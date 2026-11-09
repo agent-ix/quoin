@@ -80,7 +80,7 @@ where
 }
 
 /// Provenance: quoin#469
-#[trace("FR-100-AC-4", "TC-1636")]
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_469_every_wire_union_round_trips_through_its_spelling() {
     round_trips::<InterventionDisposition>();
@@ -111,7 +111,7 @@ fn tc_469_every_wire_union_round_trips_through_its_spelling() {
 /// `all()`, which would agree with whatever the code says.
 ///
 /// Provenance: quoin#469
-#[trace("FR-100-AC-4", "TC-1636")]
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_469_the_intake_refusal_codes_are_the_typescript_codes() {
     let spellings: Vec<&str> = InterventionRefusalCode::all()
@@ -134,7 +134,7 @@ fn tc_469_the_intake_refusal_codes_are_the_typescript_codes() {
 /// A refusal carries its code, its findings, and the message they compose to.
 ///
 /// Provenance: quoin#469
-#[trace("FR-100-AC-4", "TC-1636")]
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_469_an_intake_refusal_carries_its_code_and_findings() {
     let error = InterventionIntakeError::new(

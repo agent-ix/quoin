@@ -588,7 +588,7 @@ fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one
 /// did not say which entry, unlike the sibling stack checks.
 ///
 /// Provenance: PLAT-943
-#[trace("FR-044-AC-1", "TC-1003")]
+#[trace("FR-044-AC-1")]
 #[test]
 fn tc_479_023_each_malformed_capability_is_named_by_its_index() {
     let temporary = planned_repository();
@@ -1064,7 +1064,7 @@ fn tc_969_006_the_report_shows_an_unverified_artifact_next_to_its_provenance() {
 /// digest, beside a label with no local entry, is admitted and lands.
 ///
 /// Provenance: PLAT-969
-#[trace("FR-044-AC-13")]
+#[trace("FR-044-AC-13", "TC-1734")]
 #[test]
 fn tc_969_003_a_publish_whose_every_local_artifact_is_readable_is_admitted() {
     let temporary = planned_repository();
@@ -1432,7 +1432,7 @@ fn tc_479_012_repeated_repository_locations_produce_one_report_entry() {
 /// path prefix the move implies.
 ///
 /// Provenance: quoin#479
-#[trace("FR-045-AC-1", "TC-1013")]
+#[trace("FR-045-AC-1")]
 #[test]
 fn tc_479_013_a_corpus_oriented_root_assurance_directory_is_a_governed_store() {
     let temporary = tempfile::tempdir().expect("a temporary directory");

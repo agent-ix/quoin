@@ -12,6 +12,7 @@ where the repo uses jest.
 import fc from "fast-check";
 import { describe, it, expect } from "vitest";
 import { detectDuplicates, type Entry } from "../../src/catalog.js";
+import { trace } from "../support/trace.js"; // the repo's no-op marker helper: trace(...ids: string[]): void
 
 // grounded in step 2 from `## Inputs` + the signature at src/catalog.ts:88
 const entryArb: fc.Arbitrary<Entry> = fc.record({
@@ -21,10 +22,11 @@ const entryArb: fc.Arbitrary<Entry> = fc.record({
 
 describe("FR-012-AC-1 duplicate modules are sorted", () => {
   /**
-   * Trace: FR-012-AC-1 — declaring modules are listed in sorted order.
+   * Declaring modules are listed in sorted order.
    * spec-correctness: row=FR-012-AC-1 property=ordering extraction=extractable origin=regex review=none
    */
   it("holds for any catalog", () => {
+    trace("FR-012-AC-1", "TC-345");
     fc.assert(
       fc.property(fc.array(entryArb, { maxLength: 32 }), (entries) => {
         for (const d of detectDuplicates(entries).duplicates) {
@@ -36,19 +38,20 @@ describe("FR-012-AC-1 duplicate modules are sorted", () => {
 });
 ```
 
-Both tag carriers: `Trace:` on its own JSDoc line, and `FR-012-AC-1` inside the `describe`
-title.
+Both tag carriers: the `trace("FR-012-AC-1", "TC-345")` call (the criterion id plus the
+`spec/matrix.md` row's own `TC-` id; an id in a comment binds nothing), and `FR-012-AC-1` inside
+the `describe` title.
 
-**The `Trace:` block goes immediately above the `it(` / `test(` registration — never above
-the enclosing `describe`.** A tag binds to the symbol whose source span encloses it, and
+**The `trace(...)` call goes inside the `it(` / `test(` callback — never in the enclosing
+`describe`.** A tag binds to the symbol whose source span encloses it, and
 `describe(…)` groups tests but *registers none itself* (quire-rs
-`src/symbols/typescript.rs`, `registration`). A tag above a `describe` therefore attaches
+`src/symbols/typescript.rs`, `registration`). A tag in a `describe` body therefore attaches
 to nothing: it reads fine, greps fine, and is invisible to `quire coverage`. That is the
 whole of agent-ix/quoin#61 — measured, one tag moved from its `describe` to its `test(`
 took `FR-005` from 0/3 to 1/3 with no other change.
 
 Python and Rust are unaffected: a symbol's span covers its annotation block, declaration
-**and body**, so a docstring inside the function and an attribute above `#[test] fn` both
+**and body**, so a decorator above the function and an attribute above `#[test] fn` both
 land inside a real test symbol. Only the TS placement can fall outside one.
 
 ## Family bodies
@@ -76,10 +79,11 @@ expect(summarize(xs)).toEqual(summarize([...xs].reverse()));
 ```ts
 describe("FR-005-AC-1 unknown commands error", () => {
   /**
-   * Trace: FR-005-AC-1 — an unknown command raises an error that names the usage.
+   * An unknown command raises an error that names the usage.
    * spec-correctness: row=FR-005-AC-1 property=error-case extraction=extractable origin=regex review=none
    */
   it("rejects any command outside the known set", () => {
+    trace("FR-005-AC-1", "TC-345");
     fc.assert(
       fc.property(fc.stringMatching(/^[a-z]{1,12}$/), (cmd) => {
         fc.pre(!KNOWN.has(cmd));
@@ -96,10 +100,11 @@ describe("FR-005-AC-1 unknown commands error", () => {
 ```ts
 describe("FR-040-AC-2 session lifecycle", () => {
   /**
-   * Trace: FR-040-AC-2 — a session accepts exactly the ops its state allows.
+   * A session accepts exactly the ops its state allows.
    * spec-correctness: row=FR-040-AC-2 property=lifecycle extraction=extractable origin=regex review=none
    */
   it("matches the model over any op sequence", () => {
+    trace("FR-040-AC-2", "TC-345");
     fc.assert(
       fc.property(fc.commands(allCommands, { maxCommands: 24 }), (cmds) =>
         fc.modelRun(() => ({ model: newModel(), real: new Session() }), cmds),
@@ -117,10 +122,11 @@ assertion. That split *is* the precondition/oracle split from step 2.
 ```ts
 describe("FR-050-AC-1 concurrent writes", () => {
   /**
-   * Trace: FR-050-AC-1 — concurrent writers never lose an entry.
+   * Concurrent writers never lose an entry.
    * spec-correctness: row=FR-050-AC-1 property=concurrency extraction=extractable origin=regex review=none
    */
   it("linearizes under any interleaving", async () => {
+    trace("FR-050-AC-1", "TC-345");
     await fc.assert(
       fc.asyncProperty(fc.scheduler(), async (s) => {
         const store = new Store();
@@ -148,10 +154,11 @@ disable a test:
 ```ts
 describe("FR-018-AC-3 source maps to one root", () => {
   /**
-   * Trace: FR-018-AC-3 — a plugin source maps to exactly one resolved root.
+   * A plugin source maps to exactly one resolved root.
    * spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
    */
   it("holds for any plugin source", () => { … });
+    trace("FR-018-AC-3", "TC-345");
 });
 ```
 

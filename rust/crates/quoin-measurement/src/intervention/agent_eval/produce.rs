@@ -355,7 +355,7 @@ mod tests {
     ///
     /// The `+` in the retained regular expression is the whole content of this
     /// test: a run of unsafe characters is **one** dash, not one each.
-    #[trace("FR-100-AC-6", "TC-1638")]
+    #[trace("FR-100-AC-6")]
     #[test]
     fn a_scenario_id_becomes_one_metric_name() {
         for (id, expected) in [

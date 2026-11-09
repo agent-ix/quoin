@@ -1,6 +1,6 @@
 ---
 name: rust-style
-description: The Rust idioms quoin's `rust/` workspace is built on — the boundary contract (exit taxonomy, canonical JSON, stream discipline), error envelopes with stable codes, the workspace lint policy, untrusted-input hardening on stdin, the `/// Trace:` criterion-tag test convention, and the gates that must actually be run. Use whenever writing or reviewing Rust in this repository, adding an operation to `quoin-core`, touching the error catalogue, or changing anything under `rust/`.
+description: The Rust idioms quoin's `rust/` workspace is built on — the boundary contract (exit taxonomy, canonical JSON, stream discipline), error envelopes with stable codes, the workspace lint policy, untrusted-input hardening on stdin, the `#[trace(...)]` criterion-tag test convention, and the gates that must actually be run. Use whenever writing or reviewing Rust in this repository, adding an operation to `quoin-core`, touching the error catalogue, or changing anything under `rust/`.
 ---
 
 # quoin Rust Style

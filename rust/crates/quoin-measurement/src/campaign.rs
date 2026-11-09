@@ -403,7 +403,7 @@ mod tests {
     }
 
     /// Provenance: PLAT-1043
-    #[trace("FR-114-AC-1", "FR-114-AC-4", "TC-1940", "TC-1945")]
+    #[trace("FR-114-AC-1", "FR-114-AC-4", "TC-1940")]
     #[test]
     fn tc_1940_unknown_cycle_and_duplicate_attempts_reject() {
         let cycle_a = ["b".to_owned()];

@@ -63,7 +63,7 @@ fn repository_with_one_broken_collection(root: &Path) {
 /// refusal then renders.
 ///
 /// Provenance: quoin#477
-#[trace("FR-100-AC-4", "TC-1636")]
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_477_020_a_disk_refusal_names_the_whole_path() {
     let temporary = tempfile::tempdir().expect("a temporary directory");
@@ -116,7 +116,7 @@ fn tc_477_020_a_disk_refusal_names_the_whole_path() {
 /// join an in-memory store cannot make.
 ///
 /// Provenance: quoin#477
-#[trace("FR-100-AC-4", "TC-1636")]
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_477_021_an_in_memory_source_names_what_it_was_given() {
     let source = MemoryMeasurement::new().with_collection(BROKEN, NOT_A_COLLECTION);

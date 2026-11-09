@@ -57,7 +57,7 @@ impl Clock for VirtualClock {
 }
 
 /// Provenance: quoin#472
-#[trace("FR-100-AC-9", "TC-1699")]
+#[trace("FR-100-AC-9")]
 #[test]
 fn tc_472_two_threads_are_never_inside_the_lock_at_once() {
     let store = tempfile::tempdir().unwrap();
@@ -101,7 +101,7 @@ fn tc_472_two_threads_are_never_inside_the_lock_at_once() {
 }
 
 /// Provenance: quoin#472
-#[trace("FR-100-AC-9", "TC-1699")]
+#[trace("FR-100-AC-9")]
 #[test]
 fn tc_472_a_second_writer_refuses_at_the_deadline_and_says_who_may_clear_it() {
     let store = tempfile::tempdir().unwrap();

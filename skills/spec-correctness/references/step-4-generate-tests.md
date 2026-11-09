@@ -12,7 +12,11 @@ Templates per harness:
 `gap-analysis` step 3 greps for four forms. Every generated test carries **two independent
 carriers**, so a single formatting change cannot break reconciliation:
 
-1. `Trace: FR-027-AC-1` on its own line in the doc comment or docstring.
+1. The explicit trace marker carrying the criterion id and the `spec/matrix.md` row's own `TC-` id
+   (`#[trace("FR-027-AC-1", "TC-345")]`, `@pytest.mark.trace("FR-027-AC-1", "TC-345")`,
+   `trace("FR-027-AC-1", "TC-345")`). An id written in a comment or docstring binds nothing
+   (`quire coverage` reports `trace-id-outside-marker`); without the row's TC id the tag is
+   `criterion-tagged-outside-row` and gives no backing.
 2. The test function or `describe` name containing the id —
    `fr_027_ac_1_…` in Rust/Python, `"FR-027-AC-1 …"` in TypeScript.
 
@@ -23,13 +27,13 @@ whose source span encloses it** — the span covering that symbol's annotation b
 declaration, and its body. Placement is therefore part of the contract, and it differs by
 language:
 
-| Harness | Put `Trace:` | Because |
-|---------|--------------|---------|
-| Rust | in the doc comment above `#[test] fn …` | the span starts at the annotation block |
-| Python | in the test function's docstring | the span covers the body |
-| TypeScript | **immediately above `it(` / `test(`** — never above `describe(` | `describe(…)` groups tests but registers no symbol itself |
+| Harness | Put the marker | Because |
+|---------|----------------|---------|
+| Rust | `#[trace(…)]` on `#[test] fn …` | the span starts at the annotation block |
+| Python | `@pytest.mark.trace(…)` decorating the test function or class | the span covers the decorators and body |
+| TypeScript | a `trace(…)` call **inside the `it(` / `test(` callback** — never in a `describe(` body | `describe(…)` groups tests but registers no symbol itself |
 
-The TypeScript row is the one that bites. A tag above a `describe` block reads correctly,
+The TypeScript row is the one that bites. A tag in a `describe` block reads correctly,
 passes review, and matches a grep — and binds to nothing at all. Six generated files
 shipped that way in `@agent-ix/quoin@0.12.x` and every criterion in them scored zero
 (agent-ix/quoin#61). **Do not verify placement with grep**: grep does not care where a

@@ -385,7 +385,7 @@ fn tc_1947_two_member_authored_origins_are_recorded() {
 /// Provenance: PLAT-1071
 /// A selected input at a path tracked in the source tree is refused before
 /// launch and the tracked file keeps its bytes.
-#[trace("FR-114-AC-2", "TC-1942", "TC-1947")]
+#[trace("FR-114-AC-2", "TC-1942")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1947_selected_input_at_a_tracked_path_is_refused() {
@@ -544,7 +544,7 @@ fn tc_1941_live_event_cancellation_is_retained() {
 /// Provenance: PLAT-1043, TC-1944.
 /// A producer that wrote none of its required outputs leaves the campaign
 /// inconclusive and mints no Collection.
-#[trace("FR-114-AC-3", "TC-1983")]
+#[trace("FR-114-AC-3")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1944_no_collection_when_the_producer_yields_none() {

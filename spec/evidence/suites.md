@@ -27,7 +27,7 @@ FR-006).
 ## What the store discharges
 
 A JUnit report names tests, and quoin's trace ids live in source tags
-(`/// Trace: FR-002-AC-1`, `#[trace("FR-002-AC-1")]`), so a plain report binds no
+(`#[trace("FR-002-AC-1", "TC-2")]`), so a plain report binds no
 obligation. `make evidence` closes that gap in three steps:
 
 1. `cargo nextest run --profile evidence` runs the Rust workspace and writes

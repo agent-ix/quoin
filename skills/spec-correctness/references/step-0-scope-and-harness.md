@@ -80,7 +80,7 @@ Rules:
 Grep the existing test tree for the trace-tag forms already in use:
 
 ```
-Trace: FR-
+#[trace(
 @pytest.mark.trace(
 FR-[0-9]{3}-AC-
 Tests for FR-
