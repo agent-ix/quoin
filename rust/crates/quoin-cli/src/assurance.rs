@@ -264,8 +264,9 @@ fn field(value: &serde_json::Value, name: &str) -> Result<serde_json::Value, Str
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
     use super::command;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-040, FR-062
+    #[trace("FR-040", "FR-062")]
     #[test]
     fn tc_447_742_preserves_the_retained_assurance_grammar() {
         let matches = command()
@@ -300,7 +301,7 @@ mod tests {
         assert!(matches.get_flag("json"));
     }
 
-    /// Trace: FR-047, FR-062
+    #[trace("FR-047", "FR-062")]
     #[test]
     fn tc_447_743_preserves_the_authored_argument_grammar() {
         let matches = command()

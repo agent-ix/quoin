@@ -159,6 +159,7 @@ fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test assertions report failures")]
 mod tests {
+    use ix_trace_rs::trace;
     use std::path::PathBuf;
 
     use clap::{Arg, ArgAction, Command};
@@ -167,7 +168,7 @@ mod tests {
     use super::context;
     use crate::invocation::{Invocation, with_current};
 
-    /// Trace: FR-016, FR-062
+    #[trace("FR-016", "FR-062")]
     #[test]
     fn tc_373_config_flags_reach_the_native_config_service() {
         let matches = Command::new("quoin")

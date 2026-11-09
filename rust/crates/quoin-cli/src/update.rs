@@ -122,6 +122,7 @@ fn failure(error: &DeliveryError) -> Response {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
+    use ix_trace_rs::trace;
     use std::path::Path;
 
     use quoin_core::protocol::Response;
@@ -146,7 +147,7 @@ mod tests {
         run_with(&matches, Path::new(executable), &Unreachable).expect("update runs")
     }
 
-    /// Trace: FR-022-AC-4
+    #[trace("FR-022-AC-4")]
     #[test]
     fn tc_1013_update_refuses_inside_node_modules_without_touching_the_network() {
         let response = run_update(
@@ -163,7 +164,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-022-AC-4
+    #[trace("FR-022-AC-4")]
     #[test]
     fn tc_1013_update_outside_node_modules_reaches_the_github_release_path() {
         let response = run_update(&["update"], "/usr/local/bin/quoin");
@@ -172,7 +173,7 @@ mod tests {
         assert!(diagnostic.message.contains("transport reached"));
     }
 
-    /// Trace: FR-022
+    #[trace("FR-022")]
     #[test]
     fn tc_373_751_update_preserves_check_and_registry_grammar() {
         let matches = command()

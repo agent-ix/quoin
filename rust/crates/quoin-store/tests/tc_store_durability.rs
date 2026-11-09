@@ -14,6 +14,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -54,8 +55,7 @@ fn temporaries_in(directory: &Path) -> Vec<String> {
 /// reach it, this is the byte sequence that would be read as a record; the
 /// assertion is that the record path still holds the previous complete record
 /// and that the torn bytes are never reachable under any record name.
-///
-/// Trace: FR-100-AC-9
+#[trace("FR-100-AC-9")]
 #[test]
 fn tc_380_an_interrupted_write_leaves_no_torn_record_and_no_orphaned_temporary() {
     let scratch = scratch("interrupted");
@@ -106,8 +106,7 @@ fn tc_380_an_interrupted_write_leaves_no_torn_record_and_no_orphaned_temporary()
 
 /// A reader racing a writer sees one complete record or the other, never a
 /// prefix of either, and the writer leaves no temporary behind.
-///
-/// Trace: FR-100-AC-9
+#[trace("FR-100-AC-9")]
 #[test]
 fn tc_380_a_reader_racing_a_writer_never_observes_a_torn_record() {
     let scratch = scratch("torn");
@@ -157,8 +156,7 @@ fn tc_380_a_reader_racing_a_writer_never_observes_a_torn_record() {
 
 /// Concurrent writers against one store root produce a readable store with
 /// every completed record intact.
-///
-/// Trace: FR-100-AC-9
+#[trace("FR-100-AC-9")]
 #[test]
 fn tc_380_concurrent_writes_to_one_store_root_keep_every_completed_record() {
     let scratch = scratch("concurrent");
@@ -210,8 +208,7 @@ fn tc_380_concurrent_writes_to_one_store_root_keep_every_completed_record() {
 
 /// Concurrent content-addressed writers of *differing* bytes: one publishes,
 /// the rest are refused. No writer's bytes are clobbered by another's.
-///
-/// Trace: FR-100-AC-9
+#[trace("FR-100-AC-9")]
 #[test]
 fn tc_380_concurrent_content_addressed_writers_refuse_rather_than_clobber() {
     let scratch = scratch("content-addressed");

@@ -51,8 +51,9 @@ pub fn to_yaml_via_json_text<T: Serialize + ?Sized>(value: &T) -> Result<Yaml, J
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-027-AC-1
+    #[trace("FR-027-AC-1")]
     #[test]
     fn tc_381_132_a_json_value_reaches_yaml_with_its_numbers_intact() {
         let value: serde_json::Value =
@@ -74,7 +75,7 @@ mod tests {
         assert_eq!(nested, Some(2.5), "a nested number left as a marker map");
     }
 
-    /// Trace: FR-027-AC-1
+    #[trace("FR-027-AC-1")]
     #[test]
     fn tc_381_133_a_value_with_no_json_form_is_a_render_error() {
         let mut map = std::collections::BTreeMap::new();

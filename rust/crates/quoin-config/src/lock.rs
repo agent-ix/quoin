@@ -154,10 +154,11 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
-    /// Trace: FR-027-AC-8
+    #[trace("FR-027-AC-8")]
     #[test]
     fn tc_381_050_the_lock_is_the_sentinel_ix_cli_core_uses() {
         assert_eq!(
@@ -166,7 +167,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-027-AC-8
+    #[trace("FR-027-AC-8")]
     #[test]
     fn tc_381_051_the_lock_is_held_during_the_body_and_released_after() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -180,7 +181,7 @@ mod tests {
         assert!(!lock.exists(), "the sentinel is released afterwards");
     }
 
-    /// Trace: FR-027-AC-8
+    #[trace("FR-027-AC-8")]
     #[test]
     fn tc_381_052_a_held_lock_times_out_rather_than_corrupting_the_file() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -195,7 +196,7 @@ mod tests {
         assert_eq!(err.code(), crate::error::ConfigErrorCode::ConfigLockTimeout);
     }
 
-    /// Trace: FR-027-AC-8
+    #[trace("FR-027-AC-8")]
     #[test]
     fn tc_381_053_a_sentinel_with_no_live_owner_is_reclaimed() {
         let dir = tempfile::tempdir().expect("temp dir");

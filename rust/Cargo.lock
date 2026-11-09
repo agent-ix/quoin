@@ -2947,6 +2947,7 @@ name = "quoin-config"
 version = "0.29.4"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "schemars",
  "serde",
  "serde_json",
@@ -2993,6 +2994,7 @@ name = "quoin-delivery"
 version = "0.29.4"
 dependencies = [
  "flate2",
+ "ix-trace-rs",
  "reqwest 0.13.5",
  "semver",
  "serde",

@@ -163,10 +163,11 @@ mod tests {
     )]
     use super::{open_no_follow, read_opened_file_bounded, read_regular_file_bounded};
     use crate::error::StoreErrorCode;
+    use ix_trace_rs::trace;
 
     const LIMIT: u64 = 1024;
 
-    /// Trace: FR-098-CON-1
+    #[trace("FR-098-CON-1")]
     #[test]
     fn tc_380_bounded_read_refuses_symlinks_directories_and_oversize_files() {
         let dir = std::env::temp_dir().join(format!("quoin-store-read-{}", std::process::id()));
@@ -203,8 +204,8 @@ mod tests {
     /// the call runs on a thread with a bounded wait and a regression reports
     /// as a failed assertion, not a hung test process.
     ///
-    /// Trace: FR-110-AC-10
     /// Provenance: PLAT-985, quoin#600
+    #[trace("FR-110-AC-10")]
     #[cfg(unix)]
     #[test]
     fn tc_985_a_fifo_with_no_writer_fails_fast_rather_than_blocking() {
@@ -234,8 +235,8 @@ mod tests {
     /// is swapped - first for a FIFO, then for a symlink to other bytes -
     /// before the handle is read; the bytes are still the opened file's.
     ///
-    /// Trace: FR-110-AC-10
     /// Provenance: PLAT-985, quoin#600
+    #[trace("FR-110-AC-10")]
     #[cfg(unix)]
     #[test]
     fn tc_985_the_read_uses_the_opened_handle_not_the_path() {

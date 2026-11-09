@@ -250,8 +250,9 @@ fn json(arguments: &ArgMatches) -> bool {
 )]
 mod tests {
     use super::{command, portfolio_request, render_series};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-062, FR-102
+    #[trace("FR-062", "FR-102")]
     #[test]
     fn tc_373_report_preserves_the_retained_selection_grammar() {
         assert!(
@@ -282,7 +283,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-062, FR-102
+    #[trace("FR-062", "FR-102")]
     #[test]
     fn tc_373_plain_portfolio_uses_its_strict_core_request_shape() {
         let portfolio = vec!["one".to_owned(), "two".to_owned()];
@@ -292,7 +293,7 @@ mod tests {
         assert_eq!(request, serde_json::json!({ "locations": ["one", "two"] }));
     }
 
-    /// Trace: FR-062, FR-102
+    #[trace("FR-062", "FR-102")]
     #[test]
     fn tc_373_graph_portfolio_carries_only_the_graph_operation_fields() {
         let portfolio = vec!["one".to_owned()];
@@ -308,7 +309,7 @@ mod tests {
         assert!(request.get("cwd").is_some());
     }
 
-    /// Trace: FR-062, FR-102
+    #[trace("FR-062", "FR-102")]
     #[test]
     fn tc_373_series_human_output_matches_javascript_string_coercion() {
         let payload = serde_json::json!([{

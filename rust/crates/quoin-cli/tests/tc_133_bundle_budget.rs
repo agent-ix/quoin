@@ -19,6 +19,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 use std::process::{Command, Output};
 use std::time::{Duration, Instant};
@@ -82,8 +83,7 @@ fn run(repo: &Path, home: &Path, arguments: &[&str]) -> (Output, Duration) {
 
 /// Each bundle-scale command finishes a 250-document bundle inside the
 /// threshold.
-///
-/// Trace: NFR-011-M-1
+#[trace("NFR-011-M-1")]
 #[test]
 fn tc_133_100_bundle_scale_commands_stay_inside_the_time_budget() {
     let repo = tempfile::tempdir().unwrap();

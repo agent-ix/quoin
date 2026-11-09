@@ -44,8 +44,9 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
 )]
 mod tests {
     use super::command;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-017
+    #[trace("FR-017")]
     #[test]
     fn tc_373_plugin_alias_keeps_the_module_grammar() {
         assert!(command().try_get_matches_from(["plugin"]).is_ok());
@@ -61,7 +62,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-017, FR-102
+    #[trace("FR-017", "FR-102")]
     #[test]
     fn tc_373_plugin_alias_is_not_advertised_as_a_root_command() {
         assert!(command().is_hide_set());

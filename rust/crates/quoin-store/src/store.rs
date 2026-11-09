@@ -348,6 +348,7 @@ mod tests {
         Content, Published, STORE_SCHEMA_VERSION, StorePath, publish, read_bytes, write_durable_new,
     };
     use crate::error::StoreErrorCode;
+    use ix_trace_rs::trace;
 
     fn scratch() -> std::path::PathBuf {
         let base = std::env::temp_dir().join(format!(
@@ -359,13 +360,13 @@ mod tests {
         base
     }
 
-    /// Trace: FR-100-AC-2
+    #[trace("FR-100-AC-2")]
     #[test]
     fn tc_380_schema_version_is_frozen_at_one() {
         assert_eq!(STORE_SCHEMA_VERSION, 1);
     }
 
-    /// Trace: FR-100-AC-9
+    #[trace("FR-100-AC-9")]
     #[test]
     fn tc_380_atomic_write_replaces_and_leaves_no_temporary() {
         let dir = scratch().join("atomic");
@@ -417,8 +418,7 @@ mod tests {
     /// A record is canonicalized on the way in; an artifact is kept verbatim.
     /// A compact third-party payload published as an artifact is not
     /// reserialized, and the same value published as a record is.
-    ///
-    /// Trace: FR-100-AC-9
+    #[trace("FR-100-AC-9")]
     #[test]
     fn tc_130_record_is_canonicalized_and_artifact_is_verbatim() {
         let dir = scratch().join("kinds");
@@ -444,8 +444,7 @@ mod tests {
 
     /// A named path is replaced and reports `Written`; a content-addressed path
     /// is never replaced, whatever the content kind.
-    ///
-    /// Trace: FR-100-AC-9
+    #[trace("FR-100-AC-9")]
     #[test]
     fn tc_137_the_path_decides_replace_versus_refuse() {
         let dir = scratch().join("decides");
