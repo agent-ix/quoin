@@ -4,6 +4,7 @@
 //! Rust adapters for measurement collection publication (quoin#373, Stage 8).
 
 mod campaign;
+mod source_state;
 mod tamper;
 
 use std::io::Read as _;
@@ -85,10 +86,12 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
 
 fn record(arguments: &ArgMatches) -> Result<Response, String> {
     let input = required(arguments, "input")?;
-    let record = json_input(&input, "measurement input")?;
+    let mut record = json_input(&input, "measurement input")?;
+    let repo = required(arguments, "repo")?;
+    source_state::attest(&repo, &mut record)?;
     publish(
         "measurement.record",
-        &serde_json::json!({ "repo": required(arguments, "repo")?, "record": record }),
+        &serde_json::json!({ "repo": repo, "record": record }),
     )
 }
 

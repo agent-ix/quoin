@@ -18,6 +18,7 @@ use crate::model::record::{
     ChangeAssuranceRecord, CommandBinding, Completeness, DECISION_EVENT_KIND, Definition,
     Disposition, ImpactSnapshot, ProofObligation, RECORD_TYPE, RecordSubject, ReviewWorkflow,
     SCHEMA_VERSION, SUBJECT, SourceConnection, SourceKind, Statement, Unknown,
+    is_normalized_relative_posix_path,
 };
 
 /// Read the record shape.
@@ -79,22 +80,37 @@ fn read_source_connections(
     let mut connections = Vec::with_capacity(entries.len());
     for entry in entries {
         let fields = Fields::read(entry, SUBJECT, "source_connections")?;
-        fields.exact(&["source_id", "kind", "revision"])?;
+        fields.exact(&["source_id", "kind", "revision", "path"])?;
         let source_id = SourceId::parse(fields.text("source_id")?, SUBJECT, "source_id")?;
         let kind = SourceKind::parse(fields.text("kind")?).ok_or_else(|| {
             ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("source kind"))
         })?;
         let revision = NonEmptyText::parse(fields.text("revision")?, SUBJECT, "source revision")?;
+        let path = NonEmptyText::parse(fields.text("path")?, SUBJECT, "source path")?;
+        if path.as_str() == "." || !is_normalized_relative_posix_path(path.as_str()) {
+            return Err(ChangeAssuranceError::shape(
+                SUBJECT,
+                FieldFailure::malformed(
+                    "source path must be normalized repository-relative POSIX path",
+                ),
+            ));
+        }
         connections.push(SourceConnection {
             source_id,
             kind,
             revision,
+            path,
         });
     }
     require_unique_values(
         connections.iter().map(|entry| entry.source_id.as_str()),
         SUBJECT,
         "source identity",
+    )?;
+    require_unique_values(
+        connections.iter().map(|entry| entry.path.as_str()),
+        SUBJECT,
+        "source path",
     )?;
     require_sorted(
         connections.iter().map(|entry| entry.source_id.as_str()),

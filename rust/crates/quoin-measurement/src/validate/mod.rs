@@ -26,12 +26,10 @@
 //! is a lossy round trip, because nothing here round-trips.
 
 mod interval;
-mod plan;
+pub(crate) mod plan;
 mod population;
 pub(crate) mod read;
 mod stack;
-
-use std::collections::BTreeMap;
 
 use quoin_store::{JsonObject, JsonValue};
 
@@ -247,10 +245,7 @@ pub fn measurement_collection(
 
     findings.extend(stack::stated_computed_members(value));
 
-    let by_metric: BTreeMap<&str, &MeasurementPlan> = plans
-        .iter()
-        .map(|plan| (plan.metric.as_str(), plan))
-        .collect();
+    let by_metric = plan::by_metric(plans);
     // The parse admitted every observation in order, so the stored array and
     // `collection.observations` pair up by position; the population checks
     // read the stored member, because a malformed value is exactly what the
@@ -265,18 +260,31 @@ pub fn measurement_collection(
     };
     for (index, observation) in collection.observations.iter().enumerate() {
         let (plan, population_plan) = plan::governing(&by_metric, observation);
-        findings.extend(plan::findings(observation, plan));
+        findings.extend(
+            plan::findings(observation, plan)
+                .into_iter()
+                .map(|finding| format!("{finding} (at observations[{index}])")),
+        );
         let raw_population = raw_observations
             .get(index)
             .and_then(|raw| raw.as_object().ok())
             .and_then(|raw| raw.get("population"));
-        for (code, finding) in population::findings(observation, raw_population, population_plan) {
+        // Each finding names the JSON path of the member it concerns, so the
+        // same complaint about two observations is two locations, not one
+        // sentence repeated (PLAT-1050).
+        for (code, finding, member) in
+            population::findings(observation, raw_population, population_plan)
+        {
             typed.push(code);
-            findings.push(format!("{code}: {finding}"));
+            findings.push(format!(
+                "{code}: {finding} (at observations[{index}].{member})"
+            ));
         }
-        for (code, finding) in interval::findings(observation, population_plan) {
+        for (code, finding, member) in interval::findings(observation, population_plan) {
             typed.push(code);
-            findings.push(format!("{code}: {finding}"));
+            findings.push(format!(
+                "{code}: {finding} (at observations[{index}].{member})"
+            ));
         }
     }
 

@@ -17,6 +17,7 @@ workspace = true
 [dependencies]
 thiserror = { workspace = true }
 quire-canonical = { workspace = true }
+engineering-assurance = { workspace = true, features = ["atomic-publish"] }
 
 # Unix only: the Windows release target has neither flag, and takes its own
 # path in `read_regular_file_bounded`. Already resolves once in the graph (aws-lc-sys's

@@ -343,6 +343,23 @@ fn a_hyphenated_compound_is_one_token() {
     ));
 }
 
+/// Concessive `while` joins two outcomes; it is not a temporal state, while
+/// `while <state>` still is (quoin#359).
+#[trace("FR-031-AC-20")]
+#[test]
+fn concessive_while_is_not_temporal_but_while_a_state_is() {
+    assert!(!has(
+        &of(
+            "Each Task-029 seeded mutant records one exact qualification-critical guard and assigned bare-traced Rust test; removing the guard makes that test fail for the intended reason, while surviving mutants, crashes, hangs, and unfinished fuzz budgets remain blocking results."
+        ),
+        "temporal"
+    ));
+    assert!(has(
+        &of("The service SHALL keep serving reads while the service is degraded."),
+        "temporal"
+    ));
+}
+
 /// A statement claiming an architectural fact in the corpus's own wording mints
 /// `layering` or `module-boundary`; `top-level claim` mints neither.
 #[trace("FR-031-AC-21")]

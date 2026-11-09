@@ -53,7 +53,7 @@ that is the ticket to reopen.
 ### `differential-report`
 
 - **Producer** — `agent-ix/tl-mltl`, comparing its engine against R2U2 4.2-release / C2PO 4.1.0.
-- **Sample** — `tests/fixtures/evidence/differential-report-real.json`, the committed `tl-mltl` report, unedited. It carries eight agreements and one `unsupported`.
+- **Sample** — `corpus/r2u2-v4.2/differential-report.json` in `agent-ix/tl-mltl`, the committed report, which that repository owns; quoin keeps no copy. It carries eight agreements and one `unsupported`.
 - **Governed target record** — `RunRecord` entries, one per compared case.
 - **Why nothing existing represents it** — `junit` has no state for "the external reference cannot express this case"; `cargo-mutants` is mutation-shaped; `agent-eval` is measurement-shaped; the finding-shaped adapters would record a disagreement as a rule violation, which is a different claim from "two implementations disagree" and one the report does not make.
 - **Schema family** — `<domain>.differential-summary/v1`, so another domain can use the shape without claiming `tl-mltl`'s identity. A `v2` is refused rather than read by a `v1` reader that happens to recognise the fields.

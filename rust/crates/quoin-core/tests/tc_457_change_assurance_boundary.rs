@@ -105,7 +105,7 @@ fn record_body() -> Value {
         "record_id": "change-1",
         "revision": 1,
         "subject": {"repository": "agent-ix/quoin", "base_revision": "abc123", "scope": ["src/evidence"]},
-        "source_connections": [{"source_id": "FR-063", "kind": "requirement", "revision": "1"}],
+        "source_connections": [{"source_id": "FR-063", "kind": "requirement", "revision": "1", "path": "spec/functional/FR-063-change-assurance-record-integrity.md"}],
         "impact_snapshot": {"identity": "impact-1", "revision": "1", "completeness": "complete", "truncated": false, "gaps": []},
         "definition": {
             "requirements": [{"id": "FR-063", "statement": "record it", "source_ids": ["FR-063"]}],

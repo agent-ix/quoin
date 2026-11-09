@@ -353,6 +353,39 @@ fn tc_479_001_an_unplanned_observation_is_refused_naming_the_metric() {
     );
 }
 
+/// A drafted successor plan for a metric does not shadow the active plan:
+/// recording keeps resolving to the active one (PLAT-271).
+///
+/// FR-044-AC-1: "Every observation resolves to an active plan or the write is
+/// refused naming the metric."
+///
+/// Trace: FR-044-AC-1
+/// Provenance: quoin#300
+#[test]
+fn tc_479_001a_a_proposed_successor_does_not_shadow_the_active_plan() {
+    let candidate = from_serde(&new_collection_json()).expect("the candidate crosses the bridge");
+    let temporary = planned_repository();
+    let active = authored_plans(temporary.path());
+    assert_eq!(active.len(), 1, "the fixture repository authors one plan");
+
+    let mut draft = active[0].clone();
+    draft.id = quoin_measurement::types::ids::NonEmptyText::parse(
+        "MP-999",
+        MeasurementErrorCode::PlanInvalid,
+        "id",
+    )
+    .expect("a non-empty plan id");
+    draft.status = quoin_measurement::types::plan::LifecycleStatus::Proposed;
+
+    for plans in [
+        vec![active[0].clone(), draft.clone()],
+        vec![draft.clone(), active[0].clone()],
+    ] {
+        validate::measurement_collection(&candidate, &plans)
+            .expect("the active plan governs; a proposed successor is not consulted");
+    }
+}
+
 /// Every member FR-044-AC-1 names is required, one at a time.
 ///
 /// FR-044-AC-1: "A collection carries schema and collection identity, subject,
@@ -543,6 +576,48 @@ fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one
         "the SAME refusal must also name the unplanned metric, not just the stack defect; \
          got {:?}",
         refusal.findings()
+    );
+}
+
+/// Two malformed `capabilities` entries are two findings, and each names its
+/// own index, so the refusal says which entries to fix rather than repeating
+/// one generic sentence.
+///
+/// PLAT-943: `capabilities()` accumulated (PLAT-931) but its per-entry message
+/// did not say which entry, unlike the sibling stack checks.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-943
+#[test]
+fn tc_479_023_each_malformed_capability_is_named_by_its_index() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["capabilities"] = json!(["ok.capability", "", 7]);
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("empty and non-string capabilities are refused");
+    let findings = refusal.findings();
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.contains("capabilities[1]")),
+        "the empty entry must be named by its index, got {findings:?}"
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.contains("capabilities[2]")),
+        "the non-string entry must be named by its index, got {findings:?}"
+    );
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| finding.contains("capabilities[0]")),
+        "the valid entry must not be named, got {findings:?}"
     );
 }
 
@@ -1240,7 +1315,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
     );
     for literal in [
         "not_computed: no record",
-        "Corpus gaps: not_computed",
+        "Corpus gaps: not reported (no collection states bounds.gap_count)",
         "finding_recall",
     ] {
         assert!(
@@ -1262,7 +1337,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
         "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
         "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md; ground truth: mechanical) | gate | not_computed: no record |",
         "Corpus gaps: 3",
-        "2026-03-01T00:00:00.000Z — quoin 0.9.1",
+        "c-2026-03 (quoin) — 2026-03-01T00:00:00.000Z — quoin 0.9.1",
         "- unmeasured_metric: no collection has computed this authored plan.",
     ] {
         assert!(

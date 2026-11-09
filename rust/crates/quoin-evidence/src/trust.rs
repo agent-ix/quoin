@@ -17,16 +17,16 @@
 //! here; a consumer that matched on it was matching on a dependency's wording.
 
 use crate::error::EvidenceError;
-use crate::instant::{Instant, InstantGrammar};
 use crate::types::{
     ProducerContext, TrustAssessment, TrustDecision, TrustDecisionKind, TrustStatus, TrustTrigger,
 };
+use quoin_store::instant::{Instant, InstantGrammar};
 
 /// The language `decidedAt` is written in.
 ///
 /// The retained check was `!Number.isNaN(Date.parse(value))`, so a bare
 /// `YYYY-MM-DD` reads and a trailing zone or comment does not disqualify a
-/// well-formed prefix. See [`crate::instant`] for why the two grammars in this
+/// well-formed prefix. See [`quoin_store::instant`] for why the two grammars in this
 /// crate are not one.
 const DECIDED_AT_GRAMMAR: InstantGrammar = InstantGrammar::DateOrInstant;
 

@@ -270,8 +270,9 @@ fn tc_1016_002_an_item_row_naming_another_plan_is_refused() {
         refusal
             .findings()
             .iter()
-            .any(|finding| finding
-                == "metric `quality.gate.constant-predictor-item` names plan MP-901; active plan is MP-900"),
+            .any(|finding| finding.starts_with(
+                "metric `quality.gate.constant-predictor-item` names plan MP-901; active plan is MP-900 (at observations["
+            )),
         "{:?}",
         refusal.findings()
     );

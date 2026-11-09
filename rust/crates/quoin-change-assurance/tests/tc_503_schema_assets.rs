@@ -169,3 +169,53 @@ fn tc_503_015_the_named_constants_and_the_lookup_agree() {
     assert_eq!(asset(ASSET_NAMES[1]), Some(PROOF_ATTESTATION_V1));
     assert_eq!(asset(ASSET_NAMES[2]), Some(VERIFICATION_RECEIPT_V1));
 }
+
+/// Trace: FR-063-AC-12
+///
+/// The published record schema refuses the same malformed source paths the
+/// reader refuses, and accepts the paths the reader accepts.
+#[test]
+fn tc_503_the_record_schema_agrees_with_the_reader_on_source_paths() {
+    let validator = validator(ASSET_NAMES[0]);
+    let record = base_input().record;
+    let instance = |path: &str| {
+        let mut value = as_instance(&record);
+        value["source_connections"][0]["path"] = serde_json::Value::String(path.to_owned());
+        value
+    };
+    for bad in [
+        ".", "/abs", "../x", "a/../b", "a/./b", "./a", "a//b", "a\\b", "a/b/", "a\0b", "",
+    ] {
+        assert!(
+            !validator.is_valid(&instance(bad)),
+            "the schema must refuse the path {bad:?}"
+        );
+        assert!(
+            prepare_change_record(&{
+                let mut value = record.clone();
+                set_first_path(&mut value, bad);
+                value
+            })
+            .is_err(),
+            "the reader must refuse the path {bad:?}"
+        );
+    }
+    for good in ["a.md", "spec/a.md", "dir/.hidden", "a/..b/c"] {
+        assert!(
+            validator.is_valid(&instance(good)),
+            "the schema must accept the path {good:?}"
+        );
+    }
+}
+
+fn set_first_path(record: &mut JsonValue, path: &str) {
+    let mut root = record.as_object().unwrap().clone();
+    let JsonValue::Array(mut connections) = root.get("source_connections").unwrap().clone() else {
+        panic!("source_connections is not an array");
+    };
+    let mut first = connections[0].as_object().unwrap().clone();
+    first.set("path", JsonValue::string(path));
+    connections[0] = JsonValue::Object(first);
+    root.set("source_connections", JsonValue::Array(connections));
+    *record = JsonValue::Object(root);
+}

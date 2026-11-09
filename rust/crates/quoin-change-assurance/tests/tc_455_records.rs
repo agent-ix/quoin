@@ -263,3 +263,142 @@ fn tc_455_lineage_is_strict_and_every_break_is_refused() {
         "a parent that is not a valid record must be refused"
     );
 }
+
+/// The scenario record with `connections` as its source connections.
+fn with_connections(connections: Vec<JsonValue>) -> JsonValue {
+    replacing(
+        &json(&record_text()),
+        "source_connections",
+        JsonValue::Array(connections),
+    )
+}
+
+/// One source connection at `path`.
+fn connection(source_id: &str, path: &str) -> JsonValue {
+    object(vec![
+        ("source_id", JsonValue::string(source_id)),
+        ("kind", JsonValue::string("requirement")),
+        ("revision", JsonValue::string("1")),
+        ("path", JsonValue::string(path)),
+    ])
+}
+
+/// Trace: FR-063-AC-12
+///
+/// A source connection names the repository path of its artifact. The path is
+/// required, survives a write and a re-read unchanged, and the gate refuses
+/// every shape that is not a normalized repository-relative POSIX path, and a
+/// path two connections share.
+#[test]
+fn tc_455_a_source_connection_binds_a_normalized_unique_repository_path() {
+    let record = json(&record_text());
+    let typed = prepare_change_record(&record).expect("the scenario record prepares");
+    assert_eq!(
+        typed.source_connections[0].path.as_str(),
+        "spec/functional/FR-063-change-assurance-record-integrity.md"
+    );
+    let written = quoin_store::parse_strict_json(&record_bytes(&typed).unwrap()).unwrap();
+    assert_eq!(
+        member(&written, "source_connections"),
+        member(&record, "source_connections"),
+        "the path must survive a write unchanged"
+    );
+
+    let JsonValue::Array(given) = member(&record, "source_connections").clone() else {
+        panic!("source_connections is not an array");
+    };
+    let mut without_path = given[0].as_object().unwrap().clone();
+    without_path.remove("path");
+    assert!(
+        prepare_change_record(&with_connections(vec![JsonValue::Object(without_path)])).is_err(),
+        "a connection without a path must be refused"
+    );
+
+    for bad in [
+        "",
+        ".",
+        "/abs/file.md",
+        "../up.md",
+        "a/../b.md",
+        "a/./b.md",
+        "./a.md",
+        "a//b.md",
+        "a\\b.md",
+        "a/b/",
+        "a\0b.md",
+    ] {
+        assert!(
+            prepare_change_record(&with_connections(vec![connection("FR-063", bad)])).is_err(),
+            "the path {bad:?} must be refused"
+        );
+    }
+
+    for good in ["a.md", "spec/a.md", "dir/.hidden", "a/..b/c", "a/b.c.d"] {
+        prepare_change_record(&with_connections(vec![connection("FR-063", good)]))
+            .unwrap_or_else(|error| panic!("the path {good:?} must be accepted: {error}"));
+    }
+
+    assert!(
+        prepare_change_record(&with_connections(vec![
+            connection("FR-063", "spec/a.md"),
+            connection("FR-064", "spec/a.md"),
+        ]))
+        .is_err(),
+        "two connections sharing a path must be refused"
+    );
+    prepare_change_record(&with_connections(vec![
+        connection("FR-063", "spec/a.md"),
+        connection("FR-064", "spec/b.md"),
+    ]))
+    .expect("distinct paths are accepted");
+}
+
+/// Trace: FR-063-AC-13
+///
+/// Only the record body is evidence. Declaration metadata a producer might keep
+/// beside it (a purpose, derived fields, a lookup map) is refused when placed
+/// inside the body, at the top level or inside a source connection.
+#[test]
+fn tc_455_metadata_inside_the_record_body_is_refused_as_undeclared() {
+    let record = json(&record_text());
+    for extra in ["purpose", "derived_fields", "path_by_source_id"] {
+        let value = JsonValue::string("x");
+        assert!(
+            prepare_change_record(&replacing(&record, extra, value.clone())).is_err(),
+            "a top-level `{extra}` must be refused"
+        );
+        let JsonValue::Array(given) = member(&record, "source_connections").clone() else {
+            panic!("source_connections is not an array");
+        };
+        let nested = replacing(&given[0], extra, value);
+        assert!(
+            prepare_change_record(&with_connections(vec![nested])).is_err(),
+            "a `{extra}` inside a source connection must be refused"
+        );
+    }
+}
+
+/// Trace: FR-063-AC-12
+///
+/// The path rule a source connection uses is the one a command's
+/// `working_directory` uses, so the NUL refusal reaches the working directory
+/// too, while the root `.` and ordinary nested directories stay valid there.
+#[test]
+fn tc_455_a_working_directory_shares_the_path_rule_including_nul() {
+    let with_directory = |directory: &str| {
+        json(&record_text().replace(
+            r#""working_directory": ".""#,
+            &format!(r#""working_directory": "{directory}""#),
+        ))
+    };
+    for good in [".", "crates", "crates/x"] {
+        prepare_change_record(&with_directory(good))
+            .unwrap_or_else(|error| panic!("the directory {good:?} must be accepted: {error}"));
+    }
+    for bad in ["a\\u0000b", "/abs", "a/../b", "a/"] {
+        assert!(
+            prepare_change_record(&with_directory(bad)).is_err(),
+            "the directory {bad:?} must be refused"
+        );
+    }
+}

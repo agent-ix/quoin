@@ -53,9 +53,12 @@ pub static STATEMENT_CHARACTERISTICS: LazyLock<Vec<StatementCharacteristic>> =
 /// fifty times, so a reader can diff this list against the TypeScript
 /// line by line.
 const ASCII_PATTERNS: &[(&str, &str)] = &[
+    // Bare `while` is also the concessive conjunction ("..., while surviving
+    // mutants remain blocking"), so it mints only when a state or interval
+    // follows it (`while the service is degraded`). quoin#359.
     (
         "temporal",
-        r"\b(always|never|eventually|while|until|continuously)\b",
+        r"\b(always|never|eventually|while (the|a|an|any|each|every|all|no|in|at|under|during)|until|continuously)\b",
     ),
     ("liveness", r"\b(eventually|makes progress|terminates)\b"),
     (

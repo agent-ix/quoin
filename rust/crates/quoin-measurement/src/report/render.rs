@@ -24,10 +24,16 @@ use crate::intervention::report::render_intervention_report;
 use crate::json_bridge::to_serde;
 use crate::operational::report::render_operational_report;
 use crate::report::build::{CurrentRow, MeasurementReport};
+use crate::report::quantity::measured_text;
 use crate::report::verdict::{GateOutcome, RatchetOutcome, StageVerdict};
 use crate::report::verdict_render::stage_verdict_table;
 use crate::types::observation::{Dimensions, MeasurementObservation, MeasurementState};
 use crate::types::plan::GroundTruthKind;
+
+/// The corpus-gap line when no collection states `bounds.gap_count`. Not
+/// `not_computed`: that is an observation's state, and nothing here is one.
+pub(crate) const NO_GAP_COUNT: &str =
+    "Corpus gaps: not reported (no collection states bounds.gap_count)";
 
 /// The metrics that carry a factual attention sentence of their own.
 ///
@@ -159,11 +165,7 @@ pub(crate) fn observation_cell(row: &CurrentRow, no_reason: &str, no_observation
         );
     }
     match observation.state {
-        MeasurementState::Measured => format!(
-            "{} {}",
-            value_text(observation.value),
-            observation.unit.as_str()
-        ),
+        MeasurementState::Measured => measured_text(observation.value, observation.unit.as_str()),
         MeasurementState::NotComputed => format!(
             "not_computed: {}",
             observation.reason.as_deref().unwrap_or(no_reason)
@@ -239,7 +241,7 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
     lines.push("## Current evidence".to_owned());
     lines.push(String::new());
     lines.push(report.corpus_gaps.map_or_else(
-        || "Corpus gaps: not_computed".to_owned(),
+        || NO_GAP_COUNT.to_owned(),
         |gaps| format!("Corpus gaps: {}", js_f64_string(gaps)),
     ));
     lines.push(String::new());
@@ -257,7 +259,9 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
         }
         seen.push(&collection.collection_id);
         lines.push(format!(
-            "- {} — {} {}{}",
+            "- {} ({}) — {} — {} {}{}",
+            collection.collection_id,
+            collection.subject,
             collection.timestamp,
             collection.tool_identity,
             collection.tool_version,

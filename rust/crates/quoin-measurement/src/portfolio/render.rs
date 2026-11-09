@@ -17,7 +17,7 @@ use crate::error::MeasurementError;
 use crate::portfolio::ranking::{PortfolioRanking, RANKING_ADVISORY_NOTE, rank_portfolio};
 use crate::portfolio::types::{PortfolioReport, PortfolioRepositoryReport};
 use crate::report::render::{
-    metric_label, observation_cell, plan_cell, row_label, unverified_artifacts_suffix,
+    NO_GAP_COUNT, metric_label, observation_cell, plan_cell, row_label, unverified_artifacts_suffix,
 };
 use crate::report::verdict_render::stage_verdict_table;
 
@@ -167,7 +167,7 @@ fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, Measu
             js_f64_string(gaps),
             collection.path
         ),
-        _ => "Corpus gaps: not_computed".to_owned(),
+        _ => NO_GAP_COUNT.to_owned(),
     });
     lines.push(String::new());
     lines.push("| Metric | State/value | Plan | Collection |".to_owned());

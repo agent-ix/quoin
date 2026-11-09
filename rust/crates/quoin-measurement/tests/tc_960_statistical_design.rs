@@ -204,7 +204,7 @@ fn tc_960_001_a_population_below_the_minimum_is_refused_with_its_own_code() {
         refusal.findings(),
         [
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate` examined 9 but plan MP-900 \
-             requires a population of at least 10"
+             requires a population of at least 10 (at observations[0].population.examined)"
         ]
     );
 }
@@ -245,7 +245,8 @@ fn tc_960_003_a_measured_observation_with_no_population_is_refused_under_a_minim
         refusal.findings(),
         [
             "QM-POPULATION-UNSTATED: metric `quality.gate` states no population.examined; \
-             plan MP-900 requires a population of at least 10"
+             plan MP-900 requires a population of at least 10 (at \
+             observations[0].population.examined)"
         ]
     );
 
@@ -287,13 +288,15 @@ fn tc_960_004_population_findings_accumulate_with_every_other_finding() {
         refusal.findings(),
         [
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate` examined 2 but plan MP-900 \
-             requires a population of at least 10",
+             requires a population of at least 10 (at observations[0].population.examined)",
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate [variant=b]` examined 3 but \
-             plan MP-900 requires a population of at least 10",
+             plan MP-900 requires a population of at least 10 (at \
+             observations[1].population.examined)",
             "QM-POPULATION-UNSTATED: metric `quality.gate [variant=c]` states no \
-             population.examined; plan MP-900 requires a population of at least 10",
+             population.examined; plan MP-900 requires a population of at least 10 (at \
+             observations[2].population.examined)",
             "metric `quality.unplanned` has no MeasurementPlan under spec/assurance or \
-             assurance; record refused",
+             assurance; record refused (at observations[3])",
         ]
     );
 }
@@ -488,7 +491,7 @@ fn tc_960_009_repetitions_short_of_the_plan_are_refused_with_their_own_code() {
     assert_eq!(
         refusal.findings(),
         [
-            "QM-REPETITIONS-SHORT: metric `quality.gate` ran 2 repetitions but plan MP-900 requires 3"
+            "QM-REPETITIONS-SHORT: metric `quality.gate` ran 2 repetitions but plan MP-900 requires 3 (at observations[0].population.repetitions)"
         ]
     );
 }
@@ -533,7 +536,7 @@ fn tc_960_011_unstated_repetitions_under_a_plan_of_more_than_one_are_refused() {
         refusal.findings(),
         [
             "QM-POPULATION-UNSTATED: metric `quality.gate` states no population.repetitions; \
-             plan MP-900 requires 3 repetitions"
+             plan MP-900 requires 3 repetitions (at observations[0].population.repetitions)"
         ]
     );
 
@@ -630,7 +633,8 @@ fn tc_960_014_a_malformed_repetition_count_is_refused_whatever_the_plan() {
                 refusal.findings(),
                 [format!(
                     "QM-POPULATION-MALFORMED: metric `quality.gate` states \
-                     population.repetitions {spelled}; it must be a whole number of at least 1"
+                     population.repetitions {spelled}; it must be a whole number of at least 1 \
+                     (at observations[0].population.repetitions)"
                 )],
                 "{document}"
             );
@@ -658,7 +662,8 @@ fn tc_960_015_a_malformed_examined_count_is_refused_under_a_minimum() {
             refusal.findings(),
             [format!(
                 "QM-POPULATION-MALFORMED: metric `quality.gate` states population.examined \
-                 {spelled}; it must be a whole number of at least 0"
+                 {spelled}; it must be a whole number of at least 0 (at \
+                 observations[0].population.examined)"
             )]
         );
     }
@@ -738,9 +743,9 @@ fn tc_960_018_population_findings_of_different_kinds_are_collection_invalid() {
         refusal.findings(),
         [
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate` examined 2 but plan MP-900 \
-             requires a population of at least 10",
+             requires a population of at least 10 (at observations[0].population.examined)",
             "QM-REPETITIONS-SHORT: metric `quality.gate` ran 1 repetitions but plan MP-900 \
-             requires 3",
+             requires 3 (at observations[0].population.repetitions)",
         ]
     );
 }

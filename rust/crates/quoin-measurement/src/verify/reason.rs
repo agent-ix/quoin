@@ -141,47 +141,48 @@ pub enum Reason {
 }
 
 impl Reason {
-    /// Every reason. This array's own order carries no meaning — `from_wire`
-    /// scans it, and nothing maps a reason to its index.
-    ///
-    /// The enum's *declaration* order does carry meaning: [`Reason`] derives
-    /// [`Ord`], and `verify` sorts a verdict's `reasons` by it, so declaration
-    /// order is the wire order. Place a new reason beside the ones it belongs
-    /// with rather than at the end.
-    pub const ALL: [Self; 32] = [
-        Self::NoDecisionRule,
-        Self::NoEstimator,
-        Self::NoCollections,
-        Self::NoValue,
-        Self::PopulationUnstated,
-        Self::PopulationIncomplete,
-        Self::PopulationEmpty,
-        Self::NoPrior,
-        Self::OrderUnattested,
-        Self::ConstantPredictorRowsAbsent,
-        Self::RuleNotEvaluable,
-        Self::UnitUnsupported,
-        Self::SliceMissing,
-        Self::ObservationMissing,
-        Self::ApparatusUnrecorded,
-        Self::RuleNotMet,
-        Self::ValueDisagreesWithRows,
-        Self::PopulationBelowMinimum,
-        Self::RepetitionsShort,
-        Self::PopulationMalformed,
-        Self::RerunUntilPass,
-        Self::ApparatusEdit,
-        Self::ClaimedVerdictDisagrees,
-        Self::CollectionDeleted,
-        Self::CollectionEdited,
-        Self::DefinitionChangedWithoutVersionBump,
-        Self::ConstantPredictorRowsMalformed,
-        Self::ConstantPredictorRowsMismatch,
-        Self::ExternalReferenceUnsupplied,
-        Self::IntervalUnstated,
-        Self::IntervalMalformed,
-        Self::IntervalLevelShort,
-    ];
+    crate::all_variants::all_variants! {
+        /// Every reason, in declaration order, generated with an exhaustive
+        /// `match` so a variant missing from the list is a compile error.
+        ///
+        /// The enum's *declaration* order carries meaning: [`Reason`] derives
+        /// [`Ord`], and `verify` sorts a verdict's `reasons` by it, so declaration
+        /// order is the wire order. Place a new reason beside the ones it belongs
+        /// with rather than at the end.
+        Reason:
+        NoDecisionRule,
+        NoEstimator,
+        NoCollections,
+        NoValue,
+        PopulationUnstated,
+        PopulationIncomplete,
+        PopulationEmpty,
+        NoPrior,
+        OrderUnattested,
+        ConstantPredictorRowsAbsent,
+        ConstantPredictorRowsMalformed,
+        ConstantPredictorRowsMismatch,
+        ExternalReferenceUnsupplied,
+        RuleNotEvaluable,
+        UnitUnsupported,
+        SliceMissing,
+        ObservationMissing,
+        ApparatusUnrecorded,
+        IntervalUnstated,
+        RuleNotMet,
+        ValueDisagreesWithRows,
+        PopulationBelowMinimum,
+        RepetitionsShort,
+        PopulationMalformed,
+        IntervalMalformed,
+        IntervalLevelShort,
+        RerunUntilPass,
+        ApparatusEdit,
+        ClaimedVerdictDisagrees,
+        CollectionDeleted,
+        CollectionEdited,
+        DefinitionChangedWithoutVersionBump,
+    }
 
     /// The stable wire spelling.
     #[must_use]

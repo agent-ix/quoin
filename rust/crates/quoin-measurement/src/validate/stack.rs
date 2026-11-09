@@ -130,13 +130,18 @@ fn capabilities(object: &JsonObject) -> Result<Vec<NonEmptyText>, MeasurementErr
     // first (PLAT-929).
     let mut findings = Vec::new();
     let mut out = Vec::with_capacity(items.len());
-    for item in items {
+    for (index, item) in items.iter().enumerate() {
         match item.as_str().filter(|text| !text.is_empty()) {
             Some(text) => match NonEmptyText::parse(text, CODE, "capability") {
                 Ok(capability) => out.push(capability),
-                Err(error) => findings.push(error.subject().to_owned()),
+                Err(error) => findings.push(format!(
+                    "verificationStack.capabilities[{index}]: {}",
+                    error.subject()
+                )),
             },
-            None => findings.push(non_empty.to_owned()),
+            None => findings.push(format!(
+                "verificationStack.capabilities[{index}] must be a non-empty string"
+            )),
         }
     }
     if findings.is_empty() {
