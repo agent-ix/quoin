@@ -26,6 +26,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+mod common;
+
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
@@ -100,39 +102,6 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
-/// module-manifest schema requires and the fixture does not carry.
-fn fixture() -> PathBuf {
-    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    ROOT.get_or_init(|| {
-        let root =
-            std::env::temp_dir().join(format!("tc452-install-module-ok-{}", std::process::id()));
-        copy_tree(&quire_fixtures::module_ok_dir(), &root);
-        let manifest = root.join("manifest.yaml");
-        let text = std::fs::read_to_string(&manifest).unwrap();
-        std::fs::write(
-            &manifest,
-            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
-        )
-        .unwrap();
-        root
-    })
-    .clone()
-}
-
-fn copy_tree(from: &Path, to: &Path) {
-    fs::create_dir_all(to).unwrap();
-    for entry in fs::read_dir(from).unwrap() {
-        let entry = entry.unwrap();
-        let target = to.join(entry.file_name());
-        if entry.file_type().unwrap().is_dir() {
-            copy_tree(&entry.path(), &target);
-        } else {
-            fs::copy(entry.path(), &target).unwrap();
-        }
-    }
-}
-
 /// A copy of the `module-ok` fixture under `parent`, renamed to `name`, with
 /// `extra` appended to its `semantic` block.
 ///
@@ -142,7 +111,7 @@ fn copy_tree(from: &Path, to: &Path) {
 /// scaffolding for the sake of two lines.
 fn module_copy(parent: &Path, name: &str, extra: &str) -> PathBuf {
     let root = parent.join(name);
-    copy_tree(&fixture(), &root);
+    common::copy_module_ok(&root);
     let manifest_path = root.join("manifest.yaml");
     let text = fs::read_to_string(&manifest_path).unwrap();
     let renamed = text.replace(

@@ -25,23 +25,26 @@ fn copy_tree(source: &Path, destination: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
-/// module-manifest schema requires and the fixture does not carry.
-fn module_ok() -> PathBuf {
-    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    ROOT.get_or_init(|| {
-        let root = std::env::temp_dir().join(format!("quoin-cli-module-ok-{}", std::process::id()));
-        copy_tree(&quire_fixtures::module_ok_dir(), &root).expect("module fixture is copied");
-        let manifest = root.join("manifest.yaml");
-        let text = std::fs::read_to_string(&manifest).expect("manifest is read");
-        std::fs::write(
-            &manifest,
-            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
-        )
-        .expect("manifest is written");
-        root
-    })
-    .clone()
+/// `semantic.semantic_core` as the module-manifest schema pinned through
+/// `@agent-ix/semantic-schema` requires it. The `quire-fixtures` `module-ok`
+/// manifest omits the key, so `copy_module_ok` adds it; drop this injection
+/// when the pinned `@agent-ix/semantic-schema` no longer requires
+/// `semantic.semantic_core`. Quoin reads nothing from the value.
+const SCHEMA_REQUIRED_SEMANTIC_CORE: &str = "0.0.0";
+
+/// Copy the `quire-fixtures` `module-ok` fixture to `to` with the
+/// `semantic_core` key the pinned schema requires.
+fn copy_module_ok(to: &Path) -> std::io::Result<()> {
+    copy_tree(&quire_fixtures::module_ok_dir(), to)?;
+    let manifest = to.join("manifest.yaml");
+    let text = std::fs::read_to_string(&manifest)?;
+    std::fs::write(
+        &manifest,
+        text.replace(
+            "semantic:\n",
+            &format!("semantic:\n  semantic_core: {SCHEMA_REQUIRED_SEMANTIC_CORE}\n"),
+        ),
+    )
 }
 
 /// A real, on-disk semantic contract root for `QUOIN_SEMANTIC_ROOT`, so
@@ -96,7 +99,7 @@ fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
     let home = scratch.path().join("ix-home");
     let source = scratch.path().join("module-source");
-    copy_tree(&module_ok(), &source).expect("module fixture is copied");
+    copy_module_ok(&source).expect("module fixture is copied");
 
     let source_argument = format!("path:{}", source.display());
     let installed = invoke(&home, &["module", "install", &source_argument]);
@@ -129,7 +132,7 @@ fn tc_527_001_native_module_install_bootstraps_without_a_semantic_root_env() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
     let home = scratch.path().join("ix-home");
     let source = scratch.path().join("module-source");
-    copy_tree(&module_ok(), &source).expect("module fixture is copied");
+    copy_module_ok(&source).expect("module fixture is copied");
 
     let source_argument = format!("path:{}", source.display());
     let output = invoke_without_semantic_root(&home, &["module", "install", &source_argument]);

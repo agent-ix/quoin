@@ -75,38 +75,34 @@ pub fn schema_dir() -> PathBuf {
     quoin_semantic::contract::schema_dir(&semantic_root())
 }
 
-/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
-/// module-manifest schema requires and the fixture does not carry.
-pub fn fixture() -> PathBuf {
-    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    ROOT.get_or_init(|| {
-        let root =
-            std::env::temp_dir().join(format!("quoin-semantic-module-ok-{}", std::process::id()));
-        copy_tree(&quire_fixtures::module_ok_dir(), &root);
-        let manifest = root.join("manifest.yaml");
-        let text = std::fs::read_to_string(&manifest).unwrap();
-        std::fs::write(
-            &manifest,
-            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
-        )
-        .unwrap();
-        root
-    })
-    .clone()
-}
-
 /// The authoritative mapping fixture directory.
 pub fn mapping_dir() -> PathBuf {
     quire_fixtures::mapping_dir()
 }
 
-/// The `semantic_core` value every test manifest carries.
-///
-/// BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream
-/// module-manifest schema still requires `semantic.semantic_core` to be present
-/// and to match `^[0-9]+\.[0-9]+\.[0-9]+$`, so a manifest without it is
-/// rejected. Quoin reads nothing from the value.
+/// `semantic.semantic_core` as the module-manifest schema pinned through
+/// `@agent-ix/semantic-schema` requires it. The `quire-fixtures` `module-ok`
+/// manifest omits the key, so `copy_module_ok` adds it; drop this injection
+/// when the pinned `@agent-ix/semantic-schema` no longer requires
+/// `semantic.semantic_core`. Quoin reads nothing from the value.
 pub const SCHEMA_REQUIRED_SEMANTIC_CORE: &str = "0.0.0";
+
+/// Copy the `quire-fixtures` `module-ok` fixture to `to` with the
+/// `semantic_core` key the pinned schema requires.
+pub fn copy_module_ok(to: &Path) {
+    copy_tree(&quire_fixtures::module_ok_dir(), to);
+    let manifest = to.join("manifest.yaml");
+    let text = fs::read_to_string(&manifest).unwrap();
+    fs::write(
+        &manifest,
+        text.replace(
+            "semantic:\n",
+            &format!("semantic:\n  semantic_core: {SCHEMA_REQUIRED_SEMANTIC_CORE}\n"),
+        ),
+    )
+    .unwrap();
+}
+
 /// The compiled validators, built from the live vendored tree.
 pub fn validators() -> SemanticValidators {
     SemanticValidators::load(&semantic_root()).expect("the vendored contract compiles")
@@ -148,7 +144,7 @@ impl Scratch {
     /// `mutate` applied to its manifest before it is written back.
     pub fn module_copy(&self, name: &str, mutate: impl FnOnce(&mut Value, &Path)) -> PathBuf {
         let root = self.path().join(name);
-        copy_tree(&fixture(), &root);
+        copy_module_ok(&root);
         let manifest_path = root.join("manifest.yaml");
         let mut manifest = read_manifest_yaml(&manifest_path).expect("the fixture manifest parses");
         manifest["name"] = Value::String(name.to_owned());

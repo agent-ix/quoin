@@ -27,6 +27,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+mod common;
+
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
@@ -128,39 +130,6 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-fn copy_tree(from: &std::path::Path, to: &std::path::Path) {
-    std::fs::create_dir_all(to).unwrap();
-    for entry in std::fs::read_dir(from).unwrap() {
-        let entry = entry.unwrap();
-        let target = to.join(entry.file_name());
-        if entry.file_type().unwrap().is_dir() {
-            copy_tree(&entry.path(), &target);
-        } else {
-            std::fs::copy(entry.path(), &target).unwrap();
-        }
-    }
-}
-
-/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
-/// module-manifest schema requires and the fixture does not carry.
-fn fixture() -> PathBuf {
-    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    ROOT.get_or_init(|| {
-        let root =
-            std::env::temp_dir().join(format!("tc452-boundary-module-ok-{}", std::process::id()));
-        copy_tree(&quire_fixtures::module_ok_dir(), &root);
-        let manifest = root.join("manifest.yaml");
-        let text = std::fs::read_to_string(&manifest).unwrap();
-        std::fs::write(
-            &manifest,
-            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
-        )
-        .unwrap();
-        root
-    })
-    .clone()
-}
-
 /// `semantic.read_blocks` reads a module's block against the vendored contract
 /// and answers per root, in the order asked.
 ///
@@ -172,7 +141,8 @@ fn fixture() -> PathBuf {
 /// Provenance: agent-ix/quoin#452
 #[test]
 fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
-    let module = fixture();
+    let module_dir = common::module_ok_copy();
+    let module = module_dir.path().to_path_buf();
     let request = json!({ "roots": [module.to_string_lossy(), module.to_string_lossy()] });
     let payload = ok(&run("semantic.read_blocks", &request, true));
 
@@ -239,7 +209,8 @@ fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
 #[test]
 fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
     let home = tempfile::tempdir().unwrap();
-    let request = json!({ "roots": [fixture().to_string_lossy()] });
+    let module_dir = common::module_ok_copy();
+    let request = json!({ "roots": [module_dir.path().to_string_lossy()] });
     let payload = ok(&run_isolated("semantic.read_blocks", &request, home.path()));
     let modules = payload["modules"].as_array().unwrap();
     assert_eq!(

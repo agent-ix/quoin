@@ -29,6 +29,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+mod common;
+
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 
@@ -82,38 +84,6 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
-/// module-manifest schema requires and the fixture does not carry.
-fn fixture() -> PathBuf {
-    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    ROOT.get_or_init(|| {
-        let root = std::env::temp_dir().join(format!("tc446-module-ok-{}", std::process::id()));
-        copy_tree(&quire_fixtures::module_ok_dir(), &root);
-        let manifest = root.join("manifest.yaml");
-        let text = std::fs::read_to_string(&manifest).unwrap();
-        std::fs::write(
-            &manifest,
-            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
-        )
-        .unwrap();
-        root
-    })
-    .clone()
-}
-
-fn copy_tree(from: &Path, to: &Path) {
-    fs::create_dir_all(to).unwrap();
-    for entry in fs::read_dir(from).unwrap() {
-        let entry = entry.unwrap();
-        let target = to.join(entry.file_name());
-        if entry.file_type().unwrap().is_dir() {
-            copy_tree(&entry.path(), &target);
-        } else {
-            fs::copy(entry.path(), &target).unwrap();
-        }
-    }
-}
-
 /// A home with `module-ok` installed through the boundary itself.
 struct Fixture {
     _root: tempfile::TempDir,
@@ -124,7 +94,7 @@ struct Fixture {
 fn install_fixture() -> Fixture {
     let root = tempfile::tempdir().unwrap();
     let source = root.path().join("source");
-    copy_tree(&fixture(), &source);
+    common::copy_module_ok(&source);
     let home = root.path().join("home");
     fs::create_dir_all(&home).unwrap();
 
