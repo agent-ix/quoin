@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22.15.0
+          node-version: 22
           # Deliberately no registry-url: setup-node would write an .npmrc with
           # _authToken=${NODE_AUTH_TOKEN}, and that token line stops npm doing
           # the OIDC exchange when NPM_TOKEN is empty.
