@@ -70,3 +70,17 @@ No ceremony was added. TC-1456 and its byte-identity row are deleted, along with
 There is also a defect on origin/main, outside this diff. The template ships no lockfile, and `@typespec/json-schema@1.15.0` takes `@typespec/asset-emitter@^0.79`, which now resolves to 0.79.3, which needs compiler ^1.17. A fresh `npm install` therefore yields a toolchain whose `tsp compile` fails with "does not provide an export named 'sanitizePathSegment'". Both the old and new renders hit this. I worked around it in scratch only, with an `overrides` pin of asset-emitter 0.79.1.
 
 Not mergeable as is: fix FND-001 (publish 0.1.0) and FND-002 first.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | The fix round adds `assert_eq!(package["overrides"]["@typespec/asset-emitter"], "0.79.1")` to tc_264_056. That brings back the literal-version assertion FND-003 removed: any compatible bump of the override has to edit the test. It also sits under the FR-076-CON-4 trace, and CON-4 says nothing about overrides. Assert instead that the override exists and is an exact version (the same shape check used for the emit package pin), or drop the assertion. | rust/crates/quoin-semantic/tests/tc_264_template_render.rs:1056-1059 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | deferred | Not a code fix. Publishing `@agent-ix/semantic-module-tools` 0.1.0 is a release step owned by the lead and Peter. At disposition pass 1 (head 855e68ba) npmjs still returns E404 for the package. It must be published before or together with the merge, or newly rendered repositories fail `make install`. |
+| FND-002 | fixed | `readIdentity` wraps the read and parse in a GenerateError that names the path and suggests `--repo-root`/`--identity`. A new test covers it (exit 1, stderr names package.json and --repo-root). |
+| FND-003 | fixed | The literal "0.1.0" check is replaced by an exact-version shape check: three non-empty, all-digit, dot-separated parts. |

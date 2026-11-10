@@ -43,3 +43,10 @@ FR-076-CON-4 is backed: tc_264_056 asserts the exact-version dev dependency, the
 The ticket asks for the package behaviour to be recorded in an emitted `toolchain.json`. Per the coder, no such file exists on origin/main, and recording it would be version tracking, so that criterion is stale rather than a gap.
 
 Mergeable with respect to this method once FND-001 is fixed.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The Makefile adds a `package-test` target (`cd packages/semantic-module-tools && node --test`), and `test` now depends on `rust-gate package-test`, so the pre-merge `make test` gate runs it. Note: `.github/workflows/build-test.yml` calls `rust-lint`, `rust-build`, `rust-test` and `workflow-test` directly, so GitHub Actions still does not run it. Changing that would need a workflow edit. |
+| FND-002 | fixed | New tests cover `checkOutput` (missing, differing and stale files), `writeOutput` (removes a stale .json and keeps non-json files), explicit and installed `semanticCoreBase`, and CLI exit codes 2 and 1. The suite has 8 tests, all passing. |

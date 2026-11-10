@@ -1046,17 +1046,23 @@ fn tc_264_056_a_rendered_repo_depends_on_the_emit_package_and_carries_no_local_p
         let pin = package["devDependencies"]["@agent-ix/semantic-module-tools"]
             .as_str()
             .unwrap_or_default();
-        let parts: Vec<&str> = pin.split('.').collect();
-        assert!(
+        let is_exact = |v: &str| {
+            let parts: Vec<&str> = v.split('.').collect();
             parts.len() == 3
                 && parts
                     .iter()
-                    .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit())),
+                    .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
+        };
+        assert!(
+            is_exact(pin),
             "variant {kind}: the emit package pin {pin:?} is not an exact version"
         );
-        assert_eq!(
-            package["overrides"]["@typespec/asset-emitter"], "0.79.1",
-            "variant {kind}: a fresh install can resolve an asset-emitter newer than the pinned compiler supports"
+        let asset_emitter = package["overrides"]["@typespec/asset-emitter"]
+            .as_str()
+            .unwrap_or_default();
+        assert!(
+            is_exact(asset_emitter),
+            "variant {kind}: the asset-emitter override {asset_emitter:?} is missing or not an exact version"
         );
         assert!(
             !r.path("scripts/generate-schemas.mjs").exists(),

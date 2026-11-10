@@ -43,3 +43,9 @@ The spec edits are consistent with each other and with the code.
 - Skipping the number CON-3 avoids reusing a retired id.
 
 Mergeable with respect to this method; FND-001 is a nit.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The stray comma is gone: the note now reads "the absent-tool paths in `tests/conftest.py` and `tests/test_schema_emission.py`". |
