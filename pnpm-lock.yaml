@@ -12,8 +12,8 @@ importers:
         specifier: 0.4.3
         version: 0.4.3(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))
       '@agent-ix/semantic-schema':
-        specifier: 0.4.2
-        version: 0.4.2
+        specifier: 0.5.0
+        version: 0.5.0
 
 packages:
 
@@ -23,8 +23,8 @@ packages:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0
 
-  '@agent-ix/semantic-schema@0.4.2':
-    resolution: {integrity: sha512-KQ1QXfMql1BxOpVrL8qoIZqKtwkWp0IuXA+S6Wx2n+Sd6jwAqMn3msuA8sgKthJOryYMMCGvbByAJqXqyZbvdw==}
+  '@agent-ix/semantic-schema@0.5.0':
+    resolution: {integrity: sha512-7iGPuc1B3rOK0U20aRmmLxpCi9eA4rAkoeeeljP9B2Vz4l3ZF9Kf7z+13AYH6HeFeU/8myGtYK6qNuqZ9vgupg==}
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -384,7 +384,7 @@ snapshots:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0(@typespec/compiler@1.15.0)
 
-  '@agent-ix/semantic-schema@0.4.2': {}
+  '@agent-ix/semantic-schema@0.5.0': {}
 
   '@babel/code-frame@7.29.7':
     dependencies:

@@ -7,6 +7,6 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@agent-ix/semantic-core": "0.4.3",
-    "@agent-ix/semantic-schema": "0.4.2"
+    "@agent-ix/semantic-schema": "0.5.0"
   }
 }

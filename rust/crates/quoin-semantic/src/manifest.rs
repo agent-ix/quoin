@@ -113,6 +113,10 @@ pub struct SemanticBlock {
     pub exports: Vec<ObjectTypeName>,
     /// `imports`, package identity to exact version.
     pub imports: BTreeMap<PackageIdentity, ModuleVersion>,
+    /// `import_types`, package identity to the type names the module uses;
+    /// empty when the manifest declares none.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub import_types: BTreeMap<PackageIdentity, Vec<String>>,
     /// `targets`, in manifest order.
     pub targets: Vec<String>,
     /// `mappings`, in manifest order.
@@ -337,7 +341,13 @@ pub fn read_semantic_block(
         ));
     }
 
-    let mut diagnostics: Vec<SemanticDiagnostic> = Vec::new();
+    let mut diagnostics: Vec<SemanticDiagnostic> = import_types::shape(raw_map);
+    if !diagnostics.is_empty() {
+        return SemanticReadResult {
+            module: None,
+            diagnostics,
+        };
+    }
 
     if !validators.semantic_block.is_valid(raw) {
         for error in validators.semantic_block.errors(raw) {
@@ -354,14 +364,25 @@ pub fn read_semantic_block(
     // (ADR, Plan, SpecReview, …) with the same pinned schema form. Treating
     // that second declaration family as invisible made the shipped default
     // module impossible to install (quoin#537).
-    let declared_types: Vec<&serde_json::Map<String, Value>> = ["object_types", "artifact_types"]
-        .into_iter()
-        .filter_map(|key| manifest_map.get(key).and_then(Value::as_array))
-        .flat_map(|entries| entries.iter().filter_map(Value::as_object))
-        .collect();
+    let declared_types: Vec<(&'static str, &serde_json::Map<String, Value>)> =
+        ["object_types", "artifact_types"]
+            .into_iter()
+            .filter_map(|key| {
+                manifest_map
+                    .get(key)
+                    .and_then(Value::as_array)
+                    .map(|entries| (key, entries))
+            })
+            .flat_map(|(key, entries)| {
+                entries
+                    .iter()
+                    .filter_map(Value::as_object)
+                    .map(move |entry| (key, entry))
+            })
+            .collect();
     let declared_names: std::collections::BTreeSet<String> = declared_types
         .iter()
-        .map(|entry| entry.get("name").map_or_else(String::new, stringify))
+        .map(|(_, entry)| entry.get("name").map_or_else(String::new, stringify))
         .collect();
 
     let exports: Vec<ObjectTypeName> = string_array(raw_map.get("exports"))
@@ -409,6 +430,15 @@ pub fn read_semantic_block(
                     .collect()
             })
             .unwrap_or_default(),
+        import_types: raw_map
+            .get("import_types")
+            .and_then(Value::as_object)
+            .map(|map| {
+                map.iter()
+                    .map(|(k, v)| (PackageIdentity::new(k.clone()), string_array(Some(v))))
+                    .collect()
+            })
+            .unwrap_or_default(),
         targets: string_array(raw_map.get("targets")),
         mappings: string_array(raw_map.get("mappings"))
             .into_iter()
@@ -442,7 +472,7 @@ pub fn read_semantic_block(
     }
 
     let mut data_schemas: BTreeMap<ObjectTypeName, ResolvedDataSchema> = BTreeMap::new();
-    for entry in &declared_types {
+    for (section, entry) in &declared_types {
         let name = ObjectTypeName::new(entry.get("name").map_or_else(String::new, stringify));
         let Some(value) = entry.get("data_schema") else {
             continue;
@@ -450,7 +480,9 @@ pub fn read_semantic_block(
         let ctx = ResolveContext {
             module_root: module_root.to_path_buf(),
             package_identity: block.package.clone(),
+            section,
             object_type: name.clone(),
+            imports: block.imports.keys().cloned().collect(),
             semantic_core_dir: validators.semantic_core_dir.clone(),
         };
         let resolved = resolve_data_schema(value, &ctx, true);
@@ -643,6 +675,8 @@ fn string_array(value: Option<&Value>) -> Vec<String> {
         .map(|items| items.iter().map(stringify).collect())
         .unwrap_or_default()
 }
+
+mod import_types;
 
 #[cfg(test)]
 mod tests;

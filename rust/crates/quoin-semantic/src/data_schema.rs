@@ -47,9 +47,42 @@ impl DataSchemaForm {
     }
 }
 
+/// The `$ref` URLs one schema file of a type's bundle carries.
+///
+/// `type_name` is the file's type name (the file name stem, FR-075), so the
+/// type-level import graph can name the file as `<org>/<repo>#<type_name>`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FileRefs {
+    /// The file's type name.
+    pub type_name: String,
+    /// Every `$ref` URL in the file, fragment removed, empty ones dropped.
+    pub urls: Vec<String>,
+}
+
+/// The schema base `https://schemas.agent-ix.org/<org>/<repo>/` of a package.
+#[must_use]
+pub fn schema_base(package: &PackageIdentity) -> String {
+    format!("{PACKAGE_BASE}{}/{}/", package.org(), package.repo())
+}
+
+/// The type name a `$ref` URL or schema path names (FR-075): the final path
+/// segment with a trailing `.json` removed and then a trailing `.schema`
+/// removed if present. A `#fragment` is ignored.
+#[must_use]
+pub fn ref_type_name(reference: &str) -> &str {
+    let without_fragment = reference.split('#').next().unwrap_or("");
+    let segment = without_fragment.rsplit('/').next().unwrap_or("");
+    let stem = segment.strip_suffix(".json").unwrap_or(segment);
+    stem.strip_suffix(".schema").unwrap_or(stem)
+}
+
 /// The result of resolving one object type's `data_schema`.
 #[derive(Debug, Clone)]
 pub struct ResolvedDataSchema {
+    /// `<section>[<type>].data_schema`, the locus every diagnostic hangs off.
+    pub locus: String,
+    /// The `$ref`s of the type's own schemas, one entry per file.
+    pub file_refs: Vec<FileRefs>,
     /// Which form was resolved. `Invalid` inputs report as `Inline`, matching
     /// the TypeScript, so a caller counting reference-form exports is not
     /// misled into thinking a malformed value was a reference.
@@ -67,27 +100,29 @@ pub struct ResolveContext {
     pub module_root: PathBuf,
     /// `<org>/<repo>` from `semantic.package`.
     pub package_identity: PackageIdentity,
+    /// The manifest section declaring the type: `object_types` or
+    /// `artifact_types`.
+    pub section: &'static str,
     /// The object type being resolved.
     pub object_type: ObjectTypeName,
+    /// The packages `semantic.imports` declares; a `$ref` under one of their
+    /// schema bases is judged against the provider, not shipped here.
+    pub imports: Vec<PackageIdentity>,
     /// The directory holding the vendored semantic-core bundle.
     pub semantic_core_dir: PathBuf,
 }
 
 impl ResolveContext {
-    /// `object_types[<name>].data_schema`, the locus every diagnostic hangs off.
+    /// `<section>[<name>].data_schema`, the locus every diagnostic hangs off.
     #[must_use]
     pub fn locus(&self) -> String {
-        format!("object_types[{}].data_schema", self.object_type)
+        format!("{}[{}].data_schema", self.section, self.object_type)
     }
 
     /// The base URI a shipped schema's `$id` must sit under.
     #[must_use]
     pub fn package_base(&self) -> String {
-        format!(
-            "{PACKAGE_BASE}{}/{}/",
-            self.package_identity.org(),
-            self.package_identity.repo()
-        )
+        schema_base(&self.package_identity)
     }
 }
 
@@ -182,6 +217,15 @@ fn collect_refs(node: &Value, out: &mut Vec<String>) {
     }
 }
 
+/// Reference URLs with the fragment removed; fragment-only references drop out.
+fn ref_urls(refs: &[String]) -> Vec<String> {
+    refs.iter()
+        .map(|r| r.split('#').next().unwrap_or(""))
+        .filter(|url| !url.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
 /// True when `path` carries a `..` segment, under either separator.
 fn has_parent_segment(path: &str) -> bool {
     path.split(['\\', '/']).any(|segment| segment == "..")
@@ -204,6 +248,8 @@ pub fn resolve_data_schema(
     match form {
         DataSchemaForm::Invalid => {
             return ResolvedDataSchema {
+                locus,
+                file_refs: Vec::new(),
                 kind: DataSchemaForm::Inline,
                 schema: None,
                 diagnostics: classified,
@@ -224,7 +270,14 @@ pub fn resolve_data_schema(
             } else {
                 Vec::new()
             };
+            let mut refs = Vec::new();
+            collect_refs(value, &mut refs);
             return ResolvedDataSchema {
+                locus,
+                file_refs: vec![FileRefs {
+                    type_name: ctx.object_type.as_str().to_owned(),
+                    urls: ref_urls(&refs),
+                }],
                 kind: DataSchemaForm::Inline,
                 schema: Some(value.clone()),
                 diagnostics,
@@ -240,6 +293,8 @@ pub fn resolve_data_schema(
         .clone();
 
     let fail = |diagnostics: Vec<SemanticDiagnostic>| ResolvedDataSchema {
+        locus: locus.clone(),
+        file_refs: Vec::new(),
         kind: DataSchemaForm::Reference,
         schema: None,
         diagnostics,
@@ -337,11 +392,16 @@ pub fn resolve_data_schema(
         visited: BTreeSet::new(),
         stack: Vec::new(),
         diagnostics: Vec::new(),
+        file_refs: Vec::new(),
+        imported_bases: ctx.imports.iter().map(schema_base).collect(),
     };
     walker.walk(&parsed, &format!("module/{leaf}"));
     diagnostics.extend(walker.diagnostics);
+    let file_refs = walker.file_refs;
 
     ResolvedDataSchema {
+        locus,
+        file_refs,
         kind: DataSchemaForm::Reference,
         schema: Some(parsed),
         diagnostics,
@@ -358,6 +418,8 @@ struct RefWalker<'a> {
     visited: BTreeSet<String>,
     stack: Vec<String>,
     diagnostics: Vec<SemanticDiagnostic>,
+    file_refs: Vec<FileRefs>,
+    imported_bases: Vec<String>,
 }
 
 impl RefWalker<'_> {
@@ -392,6 +454,12 @@ impl RefWalker<'_> {
 
         let mut refs = Vec::new();
         collect_refs(document, &mut refs);
+        if file_key.starts_with("module/") {
+            self.file_refs.push(FileRefs {
+                type_name: ref_type_name(file_key).to_owned(),
+                urls: ref_urls(&refs),
+            });
+        }
 
         for target in refs {
             let url = target.split('#').next().unwrap_or("");
@@ -450,6 +518,12 @@ impl RefWalker<'_> {
                 if !self.walk(&document, &format!("module/{name}")) {
                     return false;
                 }
+            } else if self.imported_bases.iter().any(|imported| {
+                url.strip_prefix(imported.as_str())
+                    .is_some_and(|rest| !has_parent_segment(rest))
+            }) {
+                // An imported package's type: the provider ships it, and
+                // `resolve_imports` judges the name against its exports.
             } else {
                 self.push(
                     DiagnosticCode::SchemaRefUnshipped,

@@ -18,6 +18,7 @@ use std::path::Path;
 use serde_json::Value;
 
 use crate::contract::{COMMON_SCHEMA_URI, common_schema_path, package_manifest_schema_path};
+use crate::data_schema::{ref_type_name, schema_base};
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic};
 use crate::error::SemanticError;
 use crate::ids::{ObjectTypeName, PackageIdentity};
@@ -46,7 +47,7 @@ pub struct DerivedImport {
     /// `semantic.imports` values to be exact semantic versions.
     #[serde(rename = "versionConstraint")]
     pub version_constraint: String,
-    /// Always empty: the `semantic` block does not name per-import exports.
+    /// The import's declared `semantic.import_types` list, `[]` when none.
     pub exports: Vec<String>,
     /// Always empty: the `semantic` block does not name capabilities.
     pub capabilities: Vec<String>,
@@ -142,17 +143,18 @@ pub fn derive_package_manifest(module: &SemanticModule) -> DerivedPackageManifes
     // `block.imports` is a BTreeMap, which is already the TypeScript's
     // `localeCompare` order for the `[a-z0-9._-]/[a-z0-9._-]` identities the
     // schema admits — those are ASCII, where byte order and locale order agree.
-    imports.extend(
-        block
-            .imports
-            .iter()
-            .map(|(identity, version)| DerivedImport {
-                package_identity: identity.as_str().to_owned(),
-                version_constraint: version.to_string(),
-                exports: Vec::new(),
-                capabilities: Vec::new(),
-            }),
-    );
+    imports.extend(block.imports.iter().map(|(identity, version)| {
+        DerivedImport {
+            package_identity: identity.as_str().to_owned(),
+            version_constraint: version.to_string(),
+            exports: block
+                .import_types
+                .get(identity)
+                .cloned()
+                .unwrap_or_default(),
+            capabilities: Vec::new(),
+        }
+    }));
 
     let mut mapping_names: Vec<&str> = block
         .mappings
@@ -364,6 +366,8 @@ pub fn resolve_imports_in<'a>(
         }
     }
 
+    diagnostics.extend(import_type_diagnostics(candidate, by_package));
+
     let mut visitor = CycleVisitor {
         by_package,
         open: BTreeSet::new(),
@@ -374,6 +378,179 @@ pub fn resolve_imports_in<'a>(
     visitor.visit(&candidate.block.package);
     diagnostics.extend(visitor.diagnostics);
     diagnostics
+}
+
+/// `semantic.unknown-import-type` and `semantic.unused-import` for one
+/// candidate (FR-070).
+///
+/// A provider that is not installed at the declared version is the
+/// unresolved-import error's business; no unknown-type finding is raised for it.
+fn import_type_diagnostics(
+    candidate: &SemanticModule,
+    by_package: &BTreeMap<&PackageIdentity, &SemanticModule>,
+) -> Vec<SemanticDiagnostic> {
+    let mut diagnostics = Vec::new();
+    let mut reported = BTreeSet::new();
+    for (identity, version) in &candidate.block.imports {
+        let base = schema_base(identity);
+        let provider = by_package
+            .get(identity)
+            .filter(|module| &module.version == version);
+        let urls: Vec<(&str, &str)> = candidate
+            .data_schemas
+            .values()
+            .flat_map(|resolved| {
+                resolved
+                    .file_refs
+                    .iter()
+                    .flat_map(|file| file.urls.iter())
+                    .filter(|url| url.starts_with(&base))
+                    .map(|url| (resolved.locus.as_str(), url.as_str()))
+            })
+            .collect();
+
+        // A reference-form schema that failed to resolve carries no refs; its
+        // own error is the finding, not an unused import.
+        let unresolved = candidate
+            .data_schemas
+            .values()
+            .any(|resolved| resolved.schema.is_none());
+        if urls.is_empty() && !unresolved {
+            diagnostics.push(SemanticDiagnostic::warning(
+                DiagnosticCode::UnusedImport,
+                format!("semantic.imports.{identity}"),
+                format!("import {identity} is referenced by no $ref in the module's data schemas"),
+            ));
+        }
+        let Some(provider) = provider else {
+            continue;
+        };
+        let exported = |name: &str| provider.block.exports.iter().any(|e| e.as_str() == name);
+
+        for name in candidate
+            .block
+            .import_types
+            .get(identity)
+            .into_iter()
+            .flatten()
+        {
+            if !exported(name) {
+                diagnostics.push(SemanticDiagnostic::error(
+                    DiagnosticCode::UnknownImportType,
+                    format!("semantic.import_types.{identity}"),
+                    format!("{identity}@{version} does not export type {name}"),
+                ));
+            }
+        }
+        for (locus, url) in urls {
+            let name = ref_type_name(url);
+            if !exported(name) && reported.insert((locus, identity, name)) {
+                diagnostics.push(SemanticDiagnostic::error(
+                    DiagnosticCode::UnknownImportType,
+                    format!("{locus}.schema"),
+                    format!(
+                        "$ref {url} names type {name}, which {identity}@{version} does not export"
+                    ),
+                ));
+            }
+        }
+    }
+    diagnostics
+}
+
+/// The type-level import graph over `modules` (FR-075): nodes
+/// `<org>/<repo>#<Type>`, one edge per `$ref` of a module's own file into an
+/// imported package's type file.
+fn type_graph(
+    by_package: &BTreeMap<&PackageIdentity, &SemanticModule>,
+) -> BTreeMap<String, BTreeSet<String>> {
+    let mut graph: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for module in by_package.values() {
+        let package = &module.block.package;
+        let bases: Vec<(&PackageIdentity, String)> = module
+            .block
+            .imports
+            .keys()
+            .map(|import| (import, schema_base(import)))
+            .collect();
+        for file in module
+            .data_schemas
+            .values()
+            .flat_map(|resolved| resolved.file_refs.iter())
+        {
+            for url in &file.urls {
+                if let Some((import, _)) = bases.iter().find(|(_, base)| url.starts_with(base)) {
+                    graph
+                        .entry(format!("{package}#{}", file.type_name))
+                        .or_default()
+                        .insert(format!("{import}#{}", ref_type_name(url)));
+                }
+            }
+        }
+    }
+    graph
+}
+
+/// A cycle among the type-level edges that run along the package `cycle` (a
+/// closed path of package identities), as a closed node path, when there is one.
+fn type_cycle(
+    by_package: &BTreeMap<&PackageIdentity, &SemanticModule>,
+    cycle: &[&str],
+) -> Option<Vec<String>> {
+    let package_of = |node: &str| node.split('#').next().unwrap_or_default().to_owned();
+    let along: BTreeSet<(&str, &str)> = cycle
+        .iter()
+        .copied()
+        .zip(cycle.iter().copied().skip(1))
+        .collect();
+    let on_cycle = |from: &str, to: &str| {
+        let (from, to) = (package_of(from), package_of(to));
+        along.contains(&(from.as_str(), to.as_str()))
+    };
+    let graph: BTreeMap<String, Vec<String>> = type_graph(by_package)
+        .into_iter()
+        .map(|(node, targets)| {
+            let kept = targets
+                .into_iter()
+                .filter(|t| on_cycle(&node, t))
+                .collect::<Vec<_>>();
+            (node, kept)
+        })
+        .collect();
+
+    let mut done: BTreeSet<&str> = BTreeSet::new();
+    for start in graph.keys() {
+        if done.contains(start.as_str()) {
+            continue;
+        }
+        // Iterative depth-first search: `path` is the open chain, each frame
+        // holding the next child index to try.
+        let mut path: Vec<(&str, usize)> = vec![(start.as_str(), 0)];
+        while let Some(&(node, next)) = path.last() {
+            let child = graph.get(node).and_then(|targets| targets.get(next));
+            if let Some(frame) = path.last_mut() {
+                frame.1 += 1;
+            }
+            match child {
+                None => {
+                    done.insert(node);
+                    path.pop();
+                }
+                Some(child) => {
+                    if let Some(at) = path.iter().position(|(open, _)| *open == child.as_str()) {
+                        let mut cycle: Vec<String> =
+                            path.iter().skip(at).map(|(n, _)| (*n).to_owned()).collect();
+                        cycle.push(child.clone());
+                        return Some(cycle);
+                    }
+                    if !done.contains(child.as_str()) {
+                        path.push((child.as_str(), 0));
+                    }
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Depth-first cycle detection over the import graph rooted at the candidate.
@@ -401,10 +578,14 @@ impl<'a> CycleVisitor<'a> {
                 .map(|p| p.as_str())
                 .collect();
             cycle.push(key.as_str());
+            // The cycle fails either way; the type-level graph only decides how
+            // it is named (FR-075).
+            let named = type_cycle(self.by_package, &cycle)
+                .map_or_else(|| cycle.join(" -> "), |nodes| nodes.join(" -> "));
             self.diagnostics.push(SemanticDiagnostic::error(
                 DiagnosticCode::ImportCycle,
                 "semantic.imports",
-                format!("import cycle: {}", cycle.join(" -> ")),
+                format!("import cycle: {named}"),
             ));
             return;
         }

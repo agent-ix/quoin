@@ -28,7 +28,7 @@ use crate::ids::ContractVersion;
 pub struct SemanticContract {
     /// The `semantic.contract_version` this quoin understands (FR-070).
     pub contract_version: &'static str,
-    /// The nine admitted `semantic` keys (FR-070).
+    /// The admitted `semantic` keys (FR-070).
     pub semantic_keys: &'static [&'static str],
 }
 
@@ -48,6 +48,7 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
         "package",
         "exports",
         "imports",
+        "import_types",
         "targets",
         "mappings",
         "compatibility_posture",
