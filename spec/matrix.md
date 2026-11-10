@@ -109,7 +109,7 @@ that exist.
 
 | FR-076      | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-1400..TC-1407, TC-1412, TC-1451 — the three variants render from one core, the shared surfaces are single-sourced, and each rejected input aborts naming the value. renders every variant on `make test`. |
 | FR-077      | 🚧 Partly | TC-1408, TC-1409, TC-1413 pass under `make template-gate`, which emits twice and re-checks. TC-1414..TC-1416 and TC-1449 are `🚧`: the emit driver implements each refusal and no run yet provokes one. |
-| FR-078      | ✅ Covered | TC-1417, TC-1410, TC-1409, TC-1402 — the nine-key `semantic` block, reference-form `data_schema`, and `imports`. |
+| FR-078      | 🚧 Pending | TC-1417, TC-1410, TC-1409, TC-1402 — the nine-key `semantic` block, reference-form `data_schema`, and `imports`; TC-2138 (no `import_types` key in the rendered block) is Pending. |
 | FR-079      | ✅ Covered | TC-1420..TC-1426, TC-1411 — typed table, `sysml` alternate, `ocl` invariants, distinct negative fixtures, the legacy warning, both-forms refusal, placeholder-free bodies, and the artifact mappings. |
 | FR-080      | 🚧 Partly | TC-1427 and TC-1430 pass under `make template-gate` — a rendered run reports 31 passed and zero skipped. TC-1428, TC-1429, TC-1431, TC-1450 and TC-1460 are `🚧`: the failure paths are authored in the rendered `conftest.py` and no run yet removes the tool to observe them. |
 | FR-081      | ✅ Covered | TC-1432..TC-1438 — licence consistency, the baseline files, wheel/tarball payload agreement, credential and registry scans, the manual release workflows, and the catalog document. |
@@ -230,7 +230,7 @@ Criteria absent here are verified by a method that produces no test — see
 | StR-007 | StR-007-VC-1 | TC-1316 | ✅ Covered |
 | FR-068 | ⚠️ Partial | TC-1317, TC-1318, TC-1319, TC-1320, TC-1321, TC-1322, TC-1323, TC-1324, TC-1325, TC-1326, TC-1327 Criteria carried only by retired TypeScript tests are unbacked (PLAT-1045). | ⚠️ Partial |
 | FR-069 | FR-069-AC-1, FR-069-AC-2, FR-069-AC-3, FR-069-AC-4, FR-069-AC-5, FR-069-AC-6, FR-069-AC-7, FR-069-AC-8, FR-069-AC-9, FR-069-AC-10, FR-069-AC-11 | TC-1328, TC-1329, TC-1330, TC-1331, TC-1332, TC-1333, TC-1334, TC-1335, TC-1585, TC-1586, TC-1587, TC-1588 | ❌ Unbacked |
-| FR-070 | FR-070-AC-1, FR-070-AC-2, FR-070-AC-3, FR-070-AC-4, FR-070-AC-5, FR-070-AC-6, FR-070-AC-7, FR-070-AC-8, FR-070-AC-9, FR-070-AC-10, FR-070-AC-11, FR-070-AC-12, FR-070-CON-1, FR-070-CON-2 | TC-1336, TC-1337, TC-1338, TC-1339, TC-1340, TC-1341, TC-1342, TC-1383, TC-2130, TC-2131, TC-2132, TC-2133, TC-2134 | 🚧 Pending |
+| FR-070 | FR-070-AC-1, FR-070-AC-2, FR-070-AC-3, FR-070-AC-4, FR-070-AC-5, FR-070-AC-6, FR-070-AC-7, FR-070-AC-8, FR-070-AC-9, FR-070-AC-10, FR-070-AC-11, FR-070-AC-12, FR-070-AC-13, FR-070-CON-1, FR-070-CON-2 | TC-1336, TC-1337, TC-1338, TC-1339, TC-1340, TC-1341, TC-1342, TC-1383, TC-2130, TC-2131, TC-2132, TC-2133, TC-2134, TC-2139 | 🚧 Pending |
 | FR-071 | FR-071-AC-1, FR-071-AC-2, FR-071-AC-3, FR-071-AC-4, FR-071-AC-5, FR-071-AC-6, FR-071-AC-7, FR-071-AC-8, FR-071-CON-1, FR-071-CON-2 | TC-1344, TC-1345, TC-1346, TC-1347, TC-1348, TC-1349, TC-1350, TC-1351, TC-1352, TC-1384 | ✅ Covered |
 | FR-072 | FR-072-AC-1, FR-072-AC-2, FR-072-AC-3, FR-072-AC-4, FR-072-AC-5, FR-072-AC-6, FR-072-AC-7, FR-072-AC-8, FR-072-CON-1 | TC-1353, TC-1354, TC-1355, TC-1356, TC-1357, TC-1358, TC-1359, TC-1715, TC-1716 | ⚠️ Partial |
 | FR-073 | FR-073-AC-1, FR-073-AC-2, FR-073-AC-3, FR-073-AC-4, FR-073-AC-5, FR-073-CON-1, FR-073-CON-2 | TC-1360, TC-1361, TC-1362, TC-1363, TC-1364, TC-1365, TC-1366 | ✅ Covered |
@@ -1445,6 +1445,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2136 | The derived package manifest import entries carry `exports` equal to the declared type list, `[]` when none | Unit | P0 | FR-075-AC-6 | 🚧 Pending |
 | TC-2137 | An import cycle fails install in every case; it is named over `<org>/<repo>#<Type>` nodes only when the `$ref`-derived type-level edges themselves form a cycle, and over packages when they do not (no edges, edges forming no type-level cycle, or a module with no `$ref`s into it) | Unit | P0 | FR-075-AC-7 | 🚧 Pending |
 | TC-2138 | The rendered `semantic` block carries no `import_types` key | Unit | P0 | FR-078-AC-9 | 🚧 Pending |
+| TC-2139 | A `$ref` in the module's own data schema naming a type the installed provider does not export fails install with `semantic.unknown-import-type` at `<section>[<type>].data_schema.schema`, with and without `import_types`; an exported type raises none | Unit | P0 | FR-070-AC-13 | 🚧 Pending |
 
 ## Stakeholder Requirement Coverage
 
