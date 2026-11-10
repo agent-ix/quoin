@@ -154,6 +154,7 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
             repetitions: None,
             estimator: Some(Estimator::Proportion),
             decision_rule: Some(decision_rule),
+            answer_families: None,
         }),
         objective: None,
         protected_apparatus: None,

@@ -52,12 +52,6 @@ jobs:
         with:
           node-version: 22.15.0
           cache: pnpm
-      # @agent-ix/* scoped packages live on GitHub Packages (npm.ix's
-      # target), not public npm. Without this, `pnpm install` below falls
-      # back to registry.npmjs.org and 404s on every @agent-ix package.
-      - uses: agent-ix/nodejs-actions/setup-npmrc@main
-        with:
-          npm_registry_token: ${{ secrets.REGISTRY_TOKEN }}
       - name: Install Rust toolchain
         shell: bash
         working-directory: rust
@@ -118,6 +112,12 @@ jobs:
           test "$(find release-smoke -type f | wc -l | tr -d ' ')" = 1
           test -f "release-smoke/$BINARY"
           "./release-smoke/$BINARY" --version
+          # A released quoin must install and load its own default module set on a
+          # machine that has never seen it. v0.29.4 shipped refusing every fresh
+          # install (module manifests dropped semantic_core after it was cut).
+          CLEAN_HOME="$(mktemp -d)"
+          HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" module ensure-defaults > /dev/null
+          HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" catalog validate
           npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
           (cd rust && cargo build --locked --target-dir target -p quoin-workflow-check)
           CHECKER="rust/target/debug/quoin-workflow-check"

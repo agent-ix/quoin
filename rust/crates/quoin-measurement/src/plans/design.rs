@@ -9,7 +9,9 @@
 use std::cmp::Ordering;
 use std::num::NonZeroU32;
 
-use engineering_assurance::measurement::{DecisionRule, Direction, Estimator, Objective};
+use engineering_assurance::measurement::{
+    AnswerFamilies, DecisionRule, Direction, Estimator, Objective,
+};
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
@@ -47,7 +49,7 @@ pub(super) fn ground_truth_kind_from(
 }
 
 /// Read the optional `statistical_design` block's `minimum_population`,
-/// `repetitions`, `estimator` and `decision_rule`, or `None` when the document
+/// `repetitions`, `estimator`, `decision_rule` and `answer_families`, or `None` when the document
 /// declares no such block.
 ///
 /// `estimator` and `decision_rule` are engineering-assurance's (FR-021) and
@@ -126,6 +128,19 @@ pub(super) fn statistical_design_from(
             })
         })
         .transpose()?;
+    let answer_families = block
+        .get("answer_families")
+        .map(|stated| {
+            AnswerFamilies::deserialize(stated).map_err(|error| {
+                MeasurementError::new(
+                    CODE,
+                    format!(
+                        "{path}: statistical_design.answer_families is invalid: {error}; found {stated}"
+                    ),
+                )
+            })
+        })
+        .transpose()?;
     if let (Some(rule), Some(estimator)) = (decision_rule, estimator) {
         rule.check_estimator(estimator).map_err(|error| {
             MeasurementError::new(
@@ -139,6 +154,7 @@ pub(super) fn statistical_design_from(
         repetitions: count("repetitions")?,
         estimator,
         decision_rule,
+        answer_families,
     }))
 }
 

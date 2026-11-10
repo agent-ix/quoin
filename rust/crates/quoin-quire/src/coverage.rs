@@ -89,11 +89,12 @@ pub fn compute(request: &Request) -> Result<Outcome> {
     let graph = quire_rs::symbols::trace::bind(&extraction, model);
     let report = quire_rs::compute_coverage(&spec, &registry, &graph, request.scope.as_path())
         .map_err(|error| match error {
-            // The engine's only coverage error, mapped onto this crate's
+            // The engine's coverage errors, each mapped onto this crate's
             // variant rather than stringified. An exhaustive match, so a new
             // engine variant fails the build instead of collapsing into a
             // catch-all that reports the wrong condition.
             quire_rs::CoverageError::ModelUndeclared => Error::TraceabilityModelUndeclared,
+            quire_rs::CoverageError::ExtractionUnavailable(unavailable) => unavailable.into(),
         })?;
 
     Ok(Outcome { report, notices })
@@ -120,7 +121,9 @@ pub struct TestTrace {
 /// # Errors
 /// [`Error::ModuleLoad`] / [`Error::ModuleSetEmpty`] when the module set does
 /// not resolve, and [`Error::TraceabilityModelUndeclared`] when no active
-/// module declares a `traceability:` model.
+/// module declares a `traceability:` model, and
+/// [`Error::ExtractionUnavailable`] when the build cannot extract a language
+/// the tree holds.
 pub fn test_traces(request: &Request) -> Result<(Vec<TestTrace>, Vec<Notice>)> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
@@ -139,6 +142,10 @@ pub fn test_traces(request: &Request) -> Result<(Vec<TestTrace>, Vec<Notice>)> {
             path: Some(diagnostic.path.clone()),
         });
     }
+    // FR-051-AC-29: a consumer that reads counts refuses when the build has no
+    // adapter for a language in the tree. The relation below is read the same
+    // way `compute` reads it, and would omit those files' tests silently.
+    extraction.require_available()?;
     let graph = quire_rs::symbols::trace::bind(&extraction, model);
     let mut traces: Vec<TestTrace> = graph
         .verifies

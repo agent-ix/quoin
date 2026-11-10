@@ -40,7 +40,7 @@ cast_sign_loss = "warn"
 cast_possible_wrap = "warn"
 
 [workspace.package]
-version = "0.29.4"
+version = "0.30.0"
 edition = "2024"
 rust-version = "1.98.1"
 license = "AGPL-3.0-or-later"
@@ -76,7 +76,7 @@ publish = false
 # lists every path. This was re-measured after quoin-quire, quoin-semantic and
 # quoin-store merged, not inherited from when the branch was cut.)
 [workspace.dependencies]
-quire-fixtures = { git = "https://github.com/agent-ix/quire-rs", rev = "ce172a7ddcec21815f852c06fa5a0e340b79e57b" }
+quire-fixtures = { git = "https://github.com/agent-ix/quire-rs", rev = "73454c7d4606183c1d41b6f67269b7a173046159" }
 ix-trace-rs = { git = "https://github.com/agent-ix/ix-trace-rs", rev = "e29cc07f70394ff018884d12406c1e150bded5f4" }
 quire-canonical = { git = "https://github.com/agent-ix/quire-canonical", rev = "5dc4e12db63b8fae647825b4e4b78df9b6dcadfe", features = ["serde_json"] }
 ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", branch = "main" }
@@ -150,7 +150,7 @@ regex = "=1.13.1"
 # in its acceptance criterion, so this is the place.
 proptest = { version = "=1.9.0", default-features = false, features = ["std", "bit-set"] }
 jsonschema = { version = "=0.56.0", default-features = false }
-engineering-assurance = { version = "=0.7.1", git = "https://github.com/agent-ix/engineering-assurance.git", rev = "f70528df9890a892b5a5488e89f26dd990f99c3b", default-features = false }
+engineering-assurance = { version = "=0.8.1", git = "https://github.com/agent-ix/engineering-assurance.git", rev = "ce36020ac7361c397fa2fcfaa4a9b95b5470419b", default-features = false }
 signal-hook = "=0.4.4"
 clap = { version = "=4.5.47", default-features = false, features = ["std", "help", "usage", "error-context"] }
 flate2 = "=1.1.10"

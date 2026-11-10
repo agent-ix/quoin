@@ -21,13 +21,6 @@ jobs:
         with:
           node-version: 22.15.0
           cache: pnpm
-      # @agent-ix/* scoped packages (semantic-schema, semantic-core) live on
-      # GitHub Packages (npm.ix's target), not public npm. Without this,
-      # `pnpm install` below falls back to registry.npmjs.org and 404s on
-      # every @agent-ix package.
-      - uses: agent-ix/nodejs-actions/setup-npmrc@main
-        with:
-          npm_registry_token: ${{ secrets.REGISTRY_TOKEN }}
       - name: Install Rust toolchain
         shell: bash
         working-directory: rust
@@ -87,9 +80,6 @@ jobs:
         with:
           node-version: 22.15.0
           cache: pnpm
-      - uses: agent-ix/nodejs-actions/setup-npmrc@main
-        with:
-          npm_registry_token: ${{ secrets.REGISTRY_TOKEN }}
       - name: Install Rust toolchain
         working-directory: rust
         run: rustup show active-toolchain || rustup toolchain install

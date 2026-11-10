@@ -111,6 +111,7 @@ pub enum Reason {
     DisallowedEdgeType,
     Grammar,
     Semantic,
+    RowWidth,
 }
 
 impl From<quire_rs::ValidationReason> for Reason {
@@ -130,6 +131,7 @@ impl From<quire_rs::ValidationReason> for Reason {
             quire_rs::ValidationReason::DisallowedEdgeType => Self::DisallowedEdgeType,
             quire_rs::ValidationReason::Grammar => Self::Grammar,
             quire_rs::ValidationReason::Semantic => Self::Semantic,
+            quire_rs::ValidationReason::RowWidth => Self::RowWidth,
         }
     }
 }
@@ -325,6 +327,7 @@ mod tests {
             quire_rs::ValidationReason::DisallowedEdgeType,
             quire_rs::ValidationReason::Grammar,
             quire_rs::ValidationReason::Semantic,
+            quire_rs::ValidationReason::RowWidth,
         ];
         for reason in reasons {
             assert_eq!(

@@ -57,7 +57,6 @@
               "line": 12,
               "path": "lib/backed.rs"
             },
-            "provenance": "canonical",
             "source": "[\"rust\",\"lib/backed.rs\",\"covers_the_round_trip\",\"test_function\"]",
             "target": "TC-001"
           }

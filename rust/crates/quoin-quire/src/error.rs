@@ -46,6 +46,8 @@ pub enum ErrorCode {
     ModuleSetEmpty,
     /// No module in scope declares a `traceability:` model.
     TraceabilityModelUndeclared,
+    /// The linked engine has no symbol adapter for a language the tree holds.
+    ExtractionUnavailable,
     /// A document's frontmatter carries no `type`.
     ArchetypeUndeclared,
     /// A document names an archetype no loaded module registers.
@@ -88,6 +90,7 @@ impl ErrorCode {
             Self::ModuleLoad => "QQ-1010",
             Self::ModuleSetEmpty => "QQ-1011",
             Self::TraceabilityModelUndeclared => "QQ-1020",
+            Self::ExtractionUnavailable => "QQ-1021",
             Self::ArchetypeUndeclared => "QQ-1030",
             Self::ArchetypeUnknown => "QQ-1031",
             Self::ClauseSetNotLoaded => "QQ-1040",
@@ -120,6 +123,7 @@ impl ErrorCode {
             Self::ModuleLoad,
             Self::ModuleSetEmpty,
             Self::TraceabilityModelUndeclared,
+            Self::ExtractionUnavailable,
             Self::ArchetypeUndeclared,
             Self::ArchetypeUnknown,
             Self::ClauseSetNotLoaded,
@@ -228,6 +232,24 @@ pub enum Error {
          or name one explicitly"
     )]
     TraceabilityModelUndeclared,
+
+    /// The linked engine has no symbol adapter for a language the tree holds
+    /// source in (quire-rs FR-051-AC-29).
+    ///
+    /// Its counts and per-test relations would silently omit those files, so
+    /// the engine refuses and so does quoin: a zero here would read exactly
+    /// like tests that were never written. Distinct from every other refusal
+    /// because the remedy is rebuilding the engine with the matching symbol
+    /// feature, not changing the repository.
+    #[error(
+        "this build cannot extract symbols for: {}; the result would silently omit \
+         those files (rebuild with the matching `*-symbols` Cargo feature)",
+        languages.join(", ")
+    )]
+    ExtractionUnavailable {
+        /// The unavailable languages, sorted, as the engine spells them.
+        languages: Vec<String>,
+    },
 
     /// A document's frontmatter carries no `type`.
     #[error("{document}: required 'type' is missing from frontmatter")]
@@ -418,6 +440,7 @@ impl Error {
             Self::ModuleLoad { .. } => ErrorCode::ModuleLoad,
             Self::ModuleSetEmpty { .. } => ErrorCode::ModuleSetEmpty,
             Self::TraceabilityModelUndeclared => ErrorCode::TraceabilityModelUndeclared,
+            Self::ExtractionUnavailable { .. } => ErrorCode::ExtractionUnavailable,
             Self::ArchetypeUndeclared { .. } => ErrorCode::ArchetypeUndeclared,
             Self::ArchetypeUnknown { .. } => ErrorCode::ArchetypeUnknown,
             Self::ClauseSetNotLoaded { .. } => ErrorCode::ClauseSetNotLoaded,
@@ -432,6 +455,18 @@ impl Error {
             Self::VendoredSchemaInvalid { .. } => ErrorCode::VendoredSchemaInvalid,
             Self::EnginePremise { .. } => ErrorCode::EnginePremise,
             Self::EngineRevisionMismatch { .. } => ErrorCode::EngineRevisionMismatch,
+        }
+    }
+}
+
+impl From<quire_rs::symbols::ExtractionUnavailable> for Error {
+    fn from(error: quire_rs::symbols::ExtractionUnavailable) -> Self {
+        Self::ExtractionUnavailable {
+            languages: error
+                .languages
+                .iter()
+                .map(|language| language.as_str().to_owned())
+                .collect(),
         }
     }
 }
@@ -467,6 +502,25 @@ mod tests {
 
     #[trace("FR-096")]
     #[test]
+    fn tc_379_003_engine_extraction_unavailable_keeps_its_code_and_language_order() {
+        let engine = quire_rs::symbols::ExtractionUnavailable {
+            languages: vec![
+                quire_rs::traceability::SourceLanguage::Python,
+                quire_rs::traceability::SourceLanguage::Typescript,
+                quire_rs::traceability::SourceLanguage::Shell,
+            ],
+        };
+        let error = Error::from(engine);
+        assert_eq!(error.code().as_str(), "QQ-1021");
+        assert!(matches!(
+            &error,
+            Error::ExtractionUnavailable { languages }
+                if languages == &["python", "typescript", "shell"]
+        ));
+    }
+
+    #[trace("FR-096")]
+    #[test]
     fn tc_379_002_each_variant_reports_its_own_code() {
         // One representative per code, so a copy-paste in `Error::code` that
         // maps two variants to one token fails here. The set built from the
@@ -492,6 +546,9 @@ mod tests {
             },
             Error::ModuleSetEmpty { requested: 2 },
             Error::TraceabilityModelUndeclared,
+            Error::ExtractionUnavailable {
+                languages: vec!["rust".into()],
+            },
             Error::ArchetypeUndeclared {
                 document: "a.md".into(),
             },
