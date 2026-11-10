@@ -32,10 +32,17 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 ## Behavior
 
 - The `semantic` block SHALL be optional, so a manifest without it loads exactly as today.
-- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as published), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
+- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `import_types` (optional per-package type lists, below), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as published), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
 - The `semantic` block SHALL require `contract_version` and `package`.
+- `semantic.imports` SHALL keep its shape `{ "<org>/<repo>": "<exact semver>" }`, so a manifest that declares imports and no `import_types` validates and behaves exactly as before.
+- `semantic.import_types` SHALL be an optional key that maps `<org>/<repo>` to a non-empty array of unique, non-empty type-name strings, naming the types of that package the module uses.
+- When a key of `semantic.import_types` names a package absent from `semantic.imports`, or its list is empty, holds a duplicate, or holds an empty string, Quoin SHALL reject the manifest as a shape error naming the package.
+- When a type listed in `semantic.import_types` is not named by the `exports` of the installed provider package, Quoin SHALL refuse `quoin module install` with the diagnostic `semantic.unknown-import-type` (severity error), naming the package and the type.
+- When the provider package of an `import_types` entry is not loaded, Quoin SHALL NOT check its type list.
+- When a declared import, with or without a type list, is referenced by no `$ref` in the module's own emitted schemas, Quoin SHALL report the diagnostic `semantic.unused-import` (severity warning) naming the import.
+- A reference, for `semantic.unused-import`, is a `$ref` whose URL is under the imported package's schema base `https://schemas.agent-ix.org/<org>/<repo>/`.
 - The `semantic` block SHALL NOT admit `semantic_core`: the key is retired (PLAT-1221), a module declares no semantic-core version, and a manifest that still carries it is refused like any other unknown key.
-- The module-manifest JSON Schema, owned by filament-core-service (`agent-ix/filament-core-service#21`), SHALL publish the block with `additionalProperties: false`.
+- The module-manifest JSON Schema, owned by `agent-ix/filament-core-data` (`schema/semantic/v1/module-manifest.schema.json` and `module-semantic-block.schema.json`, published as `@agent-ix/semantic-schema`), SHALL publish the block with `additionalProperties: false`.
 - Quoin SHALL take that schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, and the Quire output schemas from the linked `quire-rs` engine (FR-029).
 - When `quoin module install` meets an unknown key inside `semantic`, Quoin SHALL reject the manifest with a diagnostic naming the key rather than degrading to an empty model.
 - When `semantic.exports` names an object type the manifest does not declare, Quoin SHALL reject the manifest naming the export.
@@ -50,7 +57,7 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
-| FR-070-CON-1 | The `semantic` block SHALL add no required key to the manifest root, `ObjectTypeEntry`, `ArchetypeEntry`, or `ArtifactTypeEntry`. | Compatibility | Manifest schema diff |
+| FR-070-CON-1 | The `semantic` block (including `import_types`) SHALL add no required key to the manifest root, `ObjectTypeEntry`, `ArchetypeEntry`, or `ArtifactTypeEntry`. | Compatibility | Manifest schema diff |
 | FR-070-CON-2 | Quoin SHALL take the module-manifest schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, with no copy kept. | Integrity | Build inspection |
 
 > **CR note (2026-10-29):** FR-070-CON-2 previously required a vendored copy of
@@ -71,8 +78,13 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 | FR-070-AC-5 | `contract_version: "2.0.0"` is rejected before any other semantic key is read. | Test |
 | FR-070-AC-6 | Two modules declaring the same `semantic.package` fail to install together, naming both, with the module being installed rejected whatever its sorted position. | Test |
 | FR-070-AC-7 | `targets: [go]` and `package: "ix://agent-ix/x"` are each rejected naming the value. | Test |
+| FR-070-AC-8 | A manifest with `imports: { "agent-ix/spec-artifacts-iso": "0.2.0" }` and no `import_types` loads exactly as it did before this amendment, and one with `import_types: { "agent-ix/spec-artifacts-iso": ["StR", "FR"] }` alongside that import loads and the pack reports the lists. | Test |
+| FR-070-AC-9 | An `import_types` key absent from `imports`, an empty list, a duplicate type name and an empty type name are each rejected naming the package. | Test |
+| FR-070-AC-10 | With the provider installed and its `exports` lacking `Nope`, an `import_types` entry listing `Nope` fails `quoin module install` with `semantic.unknown-import-type` naming the package and `Nope`. | Test |
+| FR-070-AC-11 | With the provider not loaded, the same `import_types` entry raises no `semantic.unknown-import-type`. | Test |
+| FR-070-AC-12 | An import, with and without a type list, referenced by no `$ref` under `https://schemas.agent-ix.org/<org>/<repo>/` in the module's emitted schemas yields `semantic.unused-import` at warning severity naming it, and an import that one such `$ref` references yields none. | Test |
 
 ## Dependencies
 
-- **Upstream**: [US-020](../usecase/US-020-declare-a-semantic-module-contract-once.md), [FR-009](./FR-009-read-module-manifest.md), [FR-049](./FR-049-preserve-dynamic-and-generated-modules.md), `filament-core-data` FR-021 and `common.schema.json`, semantic-core (`agent-ix/filament-core-data#35`), `agent-ix/filament-core-service#21`
+- **Upstream**: [US-020](../usecase/US-020-declare-a-semantic-module-contract-once.md), [FR-009](./FR-009-read-module-manifest.md), [FR-049](./FR-049-preserve-dynamic-and-generated-modules.md), `filament-core-data` FR-021 and `common.schema.json`, semantic-core (`agent-ix/filament-core-data#35`), `agent-ix/filament-core-data` module-manifest schema (PLAT-212)
 - **Downstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path.md), [FR-074](./FR-074-legacy-authoring-forms.md), [FR-075](./FR-075-semantic-package-exports-and-locks.md), `agent-ix/quire-rs#388`

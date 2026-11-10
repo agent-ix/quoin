@@ -230,12 +230,12 @@ Criteria absent here are verified by a method that produces no test — see
 | StR-007 | StR-007-VC-1 | TC-1316 | ✅ Covered |
 | FR-068 | ⚠️ Partial | TC-1317, TC-1318, TC-1319, TC-1320, TC-1321, TC-1322, TC-1323, TC-1324, TC-1325, TC-1326, TC-1327 Criteria carried only by retired TypeScript tests are unbacked (PLAT-1045). | ⚠️ Partial |
 | FR-069 | FR-069-AC-1, FR-069-AC-2, FR-069-AC-3, FR-069-AC-4, FR-069-AC-5, FR-069-AC-6, FR-069-AC-7, FR-069-AC-8, FR-069-AC-9, FR-069-AC-10, FR-069-AC-11 | TC-1328, TC-1329, TC-1330, TC-1331, TC-1332, TC-1333, TC-1334, TC-1335, TC-1585, TC-1586, TC-1587, TC-1588 | ❌ Unbacked |
-| FR-070 | FR-070-AC-1, FR-070-AC-2, FR-070-AC-3, FR-070-AC-4, FR-070-AC-5, FR-070-AC-6, FR-070-AC-7, FR-070-CON-1, FR-070-CON-2 | TC-1336, TC-1337, TC-1338, TC-1339, TC-1340, TC-1341, TC-1342, TC-1383 | ✅ Covered |
+| FR-070 | FR-070-AC-1, FR-070-AC-2, FR-070-AC-3, FR-070-AC-4, FR-070-AC-5, FR-070-AC-6, FR-070-AC-7, FR-070-AC-8, FR-070-AC-9, FR-070-AC-10, FR-070-AC-11, FR-070-AC-12, FR-070-CON-1, FR-070-CON-2 | TC-1336, TC-1337, TC-1338, TC-1339, TC-1340, TC-1341, TC-1342, TC-1383, TC-2130, TC-2131, TC-2132, TC-2133, TC-2134 | 🚧 Pending |
 | FR-071 | FR-071-AC-1, FR-071-AC-2, FR-071-AC-3, FR-071-AC-4, FR-071-AC-5, FR-071-AC-6, FR-071-AC-7, FR-071-AC-8, FR-071-CON-1, FR-071-CON-2 | TC-1344, TC-1345, TC-1346, TC-1347, TC-1348, TC-1349, TC-1350, TC-1351, TC-1352, TC-1384 | ✅ Covered |
 | FR-072 | FR-072-AC-1, FR-072-AC-2, FR-072-AC-3, FR-072-AC-4, FR-072-AC-5, FR-072-AC-6, FR-072-AC-7, FR-072-AC-8, FR-072-CON-1 | TC-1353, TC-1354, TC-1355, TC-1356, TC-1357, TC-1358, TC-1359, TC-1715, TC-1716 | ⚠️ Partial |
 | FR-073 | FR-073-AC-1, FR-073-AC-2, FR-073-AC-3, FR-073-AC-4, FR-073-AC-5, FR-073-CON-1, FR-073-CON-2 | TC-1360, TC-1361, TC-1362, TC-1363, TC-1364, TC-1365, TC-1366 | ✅ Covered |
 | FR-074 | FR-074-AC-1, FR-074-AC-2, FR-074-AC-3, FR-074-AC-4, FR-074-AC-5, FR-074-CON-1 | TC-1367, TC-1368, TC-1369, TC-1370, TC-1371, TC-1386 | ✅ Covered |
-| FR-075 | FR-075-AC-1, FR-075-AC-3, FR-075-AC-4, FR-075-AC-5, FR-075-CON-1, FR-075-CON-2 | TC-1372, TC-1374, TC-1375, TC-1376, TC-1377, TC-1378 | ✅ Covered |
+| FR-075 | FR-075-AC-1, FR-075-AC-3, FR-075-AC-4, FR-075-AC-5, FR-075-AC-6, FR-075-AC-7, FR-075-CON-1, FR-075-CON-2 | TC-1372, TC-1374, TC-1375, TC-1376, TC-2136, TC-2137, TC-1377, TC-1378 | 🚧 Pending |
 | FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4, FR-046-AC-5, FR-046-AC-6 | TC-1990, TC-1991, TC-1992, TC-1993, TC-1994, TC-1995 | ❌ Unbacked |
 | FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5, FR-047-AC-6, FR-047-AC-7, FR-047-AC-8 | TC-1996, TC-1997, TC-1998, TC-1999, TC-2000, TC-2001, TC-1712, TC-1925 | ⚠️ Partial |
 | FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6, FR-048-AC-7 | TC-2002, TC-2003, TC-2004, TC-2005, TC-2006, TC-2007, TC-2008 | ❌ Unbacked |
@@ -1435,6 +1435,14 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2126 | Under record-sections, `## Parent`, `## Owner` and the Ubiquitous Language table extract no owner or ubiquitous_language | Unit | P0 | FR-123-AC-7 | 🚧 Pending — Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101) against goldens in its `quire-fixtures` crate; no quire-rs ticket is cited yet. |
 | TC-2127 | Every property of every business record schema has exactly one named owner or is listed unmapped | Static | P0 | FR-123-AC-8 | 🚧 Pending — an ownership audit over the emitted schemas of agent-ix/spec-objects-business against the owner list in FR-123, not an extraction. |
 | TC-2128 | A header-only `## Values` table extracts an empty `values` and is `available` | Unit | P0 | FR-123-AC-9 | 🚧 Pending — Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101) against goldens in its `quire-fixtures` crate; no quire-rs ticket is cited yet. |
+| TC-2130 | A manifest with imports and no `import_types` loads as before; with `import_types` it loads and the pack reports the lists | Unit | P0 | FR-070-AC-8 | 🚧 Pending |
+| TC-2131 | An `import_types` key absent from `imports`, an empty list, a duplicate and an empty type name are each rejected naming the package | Unit | P0 | FR-070-AC-9 | 🚧 Pending |
+| TC-2132 | An `import_types` type the installed provider does not export fails install with `semantic.unknown-import-type` naming package and type | Unit | P0 | FR-070-AC-10 | 🚧 Pending |
+| TC-2133 | With the provider not loaded, `import_types` raises no `semantic.unknown-import-type` | Unit | P0 | FR-070-AC-11 | 🚧 Pending |
+| TC-2134 | An import no emitted-schema `$ref` under its schema base references yields `semantic.unused-import` at warning severity; a referenced import yields none | Unit | P0 | FR-070-AC-12 | 🚧 Pending |
+| TC-2135 | `quoin module inspect` reports `semantic.unknown-import-type` (exit 1) and `semantic.unused-import` (warning, exit 0 alone) on an importer | Integration | P0 | FR-124-AC-9 | 🚧 Pending |
+| TC-2136 | The derived package manifest import entries carry `exports` equal to the declared type list, `[]` when none | Unit | P0 | FR-075-AC-6 | 🚧 Pending |
+| TC-2137 | An import cycle is named over types when type lists exist and over packages when they do not | Unit | P0 | FR-075-AC-7 | 🚧 Pending |
 
 ## Stakeholder Requirement Coverage
 

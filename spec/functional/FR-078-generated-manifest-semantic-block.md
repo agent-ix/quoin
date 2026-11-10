@@ -50,6 +50,7 @@ prevent.
 - The rendered manifest SHALL carry, for every exported type, `data_schema` as a `{schema}` mapping whose `schema` is the repository-relative path of an emitted file.
 - The rendered manifest SHALL carry `data_schema: {type: object}` for no exported type.
 - When `imported_modules` is non-empty, the rendered `semantic.imports` SHALL map each imported package identity to its declared exact version.
+- The rendered `semantic` block SHALL omit the optional `import_types` key; an author adds it by hand (FR-070).
 - When `imported_modules` is empty, the rendered `semantic.imports` SHALL be an empty mapping rather than an absent key.
 - The rendered manifest SHALL declare each exported type name exactly once across `artifact_types` and `object_types`, so that a type name identifies one declaration.
 - If two entries of `imported_modules` name the same `<org>/<repo>`, then the template SHALL abort rendering naming the package identity, rather than collapsing them to whichever came last.
