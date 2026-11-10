@@ -52,7 +52,7 @@ pub fn plan_from_text(
 
 /// Whether `before` and `after` — two revisions of the same plan document, in
 /// git order, as a caller with git read from its history — changed the
-/// objective, estimator, decision rule or protected apparatus while keeping
+/// objective, estimator, decision rule, answer families or protected apparatus while keeping
 /// the same `definition_version` (engineering-assurance FR-021's
 /// `definition_change_without_version_bump`).
 ///
@@ -85,15 +85,16 @@ fn plan_definition_of(
         definition_version: Some(plan.definition_version.as_str()),
         definition: MeasurementDefinition {
             objective: plan.objective,
-            estimator: plan.statistical_design.and_then(|design| design.estimator),
+            estimator: plan.statistical_design.as_ref().and_then(|d| d.estimator),
             decision_rule: plan
                 .statistical_design
-                .and_then(|design| design.decision_rule),
+                .as_ref()
+                .and_then(|d| d.decision_rule),
             protected_apparatus: plan.protected_apparatus.clone(),
-            // EA 0.8.1 added `statistical_design.answer_families` (PLAT-1020);
-            // quoin does not parse it yet, so it is not part of the definition
-            // this check compares.
-            answer_families: None,
+            answer_families: plan
+                .statistical_design
+                .as_ref()
+                .and_then(|d| d.answer_families.clone()),
         },
     }
 }
@@ -109,6 +110,8 @@ fn plan_definition_of(
 mod tests {
     use super::{definition_changed_without_version_bump, plan_from_text};
     use crate::plans::PlanLoadOptions;
+    use crate::types::plan::MeasurementPlan;
+    use ix_trace_rs::trace;
 
     const DOC: &str = "---\nid: MP-1\ntitle: A plan\nstatus: active\nstage: observe\nmetric: m\ndefinition_version: v1\ntype: MeasurementPlan\nobjective:\n  direction: higher\n---\nbody\n";
 
@@ -169,6 +172,62 @@ mod tests {
         let after = plan_from_text("a.md", DOC, PlanLoadOptions::default())
             .unwrap()
             .unwrap();
+        assert!(!definition_changed_without_version_bump(&before, &after));
+    }
+
+    /// `DOC` with a `statistical_design` block carrying `families` verbatim.
+    fn plan_with_families(families: &str) -> Result<MeasurementPlan, String> {
+        let document = DOC.replace(
+            "objective:",
+            &format!("statistical_design:\n  answer_families: {families}\nobjective:"),
+        );
+        plan_from_text("a.md", &document, PlanLoadOptions::default())
+            .map(|plan| plan.expect("a MeasurementPlan document parses"))
+            .map_err(|error| error.to_string())
+    }
+
+    #[trace("FR-044-AC-7", "TC-1746")]
+    #[test]
+    fn valid_answer_families_are_parsed_into_the_plan() {
+        let plan = plan_with_families("[alpha, beta]").unwrap();
+        let families = plan
+            .statistical_design
+            .expect("the block is parsed")
+            .answer_families
+            .expect("the families are parsed");
+        assert_eq!(Vec::<String>::from(families), vec!["alpha", "beta"]);
+    }
+
+    #[trace("FR-044-AC-7", "TC-1746")]
+    #[test]
+    fn invalid_answer_families_are_refused_naming_the_path_and_key() {
+        for (stated, reason) in [
+            ("[]", "at least one family"),
+            ("[alpha, alpha]", "more than once"),
+            ("[alpha, \"\"]", "empty family"),
+        ] {
+            let message = plan_with_families(stated).unwrap_err();
+            assert!(
+                message.contains("a.md: statistical_design.answer_families is invalid:")
+                    && message.contains(reason),
+                "{stated}: {message}"
+            );
+        }
+    }
+
+    #[trace("FR-108-AC-9", "TC-1894")]
+    #[test]
+    fn changed_answer_families_under_the_same_version_are_a_change_without_a_bump() {
+        let before = plan_with_families("[alpha, beta]").unwrap();
+        let after = plan_with_families("[alpha, gamma]").unwrap();
+        assert!(definition_changed_without_version_bump(&before, &after));
+    }
+
+    #[trace("FR-108-AC-9", "TC-1894")]
+    #[test]
+    fn answer_families_in_a_different_order_are_not_a_change() {
+        let before = plan_with_families("[alpha, beta]").unwrap();
+        let after = plan_with_families("[beta, alpha]").unwrap();
         assert!(!definition_changed_without_version_bump(&before, &after));
     }
 }

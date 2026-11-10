@@ -8,7 +8,7 @@
 use std::num::NonZeroU32;
 
 use engineering_assurance::measurement::{
-    DecisionRule, Estimator, NegativeControls, Objective, ProtectedApparatus,
+    AnswerFamilies, DecisionRule, Estimator, NegativeControls, Objective, ProtectedApparatus,
 };
 
 use crate::types::ids::NonEmptyText;
@@ -150,7 +150,7 @@ impl GroundTruthKind {
 ///
 /// `PartialEq` only, not `Eq`: [`DecisionRule`]'s threshold and margin are
 /// `f64`.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct StatisticalDesign {
     /// The smallest `population.examined` a measured observation may carry
     /// before intake refuses it.
@@ -165,6 +165,10 @@ pub struct StatisticalDesign {
     /// The rule `quoin measurement verify` applies to the estimate
     /// (engineering-assurance FR-021). EA owns its evaluation.
     pub decision_rule: Option<DecisionRule>,
+    /// The families the constant-predictor baseline is computed over
+    /// (engineering-assurance, PLAT-1020). A set; part of the versioned
+    /// measurement definition.
+    pub answer_families: Option<AnswerFamilies>,
 }
 
 /// One measurement plan, as read from an assurance document's frontmatter.

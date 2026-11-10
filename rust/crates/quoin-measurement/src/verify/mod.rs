@@ -104,12 +104,16 @@ pub fn verify(
     order: OrderSource,
     claimed: Option<Verdict>,
 ) -> MeasurementVerdict {
-    let design = plan.statistical_design.unwrap_or(StatisticalDesign {
-        minimum_population: None,
-        repetitions: None,
-        estimator: None,
-        decision_rule: None,
-    });
+    let design = plan
+        .statistical_design
+        .clone()
+        .unwrap_or(StatisticalDesign {
+            minimum_population: None,
+            repetitions: None,
+            estimator: None,
+            decision_rule: None,
+            answer_families: None,
+        });
     // Positions are ignored when the order's source attests none.
     let positioned = matches!(
         order,

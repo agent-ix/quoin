@@ -502,6 +502,25 @@ mod tests {
 
     #[trace("FR-096")]
     #[test]
+    fn tc_379_003_engine_extraction_unavailable_keeps_its_code_and_language_order() {
+        let engine = quire_rs::symbols::ExtractionUnavailable {
+            languages: vec![
+                quire_rs::traceability::SourceLanguage::Python,
+                quire_rs::traceability::SourceLanguage::Typescript,
+                quire_rs::traceability::SourceLanguage::Shell,
+            ],
+        };
+        let error = Error::from(engine);
+        assert_eq!(error.code().as_str(), "QQ-1021");
+        assert!(matches!(
+            &error,
+            Error::ExtractionUnavailable { languages }
+                if languages == &["python", "typescript", "shell"]
+        ));
+    }
+
+    #[trace("FR-096")]
+    #[test]
     fn tc_379_002_each_variant_reports_its_own_code() {
         // One representative per code, so a copy-paste in `Error::code` that
         // maps two variants to one token fails here. The set built from the

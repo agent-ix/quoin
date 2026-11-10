@@ -55,7 +55,7 @@ pub(super) fn findings(
     raw_population: Option<&JsonValue>,
     plan: Option<&MeasurementPlan>,
 ) -> Vec<Finding> {
-    let design = plan.and_then(|plan| plan.statistical_design);
+    let design = plan.and_then(|plan| plan.statistical_design.as_ref());
     let minimum = design.and_then(|design| design.minimum_population);
     let required = design.and_then(|design| design.repetitions);
     let requires_repetitions = required.is_some_and(|required| required.get() > 1);

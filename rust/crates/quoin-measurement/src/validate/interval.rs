@@ -59,6 +59,7 @@ pub(super) fn findings(
         .and_then(|plan| {
             let level = plan
                 .statistical_design
+                .as_ref()
                 .and_then(|design| design.decision_rule)
                 .and_then(|rule| rule.interval_level())?;
             Some((plan, level))

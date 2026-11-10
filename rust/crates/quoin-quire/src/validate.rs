@@ -327,6 +327,7 @@ mod tests {
             quire_rs::ValidationReason::DisallowedEdgeType,
             quire_rs::ValidationReason::Grammar,
             quire_rs::ValidationReason::Semantic,
+            quire_rs::ValidationReason::RowWidth,
         ];
         for reason in reasons {
             assert_eq!(

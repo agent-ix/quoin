@@ -85,7 +85,8 @@ compute:
   by a later commit, by a delete and re-add under the same id, or by an
   uncommitted edit in the work tree (`collection_edited`);
 - the plan's own document changing its `objective`, `estimator`,
-  `decision_rule` or `protected_apparatus` between two revisions that share
+  `decision_rule`, `statistical_design.answer_families` (a set: reordering is
+  not a change) or `protected_apparatus` between two revisions that share
   a `definition_version` — adjacent committed revisions, each read at the
   path the document had in its own commit so a rename hides nothing, and the
   work-tree document against the last commit

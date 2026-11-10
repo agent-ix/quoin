@@ -80,13 +80,22 @@ pub fn build(request: &Request) -> Result<Outcome> {
         quire_rs::symbols::trace::bind(&extraction, model)
     });
 
-    let export = quire_rs::build_assurance_export(quire_rs::AssuranceInput {
+    // The engine wraps "this build cannot read a language the tree holds" in
+    // its assurance error; it is the same refusal coverage raises as
+    // QQ-1021, so it must not degrade to the generic QQ-1060 (Io) here.
+    let export = match quire_rs::build_assurance_export(quire_rs::AssuranceInput {
         spec: &spec,
         registry: &registry,
         corpus_root: &document_root,
         symbols: &extraction,
         symbol_graph: &graph,
-    })?;
+    }) {
+        Ok(export) => export,
+        Err(quire_rs::AssuranceError::ExtractionUnavailable(unavailable)) => {
+            return Err(unavailable.into());
+        }
+        Err(other) => return Err(other.into()),
+    };
 
     Ok(Outcome { export, notices })
 }

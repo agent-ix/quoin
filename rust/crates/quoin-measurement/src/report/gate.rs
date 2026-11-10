@@ -102,6 +102,7 @@ pub(super) fn gate(
     };
     let Some(rule) = plan
         .statistical_design
+        .as_ref()
         .and_then(|design| design.decision_rule)
     else {
         return GateOutcome::Inconclusive(InconclusiveReason::NoDecisionRule);
