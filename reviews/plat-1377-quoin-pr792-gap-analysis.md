@@ -59,3 +59,19 @@ Semantic review was skipped (not opted in).
 - Stubs: none.
 - Semantic review: skipped.
 - Plan completion: not assessed
+
+## Dispositions
+
+Disposition pass 1 checked `git diff 3b70d3a1..5a33c2ff`.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | `tc_452_611b` and the retired-key clause of FR-070-AC-2 are gone because the shim was removed. The new behaviour, rejection naming the key, is asserted with the exact code and locus `error:semantic.unknown-key@semantic.semantic_core` in `tc_452_612` under FR-070-AC-3. |
+
+Coverage after the fix round:
+
+- FR-076-AC-8 is asserted by `tc_264_008`, which renders `go` and checks that the published
+  schema refuses it, naming it. That is a real behaviour check, not a copy comparison.
+- The `generated_targets=go` case in `tc_264_014` is still refused, now because
+  `json-schema` is missing, and still leaves no directory behind.
+- No criterion lost its test.

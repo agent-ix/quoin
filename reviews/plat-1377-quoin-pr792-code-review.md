@@ -70,3 +70,23 @@ FND-004 needs a decision from the owner, not a code change.
 - `tc_452_641` (FND-001) and `tc_452_643` (exact six-target set). The latter is clean.
 - Template manifest.yaml, conftest.py and hook (FND-002).
 - package.json and pnpm-lock.yaml. Clean.
+
+## Dispositions
+
+Disposition pass 1 checked `git diff 3b70d3a1..5a33c2ff`. I also verified two things outside
+the diff:
+
+- The `module-manifest.schema.json` in the published 0.4.2 package is referenced only from
+  optional manifest properties for every entry in `NEW_OPTIONAL_DEFS`. That is either a
+  top-level optional section, `TraceabilityModel`, or the optional
+  `ObjectTypeEntry.properties.construct`. The list matches the 18 new `$defs` paths that
+  have `required` arrays.
+- None of the ten default module manifests (`default-modules.yaml`) declares `semantic_core`
+  on GitHub `main` any more.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The guard now admits only the named `NEW_OPTIONAL_DEFS` entries and their subpaths. A new `required` array under `ObjectTypeEntry`, `ArchetypeEntry` or `ArtifactTypeEntry` fails again. The `LintRuleEntry` change is recorded as accepted upstream evolution, and the string form of `pattern` is asserted. The doc count reads 13. |
+| FND-002 | fixed | `TARGET_REGISTRY` and its hook check are deleted. FR-076 and TC-1407 now hand target refusal to the published schema. `tc_264_008` renders `go` and asserts that the published schema's validation names it. The `tc_264_009` drift test is deleted with the copy. |
+| FND-003 | fixed | DIVERGENCE.md no longer lists `/semantic_core pattern`. |
+| FND-004 | fixed | The owner decided against a compatibility shim. The strip is removed, so `read_semantic_block` validates the raw block, and a retired `semantic_core` is refused as `semantic.unknown-key` (FR-070-AC-3, `tc_452_612`). All ten default modules have already dropped the key. Follow-up outside this repo: quire-rs FR-069 and `src/semantic/contract.rs` still tolerate `semantic_core`, so quire-rs and quoin now disagree until quire-rs drops its strip (PLAT-1221 scope). |

@@ -3,7 +3,7 @@ id: SR-20261103118156
 title: "Spec review of quoin PR 792 (FR-070, FR-071, FR-078 and template FR-001 edits)"
 type: SpecReview
 analysis: base
-scope: "agent-ix/quoin@3b70d3a1; spec/functional/FR-070-semantic-module-manifest-extension.md, spec/functional/FR-071-typed-properties-mapping.md, spec/functional/FR-078-generated-manifest-semantic-block.md, templates/semantic-module/{{cookiecutter.repo_name}}/spec/functional/FR-001-declare-the-semantic-contract.md"
+scope: "agent-ix/quoin@3b70d3a1; spec/functional/FR-070-semantic-module-manifest-extension.md, spec/functional/FR-071-typed-properties-mapping.md, spec/functional/FR-078-generated-manifest-semantic-block.md, spec/functional/FR-076-semantic-module-template-variants.md, spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md, templates/semantic-module/{{cookiecutter.repo_name}}/spec/functional/FR-001-declare-the-semantic-contract.md"
 review_set: subset
 ---
 
@@ -50,3 +50,22 @@ blocker is closed.
 - FR-078 Behavior, `semantic_core` bullet. Clean.
 - FR-078-AC-1. Clean.
 - Template FR-001 Behavior bullet and FR-001-AC-1. Clean.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | low | The amended NFR-017-AC-4 says "No `required` array that the pre-CR-003 manifest schema carried gains or loses a key ... so a manifest that validated before still validates". semantic-schema 0.4.2 breaks that for `lint_rules`: the pre-CR-003 `/$defs/LintRuleEntry/properties/pattern` `required: [kind]` array is gone (`pattern` is now a string), and `LintRuleEntry` gains a root `required: [type, id, section]`. `tc_452_641` records this honestly as accepted upstream evolution, but the AC that test backs claims it cannot happen. Name the `LintRuleEntry` exception (semantic-schema 0.4.2, accepted upstream evolution) in the AC so the spec matches its test. | spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md:63 |
+
+## Dispositions
+
+Disposition pass 1 checked `git diff 3b70d3a1..5a33c2ff`. In that diff:
+
+- FR-070 now refuses the retired key, which matches the owner's no-shim decision.
+- FR-070-AC-2 and AC-3 match the code and `tc_452_612`.
+- The FR-076 target bullet and AC-8 match `tc_264_008`.
+- `quire validate` passes on FR-070, FR-076 and NFR-017.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The retired-key rule is now its own bullet: "The `semantic` block SHALL NOT admit `semantic_core`: the key is retired (PLAT-1221), a module declares no semantic-core version, and a manifest that still carries it is refused like any other unknown key." The admitted-keys bullet no longer carries a parenthetical. |
