@@ -42,6 +42,7 @@ fn block(package: &str) -> SemanticBlock {
         package: package.into(),
         exports: vec!["Entity".into()],
         imports: BTreeMap::new(),
+        import_types: BTreeMap::new(),
         targets: vec!["filament".to_owned()],
         mappings: vec![],
         compatibility_posture: CompatibilityPosture::Strict,
