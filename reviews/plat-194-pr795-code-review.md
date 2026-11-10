@@ -51,3 +51,11 @@ The suite is real, with three nits. The seven flipped rows each come from a run 
 The driver's messages in `packages/semantic-module-tools/src/emit.mjs` match each assertion. Every mutation happens inside a `TempDir`, and the `Render` drop removes it on panic. `npm install` runs in the temp tree with the user npmrc disabled and a public registry. There is no pin, ledger or digest. The helper move to `tests/common/template.rs` is byte-faithful apart from `pub` and one sentence of doc. Clippy idioms are clean: the extension test uses `Path::extension`, not a string `ends_with`.
 
 Mergeable as far as this method goes.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | Round 1 (head ac764d9e): tc_194_007 asserts `quire: not found` and `make install`; the template's `validate` recipe now emits that line from an `@`-silenced guard, so the recipe echo cannot satisfy it. |
+| FND-002 | fixed | Round 1 (head ac764d9e): tc_194_008 asserts the absence of `poe lint` and `poe test`, which make echoes for `$(POETRY) run poe lint` / `poe test` whenever those legs start. |
+| FND-003 | fixed | Round 1 (head ac764d9e): `tests/common/template.rs` carries the SPDX and copyright header. |

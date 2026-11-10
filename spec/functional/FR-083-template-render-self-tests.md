@@ -62,7 +62,7 @@ this repository rather than a discovery in the next module.
 | FR-083-AC-2 | Every rendered directory is removed after the run, including after a failure. | Test (TC-1445) |
 | FR-083-AC-3 | An injected unresolved token, placeholder organization, absolute path, credential, or private-registry default in the template fails the gate naming the file. | Test (TC-1446) |
 | FR-083-AC-4 | Removing a surface the conformance contract names fails the gate naming that surface. | Test (TC-1447) |
-| FR-083-AC-6 | With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check. | Test (TC-1448) |
+| FR-083-AC-6 | With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check. | Inspection (unbacked: no test drives quoin's own gate with the toolchain absent; TC-1448 covers only the rendered emit command, NFR-020-AC-3) |
 | FR-083-AC-9 | Quoin explicitly declares only its root package as its pnpm workspace, matching the one-importer lock. Unrendered template package files remain generation input, not installable workspace packages. Normal frozen installation, script execution and command execution retain dependency verification; all three rendered variants remain independently exercised outside the workspace. | Test (TC-1597) |
 
 ## Dependencies

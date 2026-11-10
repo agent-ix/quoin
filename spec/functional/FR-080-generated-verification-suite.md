@@ -50,6 +50,8 @@ environment that would skip.
 - The rendered suite SHALL assert the rendered `semantic` block, the emitted schemas, the skeleton mappings, the negative fixtures, and the legacy-form fixture.
 - When the grammar package is not installed, the rendered suite SHALL fail naming the install command rather than skipping the schema checks.
 - The rendered suite SHALL treat every warning as an error, so that a deprecation is a failure rather than scrollback.
+- The rendered suite SHALL compare the installed engine's version with the engine floor the rendered repository declares.
+- If the installed engine is older than the declared floor, then the rendered suite SHALL fail naming both versions, rather than reporting a capability gap as a module defect.
 - The rendered repository's gate SHALL run spec validation, lint, the schema drift check, and the rendered suite, failing when any one of them fails.
 
 ## Constraints
@@ -63,10 +65,14 @@ environment that would skip.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
+| FR-080-AC-1 | With the engine absent, the rendered suite fails and its message names `poetry install`. | Test (TC-1428) |
+| FR-080-AC-2 | With the engine present but without `extract_semantic`, the rendered suite fails naming the missing capability. | Test (TC-1429) |
 | FR-080-AC-3 | A run of the rendered suite reports zero skipped tests. | Test (TC-1427) |
 | FR-080-AC-4 | The rendered package metadata declares the engine as a dev dependency sourced from `internal-pypi`. | Test (TC-1430) |
-| FR-080-AC-5 | The rendered gate runs spec validation, lint, the schema drift check, and the suite, and a failing validation leg fails the gate before lint and the suite run. | Test (TC-1431) |
+| FR-080-AC-5 | The rendered gate runs spec validation, lint, the schema drift check, and the suite, and fails when any one fails. | Test (TC-1431) |
 | FR-080-AC-6 | The rendered test configuration turns warnings into errors. | Test (TC-1430) |
+| FR-080-AC-7 | With `@agent-ix/semantic-core` not installed, the rendered suite fails naming the install command, and reports no skipped schema check. | Test (TC-1450) |
+| FR-080-AC-8 | With an engine older than the declared floor installed, the rendered suite fails naming the installed version and the floor. | Test (TC-1460) |
 
 ## Dependencies
 

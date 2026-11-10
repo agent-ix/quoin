@@ -44,3 +44,10 @@ The bindings are sound for the other six flipped rows: TC-1414, TC-1415, TC-1416
 The tests contain no stubs and no coverage inflation. tc_194_008 is tagged to FR-080-AC-5, and the matrix honestly keeps TC-1431 at 🚧 because the lint and test legs are not driven.
 
 FND-001 and FND-002 are spec-to-behaviour gaps. They can be closed by a small test or recipe change, or by narrowing the rows' claims. Neither is a wrong result in the shipped code.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | still-open | Round 1 (head ac764d9e): the tc_194_006 trace and the TC-1448 row now name NFR-020-AC-3 only, and the FR-083 matrix row says FR-083-AC-6 is unbacked. But `spec/functional/FR-083-template-render-self-tests.md:65` still reads `Test (TC-1448)`, and TC-1448 no longer lists FR-083-AC-6. No test drives Quoin's own gate with the toolchain absent. Repointing the cell at tc_194_001..008 would reintroduce this finding, because none of them drives Quoin's gate. The fix is a test of the `installed()` absent-toolchain path, or a verification cell that does not claim a test. |
+| FND-002 | fixed | Round 1 (head ac764d9e): the rendered `validate` recipe fails with `quire: not found; run 'make install' (poetry install provides the quire validator)`, and tc_194_007 asserts both `quire: not found` and `make install`. |

@@ -416,7 +416,7 @@ fn tc_194_007_an_absent_validator_fails_the_validation_leg_naming_quire() {
     }
 }
 
-#[trace("FR-080-AC-5")]
+#[trace("FR-080-AC-5", "TC-1431")]
 #[test]
 fn tc_194_008_a_failing_validation_leg_fails_the_gate_before_lint_and_test_run() {
     let r = render("object", "", &[]);
