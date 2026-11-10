@@ -48,6 +48,10 @@ FND-001 is a false statement in a row this PR authored. Fix it in this PR.
 | FND | Outcome | Reason |
 | --- | --- | --- |
 | FND-001 | fixed | Round 1 (head ac764d9e): the FR-077 row names TC-1414..1416, 1449 and 1457 on `make test` via tc_194_001..005, and marks AC-1..3 unbacked with no `make template-gate` target. |
+| FND-002 | fixed | Round 2 (head 6b38ff24): `git diff origin/main...HEAD` no longer touches FR-080. AC-1, AC-2, AC-7, AC-8 and the two engine-floor SHALLs are back verbatim. TC-1428, 1429, 1450 and 1460 are restored, each reading "❌ Unbacked — owner dropped test; needs PyPI-installed Python deps". The FR-080 row lists them as unbacked. The TASK-048 and PLAN-008 citations resolve again. |
+| FND-003 | fixed | Round 2 (head 6b38ff24): FR-080-AC-5 again reads "fails when any one fails", matching main and the Behavior SHALL. TC-1431 reads "🚧 Partly": the validation leg is backed by tc_194_008, and the lint, drift and suite legs are unbacked. tc_194_008 now traces `FR-080-AC-5` and `TC-1431`. |
+| FND-004 | fixed | Round 2 (head 6b38ff24): TC-1409 and TC-1410 read "🚧 Partly". Each names `tc_264_021` for its backed half and marks the FR-077-AC-2/CON-2 or StR-008-VC-2 half unbacked. The FR-078 row is now 🚧 Partly and cites only tests that exist with those traces (tc_264_020, 021 and 050, and the FR-078-AC-5/AC-8 traces at tc_264_template_render.rs:376 and :397). |
+| FND-005 | fixed | Round 2 (head 6b38ff24): `grep -rn template-gate spec/` returns nothing. The US-021 and NFR-019 rows and all thirteen former `✅ make template-gate` TC rows now name a real Rust test or read ❌ Unbacked. |
 
 ## New findings (disposition pass 1)
 
