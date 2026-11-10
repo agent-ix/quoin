@@ -51,7 +51,7 @@ to inspect.
 - Each entry SHALL carry `name`, `mode`, `diagnostics`, the registry `ref` when one was recorded, and, when the module's `semantic` block validated, its `version` and the block itself.
 - `mode` SHALL be `unreadable` when the module's `manifest.yaml` is missing, unreadable, not YAML, or not a mapping.
 - `mode` SHALL be `no-semantic-block` when the module has no `semantic` block or its block was refused, `compiled` when `semantic.targets` declares any of `rust`, `typescript`, `python-pydantic-v2`, or `python-dataclass`, and `dynamic` otherwise.
-- An entry's `diagnostics` SHALL be the diagnostics of reading its block (FR-070, FR-073, FR-074) followed by one error per `semantic.imports` entry that no other installed module provides at exactly the locked version, naming the import, the locked version and the installed versions, and one error per import cycle.
+- An entry's `diagnostics` SHALL be the diagnostics of reading its block (FR-070, FR-073, FR-074) followed by one error per `semantic.imports` entry that no other installed module provides at exactly the locked version, naming the import, the locked version and the installed versions, and one error per import cycle (named over `<org>/<repo>#<Type>` nodes only when the `$ref`-derived type-level edges themselves form a cycle, otherwise over packages, FR-075), followed by one `semantic.unknown-import-type` error per `semantic.import_types` type the installed provider does not export and one per `$ref` in the module's own data schemas naming a type the provider does not export (locus `<section>[<type>].data_schema.schema`, FR-070), and one `semantic.unused-import` warning per declared import no `$ref` in the module's own data schemas references (FR-070); `inspect` lists the warning without failing the run.
 - Where a block names a contract version this build does not define, `inspect` SHALL report the refusal as a diagnostic on that module.
 - Where a block names a contract version this build does not define, `inspect` SHALL report no `semantic` view for that module.
 - If any entry carries an error-severity diagnostic, then `inspect` SHALL still write the complete document.
@@ -74,6 +74,7 @@ to inspect.
 | FR-124-AC-6 | With one installed module's directory removed, `inspect` still writes an entry for every installed module, reports the removed one as `unreadable` with an error diagnostic, exits 1, and names it on stderr under `QM023_INSTALLED_MODULE_INVALID`. | Test |
 | FR-124-AC-7 | Two installed modules that import each other yield an import-cycle error naming the cycle, and the command exits 1. | Test |
 | FR-124-AC-8 | The registry and every installed module file are byte-identical before and after `inspect`, including a run that finds errors. | Test |
+| FR-124-AC-9 | `inspect` reports on an importer a `semantic.unknown-import-type` error naming the package and type for a type its installed provider does not export, both for an `import_types` entry and for a `$ref` in its own data schemas (at `<section>[<type>].data_schema.schema`), and a `semantic.unused-import` warning for an unreferenced import; the error exits 1, and a run whose only finding is the warning exits zero. | Test |
 
 ## Dependencies
 
