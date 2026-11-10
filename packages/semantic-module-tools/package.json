@@ -1,0 +1,33 @@
+{
+  "name": "@agent-ix/semantic-module-tools",
+  "version": "0.1.0",
+  "description": "Shared emit driver for Quire semantic-module repositories: wraps `tsp compile`, keeps the module's namespace, absolutizes relative $id/$ref against declared bases.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "semantic-module-emit": "bin/semantic-module-emit.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agent-ix/quoin.git",
+    "directory": "packages/semantic-module-tools"
+  }
+}

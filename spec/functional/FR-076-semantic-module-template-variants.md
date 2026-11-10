@@ -63,10 +63,12 @@ and the mapping declarations it needs.
 
 ## Notes
 
-The emit driver the rendered repository carries is a driver, not the emitter:
-it invokes the official `@typespec/json-schema` emitter and never reimplements
-it (FR-076-CON-1). Extracting it into a versioned package is tracked as
-`agent-ix/quoin#345` and is not a condition of this requirement.
+The emit driver is a driver, not the emitter: it invokes the official
+`@typespec/json-schema` emitter and never reimplements it (FR-076-CON-1). It is
+the versioned package `@agent-ix/semantic-module-tools`, which the rendered
+repository depends on at an exact version and does not copy (FR-076-CON-4), so a
+correction to the driver is one release rather than a sweep of every module
+repository.
 
 The exact-version rule mirrors the published module-manifest schema, whose
 `semver` pattern `semantic.imports` values must match; a range would render a
@@ -81,6 +83,7 @@ first choice for an off-list `module_kind`, so FR-076-AC-6 cannot hold there.
 |----|------------|------|------------|
 | FR-076-CON-1 | The template SHALL contain no copy of the schema emitter, the Quire runtime, or the semantic-core grammar; each is reached as a versioned dependency. | Architecture | Test (TC-1455) |
 | FR-076-CON-2 | The rendered repository SHALL contain no `.npmrc`; `@agent-ix` resolves from the user-level npm configuration. | Packaging | Test (TC-1412) |
+| FR-076-CON-4 | The rendered repository SHALL depend on `@agent-ix/semantic-module-tools` at an exact version in `package.json` `devDependencies` and SHALL contain no local implementation of the schema emit pipeline. | Architecture | Test |
 
 ## Acceptance Criteria
 

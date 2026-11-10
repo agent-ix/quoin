@@ -9,9 +9,14 @@ import subprocess
 import pytest
 
 
-def run_generate(repo_root, *args: str) -> subprocess.CompletedProcess:
+PACKAGE_DIR = "{{ cookiecutter.package_name }}"
+
+
+def run_generate(
+    repo_root, package_dir: str, *args: str
+) -> subprocess.CompletedProcess:
     return subprocess.run(
-        ["node", "scripts/generate-schemas.mjs", *args],
+        ["node_modules/.bin/semantic-module-emit", "--package-dir", package_dir, *args],
         cwd=repo_root,
         capture_output=True,
         text=True,
@@ -25,7 +30,10 @@ def require_toolchain(repo_root):
     A drift gate that reports green without running is the defect the gate
     exists to catch.
     """
-    if not (repo_root / "node_modules" / "@typespec" / "compiler").is_dir():
+    if not (
+        (repo_root / "node_modules" / "@typespec" / "compiler").is_dir()
+        and (repo_root / "node_modules" / ".bin" / "semantic-module-emit").exists()
+    ):
         pytest.fail(
             "the schema toolchain is not installed, so this check cannot run. "
             "Run `make install`. This is a failure and not a skip."
@@ -64,7 +72,7 @@ def test_every_reference_is_absolute(schemas_dir):
 @pytest.mark.trace("FR-002-AC-5")
 def test_check_mode_is_green_against_the_committed_output(repo_root):
     require_toolchain(repo_root)
-    result = run_generate(repo_root, "--check")
+    result = run_generate(repo_root, PACKAGE_DIR, "--check")
     assert result.returncode == 0, result.stdout + result.stderr
 
 
@@ -79,7 +87,7 @@ def test_check_mode_is_red_when_an_emitted_byte_changes(repo_root, schemas_dir):
     # the tree it reads. `make schemas` restores it in one command.
     try:
         target.write_bytes(original.replace(b'"type"', b'"typ3"', 1))
-        result = run_generate(repo_root, "--check")
+        result = run_generate(repo_root, PACKAGE_DIR, "--check")
         assert result.returncode != 0
         assert target.name in (result.stdout + result.stderr)
     finally:

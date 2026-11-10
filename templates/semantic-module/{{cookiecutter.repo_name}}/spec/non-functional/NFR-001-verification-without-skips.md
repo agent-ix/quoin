@@ -50,8 +50,7 @@ No test in the suite asserts either criterion, so neither carries a trace tag.
 AC-1 is verified by inspection, reading the skip count from a run's own summary.
 AC-2 is verified by inspecting each absent-tool path: `tests/conftest.py` for
 the engine and the grammar package, `tests/test_schema_emission.py` for the
-schema toolchain, and `scripts/generate-schemas.mjs`, each of which must fail
-naming its install command.
+schema toolchain, each of which must fail naming its install command.
 
 ## Acceptance Criteria
 

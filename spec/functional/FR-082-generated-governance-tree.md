@@ -83,6 +83,6 @@ the rendered repository ships the two inputs and no copy of the output.
 > tool fails naming its install command) were recorded in the deleted matrix as
 > `🚧` rows, and no rendered test asserts either. AC-1 and AC-2 are now verified by
 > `Inspection` (AC-1 the skip count read from a run's summary, AC-2 the
-> absent-tool paths in `tests/conftest.py`, `tests/test_schema_emission.py` and
-> `scripts/generate-schemas.mjs`). Both methods compute as
+> absent-tool paths in `tests/conftest.py`, and
+> `tests/test_schema_emission.py`). Both methods compute as
 > `method-without-symbol`, so a fresh render carries no untagged criterion.

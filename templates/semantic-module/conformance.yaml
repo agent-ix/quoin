@@ -29,7 +29,6 @@ all:
     - typespec/tspconfig.yaml
     - scripts/__init__.py
     - scripts/build_tools.py
-    - scripts/generate-schemas.mjs
     - scripts/stage-npm.mjs
     - "{package}/__init__.py"
     - "{package}/manifest.yaml"

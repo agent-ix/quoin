@@ -1037,3 +1037,33 @@ fn tc_264_055_the_template_carries_no_emitter_runtime_or_grammar_copy() {
     assert!(main.contains("import \"@agent-ix/semantic-core\";"));
     assert!(main.contains("import \"@typespec/json-schema\";"));
 }
+
+#[trace("FR-076-CON-4")]
+#[test]
+fn tc_264_056_a_rendered_repo_depends_on_the_emit_package_and_carries_no_local_pipeline() {
+    for (kind, r) in all_variants() {
+        let package: Value = serde_json::from_str(&r.text("package.json")).unwrap();
+        assert_eq!(
+            package["devDependencies"]["@agent-ix/semantic-module-tools"], "0.1.0",
+            "variant {kind}: the emit package is not pinned to an exact version"
+        );
+        assert!(
+            !r.path("scripts/generate-schemas.mjs").exists(),
+            "variant {kind}: carries a local emit driver"
+        );
+        for (name, bytes) in files_under(&r.root) {
+            if name.starts_with("scripts/") && name.ends_with(".mjs") {
+                let text = String::from_utf8_lossy(&bytes);
+                assert!(
+                    !text.contains("tsp compile") && !text.contains("compiler/entrypoints"),
+                    "variant {kind}: {name} implements the emit pipeline"
+                );
+            }
+        }
+        let pyproject = r.text("pyproject.toml");
+        assert!(
+            pyproject.contains("semantic-module-emit --package-dir"),
+            "variant {kind}: the schemas task does not invoke the shared bin"
+        );
+    }
+}
