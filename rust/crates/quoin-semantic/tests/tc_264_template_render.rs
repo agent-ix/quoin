@@ -1069,7 +1069,11 @@ fn tc_264_056_a_rendered_repo_depends_on_the_emit_package_and_carries_no_local_p
             "variant {kind}: carries a local emit driver"
         );
         for (name, bytes) in files_under(&r.root) {
-            if name.starts_with("scripts/") && name.ends_with(".mjs") {
+            if name.starts_with("scripts/")
+                && std::path::Path::new(&name)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("mjs"))
+            {
                 let text = String::from_utf8_lossy(&bytes);
                 assert!(
                     !text.contains("tsp compile") && !text.contains("compiler/entrypoints"),
