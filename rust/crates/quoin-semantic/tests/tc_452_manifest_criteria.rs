@@ -127,6 +127,7 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
         "package": "agent-ix/spec-objects-fixture",
         "exports": ["entity"],
         "imports": { "agent-ix/spec-artifacts-iso": "0.4.0" },
+        "import_types": { "agent-ix/spec-artifacts-iso": ["StR"] },
         "targets": ["json-schema", "markdown"],
         "mappings": ["typed-table"],
         "compatibility_posture": "strict",

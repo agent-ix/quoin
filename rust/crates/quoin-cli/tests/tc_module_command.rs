@@ -280,6 +280,92 @@ fn tc_286_003_an_import_lock_the_installed_set_no_longer_satisfies_is_reported()
     assert!(stderr.contains("spec-objects-consumer"), "{stderr}");
 }
 
+const FIXTURE_BASE: &str = "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/";
+
+/// A consumer of the fixture module whose entity schema `$ref`s `type_name` of
+/// it, importing `entity` through `import_types`.
+fn typed_consumer(scratch: &Path, refs: &[&str]) -> PathBuf {
+    let source = module_source(scratch, "typed-consumer", |text| {
+        consumer(&text).replace(
+            "    agent-ix/spec-objects-fixture: 0.1.0",
+            "    agent-ix/spec-objects-fixture: 0.1.0\n  import_types:\n    agent-ix/spec-objects-fixture: [entity]",
+        )
+    });
+    let file = source.join("schemas/Entity.json");
+    let mut schema: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+    for (i, type_name) in refs.iter().enumerate() {
+        schema["properties"][format!("ref{i}")] =
+            serde_json::json!({ "$ref": format!("{FIXTURE_BASE}{type_name}.json") });
+    }
+    std::fs::write(&file, schema.to_string()).unwrap();
+    source
+}
+
+/// An installed importer that lists or `$ref`s a type its installed provider
+/// does not export is reported with `semantic.unknown-import-type` for each,
+/// and the command exits non-zero.
+#[trace("FR-124-AC-9", "TC-2135")]
+#[test]
+fn tc_212_001_inspect_reports_unknown_import_types_for_list_and_ref() {
+    let scratch = tempfile::tempdir().expect("scratch root is created");
+    let home = scratch.path().join("ix-home");
+    install(&home, &module_source(scratch.path(), "dynamic", |t| t));
+    install(&home, &typed_consumer(scratch.path(), &["entity"]));
+    let (output, _) = inspect(&home);
+    assert!(output.status.success(), "{output:?}");
+
+    // The provider moves on to export nothing the importer uses.
+    let installed = home.join("filament/modules/spec-objects-consumer");
+    let manifest = installed.join("manifest.yaml");
+    let text = std::fs::read_to_string(&manifest).unwrap();
+    std::fs::write(&manifest, text.replace("[entity]", "[entity, Nope]")).unwrap();
+    let schema = installed.join("schemas/Entity.json");
+    let text = std::fs::read_to_string(&schema).unwrap();
+    std::fs::write(&schema, text.replace("entity.json", "Gone.json")).unwrap();
+
+    let (output, report) = inspect(&home);
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let found: Vec<(&str, &str)> = errors(entry(&report, "spec-objects-consumer"))
+        .into_iter()
+        .filter(|d| d["code"] == "semantic.unknown-import-type")
+        .map(|d| (d["path"].as_str().unwrap(), d["message"].as_str().unwrap()))
+        .collect();
+    assert_eq!(found.len(), 2, "{found:?}");
+    assert!(found.iter().any(|(path, message)| {
+        *path == "semantic.import_types.agent-ix/spec-objects-fixture" && message.contains("Nope")
+    }));
+    assert!(found.iter().any(|(path, message)| {
+        *path == "object_types[entity].data_schema.schema" && message.contains("Gone")
+    }));
+}
+
+/// An import no `$ref` references is listed as a warning, and a run whose only
+/// finding is that warning exits zero.
+#[trace("FR-124-AC-9", "TC-2135")]
+#[test]
+fn tc_212_002_inspect_lists_an_unused_import_as_a_warning_and_exits_zero() {
+    let scratch = tempfile::tempdir().expect("scratch root is created");
+    let home = scratch.path().join("ix-home");
+    install(&home, &module_source(scratch.path(), "dynamic", |t| t));
+    install(&home, &typed_consumer(scratch.path(), &[]));
+
+    let (output, report) = inspect(&home);
+    assert!(output.status.success(), "{output:?}");
+    let unused: Vec<&serde_json::Value> = entry(&report, "spec-objects-consumer")["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["code"] == "semantic.unused-import")
+        .collect();
+    assert_eq!(unused.len(), 1, "{report}");
+    assert_eq!(unused[0]["severity"], "warning");
+    assert_eq!(
+        unused[0]["path"],
+        "semantic.imports.agent-ix/spec-objects-fixture"
+    );
+}
+
 /// A block whose contract major this build does not know is reported with its
 /// diagnostic and no semantic view, rather than as an empty model.
 #[trace("FR-124-AC-5")]

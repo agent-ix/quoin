@@ -303,6 +303,7 @@ fn tc_264_014_every_refusal_leaves_no_directory_behind() {
 #[trace("FR-078-AC-1")]
 #[trace("FR-078-AC-6")]
 #[trace("FR-078-CON-1", "TC-1417", "TC-1468")]
+#[trace("FR-078-AC-9", "TC-2138")]
 #[test]
 fn tc_264_020_the_semantic_block_has_the_eight_keys_validates_and_matches_the_types() {
     let eight: BTreeSet<&str> = [
@@ -327,6 +328,7 @@ fn tc_264_020_the_semantic_block_has_the_eight_keys_validates_and_matches_the_ty
             .map(String::as_str)
             .collect();
         assert_eq!(keys, eight, "variant {kind}");
+        assert!(block.get("import_types").is_none(), "variant {kind}");
         let errors = validators.semantic_block().errors(block);
         assert!(errors.is_empty(), "variant {kind}: {errors:?}");
 
