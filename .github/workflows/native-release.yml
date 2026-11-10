@@ -31,7 +31,7 @@ jobs:
             target: aarch64-unknown-linux-gnu
             extension: tar.gz
             binary: quoin
-          - runner: macos-14
+          - runner: macos-15
             target: aarch64-apple-darwin
             extension: tar.gz
             binary: quoin
