@@ -165,7 +165,7 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `claimed_verdict_disagrees` | reject | the claimed verdict is not the checker's |
 | `collection_deleted` | reject | a collection that measured this plan was added to the store's git history and no longer exists there (PLAT-985) |
 | `collection_edited` | reject | a run's stored file was edited by a commit after the one that first added it (PLAT-985) |
-| `definition_changed_without_version_bump` | reject | the plan's objective, estimator, decision rule or protected apparatus changed between two committed revisions sharing a `definition_version` (PLAT-985) |
+| `definition_changed_without_version_bump` | reject | the plan's objective, estimator, decision rule, answer families or protected apparatus changed between two committed revisions sharing a `definition_version` (PLAT-985) |
 
 ## Acceptance Criteria
 

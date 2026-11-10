@@ -215,7 +215,7 @@ mod tests {
         }
     }
 
-    #[trace("FR-108-AC-9", "TC-1894")]
+    #[trace("FR-108-AC-9", "TC-1896")]
     #[test]
     fn changed_answer_families_under_the_same_version_are_a_change_without_a_bump() {
         let before = plan_with_families("[alpha, beta]").unwrap();
@@ -223,7 +223,7 @@ mod tests {
         assert!(definition_changed_without_version_bump(&before, &after));
     }
 
-    #[trace("FR-108-AC-9", "TC-1894")]
+    #[trace("FR-108-AC-9", "TC-1896")]
     #[test]
     fn answer_families_in_a_different_order_are_not_a_change() {
         let before = plan_with_families("[alpha, beta]").unwrap();
