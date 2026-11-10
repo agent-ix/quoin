@@ -22,10 +22,8 @@ attribute supersedes : String[0..1]
 
 The clauses a Handover Note declaration enforces.
 
-### SupersededNoteIsNotItself
+### SupersededNoteIsNamed
 
-```ocl
-context HandoverNote
-inv SupersededNoteIsNotItself:
-  self.supersedes->notEmpty() implies self.supersedes <> self.id
+```quire
+present(self.supersedes) implies value(self.supersedes) != ""
 ```

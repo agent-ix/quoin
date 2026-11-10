@@ -9,10 +9,8 @@ because: "the manifest marks the Properties section required for a note"
 
 ## Invariants
 
-### SupersededNoteIsNotItself
+### SupersededNoteIsNamed
 
-```ocl
-context HandoverNote
-inv SupersededNoteIsNotItself:
-  self.supersedes->notEmpty() implies self.supersedes <> self.id
+```quire
+present(self.supersedes) implies value(self.supersedes) != ""
 ```

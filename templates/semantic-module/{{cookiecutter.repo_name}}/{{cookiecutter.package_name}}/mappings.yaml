@@ -14,7 +14,7 @@ kinds:
   - frontmatter
   - typed-table
   - sysml-fence
-  - ocl-clause
+  - quire-clause
 
 golden_records:
   source_identity: "ix://{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}/skeletons"
@@ -44,11 +44,11 @@ models:
         alternate_kind: sysml-fence
         lossless: false
       clauses:
-        kind: ocl-clause
+        kind: quire-clause
         source:
           section: Invariants
           clause_heading_level: 3
-          language: ocl
+          language: quire
           sidecar: clauseText
         lossless: true
 {%- endif %}
@@ -74,11 +74,11 @@ models:
         alternate_kind: sysml-fence
         lossless: false
       clauses:
-        kind: ocl-clause
+        kind: quire-clause
         source:
           section: Invariants
           clause_heading_level: 3
-          language: ocl
+          language: quire
           sidecar: clauseText
         lossless: true
 {%- endif %}

@@ -1,11 +1,11 @@
 {
   "clauses": [
     {
-      "clauseId": "SupersededNoteIsNotItself",
-      "language": "ocl",
+      "clauseId": "SupersededNoteIsNamed",
+      "language": "quire",
       "sourceSpan": {
         "endColumn": 4,
-        "endLine": 37,
+        "endLine": 35,
         "path": "<document>",
         "sourceIdentity": "ix://local/scope/spec",
         "startColumn": 1,

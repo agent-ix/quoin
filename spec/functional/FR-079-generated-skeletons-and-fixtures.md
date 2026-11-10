@@ -26,7 +26,7 @@ described in prose.
 ## Rationale
 
 The typed `## Properties` table is the default form and the `sysml` fence its
-alternate; invariants are `ocl` fences under `### <clauseId>` headings. A template
+alternate; invariants are `quire` fences under `### <clauseId>` headings. A template
 that shipped only the default form would leave the alternate undemonstrated, and
 a template that shipped only positive examples would ship a contract nothing
 proves is enforced. Both completed migrations pair every skeleton with a negative
@@ -50,7 +50,7 @@ counterpart whose frontmatter names the expected refusal and the reason.
 - Each rendered skeleton SHALL carry frontmatter naming its `id`, `title`, and `type`, and a body comment stating the contract the manifest's `body_extraction` asserts.
 - Each rendered skeleton SHALL carry a `## Properties` section whose table header is exactly `Field | Type | Multiplicity | Constraints`, with at least one substantive row.
 - Each rendered skeleton SHALL be accompanied by an alternate file declaring the same fields as one ```sysml``` fence under `## Properties`.
-- Each rendered skeleton SHALL carry an `## Invariants` section holding at least one ```ocl``` fence under its own `### <clauseId>` heading.
+- Each rendered skeleton SHALL carry an `## Invariants` section holding at least one ```quire``` fence under its own `### <clauseId>` heading.
 - The rendered repository SHALL carry, for every failure mode its emitted schemas refuse, one negative fixture whose frontmatter carries an `expect` key naming the expected diagnostic and a `because` key naming the reason.
 - Each rendered negative fixture SHALL carry an `expect` value that no other rendered negative fixture of the same variant carries, so that "its own distinct reason" is a comparison of declared identifiers rather than of message text.
 - The rendered repository SHALL carry a legacy-form fixture whose `## Properties` section uses the pre-contract free-text form.
@@ -73,7 +73,7 @@ counterpart whose frontmatter names the expected refusal and the reason.
 |----|----------|--------------|
 | FR-079-AC-1 | Every exported type of every rendered variant has a skeleton with the exact typed-table header and at least one row. | Test (TC-1420) |
 | FR-079-AC-2 | Every rendered skeleton has a `sysml`-fence alternate declaring the same field names, types, and multiplicities. | Test (TC-1421) |
-| FR-079-AC-3 | Every rendered skeleton carries at least one `ocl` fence under its own `### <clauseId>` heading. | Test (TC-1423) |
+| FR-079-AC-3 | Every rendered skeleton carries at least one `quire` fence under its own `### <clauseId>` heading. | Test (TC-1423) |
 | FR-079-AC-4 | Every rendered negative fixture is refused, and each is refused for its own distinct reason. | Test (TC-1424) |
 | FR-079-AC-5 | The rendered legacy-form fixture validates with exactly one legacy warning and zero errors. | Test (TC-1425) |
 | FR-079-AC-6 | A document carrying both Properties forms is refused. | Test (TC-1422) |

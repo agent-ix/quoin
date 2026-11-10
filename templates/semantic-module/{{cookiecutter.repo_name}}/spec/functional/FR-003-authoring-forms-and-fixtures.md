@@ -24,7 +24,7 @@ fixture per failure mode its emitted schemas refuse.
 
 - Each skeleton SHALL carry a `## Properties` section whose table header is exactly the typed four-column form.
 - Each skeleton SHALL be accompanied by an alternate declaring the same fields as one `sysml` fence.
-- Each skeleton SHALL carry at least one `ocl` fence under its own clause heading, repeating no clause id.
+- Each skeleton SHALL carry at least one `quire` fence under its own clause heading, repeating no clause id.
 - No skeleton SHALL carry a placeholder body.
 - Each negative fixture SHALL declare an `expect` identifier and a `because` reason.
 - No two negative fixtures SHALL declare the same `expect` identifier.
@@ -40,7 +40,7 @@ fixture per failure mode its emitted schemas refuse.
 |----|----------|--------------|
 | FR-003-AC-1 | Every exported type has a typed-table skeleton with at least one row. | Test |
 | FR-003-AC-2 | Every skeleton's `sysml` alternate declares the same field names, types and multiplicities. | Test |
-| FR-003-AC-3 | Every skeleton carries at least one `ocl` clause under its own heading, with distinct clause ids. | Test |
+| FR-003-AC-3 | Every skeleton carries at least one `quire` clause under its own heading, with distinct clause ids. | Test |
 | FR-003-AC-4 | No skeleton body carries a placeholder token. | Test |
 | FR-003-AC-5 | Every negative fixture declares an `expect` and a `because`, and no two share an `expect`. | Test |
 | FR-003-AC-6 | The both-forms fixture carries both Properties forms in one document. | Test |

@@ -105,12 +105,12 @@ def test_every_skeleton_has_a_sysml_alternate_declaring_the_same_fields(
 
 
 @pytest.mark.trace("FR-003-AC-3")
-def test_every_skeleton_carries_an_ocl_clause_under_its_own_heading(skeletons_dir):
+def test_every_skeleton_carries_a_quire_clause_under_its_own_heading(skeletons_dir):
     for path in sorted(skeletons_dir.glob("*.md")):
         clauses = re.findall(
-            r"^### (\w+)\n\n```ocl\n(.*?)```", path.read_text(), re.S | re.M
+            r"^### (\w+)\n\n```quire\n(.*?)```", path.read_text(), re.S | re.M
         )
-        assert clauses, f"{path.name} carries no ocl clause under a clause heading"
+        assert clauses, f"{path.name} carries no quire clause under a clause heading"
         ids = [clause[0] for clause in clauses]
         assert len(ids) == len(set(ids)), f"{path.name} repeats a clause id"
 

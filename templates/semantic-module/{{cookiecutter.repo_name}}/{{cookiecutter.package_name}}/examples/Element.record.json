@@ -2,10 +2,10 @@
   "clauses": [
     {
       "clauseId": "DispatchedShipmentHasTrackingCode",
-      "language": "ocl",
+      "language": "quire",
       "sourceSpan": {
         "endColumn": 4,
-        "endLine": 42,
+        "endLine": 40,
         "path": "<document>",
         "sourceIdentity": "ix://local/scope/spec",
         "startColumn": 1,
@@ -14,14 +14,14 @@
     },
     {
       "clauseId": "WeightIsPositive",
-      "language": "ocl",
+      "language": "quire",
       "sourceSpan": {
         "endColumn": 4,
-        "endLine": 50,
+        "endLine": 46,
         "path": "<document>",
         "sourceIdentity": "ix://local/scope/spec",
         "startColumn": 1,
-        "startLine": 46
+        "startLine": 44
       }
     }
   ],

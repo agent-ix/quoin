@@ -1,0 +1,77 @@
+---
+id: SR-16330
+title: "Gap analysis of quoin PR 774 against FR-079, FR-072 and FR-070"
+type: SpecReview
+analysis: gap-analysis
+scope: "agent-ix/quoin@93b3504; templates/semantic-module/**; tests/fixtures/semantic-module/mapping/**; spec/matrix.md; spec/functional/FR-070-semantic-module-manifest-extension.md"
+review_set: subset
+relationships:
+  - target: ix://agent-ix/quoin/FR-079
+    type: reviews
+  - target: ix://agent-ix/quoin/FR-072
+    type: reviews
+---
+
+# Gap analysis of quoin PR 774
+
+## Summary
+
+Ticket: PLAT-59, PLAT-60, PLAT-900. Planless gap analysis of the change set. Plan completion: not assessed.
+Tools: quoin 0.29.1, quire 0.36.2 (engine 0.50.2). `quoin matrix` was not run, because the quoin build
+needs quoin-semantic's node_modules and the npm.ix registry is down. The test↔fixture bindings were traced
+by hand.
+
+FR-079-AC-3 / FR-003-AC-3 are backed: the rendered template test is tagged `FR-003-AC-3`, and run
+manually on a scratch render it passes. FR-072-AC-7 is narrowed to the `fence-ocl-carried` case, which
+is unchanged. Ticket scope checked against the code: PLAT-59's `semantic_core_version` item is stale
+(cookiecutter.json has no such key), and the PR is right to skip it. PLAT-60's struck vendoring item
+was not re-added.
+
+## Verdict
+
+**PASS WITH FINDINGS.** The edits are consistent, but nothing executes the golden's changed clause
+claims. The matrix rows the PR edits cite a gate that does not exist. The PR also links PLAT-900 while
+covering one of its four acceptance items.
+
+## Findings
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-001 | medium | No test executes the golden's changed `clauses`/`availability`/`diagnostics`. quoin tests read only `fields` and `authoredForm`. The README hand-off ("Quire extracts ... carries the `quire` clause with no diagnostic") is false: quire-rs `golden_operations_and_spans` reads its own copy, `crates/quire-fixtures/fixtures/mapping/config-version.expected.json`, which still holds `ocl`, the advisory and `lossy: true`. That copy is a vendoring antipattern in quire-rs, now diverged | tests/fixtures/semantic-module/mapping/config-version.expected.json:96-121; tests/fixtures/semantic-module/mapping/README.md:10; rust/crates/quoin-semantic/tests/tc_452_sweep_criteria.rs:104-155 |
+| FND-002 | medium | The rows this PR edits keep `✅ make template-gate` (TC-1423, FR-079 Covered), but no `template-gate` target exists in quoin or in the rendered repo's Makefile, and no quoin test renders the template. The rendered `FR-003-AC-3` test passes only when someone runs it by hand | spec/matrix.md:113; spec/matrix.md:1118 |
+| FND-003 | medium | The PR title links PLAT-900, so a Linear merge automation would close it. The diff deletes one FR-070 bullet only: three of PLAT-900's four acceptance items (quoin publishes the schema, the 8 unmodelled keys, no private-repo-sourced file) are not addressed here. Unlink PLAT-900 or record the remaining scope before merge | spec/functional/FR-070-semantic-module-manifest-extension.md:36 |
+
+## Examined scope
+
+```yaml
+clean: false
+scope:
+- {id: FR-079-AC-3, path: spec/functional/FR-079-generated-skeletons-and-fixtures.md, role: examined, excerpt: "Every rendered skeleton carries at least one `quire` fence under its own `### <clauseId>` heading."}
+- {id: FR-003-AC-3, path: "templates/semantic-module/{{cookiecutter.repo_name}}/spec/functional/FR-003-authoring-forms-and-fixtures.md", role: examined, excerpt: "Every skeleton carries at least one `quire` clause under its own heading, with distinct clause ids."}
+- {id: FR-072-AC-7, path: spec/functional/FR-072-invariants-and-operations-mapping.md, role: examined, excerpt: "An `ocl` fence under `### immutable` has an expected `ClauseRef { language: ocl, clauseId: immutable }`, the body carried verbatim, exactly one `semantic.clause-language-unchecked` advisory at the fence, and the clauses kind available and lossy, under semantic-core `0.2.0` (`operations-cases.json` `fence-ocl-carried`)."}
+- {id: TC-1423, path: spec/matrix.md, role: examined, excerpt: "Every rendered skeleton carries at least one `quire` fence under its own `### <clauseId>` heading | Property | P0 | FR-079-AC-3 | ✅ `make template-gate`"}
+- {id: TC-1715, path: spec/matrix.md, role: examined, excerpt: "The `fence-ocl-carried` case (semantic-core `0.2.0`) carries the `ocl` body verbatim with one `semantic.clause-language-unchecked` advisory at the fence and a lossy clauses kind"}
+```
+
+## Dispositions
+
+Round 1, checked against fix commit d53395c6 (head 0cd7173) and the current PR title, body and Linear attachments.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | deferred | The executing test and the drifted copy both live in quire-rs, which is outside this PR's repo. The fix is to delete `crates/quire-fixtures/fixtures/mapping/` in quire-rs and read quoin's fixtures there; the PR body records it for PLAT-58. quoin has no lane that links quire-rs. Reviewer's manual `extract_semantic` (wheel 0.53.0) matches the golden's `clauses`, `clauseText` and `availability.clauses` |
+| FND-002 | fixed | TC-1423 and FR-079 rows no longer cite `make template-gate` |
+| FND-003 | still-open | Title now `PLAT-59/60: ...` and body `Refs PLAT-900 (partial ...)`, but PLAT-900 still carries the PR #774 GitHub attachment created under the old title. Remove that attachment from PLAT-900 before merge, or check PLAT-900's state right after merge and reopen it if automation closed it |
+
+Round 2, checked against fix commit 9dc24f75 (head 2631154) and PLAT-900's Linear attachments.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-003 | still-open | PLAT-900 still carries the PR #774 GitHub attachment. Remove it before merge, or have the merging lead check PLAT-900's state right after merge and reopen it if automation closed it |
+| FND-004 | fixed | TC-1411, TC-1420, TC-1421, TC-1422, TC-1424, TC-1425 and TC-1426 are 🚧 and each names a rendered-suite test that exists in test_skeletons_semantic.py. TC-1422's named test checks only the fixture's shape, and its refusal runs through TC-1424's test. The row is 🚧, so it claims nothing false |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | medium | The FR-079 row is now 🚧 "no quoin target renders the template", but its own test rows TC-1411, TC-1420, TC-1421, TC-1422, TC-1424, TC-1425 and TC-1426 still say `✅ make template-gate`. The requirement this PR edits now contradicts itself. Give those seven rows the same 🚧 wording as TC-1423. The other 16 `make template-gate` cells (FR-077, FR-080, NFR-019, US-021, TC-1408..1410, TC-1413, TC-1414, TC-1417, TC-1427, TC-1430, TC-1458, TC-1468, TC-1469) are byte-identical on origin/main and belong to other requirements. They are a separate defect that predates this PR and are not in this PR's scope | spec/matrix.md:1107; spec/matrix.md:1115-1121 |

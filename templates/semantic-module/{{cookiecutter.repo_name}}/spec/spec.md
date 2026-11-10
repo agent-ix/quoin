@@ -33,7 +33,7 @@ three must be able to read one declaration rather than three descriptions of it.
 
 - The `semantic` manifest block and the `{schema}` reference for every exported type.
 - The TypeSpec source and the deterministic emit pipeline that produces the schemas.
-- One authoring skeleton per exported type in the typed-table form, its `sysml` alternate, and its `ocl` invariants.
+- One authoring skeleton per exported type in the typed-table form, its `sysml` alternate, and its `quire` invariants.
 - One negative fixture per failure mode the schemas refuse, and a legacy-form fixture.
 - The verification suite and the repository gate.
 - The public {{ cookiecutter.license }} packaging surfaces, Python and npm.

@@ -56,7 +56,7 @@ Duplicating a clause inline and externally creates two authorities.
 | FR-072-AC-4 | An `## Operations` subsection `### archive` with a two-row param table, `Returns: ConfigVersion[1]`, `Pre: notArchived`, `Post: archived` has the expected `OperationDecl` fixture. | Test |
 | FR-072-AC-5 | `Post: missing` has an expected failure at that line. | Test |
 | FR-072-AC-6 | A clause declared by a fence and by `Clause: ./clauses.md#immutable` has an expected failure at the second occurrence. | Test |
-| FR-072-AC-7 | An `ocl` fence under `### immutable` has an expected `ClauseRef { language: ocl, clauseId: immutable }`, the body carried verbatim, exactly one `semantic.clause-language-unchecked` advisory at the fence, and the clauses kind available and lossy, both under semantic-core `0.2.0` (`operations-cases.json` `fence-ocl-carried`) and under `0.1.0` (`config-version.expected.json`). | Test |
+| FR-072-AC-7 | An `ocl` fence under `### immutable` has an expected `ClauseRef { language: ocl, clauseId: immutable }`, the body carried verbatim, exactly one `semantic.clause-language-unchecked` advisory at the fence, and the clauses kind available and lossy, under semantic-core `0.2.0` (`operations-cases.json` `fence-ocl-carried`). | Test |
 | FR-072-AC-8 | Withdrawn: a clause-language check conditioned on a module's semantic-core version. Quoin reads no module semantic-core version, so nothing remains to condition on (id not reused). | Withdrawn (TC-1716) |
 
 ## Dependencies
