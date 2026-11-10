@@ -535,7 +535,7 @@ fn tc_212_009_a_long_cycle_is_named_along_its_own_edges() {
 
 /// A `$ref` to a package the module does not import is `schema-ref-unshipped`,
 /// including one that climbs out of an imported package's base with `..`.
-#[trace("FR-073-AC-6", "TC-2138")]
+#[trace("FR-073-AC-3", "TC-1362")]
 #[test]
 fn tc_212_010_a_ref_to_an_undeclared_package_is_unshipped() {
     let validators = validators();

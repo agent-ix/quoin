@@ -77,3 +77,14 @@ round.
 - `rust/crates/quoin-cli/tests/tc_module_command.rs` (examined): tc_212_001..002 (CLI inspect).
 - `package.json`, `pnpm-lock.yaml` (examined): 0.5.0 bump and integrity, no findings.
 - `rust/crates/quoin-modules/src/contract_gate.rs`, `install.rs` (context_only): install fails on errors only.
+
+## Dispositions
+
+Round 1, fix head ed89c79d, verified against `git diff f1e6b687 ed89c79d`.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | data_schema.rs:521-524 now skips a ref only when `url.strip_prefix(imported).is_some_and(\|rest\| !has_parent_segment(rest))`; a `..` remainder falls to the schema-ref-unshipped refusal. Asserted by tc_212_010 (`dotdot` case). |
+| FND-002 | fixed | package_manifest.rs:412-418 suppresses the unused-import warning when any data schema has `schema: None` (failed to resolve), so the real error stands alone. |
+| FND-003 | fixed | `type_cycle` now takes the closed package path and keeps only type edges whose package pair is consecutive on it; tc_212_009 asserts the three-package cycle is named along its own edges (it would have been named F#E -> O#E -> F#E before). |
+| FND-004 | fixed | Comment at tc_module_command.rs:318 now reads "The importer moves on to list and `$ref` types the provider does not export." |

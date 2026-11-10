@@ -50,3 +50,18 @@ case asserting `schema-ref-unshipped` in `read(...).diagnostics`).
 - `FR-075-AC-7` (examined): cycle naming over type nodes only when type edges cycle; packages otherwise; always fails.
 - `FR-078-AC-9` (examined): rendered semantic block has no import_types key.
 - `FR-124-AC-9` (examined): inspect reports unknown-import-type for list and $ref (exit 1) and unused-import warning (exit 0 alone).
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | medium | tc_212_010 is tagged `#[trace("FR-073-AC-6", "TC-2138")]`: FR-073-AC-6 is withdrawn (matrix TC-1385 row) and TC-2138 is the FR-078-AC-9 row, so the marker binds a withdrawn criterion to an unrelated TC; it should carry the criterion it asserts (e.g. FR-073-AC-3 with TC-1362, or FR-070-AC-13 with TC-2139) | rust/crates/quoin-semantic/tests/tc_212_import_types.rs:538 |
+
+## Dispositions
+
+Round 1, fix head ed89c79d.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | tc_212_011 moves the fixture's types to `artifact_types` and asserts the unknown-import-type path is exactly `artifact_types[entity].data_schema.schema`. |
+| FND-002 | fixed | tc_212_010 reads the candidate and asserts `semantic.schema-ref-unshipped` in `read(...).diagnostics` for a plain undeclared-package ref and for a `..` escape from an imported base. Its trace tag is wrong; see FND-003. |
