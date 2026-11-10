@@ -378,8 +378,9 @@ fn render(
 )]
 mod tests {
     use super::{DESCRIPTION, command, run};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-030, FR-062, FR-102
+    #[trace("FR-030", "FR-062", "FR-102")]
     #[test]
     fn tc_373_evidence_without_a_subcommand_keeps_the_retained_description() {
         let matches = command()
@@ -395,7 +396,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-030
+    #[trace("FR-030")]
     #[test]
     fn tc_373_evidence_store_command_grammar_is_retained() {
         assert!(

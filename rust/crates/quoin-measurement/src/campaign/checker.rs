@@ -216,6 +216,7 @@ pub fn assess_receipt(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     fn input() -> DomainCheckInput {
         DomainCheckInput {
@@ -244,7 +245,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-114-AC-3, TC-1983.
+    #[trace("FR-114-AC-3", "TC-1983")]
     #[test]
     fn tc_1983_receipt_must_name_the_checked_member_plan_and_version() {
         assert_eq!(

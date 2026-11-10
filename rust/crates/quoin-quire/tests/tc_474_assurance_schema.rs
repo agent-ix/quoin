@@ -36,6 +36,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_jsonschema::{FormatCheck, SchemaValidator};
@@ -73,8 +74,8 @@ fn a_valid_document() -> Value {
 /// second UUID grammar written to answer that question would be a worse defect
 /// than the one it detects.
 ///
-/// Trace: FR-099-AC-2
 /// Provenance: quoin#474
+#[trace("FR-099-AC-2")]
 #[test]
 fn tc_474_012_format_is_annotated_here_because_the_retained_ajv_annotated_it() {
     let mut document = a_valid_document();
@@ -109,8 +110,8 @@ fn tc_474_012_format_is_annotated_here_because_the_retained_ajv_annotated_it() {
 /// in this repository asserted that before: `assurance::build` wrote exports
 /// that only the engine's own reader ever checked.
 ///
-/// Trace: FR-099-AC-2
 /// Provenance: quoin#474
+#[trace("FR-099-AC-2")]
 #[test]
 fn tc_474_013_every_captured_base_satisfies_the_published_schema() {
     let corpus = corpus();

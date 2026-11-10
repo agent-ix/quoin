@@ -35,6 +35,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
@@ -160,8 +161,8 @@ fn workspace(evidence: &[&str]) -> tempfile::TempDir {
 /// store refuses a collection naming a retired or drifted plan, and refusing is
 /// not what this test is measuring.
 ///
-/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
+#[trace("FR-096-AC-2")]
 #[test]
 fn tc_478_100_a_collection_is_published_under_measurements() {
     let alpha = fixture_tree().join("alpha");
@@ -192,8 +193,8 @@ fn tc_478_100_a_collection_is_published_under_measurements() {
 /// The intervention intake: `record_type: intervention_experiment` is published
 /// under `interventions/`, at the `p-` prefixed name the store mints.
 ///
-/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
+#[trace("FR-096-AC-2")]
 #[test]
 fn tc_478_101_an_intervention_record_is_published_under_interventions() {
     let temporary = workspace(&["agent-evals"]);
@@ -221,8 +222,8 @@ fn tc_478_101_an_intervention_record_is_published_under_interventions() {
 /// `measurement.produce_agent_eval_intervention` produces a record from a
 /// retained definition and publishes it.
 ///
-/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
+#[trace("FR-096-AC-2")]
 #[test]
 fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
     let temporary = workspace(&["agent-evals"]);
@@ -333,8 +334,8 @@ protected_apparatus:\n  - spec/evidence/github-actions/synthetic-workflow.yml\nn
 /// `measurement.produce_github_release_operational` produces the linked pair
 /// from synthetic exports and publishes it under `operational/pairs/`.
 ///
-/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
+#[trace("FR-096-AC-2")]
 #[test]
 fn tc_478_104_the_release_producer_publishes_an_operational_pair() {
     let (temporary, definition) = synthetic_release_workspace();
@@ -352,8 +353,8 @@ fn tc_478_104_the_release_producer_publishes_an_operational_pair() {
 /// The operational intake: `record_type: operational_evidence` is published
 /// under `operational/`, at a name derived from the record identity.
 ///
-/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
+#[trace("FR-096-AC-2")]
 #[test]
 fn tc_478_102_an_operational_record_is_published_under_operational() {
     let (source, definition) = synthetic_release_workspace();
@@ -382,8 +383,8 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
 /// repository it names does not exist, so a store opened before the ceiling was
 /// applied would answer with an I/O fault instead.
 ///
-/// Trace: FR-096-AC-4
 /// Provenance: quoin#478
+#[trace("FR-096-AC-4")]
 #[test]
 fn tc_478_105_an_oversized_record_is_refused_by_the_process() {
     let oversized = json!({

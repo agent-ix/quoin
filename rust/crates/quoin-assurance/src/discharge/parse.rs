@@ -260,6 +260,7 @@ fn one_of<T: Copy>(
 )]
 mod tests {
     use super::{instant, string_value};
+    use ix_trace_rs::trace;
 
     /// `currentAttestation` orders instants, so `instant()` must return the
     /// same NUMBER `Date.parse` does, not merely agree about validity.
@@ -267,8 +268,8 @@ mod tests {
     /// The literals are `Date.parse`'s own output, read out of node and
     /// written down — a re-derivation would agree with itself no matter what
     /// the code did.
-    /// Trace: FR-046-AC-1, FR-046-AC-4
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-1", "FR-046-AC-4")]
     #[test]
     fn tc_447_430_instant_returns_the_number_date_parse_returns() {
         let parsed = |value: &str| instant("asOf", value).expect("a valid instant");
@@ -294,8 +295,8 @@ mod tests {
     }
 
     /// The retained `stringValue` trims only to TEST; it returns the original.
-    /// Trace: FR-046-AC-1, FR-046-AC-5
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-1", "FR-046-AC-5")]
     #[test]
     fn tc_447_431_string_value_tests_the_trimmed_string_and_returns_the_untrimmed_one() {
         let padded = serde_json::json!("  reviewer-1  ");

@@ -23,6 +23,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::cell::RefCell;
 use std::path::Path;
 
@@ -586,12 +587,12 @@ fn recover_reports_the_staging_it_removed() {
     assert_eq!(host.inner.borrow().staged(), 0);
 }
 
-/// Trace: FR-068-AC-8
 /// Provenance: quoin#503
 ///
 /// Asked for nothing in particular, the operation answers with the vocabulary
 /// and no asset. That is the `quoin change-assurance schema` listing, and it
 /// is what tells a caller which names the flag will accept.
+#[trace("FR-068-AC-8", "TC-1324")]
 #[test]
 fn tc_503_the_vocabulary_comes_back_without_an_asset() {
     let response = schema(&json!({})).expect("listing needs no capability");
@@ -607,13 +608,13 @@ fn tc_503_the_vocabulary_comes_back_without_an_asset() {
     assert_eq!(payload["schema"], Value::Null);
 }
 
-/// Trace: FR-068-AC-8
 /// Provenance: quoin#503
 ///
 /// A named asset comes back as the exact text compiled into
 /// `quoin-change-assurance`, trailing newline included. Byte-for-byte is the
 /// contract: a consumer validates against the same file the writing code was
 /// written against.
+#[trace("FR-068-AC-8", "TC-1324")]
 #[test]
 fn tc_503_a_named_asset_comes_back_byte_for_byte() {
     let response = schema(&json!({ "name": "proof-attestation-v1.schema.json" }))
@@ -624,12 +625,12 @@ fn tc_503_a_named_asset_comes_back_byte_for_byte() {
     );
 }
 
-/// Trace: FR-068-AC-8
 /// Provenance: quoin#503
 ///
 /// An unknown name is a caller mistake reported as one, naming what this build
 /// does ship. Answering with some other schema would validate a document
 /// against a contract nobody asked for.
+#[trace("FR-068-AC-8", "TC-1324")]
 #[test]
 fn tc_503_an_unknown_asset_name_is_refused_naming_the_known_ones() {
     let error = schema(&json!({ "name": "change-assurance-record-v2.schema.json" }))

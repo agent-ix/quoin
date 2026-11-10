@@ -64,4 +64,4 @@ maintained repositories and the exemptions.
 
 ## Notes
 
-- The emit driver the rendered repository carries is a driver, not the emitter (FR-076-CON-1). Keeping every rendered copy byte-identical to the template's is FR-076-CON-3; extracting it into a versioned package is separate work.
+- The emit driver the rendered repository carries is a driver, not the emitter (FR-076-CON-1). Extracting it into a versioned package is separate work.

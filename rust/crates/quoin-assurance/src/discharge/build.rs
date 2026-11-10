@@ -198,11 +198,12 @@ fn reason_for(clause: &ClauseBinding) -> String {
 mod tests {
     use super::super::fixtures::{binding, direct, request};
     use super::build_discharge_report;
+    use ix_trace_rs::trace;
 
     /// The parse loop runs to completion before the duplicate check, so a
     /// malformed later fact beats a duplicate earlier one.
-    /// Trace: FR-046-AC-1, FR-046-AC-5
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-1", "FR-046-AC-5")]
     #[test]
     fn tc_447_433_a_malformed_fact_is_refused_before_a_duplicate_is_noticed() {
         let mut malformed = direct();
@@ -214,8 +215,8 @@ mod tests {
 
     /// `parseFact` reads the attestation BEFORE `exact`, so the attestation
     /// message wins when a fact is wrong in both ways.
-    /// Trace: FR-046-AC-5
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-5")]
     #[test]
     fn tc_447_434_the_attestation_is_read_before_the_unknown_field_check() {
         let mut fact = direct();
@@ -226,8 +227,8 @@ mod tests {
     }
 
     /// `asOf` is echoed verbatim; only the comparison uses the parsed number.
-    /// Trace: FR-046-AC-4, FR-046-AC-6
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-4", "FR-046-AC-6")]
     #[test]
     fn tc_447_435_as_of_carries_the_original_request_string() {
         let mut input = request(vec![direct()]);
@@ -241,8 +242,8 @@ mod tests {
 
     /// The retained `entry()` spreads on TRUTHINESS, so an all-empty reason
     /// set omits the key rather than emitting `"reason": ""`.
-    /// Trace: FR-046-AC-3, FR-046-AC-6
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-3", "FR-046-AC-6")]
     #[test]
     fn tc_447_436_an_empty_joined_reason_omits_the_key_entirely() {
         let mut input = request(vec![]);
@@ -265,8 +266,8 @@ mod tests {
     }
 
     /// `reason` and `fact` are absent keys, never nulls.
-    /// Trace: FR-046-AC-2, FR-046-AC-6
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-2", "FR-046-AC-6")]
     #[test]
     fn tc_447_437_a_discharged_entry_omits_reason_and_an_undischarged_one_omits_fact() {
         let report = build_discharge_report(&request(vec![direct()])).expect("valid");
@@ -281,8 +282,8 @@ mod tests {
 
     /// The internally tagged enum must put `kind` beside the payload, not
     /// around it.
-    /// Trace: FR-046-AC-2, FR-046-AC-6
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-2", "FR-046-AC-6")]
     #[test]
     fn tc_447_438_a_fact_serialises_with_its_discriminant_flat() {
         let report = build_discharge_report(&request(vec![direct()])).expect("valid");
@@ -291,8 +292,8 @@ mod tests {
     }
 
     /// Clause-ordered entries first, then fact-ordered ones.
-    /// Trace: FR-046-AC-3, FR-046-AC-6
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-3", "FR-046-AC-6")]
     #[test]
     fn tc_447_439_unused_facts_are_clause_ordered_then_fact_ordered() {
         let mut unknown = direct();
@@ -313,8 +314,8 @@ mod tests {
     }
 
     /// `context` is a copy, and an ordered one.
-    /// Trace: FR-046-AC-6
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-046-AC-6")]
     #[test]
     fn tc_447_440_context_is_copied_and_serialises_in_a_stable_order() {
         let report = build_discharge_report(&request(vec![])).expect("valid");

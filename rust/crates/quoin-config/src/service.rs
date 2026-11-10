@@ -29,6 +29,7 @@ mod incident;
 
 pub use incident::{ConfigIncident, IncidentKind, IncidentLog};
 
+use ix_trace_rs::implements;
 use std::fs;
 use std::io::Write as _;
 use std::marker::PhantomData;
@@ -114,6 +115,7 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
     /// Total: every failure path records an incident on `log` and yields schema
     /// defaults. There is no error return, deliberately — a broken config file
     /// must not stop an author writing specs (FR-027-AC-5).
+    #[implements("FR-027-AC-5")]
     pub fn get(&self, log: &mut IncidentLog) -> Resolved<S> {
         let mut degraded = false;
         let mut merged = Mapping::new();
@@ -485,6 +487,7 @@ pub fn deep_merge(base: &mut Mapping, overlay: &Mapping) {
 /// mapping, is recorded in the returned issue list and **skipped**, matching the
 /// totality contract: a broken config file must not stop an author writing
 /// specs (FR-027-AC-5).
+#[implements("FR-027-AC-5")]
 #[must_use]
 pub fn resolve_documents<S: PluginConfigSchema + Default>(
     layers: &[Option<&str>],

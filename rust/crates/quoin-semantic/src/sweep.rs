@@ -519,8 +519,9 @@ pub const LEGACY_MIGRATION_EXAMPLE: &str = concat!(
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-074
+    #[trace("FR-074")]
     #[test]
     fn tc_378_080_properties_heading_must_be_exactly_level_two_and_bare() {
         assert!(is_properties_heading("## Properties"));
@@ -532,7 +533,7 @@ mod tests {
         assert!(!is_properties_heading("# Properties"));
     }
 
-    /// Trace: FR-074
+    #[trace("FR-074")]
     #[test]
     fn tc_378_081_separator_row_accepts_alignment_colons() {
         assert!(is_separator_row("| --- |"));
@@ -542,7 +543,7 @@ mod tests {
         assert!(!is_separator_row("| id |"));
     }
 
-    /// Trace: FR-074
+    #[trace("FR-074")]
     #[test]
     fn tc_378_082_list_item_needs_a_space_and_text() {
         assert!(is_list_item("- id"));
@@ -552,7 +553,7 @@ mod tests {
         assert!(!is_list_item("- "));
     }
 
-    /// Trace: FR-074
+    #[trace("FR-074")]
     #[test]
     fn tc_378_083_legacy_forms_are_exactly_two() {
         let legacy: Vec<_> = PropertiesForm::all()
@@ -568,7 +569,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-074
+    #[trace("FR-074")]
     #[test]
     fn tc_378_084_migration_example_names_both_forms() {
         assert!(LEGACY_MIGRATION_EXAMPLE.contains("Field | Type | Multiplicity | Constraints"));

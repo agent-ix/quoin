@@ -16,6 +16,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_quire::{
@@ -45,10 +46,9 @@ fn fixture_modules() -> ModuleSelection {
     ])
 }
 
-/// Trace: FR-099
-///
 /// Coverage: the capability `runQuire(["coverage", …])` + `parseCoverage`
 /// carried for six quoin commands.
+#[trace("FR-099")]
 #[test]
 fn tc_379_110_coverage_reconciles_the_fixture_corpus() {
     let outcome = coverage::compute(&coverage::Request {
@@ -113,11 +113,10 @@ fn tc_379_110_coverage_reconciles_the_fixture_corpus() {
     );
 }
 
-/// Trace: FR-099
-///
 /// The agent-ix/quoin#106 diagnostic: a scope whose module set declares no
 /// traceability model. The subprocess printed this to a discarded stderr; here
 /// it is a named variant.
+#[trace("FR-099")]
 #[test]
 fn tc_379_111_a_scope_without_a_traceability_model_names_that_exactly() {
     // A named module that declares no model, rather than the ambient set:
@@ -144,11 +143,10 @@ fn tc_379_111_a_scope_without_a_traceability_model_names_that_exactly() {
     );
 }
 
-/// Trace: FR-033-AC-15
-///
 /// The per-test relation behind the `JUnit` trace properties: the fixture's one
 /// tagged test comes back with its file, its name and its id, and the untagged
 /// row yields nothing.
+#[trace("FR-033-AC-15")]
 #[test]
 fn tc_379_119_test_traces_names_each_tagged_test_and_its_id() {
     let (traces, _notices) = coverage::test_traces(&coverage::Request {
@@ -167,10 +165,9 @@ fn tc_379_119_test_traces_names_each_tagged_test_and_its_id() {
     );
 }
 
-/// Trace: FR-099
-///
 /// Properties: classification, and the agent-ix/quoin#103 partial result as
 /// data rather than as an exit code plus a populated stdout.
+#[trace("FR-099")]
 #[test]
 fn tc_379_112_classification_reports_partial_results_as_data() {
     let scope = fixture_scope();
@@ -300,10 +297,9 @@ fn tc_379_113_the_properties_payload_round_trips() {
     assert!(value["engine"]["capabilities"].is_array());
 }
 
-/// Trace: FR-099
-///
 /// Validation: the capability `runQuireBatch(["validate", …])` carried, with
 /// the three-way outcome taxonomy preserved and the stderr-scraping gone.
+#[trace("FR-099")]
 #[test]
 fn tc_379_114_validation_reports_an_outcome_per_document() {
     let scope = fixture_scope();
@@ -363,10 +359,9 @@ fn tc_379_114_validation_reports_an_outcome_per_document() {
     );
 }
 
-/// Trace: FR-100
-///
 /// Assurance: the producing half quoin never had, and the engine's own
 /// fail-closed reader in place of the vendored `assurance-v1` schema.
+#[trace("FR-100")]
 #[test]
 fn tc_379_115_an_assurance_export_builds_and_reads_back_under_its_own_premises() {
     let outcome = assurance::build(&assurance::Request {
@@ -418,10 +413,9 @@ fn tc_379_115_an_assurance_export_builds_and_reads_back_under_its_own_premises()
     assert_eq!(error.code(), ErrorCode::Assurance);
 }
 
-/// Trace: FR-096
-///
 /// Clause sets: the module declares none, and "declares none" must be a named
 /// refusal that lists what *is* loaded — not an empty report.
+#[trace("FR-096")]
 #[test]
 fn tc_379_116_an_absent_clause_set_is_named_with_what_is_loaded() {
     let module = ids::ModuleRoot::open(
@@ -449,10 +443,9 @@ fn tc_379_116_an_absent_clause_set_is_named_with_what_is_loaded() {
     );
 }
 
-/// Trace: FR-096
-///
 /// A document outside the scope is refused rather than reported under a path
 /// that looks scope-relative (rust-review §10).
+#[trace("FR-096")]
 #[test]
 fn tc_379_117_a_document_outside_the_scope_is_refused() {
     let outside = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");

@@ -24,8 +24,11 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::PathBuf;
+
+mod common;
 
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
@@ -109,15 +112,6 @@ fn ok(result: &Run) -> Value {
     serde_json::from_str(&result.stdout).unwrap()
 }
 
-/// The repository root: `rust/crates/quoin-core` up three.
-fn repo_root() -> PathBuf {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    for _ in 0..3 {
-        root.pop();
-    }
-    root
-}
-
 /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production:
 /// DATA, not code, handed across as a directory path. Materialized once per
 /// process from the embedded bytes `quoin-semantic`'s `build.rs` compiles in
@@ -137,15 +131,6 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-/// The `module-ok` fixture, the same one `tc_446` and `tc_449` install.
-fn fixture() -> PathBuf {
-    repo_root()
-        .join("tests")
-        .join("fixtures")
-        .join("semantic-module")
-        .join("module-ok")
-}
-
 /// `semantic.read_blocks` reads a module's block against the vendored contract
 /// and answers per root, in the order asked.
 ///
@@ -153,11 +138,12 @@ fn fixture() -> PathBuf {
 /// for, and a handler that answered only the first — or answered out of order —
 /// would satisfy a single-root assertion.
 ///
-/// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-1", "FR-096")]
 #[test]
 fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
-    let module = fixture();
+    let module_dir = common::module_ok_copy();
+    let module = module_dir.path().to_path_buf();
     let request = json!({ "roots": [module.to_string_lossy(), module.to_string_lossy()] });
     let payload = ok(&run("semantic.read_blocks", &request, true));
 
@@ -193,21 +179,25 @@ fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
     assert_eq!(modules[1]["block"], modules[0]["block"]);
 }
 
-/// A module root with no `manifest.yaml` is refused, and the refusal names the
-/// `quoin-semantic` code that declined it.
+/// A module root with no `manifest.yaml` is answered, not reported empty and
+/// not a failure of the whole request: the entry carries no block and says why
+/// it could not be read, so the other roots are still answered (FR-124).
 ///
-/// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-124-AC-6")]
 #[test]
-fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
+fn tc_452_602_a_module_root_with_no_manifest_is_answered_as_unreadable_not_empty() {
     let temp = tempfile::tempdir().unwrap();
     let request = json!({ "roots": [temp.path().to_string_lossy()] });
     let result = run("semantic.read_blocks", &request, true);
-    assert_eq!(result.status, 2, "{}", result.stderr);
-    assert_eq!(result.stdout, "", "a refusal carries no payload");
-    let diagnostics: Value = serde_json::from_str(&result.stderr).unwrap();
-    assert_eq!(diagnostics[0]["context"]["semantic_code"], "QSEM-001");
-    assert_eq!(diagnostics[0]["context"]["op"], "semantic.read_blocks");
+    assert_eq!(result.status, 0, "{}", result.stderr);
+    let payload: Value = serde_json::from_str(&result.stdout).unwrap();
+    let entry = &payload["modules"][0];
+    assert!(entry.get("block").is_none(), "no block is invented");
+    assert!(
+        entry["unreadable"].as_str().unwrap().contains("manifest"),
+        "{entry}"
+    );
 }
 
 /// With no vendored contract root supplied, the boundary falls back to its
@@ -219,12 +209,13 @@ fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
 /// contract materialised under this run's `IX_HOME` cache — is asserted
 /// directly rather than only inferred from the read succeeding.
 ///
-/// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452, agent-ix/quoin#527, agent-ix/quoin#539
+#[trace("FR-070-AC-1", "FR-096")]
 #[test]
 fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
     let home = tempfile::tempdir().unwrap();
-    let request = json!({ "roots": [fixture().to_string_lossy()] });
+    let module_dir = common::module_ok_copy();
+    let request = json!({ "roots": [module_dir.path().to_string_lossy()] });
     let payload = ok(&run_isolated("semantic.read_blocks", &request, home.path()));
     let modules = payload["modules"].as_array().unwrap();
     assert_eq!(
@@ -244,8 +235,8 @@ fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
 
 /// `semantic.sweep_corpus` walks a real tree and classifies what it finds.
 ///
-/// Trace: FR-074-AC-3, FR-074-AC-4, FR-096
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-074-AC-3", "FR-074-AC-4", "FR-096")]
 #[test]
 fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
     let temp = tempfile::tempdir().unwrap();
@@ -311,8 +302,8 @@ fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
 /// text alone would pass with a copy that had drifted from what the sweep
 /// actually asks for.
 ///
-/// Trace: FR-074-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-074-AC-1", "FR-096")]
 #[test]
 fn tc_452_605_migration_example_is_the_guidance_a_legacy_finding_directs_to() {
     let payload = ok(&run("semantic.migration_example", &json!({}), false));

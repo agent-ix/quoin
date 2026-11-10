@@ -19,6 +19,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::{AttestationId, RecordId, Revision};
 use quoin_change_assurance::intake::disk::{DiskEvidenceStore, STAGING_PREFIX};
@@ -61,13 +62,12 @@ fn over_both_stores(rule: impl Fn(&str, &mut dyn EvidenceStore)) {
     rule("disk", &mut disk);
 }
 
-/// Trace: FR-064-AC-3
-///
 /// The retained output must have the declared size, and a pair that does not
 /// leaves neither artifact: not the attestation, not the output. Changed-size,
 /// absent and extra bytes are each tried, because a store that wrote the
 /// attestation first and checked the output second would pass a test that
 /// only tried one.
+#[trace("FR-064-AC-3")]
 #[test]
 fn tc_455_only_output_of_the_declared_size_is_retained() {
     let (attestation, output) = pair();
@@ -112,11 +112,10 @@ fn tc_455_only_output_of_the_declared_size_is_retained() {
     });
 }
 
-/// Trace: FR-064-AC-6
-///
 /// Repeated identical intake preserves byte identity and reports that the
 /// evidence was already retained, while a different pair under the same id is
 /// a collision that leaves the first pair exactly as it was.
+#[trace("FR-064-AC-6", "TC-1277")]
 #[test]
 fn tc_455_repeated_intake_is_identical_and_a_collision_preserves_the_first_pair() {
     let (attestation, output) = pair();
@@ -154,11 +153,10 @@ fn tc_455_repeated_intake_is_identical_and_a_collision_preserves_the_first_pair(
     });
 }
 
-/// Trace: FR-063-AC-9
-///
 /// Writing a successor leaves the predecessor exactly where it was, byte for
 /// byte. A revision is a new record, never an edit of the one before, and
 /// every revision stays addressable by `(record_id, revision)`.
+#[trace("FR-063-AC-9")]
 #[test]
 fn tc_455_writing_a_successor_leaves_every_parent_byte_untouched() {
     let id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
@@ -191,12 +189,11 @@ fn tc_455_writing_a_successor_leaves_every_parent_byte_untouched() {
     });
 }
 
-/// Trace: FR-064-AC-8
-///
 /// Records and attestations occupy distinct families in the store: an
 /// attestation's id never addresses a record and a record's identity never
 /// addresses an attestation. Nothing here reaches outside the change-assurance
 /// root, so evidence written by other families is untouched by construction.
+#[trace("FR-064-AC-8", "TC-1279")]
 #[test]
 fn tc_455_records_and_attestations_are_distinct_store_families() {
     let (attestation, output) = pair();
@@ -235,12 +232,11 @@ fn tc_455_records_and_attestations_are_distinct_store_families() {
     });
 }
 
-/// Trace: FR-100-AC-9
-///
 /// The durability seam, on disk. A publish interrupted between staging and the
 /// rename exposes neither half of the pair - a reader sees no attestation at
 /// all rather than half of one - and the staging it left behind is both
 /// findable and removable afterwards. A retry then publishes normally.
+#[trace("FR-100-AC-9")]
 #[test]
 fn tc_455_an_interrupted_publish_exposes_nothing_and_is_recoverable() {
     let (attestation, output) = pair();

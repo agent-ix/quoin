@@ -15,6 +15,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use quoin_evidence::assurance_records::{
     read_experiment_record, write_experiment_record, write_operational_evidence_record,
 };
@@ -191,7 +192,7 @@ fn operational() -> serde_json::Value {
 
 // ---------------------------------------------------------------- FR-030 -----
 
-/// Trace: FR-030-AC-1
+#[trace("FR-030-AC-1", "TC-119")]
 #[test]
 fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
     let run_path = record_path("runs", &suite("SUITE-001"), "2026-08-17T00:00:00Z");
@@ -215,7 +216,7 @@ fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
     );
 }
 
-/// Trace: FR-030-AC-2
+#[trace("FR-030-AC-2", "TC-120")]
 #[test]
 fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
     let mut store = MemoryEvidence::new();
@@ -260,7 +261,7 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
     assert_eq!(first, second_store.read(&path).unwrap().unwrap());
 }
 
-/// Trace: FR-030-AC-3
+#[trace("FR-030-AC-3", "TC-121")]
 #[test]
 fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     let mut store = MemoryEvidence::new();
@@ -302,7 +303,7 @@ fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     assert!(text.contains("tests::later"), "the later write did not win");
 }
 
-/// Trace: FR-030-AC-4
+#[trace("FR-030-AC-4", "TC-122")]
 #[test]
 fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
     let obligations = [obligation("FR-001-AC-1")];
@@ -326,7 +327,7 @@ fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
     }
 }
 
-/// Trace: FR-030-AC-7
+#[trace("FR-030-AC-7", "TC-125")]
 #[test]
 fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
     let mut store = MemoryEvidence::new();
@@ -343,7 +344,7 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
     assert_eq!(outcome.bound.len(), 0);
 }
 
-/// Trace: FR-030-AC-8, FR-030-AC-12
+#[trace("FR-030-AC-8", "FR-030-AC-12", "TC-126", "TC-130")]
 #[test]
 fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     let mut store = MemoryEvidence::new();
@@ -368,7 +369,7 @@ fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     assert_eq!(runs[0].timestamp, "2026-08-18T00:00:00Z");
 }
 
-/// Trace: FR-030-AC-9
+#[trace("FR-030-AC-9", "TC-127")]
 #[test]
 fn tc_456_208_an_unrecorded_store_reads_as_an_empty_graph_not_an_error() {
     let store = MemoryEvidence::new();
@@ -378,7 +379,7 @@ fn tc_456_208_an_unrecorded_store_reads_as_an_empty_graph_not_an_error() {
     assert_eq!(list_recorded_suites(&store).unwrap().len(), 0);
 }
 
-/// Trace: FR-030-AC-10, FR-030-CON-2
+#[trace("FR-030-AC-10", "FR-030-CON-2", "TC-128")]
 #[test]
 fn tc_456_209_the_graph_never_keeps_the_statement() {
     let mut store = MemoryEvidence::new();
@@ -398,7 +399,7 @@ fn tc_456_209_the_graph_never_keeps_the_statement() {
     );
 }
 
-/// Trace: FR-030-AC-15
+#[trace("FR-030-AC-15", "TC-245")]
 #[test]
 fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
     let mut store = MemoryEvidence::new();
@@ -425,7 +426,7 @@ fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
     assert_eq!(outcome.unmatched.len(), 0);
 }
 
-/// Trace: FR-030-AC-15
+#[trace("FR-030-AC-15", "TC-245")]
 #[test]
 fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
     let mut store = MemoryEvidence::new();
@@ -443,7 +444,7 @@ fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
     assert_eq!(outcome.bound, vec![ObligationId::new("FR-001-AC-2")]);
 }
 
-/// Trace: FR-030-AC-16
+#[trace("FR-030-AC-16", "TC-1064")]
 #[test]
 fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read() {
     let mut store = MemoryEvidence::new();
@@ -471,7 +472,6 @@ fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read() {
 
 // ---------------------------------------------------------------- FR-031 -----
 
-/// Trace: FR-031-AC-1
 #[test]
 fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     let mut store = MemoryEvidence::new();
@@ -507,7 +507,7 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     );
 }
 
-/// Trace: FR-030-AC-12, FR-031-AC-2
+#[trace("FR-030-AC-12", "TC-130")]
 #[test]
 fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
     let mut store = MemoryEvidence::new();
@@ -532,7 +532,7 @@ fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
     assert_eq!(skipped.len(), 0);
 }
 
-/// Trace: FR-031-AC-3
+#[trace("FR-030-AC-13", "TC-131")]
 #[test]
 fn tc_456_224_an_unreadable_binding_graph_names_the_file_and_the_cause() {
     let store = MemoryEvidence::new().with_file(
@@ -550,7 +550,7 @@ fn tc_456_224_an_unreadable_binding_graph_names_the_file_and_the_cause() {
     );
 }
 
-/// Trace: FR-031-AC-3
+#[trace("FR-030-AC-13")]
 #[test]
 fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding() {
     let mut store = MemoryEvidence::new();
@@ -582,7 +582,7 @@ fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding()
 
 // ---------------------------------------------------------------- FR-048 -----
 
-/// Trace: FR-048-AC-1, FR-048-AC-2
+#[trace("FR-048-AC-1", "FR-048-AC-2")]
 #[test]
 fn tc_456_240_an_assurance_record_is_identified_by_an_opaque_uuid() {
     let mut store = MemoryEvidence::new();
@@ -618,7 +618,7 @@ fn tc_456_240_an_assurance_record_is_identified_by_an_opaque_uuid() {
     assert_eq!(store.paths().len(), 2);
 }
 
-/// Trace: FR-048-AC-3
+#[trace("FR-048-AC-3")]
 #[test]
 fn tc_456_241_invalid_provenance_is_refused_before_any_record_is_published() {
     let mut store = MemoryEvidence::new();
@@ -635,7 +635,7 @@ fn tc_456_241_invalid_provenance_is_refused_before_any_record_is_published() {
     );
 }
 
-/// Trace: FR-048-AC-4, FR-048-AC-6
+#[trace("FR-048-AC-4", "FR-048-AC-6")]
 #[test]
 fn tc_456_242_differing_bytes_at_an_immutable_path_are_never_overwritten() {
     let mut store = MemoryEvidence::new();
@@ -659,7 +659,7 @@ fn tc_456_242_differing_bytes_at_an_immutable_path_are_never_overwritten() {
     );
 }
 
-/// Trace: FR-048-AC-5
+#[trace("FR-048-AC-5")]
 #[test]
 fn tc_456_243_operational_evidence_is_filed_by_uuid_and_its_window_is_checked() {
     let mut store = MemoryEvidence::new();
@@ -677,7 +677,7 @@ fn tc_456_243_operational_evidence_is_filed_by_uuid_and_its_window_is_checked() 
     assert!(error.contains("must be after"), "{error}");
 }
 
-/// Trace: FR-048-AC-6
+#[trace("FR-048-AC-6")]
 #[test]
 fn tc_456_244_a_record_whose_stored_id_disagrees_with_its_path_is_refused() {
     let mut store = MemoryEvidence::new();
@@ -695,7 +695,7 @@ fn tc_456_244_a_record_whose_stored_id_disagrees_with_its_path_is_refused() {
 
 // ---------------------------------------------------------------- FR-093 -----
 
-/// Trace: FR-093-AC-1, FR-093-AC-2
+#[trace("FR-093-AC-1", "FR-093-AC-2")]
 #[test]
 fn tc_456_260_a_decision_is_scoped_to_one_use_and_is_never_a_global_tool_badge() {
     let assessment = assess_trust(&decision("ETD-1")).unwrap();
@@ -709,7 +709,7 @@ fn tc_456_260_a_decision_is_scoped_to_one_use_and_is_never_a_global_tool_badge()
     assert_eq!(assessment.owner, "peter");
 }
 
-/// Trace: FR-093-AC-3, FR-093-CON-3
+#[trace("FR-093-AC-3", "FR-093-CON-3")]
 #[test]
 fn tc_456_261_a_changed_context_names_every_trigger_and_never_falls_back_to_accepted() {
     let mut changed = decision("ETD-1");
@@ -724,7 +724,7 @@ fn tc_456_261_a_changed_context_names_every_trigger_and_never_falls_back_to_acce
     );
 }
 
-/// Trace: FR-093-AC-4, FR-093-CON-3
+#[trace("FR-093-AC-4", "FR-093-CON-3")]
 #[test]
 fn tc_456_262_an_unobserved_decision_is_neither_accepted_nor_rejected() {
     let mut unobserved = decision("ETD-1");
@@ -734,7 +734,7 @@ fn tc_456_262_an_unobserved_decision_is_neither_accepted_nor_rejected() {
     assert_eq!(assessment.triggered_by.len(), 0);
 }
 
-/// Trace: FR-093-AC-5
+#[trace("FR-093-AC-5")]
 #[test]
 fn tc_456_263_one_producer_carries_different_decisions_for_different_uses() {
     let mut relied = decision("ETD-1");
@@ -751,7 +751,7 @@ fn tc_456_263_one_producer_carries_different_decisions_for_different_uses() {
     assert_eq!(second.status, TrustStatus::NotAccepted);
 }
 
-/// Trace: FR-093-AC-6
+#[trace("FR-093-AC-6")]
 #[test]
 fn tc_456_264_valid_decisions_round_trip_and_an_invalid_file_is_reported_not_hidden() {
     let mut store = MemoryEvidence::new();
@@ -767,7 +767,7 @@ fn tc_456_264_valid_decisions_round_trip_and_an_invalid_file_is_reported_not_hid
     assert_eq!(skipped, vec!["trust/ETD-2.json".to_owned()]);
 }
 
-/// Trace: FR-093-CON-3
+#[trace("FR-093-CON-3")]
 #[test]
 fn tc_456_265_a_decision_missing_a_required_trigger_or_its_evidence_is_refused() {
     let mut missing = decision("ETD-1");
@@ -823,7 +823,7 @@ fn lineaged(suite_name: &str, value: EvidenceLineage) -> Binding {
     item
 }
 
-/// Trace: FR-094-AC-1
+#[trace("FR-094-AC-1")]
 #[test]
 fn tc_456_280_a_policy_naming_no_dimension_is_refused() {
     let policy = IndependencePolicy {
@@ -843,7 +843,7 @@ fn tc_456_280_a_policy_naming_no_dimension_is_refused() {
     validate_independence_policy(&good).unwrap();
 }
 
-/// Trace: FR-094-AC-2
+#[trace("FR-094-AC-2")]
 #[test]
 fn tc_456_281_a_policy_naming_an_unknown_obligation_is_refused_not_silently_skipped() {
     let policy = IndependencePolicy {
@@ -861,7 +861,7 @@ fn tc_456_281_a_policy_naming_an_unknown_obligation_is_refused_not_silently_skip
     require_known_policy_obligations(&policy, known.iter().copied()).unwrap();
 }
 
-/// Trace: FR-094-AC-3, FR-094-CON-2
+#[trace("FR-094-AC-3", "FR-094-CON-2")]
 #[test]
 fn tc_456_282_independence_needs_two_lines_differing_on_every_selected_dimension() {
     let requirement = requirement(&[
@@ -897,7 +897,7 @@ fn tc_456_282_independence_needs_two_lines_differing_on_every_selected_dimension
     );
 }
 
-/// Trace: FR-094-AC-4
+#[trace("FR-094-AC-4")]
 #[test]
 fn tc_456_283_a_common_actor_and_a_missing_dimension_stay_visible_in_the_assessment() {
     let assessment = assess_independence(
@@ -918,7 +918,7 @@ fn tc_456_283_a_common_actor_and_a_missing_dimension_stay_visible_in_the_assessm
     assert!(assessment.summary.contains("missing on SUITE-B"));
 }
 
-/// Trace: FR-094-AC-7
+#[trace("FR-094-AC-7")]
 #[test]
 fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
     let mut store = MemoryEvidence::new();
@@ -951,7 +951,7 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
 
 // ---------------------------------------------------------------- FR-032 -----
 
-/// Trace: FR-032-AC-16
+#[trace("FR-032-AC-16", "TC-1062")]
 #[test]
 fn tc_456_300_the_same_explicit_stand_in_shape_is_found_in_rust_python_and_typescript() {
     let repo = tempfile::tempdir().unwrap();
@@ -987,7 +987,7 @@ fn tc_456_300_the_same_explicit_stand_in_shape_is_found_in_rust_python_and_types
     );
 }
 
-/// Trace: FR-032-AC-16
+#[trace("FR-032-AC-16", "TC-1063")]
 #[test]
 fn tc_456_301_ordinary_constructors_and_production_calls_are_not_reported() {
     let repo = tempfile::tempdir().unwrap();

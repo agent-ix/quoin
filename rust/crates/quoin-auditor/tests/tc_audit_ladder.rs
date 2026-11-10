@@ -138,7 +138,7 @@ fn catalog() -> MethodCatalog {
 // ── FR-032 ────────────────────────────────────────────────────────────────
 
 /// A passing run produces no finding and is healthy.
-#[trace("FR-032-AC-1")]
+#[trace("FR-032-AC-1", "TC-137")]
 #[test]
 fn a_passing_run_at_head_is_healthy_and_silent() {
     let audited = input(
@@ -152,7 +152,7 @@ fn a_passing_run_at_head_is_healthy_and_silent() {
 }
 
 /// A missing recorded run is high severity.
-#[trace("FR-032-AC-3")]
+#[trace("FR-032-AC-3", "TC-139")]
 #[test]
 fn a_missing_run_is_high() {
     let audited = input(
@@ -168,7 +168,7 @@ fn a_missing_run_is_high() {
 
 /// Vacuity fires when every bound symbol was skipped or absent, and does not
 /// fire when at least one passed.
-#[trace("FR-032-AC-4")]
+#[trace("FR-032-AC-4", "TC-140")]
 #[test]
 fn vacuity_needs_every_bound_symbol_skipped_or_absent() {
     let audited = input(
@@ -194,7 +194,7 @@ fn vacuity_needs_every_bound_symbol_skipped_or_absent() {
 }
 
 /// An obligation with no binding is undischarged at medium severity.
-#[trace("FR-032-AC-5")]
+#[trace("FR-032-AC-5", "TC-141")]
 #[test]
 fn an_unbound_obligation_is_undischarged_at_medium() {
     let out = report(&input(
@@ -210,7 +210,7 @@ fn an_unbound_obligation_is_undischarged_at_medium() {
 
 /// A non-test-class method discharged by a test run is flagged; a test-class
 /// one is not; and with no catalog the question is not asked.
-#[trace("FR-032-AC-6")]
+#[trace("FR-032-AC-6", "TC-142")]
 #[test]
 fn a_non_test_method_discharged_by_a_test_run_is_flagged() {
     let build = |declared: &str, catalog: Option<MethodCatalog>| {
@@ -238,7 +238,7 @@ fn a_non_test_method_discharged_by_a_test_run_is_flagged() {
 
 /// A criticality demanding two independent methods is satisfied by two suites
 /// and not by two symbols in one, and does not apply below the threshold.
-#[trace("FR-032-AC-7")]
+#[trace("FR-032-AC-7", "TC-143")]
 #[test]
 fn two_independent_methods_means_two_suites_not_two_symbols() {
     let build = |criticality: &str, bindings: Vec<Binding>| {
@@ -278,7 +278,7 @@ fn two_independent_methods_means_two_suites_not_two_symbols() {
 
 /// A run declaring no evidence kind is not judged: the question cannot be
 /// asked, which is different from the answer being yes.
-#[trace("FR-032-AC-9")]
+#[trace("FR-032-AC-9", "TC-146")]
 #[test]
 fn a_run_declaring_no_kind_is_not_judged_for_conformance() {
     let build = |kind: Option<&str>| {
@@ -305,7 +305,7 @@ fn a_run_declaring_no_kind_is_not_judged_for_conformance() {
 }
 
 /// A declared method matching neither a catalog id nor a class is reported.
-#[trace("FR-032-AC-10")]
+#[trace("FR-032-AC-10", "TC-146")]
 #[test]
 fn an_undeclared_method_is_reported_as_unknown() {
     let mut audited = input(
@@ -356,7 +356,7 @@ fn an_explicit_module_set_supplies_the_catalog_and_ambient_modules_cannot_extend
 
 /// `unknown-method` is evaluated before the binding guard: an unbound
 /// obligation with an uncatalogued method is both undischarged and unknown.
-#[trace("FR-032-AC-14")]
+#[trace("FR-032-AC-14", "TC-264")]
 #[test]
 fn unknown_method_fires_whatever_the_evidence_state() {
     let mut audited = input(
@@ -383,7 +383,7 @@ fn injection(suite: &str, symbol: &str, injects: &[&str]) -> MockInjection {
 /// An obligation discharged only by tests injecting a stand-in for its own
 /// subject is `mocked-confirmation` at medium, with the locus; one real suite
 /// alongside a mocked one is ordinary test design.
-#[trace("FR-032-AC-15")]
+#[trace("FR-032-AC-15", "TC-936", "TC-937", "TC-938")]
 #[test]
 fn only_mocked_bindings_make_a_mocked_confirmation() {
     let statement = "the parser SHALL reject malformed input";
@@ -484,7 +484,7 @@ fn mutation_kinds(out: &AuditReport) -> Vec<&str> {
 }
 
 /// With no floor declared, no mutation finding is produced whatever the score.
-#[trace("FR-039-AC-1", "FR-039-CON-2")]
+#[trace("FR-039-AC-1", "FR-039-CON-2", "TC-219")]
 #[test]
 fn no_declared_floor_produces_no_mutation_finding() {
     let out = mutation_audit(
@@ -502,7 +502,7 @@ fn no_declared_floor_produces_no_mutation_finding() {
 }
 
 /// A bound score below the floor is reported at medium.
-#[trace("FR-039-AC-2")]
+#[trace("FR-039-AC-2", "TC-219")]
 #[test]
 fn a_score_below_the_floor_is_reported_at_medium() {
     let out = mutation_audit(
@@ -521,7 +521,7 @@ fn a_score_below_the_floor_is_reported_at_medium() {
 }
 
 /// A score exactly at the floor is accepted.
-#[trace("FR-039-AC-3")]
+#[trace("FR-039-AC-3", "TC-219")]
 #[test]
 fn a_score_exactly_at_the_floor_is_accepted() {
     let out = mutation_audit(
@@ -538,7 +538,7 @@ fn a_score_exactly_at_the_floor_is_accepted() {
 }
 
 /// The judgement is on the weakest bound symbol, not the mean.
-#[trace("FR-039-AC-4")]
+#[trace("FR-039-AC-4", "TC-219")]
 #[test]
 fn the_weakest_symbol_decides_not_the_mean() {
     let out = mutation_audit(
@@ -560,7 +560,7 @@ fn the_weakest_symbol_decides_not_the_mean() {
 
 /// A demanded floor with nothing measured is its own finding, distinct from
 /// `undischarged`; a passing run or coverage never stands in for a score.
-#[trace("FR-039-AC-5", "FR-039-CON-3")]
+#[trace("FR-039-AC-5", "FR-039-CON-3", "TC-219")]
 #[test]
 fn a_demanded_floor_with_nothing_measured_is_unmeasured_not_undischarged() {
     let out = mutation_audit(vec![pass("t::a")], Some(floor(&[("P0", 0.8)])), "P0");
@@ -573,7 +573,7 @@ fn a_demanded_floor_with_nothing_measured_is_unmeasured_not_undischarged() {
 }
 
 /// A skipped symbol's absent score is not read as zero.
-#[trace("FR-039-AC-6")]
+#[trace("FR-039-AC-6", "TC-219")]
 #[test]
 fn a_skipped_symbols_score_is_not_read_as_zero() {
     let out = mutation_audit(
@@ -612,7 +612,7 @@ fn a_floor_applies_only_to_the_criticality_it_names() {
 
 /// A score whose entry declares another metric, or none, is not compared
 /// against the floor.
-#[trace("FR-039-AC-10")]
+#[trace("FR-039-AC-10", "TC-219")]
 #[test]
 fn a_score_labelled_with_another_metric_is_not_compared() {
     let out = mutation_audit(
@@ -634,7 +634,7 @@ fn a_score_labelled_with_another_metric_is_not_compared() {
 
 /// The floor filters on the entry's metric, never on the run's tool name: a
 /// labelled score from a tool no catalog lists is judged like any other.
-#[trace("FR-039-AC-11")]
+#[trace("FR-039-AC-11", "TC-269")]
 #[test]
 fn the_metric_and_not_the_tool_decides_whether_a_score_is_judged() {
     let mut audited = input(
@@ -661,7 +661,7 @@ fn the_metric_and_not_the_tool_decides_whether_a_score_is_judged() {
 
 /// The check reads no catalog, and an entry without a metric is not a mutation
 /// score even when the run's tool is a mutation tool.
-#[trace("FR-039-AC-12")]
+#[trace("FR-039-AC-12", "TC-269")]
 #[test]
 fn an_unlabelled_entry_is_not_a_score_whatever_the_tool_says() {
     let mut audited = input(
@@ -713,7 +713,7 @@ const SPACE: &str = "2-way over a(1|2) b(3|4)";
 
 /// `audit` reports `combinatorial-gap` naming the missing combinations, and the
 /// finding is `medium`.
-#[trace("FR-035-AC-9", "FR-035-CON-3")]
+#[trace("FR-035-AC-9", "FR-035-CON-3", "TC-188")]
 #[test]
 fn an_incomplete_covering_array_is_a_medium_gap_naming_the_missing_combinations() {
     let out = space_audit(
@@ -744,7 +744,7 @@ fn an_incomplete_covering_array_is_a_medium_gap_naming_the_missing_combinations(
 }
 
 /// An obligation whose demanded combinations all ran is healthy.
-#[trace("FR-035-AC-10")]
+#[trace("FR-035-AC-10", "TC-189")]
 #[test]
 fn an_obligation_whose_combinations_all_ran_is_healthy() {
     let out = space_audit(
@@ -762,7 +762,7 @@ fn an_obligation_whose_combinations_all_ran_is_healthy() {
 
 /// An obligation declaring no configuration space produces no combinatorial
 /// finding.
-#[trace("FR-035-AC-11")]
+#[trace("FR-035-AC-11", "TC-190")]
 #[test]
 fn an_obligation_with_no_declared_space_produces_no_combinatorial_finding() {
     let out = space_audit("the system SHALL do the thing", vec![pass("t::a")]);

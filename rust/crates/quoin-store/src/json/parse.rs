@@ -406,6 +406,7 @@ mod tests {
     use super::{parse_strict_json, parse_strict_json_str};
     use crate::error::StoreErrorCode;
     use crate::json::MAX_NESTING_DEPTH;
+    use ix_trace_rs::trace;
 
     /// A literal is matched over bytes, so a multi-byte character straddling
     /// the end of the token is a refusal and not a panic.
@@ -415,8 +416,7 @@ mod tests {
     /// `\u{e9}`. Slicing `&text[0..4]` there aborts the process with `end byte
     /// index 4 is not a char boundary`. The retained parser refuses the same
     /// input cleanly, so a panic is both a crash and a parity divergence.
-    ///
-    /// Trace: FR-098-AC-9
+    #[trace("FR-098-AC-9")]
     #[test]
     fn tc_380_a_literal_split_by_a_multibyte_character_is_refused_not_panicking() {
         for (token, input) in [
@@ -432,8 +432,7 @@ mod tests {
 
     /// The same boundary reached from the byte entry point, and one byte short
     /// of each literal so the length guard itself is exercised.
-    ///
-    /// Trace: FR-098-AC-9
+    #[trace("FR-098-AC-9")]
     #[test]
     fn tc_380_a_truncated_literal_is_refused_at_every_length() {
         for token in ["null", "true", "false"] {
@@ -446,8 +445,7 @@ mod tests {
     }
 
     /// Input that is not UTF-8 is refused before any canonicalization runs.
-    ///
-    /// Trace: FR-098-AC-9
+    #[trace("FR-098-AC-9")]
     #[test]
     fn tc_380_non_utf8_input_is_refused_before_parsing() {
         let error = parse_strict_json(&[0x22, 0xFF, 0x22]).expect_err("not UTF-8");
@@ -503,8 +501,8 @@ mod tests {
     /// these inputs, silently: last member wins, the BOM becomes whitespace,
     /// the number becomes an infinity, the trailing bytes are ignored.
     ///
-    /// Trace: FR-098-AC-9
     /// Provenance: quoin#504
+    #[trace("FR-098-AC-9")]
     #[test]
     fn tc_504_010_the_four_strict_refusals_are_taken_on_the_input_that_provokes_them() {
         for (input, code, decision) in [
@@ -541,8 +539,8 @@ mod tests {
     /// Without this the test above passes over a parser that refuses all four
     /// inputs for the wrong reason, or refuses every document.
     ///
-    /// Trace: FR-098-AC-9
     /// Provenance: quoin#504
+    #[trace("FR-098-AC-9")]
     #[test]
     fn tc_504_011_the_neighbouring_documents_those_four_refusals_bound_are_accepted() {
         for input in [
@@ -573,8 +571,8 @@ mod tests {
     /// before a `String` exists. That claim was written down by quoin#503 and
     /// asserted by nothing until this test.
     ///
-    /// Trace: FR-098-AC-9
     /// Provenance: quoin#504
+    #[trace("FR-098-AC-9")]
     #[test]
     fn tc_504_012_an_unpaired_surrogate_escape_is_refused_where_one_can_still_be_written() {
         for (input, code, shape) in [

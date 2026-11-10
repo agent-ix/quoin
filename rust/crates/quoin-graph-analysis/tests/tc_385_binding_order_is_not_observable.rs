@@ -21,8 +21,6 @@
 //! that cannot fire is a claim about nothing, so the property is asserted here,
 //! where it can fail.
 //!
-//! Trace: FR-062-AC-1
-//!
 //! Provenance: quoin#385
 
 #![allow(
@@ -35,6 +33,7 @@
 
 mod support;
 
+use ix_trace_rs::trace;
 use quoin_graph_analysis::model::binding::{Binding, BindingInput};
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysis, GraphAnalysisInput, RelationKind, analyze_change_impact,
@@ -95,8 +94,7 @@ fn permutations(bindings: &[Binding]) -> Vec<(&'static str, Vec<Binding>)> {
 }
 
 /// Permuting a case's bindings changes none of its views.
-///
-/// Trace: FR-062-AC-1
+#[trace("FR-062-AC-1")]
 #[test]
 fn tc_385_040_permuting_the_bindings_changes_no_view() {
     let corpus = support::corpus();

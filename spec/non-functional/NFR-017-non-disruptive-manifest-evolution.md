@@ -60,7 +60,7 @@ mode, diff the manifest schema `required` arrays, and test the promotion guard.
 | NFR-017-AC-1 | Every default module manifest loads with no new diagnostic. | Test |
 | NFR-017-AC-2 | The sweep over the corpus fixture set reports only `warning`-severity semantic findings by default. | Test |
 | NFR-017-AC-3 | No corpus repository path appears in the change set. | Analysis |
-| NFR-017-AC-4 | The manifest schema's `required` arrays are unchanged. | Analysis |
+| NFR-017-AC-4 | No `required` array that the pre-CR-003 manifest schema carried gains or loses a key, except the `LintRuleEntry` `pattern` array (retired because `pattern` is now a string) and the new `LintRuleEntry` root `required` of `type`, `id` and `section`, and every `required` array added since sits under an optional manifest property (a `semantic` block, a `data_schema` form, or a named `$defs` entry that only an optional section references), so a manifest that validated before still validates. | Analysis |
 
 ## Dependencies
 

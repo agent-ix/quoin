@@ -19,6 +19,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -95,8 +96,8 @@ fn verdict(repo: &Path) -> (Option<i32>, Value, String) {
     )
 }
 
-/// Trace: FR-108-AC-2, FR-108-AC-3, FR-108-AC-7, FR-108-AC-8
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2", "FR-108-AC-3", "FR-108-AC-7", "FR-108-AC-8", "TC-1797")]
 #[test]
 fn tc_961_020_git_intake_order_decides_the_candidate_over_a_stated_timestamp() {
     let repo = tempfile::tempdir().unwrap();

@@ -28,6 +28,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_config::paths::FixedEnvironment;
 use quoin_config::{OrgOptions, resolve_org_from_documents};
 
@@ -58,8 +59,8 @@ fn origin_org(config: &str) -> Option<String> {
 /// legal, longest legal, digits, and an internal hyphen.
 const SEGMENTS: &[&str] = &["a", "agent-ix", "acme", "x9", "a-b-c", "abcdefghijkl"];
 
-/// Trace: FR-025-AC-9
-/// Provenance: quoin#446, carried from tests/props/fr-025.prop.test.ts
+/// Provenance: quoin#446, carried from the prior TypeScript property suite
+#[trace("FR-025-AC-9", "TC-091")]
 #[test]
 fn tc_446_050_a_remote_that_names_no_organization_yields_none() {
     // The four families `orgFromRemoteUrl` documented as carrying no org. A
@@ -81,8 +82,8 @@ fn tc_446_050_a_remote_that_names_no_organization_yields_none() {
     }
 }
 
-/// Trace: FR-025-AC-10
-/// Provenance: quoin#446, carried from tests/props/fr-025.prop.test.ts
+/// Provenance: quoin#446, carried from the prior TypeScript property suite
+#[trace("FR-025-AC-10", "TC-092")]
 #[test]
 fn tc_446_051_a_nested_namespace_qualifies_by_the_segment_before_the_repository() {
     // Depths 2..=6, the range the original generated, in both url forms.
@@ -103,8 +104,8 @@ fn tc_446_051_a_nested_namespace_qualifies_by_the_segment_before_the_repository(
     }
 }
 
-/// Trace: FR-025-AC-2, FR-025-AC-3
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
+#[trace("FR-025-AC-2", "FR-025-AC-3", "TC-084", "TC-085")]
 #[test]
 fn tc_446_052_both_url_forms_yield_the_owner_across_their_whole_matrix() {
     for owner in SEGMENTS {
@@ -160,8 +161,8 @@ fn casings(word: &str) -> Vec<String> {
         .collect()
 }
 
-/// Trace: FR-025-AC-11
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
+#[trace("FR-025-AC-11", "TC-093")]
 #[test]
 fn tc_446_053_the_section_name_matches_case_insensitively_and_the_remote_name_does_not() {
     // The asymmetry is git's own: a section name is case-insensitive, the
@@ -192,10 +193,10 @@ fn tc_446_053_the_section_name_matches_case_insensitively_and_the_remote_name_do
     }
 }
 
-/// Trace: FR-025-AC-2, FR-025-AC-3
 ///
 /// The bundle package is the org and repository of the same remote url, with
 /// `.git` dropped, and a remote that names no org names no package.
+#[trace("FR-025-AC-2", "FR-025-AC-3")]
 #[test]
 fn tc_557_origin_package_is_org_slash_repo() {
     for (url, expected) in [

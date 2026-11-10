@@ -55,11 +55,19 @@ fn rejects_an_unpinned_import() { … }
 def test_rejects_an_unpinned_import(): ...
 ```
 
-- A `Trace: FR-012-AC-3` comment line (`/// Trace:` in Rust) is the accepted legacy form: it
-  still binds, and a repository that already uses it (quoin's own `rust/` does) may keep
-  it. Its keyword is `Trace:` and its ids are comma-separated — `Tracing:` or a `;`
-  separator binds nothing.
-- Tag the **criterion** (`FR-012-AC-3`), not the requirement, and never a `TC-` id.
+The pytest marker is registered by the `ix_trace_py` plugin (or a `markers = trace(*ids)` pytest config
+entry); the TypeScript form is `trace("FR-012-AC-3")` from `@agent-ix/ix-trace-ts/vitest`, called
+inside the `it(...)` callback (vitest only).
+
+- A `Trace: FR-012-AC-3` comment line (`/// Trace:` in Rust) no longer binds (quire engine
+  0.55): ids bind only from the marker attribute, and `quire coverage` reports a comment id as
+  `trace-id-outside-marker` naming the replacement form. A production item that implements a
+  requirement carries `#[implements("FR-012")]`; a test, bench or fuzz target carries `#[trace(...)]`.
+- Tag the **criterion** (`FR-012-AC-3`), not the requirement. For AC-to-TC-to-code backing
+  (`quire coverage`) the test must also carry the TC id of the `spec/matrix.md` row that cites
+  the criterion: `#[trace("FR-012-AC-3", "TC-345")]`. A criterion tag alone is reported
+  `criterion-tagged-outside-row` ("expected a same-test tag for one of `TC-345`") and gives no
+  backing.
 - Several ids on one marker are separate quoted arguments: `#[trace("FR-012-AC-3", "FR-012-AC-4")]`.
 - Only tag a test that would fail if the criterion were broken. A tag on a test that does not
   assert the criterion is coverage inflation, and `gap-analysis` reports it as such.

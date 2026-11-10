@@ -398,15 +398,6 @@ mod tests {
     use crate::ids::ModuleName;
     use crate::semantic::{SemanticGate, Severity};
 
-    /// The repository root: `rust/crates/quoin-modules` up three.
-    fn repo_root() -> PathBuf {
-        let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        for _ in 0..3 {
-            root.pop();
-        }
-        root
-    }
-
     /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in
     /// production, not a fixture this test wrote: a gate judged against a
     /// contract of the test's own invention agrees with whatever the test put
@@ -426,15 +417,6 @@ mod tests {
         .clone()
     }
 
-    /// The `module-ok` fixture, which declares a valid `semantic` block.
-    fn fixture() -> PathBuf {
-        repo_root()
-            .join("tests")
-            .join("fixtures")
-            .join("semantic-module")
-            .join("module-ok")
-    }
-
     fn copy_tree(from: &Path, to: &Path) {
         fs::create_dir_all(to).unwrap();
         for entry in fs::read_dir(from).unwrap() {
@@ -446,6 +428,11 @@ mod tests {
                 fs::copy(entry.path(), &target).unwrap();
             }
         }
+    }
+
+    /// Copy the `quire-fixtures` `module-ok` fixture to `to`.
+    fn copy_module_ok(to: &Path) {
+        copy_tree(&quire_fixtures::module_ok_dir(), to);
     }
 
     /// A home with `names` materialised from the fixture and recorded in the
@@ -464,7 +451,7 @@ mod tests {
         let mut plugins = Vec::new();
         for name in names {
             let root = modules_dir.join(name);
-            copy_tree(&fixture(), &root);
+            copy_module_ok(&root);
             plugins.push(serde_json::json!({
                 "name": name,
                 "source": { "type": "path", "path": root.to_string_lossy() },

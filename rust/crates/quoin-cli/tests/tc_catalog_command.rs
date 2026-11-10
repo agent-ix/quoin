@@ -8,6 +8,7 @@
     reason = "test assertions deliberately panic to report a failed command contract"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
@@ -74,8 +75,7 @@ fn text(bytes: &[u8]) -> String {
 /// and human listing shapes without mutating migration evidence in place. This
 /// fixture deliberately has no resolved module roots: its contract is the
 /// empty JSON module list and an entirely empty human response.
-///
-/// Trace: FR-099, FR-102, TC-1650
+#[trace("FR-099", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -104,8 +104,7 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
 
 /// The shipped command, rather than the retired protocol executable, discovers
 /// one nested module root and preserves its declared artifact projection.
-///
-/// Trace: FR-099, FR-102
+#[trace("FR-099", "FR-102")]
 #[test]
 fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -142,8 +141,7 @@ fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
 }
 
 /// Candidate discovery preserves the lexical symlink root the operator passed.
-///
-/// Trace: FR-099, FR-102
+#[trace("FR-099", "FR-102")]
 #[cfg(unix)]
 #[test]
 fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
@@ -168,8 +166,7 @@ fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
 }
 
 /// The shipped `catalog methods` command retains first-wins merge semantics.
-///
-/// Trace: FR-099, FR-102
+#[trace("FR-099", "FR-102")]
 #[test]
 fn tc_521_catalog_methods_preserves_first_wins_data() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -202,8 +199,7 @@ fn tc_521_catalog_methods_preserves_first_wins_data() {
 
 /// Bare `quoin catalog` (and `quoin catalog --json`) defaults to `list` and
 /// must not panic on the group-level `--json` flag (PLAT-1167).
-///
-/// Trace: FR-099, FR-102
+#[trace("FR-099", "FR-102")]
 #[test]
 fn plat_1167_bare_catalog_defaults_to_list_without_panicking() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");

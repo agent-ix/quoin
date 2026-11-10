@@ -18,6 +18,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -142,8 +143,8 @@ fn verify(root: &Path, receipt: &Path, candidate: &str) -> Output {
 /// A stored receipt that re-derives byte for byte exits with its own
 /// verdict: 0 for `valid`, 1 for `invalid` or `incomplete`.
 ///
-/// Trace: FR-068-AC-6, FR-068-AC-7, TC-1322, TC-1323
 /// Provenance: quoin#543
+#[trace("FR-068-AC-6", "FR-068-AC-7", "TC-1322", "TC-1323")]
 #[test]
 fn tc_1322_a_rederived_receipt_exits_with_its_verdict() {
     let root = retained_repo();
@@ -166,8 +167,8 @@ fn tc_1322_a_rederived_receipt_exits_with_its_verdict() {
 /// Exit 2 is a refused document: a stored receipt whose bytes differ from the
 /// re-derived receipt is refused, whatever member was edited.
 ///
-/// Trace: FR-068-AC-6, FR-068-AC-7, TC-1322, TC-1323
 /// Provenance: quoin#543
+#[trace("FR-068-AC-6", "FR-068-AC-7", "TC-1322", "TC-1323")]
 #[test]
 fn tc_1322_an_edited_receipt_exits_two() {
     let root = retained_repo();
@@ -190,8 +191,8 @@ fn tc_1322_an_edited_receipt_exits_two() {
 /// A parse error and an unknown schema name are refusals of the document the
 /// caller supplied, not command failures: both exit 2.
 ///
-/// Trace: FR-068-AC-6, FR-068-AC-8, TC-1322, TC-1324
 /// Provenance: quoin#543
+#[trace("FR-068-AC-6", "FR-068-AC-8", "TC-1322", "TC-1324")]
 #[test]
 fn tc_1324_unparseable_input_and_an_unknown_schema_name_exit_two() {
     let root = retained_repo();
@@ -212,13 +213,13 @@ fn tc_1324_unparseable_input_and_an_unknown_schema_name_exit_two() {
     assert_eq!(output.status.code(), Some(2));
 }
 
-/// A usage error on this surface exits 2 as well. FR-068 groups usage with
-/// parse and integrity errors, but the parser refuses an invocation before
+/// A usage error on this surface exits 2 as well. The exit grammar groups
+/// usage with parse and integrity errors, but the parser refuses an invocation before
 /// dispatch ever sees which family it named, so this arm reached the root
 /// shell's exit 3 until quoin#543.
 ///
-/// Trace: FR-068-AC-6, TC-1322
 /// Provenance: quoin#543
+#[trace("FR-068", "FR-068-AC-6", "TC-1322")]
 #[test]
 fn tc_1322_a_usage_error_on_the_surface_exits_two() {
     for argv in [

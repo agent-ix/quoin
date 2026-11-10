@@ -85,7 +85,7 @@ bind to no obligation until a requirement→production-code relation exists
 **Interim.** [ADR-100](../adrs/ADR-100-execution-evidence-is-emitted-by-the-run.md) supersedes this annotator: ids are emitted by the run ([FR-120](./FR-120-trace-marks-in-test-result-output.md)), not derived afterward. It is removed when the PLAT-333 Rust emitter lands.
 
 cargo-nextest writes a JUnit report that identifies each test by binary and name and says nothing
-about the criteria the test exercises. The tags that say so live in source (`/// Trace: FR-002-AC-1`),
+about the criteria the test exercises. The tags that say so live in source (`#[trace("FR-002-AC-1", ...)]`),
 and only the traceability engine knows their grammar. `quoin-suite-trace` therefore copies the
 engine's per-test relation into the report as a `trace` property, and the JUnit adapter reads that
 property like any other producer's declared trace ids. A case with no tags is left unchanged, and the

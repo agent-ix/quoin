@@ -2,9 +2,10 @@
 // Copyright (C) 2026 Agent-IX
 
 use super::*;
+use ix_trace_rs::trace;
 use serde_json::json;
 
-/// Trace: FR-070
+#[trace("FR-070")]
 #[test]
 fn tc_378_060_targets_locus_detection_matches_the_regex() {
     assert!(is_targets_locus("semantic.targets"));
@@ -15,7 +16,7 @@ fn tc_378_060_targets_locus_detection_matches_the_regex() {
     assert!(!is_targets_locus("semantic.targetsx"));
 }
 
-/// Trace: FR-070
+#[trace("FR-070")]
 #[test]
 fn tc_378_061_map_schema_error_names_each_unknown_key_separately() {
     let diagnostic = map_schema_error(&SchemaError {
@@ -30,7 +31,7 @@ fn tc_378_061_map_schema_error_names_each_unknown_key_separately() {
     assert_eq!(diagnostic.message, "unknown key inside semantic: nope");
 }
 
-/// Trace: FR-070
+#[trace("FR-070")]
 #[test]
 fn tc_378_062_map_schema_error_distinguishes_target_from_value() {
     let target = map_schema_error(&SchemaError {
@@ -57,7 +58,7 @@ fn tc_378_062_map_schema_error_distinguishes_target_from_value() {
     assert_eq!(posture.code, DiagnosticCode::InvalidValue);
 }
 
-/// Trace: FR-070
+#[trace("FR-070")]
 #[test]
 fn tc_378_063_map_schema_error_distinguishes_package_from_value() {
     let package = map_schema_error(&SchemaError {
@@ -80,7 +81,7 @@ fn tc_378_063_map_schema_error_distinguishes_package_from_value() {
     assert_eq!(other.code, DiagnosticCode::InvalidValue);
 }
 
-/// Trace: FR-070
+#[trace("FR-070")]
 #[test]
 fn tc_378_064_map_schema_error_falls_through_to_invalid_value() {
     let diagnostic = map_schema_error(&SchemaError {
@@ -94,7 +95,7 @@ fn tc_378_064_map_schema_error_falls_through_to_invalid_value() {
     assert_eq!(diagnostic.path, "semantic.exports.0");
 }
 
-/// Trace: FR-070
+#[trace("FR-070")]
 #[test]
 fn tc_378_065_has_errors_ignores_warnings() {
     let warning = SemanticDiagnostic::warning(DiagnosticCode::InlineDataSchema, "x", "y");

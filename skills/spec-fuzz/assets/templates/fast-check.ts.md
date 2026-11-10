@@ -8,12 +8,13 @@ Say so in the report rather than implying parity with cargo-fuzz.
 
 ## Placement is the thing that bites
 
-The `Trace:` carrier goes **immediately above `it(`** — never above `describe(`. A `describe`
-block groups tests and registers no symbol of its own, so a tag above it binds to nothing
+The `trace(...)` carrier goes **inside the `it(` callback** — never in a `describe(` body. A `describe`
+block groups tests and registers no symbol of its own, so a tag in it binds to nothing
 while reading correctly and matching a grep (`agent-ix/quoin#61`).
 
 ```ts
 import fc from "fast-check";
+import { trace } from "@agent-ix/ix-trace-ts/vitest";
 import { describe, expect, it } from "vitest";
 
 import { parseManifest } from "../src/manifest.js";
@@ -21,10 +22,9 @@ import { parseManifest } from "../src/manifest.js";
 describe("the manifest parser under arbitrary input", () => {
   // The parser does not throw an unexpected error on any string.
   //
-  // Trace: NFR-003-M-1
-  //
   // spec-fuzz: obligation=NFR-003-M-1 harness=fast-check entry=parseManifest origin=advised
   it("NFR-003-M-1 never throws outside its declared rejection", () => {
+    trace("NFR-003-M-1");
     fc.assert(
       fc.property(fc.string(), (text) => {
         try {

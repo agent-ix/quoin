@@ -17,6 +17,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_measurement::{
     DiskMeasurement, MeasurementSource, MemoryMeasurement, PlanLoadOptions,
     load_active_assurance_profiles, load_measurement_plans, read_measurement_collections,
@@ -72,8 +73,8 @@ fn summary<S: MeasurementSource + ?Sized>(source: &S) -> (Vec<String>, Vec<Strin
     )
 }
 
-/// Trace: FR-100-AC-2, FR-100-AC-4
 /// Provenance: quoin#468
+#[trace("FR-100-AC-2", "FR-100-AC-4")]
 #[test]
 fn tc_468_one_analysis_runs_unchanged_on_disk_and_in_memory() {
     let temporary = tempfile::tempdir().expect("a temporary directory");
@@ -108,8 +109,8 @@ fn tc_468_one_analysis_runs_unchanged_on_disk_and_in_memory() {
 ///
 /// The refusal is reserved for a path the source was never given.
 ///
-/// Trace: FR-100-AC-4, FR-100-CON-4
 /// Provenance: quoin#468, quoin#484
+#[trace("FR-100-AC-4", "FR-100-CON-4")]
 #[test]
 fn tc_484_a_memory_source_accounts_for_the_files_it_holds() {
     use quoin_measurement::{MeasurementErrorCode, RawEvidencePath};

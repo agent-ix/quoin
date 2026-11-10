@@ -16,6 +16,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use quoin_change_assurance::model::record::{Completeness, Disposition};
 use quoin_change_assurance::records::{record_bytes, verify_lineage};
 use quoin_change_assurance::{prepare_change_record, read_change_record_json};
@@ -49,12 +50,11 @@ fn object(members: Vec<(&str, JsonValue)>) -> JsonValue {
     JsonValue::Object(fields)
 }
 
-/// Trace: FR-063-AC-2
-///
 /// Requirements and proof obligations must be non-empty, while preservation
 /// constraints and unknowns may be empty and stay present when they are: an
 /// absent collection and an empty one are different claims. A duplicated
 /// identity is refused before the record is ever written.
+#[trace("FR-063-AC-2", "TC-1262")]
 #[test]
 fn tc_455_meaningful_collections_are_required_and_empty_ones_stay_present() {
     let record = json(&record_text());
@@ -101,13 +101,12 @@ fn tc_455_meaningful_collections_are_required_and_empty_ones_stay_present() {
     );
 }
 
-/// Trace: FR-063-AC-3
-///
 /// A proof obligation fixes the exact evidence that discharges it, and the
 /// typed reading is compared member for member against the JSON that was
 /// given: the literal argv, the repository-relative working directory, the
 /// evidence kind, the tool identity and the configuration reference. Every
 /// requirement retains its reviewed statement.
+#[trace("FR-063-AC-3", "TC-1263")]
 #[test]
 fn tc_455_each_proof_obligation_fixes_the_exact_evidence_that_discharges_it() {
     let record = json(&record_text());
@@ -156,12 +155,11 @@ fn tc_455_each_proof_obligation_fixes_the_exact_evidence_that_discharges_it() {
     }
 }
 
-/// Trace: FR-063-AC-4
-///
 /// An analysis that did not see everything, and a review that did not settle
 /// everything, stay visible as themselves. Each of the four dispositions
 /// survives a write-and-read round trip, and so do `incomplete` and
 /// `truncated`: none of them collapses into a completeness claim.
+#[trace("FR-063-AC-4", "TC-1264")]
 #[test]
 fn tc_455_admitted_gaps_and_open_unknowns_survive_writing_as_themselves() {
     let record = json(&record_text());
@@ -221,11 +219,10 @@ fn tc_455_admitted_gaps_and_open_unknowns_survive_writing_as_themselves() {
     }
 }
 
-/// Trace: FR-063-AC-8
-///
 /// The strict N-1 chain. A three-revision chain verifies, and each way of
 /// breaking it - a genesis with a parent, a missing link, a repeated
 /// revision, a cross-record parent - is refused on its own.
+#[trace("FR-063-AC-8", "TC-1268")]
 #[test]
 fn tc_455_lineage_is_strict_and_every_break_is_refused() {
     let chain: Vec<JsonValue> = (1..=3).map(record_at).collect();
@@ -283,12 +280,11 @@ fn connection(source_id: &str, path: &str) -> JsonValue {
     ])
 }
 
-/// Trace: FR-063-AC-12
-///
 /// A source connection names the repository path of its artifact. The path is
 /// required, survives a write and a re-read unchanged, and the gate refuses
 /// every shape that is not a normalized repository-relative POSIX path, and a
 /// path two connections share.
+#[trace("FR-063-AC-12", "TC-2011")]
 #[test]
 fn tc_455_a_source_connection_binds_a_normalized_unique_repository_path() {
     let record = json(&record_text());
@@ -353,11 +349,10 @@ fn tc_455_a_source_connection_binds_a_normalized_unique_repository_path() {
     .expect("distinct paths are accepted");
 }
 
-/// Trace: FR-063-AC-13
-///
 /// Only the record body is evidence. Declaration metadata a producer might keep
 /// beside it (a purpose, derived fields, a lookup map) is refused when placed
 /// inside the body, at the top level or inside a source connection.
+#[trace("FR-063-AC-13", "TC-2012")]
 #[test]
 fn tc_455_metadata_inside_the_record_body_is_refused_as_undeclared() {
     let record = json(&record_text());
@@ -378,11 +373,10 @@ fn tc_455_metadata_inside_the_record_body_is_refused_as_undeclared() {
     }
 }
 
-/// Trace: FR-063-AC-12
-///
 /// The path rule a source connection uses is the one a command's
 /// `working_directory` uses, so the NUL refusal reaches the working directory
 /// too, while the root `.` and ordinary nested directories stay valid there.
+#[trace("FR-063-AC-12", "TC-2011")]
 #[test]
 fn tc_455_a_working_directory_shares_the_path_rule_including_nul() {
     let with_directory = |directory: &str| {

@@ -35,6 +35,7 @@ mod census;
 mod release_evidence;
 
 use census::rust_files;
+use ix_trace_rs::trace;
 use release_evidence::{JOBS, PAIR, PREFIX, RUN, WORKFLOW, write_repository};
 
 use std::path::{Path, PathBuf};
@@ -150,8 +151,8 @@ fn obligation() -> OperationalObligation {
 /// one linked standing-capability and exercise pair whose workflow, actor,
 /// timing, outcome, and observations match the input data.
 ///
-/// Trace: FR-061-AC-1
 /// Provenance: quoin#479
+#[trace("FR-061-AC-1", "TC-1244")]
 #[test]
 fn tc_479_450_synthetic_release_inputs_produce_one_exact_linked_pair() {
     let workspace = temporary_repository();
@@ -211,8 +212,8 @@ fn tc_479_450_synthetic_release_inputs_produce_one_exact_linked_pair() {
 /// absent, duplicate, unstarted, incomplete, or mismatched release job is
 /// refused without either operational record.
 ///
-/// Trace: FR-061-AC-2
 /// Provenance: quoin#479
+#[trace("FR-061-AC-2", "TC-1245")]
 #[test]
 fn tc_479_451_malformed_and_mismatched_inputs_are_refused_without_either_record() {
     let cases = refusal_cases();
@@ -400,8 +401,8 @@ fn job_refusal_cases() -> Vec<RefusalCase> {
 /// clock status are derived from the retained API exports; caller-supplied
 /// replacements cannot change them.
 ///
-/// Trace: FR-061-AC-3
 /// Provenance: quoin#479
+#[trace("FR-061-AC-3", "TC-1246")]
 #[test]
 fn tc_479_452_workflow_structure_and_api_exports_decide_state_not_the_caller() {
     // A definition carrying every state member a caller might hope to supply.
@@ -476,8 +477,8 @@ fn tc_479_452_workflow_structure_and_api_exports_decide_state_not_the_caller() {
 /// Every non-success GitHub conclusion remains a named non-success exercise and
 /// cannot discharge the clocked release obligation.
 ///
-/// Trace: FR-061-AC-4
 /// Provenance: quoin#479
+#[trace("FR-061-AC-4", "TC-1247")]
 #[test]
 fn tc_479_453_every_non_success_conclusion_is_named_and_cannot_discharge() {
     /// Every conclusion GitHub reports, and the outcome it must become. A
@@ -534,8 +535,8 @@ fn tc_479_453_every_non_success_conclusion_is_named_and_cannot_discharge() {
 /// network or process execution and atomically persists the pair through
 /// FR-060.
 ///
-/// Trace: FR-061-AC-5
 /// Provenance: quoin#479
+#[trace("FR-061-AC-5", "TC-1248")]
 #[test]
 fn tc_479_454_synthetic_exports_are_consumed_offline_and_persisted_all_or_nothing() {
     /// The producer reads files. Anything here would be Quoin running the

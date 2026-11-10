@@ -299,7 +299,6 @@ impl Harness {
     }
 }
 
-/// Trace: FR-020-AC-1, FR-020-AC-5, FR-021-AC-6, FR-021-AC-7, FR-095-AC-6, FR-095-AC-8, FR-095-AC-9
 pub(super) fn run(binary: &str, runner: &str, plugin: &str) -> Result<()> {
     for crlf in [false, true] {
         lifecycle(&Harness::new(binary, runner, plugin, crlf)?)?;
@@ -312,7 +311,6 @@ pub(super) fn run(binary: &str, runner: &str, plugin: &str) -> Result<()> {
 }
 
 fn lifecycle(h: &Harness) -> Result<()> {
-    // Trace: FR-020-AC-1, FR-020-AC-5, FR-021-AC-6, FR-021-AC-7, FR-095-AC-6, FR-095-AC-8, FR-095-AC-9
     let started = h.start("review", "smoke-base")?;
     require(
         text(&started, "/current_phase")? == "intake",
@@ -409,9 +407,7 @@ fn lifecycle(h: &Harness) -> Result<()> {
     Ok(())
 }
 
-/// Trace: FR-095-AC-3, FR-095-AC-4, FR-095-AC-5, FR-095-AC-7
 fn review_scenarios(h: &Harness, started: &Value) -> Result<()> {
-    // Trace: FR-095-AC-3, FR-095-AC-4, FR-095-AC-5, FR-095-AC-7
     h.start("review", "smoke-all")?;
     h.answers("smoke-all", "request", &selection("all", &["integrity"]))?;
     refused(
@@ -498,9 +494,7 @@ fn review_scenarios(h: &Harness, started: &Value) -> Result<()> {
     Ok(())
 }
 
-/// Trace: FR-021-AC-6, FR-021-AC-7
 fn plan_scenario(h: &Harness) -> Result<()> {
-    // Trace: FR-021-AC-6, FR-021-AC-7
     h.start("to-plan", "smoke-plan")?;
     let bundle = "plan/Plan-001-smoke";
     let plan = format!("{bundle}/plan.md");
@@ -526,7 +520,6 @@ fn plan_scenario(h: &Harness) -> Result<()> {
     )
 }
 
-/// Trace: FR-020-AC-3, FR-021-AC-2
 fn runner_failures(h: &Harness) -> Result<()> {
     let fake_dir = h.scratch.path().join("fake runner");
     let program = fake_dir.join(if cfg!(windows) {

@@ -447,9 +447,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
     use std::collections::BTreeSet;
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_001_every_code_is_unique_and_round_trips() {
         let codes: BTreeSet<&str> = ErrorCode::all().iter().map(|c| c.as_str()).collect();
@@ -464,7 +465,7 @@ mod tests {
         assert_eq!(ErrorCode::from_code("QQ-9999"), None);
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_002_each_variant_reports_its_own_code() {
         // One representative per code, so a copy-paste in `Error::code` that

@@ -2789,6 +2789,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "quire-fixtures"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=ce172a7ddcec21815f852c06fa5a0e340b79e57b#ce172a7ddcec21815f852c06fa5a0e340b79e57b"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "quire-rs"
 version = "0.53.0"
 source = "git+https://github.com/agent-ix/quire-rs?rev=ce172a7ddcec21815f852c06fa5a0e340b79e57b#ce172a7ddcec21815f852c06fa5a0e340b79e57b"
@@ -2822,6 +2830,7 @@ name = "quoin-assurance"
 version = "0.29.4"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-evidence-types",
  "quoin-finding-types",
@@ -2870,6 +2879,7 @@ name = "quoin-change-assurance"
 version = "0.29.4"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "quoin-jsonschema",
  "quoin-store",
  "serde_json",
@@ -2885,6 +2895,7 @@ dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
  "ix-trace-rs",
+ "quire-fixtures",
  "quoin-assurance",
  "quoin-config",
  "quoin-core",
@@ -2892,6 +2903,7 @@ dependencies = [
  "quoin-evidence",
  "quoin-graph-analysis",
  "quoin-measurement",
+ "quoin-modules",
  "quoin-quire",
  "quoin-semantic",
  "quoin-store",
@@ -2937,6 +2949,7 @@ name = "quoin-config"
 version = "0.29.4"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "schemars",
  "serde",
  "serde_json",
@@ -2953,6 +2966,7 @@ dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
  "quire-canonical",
+ "quire-fixtures",
  "quoin-assurance",
  "quoin-auditor",
  "quoin-catalog",
@@ -2982,6 +2996,7 @@ name = "quoin-delivery"
 version = "0.29.4"
 dependencies = [
  "flate2",
+ "ix-trace-rs",
  "reqwest 0.13.5",
  "semver",
  "serde",
@@ -3047,6 +3062,7 @@ version = "0.29.4"
 dependencies = [
  "async-trait",
  "engineering-assurance",
+ "ix-trace-rs",
  "quoin-measurement",
  "quoin-modules",
  "quoin-store",
@@ -3070,6 +3086,7 @@ dependencies = [
 name = "quoin-jsonschema"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "jsonschema",
  "quoin-measurement",
  "serde_json",
@@ -3081,6 +3098,7 @@ name = "quoin-measurement"
 version = "0.29.4"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "proptest",
  "quoin-evidence",
  "quoin-jsonschema",
@@ -3112,6 +3130,8 @@ name = "quoin-modules"
 version = "0.29.4"
 dependencies = [
  "gix",
+ "ix-trace-rs",
+ "quire-fixtures",
  "quoin-semantic",
  "schemars",
  "serde",
@@ -3125,6 +3145,7 @@ dependencies = [
 name = "quoin-quire"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quire-rs",
  "quoin-jsonschema",
  "quoin-quire-types",
@@ -3146,8 +3167,11 @@ dependencies = [
 name = "quoin-semantic"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
+ "quire-fixtures",
  "quoin-jsonschema",
  "quoin-yaml",
+ "regex",
  "schemars",
  "serde",
  "serde_json",
@@ -3171,6 +3195,7 @@ dependencies = [
 name = "quoin-suite-trace"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-quire",
  "regex",
@@ -3182,6 +3207,7 @@ dependencies = [
 name = "quoin-validators"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "regex",
  "schemars",
  "serde",
@@ -3202,6 +3228,7 @@ dependencies = [
 name = "quoin-yaml"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "saphyr",
  "serde_json",
  "thiserror",

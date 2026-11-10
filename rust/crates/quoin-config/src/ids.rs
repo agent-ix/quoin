@@ -7,6 +7,7 @@
 //! are routinely passed adjacent to one another. Newtypes make the call sites
 //! un-swappable and put each identifier's validation rule in exactly one place.
 
+use ix_trace_rs::implements;
 use std::fmt;
 use std::str::FromStr;
 
@@ -154,6 +155,7 @@ impl fmt::Display for PackageName {
 /// Constructed only through [`OrgName::parse`], which trims and refuses an
 /// empty result — the no-substitution rule of FR-025 lives here so no caller
 /// can construct a blank org.
+#[implements("FR-025")]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(transparent)]
 pub struct OrgName(String);
@@ -175,6 +177,7 @@ impl OrgName {
     ///
     /// This is the shape every resolution source wants: "nobody said" is an
     /// outcome, not a failure (FR-025).
+    #[implements("FR-025")]
     #[must_use]
     pub fn parse_opt(raw: &str) -> Option<Self> {
         Self::parse(raw).ok()
@@ -228,10 +231,11 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
-    /// Trace: FR-027-AC-7
+    #[trace("FR-027-AC-7")]
     #[test]
     fn tc_381_001_plugin_id_grammar() {
         assert!(PluginId::new("quoin").is_ok());
@@ -245,7 +249,7 @@ mod tests {
         assert!(PluginId::new("a".repeat(65)).is_err());
     }
 
-    /// Trace: FR-027-AC-7
+    #[trace("FR-027-AC-7")]
     #[test]
     fn tc_381_002_package_name_derives_plugin_id() {
         let cases = [
@@ -270,7 +274,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-025-AC-5
+    #[trace("FR-025-AC-5", "TC-087")]
     #[test]
     fn tc_381_003_org_name_refuses_blank() {
         assert_eq!(OrgName::parse("  acme ").expect("trims").as_str(), "acme");

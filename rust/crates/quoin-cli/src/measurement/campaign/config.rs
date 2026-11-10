@@ -312,6 +312,7 @@ impl MemberBindingWire {
 )]
 mod tests {
     use super::{InputSource, RunSelection};
+    use ix_trace_rs::trace;
     use serde_json::{Value, json};
 
     fn contract() -> Value {
@@ -374,7 +375,7 @@ mod tests {
         })
     }
 
-    /// Trace: FR-114-AC-1, TC-1942
+    #[trace("FR-114-AC-1", "TC-1942")]
     #[test]
     fn tc_1942_run_selection_builds_exact_typed_bindings() {
         let selected: RunSelection = serde_json::from_value(config()).expect("typed config");
@@ -390,7 +391,7 @@ mod tests {
         ));
     }
 
-    /// Trace: FR-114-AC-4, TC-1942
+    #[trace("FR-114-AC-4", "TC-1942")]
     #[test]
     fn tc_1942_run_selection_refuses_unknown_fields() {
         let mut unknown = config();

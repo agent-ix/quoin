@@ -228,6 +228,7 @@ mod tests {
         ADAPTERS, AdapterSelection, FINDING_ADAPTERS, adapter_names, select_adapter,
         select_finding_adapter,
     };
+    use ix_trace_rs::trace;
     use std::collections::BTreeSet;
 
     #[test]
@@ -309,8 +310,15 @@ mod tests {
     /// works and is never selected reads, from the store, exactly like a parser
     /// that does not exist.
     ///
-    /// Trace: FR-036-AC-5, FR-041-AC-6, FR-042-AC-5
     /// Provenance: quoin#458
+    #[trace(
+        "FR-036-AC-5",
+        "FR-041-AC-6",
+        "FR-042-AC-5",
+        "TC-201",
+        "TC-236",
+        "TC-244"
+    )]
     #[test]
     fn tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool() {
         let by_name = [

@@ -16,6 +16,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::cell::RefCell;
 use std::fmt::Write as _;
 use std::fs;
@@ -142,7 +143,7 @@ fn home() -> Home {
     }
 }
 
-/// Trace: FR-019-AC-1, FR-019-AC-2, FR-019-AC-4
+#[trace("FR-019-AC-1", "FR-019-AC-2", "FR-019-AC-4", "TC-061", "TC-064")]
 #[test]
 fn tc_381_280_install_lists_and_removes_a_path_module() {
     let h = home();
@@ -182,7 +183,7 @@ fn tc_381_280_install_lists_and_removes_a_path_module() {
     );
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_281_a_rejected_reinstall_restores_the_previous_version() {
     let h = home();
@@ -234,7 +235,7 @@ fn tc_381_281_a_rejected_reinstall_restores_the_previous_version() {
     );
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_282_a_rejected_first_install_leaves_nothing_behind() {
     let h = home();
@@ -280,7 +281,7 @@ fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
     }
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     let h = home();
@@ -312,7 +313,7 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     );
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_284_sync_mode_re_resolves_an_installed_module() {
     let h = home();
@@ -339,7 +340,7 @@ fn tc_381_284_sync_mode_re_resolves_an_installed_module() {
     assert_eq!(synced.updated, vec![ModuleName::new("mod").expect("legal")]);
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_285_a_disabled_entry_is_skipped_and_never_resolved() {
     let h = home();
@@ -354,7 +355,7 @@ fn tc_381_285_a_disabled_entry_is_skipped_and_never_resolved() {
     assert_eq!(resolver.calls(), 0);
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_287_an_entry_with_no_ref_settles_by_name_and_does_no_further_io() {
     let h = home();

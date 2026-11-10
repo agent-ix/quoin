@@ -124,7 +124,7 @@ fn math_min(values: &[f64]) -> f64 {
 /// checkable. The catalog declares the values that trigger a method; this is
 /// the set that can ever be produced to match them. Nothing compared the two,
 /// and the consequence was silent: `match_rules` skips an unknown *axis* by
-/// design (FR-054-CON-2 leaves the axis set open) but an unknown *value* on a
+/// design (the engine leaves the axis set open) but an unknown *value* on a
 /// known axis simply never matches, and `inconclusive` is already a legitimate
 /// outcome. A systematically under-advising advisor was indistinguishable from
 /// a quiet one.

@@ -14,6 +14,7 @@
     reason = "test assertions deliberately panic to report a failed command contract"
 )]
 
+use ix_trace_rs::trace;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -174,7 +175,7 @@ fn json_stdout(output: &Output) -> serde_json::Value {
     serde_json::from_str(&stdout(output)).expect("the JSON view writes one JSON report")
 }
 
-/// Trace: FR-062, FR-062-AC-1, TC-1650
+#[trace("FR-062", "FR-062-AC-1", "TC-1650")]
 #[test]
 fn tc_1650_fan_out_reaches_real_fixture_inputs_in_json_and_human_forms() {
     let fixture = Fixture::new().expect("fixture files");
@@ -194,7 +195,7 @@ fn tc_1650_fan_out_reaches_real_fixture_inputs_in_json_and_human_forms() {
     assert_eq!(stderr(&human).len(), 0);
 }
 
-/// Trace: FR-062, FR-062-AC-1, TC-1650
+#[trace("FR-062", "FR-062-AC-1", "TC-1650")]
 #[test]
 fn tc_1650_change_impact_reaches_real_fixture_inputs_in_json_and_human_forms() {
     let fixture = Fixture::new().expect("fixture files");
@@ -215,7 +216,7 @@ fn tc_1650_change_impact_reaches_real_fixture_inputs_in_json_and_human_forms() {
     assert_eq!(stderr(&human).len(), 0);
 }
 
-/// Trace: FR-062, FR-102, TC-1650
+#[trace("FR-062", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_graph_refusal_keeps_stdout_empty_and_diagnostics_on_stderr() {
     let output = ProcessCommand::new(env!("CARGO_BIN_EXE_quoin"))

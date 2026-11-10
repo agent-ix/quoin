@@ -42,8 +42,8 @@ pub struct DerivedImport {
     /// The imported package's identity.
     #[serde(rename = "packageIdentity")]
     pub package_identity: String,
-    /// The declared version, as written: the contract accepts any valid
-    /// version requirement, and a plain version is one.
+    /// The declared version, as written: the module-manifest schema requires
+    /// `semantic.imports` values to be exact semantic versions.
     #[serde(rename = "versionConstraint")]
     pub version_constraint: String,
     /// Always empty: the `semantic` block does not name per-import exports.
@@ -313,8 +313,6 @@ pub fn resolve_imports(
     candidate: &SemanticModule,
     installed: &[SemanticModule],
 ) -> Vec<SemanticDiagnostic> {
-    let mut diagnostics = Vec::new();
-
     // `new Map([candidate, ...installed].map(...))`: later entries overwrite
     // earlier ones, so an installed module with the candidate's package wins.
     let mut by_package: BTreeMap<&PackageIdentity, &SemanticModule> = BTreeMap::new();
@@ -322,13 +320,30 @@ pub fn resolve_imports(
     for module in installed {
         by_package.insert(&module.block.package, module);
     }
+    let population: Vec<&SemanticModule> = installed.iter().collect();
+    resolve_imports_in(candidate, &by_package, &population)
+}
+
+/// [`resolve_imports`] against a provider index the caller built once, so that
+/// judging every module of a population is one pass over it rather than a copy
+/// of it per module (FR-124).
+///
+/// `by_package` maps a package identity to the module providing it; `population`
+/// is every module the unresolved-import message may name versions from.
+#[must_use]
+pub fn resolve_imports_in<'a>(
+    candidate: &'a SemanticModule,
+    by_package: &'a BTreeMap<&'a PackageIdentity, &'a SemanticModule>,
+    population: &[&SemanticModule],
+) -> Vec<SemanticDiagnostic> {
+    let mut diagnostics = Vec::new();
 
     for (identity, version) in &candidate.block.imports {
         let provided = by_package
             .get(identity)
             .is_some_and(|module| &module.version == version);
         if !provided {
-            let installed_versions: Vec<&str> = installed
+            let installed_versions: Vec<&str> = population
                 .iter()
                 .filter(|module| &module.block.package == identity)
                 .map(|module| module.version.as_str())
@@ -350,7 +365,7 @@ pub fn resolve_imports(
     }
 
     let mut visitor = CycleVisitor {
-        by_package: &by_package,
+        by_package,
         open: BTreeSet::new(),
         done: BTreeSet::new(),
         trail: Vec::new(),
@@ -418,8 +433,9 @@ impl<'a> CycleVisitor<'a> {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-075
+    #[trace("FR-075")]
     #[test]
     fn tc_378_070_type_identity_is_ix_scheme() {
         assert_eq!(
@@ -431,7 +447,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-075
+    #[trace("FR-075")]
     #[test]
     fn tc_378_071_mapping_identity_is_ix_scheme() {
         assert_eq!(

@@ -23,8 +23,11 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+mod common;
 
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
@@ -82,15 +85,6 @@ fn run(op: &str, request: &Value) -> Run {
     }
 }
 
-/// The repository root: `rust/crates/quoin-core` up three.
-fn repo_root() -> PathBuf {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    for _ in 0..3 {
-        root.pop();
-    }
-    root
-}
-
 /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production.
 /// Materialized once per process from the embedded bytes `quoin-semantic`'s
 /// `build.rs` compiles in (PLAT-887 de-vendoring), not read from a
@@ -109,27 +103,6 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-fn fixture() -> PathBuf {
-    repo_root()
-        .join("tests")
-        .join("fixtures")
-        .join("semantic-module")
-        .join("module-ok")
-}
-
-fn copy_tree(from: &Path, to: &Path) {
-    fs::create_dir_all(to).unwrap();
-    for entry in fs::read_dir(from).unwrap() {
-        let entry = entry.unwrap();
-        let target = to.join(entry.file_name());
-        if entry.file_type().unwrap().is_dir() {
-            copy_tree(&entry.path(), &target);
-        } else {
-            fs::copy(entry.path(), &target).unwrap();
-        }
-    }
-}
-
 /// A copy of the `module-ok` fixture under `parent`, renamed to `name`, with
 /// `extra` appended to its `semantic` block.
 ///
@@ -139,7 +112,7 @@ fn copy_tree(from: &Path, to: &Path) {
 /// scaffolding for the sake of two lines.
 fn module_copy(parent: &Path, name: &str, extra: &str) -> PathBuf {
     let root = parent.join(name);
-    copy_tree(&fixture(), &root);
+    common::copy_module_ok(&root);
     let manifest_path = root.join("manifest.yaml");
     let text = fs::read_to_string(&manifest_path).unwrap();
     let renamed = text.replace(
@@ -188,8 +161,8 @@ fn scratch() -> (tempfile::TempDir, PathBuf) {
 /// The first install is the control: without it a gate that refused every
 /// install would satisfy the refusal.
 ///
-/// Trace: FR-070-AC-6
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-6", "TC-1341")]
 #[test]
 fn tc_452_660_a_second_module_claiming_an_installed_package_is_refused_naming_both() {
     let (dir, home) = scratch();
@@ -206,8 +179,8 @@ fn tc_452_660_a_second_module_claiming_an_installed_package_is_refused_naming_bo
 
 /// A re-install refused by the contract restores the version that was there.
 ///
-/// Trace: FR-070-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-3")]
 #[test]
 fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
     let (dir, home) = scratch();
@@ -236,8 +209,8 @@ fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
 
 /// Installing a semantic module writes the derived package manifest beside it.
 ///
-/// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-AC-1")]
 #[test]
 fn tc_452_662_installing_writes_the_derived_manifest() {
     let (dir, home) = scratch();
@@ -262,8 +235,8 @@ fn tc_452_662_installing_writes_the_derived_manifest() {
 /// `legacy_forms: error` without a usable sweep report refuses the install and
 /// leaves nothing behind.
 ///
-/// Trace: FR-074-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-074-AC-3")]
 #[test]
 fn tc_452_663_legacy_forms_error_without_a_sweep_report_refuses_the_install() {
     let (dir, home) = scratch();

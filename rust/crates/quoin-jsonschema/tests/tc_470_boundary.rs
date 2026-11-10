@@ -15,8 +15,6 @@
 //! it is read off the crate's own `src/` tree instead. The forbidden tokens are
 //! spelled with a concatenation so that this file does not itself contain the
 //! strings it forbids.
-//!
-//! Trace: FR-098
 
 #![allow(
     clippy::unwrap_used,
@@ -26,6 +24,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 fn sources() -> Vec<(String, String)> {
@@ -53,8 +52,8 @@ fn sources() -> Vec<(String, String)> {
 
 /// No second instant grammar, hasher or canonicalizer grew here.
 ///
-/// Trace: FR-098
 /// Provenance: quoin#470
+#[trace("FR-098-CON-2")]
 #[test]
 fn tc_470_no_second_grammar_hasher_or_canonicalizer_appeared() {
     // (token, what owns it instead)
@@ -98,8 +97,8 @@ fn tc_470_no_second_grammar_hasher_or_canonicalizer_appeared() {
 /// A schema read off disk at run time is a schema that can differ from the one
 /// the tests measured.
 ///
-/// Trace: FR-098
 /// Provenance: quoin#470
+#[trace("FR-098")]
 #[test]
 fn tc_470_no_module_reads_a_schema_from_the_filesystem() {
     let including: Vec<String> = sources()
@@ -127,8 +126,8 @@ fn tc_470_no_module_reads_a_schema_from_the_filesystem() {
 /// dependency runs the other way, which is why the `date-time` check is passed
 /// in rather than looked up.
 ///
-/// Trace: FR-098
 /// Provenance: quoin#470
+#[trace("FR-098-CON-2")]
 #[test]
 fn tc_470_the_manifest_holds_no_grammar_and_no_cycle() {
     let manifest =

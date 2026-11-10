@@ -174,7 +174,7 @@ impl PluginConfigSchema for QuoinConfig {
     }
 }
 
-/// The `ixSchema` convention (ix-cli-core FR-014) as a value rather than a
+/// The `ixSchema` convention (the ix-cli-core convention) as a value rather than a
 /// named module export: what a host's init hook would read off a loaded plugin
 /// and hand to the schema registry.
 #[derive(Debug, Clone)]
@@ -225,6 +225,7 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
@@ -232,7 +233,7 @@ mod tests {
         serde_yaml_ng::from_str(s).expect("test yaml parses")
     }
 
-    /// Trace: FR-027-AC-7
+    #[trace("FR-027-AC-7")]
     #[test]
     fn tc_381_020_ix_schema_declares_id_and_env_binding() {
         let decl = IxSchema::of::<QuoinConfig>();
@@ -242,7 +243,7 @@ mod tests {
         assert_eq!(decl.env[0].var_name, "QUOIN_ORG");
     }
 
-    /// Trace: FR-027-AC-6
+    #[trace("FR-027-AC-6")]
     #[test]
     fn tc_381_021_schema_is_strict() {
         assert!(
@@ -252,7 +253,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-027-AC-6
+    #[trace("FR-027-AC-6")]
     #[test]
     fn tc_381_022_absent_org_stays_absent() {
         let cfg = QuoinConfig::validate(&yaml("{}")).expect("empty object is valid");

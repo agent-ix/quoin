@@ -132,8 +132,9 @@ pub fn read_file(
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-100
+    #[trace("FR-100")]
     #[test]
     fn tc_379_090_an_oversized_export_is_refused_before_the_engine_parses_it() {
         let accepted = quire_rs::AcceptedAssurancePremises {
@@ -151,7 +152,7 @@ mod tests {
         assert_eq!(error.code(), crate::ErrorCode::PayloadTooLarge);
     }
 
-    /// Trace: FR-100
+    #[trace("FR-100")]
     #[test]
     fn tc_379_091_the_engines_own_refusals_are_carried_not_restated() {
         let accepted = quire_rs::AcceptedAssurancePremises {

@@ -15,7 +15,7 @@ relationships:
 ## Statement
 
 Every test result artifact an emitter produces SHALL carry, in the artifact
-itself, each tagged test's symbol, file path, outcome and trace ids, so that the
+itself, each tagged test's symbol, file path, outcome and trace ids (except that a case recorded under FR-120 E-4 without a `trace` property carries no ids), so that the
 artifact is interpretable without the source tree that produced it.
 
 ## Scope
@@ -33,13 +33,13 @@ neither.
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Tagged cases whose symbol, path, outcome and ids are not all in the artifact | 0 | 0 | Test |
+| Tagged cases, other than FR-120 E-4 id-less cases, whose symbol, path, outcome and ids are not all in the artifact | 0 | 0 | Test |
 | Source files read to record a result | 0 | 0 | Test |
 
 ## Verification
 
 Record an emitter's result file in an empty directory with no source tree present
-and assert that every tagged case is recorded with its symbol, path, outcome and
+and assert that every tagged case, other than an FR-120 E-4 id-less case, is recorded with its symbol, path, outcome and
 ids.
 
 ## Dependencies

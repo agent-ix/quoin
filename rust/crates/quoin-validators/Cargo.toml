@@ -40,5 +40,6 @@ schemars = { workspace = true, optional = true }
 schema = ["dep:schemars"]
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 serde_json = { workspace = true }
 tempfile = "=3.27.0"

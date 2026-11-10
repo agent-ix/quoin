@@ -23,6 +23,7 @@ mod common;
 use engineering_assurance::measurement::{
     ApparatusPath, NegativeControl, NegativeControlKind, NegativeControls, ProtectedApparatus,
 };
+use ix_trace_rs::trace;
 use quoin_change_assurance::model::outcome::{Outcome, Reason};
 use quoin_change_assurance::model::receipt::VerificationReceipt;
 use quoin_change_assurance::verify::input::GoverningPlan;
@@ -56,12 +57,11 @@ fn plan_protecting(entries: &[&str]) -> GoverningPlan {
     }
 }
 
-/// Trace: FR-111-AC-1
-///
 /// A change whose diff touches the harness, the labels, the population or
 /// the checker configuration is refused credit with `apparatus_touched`,
 /// whichever of the four the plan protects and the diff reaches, and whether
 /// or not the plan declares the `apparatus-edit` control.
+#[trace("FR-111-AC-1", "TC-1868")]
 #[test]
 fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
     let categories: [(&str, &str, &str); 4] = [
@@ -100,11 +100,10 @@ fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
     }
 }
 
-/// Trace: FR-111-AC-2
-///
 /// A diff that does not reach any protected entry passes: no
 /// `apparatus_touched`, and the receipt is exactly what it would have been
 /// with no plan linked at all.
+#[trace("FR-111-AC-2", "TC-1869")]
 #[test]
 fn tc_964_002_a_diff_outside_the_protected_set_is_unaffected() {
     let unlinked = verify_change_assurance(&base_input()).expect("verification succeeds");
@@ -133,13 +132,12 @@ fn tc_964_002_a_diff_outside_the_protected_set_is_unaffected() {
     );
 }
 
-/// Trace: FR-111-AC-3
-///
 /// A plan that declares a negative control this checker has no rule to
 /// evaluate — `gain-within-noise`, here — is reported as
 /// `negative_control_uncaught` rather than silently passing, and the
 /// uncaught control alone leaves the outcome `incomplete` rather than
 /// `invalid`.
+#[trace("FR-111-AC-3", "TC-1870")]
 #[test]
 fn tc_964_003_an_uncatchable_negative_control_is_reported() {
     let mut input = base_input();
@@ -162,11 +160,10 @@ fn tc_964_003_an_uncatchable_negative_control_is_reported() {
     assert_eq!(receipt.outcome, Outcome::Incomplete);
 }
 
-/// Trace: FR-111-AC-4
-///
 /// A plan that protects apparatus, checked with no diff retained, is
 /// `diff_missing` and `incomplete` — never vacuously `valid` — while the same
 /// missing diff with no plan linked changes nothing.
+#[trace("FR-111-AC-4", "TC-1871")]
 #[test]
 fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
     let mut input = base_input();
@@ -181,8 +178,6 @@ fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
     assert_eq!(unlinked.reasons, Vec::new());
 }
 
-/// Trace: FR-111-AC-5, TC-1915
-///
 /// A receipt written with both a governing plan and a retained diff records
 /// `governing_plan_id` and `diff_paths_supplied: true`; the same base input
 /// written with neither records `governing_plan_id: null` and
@@ -190,6 +185,7 @@ fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
 /// so an auditor reading the written receipt afterward can tell "no plan/diff
 /// was ever given" apart from "one was given and found nothing to refuse"
 /// (PLAT-1015, closing the audit gap PLAT-997 left open).
+#[trace("FR-111-AC-5", "TC-1915")]
 #[test]
 fn tc_1015_005_the_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     let mut linked = base_input();
@@ -221,13 +217,12 @@ fn tc_1015_005_the_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     assert!(!unlinked.diff_paths_supplied);
 }
 
-/// Trace: FR-111-AC-5, TC-1915
-///
 /// A refusal receipt records the two PLAT-1015 members too: a record that
 /// fails its own schema is written as `schema_invalid` without any apparatus
 /// judgment, and that receipt still states which plan and whether a diff it
 /// was asked to be checked against — the omission is auditable on every
 /// receipt, not only on the ones whose record parsed.
+#[trace("FR-111-AC-5", "TC-1915")]
 #[test]
 fn tc_1015_006_a_schema_invalid_receipt_records_the_plan_and_diff() {
     let mut linked = base_input();

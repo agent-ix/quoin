@@ -21,6 +21,7 @@
 //! does: `gix` would open a repository, and an unreadable or half-initialised
 //! `.git` must be "no org here", not an error.
 
+use ix_trace_rs::implements;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -139,6 +140,7 @@ pub struct OrgOptions<'a> {
 /// `--config-root` override and the project-local `.ix` layer. Incidents from a
 /// broken config file are appended to `log` — the read still succeeds, with no
 /// stored org, and resolution carries on to the remote (FR-027-AC-5).
+#[implements("FR-027-AC-5")]
 pub fn resolve_org(
     repo_root: &Path,
     options: &OrgOptions<'_>,
@@ -433,6 +435,7 @@ pub fn package_from_git_config(repo_root: &Path) -> Option<String> {
 /// path segment regardless would answer `git` for `/srv/git/repo.git`, `..` for
 /// `../sibling`, and the *hostname* for `https://host/repo.git` — a
 /// confidently-reported wrong org, the exact failure FR-025 exists to prevent.
+#[implements("FR-025")]
 #[must_use]
 pub fn org_from_remote_url(url: &str) -> Option<OrgName> {
     let path = if let Some((scheme, rest)) = split_scheme(url) {

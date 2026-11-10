@@ -227,8 +227,9 @@ impl fmt::Display for SemanticDiagnostic {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_020_every_diagnostic_code_round_trips() {
         for code in DiagnosticCode::all() {
@@ -236,7 +237,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_021_diagnostic_codes_are_unique_and_namespaced() {
         let mut seen = std::collections::BTreeSet::new();
@@ -249,7 +250,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_022_display_matches_the_typescript_format() {
         let diagnostic = SemanticDiagnostic::error(

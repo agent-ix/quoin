@@ -21,28 +21,6 @@ GENERATED_TARGETS = "{{ cookiecutter.generated_targets }}"
 IMPORTED_MODULES = "{{ cookiecutter.imported_modules }}"
 NAV_CATEGORY_ORDER = "{{ cookiecutter.nav_category_order }}"
 
-# filament-core-data `common.schema.json`: `target` plus `representationFormat`,
-# which `manifestTarget` admits as one union. Vendored here because a template
-# cannot reach the schema at render time; the drift between this list and the
-# vendored copy under `src/semantic/schemas/filament-core-data/` is asserted by
-# quoin's own suite rather than trusted.
-TARGET_REGISTRY = {
-    "json-schema",
-    "rust",
-    "typescript",
-    "python-pydantic-v2",
-    "python-dataclass",
-    "markdown",
-    "json",
-    "postgresql",
-    "protobuf",
-    "avro",
-    "arrow",
-    "parquet",
-    "csv",
-    "tsv",
-}
-
 # The only target with a working emitter today. Everything else is declared and
 # recorded as declared-not-emitted (FR-076-AC-10) rather than presented as
 # emitted, because a target nothing emits is a claim nobody checked.
@@ -58,7 +36,10 @@ AGPL_IDENTIFIERS = {"AGPL-3.0-or-later", "AGPL-3.0+"}
 SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 SLUG = re.compile(r"^[a-z][a-z0-9-]*[a-z0-9]$")
 PY_IDENT = re.compile(r"^[a-z][a-z0-9_]*$")
-IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@[\^~<>=]*\d[0-9A-Za-z.*,<>=^~+-]*$")
+# The module-manifest schema's `semver` pattern, which `semantic.imports` values
+# must match: no leading zeros, optional prerelease and build suffixes.
+EXACT_SEMVER = r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"
+IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@" + EXACT_SEMVER + "$")
 
 
 def fail(message):
@@ -110,12 +91,6 @@ def main():
     targets = split_list(GENERATED_TARGETS)
     if not targets:
         fail("generated_targets is empty; a module declares at least one target.")
-    for target in targets:
-        if target not in TARGET_REGISTRY:
-            fail(
-                "generated_targets entry %r is outside the filament-core-data "
-                "target registry (%s)." % (target, ", ".join(sorted(TARGET_REGISTRY)))
-            )
     if "json-schema" not in targets:
         fail(
             "generated_targets must include 'json-schema': it is the only target "
@@ -129,8 +104,9 @@ def main():
         if not IMPORT_REF.match(entry):
             fail(
                 "imported_modules entry %r is not of the form "
-                "<org>/<repo>@<version-requirement>. An import without a version "
-                "requirement resolves differently on two machines." % entry
+                "<org>/<repo>@<x.y.z>. The module-manifest schema admits exact "
+                "versions only, and an import without one resolves differently "
+                "on two machines." % entry
             )
         identity = entry.split("@", 1)[0]
         if identity in seen:

@@ -20,6 +20,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_change_assurance::attestations::read_attestation_json;
@@ -74,11 +75,11 @@ fn assert_valid(
     }
 }
 
-/// Trace: FR-068-AC-8
 /// Provenance: quoin#503
 ///
 /// The asset vocabulary is closed: three names, each resolving, and nothing
 /// else resolving to anything.
+#[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_010_the_asset_vocabulary_is_closed() {
     assert_eq!(ASSET_NAMES.len(), 3);
@@ -95,11 +96,11 @@ fn tc_503_010_the_asset_vocabulary_is_closed() {
     }
 }
 
-/// Trace: FR-068-AC-8
 /// Provenance: quoin#503
 ///
 /// Each asset is a draft 2020-12 document whose `$id` names the file it is
 /// served as — the pairing a consumer relies on when it asks for one by name.
+#[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_011_every_asset_declares_its_own_identity() {
     for name in ASSET_NAMES {
@@ -118,11 +119,11 @@ fn tc_503_011_every_asset_declares_its_own_identity() {
     }
 }
 
-/// Trace: FR-063-AC-1
 /// Provenance: quoin#503
 ///
 /// A record and an attestation this crate writes, and the receipt it emits,
 /// satisfy the schemas that describe them.
+#[trace("FR-063-AC-1")]
 #[test]
 fn tc_503_012_written_documents_satisfy_their_schemas() {
     let input = base_input();
@@ -158,11 +159,11 @@ fn tc_503_012_written_documents_satisfy_their_schemas() {
     );
 }
 
-/// Trace: FR-068-AC-8
 /// Provenance: quoin#503
 ///
 /// The named constants and the `asset` lookup are the same bytes. They are two
 /// surfaces onto one file and a consumer may read either.
+#[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_015_the_named_constants_and_the_lookup_agree() {
     assert_eq!(asset(ASSET_NAMES[0]), Some(CHANGE_ASSURANCE_RECORD_V1));
@@ -170,10 +171,9 @@ fn tc_503_015_the_named_constants_and_the_lookup_agree() {
     assert_eq!(asset(ASSET_NAMES[2]), Some(VERIFICATION_RECEIPT_V1));
 }
 
-/// Trace: FR-063-AC-12
-///
 /// The published record schema refuses the same malformed source paths the
 /// reader refuses, and accepts the paths the reader accepts.
+#[trace("FR-063-AC-12", "TC-2011")]
 #[test]
 fn tc_503_the_record_schema_agrees_with_the_reader_on_source_paths() {
     let validator = validator(ASSET_NAMES[0]);
