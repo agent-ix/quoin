@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! FR-071-AC-3 to AC-8, criterion by criterion (PLAT-278).
+//! FR-071-AC-1 and AC-3 to AC-8, criterion by criterion (PLAT-278).
 //!
 //! Quire executes the Markdown to `FieldDecl[]` extraction against the
 //! `quire-fixtures` goldens. What Quoin owns, and what these assert, is the
@@ -9,16 +9,6 @@
 //! says, every recorded multiplicity is valid semantic-core, and every refusal
 //! names a stable code, a severity and a locus. The fixtures are read from
 //! `quire-fixtures`; Quoin holds no copy.
-//!
-//! Not asserted here: that the recorded `TypeRef` targets and constraint
-//! declarations validate against the semantic-core schemas Quoin pins (0.3.2),
-//! so FR-071-AC-1, AC-4 and AC-6 are not schema-checked. The fixtures are right:
-//! filament-core-data main (IR-994, commit 7e6f209e) moved semantic-core
-//! `TypeRef.target` and constraint values to the tagged `{kind, value}` form the
-//! fixtures record, and Quoin's pin predates it. No semantic-core tag contains
-//! IR-994 yet. Owner: Linear PLAT-1377. Expiry: the pin is bumped, the
-//! `FieldDecl`, `TypeRef` and `ConstraintDecl` schema checks are added here, and
-//! this paragraph is deleted.
 
 #![allow(
     clippy::unwrap_used,
@@ -74,6 +64,20 @@ fn assert_valid(validator: &SchemaValidator, what: &str, instance: &Value) {
         errors.is_empty(),
         "{what} is not valid semantic-core: {errors:?}"
     );
+}
+
+/// The config-service FR-006 expected `FieldDecl[]` is valid semantic-core,
+/// element by element.
+#[trace("FR-071-AC-1", "TC-1344")]
+#[test]
+fn tc_278_001_the_config_service_expected_field_decls_validate() {
+    let field_decl = semantic_core_validator("FieldDecl");
+    let expected = mapping_json("config-version.expected.json");
+    let fields = expected["fields"].as_array().unwrap();
+    assert!(!fields.is_empty(), "FR-006 declares fields");
+    for field in fields {
+        assert_valid(&field_decl, &format!("FieldDecl {}", field["name"]), field);
+    }
 }
 
 /// One case of `cell-cases.json` by id.
@@ -143,6 +147,26 @@ fn tc_278_003_both_forms_fails_at_the_second_forms_locus() {
 #[trace("FR-071-AC-4", "TC-1347")]
 #[test]
 fn tc_278_004_type_cells_record_the_expected_targets_and_the_unresolved_placeholder() {
+    let type_ref = semantic_core_validator("TypeRef");
+    for id in [
+        "type-kernel",
+        "type-decimal",
+        "type-unit",
+        "type-object-by-title",
+        "type-enum-by-id",
+        "type-import",
+        "type-unresolved",
+    ] {
+        let expected = &case(id)["expected"];
+        let mut instance = serde_json::json!({ "target": expected["target"] });
+        for key in ["decimal", "unit"] {
+            if let Some(value) = expected.get(key) {
+                instance[key] = value.clone();
+            }
+        }
+        assert_valid(&type_ref, &format!("TypeRef of {id}"), &instance);
+    }
+
     let uuid = case("type-kernel");
     assert_eq!(uuid["cell"]["Type"], "UUID");
     assert_eq!(uuid["expected"]["target"]["kind"], "KernelScalar");
@@ -261,6 +285,23 @@ fn tc_278_005_multiplicity_cells_map_and_invalid_cells_are_errors() {
 #[trace("FR-071-AC-6", "TC-1349")]
 #[test]
 fn tc_278_006_constraint_cells_map_to_the_closed_vocabulary() {
+    let constraint_decl = semantic_core_validator("ConstraintDecl");
+    for id in [
+        "con-min-maxlen-identity",
+        "con-pattern",
+        "con-enum-values",
+        "con-non-empty",
+        "con-format",
+    ] {
+        for constraint in case(id)["expected"]["constraints"].as_array().unwrap() {
+            assert_valid(
+                &constraint_decl,
+                &format!("ConstraintDecl of {id}"),
+                constraint,
+            );
+        }
+    }
+
     let kinds = |id: &str| -> Vec<String> {
         let c = case(id);
         let list = c["expected"]["constraints"].as_array().unwrap();

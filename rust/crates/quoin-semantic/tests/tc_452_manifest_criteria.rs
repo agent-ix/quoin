@@ -26,8 +26,7 @@ use ix_trace_rs::trace;
 use std::fs;
 
 use common::{
-    SCHEMA_REQUIRED_SEMANTIC_CORE, Scratch, codes, errors, message_for, read,
-    rewrite_entity_schema, semantic_root, validators,
+    Scratch, codes, errors, message_for, read, rewrite_entity_schema, semantic_root, validators,
 };
 use quoin_semantic::data_schema::DataSchemaForm;
 use quoin_semantic::{CompatibilityPosture, LegacyForms, SEMANTIC_CONTRACT, read_semantic_block};
@@ -75,7 +74,6 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     let root = scratch.module_copy("minimal", |manifest, _| {
         manifest["semantic"] = json!({
             "contract_version": "1.0.0",
-            "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
             "package": "agent-ix/spec-objects-fixture",
         });
     });
@@ -114,9 +112,18 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
         codes(&bad, &validators)
     );
 
+    let retired = scratch.module_copy("retired-key", |manifest, _| {
+        manifest["semantic"]["semantic_core"] = json!("0.0.0");
+    });
+    assert!(
+        codes(&retired, &validators)
+            .contains(&"error:semantic.unknown-key@semantic.semantic_core".to_owned()),
+        "{:?}",
+        codes(&retired, &validators)
+    );
+
     let admitted = json!({
         "contract_version": "1.0.0",
-        "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
         "package": "agent-ix/spec-objects-fixture",
         "exports": ["entity"],
         "imports": { "agent-ix/spec-artifacts-iso": "0.4.0" },

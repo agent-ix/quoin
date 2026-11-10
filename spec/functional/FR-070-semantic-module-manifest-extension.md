@@ -32,8 +32,9 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 ## Behavior
 
 - The `semantic` block SHALL be optional, so a manifest without it loads exactly as today.
-- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `semantic_core` (an `x.y.z` string that Quoin does not read; BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core` (an `x.y.z` string) in the `semantic` block, so a manifest without it is rejected; Quoin reads no value from it), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as published), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
+- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as published), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
 - The `semantic` block SHALL require `contract_version` and `package`.
+- The `semantic` block SHALL NOT admit `semantic_core`: the key is retired (PLAT-1221), a module declares no semantic-core version, and a manifest that still carries it is refused like any other unknown key.
 - The module-manifest JSON Schema, owned by filament-core-service (`agent-ix/filament-core-service#21`), SHALL publish the block with `additionalProperties: false`.
 - Quoin SHALL take that schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, and the Quire output schemas from the linked `quire-rs` engine (FR-029).
 - When `quoin module install` meets an unknown key inside `semantic`, Quoin SHALL reject the manifest with a diagnostic naming the key rather than degrading to an empty model.
@@ -64,8 +65,8 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-070-AC-1 | Every installed default module manifest loads unchanged with no `semantic` block. | Test |
-| FR-070-AC-2 | A manifest with `semantic: { contract_version: "1.0.0", package: "agent-ix/spec-objects-business" }` (plus the key the upstream schema requires, PLAT-1221) loads and the pack reports the contract version and package. Quoin reports no `semantic_core` value. | Test |
-| FR-070-AC-3 | A `semantic` block with an unknown key `foo` is rejected naming `foo`; every key in the admitted list is accepted. | Test |
+| FR-070-AC-2 | A manifest with `semantic: { contract_version: "1.0.0", package: "agent-ix/spec-objects-business" }` loads and the pack reports the contract version and package. | Test |
+| FR-070-AC-3 | A `semantic` block with an unknown key `foo`, or with the retired key `semantic_core`, is rejected naming that key; every key in the admitted list is accepted. | Test |
 | FR-070-AC-4 | `exports: [endpoint]` on a module without an `endpoint` object type is rejected naming `endpoint`. | Test |
 | FR-070-AC-5 | `contract_version: "2.0.0"` is rejected before any other semantic key is read. | Test |
 | FR-070-AC-6 | Two modules declaring the same `semantic.package` fail to install together, naming both, with the module being installed rejected whatever its sorted position. | Test |

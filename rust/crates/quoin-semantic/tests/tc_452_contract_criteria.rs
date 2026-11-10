@@ -64,6 +64,41 @@ fn required_arrays(node: &Value, path: &str, found: &mut BTreeMap<String, Vec<St
     }
 }
 
+/// `$defs` entries added after CR-003, each the value type of an optional
+/// top-level manifest property (`plain_language_profiles`, `lint_rules`,
+/// `lexicon`, `ambiguity_terms`, `property_idioms`, `verification_catalog`,
+/// `traceability` and its column, obligation and relation helpers). The
+/// top-level `required` stays the original three keys, so a manifest that never
+/// sets such a property never evaluates the entry's `required` array.
+///
+/// `LintRuleEntry` is accepted upstream evolution of semantic-schema 0.4.2: its
+/// root `required` is `[type, id, section]` with conditional `column`/`allowed`
+/// and `pattern` fields, replacing the pre-CR-003 object-form `pattern`. A new
+/// `required` array under `ObjectTypeEntry`, `ArchetypeEntry` or
+/// `ArtifactTypeEntry` is not on this list and still fails.
+const NEW_OPTIONAL_DEFS: &[&str] = &[
+    // filament-core-service#33: an optional semantic-IR construct declaration
+    // attached through the optional `ObjectTypeEntry.properties.construct`.
+    "ConstructDeclaration",
+    "PlainLanguageProfile",
+    "LintRuleEntry",
+    "VocabularyTerm",
+    "AmbiguityTermEntry",
+    "PropertyIdiomEntry",
+    "VerificationMethodEntry",
+    "TraceTarget",
+    "DocumentReference",
+    "StatusVocabulary",
+    "TraceTagGrammar",
+    "TraceMarkerForm",
+    "ColumnVocabularies",
+    "CombinatorialColumns",
+    "ObligationSource",
+    "RequiredRelation",
+    "VocabularyCoverage",
+    "TraceImplementsForm",
+];
+
 /// The module-manifest schema admits exactly the contract's keys.
 ///
 /// Provenance: agent-ix/quoin#452
@@ -93,7 +128,7 @@ fn tc_452_640_the_module_manifest_schema_admits_the_contract_keys() {
 /// arrays, or "every one of them is unchanged" is a statement about none of
 /// them.
 ///
-/// The baseline is the 14 `(path, required)` pairs `required_arrays` produced
+/// The baseline is the 13 `(path, required)` pairs `required_arrays` produced
 /// over filament-core-service's `module-manifest.schema.json` at the commit
 /// before CR-003 (agent-ix/filament-core-service#21) added the `semantic`
 /// block — recorded here as data rather than as a second copy of the whole
@@ -124,7 +159,6 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
         ),
         ("/$defs/EdgeTypeEntry", &["description", "category"]),
         ("/$defs/GrammarEntry", &["name"]),
-        ("/$defs/LintRuleEntry/properties/pattern", &["kind"]),
         ("/$defs/LocatorPrimitive", &["from"]),
         ("/$defs/ObjectTypeEntry", &["name"]),
         ("/$defs/RoleEntry", &["description"]),
@@ -155,16 +189,19 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
         assert!(
             path.contains("/properties/semantic")
                 || path.contains("/data_schema/")
-                // `$defs/ConstructDeclaration` (filament-core-service#33): an optional
-                // semantic-IR construct declaration a manifest may attach to an object
-                // type via `ObjectTypeEntry.properties.construct`, which is itself
-                // optional -- a manifest that never sets `construct` never has this
-                // def's own `required` array evaluated, so it adds no obligation to a
-                // manifest that validated before.
-                || path.contains("/$defs/ConstructDeclaration"),
+                || NEW_OPTIONAL_DEFS.iter().any(|name| {
+                    *path == format!("/$defs/{name}")
+                        || path.starts_with(&format!("/$defs/{name}/"))
+                }),
             "new required array outside the optional nodes: {path}"
         );
     }
+    // The pre-CR-003 object-form `pattern` baseline is now a plain string.
+    let schema = read_json(&module_manifest_schema_path(&semantic_root()));
+    assert_eq!(
+        schema["$defs"]["LintRuleEntry"]["properties"]["pattern"]["type"],
+        "string"
+    );
     assert_eq!(
         after.get(""),
         Some(&vec![
@@ -175,12 +212,13 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
     );
 }
 
-/// The common schema's target registry is the declared five.
+/// The common schema's target registry is the published six (semantic-schema
+/// 0.4.x added `sysml-v2-textual`).
 ///
 /// Provenance: agent-ix/quoin#452
 #[trace("FR-075-AC-1")]
 #[test]
-fn tc_452_643_the_common_schema_declares_the_five_targets() {
+fn tc_452_643_the_common_schema_declares_the_published_targets() {
     let common_path = common_schema_path(&semantic_root());
     let common = read_json(&common_path);
     assert_eq!(
@@ -190,7 +228,8 @@ fn tc_452_643_the_common_schema_declares_the_five_targets() {
             "rust",
             "typescript",
             "python-pydantic-v2",
-            "python-dataclass"
+            "python-dataclass",
+            "sysml-v2-textual"
         ])
     );
 }

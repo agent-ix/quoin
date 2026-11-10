@@ -32,7 +32,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use common::{schema_dir, validators};
+use common::validators;
 use regex::Regex;
 use serde_json::Value;
 use tempfile::TempDir;
@@ -303,39 +303,22 @@ fn tc_264_007_an_import_without_an_exact_version_aborts_naming_the_entry() {
 
 #[trace("FR-076-AC-8", "TC-1407")]
 #[test]
-fn tc_264_008_a_target_outside_the_registry_aborts_naming_it() {
-    assert!(refused(&["generated_targets=json-schema,go"]).contains("go"));
-}
-
-/// The target list the pre-generation hook validates against is the
-/// filament-core-data registry Quoin reads (`target` plus
-/// `representationFormat`), not a stale copy of it.
-#[trace("FR-076-AC-8")]
-#[test]
-fn tc_264_009_the_hooks_target_registry_equals_the_published_registry() {
-    let common: Value = serde_json::from_str(
-        &fs::read_to_string(schema_dir().join("filament-core-data/common.schema.json")).unwrap(),
-    )
-    .unwrap();
-    let defs = &common["$defs"];
-    let published: BTreeSet<String> = ["target", "representationFormat"]
-        .iter()
-        .flat_map(|name| defs[*name]["enum"].as_array().unwrap().clone())
-        .map(|v| v.as_str().unwrap().to_owned())
-        .collect();
-
-    let hook = fs::read_to_string(Path::new(TEMPLATE).join("hooks/pre_gen_project.py")).unwrap();
-    let block = hook
-        .split("TARGET_REGISTRY = {")
-        .nth(1)
-        .and_then(|rest| rest.split('}').next())
-        .expect("the hook declares TARGET_REGISTRY");
-    let in_hook: BTreeSet<String> = Regex::new(r#""([^"]+)""#)
-        .unwrap()
-        .captures_iter(block)
-        .map(|c| c[1].to_owned())
-        .collect();
-    assert_eq!(in_hook, published);
+fn tc_264_008_a_target_outside_the_registry_is_refused_by_the_published_schema() {
+    let r = render("object", "", &["generated_targets=json-schema,go"]);
+    let manifest = r.manifest();
+    let block = &manifest["semantic"];
+    assert!(
+        block["targets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t == "go")
+    );
+    let errors = validators().semantic_block().errors(block);
+    assert!(
+        errors.iter().any(|e| format!("{e:?}").contains("go")),
+        "{errors:?}"
+    );
 }
 
 #[trace("FR-076-AC-9")]
@@ -412,10 +395,9 @@ fn tc_264_014_every_refusal_leaves_no_directory_behind() {
 #[trace("FR-078-AC-6")]
 #[trace("FR-078-CON-1", "TC-1417", "TC-1468")]
 #[test]
-fn tc_264_020_the_semantic_block_has_the_nine_keys_validates_and_matches_the_types() {
-    let nine: BTreeSet<&str> = [
+fn tc_264_020_the_semantic_block_has_the_eight_keys_validates_and_matches_the_types() {
+    let eight: BTreeSet<&str> = [
         "contract_version",
-        "semantic_core",
         "package",
         "exports",
         "imports",
@@ -435,7 +417,7 @@ fn tc_264_020_the_semantic_block_has_the_nine_keys_validates_and_matches_the_typ
             .keys()
             .map(String::as_str)
             .collect();
-        assert_eq!(keys, nine, "variant {kind}");
+        assert_eq!(keys, eight, "variant {kind}");
         let errors = validators.semantic_block().errors(block);
         assert!(errors.is_empty(), "variant {kind}: {errors:?}");
 

@@ -430,27 +430,9 @@ mod tests {
         }
     }
 
-    /// `semantic.semantic_core` as the module-manifest schema pinned through
-    /// `@agent-ix/semantic-schema` requires it. The `quire-fixtures`
-    /// `module-ok` manifest omits the key, so `copy_module_ok` adds it; drop
-    /// this injection when the pinned `@agent-ix/semantic-schema` no longer
-    /// requires `semantic.semantic_core`. Quoin reads nothing from the value.
-    const SCHEMA_REQUIRED_SEMANTIC_CORE: &str = "0.0.0";
-
-    /// Copy the `quire-fixtures` `module-ok` fixture to `to` with the
-    /// `semantic_core` key the pinned schema requires.
+    /// Copy the `quire-fixtures` `module-ok` fixture to `to`.
     fn copy_module_ok(to: &Path) {
         copy_tree(&quire_fixtures::module_ok_dir(), to);
-        let manifest = to.join("manifest.yaml");
-        let text = fs::read_to_string(&manifest).unwrap();
-        fs::write(
-            &manifest,
-            text.replace(
-                "semantic:\n",
-                &format!("semantic:\n  semantic_core: {SCHEMA_REQUIRED_SEMANTIC_CORE}\n"),
-            ),
-        )
-        .unwrap();
     }
 
     /// A home with `names` materialised from the fixture and recorded in the
