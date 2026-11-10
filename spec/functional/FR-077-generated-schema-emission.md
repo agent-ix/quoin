@@ -31,7 +31,7 @@ the emitter leaves relative, and render deterministically.
 
 - `typespec/main.tsp`, importing `@agent-ix/semantic-core`
 - `typespec/tspconfig.yaml`, selecting the official `@typespec/json-schema` emitter
-- The manifest `version`
+- The package identity (`<org>/<repo>`)
 
 ## Outputs
 
@@ -47,9 +47,9 @@ the emitter leaves relative, and render deterministically.
 - The rendered emit command SHALL write one JSON Schema file per type the rendered manifest exports.
 - When the emitter leaves an `$id` or `$ref` relative, the emit command SHALL rewrite it to an absolute URL under this module's base or under the semantic-core base.
 - The emit command SHALL discard the schemas the emitter re-emits for imported libraries, so that only this module's namespace is written.
-- Where a `$ref` names a model of an imported semantic module, the emit command SHALL rewrite it to that module's schema base at the version `semantic.imports` declares, rather than to this module's base or to the semantic-core base; the rewritten `$ref` URLs count as references for `semantic.unused-import`, as do `$ref`s in hand-written data schemas (FR-070).
+- Where a `$ref` names a model of an imported semantic module, the emit command SHALL rewrite it to that module's schema base, named by the identity `semantic.imports` declares, rather than to this module's base or to the semantic-core base; the rewritten `$ref` URLs count as references for `semantic.unused-import`, as do `$ref`s in hand-written data schemas (FR-070).
 - If a `$ref` resolves to no declared base — this module's, the semantic-core base, or an imported module's — then the emit command SHALL fail naming the reference, rather than writing a schema whose reference points nowhere.
-- When the `@jsonSchema` base declared in the source and the manifest `version` disagree, the emit command SHALL fail naming both values, leaving the committed output untouched.
+- When the `@jsonSchema` base declared in the source and the base the package identity implies disagree, the emit command SHALL fail naming both values, leaving the committed output untouched.
 - When `tsp compile` fails, the emit command SHALL fail carrying the compiler diagnostics, leaving the committed output untouched.
 - Where the emit command is run in check mode, it SHALL exit non-zero listing every schema that differs from the committed output, writing no file.
 - The rendered lint task SHALL run the emit command in check mode, so that schema drift fails the rendered repository's own gate.
@@ -69,10 +69,10 @@ the emitter leaves relative, and render deterministically.
 | FR-077-AC-2 | No emitted schema of any rendered variant is the placeholder `{"type": "object"}` contract. | Test (TC-1409) |
 | FR-077-AC-3 | Running the emit command twice over an unchanged tree produces byte-identical output. | Test (TC-1413) |
 | FR-077-AC-4 | Check mode exits zero on the committed output and non-zero, naming the file, after one emitted byte is changed. | Test (TC-1414) |
-| FR-077-AC-5 | Editing the manifest `version` without editing the `@jsonSchema` base fails the emit command naming both values, and no committed file changes. | Test (TC-1415) |
+| FR-077-AC-5 | An `@jsonSchema` base that disagrees with the package identity fails the emit command naming both values, and no committed file changes. | Test (TC-1415) |
 | FR-077-AC-6 | The rendered `main.tsp` imports `@agent-ix/semantic-core` and redeclares no model the grammar already declares. | Test (TC-1416) |
 | FR-077-AC-7 | A rendered source with a deliberate TypeSpec error fails the emit command with the compiler diagnostics in the message, and no committed schema or manifest byte changes. | Test (TC-1449) |
-| FR-077-AC-8 | In a mixed rendering with an imported module, a `$ref` to an imported model is written against that module's base at the imported version; a `$ref` matching no declared base fails the emit command naming the reference. | Test (TC-1457) |
+| FR-077-AC-8 | In a mixed rendering with an imported module, a `$ref` to an imported model is written against that imported module's base; a `$ref` matching no declared base fails the emit command naming the reference. | Test (TC-1457) |
 
 ## Dependencies
 

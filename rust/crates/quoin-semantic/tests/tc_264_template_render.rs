@@ -29,106 +29,15 @@ use ix_trace_rs::trace;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::Path;
 
+use common::template::{IMPORT, Render, TEMPLATE, cookiecutter, render};
 use common::validators;
 use regex::Regex;
 use serde_json::Value;
 use tempfile::TempDir;
 
-const TEMPLATE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../../templates/semantic-module"
-);
-
-/// An import a `mixed` variant needs; the form is `<org>/<repo>@<requirement>`.
-const IMPORT: &str = "agent-ix/spec-artifacts-iso@0.1.0";
-
 const VARIANTS: [(&str, &str); 3] = [("object", ""), ("artifact", ""), ("mixed", IMPORT)];
-
-/// One rendered repository, living only as long as this value.
-struct Render {
-    _dir: TempDir,
-    root: PathBuf,
-    package: String,
-}
-
-impl Render {
-    fn path(&self, relative: &str) -> PathBuf {
-        self.root.join(relative.replace("{package}", &self.package))
-    }
-
-    fn text(&self, relative: &str) -> String {
-        let path = self.path(relative);
-        fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
-    }
-
-    fn manifest(&self) -> Value {
-        quoin_yaml::from_str(&self.text("{package}/manifest.yaml")).unwrap()
-    }
-}
-
-/// `cookiecutter` 1.x silently replaces an off-list choice with the first one,
-/// so FR-076-AC-6 cannot hold there; the floor is 2.x (FR-076).
-fn assert_renderer_floor() {
-    static CHECKED: std::sync::Once = std::sync::Once::new();
-    CHECKED.call_once(|| {
-        let out = Command::new("cookiecutter").arg("--version").output().expect(
-            "`cookiecutter` is not installed; install it with `pipx install cookiecutter` \
-             (NFR-020 declares it a toolchain floor, so this is a failure, not a skip)",
-        );
-        let text = String::from_utf8_lossy(&out.stdout);
-        let major: u32 = text
-            .split_whitespace()
-            .nth(1)
-            .and_then(|v| v.split('.').next())
-            .and_then(|m| m.parse().ok())
-            .unwrap_or_else(|| panic!("unreadable `cookiecutter --version`: {text}"));
-        assert!(
-            major >= 2,
-            "cookiecutter {major}.x is below the 2.x floor (FR-076); upgrade with `pipx upgrade cookiecutter`"
-        );
-    });
-}
-
-fn cookiecutter(output: &Path, args: &[&str]) -> std::process::Output {
-    assert_renderer_floor();
-    Command::new("cookiecutter")
-        .args(["--no-input", "--output-dir"])
-        .arg(output)
-        .arg(TEMPLATE)
-        .args(args)
-        .stdin(std::process::Stdio::null())
-        .output()
-        .expect(
-            "`cookiecutter` is not installed; install it with `pipx install cookiecutter` \
-             (NFR-020 declares it a toolchain floor, so this is a failure, not a skip)",
-        )
-}
-
-/// Render `kind` with extra `key=value` inputs; panics if rendering fails.
-fn render(kind: &str, imports: &str, extra: &[&str]) -> Render {
-    let dir = TempDir::new().unwrap();
-    let mut args = vec![format!("module_kind={kind}")];
-    if !imports.is_empty() {
-        args.push(format!("imported_modules={imports}"));
-    }
-    args.extend(extra.iter().map(|s| (*s).to_owned()));
-    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-    let out = cookiecutter(dir.path(), &refs);
-    assert!(
-        out.status.success(),
-        "variant {kind}: rendering failed: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    let root = dir.path().join("spec-objects-example");
-    Render {
-        _dir: dir,
-        root,
-        package: "spec_objects_example".to_owned(),
-    }
-}
 
 fn all_variants() -> Vec<(&'static str, Render)> {
     VARIANTS
