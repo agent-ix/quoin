@@ -338,8 +338,7 @@ fn tc_194_005_a_ref_resolves_to_an_imported_base_or_fails_naming_it() {
 
 // ------------------------------------------------------------- NFR-020
 
-#[trace("FR-083-AC-6", "TC-1448")]
-#[trace("NFR-020-AC-3")]
+#[trace("NFR-020-AC-3", "TC-1448")]
 #[test]
 fn tc_194_006_an_absent_schema_toolchain_fails_the_drift_check_naming_the_install_command() {
     let r = installed("object", "");
@@ -403,10 +402,13 @@ fn tc_194_007_an_absent_validator_fails_the_validation_leg_naming_quire() {
             "make {target} passed with no validator: {message}"
         );
         assert!(
-            message.contains("quire"),
-            "make {target} does not name the validator: {message}"
+            message.contains("quire: not found"),
+            "make {target} does not name the missing validator: {message}"
         );
-        assert!(message.contains("not found"), "make {target}: {message}");
+        assert!(
+            message.contains("make install"),
+            "make {target} does not name the install step: {message}"
+        );
         assert!(
             !message.contains("0 document"),
             "make {target} reported zero documents instead of failing: {message}"
@@ -449,7 +451,7 @@ fn tc_194_008_a_failing_validation_leg_fails_the_gate_before_lint_and_test_run()
         "the invalid document is not named: {message}"
     );
     assert!(
-        !message.contains("ruff") && !message.contains("pytest"),
+        !message.contains("poe lint") && !message.contains("poe test"),
         "a later leg ran after the validation leg failed: {message}"
     );
 }

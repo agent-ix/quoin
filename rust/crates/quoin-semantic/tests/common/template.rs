@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Agent-IX
+
 //! Rendering the real semantic-module cookiecutter into a temporary directory,
 //! shared by the template render suite (PLAT-264) and the refusal suite
 //! (PLAT-194).

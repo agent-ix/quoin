@@ -68,6 +68,7 @@ gate: validate lint test
 
 .PHONY: validate
 validate:
+	@command -v quire >/dev/null || { echo "quire: not found; run 'make install' (poetry install provides the quire validator)" >&2; exit 1; }
 	quire validate --scope . "spec/**/*.md"
 
 .PHONY: lint
