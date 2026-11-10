@@ -57,4 +57,3 @@ quire-fixtures = { workspace = true }
 # that a pin moves up and never down; 3.27.0 is API-compatible for the
 # `TempDir`/`NamedTempFile` use here.
 tempfile = "=3.27.0"
-regex = { workspace = true }

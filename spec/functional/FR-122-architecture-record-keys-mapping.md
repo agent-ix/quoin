@@ -33,13 +33,13 @@ authored Markdown fills. The keys fall into four groups, and each has one owner:
 - `relations` and the typed relation keys (`requires`, `carries`, `renders`,
   `triggers`, `serializes`, `throttles`): arrays of `SemanticId` named after an
   `allowed_links` verb, owned by FR-104 and quire-rs FR-076, which derive them from `## Relationships` rows only
-  (FR-076-CON-4). This requirement adds no second authoring form for them; an
+  (quire-rs FR-076-CON-4). This requirement adds no second authoring form for them; an
   author declares `requires` as a `## Relationships` row with the verb
   `requires`.
 - `featureOrder` and the systems-kind members (`owner`, `declaredType`,
   `multiplicity`, `direction`, `interfaceType`, `sourceEnd`, `targetEnd`,
   `flowDirection`, `sourceElement`, `targetElement`): quire-rs FR-075.
-- `provider` and `exposes`: single `SemanticId` values that name no verb, so FR-076 does not derive them; this requirement, by the FR-121 single-value form.
+- `provider` and `exposes`: single `SemanticId` values that name no verb, so quire-rs FR-076 does not derive them; this requirement, by the FR-121 single-value form.
 - The other nine keys above: this requirement, by FR-121 or by its own form.
 
 Adopting `record-sections` is a breaking change for the module's artifacts, not
@@ -100,11 +100,11 @@ it names the token (Dependencies). No key is declared not-authored.
 | FR-122-AC-3 | A `## Associated Types` table `Type \| Multiplicity` extracts to `associated_types` as `TypeRef[]` that validates against `TypeRef.json`; an `interface` whose `## Contract` fence lists `associated_types` that its table omits extracts none from the fence. | Test |
 | FR-122-AC-4 | The `binary_format` skeleton's `## Layout` fence extracts `endianness` `little` and two `RecordLayout`s, `tag: 0x21` as `"0x21"`, `posting_tuple.payload` with `size: payload_len` as the identifier resolving to `metadata_block.payload_len`, and `magic` absent, and the record validates against `BinaryFormat.json`; a `size` naming no field yields `size-unknown-field` and one naming a field in two records yields `size-ambiguous`; a `## Endianness` section is prose. | Test |
 | FR-122-AC-5 | A `## Thresholds` row `per_token \| requests \| 60 \| 1m \| 429 \| true \| ` extracts to a `Threshold` with `on_exceeded` of `status` 429 and `retry_after` true and no `behavior`, validating against `Threshold.json`; the same row with an empty `Status` yields `semantic.invalid-model-cell` `status-required` at the row. | Test |
-| FR-122-AC-6 | An `api_endpoint` whose `## Relationships` table holds a `requires` row extracts `requires` through FR-076 as `SemanticId[]`, and a `## Requires` bullet list in the same artifact is prose and yields no diagnostic. | Test |
+| FR-122-AC-6 | An `api_endpoint` whose `## Relationships` table holds a `requires` row extracts `requires` through quire-rs FR-076 as `SemanticId[]`, and a `## Requires` bullet list in the same artifact is prose and yields no diagnostic. | Test |
 | FR-122-AC-7 | Every top-level property of every object-type record schema that `agent-ix/spec-objects-architecture` ships is owned by exactly one of FR-071, FR-072, FR-104, FR-121, this requirement, quire-rs FR-075 or quire-rs FR-076, and none is declared not-authored; a property that no owner claims fails the test. | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-121](./FR-121-record-key-sections-mapping.md), [FR-071](./FR-071-typed-properties-mapping.md) (`Type` and `Multiplicity` cells), [FR-072](./FR-072-invariants-and-operations-mapping.md), [FR-104](./FR-104-relationships-mapping.md), quire-rs FR-075 and FR-076, `agent-ix/spec-objects-architecture` FR-004 and FR-006 (the record models and the interface lowering adopted here)
+- **Upstream**: [FR-121](./FR-121-record-key-sections-mapping.md), [FR-071](./FR-071-typed-properties-mapping.md) (`Type` and `Multiplicity` cells), [FR-072](./FR-072-invariants-and-operations-mapping.md), [FR-104](./FR-104-relationships-mapping.md), quire-rs FR-075 and quire-rs FR-076, `agent-ix/spec-objects-architecture` FR-004 and FR-006 (the record models and the interface lowering adopted here)
 - **Upstream, quire-rs**: the `semantic-v1.schema.json` change of FR-121 (`recordSources`, `availability.recordKeys`), owned by `agent-ix/quire-rs`, lane P-PLAT-101
-- **Downstream**: the extractor in `agent-ix/quire-rs`; `agent-ix/spec-objects-architecture` changes that are that module's to make: convert the `## Thresholds`, `## Registration` and `## Stability` skeleton sections from bullet lists to the tables above (breaking for its corpus), add the `relationships` token to its manifest `semantic.mappings` (today `typed-table`, `sysml-fence`, `ocl-clause`, `generalization`), since FR-076 yields no typed relation keys until then, add `record-sections`, add `## Provider`, `## Exposes`, `## Delivery`, `## Versioning` and `## Routes`, drop `associated_types[]` as a source in FR-006, widen the `LayoutField.size` doc, revisit its decision #20, and name PLAT-196 as the owner in its Out of Scope
+- **Downstream**: the extractor in `agent-ix/quire-rs`; `agent-ix/spec-objects-architecture` changes that are that module's to make: convert the `## Thresholds`, `## Registration` and `## Stability` skeleton sections from bullet lists to the tables above (breaking for its corpus), add the `relationships` token to its manifest `semantic.mappings` (today `typed-table`, `sysml-fence`, `ocl-clause`, `generalization`), since quire-rs FR-076 yields no typed relation keys until then, add `record-sections`, add `## Provider`, `## Exposes`, `## Delivery`, `## Versioning` and `## Routes`, drop `associated_types[]` as a source in FR-006, widen the `LayoutField.size` doc, revisit its decision #20, and name PLAT-196 as the owner in its Out of Scope

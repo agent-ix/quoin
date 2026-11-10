@@ -37,8 +37,6 @@ use quoin_semantic::manifest::{SemanticValidators, read_manifest_yaml};
 use quoin_semantic::{SemanticDiagnostic, SemanticReadResult, read_module_semantic};
 use serde_json::Value;
 
-pub mod template;
-
 /// The semantic contract's root: quoin's own `sweep-report.schema.json` plus
 /// the module-manifest and semantic-core schemas quoin depends on from
 /// `agent-ix/filament-core-data`'s published `@agent-ix/semantic-schema` and

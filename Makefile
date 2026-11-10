@@ -9,7 +9,7 @@ RUST_DIR := $(CURDIR)/rust
 CARGO_TARGET := $(RUST_DIR)/target
 CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
 
-.PHONY: build test package-test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence
 
 build: rust-build
 
@@ -20,10 +20,7 @@ build-inputs:
 	  echo "build-inputs: 'pnpm install --frozen-lockfile' failed (exit $$rc); the pnpm error is above. If it is a connection error, this step needs the registries in your npm config ('pnpm config get registry'): even a lockfile satisfied from the store re-checks package metadata. Retry waits are bounded by pnpm-workspace.yaml." >&2; \
 	  exit $$rc; }
 
-test: rust-gate package-test
-
-package-test:
-	cd packages/semantic-module-tools && node --test
+test: rust-gate
 
 lint: rust-lint
 

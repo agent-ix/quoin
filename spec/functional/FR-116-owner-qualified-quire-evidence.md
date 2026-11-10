@@ -41,7 +41,7 @@ establishes that an act occurred.
 ### Scope and existing record boundary
 
 The planned qualification boundary is the Quoin-owned check consumed by the
-planned `quoin_quire::evidence::qualify` bridge in FR-078. Its premises below are
+planned `quoin_quire::evidence::qualify` bridge in quire-rs FR-078. Its premises below are
 a typed owner input contract, **not new fields asserted to exist in
 `RunRecord`, a new retained-record wire schema, or a second evidence store**.
 The bridge consumes the same owner decision rather than implementing another
@@ -54,7 +54,7 @@ path SHALL instead be checked using correlated observations supplied at
 qualification time. A store record alone cannot answer those questions.
 
 Waiver authority and the final strict disposition of an owner-recognized waiver
-remain separate policy decisions under FR-078. This contract decides positive
+remain separate policy decisions under quire-rs FR-078. This contract decides positive
 verification only; it does not decide that pending policy.
 
 ## Inputs
@@ -66,8 +66,8 @@ input, not an existing JSON envelope or permission to place arbitrary keys in
 
 | Input | Required meaning |
 |---|---|
-| Selected target | The owner selection and original criterion identity supplied by FR-078, including its source/document/origin identity, exact requested target and declared method. A flat string ID alone is insufficient when the selected inventory distinguishes rows with the same rendered ID. |
-| Original audit premises | The original `AuditInput`, canonical `RunRecord` and `Binding` observations, method catalog and original record/run/entry locators from the owner read boundary. The bridge invokes the shared audit itself as FR-078 specifies; a supplied `healthy` flag or precomputed pass list is insufficient. |
+| Selected target | The owner selection and original criterion identity supplied by quire-rs FR-078, including its source/document/origin identity, exact requested target and declared method. A flat string ID alone is insufficient when the selected inventory distinguishes rows with the same rendered ID. |
+| Original audit premises | The original `AuditInput`, canonical `RunRecord` and `Binding` observations, method catalog and original record/run/entry locators from the owner read boundary. The bridge invokes the shared audit itself as quire-rs FR-078 specifies; a supplied `healthy` flag or precomputed pass list is insufficient. |
 | Producer definition | A Quoin-owner-approved definition identity/version describing the allowed declared-method/act-kind pair, required verification acts, required result semantics, permitted target scope, actual tool/configuration premises and required CI or manual association. A suite or command name alone is not this definition. |
 | Bounded reliance | The original FR-093 decision and current observation for the exact intended producer use, including accountable owner, permitted downstream decisions, validation evidence and accepted limitations. The requested positive use must be permitted, not merely another advisory use of the producer. |
 | Actor authority | The actual performer or accountable attester identity, its owner-authorized scope for the requested obligation/method, and the host's authority-admission reference. A name copied into a record does not establish authority. |
@@ -96,7 +96,7 @@ authority references, actor, performed/current source revisions, actual
 tool/configuration context, execution association and observation/freshness
 basis. It is a use-specific decision, not a producer certificate.
 
-The owner results SHALL preserve the following distinctions for FR-078's
+The owner results SHALL preserve the following distinctions for quire-rs FR-078's
 consumer mapping. Cause details name the unanswered or mismatched premise and
 the available target/record/invocation locus. An absent record has no invented
 record locator or producer outcome.
@@ -204,7 +204,7 @@ pass.
 ### Consumer and waiver boundary
 
 Only Quoin's evaluated owner result supplies these premises to the planned
-FR-078 bridge; a Quire-local configuration map, source tag or reconstructed
+quire-rs FR-078 bridge; a Quire-local configuration map, source tag or reconstructed
 pass list cannot stand in for it. The bridge's owner-neutral projection retains
 the original selected target and locators without manufacturing a
 `SymbolGraph` node or source binder. A positive decision supplies no blanket
@@ -213,7 +213,7 @@ other requested acts and its inherited strict premises.
 
 The qualifier SHALL NOT interpret a waiver as a passing verification act.
 Unknown waiver-shaped input remains unevaluated with the pending-policy detail
-specified by FR-078. An eventual owner-recognized waiver remains a separate
+specified by quire-rs FR-078. An eventual owner-recognized waiver remains a separate
 owner-policy outcome; this contract SHALL NOT map it silently to Pass, Skip,
 Fail or absence, or determine its eventual strict exit. Positive qualification
 can be reviewed independently of that unresolved waiver policy.
@@ -249,11 +249,11 @@ claims no executable acceptance evidence or current downstream discharge.
 | FR-116-AC-14 | Two owner targets with a shared rendered ID are not collapsed; unknown or ambiguous targets cannot qualify, and a shared suite/test-case reference does not grant a sibling target a decision without its own observed act. | Test |
 | FR-116-AC-15 | A genuine healthy audit with no positive owner premises, or a matching FR-093 reliance assessment alone, does not qualify an act; the bridge consumes the owner result rather than a precomputed healthy flag or a second checker. | Test |
 | FR-116-AC-16 | Accepted retained claims create no source symbols/binders or copied store records; legacy no-evidence audit/matrix behavior and the original canonical store formats remain unchanged. | Test |
-| FR-116-AC-17 | Waiver-shaped input produces no positive qualification and remains distinct under FR-078's pending owner policy; no fixture or report claims the final recognized-waiver strict policy settled by this contract. | Test |
+| FR-116-AC-17 | Waiver-shaped input produces no positive qualification and remains distinct under quire-rs FR-078's pending owner policy; no fixture or report claims the final recognized-waiver strict policy settled by this contract. | Test |
 | FR-116-AC-18 | The result exposes the host-admission and bounded authority basis for every positive decision; an unadmitted self-asserted context cannot obtain a positive decision merely by copying the expected field values. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) for original canonical records and locators; [FR-032](./FR-032-evidence-auditor.md) for the existing shared audit; [FR-093](./FR-093-evidence-producer-trust.md) for bounded owner reliance and invalidation; the original method catalog and the caller's admitted CI/manual/source observations.
 - **Downstream**: quire-rs [FR-078](ix://agent-ix/quire-rs/FR-078) / PLAT-1160's planned bridge and neutral backing projection; IR-1006 method-consumer qualification; the affected IR/RT Inspection and Analysis rows. [FR-115](./FR-115-evidence-backed-test-matrix.md)'s existing join is not itself this opt-in owner qualification.
-- **Separate**: PLAT-1162's evidence-gate apparatus intake does not supply this contract; the owner-recognized waiver representation and final strict policy remain with the policy owner identified by FR-078.
+- **Separate**: PLAT-1162's evidence-gate apparatus intake does not supply this contract; the owner-recognized waiver representation and final strict policy remain with the policy owner identified by quire-rs FR-078.
