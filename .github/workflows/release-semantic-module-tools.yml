@@ -1,0 +1,69 @@
+# Publishes @agent-ix/semantic-module-tools (packages/semantic-module-tools) to
+# public npm. Auth mirrors agent-ix/nodejs-actions release-npm-module.yml: when
+# the repo secret NPM_TOKEN is set (the package's first publish, before its
+# Trusted Publisher exists) it is written to ~/.npmrc; when empty, publish falls
+# back to OIDC Trusted Publishing. Filename is load-bearing: npmjs's Trusted
+# Publisher for the package is bound to a workflow literally named
+# `release-semantic-module-tools.yml`.
+name: Release semantic-module-tools to npm
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for npm Trusted Publishing (public npm)
+
+jobs:
+  publish-npm:
+    name: Test and publish to npm
+    runs-on: ubuntu-24.04
+    # An npm publish is irreversible (a version can never be re-published),
+    # so this only ever runs from reviewed main, never from a branch or a
+    # fork's workflow_dispatch.
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: packages/semantic-module-tools
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.15.0
+          # Deliberately no registry-url: setup-node would write an .npmrc with
+          # _authToken=${NODE_AUTH_TOKEN}, and that token line stops npm doing
+          # the OIDC exchange when NPM_TOKEN is empty.
+
+      # Trusted Publishing needs a recent npm; the one bundled with Node 22
+      # predates it.
+      - name: Install current npm
+        run: npm install -g npm@latest
+
+      - name: Test
+        run: npm test
+
+      - name: Refuse an already-published version
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          if npm view "${name}@${version}" version > /dev/null 2>&1; then
+            echo "::error::${name}@${version} is already published to npm; bump package.json's version" >&2
+            exit 1
+          fi
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf 'registry=https://registry.npmjs.org/\n' > "$HOME/.npmrc"
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" >> "$HOME/.npmrc"
+          fi
+          npm publish --provenance --access public

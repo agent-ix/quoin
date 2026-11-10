@@ -37,7 +37,11 @@
   },
   "devDependencies": {
     "@agent-ix/semantic-core": "*",
+    "@agent-ix/semantic-module-tools": "0.1.0",
     "@typespec/compiler": "1.15.0",
     "@typespec/json-schema": "1.15.0"
+  },
+  "overrides": {
+    "@typespec/asset-emitter": "0.79.1"
   }
 }

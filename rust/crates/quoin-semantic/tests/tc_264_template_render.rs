@@ -1037,3 +1037,54 @@ fn tc_264_055_the_template_carries_no_emitter_runtime_or_grammar_copy() {
     assert!(main.contains("import \"@agent-ix/semantic-core\";"));
     assert!(main.contains("import \"@typespec/json-schema\";"));
 }
+
+#[trace("FR-076-CON-4")]
+#[test]
+fn tc_264_056_a_rendered_repo_depends_on_the_emit_package_and_carries_no_local_pipeline() {
+    for (kind, r) in all_variants() {
+        let package: Value = serde_json::from_str(&r.text("package.json")).unwrap();
+        let pin = package["devDependencies"]["@agent-ix/semantic-module-tools"]
+            .as_str()
+            .unwrap_or_default();
+        let is_exact = |v: &str| {
+            let parts: Vec<&str> = v.split('.').collect();
+            parts.len() == 3
+                && parts
+                    .iter()
+                    .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
+        };
+        assert!(
+            is_exact(pin),
+            "variant {kind}: the emit package pin {pin:?} is not an exact version"
+        );
+        let asset_emitter = package["overrides"]["@typespec/asset-emitter"]
+            .as_str()
+            .unwrap_or_default();
+        assert!(
+            is_exact(asset_emitter),
+            "variant {kind}: the asset-emitter override {asset_emitter:?} is missing or not an exact version"
+        );
+        assert!(
+            !r.path("scripts/generate-schemas.mjs").exists(),
+            "variant {kind}: carries a local emit driver"
+        );
+        for (name, bytes) in files_under(&r.root) {
+            if name.starts_with("scripts/")
+                && std::path::Path::new(&name)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("mjs"))
+            {
+                let text = String::from_utf8_lossy(&bytes);
+                assert!(
+                    !text.contains("tsp compile") && !text.contains("compiler/entrypoints"),
+                    "variant {kind}: {name} implements the emit pipeline"
+                );
+            }
+        }
+        let pyproject = r.text("pyproject.toml");
+        assert!(
+            pyproject.contains("semantic-module-emit --package-dir"),
+            "variant {kind}: the schemas task does not invoke the shared bin"
+        );
+    }
+}

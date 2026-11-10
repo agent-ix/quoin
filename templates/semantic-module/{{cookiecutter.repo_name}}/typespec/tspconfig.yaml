@@ -1,6 +1,6 @@
 # The official @typespec/json-schema emitter, and only it.
 #
-# `emitter-output-dir` is always overridden by scripts/generate-schemas.mjs with
+# `emitter-output-dir` is always overridden by semantic-module-emit with
 # a scratch directory, so a stray `tsp compile` never writes over the committed
 # schemas.
 #

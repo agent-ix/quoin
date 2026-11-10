@@ -73,11 +73,11 @@ cmd = "pytest"
 help = "Run the module's verification suite"
 
 [tool.poe.tasks.schemas]
-cmd = "node scripts/generate-schemas.mjs"
+cmd = "npx --no-install semantic-module-emit --package-dir {{ cookiecutter.package_name }}"
 help = "Emit {{ cookiecutter.package_name }}/schemas/ from typespec/main.tsp"
 
 [tool.poe.tasks.schemas-check]
-cmd = "node scripts/generate-schemas.mjs --check"
+cmd = "npx --no-install semantic-module-emit --package-dir {{ cookiecutter.package_name }} --check"
 help = "Fail when the committed schemas differ from the source"
 
 [tool.poe.tasks.lint]

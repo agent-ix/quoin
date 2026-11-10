@@ -49,19 +49,19 @@ the rendered repository ships the two inputs and no copy of the output.
 
 ## Constraints
 
-| ID | Constraint | Type | Validation |
-|----|------------|------|------------|
+| ID           | Constraint                                                                                                                    | Type         | Validation     |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------- |
 | FR-082-CON-2 | The rendered spec tree SHALL describe the rendered module, carrying no requirement copied from an existing module repository. | Independence | Test (TC-1461) |
 
 ## Acceptance Criteria
 
-| ID | Criteria | Verification |
-|----|----------|--------------|
-| FR-082-AC-1 | `quire validate` over each rendered variant's `spec/**/*.md` exits zero with no error diagnostic. | Test (TC-1439) |
-| FR-082-AC-2 | No rendered variant carries `spec/matrix.md` or `spec/tests.md`, and the rendered `spec/index.md` links neither. | Test |
-| FR-082-AC-3 | No rendered acceptance criterion's `Verification` cell carries a test-case id. | Test |
-| FR-082-AC-4 | Every rendered test function carries a trace tag, and every id it names is an acceptance criterion that exists in the rendered spec. | Test |
-| FR-082-AC-5 | Each rendered variant carries the master-requirements root, the stakeholder, usecase, functional, and non-functional folders, and their indexes. | Test (TC-1443) |
+| ID          | Criteria                                                                                                                                                                                                     | Verification   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| FR-082-AC-1 | `quire validate` over each rendered variant's `spec/**/*.md` exits zero with no error diagnostic.                                                                                                            | Test (TC-1439) |
+| FR-082-AC-2 | No rendered variant carries `spec/matrix.md` or `spec/tests.md`, and the rendered `spec/index.md` links neither.                                                                                             | Test           |
+| FR-082-AC-3 | No rendered acceptance criterion's `Verification` cell carries a test-case id.                                                                                                                               | Test           |
+| FR-082-AC-4 | Every rendered test function carries a trace tag, and every id it names is an acceptance criterion that exists in the rendered spec.                                                                         | Test           |
+| FR-082-AC-5 | Each rendered variant carries the master-requirements root, the stakeholder, usecase, functional, and non-functional folders, and their indexes.                                                             | Test (TC-1443) |
 | FR-082-AC-6 | The rendered master-requirements Out of Scope section states that the module's domain types are the maintainer's to specify, and no rendered requirement text is copied from a maintained module repository. | Test (TC-1461) |
 
 ## Dependencies
@@ -83,6 +83,6 @@ the rendered repository ships the two inputs and no copy of the output.
 > tool fails naming its install command) were recorded in the deleted matrix as
 > `🚧` rows, and no rendered test asserts either. AC-1 and AC-2 are now verified by
 > `Inspection` (AC-1 the skip count read from a run's summary, AC-2 the
-> absent-tool paths in `tests/conftest.py`, `tests/test_schema_emission.py` and
-> `scripts/generate-schemas.mjs`). Both methods compute as
+> absent-tool paths in `tests/conftest.py` and
+> `tests/test_schema_emission.py`). Both methods compute as
 > `method-without-symbol`, so a fresh render carries no untagged criterion.
