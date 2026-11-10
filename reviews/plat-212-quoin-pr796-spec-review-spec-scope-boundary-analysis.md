@@ -35,3 +35,17 @@ Unknown-import-type is cleanly allocated to install (FR-070/FR-075) and inspect 
 - `FR-070-CON-2` (examined): Quoin SHALL take the module-manifest schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, with no copy kept.
 - `FR-070-AC-8` (examined): A manifest with `imports: { "agent-ix/spec-artifacts-iso": "0.2.0" }` and no `import_types` loads exactly as it did before this amendment, and one with `import_types: { "agent-ix/spec-artifacts-iso": ["StR", "FR"] }` alongside that import loads and the pack reports the lists.
 - `FR-078` (examined): The rendered `semantic` block SHALL omit the optional `import_types` key; an author adds it by hand (FR-070).
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | medium | quire-rs#637 FR-069 (head 25f7dbde) also refuses a module with `semantic.unknown-import-type` at `<section>[<type>].data_schema.schema` when a declared-import `$ref` in its own data schemas names a type the provider does not export. Quoin FR-070 checks only `import_types` lists, so `quoin module install` accepts a module that `quire load` refuses, and PLAT-212's 'a manifest naming an imported type the package does not export is refused at install' is met only for the list form. Add the `$ref` form of the check to FR-070 (with an AC), or state why install leaves it to the loader. | spec/functional/FR-070-semantic-module-manifest-extension.md:42 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-070 now states `quoin module install` emits `semantic.unused-import` as a non-failing warning and `inspect` lists it; AC-12 names install. |
+| FND-002 | fixed | FR-070 states `quire load` refuses the same shapes, including the cross-key case, and quire-rs FR-069 head 25f7dbde refuses a key absent from `semantic.imports` with `semantic.invalid-value`. |
+| FND-003 | fixed | The Upstream line now names the filament-core-data schema change and its release as delivered under PLAT-212, whose deliverables include that schema change, and FR-070 states install refuses the key until the lockfile records that release, so AC-8's dependency is explicit. |

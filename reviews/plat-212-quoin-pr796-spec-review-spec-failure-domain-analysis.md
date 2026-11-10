@@ -39,3 +39,18 @@ The shape-error, unknown-import-type and derived `exports` rules are well bounde
 - `FR-075` (examined): `quoin module install` SHALL fill each derived `imports` entry's `exports` with that import's declared `semantic.import_types` list as type names, and with `[]` when none is declared, so the type-level import graph is available to consumers of `package-manifest.json`.
 - `FR-075-AC-6` (examined): For a fixture importing a package with `import_types: ["StR", "FR"]`, the derived `package-manifest.json` import entry carries `exports` naming `StR` and `FR`, and an import with no type list carries `exports: []`.
 - `FR-070-AC-10` (examined): With the provider installed and its `exports` lacking `Nope`, an `import_types` entry listing `Nope` fails `quoin module install` with `semantic.unknown-import-type` naming the package and `Nope`.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | FR-075 names a cycle 'by the `<org>/<repo>#<Type>` nodes that form it' whenever `$ref`-derived type-level edges exist, and FR-075-AC-7 now requires that 'a package cycle fails install even where the `$ref`s form no type-level cycle'. In that case edges exist but no type nodes form a cycle, so the naming rule selects the type-node form with nothing to name. Two implementers would differ (package names vs. a partial type path). Condition the type-node form on a type-level cycle existing, fall back to packages otherwise, and state the expected name in AC-7's fourth case (same wording needed in quire-rs FR-069). | spec/functional/FR-075-semantic-package-exports-and-locks.md:33 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fix c6c474dc states the settled rule (every package-level cycle fails install; the type graph only names it), defines the mixed case (a module with no `$ref`s into the cycle names over packages), adds the back-edge-without-type-cycle case to AC-7, and quire-rs#637 head 25f7dbde FR-069 states the same rule, so the cross-engine contradiction is gone. |
+| FND-002 | fixed | FR-075 now defines `$ref`-derived edges `<P>#<X> -> <Q>#<T>` with the type-name stem rule, identical to quire-rs FR-069. |
+| FND-003 | fixed | FR-070 defines 'not installed' and AC-11 now names `quoin module install` and the expected unresolved-import failure only. |
+| FND-004 | fixed | FR-070 counts `$ref`s in the module's own data schemas named through `data_schema`, emitted or hand-written; AC-12 and FR-077 match. |

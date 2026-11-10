@@ -33,3 +33,15 @@ ID formats are correct and unique: FR-070-AC-8..12 continue AC-7, FR-075-AC-6/7 
 - `FR-124-AC-9` (examined): `inspect` reports on an importer a `semantic.unknown-import-type` error naming the package and type for a type its installed provider does not export, and a `semantic.unused-import` warning for an unreferenced import; the error exits 1, and a run whose only finding is the warning exits zero.
 - `FR-070` (examined): The module-manifest JSON Schema, owned by `agent-ix/filament-core-data` (`schema/semantic/v1/module-manifest.schema.json` and `module-semantic-block.schema.json`, published as `@agent-ix/semantic-schema`), SHALL publish the block with `additionalProperties: false`.
 - `spec/matrix.md` (examined): TC-2130..TC-2137 added to the Test Case Summary (TC-2130..2134 -> FR-070-AC-8..12, TC-2135 -> FR-124-AC-9, TC-2136/2137 -> FR-075-AC-6/7), all 🚧 Pending; FR-070 and FR-075 coverage rows extended and set to 🚧 Pending.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | low | The fix added FR-078-AC-9 and TC-2138 (Pending), but the FR-078 row in spec/matrix.md still reads `✅ Covered` and does not list TC-2138, while the FR-070/FR-075 rows were moved to Pending when their new ACs were added. Add TC-2138 to the FR-078 row and mark it partly covered. | spec/matrix.md:112 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | spec/matrix.md now has an FR-124 coverage row for FR-124-AC-9 / TC-2135 (Pending). FR-124-AC-1..8 still have no TC anywhere in the matrix; that gap predates this PR. |

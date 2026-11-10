@@ -1443,7 +1443,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2134 | An import no `$ref` of the module's own data schemas under its schema base references yields `semantic.unused-import` at warning severity without failing install; a referenced import yields none | Unit | P0 | FR-070-AC-12 | 🚧 Pending |
 | TC-2135 | `quoin module inspect` reports `semantic.unknown-import-type` (exit 1) and `semantic.unused-import` (warning, exit 0 alone) on an importer | Integration | P0 | FR-124-AC-9 | 🚧 Pending |
 | TC-2136 | The derived package manifest import entries carry `exports` equal to the declared type list, `[]` when none | Unit | P0 | FR-075-AC-6 | 🚧 Pending |
-| TC-2137 | An import cycle fails install in every case; it is named over `<org>/<repo>#<Type>` nodes when `$ref`-derived type-level edges exist and over packages when they do not or a module has no `$ref`s into it | Unit | P0 | FR-075-AC-7 | 🚧 Pending |
+| TC-2137 | An import cycle fails install in every case; it is named over `<org>/<repo>#<Type>` nodes only when the `$ref`-derived type-level edges themselves form a cycle, and over packages when they do not (no edges, edges forming no type-level cycle, or a module with no `$ref`s into it) | Unit | P0 | FR-075-AC-7 | 🚧 Pending |
 | TC-2138 | The rendered `semantic` block carries no `import_types` key | Unit | P0 | FR-078-AC-9 | 🚧 Pending |
 
 ## Stakeholder Requirement Coverage

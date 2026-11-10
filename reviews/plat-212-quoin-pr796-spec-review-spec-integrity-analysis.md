@@ -38,3 +38,11 @@ FR-070-CON-1 stays true: `import_types` is optional and adds no required key any
 - `FR-077` (examined): Where a `$ref` names a model of an imported semantic module, the emit command SHALL rewrite it to that module's schema base at the version `semantic.imports` declares, rather than to this module's base or to the semantic-core base; the rewritten `$ref` URLs are the references `semantic.unused-import` counts (FR-070).
 - `FR-124` (examined): An entry's `diagnostics` SHALL be the diagnostics of reading its block (FR-070, FR-073, FR-074) followed by one error per `semantic.imports` entry that no other installed module provides at exactly the locked version, naming the import, the locked version and the installed versions, and one error per import cycle (named over types where type lists exist, FR-075), followed by one `semantic.unknown-import-type` error per `semantic.import_types` type the installed provider does not export and one `semantic.unused-import` warning per declared import no `$ref` in the module's emitted schemas references (FR-070).
 - `FR-075` (examined): `quoin module install` SHALL fill each derived `imports` entry's `exports` with that import's declared `semantic.import_types` list as type names, and with `[]` when none is declared, so the type-level import graph is available to consumers of `package-manifest.json`.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-075, FR-124 and TC-2137 now spell type-level nodes `<org>/<repo>#<Type>`, matching quire-rs FR-069. |
+| FND-002 | fixed | FR-075 now defers to the rules 'stated once in FR-070' for `semantic.unknown-import-type` and the unresolved-import error. |
+| FND-003 | fixed | FR-078-AC-9 and TC-2138 added for the omitted `import_types` key. |
