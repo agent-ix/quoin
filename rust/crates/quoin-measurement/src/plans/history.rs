@@ -90,6 +90,10 @@ fn plan_definition_of(
                 .statistical_design
                 .and_then(|design| design.decision_rule),
             protected_apparatus: plan.protected_apparatus.clone(),
+            // EA 0.8.1 added `statistical_design.answer_families` (PLAT-1020);
+            // quoin does not parse it yet, so it is not part of the definition
+            // this check compares.
+            answer_families: None,
         },
     }
 }

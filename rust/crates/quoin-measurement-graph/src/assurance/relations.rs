@@ -60,16 +60,6 @@ pub enum Resolution {
     Dangling,
 }
 
-/// Which tagging form a `verifies` edge was recovered from.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum VerifiesProvenance {
-    /// The current tagging form.
-    Canonical,
-    /// A form kept readable for history.
-    Legacy,
-}
-
 /// One document-to-document edge read out of the corpus.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -98,8 +88,6 @@ pub struct VerifiesRelation {
     pub target: NonEmptyText,
     /// The tagging form it was written in.
     pub form: NonEmptyText,
-    /// Which tagging form it was recovered from.
-    pub provenance: VerifiesProvenance,
     /// Where it was read from.
     pub locator: super::entities::Locator,
     /// How current it is.
