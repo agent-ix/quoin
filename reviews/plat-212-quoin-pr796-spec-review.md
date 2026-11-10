@@ -45,3 +45,4 @@ ID formats are correct and unique: FR-070-AC-8..12 continue AC-7, FR-075-AC-6/7 
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | spec/matrix.md now has an FR-124 coverage row for FR-124-AC-9 / TC-2135 (Pending). FR-124-AC-1..8 still have no TC anywhere in the matrix; that gap predates this PR. |
+| FND-002 | fixed | 71233bbf: the FR-078 coverage row now reads 🚧 Pending and lists TC-2138, the same treatment as the FR-070/FR-075 rows. |

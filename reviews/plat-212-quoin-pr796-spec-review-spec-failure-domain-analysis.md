@@ -54,3 +54,4 @@ The shape-error, unknown-import-type and derived `exports` rules are well bounde
 | FND-002 | fixed | FR-075 now defines `$ref`-derived edges `<P>#<X> -> <Q>#<T>` with the type-name stem rule, identical to quire-rs FR-069. |
 | FND-003 | fixed | FR-070 defines 'not installed' and AC-11 now names `quoin module install` and the expected unresolved-import failure only. |
 | FND-004 | fixed | FR-070 counts `$ref`s in the module's own data schemas named through `data_schema`, emitted or hand-written; AC-12 and FR-077 match. |
+| FND-005 | fixed | 05df0635: FR-075 names the cycle by `<org>/<repo>#<Type>` nodes only when the `$ref`-derived edges themselves form a cycle, and over packages otherwise, including edges that form no type-level cycle. FR-124 and TC-2137 use the same wording. AC-7's fourth case does not repeat the expected name, but the FR statement and TC-2137 fix it. |

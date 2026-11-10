@@ -42,6 +42,12 @@ Unknown-import-type is cleanly allocated to install (FR-070/FR-075) and inspect 
 | --- | --- | --- | --- |
 | FND-004 | medium | quire-rs#637 FR-069 (head 25f7dbde) also refuses a module with `semantic.unknown-import-type` at `<section>[<type>].data_schema.schema` when a declared-import `$ref` in its own data schemas names a type the provider does not export. Quoin FR-070 checks only `import_types` lists, so `quoin module install` accepts a module that `quire load` refuses, and PLAT-212's 'a manifest naming an imported type the package does not export is refused at install' is met only for the list form. Add the `$ref` form of the check to FR-070 (with an AC), or state why install leaves it to the loader. | spec/functional/FR-070-semantic-module-manifest-extension.md:42 |
 
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | The FND-004 fix added the `$ref` form of `semantic.unknown-import-type` to FR-070 (raised at `<section>[<type>].data_schema.schema`, with or without an `import_types` list). FR-124's `diagnostics` enumeration still lists only 'one `semantic.unknown-import-type` error per `semantic.import_types` type the installed provider does not export'. That enumeration is exhaustive ('SHALL be ... followed by ...') and lists the list-form check explicitly as a cross-module check, separate from 'reading its block'. An implementer following it reports a module clean in `inspect` when install, and `quire load`, refuse it for a `$ref` to an unexported type. FR-124-AC-9 covers only the list form. Add the `$ref` form to the FR-124 enumeration (one error per `$ref` in the module's own data schemas naming an unexported provider type, at `<section>[<type>].data_schema.schema`) and to FR-124-AC-9 or a new AC/TC. | spec/functional/FR-124-inspect-installed-semantic-modules.md:54,77 |
+
 ## Dispositions
 
 | FND | outcome | reason |
@@ -49,3 +55,4 @@ Unknown-import-type is cleanly allocated to install (FR-070/FR-075) and inspect 
 | FND-001 | fixed | FR-070 now states `quoin module install` emits `semantic.unused-import` as a non-failing warning and `inspect` lists it; AC-12 names install. |
 | FND-002 | fixed | FR-070 states `quire load` refuses the same shapes, including the cross-key case, and quire-rs FR-069 head 25f7dbde refuses a key absent from `semantic.imports` with `semantic.invalid-value`. |
 | FND-003 | fixed | The Upstream line now names the filament-core-data schema change and its release as delivered under PLAT-212, whose deliverables include that schema change, and FR-070 states install refuses the key until the lockfile records that release, so AC-8's dependency is explicit. |
+| FND-004 | fixed | 71233bbf: FR-070 now refuses `quoin module install` with `semantic.unknown-import-type` at `<section>[<type>].data_schema.schema` when a `$ref` in the module's own data schemas names a type the installed provider does not export, with or without an `import_types` list, to match quire-rs FR-069. FR-070-AC-13 and TC-2139 back the rule, and TC-2139 is in the FR-070 matrix row. |
