@@ -15,8 +15,20 @@ const USAGE = `usage: semantic-module-emit --package-dir <dir> [options]
 `;
 
 function readIdentity(repoRoot) {
-  const { name } = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8"));
-  if (typeof name !== "string" || !name.startsWith("@") || !name.includes("/")) {
+  const path = resolve(repoRoot, "package.json");
+  let name;
+  try {
+    ({ name } = JSON.parse(readFileSync(path, "utf8")));
+  } catch (error) {
+    throw new GenerateError(
+      `cannot read ${path}: ${error.message}; run from the repository root, or pass --repo-root and --identity`,
+    );
+  }
+  if (
+    typeof name !== "string" ||
+    !name.startsWith("@") ||
+    !name.includes("/")
+  ) {
     throw new GenerateError(
       `package.json name ${JSON.stringify(name)} is not @org/repo; pass --identity`,
     );
@@ -55,7 +67,10 @@ export function main(argv) {
     const rendered = emit({
       repoRoot,
       sourceDir: resolve(repoRoot, values["source-dir"] ?? "typespec"),
-      manifestPath: resolve(repoRoot, values.manifest ?? resolve(packageDir, "manifest.yaml")),
+      manifestPath: resolve(
+        repoRoot,
+        values.manifest ?? resolve(packageDir, "manifest.yaml"),
+      ),
       identity: values.identity ?? readIdentity(repoRoot),
       semanticCoreVersion: values["semantic-core-version"],
     });
@@ -68,11 +83,15 @@ export function main(argv) {
         );
         return 1;
       }
-      console.log(`schemas-check: ${rendered.size} schema(s) match the committed output`);
+      console.log(
+        `schemas-check: ${rendered.size} schema(s) match the committed output`,
+      );
       return 0;
     }
     writeOutput(rendered, outputDir);
-    console.log(`schemas: wrote ${rendered.size} schema(s) to ${relative(repoRoot, outputDir)}`);
+    console.log(
+      `schemas: wrote ${rendered.size} schema(s) to ${relative(repoRoot, outputDir)}`,
+    );
     return 0;
   } catch (error) {
     if (error instanceof GenerateError) {

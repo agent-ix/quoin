@@ -47,10 +47,14 @@ function requireNode() {
  * The semantic-core base this module extends: the version of the installed
  * `@agent-ix/semantic-core` package unless one is given explicitly.
  */
-function semanticCoreBase(repoRoot, version) {
+export function semanticCoreBase(repoRoot, version) {
   if (version) return `${SCHEMA_HOST}/semantic-core/${version}/`;
-  const pkg = resolve(repoRoot, "node_modules/@agent-ix/semantic-core/package.json");
-  if (!existsSync(pkg)) fail("@agent-ix/semantic-core is not installed; run `make install`.");
+  const pkg = resolve(
+    repoRoot,
+    "node_modules/@agent-ix/semantic-core/package.json",
+  );
+  if (!existsSync(pkg))
+    fail("@agent-ix/semantic-core is not installed; run `make install`.");
   const installed = JSON.parse(readFileSync(pkg, "utf8")).version;
   return `${SCHEMA_HOST}/semantic-core/${installed}/`;
 }
@@ -60,7 +64,9 @@ function semanticCoreBase(repoRoot, version) {
  * `semantic.imports` block.
  */
 export function importedBases(manifestText) {
-  const block = manifestText.match(/^\s{2}imports:\s*(\{\s*\}|\n(?:\s{4}\S.*\n?)*)/m);
+  const block = manifestText.match(
+    /^\s{2}imports:\s*(\{\s*\}|\n(?:\s{4}\S.*\n?)*)/m,
+  );
   const bases = new Map();
   if (!block || block[1].trim() === "{}") return bases;
   for (const line of block[1].split("\n")) {
@@ -90,19 +96,33 @@ function moduleBase(sourceDir, identity) {
 }
 
 function compile(repoRoot, sourceDir, scratch) {
-  const cli = resolve(repoRoot, "node_modules/@typespec/compiler/entrypoints/cli.js");
+  const cli = resolve(
+    repoRoot,
+    "node_modules/@typespec/compiler/entrypoints/cli.js",
+  );
   if (!existsSync(cli)) {
-    fail("@typespec/compiler is not installed; run `make install` before `make schemas`.");
+    fail(
+      "@typespec/compiler is not installed; run `make install` before `make schemas`.",
+    );
   }
   try {
-    execFileSync(process.execPath, [cli, "compile", sourceDir, "--output-dir", scratch], {
-      cwd: repoRoot,
-      stdio: "pipe",
-      encoding: "utf8",
-    });
+    execFileSync(
+      process.execPath,
+      [cli, "compile", sourceDir, "--output-dir", scratch],
+      {
+        cwd: repoRoot,
+        stdio: "pipe",
+        encoding: "utf8",
+      },
+    );
   } catch (error) {
-    const detail = [error.stdout, error.stderr].filter(Boolean).join("\n").trim();
-    fail(`tsp compile failed; the committed output was not touched.\n${detail}`);
+    const detail = [error.stdout, error.stderr]
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    fail(
+      `tsp compile failed; the committed output was not touched.\n${detail}`,
+    );
   }
 }
 
@@ -112,7 +132,10 @@ function compile(repoRoot, sourceDir, scratch) {
  * `all` is a list of `[name, schema]`.
  */
 export function filterModuleSchemas(all, base) {
-  return all.filter(([, schema]) => typeof schema.$id === "string" && schema.$id.startsWith(base));
+  return all.filter(
+    ([, schema]) =>
+      typeof schema.$id === "string" && schema.$id.startsWith(base),
+  );
 }
 
 /**
@@ -122,7 +145,13 @@ export function filterModuleSchemas(all, base) {
  * module's base at its exact version. Anything else fails.
  * `schemas` is a list of `[name, schema]`, mutated in place.
  */
-export function absolutizeSchemas(schemas, base, moduleFiles, imports, coreBase) {
+export function absolutizeSchemas(
+  schemas,
+  base,
+  moduleFiles,
+  imports,
+  coreBase,
+) {
   const problems = [];
   const absolutize = (name, value) => {
     if (typeof value !== "string" || /^https?:\/\//.test(value)) return value;
@@ -131,7 +160,8 @@ export function absolutizeSchemas(schemas, base, moduleFiles, imports, coreBase)
     if (qualified && imports.has(qualified[1])) {
       return `${imports.get(qualified[1])}${qualified[2]}`;
     }
-    if (/^[A-Za-z][A-Za-z0-9]*\.json$/.test(value)) return `${coreBase}${value}`;
+    if (/^[A-Za-z][A-Za-z0-9]*\.json$/.test(value))
+      return `${coreBase}${value}`;
     problems.push(
       `${name}: reference ${JSON.stringify(value)} matches no declared base ` +
         `(this module, ${coreBase}, or an entry of semantic.imports)`,
@@ -166,7 +196,13 @@ export function render(schema) {
  * `manifestPath`, `identity` (`org/repo`), `semanticCoreVersion` (optional;
  * defaults to the installed package's version).
  */
-export function emit({ repoRoot, sourceDir, manifestPath, identity, semanticCoreVersion }) {
+export function emit({
+  repoRoot,
+  sourceDir,
+  manifestPath,
+  identity,
+  semanticCoreVersion,
+}) {
   requireNode();
   const base = moduleBase(sourceDir, identity);
   const imports = importedBases(readFileSync(manifestPath, "utf8"));
@@ -176,10 +212,15 @@ export function emit({ repoRoot, sourceDir, manifestPath, identity, semanticCore
     const all = readdirSync(scratch)
       .filter((name) => name.endsWith(".json"))
       .sort()
-      .map((name) => [name, JSON.parse(readFileSync(join(scratch, name), "utf8"))]);
+      .map((name) => [
+        name,
+        JSON.parse(readFileSync(join(scratch, name), "utf8")),
+      ]);
     const mine = filterModuleSchemas(all, base);
     if (mine.length === 0) {
-      fail(`tsp compile emitted no schema under ${base}; the committed output was not touched.`);
+      fail(
+        `tsp compile emitted no schema under ${base}; the committed output was not touched.`,
+      );
     }
     const moduleFiles = new Set(mine.map(([name]) => name));
     absolutizeSchemas(
@@ -214,7 +255,9 @@ export function checkOutput(rendered, outputDir, repoRoot) {
   try {
     committed = readdirSync(outputDir).filter((name) => name.endsWith(".json"));
   } catch {
-    problems.push(`${relative(repoRoot, outputDir)} (missing; run \`make schemas\`)`);
+    problems.push(
+      `${relative(repoRoot, outputDir)} (missing; run \`make schemas\`)`,
+    );
   }
   for (const name of committed) {
     if (!rendered.has(name)) {
@@ -231,5 +274,6 @@ export function writeOutput(rendered, outputDir) {
       rmSync(join(outputDir, name));
     }
   }
-  for (const [name, text] of rendered) writeFileSync(join(outputDir, name), text);
+  for (const [name, text] of rendered)
+    writeFileSync(join(outputDir, name), text);
 }

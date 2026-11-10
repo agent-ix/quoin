@@ -1043,9 +1043,20 @@ fn tc_264_055_the_template_carries_no_emitter_runtime_or_grammar_copy() {
 fn tc_264_056_a_rendered_repo_depends_on_the_emit_package_and_carries_no_local_pipeline() {
     for (kind, r) in all_variants() {
         let package: Value = serde_json::from_str(&r.text("package.json")).unwrap();
+        let pin = package["devDependencies"]["@agent-ix/semantic-module-tools"]
+            .as_str()
+            .unwrap_or_default();
+        let parts: Vec<&str> = pin.split('.').collect();
+        assert!(
+            parts.len() == 3
+                && parts
+                    .iter()
+                    .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit())),
+            "variant {kind}: the emit package pin {pin:?} is not an exact version"
+        );
         assert_eq!(
-            package["devDependencies"]["@agent-ix/semantic-module-tools"], "0.1.0",
-            "variant {kind}: the emit package is not pinned to an exact version"
+            package["overrides"]["@typespec/asset-emitter"], "0.79.1",
+            "variant {kind}: a fresh install can resolve an asset-emitter newer than the pinned compiler supports"
         );
         assert!(
             !r.path("scripts/generate-schemas.mjs").exists(),
