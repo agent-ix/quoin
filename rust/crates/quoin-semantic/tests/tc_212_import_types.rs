@@ -478,3 +478,110 @@ fn tc_212_008_an_import_cycle_is_named_over_types_only_when_the_types_cycle() {
     let message = cycle_message(&a, std::slice::from_ref(&b));
     assert!(!message.contains('#'), "{message}");
 }
+
+const THIRD: &str = "agent-ix/spec-objects-third";
+
+/// A module named `package`, importing `imports`, whose entity schema `$ref`s
+/// the given `(package, type)` pairs.
+fn linked(
+    scratch: &Scratch,
+    name: &str,
+    package: &str,
+    imports: Value,
+    refs: &[(&str, &str)],
+) -> SemanticModule {
+    let urls: Vec<String> = refs
+        .iter()
+        .map(|(pkg, ty)| format!("https://schemas.agent-ix.org/{pkg}/{ty}.json"))
+        .collect();
+    let root = scratch.module_copy(name, |manifest, root| {
+        manifest["semantic"]["package"] = json!(package);
+        manifest["semantic"]["imports"] = imports;
+        rewrite_entity_schema(root, |schema| {
+            schema["$id"] = json!(format!(
+                "https://schemas.agent-ix.org/{package}/0.1.0/Entity.json"
+            ));
+            add_refs(schema, &urls.iter().map(String::as_str).collect::<Vec<_>>());
+        });
+    });
+    module(&root, &validators())
+}
+
+/// A longer package cycle is named over its own type edges, not over a shorter
+/// type cycle among the same packages.
+#[trace("FR-075-AC-7", "TC-2137")]
+#[test]
+fn tc_212_009_a_long_cycle_is_named_along_its_own_edges() {
+    let scratch = Scratch::new();
+    let one = |pkg: &str| json!({ pkg: "0.1.0" });
+    let a = linked(&scratch, "a", FIXTURE, one(OTHER), &[(OTHER, "Entity")]);
+    let b = linked(
+        &scratch,
+        "b",
+        OTHER,
+        json!({ FIXTURE: "0.1.0", THIRD: "0.1.0" }),
+        &[(FIXTURE, "Entity"), (THIRD, "Entity")],
+    );
+    let c = linked(&scratch, "c", THIRD, one(FIXTURE), &[(FIXTURE, "Entity")]);
+
+    let cycles: Vec<String> = resolve_imports(&a, &[b, c])
+        .into_iter()
+        .filter(|d| d.code.as_str() == "semantic.import-cycle")
+        .map(|d| d.message)
+        .collect();
+    let long = format!("{FIXTURE}#Entity -> {OTHER}#Entity -> {THIRD}#Entity -> {FIXTURE}#Entity");
+    assert!(cycles.iter().any(|m| m.contains(&long)), "{cycles:?}");
+}
+
+/// A `$ref` to a package the module does not import is `schema-ref-unshipped`,
+/// including one that climbs out of an imported package's base with `..`.
+#[trace("FR-073-AC-6", "TC-2138")]
+#[test]
+fn tc_212_010_a_ref_to_an_undeclared_package_is_unshipped() {
+    let validators = validators();
+    let scratch = Scratch::new();
+    let escape = format!("https://schemas.agent-ix.org/{OTHER}/../agent-ix/undeclared/T.json");
+    for (name, reference) in [
+        (
+            "plain",
+            "https://schemas.agent-ix.org/agent-ix/undeclared/T.json".to_owned(),
+        ),
+        ("dotdot", escape),
+    ] {
+        let root = candidate(&scratch, None, imports_other(), &[&reference]);
+        let found = read(&root, &validators);
+        assert!(
+            found
+                .diagnostics
+                .iter()
+                .any(|d| d.code.as_str() == "semantic.schema-ref-unshipped"),
+            "{name}: {:?}",
+            codes(&root, &validators)
+        );
+    }
+}
+
+/// The `<section>[T]` locus follows the declaring section: an `artifact_types`
+/// type is judged at `artifact_types[T].data_schema.schema`.
+#[trace("FR-070-AC-13", "TC-2139")]
+#[test]
+fn tc_212_011_an_artifact_type_ref_is_judged_at_its_own_locus() {
+    let validators = validators();
+    let scratch = Scratch::new();
+    let provider = module(&provider(&scratch, json!({}), &[]), &validators);
+    let root = scratch.module_copy("artifact", |manifest, root| {
+        manifest["semantic"]["imports"] = imports_other();
+        let types = manifest["object_types"].take();
+        manifest["artifact_types"] = types;
+        manifest.as_object_mut().unwrap().remove("object_types");
+        rewrite_entity_schema(root, |schema| add_refs(schema, &[&other_ref("Nope")]));
+    });
+    let cand = module(&root, &validators);
+    let found = resolve_imports(&cand, std::slice::from_ref(&provider));
+    let unknown: Vec<_> = found
+        .iter()
+        .filter(|d| d.code.as_str() == "semantic.unknown-import-type")
+        .collect();
+    assert_eq!(unknown.len(), 1, "{found:?}");
+    assert_eq!(unknown[0].path, "artifact_types[entity].data_schema.schema");
+}

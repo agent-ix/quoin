@@ -315,7 +315,7 @@ fn tc_212_001_inspect_reports_unknown_import_types_for_list_and_ref() {
     let (output, _) = inspect(&home);
     assert!(output.status.success(), "{output:?}");
 
-    // The provider moves on to export nothing the importer uses.
+    // The importer moves on to list and `$ref` types the provider does not export.
     let installed = home.join("filament/modules/spec-objects-consumer");
     let manifest = installed.join("manifest.yaml");
     let text = std::fs::read_to_string(&manifest).unwrap();

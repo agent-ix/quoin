@@ -518,11 +518,10 @@ impl RefWalker<'_> {
                 if !self.walk(&document, &format!("module/{name}")) {
                     return false;
                 }
-            } else if self
-                .imported_bases
-                .iter()
-                .any(|imported| url.starts_with(imported.as_str()))
-            {
+            } else if self.imported_bases.iter().any(|imported| {
+                url.strip_prefix(imported.as_str())
+                    .is_some_and(|rest| !has_parent_segment(rest))
+            }) {
                 // An imported package's type: the provider ships it, and
                 // `resolve_imports` judges the name against its exports.
             } else {

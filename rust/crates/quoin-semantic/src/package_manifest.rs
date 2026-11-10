@@ -409,7 +409,13 @@ fn import_type_diagnostics(
             })
             .collect();
 
-        if urls.is_empty() {
+        // A reference-form schema that failed to resolve carries no refs; its
+        // own error is the finding, not an unused import.
+        let unresolved = candidate
+            .data_schemas
+            .values()
+            .any(|resolved| resolved.schema.is_none());
+        if urls.is_empty() && !unresolved {
             diagnostics.push(SemanticDiagnostic::warning(
                 DiagnosticCode::UnusedImport,
                 format!("semantic.imports.{identity}"),
@@ -485,24 +491,30 @@ fn type_graph(
     graph
 }
 
-/// A cycle among the type-level edges that stay inside `packages`, as a closed
-/// node path, when there is one.
+/// A cycle among the type-level edges that run along the package `cycle` (a
+/// closed path of package identities), as a closed node path, when there is one.
 fn type_cycle(
     by_package: &BTreeMap<&PackageIdentity, &SemanticModule>,
-    packages: &BTreeSet<&str>,
+    cycle: &[&str],
 ) -> Option<Vec<String>> {
-    let in_scope = |node: &str| node.split('#').next().is_some_and(|p| packages.contains(p));
+    let package_of = |node: &str| node.split('#').next().unwrap_or_default().to_owned();
+    let along: BTreeSet<(&str, &str)> = cycle
+        .iter()
+        .copied()
+        .zip(cycle.iter().copied().skip(1))
+        .collect();
+    let on_cycle = |from: &str, to: &str| {
+        let (from, to) = (package_of(from), package_of(to));
+        along.contains(&(from.as_str(), to.as_str()))
+    };
     let graph: BTreeMap<String, Vec<String>> = type_graph(by_package)
         .into_iter()
-        .filter(|(node, _)| in_scope(node))
         .map(|(node, targets)| {
-            (
-                node,
-                targets
-                    .into_iter()
-                    .filter(|t| in_scope(t))
-                    .collect::<Vec<_>>(),
-            )
+            let kept = targets
+                .into_iter()
+                .filter(|t| on_cycle(&node, t))
+                .collect::<Vec<_>>();
+            (node, kept)
         })
         .collect();
 
@@ -568,8 +580,7 @@ impl<'a> CycleVisitor<'a> {
             cycle.push(key.as_str());
             // The cycle fails either way; the type-level graph only decides how
             // it is named (FR-075).
-            let packages: BTreeSet<&str> = cycle.iter().copied().collect();
-            let named = type_cycle(self.by_package, &packages)
+            let named = type_cycle(self.by_package, &cycle)
                 .map_or_else(|| cycle.join(" -> "), |nodes| nodes.join(" -> "));
             self.diagnostics.push(SemanticDiagnostic::error(
                 DiagnosticCode::ImportCycle,
