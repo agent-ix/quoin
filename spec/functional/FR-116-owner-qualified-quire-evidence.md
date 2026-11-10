@@ -256,4 +256,4 @@ claims no executable acceptance evidence or current downstream discharge.
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) for original canonical records and locators; [FR-032](./FR-032-evidence-auditor.md) for the existing shared audit; [FR-093](./FR-093-evidence-producer-trust.md) for bounded owner reliance and invalidation; the original method catalog and the caller's admitted CI/manual/source observations.
 - **Downstream**: quire-rs [FR-078](ix://agent-ix/quire-rs/FR-078) / PLAT-1160's planned bridge and neutral backing projection; IR-1006 method-consumer qualification; the affected IR/RT Inspection and Analysis rows. [FR-115](./FR-115-evidence-backed-test-matrix.md)'s existing join is not itself this opt-in owner qualification.
-- **Separate**: PLAT-1162's evidence-gate apparatus intake does not supply this contract; the owner-recognized waiver representation and final strict policy remain with the policy owner identified by FR-078.
+- **Separate**: PLAT-1162's evidence-gate apparatus intake does not supply this contract; the owner-recognized waiver representation and final strict policy remain with the policy owner identified by quire-rs FR-078.

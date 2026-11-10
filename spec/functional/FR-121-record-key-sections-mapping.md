@@ -130,5 +130,5 @@ and is checked by record validation (FR-073), not by this extraction.
 ## Dependencies
 
 - **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md) (`semantic.mappings`), [FR-071](./FR-071-typed-properties-mapping.md), [FR-072](./FR-072-invariants-and-operations-mapping.md) (`SourceLocus`, availability), [FR-073](./FR-073-data-schema-by-path.md) (the referenced schema that directs the mapping and validates the record), [FR-104](./FR-104-relationships-mapping.md) (identity cells, diagnostics, `entry-errors` format), quire-rs FR-075 diagnostic shape
-- **Upstream, quire-rs**: the `semantic-v1.schema.json` change that admits `recordSources` and `availability.recordKeys` (owner: `agent-ix/quire-rs`, lane P-PLAT-101); quire-rs FR-075 and FR-076 (the keys they own, excluded above)
+- **Upstream, quire-rs**: the `semantic-v1.schema.json` change that admits `recordSources` and `availability.recordKeys` (owner: `agent-ix/quire-rs`, lane P-PLAT-101); quire-rs FR-075 and quire-rs FR-076 (the keys they own, excluded above)
 - **Downstream**: [FR-122](./FR-122-architecture-record-keys-mapping.md), the extractor in `agent-ix/quire-rs`, `agent-ix/spec-objects-safety#2`
