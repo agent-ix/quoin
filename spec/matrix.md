@@ -243,6 +243,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-121 | FR-121-AC-1, FR-121-AC-2, FR-121-AC-3, FR-121-AC-4, FR-121-AC-5, FR-121-AC-6, FR-121-AC-7, FR-121-AC-8, FR-121-AC-9 | TC-2100, TC-2101, TC-2102, TC-2103, TC-2104, TC-2105, TC-2106, TC-2107, TC-2108 | 🚧 Pending |
 | FR-122 | FR-122-AC-1, FR-122-AC-2, FR-122-AC-3, FR-122-AC-4, FR-122-AC-5, FR-122-AC-6, FR-122-AC-7 | TC-2109, TC-2110, TC-2111, TC-2112, TC-2113, TC-2114, TC-2115 | 🚧 Pending |
 | FR-123 | FR-123-AC-1, FR-123-AC-2, FR-123-AC-3, FR-123-AC-4, FR-123-AC-5, FR-123-AC-6, FR-123-AC-7, FR-123-AC-8, FR-123-AC-9 | TC-2120, TC-2121, TC-2122, TC-2123, TC-2124, TC-2125, TC-2126, TC-2127, TC-2128 | 🚧 Pending |
+| FR-124 | FR-124-AC-9 | TC-2135 | 🚧 Pending |
 
 ## Test Case Summary
 
@@ -1436,13 +1437,14 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2127 | Every property of every business record schema has exactly one named owner or is listed unmapped | Static | P0 | FR-123-AC-8 | 🚧 Pending — an ownership audit over the emitted schemas of agent-ix/spec-objects-business against the owner list in FR-123, not an extraction. |
 | TC-2128 | A header-only `## Values` table extracts an empty `values` and is `available` | Unit | P0 | FR-123-AC-9 | 🚧 Pending — Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101) against goldens in its `quire-fixtures` crate; no quire-rs ticket is cited yet. |
 | TC-2130 | A manifest with imports and no `import_types` loads as before; with `import_types` it loads and the pack reports the lists | Unit | P0 | FR-070-AC-8 | 🚧 Pending |
-| TC-2131 | An `import_types` key absent from `imports`, an empty list, a duplicate and an empty type name are each rejected naming the package | Unit | P0 | FR-070-AC-9 | 🚧 Pending |
+| TC-2131 | An `import_types` key absent from `imports`, an empty list, a duplicate, an empty type name, a non-array value and a non-string entry are each rejected naming package and entry | Unit | P0 | FR-070-AC-9 | 🚧 Pending |
 | TC-2132 | An `import_types` type the installed provider does not export fails install with `semantic.unknown-import-type` naming package and type | Unit | P0 | FR-070-AC-10 | 🚧 Pending |
-| TC-2133 | With the provider not loaded, `import_types` raises no `semantic.unknown-import-type` | Unit | P0 | FR-070-AC-11 | 🚧 Pending |
-| TC-2134 | An import no emitted-schema `$ref` under its schema base references yields `semantic.unused-import` at warning severity; a referenced import yields none | Unit | P0 | FR-070-AC-12 | 🚧 Pending |
+| TC-2133 | With the provider not installed, install fails with the unresolved-import error only and raises no `semantic.unknown-import-type` | Unit | P0 | FR-070-AC-11 | 🚧 Pending |
+| TC-2134 | An import no `$ref` of the module's own data schemas under its schema base references yields `semantic.unused-import` at warning severity without failing install; a referenced import yields none | Unit | P0 | FR-070-AC-12 | 🚧 Pending |
 | TC-2135 | `quoin module inspect` reports `semantic.unknown-import-type` (exit 1) and `semantic.unused-import` (warning, exit 0 alone) on an importer | Integration | P0 | FR-124-AC-9 | 🚧 Pending |
 | TC-2136 | The derived package manifest import entries carry `exports` equal to the declared type list, `[]` when none | Unit | P0 | FR-075-AC-6 | 🚧 Pending |
-| TC-2137 | An import cycle is named over types when type lists exist and over packages when they do not | Unit | P0 | FR-075-AC-7 | 🚧 Pending |
+| TC-2137 | An import cycle fails install in every case; it is named over `<org>/<repo>#<Type>` nodes when `$ref`-derived type-level edges exist and over packages when they do not or a module has no `$ref`s into it | Unit | P0 | FR-075-AC-7 | 🚧 Pending |
+| TC-2138 | The rendered `semantic` block carries no `import_types` key | Unit | P0 | FR-078-AC-9 | 🚧 Pending |
 
 ## Stakeholder Requirement Coverage
 

@@ -72,6 +72,7 @@ prevent.
 | FR-078-AC-6 | The rendered `semantic.exports` and the rendered manifest's declared type names are the same set. | Test (TC-1417) |
 | FR-078-AC-7 | No exported type name appears in more than one declaration of a rendered manifest, in any variant. | Test (TC-1458) |
 | FR-078-AC-8 | Two `imported_modules` entries naming the same package identity abort rendering naming that identity. | Test (TC-1459) |
+| FR-078-AC-9 | A rendered `semantic` block carries no `import_types` key, in every variant. | Test (TC-2138) |
 
 ## Dependencies
 
