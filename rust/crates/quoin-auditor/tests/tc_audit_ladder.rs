@@ -780,10 +780,7 @@ fn with_survivors(symbol: &str, score: f64, count: usize) -> RunEntry {
     RunEntry {
         survivors: Some(
             (0..count)
-                .map(|n| Survivor {
-                    line: Some(10 + n as u64),
-                    mutation: format!("replace {symbol} body {n}"),
-                })
+                .map(|n| Survivor::new(Some(10 + n as u64), &format!("replace {symbol} body {n}")))
                 .collect(),
         ),
         ..scored(symbol, Outcome::Pass, score, Some(MUTATION_SCORE_METRIC))
@@ -803,7 +800,10 @@ fn a_missed_floor_reports_each_recorded_survivor() {
         Some(floor(&[("P0", 0.8)])),
         "P0",
     );
-    assert_eq!(of_kind(&out, "insufficient-mutation-score", "FR-9-AC-1").len(), 1);
+    assert_eq!(
+        of_kind(&out, "insufficient-mutation-score", "FR-9-AC-1").len(),
+        1
+    );
     let found = survivors(&out);
     assert_eq!(found.len(), 2);
     for finding in &found {
@@ -815,8 +815,8 @@ fn a_missed_floor_reports_each_recorded_survivor() {
     assert!(found[1].summary.contains("replace src/a.rs::f body 1"));
 }
 
-/// Survivors are findings only beside a missed floor, for a scored, unskipped,
-/// bound symbol.
+/// Survivors are findings only beside a missed floor, for a scored, unskipped
+/// symbol that is itself below the floor, in a bound suite.
 #[trace("FR-039-AC-15", "TC-3101")]
 #[test]
 fn no_survivor_findings_unless_the_floor_is_missed() {
@@ -855,4 +855,68 @@ fn survivor_findings_are_bounded_per_obligation() {
         "P0",
     );
     assert_eq!(survivors(&out).len(), 25);
+}
+
+/// Unmeasured scores and unbound suites yield no survivor findings; a symbol
+/// that meets the floor yields none beside one that misses it.
+#[trace("FR-039-AC-15", "TC-3101")]
+#[test]
+fn survivors_come_only_from_failing_symbols_of_bound_suites() {
+    let unmeasured = mutation_audit(
+        vec![RunEntry {
+            survivors: Some(vec![Survivor::new(Some(1), "replace x")]),
+            ..pass("src/a.rs::f")
+        }],
+        Some(floor(&[("P0", 0.8)])),
+        "P0",
+    );
+    assert_eq!(
+        of_kind(&unmeasured, "unmeasured-mutation-score", "FR-9-AC-1").len(),
+        1
+    );
+    assert!(survivors(&unmeasured).is_empty());
+
+    let mut audited = input(
+        vec![ob_with("FR-9-AC-1", None, Some("P0"))],
+        vec![bind("FR-9-AC-1", "mutants", &["src/a.rs::f"])],
+        vec![
+            run_of(
+                "mutants",
+                None,
+                vec![
+                    with_survivors("src/a.rs::f", 0.5, 1),
+                    with_survivors("src/ok.rs::good", 0.9, 2),
+                ],
+            ),
+            run_of("other", None, vec![with_survivors("src/o.rs::o", 0.0, 3)]),
+        ],
+    );
+    audited.mutation_floor = Some(floor(&[("P0", 0.8)]));
+    let out = report(&audited);
+    let found = survivors(&out);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].symbol.as_deref(), Some("src/a.rs::f"));
+}
+
+/// The cap cuts the least-bad survivors: failing symbols are taken worst first.
+#[trace("FR-039-AC-16", "TC-3101")]
+#[test]
+fn the_cap_keeps_the_worst_failing_symbols_survivors() {
+    let out = mutation_audit(
+        vec![
+            with_survivors("src/a.rs::aaa", 0.7, 25),
+            with_survivors("src/z.rs::zzz", 0.1, 3),
+        ],
+        Some(floor(&[("P0", 0.8)])),
+        "P0",
+    );
+    let found = survivors(&out);
+    assert_eq!(found.len(), 25);
+    assert_eq!(
+        found
+            .iter()
+            .filter(|finding| finding.symbol.as_deref() == Some("src/z.rs::zzz"))
+            .count(),
+        3
+    );
 }

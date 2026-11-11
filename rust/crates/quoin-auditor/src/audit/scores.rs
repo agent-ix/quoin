@@ -6,7 +6,7 @@
 use std::collections::BTreeSet;
 
 use crate::jsvalue::number_text;
-use quoin_evidence::types::{Binding, Outcome, RunRecord};
+use quoin_evidence::types::{Binding, Outcome, RunEntry, RunRecord};
 use quoin_finding_types::{Finding, FindingKind, Severity};
 use quoin_quire_types::Obligation;
 
@@ -196,56 +196,89 @@ pub fn mutation_finding(
 /// Most `surviving-mutant` findings one obligation reports.
 const MAX_SURVIVOR_FINDINGS: usize = 25;
 
-/// One `surviving-mutant` finding per recorded survivor of a mutation-scored
-/// symbol bound to this obligation.
+/// The mutation floor an obligation's criticality demands, if one is declared.
+#[must_use]
+pub fn floor_for(obligation: &Obligation, input: &AuditInput) -> Option<f64> {
+    let criticality = obligation
+        .criticality
+        .as_deref()
+        .filter(|value| !value.is_empty())?;
+    input.mutation_floor.as_ref()?.get(criticality).copied()
+}
+
+/// One `surviving-mutant` finding per recorded survivor of each mutation-scored
+/// symbol, in a suite bound to this obligation, whose score is below `floor`.
 ///
-/// A survivor in code the obligation's tests exercise means those tests, or the
-/// criterion they discharge, do not demand that behaviour. The finding carries
-/// the locus (`path`, `line`, `symbol`) and the mutation so `spec-correctness`
-/// can aim a regenerated property at it. Read from the same entries as
-/// [`scores_for`], on the same `metric`; a skipped entry has no survivors that
-/// count. Bounded by [`MAX_SURVIVOR_FINDINGS`], in run then entry order.
+/// **Attribution is by suite, not by test.** A survivor here sits in code
+/// exercised by a suite bound to the obligation; the evidence does not say which
+/// test in that suite covers the obligation's behaviour. The finding carries the
+/// locus (`path`, `line`, `symbol`) and the mutation so `spec-correctness` can
+/// aim a regenerated property at it. Symbols that meet the floor report nothing.
+/// Failing symbols come first, worst score first, so the cap cuts the least
+/// informative survivors. Read from the same entries as [`scores_for`], on the
+/// same `metric`; a skipped entry counts for nothing.
 #[must_use]
 pub fn surviving_mutant_findings(
     obligation: &Obligation,
     bindings: &[&Binding],
     runs: &[&RunRecord],
+    floor: f64,
 ) -> Vec<Finding> {
     let bound: BTreeSet<&str> = bindings
         .iter()
         .map(|binding| binding.suite.as_str())
         .collect();
-    let mut found = Vec::new();
+    let mut failing: Vec<(f64, &RunEntry)> = Vec::new();
     for run in runs.iter().filter(|run| bound.contains(run.suite.as_str())) {
-        for entry in run.entries.iter().filter(|entry| {
-            entry.metric.as_deref() == Some(quoin_evidence::types::MUTATION_SCORE_METRIC)
-                && entry.outcome != Outcome::Skip
-        }) {
-            let symbol = entry.symbol.as_str();
-            let path = symbol.split_once("::").map_or(symbol, |(file, _)| file);
-            for survivor in entry.survivors.as_deref().unwrap_or_default() {
-                if found.len() >= MAX_SURVIVOR_FINDINGS {
-                    return found;
-                }
-                let mut finding = Finding::new(
-                    FindingKind::SURVIVING_MUTANT,
-                    &obligation.id,
-                    Severity::medium(),
-                    format!(
-                        "{id}: the tests bound to it do not detect `{mutation}` in {symbol}.",
-                        id = obligation.id,
-                        mutation = survivor.mutation
-                    ),
-                );
-                finding.path = Some(path.to_owned());
-                finding.line = survivor.line;
-                finding.symbol = Some(symbol.to_owned());
-                finding.remedy = Some(format!(
-                    "Strengthen the tests or the wording of {id} so this mutation fails them.",
-                    id = obligation.id
-                ));
-                found.push(finding);
+        for entry in &run.entries {
+            if entry.metric.as_deref() != Some(quoin_evidence::types::MUTATION_SCORE_METRIC)
+                || entry.outcome == Outcome::Skip
+            {
+                continue;
             }
+            if let Some(score) = entry.score
+                && score < floor
+            {
+                failing.push((score, entry));
+            }
+        }
+    }
+    failing.sort_by(|left, right| {
+        left.0
+            .total_cmp(&right.0)
+            .then_with(|| left.1.symbol.as_str().cmp(right.1.symbol.as_str()))
+    });
+
+    let mut found = Vec::new();
+    for (score, entry) in failing {
+        let symbol = entry.symbol.as_str();
+        let path = symbol.split_once("::").map_or(symbol, |(file, _)| file);
+        for survivor in entry.survivors.as_deref().unwrap_or_default() {
+            if found.len() >= MAX_SURVIVOR_FINDINGS {
+                return found;
+            }
+            let mut finding = Finding::new(
+                FindingKind::SURVIVING_MUTANT,
+                &obligation.id,
+                Severity::medium(),
+                format!(
+                    "`{mutation}` in {symbol} (score {score}, floor {floor}) survived the tests \
+                     of a suite bound to {id}.",
+                    mutation = survivor.mutation,
+                    score = number_text(score),
+                    floor = number_text(floor),
+                    id = obligation.id
+                ),
+            );
+            finding.path = Some(path.to_owned());
+            finding.line = survivor.line;
+            finding.symbol = Some(symbol.to_owned());
+            finding.remedy = Some(format!(
+                "Check whether {id}'s tests exercise this behaviour; strengthen them or the \
+                 criterion's wording so this mutation fails.",
+                id = obligation.id
+            ));
+            found.push(finding);
         }
     }
     found

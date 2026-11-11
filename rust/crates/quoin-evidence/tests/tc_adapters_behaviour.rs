@@ -220,29 +220,61 @@ fn tc_197_an_all_passing_audit_run_is_rules_that_ran_and_found_nothing() {
     assert!(parse_audit_script("nothing recognisable\n").is_err());
 }
 
+const REAL_MUTANTS: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../../tests/fixtures/evidence/cargo-mutants-real.json"
+));
+
+/// A real cargo-mutants 27.1.0 report: the missed mutants of each function are
+/// kept with the line from the span and the description without its locus
+/// prefix; caught mutants are not.
 #[trace("FR-039-AC-13", "TC-3100")]
 #[test]
-fn tc_3100_a_missed_mutant_is_kept_with_line_and_description_bounded() {
+fn tc_3100_a_real_report_keeps_each_missed_mutant_with_line_and_description() {
+    let entries = parse_cargo_mutants(REAL_MUTANTS).unwrap().entries;
+    let by_symbol = |symbol: &str| {
+        entries
+            .iter()
+            .find(|e| e.symbol.as_str() == symbol)
+            .unwrap()
+    };
+
+    let add = by_symbol("src/lib.rs::add").survivors.as_ref().unwrap();
+    let described: Vec<(Option<u64>, &str)> = add
+        .iter()
+        .map(|survivor| (survivor.line, survivor.mutation.as_str()))
+        .collect();
+    assert_eq!(
+        described,
+        [
+            (Some(2), "replace add -> i32 with 0"),
+            (Some(2), "replace + with - in add"),
+            (Some(2), "replace + with * in add"),
+        ]
+    );
+    let is_big = by_symbol("src/lib.rs::is_big").survivors.as_ref().unwrap();
+    assert_eq!(is_big.len(), 1);
+    assert_eq!(is_big[0].mutation, "replace > with >= in is_big");
+    assert_eq!(
+        by_symbol("src/lib.rs::label")
+            .survivors
+            .as_ref()
+            .unwrap()
+            .len(),
+        2
+    );
+}
+
+/// A description over the cap is cut in the middle: the head and the
+/// `with <replacement>` tail both survive.
+#[trace("FR-039-AC-13", "TC-3100")]
+#[test]
+fn tc_3100_an_over_long_description_keeps_its_replacement_and_the_cap() {
     use quoin_evidence::types::{MAX_SURVIVOR_CHARS, MAX_SURVIVORS_PER_ENTRY};
 
-    let report = r#"{"outcomes":[
-      {"scenario":{"Mutant":{"file":"src/a.rs","name":"replace f -> bool with true","span":{"start":{"line":12,"column":5}},"function":{"function_name":"f"}}},"summary":"MissedMutant"},
-      {"scenario":{"Mutant":{"file":"src/a.rs","function":{"function_name":"f"}}},"summary":"Timeout"},
-      {"scenario":{"Mutant":{"file":"src/a.rs","function":{"function_name":"f"}}},"summary":"CaughtMutant"},
-      {"scenario":{"Mutant":{"file":"src/b.rs","function":{"function_name":"g"}}},"summary":"CaughtMutant"}
-    ]}"#;
-    let entries = parse_cargo_mutants(report).unwrap().entries;
-    let kept = entries[0].survivors.as_ref().unwrap();
-    assert_eq!(kept.len(), 2);
-    assert_eq!(kept[0].line, Some(12));
-    assert_eq!(kept[0].mutation, "replace f -> bool with true");
-    assert_eq!(kept[1].line, None);
-    assert_eq!(kept[1].mutation, "Timeout");
-    assert!(entries[1].survivors.is_none(), "a killed mutant is not kept");
-
-    let long = "x".repeat(MAX_SURVIVOR_CHARS + 50);
+    let path = "a::".repeat(120);
     let one = format!(
-        r#"{{"scenario":{{"Mutant":{{"file":"src/a.rs","name":"{long}","function":{{"function_name":"f"}}}}}},"summary":"MissedMutant"}}"#
+        r#"{{"scenario":{{"Mutant":{{"file":"src/a.rs","name":"src/a.rs:3:4: replace {path}f -> bool with true","span":{{"start":{{"line":3}}}},"function":{{"function_name":"f"}}}}}},"summary":"MissedMutant"}}"#
     );
     let all = vec![one; MAX_SURVIVORS_PER_ENTRY + 10].join(",");
     let entries = parse_cargo_mutants(&format!(r#"{{"outcomes":[{all}]}}"#))
@@ -251,5 +283,38 @@ fn tc_3100_a_missed_mutant_is_kept_with_line_and_description_bounded() {
     let kept = entries[0].survivors.as_ref().unwrap();
     assert_eq!(kept.len(), MAX_SURVIVORS_PER_ENTRY);
     assert_eq!(kept[0].mutation.chars().count(), MAX_SURVIVOR_CHARS);
-    assert!(entries[0].score.unwrap().abs() < f64::EPSILON, "every miss still counts");
+    assert!(kept[0].mutation.starts_with("replace a::a::"));
+    assert!(kept[0].mutation.ends_with("f -> bool with true"));
+    assert!(
+        entries[0].score.unwrap().abs() < f64::EPSILON,
+        "every miss still counts"
+    );
+}
+
+/// The bounds hold for every adapter, not only cargo-mutants: the generic
+/// `entries` adapter cannot record unbounded or multi-line survivors.
+#[trace("FR-039-AC-13", "TC-3100")]
+#[test]
+fn tc_3100_the_entries_adapter_bounds_survivors_too() {
+    use quoin_evidence::adapters::parse_entries;
+    use quoin_evidence::types::{MAX_SURVIVOR_CHARS, MAX_SURVIVORS_PER_ENTRY};
+
+    let survivors: Vec<serde_json::Value> = (0..MAX_SURVIVORS_PER_ENTRY + 5)
+        .map(|n| serde_json::json!({"line": n, "mutation": format!("first\nsecond\u{0007}{}", "x".repeat(500))}))
+        .collect();
+    let raw = serde_json::json!({"entries": [
+        {"symbol": "t::a", "outcome": "pass", "survivors": survivors},
+        {"symbol": "t::b", "outcome": "pass", "survivors": []},
+    ]})
+    .to_string();
+    let entries = parse_entries(&raw).unwrap().entries;
+    let kept = entries[0].survivors.as_ref().unwrap();
+    assert_eq!(kept.len(), MAX_SURVIVORS_PER_ENTRY);
+    assert_eq!(kept[0].mutation.chars().count(), MAX_SURVIVOR_CHARS);
+    assert!(kept[0].mutation.starts_with("first second "));
+    assert!(
+        kept.iter()
+            .all(|s| !s.mutation.chars().any(char::is_control))
+    );
+    assert!(entries[1].survivors.is_none());
 }

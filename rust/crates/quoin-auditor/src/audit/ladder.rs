@@ -27,7 +27,7 @@ use quoin_quire_types::Obligation;
 use super::input::AuditInput;
 use super::method::{method_conformance, unknown_method_finding};
 use super::mocks::{mocked_bindings, mocked_finding};
-use super::scores::{multiplicity_finding, mutation_finding, surviving_mutant_findings};
+use super::scores::{floor_for, multiplicity_finding, mutation_finding, surviving_mutant_findings};
 use super::stale::{failed_run, unrecorded_evidence};
 use super::{Indexed, Pass, is_insufficient};
 use crate::error::AuditorError;
@@ -161,9 +161,13 @@ pub(super) fn run(
     if let Some(finding) = mutation_finding(obligation, &run_bindings, &runs, input) {
         let missed_floor = finding.kind == FindingKind::INSUFFICIENT_MUTATION_SCORE;
         pass.findings.push(finding);
-        if missed_floor {
-            pass.findings
-                .extend(surviving_mutant_findings(obligation, &run_bindings, &runs));
+        if missed_floor && let Some(floor) = floor_for(obligation, input) {
+            pass.findings.extend(surviving_mutant_findings(
+                obligation,
+                &run_bindings,
+                &runs,
+                floor,
+            ));
         }
         return Ok(pass);
     }

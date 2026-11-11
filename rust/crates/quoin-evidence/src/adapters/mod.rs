@@ -87,7 +87,10 @@ impl AdapterResult {
     /// A result carrying entries and nothing else — what nine of the ten
     /// shipped adapters return.
     #[must_use]
-    pub(crate) fn from_entries(entries: Vec<RunEntry>) -> Self {
+    pub(crate) fn from_entries(mut entries: Vec<RunEntry>) -> Self {
+        for entry in &mut entries {
+            entry.bound_survivors();
+        }
         Self {
             entries,
             unrepresented: None,

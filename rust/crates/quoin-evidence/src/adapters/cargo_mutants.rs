@@ -20,10 +20,7 @@ use serde::Deserialize;
 
 use super::AdapterResult;
 use crate::error::EvidenceError;
-use crate::types::{
-    MAX_SURVIVOR_CHARS, MAX_SURVIVORS_PER_ENTRY, MUTATION_SCORE_METRIC, Outcome, RunEntry,
-    Survivor,
-};
+use crate::types::{MAX_SURVIVORS_PER_ENTRY, MUTATION_SCORE_METRIC, Outcome, RunEntry, Survivor};
 
 #[derive(Deserialize)]
 struct MutantScenario {
@@ -83,22 +80,36 @@ fn symbol_of(mutant: &MutantScenario) -> Option<String> {
     Some(format!("{file}::{function}"))
 }
 
-/// The line and description of a mutant the tests did not kill, bounded.
+/// `name` without its `<file>:<line>:<col>: ` locus prefix, which cargo-mutants
+/// writes in front of the description (`src/lib.rs:6:7: replace + with * in add`).
+/// The line is kept separately, from the span.
+fn description_of<'a>(name: &'a str, file: &str) -> &'a str {
+    name.strip_prefix(file)
+        .and_then(|rest| rest.strip_prefix(':'))
+        .and_then(|rest| rest.split_once(": "))
+        .filter(|(locus, _)| {
+            !locus.is_empty() && locus.chars().all(|c| c.is_ascii_digit() || c == ':')
+        })
+        .map_or(name, |(_, description)| description)
+}
+
+/// The line and description of a mutant the tests did not kill.
 fn survivor_of(mutant: &MutantScenario, summary: &str) -> Survivor {
-    let described = mutant
-        .name
-        .as_deref()
-        .map(str::trim)
-        .filter(|name| !name.is_empty())
-        .map_or_else(|| summary.to_owned(), str::to_owned);
-    Survivor {
-        line: mutant
+    let name = mutant.name.as_deref().map(str::trim).unwrap_or_default();
+    let file = mutant.file.as_deref().unwrap_or_default().trim();
+    let described = description_of(name, file);
+    Survivor::new(
+        mutant
             .span
             .as_ref()
             .and_then(|span| span.start.as_ref())
             .and_then(|start| start.line),
-        mutation: described.chars().take(MAX_SURVIVOR_CHARS).collect(),
-    }
+        if described.is_empty() {
+            summary
+        } else {
+            described
+        },
+    )
 }
 
 /// Parse `mutants.out/outcomes.json`.
