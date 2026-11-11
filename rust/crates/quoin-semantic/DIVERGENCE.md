@@ -54,9 +54,9 @@ with the current release at 0.56.0.
    does not separate them. A targeted feature probe does: against
    `{"$defs": {"item": {"$dynamicAnchor": "T", "type": "string"}}, "items": {"$dynamicRef": "#T"}}`,
    the document `[1]` is **accepted by 0.18.3** and rejected by 0.56.0, by ajv,
-   and by the 2020-12 specification. Neither vendored schema uses `$dynamicRef`
-   today — but `module-manifest.schema.json` is owned by filament-core-service and
-   `package-manifest.schema.json`/`common.schema.json` by filament-core-data, so
+   and by the 2020-12 specification. Neither schema uses `$dynamicRef`
+   today — but `module-manifest.schema.json`, `package-manifest.schema.json` and
+   `common.schema.json` are owned by filament-core-data, so
    quoin does not control when one appears, and the failure mode is a manifest
    silently accepted rather than an error.
 
