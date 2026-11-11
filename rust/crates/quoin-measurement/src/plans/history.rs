@@ -230,4 +230,28 @@ mod tests {
         let after = plan_with_families("[beta, alpha]").unwrap();
         assert!(!definition_changed_without_version_bump(&before, &after));
     }
+
+    /// A constant-predictor revision that predates `answer_families` still
+    /// parses as history, so both definition changes against it are seen: a
+    /// lowered margin and the list added, each under an unchanged version.
+    #[trace("FR-108-AC-25", "TC-2302")]
+    #[test]
+    fn a_constant_predictor_revision_without_families_is_still_readable_history() {
+        let design = |margin: &str, families: &str| {
+            let document = DOC.replace(
+                "objective:",
+                &format!(
+                    "statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: gt\n    baseline: constant-predictor\n    margin: {margin}\n{families}objective:"
+                ),
+            );
+            plan_from_text("a.md", &document, PlanLoadOptions::default())
+                .unwrap()
+                .unwrap()
+        };
+        let old = design("0.05", "");
+        let lowered = design("0.01", "");
+        let declared = design("0.05", "  answer_families: [alpha]\n");
+        assert!(definition_changed_without_version_bump(&old, &lowered));
+        assert!(definition_changed_without_version_bump(&old, &declared));
+    }
 }

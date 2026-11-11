@@ -12,6 +12,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use engineering_assurance::measurement::{AnswerFamilies, AnswerFamily};
 use quoin_store::JsonValue;
 
 use super::Reason;
@@ -60,6 +61,15 @@ impl Row<'_> {
 ///   carries a `contested` that is not an array of strings, or repeats
 ///   another item's `item_id`. A dropped row would shrink the sample the
 ///   baseline is computed from without anyone noticing.
+/// - [`Reason::ConstantPredictorFamiliesUnstated`] when the plan states no
+///   `statistical_design.answer_families` to hold the item rows' grouping
+///   against.
+/// - [`Reason::ConstantPredictorFamilyUnexpected`] when an item row carries a
+///   `family` the plan does not declare (checked before a missing one: a
+///   merged or split family shows up as an undeclared name), and
+///   [`Reason::ConstantPredictorFamilyMissing`] when a declared family has no
+///   item row. The two sets must be equal; a producer that merges two
+///   declared families would otherwise understate the baseline.
 /// - [`Reason::ConstantPredictorRowsMismatch`] when the number of item
 ///   observations is not `observation`'s own `population.examined`: the item
 ///   rows are not the population the governed rate was measured over (items
@@ -68,6 +78,7 @@ impl Row<'_> {
 pub(super) fn baseline(
     collection: &MeasurementCollection,
     observation: &MeasurementObservation,
+    families: Option<&AnswerFamilies>,
 ) -> Result<f64, Reason> {
     let item_metric = constant_predictor_item_metric(observation.metric.as_str());
     let mut by_family: BTreeMap<&str, Vec<Row<'_>>> = BTreeMap::new();
@@ -112,6 +123,7 @@ pub(super) fn baseline(
     if total == 0 {
         return Err(Reason::ConstantPredictorRowsAbsent);
     }
+    check_families(families, &by_family)?;
     #[allow(
         clippy::cast_precision_loss,
         reason = "a graded corpus's item count is far below f64's 2^53 exact-integer bound"
@@ -136,6 +148,26 @@ pub(super) fn baseline(
     )]
     let rate = hits as f64 / total_f64;
     Ok(rate)
+}
+
+/// Hold the item rows' families against the plan's declared answer families:
+/// the two must be equal as sets.
+fn check_families(
+    declared: Option<&AnswerFamilies>,
+    by_family: &BTreeMap<&str, Vec<Row<'_>>>,
+) -> Result<(), Reason> {
+    let declared = declared.ok_or(Reason::ConstantPredictorFamiliesUnstated)?;
+    let declared: BTreeSet<&str> = declared.iter().map(AnswerFamily::as_str).collect();
+    if by_family.keys().any(|family| !declared.contains(family)) {
+        return Err(Reason::ConstantPredictorFamilyUnexpected);
+    }
+    if declared
+        .iter()
+        .any(|family| !by_family.contains_key(family))
+    {
+        return Err(Reason::ConstantPredictorFamilyMissing);
+    }
+    Ok(())
 }
 
 /// One family's best-constant hit count: the most items any single label in
@@ -163,6 +195,8 @@ fn best_constant(rows: &[Row<'_>]) -> usize {
 mod tests {
     use std::collections::BTreeMap;
 
+    use engineering_assurance::measurement::AnswerFamilies;
+    use ix_trace_rs::trace;
     use quoin_store::{JsonObject, JsonValue};
 
     use super::baseline;
@@ -251,6 +285,10 @@ mod tests {
         aggregate
     }
 
+    fn families(names: &[&str]) -> AnswerFamilies {
+        AnswerFamilies::new(names.iter().copied()).unwrap()
+    }
+
     fn collection(observations: Vec<MeasurementObservation>) -> MeasurementCollection {
         MeasurementCollection {
             schema_version: crate::types::collection::MEASUREMENT_SCHEMA_VERSION,
@@ -300,7 +338,12 @@ mod tests {
         for (index, (expected, contested)) in coverage.into_iter().enumerate() {
             items.push(item(&format!("c{index}"), "coverage", expected, contested));
         }
-        let value = baseline(&collection(items), &governed(15.0)).unwrap();
+        let value = baseline(
+            &collection(items),
+            &governed(15.0),
+            Some(&families(&["weakness_kind", "coverage"])),
+        )
+        .unwrap();
         assert!((value - 0.8).abs() < f64::EPSILON, "{value}");
     }
 
@@ -315,7 +358,7 @@ mod tests {
             item("b", "f", "q", &["q", "x"]),
             item("c", "f", "r", &["r", "x"]),
         ];
-        let value = baseline(&collection(items), &governed(3.0)).unwrap();
+        let value = baseline(&collection(items), &governed(3.0), Some(&families(&["f"]))).unwrap();
         assert!((value - 1.0).abs() < f64::EPSILON, "{value}");
     }
 
@@ -356,7 +399,11 @@ mod tests {
             let mut items = well_formed();
             items.push(observation(&metric, bad.clone()));
             assert_eq!(
-                baseline(&collection(items), &governed(4.0)),
+                baseline(
+                    &collection(items),
+                    &governed(4.0),
+                    Some(&families(&["f", "g"]))
+                ),
                 Err(Reason::ConstantPredictorRowsMalformed),
                 "{bad:?}"
             );
@@ -377,7 +424,11 @@ mod tests {
         };
         for examined in [2.0, 4.0, 30.0] {
             assert_eq!(
-                baseline(&collection(items()), &governed(examined)),
+                baseline(
+                    &collection(items()),
+                    &governed(examined),
+                    Some(&families(&["f"]))
+                ),
                 Err(Reason::ConstantPredictorRowsMismatch),
                 "{examined}"
             );
@@ -385,10 +436,15 @@ mod tests {
         let mut unstated = governed(3.0);
         unstated.population = None;
         assert_eq!(
-            baseline(&collection(items()), &unstated),
+            baseline(&collection(items()), &unstated, Some(&families(&["f"]))),
             Err(Reason::ConstantPredictorRowsMismatch)
         );
-        let value = baseline(&collection(items()), &governed(3.0)).unwrap();
+        let value = baseline(
+            &collection(items()),
+            &governed(3.0),
+            Some(&families(&["f"])),
+        )
+        .unwrap();
         assert!((value - (2.0 / 3.0)).abs() < f64::EPSILON, "{value}");
     }
 
@@ -398,7 +454,7 @@ mod tests {
     #[test]
     fn only_the_matching_plan_definition_and_item_metric_are_read() {
         assert_eq!(
-            baseline(&collection(vec![]), &governed(1.0)),
+            baseline(&collection(vec![]), &governed(1.0), Some(&families(&["f"]))),
             Err(Reason::ConstantPredictorRowsAbsent)
         );
         let mut wrong_plan = item("a", "f", "a", &["a"]);
@@ -416,8 +472,53 @@ mod tests {
             other_metric,
         ]);
         assert_eq!(
-            baseline(&collection, &governed(4.0)),
+            baseline(&collection, &governed(4.0), Some(&families(&["f"]))),
             Err(Reason::ConstantPredictorRowsAbsent)
+        );
+    }
+
+    /// The item rows' families must equal the plan's declared list as a set:
+    /// an undeclared grouping (two declared families merged into one, or one
+    /// split), a declared family with no rows, and a plan that declares none
+    /// each fail closed with their own reason; the same set in any order is
+    /// read.
+    #[trace("FR-108-AC-24", "TC-2300")]
+    #[test]
+    fn item_row_families_must_equal_the_declared_list() {
+        let rows = || {
+            vec![
+                item("a", "weakness_kind", "sound", &["sound"]),
+                item("b", "weakness_kind", "gap", &["gap"]),
+                item("c", "coverage", "2", &["2"]),
+            ]
+        };
+        let governed = governed(3.0);
+        let check = |declared: Option<&[&str]>, rows| {
+            baseline(
+                &collection(rows),
+                &governed,
+                declared.map(families).as_ref(),
+            )
+        };
+        assert!(check(Some(&["coverage", "weakness_kind"]), rows()).is_ok());
+        assert_eq!(
+            check(None, rows()),
+            Err(Reason::ConstantPredictorFamiliesUnstated)
+        );
+        // The producer merged `weakness_kind` and `coverage` into one family.
+        let merged = vec![
+            item("a", "all", "sound", &["sound"]),
+            item("b", "all", "gap", &["gap"]),
+            item("c", "all", "2", &["2"]),
+        ];
+        assert_eq!(
+            check(Some(&["coverage", "weakness_kind"]), merged),
+            Err(Reason::ConstantPredictorFamilyUnexpected)
+        );
+        // A declared family no row carries.
+        assert_eq!(
+            check(Some(&["coverage", "weakness_kind", "extra"]), rows()),
+            Err(Reason::ConstantPredictorFamilyMissing)
         );
     }
 }
