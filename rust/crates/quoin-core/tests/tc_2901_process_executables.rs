@@ -43,8 +43,8 @@ fn rust_files(dir: &Path, into: &mut Vec<PathBuf>) {
 /// since clap's `Command` shares the name.
 fn executables_in(source: &str) -> BTreeSet<String> {
     let production = source.split("#[cfg(test)]").next().unwrap_or(source);
-    let imports_process = production.contains("use std::process::Command")
-        || production.contains("use std::process::{Command");
+    let imports_process = production.contains("use std::process::Command;")
+        || production.contains("use std::process::{Command,");
     let mut found = BTreeSet::new();
     for line in production.lines() {
         let Some((head, tail)) = line.split_once("Command::new(") else {
@@ -58,7 +58,7 @@ fn executables_in(source: &str) -> BTreeSet<String> {
         }
         let argument = tail.split(')').next().unwrap_or("").trim();
         let name = match argument {
-            "runner_program()" => "ix-flow".to_owned(),
+            "runner_program(" => "ix-flow".to_owned(),
             "&editor" => "$EDITOR".to_owned(),
             literal if literal.starts_with('"') => literal.trim_matches('"').to_owned(),
             other => format!("<unreadable executable: {other}>"),
@@ -98,7 +98,7 @@ fn quoin_executes_exactly_git_and_ix_flow_and_the_operators_editor() {
 #[trace("FR-036-AC-8", "TC-203")]
 #[test]
 fn the_executable_check_sees_an_injected_binary() {
-    let injected = "use std::process::Command;\nfn f() { Command::new(\"curl\"); std::process::Command::new(tool); }\n";
+    let injected = "use std::process::Command;\nfn f() {\n Command::new(\"curl\");\n std::process::Command::new(tool);\n}\n";
     assert_eq!(
         executables_in(injected),
         BTreeSet::from([
