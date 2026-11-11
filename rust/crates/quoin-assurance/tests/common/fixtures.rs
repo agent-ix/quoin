@@ -93,6 +93,8 @@ pub(crate) fn input(
         documents,
         obligations,
         findings,
+        healthy: None,
+        unevaluated: None,
         bindings: None,
         observations: None,
         claim_types: None,

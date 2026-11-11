@@ -183,6 +183,8 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         .collect();
     let mut case_request = serde_json::json!({
         "bindings": field(&store.payload, "bindings")?, "observations": observations,
+        "healthy": field(&audit.payload, "report")?.get("healthy"),
+        "unevaluated": field(&audit.payload, "report")?.get("unevaluated"),
             "documents": field(&frontmatter.payload, "documents")?, "obligations": field(&coverage.payload, "obligations")?,
         "findings": field(&field(&audit.payload, "report")?, "findings")?,
         "unreadable": unreadable, "producer_trust": field(&trust.payload, "assessments")?,

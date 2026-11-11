@@ -23,7 +23,8 @@
 
 use quoin_evidence_types::{IndependenceAssessment, TrustAssessment};
 
-use crate::case::{AssuranceCase, CaseNode, LeafEvidence, NodeKind, NodeStatus, Verdict};
+use crate::case::{AssuranceCase, CaseNode, LeafEvidence, NodeKind, NodeStatus};
+use crate::matrix::EvidenceStatus;
 
 /// The label budget, in CODE POINTS. See [`label`].
 const MAX_LABEL_LENGTH: usize = 80;
@@ -240,12 +241,7 @@ fn evidence_line(evidence: &LeafEvidence) -> String {
         })
         .collect();
     let newest = evidence.newest.as_deref().unwrap_or("none recorded");
-    let verdict = match evidence.verdict {
-        Some(Verdict::Fresh) => "fresh",
-        Some(Verdict::Stale) => "stale",
-        Some(Verdict::Suspect) => "suspect",
-        None => "not stated",
-    };
+    let verdict = evidence.verdict.map_or("none", EvidenceStatus::as_str);
     format!(
         "suites {}; newest {newest}; verdict {verdict}",
         suites.join(", ")

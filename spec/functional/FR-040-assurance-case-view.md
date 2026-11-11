@@ -43,11 +43,14 @@ one parent appears once, under both. A goal with only obligations and no sub-cla
 ### A supported leaf says what it rests on
 
 A solution leaf that has a binding lists its bound suites, the newest run or scan timestamp the store
-holds for each, the newest across them, and the auditor's verdict: `fresh` (bound, nothing raised),
-`stale` (`stale-evidence`) or `suspect` (a finding that distrusts the binding), by the precedence the
-test matrix (FR-115) already applies to the same findings. The verdict is read from the findings
-`audit()` produced, never recomputed from timestamps. A leaf raising any other finding states no
-verdict and keeps the finding in its reason. The `--json` payload carries the same fields.
+holds for each, the newest across them, and the auditor's verdict in the test matrix's terms (FR-115):
+`bound`, `stale`, `suspect` or `undischarged`. `bound` means the audit lists the obligation in its
+`healthy` set, which is not the same as "no finding": a ladder that stops early (an obligation bound
+only to scans) or leaves a check unevaluated raises no finding and is still not healthy. Such a leaf is
+open, with the unevaluated check's reason, or a statement that the audit reached no verdict, as its
+reason. `suspect` and `stale` come from the findings by the matrix's precedence. "Newest" is the later
+instant, compared as RFC 3339 instants rather than as strings. The verdict is read from what `audit()`
+produced, never recomputed from timestamps. The `--json` payload carries the same fields.
 
 ### Gaps are nodes, not omissions
 
@@ -140,8 +143,10 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-13 | A case with no claims carries a machine-readable `reason` naming the searched claim types — present exactly when `claims` is empty — so the `--json` consumer can tell a clean case from one where nothing was argued. | Test (TC-261) |
 | FR-040-AC-14 | `--claim-type` is matched case-insensitively against the authored `type:`, and the flag REPLACES the `StR` default rather than adding to it — stated in its help. | Test (TC-262) |
 | FR-040-AC-15 | A mermaid label is truncated on a code-point boundary, so a label whose limit falls inside a surrogate pair stays well-formed rather than ending in a lone surrogate. | Test (TC-1711) |
-| FR-040-AC-16 | A goal decomposed into sub-claims has a strategy node, in markdown and mermaid, that names the edge verbs and the sub-claims argued over each. | Test |
-| FR-040-AC-17 | A bound leaf lists its suites, the newest run or scan timestamp and the auditor's fresh, stale or suspect verdict, in markdown and `--json`, byte-identically over unchanged inputs. | Test |
+| FR-040-AC-16 | A goal decomposed into sub-claims has a strategy node, in markdown and mermaid, that names the edge verbs and the sub-claims argued over each, groups separated unambiguously; a sub-claim declaring two verbs toward one parent appears once. | Test (TC-2143) |
+| FR-040-AC-17 | A bound leaf lists its suites, the newest run or scan timestamp for each and overall, and the auditor's `bound`, `stale`, `suspect` or `undischarged` verdict, in markdown and `--json`; a bound suite with no run or scan says so. | Test (TC-2144) |
+| FR-040-AC-18 | A leaf the audit does not list healthy is open even with no finding, and shows the unevaluated check's reason or that the audit reached no verdict. | Test (TC-2145) |
+| FR-040-AC-19 | "Newest" run or scan is the later instant: fractional seconds and zone offsets order by the instant they name, not by string. | Test (TC-2146) |
 
 ## Constraints
 

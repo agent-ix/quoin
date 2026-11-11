@@ -35,11 +35,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_evidence::types::Binding;
-use quoin_finding_types::Finding;
+use quoin_finding_types::{Finding, UnevaluatedCheck};
 use quoin_quire_types::Obligation;
+use quoin_store::instant::{Instant, InstantGrammar};
 use serde::{Deserialize, Serialize};
 
-use crate::matrix::bucket;
+use crate::matrix::{EvidenceStatus, bucket, status_of};
 use crate::requirement_of;
 
 /// Internal node kinds for the legacy derived view; not an external format.
@@ -74,21 +75,6 @@ pub enum NodeStatus {
     Open,
 }
 
-/// The auditor's verdict on a bound leaf, read from its findings.
-///
-/// Never re-derived here: it is the precedence [`crate::matrix`] already
-/// applies to the same findings.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Verdict {
-    /// Bound, and the auditor raised nothing against it.
-    Fresh,
-    /// The auditor raised `stale-evidence`.
-    Stale,
-    /// The auditor distrusts the binding.
-    Suspect,
-}
-
 /// One suite bound to a leaf, with the newest run or scan the store holds for it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -110,10 +96,12 @@ pub struct LeafEvidence {
     /// The newest timestamp across `suites`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub newest: Option<String>,
-    /// The auditor's verdict. Absent when the auditor raised a finding that is
-    /// neither stale nor suspect; the finding itself is in `because`.
+    /// The auditor's verdict, in the matrix's terms (FR-115): `bound` only when
+    /// the audit lists the obligation healthy, then `suspect`, `stale`, else
+    /// `undischarged`. Absent when the caller supplied no `healthy` list and
+    /// the auditor raised nothing.
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub verdict: Option<Verdict>,
+    pub verdict: Option<EvidenceStatus>,
 }
 
 /// One run or scan the store holds, reduced to what the view shows.
@@ -248,6 +236,13 @@ pub struct CaseInput {
     pub obligations: Vec<Obligation>,
     /// The auditor's findings, keyed by obligation elsewhere.
     pub findings: Vec<Finding>,
+    /// Obligations the audit lists healthy. When supplied, a leaf not listed and
+    /// carrying no finding is open: the auditor reached no verdict for it.
+    #[serde(default)]
+    pub healthy: Option<Vec<String>>,
+    /// Checks the audit could not evaluate; each keeps its leaf open.
+    #[serde(default)]
+    pub unevaluated: Option<Vec<UnevaluatedCheck>>,
     /// The binding graph, from the store.
     #[serde(default)]
     pub bindings: Option<Vec<Binding>>,
@@ -561,14 +556,28 @@ struct Store<'a> {
     suites_for: BTreeMap<&'a str, BTreeSet<&'a str>>,
     /// Suite → its newest run or scan timestamp.
     newest_for_suite: BTreeMap<&'a str, &'a str>,
+    /// The healthy list, when the caller supplied one.
+    healthy: Option<BTreeSet<&'a str>>,
+    /// Obligation id → the checks the audit could not evaluate.
+    unevaluated_for: BTreeMap<&'a str, Vec<&'a UnevaluatedCheck>>,
+}
+
+/// Orders timestamps by the instant they name, so `…00.500Z` follows `…00Z`
+/// and `+01:00` offsets compare correctly. A timestamp that is not RFC 3339
+/// sorts before every instant, then lexically among its kind.
+fn instant_key(text: &str) -> (i64, &str) {
+    let millis = Instant::parse(text, InstantGrammar::Rfc3339).and_then(|i| i.epoch_millis());
+    (millis.unwrap_or(i64::MIN), text)
 }
 
 impl<'a> Store<'a> {
     fn new(input: &'a CaseInput) -> Self {
         let mut newest_for_suite: BTreeMap<&str, &str> = BTreeMap::new();
         for observation in input.observations.iter().flatten() {
-            let newest = newest_for_suite.entry(&observation.suite).or_default();
-            if observation.timestamp.as_str() > *newest {
+            let newest = newest_for_suite
+                .entry(&observation.suite)
+                .or_insert(&observation.timestamp);
+            if instant_key(&observation.timestamp) > instant_key(newest) {
                 *newest = &observation.timestamp;
             }
         }
@@ -579,9 +588,21 @@ impl<'a> Store<'a> {
                 .or_default()
                 .insert(binding.suite.as_str());
         }
+        let mut unevaluated_for: BTreeMap<&str, Vec<&UnevaluatedCheck>> = BTreeMap::new();
+        for check in input.unevaluated.iter().flatten() {
+            unevaluated_for
+                .entry(check.obligation.as_str())
+                .or_default()
+                .push(check);
+        }
         Self {
             suites_for,
             newest_for_suite,
+            healthy: input
+                .healthy
+                .as_ref()
+                .map(|ids| ids.iter().map(String::as_str).collect()),
+            unevaluated_for,
         }
     }
 }
@@ -610,7 +631,7 @@ fn strategy_for(
     CaseNode {
         id: format!("{goal}/strategy"),
         kind: NodeKind::Strategy,
-        statement: format!("argued over {}", argued.join("; ")),
+        statement: format!("argued over {}", argued.join(" | ")),
         status,
         because: None,
         evidence: None,
@@ -622,24 +643,51 @@ fn solution_for(obligation: &Obligation, finding_for: &FindingsFor, store: &Stor
     let findings = finding_for
         .get(obligation.id.as_str())
         .map_or(&[][..], Vec::as_slice);
+    let id = obligation.id.as_str();
     let finding = findings.first();
+    let healthy = store.healthy.as_ref().map(|ids| ids.contains(id));
+    let checks = store.unevaluated_for.get(id).map_or(&[][..], Vec::as_slice);
+    // Healthy is the auditor's word, not "no finding": a ladder that stops
+    // early or leaves a check unevaluated raises nothing and is still not
+    // healthy. Only judged when the caller supplied the audit's list.
+    let unhealthy = healthy == Some(false) && finding.is_none();
+    let because = if let Some(f) = finding {
+        Some(format!("{}: {}", f.kind, f.summary))
+    } else if unhealthy && !checks.is_empty() {
+        Some(
+            checks
+                .iter()
+                .map(|c| format!("unevaluated {}: {}", c.check, c.reason))
+                .collect::<Vec<_>>()
+                .join(" | "),
+        )
+    } else if unhealthy {
+        Some("not healthy: the audit reached no verdict for this obligation".to_owned())
+    } else {
+        None
+    };
     CaseNode {
         id: obligation.id.clone(),
         kind: NodeKind::Solution,
         statement: obligation.statement.clone(),
-        status: if finding.is_some() {
+        status: if because.is_some() {
             NodeStatus::Open
         } else {
             NodeStatus::Supported
         },
-        because: finding.map(|f| format!("{}: {}", f.kind, f.summary)),
-        evidence: evidence_for(&obligation.id, findings, store),
+        because,
+        evidence: evidence_for(id, findings, healthy, store),
         children: Vec::new(),
     }
 }
 
 /// The leaf's bound suites and the auditor's verdict, when anything is bound.
-fn evidence_for(id: &str, findings: &[&Finding], store: &Store) -> Option<LeafEvidence> {
+fn evidence_for(
+    id: &str,
+    findings: &[&Finding],
+    healthy: Option<bool>,
+    store: &Store,
+) -> Option<LeafEvidence> {
     let suites = store.suites_for.get(id)?;
     let suites: Vec<SuiteRef> = suites
         .iter()
@@ -648,14 +696,16 @@ fn evidence_for(id: &str, findings: &[&Finding], store: &Store) -> Option<LeafEv
             at: store.newest_for_suite.get(suite).map(|at| (*at).to_owned()),
         })
         .collect();
-    let newest = suites.iter().filter_map(|s| s.at.clone()).max();
-    // Same precedence as the matrix: suspect, then stale. A finding of any
-    // other kind leaves the verdict unstated rather than calling it fresh.
-    let verdict = match findings.iter().map(|f| bucket(&f.kind)).min() {
-        None => Some(Verdict::Fresh),
-        Some(0) => Some(Verdict::Suspect),
-        Some(1) => Some(Verdict::Stale),
-        Some(_) => None,
+    let newest = suites
+        .iter()
+        .filter_map(|s| s.at.as_deref())
+        .max_by_key(|at| instant_key(at))
+        .map(str::to_owned);
+    // The matrix's own precedence over the same findings (FR-115).
+    let worst = findings.iter().map(|f| bucket(&f.kind)).min();
+    let verdict = match (healthy, worst) {
+        (None, None) => None,
+        _ => Some(status_of(healthy == Some(true), worst)),
     };
     Some(LeafEvidence {
         suites,

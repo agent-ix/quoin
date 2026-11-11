@@ -330,12 +330,21 @@ fn detail(findings: &[&Finding], bindings: &[BindingDetail], checks: &[String]) 
 /// The status of a criterion in a populated store: bound, then suspect, then
 /// stale, then undischarged.
 fn status(healthy: bool, detail: &EvidenceDetail) -> EvidenceStatus {
+    // `detail.findings` is already sorted by bucket, so its first finding is
+    // the one precedence selects.
+    status_of(
+        healthy,
+        detail.findings.first().map(|finding| bucket(&finding.kind)),
+    )
+}
+
+/// [`status`] from the most serious finding's [`bucket`], for callers that
+/// hold findings rather than a built detail.
+pub(crate) fn status_of(healthy: bool, worst_bucket: Option<u8>) -> EvidenceStatus {
     if healthy {
         return EvidenceStatus::Bound;
     }
-    // `detail.findings` is already sorted by bucket, so its first finding is
-    // the one precedence selects.
-    match detail.findings.first().map(|finding| bucket(&finding.kind)) {
+    match worst_bucket {
         Some(0) => EvidenceStatus::Suspect,
         Some(1) => EvidenceStatus::Stale,
         _ => EvidenceStatus::Undischarged,
