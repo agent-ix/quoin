@@ -16,6 +16,56 @@ use crate::ids::{SuiteId, SymbolId};
 /// means.
 pub const MUTATION_SCORE_METRIC: &str = "mutation-score";
 
+/// Most surviving mutants one entry keeps. A function with more survivors than
+/// this has already failed any floor; the rest add bytes, not information.
+pub const MAX_SURVIVORS_PER_ENTRY: usize = 25;
+
+/// Longest description, in characters, a [`Survivor`] keeps.
+///
+/// cargo-mutants descriptions run `replace <function path> -> <type> with
+/// <replacement> in <function>`; the replacement is the part that says what went
+/// undetected, so an over-long description is cut in the middle and keeps both
+/// ends.
+pub const MAX_SURVIVOR_CHARS: usize = 200;
+
+/// Characters kept from the head of an over-long description. The tail keeps the
+/// rest of [`MAX_SURVIVOR_CHARS`] after the one-character ellipsis.
+const SURVIVOR_HEAD_CHARS: usize = 80;
+
+/// One mutant the tests did not kill: a demonstrated gap in the suite.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct Survivor {
+    /// The line of the mutated code, when the tool reported one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line: Option<u64>,
+    /// What was changed, in the tool's words (`replace f -> bool with true`).
+    pub mutation: String,
+}
+
+impl Survivor {
+    /// A survivor whose description holds no control character (a newline
+    /// included) and is at most [`MAX_SURVIVOR_CHARS`] long.
+    #[must_use]
+    pub fn new(line: Option<u64>, mutation: &str) -> Self {
+        let clean: Vec<char> = mutation
+            .trim()
+            .chars()
+            .map(|c| if c.is_control() { ' ' } else { c })
+            .collect();
+        let mutation = if clean.len() > MAX_SURVIVOR_CHARS {
+            let tail = MAX_SURVIVOR_CHARS - SURVIVOR_HEAD_CHARS - 1;
+            let head: String = clean.iter().take(SURVIVOR_HEAD_CHARS).collect();
+            let end: String = clean.iter().skip(clean.len() - tail).collect();
+            format!("{head}…{end}")
+        } else {
+            clean.into_iter().collect()
+        };
+        Self { line, mutation }
+    }
+}
+
 /// What a producer said about one symbol.
 ///
 /// A closed enum here and not a `String`, unlike
@@ -75,9 +125,29 @@ pub struct RunEntry {
     /// that cast at every read site.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<BTreeMap<String, String>>,
+    /// The mutants of this symbol the tests did not kill, bounded by
+    /// [`MAX_SURVIVORS_PER_ENTRY`] and [`MAX_SURVIVOR_CHARS`] by
+    /// [`RunEntry::bound_survivors`], which every adapter result passes through.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub survivors: Option<Vec<Survivor>>,
 }
 
 impl RunEntry {
+    /// Enforce the survivor bounds on whatever a producer wrote: at most
+    /// [`MAX_SURVIVORS_PER_ENTRY`] survivors, each through [`Survivor::new`]. An
+    /// empty list becomes absent.
+    pub fn bound_survivors(&mut self) {
+        let Some(kept) = self.survivors.take() else {
+            return;
+        };
+        let bounded: Vec<Survivor> = kept
+            .iter()
+            .take(MAX_SURVIVORS_PER_ENTRY)
+            .map(|survivor| Survivor::new(survivor.line, &survivor.mutation))
+            .collect();
+        self.survivors = (!bounded.is_empty()).then_some(bounded);
+    }
+
     /// A minimal entry: the two fields every adapter fills.
     #[must_use]
     pub fn new(symbol: impl Into<String>, outcome: Outcome) -> Self {
@@ -88,6 +158,7 @@ impl RunEntry {
             metric: None,
             trace_ids: None,
             config: None,
+            survivors: None,
         }
     }
 }

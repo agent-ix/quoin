@@ -144,6 +144,7 @@ fn tc_1080_002_every_finding_kind_maps_to_its_status() {
         "method-conformance",
         "insufficient-multiplicity",
         "insufficient-mutation-score",
+        "surviving-mutant",
         "unmeasured-mutation-score",
         "combinatorial-gap",
         "a-kind-the-auditor-adds-later",

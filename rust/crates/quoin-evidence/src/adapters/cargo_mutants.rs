@@ -20,12 +20,25 @@ use serde::Deserialize;
 
 use super::AdapterResult;
 use crate::error::EvidenceError;
-use crate::types::{MUTATION_SCORE_METRIC, Outcome, RunEntry};
+use crate::types::{MAX_SURVIVORS_PER_ENTRY, MUTATION_SCORE_METRIC, Outcome, RunEntry, Survivor};
 
 #[derive(Deserialize)]
 struct MutantScenario {
     file: Option<String>,
     function: Option<MutantFunction>,
+    /// cargo-mutants' own description, e.g. `replace f -> bool with true`.
+    name: Option<String>,
+    span: Option<MutantSpan>,
+}
+
+#[derive(Deserialize)]
+struct MutantSpan {
+    start: Option<MutantPosition>,
+}
+
+#[derive(Deserialize)]
+struct MutantPosition {
+    line: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -67,6 +80,38 @@ fn symbol_of(mutant: &MutantScenario) -> Option<String> {
     Some(format!("{file}::{function}"))
 }
 
+/// `name` without its `<file>:<line>:<col>: ` locus prefix, which cargo-mutants
+/// writes in front of the description (`src/lib.rs:6:7: replace + with * in add`).
+/// The line is kept separately, from the span.
+fn description_of<'a>(name: &'a str, file: &str) -> &'a str {
+    name.strip_prefix(file)
+        .and_then(|rest| rest.strip_prefix(':'))
+        .and_then(|rest| rest.split_once(": "))
+        .filter(|(locus, _)| {
+            !locus.is_empty() && locus.chars().all(|c| c.is_ascii_digit() || c == ':')
+        })
+        .map_or(name, |(_, description)| description)
+}
+
+/// The line and description of a mutant the tests did not kill.
+fn survivor_of(mutant: &MutantScenario, summary: &str) -> Survivor {
+    let name = mutant.name.as_deref().map(str::trim).unwrap_or_default();
+    let file = mutant.file.as_deref().unwrap_or_default().trim();
+    let described = description_of(name, file);
+    Survivor::new(
+        mutant
+            .span
+            .as_ref()
+            .and_then(|span| span.start.as_ref())
+            .and_then(|start| start.line),
+        if described.is_empty() {
+            summary
+        } else {
+            described
+        },
+    )
+}
+
 /// Parse `mutants.out/outcomes.json`.
 ///
 /// # Errors
@@ -90,6 +135,7 @@ pub fn parse_cargo_mutants(raw: &str) -> Result<AdapterResult, EvidenceError> {
     // says nothing about the suite.
     let mut caught: BTreeMap<String, u64> = BTreeMap::new();
     let mut missed: BTreeMap<String, u64> = BTreeMap::new();
+    let mut survivors: BTreeMap<String, Vec<Survivor>> = BTreeMap::new();
     for value in outcomes {
         let Ok(outcome) = serde_json::from_value::<MutantOutcome>(value) else {
             continue;
@@ -104,7 +150,13 @@ pub fn parse_cargo_mutants(raw: &str) -> Result<AdapterResult, EvidenceError> {
             Some("CaughtMutant") => *caught.entry(symbol).or_default() += 1,
             // A `Timeout` is a mutant the suite did not kill. Counting it as
             // caught would report a gap as coverage.
-            Some("MissedMutant" | "Timeout") => *missed.entry(symbol).or_default() += 1,
+            Some(summary @ ("MissedMutant" | "Timeout")) => {
+                let kept = survivors.entry(symbol.clone()).or_default();
+                if kept.len() < MAX_SURVIVORS_PER_ENTRY {
+                    kept.push(survivor_of(&mutant, summary));
+                }
+                *missed.entry(symbol).or_default() += 1;
+            }
             _ => {}
         }
     }
@@ -147,6 +199,7 @@ pub fn parse_cargo_mutants(raw: &str) -> Result<AdapterResult, EvidenceError> {
             entry.score = Some(score);
             // The measurement is named where it is recorded (quoin#138).
             entry.metric = Some(MUTATION_SCORE_METRIC.to_owned());
+            entry.survivors = survivors.remove(symbol).filter(|kept| !kept.is_empty());
             entry
         })
         .collect();

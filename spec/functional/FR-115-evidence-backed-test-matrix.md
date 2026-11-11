@@ -58,15 +58,16 @@ Every criterion in the population gets exactly one of:
 | `bound` | A passing run backs this criterion, and the auditor found nothing wrong with it. |
 | `stale` | The auditor reports `stale-evidence`: a binding names a suite with **no recorded run** at all, or its bound run failed or errored. |
 | `suspect` | The auditor distrusts the binding: `mocked-confirmation` (a stand-in for the verified behavior), `insufficient-independence` (a separation-axis violation), or `vacuous-evidence` (every bound symbol was skipped or absent from its run). All three are the auditor's own "claims to exist and does not hold" class. |
-| `undischarged` | No binding exists for this criterion while the store holds bindings for others, or the auditor's remaining finding kinds apply (`undischarged`, `unknown-method`, `method-conformance`, `insufficient-multiplicity`, `insufficient-mutation-score`, `unmeasured-mutation-score`, `combinatorial-gap`), or the criterion has an `unevaluated` entry, or it appears in none of `healthy`/`findings`/`unevaluated`. |
+| `undischarged` | No binding exists for this criterion while the store holds bindings for others, or the auditor's remaining finding kinds apply (`undischarged`, `unknown-method`, `method-conformance`, `insufficient-multiplicity`, `insufficient-mutation-score`, `unmeasured-mutation-score`, `surviving-mutant`, `combinatorial-gap`), or the criterion has an `unevaluated` entry, or it appears in none of `healthy`/`findings`/`unevaluated`. |
 | `no run evidence` | The evidence store's binding graph is **empty** — no criterion in this run has ever been discharged. |
 
-That is all 11 `FindingKind` values this FR reads
+That is all 12 `FindingKind` values this FR reads
 (`quoin-finding-types::FindingKind::ALL`): `mocked-confirmation`,
 `insufficient-independence`, and `vacuous-evidence` map to `suspect`;
 `stale-evidence` maps to `stale`; `undischarged`, `unknown-method`,
 `method-conformance`, `insufficient-multiplicity`,
-`insufficient-mutation-score`, `unmeasured-mutation-score`, and
+`insufficient-mutation-score`, `unmeasured-mutation-score`,
+`surviving-mutant` (always raised beside `insufficient-mutation-score`), and
 `combinatorial-gap` map to `undischarged`. Folding `vacuous-evidence` into
 `suspect` (rather than `stale`, where an earlier draft of this FR left it) is
 deliberate: a stale-evidence finding does not stop the auditor's ladder, so a run

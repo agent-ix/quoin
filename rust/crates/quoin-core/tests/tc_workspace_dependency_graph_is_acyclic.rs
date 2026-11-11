@@ -45,6 +45,18 @@ fn workspace_edges() -> BTreeMap<String, BTreeSet<String>> {
         .iter()
         .map(|id| id.as_str().unwrap())
         .collect();
+    // Package ids embed the checkout path; name the crates instead.
+    let names: BTreeMap<&str, &str> = metadata["packages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|package| {
+            (
+                package["id"].as_str().unwrap(),
+                package["name"].as_str().unwrap(),
+            )
+        })
+        .collect();
     let mut edges = BTreeMap::new();
     for node in metadata["resolve"]["nodes"].as_array().unwrap() {
         let id = node["id"].as_str().unwrap();
@@ -64,9 +76,9 @@ fn workspace_edges() -> BTreeMap<String, BTreeSet<String>> {
             })
             .map(|dep| dep["pkg"].as_str().unwrap())
             .filter(|pkg| members.contains(pkg))
-            .map(ToOwned::to_owned)
+            .map(|pkg| names[pkg].to_owned())
             .collect();
-        edges.insert(id.to_owned(), targets);
+        edges.insert(names[id].to_owned(), targets);
     }
     edges
 }
@@ -125,4 +137,49 @@ fn the_cycle_detector_finds_a_loop_when_there_is_one() {
         find_cycle(&edges),
         Some(vec!["a".into(), "b".into(), "a".into()])
     );
+}
+
+/// Crates with a normal or build edge onto `quoin-cli`. The CLI is the
+/// delivery surface; the engine crates must load without it.
+fn cli_dependents(edges: &BTreeMap<String, BTreeSet<String>>) -> Vec<String> {
+    let is_cli = |name: &str| name == "quoin-cli";
+    edges
+        .iter()
+        .filter(|(id, targets)| !is_cli(id) && targets.iter().any(|target| is_cli(target)))
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
+/// FR-036-AC-7: the CLI is a leaf.
+#[trace("FR-036-AC-7", "TC-202")]
+#[test]
+fn no_workspace_crate_depends_on_the_cli() {
+    let edges = workspace_edges();
+    assert!(
+        edges.contains_key("quoin-cli"),
+        "the walk must reach the CLI crate"
+    );
+    assert_eq!(cli_dependents(&edges), Vec::<String>::new());
+}
+
+/// The check must be able to fail: an edge onto the CLI is reported, and a
+/// crate whose name merely contains `quoin-cli` is not the CLI.
+#[trace("FR-036-AC-7", "TC-202")]
+#[test]
+fn the_cli_leaf_check_reports_an_injected_edge() {
+    let mut edges: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    edges.insert(
+        "quoin-core".into(),
+        BTreeSet::from(["quoin-cli".to_owned()]),
+    );
+    edges.insert("quoin-cli".into(), BTreeSet::new());
+    assert_eq!(cli_dependents(&edges), vec!["quoin-core".to_owned()]);
+
+    let mut edges: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    edges.insert(
+        "quoin-cli-extras".into(),
+        BTreeSet::from(["quoin-core".to_owned()]),
+    );
+    edges.insert("quoin-core".into(), BTreeSet::new());
+    assert_eq!(cli_dependents(&edges), Vec::<String>::new());
 }

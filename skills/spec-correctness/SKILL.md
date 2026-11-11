@@ -52,6 +52,8 @@ whether existing tests are good (`gap-analysis`).
 - The target repo and its spec glob (default `spec/**/*.md`).
 - `quire properties --scope <repo> --json '<glob>'` output.
 - The repo's source and test trees.
+- Optionally, `surviving-mutant` findings from `quoin evidence audit --json`, grouped by
+  `row_id` ([surviving mutants](references/surviving-mutants.md)).
 
 ## Steps
 
