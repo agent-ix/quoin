@@ -152,6 +152,8 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::PopulationUnstated
         | Code::RepetitionsShort
         | Code::PopulationMalformed
+        | Code::PopulationOutsideSet
+        | Code::PopulationPartial
         | Code::IntervalMalformed
         | Code::IntervalUnstated
         | Code::IntervalLevelShort
@@ -267,7 +269,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            33,
+            35,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -283,6 +285,8 @@ mod tests {
             Code::PopulationUnstated,
             Code::RepetitionsShort,
             Code::PopulationMalformed,
+            Code::PopulationOutsideSet,
+            Code::PopulationPartial,
             Code::IntervalMalformed,
             Code::IntervalUnstated,
             Code::IntervalLevelShort,

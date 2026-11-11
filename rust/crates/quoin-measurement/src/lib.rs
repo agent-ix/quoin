@@ -85,6 +85,7 @@ pub mod intervention;
 pub mod json_bridge;
 pub mod operational;
 pub mod plans;
+pub mod population_set;
 pub mod portfolio;
 pub mod profiles;
 pub mod raw_evidence;

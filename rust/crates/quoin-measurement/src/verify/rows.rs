@@ -36,6 +36,7 @@ use std::cmp::Ordering;
 use engineering_assurance::measurement::Estimator;
 use quoin_store::JsonValue;
 
+use crate::population_set::{self, SetFault};
 use crate::types::observation::{MeasurementObservation, MeasurementState};
 use crate::types::plan::StatisticalDesign;
 use crate::verify::Reason;
@@ -189,6 +190,21 @@ pub fn assess(
             .is_some_and(|m| !is_whole(m) || m > examined)
     {
         return Err(Reason::PopulationMalformed);
+    }
+    if let Some(set) = &design.population_set {
+        population_set::check(
+            set,
+            population.unmodelled.get(population_set::EXAMINED_IDS),
+            population.unmodelled.get(population_set::MATCHED_IDS),
+            Some(examined),
+            population.matched,
+        )
+        .map_err(|fault| match fault {
+            SetFault::Unstated(_) => Reason::PopulationUnstated,
+            SetFault::Malformed(..) => Reason::PopulationMalformed,
+            SetFault::Outside(..) => Reason::PopulationOutsideSet,
+            SetFault::Partial(_) => Reason::PopulationPartial,
+        })?;
     }
     let repetitions = stated_repetitions(population.repetitions.as_ref())?;
     match population.complete {

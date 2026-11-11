@@ -18,9 +18,10 @@ use quoin_store::JsonValue;
 use crate::common::scalar::js_f64_string;
 use crate::error::MeasurementErrorCode as Code;
 use crate::json_bridge::to_serde;
+use crate::population_set::{self, SetFault};
 use crate::report::render::metric_label;
 use crate::types::observation::{MeasurementObservation, MeasurementState};
-use crate::types::plan::MeasurementPlan;
+use crate::types::plan::{MeasurementPlan, StatisticalDesign};
 
 /// One typed population finding, and the `observations[i]`-relative JSON path
 /// of the member it concerns.
@@ -102,9 +103,8 @@ pub(super) fn findings(
     if observation.state != MeasurementState::Measured {
         return out;
     }
-    let Some(plan) = plan else {
-        return out;
-    };
+    let Some(plan) = plan else { return out };
+    out.extend(set_finding(design, observation, population, &label, plan));
     if let Some(minimum) = minimum {
         out.extend(threshold(
             &examined,
@@ -158,6 +158,35 @@ pub(super) fn findings(
         ));
     }
     out
+}
+
+/// The finding, if any, against `observation` for not stating the plan's
+/// declared population (PLAT-110).
+fn set_finding(
+    design: Option<&StatisticalDesign>,
+    observation: &MeasurementObservation,
+    population: Option<&quoin_store::JsonObject>,
+    label: &str,
+    plan: &MeasurementPlan,
+) -> Option<Finding> {
+    let set = design?.population_set.as_ref()?;
+    let member = |name: &str| population.and_then(|population| population.get(name));
+    let stated = observation.population.as_ref();
+    let fault = population_set::check(
+        set,
+        member(population_set::EXAMINED_IDS),
+        member(population_set::MATCHED_IDS),
+        stated.and_then(|stated| stated.examined),
+        stated.and_then(|stated| stated.matched),
+    )
+    .err()?;
+    let code = match fault {
+        SetFault::Unstated(_) => Code::PopulationUnstated,
+        SetFault::Malformed(..) => Code::PopulationMalformed,
+        SetFault::Outside(..) => Code::PopulationOutsideSet,
+        SetFault::Partial(_) => Code::PopulationPartial,
+    };
+    Some((code, fault.describe(label, plan.id.as_str()), fault.path()))
 }
 
 /// Read one stated count, calling `report` when it is stated but is not a

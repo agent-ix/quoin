@@ -119,3 +119,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-123: Enumeration Values and model-table sections mapping to record keys](./FR-123-model-table-sections-mapping.md)
 - [FR-124: Inspect installed semantic modules and their import locks](./FR-124-inspect-installed-semantic-modules.md)
 - [FR-125: Immutable content-addressed binary attachments for measurements](./FR-125-content-addressed-measurement-attachments.md)
+- [FR-131: Percentage metrics are taken over a plan-enumerated population](./FR-131-percentage-metrics-over-enumerated-population.md)

@@ -15,7 +15,7 @@ use engineering_assurance::measurement::{
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
-use crate::types::plan::{GroundTruthKind, StatisticalDesign};
+use crate::types::plan::{GroundTruthKind, PopulationSet, StatisticalDesign};
 
 use super::CODE;
 
@@ -70,7 +70,7 @@ pub(super) fn ground_truth_kind_from(
 }
 
 /// Read the optional `statistical_design` block's `minimum_population`,
-/// `repetitions`, `estimator`, `decision_rule` and `answer_families`, or `None` when the document
+/// `repetitions`, `estimator`, `decision_rule`, `answer_families` and `population_set`, or `None` when the document
 /// declares no such block.
 ///
 /// `estimator` and `decision_rule` are engineering-assurance's (FR-021) and
@@ -162,6 +162,10 @@ pub(super) fn statistical_design_from(
             })
         })
         .transpose()?;
+    let population_set = block
+        .get("population_set")
+        .map(|stated| population_set_from(path, stated))
+        .transpose()?;
     if let (Some(rule), Some(estimator)) = (decision_rule, estimator) {
         rule.check_estimator(estimator).map_err(|error| {
             MeasurementError::new(
@@ -176,7 +180,40 @@ pub(super) fn statistical_design_from(
         estimator,
         decision_rule,
         answer_families,
+        population_set,
     }))
+}
+
+/// Read `statistical_design.population_set`: an object `{ ids: [..] }` of a
+/// non-empty list of distinct, non-empty strings (PLAT-110). The object is
+/// closed so a later member cannot be silently ignored.
+fn population_set_from(
+    path: &str,
+    stated: &serde_json::Value,
+) -> Result<PopulationSet, MeasurementError> {
+    let invalid = |reason: String| {
+        MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: statistical_design.population_set is invalid: {reason}; found {stated}"
+            ),
+        )
+    };
+    let object = stated
+        .as_object()
+        .ok_or_else(|| invalid("it must be an object".to_owned()))?;
+    if let Some(other) = object.keys().find(|name| name.as_str() != "ids") {
+        return Err(invalid(format!("unknown member `{other}`")));
+    }
+    let ids = object
+        .get("ids")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| invalid("`ids` must be a list of strings".to_owned()))?
+        .iter()
+        .map(|id| id.as_str().map(str::to_owned))
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| invalid("`ids` must be a list of strings".to_owned()))?;
+    PopulationSet::new(ids).map_err(invalid)
 }
 
 /// Refuse a decision rule whose comparator disagrees with the plan's
