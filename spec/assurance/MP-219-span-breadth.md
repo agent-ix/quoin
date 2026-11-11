@@ -13,6 +13,7 @@ statistical_design:
   sampling: none; the canonical stack replays every label and duplicates cannot inflate the denominator
   repetitions: 1
   estimator: proportion
+  population_exempt: the frozen label population is held by the producer corpus and replayed by it; this plan does not enumerate its ids
   error_model: a label is wrong or a repository drifts from the frozen set
   uncertainty: none estimated; the population is the full frozen label set and any wrong or unsafe span blocks promotion
   decision_rule:

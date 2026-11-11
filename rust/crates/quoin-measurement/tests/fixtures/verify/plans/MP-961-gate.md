@@ -16,6 +16,7 @@ statistical_design:
   sampling: exhaustive
   repetitions: 1
   estimator: proportion
+  population_exempt: fixture cases carry no ids
   error_model: none -- a deterministic suite
   uncertainty: none -- an exact proportion
   decision_rule:

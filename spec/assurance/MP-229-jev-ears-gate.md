@@ -13,6 +13,7 @@ statistical_design:
   sampling: none; reads the already-collected upstream observations for lens ears
   repetitions: 1
   estimator: proportion
+  population_exempt: the denominator is bars read from other plans observations, not a set of ids
   error_model: agent-labelled ground truth; each bar inherits the error of its upstream observation, and a not_computed bar counts as unmet
   uncertainty: the verdict inherits the uncertainty of the M2 corpus and of MP-225 disagreement under repetition; a bar resting on a not_computed value is NO-GO
   decision_rule:

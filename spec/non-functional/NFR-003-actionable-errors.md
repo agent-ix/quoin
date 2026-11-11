@@ -49,6 +49,13 @@ agent recover in one step, whereas a silent failure stalls the loop.
 and subcommands are refused with a non-zero exit. No native test is cited for unknown
 types, missing manifests, or catalog conflicts (PLAT-1275).
 
+NFR-003-M-1 and NFR-003-M-2 are measured over the commands the `quoin` binary lists, each
+given an unknown flag, by plans
+[MP-250](../assurance/MP-250-nfr003-actionable-failures.md) and
+[MP-251](../assurance/MP-251-nfr003-silent-failures.md) with the test
+`tc_3003_every_command_fails_a_bad_argument_out_loud` (FR-131-AC-9). That population
+covers argument validation of top-level commands only.
+
 ## Dependencies
 
 - **Upstream**: [FR-005](../functional/FR-005-reject-unknown-commands.md),

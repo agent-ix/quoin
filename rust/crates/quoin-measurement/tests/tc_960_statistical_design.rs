@@ -90,6 +90,7 @@ fn design(extra: &str, repetitions: &str) -> String {
          \x20\x20sampling: exhaustive\n\
          \x20\x20repetitions: {repetitions}\n\
          \x20\x20estimator: proportion\n\
+         \x20\x20population_exempt: fixture cases carry no ids\n\
          \x20\x20error_model: binomial\n\
          \x20\x20uncertainty: wilson interval\n\
          \x20\x20decision_rule:\n\

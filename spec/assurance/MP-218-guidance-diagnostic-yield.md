@@ -13,6 +13,7 @@ statistical_design:
   sampling: the deterministic partition sampling used for guidance correctness
   repetitions: 1
   estimator: proportion
+  population_exempt: the denominator is a deterministic per-run sample of reviewed records, not a fixed enumerable set of ids
   error_model: a canonical replay yields a non-distinguishing observation, or a reviewer misreads the cited causal channel
   uncertainty: none estimated; every reviewed diagnostic record is in the denominator and exactly 100% is required
   decision_rule:

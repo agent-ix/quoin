@@ -117,6 +117,7 @@ pub fn verify(
             decision_rule: None,
             answer_families: None,
             population_set: None,
+            population_exempt: None,
         });
     // Positions are ignored when the order's source attests none.
     let positioned = matches!(

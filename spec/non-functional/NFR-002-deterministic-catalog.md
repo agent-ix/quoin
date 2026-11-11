@@ -40,6 +40,10 @@ reports vary run to run, undermining trust in the catalog.
 
 ## Verification
 
+NFR-002-M-2 (duplicate-module lists not in sorted order) is a single-run metric: it is
+read off one catalog, not off a population of cases, so it takes no `population_set`
+and is not a percentage.
+
 `quoin-cli` `tests/tc_catalog_command.rs` ::
 `tc_521_catalog_methods_preserves_first_wins_data` asserts the first-wins projection. No
 native test is cited for repeated roots or sorted duplicate-module lists (PLAT-1275).

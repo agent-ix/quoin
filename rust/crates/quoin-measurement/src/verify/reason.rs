@@ -45,6 +45,10 @@ pub enum Reason {
     NoDecisionRule,
     /// The plan states no `statistical_design.estimator`.
     NoEstimator,
+    /// The plan's estimator is `proportion` and it declares neither a
+    /// `statistical_design.population_set` nor a `population_exempt` reason
+    /// (PLAT-1401): its denominator is whatever a producer counted.
+    PopulationSetUndeclared,
     /// No stored collection measured the plan under its definition.
     NoCollections,
     /// An observation carries no measured value.
@@ -169,6 +173,7 @@ impl Reason {
         Reason:
         NoDecisionRule,
         NoEstimator,
+        PopulationSetUndeclared,
         NoCollections,
         NoValue,
         PopulationUnstated,
@@ -212,6 +217,7 @@ impl Reason {
         match self {
             Self::NoDecisionRule => "no_decision_rule",
             Self::NoEstimator => "no_estimator",
+            Self::PopulationSetUndeclared => "population_set_undeclared",
             Self::NoCollections => "no_collections",
             Self::NoValue => "no_value",
             Self::PopulationUnstated => "population_unstated",
@@ -275,6 +281,7 @@ impl Reason {
         match self {
             Self::NoDecisionRule
             | Self::NoEstimator
+            | Self::PopulationSetUndeclared
             | Self::NoCollections
             | Self::NoValue
             | Self::PopulationUnstated

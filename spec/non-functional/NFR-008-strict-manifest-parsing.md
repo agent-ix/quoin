@@ -46,6 +46,12 @@ Aborting makes the corruption visible at the source.
 asserts that a malformed manifest is refused before it reaches the host. No native test is
 cited for the skipped manifest-less candidate (PLAT-1275).
 
+NFR-008-M-1 and NFR-008-M-2 are measured over the corrupt and manifest-less candidate kinds
+the producer builds, through `quoin catalog list`, by plans
+[MP-253](../assurance/MP-253-nfr008-corrupt-manifests.md) and
+[MP-254](../assurance/MP-254-nfr008-missing-manifests.md) with the test
+`tc_3005_corrupt_manifests_abort_and_missing_ones_are_skipped` (FR-131-AC-11).
+
 ## Dependencies
 
 - **Upstream**: [FR-006](../functional/FR-006-locate-module-roots.md) and

@@ -14,6 +14,10 @@ pub enum InconclusiveReason {
     /// The newest value was measured under a different `definition_version`
     /// than the plan's.
     DefinitionMismatch,
+    /// The plan's estimator is `proportion` and it declares neither a
+    /// `statistical_design.population_set` nor a `population_exempt` reason
+    /// (PLAT-1401).
+    PopulationSetUndeclared,
     /// The newest value states no `population`, so nothing says what it was
     /// measured over.
     PopulationUnstated,
@@ -71,6 +75,7 @@ impl InconclusiveReason {
         NoCurrentValue,
         PlanMismatch,
         DefinitionMismatch,
+        PopulationSetUndeclared,
         PopulationUnstated,
         IncompletePopulation,
         EmptyPopulation,
@@ -93,6 +98,7 @@ impl InconclusiveReason {
             Self::NoCurrentValue => "no_current_value",
             Self::PlanMismatch => "plan_mismatch",
             Self::DefinitionMismatch => "definition_mismatch",
+            Self::PopulationSetUndeclared => "population_set_undeclared",
             Self::PopulationUnstated => "population_unstated",
             Self::IncompletePopulation => "incomplete_population",
             Self::EmptyPopulation => "empty_population",
@@ -123,6 +129,9 @@ impl InconclusiveReason {
             Self::NoCurrentValue => "no measured value in the newest collection",
             Self::PlanMismatch => "the newest value names another plan",
             Self::PopulationUnstated => "the newest value states no population",
+            Self::PopulationSetUndeclared => {
+                "the proportion plan declares no population set or exemption"
+            }
             Self::DefinitionMismatch => {
                 "the newest value was measured under another definition version"
             }

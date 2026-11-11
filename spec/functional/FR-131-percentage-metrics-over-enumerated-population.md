@@ -18,7 +18,8 @@ take the plan's percentage metric over that set of ids: an observation states th
 ids it examined and the ids that matched as `population.examined_ids` and
 `population.matched_ids`, and intake and `quoin measurement verify` SHALL accept the
 observation only when `examined_ids` is exactly the declared set and `matched_ids`
-is drawn from it.
+is drawn from it. A plan whose estimator is `proportion` and that declares neither a
+set nor `statistical_design.population_exempt` SHALL be inconclusive.
 
 ## Rationale
 
@@ -31,7 +32,8 @@ an asserted count. The producer's lists are evidence about the set, never the se
 ## Behavior
 
 - `statistical_design.population_set` is `{ "ids": [...] }`: a non-empty list of distinct, non-empty strings, in a member the engineering-assurance plan schema already leaves free-form. The set is mechanical to generate from a code property (for example the error-code taxonomy) by whatever authors the plan.
-- A plan declaring none behaves exactly as before; a percentage metric under such a plan is not held to any enumeration, and declaring one is the plan author's choice.
+- A plan with no `population_set` is not held to any enumeration, except that a `proportion` plan declaring none must instead state `statistical_design.population_exempt`: a non-empty reason its denominator is not a set of ids (for example, repeated passes of a live service). A `proportion` plan stating neither is inconclusive in `report` (`population_set_undeclared`) and in `quoin measurement verify` (`population_set_undeclared`), whatever its observations say.
+- The set is generated from the code property it enumerates and compared with the plan by a test, so a hand-typed list cannot drift from it: the commands of the `quoin` command catalogue (NFR-003), the workflow commands crossed with the ways `ix-flow` fails (NFR-007), and the manifest-fixture kinds that are corrupt or missing (NFR-008).
 - `examined_ids` and `matched_ids` are lists of distinct, non-empty strings. `examined` and `matched` counts are stated, numeric, and equal their lists' lengths.
 
 ## Acceptance Criteria
@@ -44,11 +46,16 @@ an asserted count. The producer's lists are evidence about the set, never the se
 | FR-131-AC-4 | Under such a plan, a list naming an id outside the declared set is refused as `QM-POPULATION-OUTSIDE-SET`, naming the ids; a producer's `examined_ids` omitting any declared id, including a producer choosing a convenient subset, is refused as `QM-POPULATION-PARTIAL`, naming the omitted ids. A stated count never substitutes for the list. | Test (TC-2405, TC-2406) |
 | FR-131-AC-5 | `quoin measurement verify` applies FR-131-AC-3 and FR-131-AC-4 to the observations it assesses under a plan declaring a `population_set`: an unstated list or count is `population_unstated` (inconclusive), a malformed list or disagreeing count `population_malformed`, an id outside the set `population_outside_set`, and an omitted id `population_partial` (each reject). | Test (TC-2407) |
 | FR-131-AC-6 | A refusal under a plan declaring a `population_set` stays bounded however large the set or the input: a finding names at most five ids, each cut to 64 characters, followed by a count of the rest, and a refusal spells out at most 100 findings followed by a count of the remainder. | Test (TC-2408) |
+| FR-131-AC-7 | A plan's `statistical_design.population_exempt` is read when present. A value that is not a non-empty string refuses the plan load as `QM-PLAN-INVALID`, naming the member. | Test (TC-3000) |
+| FR-131-AC-8 | A plan with `estimator: proportion` that declares neither a `population_set` nor a `population_exempt` yields no usable value in a stage verdict (inconclusive `population_set_undeclared`), and `quoin measurement verify` is inconclusive `population_set_undeclared` for it; a plan declaring either, or a non-proportion estimator, is unaffected. | Test (TC-3001, TC-3002) |
+| FR-131-AC-9 | NFR-003-M-1 and NFR-003-M-2 are measured by plans MP-250 and MP-251 over the commands of the `quoin` catalogue, enumerated from the binary itself; each plan's declared set equals that enumeration, and the producer's observation, probing every command with an unknown flag, is accepted at intake and read by `quoin measurement verify`. | Test (TC-3003) |
+| FR-131-AC-10 | NFR-007-M-1 is measured by MP-252 over every workflow command crossed with `ix-flow` absent and `ix-flow` failing; the declared set equals the enumeration, and the producer's observation, running each pair against the real binary, is accepted at intake and read by `quoin measurement verify`. | Test (TC-3004) |
+| FR-131-AC-11 | NFR-008-M-1 and NFR-008-M-2 are measured by plans MP-253 (corrupt manifests abort assembly) and MP-254 (manifest-less candidates are skipped) over the manifest fixture kinds the producer builds; each declared set equals that enumeration, and the producer's observation, running every candidate through `quoin catalog list`, is accepted at intake and read by `quoin measurement verify`. | Test (TC-3005) |
 
 ## Constraints
 
 - No id list, digest or manifest is stored beyond the plan's declaration and the observation's lists.
-- This criterion binds no metric to a set; naming a plan's set for a given metric is the plan author's.
+- Naming a plan's set for a given metric is the plan author's; FR-131-AC-9 to FR-131-AC-11 bind the five NFR metrics. NFR-002-M-2 (duplicate-module lists sorted) is a single-run property of one catalog and is not a population percentage.
 
 ## Dependencies
 

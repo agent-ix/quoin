@@ -169,6 +169,9 @@ pub fn assess(
     estimator: Estimator,
     observation: &MeasurementObservation,
 ) -> Result<Estimate, Reason> {
+    if design.proportion_without_population() {
+        return Err(Reason::PopulationSetUndeclared);
+    }
     let value = match (observation.state, observation.value) {
         (MeasurementState::Measured, Some(value)) => value,
         (MeasurementState::Measured | MeasurementState::NotComputed, _) => {

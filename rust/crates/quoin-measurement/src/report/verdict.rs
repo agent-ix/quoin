@@ -72,7 +72,7 @@ use crate::report::gate::gate;
 pub use crate::report::inconclusive::InconclusiveReason;
 use crate::types::collection::MeasurementCollection;
 use crate::types::observation::{MeasurementObservation, MeasurementState};
-use crate::types::plan::{MeasurementPlan, MeasurementStage};
+use crate::types::plan::{MeasurementPlan, MeasurementStage, StatisticalDesign};
 
 /// The best earlier value a ratchet holds against, and where it came from.
 #[derive(Clone, Debug, PartialEq)]
@@ -296,6 +296,13 @@ pub(crate) fn usable<'a>(
     }
     if observation.definition_version.as_str() != plan.definition_version.as_str() {
         return Err(InconclusiveReason::DefinitionMismatch);
+    }
+    if plan
+        .statistical_design
+        .as_ref()
+        .is_some_and(StatisticalDesign::proportion_without_population)
+    {
+        return Err(InconclusiveReason::PopulationSetUndeclared);
     }
     let value = match (observation.state, observation.value) {
         (MeasurementState::Measured, Some(value)) => value,
