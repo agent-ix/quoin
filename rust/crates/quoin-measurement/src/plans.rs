@@ -182,7 +182,9 @@ pub(crate) fn plan_from(
     let statistical_design = design::statistical_design_from(path, value)?;
     let objective = design::objective_from(path, value)?;
     design::rule_agrees_with_objective(path, statistical_design.as_ref(), objective.as_ref())?;
-    let (protected_apparatus, negative_controls) = apparatus::apparatus_from(path, value, stage)?;
+    let (protected_apparatus, negative_controls) =
+        apparatus::apparatus_from(path, value, stage, status)?;
+    validate_gate_definition(path, value, stage, status, ground_truth_kind.is_some())?;
     if let Some(procedure) = execution_procedure.as_deref() {
         let covered = protected_apparatus.as_ref().is_some_and(|apparatus| {
             apparatus.iter().any(|entry| {
@@ -200,6 +202,7 @@ pub(crate) fn plan_from(
             ));
         }
     }
+    let cross_profile_comparison = design::cross_profile_comparison_from(path, value)?;
     Ok(MeasurementPlan {
         id,
         title,
@@ -216,7 +219,56 @@ pub(crate) fn plan_from(
         objective,
         protected_apparatus,
         negative_controls,
+        cross_profile_comparison,
     })
+}
+
+/// Refuse a non-retired `gate` plan whose definition engineering-assurance's
+/// schema would refuse: it must state `ground_truth_kind` and a
+/// `statistical_design` with every member the schema requires, each of the
+/// type the schema gives it.
+fn validate_gate_definition(
+    path: &str,
+    value: &serde_json::Value,
+    stage: MeasurementStage,
+    status: LifecycleStatus,
+    has_ground_truth: bool,
+) -> Result<(), MeasurementError> {
+    if stage != MeasurementStage::Gate || status == LifecycleStatus::Retired {
+        return Ok(());
+    }
+    let missing = |member: &str| {
+        MeasurementError::new(
+            CODE,
+            format!("{path}: a non-retired `gate` plan requires `{member}`"),
+        )
+    };
+    if !has_ground_truth {
+        return Err(missing("ground_truth_kind"));
+    }
+    let block = value
+        .get("statistical_design")
+        .and_then(serde_json::Value::as_object)
+        .ok_or_else(|| missing("statistical_design"))?;
+    for member in [
+        "population",
+        "sampling",
+        "repetitions",
+        "estimator",
+        "error_model",
+        "uncertainty",
+        "decision_rule",
+    ] {
+        let stated = block.get(member).is_some_and(|stated| match member {
+            "repetitions" => stated.as_u64().is_some_and(|count| count >= 1),
+            "decision_rule" => stated.is_object(),
+            _ => stated.as_str().is_some_and(|text| !text.is_empty()),
+        });
+        if !stated {
+            return Err(missing(&format!("statistical_design.{member}")));
+        }
+    }
+    Ok(())
 }
 
 fn execution_procedure_from(

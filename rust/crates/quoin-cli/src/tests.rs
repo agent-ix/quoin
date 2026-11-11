@@ -52,6 +52,7 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin graph fan-out",
     "quoin matrix",
     "quoin measurement",
+    "quoin measurement attach",
     "quoin measurement campaign",
     "quoin measurement campaign run",
     "quoin measurement intervention",

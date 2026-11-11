@@ -19,6 +19,27 @@ use crate::types::plan::{GroundTruthKind, StatisticalDesign};
 
 use super::CODE;
 
+/// Read the optional `cross_profile_comparison`, `false` when absent.
+///
+/// # Errors
+///
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] when the member is
+/// present but is not a boolean.
+pub(super) fn cross_profile_comparison_from(
+    path: &str,
+    value: &serde_json::Value,
+) -> Result<bool, MeasurementError> {
+    match value.get("cross_profile_comparison") {
+        None => Ok(false),
+        Some(stated) => stated.as_bool().ok_or_else(|| {
+            MeasurementError::new(
+                CODE,
+                format!("{path}: cross_profile_comparison must be true or false; found {stated}"),
+            )
+        }),
+    }
+}
+
 /// Read the optional `ground_truth_kind`, or `None` when the document does
 /// not state one.
 ///

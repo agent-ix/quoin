@@ -217,6 +217,10 @@ pub struct MeasurementPlan {
     /// document declares `negative_controls` (engineering-assurance FR-024).
     /// The checker reads only whether `apparatus-edit` is among them.
     pub negative_controls: Option<NegativeControls>,
+    /// Whether results from collections built under different profiles may be
+    /// compared. Absent in the document means `false`: a profile change blocks
+    /// the comparison unless the plan says otherwise.
+    pub cross_profile_comparison: bool,
 }
 
 impl MeasurementPlan {

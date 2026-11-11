@@ -54,14 +54,21 @@ repository as it reads today.
 
 ### Plan intake
 
+- A non-retired `stage: gate` plan SHALL state `ground_truth_kind` and a
+  `statistical_design` with `population`, `sampling`, `repetitions`,
+  `estimator`, `error_model`, `uncertainty` and `decision_rule`, the members
+  engineering-assurance's schema requires. A missing member SHALL refuse
+  intake as `QM-PLAN-INVALID`, naming the member; present members are
+  validated before missing-member checks.
 - Plan intake SHALL read `protected_apparatus` and `negative_controls` into
   engineering-assurance's `ProtectedApparatus` and `NegativeControls`. A list
   engineering-assurance refuses, a `stage: gate` plan that states no
-  `protected_apparatus` or no `negative_controls`, and an `apparatus-edit`
+  `negative_controls`, and an `apparatus-edit`
   control on a plan with no `protected_apparatus`, SHALL refuse the plan load
-  as `QM-PLAN-INVALID` naming the member. The gate-stage requirement has no
-  exception for a plan written before it: a gate that names nothing it
-  protects gives credit a changed answer key can earn.
+  as `QM-PLAN-INVALID` naming the member. A plan with neither an `execution_procedure` nor an
+  `apparatus-edit` control MAY omit `protected_apparatus`; a plan declaring
+  `execution_procedure` SHALL protect that procedure's path. A retired `gate`
+  plan MAY omit `negative_controls`.
 
 ### Resolution at intake
 
@@ -168,7 +175,7 @@ and never rejects.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-110-AC-1 | `protected_apparatus` and `negative_controls` load as engineering-assurance's types; an unsafe or `**` entry, an empty or repeated list, an unknown control kind, an `apparatus-edit` control with no `protected_apparatus`, and a `gate` plan missing either list refuse the plan load as `QM-PLAN-INVALID` naming the member; a `gate` plan stating both loads. | Test (TC-1810) |
+| FR-110-AC-1 | `protected_apparatus` and `negative_controls` load as engineering-assurance's types; an unsafe or `**` entry, an empty or repeated list, an unknown control kind, an `apparatus-edit` control with no `protected_apparatus`, a non-retired `gate` plan missing `ground_truth_kind` or any required `statistical_design` member, and a non-retired `gate` missing `negative_controls` refuse the plan load as `QM-PLAN-INVALID` naming the member; a complete gate with no apparatus list, no `execution_procedure` and no `apparatus-edit` control loads, while a plan with `execution_procedure` still requires protection. | Test (TC-1810) |
 | FR-110-AC-2 | A written collection records, under the plan's id, every file its entries resolve to — every file under a directory entry, dotfiles and nested files included — as a sorted path list; no protected path is in `unverifiedArtifacts`; with no protecting plan the member is absent. A candidate stating `protectedApparatus` or `unverifiedArtifacts` is `QM-COLLECTION-INVALID` and writes nothing. | Test (TC-1811, TC-1819, TC-1827) |
 | FR-110-AC-3 | A missing protected file, a missing or empty directory entry, a file entry naming a directory, and a case-only name difference are `QM-APPARATUS-UNRESOLVED`; a symlinked entry, ancestor, or file under a directory entry is `QM-APPARATUS-SYMLINK`; a socket under a directory entry or an unlistable directory is `QM-APPARATUS-UNREADABLE`; an artifact list omitting a resolved file is `QM-APPARATUS-UNDECLARED` naming it; none writes a collection. | Test (TC-1812..TC-1815) |
 | FR-110-AC-4 | Comparing two stored collections, a file added under or removed from a directory entry, a record on one side only, and a protected path listed as unverified each add blocking `apparatus_changed` with a `null` delta and `incomparable` status, naming the path; an unprotected artifact stated by one side alone adds only non-blocking `artifact_changed` with the delta kept; under a plan that protects nothing, neither reason appears. | Test (TC-1816..TC-1819, TC-1821) |

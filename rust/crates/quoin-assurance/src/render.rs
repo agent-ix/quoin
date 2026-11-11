@@ -23,7 +23,8 @@
 
 use quoin_evidence_types::{IndependenceAssessment, TrustAssessment};
 
-use crate::case::{AssuranceCase, CaseNode, NodeKind, NodeStatus};
+use crate::case::{AssuranceCase, CaseNode, LeafEvidence, NodeKind, NodeStatus};
+use crate::matrix::EvidenceStatus;
 
 /// The label budget, in CODE POINTS. See [`label`].
 const MAX_LABEL_LENGTH: usize = 80;
@@ -193,7 +194,13 @@ fn independence_section(assessments: &[IndependenceAssessment]) -> Vec<String> {
 
 fn render_node(node: &CaseNode, depth: usize) -> Vec<String> {
     let indent = "  ".repeat(depth);
-    let label = if node.kind == NodeKind::Solution {
+    let label = if node.kind == NodeKind::Strategy {
+        format!(
+            "{indent}- {} strategy — {}",
+            mark(node.status),
+            node.statement
+        )
+    } else if node.kind == NodeKind::Solution {
         format!(
             "{indent}- {} **{}** — {}",
             mark(node.status),
@@ -214,10 +221,31 @@ fn render_node(node: &CaseNode, depth: usize) -> Vec<String> {
     if let Some(because) = &node.because {
         out.push(format!("{indent}  - ↳ {because}"));
     }
+    if let Some(evidence) = &node.evidence {
+        out.push(format!("{indent}  - evidence: {}", evidence_line(evidence)));
+    }
     for child in &node.children {
         out.extend(render_node(child, depth + 1));
     }
     out
+}
+
+/// `suites S1 (2026-…), S2; newest 2026-…; verdict fresh`.
+fn evidence_line(evidence: &LeafEvidence) -> String {
+    let suites: Vec<String> = evidence
+        .suites
+        .iter()
+        .map(|s| match &s.at {
+            Some(at) => format!("{} ({at})", s.suite),
+            None => format!("{} (no run or scan recorded)", s.suite),
+        })
+        .collect();
+    let newest = evidence.newest.as_deref().unwrap_or("none recorded");
+    let verdict = evidence.verdict.map_or("none", EvidenceStatus::as_str);
+    format!(
+        "suites {}; newest {newest}; verdict {verdict}",
+        suites.join(", ")
+    )
 }
 
 /// The claim's subtree as a mermaid flowchart.
@@ -247,10 +275,10 @@ fn walk(node: &CaseNode, lines: &mut Vec<String>, seen: &mut Vec<String>) {
     let id = node_id(&node.id);
     if !seen.contains(&id) {
         seen.push(id.clone());
-        let (open, close) = if node.kind == NodeKind::Solution {
-            ("([", "])")
-        } else {
-            ("[", "]")
+        let (open, close) = match node.kind {
+            NodeKind::Solution => ("([", "])"),
+            NodeKind::Strategy => ("[/", "/]"),
+            NodeKind::Goal => ("[", "]"),
         };
         lines.push(format!("  {id}{open}\"{}\"{close}", label(node)));
     }

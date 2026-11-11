@@ -287,6 +287,7 @@ mod tests {
             objective: None,
             protected_apparatus: None,
             negative_controls: None,
+            cross_profile_comparison: false,
         }
     }
 

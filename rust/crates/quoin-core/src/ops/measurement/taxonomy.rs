@@ -146,6 +146,7 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::DefinitionMismatch
         | Code::RawEvidencePathUnsafe
         | Code::ArtifactNameUnsafe
+        | Code::AttachmentInvalid
         | Code::DateTimeInvalid
         | Code::PopulationBelowMinimum
         | Code::PopulationUnstated
@@ -174,6 +175,8 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::RawEvidenceMismatch
         | Code::RawEvidenceUnavailable
         | Code::ArtifactUnreadable
+        | Code::AttachmentUnavailable
+        | Code::AttachmentTampered
         | Code::ApparatusUnresolved
         | Code::ApparatusSymlink
         | Code::ApparatusUnreadable
@@ -264,7 +267,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            30,
+            33,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -274,6 +277,7 @@ mod tests {
             Code::DefinitionMismatch,
             Code::RawEvidencePathUnsafe,
             Code::ArtifactNameUnsafe,
+            Code::AttachmentInvalid,
             Code::DateTimeInvalid,
             Code::PopulationBelowMinimum,
             Code::PopulationUnstated,
@@ -294,6 +298,8 @@ mod tests {
             Code::RawEvidenceMismatch,
             Code::RawEvidenceUnavailable,
             Code::ArtifactUnreadable,
+            Code::AttachmentUnavailable,
+            Code::AttachmentTampered,
             Code::ApparatusUnresolved,
             Code::ApparatusSymlink,
             Code::ApparatusUnreadable,

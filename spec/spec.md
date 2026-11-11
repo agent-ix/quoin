@@ -226,6 +226,7 @@ index; the files are authoritative.
 - [FR-123](./functional/FR-123-model-table-sections-mapping.md) — enumeration `## Values` and model-table sections map to record keys.
 - [FR-124](./functional/FR-124-inspect-installed-semantic-modules.md) — `quoin module inspect` reports each installed module's semantic contract and import locks.
 - [FR-130](./functional/FR-130-protocol-scenario-evidence-intake.md) — `evidence.record_scenario` files a typed Quire Protocol scenario-evidence record or refuses it by kind.
+- [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 

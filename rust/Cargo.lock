@@ -3188,6 +3188,7 @@ dependencies = [
  "libc",
  "quire-canonical",
  "serde_json",
+ "sha2",
  "thiserror",
 ]
 

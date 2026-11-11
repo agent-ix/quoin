@@ -61,6 +61,7 @@ pub const OPERATIONS: &[&str] = &[
     "graph.change_impact",
     "graph.fan_out",
     "matrix.build",
+    "measurement.attach",
     "measurement.build_graph_portfolio",
     "measurement.build_portfolio",
     "measurement.build_report",
@@ -159,6 +160,7 @@ pub fn dispatch(
             crate::ops::evidence::record_operational(request, capabilities)
         }
         "evidence.audit_inputs" => crate::ops::evidence::audit_inputs(request, capabilities),
+        "measurement.attach" => crate::ops::measurement::attach(request),
         "measurement.record" => crate::ops::measurement::record(request),
         "measurement.verify" => crate::ops::measurement::verify(request),
         "measurement.produce_agent_eval_intervention" => {

@@ -30,7 +30,7 @@ use std::collections::BTreeSet;
 
 use quoin_store::{JsonValue, StoreError, canonical_bytes};
 
-use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
+use crate::types::collection::{BuildProfile, MeasurementCollection, ResolvedApparatus};
 use crate::types::comparison::{
     ComparisonReason, ComparisonReasonCode, ComparisonStatus, MeasurementComparison,
 };
@@ -38,6 +38,7 @@ use crate::types::observation::{
     MeasurementObservation, MeasurementPopulation, MeasurementShape,
     constant_predictor_governed_metric,
 };
+use crate::types::plan::MeasurementPlan;
 
 /// Compare two collections, slice by slice.
 ///
@@ -47,6 +48,10 @@ use crate::types::observation::{
 /// comparing them item by item would bury the real slices under one row per
 /// corpus item.
 ///
+/// `plans` says whether a slice's plan permits comparing collections built
+/// under different profiles; a slice whose plan is absent from `plans` does
+/// not permit it.
+///
 /// # Errors
 ///
 /// [`StoreError`] when a dimension value cannot be rendered into the sort key,
@@ -54,6 +59,7 @@ use crate::types::observation::{
 pub fn compare_measurement_collections(
     before: &MeasurementCollection,
     after: &MeasurementCollection,
+    plans: &[MeasurementPlan],
 ) -> Result<Vec<MeasurementComparison>, StoreError> {
     let mut keys: Vec<String> = Vec::new();
     for observation in before.observations.iter().chain(&after.observations) {
@@ -77,7 +83,7 @@ pub fn compare_measurement_collections(
         let Some(sample) = left.or(right) else {
             continue;
         };
-        out.push(compare_one(before, after, sample, left, right));
+        out.push(compare_one(before, after, plans, sample, left, right));
     }
     Ok(out)
 }
@@ -86,6 +92,7 @@ pub fn compare_measurement_collections(
 fn compare_one(
     before: &MeasurementCollection,
     after: &MeasurementCollection,
+    plans: &[MeasurementPlan],
     sample: &MeasurementObservation,
     left: Option<&MeasurementObservation>,
     right: Option<&MeasurementObservation>,
@@ -118,6 +125,9 @@ fn compare_one(
                 a.definition_version, b.definition_version
             ),
         ));
+    }
+    if let Some(reason) = profile_reason(before, after, plans, a) {
+        reasons.push(reason);
     }
     let protected = (
         before.protected_apparatus_of(a.plan_id.as_str()),
@@ -179,6 +189,51 @@ fn compare_one(
         },
         reasons,
     }
+}
+
+/// The reason, if any, that the two collections were built under different
+/// profiles: blocking unless the observation's plan permits comparing across
+/// them.
+fn profile_reason(
+    before: &MeasurementCollection,
+    after: &MeasurementCollection,
+    plans: &[MeasurementPlan],
+    observation: &MeasurementObservation,
+) -> Option<ComparisonReason> {
+    let profile_of = |collection: &MeasurementCollection| {
+        collection
+            .verification_stack
+            .as_ref()
+            .and_then(|stack| stack.build_profile)
+    };
+    let (from, to) = (profile_of(before), profile_of(after));
+    if from == to {
+        return None;
+    }
+    let permitted = plans
+        .iter()
+        .any(|plan| plan.id == observation.plan_id && plan.cross_profile_comparison);
+    let name = |profile: Option<BuildProfile>| profile.map_or("unstated", BuildProfile::as_str);
+    let (code, note) = if permitted {
+        (
+            ComparisonReasonCode::ProfileStratified,
+            "the plan permits it",
+        )
+    } else {
+        (
+            ComparisonReasonCode::ProfileChanged,
+            "the plan does not permit it",
+        )
+    };
+    Some(ComparisonReason::new(
+        code,
+        format!(
+            "{}: build profile moved {} -> {}; {note}",
+            observation.metric,
+            name(from),
+            name(to)
+        ),
+    ))
 }
 
 /// How the plan's recorded protected apparatus differs between the two

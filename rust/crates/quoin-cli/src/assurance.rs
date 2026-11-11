@@ -170,7 +170,21 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         .cloned()
         .unwrap_or_default();
     unreadable.extend(field(&trust.payload, "unreadable")?.as_array().into_iter().flatten().filter_map(serde_json::Value::as_str).map(|path| serde_json::json!({ "path": path, "reason": "trust decision is unreadable or invalid" })));
+    let observations: Vec<serde_json::Value> = ["runs", "scans"]
+        .iter()
+        .filter_map(|key| store.payload.get(*key)?.as_array())
+        .flatten()
+        .filter_map(|record| {
+            Some(serde_json::json!({
+                "suite": record.get("suite")?,
+                "timestamp": record.get("timestamp")?,
+            }))
+        })
+        .collect();
     let mut case_request = serde_json::json!({
+        "bindings": field(&store.payload, "bindings")?, "observations": observations,
+        "healthy": field(&audit.payload, "report")?.get("healthy"),
+        "unevaluated": field(&audit.payload, "report")?.get("unevaluated"),
             "documents": field(&frontmatter.payload, "documents")?, "obligations": field(&coverage.payload, "obligations")?,
         "findings": field(&field(&audit.payload, "report")?, "findings")?,
         "unreadable": unreadable, "producer_trust": field(&trust.payload, "assessments")?,
