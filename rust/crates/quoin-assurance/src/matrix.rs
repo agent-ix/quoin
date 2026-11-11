@@ -192,7 +192,7 @@ const SUSPECT_KINDS: [&str; 3] = [
 /// Everything else includes a kind the auditor adds later: `Finding::kind` is
 /// deliberately an open string, and an unrecognised kind is not evidence that
 /// the criterion is sound.
-fn bucket(kind: &str) -> u8 {
+pub(crate) fn bucket(kind: &str) -> u8 {
     if SUSPECT_KINDS.contains(&kind) {
         0
     } else if kind == FindingKind::STALE_EVIDENCE {
@@ -330,12 +330,21 @@ fn detail(findings: &[&Finding], bindings: &[BindingDetail], checks: &[String]) 
 /// The status of a criterion in a populated store: bound, then suspect, then
 /// stale, then undischarged.
 fn status(healthy: bool, detail: &EvidenceDetail) -> EvidenceStatus {
+    // `detail.findings` is already sorted by bucket, so its first finding is
+    // the one precedence selects.
+    status_of(
+        healthy,
+        detail.findings.first().map(|finding| bucket(&finding.kind)),
+    )
+}
+
+/// [`status`] from the most serious finding's [`bucket`], for callers that
+/// hold findings rather than a built detail.
+pub(crate) fn status_of(healthy: bool, worst_bucket: Option<u8>) -> EvidenceStatus {
     if healthy {
         return EvidenceStatus::Bound;
     }
-    // `detail.findings` is already sorted by bucket, so its first finding is
-    // the one precedence selects.
-    match detail.findings.first().map(|finding| bucket(&finding.kind)) {
+    match worst_bucket {
         Some(0) => EvidenceStatus::Suspect,
         Some(1) => EvidenceStatus::Stale,
         _ => EvidenceStatus::Undischarged,

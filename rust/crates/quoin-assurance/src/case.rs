@@ -34,11 +34,16 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use quoin_finding_types::Finding;
+use quoin_evidence::types::Binding;
+use quoin_finding_types::{Finding, UnevaluatedCheck};
 use quoin_quire_types::Obligation;
 use serde::{Deserialize, Serialize};
 
 use crate::requirement_of;
+
+mod leaf;
+use leaf::{Children, FindingsFor, Store, solution_for, strategy_for};
+pub use leaf::{LeafEvidence, Observation, SuiteRef};
 
 /// Internal node kinds for the legacy derived view; not an external format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -46,7 +51,8 @@ use crate::requirement_of;
 pub enum NodeKind {
     /// A claim or sub-claim.
     Goal,
-    /// Reserved by the retained type; this view mints none.
+    /// The reasoning that decomposes a goal into its sub-goals; it names the
+    /// edge verbs the corpus authored.
     Strategy,
     /// A leaf: one obligation.
     Solution,
@@ -86,6 +92,10 @@ pub struct CaseNode {
     /// Why it is open — the auditor's finding, verbatim. Absent when supported.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub because: Option<String>,
+    /// Bound suites, newest run and the auditor's verdict. Solutions only, and
+    /// only when the obligation has a binding.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub evidence: Option<LeafEvidence>,
     /// Sub-claims first, then evidence.
     pub children: Vec<CaseNode>,
 }
@@ -189,6 +199,19 @@ pub struct CaseInput {
     pub obligations: Vec<Obligation>,
     /// The auditor's findings, keyed by obligation elsewhere.
     pub findings: Vec<Finding>,
+    /// Obligations the audit lists healthy. When supplied, a leaf not listed and
+    /// carrying no finding is open: the auditor reached no verdict for it.
+    #[serde(default)]
+    pub healthy: Option<Vec<String>>,
+    /// Checks the audit could not evaluate; each keeps its leaf open.
+    #[serde(default)]
+    pub unevaluated: Option<Vec<UnevaluatedCheck>>,
+    /// The binding graph, from the store.
+    #[serde(default)]
+    pub bindings: Option<Vec<Binding>>,
+    /// Every run and scan the store holds, reduced to suite and timestamp.
+    #[serde(default)]
+    pub observations: Option<Vec<Observation>>,
     /// Artifact types that are top-level claims.
     ///
     /// Defaults to `StR`. A safety or security bundle argues from a declared
@@ -252,25 +275,37 @@ pub fn build_case(input: &CaseInput) -> AssuranceCase {
         }
     }
 
-    // parent id → child ids, inverted from the edges each child declares.
-    let mut children: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    // parent id → child id → the verbs the child declares toward it, inverted
+    // from the edges each child declares. A set, so a child that declares two
+    // verbs toward one parent is one sub-claim argued over both.
+    let mut children: Children = BTreeMap::new();
     for doc in &input.documents {
         let Some(id) = id_of(doc) else { continue };
-        for parent in parents_of(doc) {
+        for (parent, verb) in parents_of(doc) {
             if !by_id.contains_key(&parent) {
                 continue;
             }
-            children.entry(parent).or_default().push(id.clone());
+            children
+                .entry(parent)
+                .or_default()
+                .entry(id.clone())
+                .or_default()
+                .insert(verb);
         }
     }
 
-    let mut finding_for: BTreeMap<&str, &Finding> = BTreeMap::new();
+    // The auditor already orders by severity, so the first finding for an
+    // obligation is its most serious one, and that is the one a reader needs
+    // on the node. All of them feed the verdict.
+    let mut finding_for: FindingsFor = BTreeMap::new();
     for finding in &input.findings {
-        // First wins: the auditor already orders by severity, so the first
-        // finding for an obligation is its most serious one, and that is the
-        // one a reader needs on the node.
-        finding_for.entry(&finding.obligation).or_insert(finding);
+        finding_for
+            .entry(&finding.obligation)
+            .or_default()
+            .push(finding);
     }
+
+    let store = Store::new(input);
 
     let mut obligations_for: BTreeMap<&str, Vec<&Obligation>> = BTreeMap::new();
     for obligation in &input.obligations {
@@ -306,6 +341,7 @@ pub fn build_case(input: &CaseInput) -> AssuranceCase {
             &children,
             &obligations_for,
             &finding_for,
+            &store,
             &mut reached,
             &BTreeSet::new(),
         ));
@@ -382,9 +418,10 @@ fn sorted_by_key(values: &[serde_json::Value], key: &str) -> Vec<serde_json::Val
 fn node_for(
     id: &str,
     by_id: &BTreeMap<String, &serde_json::Value>,
-    children: &BTreeMap<String, Vec<String>>,
+    children: &Children,
     obligations_for: &BTreeMap<&str, Vec<&Obligation>>,
-    finding_for: &BTreeMap<&str, &Finding>,
+    finding_for: &FindingsFor,
+    store: &Store,
     reached: &mut BTreeSet<String>,
     ancestors: &BTreeSet<String>,
 ) -> CaseNode {
@@ -405,33 +442,44 @@ fn node_for(
 
     // `ancestors`, not `reached`: a child already rendered under a DIFFERENT
     // claim must still appear here, and only a child on this path is a cycle.
-    let mut sub_ids: Vec<&String> = children
+    // The map is keyed by child id, so iteration is already sorted.
+    let sub_edges: Vec<(&String, &BTreeSet<String>)> = children
         .get(id)
-        .map(|ids| ids.iter().filter(|c| !ancestors.contains(*c)).collect())
+        .map(|edges| {
+            edges
+                .iter()
+                .filter(|(child, _)| !ancestors.contains(*child))
+                .collect()
+        })
         .unwrap_or_default();
-    sub_ids.sort();
 
-    let mut parts: Vec<CaseNode> = sub_ids
-        .into_iter()
-        .map(|child| {
+    let sub_nodes: Vec<CaseNode> = sub_edges
+        .iter()
+        .map(|(child, _)| {
             node_for(
                 child,
                 by_id,
                 children,
                 obligations_for,
                 finding_for,
+                store,
                 reached,
                 &ancestors,
             )
         })
         .collect();
 
+    let mut parts: Vec<CaseNode> = Vec::new();
+    if !sub_nodes.is_empty() {
+        parts.push(strategy_for(id, &sub_edges, sub_nodes));
+    }
+
     let mut evidence: Vec<&Obligation> = obligations_for.get(id).cloned().unwrap_or_default();
     evidence.sort_by(|a, b| a.id.cmp(&b.id));
     parts.extend(
         evidence
             .into_iter()
-            .map(|obligation| solution_for(obligation, finding_for)),
+            .map(|obligation| solution_for(obligation, finding_for, store)),
     );
 
     // A goal with no sub-goals and no evidence is open, which a reader must
@@ -454,23 +502,8 @@ fn node_for(
         statement: title,
         status,
         because,
+        evidence: None,
         children: parts,
-    }
-}
-
-fn solution_for(obligation: &Obligation, finding_for: &BTreeMap<&str, &Finding>) -> CaseNode {
-    let finding = finding_for.get(obligation.id.as_str());
-    CaseNode {
-        id: obligation.id.clone(),
-        kind: NodeKind::Solution,
-        statement: obligation.statement.clone(),
-        status: if finding.is_some() {
-            NodeStatus::Open
-        } else {
-            NodeStatus::Supported
-        },
-        because: finding.map(|f| format!("{}: {}", f.kind, f.summary)),
-        children: Vec::new(),
     }
 }
 
@@ -486,8 +519,8 @@ fn id_of(doc: &serde_json::Value) -> Option<String> {
     }
 }
 
-/// Ids this document declares itself to elaborate.
-fn parents_of(doc: &serde_json::Value) -> Vec<String> {
+/// Ids this document declares itself to elaborate, with the verb it uses.
+fn parents_of(doc: &serde_json::Value) -> Vec<(String, String)> {
     let Some(serde_json::Value::Array(rels)) =
         doc.get("frontmatter").and_then(|f| f.get("relationships"))
     else {
@@ -509,7 +542,7 @@ fn parents_of(doc: &serde_json::Value) -> Vec<String> {
         if let Some(id) = target.split('/').next_back()
             && !id.is_empty()
         {
-            out.push(id.to_owned());
+            out.push((id.to_owned(), edge));
         }
     }
     out
