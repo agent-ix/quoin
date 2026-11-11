@@ -102,23 +102,107 @@ const KNOWN_ARGUMENTS: &[(&str, &str, &str)] = &[
     ("quoin-cli/src/config.rs", "&editor", "$EDITOR"),
 ];
 
+/// Fillers keep each character's UTF-8 width so byte offsets agree with the
+/// original text.
+fn fill(c: char, with: char) -> String {
+    if c == '\n' {
+        "\n".to_owned()
+    } else {
+        with.to_string().repeat(c.len_utf8())
+    }
+}
+
+fn char_line(chars: &[char], at: usize) -> usize {
+    chars[..at].iter().filter(|c| **c == '\n').count() + 1
+}
+
+/// Blank the (nested) block comment at `start`; returns the index after it.
+fn mask_block_comment(chars: &[char], start: usize, out: &mut String) -> Result<usize, String> {
+    let mut i = start;
+    let mut depth = 0usize;
+    loop {
+        match (chars.get(i), chars.get(i + 1)) {
+            (Some('/'), Some('*')) => {
+                depth += 1;
+                out.push_str("  ");
+                i += 2;
+            }
+            (Some('*'), Some('/')) => {
+                depth -= 1;
+                out.push_str("  ");
+                i += 2;
+                if depth == 0 {
+                    return Ok(i);
+                }
+            }
+            (Some(c), _) => {
+                out.push_str(&fill(*c, ' '));
+                i += 1;
+            }
+            (None, _) => {
+                return Err(format!(
+                    "line {}: unterminated block comment",
+                    char_line(chars, start)
+                ));
+            }
+        }
+    }
+}
+
+/// Replace the body of the string literal (plain or raw) at `start` with `_`;
+/// returns the index after it.
+fn mask_string(chars: &[char], start: usize, out: &mut String) -> Result<usize, String> {
+    let mut i = start;
+    let c = chars[i];
+    let (hashes, raw) = if c == 'r' {
+        let hashes = raw_open(chars, i).unwrap_or(0);
+        out.push('r');
+        for _ in 0..hashes {
+            out.push('#');
+        }
+        out.push('"');
+        i += hashes + 2;
+        (hashes, true)
+    } else {
+        out.push('"');
+        i += 1;
+        (0, false)
+    };
+    loop {
+        let Some(&c) = chars.get(i) else {
+            return Err(format!(
+                "line {}: unterminated string",
+                char_line(chars, start)
+            ));
+        };
+        if !raw && c == '\\' {
+            out.push_str(&fill(c, '_'));
+            if let Some(&escaped) = chars.get(i + 1) {
+                out.push_str(&fill(escaped, '_'));
+            }
+            i += 2;
+        } else if c == '"' && (0..hashes).all(|k| chars.get(i + 1 + k) == Some(&'#')) {
+            out.push('"');
+            for _ in 0..hashes {
+                out.push('#');
+            }
+            i += 1 + hashes;
+            break;
+        } else {
+            out.push_str(&fill(c, '_'));
+            i += 1;
+        }
+    }
+    Ok(i)
+}
+
 /// `(masked, original)`: comments blanked to spaces and string/char bodies
 /// replaced by `_`, newlines and offsets preserved, so structure can be read
 /// without a comment or a string fooling it.
 fn mask(source: &str) -> Result<String, String> {
     let chars: Vec<char> = source.chars().collect();
     let mut out = String::with_capacity(source.len());
-    // Fillers keep each character's UTF-8 width so byte offsets agree with the
-    // original text.
-    let fill = |c: char, with: char| -> String {
-        if c == '\n' {
-            "\n".to_owned()
-        } else {
-            with.to_string().repeat(c.len_utf8())
-        }
-    };
     let mut i = 0;
-    let line_of = |at: usize| chars[..at].iter().filter(|c| **c == '\n').count() + 1;
     while i < chars.len() {
         let c = chars[i];
         let next = chars.get(i + 1).copied();
@@ -128,75 +212,11 @@ fn mask(source: &str) -> Result<String, String> {
                 i += 1;
             }
         } else if c == '/' && next == Some('*') {
-            let start = i;
-            let mut depth = 0usize;
-            loop {
-                match (chars.get(i), chars.get(i + 1)) {
-                    (Some('/'), Some('*')) => {
-                        depth += 1;
-                        out.push_str("  ");
-                        i += 2;
-                    }
-                    (Some('*'), Some('/')) => {
-                        depth -= 1;
-                        out.push_str("  ");
-                        i += 2;
-                        if depth == 0 {
-                            break;
-                        }
-                    }
-                    (Some(c), _) => {
-                        out.push_str(&fill(*c, ' '));
-                        i += 1;
-                    }
-                    (None, _) => {
-                        return Err(format!(
-                            "line {}: unterminated block comment",
-                            line_of(start)
-                        ));
-                    }
-                }
-            }
+            i = mask_block_comment(&chars, i, &mut out)?;
         } else if c == '"'
             || (c == 'r' && matches!(next, Some('"' | '#')) && raw_open(&chars, i).is_some())
         {
-            let start = i;
-            let (hashes, raw) = if c == 'r' {
-                let hashes = raw_open(&chars, i).unwrap_or(0);
-                out.push('r');
-                for _ in 0..hashes {
-                    out.push('#');
-                }
-                out.push('"');
-                i += hashes + 2;
-                (hashes, true)
-            } else {
-                out.push('"');
-                i += 1;
-                (0, false)
-            };
-            loop {
-                let Some(&c) = chars.get(i) else {
-                    return Err(format!("line {}: unterminated string", line_of(start)));
-                };
-                if !raw && c == '\\' {
-                    out.push_str(&fill(c, '_'));
-                    if let Some(&escaped) = chars.get(i + 1) {
-                        out.push_str(&fill(escaped, '_'));
-                    }
-                    i += 2;
-                } else if c == '"' && (0..hashes).all(|k| chars.get(i + 1 + k) == Some(&'#')) {
-                    out.push('"');
-                    for _ in 0..hashes {
-                        out.push('#');
-                    }
-                    i += 1 + hashes;
-                    break;
-                } else {
-                    out.push_str(&fill(c, '_'));
-                    i += 1;
-                }
-            }
+            i = mask_string(&chars, i, &mut out)?;
         } else if c == '\'' {
             // A char literal is `'x'` or `'\..'`; anything else is a lifetime.
             let closes = if next == Some('\\') {
