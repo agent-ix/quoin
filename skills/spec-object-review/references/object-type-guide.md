@@ -86,7 +86,7 @@ The domain objects defined above act as the **Nouns** (Nodes) in the graph. The 
 > **CRITICAL**: Do NOT bake the noun into the verb! (e.g., do not use `publishes_event` or `uses_api`). The database already knows the target is an `event` or an `api_endpoint` based on its domain type. 
 
 ### Valid Relationship Verbs
-When linking specs, you must use one of the following strict semantic primitives:
+When linking specs, you must use a verb from the edge-type vocabulary owned by `spec-artifacts-iso` (FR-004, `edge_types`). The verbs authors reach for most are:
 
 **1. Operational & Flow:**
 - `calls`: Synchronous invocation (e.g., an endpoint `calls` an external API).
@@ -100,14 +100,25 @@ When linking specs, you must use one of the following strict semantic primitives
 
 **3. Contracts & Constraints:**
 - `requires`: Security and configuration bounds (e.g., an endpoint `requires` a specific permission scope or configuration).
-- `implements`: Interface/contract fulfillment.
+- `implements`: Interface/contract fulfillment only (an implementation `implements` an `interface`). It is NOT requirement lineage: an FR/NFR answering a StR or US uses `satisfies` (see Traceability).
 - `specifies`: An object FR providing the normative definition of structure/contract a behavioral FR relies on (e.g., a `binary_format` FR `specifies` the storage FR that writes it). Use this — not `references` — for the object-FR → behavioral-FR edge.
 
 **4. Generic Structure:**
 - `depends_on`: Library/package dependencies. NOTE: as a frontmatter FIELD, `depends_on:` is reserved for `spec.md` (master-requirements), where it is the repo-level dependency manifest. At artifact level always author the explicit `relationships:` array — bare-ID sugar fields are read-side ingestion tolerance only.
 - `contains`: Composition (e.g., UI component `contains` sub-components, Aggregate Root `contains` Entities, a `domain` `contains` its entity FRs).
 - `transitions_to`: State machine flows.
-- `references` / `related_to`: Loose general linkages (use only if no specific verb applies).
+- `references` / `relates_to`: Loose general linkages (use only if no specific verb applies).
+
+**5. Traceability & Lineage:**
+- `satisfies` / `satisfied_by`: Requirement lineage. An FR, NFR or US that answers a stakeholder or user requirement `satisfies` it; the StR may instead declare `satisfied_by`. The two are inverses and authorable from either end. Use this — not `implements` — for FR → US/StR edges.
+- `traces_to`: Traceability link for matrix/coverage (e.g., a US `traces_to` its StR).
+- `derives_from`: Source is derived or refined from the target (decomposition lineage).
+- `constrains`: Imposes a constraint on the target (e.g., an NFR `constrains` an FR).
+- `verifies`: A test or integration artifact verifies a requirement.
+- `exercises`: A user story exercises a functional requirement.
+- `supersedes`: Replaces a prior artifact.
+
+The full vocabulary, with categories and inverses, is `edge_types` in the `spec-artifacts-iso` manifest (FR-004); do not invent a verb that is not in it.
 
 ## Acceptance-Criteria Verification Vocabulary
 

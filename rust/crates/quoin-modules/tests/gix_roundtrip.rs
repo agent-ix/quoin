@@ -17,6 +17,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::Path;
 
@@ -117,7 +118,7 @@ fn build_fixture_repo(dir: &Path) -> (String, String) {
     )
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_290_gix_resolves_a_tag_and_extracts_the_whole_tree() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -146,7 +147,7 @@ fn tc_381_290_gix_resolves_a_tag_and_extracts_the_whole_tree() {
     );
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_291_gix_extracts_only_the_requested_subdirectory() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -167,7 +168,7 @@ fn tc_381_291_gix_extracts_only_the_requested_subdirectory() {
     );
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_293_an_unknown_revision_is_reported_not_followed_to_head() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -180,7 +181,7 @@ fn tc_381_293_an_unknown_revision_is_reported_not_followed_to_head() {
     assert_eq!(err.code(), ModulesErrorCode::GitRevisionNotFound);
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_294_an_absent_subdirectory_is_refused() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -193,7 +194,7 @@ fn tc_381_294_an_absent_subdirectory_is_refused() {
     assert_eq!(err.code(), ModulesErrorCode::GitObjectStore);
 }
 
-/// Trace: NFR-004
+#[trace("NFR-004")]
 #[test]
 fn tc_381_295_extraction_stops_at_the_declared_byte_bound() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -213,7 +214,7 @@ fn tc_381_295_extraction_stops_at_the_declared_byte_bound() {
     );
 }
 
-/// Trace: NFR-004
+#[trace("NFR-004")]
 #[test]
 fn tc_381_296_extraction_stops_at_the_declared_file_bound() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -230,7 +231,7 @@ fn tc_381_296_extraction_stops_at_the_declared_file_bound() {
     assert!(err.to_string().contains("file count"), "got: {err}");
 }
 
-/// Trace: FR-019-AC-2
+#[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_297_head_resolves_the_remotes_default_branch() {
     let root = tempfile::tempdir().expect("temp dir");

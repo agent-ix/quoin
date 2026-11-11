@@ -19,6 +19,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -155,10 +156,10 @@ fn intake_attestation(root: &Path) -> String {
 
 /// `quoin change-assurance receipt` with `--diff-path` and `--plan` reports
 /// `apparatus_touched` and refuses the receipt, through the real binary — the
-/// gap FR-111-CON-3 recorded until this ticket.
+/// gap the apparatus-touched constraint recorded until this ticket.
 ///
-/// Trace: FR-111-AC-1, TC-1889
 /// Provenance: PLAT-997
+#[trace("FR-111-AC-1", "TC-1889")]
 #[test]
 fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
     let root = repo();
@@ -211,10 +212,10 @@ fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
 
 /// A plan that protects apparatus, checked with no `--diff-path` at all, is
 /// `diff_missing` and `incomplete` through the real binary — never vacuously
-/// `valid` because the caller supplied no diff (FR-111-AC-4).
+/// `valid` because the caller supplied no diff.
 ///
-/// Trace: FR-111-AC-4, TC-1890
 /// Provenance: PLAT-997
+#[trace("FR-111-AC-4", "TC-1890")]
 #[test]
 fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
     let root = repo();
@@ -267,8 +268,8 @@ fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
 /// an auditor reading `quoin change-assurance receipt`'s own output can tell
 /// a caller's omission apart from a genuinely unlinked receipt (PLAT-1015).
 ///
-/// Trace: FR-111-AC-5, TC-1915
 /// Provenance: PLAT-1015
+#[trace("FR-111-AC-5", "TC-1915")]
 #[test]
 fn tc_1015_622_receipt_records_the_omission_through_the_real_binary() {
     let root = repo();

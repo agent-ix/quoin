@@ -36,6 +36,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_core::protocol::canonical_json;
@@ -144,8 +145,7 @@ fn integration_tests() -> Vec<(String, String)> {
 /// Route probes for operations whose former protocol-process tests were moved
 /// to the shipped CLI. Their named in-process invocation keeps the dispatch
 /// census able to catch a swapped match arm without retaining that executable.
-///
-/// Trace: FR-102
+#[trace("FR-102")]
 #[test]
 fn tc_521_migrated_command_routes_remain_named_in_the_runtime_census() {
     for result in [
@@ -177,8 +177,8 @@ fn tc_521_migrated_command_routes_remain_named_in_the_runtime_census() {
 /// census over a transcribed list is a census of the transcription, which is
 /// the #443 failure this whole area already has scar tissue from.
 ///
-/// Trace: FR-096
 /// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[trace("FR-096")]
 #[test]
 fn tc_447_600_every_operation_is_invoked_by_name_by_some_test() {
     let sources = integration_tests();
@@ -217,8 +217,8 @@ fn tc_447_600_every_operation_is_invoked_by_name_by_some_test() {
 /// operation through a `format!("assurance.{}", case.op)`, so no test named it.
 /// That is coverage a census cannot see and a reader cannot either.
 ///
-/// Trace: FR-040, FR-096
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-040", "FR-096")]
 #[test]
 fn tc_447_601_parse_argument_returns_the_validated_argument() {
     let payload = ok(&run("assurance.parse_argument", &argument().to_string()));
@@ -234,8 +234,8 @@ fn tc_447_601_parse_argument_returns_the_validated_argument() {
 /// builder's output: fed a hand-written view, a renderer that had drifted from
 /// the builder would still pass.
 ///
-/// Trace: FR-047, FR-096
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-047", "FR-096")]
 #[test]
 fn tc_447_602_an_authored_argument_is_built_and_then_rendered() {
     let request = json!({
@@ -275,8 +275,8 @@ fn tc_447_602_an_authored_argument_is_built_and_then_rendered() {
 /// partition has to put it in `open`: an empty clause set would exercise the
 /// request shape and none of the accounting.
 ///
-/// Trace: FR-046, FR-096
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-046", "FR-096")]
 #[test]
 fn tc_447_603_a_discharge_is_built_and_then_rendered() {
     let request = json!({
@@ -316,8 +316,8 @@ fn tc_447_603_a_discharge_is_built_and_then_rendered() {
 /// `completeness.schema_refs` names the frontmatter schemas a manifest reaches
 /// for, so the shell knows what to read.
 ///
-/// Trace: FR-037, FR-096
 /// Provenance: agent-ix/quoin#445
+#[trace("FR-037", "FR-096")]
 #[test]
 fn tc_447_604_schema_refs_names_what_the_shell_must_read() {
     let request = json!({ "manifest": MANIFEST });
@@ -333,8 +333,8 @@ fn tc_447_604_schema_refs_names_what_the_shell_must_read() {
 /// which must survive the crossing. Asserting only the first would pass with a
 /// handler that dropped the other two.
 ///
-/// Trace: FR-037, FR-040, FR-096
 /// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[trace("FR-037", "FR-040", "FR-096")]
 #[test]
 fn tc_447_605_read_frontmatter_splits_documents_and_keeps_the_unreadable() {
     let request = json!({
@@ -362,8 +362,8 @@ fn tc_447_605_read_frontmatter_splits_documents_and_keeps_the_unreadable() {
 
 /// `completeness.assess_bundle` reaches a verdict over content alone.
 ///
-/// Trace: FR-037, FR-096
 /// Provenance: agent-ix/quoin#445
+#[trace("FR-037", "FR-096")]
 #[test]
 fn tc_447_606_assess_bundle_returns_a_verdict() {
     let request = json!({

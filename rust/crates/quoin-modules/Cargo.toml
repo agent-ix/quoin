@@ -46,4 +46,6 @@ schemars = { workspace = true, optional = true }
 schema = ["dep:schemars"]
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
+quire-fixtures = { workspace = true }
 tempfile = "=3.27.0"

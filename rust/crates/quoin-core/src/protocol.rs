@@ -157,7 +157,7 @@ mod tests {
     use super::*;
     use ix_trace_rs::trace;
 
-    /// Trace: FR-096-AC-10
+    #[trace("FR-096-AC-10")]
     #[test]
     fn exit_statuses_are_the_documented_taxonomy() {
         assert_eq!(
@@ -172,7 +172,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-096-AC-10
+    #[trace("FR-096-AC-10")]
     #[test]
     fn every_status_round_trips() {
         for outcome in [
@@ -187,7 +187,7 @@ mod tests {
         assert_eq!(Outcome::from_code(5), None);
     }
 
-    /// Trace: FR-096-AC-10
+    #[trace("FR-096-AC-10")]
     #[test]
     fn non_zero_but_valid_is_distinguishable_from_failed() {
         assert!(Outcome::Partial.carries_payload());
@@ -197,7 +197,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-096-AC-10
+    #[trace("FR-096-AC-10")]
     #[test]
     fn canonical_json_sorts_keys_and_emits_no_whitespace() {
         let value = serde_json::json!({ "z": 1, "a": { "y": 2, "b": 3 } });
@@ -248,7 +248,7 @@ mod tests {
     /// untested -- it recurses into array elements but was never asserted to.
     /// An object nested inside an array element must come out sorted exactly
     /// like a top-level or nested-object one does.
-    /// Trace: FR-096-AC-10
+    #[trace("FR-096-AC-10")]
     #[test]
     fn canonical_json_sorts_keys_inside_array_elements() {
         let value = serde_json::json!({ "z": [ { "b": 1, "a": 2 }, { "d": 3, "c": 4 } ] });
@@ -258,7 +258,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-096-AC-10
+    #[trace("FR-096-AC-10")]
     #[test]
     fn serialization_failure_retains_the_domain_io_code() {
         let value = BTreeMap::from([(vec![1, 2], "invalid JSON map key")]);

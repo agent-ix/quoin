@@ -154,6 +154,7 @@ fn number(value: &serde_json::Value, name: &str) -> u64 {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
+    use ix_trace_rs::trace;
     use std::fs::{create_dir_all, write};
 
     use super::{command, snapshot};
@@ -211,7 +212,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-096, FR-062
+    #[trace("FR-096", "FR-062")]
     #[test]
     fn tc_412_742_preserves_the_validate_grammar() {
         let matches = command()
@@ -227,8 +228,7 @@ mod tests {
 
     /// The native snapshot walker is a transport optimisation only: it must
     /// reach every gate the independent on-disk validator would classify.
-    ///
-    /// Trace: FR-096, TC-1650
+    #[trace("FR-096", "TC-1650")]
     #[test]
     fn tc_1650_native_validate_snapshot_matches_the_independent_disk_reader() {
         let scratch = tempfile::tempdir().expect("scratch tree is created");

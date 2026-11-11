@@ -22,23 +22,23 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use std::fs;
 
 use common::{
-    SCHEMA_REQUIRED_SEMANTIC_CORE, Scratch, codes, errors, message_for, read,
-    rewrite_entity_schema, semantic_root, validators,
+    Scratch, codes, errors, message_for, read, rewrite_entity_schema, semantic_root, validators,
 };
 use quoin_semantic::data_schema::DataSchemaForm;
 use quoin_semantic::{CompatibilityPosture, LegacyForms, SEMANTIC_CONTRACT, read_semantic_block};
-use serde_json::json;
+use serde_json::{Value, json};
 
 /// A module with no `semantic` block is read clean, and reports no module.
 ///
 /// The "unchanged" half of the criterion: the block is optional, so a manifest
 /// without one must be neither refused nor decorated with advice.
 ///
-/// Trace: FR-070-AC-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-1", "TC-1336")]
 #[test]
 fn tc_452_610_a_module_without_a_semantic_block_reads_clean_and_unjudged() {
     let validators = validators();
@@ -65,8 +65,8 @@ fn tc_452_610_a_module_without_a_semantic_block_reads_clean_and_unjudged() {
 /// verbatim would answer with absent posture and absent legacy-form policy,
 /// and every downstream rule keyed on them would silently not apply.
 ///
-/// Trace: FR-070-AC-2
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-2", "TC-1337")]
 #[test]
 fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     let validators = validators();
@@ -74,7 +74,6 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     let root = scratch.module_copy("minimal", |manifest, _| {
         manifest["semantic"] = json!({
             "contract_version": "1.0.0",
-            "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
             "package": "agent-ix/spec-objects-fixture",
         });
     });
@@ -98,8 +97,8 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
 /// everything passes the second. The accepted set is `SEMANTIC_CONTRACT`'s own
 /// key list, so a key added to the contract and not to the reader fails here.
 ///
-/// Trace: FR-070-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-3", "TC-1338")]
 #[test]
 fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accepted() {
     let validators = validators();
@@ -113,12 +112,22 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
         codes(&bad, &validators)
     );
 
+    let retired = scratch.module_copy("retired-key", |manifest, _| {
+        manifest["semantic"]["semantic_core"] = json!("0.0.0");
+    });
+    assert!(
+        codes(&retired, &validators)
+            .contains(&"error:semantic.unknown-key@semantic.semantic_core".to_owned()),
+        "{:?}",
+        codes(&retired, &validators)
+    );
+
     let admitted = json!({
         "contract_version": "1.0.0",
-        "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
         "package": "agent-ix/spec-objects-fixture",
         "exports": ["entity"],
         "imports": { "agent-ix/spec-artifacts-iso": "0.4.0" },
+        "import_types": { "agent-ix/spec-artifacts-iso": ["StR"] },
         "targets": ["json-schema", "markdown"],
         "mappings": ["typed-table"],
         "compatibility_posture": "strict",
@@ -147,8 +156,8 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
 
 /// An export no `object_types` entry declares is refused.
 ///
-/// Trace: FR-070-AC-4
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-4", "TC-1339")]
 #[test]
 fn tc_452_613_an_export_must_name_a_declared_type() {
     let validators = validators();
@@ -168,8 +177,8 @@ fn tc_452_613_an_export_must_name_a_declared_type() {
 /// module exports authored document types such as `SpecReview`, not only its
 /// internal object types.
 ///
-/// Trace: FR-070-AC-4
 /// Provenance: quoin#537
+#[trace("FR-070-AC-4")]
 #[test]
 fn tc_537_001_an_export_may_name_an_artifact_type_with_a_pinned_schema() {
     let validators = validators();
@@ -194,8 +203,8 @@ fn tc_537_001_an_export_may_name_an_artifact_type_with_a_pinned_schema() {
 /// that validated the whole block first would report two diagnostics. Exactly
 /// one is the assertion.
 ///
-/// Trace: FR-070-AC-5
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-5", "TC-1340")]
 #[test]
 fn tc_452_614_an_unsupported_contract_version_is_refused_before_any_other_key() {
     let validators = validators();
@@ -213,8 +222,8 @@ fn tc_452_614_an_unsupported_contract_version_is_refused_before_any_other_key() 
 /// A target outside the declared registry is refused and named, and a package
 /// that is not `<org>/<repo>` is refused.
 ///
-/// Trace: FR-070-AC-7
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-7", "TC-1383")]
 #[test]
 fn tc_452_615_an_unregistered_target_and_a_non_org_repo_package_are_refused() {
     let validators = validators();
@@ -253,8 +262,8 @@ fn tc_452_615_an_unregistered_target_and_a_non_org_repo_package_are_refused() {
 /// A reference-form `data_schema` resolves to the shipped file, against the
 /// vendored semantic-core bundle.
 ///
-/// Trace: FR-073-AC-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-073-AC-1", "TC-1360")]
 #[test]
 fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
     let validators = validators();
@@ -271,13 +280,16 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
         .expect("the entity export resolved");
     assert_eq!(resolved.kind, DataSchemaForm::Reference);
     let schema = resolved.schema.as_ref().expect("a resolved document");
-    assert!(
-        schema["$id"]
-            .as_str()
-            .unwrap()
-            .ends_with("/spec-objects-fixture/Entity.json"),
-        "{schema}"
-    );
+    let authored: Value = serde_json::from_str(
+        &fs::read_to_string(
+            quire_fixtures::module_ok_dir()
+                .join("schemas")
+                .join("Entity.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(schema["$id"], authored["$id"], "{schema}");
     // Resolution is against the shipped bundle: the document's own `$ref`s
     // name the semantic-core bundle. A resolver that ignored `$ref`s entirely would
     // pass an assertion about `$id` alone.
@@ -296,8 +308,8 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
 /// collapsed them into one generic refusal would tell an author nothing about
 /// which of the three happened.
 ///
-/// Trace: FR-073-AC-2
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-073-AC-2", "TC-1361")]
 #[test]
 fn tc_452_617_a_missing_unparsable_or_non_schema_file_is_refused() {
     let validators = validators();
@@ -350,8 +362,8 @@ fn tc_452_617_a_missing_unparsable_or_non_schema_file_is_refused() {
 /// refuse a correct schema, and a cycle detector that never fires would accept
 /// an incorrect one; both halves have to hold at once.
 ///
-/// Trace: FR-073-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-073-AC-3", "TC-1362")]
 #[test]
 fn tc_452_618_a_self_reference_is_a_fragment_and_the_two_bad_refs_are_refused() {
     let validators = validators();
@@ -406,8 +418,8 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_two_bad_refs_are_refused() 
 /// An inline `data_schema` under a `semantic` block is a WARNING; without a
 /// block it is silent.
 ///
-/// Trace: FR-073-AC-4
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-073-AC-4", "TC-1363")]
 #[test]
 fn tc_452_619_an_inline_data_schema_warns_only_under_a_semantic_block() {
     let validators = validators();
@@ -434,8 +446,8 @@ fn tc_452_619_an_inline_data_schema_warns_only_under_a_semantic_block() {
 /// — is refused, and a value mixing the reference and inline forms is refused
 /// as ambiguous rather than silently preferring one.
 ///
-/// Trace: FR-073-AC-5
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-073-AC-5", "TC-1364")]
 #[test]
 fn tc_452_620_a_path_escape_or_an_ambiguous_data_schema_is_refused() {
     let validators = validators();
@@ -456,7 +468,9 @@ fn tc_452_620_a_path_escape_or_an_ambiguous_data_schema_is_refused() {
     // are a VALID schema, so only the escape rule can refuse this one.
     let outside = scratch.path().join("outside.json");
     fs::copy(
-        common::fixture().join("schemas").join("Entity.json"),
+        quire_fixtures::module_ok_dir()
+            .join("schemas")
+            .join("Entity.json"),
         &outside,
     )
     .unwrap();
@@ -496,8 +510,8 @@ fn tc_452_620_a_path_escape_or_an_ambiguous_data_schema_is_refused() {
 /// `std::fs`, so the guard reads the bytes compiled into this binary rather
 /// than whatever is on disk when it runs.
 ///
-/// Trace: FR-073-CON-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-073-CON-1", "TC-1365")]
 #[test]
 fn tc_452_621_the_data_schema_resolution_path_names_no_network_client() {
     const SOURCE: &str = include_str!("../src/data_schema.rs");
@@ -533,8 +547,8 @@ fn tc_452_621_the_data_schema_resolution_path_names_no_network_client() {
 /// The inline form stays valid and silent for a module with no `semantic`
 /// block — the pre-contract modules keep working.
 ///
-/// Trace: FR-073-CON-2
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-073-CON-2", "TC-1366")]
 #[test]
 fn tc_452_622_the_inline_form_stays_valid_for_a_module_with_no_semantic_block() {
     let validators = validators();

@@ -15,11 +15,6 @@ evals/.bin/
 builtin-modules/
 reports/
 
-# Rendered variants are written to a temporary directory by the template gate
-# and removed afterwards. This entry catches a run interrupted before its
-# `finally`, so a stray tree never reaches a commit.
-quoin-semantic-module-*/
-
 # Cargo build output for the Rust workspace (quoin#375). `rust/target/` is the
 # EXPLICIT target dir every gate names on the command line; an inherited
 # CARGO_TARGET_DIR moves the artifact somewhere else and leaves a stale binary

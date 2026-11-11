@@ -39,3 +39,4 @@ engineering-assurance = { workspace = true, features = ["measurement", "claim-st
 quoin-jsonschema = { workspace = true }
 serde_json = { workspace = true }
 tempfile = "=3.27.0"
+ix-trace-rs = { workspace = true }

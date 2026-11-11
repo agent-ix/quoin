@@ -11,15 +11,16 @@ Templates: [cargo-fuzz](../assets/templates/cargo-fuzz.rs.md) ·
 Inherited from `spec-correctness` step 4, unchanged, because `gap-analysis` reconciles by the
 same grep. **Two independent carriers**, so one formatting change cannot break reconciliation:
 
-1. `Trace: NFR-003-M-1` on its own line in the doc comment or docstring.
+1. The explicit trace marker with the obligation or criterion id (and the matrix row's `TC-` id
+   where a row cites it): `#[trace("NFR-003-M-1")]`, `@pytest.mark.trace("NFR-003-M-1")`,
+   `trace("NFR-003-M-1")`. An id in a comment or docstring binds nothing.
 2. The target's own name containing the id — `fuzz_nfr_003_m_1_parse_manifest`.
 
 ### Placement, which is where this bites
 
 A carrier binds to the **symbol whose source span encloses it**. For a libfuzzer target that
-span is the named wrapper `fn` that `fuzz_target!` calls — so the doc comment goes immediately
-above that `fn`, never on the `fuzz_target!` invocation (rustc warns `unused_doc_comments` on a
-doc comment attached to a macro call) and not at the top of the file.
+span is the named wrapper `fn` that `fuzz_target!` calls — so the `#[trace(...)]` attribute goes immediately
+above that `fn`, never on the `fuzz_target!` invocation and not at the top of the file.
 
 A file-header comment reads correctly, passes review, matches a grep, and **binds to
 nothing**. Six generated files shipped that way in `@agent-ix/quoin@0.12.x` and every

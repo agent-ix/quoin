@@ -56,7 +56,7 @@ pub use manifest::{
     read_semantic_block,
 };
 pub use package_manifest::{
-    derive_package_manifest, mapping_identity, resolve_imports, type_identity,
+    derive_package_manifest, mapping_identity, resolve_imports, resolve_imports_in, type_identity,
     validate_package_manifest,
 };
 pub use sweep::{

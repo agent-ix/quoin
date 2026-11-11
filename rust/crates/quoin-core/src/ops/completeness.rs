@@ -198,6 +198,7 @@ pub fn assess_bundle(request: &serde_json::Value) -> Result<Response, CoreError>
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     fn refs(request: &serde_json::Value) -> Result<serde_json::Value, CoreError> {
         schema_refs(request).map(|response| response.payload)
@@ -218,16 +219,16 @@ mod tests {
         \x20     field: quality_attribute\n\
         \x20     check: vocabulary-coverage\n";
 
-    /// Trace: FR-037, FR-096
     /// Provenance: agent-ix/quoin#445
+    #[trace("FR-037", "FR-096")]
     #[test]
     fn the_refs_a_manifest_names_come_back_so_the_shell_knows_what_to_read() {
         let payload = refs(&serde_json::json!({ "manifest": MANIFEST })).unwrap();
         assert_eq!(payload["refs"], serde_json::json!(["schemas/nfr.json"]));
     }
 
-    /// Trace: FR-096
     /// Provenance: agent-ix/quoin#445
+    #[trace("FR-096")]
     #[test]
     fn a_misspelled_schema_refs_field_is_refused_not_ignored() {
         let error = refs(&serde_json::json!({ "manifestt": "" })).unwrap_err();
@@ -235,8 +236,8 @@ mod tests {
         assert_eq!(error.outcome().code(), 3);
     }
 
-    /// Trace: FR-096
     /// Provenance: agent-ix/quoin#445
+    #[trace("FR-096")]
     #[test]
     fn an_oversized_manifest_is_refused_before_it_is_parsed() {
         let manifest = "#".repeat(MAX_MANIFEST_BYTES + 1);
@@ -249,7 +250,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-037, FR-096
     /// Provenance: agent-ix/quoin#445
     ///
     /// The end-to-end shape, over content only: a bundle whose one NFR claims
@@ -257,6 +257,7 @@ mod tests {
     /// named. Zero declarations would be `UNCHECKED`, which is the distinction
     /// FR-037 exists to keep visible, so both are asserted here rather than
     /// only the happy one.
+    #[trace("FR-037", "FR-096")]
     #[test]
     fn an_assessment_crosses_the_boundary_with_no_filesystem_at_all() {
         let request = serde_json::json!({
@@ -295,8 +296,8 @@ mod tests {
         assert_eq!(assess(&unchecked).unwrap()["verdict"], "UNCHECKED");
     }
 
-    /// Trace: FR-096
     /// Provenance: agent-ix/quoin#445
+    #[trace("FR-096")]
     #[test]
     fn a_misspelled_assess_field_is_refused_not_ignored() {
         let error = assess(&serde_json::json!({
@@ -311,13 +312,13 @@ mod tests {
         assert_eq!(error.outcome().code(), 3);
     }
 
-    /// Trace: FR-096
     /// Provenance: agent-ix/quoin#445
     ///
     /// `unreadable` defaults to empty — a caller whose walk hit no OS error
     /// should not have to send an empty list — but every other field is
     /// required, because a missing `documents` and an empty `documents` are
     /// different claims about the bundle.
+    #[trace("FR-096")]
     #[test]
     fn unreadable_is_optional_and_documents_is_not() {
         assert!(
@@ -333,12 +334,12 @@ mod tests {
         assert_eq!(error.code, CoreErrorCode::BadRequest);
     }
 
-    /// Trace: FR-096
     /// Provenance: agent-ix/quoin#445
     ///
     /// A caller's own read failures are reported, not dropped: a file the walk
     /// found and could not open is the same kind of gap as one whose YAML is
     /// broken, and losing it would turn a broken bundle into a clean one.
+    #[trace("FR-096")]
     #[test]
     fn a_read_failure_the_caller_reports_survives_the_crossing() {
         let payload = assess(&serde_json::json!({
@@ -352,13 +353,13 @@ mod tests {
         assert_eq!(payload["unreadable"][0]["path"], "locked.md");
     }
 
-    /// Trace: FR-096
     /// Provenance: agent-ix/quoin#445
     ///
     /// The guard the module docs describe. Not a loop over
     /// `CompletenessErrorCode::all()` — that would re-run the same match and
     /// agree with itself (quoin#443). A count, pinned, so a third code arrives
     /// as a failure here and someone decides its exit status deliberately.
+    #[trace("FR-096")]
     #[test]
     fn a_third_completeness_error_code_would_need_a_mapping() {
         assert_eq!(

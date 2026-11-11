@@ -23,6 +23,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -242,8 +243,8 @@ fn retained(root: &Path) -> Vec<String> {
 /// `path` is the member only this handler writes; a swap onto `intake` would
 /// answer `directory` and fail here.
 ///
-/// Trace: FR-068-AC-1
 /// Provenance: agent-ix/quoin#457
+#[trace("FR-068-AC-1")]
 #[test]
 fn tc_457_600_write_record_retains_a_record_under_its_identity() {
     let root = repo();
@@ -276,8 +277,8 @@ fn tc_457_600_write_record_retains_a_record_under_its_identity() {
 /// `change_assurance.prepare_attestation` derives only the retained output's
 /// size; a caller-written `retained_output` is refused.
 ///
-/// Trace: FR-068-AC-2, FR-068-CON-2
 /// Provenance: agent-ix/quoin#457
+#[trace("FR-068-AC-2", "FR-068-CON-2", "TC-1318")]
 #[test]
 fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
     let prepared = ok(&run(
@@ -315,8 +316,8 @@ fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
 ///
 /// `size_bytes` is the member only this handler writes.
 ///
-/// Trace: FR-068-AC-3
 /// Provenance: agent-ix/quoin#457
+#[trace("FR-068-AC-3")]
 #[test]
 fn tc_457_602_intake_retains_an_exact_pair_atomically_and_idempotently() {
     let prepared = ok(&run(
@@ -372,8 +373,8 @@ fn tc_457_602_intake_retains_an_exact_pair_atomically_and_idempotently() {
 /// record and the explicit selections. A retained attestation that no
 /// selection names has NO effect: a stray upload cannot discharge a proof.
 ///
-/// Trace: FR-068-AC-4
 /// Provenance: agent-ix/quoin#457
+#[trace("FR-068-AC-4")]
 #[test]
 fn tc_457_603_receipt_uses_only_what_the_caller_named() {
     let root = repo();
@@ -397,8 +398,8 @@ fn tc_457_603_receipt_uses_only_what_the_caller_named() {
 /// `change_assurance.verify_receipt` re-derives the receipt from the named
 /// retained inputs and refuses one that differs, byte for byte.
 ///
-/// Trace: FR-068-AC-5
 /// Provenance: agent-ix/quoin#457
+#[trace("FR-068-AC-5")]
 #[test]
 fn tc_457_605_verify_receipt_re_derives_and_refuses_an_alteration() {
     let root = repo();
@@ -438,8 +439,8 @@ fn tc_457_605_verify_receipt_re_derives_and_refuses_an_alteration() {
 /// survivors over a store that actually holds evidence: a recovery asserted
 /// over an empty tree passes whatever the code does.
 ///
-/// Trace: FR-068-AC-9
 /// Provenance: agent-ix/quoin#457
+#[trace("FR-068-AC-9")]
 #[test]
 fn tc_457_606_recover_removes_only_interrupted_staging() {
     let root = repo();
@@ -476,8 +477,8 @@ fn tc_457_606_recover_removes_only_interrupted_staging() {
 /// attestations at `attestations/<id>/`. The valid receipt it emits verifies
 /// against its own inputs.
 ///
-/// Trace: FR-068-AC-10, FR-068-CON-4
 /// Provenance: agent-ix/quoin#457
+#[trace("FR-068-AC-10", "FR-068-CON-4")]
 #[test]
 fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
     let mut runs = Vec::new();
@@ -528,8 +529,8 @@ fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
 /// the boundary unchanged — parsed back here only to compare against the same
 /// constant the writing tests use.
 ///
-/// Trace: FR-068-AC-8
 /// Provenance: agent-ix/quoin#503
+#[trace("FR-068-AC-8", "TC-1324")]
 #[test]
 fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
     let listed = ok(&run("change_assurance.schema", &json!({})));
@@ -587,10 +588,10 @@ fn write_protecting_plan(root: &Path, id: &str, entries: &[&str]) {
 /// `quoin-measurement`'s own plan intake and folds FR-111's judgment into the
 /// receipt: a diff touching the linked plan's `protected_apparatus` is
 /// `apparatus_touched` and the receipt is `invalid`, through this operation
-/// and not only through the library (closes FR-111-CON-3).
+/// and not only through the library.
 ///
-/// Trace: FR-111-AC-1, TC-1889
 /// Provenance: PLAT-997
+#[trace("FR-111-AC-1", "TC-1889")]
 #[test]
 fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
     let root = repo();
@@ -624,8 +625,8 @@ fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
 /// `diff_missing` and `incomplete` through the operation — never vacuously
 /// `valid` because the caller omitted `--diff-path` (FR-111-AC-4).
 ///
-/// Trace: FR-111-AC-4, TC-1890
 /// Provenance: PLAT-997
+#[trace("FR-111-AC-4", "TC-1890")]
 #[test]
 fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
     let root = repo();
@@ -647,8 +648,8 @@ fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
 /// refused naming the field and the ceiling before any store or plan is read,
 /// and so is a `plan` id one byte past its ceiling.
 ///
-/// Trace: FR-111-CON-2, TC-1891
 /// Provenance: PLAT-997
+#[trace("FR-111-CON-2", "TC-1891")]
 #[test]
 fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
     use quoin_core::ops::change_assurance::{MAX_DIFF_PATHS, MAX_SCALAR_BYTES};
@@ -709,8 +710,8 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
 /// `false` explicitly, rather than a caller's omission producing the same
 /// silence a genuinely unlinked record would (PLAT-1015).
 ///
-/// Trace: FR-111-AC-5, TC-1915
 /// Provenance: PLAT-1015
+#[trace("FR-111-AC-5", "TC-1915")]
 #[test]
 fn tc_1015_614_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     let root = repo();

@@ -48,6 +48,7 @@
 //! whole assessments rather than read documents — so its fixture is the
 //! committed input corpus rather than the tree below.
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::Path;
 
@@ -300,8 +301,8 @@ fn descend(root: &Path, prefix: &Path, out: &mut Vec<(String, String)>) {
     }
 }
 
-/// Trace: FR-037, FR-096
 /// Provenance: quoin#445, agent-ix/quoin#448
+#[trace("FR-037", "FR-096-AC-8")]
 #[test]
 fn tc_445_320_the_disk_reader_and_the_snapshot_reader_agree_on_one_real_tree() {
     let temp = bundle();
@@ -315,8 +316,8 @@ fn tc_445_320_the_disk_reader_and_the_snapshot_reader_agree_on_one_real_tree() {
     assert_eq!(from_disk, from_snapshot);
 }
 
-/// Trace: FR-037, FR-096
 /// Provenance: quoin#445, agent-ix/quoin#448
+#[trace("FR-037", "FR-096")]
 #[test]
 fn tc_445_321_unparseable_frontmatter_is_reported() {
     let temp = bundle();
@@ -352,8 +353,8 @@ fn tc_445_321_unparseable_frontmatter_is_reported() {
 /// removes that document's claims and reports the value it owned `unowned`.
 /// This states the chosen behaviour outright, in all three directions.
 ///
-/// Trace: FR-037, FR-096
 /// Provenance: quoin#445, agent-ix/quoin#448
+#[trace("FR-037", "FR-096")]
 #[cfg(unix)]
 #[test]
 fn tc_445_322_a_symlink_is_a_document_only_when_it_resolves_to_a_file() {
@@ -457,13 +458,13 @@ fn module_under(root: &Path) -> Option<ModuleSource> {
     })
 }
 
-/// Trace: FR-037, FR-096
 /// Provenance: agent-ix/quoin#445
 ///
 /// The content-in entry point answers what the filesystem entry point answers.
 ///
 /// Both entry points are live code run over the same committed input corpus
 /// (`tests/fixtures/assess-bundle-inputs.json`); no recorded answer is read.
+#[trace("FR-037", "FR-096-AC-8")]
 #[test]
 fn tc_445_310_the_content_in_path_answers_what_the_filesystem_path_answers() {
     let corpus = fixture("assess-bundle-inputs.json");

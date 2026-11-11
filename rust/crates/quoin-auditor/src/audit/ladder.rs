@@ -302,7 +302,7 @@ fn vacuous_run(obligation: &Obligation, paired: &[Paired<'_>]) -> Option<Finding
 /// ── Combinatorial coverage ──
 ///
 /// Only for an obligation whose statement declares a configuration space
-/// (quire-rs FR-061). [`parse_space`] returning [`None`] IS the test for that,
+/// (quire-rs requirement 61, the combinatorial grammar). [`parse_space`] returning [`None`] IS the test for that,
 /// so there is no second flag to keep in agreement with the first.
 fn combinatorial_gap(
     obligation: &Obligation,

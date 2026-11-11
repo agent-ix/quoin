@@ -16,7 +16,6 @@
 //! Carried over from `tests/arch-boundaries.test.ts`, deleted with
 //! `src/advisor/` at cutover.
 //!
-//! Trace: FR-031-CON-1
 //! Provenance: quoin#501
 
 #![allow(
@@ -27,6 +26,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 /// The four method classes the catalog declares. A literal naming one inside
@@ -58,8 +58,8 @@ fn advisor_sources() -> Vec<(String, String)> {
     found
 }
 
-/// Trace: FR-031-CON-1
 /// Provenance: quoin#501
+#[trace("FR-031-CON-1")]
 #[test]
 fn tc_501_020_the_advisor_names_no_method_class_as_a_literal() {
     let sources = advisor_sources();
@@ -96,8 +96,8 @@ fn tc_501_020_the_advisor_names_no_method_class_as_a_literal() {
 
 /// The scanner fires on a planted restatement, so a clean census is evidence.
 ///
-/// Trace: FR-031-CON-1
 /// Provenance: quoin#501
+#[trace("FR-031-CON-1")]
 #[test]
 fn tc_501_021_the_scanner_would_find_a_planted_restatement() {
     let planted = "const CLASSES: &[&str] = &[\"Test\", \"Inspection\"];";

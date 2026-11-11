@@ -172,8 +172,9 @@ fn assess(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-037
+    #[trace("FR-037-AC-12", "TC-217")]
     #[test]
     fn tc_378_240_a_bundle_with_no_declarations_is_unchecked_not_passed() {
         let Ok(temp) = tempfile::tempdir() else {
@@ -188,7 +189,7 @@ mod tests {
         assert_eq!(assessment.vocabularies.len(), 0);
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_241_an_absent_bundle_root_reads_as_empty_not_as_a_panic() {
         let assessment = assess_bundle(&AssessOptions {
@@ -208,8 +209,8 @@ mod tests {
     /// in, so an absent bundle stays legible" at the one moment it matters —
     /// the bundle is absent and the printed root is all the user has.
     ///
-    /// Trace: FR-037
     /// Provenance: quoin#445
+    #[trace("FR-037")]
     #[cfg(unix)]
     #[test]
     fn tc_378_242_a_non_utf8_bundle_root_is_echoed_byte_for_byte() {

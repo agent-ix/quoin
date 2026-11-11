@@ -12,6 +12,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::PathBuf;
 
@@ -42,7 +43,7 @@ fn service(f: &Fixture) -> ConfigService<'_, QuoinConfig> {
     ConfigService::for_plugin(&f.env, &f.ctx)
 }
 
-/// Trace: FR-027-AC-1
+#[trace("FR-027-AC-1")]
 #[test]
 fn tc_381_120_set_key_writes_only_the_named_key() {
     let f = fixture();
@@ -75,7 +76,7 @@ fn tc_381_120_set_key_writes_only_the_named_key() {
     );
 }
 
-/// Trace: FR-027-AC-6
+#[trace("FR-027-AC-6")]
 #[test]
 fn tc_381_121_set_refuses_an_unknown_key_and_writes_nothing() {
     let f = fixture();
@@ -91,7 +92,7 @@ fn tc_381_121_set_refuses_an_unknown_key_and_writes_nothing() {
     );
 }
 
-/// Trace: FR-027-AC-6
+#[trace("FR-027-AC-6")]
 #[test]
 fn tc_381_122_set_refuses_a_value_the_schema_rejects() {
     let f = fixture();
@@ -104,7 +105,7 @@ fn tc_381_122_set_refuses_a_value_the_schema_rejects() {
     assert!(!f.user_config.exists());
 }
 
-/// Trace: FR-027-AC-5
+#[trace("FR-027-AC-5", "TC-105")]
 #[test]
 fn tc_381_123_get_is_total_and_records_one_incident_per_failure_class() {
     let f = fixture();
@@ -138,7 +139,7 @@ fn tc_381_123_get_is_total_and_records_one_incident_per_failure_class() {
     }
 }
 
-/// Trace: FR-027-AC-5
+#[trace("FR-027-AC-5")]
 #[test]
 fn tc_381_124_a_config_file_over_the_read_bound_is_an_io_incident() {
     let f = fixture();
@@ -157,7 +158,7 @@ fn tc_381_124_a_config_file_over_the_read_bound_is_an_io_incident() {
     );
 }
 
-/// Trace: FR-027-AC-5
+#[trace("FR-027-AC-5")]
 #[test]
 fn tc_381_125_a_write_replaces_an_unparsable_file_and_reset_clears_it() {
     let f = fixture();
@@ -203,7 +204,7 @@ fn tc_381_125_a_write_replaces_an_unparsable_file_and_reset_clears_it() {
     );
 }
 
-/// Trace: FR-027-AC-5
+#[trace("FR-027-AC-5")]
 #[test]
 fn tc_381_126_doctor_reports_valid_invalid_and_key_counts() {
     let f = fixture();
@@ -236,7 +237,7 @@ fn tc_381_126_doctor_reports_valid_invalid_and_key_counts() {
     }
 }
 
-/// Trace: FR-027-AC-9
+#[trace("FR-027-AC-9")]
 #[test]
 fn tc_381_127_project_layer_beats_the_user_layer_and_writes_stay_user_level() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -280,7 +281,7 @@ fn tc_381_127_project_layer_beats_the_user_layer_and_writes_stay_user_level() {
     assert!(user_text.contains("org: written"), "got: {user_text:?}");
 }
 
-/// Trace: FR-027-AC-3
+#[trace("FR-027-AC-3", "TC-103")]
 #[test]
 fn tc_381_128_env_binding_layers_over_both_files() {
     let f = fixture();
@@ -310,7 +311,7 @@ fn tc_381_128_env_binding_layers_over_both_files() {
     );
 }
 
-/// Trace: FR-027-AC-5
+#[trace("FR-027-AC-5")]
 #[test]
 fn tc_381_129_writing_through_a_symlink_is_refused() {
     let f = fixture();
@@ -338,7 +339,7 @@ fn tc_381_129_writing_through_a_symlink_is_refused() {
     );
 }
 
-/// Trace: FR-027-AC-8
+#[trace("FR-027-AC-8")]
 #[test]
 fn tc_381_130_get_key_reports_declared_unset_and_refuses_undeclared() {
     let f = fixture();
@@ -405,7 +406,7 @@ impl quoin_config::PluginConfigSchema for ComplexSchema {
     }
 }
 
-/// Trace: FR-027-AC-1
+#[trace("FR-027-AC-1")]
 #[test]
 fn tc_381_131_set_key_writes_a_complex_value_as_yaml_not_as_a_serde_marker() {
     let f = fixture();

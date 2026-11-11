@@ -31,6 +31,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
@@ -104,8 +105,8 @@ fn request(json_output: bool) -> Value {
 /// Each named route answers with its own view, and an absent retained store is
 /// a report rather than a refusal.
 ///
-/// Trace: FR-062-AC-9, FR-096-AC-2
 /// Provenance: quoin#500
+#[trace("FR-062-AC-9", "FR-096-AC-2")]
 #[test]
 fn tc_500_300_each_route_answers_with_its_own_view() {
     let mut seeded = request(true);
@@ -151,8 +152,8 @@ fn tc_500_300_each_route_answers_with_its_own_view() {
 /// the absent case into `[]` would silently turn every default walk into a walk
 /// with no edges.
 ///
-/// Trace: FR-062-AC-3
 /// Provenance: quoin#500
+#[trace("FR-062-AC-3", "TC-1251")]
 #[test]
 fn tc_500_301_an_absent_relation_list_is_not_an_empty_one() {
     let mut absent = request(true);
@@ -186,8 +187,8 @@ fn tc_500_301_an_absent_relation_list_is_not_an_empty_one() {
 
 /// Both spellings come from one report: the markdown is the same view.
 ///
-/// Trace: FR-062-AC-10
 /// Provenance: quoin#500
+#[trace("FR-062-AC-10")]
 #[test]
 fn tc_500_302_the_markdown_spelling_is_the_same_view() {
     let result = run("graph.fan_out", &request(false).to_string());
@@ -203,8 +204,8 @@ fn tc_500_302_the_markdown_spelling_is_the_same_view() {
 /// A declared input that is not there is REFUSED by name, not an internal
 /// fault and not an empty report.
 ///
-/// Trace: FR-062-AC-9
 /// Provenance: quoin#500
+#[trace("FR-062-AC-9", "TC-1257")]
 #[test]
 fn tc_500_303_a_missing_declared_input_is_refused_by_name() {
     let mut broken = request(true);

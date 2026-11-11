@@ -83,9 +83,10 @@ fn offences(source: &[u8], label: &str) -> Vec<String> {
 )]
 mod tests {
     use super::{offences, org_source};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-025-AC-7
     /// Provenance: quoin#446
+    #[trace("FR-025-AC-7", "TC-089")]
     #[test]
     fn tc_446_070_org_resolution_names_no_child_program() {
         let source = match org_source() {
@@ -116,8 +117,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-025-AC-7
     /// Provenance: quoin#446
+    #[trace("FR-025-AC-7")]
     #[test]
     fn tc_446_071_the_audit_reports_a_child_program_when_one_is_named() {
         // A control on the check, not evidence for the criterion: the assertion

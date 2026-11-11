@@ -175,6 +175,7 @@ fn unescape(text: &str) -> String {
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     fn index(entries: &[(&str, &str, &[&str])]) -> TraceIndex {
         let mut ids = BTreeMap::new();
@@ -187,7 +188,7 @@ mod tests {
         TraceIndex { ids }
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15", "TC-2010")]
     #[test]
     fn a_tagged_case_gains_a_trace_property_and_keeps_its_attributes() {
         let xml = r#"<testsuite><testcase name="a::t" classname="pkg" time="0.1"/></testsuite>"#;
@@ -199,7 +200,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15")]
     #[test]
     fn a_failing_case_keeps_its_failure_child_after_the_property() {
         let xml = r#"<testcase name="t" classname="pkg"><failure message="x"/></testcase>"#;
@@ -210,7 +211,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15", "TC-2010")]
     #[test]
     fn untagged_cases_are_left_alone_and_unrun_tagged_tests_are_named() {
         let xml = r#"<testcase name="other" classname="pkg"/>"#;
@@ -220,7 +221,7 @@ mod tests {
         assert_eq!(done.unrun, ["pkg gone"]);
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15")]
     #[test]
     fn a_file_under_a_shared_src_belongs_to_the_library_not_the_binary() {
         let lib = crate::targets::from_metadata(
@@ -244,7 +245,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15", "TC-2010")]
     #[test]
     fn the_annotated_report_binds_through_the_evidence_junit_adapter() {
         let xml = r#"<testsuite><testcase name="t" classname="pkg"/></testsuite>"#;

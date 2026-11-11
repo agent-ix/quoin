@@ -127,10 +127,11 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_200_module_name_refuses_path_traversal() {
         assert!(ModuleName::new("spec-objects-business").is_ok());
@@ -142,7 +143,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_201_commit_sha_requires_forty_hex_digits() {
         assert!(CommitSha::new("a".repeat(40)).is_ok());

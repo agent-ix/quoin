@@ -357,6 +357,7 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
 )]
 mod tests {
     use super::{Instant, InstantGrammar};
+    use ix_trace_rs::trace;
 
     /// Every grammar survives the round trip through its own code.
     ///
@@ -381,8 +382,8 @@ mod tests {
 
     /// The date-or-instant language, exactly as `trust::is_instant` read it.
     ///
-    /// Trace: FR-093-AC-1
     /// Provenance: quoin#456, quoin#458
+    #[trace("FR-093-AC-1")]
     #[test]
     fn tc_458_301_the_date_or_instant_grammar_takes_a_bare_date_and_any_suffix() {
         for accepted in [
@@ -418,8 +419,8 @@ mod tests {
 
     /// The zoned language, exactly as `assurance_records::is_iso_instant` read it.
     ///
-    /// Trace: FR-048-AC-3
     /// Provenance: quoin#456, quoin#458
+    #[trace("FR-048-AC-3")]
     #[test]
     fn tc_458_302_the_zoned_instant_grammar_requires_a_zone_and_ends_at_it() {
         for accepted in [
@@ -456,8 +457,8 @@ mod tests {
     /// Anti-tautology: if a future edit collapsed them, this fails rather than
     /// the two tests above both continuing to pass against one grammar.
     ///
-    /// Trace: FR-048-AC-3, FR-093-AC-1
     /// Provenance: quoin#458
+    #[trace("FR-048-AC-3", "FR-093-AC-1")]
     #[test]
     fn tc_458_303_the_two_grammars_disagree_in_both_directions() {
         let date_only = "2026-01-01";
@@ -557,8 +558,8 @@ mod tests {
 
     /// What was read is what was written, and it remembers which language.
     ///
-    /// Trace: FR-048-AC-3
     /// Provenance: quoin#458
+    #[trace("FR-048-AC-3")]
     #[test]
     fn tc_458_304_a_read_instant_carries_its_own_text_and_grammar() {
         let read = Instant::parse("2026-01-01T00:00:00Z", InstantGrammar::ZonedInstant).unwrap();

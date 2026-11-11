@@ -19,6 +19,7 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 quire-canonical = { workspace = true }
 ix-cli-kit = { workspace = true }
 quoin-assurance = { workspace = true }
@@ -116,7 +117,7 @@ schema = [
 ]
 
 [dev-dependencies]
-ix-trace-rs = { workspace = true }
+quire-fixtures = { workspace = true }
 # quoin does not grow its own syn-based source auditor: `source_audit` is the
 # shared home for "is this library half actually I/O-free".
 engineering-assurance = { workspace = true, features = ["source-audit"] }

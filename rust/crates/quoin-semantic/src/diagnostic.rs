@@ -133,6 +133,11 @@ diagnostic_codes! {
     SchemaRefUnshipped => "semantic.schema-ref-unshipped",
     /// A legacy Properties form found by the sweep (FR-074).
     LegacyPropertiesForm => "semantic.legacy-properties-form",
+    /// An `import_types` entry or a data-schema `$ref` names a type the
+    /// installed provider does not export (FR-070).
+    UnknownImportType => "semantic.unknown-import-type",
+    /// A declared import no data-schema `$ref` references (FR-070).
+    UnusedImport => "semantic.unused-import",
 }
 
 impl fmt::Display for DiagnosticCode {
@@ -153,7 +158,7 @@ impl serde::Serialize for DiagnosticCode {
 pub struct SemanticDiagnostic {
     /// The stable code.
     ///
-    /// `string` in the schema, not a closed union of the 29 spellings:
+    /// `string` in the schema, not a closed union of the spellings:
     /// [`DiagnosticCode`] is `#[non_exhaustive]`, so freezing today's set into
     /// a TypeScript literal type would make a code added here a type error at
     /// a call site that only forwards the value. The catalogue lives in
@@ -227,8 +232,9 @@ impl fmt::Display for SemanticDiagnostic {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_020_every_diagnostic_code_round_trips() {
         for code in DiagnosticCode::all() {
@@ -236,7 +242,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_021_diagnostic_codes_are_unique_and_namespaced() {
         let mut seen = std::collections::BTreeSet::new();
@@ -249,7 +255,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_022_display_matches_the_typescript_format() {
         let diagnostic = SemanticDiagnostic::error(

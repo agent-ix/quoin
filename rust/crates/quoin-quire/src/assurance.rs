@@ -80,13 +80,22 @@ pub fn build(request: &Request) -> Result<Outcome> {
         quire_rs::symbols::trace::bind(&extraction, model)
     });
 
-    let export = quire_rs::build_assurance_export(quire_rs::AssuranceInput {
+    // The engine wraps "this build cannot read a language the tree holds" in
+    // its assurance error; it is the same refusal coverage raises as
+    // QQ-1021, so it must not degrade to the generic QQ-1060 (Io) here.
+    let export = match quire_rs::build_assurance_export(quire_rs::AssuranceInput {
         spec: &spec,
         registry: &registry,
         corpus_root: &document_root,
         symbols: &extraction,
         symbol_graph: &graph,
-    })?;
+    }) {
+        Ok(export) => export,
+        Err(quire_rs::AssuranceError::ExtractionUnavailable(unavailable)) => {
+            return Err(unavailable.into());
+        }
+        Err(other) => return Err(other.into()),
+    };
 
     Ok(Outcome { export, notices })
 }
@@ -132,8 +141,9 @@ pub fn read_file(
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-100
+    #[trace("FR-100")]
     #[test]
     fn tc_379_090_an_oversized_export_is_refused_before_the_engine_parses_it() {
         let accepted = quire_rs::AcceptedAssurancePremises {
@@ -151,7 +161,7 @@ mod tests {
         assert_eq!(error.code(), crate::ErrorCode::PayloadTooLarge);
     }
 
-    /// Trace: FR-100
+    #[trace("FR-100")]
     #[test]
     fn tc_379_091_the_engines_own_refusals_are_carried_not_restated() {
         let accepted = quire_rs::AcceptedAssurancePremises {

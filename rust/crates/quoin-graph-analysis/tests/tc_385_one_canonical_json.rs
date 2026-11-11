@@ -21,8 +21,6 @@
 //! carries a floor: if it stops finding modules, or stops finding the calls it
 //! is guarding, it fails rather than passing on an empty tree.
 //!
-//! Trace: FR-100-CON-4
-//!
 //! Provenance: quoin#385
 
 #![allow(
@@ -33,6 +31,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 /// The one module allowed to call the store's canonicalizers.
@@ -94,8 +93,7 @@ fn modules() -> Vec<(String, String, String)> {
 }
 
 /// The store's canonicalizers are called from exactly one module.
-///
-/// Trace: FR-100-CON-4
+#[trace("FR-100-CON-4")]
 #[test]
 fn tc_385_020_the_canonicalizers_are_called_from_one_module() {
     for (name, relative, contents) in modules() {
@@ -121,8 +119,7 @@ fn tc_385_020_the_canonicalizers_are_called_from_one_module() {
 }
 
 /// No module writes JSON, or orders members, on its own.
-///
-/// Trace: FR-100-CON-4
+#[trace("FR-100-CON-4")]
 #[test]
 fn tc_385_021_no_module_grows_a_second_canonical_form() {
     for (_, relative, contents) in modules() {

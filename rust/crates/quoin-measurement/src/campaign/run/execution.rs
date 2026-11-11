@@ -283,9 +283,11 @@ fn status_of(state: &ProducerExecutionState<ProcessEvidenceObservation>) -> Camp
 mod tests {
     use super::*;
     use engineering_assurance::producer_execution::{ExecutionFailure, ExecutionRefusal};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-114-AC-2, TC-1941. Every EA terminal state maps to its
-    /// distinct retained campaign attempt status, including adapter refusal.
+    /// Every EA terminal state maps to its distinct retained campaign attempt
+    /// status, including adapter refusal.
+    #[trace("FR-114-AC-2", "TC-1941")]
     #[test]
     fn tc_1941_typed_ea_terminal_states_map_to_attempt_statuses() {
         let cases = [

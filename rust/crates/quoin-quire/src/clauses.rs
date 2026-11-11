@@ -176,8 +176,9 @@ fn exact<'a>(
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_080_a_duplicate_context_dimension_is_refused_not_overwritten() {
         let mut context = Context::new();
@@ -196,7 +197,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_081_context_entries_must_be_key_equals_value() {
         assert_eq!(

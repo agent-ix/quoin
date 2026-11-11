@@ -1,8 +1,8 @@
 # Default Filament module set shipped with quoin.
 #
 # Lazily installed into ~/.ix/filament/modules on first catalog access. Each
-# entry checks out one module's data subdirectory from its repository's
-# default branch.
+# entry checks out one module's data subdirectory from its repository at a
+# release tag, so a released quoin installs the module set it was tested with.
 schemaVersion: 1
 name: quoin-default-modules
 entries:
@@ -15,6 +15,7 @@ entries:
       type: git-subdir
       url: agent-ix/engineering-assurance
       path: engineering_assurance
+      ref: v0.8.1
 
   - name: spec-artifacts-iso
     defaultEnabled: true
@@ -22,6 +23,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
+      ref: v0.25.0
 
   - name: spec-artifacts-app
     defaultEnabled: true
@@ -29,6 +31,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-app
       path: spec_artifacts_app
+      ref: v0.10.0
 
   - name: spec-artifacts-process
     defaultEnabled: true
@@ -36,6 +39,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
+      ref: v0.31.0
 
   - name: spec-objects-business
     defaultEnabled: true
@@ -43,6 +47,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-business
       path: spec_objects_business
+      ref: v0.10.0
 
   - name: spec-objects-architecture
     defaultEnabled: true
@@ -50,6 +55,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-architecture
       path: spec_objects_architecture
+      ref: v0.11.0
 
   - name: spec-objects-enterprise
     defaultEnabled: true
@@ -57,6 +63,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-enterprise
       path: spec_objects_enterprise
+      ref: v0.9.0
 
   - name: spec-objects-operational
     defaultEnabled: true
@@ -64,6 +71,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-operational
       path: spec_objects_operational
+      ref: v0.10.0
 
   - name: spec-objects-security
     defaultEnabled: true
@@ -71,6 +79,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-security
       path: spec_objects_security
+      ref: v0.11.0
 
   - name: spec-objects-safety
     defaultEnabled: true
@@ -78,3 +87,4 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-safety
       path: spec_objects_safety
+      ref: v0.8.0

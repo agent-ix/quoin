@@ -54,10 +54,8 @@ none for Rust today; the workspace stage creates
 `.claude/skills/rust-style/SKILL.md`, and until it exists `/rust-review` is the
 authority. This requirement is the enforceable floor under both.
 
-The last clause is the point of §12: a gate that is described and not run is the
-same defect this repository already named in
-[NFR-020](./NFR-020-declared-toolchain-floors.md) — a green result for a check
-that did not execute.
+The last clause is the point of §12: a gate that is described and not run yields
+a green result for a check that did not execute.
 
 ## Measurement and Evaluation
 

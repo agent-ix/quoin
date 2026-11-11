@@ -8,6 +8,7 @@
     reason = "test fixtures may panic"
 )]
 use super::*;
+use ix_trace_rs::trace;
 
 /// Every native-owned route retained from `src/commands/`.
 ///
@@ -59,11 +60,13 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin measurement verify",
     "quoin module",
     "quoin module ensure-defaults",
+    "quoin module inspect",
     "quoin module install",
     "quoin module list",
     "quoin module remove",
     "quoin plugin",
     "quoin plugin ensure-defaults",
+    "quoin plugin inspect",
     "quoin plugin install",
     "quoin plugin list",
     "quoin plugin remove",
@@ -93,7 +96,7 @@ fn command_routes(command: &Command) -> Vec<String> {
     routes
 }
 
-/// Trace: FR-062, FR-102
+#[trace("FR-062", "FR-102")]
 #[test]
 fn tc_373_graph_without_a_view_keeps_the_retained_description() {
     let response = run([OsString::from("quoin"), OsString::from("graph")])
@@ -107,7 +110,7 @@ fn tc_373_graph_without_a_view_keeps_the_retained_description() {
     );
 }
 
-/// Trace: FR-062, FR-102, TC-1650
+#[trace("FR-062", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_graph_grammar_preserves_the_required_and_repeatable_flags() {
     let matches = command()
@@ -147,7 +150,7 @@ fn tc_1650_graph_grammar_preserves_the_required_and_repeatable_flags() {
     );
 }
 
-/// Trace: FR-062, FR-102, TC-1650
+#[trace("FR-062", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_missing_a_required_graph_input_is_refused_by_the_shell() {
     let error = command().try_get_matches_from([
@@ -162,7 +165,7 @@ fn tc_1650_missing_a_required_graph_input_is_refused_by_the_shell() {
     assert!(error.is_err());
 }
 
-/// Trace: FR-016, FR-062
+#[trace("FR-016", "FR-062")]
 #[test]
 fn tc_373_version_requests_keep_the_bare_native_version_surface() {
     for argument in ["--version", "-v", "version"] {
@@ -196,7 +199,7 @@ fn tc_1650_root_help_uses_the_native_command_inventory() {
     assert!(root_usage().contains("USAGE\n  $ quoin [COMMAND]"));
 }
 
-/// Trace: FR-003, FR-102, TC-1650
+#[trace("FR-003", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_help_is_a_successful_stdout_response_not_a_parse_failure() {
     for arguments in [
@@ -215,7 +218,7 @@ fn tc_1650_help_is_a_successful_stdout_response_not_a_parse_failure() {
     }
 }
 
-/// Trace: FR-003, FR-102, TC-1650
+#[trace("FR-003", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_every_native_command_path_accepts_help_before_required_inputs() {
     for route in NATIVE_OWNED_ROUTES {
@@ -231,7 +234,7 @@ fn tc_1650_every_native_command_path_accepts_help_before_required_inputs() {
     }
 }
 
-/// Trace: FR-016, FR-062
+#[trace("FR-016", "FR-062")]
 #[test]
 fn tc_373_global_config_flags_are_accepted_after_a_command_path() {
     let matches = command()
@@ -252,7 +255,7 @@ fn tc_373_global_config_flags_are_accepted_after_a_command_path() {
     assert!(invocation.no_project_config());
 }
 
-/// Trace: FR-102, TC-1650
+#[trace("FR-102", "TC-1650")]
 #[test]
 fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
     let root = command();
@@ -288,7 +291,7 @@ fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
     );
 }
 
-/// Trace: FR-062, FR-102, TC-1650
+#[trace("FR-062", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_native_shell_route_census_matches_the_retained_owned_surface() {
     let expected = NATIVE_OWNED_ROUTES
@@ -298,7 +301,7 @@ fn tc_1650_native_shell_route_census_matches_the_retained_owned_surface() {
     assert_eq!(command_routes(&command()), expected);
 }
 
-/// Trace: FR-005, FR-062
+#[trace("FR-005", "FR-062")]
 #[test]
 fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
     let error = run([OsString::from("quoin"), OsString::from("bogus")])
@@ -310,7 +313,7 @@ fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
     );
 }
 
-/// Trace: FR-005, FR-102, TC-1650
+#[trace("FR-005", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_command_failures_keep_the_retained_error_envelope() {
     let error = ShellError::command("write requires <repo_dir>");
@@ -319,7 +322,7 @@ fn tc_1650_command_failures_keep_the_retained_error_envelope() {
     assert_eq!(error.message, "    Error: write requires <repo_dir>");
 }
 
-/// Trace: FR-062, FR-102, TC-1650
+#[trace("FR-062", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_graph_refusals_keep_the_core_exit_taxonomy() {
     let response = run([

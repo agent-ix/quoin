@@ -35,6 +35,7 @@ mod wire;
 #[cfg(test)]
 mod tests;
 
+use ix_trace_rs::implements;
 use serde::{Deserialize, Serialize};
 
 use quoin_auditor::{
@@ -59,6 +60,7 @@ pub use self::wire::{
 /// - [`CoreErrorCode::BadRequest`] when stdin is not an [`AuditRequest`].
 /// - [`CoreErrorCode::Refused`] when the request exceeds its ceiling, or when
 ///   the auditor declines the input it was given.
+#[implements("FR-032")]
 pub fn audit(request: &serde_json::Value) -> Result<Response, CoreError> {
     let op = "auditor.audit";
     let request: AuditRequest = read(request, op)?;
@@ -110,6 +112,7 @@ pub fn vocabulary(_request: &serde_json::Value) -> Result<Response, CoreError> {
 ///
 /// `advise_all` itself is total: an obligation no rule matched is advised as
 /// inconclusive, which is an answer rather than a failure.
+#[implements("FR-031")]
 pub fn advise(request: &serde_json::Value) -> Result<Response, CoreError> {
     let op = "auditor.advise";
     let request: AdviseRequest = read(request, op)?;

@@ -19,6 +19,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_change_assurance::intake::INTEGRITY_BOUNDARY;
@@ -55,13 +56,12 @@ fn words(line: &str) -> Vec<String> {
         .collect()
 }
 
-/// Trace: FR-100-AC-8
-///
 /// The library half names no host capability. `std::fs`, the process id, the
 /// clock, the environment and the network appear in exactly one module —
 /// `intake/disk.rs`, whose whole purpose is to be that module — and nowhere
 /// else, so every other analysis in this crate is a pure function of the
 /// evidence it was handed.
+#[trace("FR-100-AC-8")]
 #[test]
 fn tc_455_only_the_disk_store_names_a_host_capability() {
     let sources = sources();
@@ -86,7 +86,6 @@ fn tc_455_only_the_disk_store_names_a_host_capability() {
     }
 }
 
-/// Trace: FR-100-AC-8
 /// Provenance: quoin#503
 ///
 /// `include_str!` is bounded too, but to a different module and for a
@@ -97,6 +96,7 @@ fn tc_455_only_the_disk_store_names_a_host_capability() {
 /// `schemas.rs`, whose three assets `tests/tc_503_schema_assets.rs` validates
 /// written documents against. A second module embedding a second file would be
 /// a second contract with no test pointing at it.
+#[trace("FR-100-AC-8")]
 #[test]
 fn tc_503_only_the_asset_module_embeds_a_file() {
     let sources = sources();
@@ -111,8 +111,6 @@ fn tc_503_only_the_asset_module_embeds_a_file() {
     }
 }
 
-/// Trace: FR-100-CON-4
-///
 /// There is one canonicalizer in this workspace, and it lives in
 /// `quoin-store`. This crate declares exactly three dependencies: the store,
 /// `thiserror`, and `engineering-assurance` (PLAT-964) for the
@@ -121,6 +119,7 @@ fn tc_503_only_the_asset_module_embeds_a_file() {
 /// not a JSON implementation. Nothing here serializes JSON on its own, and the
 /// manifest is asserted so that adding a second implementation cannot be done
 /// quietly.
+#[trace("FR-100-CON-4")]
 #[test]
 fn tc_455_no_second_canonicalization_implementation_exists_here() {
     let manifest =
@@ -156,12 +155,11 @@ fn tc_455_no_second_canonicalization_implementation_exists_here() {
     }
 }
 
-/// Trace: FR-063-AC-11
-///
 /// The golden-terminology check. A record here is retained content and
 /// recorded attribution; it is never authentication, authorization, a
 /// signature or non-repudiation. Every place this crate's prose reaches for
 /// one of those words, it is to deny it.
+#[trace("FR-063-AC-11")]
 #[test]
 fn tc_455_the_integrity_boundary_is_stated_and_never_overstated() {
     assert_eq!(
@@ -203,12 +201,11 @@ fn tc_455_the_integrity_boundary_is_stated_and_never_overstated() {
     }
 }
 
-/// Trace: FR-064-AC-9
-///
 /// Intake runs nothing. No module in this crate spawns a process, opens a
 /// socket, or reads the environment, so an attestation's contents can only
 /// have come from the producer that wrote it — which is the whole reason a
 /// recorded result is evidence rather than a rerun.
+#[trace("FR-064-AC-9")]
 #[test]
 fn tc_455_intake_runs_nothing_and_reports_only_what_a_producer_wrote() {
     let forbidden = [

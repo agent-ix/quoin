@@ -281,12 +281,13 @@ fn warning_kind_order(raw: &str, parsed: &serde_json::Map<String, Value>) -> Vec
 )]
 mod tests {
     use super::{parse_cargo_audit, parse_sarif};
+    use ix_trace_rs::trace;
 
     /// A SARIF run carrying no result is a scan that HAPPENED, and a driver
     /// declaring `rules: []` reported ZERO rules rather than saying nothing.
     ///
-    /// Trace: FR-034-AC-1, FR-034-AC-20
     /// Provenance: quoin#458
+    #[trace("FR-034-AC-1", "FR-034-AC-20", "TC-165", "TC-196")]
     #[test]
     fn tc_458_200_a_run_with_no_results_is_a_clean_scan_and_not_a_refusal() {
         let result = parse_sarif(
@@ -303,8 +304,8 @@ mod tests {
     /// A driver that names no ruleset leaves the count unset: the question
     /// cannot be asked, so the record says nothing rather than something wrong.
     ///
-    /// Trace: FR-034-AC-20
     /// Provenance: quoin#458
+    #[trace("FR-034-AC-20", "TC-196")]
     #[test]
     fn tc_458_201_rules_evaluated_stays_absent_until_a_driver_declares_rules() {
         let result =
@@ -316,8 +317,8 @@ mod tests {
     /// Rule id, level, message and location are read; the nested `rule.id`
     /// form is accepted and a result naming no rule at all is skipped.
     ///
-    /// Trace: FR-034-AC-3, FR-034-AC-4
     /// Provenance: quoin#458
+    #[trace("FR-034-AC-3", "FR-034-AC-4", "TC-167", "TC-168")]
     #[test]
     fn tc_458_202_reads_rule_id_severity_message_path_and_line() {
         let result = parse_sarif(
@@ -340,8 +341,8 @@ mod tests {
     /// A log with no run proves nothing executed, and text that is not JSON is
     /// named as such rather than read as an empty scan.
     ///
-    /// Trace: FR-034-AC-2, FR-034-AC-5
     /// Provenance: quoin#458
+    #[trace("FR-034-AC-2", "FR-034-AC-5", "TC-166", "TC-169")]
     #[test]
     fn tc_458_203_refuses_a_log_with_no_run_and_text_that_is_not_json() {
         assert_eq!(
@@ -364,8 +365,8 @@ mod tests {
     /// `unsound`, `unmaintained` and `yanked` are distinctions cargo-audit
     /// drew; collapsing them would discard what the tool produced.
     ///
-    /// Trace: FR-034-AC-7, FR-034-CON-2
     /// Provenance: quoin#458
+    #[trace("FR-034-AC-7", "FR-034-CON-2", "TC-171")]
     #[test]
     fn tc_458_204_cargo_audit_keeps_each_warning_kind_as_its_own_severity() {
         let result = parse_cargo_audit(
@@ -391,8 +392,8 @@ mod tests {
 
     /// Output that is not cargo-audit's, and text that is not JSON at all.
     ///
-    /// Trace: FR-034-AC-8
     /// Provenance: quoin#458
+    #[trace("FR-034-AC-8", "TC-172")]
     #[test]
     fn tc_458_205_refuses_output_that_is_not_cargo_audits() {
         assert_eq!(

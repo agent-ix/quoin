@@ -35,6 +35,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_measurement::{MeasurementErrorCode, Rfc3339DateTime};
 
 /// The strict grammar of `intervention.ts:348-350`, as a predicate.
@@ -46,8 +47,8 @@ fn the_strict_grammar_would_accept(value: &str) -> bool {
     Rfc3339DateTime::parse(value).is_ok_and(|parsed| !parsed.narrowed_by_the_strict_grammar())
 }
 
-/// Trace: FR-100-AC-2, NFR-025-AC-3
 /// Provenance: quoin#468
+#[trace("FR-100-AC-2", "NFR-025-AC-3")]
 #[test]
 fn tc_468_the_two_retained_grammars_disagree_on_a_lowercase_t_and_z() {
     // The one input the two retained implementations disagree about.
@@ -75,8 +76,8 @@ fn tc_468_the_two_retained_grammars_disagree_on_a_lowercase_t_and_z() {
     assert_eq!(upper.epoch_millis(), 1_767_225_600_000);
 }
 
-/// Trace: FR-100-AC-2
 /// Provenance: quoin#468
+#[trace("FR-100-AC-2")]
 #[test]
 fn tc_468_both_grammars_still_refuse_what_date_parse_would_have_accepted() {
     // The reason `date-time.ts` exists at all: `Date.parse` accepts these and

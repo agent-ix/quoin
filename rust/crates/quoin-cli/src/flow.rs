@@ -302,9 +302,10 @@ fn runner_program() -> &'static str {
 #[allow(clippy::expect_used, reason = "test assertions may panic")]
 mod tests {
     use super::{command, instance_id, run};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-021-AC-2
     /// Provenance: PLAT-1249
+    #[trace("FR-021-AC-2")]
     #[test]
     fn ix_flow_error_envelope_is_reported_before_missing_run_id() {
         let result = serde_json::json!({
@@ -321,8 +322,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-021-AC-2
     /// Provenance: PLAT-1249
+    #[trace("FR-021-AC-2")]
     #[test]
     fn successful_ix_flow_envelope_still_requires_run_id() {
         let result = serde_json::json!({"ok": true});
@@ -333,8 +334,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-021-AC-2
     /// Provenance: PLAT-1249
+    #[trace("FR-021-AC-2")]
     #[test]
     fn successful_ix_flow_envelope_returns_run_id() {
         let result = serde_json::json!({"ok": true, "instance_id": "run-1"});
@@ -342,7 +343,7 @@ mod tests {
         assert_eq!(instance_id(&result), Ok("run-1"));
     }
 
-    /// Trace: FR-020-AC-2
+    #[trace("FR-020-AC-2")]
     #[test]
     fn unknown_workflows_are_refused_before_launch() {
         let arguments = command("matrix")
@@ -351,7 +352,7 @@ mod tests {
         assert!(run("matrix", &arguments).is_err_and(|e| e.message.contains("unknown flow")));
     }
 
-    /// Trace: FR-020-AC-4
+    #[trace("FR-020-AC-4")]
     #[test]
     fn missing_plugin_path_has_an_actionable_refusal() {
         let arguments = command("review")

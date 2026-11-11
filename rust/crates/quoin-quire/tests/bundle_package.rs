@@ -12,6 +12,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::PathBuf;
 
 use quoin_quire::{ModuleSelection, ScopeRoot, ids, validate};
@@ -49,10 +50,9 @@ fn relationship_messages(bundle_package: Option<&str>) -> Vec<String> {
         .collect()
 }
 
-/// Trace: FR-104-AC-12, FR-099-AC-2
-///
 /// With no bundle package the relationships table is unavailable and the engine
 /// says so with the `no-bundle-package` advisory.
+#[trace("FR-104-AC-12", "FR-099-AC-2")]
 #[test]
 fn tc_557_no_bundle_package_leaves_relationships_unavailable() {
     let messages = relationship_messages(None);
@@ -63,11 +63,10 @@ fn tc_557_no_bundle_package_leaves_relationships_unavailable() {
     );
 }
 
-/// Trace: FR-104-AC-12, FR-099-AC-2
-///
 /// With the repository's package the row lowers under it: the `no-bundle-package`
 /// advisory is gone and the bare `FR-005` target is only unresolved against the
 /// absent bundle index.
+#[trace("FR-104-AC-12", "FR-099-AC-2")]
 #[test]
 fn tc_557_a_relationships_row_lowers_under_the_bundle_package() {
     let messages = relationship_messages(Some("agent-ix/config-service"));

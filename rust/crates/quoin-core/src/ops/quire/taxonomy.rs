@@ -70,6 +70,7 @@ const fn core_code(code: ErrorCode) -> Option<CoreErrorCode> {
         | ErrorCode::ModuleLoad
         | ErrorCode::ModuleSetEmpty
         | ErrorCode::TraceabilityModelUndeclared
+        | ErrorCode::ExtractionUnavailable
         | ErrorCode::ArchetypeUndeclared
         | ErrorCode::ArchetypeUnknown
         | ErrorCode::ClauseSetNotLoaded
@@ -123,6 +124,7 @@ mod tests {
             ErrorCode::ModuleLoad,
             ErrorCode::ModuleSetEmpty,
             ErrorCode::TraceabilityModelUndeclared,
+            ErrorCode::ExtractionUnavailable,
             ErrorCode::ArchetypeUndeclared,
             ErrorCode::ArchetypeUnknown,
             ErrorCode::ClauseSetNotLoaded,

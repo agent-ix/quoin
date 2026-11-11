@@ -364,35 +364,36 @@ fn strings_at(value: Option<&Value>) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_230_frontmatter_split_takes_the_first_closing_fence() {
         let raw = "---\na: 1\n---\nbody\n---\nmore\n";
         assert_eq!(split_frontmatter(raw), Some(("a: 1", "body\n---\nmore\n")));
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_231_frontmatter_split_handles_crlf() {
         let raw = "---\r\na: 1\r\n---\r\nbody\r\n";
         assert_eq!(split_frontmatter(raw), Some(("a: 1", "body\r\n")));
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_232_a_document_not_starting_with_a_fence_has_no_frontmatter() {
         assert_eq!(split_frontmatter("# Index\n\n---\na: 1\n---\n"), None);
         assert_eq!(split_frontmatter(""), None);
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_233_an_empty_frontmatter_block_is_an_empty_map_not_a_failure() {
         assert_eq!(split_frontmatter("---\n\n---\nbody"), Some(("", "body")));
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_234_scalar_and_list_claim_forms_both_read() {
         assert_eq!(

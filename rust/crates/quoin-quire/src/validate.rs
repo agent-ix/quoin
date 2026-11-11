@@ -90,7 +90,7 @@ pub enum Severity {
     Warning,
 }
 
-/// Why a diagnostic was raised. The engine's FR-032 reason vocabulary.
+/// Why a diagnostic was raised. The engine's reason vocabulary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[allow(
@@ -111,6 +111,7 @@ pub enum Reason {
     DisallowedEdgeType,
     Grammar,
     Semantic,
+    RowWidth,
 }
 
 impl From<quire_rs::ValidationReason> for Reason {
@@ -130,6 +131,7 @@ impl From<quire_rs::ValidationReason> for Reason {
             quire_rs::ValidationReason::DisallowedEdgeType => Self::DisallowedEdgeType,
             quire_rs::ValidationReason::Grammar => Self::Grammar,
             quire_rs::ValidationReason::Semantic => Self::Semantic,
+            quire_rs::ValidationReason::RowWidth => Self::RowWidth,
         }
     }
 }
@@ -308,6 +310,7 @@ fn archetype_of(text: &str) -> Option<String> {
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     #[test]
     fn tc_379_070_reason_labels_are_the_engines_labels() {
@@ -324,6 +327,7 @@ mod tests {
             quire_rs::ValidationReason::DisallowedEdgeType,
             quire_rs::ValidationReason::Grammar,
             quire_rs::ValidationReason::Semantic,
+            quire_rs::ValidationReason::RowWidth,
         ];
         for reason in reasons {
             assert_eq!(
@@ -333,7 +337,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_071_could_not_run_is_distinguishable_from_fail_on_the_wire() {
         let never = serde_json::to_value(not_run(

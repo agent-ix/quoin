@@ -24,6 +24,7 @@
 mod eval_v2_support;
 mod gap_semantic_support;
 
+use ix_trace_rs::trace;
 use std::collections::{BTreeMap, BTreeSet};
 
 use eval_v2_support::corpus::{Origin, Row, Source, TruthKind, load_in_repo, validate};
@@ -38,10 +39,10 @@ fn corpus() -> Source {
         .expect("PLAT-1025 commits corpus.json")
 }
 
-/// Trace: FR-110
 /// Provenance: PLAT-1025. The file parses, ids are unique, every truth
 /// answer is legal for its key and fits the row's mode, and every mutant's
 /// source is an unmutated row of the same mode and split.
+#[trace("FR-110")]
 #[test]
 fn tc_1025_the_corpus_is_valid_against_the_shared_schema() {
     let source = corpus();

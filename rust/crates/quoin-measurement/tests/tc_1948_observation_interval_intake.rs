@@ -18,6 +18,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_measurement::error::MeasurementErrorCode;
@@ -209,8 +210,8 @@ fn malformed_intervals() -> Vec<(&'static str, Value)> {
 /// member and the stated value, under a plan with `interval_level` and one
 /// without; a well-formed one, `lower = value = upper` included, is admitted.
 ///
-/// Trace: FR-044-AC-10, TC-1948
 /// Provenance: EA-26
+#[trace("FR-044-AC-10", "TC-1948")]
 #[test]
 fn tc_1948_a_malformed_interval_is_refused_and_a_well_formed_one_admitted() {
     for document in [level_plan(), plan_document("", "proportion")] {
@@ -275,8 +276,8 @@ fn tc_1948_a_malformed_interval_is_refused_and_a_well_formed_one_admitted() {
 /// collection stating none is admitted and stored exactly as before, and one
 /// stating an interval is stored with it, `schemaVersion` unchanged.
 ///
-/// Trace: FR-044-AC-10, TC-1949
 /// Provenance: EA-26
+#[trace("FR-044-AC-10", "TC-1949")]
 #[test]
 fn tc_1949_not_computed_forbids_an_interval_and_stored_bytes_are_preserved() {
     let repository = repository_with(&plan_document("", "proportion"));
@@ -327,8 +328,8 @@ fn tc_1949_not_computed_forbids_an_interval_and_stored_bytes_are_preserved() {
 /// observation and a constant-predictor item row are not held to it; under a
 /// plan with no `interval_level` an absent interval is admitted.
 ///
-/// Trace: FR-044-AC-11, TC-1950
 /// Provenance: EA-26
+#[trace("FR-044-AC-11", "TC-1950")]
 #[test]
 fn tc_1950_an_absent_interval_is_refused_only_under_an_interval_level() {
     let repository = repository_with(&level_plan());
@@ -399,8 +400,8 @@ fn tc_1950_an_absent_interval_is_refused_only_under_an_interval_level() {
 /// refused as `QM-INTERVAL-LEVEL-SHORT` naming both levels, one at 0.95 or
 /// 0.99 is admitted, and a malformed interval raises the malformed code only.
 ///
-/// Trace: FR-044-AC-11, TC-1951
 /// Provenance: EA-26
+#[trace("FR-044-AC-11", "TC-1951")]
 #[test]
 fn tc_1951_a_short_interval_level_is_refused() {
     let repository = repository_with(&level_plan());
@@ -437,8 +438,8 @@ fn tc_1951_a_short_interval_level_is_refused() {
 /// shares it and `QM-COLLECTION-INVALID` otherwise, each interval finding
 /// leading with its own code.
 ///
-/// Trace: FR-044-AC-10, FR-044-AC-11, TC-1952
 /// Provenance: EA-26
+#[trace("FR-044-AC-10", "FR-044-AC-11", "TC-1952")]
 #[test]
 fn tc_1952_interval_findings_accumulate_with_every_other_finding() {
     let repository = repository_with(&level_plan());
@@ -493,8 +494,8 @@ fn tc_1952_interval_findings_accumulate_with_every_other_finding() {
 /// every view over records without `interval` is unchanged (the existing
 /// `tc_473_reporting` goldens stay byte-identical).
 ///
-/// Trace: FR-044-AC-12, TC-1953
 /// Provenance: EA-26
+#[trace("FR-044-AC-12", "TC-1953")]
 #[test]
 fn tc_1953_report_and_series_carry_the_stored_interval_exactly() {
     let stated = json!({ "lower": 0.7, "upper": 0.99, "level": 0.95, "method": "wilson" });

@@ -179,16 +179,17 @@ pub fn validate_assurance(document: Value) -> Result<ValidAssuranceDocument> {
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-099-AC-2
     /// Provenance: quoin#474
+    #[trace("FR-099-AC-2")]
     #[test]
     fn tc_474_001_the_vendored_document_compiles() {
         validator().expect("the committed assurance-v1 schema compiles");
     }
 
-    /// Trace: FR-099-AC-2
     /// Provenance: quoin#474
+    #[trace("FR-099-AC-2")]
     #[test]
     fn tc_474_002_a_refusal_names_every_failing_instance_path() {
         let error = validate_assurance(serde_json::json!({})).expect_err("an empty object fails");

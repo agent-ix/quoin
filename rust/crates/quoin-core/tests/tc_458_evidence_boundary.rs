@@ -25,6 +25,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -419,8 +420,7 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
 
 /// Publishing an assurance record again under the `recordId` it was given is
 /// idempotent at the boundary: the same record, `created` false, one file.
-///
-/// Trace: FR-048-AC-2
+#[trace("FR-048-AC-2")]
 #[test]
 fn tc_458_115_republishing_under_the_assigned_record_id_is_idempotent() {
     let dir = repo();
@@ -512,7 +512,6 @@ fn tc_458_140_the_exit_taxonomy_reaches_the_status() {
     assert!(refused.stderr.contains("QE-E003"), "{}", refused.stderr);
 }
 
-/// Trace: FR-034-AC-10, FR-034-AC-11
 ///
 /// The half of FR-034's vacuity rule that moved into `quoin-evidence`: which
 /// suites' newest scan evaluated no rules. The auditor no longer asks the
@@ -524,6 +523,7 @@ fn tc_458_140_the_exit_taxonomy_reaches_the_status() {
 /// is collapsing them: a scan that declared zero rules is vacuous, and a scan
 /// whose tool reported no count at all is a question that cannot be asked, so
 /// it must be absent from the list rather than in it or assumed clean.
+#[trace("FR-034-AC-10", "FR-034-AC-11")]
 #[test]
 fn tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules() {
     let dir = repo();

@@ -27,6 +27,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_modules::{Source, parse_source_arg};
 
 fn path_of(arg: &str) -> String {
@@ -36,8 +37,8 @@ fn path_of(arg: &str) -> String {
     }
 }
 
-/// Trace: FR-018-AC-5
 /// Provenance: quoin#446, carried from tests/props/fr-018.prop.test.ts
+#[trace("FR-018-AC-5")]
 #[test]
 fn tc_446_060_a_bare_argument_is_a_path_source_carrying_it_verbatim() {
     // The shapes the original's generator produced, plus the ones that would
@@ -58,8 +59,8 @@ fn tc_446_060_a_bare_argument_is_a_path_source_carrying_it_verbatim() {
     }
 }
 
-/// Trace: FR-018-AC-5
 /// Provenance: quoin#446, carried from tests/props/fr-018.prop.test.ts
+#[trace("FR-018-AC-5")]
 #[test]
 fn tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped() {
     const KNOWN: [&str; 3] = ["path", "github", "package"];
@@ -92,8 +93,8 @@ fn refs() -> Vec<Option<&'static str>> {
     all
 }
 
-/// Trace: FR-018-AC-1
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
+#[trace("FR-018-AC-1", "TC-056")]
 #[test]
 fn tc_446_062_a_path_prefix_carries_the_remainder_verbatim() {
     // The original generated arbitrary strings up to 40 characters. The rule is
@@ -130,8 +131,8 @@ fn tc_446_062_a_path_prefix_carries_the_remainder_verbatim() {
     );
 }
 
-/// Trace: FR-018-AC-2
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
+#[trace("FR-018-AC-2", "TC-057")]
 #[test]
 fn tc_446_063_a_github_prefix_yields_owner_repo_and_a_ref_only_when_given() {
     let mut checked = 0_usize;
@@ -159,8 +160,8 @@ fn tc_446_063_a_github_prefix_yields_owner_repo_and_a_ref_only_when_given() {
     assert_eq!(checked, 5 * 5 * 6, "the enumeration did not run in full");
 }
 
-/// Trace: FR-018-AC-3
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
+#[trace("FR-018-AC-3", "TC-058")]
 #[test]
 fn tc_446_064_a_double_slash_yields_git_subdir_split_at_the_first_one() {
     let mut checked = 0_usize;
@@ -192,8 +193,8 @@ fn tc_446_064_a_double_slash_yields_git_subdir_split_at_the_first_one() {
     );
 }
 
-/// Trace: FR-018-AC-4
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
+#[trace("FR-018-AC-4", "TC-059")]
 #[test]
 fn tc_446_065_a_package_prefix_splits_on_the_final_at_so_a_scope_survives() {
     // The whole point of the criterion: `@scope/name` starts with an `@`, so a

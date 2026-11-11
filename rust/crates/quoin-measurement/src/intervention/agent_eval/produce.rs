@@ -349,12 +349,13 @@ fn refuse(finding: String) -> InterventionIntakeError {
 )]
 mod tests {
     use super::scenario_metric;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-100-AC-6
     /// Provenance: quoin#471
     ///
     /// The `+` in the retained regular expression is the whole content of this
     /// test: a run of unsafe characters is **one** dash, not one each.
+    #[trace("FR-100-AC-6")]
     #[test]
     fn a_scenario_id_becomes_one_metric_name() {
         for (id, expected) in [

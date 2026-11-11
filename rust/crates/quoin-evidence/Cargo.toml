@@ -27,6 +27,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 quoin-quire-types = { workspace = true }
 quoin-store = { workspace = true }
 regex = "=1.13.1"
@@ -46,5 +47,4 @@ schemars = { workspace = true, optional = true }
 schema = ["dep:schemars", "quoin-quire-types/schema"]
 
 [dev-dependencies]
-ix-trace-rs = { workspace = true }
 tempfile = "=3.27.0"

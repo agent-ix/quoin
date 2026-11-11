@@ -4,9 +4,9 @@
 # Modelled on quire-rs/deny.toml. `multiple-versions` is "deny": a duplicate
 # version is resolved, not conceded.
 #
-# quoin#379 added the workspace's first and only git source — the `rev`-pinned
-# quire-rs engine. Both the git allowance and the AGPL exception below are
-# scoped to that one crate; nothing else in the graph gains either.
+# quoin#379 added the workspace's first git source — the `rev`-pinned quire-rs
+# engine. Every AGPL admission below is a named per-crate exception (quire-rs,
+# quire-code-parse, ix-trace-rs); nothing else in the graph gains one.
 
 [licenses]
 version = 2
@@ -59,6 +59,17 @@ confidence-threshold = 0.9
 # arrive unnoticed in another.
 [[licenses.exceptions]]
 crate = "quire-rs"
+allow = ["AGPL-3.0-or-later"]
+
+# `ix-trace-rs` (agent-ix/ix-trace-rs) is AGPL-3.0-or-later, the same licence
+# quoin itself carries. It is a proc-macro crate with no dependencies whose
+# attributes return the annotated item unchanged. It is a normal dependency only
+# of the crates that carry `#[implements]` on production items (quoin-core,
+# quoin-cli, quoin-config, quoin-evidence); it was dev-only before PLAT-847, so
+# this check did not see it. Named per crate for the same reason as the
+# `quire-rs` exception above: AGPL cannot arrive unnoticed in another crate.
+[[licenses.exceptions]]
+crate = "ix-trace-rs"
 allow = ["AGPL-3.0-or-later"]
 
 # `uluru` (an LRU cache, reached through gix-worktree) is MPL-2.0, which is
@@ -269,7 +280,8 @@ unknown-git = "deny"
 # git source. A fifth git dependency is listed here in the commit that adds it,
 # or this check refuses it.
 allow-git = [
-    # Compile-checked trace binders are a dev-only dependency.
+    # Compile-checked trace binders: a dev-dependency for `#[trace]` tests, and a
+    # normal dependency of the crates that carry `#[implements]` on production items.
     "https://github.com/agent-ix/ix-trace-rs",
     # PLAT-989: shared RFC 8785 encoding, also used by the core boundary.
     "https://github.com/agent-ix/quire-canonical",

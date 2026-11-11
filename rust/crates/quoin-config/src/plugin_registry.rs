@@ -170,11 +170,12 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
     use crate::schema::QuoinConfig;
 
-    /// Trace: FR-027-AC-7
+    #[trace("FR-027-AC-7")]
     #[test]
     fn tc_381_030_registers_quoin_under_its_package_name() {
         let mut registry = PluginSchemaRegistry::new();
@@ -189,7 +190,7 @@ mod tests {
         assert_eq!(entry.env_bindings[0].var_name, "QUOIN_ORG");
     }
 
-    /// Trace: FR-027-AC-8
+    #[trace("FR-027-AC-8")]
     #[test]
     fn tc_381_031_duplicate_registration_keeps_the_first_entry() {
         let mut registry = PluginSchemaRegistry::new();
@@ -201,7 +202,7 @@ mod tests {
         assert_eq!(registry.registered_ids(), vec!["quoin".to_owned()]);
     }
 
-    /// Trace: FR-027-AC-8
+    #[trace("FR-027-AC-8")]
     #[test]
     fn tc_381_032_unknown_plugin_names_every_registered_id() {
         let registry = PluginSchemaRegistry::new();
@@ -219,7 +220,7 @@ mod tests {
         assert!(err.to_string().contains("quoin"), "got: {err}");
     }
 
-    /// Trace: FR-027-AC-6
+    #[trace("FR-027-AC-6")]
     #[test]
     fn tc_381_033_non_strict_schema_is_refused() {
         let mut registry = PluginSchemaRegistry::new();

@@ -15,6 +15,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -107,8 +108,7 @@ fn stderr(output: &Output) -> String {
 
 /// Outside git nothing can be checked: the claim is kept out of the store as
 /// `unverified`, never as `clean`, and the record is not refused.
-///
-/// Trace: FR-044, PLAT-1049
+#[trace("FR-044", "PLAT-1049")]
 #[test]
 fn tc_1049_001_outside_git_a_clean_claim_is_stored_unverified() {
     let repo = tempfile::tempdir().unwrap();
@@ -120,8 +120,7 @@ fn tc_1049_001_outside_git_a_clean_claim_is_stored_unverified() {
 
 /// A revision that is not a commit in `--repo` may belong to another
 /// repository: the record is accepted and the claim stored as `unverified`.
-///
-/// Trace: FR-044, PLAT-1049
+#[trace("FR-044", "PLAT-1049")]
 #[test]
 fn tc_1049_002_an_unresolvable_revision_in_git_is_stored_unverified() {
     let repo = tempfile::tempdir().unwrap();
@@ -132,7 +131,7 @@ fn tc_1049_002_an_unresolvable_revision_in_git_is_stored_unverified() {
     assert_eq!(stored_state(repo.path()), "unverified");
 }
 
-/// Trace: FR-044, PLAT-1049
+#[trace("FR-044", "PLAT-1049")]
 #[test]
 fn tc_1049_003_a_clean_claim_on_a_dirty_tree_is_refused() {
     let repo = tempfile::tempdir().unwrap();
@@ -152,7 +151,7 @@ fn tc_1049_003_a_clean_claim_on_a_dirty_tree_is_refused() {
     );
 }
 
-/// Trace: FR-044, PLAT-1049
+#[trace("FR-044", "PLAT-1049")]
 #[test]
 fn tc_1049_004_a_dirty_claim_on_a_dirty_tree_and_a_clean_claim_on_a_clean_tree_are_kept() {
     let repo = tempfile::tempdir().unwrap();

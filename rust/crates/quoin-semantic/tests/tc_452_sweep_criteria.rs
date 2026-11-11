@@ -3,9 +3,8 @@
 
 //! FR-071, FR-072 and FR-074, criterion by criterion (quoin#452).
 //!
-//! The mapping fixtures under `tests/fixtures/semantic-module/mapping` are
-//! published by quoin and executed by quire; what quoin owns, and what these
-//! restate, is that quoin's own legacy-form classifier agrees with the
+//! The mapping fixtures are owned by `quire-fixtures` and executed by quire;
+//! what quoin owns, and what these restate, is that quoin's own legacy-form classifier agrees with the
 //! expectations recorded beside them, that the fence subset stays a subset, and
 //! that `legacy_forms: error` is admissible only with a usable sweep report.
 //!
@@ -24,6 +23,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -32,9 +32,9 @@ use quoin_semantic::sweep::{CorpusRoot, SweepIdentity};
 use quoin_semantic::{PropertiesForm, TYPED_HEADER, classify_artifact, sweep_corpus};
 use serde_json::{Value, json};
 
-/// Trace: FR-104-AC-1
 /// The published relationship fixture keeps both ISO composition verbs
 /// marked composite and gives their inverse labels unique owners.
+#[trace("FR-104-AC-1")]
 #[test]
 fn tc_104_001_relationship_fixture_preserves_unique_composite_inverses() {
     let fixture = mapping_json("relationships.expected.json");
@@ -68,17 +68,8 @@ const SWEEP_SOURCE: &str = include_str!("../src/sweep.rs");
 /// declares, and the edit that spoils the report it ships.
 type Case = (&'static str, Option<&'static str>, Box<dyn Fn(&mut Value)>);
 
-/// The corpus the deleted TypeScript swept: five mapping fixtures, all
-/// authored by quoin, under one root.
-///
-/// `legacy-free-column-table.md` used to be a pinned copy of
-/// `agent-ix/config-service`'s real `FR-006-config-version-entity.md`, first
-/// as a byte copy with recorded provenance, then as a git submodule. Neither
-/// survived PLAT-887's de-vendoring: config-service publishes no artifact a
-/// build can depend on, so the only compliant answer was an authored fixture
-/// quoin owns outright. It keeps the same shape (a `free-column-table` legacy
-/// properties table, header at line 17) the classifier needs to exercise,
-/// invented rather than copied.
+/// The corpus the sweep runs over: five `quire-fixtures` mapping documents under
+/// one root.
 fn corpus(scratch: &Scratch) -> PathBuf {
     let root = scratch.path().join("corpus");
     let dir = root.join("spec").join("functional");
@@ -88,7 +79,7 @@ fn corpus(scratch: &Scratch) -> PathBuf {
         "legacy-bullets.md",
         "legacy-mixed.md",
         "config-version.fence.md",
-        "legacy-free-column-table.md",
+        "legacy-free-table.md",
     ] {
         fs::copy(mapping_dir().join(name), dir.join(name)).unwrap();
     }
@@ -98,8 +89,8 @@ fn corpus(scratch: &Scratch) -> PathBuf {
 /// The typed Properties table fixture is the authored form, and the classifier
 /// recognises it by the four-column header the contract names.
 ///
-/// Trace: FR-071-AC-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-071")]
 #[test]
 fn tc_452_650_the_typed_table_fixture_classifies_as_the_authored_form() {
     let table = mapping_fixture("config-version.table.md");
@@ -120,8 +111,8 @@ fn tc_452_650_the_typed_table_fixture_classifies_as_the_authored_form() {
 /// The sysml fence fixture is a second authored form over the same
 /// declarations, and it classifies as the fence rather than as a legacy form.
 ///
-/// Trace: FR-071-AC-2
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-071-AC-2", "TC-1345")]
 #[test]
 fn tc_452_651_the_fence_fixture_declares_the_tables_rows_and_classifies_as_the_fence() {
     let fence = mapping_fixture("config-version.fence.md");
@@ -158,8 +149,8 @@ fn tc_452_651_the_fence_fixture_declares_the_tables_rows_and_classifies_as_the_f
 /// or `ref item` with a type and a multiplicity, brace content is opaque, and
 /// the classifier carries no expression parser or evaluator.
 ///
-/// Trace: FR-071-CON-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-071-CON-1")]
 #[test]
 fn tc_452_652_the_fence_subset_is_declarations_only_and_nothing_evaluates_them() {
     let fence = mapping_fixture("config-version.fence.md");
@@ -199,8 +190,8 @@ fn tc_452_652_the_fence_subset_is_declarations_only_and_nothing_evaluates_them()
 /// list below is asserted to be that declaration set, so a module added to the
 /// crate and not to this guard fails here rather than escaping it.
 ///
-/// Trace: FR-072-CON-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-072-CON-1", "TC-1359")]
 #[test]
 fn tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause() {
     const LIB: &str = include_str!("../src/lib.rs");
@@ -242,8 +233,15 @@ fn tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause() {
 /// Every legacy-form expectation recorded beside the fixtures is what quoin's
 /// classifier answers — form, line, and the advisory diagnostic in full.
 ///
-/// Trace: FR-074-AC-1, FR-074-AC-2, FR-074-CON-1
 /// Provenance: agent-ix/quoin#452
+#[trace(
+    "FR-074-AC-1",
+    "FR-074-AC-2",
+    "FR-074-CON-1",
+    "TC-1367",
+    "TC-1368",
+    "TC-1371"
+)]
 #[test]
 fn tc_452_654_the_classifier_answers_every_recorded_legacy_expectation() {
     let expected = mapping_json("legacy.expected.json");
@@ -270,10 +268,6 @@ fn tc_452_654_the_classifier_answers_every_recorded_legacy_expectation() {
             None => assert_eq!(reported, Value::Null, "{file} is an authored form"),
         }
     }
-    // `legacy-free-column-table.md` (PLAT-887: replaces what used to be a
-    // pinned copy, then a submodule, of config-service's real FR-006 spec) is
-    // one of `cases` above like any other fixture; there is nothing left to
-    // assert about it beyond that loop.
 }
 
 /// Build a module declaring `legacy_forms: error`, with `report` written to
@@ -326,8 +320,8 @@ fn report(root: &Path) -> Value {
 /// Six cases, and the first is the control: without it a guard that always
 /// refused would satisfy the other five.
 ///
-/// Trace: FR-074-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-074-AC-3", "TC-1369")]
 #[test]
 fn tc_452_655_legacy_forms_error_needs_a_matching_schema_valid_sweep_report() {
     let validators = validators();

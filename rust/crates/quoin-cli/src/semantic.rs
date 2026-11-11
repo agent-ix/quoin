@@ -169,11 +169,12 @@ fn rendered(response: Response, text: &str) -> Response {
     reason = "test fixtures may panic"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use std::path::PathBuf;
 
     use super::{absolute, command};
 
-    /// Trace: FR-074
+    #[trace("FR-074")]
     #[test]
     fn tc_373_sweep_requires_identity_and_one_or_more_roots() {
         assert!(
@@ -210,7 +211,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-074
+    #[trace("FR-074")]
     #[test]
     fn tc_373_output_paths_are_lexically_resolved_before_boundary_checks() {
         assert_eq!(

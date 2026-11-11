@@ -330,8 +330,8 @@ fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> 
 
 // ------------------------------------------------------------ plan intake
 
-/// Trace: FR-110-AC-1
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-1", "TC-1810")]
 #[test]
 fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
     let temporary = repository(&format!(
@@ -635,8 +635,8 @@ fn tc_975_028_the_criterion_strength_gate_states_five_repetitions() {
 /// A named arrangement of a fixture repository.
 type Case = (&'static str, fn(&Path));
 
-/// Trace: FR-110-AC-2
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-2", "TC-1811")]
 #[test]
 fn tc_975_002_intake_records_the_resolved_set_it_resolved_itself() {
     let temporary = repository(PROTECTED);
@@ -660,8 +660,8 @@ fn tc_975_002_intake_records_the_resolved_set_it_resolved_itself() {
     );
 }
 
-/// Trace: FR-110-AC-3
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-3", "TC-1812")]
 #[test]
 fn tc_975_003_an_entry_naming_no_file_refuses_the_write() {
     let cases: [Case; 5] = [
@@ -708,8 +708,8 @@ fn tc_975_003_an_entry_naming_no_file_refuses_the_write() {
     }
 }
 
-/// Trace: FR-110-AC-3
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-3", "TC-1813")]
 #[test]
 fn tc_975_004_a_symlink_is_refused_and_never_followed() {
     let cases: [Case; 3] = [
@@ -744,8 +744,8 @@ fn tc_975_004_a_symlink_is_refused_and_never_followed() {
 /// A producer-supplied artifact list can omit a file; intake resolves the set
 /// itself and refuses a list that leaves a protected file out.
 ///
-/// Trace: FR-110-AC-3
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-3", "TC-1814")]
 #[test]
 fn tc_975_005_an_artifact_list_that_omits_a_protected_file_is_refused() {
     let temporary = repository(PROTECTED);
@@ -777,8 +777,8 @@ fn tc_975_005_an_artifact_list_that_omits_a_protected_file_is_refused() {
     assert_eq!(stored_count(root), 0);
 }
 
-/// Trace: FR-110-AC-3
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-3", "TC-1815")]
 #[test]
 fn tc_975_006_an_unreadable_protected_file_is_refused() {
     use std::os::unix::fs::PermissionsExt as _;
@@ -813,8 +813,8 @@ fn tc_975_006_an_unreadable_protected_file_is_refused() {
 
 // ------------------------------------------------------------ comparison
 
-/// Trace: FR-110-AC-4
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-4", "TC-1817")]
 #[test]
 fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     let temporary = repository(PROTECTED);
@@ -851,8 +851,8 @@ fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 }
 
-/// Trace: FR-110-AC-4
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-4", "TC-1818")]
 #[test]
 fn tc_975_009_an_unprotected_artifact_stated_by_one_side_is_reported_and_does_not_block() {
     let temporary = repository(PROTECTED);
@@ -881,8 +881,8 @@ fn tc_975_009_an_unprotected_artifact_stated_by_one_side_is_reported_and_does_no
 /// A plan that protects nothing is compared and stored exactly as before
 /// PLAT-975: no record, and an artifact list is not reported on.
 ///
-/// Trace: FR-110-AC-2, FR-110-AC-4
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-2", "FR-110-AC-4", "TC-1819")]
 #[test]
 fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
     let temporary = repository("");
@@ -906,8 +906,8 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
 /// a regenerated copy under a new id does not change what the stored one
 /// recorded.
 ///
-/// Trace: FR-110-AC-5
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-5", "TC-1820")]
 #[test]
 fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
     let temporary = repository(PROTECTED);
@@ -935,8 +935,8 @@ fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
 /// A collection lacking the record, or listing a protected name as
 /// unverified, is not comparable with one that recorded the set.
 ///
-/// Trace: FR-110-AC-4
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-4", "TC-1821")]
 #[test]
 fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
     let temporary = repository(PROTECTED);
@@ -968,8 +968,8 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
 
 // ------------------------------------------------------------ checker
 
-/// Trace: FR-110-AC-7
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-7", "TC-1822")]
 #[test]
 fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
     let temporary = repository(PROTECTED);
@@ -995,8 +995,8 @@ fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
     );
 }
 
-/// Trace: FR-110-AC-7
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-7", "TC-1823")]
 #[test]
 fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
     let temporary = repository(&format!(
@@ -1014,8 +1014,8 @@ fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
     assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
 }
 
-/// Trace: FR-110-AC-7
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-7", "TC-1824")]
 #[test]
 fn tc_975_015_a_candidate_with_no_record_under_a_protecting_plan_is_inconclusive() {
     let temporary = repository(PROTECTED);
@@ -1045,8 +1045,8 @@ fn ratchet_outcome(root: &Path) -> RatchetOutcome {
     }
 }
 
-/// Trace: FR-110-AC-6
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-6", "TC-1825")]
 #[test]
 fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
     let temporary = repository(PROTECTED);
@@ -1068,8 +1068,8 @@ fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
     ));
 }
 
-/// Trace: FR-110-AC-8
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-8", "TC-1826")]
 #[test]
 fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
     let temporary = repository(PROTECTED);
@@ -1100,8 +1100,8 @@ fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
 /// path key that is a `<directory>/**` glob, an absolute path, or carries a
 /// `..` segment is not a shape intake's own resolver ever writes.
 ///
-/// Trace: FR-110-AC-8
 /// Provenance: PLAT-985, quoin#600
+#[trace("FR-110-AC-8", "TC-1833")]
 #[test]
 fn tc_985_001_protected_apparatus_key_shapes_are_validated_on_read() {
     let temporary = repository(PROTECTED);
@@ -1130,8 +1130,8 @@ fn tc_985_001_protected_apparatus_key_shapes_are_validated_on_read() {
     }
 }
 
-/// Trace: FR-110-AC-2
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-2", "TC-1827")]
 #[test]
 fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
     let temporary = repository(PROTECTED);
@@ -1159,8 +1159,8 @@ fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
 /// Deleting the plan's list does not switch protection off: the runs
 /// recorded under it still carry their sets.
 ///
-/// Trace: FR-110-AC-6, FR-110-AC-7
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-6", "FR-110-AC-7", "TC-1828")]
 #[test]
 fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
     let temporary = repository(PROTECTED);
@@ -1201,8 +1201,8 @@ fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
 /// is still a rerun of the same source: the changed apparatus does not
 /// excuse it.
 ///
-/// Trace: FR-110-AC-7, FR-108-AC-3
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-7", "FR-108-AC-3", "TC-1829")]
 #[test]
 fn tc_975_020_an_uncommitted_answer_key_edit_then_a_pass_is_a_rerun() {
     let temporary = repository("");
@@ -1222,8 +1222,8 @@ fn tc_975_020_an_uncommitted_answer_key_edit_then_a_pass_is_a_rerun() {
     assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
 }
 
-/// Trace: FR-110-AC-6
 /// Provenance: PLAT-975
+#[trace("FR-110-AC-6", "TC-1830")]
 #[test]
 fn tc_975_021_a_ratchet_whose_newest_collection_recorded_nothing_is_inconclusive() {
     let temporary = repository(PROTECTED);

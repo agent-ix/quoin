@@ -33,7 +33,7 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 - Each table row SHALL map to one `FieldDecl` with `name` = `Field` (an `Identifier`), `type.target` from `Type`, `type.multiplicity` from `Multiplicity`, and `constraints` and flags from `Constraints`, with backticks around a cell value stripped.
 - The `Type` cell SHALL resolve, case-sensitively and in this order, to a `KernelScalar` name, an object or enumeration declared in the same bundle by frontmatter `id`, an object or enumeration declared in the same bundle by exact title, or an export of a module named in `semantic.imports`.
 - If a title is shared by two declarations, then extraction SHALL fail naming both.
-- An enumeration SHALL be an artifact of the `enumeration` object type whose `## Values` list maps to `EnumValue[]` (`- value — doc`).
+- An enumeration SHALL be an artifact of the `enumeration` object type whose `## Values` section is one table with the header `Value | Description` that maps to `EnumValue[]` (FR-123); the bullet-list form `- value — doc` is not a mapping form.
 - If a `Type` token resolves to none of those, then extraction SHALL record an advisory finding with locus and emit the field with `type.target` set to the placeholder identity `ix://<org>/<repo>/unresolved/<token>`, so the field survives to the IR reader, which reports it as unresolved, and is never lowered as a string.
 - A `Type` cell of the form `Decimal(p,s)` SHALL map to `type.decimal { precision: p, scale: s }`.
 - A `Type` cell with a trailing ` [unit]` (for example `Duration [ms]`) SHALL map the bracketed symbol to `type.unit`.
@@ -52,13 +52,13 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
 | FR-071-CON-1 | Quire SHALL recognise the fence at line level with source spans, treating any expression inside braces as opaque constraint text mapped by the cell grammar only. | Boundary | Extraction-only inspection |
-| FR-071-CON-2 | Quoin SHALL publish the golden fixtures (table form, fence form, expected normalized `FieldDecl[]`, expected diagnostics) under `tests/fixtures/semantic-module/` for `agent-ix/quire-rs#388` to consume unchanged. | Integrity | Fixture provenance |
+| FR-071-CON-2 | Quoin SHALL read the golden fixtures (table form, fence form, expected normalized `FieldDecl[]`, expected diagnostics) from the `quire-fixtures` crate in `agent-ix/quire-rs`, holding no copy of them. | Integrity | Dependency inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-071-AC-1 | Quoin's copy of the config-service FR-006 rows, rewritten as a typed table, has an expected `FieldDecl[]` fixture whose every element validates against the semantic-core `FieldDecl.json`. | Test |
+| FR-071-AC-1 | The config-service FR-006 rows, rewritten as a typed table, has an expected `FieldDecl[]` fixture whose every element validates against the semantic-core `FieldDecl.json`. | Test |
 | FR-071-AC-2 | The `sysml` fence fixture with equal content has an expected normalized `FieldDecl[]` identical to the table fixture's. | Test |
 | FR-071-AC-3 | The both-forms fixture's expected diagnostic is a failure at the second form's locus. | Test |
 | FR-071-AC-4 | `Type` tokens `UUID`, `Decimal(10,2)`, `Duration [ms]`, `ConfigOverlay` (object by title), `Status` (enumeration by id), and an imported export resolve as specified; `Mystery` yields the advisory finding and the placeholder target. | Test |

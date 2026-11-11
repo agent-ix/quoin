@@ -115,13 +115,14 @@ pub fn parse_audit_script(raw: &str) -> Result<FindingResult, EvidenceError> {
 )]
 mod tests {
     use super::parse_audit_script;
+    use ix_trace_rs::trace;
 
     /// A FAIL line becomes a finding carrying the criterion the script itself
     /// printed, and OK lines count as rules evaluated — so a fully passing run
     /// is a result rather than a vacuous one.
     ///
-    /// Trace: FR-036-AC-2, FR-036-AC-3
     /// Provenance: quoin#458
+    #[trace("FR-036-AC-2", "FR-036-AC-3", "TC-198", "TC-199")]
     #[test]
     fn tc_458_210_counts_ok_lines_as_rules_that_ran_and_passed() {
         let result = parse_audit_script(
@@ -138,8 +139,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-036-AC-2
     /// Provenance: quoin#458
+    #[trace("FR-036-AC-2")]
     #[test]
     fn tc_458_211_reads_a_criterion_through_trailing_punctuation() {
         // The incident: an end-of-line anchor found nothing, and the finding
@@ -164,8 +165,8 @@ mod tests {
     /// No recognised line means no audit ran; recording it would manufacture
     /// conformance evidence from a file that proves nothing.
     ///
-    /// Trace: FR-036-AC-4
     /// Provenance: quoin#458
+    #[trace("FR-036-AC-4", "TC-200")]
     #[test]
     fn tc_458_212_refuses_output_with_no_recognised_line() {
         assert_eq!(

@@ -16,6 +16,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
@@ -94,8 +95,8 @@ fn run(op: &str, stdin: &str) -> Run {
 /// `IndependenceAssessment` are typed, so a case whose assessment is malformed
 /// is refused by the renderer's request schema and nowhere else.
 ///
-/// Trace: FR-040
 /// Provenance: quoin#447
+#[trace("FR-040")]
 #[test]
 fn tc_447_512_a_built_case_is_a_renderable_case_unless_its_assessments_are_untyped() {
     let corpus: Corpus = read("cases.json");

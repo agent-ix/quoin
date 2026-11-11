@@ -94,6 +94,7 @@ pub fn read_json(path: &Path) -> Result<Value, SemanticError> {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
     use serde_json::json;
 
     fn validator(schema: &Value) -> SchemaValidator {
@@ -103,7 +104,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_030_additional_properties_fan_out_is_one_error_per_key() {
         let v = validator(&json!({
@@ -123,7 +124,7 @@ mod tests {
         assert_eq!(keys, vec!["b".to_owned(), "c".to_owned()]);
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_031_any_of_reports_the_composite_and_each_branch() {
         let v = validator(&json!({
@@ -142,7 +143,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_032_required_carries_the_missing_property() {
         let v = validator(&json!({"type": "object", "required": ["a", "b"]}));
@@ -158,7 +159,7 @@ mod tests {
         assert_eq!(missing, vec!["a".to_owned(), "b".to_owned()]);
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_033_enum_carries_allowed_values_in_schema_order() {
         let v = validator(&json!({"enum": ["z", "a"]}));
@@ -172,7 +173,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_034_pattern_carries_the_regex_as_written() {
         let v = validator(&json!({"type": "string", "pattern": "^[a-z]+$"}));
@@ -184,7 +185,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_035_instance_is_the_failing_sub_document() {
         let v = validator(&json!({
@@ -197,7 +198,7 @@ mod tests {
         assert_eq!(errors[0].instance, json!("y"));
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_036_error_order_is_deterministic_and_sorted() {
         let v = validator(&json!({
@@ -213,7 +214,7 @@ mod tests {
         assert_eq!(paths, vec!["", "/a", "/z"]);
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_037_valid_document_produces_no_errors() {
         let v = validator(&json!({"type": "string"}));
@@ -221,7 +222,7 @@ mod tests {
         assert_eq!(v.errors(&json!("x")).len(), 0);
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_038_external_resource_resolves_from_memory_only() {
         let common = json!({
@@ -248,7 +249,7 @@ mod tests {
         assert_eq!(errors[0].identity(), ("/n", SchemaKeyword::MinLength));
     }
 
-    /// Trace: FR-070
+    #[trace("FR-070")]
     #[test]
     fn tc_378_039_unresolvable_ref_is_refused_at_compile_time() {
         let schema = json!({"$ref": "https://absent.test/nope.json"});

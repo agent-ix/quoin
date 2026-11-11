@@ -31,6 +31,7 @@ mod update;
 mod validate;
 mod write;
 
+use ix_trace_rs::implements;
 use std::ffi::OsString;
 use std::io::Write as _;
 
@@ -82,6 +83,7 @@ impl ShellError {
     /// Identical to [`Self::command`] apart from the status: the message text
     /// is the refusal the engine stated, and only the exit number carries the
     /// distinction between a refused document and a rejected receipt.
+    #[implements("FR-068")]
     fn document_refused(message: impl Into<String>) -> Self {
         Self {
             message: format!("    Error: {}", message.into()),
@@ -197,6 +199,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
 /// hand-rolled argv grammar: a scan for the first non-flag token disagrees
 /// with the real parser about global flags and their values, and would read
 /// `--config-root change-assurance` as the change-assurance surface.
+#[implements("FR-068")]
 fn routed_family(args: &[OsString]) -> Option<String> {
     command()
         .ignore_errors(true)
