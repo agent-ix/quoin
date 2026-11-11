@@ -105,10 +105,17 @@ fn tc_3206_the_matrix_command_renders_recorded_facts_and_refuses_misuse() {
         home.path(),
         &[&base[..], &["--facts", facts, "--rmm"]].concat(),
     );
-    assert!(!no_repo.status.success());
+    assert_eq!(no_repo.status.code(), Some(1), "{no_repo:?}");
+    let message = String::from_utf8_lossy(&no_repo.stderr);
+    assert!(message.contains("--rmm needs --repo"), "{message}");
     let with_inward = quoin(
         home.path(),
         &[&base[..], &["--repo", repo, "--rmm", "--inward"]].concat(),
     );
-    assert!(!with_inward.status.success());
+    assert_eq!(with_inward.status.code(), Some(1), "{with_inward:?}");
+    let message = String::from_utf8_lossy(&with_inward.stderr);
+    assert!(
+        message.contains("--inward and --rmm cannot be combined"),
+        "{message}"
+    );
 }

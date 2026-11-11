@@ -47,7 +47,7 @@ pub(crate) fn command() -> Command {
                 ),
         )
         .arg(Arg::new("rmm").long("rmm").action(ArgAction::SetTrue).help(
-            "Render the requirements mapping matrix: one row per clause with \
+            "Render a requirements mapping matrix view: one row per clause with \
              applicability, compliance, evidence and tailoring. Needs --repo.",
         ))
         .arg(

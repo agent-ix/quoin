@@ -13,17 +13,19 @@ relationships:
 
 ## Description
 
-Quoin SHALL render a requirements mapping matrix (RMM) from a live
-`clause-binding-v1` report and the stored discharge facts: one row per clause
-of the binding report, with the columns a standards-compliance matrix such as
-the NPR 7150.2D Appendix C matrix asks for (Req#, Applicability, Compliance,
-Tailoring Description, Tailoring Rationale) and an Evidence column carrying the
-evidence links.
+Quoin SHALL render a requirements-mapping-matrix view of the FR-133 discharge
+report from a live `clause-binding-v1` report and the stored discharge facts:
+one row per clause of the binding report. The column headings follow the shape
+projects use for a compliance matrix, for example center templates for the
+NPR 7150.2D Appendix C requirements mapping matrix: Req#, Applicability,
+Compliance, Tailoring Description and Tailoring Rationale, plus an Evidence
+column carrying the evidence links.
 
-The view is read-only. It is derived on every read from the FR-133 discharge
-report and holds no store of its own. The requirement list, its numbering and
-its applicability come from the clause set and the binding report; Quoin
-carries no standard's text.
+The Applicability and Compliance values are Quoin's own vocabulary, defined
+below; they are not quoted from any standard. Quoin supplies no standard's
+requirement list, numbering or applicability: those come from the clause set
+and the binding report. The view is read-only, derived on every read from the
+discharge report, and holds no store of its own.
 
 ## Rationale
 
@@ -49,16 +51,28 @@ answer.
     Tailoring Rationale is the disposition's rationale.
   - `Not compliant - undischarged` - the clause binds and no fact exists.
   - `Not compliant - attestation not current` - the clause binds, a fact exists
-    and its attestation has expired or is not yet valid at `asOf`. The reason
-    is shown in the row and the fact earns no `Compliant` or `Tailored`.
+    and its attestation has expired, is not yet valid at `asOf`, or has an
+    expiry that is not after its attestation. The reason is shown in the row
+    and the fact earns no `Compliant` or `Tailored`.
   - `Undetermined` - applicability is unresolved; the reason is shown.
-  - `Not applicable` - the clause does not bind.
+  - `Not applicable` - the clause does not bind. Tailoring Description reads
+    `Not applicable per binding derivation` and Tailoring Rationale is the
+    clause's binding reasons joined with `; `, or `no reason given by the
+    binding report` when it has none. A disposition recorded on a not-binding
+    clause is not tailoring: it stays under Unused facts.
 - Evidence and tailoring cells that have nothing to show render as `-`.
 - **Facts that were not spent** (a fact for an unknown, not-binding or
   unresolved clause) are listed after the table with the reason they were not
   used.
-- The Markdown render is deterministic; a `|` or line break inside a cell is
-  escaped so a cell never splits a row. An empty binding report renders the
+- **Every interpolated string renders literally.** Clause ids, clause set key
+  parts, reasons, evidence references, approval references and rationales come
+  from stored facts and the binding report and are untrusted. Each goes through
+  one inline escape wherever it appears (title, cells, unused-facts list):
+  control characters including line breaks become spaces and CommonMark/GFM
+  punctuation (backslash, pipe, backtick, angle brackets, brackets, parentheses,
+  `!`, `*`, `_`, `~`, `#`, `&`) is backslash-escaped, so text can neither start
+  an image, link, HTML or heading nor split a row.
+- The Markdown render is deterministic. An empty binding report renders the
   header and a line stating that the report names no clauses.
 - `quoin discharge --repo <repo> --rmm` renders the matrix and `--json`
   emits it. `--rmm` needs `--repo` and excludes `--inward`.
@@ -74,11 +88,11 @@ answer.
 | --- | --- | --- |
 | FR-135-AC-1 | The matrix has exactly one row per clause of the binding report, in the report's order, with Req#, Applicability, Compliance, Evidence, Tailoring Description and Tailoring Rationale, and an empty binding report renders the header and a line stating that no clauses are named. | Test (TC-3200) |
 | FR-135-AC-2 | A binding clause with a current direct fact is `Compliant` with the fact's evidence references; one with a current disposition is `Tailored` with the decision, approval reference and rationale, and is not `Compliant`. | Test (TC-3201) |
-| FR-135-AC-3 | A binding clause with no fact is `Not compliant - undischarged`; one whose fact has expired is `Not compliant - attestation not current` with the reason shown and is neither `Compliant` nor `Tailored`; an unresolved clause is `Undetermined` and a not-binding clause is `Not applicable`. | Test (TC-3202) |
+| FR-135-AC-3 | A binding clause with no fact is `Not compliant - undischarged`; one whose fact has expired, is not yet valid, or has an expiry not after its attestation is `Not compliant - attestation not current` with the reason shown and is neither `Compliant` nor `Tailored`; an unresolved clause is `Undetermined`; a not-binding clause is `Not applicable` with the tailoring description and rationale stated above, whether or not a disposition was recorded on it. | Test (TC-3202) |
 | FR-135-AC-4 | Facts that were not spent are listed after the table with their reason, and the matrix carries no score, percentage, ratio or count of compliant rows. | Test (TC-3203) |
-| FR-135-AC-5 | The Markdown render is byte-identical across two renders, and a cell containing a pipe character or a line break stays within its row. | Test (TC-3204) |
-| FR-135-AC-6 | `evidence.requirements_matrix` answers through the production runtime from the live binding report and the stored facts, refuses a request over its ceiling, and exits as a bad request when given a doubled binding clause. | Test (TC-3205) |
-| FR-135-AC-7 | `quoin discharge --repo ... --rmm` renders the matrix from recorded facts and `--json` emits it; `--rmm` without `--repo`, or with `--inward`, is refused. | Test (TC-3206) |
+| FR-135-AC-5 | Two independent builds from the same inputs, with facts supplied in a different order, render byte-identical Markdown; and a rationale, approval reference or clause id containing an image, a link, raw HTML, a line break, a backslash, a backtick or a pipe, and a clause set key containing a line break, render as the literal text in the title, the table and the unused-facts list. | Test (TC-3204) |
+| FR-135-AC-6 | `evidence.requirements_matrix` answers through the production runtime from the live binding report and the stored facts, refuses a request over its ceiling, and exits as a bad request when given a doubled binding clause; a stored disposition with an empty or whitespace-only rationale refuses the operation (FR-133-AC-4: a refusal naming the file) and renders no matrix. | Test (TC-3205) |
+| FR-135-AC-7 | `quoin discharge --repo ... --rmm` renders the matrix from recorded facts and `--json` emits it; `--rmm` without `--repo`, or with `--inward`, is refused with a usage status and a message naming the conflict. | Test (TC-3206) |
 
 ## Dependencies
 

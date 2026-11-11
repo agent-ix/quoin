@@ -853,3 +853,45 @@ fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
         refused.stderr
     );
 }
+
+/// A stored disposition whose rationale is blank was not written by
+/// `record_discharge`; the operation refuses it and renders no matrix.
+#[trace("FR-135-AC-6", "TC-3205")]
+#[test]
+fn tc_3205_a_stored_disposition_with_a_blank_rationale_refuses_the_matrix() {
+    let dir = repo();
+    write_store(
+        dir.path(),
+        "discharge/quire/spec/1/c-1.json",
+        &json!({
+            "schemaVersion": "discharge-fact-record-v1",
+            "clauseSet": { "authority": "quire", "id": "spec", "version": "1" },
+            "fact": {
+                "kind": "disposition",
+                "clauseId": "C-1",
+                "decision": "accepted_risk",
+                "rationale": " ",
+                "approvalRef": "approval://1",
+                "attestation": {
+                    "attestedBy": "reviewer-1",
+                    "authority": "quality-lead",
+                    "attestedAt": "2026-08-01T00:00:00Z",
+                    "expiresAt": "2026-09-01T00:00:00Z"
+                }
+            }
+        })
+        .to_string(),
+    );
+    let refused = run(
+        "evidence.requirements_matrix",
+        &json!({"repo": dir.path(), "binding": discharge_binding(), "asOf": "2026-08-15T00:00:00Z"}),
+    );
+    assert_eq!(refused.status, 2, "{}", refused.stderr);
+    assert!(refused.stderr.contains("c-1.json"), "{}", refused.stderr);
+    assert!(refused.stdout.is_empty(), "{}", refused.stdout);
+    assert!(
+        refused.stderr.contains("rationale must not be empty"),
+        "{}",
+        refused.stderr
+    );
+}

@@ -225,7 +225,8 @@ pub fn requirements_matrix(
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
         let report = discharge_report_from_store(&*source, &request.binding, &request.as_of)
             .map_err(|e| map_store_error(e, op))?;
-        let matrix = build_requirements_mapping(&request.binding, &report);
+        let matrix = build_requirements_mapping(&request.binding, &report)
+            .map_err(|e| map_store_error(DischargeStoreError::Discharge(e), op))?;
         value(&RequirementsMatrixPayload {
             rendered: render_requirements_mapping(&matrix),
             matrix,
