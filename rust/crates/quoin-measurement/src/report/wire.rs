@@ -38,6 +38,7 @@ use serde_json::Value;
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::json_bridge::{from_serde, to_serde};
+use crate::paired::{PairedRunObservation, PairedRunOutcome};
 use crate::report::build::{CollectionSummary, CurrentRow, MeasurementReport};
 use crate::report::verdict_wire::{StageVerdictWire, VanishedSliceWire};
 use crate::types::comparison::MeasurementComparison;
@@ -278,6 +279,38 @@ impl<'a> CurrentRowWire<'a> {
     }
 }
 
+/// One plan's paired-run result (FR-132-AC-13).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PairedRunWire<'a> {
+    plan_id: &'a str,
+    metric: &'a str,
+    status: &'static str,
+    /// Absent unless the pair was observed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    differing: Option<u64>,
+    comparisons: u64,
+    minimum_pairs: u32,
+    reasons: &'a [String],
+}
+
+impl<'a> PairedRunWire<'a> {
+    fn of(observation: &'a PairedRunObservation) -> Self {
+        Self {
+            plan_id: &observation.plan_id,
+            metric: &observation.metric,
+            status: observation.outcome.as_str(),
+            differing: match observation.outcome {
+                PairedRunOutcome::Observed { differing } => Some(differing),
+                _ => None,
+            },
+            comparisons: observation.comparisons,
+            minimum_pairs: observation.minimum_pairs,
+            reasons: &observation.reasons,
+        }
+    }
+}
+
 /// The whole report. `report.ts:24-46`.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -288,6 +321,9 @@ pub(crate) struct MeasurementReportWire<'a> {
     /// report serialises to the bytes it did before.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     vanished_slices: Vec<VanishedSliceWire<'a>>,
+    /// Absent unless an active plan declares `paired_run` (FR-132-AC-13).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    paired_runs: Vec<PairedRunWire<'a>>,
     corpus_gaps: Option<f64>,
     /// Already `snake_case` on the wire (`intervention-report.ts:3-22`), so it
     /// crosses as its own `serde` view rather than being restated here.
@@ -315,6 +351,7 @@ impl<'a> MeasurementReportWire<'a> {
                 .iter()
                 .map(VanishedSliceWire::of)
                 .collect::<Result<Vec<_>, MeasurementError>>()?,
+            paired_runs: report.paired_runs.iter().map(PairedRunWire::of).collect(),
             corpus_gaps: report.corpus_gaps,
             interventions: analysis_value(&report.interventions)?,
             operational: analysis_value(&report.operational)?,

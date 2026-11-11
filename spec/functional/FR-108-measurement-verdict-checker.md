@@ -134,13 +134,16 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 
 | code | verdict | when |
 | --- | --- | --- |
-| `no_decision_rule` | inconclusive | the plan states no `decision_rule` |
+| `no_decision_rule` | inconclusive | the plan states no `decision_rule` and declares no `paired_run` (FR-132-AC-9) |
 | `no_estimator` | inconclusive | the plan states no `estimator` |
 | `no_collections` | inconclusive | no stored collection measured the plan's metric under its id and `definition_version` |
 | `no_value` | inconclusive | the candidate's observation carries no measured value |
 | `population_unstated` | inconclusive | no `population`, `examined` or `complete`; no `matched` under `proportion` or `count`; or no `repetitions` when the plan requires more than one |
 | `population_incomplete` | inconclusive | `complete: false` |
 | `population_empty` | inconclusive | `examined: 0` under a plan with no `minimum_population` |
+| `paired_run_unpaired` | inconclusive | the plan declares `paired_run` and fewer than two collections measured it (FR-132-AC-10) |
+| `paired_run_incomparable` | inconclusive | the plan declares `paired_run` and its latest two collections cannot be compared (FR-132-AC-11) |
+| `paired_run_inconclusive` | inconclusive | the plan declares `paired_run` and its latest two collections hold fewer comparable slices than `minimum_pairs`, or a slice without a value (FR-132-AC-11) |
 | `no_prior` | inconclusive | a baseline rule has no earlier usable run |
 | `order_unattested` | inconclusive | the order source is `git-shallow`; or the candidate, or a `prior-collection` rule's prior, shares its intake position with another run, or a run on one side of it states a timestamp on the other side |
 | `constant_predictor_rows_absent` | inconclusive | a `constant-predictor` baseline needs per-item answers by answer family, and the run being decided carries no per-item observations for its metric (PLAT-1016) |
@@ -157,6 +160,7 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `slice_missing` | inconclusive | a slice an earlier run measured under this definition is absent from the candidate |
 | `observation_missing` | inconclusive | a collection with the candidate's `subject` and `scope`, not before it in intake order, carries no observation of the plan |
 | `apparatus_unrecorded` | inconclusive | in a protected series, the candidate or an earlier run recorded no protected apparatus (FR-110) |
+| `paired_run_differs` | reject | the plan declares `paired_run` and its latest two collections violate the relation in at least one slice (FR-132-AC-8) |
 | `rule_not_met` | reject | the rule does not hold for the candidate |
 | `value_disagrees_with_rows` | reject | a stored `value` is inconsistent with the estimate recomputed from `matched` and `examined`, in any run |
 | `population_below_minimum` | reject | the candidate's `examined` — `0` included — is below `minimum_population` |

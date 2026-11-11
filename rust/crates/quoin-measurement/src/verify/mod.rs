@@ -53,6 +53,7 @@
 mod apparatus;
 mod constant_predictor;
 mod order;
+mod paired;
 mod reason;
 pub mod rows;
 mod tamper;
@@ -145,7 +146,10 @@ pub fn verify(
         check.findings.push(plan_level(Reason::OrderUnattested));
     }
     check.findings.extend(tamper::findings(tamper));
+    let pair = paired::judge(plan, &check.runs);
     match (check.rule, design.estimator) {
+        // A paired plan's relation is its decision (FR-132-AC-9).
+        (None, None) if pair.is_some() => {}
         (None, _) => check.findings.push(plan_level(Reason::NoDecisionRule)),
         (_, None) => check.findings.push(plan_level(Reason::NoEstimator)),
         (Some(_), Some(_)) if check.runs.is_empty() => {
@@ -166,6 +170,10 @@ pub fn verify(
                 }
             }
         }
+    }
+    if let Some(pair) = pair {
+        check.findings.extend(pair.findings);
+        decisions.extend(pair.decision);
     }
     let regressed_runs: Vec<String> = regressed
         .iter()

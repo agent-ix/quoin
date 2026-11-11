@@ -40,6 +40,21 @@ pub enum PairedRunOutcome {
     Incomparable,
     /// Fewer comparable slices than `minimum_pairs`: no count is offered.
     Inconclusive,
+    /// Fewer than two collections measured the plan, so there is no pair.
+    Unpaired,
+}
+
+impl PairedRunOutcome {
+    /// The stable wire spelling of the status.
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Observed { .. } => "observed",
+            Self::Incomparable => "incomparable",
+            Self::Inconclusive => "inconclusive",
+            Self::Unpaired => "unpaired",
+        }
+    }
 }
 
 /// One plan's paired-run result.
@@ -89,6 +104,44 @@ pub fn compare_paired_runs(
             ))
         })
         .collect())
+}
+
+/// The paired-run observation `plan` declares over the latest two of
+/// `collections`, oldest first, or `None` when `plan` declares no `paired_run`.
+///
+/// Fewer than two collections is [`PairedRunOutcome::Unpaired`]. A comparison
+/// the store refuses is [`PairedRunOutcome::Inconclusive`], never a count.
+#[must_use]
+pub fn compare_latest_pair(
+    plan: &MeasurementPlan,
+    collections: &[&MeasurementCollection],
+) -> Option<PairedRunObservation> {
+    let paired = plan.paired_run?;
+    let unpaired = |outcome, reason: String| PairedRunObservation {
+        plan_id: plan.id.as_str().to_owned(),
+        metric: plan.metric.as_str().to_owned(),
+        outcome,
+        comparisons: 0,
+        minimum_pairs: paired.minimum_pairs.get(),
+        reasons: vec![reason],
+    };
+    let [.., first, second] = collections else {
+        return Some(unpaired(
+            PairedRunOutcome::Unpaired,
+            format!(
+                "{} collection(s) measured {}, 2 required",
+                collections.len(),
+                plan.metric
+            ),
+        ));
+    };
+    match compare_paired_runs(first, second, std::slice::from_ref(plan)) {
+        Ok(observed) => observed.into_iter().next(),
+        Err(error) => Some(unpaired(
+            PairedRunOutcome::Inconclusive,
+            format!("the pair could not be compared: {error}"),
+        )),
+    }
 }
 
 fn reduce(

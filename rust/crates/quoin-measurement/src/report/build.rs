@@ -27,6 +27,7 @@ use crate::intervention::report::{InterventionReportEntry, build_intervention_re
 use crate::operational::read::read_operational_records;
 use crate::operational::record::OperationalEvidenceRecord;
 use crate::operational::report::{OperationalReportEntry, build_operational_report};
+use crate::paired::{PairedRunObservation, compare_latest_pair};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
 use crate::report::vanished::{VanishedSlice, vanished_slices};
 use crate::report::verdict::{StageVerdict, stage_verdict};
@@ -104,6 +105,9 @@ pub struct MeasurementReport {
     /// Slices a `ratchet` plan measured earlier that its newest collection
     /// dropped (PLAT-958); empty unless a plan carries a ratchet objective.
     pub vanished_slices: Vec<VanishedSlice>,
+    /// One paired-run observation per active plan declaring `paired_run`
+    /// (FR-132-AC-13); empty when none does.
+    pub paired_runs: Vec<PairedRunObservation>,
     /// The newest stated `bounds.gap_count`, when any collection states one.
     pub corpus_gaps: Option<f64>,
     /// The intervention experiments, projected.
@@ -165,7 +169,13 @@ pub fn build_measurement_report_from(
 
     let mut current = Vec::new();
     let mut vanished = Vec::new();
+    let mut paired_runs = Vec::new();
     for plan in &plans {
+        let measuring: Vec<&MeasurementCollection> = collections
+            .iter()
+            .filter(|candidate| observes(candidate, plan.metric.as_str()))
+            .collect();
+        paired_runs.extend(compare_latest_pair(plan, &measuring));
         // `[...collections].reverse().find(…)` — the newest collection that
         // computed this metric at all, not the newest collection.
         let newest = collections
@@ -216,6 +226,7 @@ pub fn build_measurement_report_from(
         plans,
         current,
         vanished_slices: vanished,
+        paired_runs,
         corpus_gaps: latest_gap_count(collections),
         interventions: build_intervention_report(interventions),
         operational: build_operational_report(operational),

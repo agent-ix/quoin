@@ -35,6 +35,9 @@ reduces its slices to the plan's stated relation.
   that violate the relation; the metric's target is 0.
 - A slice that only one run states is a violation of every relation; a slice either run states without a value makes the pair `inconclusive`.
 - `not_worse` ranks values by the plan's `objective` direction.
+- `quoin measurement verify` and `quoin report` evaluate a plan that declares `paired_run` over the plan's latest two collections, so the count is computed by the CLI and never asserted by the producer. A collection belongs to the plan when it holds an observation of the plan's metric under the plan's id and `definition_version`; the latest two are the last two in intake order (verify, FR-108-AC-2) or in stored order (report). The paired relation is the plan's decision: a plan that declares `paired_run` and states neither `decision_rule` nor `estimator` is not `no_decision_rule` or `no_estimator`. A plan that also states a `decision_rule` and `estimator` is judged by both, and a plan without `paired_run` is judged as before.
+- `verify` maps the pair to its verdict: a count of 0 is `accept`; a count above 0 is `reject` with `paired_run_differs`; an `incomparable` pair is `inconclusive` with `paired_run_incomparable`; an `inconclusive` pair is `inconclusive` with `paired_run_inconclusive`; fewer than two collections is `inconclusive` with `paired_run_unpaired`. The count is the single `decisions` entry (empty `dimensions`, `estimate` the count, `baseline` 0, `holds` whether it is 0). This verdict is FR-108's; the FR-132 layer still emits only a count and a status.
+- `report` prints a "Paired runs" section only when an active plan declares `paired_run`, with the plan, relation, status (`observed`, `incomparable`, `inconclusive` or `unpaired`), count, comparable slices, `minimum_pairs` and the reasons.
 
 ## Acceptance Criteria
 
@@ -47,10 +50,16 @@ reduces its slices to the plan's stated relation.
 | FR-132-AC-5 | A pair whose comparison is blocked (definition changed, profile changed, apparatus changed, incomplete population) is `incomparable`, states no count, and names each blocking reason. | Test (TC-2504) |
 | FR-132-AC-6 | A plan stating no `paired_run` yields no paired-run observation. | Test (TC-2505) |
 | FR-132-AC-7 | A `paired_run` that is not an object, lacks `relation`, names an unknown relation, states a `minimum_pairs` that is not a whole number of at least 1, states a `delta` that is not a number greater than 0, any member other than those three, `delta` without `within_delta` or no `delta` with `within_delta`, or declares `not_worse` without an `objective` that ranks two values, refuses the plan load as `QM-PLAN-INVALID`. A plan stating no `minimum_pairs` loads and requires 1. | Test (TC-2506, TC-2509) |
+| FR-132-AC-8 | `quoin measurement verify` on a plan declaring `paired_run`, with two recorded collections, observes the FR-132 count through `compare_paired_runs`: a count of 0 is `accept` (exit 0) with one `decisions` entry whose `estimate` is 0 and `holds` true; a count above 0 is `reject` with `paired_run_differs` (exit 1) and `holds` false. Under `within_delta` a difference inside `delta` is `accept` and one beyond it is `reject`. | Test (TC-3500, TC-3501, TC-3513) |
+| FR-132-AC-9 | A plan declaring `paired_run` and no `decision_rule` or `estimator` yields none of `no_decision_rule`, `no_estimator` or `no_collections`; a plan stating a rule but not an estimator keeps `no_estimator`; a plan without `paired_run` is verified exactly as before, reason `no_decision_rule` included. | Test (TC-3502, TC-3503) |
+| FR-132-AC-10 | With only one collection of the plan, or none, `verify` is `inconclusive` with `paired_run_unpaired` and states no count. With three or more, the pair is the latest two in intake order: an earlier differing collection does not change the result. | Test (TC-3504, TC-3505) |
+| FR-132-AC-11 | A pair blocked by a changed build profile is `inconclusive` with `paired_run_incomparable` and states no count and no `decisions` entry; a pair with fewer comparable slices than `minimum_pairs` or a slice without a value is `inconclusive` with `paired_run_inconclusive`; a slice only one collection states is counted as a violation and rejects with `paired_run_differs`. | Test (TC-3506, TC-3507, TC-3508) |
+| FR-132-AC-12 | When the relation is `not_worse` or the plan has more than two collections, a pair whose place in the intake order is not attested (FR-108-AC-2) adds `order_unattested`; two collections under `equal` or `within_delta` need no order. | Test (TC-3509) |
+| FR-132-AC-13 | `quoin report` prints the "Paired runs" section for each active plan declaring `paired_run` over the plan's latest two collections, with the status and count of FR-132-AC-8 to AC-11 (`unpaired` for fewer than two collections), and the report JSON carries the same as `pairedRuns`; a report with no such plan renders and serialises without it. | Test (TC-3510, TC-3511, TC-3513) |
 
 ## Constraints
 
-- No second comparison engine: every slice is compared by FR-044's comparison.
+- No second comparison engine: every slice is compared by FR-044's comparison, in the CLI too: `verify` and `report` call `compare_paired_runs`.
 - This layer emits a count and a status; it emits no quality verdict.
 
 ## Dependencies
