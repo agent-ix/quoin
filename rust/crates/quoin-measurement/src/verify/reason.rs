@@ -120,6 +120,12 @@ pub enum Reason {
     /// `examined`, `matched` or `repetitions` is not a whole number, or
     /// `matched` exceeds `examined`.
     PopulationMalformed,
+    /// A listed `examined_ids` or `matched_ids` id is outside the plan's
+    /// declared `population_set` (PLAT-110).
+    PopulationOutsideSet,
+    /// The observation did not examine every id of the plan's declared
+    /// `population_set` (PLAT-110).
+    PopulationPartial,
     /// Under a plan whose rule states an `interval_level`, a run — the
     /// candidate or an earlier one — states an `interval` that does not
     /// satisfy FR-044-AC-10 (EA-26, FR-108-AC-12).
@@ -188,6 +194,8 @@ impl Reason {
         PopulationBelowMinimum,
         RepetitionsShort,
         PopulationMalformed,
+        PopulationOutsideSet,
+        PopulationPartial,
         IntervalMalformed,
         IntervalLevelShort,
         RerunUntilPass,
@@ -223,6 +231,8 @@ impl Reason {
             Self::PopulationBelowMinimum => "population_below_minimum",
             Self::RepetitionsShort => "repetitions_short",
             Self::PopulationMalformed => "population_malformed",
+            Self::PopulationOutsideSet => "population_outside_set",
+            Self::PopulationPartial => "population_partial",
             Self::IntervalMalformed => "interval_malformed",
             Self::IntervalLevelShort => "interval_level_short",
             Self::RerunUntilPass => "rerun_until_pass",
@@ -290,6 +300,8 @@ impl Reason {
             | Self::PopulationBelowMinimum
             | Self::RepetitionsShort
             | Self::PopulationMalformed
+            | Self::PopulationOutsideSet
+            | Self::PopulationPartial
             | Self::IntervalMalformed
             | Self::IntervalLevelShort
             | Self::RerunUntilPass

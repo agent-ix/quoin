@@ -102,6 +102,13 @@ pub enum MeasurementErrorCode {
     /// or a stated `population.examined` under a plan with a minimum is not a
     /// non-negative whole number (PLAT-960).
     PopulationMalformed,
+    /// A measured observation lists `population.examined_ids` or
+    /// `population.matched_ids` containing an id outside the population its
+    /// plan declares in `statistical_design.population_set` (PLAT-110).
+    PopulationOutsideSet,
+    /// A measured observation did not examine every id of the population its
+    /// plan declares in `statistical_design.population_set` (PLAT-110).
+    PopulationPartial,
     /// A stated observation `interval` does not deserialize as
     /// engineering-assurance's `Interval`, has a `value` outside its bounds,
     /// or is on a `not_computed` observation (EA-26, FR-044-AC-10).
@@ -134,7 +141,7 @@ pub enum MeasurementErrorCode {
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 33] = [
+    pub const ALL: [Self; 35] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -160,6 +167,8 @@ impl MeasurementErrorCode {
         Self::PopulationUnstated,
         Self::RepetitionsShort,
         Self::PopulationMalformed,
+        Self::PopulationOutsideSet,
+        Self::PopulationPartial,
         Self::IntervalMalformed,
         Self::IntervalUnstated,
         Self::IntervalLevelShort,
@@ -199,6 +208,8 @@ impl MeasurementErrorCode {
             Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
             Self::RepetitionsShort => "QM-REPETITIONS-SHORT",
             Self::PopulationMalformed => "QM-POPULATION-MALFORMED",
+            Self::PopulationOutsideSet => "QM-POPULATION-OUTSIDE-SET",
+            Self::PopulationPartial => "QM-POPULATION-PARTIAL",
             Self::IntervalMalformed => "QM-INTERVAL-MALFORMED",
             Self::IntervalUnstated => "QM-INTERVAL-UNSTATED",
             Self::IntervalLevelShort => "QM-INTERVAL-LEVEL-SHORT",

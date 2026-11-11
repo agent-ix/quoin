@@ -227,6 +227,7 @@ index; the files are authoritative.
 - [FR-124](./functional/FR-124-inspect-installed-semantic-modules.md) — `quoin module inspect` reports each installed module's semantic contract and import locks.
 - [FR-130](./functional/FR-130-protocol-scenario-evidence-intake.md) — `evidence.record_scenario` files a typed Quire Protocol scenario-evidence record or refuses it by kind.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
+- [FR-131](./functional/FR-131-percentage-metrics-over-enumerated-population.md) — a percentage metric is taken over a plan-enumerated population its observations must state exactly.
 - [FR-132](./functional/FR-132-paired-run-metrics.md) — a metric that states two runs agree is computed from a paired comparison of two collections under the plan's `paired_run` relation, inconclusive below `minimum_pairs`.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)

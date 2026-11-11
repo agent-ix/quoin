@@ -292,17 +292,27 @@ pub fn measurement_collection(
     }
 }
 
+/// The most findings one refusal spells out; the rest are counted. Each
+/// observation can add findings, so without a ceiling the refusal grows with
+/// the producer's input.
+const MAX_FINDINGS: usize = 100;
+
 /// One refusal carrying every accumulated finding, under the code chosen as
 /// [`measurement_collection`]'s `# Errors` states: the shared code of the
 /// typed findings when every finding is typed and they agree, and
 /// [`MeasurementErrorCode::CollectionInvalid`] otherwise.
-fn intake_refusal(findings: Vec<String>, typed: &[MeasurementErrorCode]) -> MeasurementError {
+fn intake_refusal(mut findings: Vec<String>, typed: &[MeasurementErrorCode]) -> MeasurementError {
     let code = match typed.first() {
         Some(first) if typed.len() == findings.len() && typed.iter().all(|code| code == first) => {
             *first
         }
         _ => CODE,
     };
+    if findings.len() > MAX_FINDINGS {
+        let more = findings.len() - MAX_FINDINGS;
+        findings.truncate(MAX_FINDINGS);
+        findings.push(format!("... and {more} more findings"));
+    }
     MeasurementError::with_findings(
         code,
         "measurement collection failed intake validation",
