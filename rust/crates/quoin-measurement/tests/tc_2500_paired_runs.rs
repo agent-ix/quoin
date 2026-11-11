@@ -18,6 +18,7 @@ use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::types::collection::MeasurementCollection;
 use quoin_measurement::types::ids::NonEmptyText;
+use quoin_measurement::types::observation::MeasurementState;
 use quoin_measurement::types::plan::MeasurementPlan;
 use quoin_measurement::{PairedRunOutcome, compare_paired_runs, validate};
 use serde_json::{Value, json};
@@ -127,32 +128,24 @@ fn tc_2501_within_delta_is_a_symmetric_inclusive_band() {
     );
 }
 
-/// `not_worse` reads the plan's objective direction.
+/// `not_worse` reads the plan's objective direction and the order of the runs.
 #[trace("FR-132-AC-3", "TC-2502")]
 #[test]
 fn tc_2502_not_worse_follows_the_objective_direction() {
     let paired = "paired_run:\n  relation: not_worse\n  minimum_pairs: 1\n";
     let first = run("a", &[("r1", 5.0), ("r2", 5.0)]);
-    let second = run("b", &[("r1", 4.0), ("r2", 6.0)]);
-
-    let lower = plans(paired, "objective:\n  direction: lower\n");
-    let observed = compare_paired_runs(&first, &second, &lower).expect("compares");
-    assert_eq!(
-        observed[0].outcome,
-        PairedRunOutcome::Observed { differing: 1 }
-    );
-
-    let higher = plans(paired, "objective:\n  direction: higher\n");
-    let observed = compare_paired_runs(&first, &second, &higher).expect("compares");
-    assert_eq!(
-        observed[0].outcome,
-        PairedRunOutcome::Observed { differing: 1 }
-    );
-    let reversed = compare_paired_runs(&second, &first, &higher).expect("compares");
-    assert_eq!(
-        reversed[0].outcome,
-        PairedRunOutcome::Observed { differing: 1 }
-    );
+    let second = run("b", &[("r1", 4.0), ("r2", 4.0)]);
+    let differing = |first, second, direction: &str| {
+        let plans = plans(paired, &format!("objective:\n  direction: {direction}\n"));
+        compare_paired_runs(first, second, &plans).expect("compares")[0]
+            .outcome
+            .clone()
+    };
+    let observed = |differing| PairedRunOutcome::Observed { differing };
+    assert_eq!(differing(&first, &second, "lower"), observed(0));
+    assert_eq!(differing(&first, &second, "higher"), observed(2));
+    assert_eq!(differing(&second, &first, "higher"), observed(0));
+    assert_eq!(differing(&second, &first, "lower"), observed(2));
 }
 
 /// Too few comparisons is inconclusive and carries no count, never zero variance.
@@ -165,12 +158,64 @@ fn tc_2503_fewer_than_the_minimum_is_inconclusive_not_zero() {
     assert_eq!(observed[0].outcome, PairedRunOutcome::Inconclusive);
     assert_eq!(observed[0].comparisons, 1);
     assert!(observed[0].reasons[0].contains("inconclusive"));
+}
 
-    // A slice present in only one run is not_computed, so it is not a comparison.
-    let half = run("b", &[("r1", 3.0), ("r2", 4.0)]);
-    let observed = compare_paired_runs(&one, &half, &plans).expect("compares");
+/// A slice only one run states is a violation of every relation, even when
+/// enough shared slices remain to meet the minimum.
+#[trace("FR-132-AC-4", "TC-2507")]
+#[test]
+fn tc_2507_a_slice_in_one_run_only_counts_as_differing() {
+    let first = run("a", &[("r1", 3.0), ("r2", 4.0), ("r3", 5.0)]);
+    let shorter = run("b", &[("r1", 3.0), ("r2", 4.0)]);
+    let relations = [
+        EQUAL_2,
+        "paired_run:\n  relation: within_delta\n  minimum_pairs: 2\n  delta: 1\n",
+        "paired_run:\n  relation: not_worse\n  minimum_pairs: 2\n",
+    ];
+    for relation in relations {
+        let plans = plans(relation, "objective:\n  direction: lower\n");
+        for (left, right) in [(&first, &shorter), (&shorter, &first)] {
+            let observed = compare_paired_runs(left, right, &plans).expect("compares");
+            assert_eq!(
+                observed[0].outcome,
+                PairedRunOutcome::Observed { differing: 1 },
+                "{relation}"
+            );
+            assert_eq!(observed[0].comparisons, 2);
+        }
+    }
+}
+
+/// A slice a run states without a value is neither agreement nor
+/// disagreement: the pair is inconclusive, never clean.
+#[trace("FR-132-AC-4", "TC-2508")]
+#[test]
+fn tc_2508_a_slice_without_a_value_makes_the_pair_inconclusive() {
+    let plans = plans(EQUAL_2, "");
+    let first = run("a", &[("r1", 3.0), ("r2", 4.0), ("r3", 5.0)]);
+    let mut second = run("b", &[("r1", 3.0), ("r2", 4.0), ("r3", 5.0)]);
+    second.observations[2].state = MeasurementState::NotComputed;
+    second.observations[2].value = None;
+    let observed = compare_paired_runs(&first, &second, &plans).expect("compares");
     assert_eq!(observed[0].outcome, PairedRunOutcome::Inconclusive);
-    assert_eq!(observed[0].comparisons, 1);
+    assert_eq!(observed[0].comparisons, 2);
+}
+
+/// The minimum defaults to 1, so a pair that compared nothing is never clean.
+#[trace("FR-132-AC-7", "TC-2509")]
+#[test]
+fn tc_2509_minimum_pairs_defaults_to_one() {
+    let plans = plans("paired_run:\n  relation: equal\n", "");
+    let first = run("a", &[("r1", 3.0)]);
+    let other = run("b", &[("r2", 3.0)]);
+    let observed = compare_paired_runs(&first, &other, &plans).expect("compares");
+    assert_eq!(observed[0].minimum_pairs, 1);
+    assert_eq!(observed[0].outcome, PairedRunOutcome::Inconclusive);
+    let observed = compare_paired_runs(&first, &first, &plans).expect("compares");
+    assert_eq!(
+        observed[0].outcome,
+        PairedRunOutcome::Observed { differing: 0 }
+    );
 }
 
 /// A blocked comparison makes the whole pair incomparable, with no count.
@@ -210,6 +255,37 @@ fn tc_2504_a_blocked_slice_makes_the_pair_incomparable() {
             .iter()
             .any(|r| r.starts_with("definition_changed"))
     );
+
+    let mut moved_apparatus = run("d", &[("r1", 3.0), ("r2", 4.0)]);
+    if let Some(stack) = moved_apparatus.verification_stack.as_mut() {
+        stack.protected_apparatus.insert(
+            "MP-001".to_owned(),
+            ["harness/answers.json".to_owned()].into(),
+        );
+    }
+    let observed = compare_paired_runs(&first, &moved_apparatus, &plans).expect("compares");
+    assert_eq!(observed[0].outcome, PairedRunOutcome::Incomparable);
+    assert!(
+        observed[0]
+            .reasons
+            .iter()
+            .any(|r| r.starts_with("apparatus_changed"))
+    );
+
+    let mut incomplete = run("e", &[("r1", 3.0), ("r2", 4.0)]);
+    for observation in &mut incomplete.observations {
+        if let Some(population) = observation.population.as_mut() {
+            population.complete = Some(false);
+        }
+    }
+    let observed = compare_paired_runs(&first, &incomplete, &plans).expect("compares");
+    assert_eq!(observed[0].outcome, PairedRunOutcome::Incomparable);
+    assert!(
+        observed[0]
+            .reasons
+            .iter()
+            .any(|r| r.starts_with("incomplete_population"))
+    );
 }
 
 /// A plan without `paired_run` yields nothing.
@@ -232,7 +308,11 @@ fn tc_2506_a_malformed_paired_run_refuses_the_plan() {
     let lower = "objective:\n  direction: lower\n";
     for (paired_run, objective) in [
         ("paired_run: equal\n", ""),
-        ("paired_run:\n  relation: equal\n", ""),
+        ("paired_run:\n  relation: equal\n  extra: 1\n", ""),
+        (
+            "paired_run:\n  relation: within_delta\n  minimum_pairs: 1\n  delta: 0\n",
+            "",
+        ),
         ("paired_run:\n  relation: equal\n  minimum_pairs: 0\n", ""),
         ("paired_run:\n  relation: equal\n  minimum_pairs: 1.5\n", ""),
         (

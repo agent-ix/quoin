@@ -43,7 +43,7 @@ pub(super) fn cross_profile_comparison_from(
 /// Read the optional `paired_run` block, `None` when absent.
 ///
 /// `relation` is one of `equal`, `within_delta`, `not_worse`; `minimum_pairs`
-/// is a whole number of at least 1; `delta` is a finite non-negative number
+/// is a whole number of at least 1, 1 when absent; `delta` is a finite number above 0
 /// and is required exactly when the relation is `within_delta`. `not_worse`
 /// needs an `objective` whose direction can rank two values.
 ///
@@ -64,25 +64,29 @@ pub(super) fn paired_run_from(
     let Some(block) = block.as_object() else {
         return Err(refuse(format!("must be an object; found {block}")));
     };
-    let minimum_pairs = block
-        .get("minimum_pairs")
-        .and_then(serde_json::Value::as_u64)
-        .and_then(|count| u32::try_from(count).ok())
-        .and_then(NonZeroU32::new)
-        .ok_or_else(|| {
-            refuse("minimum_pairs must be a whole number from 1 to 4294967295".to_owned())
-        })?;
+    if let Some(unknown) = block
+        .keys()
+        .find(|key| !["relation", "minimum_pairs", "delta"].contains(&key.as_str()))
+    {
+        return Err(refuse(format!("member `{unknown}` is not defined")));
+    }
+    let minimum_pairs = match block.get("minimum_pairs") {
+        None => NonZeroU32::MIN,
+        Some(stated) => stated
+            .as_u64()
+            .and_then(|count| u32::try_from(count).ok())
+            .and_then(NonZeroU32::new)
+            .ok_or_else(|| {
+                refuse("minimum_pairs must be a whole number from 1 to 4294967295".to_owned())
+            })?,
+    };
     let delta = match block.get("delta") {
         None => None,
         Some(stated) => Some(
             stated
                 .as_f64()
-                .filter(|delta| delta.is_finite() && *delta >= 0.0)
-                .ok_or_else(|| {
-                    refuse(format!(
-                        "delta must be a non-negative number; found {stated}"
-                    ))
-                })?,
+                .filter(|delta| delta.is_finite() && *delta > 0.0)
+                .ok_or_else(|| refuse(format!("delta must be a number above 0; found {stated}")))?,
         ),
     };
     let relation = match block.get("relation").and_then(serde_json::Value::as_str) {

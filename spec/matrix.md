@@ -236,7 +236,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
 | FR-130 | FR-130-AC-1, FR-130-AC-2, FR-130-AC-3, FR-130-AC-4, FR-130-AC-5, FR-130-AC-6, FR-130-AC-7, FR-130-AC-8, FR-130-AC-9, FR-130-AC-10, FR-130-AC-11, FR-130-AC-12 | TC-2200, TC-2201, TC-2202, TC-2203, TC-2204, TC-2205, TC-2206, TC-2207, TC-2208, TC-2209, TC-2210, TC-2211 | ✅ Covered |
 | FR-125 | FR-125-AC-1, FR-125-AC-2, FR-125-AC-3, FR-125-AC-4, FR-125-AC-5, FR-125-AC-6, FR-125-AC-7 | TC-2150, TC-2151, TC-2152, TC-2153, TC-2154, TC-2155, TC-2156 | ✅ Covered |
-| FR-132 | FR-132-AC-1, FR-132-AC-2, FR-132-AC-3, FR-132-AC-4, FR-132-AC-5, FR-132-AC-6, FR-132-AC-7 | TC-2500, TC-2501, TC-2502, TC-2503, TC-2504, TC-2505, TC-2506 | ✅ Covered |
+| FR-132 | FR-132-AC-1, FR-132-AC-2, FR-132-AC-3, FR-132-AC-4, FR-132-AC-5, FR-132-AC-6, FR-132-AC-7 | TC-2500, TC-2501, TC-2502, TC-2503, TC-2504, TC-2505, TC-2506, TC-2507, TC-2508, TC-2509 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -1400,6 +1400,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2504 | A blocked comparison makes the pair incomparable with no count, naming each blocking reason | Unit | P0 | FR-132-AC-5 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2504_a_blocked_slice_makes_the_pair_incomparable` |
 | TC-2505 | A plan stating no `paired_run` yields no paired-run observation | Unit | P0 | FR-132-AC-6 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2505_a_plan_without_paired_run_yields_no_observation` |
 | TC-2506 | A malformed or inconsistent `paired_run` refuses the plan load as `QM-PLAN-INVALID` | Unit | P0 | FR-132-AC-7 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2506_a_malformed_paired_run_refuses_the_plan` |
+| TC-2507 | A slice only one run states counts as a violation of every relation even when the minimum is met | Unit | P0 | FR-132-AC-4 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2507_a_slice_in_one_run_only_counts_as_differing` |
+| TC-2508 | A slice a run states without a value makes the pair inconclusive, never clean | Unit | P0 | FR-132-AC-4 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2508_a_slice_without_a_value_makes_the_pair_inconclusive` |
+| TC-2509 | A plan stating no `minimum_pairs` loads and requires 1 | Unit | P0 | FR-132-AC-7 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2509_minimum_pairs_defaults_to_one` |
 | TC-2143 | A goal decomposed into sub-claims has a strategy node naming the edge verbs in markdown and mermaid, verb groups stay unambiguous, and a child declaring two verbs toward one parent appears once | Unit | P0 | FR-040-AC-16 | ✅ Backed — `quoin-assurance` `tests/case_rendering.rs` :: `tc_363_001_a_decomposition_renders_a_strategy_naming_its_edge_verbs` and `tc_363_003_a_child_with_two_verbs_toward_one_parent_appears_once_under_both` |
 | TC-2144 | A bound leaf lists its suites, newest run or scan and the auditor's bound/stale/suspect/undischarged verdict in markdown and JSON, by the matrix precedence, and a suite with no run says so | Unit | P0 | FR-040-AC-17 | ✅ Backed — `quoin-assurance` `tests/case_rendering.rs` :: `tc_363_002_a_bound_leaf_lists_suites_newest_run_and_the_auditors_verdict` and `tc_363_005_verdicts_follow_the_matrix_precedence_and_missing_runs_are_visible` |
 | TC-2145 | A leaf the audit does not list healthy is open with no finding, showing the unevaluated reason or that no verdict was reached | Unit | P0 | FR-040-AC-18 | ✅ Backed — `quoin-assurance` `tests/case_rendering.rs` :: `tc_363_004_a_leaf_the_audit_does_not_list_healthy_is_open_not_bound` |

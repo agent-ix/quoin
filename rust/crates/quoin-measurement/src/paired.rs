@@ -16,6 +16,8 @@
 //! that violate the relation; the metric's target is 0. A pair holding fewer
 //! comparable slices than the plan's `minimum_pairs` is `Inconclusive` and
 //! carries no count: zero comparisons must never read as zero variance.
+//! A slice stated by one run only counts as a violation of every relation; a
+//! slice either run states without a value makes the pair `Inconclusive`.
 
 use quoin_store::StoreError;
 
@@ -23,6 +25,7 @@ use crate::compare::compare_measurement_collections;
 use crate::report::verdict::badness;
 use crate::types::collection::MeasurementCollection;
 use crate::types::comparison::{ComparisonStatus, MeasurementComparison};
+use crate::types::observation::{MeasurementObservation, MeasurementState};
 use crate::types::plan::{MeasurementPlan, PairedRelation};
 
 /// What a paired comparison established.
@@ -82,6 +85,7 @@ pub fn compare_paired_runs(
                 paired.relation,
                 paired.minimum_pairs.get(),
                 &slices,
+                (first, second),
             ))
         })
         .collect())
@@ -92,6 +96,7 @@ fn reduce(
     relation: PairedRelation,
     minimum_pairs: u32,
     slices: &[&MeasurementComparison],
+    runs: (&MeasurementCollection, &MeasurementCollection),
 ) -> PairedRunObservation {
     let comparable: Vec<&&MeasurementComparison> = slices
         .iter()
@@ -104,11 +109,30 @@ fn reduce(
         .flat_map(|row| row.reasons.iter().filter(|reason| reason.blocking))
         .map(|reason| format!("{}: {}", reason.code.as_str(), reason.message))
         .collect();
+    // A slice stated by one run only is the disagreement this metric exists to
+    // catch; a slice a run states but did not compute is neither agreement nor
+    // disagreement, so the pair cannot be called clean.
+    let mut one_sided = 0_u64;
+    let mut uncomputed = 0_u64;
+    for row in slices
+        .iter()
+        .filter(|row| row.status == ComparisonStatus::NotComputed)
+    {
+        let stated = (stated_in(runs.0, row), stated_in(runs.1, row));
+        match stated {
+            (Some(a), Some(b))
+                if a.state == MeasurementState::Measured
+                    && b.state == MeasurementState::Measured => {}
+            (Some(_), Some(_)) => uncomputed += 1,
+            _ => one_sided += 1,
+        }
+    }
     let outcome = if !reasons.is_empty() {
         PairedRunOutcome::Incomparable
-    } else if comparisons < u64::from(minimum_pairs) {
+    } else if comparisons < u64::from(minimum_pairs) || uncomputed > 0 {
         reasons.push(format!(
-            "inconclusive: {comparisons} comparable slice(s) of {}, {minimum_pairs} required",
+            "inconclusive: {comparisons} comparable slice(s) of {}, {minimum_pairs} required, \
+             {uncomputed} slice(s) not computed",
             plan.metric
         ));
         PairedRunOutcome::Inconclusive
@@ -118,7 +142,9 @@ fn reduce(
             .filter(|row| violates(plan, relation, row))
             .count();
         PairedRunOutcome::Observed {
-            differing: u64::try_from(differing).unwrap_or(u64::MAX),
+            differing: u64::try_from(differing)
+                .unwrap_or(u64::MAX)
+                .saturating_add(one_sided),
         }
     };
     PairedRunObservation {
@@ -146,4 +172,15 @@ fn violates(plan: &MeasurementPlan, relation: PairedRelation, row: &MeasurementC
             .and_then(|objective| Some((badness(objective, before)?, badness(objective, after)?)))
             .is_none_or(|(was, now)| now > was),
     }
+}
+
+/// The observation `collection` states for `row`'s slice, if any.
+fn stated_in<'a>(
+    collection: &'a MeasurementCollection,
+    row: &MeasurementComparison,
+) -> Option<&'a MeasurementObservation> {
+    collection.observations.iter().find(|observation| {
+        observation.metric.as_str() == row.metric
+            && observation.dimensions.entries() == &row.dimensions
+    })
 }
