@@ -86,6 +86,11 @@ const OPS_SOURCES: &[(&str, &str, &str)] = &[
     ("core", "core.rs", include_str!("../ops/core.rs")),
     (
         "evidence",
+        "evidence/discharge.rs",
+        include_str!("../ops/evidence/discharge.rs"),
+    ),
+    (
+        "evidence",
         "evidence/documents.rs",
         include_str!("../ops/evidence/documents.rs"),
     ),
@@ -639,6 +644,10 @@ fn census_of_the_evidence_domain() -> Vec<(&'static str, usize)> {
         (
             "ops::evidence::MAX_AUDIT_INPUTS_BYTES",
             crate::ops::evidence::MAX_AUDIT_INPUTS_BYTES,
+        ),
+        (
+            "ops::evidence::MAX_DISCHARGE_BYTES",
+            crate::ops::evidence::MAX_DISCHARGE_BYTES,
         ),
         (
             "ops::evidence::MAX_GC_BYTES",

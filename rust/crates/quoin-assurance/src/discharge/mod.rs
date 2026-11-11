@@ -69,6 +69,7 @@
 //! each other, and a predicate cannot order anything.
 
 mod build;
+mod completeness;
 #[cfg(test)]
 #[allow(
     clippy::expect_used,
@@ -80,12 +81,23 @@ mod fixtures;
 mod parse;
 mod render;
 mod report;
+mod store;
 
 pub use build::build_discharge_report;
+pub use completeness::{
+    CompletenessSchemaVersion, DispositionCounts, InwardCompleteness, OpenClause,
+    render_inward_completeness,
+};
 pub use render::render_discharge_report;
 pub use report::{
     BuildDischargeRequest, ClauseDischarge, DirectDischargeFact, DischargeAttestation,
     DischargeBinding, DischargeError, DischargeFact, DischargeReport, DischargeSchemaVersion,
     DischargeState, DispositionDecision, DispositionFact, FactKind, UnusedDischargeFact,
     UnusedFactReason,
+};
+pub use store::{
+    DISCHARGE_DIR, DischargeStoreError, MAX_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS,
+    RecordDischargeRequest, RecordedFact, StoreRefusal, StoredDischargeFact,
+    StoredFactSchemaVersion, discharge_report_from_store, inward_completeness_from_store,
+    read_discharge_facts, record_discharge_facts,
 };

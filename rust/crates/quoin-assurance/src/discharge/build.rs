@@ -54,6 +54,18 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
         facts.insert(fact.clause_id(), fact);
     }
 
+    // FR-046-AC-2: every binding clause appears exactly once, so a binding
+    // report naming one clause twice is refused rather than counted twice.
+    let mut seen: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+    for clause in &request.binding.clauses {
+        if !seen.insert(clause.clause_id.as_str()) {
+            return reject(format!(
+                "duplicate clause {} in the binding report",
+                clause.clause_id
+            ));
+        }
+    }
+
     let mut direct = Vec::new();
     let mut dispositions = Vec::new();
     let mut open = Vec::new();
