@@ -50,6 +50,13 @@ pub(super) fn map_error(error: &EvidenceError, op: &'static str) -> CoreError {
     let envelope = CoreError::new(mapped.unwrap_or(CoreErrorCode::Io), error.to_string())
         .with_context("op", op)
         .with_context("evidence_code", code.as_str());
+    let envelope = match error {
+        // The kind a producer branches on, beside the code that groups it.
+        EvidenceError::ScenarioRefused { kind, .. } => {
+            envelope.with_context("refusal", kind.as_str())
+        }
+        _ => envelope,
+    };
     match mapped {
         Some(_) => envelope,
         // A code this build has no opinion on. It exits Internal (4), and it
@@ -67,7 +74,8 @@ const fn core_code(code: EvidenceErrorCode) -> Option<CoreErrorCode> {
         | EvidenceErrorCode::InvalidIdentity
         | EvidenceErrorCode::InvalidRecord
         | EvidenceErrorCode::PolicyUnknownObligation
-        | EvidenceErrorCode::Canonicalization => CoreErrorCode::BadRequest,
+        | EvidenceErrorCode::Canonicalization
+        | EvidenceErrorCode::ScenarioRefused => CoreErrorCode::BadRequest,
 
         EvidenceErrorCode::StoreRead
         | EvidenceErrorCode::StoreIo
@@ -89,6 +97,7 @@ const fn core_code(code: EvidenceErrorCode) -> Option<CoreErrorCode> {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use quoin_evidence::{EvidenceError, EvidenceErrorCode};
 
     use super::{CoreErrorCode, core_code, map_error};
@@ -104,7 +113,7 @@ mod tests {
     fn the_error_mapping_covers_every_evidence_code() {
         assert_eq!(
             EvidenceErrorCode::ALL.len(),
-            9,
+            10,
             "quoin-evidence gained or lost an error code; map it in map_error deliberately"
         );
 
@@ -115,6 +124,7 @@ mod tests {
             EvidenceErrorCode::InvalidRecord,
             EvidenceErrorCode::PolicyUnknownObligation,
             EvidenceErrorCode::Canonicalization,
+            EvidenceErrorCode::ScenarioRefused,
         ];
         let refused = [
             EvidenceErrorCode::StoreRead,
@@ -146,5 +156,22 @@ mod tests {
         assert_eq!(envelope.context["evidence_code"], "QE-E002");
         assert_eq!(envelope.code, CoreErrorCode::BadRequest);
         assert_eq!(envelope.outcome().code(), 3);
+    }
+
+    /// The refusal kind rides the envelope as its own context key, so a
+    /// producer branches on it rather than on the message text.
+    #[test]
+    #[trace("FR-130-AC-9", "TC-2208")]
+    fn a_scenario_refusal_carries_its_kind_as_context() {
+        let envelope = map_error(
+            &EvidenceError::ScenarioRefused {
+                kind: quoin_evidence::scenario::ScenarioRefusal::CrossWired,
+                detail: "x".to_owned(),
+            },
+            "evidence.record_scenario",
+        );
+        assert_eq!(envelope.context["refusal"], "cross-wired");
+        assert_eq!(envelope.context["evidence_code"], "QE-E010");
+        assert_eq!(envelope.code, CoreErrorCode::BadRequest);
     }
 }

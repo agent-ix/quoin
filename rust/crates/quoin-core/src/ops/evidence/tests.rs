@@ -310,6 +310,10 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
             "evidence.record_operational",
             record_operational(&json!({"repo": "/r", "document": {}}), &none),
         ),
+        (
+            "evidence.record_scenario",
+            record_scenario(&json!({"repo": "/r", "document": {}}), &none),
+        ),
     ];
     for (op, outcome) in cases {
         let error = outcome.unwrap_err();
@@ -354,6 +358,14 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             MAX_AUDIT_INPUTS_BYTES,
             audit_inputs(
                 &json!({"repo": filler(MAX_AUDIT_INPUTS_BYTES)}),
+                &capabilities,
+            ),
+        ),
+        (
+            "evidence.record_scenario",
+            MAX_SCENARIO_RECORD_BYTES,
+            record_scenario(
+                &json!({"repo": filler(MAX_SCENARIO_RECORD_BYTES)}),
                 &capabilities,
             ),
         ),

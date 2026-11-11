@@ -593,3 +593,55 @@ fn tc_458_160_a_malformed_record_is_skipped_and_named_through_the_binary() {
     assert_eq!(payload["runs"].as_array().unwrap().len(), 1, "{payload}");
     assert_eq!(payload["runs"][0]["suite"], "readable");
 }
+
+fn scenario_document() -> Value {
+    json!({
+        "contract": "quoin.protocol-scenario-intake/v1",
+        "integration": "IT-002",
+        "scenario": "IT-002-SC-07a",
+        "resolution": {"kind": "full", "entries": [
+            {"owner": "qobs", "contractVersion": "v1", "revision": "r1"}
+        ]},
+        "valueOwners": [
+            {"value": "obs-1", "owner": "qobs", "contractVersion": "v1", "revision": "r1"}
+        ],
+        "outcome": {"operation": "assessed", "claims": [{"kind": "row", "identity": "c1"}]},
+        "budget": [{"dimension": "node", "granted": 10, "consumed": 3}],
+        "traceBinding": {"criterion": "IT-002-SC-07a"},
+    })
+}
+
+/// The intake answers a versioned payload naming its owner and contract, files
+/// the record under `scenarios/`, and refuses a wrong contract with a typed
+/// refusal kind.
+#[trace("FR-130-AC-1", "FR-130-AC-3", "FR-130-AC-9", "TC-2208")]
+#[test]
+fn tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal() {
+    let dir = repo();
+    let payload = ok(&run(
+        "evidence.record_scenario",
+        &json!({"repo": dir.path(), "document": scenario_document()}),
+    ));
+    assert_eq!(payload["contract"], "quoin.protocol-scenario-intake/v1");
+    assert_eq!(payload["owner"], "quoin");
+    assert_eq!(payload["created"], true);
+    reported_store_path(
+        dir.path(),
+        payload["path"].as_str().unwrap(),
+        "scenarios/IT-002/it-002-sc-07a.json",
+    );
+
+    let mut wrong = scenario_document();
+    wrong["contract"] = json!("quoin.protocol-scenario-intake/v9");
+    let refused = run(
+        "evidence.record_scenario",
+        &json!({"repo": dir.path(), "document": wrong}),
+    );
+    assert_eq!(refused.status, 3);
+    assert!(
+        refused.stderr.contains("wrong-contract"),
+        "{}",
+        refused.stderr
+    );
+    assert!(refused.stderr.contains("QE-E010"), "{}", refused.stderr);
+}
