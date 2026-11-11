@@ -223,7 +223,8 @@ pub(crate) fn plan_from(
 
 /// Refuse a non-retired `gate` plan whose definition engineering-assurance's
 /// schema would refuse: it must state `ground_truth_kind` and a
-/// `statistical_design` with every member the schema requires.
+/// `statistical_design` with every member the schema requires, each of the
+/// type the schema gives it.
 fn validate_gate_definition(
     path: &str,
     value: &serde_json::Value,
@@ -256,9 +257,10 @@ fn validate_gate_definition(
         "uncertainty",
         "decision_rule",
     ] {
-        let stated = block.get(member).is_some_and(|stated| match stated {
-            serde_json::Value::String(text) => !text.is_empty(),
-            other => !other.is_null(),
+        let stated = block.get(member).is_some_and(|stated| match member {
+            "repetitions" => stated.as_u64().is_some_and(|count| count >= 1),
+            "decision_rule" => stated.is_object(),
+            _ => stated.as_str().is_some_and(|text| !text.is_empty()),
         });
         if !stated {
             return Err(missing(&format!("statistical_design.{member}")));

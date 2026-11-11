@@ -209,7 +209,7 @@ fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec
 }
 
 #[test]
-#[trace("TC-1810", "FR-110-AC-1", "FR-108-AC-4")]
+#[trace("TC-1810", "FR-110-AC-1")]
 fn tc_975_022_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
     let fixture = include_str!("fixtures/MP-001-evidence-gate.md");
     let frontmatter = fixture
@@ -278,7 +278,7 @@ fn tc_975_022_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
     assert_eq!(missing.reasons, [Reason::NoCollections]);
 }
 
-/// Trace: FR-108-AC-4, FR-110-AC-1
+#[trace("FR-108-AC-4", "FR-110-AC-1", "TC-1810")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_023_active_evidence_gate_uses_retained_conclusive_results() {
@@ -409,7 +409,7 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
     }
 }
 
-/// Trace: FR-110-AC-1
+#[trace("FR-110-AC-1", "TC-1810")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
@@ -448,7 +448,28 @@ fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
         let design: String = valid_design
             .lines()
             .filter(|line| !line.trim_start().starts_with(&format!("{member}:")))
-            .map(|line| format!("{line}\n"))
+            .flat_map(|line| [line, "\n"])
+            .collect();
+        cases.push((
+            format!("statistical_design.{member}"),
+            "ground_truth_kind: mechanical\n".to_owned(),
+            design,
+        ));
+    }
+    for (member, wrong) in [
+        ("population", "population: 5"),
+        ("sampling", "sampling: []"),
+        ("repetitions", "repetitions: many"),
+    ] {
+        let design: String = valid_design
+            .lines()
+            .map(|line| {
+                if line.trim_start().starts_with(&format!("{member}:")) {
+                    format!("  {wrong}\n")
+                } else {
+                    format!("{line}\n")
+                }
+            })
             .collect();
         cases.push((
             format!("statistical_design.{member}"),
@@ -459,7 +480,7 @@ fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
     let no_rule: String = valid_design
         .lines()
         .take(7)
-        .map(|line| format!("{line}\n"))
+        .flat_map(|line| [line, "\n"])
         .collect();
     cases.push((
         "statistical_design.decision_rule".to_owned(),
@@ -476,7 +497,7 @@ fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
     }
 }
 
-/// Trace: FR-110-AC-1
+#[trace("FR-110-AC-1", "TC-1810")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_025_a_gate_with_a_procedure_and_no_apparatus_is_refused() {
@@ -496,7 +517,7 @@ fn tc_975_025_a_gate_with_a_procedure_and_no_apparatus_is_refused() {
     assert!(error.to_string().contains("execution_procedure"), "{error}");
 }
 
-/// Trace: FR-110-AC-1
+#[trace("FR-110-AC-1", "TC-1810")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_026_a_retired_gate_without_negative_controls_loads() {
@@ -512,7 +533,7 @@ fn tc_975_026_a_retired_gate_without_negative_controls_loads() {
 /// MP-001's own `count` / `eq 0` rule decides retained evidence: no adverse
 /// outcome accepts, one rejects.
 ///
-/// Trace: FR-110-AC-1, FR-108-AC-4
+#[trace("FR-110-AC-1", "FR-108-AC-4", "TC-1810")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule() {
@@ -561,7 +582,7 @@ fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule(
 /// the checker decides by it: 3 of 5 clearing passes accepts, 2 of 5 rejects,
 /// and a population under the five passes is refused.
 ///
-/// Trace: FR-110-AC-1
+#[trace("FR-110-AC-1", "TC-1810")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_028_the_criterion_strength_gate_states_five_repetitions() {
@@ -569,7 +590,7 @@ fn tc_975_028_the_criterion_strength_gate_states_five_repetitions() {
     let source = MemoryMeasurement::new().with_document("spec/assurance/MP-228.md", document);
     let plans = load_measurement_plans(&source, PlanLoadOptions::default())
         .expect("the real MP-228 loads as a gate");
-    let design = plans[0].statistical_design.expect("MP-228 states a design");
+    let design = plans[0].statistical_design.clone().expect("MP-228 states a design");
     assert_eq!(design.repetitions.map(std::num::NonZeroU32::get), Some(5));
     assert_eq!(
         design.minimum_population.map(std::num::NonZeroU32::get),
