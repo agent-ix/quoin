@@ -322,10 +322,14 @@ pub struct RecordRequest {
     pub adapter: Option<String>,
     /// The producer document's text, as the caller read it.
     pub results: String,
-    /// Obligation ids a finding-shaped scan was run to check.
+    /// Obligation ids the recording was produced to check.
     ///
-    /// Ignored on the run path, where the obligations discharged are derived
-    /// from the trace ids the entries carry.
+    /// A finding-shaped scan binds them directly, since a clean scan carries no
+    /// finding to bind from. Of the run-shaped adapters only `sbom` takes it: an
+    /// inventory carries no trace ids, so each stated id an obligation states is
+    /// added to every entry as a trace id and binds through the same join. An
+    /// id no obligation states is reported `unmatched`. Any other run adapter
+    /// refuses it.
     #[serde(default)]
     pub discharges: Vec<String>,
     /// The obligations as quire derives them today.

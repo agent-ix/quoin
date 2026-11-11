@@ -144,6 +144,8 @@ impl From<MeasurementError> for InterventionIntakeError {
             | MeasurementErrorCode::PopulationUnstated
             | MeasurementErrorCode::RepetitionsShort
             | MeasurementErrorCode::PopulationMalformed
+            | MeasurementErrorCode::PopulationOutsideSet
+            | MeasurementErrorCode::PopulationPartial
             // Likewise raised only by `validate::measurement_collection`
             // (EA-26).
             | MeasurementErrorCode::IntervalMalformed

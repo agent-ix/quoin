@@ -17,6 +17,7 @@
 
 mod agent_eval;
 mod audit_script;
+mod cargo_deny;
 mod cargo_mutants;
 mod contract_conformance;
 mod differential_report;
@@ -28,6 +29,7 @@ mod sbom;
 
 pub use agent_eval::parse_agent_eval;
 pub use audit_script::parse_audit_script;
+pub use cargo_deny::parse_cargo_deny;
 pub use cargo_mutants::parse_cargo_mutants;
 pub use contract_conformance::{PROTOCOL, parse_contract_conformance};
 pub use differential_report::parse_differential_report;
