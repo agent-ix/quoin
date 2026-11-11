@@ -69,6 +69,7 @@ fn entry(symbol: &str, outcome: Outcome, traces: &[&str]) -> RunEntry {
         metric: None,
         trace_ids: Some(traces.iter().map(|id| (*id).to_owned()).collect()),
         config: None,
+        survivors: None,
     }
 }
 

@@ -164,11 +164,14 @@ impl FindingKind {
     pub const INSUFFICIENT_MUTATION_SCORE: &'static str = "insufficient-mutation-score";
     /// A mutation floor is demanded and nothing measured one.
     pub const UNMEASURED_MUTATION_SCORE: &'static str = "unmeasured-mutation-score";
+    /// A mutant the tests bound to the obligation did not kill, reported
+    /// beside a missed mutation floor.
+    pub const SURVIVING_MUTANT: &'static str = "surviving-mutant";
     /// Every test discharging the obligation injects what it verifies.
     pub const MOCKED_CONFIRMATION: &'static str = "mocked-confirmation";
 
-    /// All eleven, in the order `src/auditor/audit.ts:38-50` declares them.
-    pub const ALL: [&'static str; 11] = [
+    /// All twelve, in the order `src/auditor/audit.ts:38-50` declares them.
+    pub const ALL: [&'static str; 12] = [
         Self::STALE_EVIDENCE,
         Self::VACUOUS_EVIDENCE,
         Self::COMBINATORIAL_GAP,
@@ -179,6 +182,7 @@ impl FindingKind {
         Self::INSUFFICIENT_MULTIPLICITY,
         Self::INSUFFICIENT_MUTATION_SCORE,
         Self::UNMEASURED_MUTATION_SCORE,
+        Self::SURVIVING_MUTANT,
         Self::MOCKED_CONFIRMATION,
     ];
 }
