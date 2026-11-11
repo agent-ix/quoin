@@ -12,7 +12,7 @@ use std::path::Path;
 
 use quoin_assurance::{
     DischargeStoreError, RecordDischargeRequest, discharge_report_from_store,
-    record_discharge_facts,
+    inward_completeness_from_store, record_discharge_facts, render_inward_completeness,
 };
 use quoin_quire_types::ClauseBindingReport;
 use serde::{Deserialize, Serialize};
@@ -51,8 +51,6 @@ pub struct RecordDischargeOpRequest {
     pub binding: ClauseBindingReport,
     /// Unvalidated discharge facts.
     pub facts: Vec<serde_json::Value>,
-    /// The caller's instant for the recording.
-    pub recorded_at: String,
 }
 
 /// The result of an accepted `evidence.record_discharge`.
@@ -79,6 +77,11 @@ fn map_store_error(error: DischargeStoreError, op: &'static str) -> CoreError {
         DischargeStoreError::Discharge(error) => {
             CoreError::new(CoreErrorCode::BadRequest, error.to_string()).with_context("op", op)
         }
+        DischargeStoreError::Refused { kind, detail } => {
+            CoreError::new(CoreErrorCode::BadRequest, detail)
+                .with_context("op", op)
+                .with_context("refusal", kind.as_str())
+        }
         DischargeStoreError::Evidence(error) => map_error(&error, op),
     }
 }
@@ -103,7 +106,6 @@ pub fn record_discharge(
     let record = RecordDischargeRequest {
         binding: request.binding,
         facts: request.facts,
-        recorded_at: request.recorded_at,
     };
 
     let host = host(capabilities, op)?;
@@ -147,6 +149,48 @@ pub fn discharge_report(
         let report = discharge_report_from_store(&*source, &request.binding, &request.as_of)
             .map_err(|e| map_store_error(e, op))?;
         value(&report)
+    })?;
+    Ok(Response::ok(payload))
+}
+
+/// The result of an `evidence.inward_completeness`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct InwardCompletenessPayload {
+    /// The accounting of the binding population.
+    pub completeness: quoin_assurance::InwardCompleteness,
+    /// The same accounting as deterministic Markdown.
+    pub rendered: String,
+}
+
+/// Answer an `evidence.inward_completeness`: account for the binding
+/// population of a live binding report against the stored facts (FR-133).
+///
+/// The report is built inside the operation from the live binding report, so
+/// the populations add up by construction and the caller supplies no
+/// snapshot of the obligations.
+///
+/// # Errors
+///
+/// As [`discharge_report`].
+pub fn inward_completeness(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    let op = "evidence.inward_completeness";
+    bound(request, op, MAX_DISCHARGE_BYTES)?;
+    let request: DischargeReportRequest = parse(request, op)?;
+    check_scalar(op, "repo", &request.repo)?;
+
+    let host = host(capabilities, op)?;
+    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
+        let completeness =
+            inward_completeness_from_store(&*source, &request.binding, &request.as_of)
+                .map_err(|e| map_store_error(e, op))?;
+        value(&InwardCompletenessPayload {
+            rendered: render_inward_completeness(&completeness),
+            completeness,
+        })
     })?;
     Ok(Response::ok(payload))
 }

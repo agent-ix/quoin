@@ -319,7 +319,14 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
         (
             "evidence.record_discharge",
             record_discharge(
-                &json!({"repo": "/r", "binding": binding, "facts": [], "recordedAt": "2026-01-01T00:00:00Z"}),
+                &json!({"repo": "/r", "binding": binding, "facts": []}),
+                &none,
+            ),
+        ),
+        (
+            "evidence.inward_completeness",
+            inward_completeness(
+                &json!({"repo": "/r", "binding": binding, "asOf": "2026-01-01T00:00:00Z"}),
                 &none,
             ),
         ),
@@ -385,6 +392,11 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             "evidence.record_discharge",
             MAX_DISCHARGE_BYTES,
             record_discharge(&json!({"repo": filler(MAX_DISCHARGE_BYTES)}), &capabilities),
+        ),
+        (
+            "evidence.inward_completeness",
+            MAX_DISCHARGE_BYTES,
+            inward_completeness(&json!({"repo": filler(MAX_DISCHARGE_BYTES)}), &capabilities),
         ),
         (
             "evidence.discharge_report",

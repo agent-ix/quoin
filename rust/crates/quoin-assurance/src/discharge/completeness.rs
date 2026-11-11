@@ -85,8 +85,11 @@ pub struct InwardCompleteness {
 }
 
 /// Account for the binding population of a discharge report.
+///
+/// Private to the module's store path on purpose: the report is always built
+/// from the live binding report, so the populations add up by construction.
 #[must_use]
-pub fn build_inward_completeness(report: &DischargeReport) -> InwardCompleteness {
+pub(super) fn build_inward_completeness(report: &DischargeReport) -> InwardCompleteness {
     let mut dispositions = DispositionCounts::default();
     for entry in &report.binding.dispositions {
         if let Some(DischargeFact::Disposition(fact)) = &entry.fact {
@@ -247,6 +250,32 @@ mod tests {
         assert!(
             text.contains("- `SYN-001` — mandatory; no discharge fact"),
             "{text}"
+        );
+    }
+
+    #[trace("FR-133-AC-5", "TC-2604")]
+    #[test]
+    fn unused_facts_and_expired_facts_are_counted_and_named() {
+        let mut unused = disposition();
+        unused["clauseId"] = "SYN-005".into();
+        let mut expired = direct();
+        expired["attestation"]["expiresAt"] = "2026-08-10T00:00:00.000Z".into();
+        let mut request = request(vec![expired, unused]);
+        request.binding = wide_binding();
+        let completeness = build_inward_completeness(&build_discharge_report(&request).unwrap());
+        // The fact for the not-binding clause is outside binding, as an unused fact.
+        assert_eq!(completeness.unused_facts, 1);
+        // The expired attestation leaves its clause open with the reason visible.
+        assert_eq!(completeness.discharged, 0);
+        let expired_clause = completeness
+            .open
+            .iter()
+            .find(|c| c.clause_id == "SYN-001")
+            .unwrap();
+        assert!(expired_clause.reason.is_some());
+        assert_eq!(
+            completeness.discharged + completeness.dispositions.total() + completeness.open.len(),
+            completeness.binding
         );
     }
 }

@@ -79,8 +79,9 @@ pub use self::wire::{
 };
 
 pub use self::discharge::{
-    DischargeReportRequest, MAX_DISCHARGE_BYTES, RecordDischargeOpRequest, RecordDischargePayload,
-    RecordedDischargeFact, discharge_report, record_discharge,
+    DischargeReportRequest, InwardCompletenessPayload, MAX_DISCHARGE_BYTES,
+    RecordDischargeOpRequest, RecordDischargePayload, RecordedDischargeFact, discharge_report,
+    inward_completeness, record_discharge,
 };
 pub use self::documents::{parse_lineage, parse_policy, parse_results, store_facts};
 pub use self::records::{

@@ -86,7 +86,7 @@ mod store;
 pub use build::build_discharge_report;
 pub use completeness::{
     CompletenessSchemaVersion, DispositionCounts, InwardCompleteness, OpenClause,
-    build_inward_completeness, render_inward_completeness,
+    render_inward_completeness,
 };
 pub use render::render_discharge_report;
 pub use report::{
@@ -96,7 +96,8 @@ pub use report::{
     UnusedFactReason,
 };
 pub use store::{
-    DISCHARGE_DIR, DischargeStoreError, RecordDischargeRequest, RecordedFact, RecordingTool,
-    StoredDischargeFact, StoredFactSchemaVersion, discharge_report_from_store,
+    DISCHARGE_DIR, DischargeStoreError, MAX_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS,
+    RecordDischargeRequest, RecordedFact, StoreRefusal, StoredDischargeFact,
+    StoredFactSchemaVersion, discharge_report_from_store, inward_completeness_from_store,
     read_discharge_facts, record_discharge_facts,
 };

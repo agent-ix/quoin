@@ -69,8 +69,6 @@ fn tc_2606_recorded_facts_are_read_back_by_the_discharge_command() {
             binding,
             "--facts",
             facts,
-            "--recorded-at",
-            "2026-08-02T00:00:00Z",
         ],
     );
     assert!(recorded.status.success(), "{recorded:?}");
@@ -111,4 +109,32 @@ fn tc_2606_recorded_facts_are_read_back_by_the_discharge_command() {
     assert!(partition.status.success(), "{partition:?}");
     let json: serde_json::Value = serde_json::from_str(&text(&partition)).unwrap();
     assert_eq!(json["binding"]["direct"][0]["clauseId"], "C-1");
+}
+
+#[trace("FR-133-AC-5", "TC-2604")]
+#[test]
+fn tc_2604_a_doubled_binding_clause_is_refused_not_counted_twice() {
+    let dir = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
+    let mut binding: serde_json::Value = serde_json::from_str(BINDING).unwrap();
+    let first = binding["clauses"][0].clone();
+    binding["clauses"].as_array_mut().unwrap().push(first);
+    let path = dir.path().join("binding.json");
+    std::fs::write(&path, binding.to_string()).unwrap();
+    let output = quoin(
+        home.path(),
+        &[
+            "discharge",
+            "--binding",
+            path.to_str().unwrap(),
+            "--repo",
+            dir.path().to_str().unwrap(),
+            "--as-of",
+            "2026-08-15T00:00:00Z",
+            "--inward",
+        ],
+    );
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("duplicate clause C-1"), "{stderr}");
 }

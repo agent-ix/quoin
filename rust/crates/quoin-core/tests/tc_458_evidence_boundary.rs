@@ -686,7 +686,6 @@ fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_r
             "repo": dir.path(),
             "binding": discharge_binding(),
             "facts": [discharge_fact()],
-            "recordedAt": "2026-08-02T00:00:00Z",
         }),
     ));
     assert_eq!(recorded["recorded"][0]["clauseId"], "C-1");
@@ -707,7 +706,14 @@ fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_r
     assert_eq!(report["binding"]["direct"][0]["clauseId"], "C-1");
     assert_eq!(report["binding"]["open"][0]["clauseId"], "C-2");
 
-    let accounted = ok(&run("assurance.inward_completeness", &report));
+    let accounted = ok(&run(
+        "evidence.inward_completeness",
+        &json!({
+            "repo": dir.path(),
+            "binding": discharge_binding(),
+            "asOf": "2026-08-15T00:00:00Z",
+        }),
+    ));
     assert_eq!(accounted["completeness"]["binding"], 2);
     assert_eq!(accounted["completeness"]["discharged"], 1);
     assert_eq!(accounted["completeness"]["open"][0]["clauseId"], "C-2");
@@ -740,9 +746,51 @@ fn tc_2602_a_refused_fact_list_exits_bad_request_and_writes_nothing() {
             "repo": dir.path(),
             "binding": discharge_binding(),
             "facts": [discharge_fact(), discharge_fact()],
-            "recordedAt": "2026-08-02T00:00:00Z",
         }),
     );
     assert_eq!(refused.status, 3, "{}", refused.stderr);
     assert!(!store_path(dir.path(), "discharge").exists());
+}
+
+#[trace("FR-133-AC-5", "TC-2604")]
+#[test]
+fn tc_2604_a_binding_report_naming_a_clause_twice_is_refused_by_every_discharge_operation() {
+    let dir = repo();
+    let mut binding = discharge_binding();
+    let first = binding["clauses"][0].clone();
+    binding["clauses"].as_array_mut().unwrap().push(first);
+    for op in ["evidence.discharge_report", "evidence.inward_completeness"] {
+        let refused = run(
+            op,
+            &json!({"repo": dir.path(), "binding": binding, "asOf": "2026-08-15T00:00:00Z"}),
+        );
+        assert_eq!(refused.status, 3, "{op}: {}", refused.stderr);
+        assert!(
+            refused.stderr.contains("duplicate clause C-1"),
+            "{}",
+            refused.stderr
+        );
+    }
+}
+
+#[trace("FR-133-AC-3", "TC-2602")]
+#[test]
+fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_writes_nothing() {
+    let dir = repo();
+    let mut long = discharge_fact();
+    long["clauseId"] = json!("x".repeat(120));
+    let mut lower = discharge_fact();
+    lower["clauseId"] = json!("c-1");
+    for (facts, kind) in [
+        (vec![discharge_fact(), long], "invalid-identifier"),
+        (vec![discharge_fact(), lower], "case-collision"),
+    ] {
+        let refused = run(
+            "evidence.record_discharge",
+            &json!({"repo": dir.path(), "binding": discharge_binding(), "facts": facts}),
+        );
+        assert_eq!(refused.status, 3, "{}", refused.stderr);
+        assert!(refused.stderr.contains(kind), "{}", refused.stderr);
+        assert!(!store_path(dir.path(), "discharge").exists());
+    }
 }
