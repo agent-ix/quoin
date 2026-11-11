@@ -8,6 +8,16 @@ stage: gate
 metric: guidance.repair_success
 definition_version: guidance.repair-success-v2
 ground_truth_kind: mechanical
+statistical_design:
+  population: selected reviewed records whose structured next move is remedy
+  sampling: the deterministic partition sampling used for guidance correctness
+  repetitions: 1
+  estimator: proportion
+  error_model: a banked failure or control fixture misreports its family; corpus verification drifts from the retained stack
+  uncertainty: none estimated; every reviewed remedy record is in the denominator and exactly 100% is required
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - bench/guidance-evaluator-contract-v1.json
   - bench/guidance-independent-review-v1.json

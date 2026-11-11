@@ -8,6 +8,16 @@ stage: gate
 metric: guidance.correctness
 definition_version: guidance.correctness-v2
 ground_truth_kind: agent-labelled
+statistical_design:
+  population: records in partitions of five or fewer, otherwise a deterministic five-record sample plus every distinct action template
+  sampling: deterministic and consumer-owned; no runtime sample
+  repetitions: 1
+  estimator: proportion
+  error_model: an independent reviewer misjudges a recommendation; a producer drops a record with a missing field
+  uncertainty: none estimated; the population is enumerated, and the rule requires every selected record to pass
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - bench/guidance-evaluator-contract-v1.json
   - bench/guidance-independent-review-v1.json
