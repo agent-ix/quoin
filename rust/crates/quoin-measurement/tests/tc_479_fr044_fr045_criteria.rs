@@ -449,25 +449,34 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
     }
 }
 
-/// A new collection must carry a release build profile.
+/// A new collection must state a build profile, and the stated profile is
+/// kept as stated rather than forced to `release`.
 ///
-/// `tests/measurement.test.ts:131`, which carried no criterion tag. **No
-/// FR-044 criterion's text names `verificationStack`**: AC-1's member census
-/// was written for schema v1 and never grew the attestation. It is tagged
-/// AC-1 here because AC-1 is the criterion that decides what a collection must
-/// carry for the write to be admitted, which is the decision this refusal
-/// makes. The criterion text is the gap, and closing it is a spec change.
-///
-/// Provenance: quoin#479, PLAT-930
-#[trace("FR-044-AC-1", "TC-1003")]
+/// Provenance: quoin#479, PLAT-930, PLAT-164
+#[trace("FR-044-AC-14", "TC-2147")]
 #[test]
-fn tc_479_003_a_new_collection_requires_a_release_build() {
+fn tc_479_003_a_new_collection_states_its_true_build_profile() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
-    // A build profile other than release is a new collection's own refusal,
-    // and so is its absence — `tests/measurement.test.ts:141-152`.
-    for profile in [Some("debug"), None] {
+    for profile in ["debug", "release", "undeclared"] {
+        let mut candidate = new_collection_json();
+        candidate["verificationStack"]["buildProfile"] = json!(profile);
+        let admitted = validate::measurement_collection(
+            &from_serde(&candidate).expect("the case crosses the bridge"),
+            &plans,
+        )
+        .unwrap_or_else(|error| panic!("a {profile} profile was refused: {error}"));
+        let stack = admitted.verification_stack.expect("the stack is kept");
+        assert_eq!(
+            stack
+                .build_profile
+                .map(quoin_measurement::types::collection::BuildProfile::as_str),
+            Some(profile)
+        );
+    }
+
+    for profile in [Some("instrumented-ish"), None] {
         let mut drifted = new_collection_json();
         match profile {
             Some(value) => {
@@ -480,12 +489,10 @@ fn tc_479_003_a_new_collection_requires_a_release_build() {
             &plans,
         )
         .err()
-        .unwrap_or_else(|| panic!("a {profile:?} build profile was admitted for a new collection"));
+        .unwrap_or_else(|| panic!("a {profile:?} build profile was admitted"));
         assert!(
-            refusal
-                .to_string()
-                .contains("buildProfile must be release for new collections"),
-            "{profile:?}: the refusal must name the profile it wanted; it said {refusal}"
+            refusal.to_string().contains("buildProfile"),
+            "{profile:?}: the refusal must name buildProfile; it said {refusal}"
         );
     }
 }
@@ -500,24 +507,24 @@ fn tc_479_003_a_new_collection_requires_a_release_build() {
 /// Provenance: PLAT-929
 #[trace("FR-044-AC-1", "TC-1003")]
 #[test]
-fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_refusal() {
+fn tc_479_020_a_missing_build_profile_and_an_unplanned_metric_are_both_named_in_one_refusal() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
     let mut candidate = new_collection_json();
-    candidate["verificationStack"]["buildProfile"] = json!("debug");
+    delete_at(&mut candidate, &["verificationStack", "buildProfile"]);
     candidate["observations"][0]["metric"] = json!("quality.unplanned");
     let refusal = validate::measurement_collection(
         &from_serde(&candidate).expect("the candidate crosses the bridge"),
         &plans,
     )
-    .expect_err("a debug build and an unplanned metric are each refused");
+    .expect_err("a missing build profile and an unplanned metric are each refused");
     assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
     assert!(
         refusal
             .findings()
             .iter()
-            .any(|finding| finding.contains("buildProfile must be release")),
+            .any(|finding| finding.contains("buildProfile must be stated")),
         "the one refusal must name the build profile defect, got {:?}",
         refusal.findings()
     );
@@ -659,7 +666,7 @@ fn tc_479_004_historical_evidence_reads_before_the_profile_field() {
         validate::measurement_collection(&stored, &plans)
             .expect_err("the same document is not admissible as a NEW collection")
             .to_string()
-            .contains("buildProfile must be release for new collections"),
+            .contains("buildProfile must be stated for new collections"),
         "intake must still require what the historical read forgives"
     );
 
@@ -1096,7 +1103,7 @@ fn tc_479_006_a_moved_definition_refuses_a_delta_and_an_incomplete_population_do
     let after = admit(&after_json);
 
     let rows =
-        compare_measurement_collections(&before, &after).expect("the two collections compare");
+        compare_measurement_collections(&before, &after, &[]).expect("the two collections compare");
     assert_eq!(rows.len(), 1, "one slice on each side is one compared row");
     let row = &rows[0];
     assert_eq!(row.status, ComparisonStatus::Incomparable);
@@ -1129,7 +1136,7 @@ fn tc_479_006_a_moved_definition_refuses_a_delta_and_an_incomplete_population_do
     let mut incomplete = new_collection_json();
     incomplete["collectionId"] = json!("run-003");
     incomplete["observations"][0]["population"]["complete"] = json!(false);
-    let rows = compare_measurement_collections(&before, &admit(&incomplete))
+    let rows = compare_measurement_collections(&before, &admit(&incomplete), &[])
         .expect("the incomplete pair compares");
     assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
     assert_eq!(rows[0].delta, None);
@@ -1169,7 +1176,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     let after = admit(&after_json);
 
     let rows =
-        compare_measurement_collections(&before, &after).expect("the two collections compare");
+        compare_measurement_collections(&before, &after, &[]).expect("the two collections compare");
     assert_eq!(rows.len(), 1);
     let row = &rows[0];
     assert_eq!(row.status, ComparisonStatus::Comparable);
@@ -1200,7 +1207,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     let mut retooled = new_collection_json();
     retooled["collectionId"] = json!("run-003");
     retooled["toolVersion"] = json!("fixture 2 (engine a2)");
-    let rows = compare_measurement_collections(&before, &admit(&retooled))
+    let rows = compare_measurement_collections(&before, &admit(&retooled), &[])
         .expect("the retooled pair compares");
     assert!(
         rows[0]
@@ -1219,7 +1226,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     // every status is checked, not the two this test happened to produce.
     assert_eq!(
         ComparisonReasonCode::ALL.len(),
-        6,
+        8,
         "every reason code is measured, not a subset"
     );
     for code in ComparisonReasonCode::ALL {
@@ -1242,6 +1249,139 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     }
 }
 
+/// Collections built under different profiles are not compared unless the
+/// governing plan permits it, and then the strata are named beside the delta.
+///
+/// Provenance: PLAT-164
+#[trace("FR-044-AC-15", "TC-2148")]
+#[test]
+fn tc_164_002_cross_profile_comparison_needs_the_plans_permission() {
+    let temporary = planned_repository();
+    let mut plans = authored_plans(temporary.path());
+    let before = admit(&new_collection_json());
+    let mut debug_run = new_collection_json();
+    debug_run["collectionId"] = json!("run-debug");
+    debug_run["verificationStack"]["buildProfile"] = json!("debug");
+    let after = admit(&debug_run);
+
+    let rows = compare_measurement_collections(&before, &after, &plans).expect("compares");
+    assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
+    assert_eq!(rows[0].delta, None);
+    assert!(
+        rows[0]
+            .reasons
+            .iter()
+            .any(|reason| reason.code == ComparisonReasonCode::ProfileChanged && reason.blocking)
+    );
+
+    plans[0].cross_profile_comparison = true;
+    let rows = compare_measurement_collections(&before, &after, &plans).expect("compares");
+    assert_eq!(rows[0].status, ComparisonStatus::Comparable);
+    assert!(rows[0].reasons.iter().any(|reason| {
+        reason.code == ComparisonReasonCode::ProfileStratified
+            && !reason.blocking
+            && reason.message.contains("release -> debug")
+    }));
+
+    // A collection stating no profile against one that states one differs.
+    let mut unstated = new_collection_json();
+    unstated["collectionId"] = json!("run-unstated");
+    delete_at(&mut unstated, &["verificationStack", "buildProfile"]);
+    let unstated = admit(&unstated);
+    plans[0].cross_profile_comparison = false;
+    let rows = compare_measurement_collections(&unstated, &before, &plans).expect("compares");
+    assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
+    assert!(
+        rows[0]
+            .reasons
+            .iter()
+            .any(|reason| reason.code == ComparisonReasonCode::ProfileChanged
+                && reason.message.contains("unstated -> release"))
+    );
+
+    // Same profile on both sides raises nothing.
+    let same = compare_measurement_collections(&before, &before, &[]).expect("compares");
+    assert!(same[0].reasons.is_empty());
+}
+
+/// The portfolio comparison applies the same rule, reading the repository's
+/// own plans.
+///
+/// Provenance: PLAT-164
+#[trace("FR-044-AC-15", "TC-2148")]
+#[test]
+fn tc_164_004_the_portfolio_comparison_consults_the_plans() {
+    let permitting = |permit: bool| {
+        let temporary = tempfile::tempdir().expect("a temporary directory");
+        let assurance = temporary.path().join("spec").join("assurance");
+        std::fs::create_dir_all(&assurance).expect("creatable");
+        let plan = PLAN.replacen(
+            "metric:",
+            &format!("cross_profile_comparison: {permit}\nmetric:"),
+            1,
+        );
+        std::fs::write(assurance.join("MP-001.md"), plan).expect("writable");
+        let before = admit(&new_collection_json());
+        let mut debug_run = new_collection_json();
+        debug_run["collectionId"] = json!("run-debug");
+        debug_run["timestamp"] = json!("2026-08-27T00:00:00.000Z");
+        debug_run["verificationStack"]["buildProfile"] = json!("debug");
+        let report = build_portfolio_report_from_collections(&[PortfolioCollectionSnapshot {
+            root: temporary.path().to_path_buf(),
+            collections: vec![before, admit(&debug_run)],
+        }]);
+        report.repositories[0]
+            .comparison
+            .as_ref()
+            .expect("the pair is compared")
+            .observations
+            .clone()
+    };
+    let blocked = permitting(false);
+    assert_eq!(blocked[0].status, ComparisonStatus::Incomparable);
+    let stratified = permitting(true);
+    assert_eq!(stratified[0].status, ComparisonStatus::Comparable);
+    assert!(
+        stratified[0]
+            .reasons
+            .iter()
+            .any(|reason| reason.code == ComparisonReasonCode::ProfileStratified)
+    );
+}
+
+/// A plan states `cross_profile_comparison` as a boolean, and a plan that does
+/// not state it refuses cross-profile comparison.
+///
+/// Provenance: PLAT-164
+#[trace("FR-044-AC-15", "TC-2148")]
+#[test]
+fn tc_164_003_a_plan_states_cross_profile_comparison_as_a_boolean() {
+    let load = |extra: &str| {
+        let temporary = tempfile::tempdir().expect("a temporary directory");
+        let assurance = temporary.path().join("spec").join("assurance");
+        std::fs::create_dir_all(&assurance).expect("creatable");
+        let plan = PLAN.replacen("metric:", &format!("{extra}metric:"), 1);
+        std::fs::write(assurance.join("MP-001.md"), plan).expect("writable");
+        load_measurement_plans(
+            &DiskMeasurement::new(temporary.path()),
+            PlanLoadOptions::default(),
+        )
+    };
+    assert!(
+        load("")
+            .expect("loads")
+            .iter()
+            .all(|plan| !plan.cross_profile_comparison)
+    );
+    assert!(
+        load("cross_profile_comparison: true\n")
+            .expect("loads")
+            .iter()
+            .all(|plan| plan.cross_profile_comparison)
+    );
+    assert!(load("cross_profile_comparison: maybe\n").is_err());
+}
+
 /// A metric present in only one collection is `not_computed`, never an
 /// unchanged zero.
 ///
@@ -1262,7 +1402,7 @@ fn tc_479_008_a_metric_in_only_one_collection_is_not_computed() {
     let after = admit(&after_json);
 
     let rows =
-        compare_measurement_collections(&before, &after).expect("the two collections compare");
+        compare_measurement_collections(&before, &after, &[]).expect("the two collections compare");
     assert_eq!(rows.len(), 2, "neither side's slice is dropped");
     let dropped = rows
         .iter()

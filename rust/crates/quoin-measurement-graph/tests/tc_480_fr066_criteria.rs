@@ -41,7 +41,7 @@ use quoin_measurement_graph::{
     GRAPH_ADAPTER_NAMES, GraphAdapterError, GraphAdapterErrorCode, adapt_graph_quality_observation,
     adapt_quire_assurance, select_graph_adapter,
 };
-use serde_json::Value;
+use serde_json::{Value, json};
 
 // ------------------------------------------------------------ the capture
 
@@ -99,6 +99,7 @@ fn plan(value: &Value) -> MeasurementPlan {
         objective: None,
         protected_apparatus: None,
         negative_controls: None,
+        cross_profile_comparison: false,
         execution_procedure: None,
     }
 }
@@ -848,6 +849,28 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
             }
         }
     }
+}
+
+/// The attestation's `buildProfile` is whatever profile intake admits: a
+/// debug or undeclared collection adapts, and an unknown spelling is refused.
+///
+/// Provenance: PLAT-164
+#[trace("FR-044-AC-14", "TC-2147")]
+#[test]
+fn tc_164_001_the_attestation_accepts_every_profile_intake_accepts() {
+    for profile in quoin_measurement::types::collection::BuildProfile::ALL
+        .map(quoin_measurement::types::collection::BuildProfile::as_str)
+    {
+        let mut input = case("quality/measured");
+        input["attestation"]["verificationStack"]["buildProfile"] = json!(profile);
+        adapt_quality(&input).unwrap_or_else(|error| panic!("{profile} was refused: {error}"));
+    }
+    let mut input = case("quality/measured");
+    input["attestation"]["verificationStack"]["buildProfile"] = json!("fast");
+    assert_eq!(
+        refusal(&input, "an unknown build profile"),
+        GraphAdapterErrorCode::InvalidAttestation
+    );
 }
 
 /// Every `.rs` at or under a path.

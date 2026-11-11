@@ -324,7 +324,7 @@ fn tc_1016_005_compare_leaves_item_rows_out() {
     let mut after_observations = with_items(13, "MP-900");
     after_observations[1]["dimensions"]["actual"] = json!("gap");
     let after = intake(&plans, &collection("run-b", &after_observations)).unwrap();
-    let comparisons = compare_measurement_collections(&before, &after).unwrap();
+    let comparisons = compare_measurement_collections(&before, &after, &[]).unwrap();
     let metrics: Vec<&str> = comparisons.iter().map(|row| row.metric.as_str()).collect();
     assert_eq!(metrics, [METRIC]);
 }
