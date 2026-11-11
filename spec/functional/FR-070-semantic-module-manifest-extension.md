@@ -45,7 +45,7 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 - A reference, for `semantic.unused-import`, is a `$ref` whose URL is under the imported package's schema base `https://schemas.agent-ix.org/<org>/<repo>/`.
 - `quoin module install` SHALL emit `semantic.unused-import` as a warning that does not fail the install.
 - `quoin module inspect` SHALL list `semantic.unused-import` (FR-124).
-- Quoin SHALL admit exactly the `semantic` keys the pinned `@agent-ix/semantic-schema` release defines and refuse any other as an unknown key under the rule below.
+- Quoin SHALL admit a module manifest that carries the eight registry keys `lexicon`, `observable_verbs`, `ambiguity_terms`, `vacuous_predicates`, `grammar_severity`, `property_idioms`, `traceability` and `verification_catalog`, and SHALL refuse a manifest whose root carries a key outside the declared set.
 - The `semantic` block SHALL NOT admit `semantic_core`: the key is retired (PLAT-1221), a module declares no semantic-core version, and a manifest that still carries it is refused like any other unknown key.
 - When `quoin module install` meets an unknown key inside `semantic`, Quoin SHALL reject the manifest with a diagnostic naming the key rather than degrading to an empty model.
 - When `semantic.exports` names an object type the manifest does not declare, Quoin SHALL reject the manifest naming the export.

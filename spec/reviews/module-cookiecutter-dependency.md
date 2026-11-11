@@ -46,7 +46,7 @@ topological order follow below.
 | EXT-TARGETS | filament-core-data target registry, only json-schema has a working emitter today | FR-076, FR-077 |
 | EXT-COMPILER | filament-core-data#5 EPIC, OPEN, 3 of 14 sub-issues complete | FR-077 |
 | EXT-PKGS | filament-core-data#11, OPEN, publish semantic-core packages for Rust TypeScript Python and JSON Schema | FR-076, FR-077 |
-| EXT-MANIFEST | filament-core-service#21 CLOSED, semantic block landed in module-manifest.schema.json, now published as @agent-ix/semantic-schema | FR-078, FR-083 |
+| EXT-MANIFEST | filament-core-service#21 CLOSED, semantic block landed in module-manifest.schema.json, vendored at src/semantic/schemas/module-manifest.schema.json | FR-078, FR-083 |
 | EXT-ADR5 | ADR-0005 cited by StR-008, FR-077, US-021 as fixing TypeSpec as the structural source | FR-077, StR-008, US-021 |
 
 ### Dependency graph
@@ -126,4 +126,4 @@ graph TD
 | FND-003 | medium | FR-080 and FR-083 rely on a dev-quire command to provision the Quire engine exposing extract_semantic, but quire-rs#392 is open and states the wheel is not published to any index a repository may depend on, and neither FR names which index dev-quire installs from. | FR-080, FR-083 |
 | FND-004 | medium | FR-077 assumes a working shared compiler pipeline for absolutizing dollar-id and dollar-ref values and discarding re-emitted imports, but filament-core-data#5, the EPIC for that reusable compiler and codegen ecosystem, is open with 3 of 14 sub-issues complete. | FR-077 |
 | FND-005 | low | The task briefing names quoin#289 as a blocked-on ADR ticket, but #289 is closed, so it is not a current blocker for US-021; the live gap is the missing ADR-0005 file recorded as FND-001, not the state of ticket #289. | US-021 |
-| FND-006 | low | filament-core-service#21 is closed and its semantic block is already published in the module-manifest schema (`@agent-ix/semantic-schema`), so FR-078 and FR-083's dependency on the module-manifest schema is satisfied. | FR-078, FR-083 |
+| FND-006 | low | filament-core-service#21 is closed and its semantic block is already vendored at src/semantic/schemas/module-manifest.schema.json, so FR-078 and FR-083's dependency on the module-manifest schema is satisfied; only the FR-070-CON-2 provenance fields in that vendored copy remain worth a spot check. | FR-078, FR-083 |
