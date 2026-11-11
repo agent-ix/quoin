@@ -76,6 +76,17 @@ pub enum MeasurementErrorCode {
     /// repository that cannot be read — a directory, a symlink, an
     /// unreadable or oversized file (PLAT-969).
     ArtifactUnreadable,
+    /// A binary attachment reference is malformed, names an address that is not
+    /// a SHA-256, declares a size or count past the limit, or repeats an
+    /// attachment (FR-125).
+    AttachmentInvalid,
+    /// A referenced attachment has no retained bytes, or they cannot be read
+    /// (FR-125).
+    AttachmentUnavailable,
+    /// Retained attachment bytes no longer match their address or declared
+    /// length, or differ from bytes already retained under that address
+    /// (FR-125).
+    AttachmentTampered,
     /// A measured observation's `population.examined` is below its plan's
     /// `statistical_design.minimum_population` (PLAT-960).
     PopulationBelowMinimum,
@@ -123,7 +134,7 @@ pub enum MeasurementErrorCode {
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 30] = [
+    pub const ALL: [Self; 33] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -142,6 +153,9 @@ impl MeasurementErrorCode {
         Self::Store,
         Self::ArtifactNameUnsafe,
         Self::ArtifactUnreadable,
+        Self::AttachmentInvalid,
+        Self::AttachmentUnavailable,
+        Self::AttachmentTampered,
         Self::PopulationBelowMinimum,
         Self::PopulationUnstated,
         Self::RepetitionsShort,
@@ -178,6 +192,9 @@ impl MeasurementErrorCode {
             Self::Store => "QM-STORE",
             Self::ArtifactNameUnsafe => "QM-ARTIFACT-NAME-UNSAFE",
             Self::ArtifactUnreadable => "QM-ARTIFACT-UNREADABLE",
+            Self::AttachmentInvalid => "QM-ATTACHMENT-INVALID",
+            Self::AttachmentUnavailable => "QM-ATTACHMENT-UNAVAILABLE",
+            Self::AttachmentTampered => "QM-ATTACHMENT-TAMPERED",
             Self::PopulationBelowMinimum => "QM-POPULATION-BELOW-MINIMUM",
             Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
             Self::RepetitionsShort => "QM-REPETITIONS-SHORT",

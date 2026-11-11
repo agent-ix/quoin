@@ -233,6 +233,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-122 | FR-122-AC-1, FR-122-AC-2, FR-122-AC-3, FR-122-AC-4, FR-122-AC-5, FR-122-AC-6, FR-122-AC-7 | TC-2109, TC-2110, TC-2111, TC-2112, TC-2113, TC-2114, TC-2115 | 🚧 Pending |
 | FR-123 | FR-123-AC-1, FR-123-AC-2, FR-123-AC-3, FR-123-AC-4, FR-123-AC-5, FR-123-AC-6, FR-123-AC-7, FR-123-AC-8, FR-123-AC-9 | TC-2120, TC-2121, TC-2122, TC-2123, TC-2124, TC-2125, TC-2126, TC-2127, TC-2128 | 🚧 Pending |
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
+| FR-125 | FR-125-AC-1, FR-125-AC-2, FR-125-AC-3, FR-125-AC-4, FR-125-AC-5 | TC-2140, TC-2141, TC-2142, TC-2143, TC-2144 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -1367,6 +1368,11 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2136 | The derived package manifest import entries carry `exports` equal to the declared type list, `[]` when none | Unit | P0 | FR-075-AC-6 | ✅ Complete |
 | TC-2137 | An import cycle fails install in every case; it is named over `<org>/<repo>#<Type>` nodes only when the `$ref`-derived type-level edges themselves form a cycle, and over packages when they do not (no edges, edges forming no type-level cycle, or a module with no `$ref`s into it) | Unit | P0 | FR-075-AC-7 | ✅ Complete |
 | TC-2139 | A `$ref` in the module's own data schema naming a type the installed provider does not export fails install with `semantic.unknown-import-type` at `<section>[<type>].data_schema.schema`, with and without `import_types`; an exported type raises none | Unit | P0 | FR-070-AC-13 | ✅ Complete |
+| TC-2140 | Retained bytes are named by their SHA-256: distinct bytes get distinct addresses, identical bytes reproduce one reference, and the bytes read back exactly | Unit | P0 | FR-125-AC-1 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_001` |
+| TC-2141 | A malformed `attachments` member (non-array, over count, duplicate, bad digest, empty media type, bad length) refuses as `QM-ATTACHMENT-INVALID` and writes no collection | Unit | P0 | FR-125-AC-2 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_002` |
+| TC-2142 | A reference to missing bytes refuses as `QM-ATTACHMENT-UNAVAILABLE`; a wrong declared length or address refuses as `QM-ATTACHMENT-TAMPERED`; no collection is written | Unit | P0 | FR-125-AC-3 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_003` |
+| TC-2143 | Editing, symlink-substituting or deleting a retained attachment after sealing makes verification refuse naming it; re-retaining over edited bytes replaces nothing | Unit | P0 | FR-125-AC-4 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_004` |
+| TC-2144 | A collection with attachments publishes, reads back with the member intact, verifies clean and recovers each attachment byte for byte | Unit | P0 | FR-125-AC-5 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_005` |
 
 ## Stakeholder Requirement Coverage
 

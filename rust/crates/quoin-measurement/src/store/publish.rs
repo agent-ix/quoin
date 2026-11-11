@@ -71,7 +71,9 @@ use crate::validate;
 /// [`crate::error::MeasurementErrorCode::ArtifactUnreadable`] when it names an
 /// entry under `repo` that is not a regular file (FR-044-AC-13), and the
 /// `QM-APPARATUS-*` refusals when a governing plan's protected apparatus
-/// cannot be resolved, or is not declared in `artifacts` (PLAT-975).
+/// cannot be resolved, or is not declared in `artifacts` (PLAT-975), and the
+/// `QM-ATTACHMENT-*` refusals when an `attachments` reference is malformed or
+/// names bytes that are not retained and intact (FR-125).
 pub fn write_measurement_collection(
     repo: &Path,
     candidate: &JsonValue,
@@ -96,6 +98,7 @@ pub(crate) fn write_measurement_collection_with_plans(
     // than as an ordinary artifact.
     let protected = apparatus::resolve_protected(repo, &collection, plans)?;
     let unverified = verify_local_artifacts(repo, &collection)?;
+    crate::attachment::verify_candidate_attachments(repo, candidate)?;
     let id = CollectionId::parse(collection.collection_id.as_str())?;
     let path = measurement_path(repo, &id);
     // The **caller's** value is what is written, canonicalised — not a
