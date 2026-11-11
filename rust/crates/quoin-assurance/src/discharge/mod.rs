@@ -81,6 +81,7 @@ mod fixtures;
 mod parse;
 mod render;
 mod report;
+mod rmm;
 mod store;
 
 pub use build::build_discharge_report;
@@ -94,6 +95,10 @@ pub use report::{
     DischargeBinding, DischargeError, DischargeFact, DischargeReport, DischargeSchemaVersion,
     DischargeState, DispositionDecision, DispositionFact, FactKind, UnusedDischargeFact,
     UnusedFactReason,
+};
+pub use rmm::{
+    RequirementsMapping, RequirementsMappingSchemaVersion, RmmApplicability, RmmCompliance, RmmRow,
+    build_requirements_mapping, render_requirements_mapping,
 };
 pub use store::{
     DISCHARGE_DIR, DischargeStoreError, MAX_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS,

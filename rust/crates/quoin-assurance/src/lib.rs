@@ -59,10 +59,12 @@ pub use discharge::{
     DischargeReport, DischargeSchemaVersion, DischargeState, DischargeStoreError,
     DispositionCounts, DispositionDecision, DispositionFact, FactKind, InwardCompleteness,
     MAX_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS, OpenClause, RecordDischargeRequest,
-    RecordedFact, StoreRefusal, StoredDischargeFact, StoredFactSchemaVersion, UnusedDischargeFact,
-    UnusedFactReason, build_discharge_report, discharge_report_from_store,
-    inward_completeness_from_store, read_discharge_facts, record_discharge_facts,
-    render_discharge_report, render_inward_completeness,
+    RecordedFact, RequirementsMapping, RequirementsMappingSchemaVersion, RmmApplicability,
+    RmmCompliance, RmmRow, StoreRefusal, StoredDischargeFact, StoredFactSchemaVersion,
+    UnusedDischargeFact, UnusedFactReason, build_discharge_report, build_requirements_mapping,
+    discharge_report_from_store, inward_completeness_from_store, read_discharge_facts,
+    record_discharge_facts, render_discharge_report, render_inward_completeness,
+    render_requirements_mapping,
 };
 pub use render::{RenderableCase, render_case};
 

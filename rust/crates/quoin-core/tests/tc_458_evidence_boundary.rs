@@ -794,3 +794,104 @@ fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_write
         assert!(!store_path(dir.path(), "discharge").exists());
     }
 }
+
+/// The requirements mapping matrix is a view of the stored facts: the same
+/// recorded fact is Compliant before its expiry and a not-current gap after.
+#[trace("FR-135-AC-6", "TC-3205")]
+#[test]
+fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
+    let dir = repo();
+    ok(&run(
+        "evidence.record_discharge",
+        &json!({
+            "repo": dir.path(),
+            "binding": discharge_binding(),
+            "facts": [discharge_fact()],
+        }),
+    ));
+    let request =
+        |as_of: &str| json!({"repo": dir.path(), "binding": discharge_binding(), "asOf": as_of});
+
+    let now = ok(&run(
+        "evidence.requirements_matrix",
+        &request("2026-08-15T00:00:00Z"),
+    ));
+    assert_eq!(now["matrix"]["rows"][0]["clauseId"], "C-1");
+    assert_eq!(now["matrix"]["rows"][0]["compliance"], "compliant");
+    assert_eq!(
+        now["matrix"]["rows"][0]["evidenceRefs"],
+        json!(["evidence://run/one"])
+    );
+    assert_eq!(now["matrix"]["rows"][1]["compliance"], "undischarged");
+    assert!(
+        now["rendered"]
+            .as_str()
+            .unwrap()
+            .contains("| C-2 | Applicable | Not compliant - undischarged: no discharge fact |")
+    );
+
+    let later = ok(&run(
+        "evidence.requirements_matrix",
+        &request("2026-10-01T00:00:00Z"),
+    ));
+    assert_eq!(
+        later["matrix"]["rows"][0]["compliance"],
+        "attestation_not_current"
+    );
+
+    let mut doubled = discharge_binding();
+    let first = doubled["clauses"][0].clone();
+    doubled["clauses"].as_array_mut().unwrap().push(first);
+    let refused = run(
+        "evidence.requirements_matrix",
+        &json!({"repo": dir.path(), "binding": doubled, "asOf": "2026-08-15T00:00:00Z"}),
+    );
+    assert_eq!(refused.status, 3, "{}", refused.stderr);
+    assert!(
+        refused.stderr.contains("duplicate clause C-1"),
+        "{}",
+        refused.stderr
+    );
+}
+
+/// A stored disposition whose rationale is blank was not written by
+/// `record_discharge`; the operation refuses it and renders no matrix.
+#[trace("FR-135-AC-6", "TC-3205")]
+#[test]
+fn tc_3205_a_stored_disposition_with_a_blank_rationale_refuses_the_matrix() {
+    let dir = repo();
+    write_store(
+        dir.path(),
+        "discharge/quire/spec/1/c-1.json",
+        &json!({
+            "schemaVersion": "discharge-fact-record-v1",
+            "clauseSet": { "authority": "quire", "id": "spec", "version": "1" },
+            "fact": {
+                "kind": "disposition",
+                "clauseId": "C-1",
+                "decision": "accepted_risk",
+                "rationale": " ",
+                "approvalRef": "approval://1",
+                "attestation": {
+                    "attestedBy": "reviewer-1",
+                    "authority": "quality-lead",
+                    "attestedAt": "2026-08-01T00:00:00Z",
+                    "expiresAt": "2026-09-01T00:00:00Z"
+                }
+            }
+        })
+        .to_string(),
+    );
+    let refused = run(
+        "evidence.requirements_matrix",
+        &json!({"repo": dir.path(), "binding": discharge_binding(), "asOf": "2026-08-15T00:00:00Z"}),
+    );
+    assert_eq!(refused.status, 2, "{}", refused.stderr);
+    assert!(refused.stderr.contains("c-1.json"), "{}", refused.stderr);
+    assert!(refused.stdout.is_empty(), "{}", refused.stdout);
+    assert!(
+        refused.stderr.contains("rationale must not be empty"),
+        "{}",
+        refused.stderr
+    );
+}
