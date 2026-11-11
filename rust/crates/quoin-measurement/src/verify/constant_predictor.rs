@@ -196,6 +196,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     use engineering_assurance::measurement::AnswerFamilies;
+    use ix_trace_rs::trace;
     use quoin_store::{JsonObject, JsonValue};
 
     use super::baseline;
@@ -481,6 +482,7 @@ mod tests {
     /// split), a declared family with no rows, and a plan that declares none
     /// each fail closed with their own reason; the same set in any order is
     /// read.
+    #[trace("FR-108-AC-24", "TC-2300")]
     #[test]
     fn item_row_families_must_equal_the_declared_list() {
         let rows = || {

@@ -170,14 +170,41 @@ pub(super) fn statistical_design_from(
             )
         })?;
     }
+    Ok(Some(StatisticalDesign {
+        minimum_population: count("minimum_population")?,
+        repetitions: count("repetitions")?,
+        estimator,
+        decision_rule,
+        answer_families,
+    }))
+}
+
+/// Refuse a plan that declares `baseline: constant-predictor` without
+/// `statistical_design.answer_families` (engineering-assurance FR-021).
+///
+/// Applied only when loading the current plans, not by the history parser:
+/// an earlier revision of a plan may predate the list, and must still be
+/// readable so tamper detection can compare it with its successor.
+///
+/// # Errors
+///
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] naming
+/// `statistical_design.answer_families`.
+pub(super) fn require_answer_families(
+    path: &str,
+    design: Option<&StatisticalDesign>,
+) -> Result<(), MeasurementError> {
+    let Some(design) = design else {
+        return Ok(());
+    };
     let constant_predictor = matches!(
-        decision_rule.map(|rule| rule.reference()),
+        design.decision_rule.map(|rule| rule.reference()),
         Some(RuleReference::Baseline {
             baseline: Baseline::ConstantPredictor,
             ..
         })
     );
-    if constant_predictor && answer_families.is_none() {
+    if constant_predictor && design.answer_families.is_none() {
         return Err(MeasurementError::new(
             CODE,
             format!(
@@ -186,13 +213,7 @@ pub(super) fn statistical_design_from(
             ),
         ));
     }
-    Ok(Some(StatisticalDesign {
-        minimum_population: count("minimum_population")?,
-        repetitions: count("repetitions")?,
-        estimator,
-        decision_rule,
-        answer_families,
-    }))
+    Ok(())
 }
 
 /// Refuse a decision rule whose comparator disagrees with the plan's
