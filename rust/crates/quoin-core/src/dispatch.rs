@@ -12,6 +12,7 @@ use std::io::Read;
 
 use crate::capabilities::Capabilities;
 use crate::error::{CoreError, CoreErrorCode};
+use crate::ops::evidence;
 use crate::protocol::{MAX_REQUEST_BYTES, Response};
 
 /// Every operation this build answers, in the wire spelling.
@@ -52,6 +53,9 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.parse_policy",
     "evidence.parse_results",
     "evidence.record",
+    "evidence.discharge_report",
+    "evidence.inward_completeness",
+    "evidence.record_discharge",
     "evidence.record_experiment",
     "evidence.record_operational",
     "evidence.record_scenario",
@@ -155,6 +159,9 @@ pub fn dispatch(
         "evidence.record_experiment" => {
             crate::ops::evidence::record_experiment(request, capabilities)
         }
+        "evidence.record_discharge" => evidence::record_discharge(request, capabilities),
+        "evidence.discharge_report" => evidence::discharge_report(request, capabilities),
+        "evidence.inward_completeness" => evidence::inward_completeness(request, capabilities),
         "evidence.record_scenario" => crate::ops::evidence::record_scenario(request, capabilities),
         "evidence.record_operational" => {
             crate::ops::evidence::record_operational(request, capabilities)
