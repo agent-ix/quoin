@@ -23,6 +23,7 @@
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
+use ix_trace_rs::trace;
 use quoin_evidence::{EvidenceSource, MemoryEvidence};
 use serde_json::json;
 
@@ -497,6 +498,39 @@ fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
         "a finding-shaped adapter fell through to the run path: {:?}",
         response.payload
     );
+}
+
+/// The audit-script format carries no tool identity, so a scan is recorded
+/// under whichever claimed tool the suite declares, not refused as another
+/// tool's output.
+#[trace("FR-036-AC-9", "TC-2900")]
+#[test]
+fn tc_2900_an_audit_script_scan_records_under_each_tool_it_claims() {
+    let host = TestHost::empty();
+    let capabilities = Capabilities::with_evidence(&host);
+    for (tool, adapter) in [
+        ("audit-static", None),
+        ("import-linter 2.0", None),
+        ("audit-static", Some("audit-script")),
+        ("audit-script", Some("audit-script")),
+    ] {
+        let mut request = json!({
+            "repo": "/somewhere",
+            "suite": "audit",
+            "tool": tool,
+            "timestamp": "2026-01-01T00:00:00Z",
+            "results": "check_a: OK\ncheck_b: FAIL - bad (FR-001-AC-1)\n",
+        });
+        if let Some(adapter) = adapter {
+            request["adapter"] = json!(adapter);
+        }
+        let response = record(&request, &capabilities).unwrap();
+        assert!(
+            response.payload.get("scan_path").is_some(),
+            "--tool {tool} --adapter {adapter:?}: {:?}",
+            response.payload
+        );
+    }
 }
 
 #[test]

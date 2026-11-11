@@ -99,9 +99,12 @@ pub fn parse_audit_script(raw: &str) -> Result<FindingResult, EvidenceError> {
             "no `<name>: OK` or `<name>: FAIL` line found — is this audit-script output?",
         ));
     }
+    // An audit script's output never names the tool that produced it, so the
+    // adapter claims no identity: stating one would fabricate a producer and
+    // make `--tool audit-static` or `--tool import-linter` refuse as a mismatch.
     Ok(FindingResult {
         findings,
-        tool: Some("audit-script".to_owned()),
+        tool: None,
         ruleset: None,
         rules_evaluated: Some(evaluated),
     })

@@ -33,7 +33,10 @@ pub use independence::{
     IndependencePolicy, IndependenceRequirement, IndependenceStatus,
 };
 pub use mock::{MockInjection, MockInspectionRecord};
-pub use run::{MUTATION_SCORE_METRIC, Outcome, RunEntry, RunRecord};
+pub use run::{
+    MAX_SURVIVOR_CHARS, MAX_SURVIVORS_PER_ENTRY, MUTATION_SCORE_METRIC, Outcome, RunEntry,
+    RunRecord, Survivor,
+};
 pub use scan::{Finding, FindingRecord};
 pub use trust::{
     ProducerContext, TrustAdapter, TrustAssessment, TrustDecision, TrustDecisionKind,

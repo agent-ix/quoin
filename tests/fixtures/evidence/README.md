@@ -33,3 +33,8 @@ vulnerabilities and one `unsound` warning**, alongside the `database`
 (1217 advisories) and `lockfile` the scan consulted. That is a scan which ran
 and found almost nothing — the state `FindingRecord` exists to tell apart from
 a scan that never ran.
+
+`cargo-mutants-real.json` is the `mutants.out/outcomes.json` of
+`cargo mutants` 27.1.0 (fresh target dir, one job) over a three-function
+scratch crate, with missed and caught mutants, unedited except that the absolute path of the `cargo` binary is shortened to `cargo`. Its `name` carries the
+`<file>:<line>:<col>: ` locus prefix that the adapter strips.
