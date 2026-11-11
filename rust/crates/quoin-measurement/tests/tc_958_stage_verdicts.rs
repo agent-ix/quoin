@@ -1320,7 +1320,7 @@ fn tc_958_021_a_gate_is_inconclusive_with_no_rule_no_prior_or_an_unsupported_bas
     let constant_predictor = plans(&gate_plan_document(
         "higher",
         "v1",
-        "    comparator: gt\n    baseline: constant-predictor\n",
+        "    comparator: gt\n    baseline: constant-predictor\n  answer_families:\n    - a\n",
     ));
     assert_eq!(
         gate_over(&constant_predictor, &[0.5, 0.9]),

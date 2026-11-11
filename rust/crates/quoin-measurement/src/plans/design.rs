@@ -10,7 +10,7 @@ use std::cmp::Ordering;
 use std::num::NonZeroU32;
 
 use engineering_assurance::measurement::{
-    AnswerFamilies, DecisionRule, Direction, Estimator, Objective,
+    AnswerFamilies, Baseline, DecisionRule, Direction, Estimator, Objective, RuleReference,
 };
 use serde::Deserialize;
 
@@ -169,6 +169,22 @@ pub(super) fn statistical_design_from(
                 format!("{path}: statistical_design.decision_rule is invalid: {error}"),
             )
         })?;
+    }
+    let constant_predictor = matches!(
+        decision_rule.map(|rule| rule.reference()),
+        Some(RuleReference::Baseline {
+            baseline: Baseline::ConstantPredictor,
+            ..
+        })
+    );
+    if constant_predictor && answer_families.is_none() {
+        return Err(MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: statistical_design.answer_families is required when \
+                 decision_rule.baseline is constant-predictor"
+            ),
+        ));
     }
     Ok(Some(StatisticalDesign {
         minimum_population: count("minimum_population")?,
