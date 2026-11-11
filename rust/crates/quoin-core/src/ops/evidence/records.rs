@@ -121,14 +121,7 @@ fn record_scan(
         .with_context("op", op));
     }
     let vacuous = result.rules_evaluated == Some(0);
-    let mut ids: Vec<String> = request
-        .discharges
-        .iter()
-        .map(|id| id.trim().to_owned())
-        .filter(|id| !id.is_empty())
-        .collect();
-    ids.sort();
-    ids.dedup();
+    let ids = stated_obligations(&request.discharges);
 
     let root = host.store_root(Path::new(&request.repo));
     host.with_store(Path::new(&request.repo), &mut |source| {
@@ -191,6 +184,19 @@ fn record_scan(
     })
 }
 
+/// The obligation ids a recorder stated with `--discharges`: trimmed, sorted,
+/// deduplicated, blanks dropped.
+fn stated_obligations(discharges: &[String]) -> Vec<String> {
+    let mut ids: Vec<String> = discharges
+        .iter()
+        .map(|id| id.trim().to_owned())
+        .filter(|id| !id.is_empty())
+        .collect();
+    ids.sort();
+    ids.dedup();
+    ids
+}
+
 /// The run-shaped half of [`record`]: transcribe the entries and let
 /// `quoin_evidence::record::record_run` update the binding graph.
 fn record_entries(
@@ -201,6 +207,23 @@ fn record_entries(
 ) -> Result<serde_json::Value, CoreError> {
     let result = (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?;
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
+    // An inventory (SBOM) names no obligation, so the recorder states which
+    // one it was produced to discharge. Stating it puts the id on every entry
+    // as a trace id, which is the one join `record_run` already makes, so the
+    // same rules apply: only a passing entry binds, and an id no obligation
+    // states comes back as `unmatched` rather than vanishing.
+    let stated = stated_obligations(&request.discharges);
+    let mut entries = result.entries;
+    if !stated.is_empty() {
+        for entry in &mut entries {
+            let trace_ids = entry.trace_ids.get_or_insert_with(Vec::new);
+            for id in &stated {
+                if !trace_ids.contains(id) {
+                    trace_ids.push(id.clone());
+                }
+            }
+        }
+    }
     let root = host.store_root(Path::new(&request.repo));
     host.with_store(Path::new(&request.repo), &mut |source| {
         let outcome = record_run(
@@ -211,7 +234,7 @@ fn record_entries(
                 evidence_kind: request.kind.clone(),
                 lineage: request.lineage.clone(),
                 timestamp: request.timestamp.clone(),
-                entries: result.entries.clone(),
+                entries: entries.clone(),
             },
             &request.obligations,
         )

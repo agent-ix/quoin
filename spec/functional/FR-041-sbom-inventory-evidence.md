@@ -68,6 +68,15 @@ Zero entries is a real finding about the consumer's build. A file the adapter co
 be able to masquerade as one, so a document that is neither CycloneDX nor SPDX raises rather than
 returning nothing.
 
+### Which obligation an SBOM discharges is stated, not inferred
+
+An SBOM entry is a component, and carries no trace id, so the join a test result makes (entry → trace id →
+obligation) has nothing to read. The recorder therefore states the obligation, as a scan's recorder does
+(FR-034-AC-16): `quoin evidence record --adapter sbom --discharges <obligation-id>` adds the stated id to
+every entry as a trace id, so the inventory binds through the same join and under the same rules as any run
+— each passing component is a symbol bound to the obligation, an id no obligation states is reported
+`unmatched`, and an inventory listing nothing has no entry to bind and discharges nothing.
+
 ### quoin does not generate the SBOM
 
 The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produced.
@@ -82,6 +91,8 @@ The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produc
 | FR-041-AC-4 | A document that is neither format is refused, not read as empty. | Test (TC-234) |
 | FR-041-AC-5 | A component with neither purl nor name is dropped rather than given an invented identity. | Test (TC-235) |
 | FR-041-AC-6 | The adapter is selected by `--adapter sbom` and by the tools that emit these formats. | Test (TC-236) |
+| FR-041-AC-7 | `--discharges` on an SBOM recording binds the stated obligation to the components it listed; without `--discharges` the SBOM binds nothing. | Test (TC-2704) |
+| FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing. | Test (TC-2705) |
 
 ## Constraints
 

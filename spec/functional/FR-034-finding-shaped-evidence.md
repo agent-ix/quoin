@@ -74,6 +74,16 @@ SARIF reader cannot subsume it, and its native JSON is what a consumer's CI prod
 kinds (`unsound`, `unmaintained`, `yanked`) are kept as their own severity rather than flattened —
 those are distinctions the tool drew, and quoin normalizes no scanner's severities.
 
+**`cargo-deny` is a third bespoke adapter, for the same measured reason**: `cargo deny --format json check`
+emits no SARIF, and its output is not cargo-audit's — JSON lines on stderr, one `diagnostic` per problem
+(an advisory diagnostic carries `advisory.id`; a ban, licence or source diagnostic carries a `code`)
+closed by one `summary` counting each check. **The summary is the proof the scan executed.** A run with a
+summary and no diagnostic is a clean scan; output with no summary is a run that did not finish and is
+refused. cargo-deny reports no count of the rules it evaluated, so `rulesEvaluated` stays unset and the
+vacuity check stays silent rather than guess. Its fixtures are captured from `cargo deny` 0.19.8 over a
+scratch crate and checked in unedited. ZAP has no adapter of its own: it reaches quoin through the SARIF
+converter.
+
 The cargo-audit adapter is verified against output captured with `cargo audit --json` and checked in
 **unedited**. A fixture written to match the reader only proves the reader parses itself.
 
@@ -101,6 +111,10 @@ The cargo-audit adapter is verified against output captured with `cargo audit --
 | FR-034-AC-18 | A suite that recorded only scans is enumerated by `listRecordedSuites`. | Test (TC-194) |
 | FR-034-AC-19 | `gc` collects superseded scans, keeping the newest by timestamp. | Test (TC-195) |
 | FR-034-AC-20 | A tool reporting **zero** rules is distinguishable from a tool reporting **no** rule count. | Test (TC-196) |
+| FR-034-AC-21 | The cargo-deny adapter reads each `cargo deny --format json check` diagnostic as a finding: the advisory id (else the check's `code`) as rule id, the tool's own severity word, the message and the first crate of the dependency graph. | Test (TC-2700) |
+| FR-034-AC-22 | A cargo-deny run that finished with no diagnostic is a clean scan, reporting no rule count. | Test (TC-2701) |
+| FR-034-AC-23 | cargo-deny output with no `summary` object, and a line that is not JSON, are rejected rather than read as a clean scan. | Test (TC-2702) |
+| FR-034-AC-24 | `quoin evidence record --tool cargo-deny` selects the cargo-deny adapter and writes a `FindingRecord` under `scans/`; `--tool cargo-audit` still selects the cargo-audit adapter. | Test (TC-2703) |
 
 ### Reachability is part of the contract
 
