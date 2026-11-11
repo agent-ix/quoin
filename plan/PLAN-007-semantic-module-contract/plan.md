@@ -26,7 +26,7 @@ relationships:
 
 Issue: `agent-ix/quoin#293`. Reviews: SR-118..125 under
 `spec/reviews/293-semantic-module-contract/`. Upstream: filament-core-data#34/#35
-(merged), filament-core-service#21 (manifest schema, open). Downstream:
+(merged), the module-manifest schema (published as `@agent-ix/semantic-schema`). Downstream:
 quire-rs#388 implements the extraction the fixtures define.
 
 ## Requirements Summary
@@ -55,7 +55,7 @@ TASK-039 -> TASK-040 -> TASK-042 --\
         \-> TASK-041 --------------+-> TASK-043 -> TASK-044
 ```
 
-- TASK-039 lands the schema change in filament-core-service#21 and consumes both schemas (module manifest, semantic-core bundle) from their published packages; every later task validates against them.
+- TASK-039 consumes both schemas (module manifest, semantic-core bundle) from their published packages; every later task validates against them.
 - TASK-040 (manifest block, `data_schema` references, authoring pack) and TASK-041 (mapping fixtures, legacy forms, sweep) touch disjoint code and run in parallel.
 - TASK-042 (package manifest derivation) needs the loaded block and the resolved schema references from TASK-040.
 - TASK-043 runs the NFR-017 gates over the finished slice; TASK-044 is the review gate.
