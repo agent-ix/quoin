@@ -11,8 +11,9 @@
 use std::path::Path;
 
 use quoin_assurance::{
-    DischargeStoreError, RecordDischargeRequest, discharge_report_from_store,
-    inward_completeness_from_store, record_discharge_facts, render_inward_completeness,
+    DischargeStoreError, RecordDischargeRequest, build_requirements_mapping,
+    discharge_report_from_store, inward_completeness_from_store, record_discharge_facts,
+    render_inward_completeness, render_requirements_mapping,
 };
 use quoin_quire_types::ClauseBindingReport;
 use serde::{Deserialize, Serialize};
@@ -190,6 +191,45 @@ pub fn inward_completeness(
         value(&InwardCompletenessPayload {
             rendered: render_inward_completeness(&completeness),
             completeness,
+        })
+    })?;
+    Ok(Response::ok(payload))
+}
+
+/// The result of an `evidence.requirements_matrix`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct RequirementsMatrixPayload {
+    /// One row per clause of the binding report.
+    pub matrix: quoin_assurance::RequirementsMapping,
+    /// The same matrix as deterministic Markdown.
+    pub rendered: String,
+}
+
+/// Answer an `evidence.requirements_matrix`: the requirements mapping matrix
+/// of a live binding report against the stored facts (FR-135).
+///
+/// # Errors
+///
+/// As [`discharge_report`].
+pub fn requirements_matrix(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    let op = "evidence.requirements_matrix";
+    bound(request, op, MAX_DISCHARGE_BYTES)?;
+    let request: DischargeReportRequest = parse(request, op)?;
+    check_scalar(op, "repo", &request.repo)?;
+
+    let host = host(capabilities, op)?;
+    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
+        let report = discharge_report_from_store(&*source, &request.binding, &request.as_of)
+            .map_err(|e| map_store_error(e, op))?;
+        let matrix = build_requirements_mapping(&request.binding, &report)
+            .map_err(|e| map_store_error(DischargeStoreError::Discharge(e), op))?;
+        value(&RequirementsMatrixPayload {
+            rendered: render_requirements_mapping(&matrix),
+            matrix,
         })
     })?;
     Ok(Response::ok(payload))

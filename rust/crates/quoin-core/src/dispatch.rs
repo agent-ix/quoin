@@ -59,6 +59,7 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.record_experiment",
     "evidence.record_operational",
     "evidence.record_scenario",
+    "evidence.requirements_matrix",
     "evidence.store_facts",
     "evidence.trust_assessments",
     "evidence.trust_decision",
@@ -162,6 +163,7 @@ pub fn dispatch(
         "evidence.record_discharge" => evidence::record_discharge(request, capabilities),
         "evidence.discharge_report" => evidence::discharge_report(request, capabilities),
         "evidence.inward_completeness" => evidence::inward_completeness(request, capabilities),
+        "evidence.requirements_matrix" => evidence::requirements_matrix(request, capabilities),
         "evidence.record_scenario" => crate::ops::evidence::record_scenario(request, capabilities),
         "evidence.record_operational" => {
             crate::ops::evidence::record_operational(request, capabilities)

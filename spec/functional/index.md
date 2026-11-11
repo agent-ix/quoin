@@ -120,6 +120,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-124: Inspect installed semantic modules and their import locks](./FR-124-inspect-installed-semantic-modules.md)
 - [FR-130: Quire Protocol scenario-evidence intake](./FR-130-protocol-scenario-evidence-intake.md)
 - [FR-133: Discharge facts in the evidence store and inward-completeness report](./FR-133-discharge-facts-in-the-evidence-store.md)
+- [FR-135: Requirements mapping matrix view over the discharge report](./FR-135-requirements-mapping-matrix-view.md)
 - [FR-125: Immutable content-addressed binary attachments for measurements](./FR-125-content-addressed-measurement-attachments.md)
 - [FR-131: Percentage metrics are taken over a plan-enumerated population](./FR-131-percentage-metrics-over-enumerated-population.md)
 - [FR-132: Paired-run metrics computed from two compared collections](./FR-132-paired-run-metrics.md)
