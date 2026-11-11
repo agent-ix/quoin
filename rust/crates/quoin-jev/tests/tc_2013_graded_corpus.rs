@@ -155,9 +155,17 @@ fn tc_2014_the_first_observation_is_the_ratio_aggregate() {
     assert_eq!(aggregate["shape"], "ratio");
     assert_eq!(aggregate["unit"], "fraction");
     assert!(aggregate.get("dimensions").is_none());
-    assert_eq!(
-        aggregate["population"],
-        json!({ "examined": 15, "matched": 12, "complete": true, "repetitions": 1 })
+    let population = &aggregate["population"];
+    assert_eq!(population["examined"], 15);
+    assert_eq!(population["matched"], 12);
+    assert_eq!(population["complete"], true);
+    assert_eq!(population["repetitions"], 1);
+    assert_eq!(population["examined_ids"].as_array().unwrap().len(), 15);
+    let matched_ids = population["matched_ids"].as_array().unwrap();
+    assert_eq!(matched_ids.len(), 12);
+    assert!(
+        !matched_ids.contains(&json!("w00")),
+        "a disagreeing item is not matched"
     );
     assert_eq!(aggregate["value"], 12.0 / 15.0);
 }
@@ -213,6 +221,7 @@ statistical_design:\n\
 \x20\x20sampling: exhaustive\n\
 \x20\x20repetitions: 1\n\
 \x20\x20estimator: proportion\n\
+\x20\x20population_exempt: synthetic fixture items are rows, not ids\n\
 \x20\x20error_model: binomial\n\
 \x20\x20uncertainty: wilson interval\n\
 \x20\x20decision_rule:\n\

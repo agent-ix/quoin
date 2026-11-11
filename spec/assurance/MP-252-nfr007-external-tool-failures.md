@@ -14,7 +14,7 @@ statistical_design:
   repetitions: 1
   estimator: proportion
   population_set:
-    ids: [review:ix-flow-absent, review:ix-flow-exits-nonzero, to-plan:ix-flow-absent, to-plan:ix-flow-exits-nonzero]
+    ids: [review:ix-flow-absent, review:ix-flow-fails-the-run, to-plan:ix-flow-absent, to-plan:ix-flow-fails-the-run]
   error_model: none; each id is probed once against the real binary and the outcome is read directly from its exit status and streams
   uncertainty: none; a complete census of the declared set, not a sample
   decision_rule:
@@ -45,13 +45,17 @@ Decide whether `quoin review` and `quoin to-plan` hide an `ix-flow` failure.
 Each workflow command paired with each failure mode, as `command:mode`. The
 commands are found by the producer from the binary's own help text; the modes
 are the two the producer can stage, and both are in the set. The set is compared
-with this plan's by the `tc_3004` test.
+with this plan's by the `tc_3004` test (TC-3004).
 
 ## Measure Definition
 
 The producer gives each command a skill directory that satisfies it, and a
-`PATH` holding either no `ix-flow` or a stub `ix-flow` that prints to stderr and
-exits 7. The pair matches when `quoin` exits non-zero. Value: matching pairs over
+`PATH` holding either no `ix-flow` or a stub `ix-flow` that answers the version
+handshake, logs each operation it is asked for, and fails the `run` with exit 7
+and a marker on stderr. A pair matches when `quoin` exits non-zero and the
+staged failure is what surfaced: the stub was asked to `run` and its marker
+reached stderr, or `quoin` said it could not start `ix-flow`. A control launch
+against a stub that succeeds must exit zero first, or the probe panics. Value: matching pairs over
 pairs examined, definition `nfr007.external-failure-exit-v1`.
 
 ## Collection Procedure

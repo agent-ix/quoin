@@ -155,6 +155,22 @@ fn tc_3000_an_exemption_is_a_non_empty_reason() {
     }
 }
 
+/// A plan declaring both a set and an exemption is refused at load.
+///
+/// Provenance: PLAT-1401
+#[trace("FR-131-AC-7", "TC-3000")]
+#[test]
+fn tc_3000_a_set_and_an_exemption_together_refuse_the_plan_load() {
+    let refusal = plans_from(&plan_document("proportion", &format!("{SET}{EXEMPT}")))
+        .expect_err("both declarations are refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::PlanInvalid);
+    assert!(
+        refusal
+            .subject()
+            .contains("both population_set and population_exempt")
+    );
+}
+
 /// A proportion plan with neither a set nor an exemption is inconclusive in
 /// the stage verdict whatever it observed; either declaration, or another
 /// estimator, lifts it.

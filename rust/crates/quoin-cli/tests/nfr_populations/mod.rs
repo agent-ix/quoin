@@ -15,8 +15,10 @@ pub(crate) mod commands;
 pub(crate) mod manifests;
 
 use std::collections::BTreeSet;
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
+use std::time::{Duration, Instant};
 
 use quoin_measurement::json_bridge::from_serde;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
@@ -32,16 +34,53 @@ pub(crate) struct Probed {
     pub(crate) matched: BTreeSet<String>,
 }
 
-/// The built `quoin` binary, run with an isolated home.
+/// The longest any spawned `quoin` may run before the probe is a failure.
+const TIMEOUT: Duration = Duration::from_secs(120);
+
+/// The built `quoin` binary, run with an isolated home and a deadline. A
+/// process that outlives the deadline is killed and the probe panics: a hang
+/// is never read as a refusal.
 pub(crate) fn quoin(
     home: &Path,
     arguments: &[&str],
     configure: impl FnOnce(&mut Command),
 ) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
-    command.args(arguments).env("IX_HOME", home);
+    command
+        .args(arguments)
+        .env("IX_HOME", home)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     configure(&mut command);
-    command.output().expect("the native quoin binary runs")
+    let mut child = command.spawn().expect("the native quoin binary spawns");
+    let drain = |stream: Option<Box<dyn Read + Send>>| {
+        std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            if let Some(mut stream) = stream {
+                let _ = stream.read_to_end(&mut bytes);
+            }
+            bytes
+        })
+    };
+    let stdout = drain(child.stdout.take().map(|s| Box::new(s) as _));
+    let stderr = drain(child.stderr.take().map(|s| Box::new(s) as _));
+    let deadline = Instant::now() + TIMEOUT;
+    let status = loop {
+        if let Some(status) = child.try_wait().expect("the child can be polled") {
+            break status;
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            panic!("`quoin {arguments:?}` ran past {TIMEOUT:?}");
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    Output {
+        status,
+        stdout: stdout.join().expect("stdout drains"),
+        stderr: stderr.join().expect("stderr drains"),
+    }
 }
 
 pub(crate) fn text(bytes: &[u8]) -> String {

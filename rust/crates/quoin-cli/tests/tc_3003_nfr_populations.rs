@@ -53,22 +53,23 @@ fn tc_3004_an_ix_flow_failure_is_a_non_zero_quoin_exit() {
     assert_accepted("MP-252", &probed);
 }
 
-/// NFR-008-M-1 and NFR-008-M-2: every corrupt manifest aborts assembly and every
-/// candidate without one is skipped.
+/// NFR-008-M-1 and NFR-008-M-2: every corrupt manifest aborts assembly naming
+/// its file and every candidate without one is skipped. Both populations are
+/// probed and checked before either observation is recorded.
 #[trace("FR-131-AC-11", "TC-3005", "NFR-008-M-1", "NFR-008-M-2")]
 #[test]
 fn tc_3005_corrupt_manifests_abort_and_missing_ones_are_skipped() {
-    let home = home();
-    let corrupt = manifests::corrupt_manifests(home.path());
+    let harness = manifests::Harness::new();
+    let corrupt = manifests::corrupt_manifests(&harness);
+    let missing = manifests::missing_manifests(&harness);
     assert_eq!(
         corrupt.matched, corrupt.examined,
-        "a corrupt manifest did not abort"
+        "a corrupt manifest did not abort naming its file"
     );
-    assert_accepted("MP-253", &corrupt);
-    let missing = manifests::missing_manifests(home.path());
     assert_eq!(
         missing.matched, missing.examined,
         "a missing manifest was not skipped"
     );
+    assert_accepted("MP-253", &corrupt);
     assert_accepted("MP-254", &missing);
 }

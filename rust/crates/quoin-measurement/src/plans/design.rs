@@ -254,6 +254,11 @@ pub(super) fn statistical_design_from(
         .get("population_exempt")
         .map(|stated| population_exempt_from(path, stated))
         .transpose()?;
+    refuse_both_population_declarations(
+        path,
+        population_set.as_ref(),
+        population_exempt.as_deref(),
+    )?;
     if let (Some(rule), Some(estimator)) = (decision_rule, estimator) {
         rule.check_estimator(estimator).map_err(|error| {
             MeasurementError::new(
@@ -271,6 +276,24 @@ pub(super) fn statistical_design_from(
         population_set,
         population_exempt,
     }))
+}
+
+/// A plan is measured over a declared set or exempt from one, never both.
+fn refuse_both_population_declarations(
+    path: &str,
+    set: Option<&PopulationSet>,
+    exempt: Option<&str>,
+) -> Result<(), MeasurementError> {
+    if set.is_some() && exempt.is_some() {
+        return Err(MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: statistical_design declares both population_set and population_exempt; \
+                 a plan is measured over a set or exempt from one, not both"
+            ),
+        ));
+    }
+    Ok(())
 }
 
 /// Read `statistical_design.population_exempt`: a non-empty reason the plan's

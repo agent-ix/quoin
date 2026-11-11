@@ -6,6 +6,7 @@
 #![allow(
     clippy::unwrap_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report"
 )]
 
@@ -115,4 +116,96 @@ fn tc_2022_an_unrecognized_row_never_agrees_through_a_leftover_label() {
     let population = &document["observations"][0]["population"];
     assert_eq!(population["examined"], 15);
     assert_eq!(population["matched"], 13);
+}
+
+/// The authored plan `id`'s declared population set.
+fn declared_set(id: &str) -> std::collections::BTreeSet<String> {
+    use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
+    use quoin_measurement::source::MemoryMeasurement;
+
+    let assurance =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../spec/assurance");
+    let file = declared_set_file(id);
+    let document = std::fs::read_to_string(assurance.join(&file)).unwrap();
+    let source = MemoryMeasurement::new().with_document(format!("spec/assurance/{file}"), document);
+    let plans = load_measurement_plans(&source, PlanLoadOptions::default()).unwrap();
+    plans[0]
+        .statistical_design
+        .as_ref()
+        .and_then(|design| design.population_set.as_ref())
+        .unwrap()
+        .iter()
+        .map(str::to_owned)
+        .collect()
+}
+
+/// The Jev plans' declared sets equal what their sources enumerate: MP-244
+/// the corpus's fixtures (and the aggregate the producer stores names exactly
+/// them), MP-219 the frozen labels, and MP-229 and MP-230 bars that are plans
+/// in this directory.
+///
+/// Provenance: PLAT-1401
+#[trace("FR-131-AC-12", "TC-3006")]
+#[test]
+fn tc_3006_the_jev_plans_declare_the_sets_their_sources_enumerate() {
+    let fixtures: std::collections::BTreeSet<String> = {
+        let corpus = corpus();
+        corpus
+            .weakness_kind_fixtures
+            .iter()
+            .map(|fixture| fixture.fixture_id.clone())
+            .chain(
+                corpus
+                    .adverse_case_coverage_fixtures
+                    .iter()
+                    .map(|fixture| fixture.fixture_id.clone()),
+            )
+            .collect()
+    };
+    assert_eq!(declared_set("MP-244"), fixtures);
+    let document = stored(constant_predictor_items(&graded()));
+    let stated: std::collections::BTreeSet<String> =
+        document["observations"][0]["population"]["examined_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|id| id.as_str().unwrap().to_owned())
+            .collect();
+    assert_eq!(stated, fixtures);
+
+    let labels: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../bench/span-breadth-v1-labels.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let label_ids: std::collections::BTreeSet<String> = labels["labels"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|label| label["id"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(declared_set("MP-219"), label_ids);
+
+    for (gate, bars) in [("MP-229", 4), ("MP-230", 3)] {
+        let declared = declared_set(gate);
+        assert_eq!(declared.len(), bars, "{gate}");
+        for bar in declared {
+            let _ = declared_set_file(&bar);
+        }
+    }
+}
+
+/// The file of the plan `id`, which must exist.
+fn declared_set_file(id: &str) -> String {
+    std::fs::read_dir(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../spec/assurance"),
+    )
+    .unwrap()
+    .filter_map(Result::ok)
+    .map(|entry| entry.file_name().to_string_lossy().into_owned())
+    .find(|name| name.starts_with(&format!("{id}-")))
+    .unwrap_or_else(|| panic!("{id} is not a plan in spec/assurance"))
 }

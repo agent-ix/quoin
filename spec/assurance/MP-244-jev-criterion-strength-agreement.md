@@ -14,6 +14,8 @@ statistical_design:
   minimum_population: 15
   repetitions: 1
   estimator: proportion
+  population_set:
+    ids: [CS-FIX-001, CS-FIX-002, CS-FIX-003, CS-FIX-004, CS-FIX-005, CS-FIX-006, CS-FIX-007, CS-FIX-008, CS-FIX-009, CS-FIX-010, CS-FIX-011, CS-FIX-012, CS-FIX-013, CS-FIX-014, CS-FIX-015]
   error_model: agent-labelled ground truth; a lens answer is noisy across passes, measured by MP-225
   uncertainty: fifteen fixtures is a small corpus and one pass can beat the constant by luck; MP-228 states the repeated-pass condition
   decision_rule:
@@ -41,6 +43,8 @@ relationships: []
 Decide whether one graded pass of the criterion-strength lens agrees with the corpus more often than the best constant predictor (MP-222, bar 1 of MP-228).
 
 ## Population
+
+The plan's `population_set` is the `fixture_id` of every fixture in `criterion-strength-fixtures.json`; the `tc_3006` test fails when the two differ, and `graded_corpus_collection` states them as the aggregate's `examined_ids` and `matched_ids`.
 
 The fifteen fixtures of `criterion-strength-fixtures.json`: eleven `weakness_kind` criteria and four `coverage` FRs. An unanswered or unrecognized row stays in the denominator as a disagreement.
 

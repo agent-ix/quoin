@@ -131,12 +131,21 @@ pub struct Duplicate {
 #[derive(Debug, thiserror::Error)]
 pub enum CatalogError {
     /// A `manifest.yaml` was not readable as one YAML 1.2 document.
-    #[error("manifest at {root} is not valid YAML: {detail}")]
+    #[error("manifest at {root}/manifest.yaml is not valid YAML: {detail}")]
     ManifestYaml {
         /// The module root whose document failed.
         root: String,
         /// The YAML reader's detail.
         detail: String,
+    },
+    /// A `manifest.yaml` parsed, but its document is not a mapping (an empty
+    /// file, `~`, a bare scalar or a sequence), so it declares no module.
+    #[error("manifest at {root}/manifest.yaml is not a mapping: found {found}")]
+    ManifestNotMapping {
+        /// The module root whose document failed.
+        root: String,
+        /// What the document is instead.
+        found: &'static str,
     },
 }
 
@@ -148,7 +157,9 @@ pub enum CatalogError {
 ///
 /// # Errors
 /// Returns [`CatalogError::ManifestYaml`] when a retained module manifest is
-/// not a YAML document the TypeScript `yaml` reader would accept.
+/// not a YAML document the TypeScript `yaml` reader would accept, and
+/// [`CatalogError::ManifestNotMapping`] when it is a document that is not a
+/// mapping.
 pub fn build(
     documents: &[ModuleDocument],
     semantics: &[SemanticView],
@@ -173,7 +184,10 @@ pub fn build(
             }
         })?;
         let Some(manifest) = manifest.as_object() else {
-            continue;
+            return Err(CatalogError::ManifestNotMapping {
+                root: document.root.clone(),
+                found: json_kind(&manifest),
+            });
         };
         let name = string_field(manifest, "name").unwrap_or_else(|| basename(&document.root));
         if !seen_names.insert(name.clone()) {
@@ -239,6 +253,17 @@ pub fn find_entry<'a>(catalog: &'a Catalog, name: &str) -> Option<&'a SpecCatalo
         .entries
         .iter()
         .find(|entry| entry.name.to_lowercase() == name.to_lowercase())
+}
+
+fn json_kind(value: &Value) -> &'static str {
+    match value {
+        Value::Null => "null or an empty document",
+        Value::Bool(_) => "a boolean",
+        Value::Number(_) => "a number",
+        Value::String(_) => "a string",
+        Value::Array(_) => "a sequence",
+        Value::Object(_) => "a mapping",
+    }
 }
 
 fn named_entries(value: Option<&Value>) -> Vec<&serde_json::Map<String, Value>> {
@@ -399,6 +424,32 @@ mod tests {
         );
         assert_eq!(object.data_schema, Some(json!({"type": "object"})));
         assert_eq!(object.kind, EntryKind::Object);
+    }
+
+    #[test]
+    fn tc_3006_a_manifest_that_is_not_a_mapping_aborts_naming_its_file() {
+        for (manifest, found) in [
+            ("", "null or an empty document"),
+            ("~\n", "null or an empty document"),
+            ("just a string\n", "a string"),
+            ("- a\n- b\n", "a sequence"),
+        ] {
+            let error = build(
+                &[ModuleDocument {
+                    root: "/modules/broken".to_owned(),
+                    manifest: manifest.to_owned(),
+                    skeleton_names: Vec::new(),
+                }],
+                &[],
+            )
+            .expect_err(manifest);
+            assert_eq!(
+                error.to_string(),
+                format!(
+                    "manifest at /modules/broken/manifest.yaml is not a mapping: found {found}"
+                )
+            );
+        }
     }
 
     #[test]

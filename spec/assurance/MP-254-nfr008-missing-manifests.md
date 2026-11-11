@@ -48,7 +48,8 @@ the `tc_3005` test compares its ids with this plan's set.
 
 ## Measure Definition
 
-For each kind the producer lists the candidate ahead of a valid module in
+The producer seeds an offline home and requires the valid companion to list
+alone first. For each kind it lists the candidate ahead of the companion in
 `QUOIN_MODULE_PATHS` and runs `quoin catalog list --json`. The kind matches when
 the process exits zero and the valid module is in the catalog. Value: matching
 kinds over kinds examined, definition `nfr008.missing-manifest-skip-v1`.
