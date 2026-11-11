@@ -53,6 +53,7 @@
 mod apparatus;
 mod constant_predictor;
 mod order;
+mod paired;
 mod reason;
 pub mod rows;
 mod tamper;
@@ -145,7 +146,10 @@ pub fn verify(
         check.findings.push(plan_level(Reason::OrderUnattested));
     }
     check.findings.extend(tamper::findings(tamper));
+    let pair = paired::judge(plan, &check.runs);
     match (check.rule, design.estimator) {
+        // A paired plan's relation is its decision (FR-132-AC-9).
+        (None, _) if pair.is_some() => {}
         (None, _) => check.findings.push(plan_level(Reason::NoDecisionRule)),
         (_, None) => check.findings.push(plan_level(Reason::NoEstimator)),
         (Some(_), Some(_)) if check.runs.is_empty() => {
@@ -166,6 +170,10 @@ pub fn verify(
                 }
             }
         }
+    }
+    if let Some(pair) = pair {
+        check.findings.extend(pair.findings);
+        decisions.extend(pair.decision);
     }
     let regressed_runs: Vec<String> = regressed
         .iter()
@@ -227,11 +235,7 @@ fn observations_of<'a>(
     collection
         .observations
         .iter()
-        .filter(|observation| {
-            observation.plan_id.as_str() == plan.id.as_str()
-                && observation.metric.as_str() == plan.metric.as_str()
-                && observation.definition_version.as_str() == plan.definition_version.as_str()
-        })
+        .filter(|observation| crate::paired::is_of_plan(plan, observation))
         .collect()
 }
 
@@ -385,6 +389,7 @@ impl Check<'_> {
                     baseline: baseline_value,
                     holds,
                     interval: decided,
+                    paired: false,
                 });
             }
         }

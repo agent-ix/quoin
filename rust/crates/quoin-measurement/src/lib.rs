@@ -113,7 +113,9 @@ pub use intervention::intake::{
     write_intervention_record,
 };
 pub use intervention::validate::validate_intervention_record;
-pub use paired::{PairedRunObservation, PairedRunOutcome, compare_paired_runs};
+pub use paired::{
+    PairedRunObservation, PairedRunOutcome, compare_latest_pair, compare_paired_runs,
+};
 pub use plans::{PlanLoadOptions, load_measurement_plans};
 pub use portfolio::{
     PORTFOLIO_STALE_AFTER_DAYS, PortfolioReport, build_portfolio_report, render_portfolio_report,
