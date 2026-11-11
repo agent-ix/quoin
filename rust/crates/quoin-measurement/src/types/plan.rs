@@ -277,6 +277,31 @@ pub struct MeasurementPlan {
     /// compared. Absent in the document means `false`: a profile change blocks
     /// the comparison unless the plan says otherwise.
     pub cross_profile_comparison: bool,
+    /// The relation two runs must satisfy for this plan's metric, when the
+    /// document states `paired_run` (PLAT-114).
+    pub paired_run: Option<PairedRun>,
+}
+
+/// How a paired-run metric relates the same slice in two runs.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PairedRelation {
+    /// The two values are equal.
+    Equal,
+    /// The two values differ by at most this finite, non-negative amount.
+    WithinDelta(f64),
+    /// The later value is no worse than the earlier under the plan's
+    /// `objective`.
+    NotWorse,
+}
+
+/// A plan's `paired_run` block: the relation and how many slice comparisons
+/// a run pair must contain before the relation says anything.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PairedRun {
+    /// What must hold between the two runs.
+    pub relation: PairedRelation,
+    /// Fewer comparable slices than this is inconclusive, never zero.
+    pub minimum_pairs: NonZeroU32,
 }
 
 impl MeasurementPlan {

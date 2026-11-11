@@ -207,6 +207,7 @@ pub(crate) fn plan_from(
         }
     }
     let cross_profile_comparison = design::cross_profile_comparison_from(path, value)?;
+    let paired_run = design::paired_run_from(path, value, objective)?;
     Ok(MeasurementPlan {
         id,
         title,
@@ -224,6 +225,7 @@ pub(crate) fn plan_from(
         protected_apparatus,
         negative_controls,
         cross_profile_comparison,
+        paired_run,
     })
 }
 

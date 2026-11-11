@@ -121,3 +121,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-130: Quire Protocol scenario-evidence intake](./FR-130-protocol-scenario-evidence-intake.md)
 - [FR-125: Immutable content-addressed binary attachments for measurements](./FR-125-content-addressed-measurement-attachments.md)
 - [FR-131: Percentage metrics are taken over a plan-enumerated population](./FR-131-percentage-metrics-over-enumerated-population.md)
+- [FR-132: Paired-run metrics computed from two compared collections](./FR-132-paired-run-metrics.md)
