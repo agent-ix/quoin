@@ -50,6 +50,13 @@ pub(super) fn map_error(error: &EvidenceError, op: &'static str) -> CoreError {
     let envelope = CoreError::new(mapped.unwrap_or(CoreErrorCode::Io), error.to_string())
         .with_context("op", op)
         .with_context("evidence_code", code.as_str());
+    let envelope = match error {
+        // The kind a producer branches on, beside the code that groups it.
+        EvidenceError::ScenarioRefused { kind, .. } => {
+            envelope.with_context("refusal", kind.as_str())
+        }
+        _ => envelope,
+    };
     match mapped {
         Some(_) => envelope,
         // A code this build has no opinion on. It exits Internal (4), and it
@@ -67,7 +74,8 @@ const fn core_code(code: EvidenceErrorCode) -> Option<CoreErrorCode> {
         | EvidenceErrorCode::InvalidIdentity
         | EvidenceErrorCode::InvalidRecord
         | EvidenceErrorCode::PolicyUnknownObligation
-        | EvidenceErrorCode::Canonicalization => CoreErrorCode::BadRequest,
+        | EvidenceErrorCode::Canonicalization
+        | EvidenceErrorCode::ScenarioRefused => CoreErrorCode::BadRequest,
 
         EvidenceErrorCode::StoreRead
         | EvidenceErrorCode::StoreIo
@@ -104,7 +112,7 @@ mod tests {
     fn the_error_mapping_covers_every_evidence_code() {
         assert_eq!(
             EvidenceErrorCode::ALL.len(),
-            9,
+            10,
             "quoin-evidence gained or lost an error code; map it in map_error deliberately"
         );
 
@@ -115,6 +123,7 @@ mod tests {
             EvidenceErrorCode::InvalidRecord,
             EvidenceErrorCode::PolicyUnknownObligation,
             EvidenceErrorCode::Canonicalization,
+            EvidenceErrorCode::ScenarioRefused,
         ];
         let refused = [
             EvidenceErrorCode::StoreRead,

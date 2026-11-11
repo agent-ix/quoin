@@ -135,6 +135,7 @@ that exist.
 | FR-121 | 🚧 Pending | Spec authored (PLAT-201). Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101) against goldens in its `quire-fixtures` crate; no quire-rs ticket is cited yet. It also needs the quire-rs `semantic-v1.schema.json` change for `recordSources` and `availability.recordKeys`. |
 | FR-122 | 🚧 Pending | Spec authored (PLAT-196). Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101) against goldens in its `quire-fixtures` crate; no quire-rs ticket is cited yet. spec-objects-architecture skeleton and FR-006 changes are that module's. |
 | FR-123 | 🚧 Pending | Spec authored (PLAT-240). Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101, PLAT-1370) against goldens in its `quire-fixtures` crate; spec-objects-business skeleton and schema changes are that module's. |
+| FR-130 | ✅ Covered | `quoin-evidence` `scenario.rs` :: unit tests; `quoin-core` `tc_458_evidence_boundary.rs` :: `tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal` |
 
 ## Non-Functional Requirements
 
@@ -233,6 +234,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-122 | FR-122-AC-1, FR-122-AC-2, FR-122-AC-3, FR-122-AC-4, FR-122-AC-5, FR-122-AC-6, FR-122-AC-7 | TC-2109, TC-2110, TC-2111, TC-2112, TC-2113, TC-2114, TC-2115 | 🚧 Pending |
 | FR-123 | FR-123-AC-1, FR-123-AC-2, FR-123-AC-3, FR-123-AC-4, FR-123-AC-5, FR-123-AC-6, FR-123-AC-7, FR-123-AC-8, FR-123-AC-9 | TC-2120, TC-2121, TC-2122, TC-2123, TC-2124, TC-2125, TC-2126, TC-2127, TC-2128 | 🚧 Pending |
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
+| FR-130 | FR-130-AC-1, FR-130-AC-2, FR-130-AC-3, FR-130-AC-4, FR-130-AC-5, FR-130-AC-6, FR-130-AC-7, FR-130-AC-8, FR-130-AC-9 | TC-2200, TC-2201, TC-2202, TC-2203, TC-2204, TC-2205, TC-2206, TC-2207, TC-2208 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -1367,6 +1369,15 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2137 | An import cycle fails install in every case; it is named over `<org>/<repo>#<Type>` nodes only when the `$ref`-derived type-level edges themselves form a cycle, and over packages when they do not (no edges, edges forming no type-level cycle, or a module with no `$ref`s into it) | Unit | P0 | FR-075-AC-7 | ✅ Complete |
 | TC-2139 | A `$ref` in the module's own data schema naming a type the installed provider does not export fails install with `semantic.unknown-import-type` at `<section>[<type>].data_schema.schema`, with and without `import_types`; an exported type raises none | Unit | P0 | FR-070-AC-13 | ✅ Complete |
 | TC-2140 | A manifest carrying all eight registry keys (`lexicon`, `observable_verbs`, `ambiguity_terms`, `vacuous_predicates`, `grammar_severity`, `property_idioms`, `traceability`, `verification_catalog`) validates against the pinned module-manifest schema; an unknown root key is refused | Unit | P0 | FR-070-AC-14 | ✅ Complete |
+| TC-2200 | A complete scenario record is filed under `scenarios/<integration>/<scenario>.json` and the same record again is idempotent | Unit | P0 | FR-130-AC-1 | ✅ Complete |
+| TC-2201 | A partial resolution and a legacy-compatibility selection are admitted without a full manifest | Unit | P0 | FR-130-AC-2 | ✅ Complete |
+| TC-2202 | A wrong or absent contract version is refused before the shape is read | Unit | P0 | FR-130-AC-3 | ✅ Complete |
+| TC-2203 | A missing member, an unknown member, a blank component and an empty budget are each refused | Unit | P0 | FR-130-AC-4 | ✅ Complete |
+| TC-2204 | A cross-wired owner, revision, scenario, path-unsafe scenario id or causing entry is refused as cross-wired | Unit | P0 | FR-130-AC-5 | ✅ Complete |
+| TC-2205 | A repeated entry, value owner or budget dimension is refused as duplicate-component | Unit | P0 | FR-130-AC-6 | ✅ Complete |
+| TC-2206 | The budget is stored per dimension, a scalar budget is refused and an absent grant stays absent | Unit | P0 | FR-130-AC-7 | ✅ Complete |
+| TC-2207 | A second different record for one scenario is refused and the first is unchanged | Unit | P0 | FR-130-AC-8 | ✅ Complete |
+| TC-2208 | The intake answers its contract version and owner, and a refusal exits 3 with QE-E010 and the refusal kind | Unit | P0 | FR-130-AC-9 | ✅ Complete |
 
 ## Stakeholder Requirement Coverage
 

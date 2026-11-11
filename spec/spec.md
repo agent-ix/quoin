@@ -225,6 +225,7 @@ index; the files are authoritative.
 - [FR-122](./functional/FR-122-architecture-record-keys-mapping.md) — architecture object record keys mapping.
 - [FR-123](./functional/FR-123-model-table-sections-mapping.md) — enumeration `## Values` and model-table sections map to record keys.
 - [FR-124](./functional/FR-124-inspect-installed-semantic-modules.md) — `quoin module inspect` reports each installed module's semantic contract and import locks.
+- [FR-130](./functional/FR-130-protocol-scenario-evidence-intake.md) — `evidence.record_scenario` files a typed Quire Protocol scenario-evidence record or refuses it by kind.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 
