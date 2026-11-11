@@ -30,17 +30,26 @@ pub enum ComparisonReasonCode {
     /// Not blocking: reported beside the delta, and only for a slice whose
     /// plan protects apparatus on at least one side (PLAT-975).
     ArtifactChanged,
+    /// The two collections were built under different profiles and the plan
+    /// does not permit comparing across them.
+    ProfileChanged,
+    /// The two collections were built under different profiles and the plan
+    /// permits comparing across them. Not blocking: the strata are named
+    /// beside the delta.
+    ProfileStratified,
 }
 
 impl ComparisonReasonCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 8] = [
         Self::DefinitionChanged,
         Self::IncompletePopulation,
         Self::PopulationChanged,
         Self::ToolChanged,
         Self::ApparatusChanged,
         Self::ArtifactChanged,
+        Self::ProfileChanged,
+        Self::ProfileStratified,
     ];
 
     /// The stable wire spelling.
@@ -53,6 +62,8 @@ impl ComparisonReasonCode {
             Self::ToolChanged => "tool_changed",
             Self::ApparatusChanged => "apparatus_changed",
             Self::ArtifactChanged => "artifact_changed",
+            Self::ProfileChanged => "profile_changed",
+            Self::ProfileStratified => "profile_stratified",
         }
     }
 
@@ -71,8 +82,14 @@ impl ComparisonReasonCode {
     #[must_use]
     pub const fn is_blocking(self) -> bool {
         match self {
-            Self::DefinitionChanged | Self::IncompletePopulation | Self::ApparatusChanged => true,
-            Self::PopulationChanged | Self::ToolChanged | Self::ArtifactChanged => false,
+            Self::DefinitionChanged
+            | Self::IncompletePopulation
+            | Self::ApparatusChanged
+            | Self::ProfileChanged => true,
+            Self::PopulationChanged
+            | Self::ToolChanged
+            | Self::ArtifactChanged
+            | Self::ProfileStratified => false,
         }
     }
 }

@@ -68,6 +68,7 @@ fn plan(id: &str, objective: Option<Objective>) -> MeasurementPlan {
         objective,
         protected_apparatus: None,
         negative_controls: None,
+        cross_profile_comparison: false,
     }
 }
 

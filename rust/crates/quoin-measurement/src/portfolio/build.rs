@@ -164,6 +164,14 @@ fn loaded(
         .len()
         .checked_sub(2)
         .and_then(|index| collections.get(index));
+    let comparison = match (previous, latest) {
+        (Some(before), Some(after)) => Some(PortfolioComparison {
+            before: collection_ref(root, before)?,
+            after: collection_ref(root, after)?,
+            observations: crate::compare::compare_measurement_collections(before, after, &plans)?,
+        }),
+        _ => None,
+    };
     Ok(PortfolioRepositoryReport {
         name: display_name(root),
         root: root.to_string_lossy().into_owned(),
@@ -183,14 +191,7 @@ fn loaded(
         latest_collection: latest
             .map(|found| collection_ref(root, found))
             .transpose()?,
-        comparison: match (previous, latest) {
-            (Some(before), Some(after)) => Some(PortfolioComparison {
-                before: collection_ref(root, before)?,
-                after: collection_ref(root, after)?,
-                observations: crate::compare::compare_measurement_collections(before, after)?,
-            }),
-            _ => None,
-        },
+        comparison,
         staleness: Staleness::NotComputed,
     })
 }

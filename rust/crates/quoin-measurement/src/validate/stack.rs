@@ -101,8 +101,8 @@ fn note<T>(findings: &mut Vec<String>, result: Result<T, MeasurementError>) -> O
     }
 }
 
-/// `buildProfile` is optional in a stored record and `release`-only in a new
-/// one; the `release`-only half is [`crate::validate::measurement_collection`].
+/// `buildProfile` is optional in a stored record; a new collection must state
+/// one, which [`crate::validate::measurement_collection`] checks.
 fn build_profile(object: &JsonObject) -> Result<Option<BuildProfile>, MeasurementError> {
     match object.get("buildProfile") {
         None => Ok(None),
@@ -111,7 +111,9 @@ fn build_profile(object: &JsonObject) -> Result<Option<BuildProfile>, Measuremen
             .and_then(BuildProfile::from_wire)
             .map(Some)
             .ok_or_else(|| {
-                refuse("verificationStack.buildProfile must be debug, release, or absent")
+                refuse(
+                    "verificationStack.buildProfile must be debug, release, undeclared, or absent",
+                )
             }),
     }
 }

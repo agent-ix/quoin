@@ -143,11 +143,19 @@ string_literal!(
     "verification-stack-attestation-v1",
     "`schemaVersion` on a verification-stack attestation."
 );
-string_literal!(
-    ReleaseProfile,
-    "release",
-    "`buildProfile: \"release\"`: a debug build is not an attestation."
-);
+/// `buildProfile` on a verification-stack attestation: the profile the
+/// producer actually ran under. It claims nothing about optimisation or
+/// release suitability.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BuildProfile {
+    /// A debug build.
+    Debug,
+    /// A release build.
+    Release,
+    /// The producer did not declare its build.
+    Undeclared,
+}
 
 integer_literal!(FormatVersion1, 1, "`format_version: 1`.");
 integer_literal!(SchemaVersion1, 1, "`schema_version: 1`.");

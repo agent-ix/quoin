@@ -159,6 +159,7 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
         objective: None,
         protected_apparatus: None,
         negative_controls: None,
+        cross_profile_comparison: false,
         execution_procedure: None,
     }
 }
