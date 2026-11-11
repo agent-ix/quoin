@@ -7,6 +7,8 @@ relationships:
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-107"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-132"
+    type: "references"
 ---
 
 # FR-108: Independent measurement-verdict checker
@@ -24,7 +26,7 @@ network or environment. It computes no estimate with producer code: it
 recomputes `proportion` and `count` from each observation's `population`, and
 applies the plan's decision rule through engineering-assurance's own
 `DecisionRule::holds`, or `DecisionRule::holds_on_interval` when the rule
-states an `interval_level` (engineering-assurance FR-021).
+states an `interval_level` (engineering-assurance FR-021). A plan that declares `paired_run` is decided by its paired relation instead, or in addition to a rule it states (FR-132).
 
 `quoin-jev` SHALL provide a pure function that builds the complete graded-corpus
 `MeasurementCollection` (the governed aggregate and one item row per graded
@@ -120,7 +122,7 @@ reads:
 | `reasons` | string[] | every distinct reason code, in the declaration order of the table below; empty exactly when `accept` |
 | `claimed` | string \| null | the claimed verdict, when one was given |
 | `candidate` | string \| null | the collection id decided: the last run in intake order |
-| `decisions` | object[] | one per slice of the candidate: `dimensions`, `estimate`, `estimateBasis` (`recomputed` \| `asserted`), `baseline` (number \| null), `holds` (boolean \| null); when the rule states `interval_level` and an interval decided the slice, also `intervalBound` (`lower` \| `upper`), `intervalBoundValue` and `intervalLevel` (the level the deciding interval states, not the plan's required level, which is in the plan; FR-108-AC-11), otherwise absent |
+| `decisions` | object[] | one per slice of the candidate, and for a plan declaring `paired_run` one more entry marked `kind: "paired_run"` whose `estimate` is the FR-132 count (a slice decision carries no `kind`): `dimensions`, `estimate`, `estimateBasis` (`recomputed` \| `asserted`), `baseline` (number \| null), `holds` (boolean \| null); when the rule states `interval_level` and an interval decided the slice, also `intervalBound` (`lower` \| `upper`), `intervalBoundValue` and `intervalLevel` (the level the deciding interval states, not the plan's required level, which is in the plan; FR-108-AC-11), otherwise absent |
 | `findings` | object[] | every reason with where it was found: `reason`, `collectionId` (null for a plan-level reason), `dimensions` (null for a collection- or plan-level reason) |
 | `regressedRuns` | string[] | the runs the rule does not hold for against their own history, in intake order |
 | `orderSource` | string | where the intake order came from, one of the sources above |
@@ -134,7 +136,7 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 
 | code | verdict | when |
 | --- | --- | --- |
-| `no_decision_rule` | inconclusive | the plan states no `decision_rule` and declares no `paired_run` (FR-132-AC-9) |
+| `no_decision_rule` | inconclusive | the plan states no `decision_rule` and declares no `paired_run`; a paired plan is exempt whatever its `estimator` (FR-132-AC-9) |
 | `no_estimator` | inconclusive | the plan states no `estimator` |
 | `no_collections` | inconclusive | no stored collection measured the plan's metric under its id and `definition_version` |
 | `no_value` | inconclusive | the candidate's observation carries no measured value |

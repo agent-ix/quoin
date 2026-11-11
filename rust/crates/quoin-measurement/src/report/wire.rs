@@ -285,6 +285,7 @@ impl<'a> CurrentRowWire<'a> {
 pub(crate) struct PairedRunWire<'a> {
     plan_id: &'a str,
     metric: &'a str,
+    relation: String,
     status: &'static str,
     /// Absent unless the pair was observed.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -299,6 +300,7 @@ impl<'a> PairedRunWire<'a> {
         Self {
             plan_id: &observation.plan_id,
             metric: &observation.metric,
+            relation: observation.relation.label(),
             status: observation.outcome.as_str(),
             differing: match observation.outcome {
                 PairedRunOutcome::Observed { differing } => Some(differing),

@@ -55,12 +55,27 @@ fn plans(extra: &str) -> Vec<MeasurementPlan> {
 }
 
 fn run(id: &str, values: &[(&str, f64)]) -> MeasurementCollection {
+    run_as(
+        id,
+        ("MP-001", "quality.example-v1"),
+        "2026-08-26T00:00:00.000Z",
+        values,
+    )
+}
+
+/// A run of `plan` (id, definition version) stated at `timestamp`.
+fn run_as(
+    id: &str,
+    plan: (&str, &str),
+    timestamp: &str,
+    values: &[(&str, f64)],
+) -> MeasurementCollection {
     let observations: Vec<Value> = values
         .iter()
         .map(|(root, value)| {
             json!({
-                "metric": "quality.example", "planId": "MP-001",
-                "definitionVersion": "quality.example-v1", "state": "measured",
+                "metric": "quality.example", "planId": plan.0,
+                "definitionVersion": plan.1, "state": "measured",
                 "value": value, "unit": "count", "shape": "count",
                 "dimensions": { "root": root },
                 "population": { "examined": 1, "complete": true },
@@ -70,7 +85,7 @@ fn run(id: &str, values: &[(&str, f64)]) -> MeasurementCollection {
     let document = json!({
         "schemaVersion": 2, "collectionId": id, "subject": "fixture",
         "scope": { "cases": 1 }, "toolIdentity": "fixture producer",
-        "toolVersion": "fixture 1", "timestamp": "2026-08-26T00:00:00.000Z",
+        "toolVersion": "fixture 1", "timestamp": timestamp,
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
@@ -122,6 +137,7 @@ fn tc_3500_equal_runs_accept_and_differing_runs_reject() {
     assert_eq!(clean.decisions[0].holds, Some(true));
     let document = verdict_json(&clean).expect("serialises");
     assert_eq!(document["decisions"][0]["estimate"], json!(0.0));
+    assert_eq!(document["decisions"][0]["kind"], json!("paired_run"));
 
     let moved = run("c", &[("r1", 3.0), ("r2", 9.0)]);
     let differing = decide(&plans, &[&first, &moved]);
@@ -311,14 +327,14 @@ fn tc_3510_the_report_prints_the_paired_runs() {
     let text = render_measurement_report(&report).expect("renders");
     assert!(text.contains("## Paired runs"), "{text}");
     assert!(
-        text.contains("| quality.example | MP-001 | observed | 1 | 1 | 1 |"),
+        text.contains("| quality.example | MP-001 | equal | observed | 1 | 1 | 1 |"),
         "{text}"
     );
 
     let single = report_of(&plans, &runs[..1]);
     let text = render_measurement_report(&single).expect("renders");
     assert!(
-        text.contains("| quality.example | MP-001 | unpaired | - |"),
+        text.contains("| quality.example | MP-001 | equal | unpaired | - |"),
         "{text}"
     );
 }
@@ -333,9 +349,102 @@ fn tc_3511_the_report_json_carries_paired_runs_only_for_paired_plans() {
     )
     .expect("json");
     assert_eq!(paired["pairedRuns"][0]["status"], json!("observed"));
+    assert_eq!(paired["pairedRuns"][0]["relation"], json!("equal"));
     assert_eq!(paired["pairedRuns"][0]["differing"], json!(0));
     let plain = render_measurement_report_json(&report_of(&plans(""), &runs)).expect("renders");
     assert!(!plain.contains("pairedRuns"));
     let text = render_measurement_report(&report_of(&plans(""), &runs)).expect("renders");
     assert!(!text.contains("Paired runs"));
+}
+
+const ESTIMATED: &str = "statistical_design:\n  population: every case\n  sampling: every case once\n  \
+                         repetitions: 1\n  estimator: mean\n  population_exempt: fixture cases carry no ids\n  \
+                         error_model: a case is misjudged\n  uncertainty: none estimated\n";
+
+/// An estimator without a rule is still decided by the relation; a rule
+/// and an estimator together judge the slices as well, and the paired count
+/// is told apart from a slice decision.
+#[trace("FR-132-AC-9", "TC-3514", "TC-3515")]
+#[test]
+fn tc_3514_an_estimator_without_a_rule_is_decided_by_the_relation() {
+    let first = run("a", &[("r1", 3.0)]);
+    let second = run("b", &[("r1", 3.0)]);
+    let estimated = decide(&plans(&format!("{EQUAL}{ESTIMATED}")), &[&first, &second]);
+    assert!(codes(&estimated).is_empty(), "{:?}", codes(&estimated));
+
+    let both = decide(
+        &plans(&format!(
+            "{EQUAL}{ESTIMATED}  decision_rule:\n    comparator: ge\n    threshold: 0.8\n"
+        )),
+        &[&first, &second],
+    );
+    assert_eq!(both.verdict, Verdict::Accept, "{:?}", codes(&both));
+    let document = verdict_json(&both).expect("serialises");
+    let kinds: Vec<&Value> = document["decisions"]
+        .as_array()
+        .expect("array")
+        .iter()
+        .map(|decision| &decision["kind"])
+        .collect();
+    assert_eq!(kinds, [&Value::Null, &json!("paired_run")]);
+}
+
+/// Another definition version, or another plan sharing the metric, is not a
+/// run of this plan, in `verify` and in the report alike.
+#[trace("FR-132-AC-14", "TC-3512")]
+#[test]
+fn tc_3512_verify_and_report_select_the_same_collections() {
+    let plans = plans(EQUAL);
+    let own = ("MP-001", "quality.example-v1");
+    let at = |day: u8| format!("2026-08-{day:02}T00:00:00.000Z");
+    let runs = [
+        run_as("a", own, &at(1), &[("r1", 3.0)]),
+        run_as("b", own, &at(2), &[("r1", 3.0)]),
+        run_as(
+            "c",
+            ("MP-001", "quality.example-v2"),
+            &at(3),
+            &[("r1", 9.0)],
+        ),
+        run_as(
+            "d",
+            ("MP-002", "quality.example-v1"),
+            &at(4),
+            &[("r1", 7.0)],
+        ),
+    ];
+    let refs: Vec<&MeasurementCollection> = runs.iter().collect();
+    assert_eq!(decide(&plans, &refs).verdict, Verdict::Accept);
+    assert_eq!(
+        report_of(&plans, &runs).paired_runs[0].outcome,
+        PairedRunOutcome::Observed { differing: 0 }
+    );
+}
+
+/// The report attests no intake order, so where the order can change the
+/// answer it defers to `verify` instead of naming a pair of its own.
+#[trace("FR-132-AC-12", "TC-3516")]
+#[test]
+fn tc_3516_the_report_never_names_a_pair_verify_would_not() {
+    let plans = plans(EQUAL);
+    let own = ("MP-001", "quality.example-v1");
+    // Intake a, b, c; c states the earliest timestamp.
+    let runs = [
+        run_as("a", own, "2026-08-02T00:00:00.000Z", &[("r1", 3.0)]),
+        run_as("b", own, "2026-08-03T00:00:00.000Z", &[("r1", 3.0)]),
+        run_as("c", own, "2026-08-01T00:00:00.000Z", &[("r1", 4.0)]),
+    ];
+    let refs: Vec<&MeasurementCollection> = runs.iter().collect();
+    let verdict = decide(&plans, &refs);
+    assert!(
+        codes(&verdict).contains(&"order_unattested"),
+        "{:?}",
+        codes(&verdict)
+    );
+    let report = report_of(&plans, &runs);
+    assert_eq!(
+        report.paired_runs[0].outcome,
+        PairedRunOutcome::Inconclusive
+    );
+    assert!(report.paired_runs[0].reasons[0].starts_with("order_unattested"));
 }

@@ -9,9 +9,9 @@
 
 use std::collections::BTreeMap;
 
-use crate::paired::{PairedRunOutcome, compare_latest_pair};
+use crate::paired::{PairedRunOutcome, compare_latest_pair, order_matters};
 use crate::types::collection::MeasurementCollection;
-use crate::types::plan::{MeasurementPlan, PairedRelation};
+use crate::types::plan::MeasurementPlan;
 
 use super::{Estimate, EstimateBasis, Finding, Reason, Run, SliceDecision, id_of, order};
 
@@ -51,17 +51,16 @@ pub(super) fn judge(plan: &MeasurementPlan, runs: &[Run<'_>]) -> Option<PairedVe
                 baseline: Some(0.0),
                 holds: Some(differing == 0),
                 interval: None,
+                paired: true,
             });
         }
         PairedRunOutcome::Incomparable => findings.push(finding(Reason::PairedRunIncomparable)),
         PairedRunOutcome::Inconclusive => findings.push(finding(Reason::PairedRunInconclusive)),
         PairedRunOutcome::Unpaired => findings.push(finding(Reason::PairedRunUnpaired)),
     }
-    // Which two runs are the latest only matters when it can change the
-    // answer: more than two runs, or a relation that ranks the later run.
+    // Which two runs are the latest only matters when it can change the answer.
     let last = runs.len().saturating_sub(1);
-    let order_matters = runs.len() > 2 || matches!(paired.relation, PairedRelation::NotWorse);
-    if order_matters
+    if order_matters(paired, runs.len())
         && runs.len() >= 2
         && (order::unattested(runs, last) || order::unattested(runs, last.saturating_sub(1)))
     {

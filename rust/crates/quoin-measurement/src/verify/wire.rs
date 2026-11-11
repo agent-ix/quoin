@@ -46,6 +46,9 @@ struct VerdictWire<'a> {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct DecisionWire {
+    /// `paired_run` on a paired plan's count; absent on a slice decision.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    kind: Option<&'static str>,
     dimensions: Value,
     estimate: f64,
     estimate_basis: &'static str,
@@ -120,6 +123,7 @@ pub fn verdict_json(verdict: &MeasurementVerdict) -> Result<Value, MeasurementEr
 
 fn decision(decision: &SliceDecision) -> Result<DecisionWire, MeasurementError> {
     Ok(DecisionWire {
+        kind: decision.paired.then_some("paired_run"),
         dimensions: dimensions(&decision.dimensions)?,
         estimate: decision.estimate.value,
         estimate_basis: decision.estimate.basis.as_str(),

@@ -15,8 +15,9 @@ pub(crate) fn paired_run_table(observations: &[PairedRunObservation]) -> Vec<Str
         return Vec::new();
     }
     let mut lines = vec![
-        "| Metric | Plan | Status | Differing | Comparable | Required | Detail |".to_owned(),
-        "| --- | --- | --- | --- | --- | --- | --- |".to_owned(),
+        "| Metric | Plan | Relation | Status | Differing | Comparable | Required | Detail |"
+            .to_owned(),
+        "| --- | --- | --- | --- | --- | --- | --- | --- |".to_owned(),
     ];
     for observation in observations {
         let differing = match observation.outcome {
@@ -24,9 +25,10 @@ pub(crate) fn paired_run_table(observations: &[PairedRunObservation]) -> Vec<Str
             _ => "-".to_owned(),
         };
         lines.push(format!(
-            "| {} | {} | {} | {differing} | {} | {} | {} |",
+            "| {} | {} | {} | {} | {differing} | {} | {} | {} |",
             observation.metric,
             observation.plan_id,
+            observation.relation.label(),
             observation.outcome.as_str(),
             observation.comparisons,
             observation.minimum_pairs,

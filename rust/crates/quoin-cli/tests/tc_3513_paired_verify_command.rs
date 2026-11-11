@@ -117,16 +117,22 @@ fn tc_3513_verify_and_report_evaluate_a_paired_plan() {
     assert_eq!(equal["verdict"], json!("accept"));
     assert_eq!(equal["decisions"][0]["estimate"].as_f64(), Some(0.0));
 
+    let report = quoin(repo.path(), &["report"]);
+    let text = String::from_utf8_lossy(&report.stdout);
+    assert!(
+        text.contains("| quality.example | MP-001 | equal | observed | 0 | 1 | 1 |"),
+        "{text}"
+    );
+
     record(repo.path(), "run-c", 2.0);
     let (status, differing) = verify(repo.path());
     assert_eq!(status, Some(1));
     assert_eq!(differing["reasons"], json!(["paired_run_differs"]));
     assert_eq!(differing["decisions"][0]["estimate"].as_f64(), Some(1.0));
 
+    // Three collections: the report attests no order and defers to `verify`.
     let report = quoin(repo.path(), &["report"]);
     let text = String::from_utf8_lossy(&report.stdout);
-    assert!(
-        text.contains("| quality.example | MP-001 | observed | 1 | 1 | 1 |"),
-        "{text}"
-    );
+    assert!(text.contains("| equal | inconclusive | - |"), "{text}");
+    assert!(text.contains("order_unattested"), "{text}");
 }

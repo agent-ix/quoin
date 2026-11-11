@@ -26,7 +26,7 @@ use crate::report::verdict::badness;
 use crate::types::collection::MeasurementCollection;
 use crate::types::comparison::{ComparisonStatus, MeasurementComparison};
 use crate::types::observation::{MeasurementObservation, MeasurementState};
-use crate::types::plan::{MeasurementPlan, PairedRelation};
+use crate::types::plan::{MeasurementPlan, PairedRelation, PairedRun};
 
 /// What a paired comparison established.
 #[derive(Clone, Debug, PartialEq)]
@@ -68,6 +68,8 @@ pub struct PairedRunObservation {
     pub outcome: PairedRunOutcome,
     /// How many slices were compared and comparable.
     pub comparisons: u64,
+    /// The relation the plan states.
+    pub relation: PairedRelation,
     /// The plan's required minimum.
     pub minimum_pairs: u32,
     /// Why the outcome is not `Observed`; empty when it is.
@@ -106,6 +108,41 @@ pub fn compare_paired_runs(
         .collect())
 }
 
+/// Whether `observation` is of `plan`: its id, metric and definition version.
+///
+/// The one selection of a plan's evidence, shared by `verify` and `report`.
+pub(crate) fn is_of_plan(plan: &MeasurementPlan, observation: &MeasurementObservation) -> bool {
+    observation.plan_id.as_str() == plan.id.as_str()
+        && observation.metric.as_str() == plan.metric.as_str()
+        && observation.definition_version.as_str() == plan.definition_version.as_str()
+}
+
+/// Whether `collection` is a run of `plan`: it holds an observation of it.
+pub(crate) fn measures(plan: &MeasurementPlan, collection: &MeasurementCollection) -> bool {
+    collection
+        .observations
+        .iter()
+        .any(|observation| is_of_plan(plan, observation))
+}
+
+/// Whether which two runs are the latest can change `plan`'s answer: more
+/// than two runs, or a relation that ranks the later run.
+pub(crate) fn order_matters(paired: PairedRun, runs: usize) -> bool {
+    runs > 2 || matches!(paired.relation, PairedRelation::NotWorse)
+}
+
+impl PairedRelation {
+    /// The relation as the report states it.
+    #[must_use]
+    pub fn label(self) -> String {
+        match self {
+            Self::Equal => "equal".to_owned(),
+            Self::WithinDelta(delta) => format!("within_delta {delta}"),
+            Self::NotWorse => "not_worse".to_owned(),
+        }
+    }
+}
+
 /// The paired-run observation `plan` declares over the latest two of
 /// `collections`, oldest first, or `None` when `plan` declares no `paired_run`.
 ///
@@ -122,6 +159,7 @@ pub fn compare_latest_pair(
         metric: plan.metric.as_str().to_owned(),
         outcome,
         comparisons: 0,
+        relation: paired.relation,
         minimum_pairs: paired.minimum_pairs.get(),
         reasons: vec![reason],
     };
@@ -205,6 +243,7 @@ fn reduce(
         metric: plan.metric.as_str().to_owned(),
         outcome,
         comparisons,
+        relation,
         minimum_pairs,
         reasons,
     }

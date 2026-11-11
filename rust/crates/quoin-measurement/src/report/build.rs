@@ -27,7 +27,9 @@ use crate::intervention::report::{InterventionReportEntry, build_intervention_re
 use crate::operational::read::read_operational_records;
 use crate::operational::record::OperationalEvidenceRecord;
 use crate::operational::report::{OperationalReportEntry, build_operational_report};
-use crate::paired::{PairedRunObservation, compare_latest_pair};
+use crate::paired::{
+    PairedRunObservation, PairedRunOutcome, compare_latest_pair, measures, order_matters,
+};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
 use crate::report::vanished::{VanishedSlice, vanished_slices};
 use crate::report::verdict::{StageVerdict, stage_verdict};
@@ -173,9 +175,9 @@ pub fn build_measurement_report_from(
     for plan in &plans {
         let measuring: Vec<&MeasurementCollection> = collections
             .iter()
-            .filter(|candidate| observes(candidate, plan.metric.as_str()))
+            .filter(|candidate| measures(plan, candidate))
             .collect();
-        paired_runs.extend(compare_latest_pair(plan, &measuring));
+        paired_runs.extend(report_pair(plan, &measuring));
         // `[...collections].reverse().find(…)` — the newest collection that
         // computed this metric at all, not the newest collection.
         let newest = collections
@@ -231,6 +233,31 @@ pub fn build_measurement_report_from(
         interventions: build_intervention_report(interventions),
         operational: build_operational_report(operational),
     })
+}
+
+/// `plan`'s pair over its `measuring` collections, as the report states it.
+///
+/// The report reads no git, so it attests no intake order (FR-108-AC-2): where
+/// the order can change the answer (`order_matters`), the pair is
+/// `inconclusive` with `order_unattested` and `quoin measurement verify`
+/// decides it, so the two never name different pairs (FR-132-AC-12).
+fn report_pair(
+    plan: &MeasurementPlan,
+    measuring: &[&MeasurementCollection],
+) -> Option<PairedRunObservation> {
+    let mut pair = compare_latest_pair(plan, measuring)?;
+    if plan
+        .paired_run
+        .is_some_and(|paired| order_matters(paired, measuring.len()))
+        && pair.outcome != PairedRunOutcome::Unpaired
+    {
+        pair.outcome = PairedRunOutcome::Inconclusive;
+        pair.reasons.push(
+            "order_unattested: the report reads no intake order; `quoin measurement verify` decides"
+                .to_owned(),
+        );
+    }
+    Some(pair)
 }
 
 /// Whether a collection computed `metric` at all.
