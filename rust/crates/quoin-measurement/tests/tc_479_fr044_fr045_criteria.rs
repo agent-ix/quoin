@@ -1476,7 +1476,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
         "| Metric | Plan | Stage | Current |",
         "finding_recall [language=python] | ap-recall (spec/assurance/10-recall.md) | observe | 0.5 ratio |",
         "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
-        "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md) | gate | not_computed: no record |",
+        "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md; ground truth: mechanical) | gate | not_computed: no record |",
         "Corpus gaps: 3",
         "c-2026-03 (quoin) — 2026-03-01T00:00:00.000Z — quoin 0.9.1",
         "- unmeasured_metric: no collection has computed this authored plan.",

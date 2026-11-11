@@ -8,6 +8,16 @@ stage: gate
 metric: jev.gap_analysis_gate_verdict
 definition_version: jev.gap-analysis-gate-v1
 ground_truth_kind: mechanical
+statistical_design:
+  population: the three bars of the gap-analysis gate (MP-222 margin, MP-223 vacuous-class recall, MP-224 not-vacuous-class recall) over the mutation-graded subset MP-232 defines
+  sampling: none; reads the already-collected upstream observations for lens gap-analysis
+  repetitions: 1
+  estimator: proportion
+  error_model: each bar inherits the error of its upstream observation; a not_computed bar counts as unmet
+  uncertainty: the verdict inherits the uncertainty of the mutation-graded subset and of MP-225 disagreement under repetition
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - rust/crates/quoin-jev/tests/fixtures/gap-semantic-corpus.json
   - rust/crates/quoin-jev/tests/fixtures/gap-battery-mutants.json
