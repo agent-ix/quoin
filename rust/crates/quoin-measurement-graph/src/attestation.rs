@@ -28,7 +28,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::scalars::NonEmptyText;
-use crate::wire::{ReleaseProfile, VerificationStackVersion};
+use crate::wire::{BuildProfile, VerificationStackVersion};
 
 /// The immutable identity of everything that produced a collection.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
@@ -36,8 +36,8 @@ use crate::wire::{ReleaseProfile, VerificationStackVersion};
 pub struct VerificationStack {
     /// Always `verification-stack-attestation-v1`.
     pub schema_version: VerificationStackVersion,
-    /// Always `release`.
-    pub build_profile: ReleaseProfile,
+    /// The profile the producer ran under.
+    pub build_profile: BuildProfile,
     /// The producer's own statement of its sources: opaque here, neither read
     /// nor validated nor reported by Quoin.
     pub sources: Value,

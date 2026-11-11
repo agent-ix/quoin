@@ -81,7 +81,9 @@ use quoin_measurement::store::{
 use quoin_measurement::types::collection::MeasurementCollection;
 use quoin_measurement::types::comparison::{ComparisonReasonCode, ComparisonStatus};
 use quoin_measurement::types::plan::MeasurementPlan;
-use quoin_measurement::{compare_measurement_collections, validate};
+use quoin_measurement::{
+    compare_measurement_collections, compare_measurement_collections_under, validate,
+};
 use serde_json::{Value, json};
 
 // ------------------------------------------------------- the committed tree
@@ -1222,7 +1224,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     // every status is checked, not the two this test happened to produce.
     assert_eq!(
         ComparisonReasonCode::ALL.len(),
-        6,
+        8,
         "every reason code is measured, not a subset"
     );
     for code in ComparisonReasonCode::ALL {
@@ -1243,6 +1245,78 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
             );
         }
     }
+}
+
+/// Collections built under different profiles are not compared unless the
+/// governing plan permits it, and then the strata are named beside the delta.
+///
+/// Provenance: PLAT-164
+#[trace("FR-044-AC-15", "TC-2141")]
+#[test]
+fn tc_164_002_cross_profile_comparison_needs_the_plans_permission() {
+    let temporary = planned_repository();
+    let mut plans = authored_plans(temporary.path());
+    let before = admit(&new_collection_json());
+    let mut debug_run = new_collection_json();
+    debug_run["collectionId"] = json!("run-debug");
+    debug_run["verificationStack"]["buildProfile"] = json!("debug");
+    let after = admit(&debug_run);
+
+    let rows = compare_measurement_collections_under(&before, &after, &plans).expect("compares");
+    assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
+    assert_eq!(rows[0].delta, None);
+    assert!(
+        rows[0]
+            .reasons
+            .iter()
+            .any(|reason| reason.code == ComparisonReasonCode::ProfileChanged && reason.blocking)
+    );
+
+    plans[0].cross_profile_comparison = true;
+    let rows = compare_measurement_collections_under(&before, &after, &plans).expect("compares");
+    assert_eq!(rows[0].status, ComparisonStatus::Comparable);
+    assert!(rows[0].reasons.iter().any(|reason| {
+        reason.code == ComparisonReasonCode::ProfileStratified
+            && !reason.blocking
+            && reason.message.contains("release -> debug")
+    }));
+
+    // Same profile on both sides raises nothing.
+    let same = compare_measurement_collections(&before, &before).expect("compares");
+    assert!(same[0].reasons.is_empty());
+}
+
+/// A plan states `cross_profile_comparison` as a boolean, and a plan that does
+/// not state it refuses cross-profile comparison.
+///
+/// Provenance: PLAT-164
+#[trace("FR-044-AC-15", "TC-2141")]
+#[test]
+fn tc_164_003_a_plan_states_cross_profile_comparison_as_a_boolean() {
+    let load = |extra: &str| {
+        let temporary = tempfile::tempdir().expect("a temporary directory");
+        let assurance = temporary.path().join("spec").join("assurance");
+        std::fs::create_dir_all(&assurance).expect("creatable");
+        let plan = PLAN.replacen("metric:", &format!("{extra}metric:"), 1);
+        std::fs::write(assurance.join("MP-001.md"), plan).expect("writable");
+        load_measurement_plans(
+            &DiskMeasurement::new(temporary.path()),
+            PlanLoadOptions::default(),
+        )
+    };
+    assert!(
+        load("")
+            .expect("loads")
+            .iter()
+            .all(|plan| !plan.cross_profile_comparison)
+    );
+    assert!(
+        load("cross_profile_comparison: true\n")
+            .expect("loads")
+            .iter()
+            .all(|plan| plan.cross_profile_comparison)
+    );
+    assert!(load("cross_profile_comparison: maybe\n").is_err());
 }
 
 /// A metric present in only one collection is `not_computed`, never an

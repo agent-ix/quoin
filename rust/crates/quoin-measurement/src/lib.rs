@@ -94,7 +94,7 @@ pub mod types;
 pub mod validate;
 pub mod verify;
 
-pub use compare::compare_measurement_collections;
+pub use compare::{compare_measurement_collections, compare_measurement_collections_under};
 pub use date_time::Rfc3339DateTime;
 pub use error::{MeasurementError, MeasurementErrorCode};
 pub use intervention::ids::{
