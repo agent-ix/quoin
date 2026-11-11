@@ -45,10 +45,8 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 - A reference, for `semantic.unused-import`, is a `$ref` whose URL is under the imported package's schema base `https://schemas.agent-ix.org/<org>/<repo>/`.
 - `quoin module install` SHALL emit `semantic.unused-import` as a warning that does not fail the install.
 - `quoin module inspect` SHALL list `semantic.unused-import` (FR-124).
-- Until the lockfile records a `@agent-ix/semantic-schema` release that defines `import_types`, Quoin SHALL refuse the key as an unknown key under the rule below.
+- Quoin SHALL admit a module manifest that carries the eight registry keys `lexicon`, `observable_verbs`, `ambiguity_terms`, `vacuous_predicates`, `grammar_severity`, `property_idioms`, `traceability` and `verification_catalog`, and refuse a manifest whose root carries a key outside the declared set.
 - The `semantic` block SHALL NOT admit `semantic_core`: the key is retired (PLAT-1221), a module declares no semantic-core version, and a manifest that still carries it is refused like any other unknown key.
-- The module-manifest JSON Schema, owned by `agent-ix/filament-core-data` (`schema/semantic/v1/module-manifest.schema.json` and `module-semantic-block.schema.json`, published as `@agent-ix/semantic-schema`), SHALL publish the block with `additionalProperties: false`.
-- Quoin SHALL take that schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, and the Quire output schemas from the linked `quire-rs` engine (FR-029).
 - When `quoin module install` meets an unknown key inside `semantic`, Quoin SHALL reject the manifest with a diagnostic naming the key rather than degrading to an empty model.
 - When `semantic.exports` names an object type the manifest does not declare, Quoin SHALL reject the manifest naming the export.
 - When `semantic.contract_version` is outside the versions this specification defines, Quoin SHALL reject the manifest before reading any other semantic key.
@@ -63,14 +61,6 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
 | FR-070-CON-1 | The `semantic` block (including `import_types`) SHALL add no required key to the manifest root, `ObjectTypeEntry`, `ArchetypeEntry`, or `ArtifactTypeEntry`. | Compatibility | Manifest schema diff |
-| FR-070-CON-2 | Quoin SHALL take the module-manifest schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, with no copy kept. | Integrity | Build inspection |
-
-> **CR note (2026-10-29):** FR-070-CON-2 previously required a vendored copy of
-> the module-manifest schema to carry source repository, revision, path and
-> SHA-256. The copy no longer exists: the schema is read from the published
-> `@agent-ix/semantic-schema` package at the version the lockfile records, and
-> that version is the whole provenance. TC-1343 is withdrawn with it. The id is
-> not reused.
 
 ## Acceptance Criteria
 
@@ -89,8 +79,9 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 | FR-070-AC-11 | With the provider not installed, an install of a module carrying an `import_types` entry for it fails with the existing unresolved-import error only, and raises no `semantic.unknown-import-type`. | Test |
 | FR-070-AC-12 | An import, with and without a type list, referenced by no `$ref` under `https://schemas.agent-ix.org/<org>/<repo>/` in the module's own data schemas (emitted or hand-written) yields `semantic.unused-import` at warning severity naming it, `quoin module install` still succeeds with that warning, and an import that one such `$ref` references yields none. | Test |
 | FR-070-AC-13 | With the provider installed and its `exports` lacking `Nope`, a `$ref` in the module's own data schema for type `T` naming `Nope` under the provider's schema base fails `quoin module install` with `semantic.unknown-import-type` at `<section>[T].data_schema.schema` naming the package and `Nope`, with and without an `import_types` list; a `$ref` naming an exported type raises none. | Test |
+| FR-070-AC-14 | A module manifest carrying all eight registry keys `lexicon`, `observable_verbs`, `ambiguity_terms`, `vacuous_predicates`, `grammar_severity`, `property_idioms`, `traceability` and `verification_catalog` validates against the pinned `@agent-ix/semantic-schema` module-manifest schema, and the same manifest with an unknown root key is refused. | Test |
 
 ## Dependencies
 
-- **Upstream**: [US-020](../usecase/US-020-declare-a-semantic-module-contract-once.md), [FR-009](./FR-009-read-module-manifest.md), [FR-049](./FR-049-preserve-dynamic-and-generated-modules.md), `filament-core-data` FR-021 and `common.schema.json`, semantic-core (`agent-ix/filament-core-data#35`), `agent-ix/filament-core-data` schema change adding `import_types` to `module-manifest.schema.json` and `module-semantic-block.schema.json`, shipped in a new `@agent-ix/semantic-schema` release and delivered under PLAT-212 (quoin refuses the key until its lockfile bumps to that release)
+- **Upstream**: [US-020](../usecase/US-020-declare-a-semantic-module-contract-once.md), [FR-009](./FR-009-read-module-manifest.md), [FR-049](./FR-049-preserve-dynamic-and-generated-modules.md), `filament-core-data` FR-021 and `common.schema.json`, semantic-core (`agent-ix/filament-core-data#35`), `@agent-ix/semantic-schema` (the module-manifest schema, `agent-ix/filament-core-data`)
 - **Downstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path.md), [FR-074](./FR-074-legacy-authoring-forms.md), [FR-075](./FR-075-semantic-package-exports-and-locks.md), `agent-ix/quire-rs#388`

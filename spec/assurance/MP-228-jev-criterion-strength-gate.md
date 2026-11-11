@@ -8,6 +8,17 @@ stage: gate
 metric: jev.criterion_strength.gate
 definition_version: jev.criterion-strength-gate-v1
 ground_truth_kind: agent-labelled
+statistical_design:
+  population: graded passes of one variant over the fifteen-fixture corpus, each pass counting as clearing only when all three bars hold (margin over the constant predictor, defect recall, sound recall)
+  sampling: five repeated passes (JEV_RUNS=5) of the variant under consideration; no sampling beyond the corpus
+  minimum_population: 5
+  repetitions: 5
+  estimator: proportion
+  error_model: agent-labelled ground truth; a lens answer is noisy across passes, measured by MP-225
+  uncertainty: fifteen fixtures is a small corpus and one pass can clear by luck; the 3 of 5 repeated-pass condition is the typed rule below; the separate requirement that the gate run itself clears all three bars has no typed form and is stated in Comparison and Enforcement
+  decision_rule:
+    comparator: ge
+    threshold: 0.6
 protected_apparatus:
   - skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json
   - skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fr-context.json
@@ -166,7 +177,10 @@ call to the service. They are reproduced here word for word.
    headline cost because each one costs a human read.
 
 **GO** requires one variant to pass all three bars on the gate run *and*
-in at least 3 of 5 repeated runs (`JEV_RUNS=5`). Fifteen fixtures and one
+in at least 3 of 5 repeated runs (`JEV_RUNS=5`). The typed `statistical_design`
+encodes the repeat condition: `repetitions: 5` with a proportion of clearing
+passes `ge 0.6`. The gate-run requirement is read from this text, because the
+schema has one rule over one estimate. Fifteen fixtures and one
 run can pass by luck; a variant that fails most repeats is not a result.
 
 **Note (PLAT-1027):** the defect recall figures above were computed under the old `defect_recall` rule, which counted an unanswered or unrecognized row as a defect found; they may count unanswered rows as found.

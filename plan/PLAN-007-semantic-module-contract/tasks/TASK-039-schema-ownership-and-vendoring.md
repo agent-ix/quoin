@@ -20,19 +20,17 @@ relationships:
 
 ## Scope
 
-Land the `semantic` block in filament-core-service's module-manifest schema (agent-ix/filament-core-service#21) and read that schema plus the semantic-core 0.1.0 JSON Schema bundle from their published npm packages at the lockfile versions.
+Read the module-manifest schema (with its `semantic` block) and the semantic-core 0.1.0 JSON Schema bundle from their published npm packages at the lockfile versions.
 
 ## Subtasks
 
-- [x] Open the filament-core-service PR for #21: optional `semantic` object with the ten FR-070 keys, `data_schema` reference form, no new required key; merge it.
 - [x] Consume `@agent-ix/semantic-schema` and `@agent-ix/semantic-core` from the published packages at the versions the lockfile records; no copy and no recorded hash (TC-1343 and TC-1385 withdrawn).
-- [x] Schema-diff test asserting `required` arrays unchanged versus the pre-#21 copy (TC-1342).
+- [x] Schema-diff test asserting `required` arrays unchanged versus the schema before the `semantic` block (TC-1342).
 
 ## Deliverables
 
-- Merged filament-core-service#21.
 - Both schemas consumed from the published packages at lockfile versions.
 
 ## Notes
 
-- Cross-repo delivery: the filament-core-service change is part of landing this ticket.
+- The module-manifest schema is owned and published upstream as `@agent-ix/semantic-schema`.
