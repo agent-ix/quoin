@@ -67,6 +67,8 @@ from a scan that never happened. `rulesEvaluated` therefore counts lines of **ei
 failures counted, a fully-passing suite would report zero rules and read as vacuous under FR-034 —
 exactly backwards.
 
+Audit-script output names no producer, so the adapter reports no tool identity and a scan is accepted under whichever claimed tool the suite declares; the tool-identity check still binds scanners that do name themselves.
+
 Output carrying no recognised line is rejected outright. No audit ran, and recording it would
 manufacture conformance evidence from a file that proves nothing.
 
@@ -78,8 +80,8 @@ distinction matters more than the precedent.
 
 Written as shell, the executor check reported five violations on its first run. Every one was
 `LINE.exec(line)`: `RegExp.exec` read as `child_process.exec` by a regex that cannot tell them apart.
-Bad rule, not bad corpus. A test over the workspace's resolved dependency graph and its Rust sources
-can tell them apart, so it is used, and the checks run in `make test` where every other assertion about this repository lives.
+Bad rule, not bad corpus. Tests over the workspace's resolved dependency graph and over its Rust sources (lexed so comments
+and strings are not read as code, failing on any executor it cannot resolve) avoid that confusion, so they are used, and the checks run in `make test` where every other assertion about this repository lives.
 
 The adapter is unaffected by that choice — it reads `quire-rs`'s seven existing scripts, which remain
 the right shape for that repository. Whether those seven should instead be `cargo deny` bans and
@@ -109,10 +111,11 @@ be read, and a check that silently ignores what it cannot read is asserting over
 | FR-036-AC-2 | A `FAIL` line becomes a finding carrying the acceptance criterion the script names. | Test (TC-198) |
 | FR-036-AC-3 | `OK` lines count toward rules evaluated, so a clean run is not vacuous. | Test (TC-199) |
 | FR-036-AC-4 | Output containing no recognised audit line is rejected. | Test (TC-200) |
-| FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape (`audit-script`, `audit-static`, `import-linter`, `dependency-cruiser`, `make ci`); a scan recorded under any of them, with or without `--adapter audit-script`, is accepted, because the format names no producer to disagree with `--tool`. | Test (TC-201, TC-2900) |
+| FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape (`audit-script`, `audit-static`, `import-linter`, `dependency-cruiser`, `make ci`). | Test (TC-201) |
 | FR-036-AC-6 | An architectural statement is advised `architecture-conformance`, with both halves of the catalog's rule matching. | Test (TC-204, TC-205) |
 | FR-036-AC-7 | No workspace crate depends on `quoin-cli`: the CLI is a leaf and the engine crates load without it. | Test (TC-202) |
 | FR-036-AC-8 | The executables quoin's production code starts are exactly `git`, `ix-flow` and the operator's own `$EDITOR` (`config edit`); build scripts and the developer tools `quoin-suite-trace` and `quoin-workflow-check` are not part of the engine. | Test (TC-203) |
+| FR-036-AC-9 | A scan recorded under any tool the adapter claims, with or without `--adapter audit-script`, is accepted and written as a scan. | Test (TC-2900) |
 
 ## Constraints
 
