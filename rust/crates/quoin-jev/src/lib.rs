@@ -53,6 +53,7 @@ pub mod constant_predictor;
 pub mod context;
 pub mod corpus_check;
 pub mod error;
+pub mod graded_run;
 pub mod lens;
 pub mod question_set;
 pub mod report;
@@ -67,6 +68,7 @@ pub use corpus_check::{
     AdequacyFinding, check_answerability, check_required_fields, check_stated_counts,
 };
 pub use error::{JevError, JevErrorCode, Result};
+pub use graded_run::{GradedRun, record_input};
 pub use question_set::QuestionSet;
 pub use report::{FrReport, render as render_findings};
 pub use span_ballot::{BallotOutcome, Granularity, Span, SpanBallot, candidate_spans};

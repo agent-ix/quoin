@@ -417,8 +417,8 @@ use typesafe_sdk_env::Process;
 
 use quoin_jev::{BoundedContext, ContextPolicy, FrVerdict, JevErrorCode, QuestionSet};
 use support::{
-    Graded, Verdict, corpus, defect_recall, disagreement, grade_coverage, grade_weakness, report,
-    sound_recall, tally, trivial_baseline,
+    Graded, Verdict, constant_predictor_items, corpus, defect_recall, disagreement, grade_coverage,
+    grade_weakness, report, sound_recall, tally, trivial_baseline,
 };
 
 /// The certainty thresholds passed to `verdict::extract`.
@@ -765,6 +765,44 @@ async fn run_once(client: &Client, questions: &QuestionSet, variant: Variant) ->
     pass
 }
 
+/// Writes this run's `quoin measurement record` input when `JEV_RECORD_OUT`
+/// names a file, so the graded run's agreement rate and its per-item rows
+/// reach the measurement store together (PLAT-1021). The governing plan is
+/// named by `JEV_PLAN_ID`, `JEV_PLAN_VERSION` and `JEV_PLAN_PATH`.
+fn record_run(graded: &[Graded]) {
+    let Ok(out) = std::env::var("JEV_RECORD_OUT") else {
+        return;
+    };
+    let var = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
+    let (plan_id, version, plan_path) = (
+        var("JEV_PLAN_ID"),
+        var("JEV_PLAN_VERSION"),
+        var("JEV_PLAN_PATH"),
+    );
+    let millis = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("the clock is after 1970")
+        .as_millis();
+    let timestamp = quoin_measurement::date_time::to_iso_string(
+        i64::try_from(millis).expect("the clock fits i64"),
+    )
+    .expect("the clock formats");
+    let collection_id = format!("{plan_id}-{millis}");
+    let run = quoin_jev::GradedRun {
+        plan_id: &plan_id,
+        definition_version: &version,
+        metric: "jev.criterion-strength.agreement-rate",
+        collection_id: &collection_id,
+        subject: "quoin-jev criterion-strength corpus",
+        tool_version: env!("CARGO_PKG_VERSION"),
+        timestamp: &timestamp,
+        plan_path: &plan_path,
+    };
+    let input = quoin_jev::record_input(&run, &constant_predictor_items(graded))
+        .expect("the graded run builds a record");
+    std::fs::write(&out, input.to_string()).expect("the record input is writable");
+}
+
 /// Provenance: PLAT-917. **The gate.** Does the real service, on the shipped
 /// question set, do better than doing nothing -- and does it actually find
 /// the defects eleven human-labelled criteria contain?
@@ -821,6 +859,7 @@ async fn the_lens_beats_the_do_nothing_baseline() {
     // bars 2 and 3 would have said.
     let bars = Bars::of(&pass.graded);
     println!("**GATE {variant:?}** {}", bars.line());
+    record_run(&pass.graded);
     assert!(
         bars.all(),
         "{variant:?} does not clear the pre-registered bars: {}",

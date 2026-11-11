@@ -370,6 +370,27 @@ pub(crate) fn is_coverage(row: &Graded) -> bool {
     row.expected.parse::<u8>().is_ok()
 }
 
+/// The graded rows as constant-predictor items, one answer family per kind of
+/// row: coverage levels and `weakness_kind` labels never share an answer
+/// space (MP-222). `actual_class` is what the row was scored on.
+pub(crate) fn constant_predictor_items(graded: &[Graded]) -> Vec<quoin_jev::ConstantPredictorItem> {
+    graded
+        .iter()
+        .map(|row| quoin_jev::ConstantPredictorItem {
+            item_id: row.fixture_id.clone(),
+            family: if is_coverage(row) {
+                "coverage"
+            } else {
+                "weakness_kind"
+            }
+            .to_owned(),
+            expected: row.expected.clone(),
+            contested: row.contested.clone(),
+            actual: row.actual_class.clone(),
+        })
+        .collect()
+}
+
 /// Recall over every class that is not `no_defect_label`: of the rows the
 /// corpus marked as carrying some defect, the share the lens also flagged as
 /// some defect.

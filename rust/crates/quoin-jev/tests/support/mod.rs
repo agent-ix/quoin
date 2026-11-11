@@ -67,9 +67,9 @@ use quoin_jev::{AcRow, FrContext, FrVerdict};
     reason = "each test binary links this module separately, so items only one binary uses read as unused in the other"
 )]
 pub(crate) use grading::{
-    Bucket, ClassStats, Graded, Tally, Tier, Verdict, calibration, class_stats, defect_recall,
-    disagreement, expected_calibration_error, is_coverage, no_defect_recall, percent, report,
-    tally, trivial_baseline,
+    Bucket, ClassStats, Graded, Tally, Tier, Verdict, calibration, class_stats,
+    constant_predictor_items, defect_recall, disagreement, expected_calibration_error, is_coverage,
+    no_defect_recall, percent, report, tally, trivial_baseline,
 };
 
 /// The corpus, compiled in from the skill asset so the fixtures and this

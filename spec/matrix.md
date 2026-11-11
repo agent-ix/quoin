@@ -235,6 +235,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-123 | FR-123-AC-1, FR-123-AC-2, FR-123-AC-3, FR-123-AC-4, FR-123-AC-5, FR-123-AC-6, FR-123-AC-7, FR-123-AC-8, FR-123-AC-9 | TC-2120, TC-2121, TC-2122, TC-2123, TC-2124, TC-2125, TC-2126, TC-2127, TC-2128 | 🚧 Pending |
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
 | FR-130 | FR-130-AC-1, FR-130-AC-2, FR-130-AC-3, FR-130-AC-4, FR-130-AC-5, FR-130-AC-6, FR-130-AC-7, FR-130-AC-8, FR-130-AC-9, FR-130-AC-10, FR-130-AC-11, FR-130-AC-12 | TC-2200, TC-2201, TC-2202, TC-2203, TC-2204, TC-2205, TC-2206, TC-2207, TC-2208, TC-2209, TC-2210, TC-2211 | ✅ Covered |
+| FR-134 | FR-134-AC-1, FR-134-AC-2 | TC-2800, TC-2801 | ✅ Covered |
 | FR-125 | FR-125-AC-1, FR-125-AC-2, FR-125-AC-3, FR-125-AC-4, FR-125-AC-5, FR-125-AC-6, FR-125-AC-7 | TC-2150, TC-2151, TC-2152, TC-2153, TC-2154, TC-2155, TC-2156 | ✅ Covered |
 
 ## Test Case Summary
@@ -1388,6 +1389,8 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2209 | A scenario id over 64 bytes, off-charset or bare-prefix and a malformed dimension label are refused as invalid-identifier; an unseen dimension label is accepted; a non-string contract is wrong-contract | Unit | P0 | FR-130-AC-10 | ✅ Complete |
 | TC-2210 | Scenario ids differing only in letter case file under one lowercase name and the second is refused as case-collision | Unit | P0 | FR-130-AC-11 | ✅ Complete |
 | TC-2211 | A request with 100000 resolution entries and value owners is attributed by lookup and completes | Unit | P0 | FR-130-AC-12 | ✅ Complete |
+| TC-2800 | `record_input` yields an aggregate with `examined` = item count and `matched` = agreeing items, one item row per graded item under the derived item metric, and refuses an empty run | Unit | P0 | FR-134-AC-1 | ✅ `quoin-jev` `tc_1021_graded_run.rs` :: `tc_1021_001` |
+| TC-2801 | A `record_input` record is recorded by `quoin measurement record` and `quoin measurement verify` decides it against the recomputed baseline: accept when the margin is cleared, reject with `rule_not_met` when not | Integration | P0 | FR-134-AC-2 | ✅ `quoin-cli` `tc_1021_graded_run_verify.rs` :: `tc_1021_101` |
 | TC-2150 | Retained bytes are named by their SHA-256: distinct bytes get distinct addresses, identical bytes reproduce one reference, and the bytes read back exactly | Unit | P0 | FR-125-AC-1 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_001` |
 | TC-2151 | A malformed `attachments` member (non-array, over count, duplicate, bad digest, empty media type, bad length) refuses as `QM-ATTACHMENT-INVALID` and writes no collection | Unit | P0 | FR-125-AC-2 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_002` |
 | TC-2152 | A reference to missing bytes refuses as `QM-ATTACHMENT-UNAVAILABLE`; a wrong declared length or address refuses as `QM-ATTACHMENT-TAMPERED`; no collection is written | Unit | P0 | FR-125-AC-3 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_003` |

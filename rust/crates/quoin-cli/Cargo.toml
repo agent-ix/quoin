@@ -52,6 +52,7 @@ time = { workspace = true }
 
 [dev-dependencies]
 quire-fixtures = { workspace = true }
+quoin-jev = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }
