@@ -247,7 +247,7 @@ fn tc_452_644_a_manifest_with_all_eight_registry_keys_validates() {
 
     let term = json!({ "definition": "a documented term" });
     let manifest = json!({
-        "manifest_version": 1,
+        "manifest_version": "1.0.0",
         "name": "registry-keys",
         "version": "0.1.0",
         "lexicon": { "latency": term },
