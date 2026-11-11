@@ -82,10 +82,14 @@ pub fn assurance_record_path(family: &str, stem: &str) -> String {
 /// One scenario record, `scenarios/<integration>/<scenario>.json`.
 ///
 /// Both components are validated to `[A-Za-z0-9-]` by the scenario intake
-/// before a path is formed, so neither can escape its directory.
+/// before a path is formed, so neither can escape its directory. The file name
+/// is ASCII-lowercased so a case-insensitive filesystem cannot alias two ids.
 #[must_use]
 pub fn scenario_path(integration: &str, scenario: &str) -> String {
-    format!("{SCENARIOS_DIR}/{integration}/{scenario}.json")
+    format!(
+        "{SCENARIOS_DIR}/{integration}/{}.json",
+        scenario.to_ascii_lowercase()
+    )
 }
 
 /// A record's file stem: its caller-supplied timestamp, with every byte outside

@@ -135,7 +135,7 @@ that exist.
 | FR-121 | 🚧 Pending | Spec authored (PLAT-201). Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101) against goldens in its `quire-fixtures` crate; no quire-rs ticket is cited yet. It also needs the quire-rs `semantic-v1.schema.json` change for `recordSources` and `availability.recordKeys`. |
 | FR-122 | 🚧 Pending | Spec authored (PLAT-196). Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101) against goldens in its `quire-fixtures` crate; no quire-rs ticket is cited yet. spec-objects-architecture skeleton and FR-006 changes are that module's. |
 | FR-123 | 🚧 Pending | Spec authored (PLAT-240). Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101, PLAT-1370) against goldens in its `quire-fixtures` crate; spec-objects-business skeleton and schema changes are that module's. |
-| FR-130 | ✅ Covered | `quoin-evidence` `scenario.rs` :: unit tests; `quoin-core` `tc_458_evidence_boundary.rs` :: `tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal` |
+| FR-130 | ✅ Covered | `quoin-evidence` `scenario/tests.rs` :: unit tests; `quoin-core` `ops/evidence/taxonomy.rs` :: `a_scenario_refusal_carries_its_kind_as_context`; `quoin-core` `tc_458_evidence_boundary.rs` :: `tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal` |
 
 ## Non-Functional Requirements
 
@@ -234,7 +234,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-122 | FR-122-AC-1, FR-122-AC-2, FR-122-AC-3, FR-122-AC-4, FR-122-AC-5, FR-122-AC-6, FR-122-AC-7 | TC-2109, TC-2110, TC-2111, TC-2112, TC-2113, TC-2114, TC-2115 | 🚧 Pending |
 | FR-123 | FR-123-AC-1, FR-123-AC-2, FR-123-AC-3, FR-123-AC-4, FR-123-AC-5, FR-123-AC-6, FR-123-AC-7, FR-123-AC-8, FR-123-AC-9 | TC-2120, TC-2121, TC-2122, TC-2123, TC-2124, TC-2125, TC-2126, TC-2127, TC-2128 | 🚧 Pending |
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
-| FR-130 | FR-130-AC-1, FR-130-AC-2, FR-130-AC-3, FR-130-AC-4, FR-130-AC-5, FR-130-AC-6, FR-130-AC-7, FR-130-AC-8, FR-130-AC-9 | TC-2200, TC-2201, TC-2202, TC-2203, TC-2204, TC-2205, TC-2206, TC-2207, TC-2208 | ✅ Covered |
+| FR-130 | FR-130-AC-1, FR-130-AC-2, FR-130-AC-3, FR-130-AC-4, FR-130-AC-5, FR-130-AC-6, FR-130-AC-7, FR-130-AC-8, FR-130-AC-9, FR-130-AC-10, FR-130-AC-11, FR-130-AC-12 | TC-2200, TC-2201, TC-2202, TC-2203, TC-2204, TC-2205, TC-2206, TC-2207, TC-2208, TC-2209, TC-2210, TC-2211 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -1378,6 +1378,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2206 | The budget is stored per dimension, a scalar budget is refused and an absent grant stays absent | Unit | P0 | FR-130-AC-7 | ✅ Complete |
 | TC-2207 | A second different record for one scenario is refused and the first is unchanged | Unit | P0 | FR-130-AC-8 | ✅ Complete |
 | TC-2208 | The intake answers its contract version and owner, and a refusal exits 3 with QE-E010 and the refusal kind | Unit | P0 | FR-130-AC-9 | ✅ Complete |
+| TC-2209 | A scenario id over 64 bytes, off-charset or bare-prefix and a malformed dimension label are refused as invalid-identifier; an unseen dimension label is accepted; a non-string contract is wrong-contract | Unit | P0 | FR-130-AC-10 | ✅ Complete |
+| TC-2210 | Scenario ids differing only in letter case file under one lowercase name and the second is refused as case-collision | Unit | P0 | FR-130-AC-11 | ✅ Complete |
+| TC-2211 | A request with 100000 resolution entries and value owners is attributed by lookup and completes | Unit | P0 | FR-130-AC-12 | ✅ Complete |
 
 ## Stakeholder Requirement Coverage
 

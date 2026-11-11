@@ -56,7 +56,7 @@ fn a_complete_record_is_filed_under_its_integration_and_scenario() {
     let mut store = MemoryEvidence::default();
     let stored = write_scenario_evidence(&mut store, &full()).unwrap();
     assert!(stored.created);
-    assert_eq!(stored.path, "scenarios/IT-002/IT-002-SC-07a.json");
+    assert_eq!(stored.path, "scenarios/IT-002/it-002-sc-07a.json");
     assert!(store.read(&stored.path).unwrap().is_some());
     let again = write_scenario_evidence(&mut store, &full()).unwrap();
     assert!(!again.created, "identical bytes are idempotent");
@@ -145,7 +145,7 @@ fn a_cross_wired_attribution_is_refused() {
 
     let mut traversal = full();
     traversal["scenario"] = json!("IT-002-../x");
-    assert_eq!(refusal(&traversal), ScenarioRefusal::CrossWired);
+    assert_eq!(refusal(&traversal), ScenarioRefusal::InvalidIdentifier);
 
     let mut causing = full();
     causing["resolution"] = json!({
@@ -224,4 +224,69 @@ fn refusal_spellings_are_distinct() {
         .map(|kind| kind.as_str())
         .collect();
     assert_eq!(spellings.len(), ScenarioRefusal::ALL.len());
+}
+
+#[test]
+#[trace("FR-130-AC-10", "TC-2209")]
+fn identifiers_are_bounded_and_need_a_suffix() {
+    let mut long = full();
+    long["scenario"] = json!(format!("IT-002-{}", "A".repeat(80)));
+    assert_eq!(refusal(&long), ScenarioRefusal::InvalidIdentifier);
+
+    let mut bare = full();
+    bare["scenario"] = json!("IT-002-");
+    assert_eq!(refusal(&bare), ScenarioRefusal::InvalidIdentifier);
+
+    let mut dimension = full();
+    dimension["budget"][0]["dimension"] = json!("Node");
+    assert_eq!(refusal(&dimension), ScenarioRefusal::InvalidIdentifier);
+
+    let mut open = full();
+    open["budget"][0]["dimension"] = json!("a-dimension-protocol-adds-later");
+    let mut store = MemoryEvidence::default();
+    write_scenario_evidence(&mut store, &open).unwrap();
+}
+
+#[test]
+#[trace("FR-130-AC-3", "TC-2209")]
+fn a_non_string_contract_is_a_wrong_contract() {
+    let mut document = full();
+    document["contract"] = json!(2);
+    assert_eq!(refusal(&document), ScenarioRefusal::WrongContract);
+}
+
+#[test]
+#[trace("FR-130-AC-11", "TC-2210")]
+fn ids_differing_only_in_case_share_a_folded_name_and_collide_by_name() {
+    let mut store = MemoryEvidence::default();
+    let stored = write_scenario_evidence(&mut store, &full()).unwrap();
+    assert_eq!(stored.path, "scenarios/IT-002/it-002-sc-07a.json");
+
+    let mut other = full();
+    other["scenario"] = json!("IT-002-SC-07A");
+    let error = write_scenario_evidence(&mut store, &other).unwrap_err();
+    assert!(matches!(
+        error,
+        EvidenceError::ScenarioRefused {
+            kind: ScenarioRefusal::CaseCollision,
+            ..
+        }
+    ));
+}
+
+#[test]
+#[trace("FR-130-AC-12", "TC-2211")]
+fn attribution_is_checked_by_lookup_not_by_scanning_every_entry() {
+    let n = 100_000;
+    let entries: Vec<Value> = (0..n)
+        .map(|i| json!({"owner": format!("o{i}"), "contractVersion": "v1", "revision": "r"}))
+        .collect();
+    let owners: Vec<Value> = (0..n)
+        .map(|i| json!({"value": format!("v{i}"), "owner": format!("o{i}"), "contractVersion": "v1", "revision": "r"}))
+        .collect();
+    let mut document = full();
+    document["resolution"] = json!({"kind": "full", "entries": entries});
+    document["valueOwners"] = json!(owners);
+    let mut store = MemoryEvidence::default();
+    write_scenario_evidence(&mut store, &document).unwrap();
 }

@@ -174,44 +174,13 @@ pub struct TypedOutcome {
     pub claims: Vec<ClaimOutcome>,
 }
 
-/// A resource-budget dimension the caller grants (Protocol FR-016).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[allow(
-    missing_docs,
-    reason = "the members are the producer's closed dimension vocabulary, named by their spelling"
-)]
-pub enum Dimension {
-    InputByte,
-    Definition,
-    Node,
-    Edge,
-    Role,
-    Message,
-    Branch,
-    Iteration,
-    ActiveInstance,
-    Observation,
-    Lineage,
-    ResultItem,
-    DerivedArtifact,
-    OutputByte,
-    Operation,
-    AccountedAllocation,
-    ElapsedTime,
-    ResolutionEntryCount,
-    ResolutionBytesDigested,
-    ResolutionDeadline,
-}
-
 /// Granted and consumed figures on one dimension.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct BudgetFigure {
-    /// The dimension.
-    pub dimension: Dimension,
+    /// The dimension label, as the producer spells it: lowercase kebab-case.
+    pub dimension: String,
     /// The grant; absent is not a grant of zero.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granted: Option<u64>,
@@ -262,6 +231,10 @@ pub enum ScenarioRefusal {
     DuplicateComponent,
     /// A component attributes to something the record does not contain.
     CrossWired,
+    /// An identifier is over-length, outside its charset or has no suffix.
+    InvalidIdentifier,
+    /// A scenario id differs from a filed one only in letter case.
+    CaseCollision,
 }
 
 impl ScenarioRefusal {
@@ -271,6 +244,8 @@ impl ScenarioRefusal {
         Self::MissingComponent,
         Self::DuplicateComponent,
         Self::CrossWired,
+        Self::InvalidIdentifier,
+        Self::CaseCollision,
     ];
 
     /// The kind's contractual spelling.
@@ -281,6 +256,8 @@ impl ScenarioRefusal {
             Self::MissingComponent => "missing-component",
             Self::DuplicateComponent => "duplicate-component",
             Self::CrossWired => "cross-wired",
+            Self::InvalidIdentifier => "invalid-identifier",
+            Self::CaseCollision => "case-collision",
         }
     }
 }
@@ -316,6 +293,20 @@ pub fn write_scenario_evidence<S: EvidenceSource + ?Sized>(
     let record = check::admit(document)?;
     let path = scenario_path(record.integration.as_str(), &record.scenario);
     let bytes = canonical_bytes_of(LABEL, &record)?;
+    // The stored name is case-folded so case-insensitive filesystems cannot
+    // alias two ids; an id that folds equal but differs is a named refusal.
+    if let Some(text) = source.read(&path)? {
+        let filed: ScenarioEvidence = crate::store::codec::decode(&path, &text)?;
+        if filed.scenario != record.scenario {
+            return Err(check::refuse(
+                ScenarioRefusal::CaseCollision,
+                format!(
+                    "scenario {:?} differs from the filed {:?} only in letter case",
+                    record.scenario, filed.scenario
+                ),
+            ));
+        }
+    }
     let created = source.publish(&path, &bytes)?;
     Ok(StoredScenario {
         record,

@@ -97,6 +97,7 @@ const fn core_code(code: EvidenceErrorCode) -> Option<CoreErrorCode> {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use quoin_evidence::{EvidenceError, EvidenceErrorCode};
 
     use super::{CoreErrorCode, core_code, map_error};
@@ -155,5 +156,22 @@ mod tests {
         assert_eq!(envelope.context["evidence_code"], "QE-E002");
         assert_eq!(envelope.code, CoreErrorCode::BadRequest);
         assert_eq!(envelope.outcome().code(), 3);
+    }
+
+    /// The refusal kind rides the envelope as its own context key, so a
+    /// producer branches on it rather than on the message text.
+    #[test]
+    #[trace("FR-130-AC-9", "TC-2208")]
+    fn a_scenario_refusal_carries_its_kind_as_context() {
+        let envelope = map_error(
+            &EvidenceError::ScenarioRefused {
+                kind: quoin_evidence::scenario::ScenarioRefusal::CrossWired,
+                detail: "x".to_owned(),
+            },
+            "evidence.record_scenario",
+        );
+        assert_eq!(envelope.context["refusal"], "cross-wired");
+        assert_eq!(envelope.context["evidence_code"], "QE-E010");
+        assert_eq!(envelope.code, CoreErrorCode::BadRequest);
     }
 }

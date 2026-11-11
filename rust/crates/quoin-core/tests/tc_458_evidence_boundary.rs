@@ -628,7 +628,7 @@ fn tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal() {
     reported_store_path(
         dir.path(),
         payload["path"].as_str().unwrap(),
-        "scenarios/IT-002/IT-002-SC-07a.json",
+        "scenarios/IT-002/it-002-sc-07a.json",
     );
 
     let mut wrong = scenario_document();

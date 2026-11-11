@@ -12,7 +12,7 @@ use super::{
 };
 use crate::error::EvidenceError;
 
-fn refuse(kind: ScenarioRefusal, detail: impl Into<String>) -> EvidenceError {
+pub(super) fn refuse(kind: ScenarioRefusal, detail: impl Into<String>) -> EvidenceError {
     EvidenceError::ScenarioRefused {
         kind,
         detail: detail.into(),
@@ -27,6 +27,12 @@ pub(super) fn admit(document: &Value) -> Result<ScenarioEvidence, EvidenceError>
             return Err(refuse(
                 ScenarioRefusal::WrongContract,
                 format!("contract {other:?} is not {INTAKE_CONTRACT:?}"),
+            ));
+        }
+        None if document.get("contract").is_some() => {
+            return Err(refuse(
+                ScenarioRefusal::WrongContract,
+                "contract is not a string",
             ));
         }
         None => {
@@ -52,15 +58,26 @@ fn nonblank(field: &str, value: &str) -> Result<(), EvidenceError> {
     Ok(())
 }
 
-fn path_safe(field: &str, value: &str) -> Result<(), EvidenceError> {
+/// Longest scenario id or dimension label accepted, in bytes.
+const MAX_IDENTIFIER_BYTES: usize = 64;
+
+fn identifier(field: &str, value: &str, lower: bool) -> Result<(), EvidenceError> {
     nonblank(field, value)?;
-    if !value
-        .bytes()
-        .all(|b| b.is_ascii_alphanumeric() || b == b'-')
-    {
+    let in_charset = value.bytes().all(|b| {
+        b.is_ascii_digit()
+            || b == b'-'
+            || if lower {
+                b.is_ascii_lowercase()
+            } else {
+                b.is_ascii_alphabetic()
+            }
+    });
+    if value.len() > MAX_IDENTIFIER_BYTES || !in_charset {
         return Err(refuse(
-            ScenarioRefusal::CrossWired,
-            format!("{field} {value:?} may hold only ASCII letters, digits and '-'"),
+            ScenarioRefusal::InvalidIdentifier,
+            format!(
+                "{field} {value:?} must be at most {MAX_IDENTIFIER_BYTES} bytes of ASCII letters, digits and '-'"
+            ),
         ));
     }
     Ok(())
@@ -92,21 +109,14 @@ fn unique_entries<'a>(
     Ok(keys)
 }
 
-fn check(record: &ScenarioEvidence) -> Result<(), EvidenceError> {
-    path_safe("scenario", &record.scenario)?;
-    let prefix = format!("{}-", record.integration.as_str());
-    if !record.scenario.starts_with(&prefix) {
-        return Err(refuse(
-            ScenarioRefusal::CrossWired,
-            format!(
-                "scenario {:?} does not belong to {}",
-                record.scenario,
-                record.integration.as_str()
-            ),
-        ));
-    }
+fn triple(entry: &PinnedEntry) -> (&str, &str, &str) {
+    (&entry.owner, &entry.contract_version, &entry.revision)
+}
 
-    let attributable: Vec<&PinnedEntry> = match &record.resolution {
+fn attributable(
+    resolution: &ResolutionState,
+) -> Result<BTreeSet<(&str, &str, &str)>, EvidenceError> {
+    let held = match resolution {
         ResolutionState::Full { entries } => {
             if entries.is_empty() {
                 return Err(refuse(
@@ -115,7 +125,7 @@ fn check(record: &ScenarioEvidence) -> Result<(), EvidenceError> {
                 ));
             }
             unique_entries(entries, "resolution.entries")?;
-            entries.iter().collect()
+            entries.iter().map(triple).collect()
         }
         ResolutionState::Partial {
             reached,
@@ -137,13 +147,40 @@ fn check(record: &ScenarioEvidence) -> Result<(), EvidenceError> {
                     "the causing entry is also listed as reached",
                 ));
             }
-            reached.iter().collect()
+            reached.iter().map(triple).collect()
         }
         ResolutionState::LegacyCompatibility { selection } => {
             pinned(selection, "resolution.selection")?;
-            vec![selection]
+            BTreeSet::from([triple(selection)])
         }
     };
+    Ok(held)
+}
+
+fn check(record: &ScenarioEvidence) -> Result<(), EvidenceError> {
+    identifier("scenario", &record.scenario, false)?;
+    let prefix = format!("{}-", record.integration.as_str());
+    if !record.scenario.starts_with(&prefix) {
+        return Err(refuse(
+            ScenarioRefusal::CrossWired,
+            format!(
+                "scenario {:?} does not belong to {}",
+                record.scenario,
+                record.integration.as_str()
+            ),
+        ));
+    }
+    if record.scenario.len() == prefix.len() {
+        return Err(refuse(
+            ScenarioRefusal::InvalidIdentifier,
+            format!(
+                "scenario {:?} has nothing after its integration prefix",
+                record.scenario
+            ),
+        ));
+    }
+
+    let attributable = attributable(&record.resolution)?;
 
     let mut values = BTreeSet::new();
     for owner in &record.value_owners {
@@ -157,12 +194,11 @@ fn check(record: &ScenarioEvidence) -> Result<(), EvidenceError> {
                 format!("value {:?} has two owners", owner.value),
             ));
         }
-        let attributed = attributable.iter().any(|entry| {
-            entry.owner == owner.owner
-                && entry.contract_version == owner.contract_version
-                && entry.revision == owner.revision
-        });
-        if !attributed {
+        if !attributable.contains(&(
+            owner.owner.as_str(),
+            owner.contract_version.as_str(),
+            owner.revision.as_str(),
+        )) {
             return Err(refuse(
                 ScenarioRefusal::CrossWired,
                 format!(
@@ -183,7 +219,8 @@ fn check(record: &ScenarioEvidence) -> Result<(), EvidenceError> {
     }
     let mut dimensions = BTreeSet::new();
     for figure in &record.budget {
-        if !dimensions.insert(figure.dimension) {
+        identifier("budget.dimension", &figure.dimension, true)?;
+        if !dimensions.insert(figure.dimension.as_str()) {
             return Err(refuse(
                 ScenarioRefusal::DuplicateComponent,
                 format!("budget holds dimension {:?} twice", figure.dimension),
