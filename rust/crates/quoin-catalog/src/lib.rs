@@ -427,7 +427,7 @@ mod tests {
     }
 
     #[test]
-    fn tc_3006_a_manifest_that_is_not_a_mapping_aborts_naming_its_file() {
+    fn a_manifest_that_is_not_a_mapping_aborts_naming_its_file() {
         for (manifest, found) in [
             ("", "null or an empty document"),
             ("~\n", "null or an empty document"),
