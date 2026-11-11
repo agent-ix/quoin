@@ -234,6 +234,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-123 | FR-123-AC-1, FR-123-AC-2, FR-123-AC-3, FR-123-AC-4, FR-123-AC-5, FR-123-AC-6, FR-123-AC-7, FR-123-AC-8, FR-123-AC-9 | TC-2120, TC-2121, TC-2122, TC-2123, TC-2124, TC-2125, TC-2126, TC-2127, TC-2128 | 🚧 Pending |
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
 | FR-125 | FR-125-AC-1, FR-125-AC-2, FR-125-AC-3, FR-125-AC-4, FR-125-AC-5, FR-125-AC-6, FR-125-AC-7 | TC-2150, TC-2151, TC-2152, TC-2153, TC-2154, TC-2155, TC-2156 | ✅ Covered |
+| FR-132 | FR-132-AC-1, FR-132-AC-2, FR-132-AC-3, FR-132-AC-4, FR-132-AC-5, FR-132-AC-6, FR-132-AC-7 | TC-2500, TC-2501, TC-2502, TC-2503, TC-2504, TC-2505, TC-2506 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -1377,6 +1378,13 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2154 | A collection with attachments publishes, reads back with the member intact, verifies clean and recovers each attachment byte for byte | Unit | P0 | FR-125-AC-5 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_005` |
 | TC-2155 | `quoin measurement attach` retains a regular repository file and refuses an absolute path, `..`, an empty path, a symlink at any component, a directory, a file over 64 MiB and a missing file as `QM-ATTACHMENT-INVALID`, retaining nothing | Integration | P0 | FR-125-AC-6 | ✅ `quoin-core` `tc_165_attachments.rs` :: `tc_165_101` |
 | TC-2156 | `quoin measurement verify` refuses, naming the attachment, when a referenced attachment is edited or deleted | Integration | P0 | FR-125-AC-7 | ✅ `quoin-core` `tc_165_attachments.rs` :: `tc_165_102` |
+| TC-2500 | Under `equal` the observed value is the count of comparable slices whose values differ; identical runs observe 0 | Unit | P0 | FR-132-AC-1 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2500_equal_counts_the_slices_that_differ` |
+| TC-2501 | Under `within_delta` a slice violates the relation beyond `delta` in either direction; equal to `delta` is admitted | Unit | P0 | FR-132-AC-2 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2501_within_delta_is_a_symmetric_inclusive_band` |
+| TC-2502 | Under `not_worse` a slice violates the relation when the later value is worse under the plan's objective direction | Unit | P0 | FR-132-AC-3 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2502_not_worse_follows_the_objective_direction` |
+| TC-2503 | A pair with fewer comparable slices than `minimum_pairs` is inconclusive and states no count | Unit | P0 | FR-132-AC-4 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2503_fewer_than_the_minimum_is_inconclusive_not_zero` |
+| TC-2504 | A blocked comparison makes the pair incomparable with no count, naming each blocking reason | Unit | P0 | FR-132-AC-5 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2504_a_blocked_slice_makes_the_pair_incomparable` |
+| TC-2505 | A plan stating no `paired_run` yields no paired-run observation | Unit | P0 | FR-132-AC-6 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2505_a_plan_without_paired_run_yields_no_observation` |
+| TC-2506 | A malformed or inconsistent `paired_run` refuses the plan load as `QM-PLAN-INVALID` | Unit | P0 | FR-132-AC-7 | ✅ `quoin-measurement` `tc_2500_paired_runs.rs` :: `tc_2506_a_malformed_paired_run_refuses_the_plan` |
 
 ## Stakeholder Requirement Coverage
 

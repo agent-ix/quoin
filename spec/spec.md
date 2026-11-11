@@ -226,6 +226,7 @@ index; the files are authoritative.
 - [FR-123](./functional/FR-123-model-table-sections-mapping.md) — enumeration `## Values` and model-table sections map to record keys.
 - [FR-124](./functional/FR-124-inspect-installed-semantic-modules.md) — `quoin module inspect` reports each installed module's semantic contract and import locks.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
+- [FR-132](./functional/FR-132-paired-run-metrics.md) — a metric that states two runs agree is computed from a paired comparison of two collections under the plan's `paired_run` relation, inconclusive below `minimum_pairs`.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 
