@@ -27,7 +27,7 @@ Plan completion: not assessed
 
 **CONDITIONAL.** The main paths of both new criteria have tests. Three stated clauses have no
 test: the campaign runner stating `undeclared`, a pair where one side states no profile, and
-the portfolio applying the rule. The matrix row for TC-2140 also cites two tests whose tags
+the portfolio applying the rule. The matrix row for TC-2147 also cites two tests whose tags
 belong to another row. Semantic review was skipped because it was not opted in.
 
 ## Findings
@@ -37,7 +37,7 @@ belong to another row. Semantic review was skipped because it was not opted in.
 | FND-001 | medium | FR-044-AC-14 says the campaign runner states `undeclared`, but no test asserts the profile a campaign publishes. The line it changed is also uncompiled under default features (code-review FND-001). Add a `campaign`-feature test that reads the published collection's `verificationStack.buildProfile` | rust/crates/quoin-measurement/src/campaign/run/collection.rs:145 |
 | FND-002 | medium | FR-044-AC-15 says "an unstated profile differs from any stated one", but `tc_164_002` compares only release against debug. No test covers a historical collection with no profile paired with a stated one, the case every pre-profile history hits first | rust/crates/quoin-measurement/tests/tc_479_fr044_fr045_criteria.rs:1256 |
 | FND-003 | medium | FR-044-AC-15 says "The portfolio comparison applies the same rule", but no test drives the portfolio. A regression back to the plan-less call in portfolio/build.rs would pass every test | rust/crates/quoin-measurement/src/portfolio/build.rs:167 |
-| FND-004 | low | Row TC-2140 cites `tc_479_020` and `tc_479_004` as backing FR-044-AC-14. Both are tagged `FR-044-AC-1`/`TC-1003`, so the hand-written cell claims backing that the computed matrix does not record. Either tag them `TC-2140` or drop them from the cell | spec/matrix.md:546 |
+| FND-004 | low | Row TC-2147 cites `tc_479_020` and `tc_479_004` as backing FR-044-AC-14. Both are tagged `FR-044-AC-1`/`TC-1003`, so the hand-written cell claims backing that the computed matrix does not record. Either tag them `TC-2147` or drop them from the cell | spec/matrix.md:546 |
 | FND-005 | low | In `tc_479_003`, the refusal of an unknown (`instrumented-ish`) or absent profile asserts only that some error occurred, not that the refusal names `buildProfile`. Any unrelated refusal would pass | rust/crates/quoin-measurement/tests/tc_479_fr044_fr045_criteria.rs:481 |
 
 ## Coverage

@@ -340,7 +340,7 @@ fn runtime(repo: &Path, prepare: bool) -> RunMemberBindings {
     "TC-1942",
     "TC-1947",
     "FR-044-AC-14",
-    "TC-2140"
+    "TC-2147"
 )]
 #[cfg(target_os = "linux")]
 #[test]

@@ -453,7 +453,7 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
 /// kept as stated rather than forced to `release`.
 ///
 /// Provenance: quoin#479, PLAT-930, PLAT-164
-#[trace("FR-044-AC-14", "TC-2140")]
+#[trace("FR-044-AC-14", "TC-2147")]
 #[test]
 fn tc_479_003_a_new_collection_states_its_true_build_profile() {
     let temporary = planned_repository();
@@ -1253,7 +1253,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
 /// governing plan permits it, and then the strata are named beside the delta.
 ///
 /// Provenance: PLAT-164
-#[trace("FR-044-AC-15", "TC-2141")]
+#[trace("FR-044-AC-15", "TC-2148")]
 #[test]
 fn tc_164_002_cross_profile_comparison_needs_the_plans_permission() {
     let temporary = planned_repository();
@@ -1308,7 +1308,7 @@ fn tc_164_002_cross_profile_comparison_needs_the_plans_permission() {
 /// own plans.
 ///
 /// Provenance: PLAT-164
-#[trace("FR-044-AC-15", "TC-2141")]
+#[trace("FR-044-AC-15", "TC-2148")]
 #[test]
 fn tc_164_004_the_portfolio_comparison_consults_the_plans() {
     let permitting = |permit: bool| {
@@ -1353,7 +1353,7 @@ fn tc_164_004_the_portfolio_comparison_consults_the_plans() {
 /// not state it refuses cross-profile comparison.
 ///
 /// Provenance: PLAT-164
-#[trace("FR-044-AC-15", "TC-2141")]
+#[trace("FR-044-AC-15", "TC-2148")]
 #[test]
 fn tc_164_003_a_plan_states_cross_profile_comparison_as_a_boolean() {
     let load = |extra: &str| {

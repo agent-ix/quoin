@@ -855,7 +855,7 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
 /// debug or undeclared collection adapts, and an unknown spelling is refused.
 ///
 /// Provenance: PLAT-164
-#[trace("FR-044-AC-14", "TC-2140")]
+#[trace("FR-044-AC-14", "TC-2147")]
 #[test]
 fn tc_164_001_the_attestation_accepts_every_profile_intake_accepts() {
     for profile in quoin_measurement::types::collection::BuildProfile::ALL
