@@ -76,9 +76,11 @@ pub struct Item {
     /// Every reading the corpus recorded as defensible, [`Self::expected`]
     /// included.
     pub contested: Vec<String>,
-    /// What the graded tool returned, for traceability. Not read by the
-    /// constant-predictor formula, which depends only on the corpus's own
-    /// labels.
+    /// The answer class the graded tool returned. The constant-predictor
+    /// formula reads only the corpus's own labels; this decides whether the
+    /// tool agreed. An unanswered or unrecognized row carries
+    /// whatever non-empty class the caller maps it to, and counts as a
+    /// disagreement unless that class is a recorded reading.
     pub actual: String,
 }
 
@@ -160,7 +162,7 @@ pub fn item_observations(
             // but the field is not left `None` when the state is `Measured` —
             // the value is the observation's own per-item agreement, for
             // anything else that reads this collection later.
-            let agreed = item.actual == item.expected || item.contested.contains(&item.actual);
+            let agreed = agrees(item);
             Ok(MeasurementObservation {
                 metric: item_metric.clone(),
                 plan_id: plan_id.clone(),
@@ -176,6 +178,12 @@ pub fn item_observations(
             })
         })
         .collect()
+}
+
+/// Whether the graded tool agreed with the corpus: its answer is the primary
+/// reading or one of the contested readings.
+pub(crate) fn agrees(item: &Item) -> bool {
+    item.actual == item.expected || item.contested.contains(&item.actual)
 }
 
 /// Parse a non-empty required field, refusing with [`MeasurementErrorCode::CollectionInvalid`].
