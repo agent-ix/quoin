@@ -192,7 +192,7 @@ const SUSPECT_KINDS: [&str; 3] = [
 /// Everything else includes a kind the auditor adds later: `Finding::kind` is
 /// deliberately an open string, and an unrecognised kind is not evidence that
 /// the criterion is sound.
-fn bucket(kind: &str) -> u8 {
+pub(crate) fn bucket(kind: &str) -> u8 {
     if SUSPECT_KINDS.contains(&kind) {
         0
     } else if kind == FindingKind::STALE_EVIDENCE {

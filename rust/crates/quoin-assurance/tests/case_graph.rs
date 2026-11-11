@@ -25,6 +25,14 @@ mod fixtures;
 
 use crate::fixtures::{bundle, doc, input, obligation};
 
+/// The sub-goals a goal is argued over: the children of its strategy node.
+fn sub_goals(goal: &CaseNode) -> &[CaseNode] {
+    match goal.children.first() {
+        Some(strategy) if strategy.kind == NodeKind::Strategy => &strategy.children,
+        _ => &[],
+    }
+}
+
 fn finding(obligation_id: &str, kind: &str) -> Finding {
     // The three fields `build_case` reads. `Finding` grew the producer's other
     // nine when quoin#383 ported the auditor into this workspace; a view
@@ -64,7 +72,7 @@ fn tc_447_400_argues_from_the_claim_down_to_its_evidence() {
     assert_eq!(claim.because, None);
 
     assert_eq!(claim.children.len(), 1);
-    let requirement = &claim.children[0];
+    let requirement = &sub_goals(claim)[0];
     assert_eq!(requirement.id, "FR-001");
     assert_eq!(requirement.kind, NodeKind::Goal);
     assert_eq!(requirement.status, NodeStatus::Supported);
@@ -80,6 +88,7 @@ fn tc_447_400_argues_from_the_claim_down_to_its_evidence() {
             statement: "It holds.".to_owned(),
             status: NodeStatus::Supported,
             because: None,
+            evidence: None,
             children: Vec::new(),
         }]
     );
@@ -97,7 +106,7 @@ fn tc_447_401_an_obligation_with_a_finding_stays_in_the_tree_as_an_open_node() {
         vec![finding("FR-001-AC-1", "undischarged")],
     ));
 
-    let leaf = &result.claims[0].children[0].children[0];
+    let leaf = &sub_goals(&result.claims[0])[0].children[0];
     assert_eq!(leaf.id, "FR-001-AC-1");
     assert_eq!(leaf.status, NodeStatus::Open);
     // `{kind}: {summary}`, stated as the literal the reader sees. The retained
@@ -124,12 +133,12 @@ fn tc_447_402_one_open_leaf_opens_every_ancestor_up_to_the_claim() {
 
     let claim = &result.claims[0];
     assert_eq!(claim.status, NodeStatus::Open);
-    assert_eq!(claim.children[0].status, NodeStatus::Open);
+    assert_eq!(sub_goals(claim)[0].status, NodeStatus::Open);
 
     // Open propagates; it does not spread. The sibling that carries no finding
     // is still supported, and an ancestor opened by "everything under me is
     // open" would be a different, weaker view.
-    let leaves = &claim.children[0].children;
+    let leaves = &sub_goals(claim)[0].children;
     assert_eq!(leaves[0].id, "FR-001-AC-1");
     assert_eq!(leaves[0].status, NodeStatus::Supported);
     assert_eq!(leaves[1].id, "FR-001-AC-2");
@@ -138,7 +147,7 @@ fn tc_447_402_one_open_leaf_opens_every_ancestor_up_to_the_claim() {
     // And the opened ancestors say nothing false about WHY: `because` belongs
     // to the empty goal, not to the propagated one.
     assert_eq!(claim.because, None);
-    assert_eq!(claim.children[0].because, None);
+    assert_eq!(sub_goals(claim)[0].because, None);
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
@@ -162,6 +171,7 @@ fn tc_447_403_a_claim_nothing_traces_to_is_undeveloped_and_never_supported() {
             statement: "Nothing argues for this".to_owned(),
             status: NodeStatus::Open,
             because: Some("no sub-claim and no obligation traces to this claim".to_owned()),
+            evidence: None,
             children: Vec::new(),
         }]
     );
@@ -196,7 +206,7 @@ fn tc_447_404_a_requirement_no_claim_reaches_is_reported_rather_than_rendered_ar
 
     assert_eq!(result.unreachable, ["FR-009"]);
     // The reached half is genuinely reached, not merely absent from the list.
-    assert_eq!(result.claims[0].children[0].id, "FR-001");
+    assert_eq!(sub_goals(&result.claims[0])[0].id, "FR-001");
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts, quoin#170
@@ -226,7 +236,7 @@ fn tc_447_405_a_requirement_that_traces_to_two_claims_appears_under_both() {
     let children: Vec<Vec<&str>> = result
         .claims
         .iter()
-        .map(|claim| claim.children.iter().map(|c| c.id.as_str()).collect())
+        .map(|claim| sub_goals(claim).iter().map(|c| c.id.as_str()).collect())
         .collect();
     assert_eq!(children, [["FR-001"], ["FR-001"]]);
     assert!(result.claims.iter().all(|claim| claim.because.is_none()));
@@ -234,7 +244,7 @@ fn tc_447_405_a_requirement_that_traces_to_two_claims_appears_under_both() {
     // The second copy is a whole subtree, not a stub: the obligation hangs off
     // both, which is what "appears under both" has to mean for a reader.
     for claim in &result.claims {
-        assert_eq!(claim.children[0].children[0].id, "FR-001-AC-1");
+        assert_eq!(sub_goals(claim)[0].children[0].id, "FR-001-AC-1");
     }
 }
 
@@ -263,9 +273,11 @@ fn tc_447_406_a_refinement_cycle_terminates_without_dropping_a_shared_child() {
     // Bounded, and bounded at the right place: the cycle is cut on the second
     // visit to `FR-001` on this path, not by refusing to descend at all.
     let claim = &result.claims[0];
-    assert_eq!(claim.children[0].id, "FR-001");
-    assert_eq!(claim.children[0].children[0].id, "FR-002");
-    assert_eq!(claim.children[0].children[0].children.len(), 0);
+    let a = &sub_goals(claim)[0];
+    assert_eq!(a.id, "FR-001");
+    let b = &sub_goals(a)[0];
+    assert_eq!(b.id, "FR-002");
+    assert_eq!(b.children.len(), 0);
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
@@ -288,7 +300,7 @@ fn tc_447_407_the_claim_type_comes_from_the_caller_and_never_from_a_constant() {
     let with_hazard = build_case(&hazard);
     assert_eq!(with_hazard.claims.len(), 1);
     assert_eq!(with_hazard.claims[0].id, "HAZ-001");
-    assert_eq!(with_hazard.claims[0].children[0].id, "FR-001");
+    assert_eq!(sub_goals(&with_hazard.claims[0])[0].id, "FR-001");
     // `mitigates` is a downward edge like `traces_to`: the hazard bundle's own
     // vocabulary reaches the requirement, rather than the requirement being
     // reported unreachable under a claim that names it.

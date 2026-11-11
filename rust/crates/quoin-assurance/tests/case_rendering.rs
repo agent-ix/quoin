@@ -17,14 +17,14 @@
 )]
 
 use ix_trace_rs::trace;
-use quoin_assurance::case::build_case;
+use quoin_assurance::case::{CaseInput, NodeKind, NodeStatus, SuiteRef, Verdict, build_case};
 
 #[path = "common/fixtures.rs"]
 mod fixtures;
 #[path = "common/render.rs"]
 mod render_hop;
 
-use crate::fixtures::{bundle, input, obligation};
+use crate::fixtures::{bundle, doc, input, obligation};
 use crate::render_hop::render;
 
 /// The contents of the first mermaid fence, exclusive of the fences.
@@ -67,16 +67,19 @@ fn tc_447_410_rendering_is_byte_identical_over_unchanged_inputs() {
          \n\
          ## ✅ StR-001 — The system is usable\n\
          \n\
-         \x20 - ✅ FR-001 — Parse the input\n\
-         \x20   - ✅ **FR-001-AC-1** — It holds.\n\
+         \x20 - ✅ strategy — argued over `traces_to`: FR-001\n\
+         \x20   - ✅ FR-001 — Parse the input\n\
+         \x20     - ✅ **FR-001-AC-1** — It holds.\n\
          \n\
          ```mermaid\n\
          flowchart TD\n\
          \x20 StR_001[\"StR-001: The system is usable\"]\n\
+         \x20 StR_001_strategy[/\"StR-001/strategy: argued over 'traces_to': FR-001\"/]\n\
          \x20 FR_001[\"FR-001: Parse the input\"]\n\
          \x20 FR_001_AC_1([\"FR-001-AC-1: It holds.\"])\n\
          \x20 FR_001 --> FR_001_AC_1\n\
-         \x20 StR_001 --> FR_001\n\
+         \x20 StR_001_strategy --> FR_001\n\
+         \x20 StR_001 --> StR_001_strategy\n\
          ```\n"
     );
 }
@@ -216,4 +219,109 @@ fn tc_447_414_an_empty_case_says_there_is_no_case_rather_than_rendering_one() {
          argue. Declare an `StR` (or pass `--claim-type`) and re-run.\n"
     );
     assert!(!rendered.contains("claim(s)"));
+}
+
+/// A claim decomposed by two edge verbs gets one strategy node naming both,
+/// in the markdown and in the mermaid graph.
+#[trace("FR-040-AC-16")]
+#[test]
+fn tc_363_001_a_decomposition_renders_a_strategy_naming_its_edge_verbs() {
+    let documents = vec![
+        doc("StR-001", "StR", "Usable", &[]),
+        doc("FR-002", "FR", "B", &[("StR-001", "traces_to")]),
+        doc("FR-001", "FR", "A", &[("StR-001", "traces_to")]),
+        doc("FR-003", "FR", "C", &[("StR-001", "refines")]),
+    ];
+    let case = build_case(&input(documents, vec![], vec![]));
+
+    let strategy = &case.claims[0].children[0];
+    assert_eq!(strategy.kind, NodeKind::Strategy);
+    assert_eq!(strategy.id, "StR-001/strategy");
+    assert_eq!(
+        strategy.statement,
+        "argued over `refines`: FR-003; `traces_to`: FR-001, FR-002"
+    );
+    assert_eq!(strategy.children.len(), 3);
+
+    let rendered = render(&case);
+    assert!(
+        rendered.contains(
+            "  - ◇ strategy — argued over `refines`: FR-003; `traces_to`: FR-001, FR-002\n"
+        )
+    );
+    let graph = mermaid(&rendered);
+    assert!(graph.contains(
+        "  StR_001_strategy[/\"StR-001/strategy: argued over 'refines': FR-003, 'traces_to': FR-001, FR-002 ◇\"/]\n"
+    ), "{graph}");
+    assert!(graph.contains("  StR_001 --> StR_001_strategy\n"));
+    assert!(graph.contains("  StR_001_strategy --> FR_001\n"));
+}
+
+/// A bound leaf lists its suites, the newest run or scan and the auditor's
+/// verdict, in the markdown and the JSON, and re-rendering is byte-identical.
+#[trace("FR-040-AC-17")]
+#[test]
+fn tc_363_002_a_bound_leaf_lists_suites_newest_run_and_the_auditors_verdict() {
+    let request = |findings: serde_json::Value| -> CaseInput {
+        let mut request = serde_json::json!({
+            "documents": bundle(),
+            "obligations": [
+                {"id": "FR-001-AC-1", "statement": "It holds."},
+                {"id": "FR-001-AC-2", "statement": "It also holds."}
+            ],
+            "findings": findings,
+            "bindings": [
+                {"obligation": "FR-001-AC-1", "suite": "unit", "symbols": []},
+                {"obligation": "FR-001-AC-1", "suite": "scan", "symbols": []},
+                {"obligation": "FR-001-AC-2", "suite": "unit", "symbols": []}
+            ],
+            "observations": [
+                {"suite": "unit", "timestamp": "2026-11-01T00:00:00Z"},
+                {"suite": "unit", "timestamp": "2026-11-09T00:00:00Z"},
+                {"suite": "scan", "timestamp": "2026-11-05T00:00:00Z"}
+            ],
+        });
+        request["unreadable"] = serde_json::json!([]);
+        serde_json::from_value(request).expect("the request reads")
+    };
+    let findings = serde_json::json!([
+        {"kind": "stale-evidence", "obligation": "FR-001-AC-2", "summary": "older than HEAD"}
+    ]);
+
+    let case = build_case(&request(findings.clone()));
+    let leaves = &case.claims[0].children[0].children[0].children;
+    let fresh = leaves[0].evidence.as_ref().expect("bound leaf");
+    assert_eq!(fresh.verdict, Some(Verdict::Fresh));
+    assert_eq!(fresh.newest.as_deref(), Some("2026-11-09T00:00:00Z"));
+    assert_eq!(
+        fresh.suites,
+        vec![
+            SuiteRef {
+                suite: "scan".to_owned(),
+                at: Some("2026-11-05T00:00:00Z".to_owned())
+            },
+            SuiteRef {
+                suite: "unit".to_owned(),
+                at: Some("2026-11-09T00:00:00Z".to_owned())
+            },
+        ]
+    );
+    let stale = leaves[1].evidence.as_ref().expect("bound leaf");
+    assert_eq!(stale.verdict, Some(Verdict::Stale));
+    assert_eq!(leaves[1].status, NodeStatus::Open);
+
+    let rendered = render(&case);
+    assert!(rendered.contains(
+        "**FR-001-AC-1** — It holds.\n        - evidence: suites scan (2026-11-05T00:00:00Z), unit (2026-11-09T00:00:00Z); newest 2026-11-09T00:00:00Z; verdict fresh\n"
+    ), "{rendered}");
+    assert!(rendered.contains("verdict stale\n"));
+
+    // JSON carries the same refs, and unchanged inputs give identical bytes.
+    let json = serde_json::to_string(&case).expect("serialises");
+    assert!(json.contains(r#""evidence":{"suites":[{"suite":"scan","at":"2026-11-05T00:00:00Z"}"#));
+    assert!(json.contains(r#""verdict":"fresh""#));
+    assert_eq!(
+        json,
+        serde_json::to_string(&build_case(&request(findings))).expect("serialises")
+    );
 }

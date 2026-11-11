@@ -93,6 +93,8 @@ pub(crate) fn input(
         documents,
         obligations,
         findings,
+        bindings: None,
+        observations: None,
         claim_types: None,
         unreadable: None,
         producer_trust: None,

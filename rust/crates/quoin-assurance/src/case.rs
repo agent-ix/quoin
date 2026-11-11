@@ -34,10 +34,12 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use quoin_evidence::types::Binding;
 use quoin_finding_types::Finding;
 use quoin_quire_types::Obligation;
 use serde::{Deserialize, Serialize};
 
+use crate::matrix::bucket;
 use crate::requirement_of;
 
 /// Internal node kinds for the legacy derived view; not an external format.
@@ -46,7 +48,8 @@ use crate::requirement_of;
 pub enum NodeKind {
     /// A claim or sub-claim.
     Goal,
-    /// Reserved by the retained type; this view mints none.
+    /// The reasoning that decomposes a goal into its sub-goals; it names the
+    /// edge verbs the corpus authored.
     Strategy,
     /// A leaf: one obligation.
     Solution,
@@ -71,6 +74,58 @@ pub enum NodeStatus {
     Open,
 }
 
+/// The auditor's verdict on a bound leaf, read from its findings.
+///
+/// Never re-derived here: it is the precedence [`crate::matrix`] already
+/// applies to the same findings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Verdict {
+    /// Bound, and the auditor raised nothing against it.
+    Fresh,
+    /// The auditor raised `stale-evidence`.
+    Stale,
+    /// The auditor distrusts the binding.
+    Suspect,
+}
+
+/// One suite bound to a leaf, with the newest run or scan the store holds for it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SuiteRef {
+    /// The bound suite.
+    pub suite: String,
+    /// ISO-8601 timestamp of its newest run or scan; absent when the store
+    /// holds none for the suite.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub at: Option<String>,
+}
+
+/// What a solution leaf is bound to.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LeafEvidence {
+    /// Bound suites, sorted.
+    pub suites: Vec<SuiteRef>,
+    /// The newest timestamp across `suites`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub newest: Option<String>,
+    /// The auditor's verdict. Absent when the auditor raised a finding that is
+    /// neither stale nor suspect; the finding itself is in `because`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub verdict: Option<Verdict>,
+}
+
+/// One run or scan the store holds, reduced to what the view shows.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Observation {
+    /// The suite the run or scan covered.
+    pub suite: String,
+    /// ISO-8601, as the store recorded it.
+    pub timestamp: String,
+}
+
 /// One node of the case tree.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -86,6 +141,10 @@ pub struct CaseNode {
     /// Why it is open — the auditor's finding, verbatim. Absent when supported.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub because: Option<String>,
+    /// Bound suites, newest run and the auditor's verdict. Solutions only, and
+    /// only when the obligation has a binding.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub evidence: Option<LeafEvidence>,
     /// Sub-claims first, then evidence.
     pub children: Vec<CaseNode>,
 }
@@ -189,6 +248,12 @@ pub struct CaseInput {
     pub obligations: Vec<Obligation>,
     /// The auditor's findings, keyed by obligation elsewhere.
     pub findings: Vec<Finding>,
+    /// The binding graph, from the store.
+    #[serde(default)]
+    pub bindings: Option<Vec<Binding>>,
+    /// Every run and scan the store holds, reduced to suite and timestamp.
+    #[serde(default)]
+    pub observations: Option<Vec<Observation>>,
     /// Artifact types that are top-level claims.
     ///
     /// Defaults to `StR`. A safety or security bundle argues from a declared
@@ -252,25 +317,37 @@ pub fn build_case(input: &CaseInput) -> AssuranceCase {
         }
     }
 
-    // parent id → child ids, inverted from the edges each child declares.
-    let mut children: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    // parent id → child id → the verbs the child declares toward it, inverted
+    // from the edges each child declares. A set, so a child that declares two
+    // verbs toward one parent is one sub-claim argued over both.
+    let mut children: Children = BTreeMap::new();
     for doc in &input.documents {
         let Some(id) = id_of(doc) else { continue };
-        for parent in parents_of(doc) {
+        for (parent, verb) in parents_of(doc) {
             if !by_id.contains_key(&parent) {
                 continue;
             }
-            children.entry(parent).or_default().push(id.clone());
+            children
+                .entry(parent)
+                .or_default()
+                .entry(id.clone())
+                .or_default()
+                .insert(verb);
         }
     }
 
-    let mut finding_for: BTreeMap<&str, &Finding> = BTreeMap::new();
+    // The auditor already orders by severity, so the first finding for an
+    // obligation is its most serious one, and that is the one a reader needs
+    // on the node. All of them feed the verdict.
+    let mut finding_for: FindingsFor = BTreeMap::new();
     for finding in &input.findings {
-        // First wins: the auditor already orders by severity, so the first
-        // finding for an obligation is its most serious one, and that is the
-        // one a reader needs on the node.
-        finding_for.entry(&finding.obligation).or_insert(finding);
+        finding_for
+            .entry(&finding.obligation)
+            .or_default()
+            .push(finding);
     }
+
+    let store = Store::new(input);
 
     let mut obligations_for: BTreeMap<&str, Vec<&Obligation>> = BTreeMap::new();
     for obligation in &input.obligations {
@@ -306,6 +383,7 @@ pub fn build_case(input: &CaseInput) -> AssuranceCase {
             &children,
             &obligations_for,
             &finding_for,
+            &store,
             &mut reached,
             &BTreeSet::new(),
         ));
@@ -382,9 +460,10 @@ fn sorted_by_key(values: &[serde_json::Value], key: &str) -> Vec<serde_json::Val
 fn node_for(
     id: &str,
     by_id: &BTreeMap<String, &serde_json::Value>,
-    children: &BTreeMap<String, Vec<String>>,
+    children: &Children,
     obligations_for: &BTreeMap<&str, Vec<&Obligation>>,
-    finding_for: &BTreeMap<&str, &Finding>,
+    finding_for: &FindingsFor,
+    store: &Store,
     reached: &mut BTreeSet<String>,
     ancestors: &BTreeSet<String>,
 ) -> CaseNode {
@@ -405,33 +484,44 @@ fn node_for(
 
     // `ancestors`, not `reached`: a child already rendered under a DIFFERENT
     // claim must still appear here, and only a child on this path is a cycle.
-    let mut sub_ids: Vec<&String> = children
+    // The map is keyed by child id, so iteration is already sorted.
+    let sub_edges: Vec<(&String, &BTreeSet<String>)> = children
         .get(id)
-        .map(|ids| ids.iter().filter(|c| !ancestors.contains(*c)).collect())
+        .map(|edges| {
+            edges
+                .iter()
+                .filter(|(child, _)| !ancestors.contains(*child))
+                .collect()
+        })
         .unwrap_or_default();
-    sub_ids.sort();
 
-    let mut parts: Vec<CaseNode> = sub_ids
-        .into_iter()
-        .map(|child| {
+    let sub_nodes: Vec<CaseNode> = sub_edges
+        .iter()
+        .map(|(child, _)| {
             node_for(
                 child,
                 by_id,
                 children,
                 obligations_for,
                 finding_for,
+                store,
                 reached,
                 &ancestors,
             )
         })
         .collect();
 
+    let mut parts: Vec<CaseNode> = Vec::new();
+    if !sub_nodes.is_empty() {
+        parts.push(strategy_for(id, &sub_edges, sub_nodes));
+    }
+
     let mut evidence: Vec<&Obligation> = obligations_for.get(id).cloned().unwrap_or_default();
     evidence.sort_by(|a, b| a.id.cmp(&b.id));
     parts.extend(
         evidence
             .into_iter()
-            .map(|obligation| solution_for(obligation, finding_for)),
+            .map(|obligation| solution_for(obligation, finding_for, store)),
     );
 
     // A goal with no sub-goals and no evidence is open, which a reader must
@@ -454,12 +544,85 @@ fn node_for(
         statement: title,
         status,
         because,
+        evidence: None,
         children: parts,
     }
 }
 
-fn solution_for(obligation: &Obligation, finding_for: &BTreeMap<&str, &Finding>) -> CaseNode {
-    let finding = finding_for.get(obligation.id.as_str());
+/// Child id → the verbs it declares toward one parent.
+type Children = BTreeMap<String, BTreeMap<String, BTreeSet<String>>>;
+
+/// Obligation id → every auditor finding against it, most serious first.
+type FindingsFor<'a> = BTreeMap<&'a str, Vec<&'a Finding>>;
+
+/// What the store holds, as the leaves read it.
+struct Store<'a> {
+    /// Obligation id → the suites bound to it.
+    suites_for: BTreeMap<&'a str, BTreeSet<&'a str>>,
+    /// Suite → its newest run or scan timestamp.
+    newest_for_suite: BTreeMap<&'a str, &'a str>,
+}
+
+impl<'a> Store<'a> {
+    fn new(input: &'a CaseInput) -> Self {
+        let mut newest_for_suite: BTreeMap<&str, &str> = BTreeMap::new();
+        for observation in input.observations.iter().flatten() {
+            let newest = newest_for_suite.entry(&observation.suite).or_default();
+            if observation.timestamp.as_str() > *newest {
+                *newest = &observation.timestamp;
+            }
+        }
+        let mut suites_for: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+        for binding in input.bindings.iter().flatten() {
+            suites_for
+                .entry(binding.obligation.as_str())
+                .or_default()
+                .insert(binding.suite.as_str());
+        }
+        Self {
+            suites_for,
+            newest_for_suite,
+        }
+    }
+}
+
+/// The strategy a goal is argued by: its sub-goals, grouped by edge verb.
+fn strategy_for(
+    goal: &str,
+    edges: &[(&String, &BTreeSet<String>)],
+    sub_nodes: Vec<CaseNode>,
+) -> CaseNode {
+    let mut by_verb: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for (child, verbs) in edges {
+        for verb in *verbs {
+            by_verb.entry(verb).or_default().push(child);
+        }
+    }
+    let argued: Vec<String> = by_verb
+        .iter()
+        .map(|(verb, ids)| format!("`{verb}`: {}", ids.join(", ")))
+        .collect();
+    let status = if sub_nodes.iter().any(|n| n.status == NodeStatus::Open) {
+        NodeStatus::Open
+    } else {
+        NodeStatus::Supported
+    };
+    CaseNode {
+        id: format!("{goal}/strategy"),
+        kind: NodeKind::Strategy,
+        statement: format!("argued over {}", argued.join("; ")),
+        status,
+        because: None,
+        evidence: None,
+        children: sub_nodes,
+    }
+}
+
+fn solution_for(obligation: &Obligation, finding_for: &FindingsFor, store: &Store) -> CaseNode {
+    let findings = finding_for
+        .get(obligation.id.as_str())
+        .map_or(&[][..], Vec::as_slice);
+    let finding = findings.first();
     CaseNode {
         id: obligation.id.clone(),
         kind: NodeKind::Solution,
@@ -470,8 +633,35 @@ fn solution_for(obligation: &Obligation, finding_for: &BTreeMap<&str, &Finding>)
             NodeStatus::Supported
         },
         because: finding.map(|f| format!("{}: {}", f.kind, f.summary)),
+        evidence: evidence_for(&obligation.id, findings, store),
         children: Vec::new(),
     }
+}
+
+/// The leaf's bound suites and the auditor's verdict, when anything is bound.
+fn evidence_for(id: &str, findings: &[&Finding], store: &Store) -> Option<LeafEvidence> {
+    let suites = store.suites_for.get(id)?;
+    let suites: Vec<SuiteRef> = suites
+        .iter()
+        .map(|suite| SuiteRef {
+            suite: (*suite).to_owned(),
+            at: store.newest_for_suite.get(suite).map(|at| (*at).to_owned()),
+        })
+        .collect();
+    let newest = suites.iter().filter_map(|s| s.at.clone()).max();
+    // Same precedence as the matrix: suspect, then stale. A finding of any
+    // other kind leaves the verdict unstated rather than calling it fresh.
+    let verdict = match findings.iter().map(|f| bucket(&f.kind)).min() {
+        None => Some(Verdict::Fresh),
+        Some(0) => Some(Verdict::Suspect),
+        Some(1) => Some(Verdict::Stale),
+        Some(_) => None,
+    };
+    Some(LeafEvidence {
+        suites,
+        newest,
+        verdict,
+    })
 }
 
 /// The document's own id, from frontmatter.
@@ -486,8 +676,8 @@ fn id_of(doc: &serde_json::Value) -> Option<String> {
     }
 }
 
-/// Ids this document declares itself to elaborate.
-fn parents_of(doc: &serde_json::Value) -> Vec<String> {
+/// Ids this document declares itself to elaborate, with the verb it uses.
+fn parents_of(doc: &serde_json::Value) -> Vec<(String, String)> {
     let Some(serde_json::Value::Array(rels)) =
         doc.get("frontmatter").and_then(|f| f.get("relationships"))
     else {
@@ -509,7 +699,7 @@ fn parents_of(doc: &serde_json::Value) -> Vec<String> {
         if let Some(id) = target.split('/').next_back()
             && !id.is_empty()
         {
-            out.push(id.to_owned());
+            out.push((id.to_owned(), edge));
         }
     }
     out

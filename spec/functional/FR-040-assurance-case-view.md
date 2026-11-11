@@ -22,12 +22,32 @@ The internal structured argument view does: a **claim** is supported by explicit
 sub-claims, whose leaves are **evidence**. *"StR-004 holds because these
 requirements refine it, each verified by a stated method, with evidence that is fresh."*
 
-This is a project-owned representation. It does not claim conformance with or
-export to an external assurance-argument notation.
+This is a project-owned representation. It borrows the vocabulary of a goal-structured argument
+(goal, strategy, solution) and nothing more: a **goal** is a claim or sub-claim, a **strategy** is the
+node that names how a goal is decomposed, and a **solution** is an obligation leaf. It is not GSN. It
+does not conform to the GSN standard's node set (no context, assumption, justification or module
+nodes), does not read or write GSN interchange, and does not claim that a rendered case is a GSN
+diagram. Its markdown and mermaid output are quoin's own formats.
 
 `quoin assurance` renders that from data the program already holds — the trace graph, the obligations
 `quire` mints, and the auditor's verdict on each binding. It is **strictly a view**: it runs nothing,
 collects nothing, and writes nothing to the store.
+
+### A decomposition names how it is argued
+
+A goal whose sub-claims are found by inverting the corpus's edges gets one **strategy** node between
+it and those sub-claims. The strategy names the edge verbs that carry the argument, grouped by verb
+and sorted: ``argued over `traces_to`: FR-001, FR-002``. A sub-claim that declares two verbs toward
+one parent appears once, under both. A goal with only obligations and no sub-claims has no strategy.
+
+### A supported leaf says what it rests on
+
+A solution leaf that has a binding lists its bound suites, the newest run or scan timestamp the store
+holds for each, the newest across them, and the auditor's verdict: `fresh` (bound, nothing raised),
+`stale` (`stale-evidence`) or `suspect` (a finding that distrusts the binding), by the precedence the
+test matrix (FR-115) already applies to the same findings. The verdict is read from the findings
+`audit()` produced, never recomputed from timestamps. A leaf raising any other finding states no
+verdict and keeps the finding in its reason. The `--json` payload carries the same fields.
 
 ### Gaps are nodes, not omissions
 
@@ -120,6 +140,8 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-13 | A case with no claims carries a machine-readable `reason` naming the searched claim types — present exactly when `claims` is empty — so the `--json` consumer can tell a clean case from one where nothing was argued. | Test (TC-261) |
 | FR-040-AC-14 | `--claim-type` is matched case-insensitively against the authored `type:`, and the flag REPLACES the `StR` default rather than adding to it — stated in its help. | Test (TC-262) |
 | FR-040-AC-15 | A mermaid label is truncated on a code-point boundary, so a label whose limit falls inside a surrogate pair stays well-formed rather than ending in a lone surrogate. | Test (TC-1711) |
+| FR-040-AC-16 | A goal decomposed into sub-claims has a strategy node, in markdown and mermaid, that names the edge verbs and the sub-claims argued over each. | Test |
+| FR-040-AC-17 | A bound leaf lists its suites, the newest run or scan timestamp and the auditor's fresh, stale or suspect verdict, in markdown and `--json`, byte-identically over unchanged inputs. | Test |
 
 ## Constraints
 
