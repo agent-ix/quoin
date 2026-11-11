@@ -88,6 +88,18 @@ The same reasoning covers a malformed pair: an ignored `--mutation-floor` means 
 for a threshold and gets a clean report saying nothing was below it. **A floor that silently does not
 apply is worse than no floor**, because it reads as a passing gate.
 
+### A surviving mutant is a finding against the criterion
+
+A score below the floor says the tests are weak; it does not say where. The `cargo-mutants` adapter
+therefore keeps, per mutated function, the mutants the tests did not kill (line and description,
+bounded: 25 per function, 200 characters each — the score still counts every miss). When the floor
+is missed the audit reports one **`surviving-mutant`** finding per kept survivor of the bound
+suites, at `medium`, carrying `path`, `line`, `symbol` and the mutation. The finding says that the
+criterion's tests, or the criterion itself, do not demand that behaviour. The `spec-correctness`
+skill takes these findings, grouped by obligation (which is the criterion's `row_id`), as an
+optional input and aims a regenerated test at each. The survivors live on the run record that
+already holds the score; there is no second store.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -104,6 +116,11 @@ apply is worse than no floor**, because it reads as a passing gate.
 | FR-039-AC-10 | A score whose entry declares another `metric` — a latency, a coverage percentage — or none at all is not compared against the floor. | Test (TC-219) |
 | FR-039-AC-11 | The floor filters on the entry's declared `metric`, never on the run's tool name: a labelled score from a tool no catalog lists is judged like any other. | Test (TC-269) |
 | FR-039-AC-12 | The check reads no catalog. The discriminator lives on the entry, written by the adapter at the point of recording, and an entry without a `metric` is not a mutation score — there is no fallback read of the tool string. | Test (TC-269) |
+| FR-039-AC-13 | The `cargo-mutants` adapter records, per function, each missed or timed-out mutant with its line and description, at most 25 per function and 200 characters each, and a killed mutant is not recorded. | Test (TC-3100) |
+| FR-039-AC-14 | When the floor is missed, the audit reports one `surviving-mutant` finding per recorded survivor of a mutation-scored symbol bound to the obligation, at `medium`, carrying `path`, `line` and `symbol`. | Test (TC-3101) |
+| FR-039-AC-15 | No `surviving-mutant` finding is produced when the floor is met, undeclared or unmeasured, for a skipped symbol, or for a suite not bound to the obligation. | Test (TC-3101) |
+| FR-039-AC-16 | An obligation reports at most 25 `surviving-mutant` findings. | Test (TC-3101) |
+| FR-039-AC-17 | The `spec-correctness` skill names `surviving-mutant` findings, grouped by `row_id`, as an optional input and directs a test at each. | Test (TC-3102) |
 
 ## Constraints
 

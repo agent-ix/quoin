@@ -27,7 +27,7 @@ use quoin_quire_types::Obligation;
 use super::input::AuditInput;
 use super::method::{method_conformance, unknown_method_finding};
 use super::mocks::{mocked_bindings, mocked_finding};
-use super::scores::{multiplicity_finding, mutation_finding};
+use super::scores::{multiplicity_finding, mutation_finding, surviving_mutant_findings};
 use super::stale::{failed_run, unrecorded_evidence};
 use super::{Indexed, Pass, is_insufficient};
 use crate::error::AuditorError;
@@ -159,7 +159,12 @@ pub(super) fn run(
     let run_bindings: Vec<&Binding> = paired.iter().map(|(binding, _)| *binding).collect();
     let runs: Vec<&RunRecord> = paired.iter().map(|(_, run)| *run).collect();
     if let Some(finding) = mutation_finding(obligation, &run_bindings, &runs, input) {
+        let missed_floor = finding.kind == FindingKind::INSUFFICIENT_MUTATION_SCORE;
         pass.findings.push(finding);
+        if missed_floor {
+            pass.findings
+                .extend(surviving_mutant_findings(obligation, &run_bindings, &runs));
+        }
         return Ok(pass);
     }
     pass.completed = true;

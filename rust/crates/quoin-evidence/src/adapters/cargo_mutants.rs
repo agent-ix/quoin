@@ -20,12 +20,28 @@ use serde::Deserialize;
 
 use super::AdapterResult;
 use crate::error::EvidenceError;
-use crate::types::{MUTATION_SCORE_METRIC, Outcome, RunEntry};
+use crate::types::{
+    MAX_SURVIVOR_CHARS, MAX_SURVIVORS_PER_ENTRY, MUTATION_SCORE_METRIC, Outcome, RunEntry,
+    Survivor,
+};
 
 #[derive(Deserialize)]
 struct MutantScenario {
     file: Option<String>,
     function: Option<MutantFunction>,
+    /// cargo-mutants' own description, e.g. `replace f -> bool with true`.
+    name: Option<String>,
+    span: Option<MutantSpan>,
+}
+
+#[derive(Deserialize)]
+struct MutantSpan {
+    start: Option<MutantPosition>,
+}
+
+#[derive(Deserialize)]
+struct MutantPosition {
+    line: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -67,6 +83,24 @@ fn symbol_of(mutant: &MutantScenario) -> Option<String> {
     Some(format!("{file}::{function}"))
 }
 
+/// The line and description of a mutant the tests did not kill, bounded.
+fn survivor_of(mutant: &MutantScenario, summary: &str) -> Survivor {
+    let described = mutant
+        .name
+        .as_deref()
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map_or_else(|| summary.to_owned(), str::to_owned);
+    Survivor {
+        line: mutant
+            .span
+            .as_ref()
+            .and_then(|span| span.start.as_ref())
+            .and_then(|start| start.line),
+        mutation: described.chars().take(MAX_SURVIVOR_CHARS).collect(),
+    }
+}
+
 /// Parse `mutants.out/outcomes.json`.
 ///
 /// # Errors
@@ -90,6 +124,7 @@ pub fn parse_cargo_mutants(raw: &str) -> Result<AdapterResult, EvidenceError> {
     // says nothing about the suite.
     let mut caught: BTreeMap<String, u64> = BTreeMap::new();
     let mut missed: BTreeMap<String, u64> = BTreeMap::new();
+    let mut survivors: BTreeMap<String, Vec<Survivor>> = BTreeMap::new();
     for value in outcomes {
         let Ok(outcome) = serde_json::from_value::<MutantOutcome>(value) else {
             continue;
@@ -104,7 +139,13 @@ pub fn parse_cargo_mutants(raw: &str) -> Result<AdapterResult, EvidenceError> {
             Some("CaughtMutant") => *caught.entry(symbol).or_default() += 1,
             // A `Timeout` is a mutant the suite did not kill. Counting it as
             // caught would report a gap as coverage.
-            Some("MissedMutant" | "Timeout") => *missed.entry(symbol).or_default() += 1,
+            Some(summary @ ("MissedMutant" | "Timeout")) => {
+                let kept = survivors.entry(symbol.clone()).or_default();
+                if kept.len() < MAX_SURVIVORS_PER_ENTRY {
+                    kept.push(survivor_of(&mutant, summary));
+                }
+                *missed.entry(symbol).or_default() += 1;
+            }
             _ => {}
         }
     }
@@ -147,6 +188,7 @@ pub fn parse_cargo_mutants(raw: &str) -> Result<AdapterResult, EvidenceError> {
             entry.score = Some(score);
             // The measurement is named where it is recorded (quoin#138).
             entry.metric = Some(MUTATION_SCORE_METRIC.to_owned());
+            entry.survivors = survivors.remove(symbol).filter(|kept| !kept.is_empty());
             entry
         })
         .collect();

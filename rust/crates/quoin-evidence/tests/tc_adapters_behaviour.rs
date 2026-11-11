@@ -219,3 +219,37 @@ fn tc_197_an_all_passing_audit_run_is_rules_that_ran_and_found_nothing() {
     // An absent scan is an error, not a clean run.
     assert!(parse_audit_script("nothing recognisable\n").is_err());
 }
+
+#[trace("FR-039-AC-13", "TC-3100")]
+#[test]
+fn tc_3100_a_missed_mutant_is_kept_with_line_and_description_bounded() {
+    use quoin_evidence::types::{MAX_SURVIVOR_CHARS, MAX_SURVIVORS_PER_ENTRY};
+
+    let report = r#"{"outcomes":[
+      {"scenario":{"Mutant":{"file":"src/a.rs","name":"replace f -> bool with true","span":{"start":{"line":12,"column":5}},"function":{"function_name":"f"}}},"summary":"MissedMutant"},
+      {"scenario":{"Mutant":{"file":"src/a.rs","function":{"function_name":"f"}}},"summary":"Timeout"},
+      {"scenario":{"Mutant":{"file":"src/a.rs","function":{"function_name":"f"}}},"summary":"CaughtMutant"},
+      {"scenario":{"Mutant":{"file":"src/b.rs","function":{"function_name":"g"}}},"summary":"CaughtMutant"}
+    ]}"#;
+    let entries = parse_cargo_mutants(report).unwrap().entries;
+    let kept = entries[0].survivors.as_ref().unwrap();
+    assert_eq!(kept.len(), 2);
+    assert_eq!(kept[0].line, Some(12));
+    assert_eq!(kept[0].mutation, "replace f -> bool with true");
+    assert_eq!(kept[1].line, None);
+    assert_eq!(kept[1].mutation, "Timeout");
+    assert!(entries[1].survivors.is_none(), "a killed mutant is not kept");
+
+    let long = "x".repeat(MAX_SURVIVOR_CHARS + 50);
+    let one = format!(
+        r#"{{"scenario":{{"Mutant":{{"file":"src/a.rs","name":"{long}","function":{{"function_name":"f"}}}}}},"summary":"MissedMutant"}}"#
+    );
+    let all = vec![one; MAX_SURVIVORS_PER_ENTRY + 10].join(",");
+    let entries = parse_cargo_mutants(&format!(r#"{{"outcomes":[{all}]}}"#))
+        .unwrap()
+        .entries;
+    let kept = entries[0].survivors.as_ref().unwrap();
+    assert_eq!(kept.len(), MAX_SURVIVORS_PER_ENTRY);
+    assert_eq!(kept[0].mutation.chars().count(), MAX_SURVIVOR_CHARS);
+    assert!(entries[0].score.unwrap().abs() < f64::EPSILON, "every miss still counts");
+}

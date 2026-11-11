@@ -16,6 +16,25 @@ use crate::ids::{SuiteId, SymbolId};
 /// means.
 pub const MUTATION_SCORE_METRIC: &str = "mutation-score";
 
+/// Most surviving mutants one entry keeps. A function with more survivors than
+/// this has already failed any floor; the rest add bytes, not information.
+pub const MAX_SURVIVORS_PER_ENTRY: usize = 25;
+
+/// Longest description, in characters, a [`Survivor`] keeps.
+pub const MAX_SURVIVOR_CHARS: usize = 200;
+
+/// One mutant the tests did not kill: a demonstrated gap in the suite.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct Survivor {
+    /// The line of the mutated code, when the tool reported one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line: Option<u64>,
+    /// What was changed, in the tool's words (`replace f -> bool with true`).
+    pub mutation: String,
+}
+
 /// What a producer said about one symbol.
 ///
 /// A closed enum here and not a `String`, unlike
@@ -75,6 +94,10 @@ pub struct RunEntry {
     /// that cast at every read site.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<BTreeMap<String, String>>,
+    /// The mutants of this symbol the tests did not kill, bounded by
+    /// [`MAX_SURVIVORS_PER_ENTRY`]. Only a mutation tool writes it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub survivors: Option<Vec<Survivor>>,
 }
 
 impl RunEntry {
@@ -88,6 +111,7 @@ impl RunEntry {
             metric: None,
             trace_ids: None,
             config: None,
+            survivors: None,
         }
     }
 }
