@@ -70,16 +70,16 @@ pub use self::wire::{
     GcPayload, GcRequest, InspectMocksPayload, InspectMocksRequest, MAX_ASSURANCE_RECORD_BYTES,
     MAX_AUDIT_INPUTS_BYTES, MAX_GC_BYTES, MAX_INSPECT_MOCKS_BYTES, MAX_PARSE_LINEAGE_BYTES,
     MAX_PARSE_POLICY_BYTES, MAX_PARSE_RESULTS_BYTES, MAX_RECORD_BYTES, MAX_SCALAR_BYTES,
-    MAX_STORE_FACTS_BYTES, MAX_TRUST_ASSESSMENTS_BYTES, MAX_TRUST_DECISION_BYTES,
-    ParseLineagePayload, ParseLineageRequest, ParsePolicyPayload, ParsePolicyRequest,
-    ParseResultsPayload, ParseResultsRequest, RecordPayload, RecordRequest, RepoRequest,
-    StoreFactsPayload, TrustAssessmentsPayload, TrustDecisionPayload, TrustDecisionRequest,
-    UnrepresentedView,
+    MAX_SCENARIO_RECORD_BYTES, MAX_STORE_FACTS_BYTES, MAX_TRUST_ASSESSMENTS_BYTES,
+    MAX_TRUST_DECISION_BYTES, ParseLineagePayload, ParseLineageRequest, ParsePolicyPayload,
+    ParsePolicyRequest, ParseResultsPayload, ParseResultsRequest, RecordPayload, RecordRequest,
+    RepoRequest, ScenarioRecordPayload, ScenarioRecordRequest, StoreFactsPayload,
+    TrustAssessmentsPayload, TrustDecisionPayload, TrustDecisionRequest, UnrepresentedView,
 };
 
 pub use self::documents::{parse_lineage, parse_policy, parse_results, store_facts};
 pub use self::records::{
-    inspect_mocks, record, record_experiment, record_operational, trust_decision,
+    inspect_mocks, record, record_experiment, record_operational, record_scenario, trust_decision,
 };
 pub use self::store::{audit_inputs, gc, trust_assessments};
 

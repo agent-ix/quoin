@@ -37,6 +37,9 @@ pub const EXPERIMENTS_DIR: &str = "experiments";
 /// Where append-only operational evidence records live (FR-048).
 pub const OPERATIONAL_EVIDENCE_DIR: &str = "operational";
 
+/// Where Quire Protocol scenario evidence records live (FR-130).
+pub const SCENARIOS_DIR: &str = "scenarios";
+
 /// The authored suite registry.
 #[must_use]
 pub fn suites_path() -> String {
@@ -74,6 +77,19 @@ pub fn suite_dir(family: &str, suite: &SuiteId) -> String {
 #[must_use]
 pub fn assurance_record_path(family: &str, stem: &str) -> String {
     format!("{family}/{stem}.json")
+}
+
+/// One scenario record, `scenarios/<integration>/<scenario>.json`.
+///
+/// Both components are validated to `[A-Za-z0-9-]` by the scenario intake
+/// before a path is formed, so neither can escape its directory. The file name
+/// is ASCII-lowercased so a case-insensitive filesystem cannot alias two ids.
+#[must_use]
+pub fn scenario_path(integration: &str, scenario: &str) -> String {
+    format!(
+        "{SCENARIOS_DIR}/{integration}/{}.json",
+        scenario.to_ascii_lowercase()
+    )
 }
 
 /// A record's file stem: its caller-supplied timestamp, with every byte outside

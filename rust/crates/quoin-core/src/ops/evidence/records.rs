@@ -16,6 +16,7 @@ use quoin_evidence::assurance_records::{
 };
 use quoin_evidence::mock_inspection::inspect_mock_injections;
 use quoin_evidence::record::{RecordRequest as StoreRecordRequest, record_run};
+use quoin_evidence::scenario::{INTAKE_CONTRACT, INTAKE_OWNER, write_scenario_evidence};
 use quoin_evidence::store::{
     bind, read_bindings, write_bindings, write_mock_inspection, write_scan, write_trust_decision,
 };
@@ -34,8 +35,8 @@ use super::taxonomy::map_error;
 use super::wire::{
     AssuranceRecordPayload, AssuranceRecordRequest, InspectMocksPayload, InspectMocksRequest,
     MAX_ASSURANCE_RECORD_BYTES, MAX_INSPECT_MOCKS_BYTES, MAX_RECORD_BYTES,
-    MAX_TRUST_DECISION_BYTES, RecordPayload, RecordRequest, TrustDecisionPayload,
-    TrustDecisionRequest,
+    MAX_SCENARIO_RECORD_BYTES, MAX_TRUST_DECISION_BYTES, RecordPayload, RecordRequest,
+    ScenarioRecordPayload, ScenarioRecordRequest, TrustDecisionPayload, TrustDecisionRequest,
 };
 use super::{absolute, bound, check_scalar, host, parse, value};
 
@@ -344,6 +345,43 @@ pub fn record_operational(
     capabilities: &Capabilities<'_>,
 ) -> Result<Response, CoreError> {
     assurance_record(request, capabilities, AssuranceFamily::Operational)
+}
+
+/// Answer an `evidence.record_scenario`: the Quire Protocol scenario-evidence
+/// intake.
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::Refused`] when the request exceeds
+///   [`MAX_SCENARIO_RECORD_BYTES`], or when the key already holds a different
+///   record or the store cannot be written.
+/// - [`CoreErrorCode::BadRequest`] when the document names another contract
+///   version or has a missing, duplicated or cross-wired component; the
+///   `evidence_code` context is `QE-E010` and `refusal` names the kind.
+/// - [`CoreErrorCode::Io`] when no evidence host was granted.
+pub fn record_scenario(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    let op = "evidence.record_scenario";
+    bound(request, op, MAX_SCENARIO_RECORD_BYTES)?;
+    let request: ScenarioRecordRequest = parse(request, op)?;
+    check_scalar(op, "repo", &request.repo)?;
+
+    let host = host(capabilities, op)?;
+    let root = host.store_root(Path::new(&request.repo));
+    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
+        let stored =
+            write_scenario_evidence(source, &request.document).map_err(|e| map_error(&e, op))?;
+        value(&ScenarioRecordPayload {
+            contract: INTAKE_CONTRACT.to_owned(),
+            owner: INTAKE_OWNER.to_owned(),
+            path: absolute(&root, &stored.path),
+            created: stored.created,
+            record: stored.record,
+        })
+    })?;
+    Ok(Response::ok(payload))
 }
 
 /// Which append-only assurance family a record belongs to.
