@@ -54,6 +54,7 @@
 )]
 
 pub(crate) mod ears;
+pub(crate) mod gate;
 pub(crate) mod grading;
 
 use std::collections::BTreeMap;

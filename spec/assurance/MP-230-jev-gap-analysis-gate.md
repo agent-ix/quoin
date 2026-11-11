@@ -46,7 +46,7 @@ verdict here.
 
 ## Population
 
-The plan's `population_set` names the three bars by their plan ids. No collection of this plan's own exists; an observation of it must state those three ids as `examined_ids`, and the `tc_3006` test checks that each names a plan in this directory.
+The plan's `population_set` names the three bars by their plan ids. The live gate run of `live_gap_semantic.rs` produces the observation per variant: it states the bars it computed as `examined_ids` and the bars that held as `matched_ids` (`tests/support/gate.rs`, kept under `QUOIN_GATE_COLLECTION_OUT`), and intake refuses a run that left one out. The `tc_3006` test checks that each declared id names a plan in this directory, and `tc_3302` checks the observation's shape without a live call; no live verdict is claimed by either.
 
 Every observation reported under `lens: gap-analysis` for MP-222
 (constant-predictor margin), MP-223 (defect / vacuous-class recall) and

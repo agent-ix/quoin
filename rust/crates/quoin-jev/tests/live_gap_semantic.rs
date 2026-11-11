@@ -87,6 +87,7 @@
 )]
 
 mod gap_semantic_support;
+mod support;
 
 use std::time::{Duration, Instant};
 
@@ -163,6 +164,31 @@ async fn run_pass(
     pass
 }
 
+/// Records one variant's MP-230 verdict as an observation stating the three
+/// bars it evaluated and the bars that held. Runs before the bar assertions, so
+/// a NO-GO is recorded as well.
+fn record_gap_gate(variant: &str, margin: bool, vacuous_recall: bool, not_vacuous_recall: bool) {
+    use support::gate::{Bar, record};
+    record(
+        "MP-230",
+        variant,
+        &[
+            Bar {
+                plan_id: "MP-222",
+                met: margin,
+            },
+            Bar {
+                plan_id: "MP-223",
+                met: vacuous_recall,
+            },
+            Bar {
+                plan_id: "MP-224",
+                met: not_vacuous_recall,
+            },
+        ],
+    );
+}
+
 /// **The gate.** Provenance: PLAT-839. Runs both pre-registered variants over
 /// the mutated subset and checks all three bars stated in this file's module
 /// doc, for each variant independently.
@@ -200,6 +226,12 @@ async fn the_lens_beats_doing_nothing() {
         let stats = tally(&pass.graded);
         let (baseline_label, baseline) = constant_baseline(&pass.graded);
         let agreement = stats.accuracy().expect("non-empty graded set");
+        record_gap_gate(
+            &format!("{variant:?}"),
+            agreement > baseline,
+            stats.recall().is_some_and(|value| value > 0.0),
+            stats.no_defect_recall().is_some_and(|value| value > 0.0),
+        );
         println!(
             "**{variant:?} GATE 1** agreement {agreement:.1}% vs. constant predictor \
              (`{baseline_label}`) {baseline:.1}%"

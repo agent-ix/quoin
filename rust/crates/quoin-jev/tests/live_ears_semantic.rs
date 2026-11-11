@@ -329,6 +329,14 @@ async fn the_ears_lens_gate_mp_229() {
     );
     assert!(m6.input_tokens > 0, "the M6 pass never reached the service");
 
+    record_ears_gate(
+        "shipped",
+        margin,
+        defect_r,
+        no_defect_r,
+        forward_delta,
+        mp225,
+    );
     // ---- GATE ASSERTIONS — copied verbatim from MP-229 ----
     assert!(
         margin > 0.0,
@@ -350,6 +358,42 @@ async fn the_ears_lens_gate_mp_229() {
         "MP-229 bar 4 (MP-231 forward delta both non-zero and above the MP-225 noise floor): \
          forward delta {forward_delta:?}, MP-225 disagreement {mp225:.1}%. A delta at or below \
          the lens's own repetition noise is not evidence it sees something the engine misses."
+    );
+}
+
+/// Records the four-bar MP-229 verdict of one run as an observation stating the
+/// bars it evaluated and the bars that held. Runs before the assertions, so a
+/// NO-GO is recorded as well.
+fn record_ears_gate(
+    variant: &str,
+    margin: f64,
+    defect_r: Option<f64>,
+    no_defect_r: Option<f64>,
+    forward_delta: Option<f64>,
+    mp225: f64,
+) {
+    use support::gate::{Bar, record};
+    record(
+        "MP-229",
+        variant,
+        &[
+            Bar {
+                plan_id: "MP-222",
+                met: margin > 0.0,
+            },
+            Bar {
+                plan_id: "MP-223",
+                met: defect_r.is_some_and(|v| v > 0.0),
+            },
+            Bar {
+                plan_id: "MP-224",
+                met: no_defect_r.is_some_and(|v| v > 0.0),
+            },
+            Bar {
+                plan_id: "MP-231",
+                met: forward_delta.is_some_and(|v| v > 0.0 && v > mp225),
+            },
+        ],
     );
 }
 
@@ -913,6 +957,7 @@ async fn the_ears_lens_gate_mp_229_v3() {
         forward_delta.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
     );
 
+    record_ears_gate("v3", margin, defect_r, no_defect_r, forward_delta, mp225);
     // ---- GATE ASSERTIONS — MP-229's four bars, verbatim, on the v3 column ----
     assert!(
         margin > 0.0,
@@ -1179,6 +1224,7 @@ async fn run_variant_gate(variant: &str, question_set_json: &str, rule: DefectRu
         m6.flagged.len(),
     );
 
+    record_ears_gate(variant, margin, defect_r, no_defect_r, forward_delta, mp225);
     assert!(
         margin > 0.0,
         "MP-229 bar 1 (MP-222 margin > 0) on {variant}: got {margin:+.1}pp"

@@ -9,7 +9,7 @@ metric: span_breadth_rate
 definition_version: property.span-breadth-v2
 ground_truth_kind: agent-labelled
 statistical_design:
-  population: the frozen labeled population of at least 60 unique normalized criteria across five property shapes and three real repositories
+  population: the frozen labeled population of 40 unique normalized criteria across eight property shapes and two real repositories (quoin and quire-rs)
   sampling: none; the canonical stack replays every label and duplicates cannot inflate the denominator
   repetitions: 1
   estimator: proportion
@@ -38,9 +38,11 @@ Decide whether span grounding is useful beyond duplicated refusal fixtures.
 
 ## Population
 
-The plan's `population_set` is the id of every label in `bench/span-breadth-v1-labels.json`; the `tc_3006` test fails when the two differ. The producer of this metric lives outside this repository and must state those ids as `examined_ids`.
+The plan's `population_set` is the id of every label in `bench/span-breadth-v1-labels.json`; the `tc_3006` test fails when the two differ.
 
-At least 60 unique normalized criteria, five property shapes, three real repositories, and 20 supported exact-grounding outcomes.
+The label file holds 40 unique normalized criteria: 20 supported exact-grounding outcomes and 20 justified refusals, across eight property shapes and two real repositories (quoin and quire-rs). The earlier "at least 60 criteria in three repositories" described the corpus before it was reduced to the repositories' own specs; the file is the source of truth and the 40-label count is what this plan holds.
+
+The producer is the `quoin-cli` test `tc_3301` (`tests/nfr_populations/span_breadth.rs`). It reads the ids from the label file, replays each label through `quoin_quire::properties::classify` in the checkout of the repository the label names, and states every label as `examined_ids` and those whose reviewed outcome the classifier reproduces as `matched_ids`. It needs a quire-rs checkout (`QUIRE_RS_CHECKOUT`) and is not part of the default gate; without the checkout the replay refuses instead of examining a subset. The default gate runs the replay logic over a fixture repository (`tc_3300`) and does not claim a measurement.
 
 ## Measure Definition
 

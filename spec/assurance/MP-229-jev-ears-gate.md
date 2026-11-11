@@ -44,7 +44,7 @@ anything or emit findings.
 
 ## Population
 
-The plan's `population_set` names the four bars by their plan ids. No collection of this plan's own exists; an observation of it must state those four ids as `examined_ids`, and the `tc_3006` test checks that each names a plan in this directory.
+The plan's `population_set` names the four bars by their plan ids. The live gate runs of `live_ears_semantic.rs` produce the observation: each run states the bars it computed as `examined_ids` and the bars that held as `matched_ids` (`tests/support/gate.rs`, kept under `QUOIN_GATE_COLLECTION_OUT`), and intake refuses a run that left one out. The `tc_3006` test checks that each declared id names a plan in this directory, and `tc_3302` checks the observation's shape without a live call; no live verdict is claimed by either.
 
 Every observation reported under `lens: ears` for MP-222 (constant-predictor
 margin), MP-223 (defect recall) and MP-224 (no-defect recall) over the M2
