@@ -137,6 +137,7 @@ that exist.
 | FR-123 | 🚧 Pending | Spec authored (PLAT-240). Executed by the agent-ix/quire-rs extractor (lane P-PLAT-101, PLAT-1370) against goldens in its `quire-fixtures` crate; spec-objects-business skeleton and schema changes are that module's. |
 | FR-130 | ✅ Covered | `quoin-evidence` `scenario/tests.rs` :: unit tests; `quoin-core` `ops/evidence/taxonomy.rs` :: `a_scenario_refusal_carries_its_kind_as_context`; `quoin-core` `tc_458_evidence_boundary.rs` :: `tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal` |
 | FR-133 | ✅ Covered | `quoin-assurance` `discharge/store.rs` and `discharge/completeness.rs` :: unit tests; `quoin-core` `tc_458_evidence_boundary.rs` :: `tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_report`, `tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_writes_nothing`, `tc_2604_a_binding_report_naming_a_clause_twice_is_refused_by_every_discharge_operation`; `quoin-cli` `tc_2606_discharge_store_command.rs` :: `tc_2606_recorded_facts_are_read_back_by_the_discharge_command` |
+| FR-135 | ✅ Covered | `quoin-assurance` `discharge/rmm.rs` :: unit tests; `quoin-core` `tc_458_evidence_boundary.rs` :: `tc_3205_the_requirements_matrix_operation_answers_from_stored_facts`; `quoin-cli` `tc_3206_requirements_matrix_command.rs` |
 
 ## Non-Functional Requirements
 
@@ -237,6 +238,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
 | FR-130 | FR-130-AC-1, FR-130-AC-2, FR-130-AC-3, FR-130-AC-4, FR-130-AC-5, FR-130-AC-6, FR-130-AC-7, FR-130-AC-8, FR-130-AC-9, FR-130-AC-10, FR-130-AC-11, FR-130-AC-12 | TC-2200, TC-2201, TC-2202, TC-2203, TC-2204, TC-2205, TC-2206, TC-2207, TC-2208, TC-2209, TC-2210, TC-2211 | ✅ Covered |
 | FR-133 | FR-133-AC-1, FR-133-AC-2, FR-133-AC-3, FR-133-AC-4, FR-133-AC-5, FR-133-AC-6, FR-133-AC-7 | TC-2600, TC-2601, TC-2602, TC-2603, TC-2604, TC-2605, TC-2606 | ✅ Covered |
+| FR-135 | FR-135-AC-1, FR-135-AC-2, FR-135-AC-3, FR-135-AC-4, FR-135-AC-5, FR-135-AC-6, FR-135-AC-7 | TC-3200, TC-3201, TC-3202, TC-3203, TC-3204, TC-3205, TC-3206 | ✅ Covered |
 | FR-125 | FR-125-AC-1, FR-125-AC-2, FR-125-AC-3, FR-125-AC-4, FR-125-AC-5, FR-125-AC-6, FR-125-AC-7 | TC-2150, TC-2151, TC-2152, TC-2153, TC-2154, TC-2155, TC-2156 | ✅ Covered |
 | FR-131 | FR-131-AC-1, FR-131-AC-2, FR-131-AC-3, FR-131-AC-4, FR-131-AC-5, FR-131-AC-6 | TC-2400, TC-2401, TC-2402, TC-2403, TC-2404, TC-2405, TC-2406, TC-2407, TC-2408 | ✅ Covered |
 | FR-132 | FR-132-AC-1, FR-132-AC-2, FR-132-AC-3, FR-132-AC-4, FR-132-AC-5, FR-132-AC-6, FR-132-AC-7 | TC-2500, TC-2501, TC-2502, TC-2503, TC-2504, TC-2505, TC-2506, TC-2507, TC-2508, TC-2509 | ✅ Covered |
@@ -1399,6 +1401,13 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2604 | Inward completeness is derived from the live binding report and stored facts, adds up, names the open remainder (an expired fact included), counts unresolved and unused facts outside binding, carries no score, and a doubled binding clause is refused | Unit | P0 | FR-133-AC-5 | ✅ Complete |
 | TC-2605 | The record, report and inward-completeness operations answer through the production runtime and each refuses a request over its ceiling | Unit | P0 | FR-133-AC-6 | ✅ Complete |
 | TC-2606 | record-discharge then discharge --repo --inward reports the recorded fact discharged and the other clause open; a doubled binding clause is refused | Unit | P0 | FR-133-AC-7 | ✅ Complete |
+| TC-3200 | The matrix has one row per binding-report clause in the report's order with every column; an empty binding report renders the header and a no-clauses line | Unit | P0 | FR-135-AC-1 | ✅ Complete |
+| TC-3201 | A current direct fact renders Compliant with its evidence references; a current disposition renders Tailored with decision, approval reference and rationale and is not Compliant | Unit | P0 | FR-135-AC-2 | ✅ Complete |
+| TC-3202 | No fact renders undischarged; an expired fact renders attestation-not-current with the reason and is neither Compliant nor Tailored; unresolved renders Undetermined; not-binding renders Not applicable | Unit | P0 | FR-135-AC-3 | ✅ Complete |
+| TC-3203 | Unspent facts are listed after the table with their reason and the matrix carries no score, percentage, ratio or compliant count | Unit | P0 | FR-135-AC-4 | ✅ Complete |
+| TC-3204 | The Markdown render is identical across renders and a cell with a pipe or line break stays in its row | Unit | P0 | FR-135-AC-5 | ✅ Complete |
+| TC-3205 | evidence.requirements_matrix answers through the runtime from stored facts, refuses a request over its ceiling, and refuses a doubled binding clause | Unit | P0 | FR-135-AC-6 | ✅ Complete |
+| TC-3206 | discharge --repo --rmm renders and --json emits the matrix from recorded facts; --rmm without --repo or with --inward is refused | Unit | P0 | FR-135-AC-7 | ✅ Complete |
 | TC-2150 | Retained bytes are named by their SHA-256: distinct bytes get distinct addresses, identical bytes reproduce one reference, and the bytes read back exactly | Unit | P0 | FR-125-AC-1 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_001` |
 | TC-2151 | A malformed `attachments` member (non-array, over count, duplicate, bad digest, empty media type, bad length) refuses as `QM-ATTACHMENT-INVALID` and writes no collection | Unit | P0 | FR-125-AC-2 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_002` |
 | TC-2152 | A reference to missing bytes refuses as `QM-ATTACHMENT-UNAVAILABLE`; a wrong declared length or address refuses as `QM-ATTACHMENT-TAMPERED`; no collection is written | Unit | P0 | FR-125-AC-3 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_003` |

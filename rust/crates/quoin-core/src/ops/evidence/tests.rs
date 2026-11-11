@@ -338,6 +338,13 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
             ),
         ),
         (
+            "evidence.requirements_matrix",
+            requirements_matrix(
+                &json!({"repo": "/r", "binding": binding, "asOf": "2026-01-01T00:00:00Z"}),
+                &none,
+            ),
+        ),
+        (
             "evidence.record_scenario",
             record_scenario(&json!({"repo": "/r", "document": {}}), &none),
         ),
@@ -402,6 +409,11 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             "evidence.discharge_report",
             MAX_DISCHARGE_BYTES,
             discharge_report(&json!({"repo": filler(MAX_DISCHARGE_BYTES)}), &capabilities),
+        ),
+        (
+            "evidence.requirements_matrix",
+            MAX_DISCHARGE_BYTES,
+            requirements_matrix(&json!({"repo": filler(MAX_DISCHARGE_BYTES)}), &capabilities),
         ),
         (
             "evidence.record_scenario",

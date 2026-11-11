@@ -794,3 +794,62 @@ fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_write
         assert!(!store_path(dir.path(), "discharge").exists());
     }
 }
+
+/// The requirements mapping matrix is a view of the stored facts: the same
+/// recorded fact is Compliant before its expiry and a not-current gap after.
+#[trace("FR-135-AC-6", "TC-3205")]
+#[test]
+fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
+    let dir = repo();
+    ok(&run(
+        "evidence.record_discharge",
+        &json!({
+            "repo": dir.path(),
+            "binding": discharge_binding(),
+            "facts": [discharge_fact()],
+        }),
+    ));
+    let request =
+        |as_of: &str| json!({"repo": dir.path(), "binding": discharge_binding(), "asOf": as_of});
+
+    let now = ok(&run(
+        "evidence.requirements_matrix",
+        &request("2026-08-15T00:00:00Z"),
+    ));
+    assert_eq!(now["matrix"]["rows"][0]["clauseId"], "C-1");
+    assert_eq!(now["matrix"]["rows"][0]["compliance"], "compliant");
+    assert_eq!(
+        now["matrix"]["rows"][0]["evidenceRefs"],
+        json!(["evidence://run/one"])
+    );
+    assert_eq!(now["matrix"]["rows"][1]["compliance"], "undischarged");
+    assert!(
+        now["rendered"]
+            .as_str()
+            .unwrap()
+            .contains("| C-2 | Applicable | Not compliant - undischarged: no discharge fact |")
+    );
+
+    let later = ok(&run(
+        "evidence.requirements_matrix",
+        &request("2026-10-01T00:00:00Z"),
+    ));
+    assert_eq!(
+        later["matrix"]["rows"][0]["compliance"],
+        "attestation_not_current"
+    );
+
+    let mut doubled = discharge_binding();
+    let first = doubled["clauses"][0].clone();
+    doubled["clauses"].as_array_mut().unwrap().push(first);
+    let refused = run(
+        "evidence.requirements_matrix",
+        &json!({"repo": dir.path(), "binding": doubled, "asOf": "2026-08-15T00:00:00Z"}),
+    );
+    assert_eq!(refused.status, 3, "{}", refused.stderr);
+    assert!(
+        refused.stderr.contains("duplicate clause C-1"),
+        "{}",
+        refused.stderr
+    );
+}

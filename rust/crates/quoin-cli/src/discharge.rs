@@ -46,6 +46,10 @@ pub(crate) fn command() -> Command {
              discharged, dispositions and the open remainder. Needs --repo.",
                 ),
         )
+        .arg(Arg::new("rmm").long("rmm").action(ArgAction::SetTrue).help(
+            "Render the requirements mapping matrix: one row per clause with \
+             applicability, compliance, evidence and tailoring. Needs --repo.",
+        ))
         .arg(
             Arg::new("json")
                 .long("json")
@@ -123,16 +127,33 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let binding_source = required(arguments, "binding")?;
     let binding = json_input(&binding_source, "clause binding")?;
     let as_of = required(arguments, "as-of")?;
+    if arguments.get_flag("inward") && arguments.get_flag("rmm") {
+        return Err("--inward and --rmm cannot be combined".to_owned());
+    }
     if arguments.get_flag("inward") {
         let repo = arguments
             .get_one::<String>("repo")
             .ok_or_else(|| "--inward needs --repo: the obligations are derived from the binding report and the facts from the store".to_owned())?;
-        return inward(
+        return view(
             &invoke(
                 "evidence.inward_completeness",
                 &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of }),
             )?,
             arguments.get_flag("json"),
+            ("completeness", "evidence.inward_completeness"),
+        );
+    }
+    if arguments.get_flag("rmm") {
+        let repo = arguments.get_one::<String>("repo").ok_or_else(|| {
+            "--rmm needs --repo: the facts are read from the evidence store".to_owned()
+        })?;
+        return view(
+            &invoke(
+                "evidence.requirements_matrix",
+                &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of }),
+            )?,
+            arguments.get_flag("json"),
+            ("matrix", "evidence.requirements_matrix"),
         );
     }
     let built = if let Some(repo) = arguments.get_one::<String>("repo") {
@@ -173,15 +194,21 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     Ok(Response::ok(serde_json::json!({ "rendered": text })))
 }
 
-fn inward(accounted: &Response, json: bool) -> Result<Response, String> {
+/// Show one of the views an `evidence.*` operation returns beside its
+/// rendering: the structured member under `--json`, the Markdown otherwise.
+fn view(
+    accounted: &Response,
+    json: bool,
+    (structured, op): (&str, &str),
+) -> Result<Response, String> {
     if !accounted.outcome.carries_payload() {
         return Ok(accounted.clone());
     }
-    let key = if json { "completeness" } else { "rendered" };
+    let key = if json { structured } else { "rendered" };
     let member = accounted
         .payload
         .get(key)
-        .ok_or_else(|| format!("evidence.inward_completeness did not return {key}"))?;
+        .ok_or_else(|| format!("{op} did not return {key}"))?;
     let text = match member.as_str() {
         Some(text) => text.to_owned(),
         None => serde_json::to_string_pretty(member).map_err(|error| error.to_string())?,
