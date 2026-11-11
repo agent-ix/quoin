@@ -238,7 +238,7 @@ fn tc_452_643_the_common_schema_declares_the_published_targets() {
 /// A manifest carrying all eight registry keys validates against the pinned
 /// module-manifest schema, and an unknown root key is still refused, so the
 /// pass is the schema admitting the keys rather than admitting everything.
-#[trace("FR-070-AC-14")]
+#[trace("FR-070-AC-14", "TC-2140")]
 #[test]
 fn tc_452_644_a_manifest_with_all_eight_registry_keys_validates() {
     let path = module_manifest_schema_path(&semantic_root());
