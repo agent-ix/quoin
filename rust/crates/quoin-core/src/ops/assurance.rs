@@ -302,6 +302,45 @@ pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreErro
     Ok(Response::ok(payload))
 }
 
+/// The payload `assurance.inward_completeness` writes to stdout.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct InwardCompletenessPayload {
+    /// The accounting of the binding population.
+    pub completeness: quoin_assurance::InwardCompleteness,
+    /// The same accounting as deterministic Markdown.
+    pub rendered: String,
+}
+
+/// Answer an `assurance.inward_completeness`: account for the binding
+/// population of a discharge report (FR-133).
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::BadRequest`] when stdin is not a [`DischargeReport`].
+/// - [`CoreErrorCode::Refused`] when the request exceeds
+///   [`MAX_BUILD_CASE_BYTES`].
+///
+/// [`DischargeReport`]: quoin_assurance::DischargeReport
+pub fn inward_completeness(request: &serde_json::Value) -> Result<Response, CoreError> {
+    let op = "assurance.inward_completeness";
+    let size = request_size(request)?;
+    if size > MAX_BUILD_CASE_BYTES {
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
+    }
+    let report: quoin_assurance::DischargeReport = serde_json::from_value(request.clone())
+        .map_err(|e| {
+            CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
+        })?;
+    let completeness = quoin_assurance::build_inward_completeness(&report);
+    let payload = serde_json::to_value(InwardCompletenessPayload {
+        rendered: quoin_assurance::render_inward_completeness(&completeness),
+        completeness,
+    })
+    .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
+    Ok(Response::ok(payload))
+}
+
 /// Answer an `assurance.render_discharge`.
 ///
 /// # Errors

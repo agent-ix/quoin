@@ -645,3 +645,104 @@ fn tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal() {
     );
     assert!(refused.stderr.contains("QE-E010"), "{}", refused.stderr);
 }
+
+fn discharge_binding() -> Value {
+    json!({
+        "schemaVersion": "clause-binding-v1",
+        "clauseSet": { "authority": "quire", "id": "spec", "version": "1" },
+        "context": {},
+        "clauses": [
+            { "clauseId": "C-1", "force": "mandatory", "outcome": "binding",
+              "reasons": [], "expectedOutputs": [] },
+            { "clauseId": "C-2", "force": "mandatory", "outcome": "binding",
+              "reasons": [], "expectedOutputs": [] }
+        ]
+    })
+}
+
+fn discharge_fact() -> Value {
+    json!({
+        "kind": "direct",
+        "clauseId": "C-1",
+        "evidenceRefs": ["evidence://run/one"],
+        "attestation": {
+            "attestedBy": "reviewer-1",
+            "authority": "quality-lead",
+            "attestedAt": "2026-08-01T00:00:00Z",
+            "expiresAt": "2026-09-01T00:00:00Z"
+        }
+    })
+}
+
+/// Facts recorded through the wire are the only thing the store keeps; the
+/// partition is re-derived from the live binding report on every read.
+#[trace("FR-133-AC-6", "TC-2605")]
+#[test]
+fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_report() {
+    let dir = repo();
+    let recorded = ok(&run(
+        "evidence.record_discharge",
+        &json!({
+            "repo": dir.path(),
+            "binding": discharge_binding(),
+            "facts": [discharge_fact()],
+            "recordedAt": "2026-08-02T00:00:00Z",
+        }),
+    ));
+    assert_eq!(recorded["recorded"][0]["clauseId"], "C-1");
+    reported_store_family(
+        dir.path(),
+        recorded["recorded"][0]["path"].as_str().unwrap(),
+        "discharge",
+    );
+
+    let report = ok(&run(
+        "evidence.discharge_report",
+        &json!({
+            "repo": dir.path(),
+            "binding": discharge_binding(),
+            "asOf": "2026-08-15T00:00:00Z",
+        }),
+    ));
+    assert_eq!(report["binding"]["direct"][0]["clauseId"], "C-1");
+    assert_eq!(report["binding"]["open"][0]["clauseId"], "C-2");
+
+    let accounted = ok(&run("assurance.inward_completeness", &report));
+    assert_eq!(accounted["completeness"]["binding"], 2);
+    assert_eq!(accounted["completeness"]["discharged"], 1);
+    assert_eq!(accounted["completeness"]["open"][0]["clauseId"], "C-2");
+    assert!(
+        accounted["rendered"]
+            .as_str()
+            .unwrap()
+            .contains("- Binding clauses: 2")
+    );
+
+    // Past the attestation's expiry the same stored fact no longer discharges.
+    let later = ok(&run(
+        "evidence.discharge_report",
+        &json!({
+            "repo": dir.path(),
+            "binding": discharge_binding(),
+            "asOf": "2026-10-01T00:00:00Z",
+        }),
+    ));
+    assert_eq!(later["binding"]["direct"], json!([]));
+}
+
+#[trace("FR-133-AC-3", "TC-2602")]
+#[test]
+fn tc_2602_a_refused_fact_list_exits_bad_request_and_writes_nothing() {
+    let dir = repo();
+    let refused = run(
+        "evidence.record_discharge",
+        &json!({
+            "repo": dir.path(),
+            "binding": discharge_binding(),
+            "facts": [discharge_fact(), discharge_fact()],
+            "recordedAt": "2026-08-02T00:00:00Z",
+        }),
+    );
+    assert_eq!(refused.status, 3, "{}", refused.stderr);
+    assert!(!store_path(dir.path(), "discharge").exists());
+}

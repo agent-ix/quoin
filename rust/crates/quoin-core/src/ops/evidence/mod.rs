@@ -47,6 +47,7 @@
 //! one place an `EvidenceError` becomes an exit status, and this file holds the
 //! operations and the helpers they share.
 
+mod discharge;
 mod documents;
 mod records;
 mod store;
@@ -77,6 +78,10 @@ pub use self::wire::{
     TrustAssessmentsPayload, TrustDecisionPayload, TrustDecisionRequest, UnrepresentedView,
 };
 
+pub use self::discharge::{
+    DischargeReportRequest, MAX_DISCHARGE_BYTES, RecordDischargeOpRequest, RecordDischargePayload,
+    RecordedDischargeFact, discharge_report, record_discharge,
+};
 pub use self::documents::{parse_lineage, parse_policy, parse_results, store_facts};
 pub use self::records::{
     inspect_mocks, record, record_experiment, record_operational, record_scenario, trust_decision,

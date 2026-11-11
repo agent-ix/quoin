@@ -278,6 +278,12 @@ fn a_store_that_cannot_be_read_is_refused_not_reported_as_empty() {
 #[test]
 fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
     let none = Capabilities::none();
+    let binding = json!({
+        "schemaVersion": "clause-binding-v1",
+        "clauseSet": {"authority": "quire", "id": "spec", "version": "1"},
+        "context": {},
+        "clauses": []
+    });
     let cases: Vec<(&str, Result<Response, CoreError>)> = vec![
         ("evidence.gc", gc(&json!({"repo": "/r"}), &none)),
         (
@@ -309,6 +315,20 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
         (
             "evidence.record_operational",
             record_operational(&json!({"repo": "/r", "document": {}}), &none),
+        ),
+        (
+            "evidence.record_discharge",
+            record_discharge(
+                &json!({"repo": "/r", "binding": binding, "facts": [], "recordedAt": "2026-01-01T00:00:00Z"}),
+                &none,
+            ),
+        ),
+        (
+            "evidence.discharge_report",
+            discharge_report(
+                &json!({"repo": "/r", "binding": binding, "asOf": "2026-01-01T00:00:00Z"}),
+                &none,
+            ),
         ),
         (
             "evidence.record_scenario",
@@ -360,6 +380,16 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
                 &json!({"repo": filler(MAX_AUDIT_INPUTS_BYTES)}),
                 &capabilities,
             ),
+        ),
+        (
+            "evidence.record_discharge",
+            MAX_DISCHARGE_BYTES,
+            record_discharge(&json!({"repo": filler(MAX_DISCHARGE_BYTES)}), &capabilities),
+        ),
+        (
+            "evidence.discharge_report",
+            MAX_DISCHARGE_BYTES,
+            discharge_report(&json!({"repo": filler(MAX_DISCHARGE_BYTES)}), &capabilities),
         ),
         (
             "evidence.record_scenario",

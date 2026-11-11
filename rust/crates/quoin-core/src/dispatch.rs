@@ -12,6 +12,7 @@ use std::io::Read;
 
 use crate::capabilities::Capabilities;
 use crate::error::{CoreError, CoreErrorCode};
+use crate::ops::evidence;
 use crate::protocol::{MAX_REQUEST_BYTES, Response};
 
 /// Every operation this build answers, in the wire spelling.
@@ -22,6 +23,7 @@ pub const OPERATIONS: &[&str] = &[
     "assurance.build_authored_argument",
     "assurance.build_case",
     "assurance.build_discharge",
+    "assurance.inward_completeness",
     "assurance.parse_argument",
     "assurance.render_authored_argument",
     "assurance.render_case",
@@ -52,6 +54,8 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.parse_policy",
     "evidence.parse_results",
     "evidence.record",
+    "evidence.discharge_report",
+    "evidence.record_discharge",
     "evidence.record_experiment",
     "evidence.record_operational",
     "evidence.record_scenario",
@@ -121,6 +125,7 @@ pub fn dispatch(
             crate::ops::assurance::render_authored_argument(request)
         }
         "assurance.build_discharge" => crate::ops::assurance::build_discharge(request),
+        "assurance.inward_completeness" => crate::ops::assurance::inward_completeness(request),
         "assurance.render_discharge" => crate::ops::assurance::render_discharge(request),
         "change_assurance.intake" => crate::ops::change_assurance::intake(request, capabilities),
         "change_assurance.prepare_attestation" => {
@@ -155,6 +160,8 @@ pub fn dispatch(
         "evidence.record_experiment" => {
             crate::ops::evidence::record_experiment(request, capabilities)
         }
+        "evidence.record_discharge" => evidence::record_discharge(request, capabilities),
+        "evidence.discharge_report" => evidence::discharge_report(request, capabilities),
         "evidence.record_scenario" => crate::ops::evidence::record_scenario(request, capabilities),
         "evidence.record_operational" => {
             crate::ops::evidence::record_operational(request, capabilities)
