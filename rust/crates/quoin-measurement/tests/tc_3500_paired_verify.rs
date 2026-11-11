@@ -281,9 +281,9 @@ fn tc_3509_an_unattested_order_matters_only_when_it_can_change_the_answer() {
     );
     let three = unordered(&plans(EQUAL), &[&first, &second, &third]);
     assert_eq!(codes(&three), ["order_unattested"]);
-    let ranked = plans(&format!(
-        "objective:\n  direction: lower\npaired_run:\n  relation: not_worse\n  minimum_pairs: 1\n"
-    ));
+    let ranked = plans(
+        "objective:\n  direction: lower\npaired_run:\n  relation: not_worse\n  minimum_pairs: 1\n",
+    );
     assert_eq!(
         codes(&unordered(&ranked, &[&first, &second])),
         ["order_unattested"]
