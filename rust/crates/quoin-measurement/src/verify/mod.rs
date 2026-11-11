@@ -61,7 +61,9 @@ mod wire;
 
 use std::collections::BTreeMap;
 
-use engineering_assurance::measurement::{Baseline, Comparator, DecisionRule, RuleReference};
+use engineering_assurance::measurement::{
+    AnswerFamilies, Baseline, Comparator, DecisionRule, RuleReference,
+};
 use quoin_store::JsonValue;
 
 use crate::interval::{self, IntervalReading, Refusal};
@@ -90,6 +92,7 @@ struct Run<'a> {
 /// What the checker holds while it decides.
 struct Check<'a> {
     rule: Option<DecisionRule>,
+    answer_families: Option<AnswerFamilies>,
     runs: Vec<Run<'a>>,
     findings: Vec<Finding>,
 }
@@ -129,6 +132,7 @@ pub fn verify(
     let collections = collections.as_slice();
     let mut check = Check {
         rule: design.decision_rule,
+        answer_families: design.answer_families.clone(),
         runs: runs(plan, &design, collections),
         findings: Vec::new(),
     };
@@ -312,11 +316,11 @@ impl Check<'_> {
             };
             let resolved = baseline(
                 rule,
-                dimensions,
                 observation,
                 run.collection,
                 history,
                 run.apparatus,
+                self.answer_families.as_ref(),
             );
             if let Ok((_, prior)) = &resolved {
                 outcome.priors.extend(*prior);
@@ -455,7 +459,7 @@ impl Check<'_> {
     }
 }
 
-/// The baseline value for `slice` over `history`, and the index of the run
+/// The baseline value for `observation`'s slice over `history`, and the index of the run
 /// it came from when that one run alone decides it (`prior-collection`).
 ///
 /// Only runs that recorded `apparatus` — the deciding run's own protected
@@ -472,15 +476,16 @@ impl Check<'_> {
 /// source wired in, so it is never computed here either.
 fn baseline(
     rule: DecisionRule,
-    slice: &BTreeMap<String, JsonValue>,
     observation: &MeasurementObservation,
     collection: &MeasurementCollection,
     history: &[Run<'_>],
     apparatus: Option<&ResolvedApparatus>,
+    answer_families: Option<&AnswerFamilies>,
 ) -> Result<(Option<f64>, Option<usize>), Reason> {
     let RuleReference::Baseline { baseline, .. } = rule.reference() else {
         return Ok((None, None));
     };
+    let slice = observation.dimensions.entries();
     // A baseline is computed from the checker's own estimates: a run that is
     // not usable evidence — tampered, short, incomplete — contributes nothing.
     let mut earlier = history.iter().enumerate().filter_map(|(index, run)| {
@@ -496,7 +501,7 @@ fn baseline(
     });
     let found = match baseline {
         Baseline::ConstantPredictor => {
-            let value = constant_predictor::baseline(collection, observation)?;
+            let value = constant_predictor::baseline(collection, observation, answer_families)?;
             return Ok((Some(value), None));
         }
         Baseline::ExternalReference => return Err(Reason::ExternalReferenceUnsupplied),

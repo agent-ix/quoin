@@ -25,7 +25,9 @@
               test asserts is not a rounded aggregate"
 )]
 
-use engineering_assurance::measurement::{Baseline, Comparator, DecisionRule, Estimator};
+use engineering_assurance::measurement::{
+    AnswerFamilies, Baseline, Comparator, DecisionRule, Estimator,
+};
 use ix_trace_rs::trace;
 use quoin_jev::{ConstantPredictorItem, item_observations};
 use quoin_measurement::error::MeasurementErrorCode;
@@ -154,7 +156,7 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
             repetitions: None,
             estimator: Some(Estimator::Proportion),
             decision_rule: Some(decision_rule),
-            answer_families: None,
+            answer_families: Some(AnswerFamilies::new(["weakness_kind", "coverage"]).unwrap()),
         }),
         objective: None,
         protected_apparatus: None,
