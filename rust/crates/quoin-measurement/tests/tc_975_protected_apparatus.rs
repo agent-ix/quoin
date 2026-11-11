@@ -501,13 +501,13 @@ fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     )
     .unwrap();
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &[]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
     assert!(rows[0].reasons[0].message.contains("labels/b.json"));
     assert_eq!(rows[0].delta, None);
 
     // And removed: the reverse comparison names the same file.
-    let rows = compare_measurement_collections(&collections[1], &collections[0]).unwrap();
+    let rows = compare_measurement_collections(&collections[1], &collections[0], &[]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 }
 
@@ -530,7 +530,7 @@ fn tc_975_009_an_unprotected_artifact_stated_by_one_side_is_reported_and_does_no
     .unwrap();
 
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &[]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ArtifactChanged]);
     assert!(!rows[0].reasons[0].blocking);
     assert!(rows[0].reasons[0].message.contains("dist/tool"));
@@ -556,7 +556,7 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
         "no protecting plan, no record"
     );
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &[]).unwrap();
     assert_eq!(reasons(&rows), []);
     assert_eq!(rows[0].status, ComparisonStatus::Comparable);
 }
@@ -587,7 +587,7 @@ fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
             .find(|collection| collection.collection_id.as_str() == id)
             .unwrap()
     };
-    let rows = compare_measurement_collections(by_id("baseline"), by_id("run")).unwrap();
+    let rows = compare_measurement_collections(by_id("baseline"), by_id("run"), &[]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
     assert_eq!(rows[0].delta, None);
 }
@@ -611,18 +611,18 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
         .unwrap()
         .remove("protectedApparatus");
     let unrecorded = stored_measurement_collection(&from_serde(&unrecorded).unwrap()).unwrap();
-    let rows = compare_measurement_collections(&unrecorded, recorded).unwrap();
+    let rows = compare_measurement_collections(&unrecorded, recorded, &[]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 
     let mut unverified = stored_bytes(root, "run-1");
     unverified["verificationStack"]["unverifiedArtifacts"] = json!(["harness/answers.json"]);
     let unverified = stored_measurement_collection(&from_serde(&unverified).unwrap()).unwrap();
-    let rows = compare_measurement_collections(&unverified, recorded).unwrap();
+    let rows = compare_measurement_collections(&unverified, recorded, &[]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 
     // The positive control: the same two runs as written compare.
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &[]).unwrap();
     assert_eq!(reasons(&rows), []);
 }
 

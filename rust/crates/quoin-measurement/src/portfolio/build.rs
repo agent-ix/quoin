@@ -168,9 +168,7 @@ fn loaded(
         (Some(before), Some(after)) => Some(PortfolioComparison {
             before: collection_ref(root, before)?,
             after: collection_ref(root, after)?,
-            observations: crate::compare::compare_measurement_collections_under(
-                before, after, &plans,
-            )?,
+            observations: crate::compare::compare_measurement_collections(before, after, &plans)?,
         }),
         _ => None,
     };

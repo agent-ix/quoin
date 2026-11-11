@@ -334,7 +334,14 @@ fn runtime(repo: &Path, prepare: bool) -> RunMemberBindings {
 }
 
 /// Provenance: PLAT-1061
-#[trace("FR-114-AC-2", "FR-114-AC-3", "TC-1942", "TC-1947")]
+#[trace(
+    "FR-114-AC-2",
+    "FR-114-AC-3",
+    "TC-1942",
+    "TC-1947",
+    "FR-044-AC-14",
+    "TC-2140"
+)]
 #[cfg(target_os = "linux")]
 #[test]
 #[allow(
@@ -364,6 +371,13 @@ fn tc_1947_two_member_authored_origins_are_recorded() {
     let collection: Value =
         serde_json::from_slice(&fs::read(&collection_path).expect("collection"))
             .expect("collection JSON");
+    assert_eq!(
+        collection
+            .pointer("/verificationStack/buildProfile")
+            .and_then(Value::as_str),
+        Some("undeclared"),
+        "the campaign launches arbitrary processes and must not claim release"
+    );
     assert_eq!(
         collection
             .pointer("/rawEvidence/inputOrigins/declaration")

@@ -858,7 +858,9 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
 #[trace("FR-044-AC-14", "TC-2140")]
 #[test]
 fn tc_164_001_the_attestation_accepts_every_profile_intake_accepts() {
-    for profile in ["debug", "release", "undeclared"] {
+    for profile in quoin_measurement::types::collection::BuildProfile::ALL
+        .map(quoin_measurement::types::collection::BuildProfile::as_str)
+    {
         let mut input = case("quality/measured");
         input["attestation"]["verificationStack"]["buildProfile"] = json!(profile);
         adapt_quality(&input).unwrap_or_else(|error| panic!("{profile} was refused: {error}"));

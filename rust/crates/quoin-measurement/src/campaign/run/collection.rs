@@ -11,7 +11,7 @@ use serde::Serialize;
 use std::collections::BTreeSet;
 
 use crate::campaign::input_origin::{InputOriginInventory, from_runtime};
-use crate::types::BuildProfile;
+use crate::types::collection::BuildProfile;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -48,26 +48,15 @@ use crate::types::plan::MeasurementPlan;
 /// comparing them item by item would bury the real slices under one row per
 /// corpus item.
 ///
+/// `plans` says whether a slice's plan permits comparing collections built
+/// under different profiles; a slice whose plan is absent from `plans` does
+/// not permit it.
+///
 /// # Errors
 ///
 /// [`StoreError`] when a dimension value cannot be rendered into the sort key,
 /// which for a value read out of a store is only the nesting-depth budget.
 pub fn compare_measurement_collections(
-    before: &MeasurementCollection,
-    after: &MeasurementCollection,
-) -> Result<Vec<MeasurementComparison>, StoreError> {
-    compare_measurement_collections_under(before, after, &[])
-}
-
-/// Compare two collections as [`compare_measurement_collections`] does, with
-/// `plans` consulted for whether a slice's plan permits comparing collections
-/// built under different profiles. A slice whose plan is absent from `plans`
-/// does not permit it.
-///
-/// # Errors
-///
-/// As [`compare_measurement_collections`].
-pub fn compare_measurement_collections_under(
     before: &MeasurementCollection,
     after: &MeasurementCollection,
     plans: &[MeasurementPlan],
