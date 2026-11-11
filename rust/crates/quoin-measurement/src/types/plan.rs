@@ -5,6 +5,7 @@
 //! Ports `src/measurement/types.ts:60-77`, and the `STAGES` / status sets that
 //! `src/measurement/plans.ts:7-15,57-68` checks against.
 
+use std::collections::BTreeSet;
 use std::num::NonZeroU32;
 
 use engineering_assurance::measurement::{
@@ -169,6 +170,61 @@ pub struct StatisticalDesign {
     /// (engineering-assurance, PLAT-1020). A set; part of the versioned
     /// measurement definition.
     pub answer_families: Option<AnswerFamilies>,
+    /// The enumerated set of ids a percentage metric is taken over (PLAT-110).
+    pub population_set: Option<PopulationSet>,
+}
+
+/// The plan-declared enumeration of a percentage metric's population: a
+/// non-empty set of distinct, non-empty ids. The denominator of the metric is
+/// this set, so a producer cannot choose it (PLAT-110).
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PopulationSet(BTreeSet<String>);
+
+impl PopulationSet {
+    /// Build a set from declared ids.
+    ///
+    /// # Errors
+    ///
+    /// A message naming the problem when `ids` is empty, holds an empty id,
+    /// or repeats an id.
+    pub fn new(ids: impl IntoIterator<Item = String>) -> Result<Self, String> {
+        let mut set = BTreeSet::new();
+        for id in ids {
+            if id.is_empty() {
+                return Err("an id must not be empty".to_owned());
+            }
+            if let Some(repeated) = set.replace(id) {
+                return Err(format!("id `{repeated}` is declared twice"));
+            }
+        }
+        if set.is_empty() {
+            return Err("the set must hold at least one id".to_owned());
+        }
+        Ok(Self(set))
+    }
+
+    /// Whether `id` belongs to the set.
+    #[must_use]
+    pub fn contains(&self, id: &str) -> bool {
+        self.0.contains(id)
+    }
+
+    /// The declared ids, in sorted order.
+    pub fn iter(&self) -> impl Iterator<Item = &str> {
+        self.0.iter().map(String::as_str)
+    }
+
+    /// How many ids the set declares.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Always `false`: a set is never empty.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 /// One measurement plan, as read from an assurance document's frontmatter.
@@ -221,6 +277,31 @@ pub struct MeasurementPlan {
     /// compared. Absent in the document means `false`: a profile change blocks
     /// the comparison unless the plan says otherwise.
     pub cross_profile_comparison: bool,
+    /// The relation two runs must satisfy for this plan's metric, when the
+    /// document states `paired_run` (PLAT-114).
+    pub paired_run: Option<PairedRun>,
+}
+
+/// How a paired-run metric relates the same slice in two runs.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PairedRelation {
+    /// The two values are equal.
+    Equal,
+    /// The two values differ by at most this finite, non-negative amount.
+    WithinDelta(f64),
+    /// The later value is no worse than the earlier under the plan's
+    /// `objective`.
+    NotWorse,
+}
+
+/// A plan's `paired_run` block: the relation and how many slice comparisons
+/// a run pair must contain before the relation says anything.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PairedRun {
+    /// What must hold between the two runs.
+    pub relation: PairedRelation,
+    /// Fewer comparable slices than this is inconclusive, never zero.
+    pub minimum_pairs: NonZeroU32,
 }
 
 impl MeasurementPlan {

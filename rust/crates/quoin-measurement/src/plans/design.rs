@@ -15,7 +15,9 @@ use engineering_assurance::measurement::{
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
-use crate::types::plan::{GroundTruthKind, StatisticalDesign};
+use crate::types::plan::{
+    GroundTruthKind, PairedRelation, PairedRun, PopulationSet, StatisticalDesign,
+};
 
 use super::CODE;
 
@@ -38,6 +40,88 @@ pub(super) fn cross_profile_comparison_from(
             )
         }),
     }
+}
+
+/// Read the optional `paired_run` block, `None` when absent.
+///
+/// `relation` is one of `equal`, `within_delta`, `not_worse`; `minimum_pairs`
+/// is a whole number of at least 1, 1 when absent; `delta` is a finite number above 0
+/// and is required exactly when the relation is `within_delta`. `not_worse`
+/// needs an `objective` whose direction can rank two values.
+///
+/// # Errors
+///
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] naming the member that
+/// is missing, mistyped, or not allowed.
+pub(super) fn paired_run_from(
+    path: &str,
+    value: &serde_json::Value,
+    objective: Option<Objective>,
+) -> Result<Option<PairedRun>, MeasurementError> {
+    let Some(block) = value.get("paired_run") else {
+        return Ok(None);
+    };
+    let refuse =
+        |reason: String| MeasurementError::new(CODE, format!("{path}: paired_run {reason}"));
+    let Some(block) = block.as_object() else {
+        return Err(refuse(format!("must be an object; found {block}")));
+    };
+    if let Some(unknown) = block
+        .keys()
+        .find(|key| !["relation", "minimum_pairs", "delta"].contains(&key.as_str()))
+    {
+        return Err(refuse(format!("member `{unknown}` is not defined")));
+    }
+    let minimum_pairs = match block.get("minimum_pairs") {
+        None => NonZeroU32::MIN,
+        Some(stated) => stated
+            .as_u64()
+            .and_then(|count| u32::try_from(count).ok())
+            .and_then(NonZeroU32::new)
+            .ok_or_else(|| {
+                refuse("minimum_pairs must be a whole number from 1 to 4294967295".to_owned())
+            })?,
+    };
+    let delta = match block.get("delta") {
+        None => None,
+        Some(stated) => Some(
+            stated
+                .as_f64()
+                .filter(|delta| delta.is_finite() && *delta > 0.0)
+                .ok_or_else(|| refuse(format!("delta must be a number above 0; found {stated}")))?,
+        ),
+    };
+    let relation = match block.get("relation").and_then(serde_json::Value::as_str) {
+        Some("equal") if delta.is_none() => PairedRelation::Equal,
+        Some("not_worse") if delta.is_none() => {
+            let ranked = objective.is_some_and(|objective| {
+                objective.direction() != Direction::Target || objective.bound().is_some()
+            });
+            if !ranked {
+                return Err(refuse(
+                    "relation not_worse needs an objective that ranks two values".to_owned(),
+                ));
+            }
+            PairedRelation::NotWorse
+        }
+        Some("within_delta") => PairedRelation::WithinDelta(
+            delta.ok_or_else(|| refuse("relation within_delta needs a delta".to_owned()))?,
+        ),
+        Some("equal" | "not_worse") => {
+            return Err(refuse(
+                "delta is allowed only with relation within_delta".to_owned(),
+            ));
+        }
+        _ => {
+            return Err(refuse(
+                "relation must be one of equal, within_delta, not_worse".to_owned(),
+            ));
+        }
+    };
+    Ok(Some(PairedRun {
+        relation,
+        minimum_pairs,
+    }))
 }
 
 /// Read the optional `ground_truth_kind`, or `None` when the document does
@@ -70,7 +154,7 @@ pub(super) fn ground_truth_kind_from(
 }
 
 /// Read the optional `statistical_design` block's `minimum_population`,
-/// `repetitions`, `estimator`, `decision_rule` and `answer_families`, or `None` when the document
+/// `repetitions`, `estimator`, `decision_rule`, `answer_families` and `population_set`, or `None` when the document
 /// declares no such block.
 ///
 /// `estimator` and `decision_rule` are engineering-assurance's (FR-021) and
@@ -162,6 +246,10 @@ pub(super) fn statistical_design_from(
             })
         })
         .transpose()?;
+    let population_set = block
+        .get("population_set")
+        .map(|stated| population_set_from(path, stated))
+        .transpose()?;
     if let (Some(rule), Some(estimator)) = (decision_rule, estimator) {
         rule.check_estimator(estimator).map_err(|error| {
             MeasurementError::new(
@@ -176,7 +264,40 @@ pub(super) fn statistical_design_from(
         estimator,
         decision_rule,
         answer_families,
+        population_set,
     }))
+}
+
+/// Read `statistical_design.population_set`: an object `{ ids: [..] }` of a
+/// non-empty list of distinct, non-empty strings (PLAT-110). The object is
+/// closed so a later member cannot be silently ignored.
+fn population_set_from(
+    path: &str,
+    stated: &serde_json::Value,
+) -> Result<PopulationSet, MeasurementError> {
+    let invalid = |reason: String| {
+        MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: statistical_design.population_set is invalid: {reason}; found {stated}"
+            ),
+        )
+    };
+    let object = stated
+        .as_object()
+        .ok_or_else(|| invalid("it must be an object".to_owned()))?;
+    if let Some(other) = object.keys().find(|name| name.as_str() != "ids") {
+        return Err(invalid(format!("unknown member `{other}`")));
+    }
+    let ids = object
+        .get("ids")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| invalid("`ids` must be a list of strings".to_owned()))?
+        .iter()
+        .map(|id| id.as_str().map(str::to_owned))
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| invalid("`ids` must be a list of strings".to_owned()))?;
+    PopulationSet::new(ids).map_err(invalid)
 }
 
 /// Refuse a plan that declares `baseline: constant-predictor` without

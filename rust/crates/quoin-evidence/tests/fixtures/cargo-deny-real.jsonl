@@ -1,0 +1,2 @@
+{"fields":{"code":"banned","graphs":[{"Krate":{"name":"itoa","version":"1.0.19"},"parents":[{"Krate":{"name":"denyscratch","version":"0.1.0"}}]}],"labels":[{"column":19,"line":5,"message":"banned here","span":"itoa"}],"message":"crate 'itoa = 1.0.19' is explicitly banned","severity":"error"},"type":"diagnostic"}
+{"fields":{"advisories":{"errors":0,"helps":0,"notes":0,"warnings":0},"bans":{"errors":1,"helps":0,"notes":0,"warnings":0},"licenses":{"errors":0,"helps":2,"notes":0,"warnings":0},"sources":{"errors":0,"helps":0,"notes":0,"warnings":0}},"type":"summary"}

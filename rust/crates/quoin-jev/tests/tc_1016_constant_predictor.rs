@@ -157,11 +157,13 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
             estimator: Some(Estimator::Proportion),
             decision_rule: Some(decision_rule),
             answer_families: Some(AnswerFamilies::new(["weakness_kind", "coverage"]).unwrap()),
+            population_set: None,
         }),
         objective: None,
         protected_apparatus: None,
         negative_controls: None,
         cross_profile_comparison: false,
+        paired_run: None,
         execution_procedure: None,
     }
 }

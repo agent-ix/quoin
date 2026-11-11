@@ -100,6 +100,7 @@ fn plan(value: &Value) -> MeasurementPlan {
         protected_apparatus: None,
         negative_controls: None,
         cross_profile_comparison: false,
+        paired_run: None,
         execution_procedure: None,
     }
 }

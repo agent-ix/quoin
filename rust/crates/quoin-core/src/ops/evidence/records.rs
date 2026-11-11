@@ -121,14 +121,7 @@ fn record_scan(
         .with_context("op", op));
     }
     let vacuous = result.rules_evaluated == Some(0);
-    let mut ids: Vec<String> = request
-        .discharges
-        .iter()
-        .map(|id| id.trim().to_owned())
-        .filter(|id| !id.is_empty())
-        .collect();
-    ids.sort();
-    ids.dedup();
+    let ids = stated_obligations(&request.discharges);
 
     let root = host.store_root(Path::new(&request.repo));
     host.with_store(Path::new(&request.repo), &mut |source| {
@@ -191,6 +184,19 @@ fn record_scan(
     })
 }
 
+/// The obligation ids a recorder stated with `--discharges`: trimmed, sorted,
+/// deduplicated, blanks dropped.
+fn stated_obligations(discharges: &[String]) -> Vec<String> {
+    let mut ids: Vec<String> = discharges
+        .iter()
+        .map(|id| id.trim().to_owned())
+        .filter(|id| !id.is_empty())
+        .collect();
+    ids.sort();
+    ids.dedup();
+    ids
+}
+
 /// The run-shaped half of [`record`]: transcribe the entries and let
 /// `quoin_evidence::record::record_run` update the binding graph.
 fn record_entries(
@@ -201,6 +207,38 @@ fn record_entries(
 ) -> Result<serde_json::Value, CoreError> {
     let result = (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?;
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
+    // An inventory (SBOM) names no obligation, so the recorder states which
+    // one it was produced to discharge (FR-041). A stated id an obligation
+    // states goes onto every entry as a trace id, which is the one join
+    // `record_run` already makes, so only a passing entry binds. An id no
+    // obligation states is reported `unmatched` here, so an inventory with no
+    // entries cannot swallow it. Only the sbom adapter takes `--discharges`: on
+    // a test run it would let a red suite discharge a stated obligation.
+    let stated = stated_obligations(&request.discharges);
+    if !stated.is_empty() && adapter.name != "sbom" {
+        return Err(CoreError::new(
+            CoreErrorCode::BadRequest,
+            format!(
+                "--discharges applies to finding-shaped recordings and the sbom adapter; the {} adapter derives what it discharges from the trace ids its entries carry",
+                adapter.name
+            ),
+        )
+        .with_context("op", op));
+    }
+    let (known, unknown): (Vec<String>, Vec<String>) = stated
+        .into_iter()
+        .partition(|id| request.obligations.iter().any(|o| &o.id == id));
+    let mut entries = result.entries;
+    for entry in &mut entries {
+        if !known.is_empty() {
+            let trace_ids = entry.trace_ids.get_or_insert_with(Vec::new);
+            for id in &known {
+                if !trace_ids.contains(id) {
+                    trace_ids.push(id.clone());
+                }
+            }
+        }
+    }
     let root = host.store_root(Path::new(&request.repo));
     host.with_store(Path::new(&request.repo), &mut |source| {
         let outcome = record_run(
@@ -211,7 +249,7 @@ fn record_entries(
                 evidence_kind: request.kind.clone(),
                 lineage: request.lineage.clone(),
                 timestamp: request.timestamp.clone(),
-                entries: result.entries.clone(),
+                entries: entries.clone(),
             },
             &request.obligations,
         )
@@ -219,7 +257,13 @@ fn record_entries(
         value(&RecordPayload::Run {
             run_path: absolute(&root, &outcome.run_path),
             bound: outcome.bound,
-            unmatched: outcome.unmatched,
+            unmatched: {
+                let mut unmatched = outcome.unmatched;
+                unmatched.extend(unknown.iter().cloned());
+                unmatched.sort();
+                unmatched.dedup();
+                unmatched
+            },
             unrepresented: unrepresented.clone(),
         })
     })

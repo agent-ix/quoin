@@ -84,7 +84,9 @@ pub mod interval;
 pub mod intervention;
 pub mod json_bridge;
 pub mod operational;
+pub mod paired;
 pub mod plans;
+pub mod population_set;
 pub mod portfolio;
 pub mod profiles;
 pub mod raw_evidence;
@@ -111,6 +113,7 @@ pub use intervention::intake::{
     write_intervention_record,
 };
 pub use intervention::validate::validate_intervention_record;
+pub use paired::{PairedRunObservation, PairedRunOutcome, compare_paired_runs};
 pub use plans::{PlanLoadOptions, load_measurement_plans};
 pub use portfolio::{
     PORTFOLIO_STALE_AFTER_DAYS, PortfolioReport, build_portfolio_report, render_portfolio_report,

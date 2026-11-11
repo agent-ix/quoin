@@ -9,8 +9,8 @@
 //! contract, not because of who produces them.
 
 use super::{
-    AdapterResult, FindingResult, agent_eval, audit_script, cargo_mutants, contract_conformance,
-    differential_report, entries, junit, sarif, sbom,
+    AdapterResult, FindingResult, agent_eval, audit_script, cargo_deny, cargo_mutants,
+    contract_conformance, differential_report, entries, junit, sarif, sbom,
 };
 use crate::error::EvidenceError;
 
@@ -129,8 +129,14 @@ pub static FINDING_ADAPTERS: &[FindingAdapter] = &[
     FindingAdapter {
         name: "cargo-audit",
         summary: "cargo audit --json — RUSTSEC advisories and warning kinds.",
-        tools: &["cargo-audit", "cargo audit", "cargo-deny", "cargo deny"],
+        tools: &["cargo-audit", "cargo audit"],
         parse: sarif::parse_cargo_audit,
+    },
+    FindingAdapter {
+        name: "cargo-deny",
+        summary: "cargo deny --format json check — advisory, ban, licence and source diagnostics.",
+        tools: &["cargo-deny", "cargo deny"],
+        parse: cargo_deny::parse_cargo_deny,
     },
 ];
 
@@ -246,6 +252,7 @@ mod tests {
                 "sarif",
                 "audit-script",
                 "cargo-audit",
+                "cargo-deny",
             ]
         );
         let distinct: BTreeSet<&str> = adapter_names().into_iter().collect();
