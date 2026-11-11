@@ -37,11 +37,11 @@ different byte strings can never share a name.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-125-AC-1 | Retaining bytes names them by their SHA-256: byte-distinct attachments get distinct addresses, identical bytes reproduce the same reference and are retained once, and reading the reference returns exactly the retained bytes, binary included. | Test (TC-2140) |
-| FR-125-AC-2 | Publishing a collection whose `attachments` member is not an array, exceeds 256 entries, repeats an address, or holds a reference with a malformed or path-like digest, an empty media type, or a `byteLength` that is not a whole number within 64 MiB, refuses as `QM-ATTACHMENT-INVALID` before any attachment file is read and writes no collection. Retaining an empty media type is refused likewise. | Test (TC-2141) |
-| FR-125-AC-3 | Publishing a collection that references an attachment with no retained bytes refuses as `QM-ATTACHMENT-UNAVAILABLE`, and one whose declared length or address disagrees with the retained bytes refuses as `QM-ATTACHMENT-TAMPERED`; each names the attachment and writes no collection. | Test (TC-2142) |
-| FR-125-AC-4 | After a collection is sealed, editing a retained attachment's bytes (including by symlink substitution) or deleting it makes `verify_collection_attachments` refuse, naming the attachment; retaining the original bytes again over edited bytes refuses as `QM-ATTACHMENT-TAMPERED` and replaces nothing. | Test (TC-2143) |
-| FR-125-AC-5 | A collection that references retained attachments publishes, reads back with its `attachments` member intact, verifies clean, and each attachment is recovered byte for byte. | Test (TC-2144) |
+| FR-125-AC-1 | Retaining bytes names them by their SHA-256: byte-distinct attachments get distinct addresses, identical bytes reproduce the same reference and are retained once, and reading the reference returns exactly the retained bytes, binary included. | Test (TC-2150) |
+| FR-125-AC-2 | Publishing a collection whose `attachments` member is not an array, exceeds 256 entries, repeats an address, or holds a reference with a malformed or path-like digest, an empty media type, or a `byteLength` that is not a whole number within 64 MiB, refuses as `QM-ATTACHMENT-INVALID` before any attachment file is read and writes no collection. Retaining an empty media type is refused likewise. | Test (TC-2151) |
+| FR-125-AC-3 | Publishing a collection that references an attachment with no retained bytes refuses as `QM-ATTACHMENT-UNAVAILABLE`, and one whose declared length or address disagrees with the retained bytes refuses as `QM-ATTACHMENT-TAMPERED`; each names the attachment and writes no collection. | Test (TC-2152) |
+| FR-125-AC-4 | After a collection is sealed, editing a retained attachment's bytes (including by symlink substitution) or deleting it makes `verify_collection_attachments` refuse, naming the attachment; retaining the original bytes again over edited bytes refuses as `QM-ATTACHMENT-TAMPERED` and replaces nothing. | Test (TC-2153) |
+| FR-125-AC-5 | A collection that references retained attachments publishes, reads back with its `attachments` member intact, verifies clean, and each attachment is recovered byte for byte. | Test (TC-2154) |
 
 ## Constraints
 

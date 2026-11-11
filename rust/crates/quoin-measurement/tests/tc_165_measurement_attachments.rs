@@ -111,7 +111,7 @@ fn no_collection(root: &Path) -> bool {
 /// The binary payload used throughout: not UTF-8, with NULs.
 const BINARY: &[u8] = &[0, 159, 146, 150, 255, 0, 1, 2];
 
-#[trace("FR-125-AC-1", "TC-2140")]
+#[trace("FR-125-AC-1", "TC-2150")]
 #[test]
 fn tc_165_001_the_address_is_the_sha256_of_the_bytes_and_round_trips() {
     let temporary = repository();
@@ -137,7 +137,7 @@ fn tc_165_001_the_address_is_the_sha256_of_the_bytes_and_round_trips() {
     );
 }
 
-#[trace("FR-125-AC-2", "TC-2141")]
+#[trace("FR-125-AC-2", "TC-2151")]
 #[test]
 fn tc_165_002_every_unsafe_reference_refuses_before_bytes_are_admitted() {
     let temporary = repository();
@@ -185,7 +185,7 @@ fn tc_165_002_every_unsafe_reference_refuses_before_bytes_are_admitted() {
     );
 }
 
-#[trace("FR-125-AC-3", "TC-2142")]
+#[trace("FR-125-AC-3", "TC-2152")]
 #[test]
 fn tc_165_003_missing_stale_or_mismatched_bytes_refuse_the_publish() {
     let temporary = repository();
@@ -217,7 +217,7 @@ fn tc_165_003_missing_stale_or_mismatched_bytes_refuse_the_publish() {
     assert!(no_collection(root));
 }
 
-#[trace("FR-125-AC-4", "TC-2143")]
+#[trace("FR-125-AC-4", "TC-2153")]
 #[test]
 fn tc_165_004_post_seal_edit_substitution_or_deletion_is_red_and_names_it() {
     let temporary = repository();
@@ -259,7 +259,7 @@ fn tc_165_004_post_seal_edit_substitution_or_deletion_is_red_and_names_it() {
     assert!(error.subject().contains(&hex), "{error}");
 }
 
-#[trace("FR-125-AC-5", "TC-2144")]
+#[trace("FR-125-AC-5", "TC-2154")]
 #[test]
 fn tc_165_005_a_collection_binds_and_recovers_binary_attachments() {
     let temporary = repository();
