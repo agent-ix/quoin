@@ -765,20 +765,26 @@ async fn run_once(client: &Client, questions: &QuestionSet, variant: Variant) ->
     pass
 }
 
-/// Writes this run's `quoin measurement record` input when `JEV_RECORD_OUT`
-/// names a file, so the graded run's agreement rate and its per-item rows
-/// reach the measurement store together (PLAT-1021). The governing plan is
-/// named by `JEV_PLAN_ID`, `JEV_PLAN_VERSION` and `JEV_PLAN_PATH`.
-fn record_run(graded: &[Graded]) {
-    let Ok(out) = std::env::var("JEV_RECORD_OUT") else {
+/// The measurement plan the gate pass is stored under (FR-108-AC-21).
+const GATE_PLAN: &str = "MP-244";
+const GATE_DEFINITION: &str = "jev.criterion-strength-agreement-v1";
+const GATE_METRIC: &str = "jev.criterion_strength.agreement";
+/// The plan's `protected_apparatus`, which intake requires the collection to
+/// list as `verificationStack.artifacts`.
+const GATE_APPARATUS: [&str; 3] = [
+    "skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json",
+    "skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fr-context.json",
+    "skills/spec-criterion-strength-analysis/assets/question-set.json",
+];
+
+/// Stores this pass as a measurement collection when `JEV_MEASUREMENT_REPO`
+/// names a repository, and writes nothing otherwise (FR-108-AC-21). It runs
+/// before any assertion so a failing pass still leaves its evidence. The
+/// stack states the profile this test binary was built under (FR-108-AC-22).
+fn store_pass(graded: &[Graded]) {
+    let Ok(repository) = std::env::var("JEV_MEASUREMENT_REPO") else {
         return;
     };
-    let var = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name} is required"));
-    let (plan_id, version, plan_path) = (
-        var("JEV_PLAN_ID"),
-        var("JEV_PLAN_VERSION"),
-        var("JEV_PLAN_PATH"),
-    );
     let millis = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("the clock is after 1970")
@@ -787,20 +793,35 @@ fn record_run(graded: &[Graded]) {
         i64::try_from(millis).expect("the clock fits i64"),
     )
     .expect("the clock formats");
-    let collection_id = format!("{plan_id}-{millis}");
-    let run = quoin_jev::GradedRun {
-        plan_id: &plan_id,
-        definition_version: &version,
-        metric: "jev.criterion-strength.agreement-rate",
-        collection_id: &collection_id,
-        subject: "quoin-jev criterion-strength corpus",
-        tool_version: env!("CARGO_PKG_VERSION"),
-        timestamp: &timestamp,
-        plan_path: &plan_path,
+    let profile = if cfg!(debug_assertions) {
+        "debug"
+    } else {
+        "release"
     };
-    let input = quoin_jev::record_input(&run, &constant_predictor_items(graded))
-        .expect("the graded run builds a record");
-    std::fs::write(&out, input.to_string()).expect("the record input is writable");
+    let corpus = quoin_jev::GradedCorpus {
+        plan_id: GATE_PLAN.to_owned(),
+        definition_version: GATE_DEFINITION.to_owned(),
+        metric: GATE_METRIC.to_owned(),
+        collection_id: format!("{GATE_PLAN}-{millis}"),
+        subject: "criterion-strength fixture corpus".to_owned(),
+        scope: serde_json::json!({ "items": graded.len() }),
+        tool_identity: "quoin-jev live_criterion_strength".to_owned(),
+        tool_version: env!("CARGO_PKG_VERSION").to_owned(),
+        timestamp,
+        environment: serde_json::json!({ "runner": "cargo test --features live-api" }),
+        verification_stack: serde_json::json!({
+            "schemaVersion": "verification-stack-attestation-v1",
+            "buildProfile": profile,
+            "capabilities": ["jev.criterion-strength-live"],
+            "artifacts": GATE_APPARATUS,
+        }),
+        repetitions: 1,
+        items: constant_predictor_items(graded),
+    };
+    let collection =
+        quoin_jev::graded_corpus_collection(&corpus).expect("the graded pass builds a collection");
+    quoin_measurement::write_measurement_collection(std::path::Path::new(&repository), &collection)
+        .unwrap_or_else(|error| panic!("{error}: {:?}", error.findings()));
 }
 
 /// Provenance: PLAT-917. **The gate.** Does the real service, on the shipped
@@ -809,12 +830,14 @@ fn record_run(graded: &[Graded]) {
 ///
 /// Fails the build when it does not. Both bars are stated in this file's
 /// module doc and were fixed before the first live number was taken.
+#[ix_trace_rs::trace("FR-108-AC-21", "TC-2020")]
 #[tokio::test]
 async fn the_lens_beats_the_do_nothing_baseline() {
     let client = live_client();
     let variant = Variant::from_env();
     let questions = variant.questions();
     let pass = run_once(&client, &questions, variant).await;
+    store_pass(&pass.graded);
 
     println!(
         "{}",
@@ -859,7 +882,6 @@ async fn the_lens_beats_the_do_nothing_baseline() {
     // bars 2 and 3 would have said.
     let bars = Bars::of(&pass.graded);
     println!("**GATE {variant:?}** {}", bars.line());
-    record_run(&pass.graded);
     assert!(
         bars.all(),
         "{variant:?} does not clear the pre-registered bars: {}",

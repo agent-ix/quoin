@@ -203,7 +203,7 @@ pub(crate) struct WeaknessLabels {
 
 impl WeaknessLabels {
     /// Every reading a reader recorded, primary first.
-    fn readings(&self) -> Vec<&str> {
+    pub(crate) fn readings(&self) -> Vec<&str> {
         self.weakness_kind_contested.as_ref().map_or_else(
             || vec![self.weakness_kind.as_str()],
             |all| all.iter().map(String::as_str).collect(),
@@ -282,7 +282,7 @@ pub(crate) struct CoverageLabels {
 
 impl CoverageLabels {
     /// Every level a reader recorded, primary first.
-    fn readings(&self) -> Vec<u8> {
+    pub(crate) fn readings(&self) -> Vec<u8> {
         self.adverse_case_coverage_contested
             .clone()
             .unwrap_or_else(|| vec![self.adverse_case_coverage])

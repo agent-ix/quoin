@@ -372,7 +372,10 @@ pub(crate) fn is_coverage(row: &Graded) -> bool {
 
 /// The graded rows as constant-predictor items, one answer family per kind of
 /// row: coverage levels and `weakness_kind` labels never share an answer
-/// space (MP-222). `actual_class` is what the row was scored on.
+/// space (MP-222). `actual` is the answer class the row was scored on. A row
+/// the lens left unanswered or answered outside the answer space carries a
+/// class naming that, never the label it happened to hold, so it cannot agree
+/// with the corpus.
 pub(crate) fn constant_predictor_items(graded: &[Graded]) -> Vec<quoin_jev::ConstantPredictorItem> {
     graded
         .iter()
@@ -386,7 +389,11 @@ pub(crate) fn constant_predictor_items(graded: &[Graded]) -> Vec<quoin_jev::Cons
             .to_owned(),
             expected: row.expected.clone(),
             contested: row.contested.clone(),
-            actual: row.actual_class.clone(),
+            actual: match row.verdict {
+                Verdict::Unanswered => "<unanswered>".to_owned(),
+                Verdict::Unrecognized => "<unrecognized>".to_owned(),
+                Verdict::Primary | Verdict::Contested | Verdict::Wrong => row.actual_class.clone(),
+            },
         })
         .collect()
 }
