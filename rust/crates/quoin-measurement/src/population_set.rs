@@ -19,6 +19,37 @@ use crate::types::plan::PopulationSet;
 pub const EXAMINED_IDS: &str = "examined_ids";
 /// The member of `population` holding the ids that matched.
 pub const MATCHED_IDS: &str = "matched_ids";
+/// The member of `population` counting the ids examined.
+pub const EXAMINED: &str = "examined";
+/// The member of `population` counting the ids that matched.
+pub const MATCHED: &str = "matched";
+
+/// How many ids a finding names before summarising the rest.
+const NAMED_IDS: usize = 5;
+/// The longest id a finding spells out in full.
+const NAMED_ID_CHARS: usize = 64;
+
+/// A population count as the stored document states it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum StatedCount {
+    /// The member is not there.
+    Absent,
+    /// The member is a number.
+    Number(f64),
+    /// The member is there and is not a number.
+    NotNumber,
+}
+
+impl StatedCount {
+    /// Read a stored member.
+    #[must_use]
+    pub fn of(value: Option<&JsonValue>) -> Self {
+        match value {
+            None => Self::Absent,
+            Some(stated) => stated.as_f64().map_or(Self::NotNumber, Self::Number),
+        }
+    }
+}
 
 /// Why a stated population is not the plan's enumeration.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -57,19 +88,21 @@ fn ids(member: &'static str, value: &JsonValue) -> Result<BTreeSet<String>, SetF
 
 /// Check one observation's stated population against `set`.
 ///
-/// `examined` and `matched` are the stated counts, when numeric; a stated
-/// count that disagrees with its list is malformed rather than trusted.
+/// `examined` and `matched` are the stored counts. Both must be stated, and
+/// each must equal the length of its list: a count is never trusted over the
+/// list.
 ///
 /// # Errors
 ///
 /// The first [`SetFault`], checked in this order: an absent list, a malformed
-/// list or disagreeing count, ids outside the set, then set ids not examined.
+/// list, an absent or disagreeing count, ids outside the set, then set ids
+/// not examined.
 pub fn check(
     set: &PopulationSet,
     examined_ids: Option<&JsonValue>,
     matched_ids: Option<&JsonValue>,
-    examined: Option<f64>,
-    matched: Option<f64>,
+    examined: StatedCount,
+    matched: StatedCount,
 ) -> Result<(), SetFault> {
     let examined_list = ids(
         EXAMINED_IDS,
@@ -80,16 +113,24 @@ pub fn check(
         matched_ids.ok_or(SetFault::Unstated(MATCHED_IDS))?,
     )?;
     for (member, list, count) in [
-        (EXAMINED_IDS, &examined_list, examined),
-        (MATCHED_IDS, &matched_list, matched),
+        (EXAMINED, &examined_list, examined),
+        (MATCHED, &matched_list, matched),
     ] {
-        if let Some(count) = count
-            && u32::try_from(list.len()).map(f64::from) != Ok(count)
-        {
-            return Err(SetFault::Malformed(
-                member,
-                format!("it lists {} ids but the count states {count}", list.len()),
-            ));
+        match count {
+            StatedCount::Absent => return Err(SetFault::Unstated(member)),
+            StatedCount::NotNumber => {
+                return Err(SetFault::Malformed(
+                    member,
+                    "it must be a number".to_owned(),
+                ));
+            }
+            StatedCount::Number(count) if u32::try_from(list.len()).map(f64::from) != Ok(count) => {
+                return Err(SetFault::Malformed(
+                    member,
+                    format!("it lists {} ids but the count states {count}", list.len()),
+                ));
+            }
+            StatedCount::Number(_) => {}
         }
     }
     for (member, list) in [(EXAMINED_IDS, &examined_list), (MATCHED_IDS, &matched_list)] {
@@ -114,6 +155,26 @@ pub fn check(
     }
 }
 
+/// The first few ids, each cut to a bounded length, then a count of the rest,
+/// so a finding stays small however large the set or the producer's lists.
+fn named(ids: &[String]) -> String {
+    let shown: Vec<String> = ids
+        .iter()
+        .take(NAMED_IDS)
+        .map(|id| {
+            let mut cut: String = id.chars().take(NAMED_ID_CHARS).collect();
+            if cut.len() < id.len() {
+                cut.push_str("...");
+            }
+            cut
+        })
+        .collect();
+    match ids.len().saturating_sub(NAMED_IDS) {
+        0 => shown.join(", "),
+        more => format!("{} and {more} more", shown.join(", ")),
+    }
+}
+
 impl SetFault {
     /// A sentence naming the fault, for `metric`.
     #[must_use]
@@ -129,12 +190,12 @@ impl SetFault {
             Self::Outside(member, ids) => format!(
                 "metric `{metric}` lists population.{member} ids outside plan {plan}'s \
                  population: {}",
-                ids.join(", ")
+                named(ids)
             ),
             Self::Partial(ids) => format!(
                 "metric `{metric}` did not examine {} of plan {plan}'s population ids: {}",
                 ids.len(),
-                ids.join(", ")
+                named(ids)
             ),
         }
     }
@@ -148,10 +209,11 @@ impl SetFault {
             }
             Self::Partial(_) => EXAMINED_IDS,
         };
-        if member == MATCHED_IDS {
-            "population.matched_ids"
-        } else {
-            "population.examined_ids"
+        match member {
+            MATCHED_IDS => "population.matched_ids",
+            EXAMINED => "population.examined",
+            MATCHED => "population.matched",
+            _ => "population.examined_ids",
         }
     }
 }

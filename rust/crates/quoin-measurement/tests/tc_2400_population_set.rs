@@ -25,7 +25,7 @@ use engineering_assurance::measurement::Estimator;
 use quoin_measurement::error::MeasurementErrorCode;
 use quoin_measurement::json_bridge::from_serde;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
-use quoin_measurement::population_set::{self, SetFault};
+use quoin_measurement::population_set::{self, SetFault, StatedCount};
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::types::ids::NonEmptyText;
 use quoin_measurement::types::observation::{
@@ -242,13 +242,12 @@ fn tc_2403_unstated_id_lists_are_refused_and_not_computed_is_exempt() {
         json!({ "examined": 3, "matched": 3 }),
         json!({ "examined": 3, "matched": 3, "examined_ids": ["a", "b", "c"] }),
         json!({ "examined": 3, "matched": 3, "matched_ids": ["a", "b", "c"] }),
+        json!({ "examined_ids": ["a", "b", "c"], "matched_ids": [], "matched": 0 }),
+        json!({ "examined_ids": ["a", "b", "c"], "matched_ids": [], "examined": 3 }),
     ] {
         let refusal = refused(population);
         assert_eq!(refusal.code(), MeasurementErrorCode::PopulationUnstated);
-        assert!(
-            refusal.findings()[0].contains("population.examined_ids")
-                || refusal.findings()[0].contains("population.matched_ids")
-        );
+        assert!(refusal.findings()[0].contains("states no population."));
     }
     let (_dir, plans) = plans_from(&plan_document(SET_ABC));
     let mut skipped = observation(json!({}));
@@ -270,7 +269,10 @@ fn tc_2404_malformed_id_lists_and_disagreeing_counts_are_refused() {
         json!({ "examined_ids": "a,b,c", "matched_ids": [] }),
         json!({ "examined_ids": ["a", "b", "c"], "matched_ids": ["a", ""] }),
         json!({ "examined_ids": ["a", "b", "c"], "matched_ids": [], "examined": 4 }),
-        json!({ "examined_ids": ["a", "b", "c"], "matched_ids": ["a"], "matched": 3 }),
+        json!({ "examined_ids": ["a", "b", "c"], "matched_ids": ["a"], "examined": 3, "matched": 3 }),
+        json!({ "examined_ids": ["a", "b", "c"], "matched_ids": [], "examined": "3", "matched": 0 }),
+        json!({ "examined_ids": ["a"], "matched_ids": [], "examined": "1", "matched": 0 }),
+        json!({ "examined_ids": ["a", "b", "c"], "matched_ids": [], "examined": 3, "matched": null }),
     ] {
         let refusal = refused(population.clone());
         assert_eq!(
@@ -411,12 +413,80 @@ fn tc_2407_verify_assesses_only_the_declared_population() {
             .unwrap_err(),
         Reason::PopulationPartial
     );
+    assert_eq!(
+        run(json!({ "examined": 3, "matched": 1, "examined_ids": ["a", "b", "c"], "matched_ids": ["z"] }))
+            .unwrap_err(),
+        Reason::PopulationOutsideSet
+    );
+    assert_eq!(
+        run(json!({ "examined": 3, "matched": 2, "examined_ids": ["a", "b", "c"], "matched_ids": ["a"] }))
+            .unwrap_err(),
+        Reason::PopulationMalformed
+    );
     let fault = population_set::check(
         design.population_set.as_ref().unwrap(),
         None,
         None,
-        None,
-        None,
+        StatedCount::Absent,
+        StatedCount::Absent,
     );
     assert_eq!(fault, Err(SetFault::Unstated(population_set::EXAMINED_IDS)));
+}
+
+/// A large declared set and many partial observations produce a refusal whose
+/// size is bounded: ids are summarised and findings are capped.
+///
+/// Provenance: PLAT-110
+#[trace("FR-131-AC-6", "TC-2408")]
+#[test]
+fn tc_2408_refusal_output_is_bounded_whatever_the_set_or_the_input() {
+    let ids: Vec<String> = (0..2000).map(|n| format!("path-{n:05}")).collect();
+    let declaration = format!(
+        "\x20\x20population_set:\n\x20\x20\x20\x20ids: [{}]\n",
+        ids.join(", ")
+    );
+    let (_dir, plans) = plans_from(&plan_document(&declaration));
+    let long = "x".repeat(10_000);
+    let observations: Vec<Value> = (0..300)
+        .map(|n| {
+            let mut stated = observation(json!({
+                "examined": 1, "matched": 0,
+                "examined_ids": [long.clone()], "matched_ids": [],
+            }));
+            stated["dimensions"] = json!({ "case": n });
+            stated
+        })
+        .collect();
+    let mut candidate = json!({
+        "schemaVersion": 2, "collectionId": "run-110", "subject": "fixture",
+        "scope": { "cases": 1 }, "toolIdentity": "fixture producer",
+        "toolVersion": "fixture 1 (engine a1)", "timestamp": "2026-09-22T00:00:00.000Z",
+        "environment": { "runner": "test" },
+        "verificationStack": {
+            "schemaVersion": "verification-stack-attestation-v1", "buildProfile": "release",
+            "capabilities": ["fixture.capability"],
+            "artifacts": ["config", "spec/assurance/MP-900.md"],
+        },
+        "rawEvidence": { "payload": [1, 2] },
+    });
+    candidate["observations"] = Value::Array(observations);
+    let refusal = validate::measurement_collection(&from_serde(&candidate).unwrap(), &plans)
+        .expect_err("the observations are refused");
+    let findings = refusal.findings();
+    assert!(findings.len() <= 101, "{} findings", findings.len());
+    let total: usize = findings.iter().map(String::len).sum();
+    assert!(total < 100_000, "{total} bytes of findings");
+    assert!(
+        findings
+            .last()
+            .is_some_and(|last| last.contains("more findings"))
+    );
+    assert!(findings[0].contains("outside"));
+    let partial = intake(
+        &plans,
+        observation(json!({ "examined": 0, "matched": 0, "examined_ids": [], "matched_ids": [] })),
+    )
+    .unwrap_err();
+    assert!(partial.findings()[0].contains("and 1995 more"));
+    assert!(partial.findings()[0].len() < 1000);
 }

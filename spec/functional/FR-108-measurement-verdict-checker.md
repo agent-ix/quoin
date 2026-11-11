@@ -159,7 +159,9 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `interval_malformed` | reject | under a plan whose rule states `interval_level`, a run states an `interval` that does not satisfy FR-044-AC-10, in any run (EA-26) |
 | `interval_level_short` | reject | the candidate's `interval` level is below the rule's `interval_level` (EA-26) |
 | `repetitions_short` | reject | the candidate's `repetitions` is below the plan's |
-| `population_malformed` | reject | `examined`, `matched` or `repetitions` is not a whole number, or `matched` exceeds `examined`, in any run |
+| `population_malformed` | reject | `examined`, `matched` or `repetitions` is not a whole number, or `matched` exceeds `examined`, in any run; or, under a plan declaring a `population_set` (FR-131), an id list is not a list of distinct non-empty strings or a count disagrees with its list |
+| `population_outside_set` | reject | under a plan declaring a `population_set` (FR-131), an `examined_ids` or `matched_ids` id is not in the set |
+| `population_partial` | reject | under a plan declaring a `population_set` (FR-131), the candidate did not examine every id of the set |
 | `rerun_until_pass` | reject | a regressed run with the candidate's own apparatus preceded it |
 | `apparatus_edit` | reject | an earlier run under the same `definition_version` recorded a different protected apparatus than the candidate (FR-110) |
 | `claimed_verdict_disagrees` | reject | the claimed verdict is not the checker's |

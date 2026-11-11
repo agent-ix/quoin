@@ -36,7 +36,7 @@ use std::cmp::Ordering;
 use engineering_assurance::measurement::Estimator;
 use quoin_store::JsonValue;
 
-use crate::population_set::{self, SetFault};
+use crate::population_set::{self, SetFault, StatedCount};
 use crate::types::observation::{MeasurementObservation, MeasurementState};
 use crate::types::plan::StatisticalDesign;
 use crate::verify::Reason;
@@ -196,8 +196,10 @@ pub fn assess(
             set,
             population.unmodelled.get(population_set::EXAMINED_IDS),
             population.unmodelled.get(population_set::MATCHED_IDS),
-            Some(examined),
-            population.matched,
+            StatedCount::Number(examined),
+            population
+                .matched
+                .map_or(StatedCount::Absent, StatedCount::Number),
         )
         .map_err(|fault| match fault {
             SetFault::Unstated(_) => Reason::PopulationUnstated,
