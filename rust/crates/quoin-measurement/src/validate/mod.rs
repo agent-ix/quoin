@@ -35,8 +35,7 @@ use quoin_store::{JsonObject, JsonValue};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::types::collection::{
-    BuildProfile, HISTORICAL_MEASUREMENT_SCHEMA_VERSIONS, MEASUREMENT_SCHEMA_VERSION,
-    MeasurementCollection,
+    HISTORICAL_MEASUREMENT_SCHEMA_VERSIONS, MEASUREMENT_SCHEMA_VERSION, MeasurementCollection,
 };
 use crate::types::observation::{
     Dimensions, MeasurementObservation, MeasurementPopulation, MeasurementShape, MeasurementState,
@@ -228,19 +227,17 @@ pub fn measurement_collection(
     match &parsed.stack_error {
         Some(error) if error.findings().is_empty() => findings.push(error.subject().to_owned()),
         Some(error) => findings.extend(error.findings().iter().cloned()),
-        None => match collection.verification_stack.as_ref() {
-            None => findings.push(
-                "verificationStack.buildProfile must be release for new collections".to_owned(),
-            ),
-            Some(stack) => {
-                if stack.build_profile != Some(BuildProfile::Release) {
-                    findings.push(
-                        "verificationStack.buildProfile must be release for new collections"
-                            .to_owned(),
-                    );
-                }
+        None => {
+            let states_profile = collection
+                .verification_stack
+                .as_ref()
+                .is_some_and(|stack| stack.build_profile.is_some());
+            if !states_profile {
+                findings.push(
+                    "verificationStack.buildProfile must be stated for new collections".to_owned(),
+                );
             }
-        },
+        }
     }
 
     findings.extend(stack::stated_computed_members(value));

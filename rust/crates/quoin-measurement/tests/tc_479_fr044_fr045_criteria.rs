@@ -449,25 +449,34 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
     }
 }
 
-/// A new collection must carry a release build profile.
+/// A new collection must state a build profile, and the stated profile is
+/// kept as stated rather than forced to `release`.
 ///
-/// `tests/measurement.test.ts:131`, which carried no criterion tag. **No
-/// FR-044 criterion's text names `verificationStack`**: AC-1's member census
-/// was written for schema v1 and never grew the attestation. It is tagged
-/// AC-1 here because AC-1 is the criterion that decides what a collection must
-/// carry for the write to be admitted, which is the decision this refusal
-/// makes. The criterion text is the gap, and closing it is a spec change.
-///
-/// Provenance: quoin#479, PLAT-930
-#[trace("FR-044-AC-1", "TC-1003")]
+/// Provenance: quoin#479, PLAT-930, PLAT-164
+#[trace("FR-044-AC-14", "TC-2140")]
 #[test]
-fn tc_479_003_a_new_collection_requires_a_release_build() {
+fn tc_479_003_a_new_collection_states_its_true_build_profile() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
-    // A build profile other than release is a new collection's own refusal,
-    // and so is its absence — `tests/measurement.test.ts:141-152`.
-    for profile in [Some("debug"), None] {
+    for profile in ["debug", "release", "undeclared"] {
+        let mut candidate = new_collection_json();
+        candidate["verificationStack"]["buildProfile"] = json!(profile);
+        let admitted = validate::measurement_collection(
+            &from_serde(&candidate).expect("the case crosses the bridge"),
+            &plans,
+        )
+        .unwrap_or_else(|error| panic!("a {profile} profile was refused: {error}"));
+        let stack = admitted.verification_stack.expect("the stack is kept");
+        assert_eq!(
+            stack
+                .build_profile
+                .map(quoin_measurement::types::collection::BuildProfile::as_str),
+            Some(profile)
+        );
+    }
+
+    for profile in [Some("instrumented-ish"), None] {
         let mut drifted = new_collection_json();
         match profile {
             Some(value) => {
@@ -475,18 +484,12 @@ fn tc_479_003_a_new_collection_requires_a_release_build() {
             }
             None => delete_at(&mut drifted, &["verificationStack", "buildProfile"]),
         }
-        let refusal = validate::measurement_collection(
+        validate::measurement_collection(
             &from_serde(&drifted).expect("the drifted case crosses the bridge"),
             &plans,
         )
         .err()
-        .unwrap_or_else(|| panic!("a {profile:?} build profile was admitted for a new collection"));
-        assert!(
-            refusal
-                .to_string()
-                .contains("buildProfile must be release for new collections"),
-            "{profile:?}: the refusal must name the profile it wanted; it said {refusal}"
-        );
+        .unwrap_or_else(|| panic!("a {profile:?} build profile was admitted"));
     }
 }
 
@@ -500,24 +503,24 @@ fn tc_479_003_a_new_collection_requires_a_release_build() {
 /// Provenance: PLAT-929
 #[trace("FR-044-AC-1", "TC-1003")]
 #[test]
-fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_refusal() {
+fn tc_479_020_a_missing_build_profile_and_an_unplanned_metric_are_both_named_in_one_refusal() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
     let mut candidate = new_collection_json();
-    candidate["verificationStack"]["buildProfile"] = json!("debug");
+    delete_at(&mut candidate, &["verificationStack", "buildProfile"]);
     candidate["observations"][0]["metric"] = json!("quality.unplanned");
     let refusal = validate::measurement_collection(
         &from_serde(&candidate).expect("the candidate crosses the bridge"),
         &plans,
     )
-    .expect_err("a debug build and an unplanned metric are each refused");
+    .expect_err("a missing build profile and an unplanned metric are each refused");
     assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
     assert!(
         refusal
             .findings()
             .iter()
-            .any(|finding| finding.contains("buildProfile must be release")),
+            .any(|finding| finding.contains("buildProfile must be stated")),
         "the one refusal must name the build profile defect, got {:?}",
         refusal.findings()
     );
@@ -659,7 +662,7 @@ fn tc_479_004_historical_evidence_reads_before_the_profile_field() {
         validate::measurement_collection(&stored, &plans)
             .expect_err("the same document is not admissible as a NEW collection")
             .to_string()
-            .contains("buildProfile must be release for new collections"),
+            .contains("buildProfile must be stated for new collections"),
         "intake must still require what the historical read forgives"
     );
 

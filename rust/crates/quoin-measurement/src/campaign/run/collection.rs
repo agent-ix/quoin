@@ -11,6 +11,7 @@ use serde::Serialize;
 use std::collections::BTreeSet;
 
 use crate::campaign::input_origin::{InputOriginInventory, from_runtime};
+use crate::types::BuildProfile;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -141,7 +142,7 @@ pub(super) fn publish_collection(
         },
         verification_stack: CollectionStack {
             schema_version: "verification-stack-attestation-v1",
-            build_profile: "release",
+            build_profile: BuildProfile::Undeclared.as_str(),
             capabilities: ["campaign.direct-process"],
             artifacts,
         },

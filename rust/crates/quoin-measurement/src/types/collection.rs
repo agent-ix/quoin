@@ -25,15 +25,19 @@ pub const VERIFICATION_STACK_SCHEMA_VERSION: &str = "verification-stack-attestat
 /// Which build the measured executable came from.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum BuildProfile {
-    /// A debug build. Readable as history; refused for a new collection.
+    /// A debug build.
     Debug,
     /// A release build.
     Release,
+    /// The producer ran a build whose profile it did not declare, such as an
+    /// arbitrary process a campaign launches. It claims nothing about
+    /// optimisation or release suitability.
+    Undeclared,
 }
 
 impl BuildProfile {
     /// Every profile, in declaration order.
-    pub const ALL: [Self; 2] = [Self::Debug, Self::Release];
+    pub const ALL: [Self; 3] = [Self::Debug, Self::Release, Self::Undeclared];
 
     /// The stable wire spelling.
     #[must_use]
@@ -41,6 +45,7 @@ impl BuildProfile {
         match self {
             Self::Debug => "debug",
             Self::Release => "release",
+            Self::Undeclared => "undeclared",
         }
     }
 
