@@ -288,6 +288,7 @@ mod tests {
             protected_apparatus: None,
             negative_controls: None,
             cross_profile_comparison: false,
+            paired_run: None,
         }
     }
 
