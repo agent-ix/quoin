@@ -72,3 +72,8 @@ That question is not resolved by this README.
 - [MP-241: code_exceeds_requirement variants E1-E4 against the as-asked question on corpus v2](./MP-241-jev-code-exceeds-variants.md)
 - [MP-242: Jev test_asserts_intent variants T1-T2 and the trace check TC on corpus v2](./MP-242-jev-test-intent-and-trace-variants.md)
 - [MP-243: Jev criterion-soundness checklist variants K1-K2 on corpus v2](./MP-243-jev-criterion-soundness-checklist.md)
+- [MP-250: Commands that fail on a bad argument say why and exit non-zero](./MP-250-nfr003-actionable-failures.md)
+- [MP-251: Commands that fail on a bad argument never fail silently](./MP-251-nfr003-silent-failures.md)
+- [MP-252: ix-flow failures reach the caller as a non-zero exit](./MP-252-nfr007-external-tool-failures.md)
+- [MP-253: Corrupt manifests abort catalog assembly](./MP-253-nfr008-corrupt-manifests.md)
+- [MP-254: Candidates without a manifest are skipped](./MP-254-nfr008-missing-manifests.md)

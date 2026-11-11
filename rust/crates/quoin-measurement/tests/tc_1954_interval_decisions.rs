@@ -67,6 +67,7 @@ fn plan_document(rule: &str, direction: &str) -> String {
          \x20\x20sampling: exhaustive\n\
          \x20\x20repetitions: 1\n\
          \x20\x20estimator: proportion\n\
+         \x20\x20population_exempt: fixture cases carry no ids\n\
          \x20\x20error_model: none\n\
          \x20\x20uncertainty: stated by the producer\n\
          \x20\x20decision_rule:\n\

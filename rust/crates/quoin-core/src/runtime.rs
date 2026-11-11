@@ -187,7 +187,13 @@ impl CatalogHost for HostCatalog {
             let Some(root) = Self::locate(&candidate)? else {
                 continue;
             };
-            let manifest = std::fs::read_to_string(root.join("manifest.yaml"))?;
+            let manifest_path = root.join("manifest.yaml");
+            let manifest = std::fs::read_to_string(&manifest_path).map_err(|error| {
+                std::io::Error::new(
+                    error.kind(),
+                    format!("{}: {error}", manifest_path.display()),
+                )
+            })?;
             let skeletons = root.join("skeletons");
             let skeleton_names = std::fs::read_dir(skeletons).map_or_else(
                 |_| Vec::new(),

@@ -13,6 +13,7 @@ statistical_design:
   sampling: the deterministic partition sampling used for guidance correctness
   repetitions: 1
   estimator: proportion
+  population_exempt: the denominator is a deterministic per-run sample of reviewed records, not a fixed enumerable set of ids
   error_model: a banked failure or control fixture misreports its family; corpus verification drifts from the retained stack
   uncertainty: none estimated; every reviewed remedy record is in the denominator and exactly 100% is required
   decision_rule:

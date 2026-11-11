@@ -162,6 +162,7 @@ fn design(estimator: Estimator) -> StatisticalDesign {
         decision_rule: Some(DecisionRule::against_threshold(Comparator::Ge, 0.8).unwrap()),
         answer_families: None,
         population_set: None,
+        population_exempt: Some("fixture cases carry no ids".to_owned()),
     }
 }
 

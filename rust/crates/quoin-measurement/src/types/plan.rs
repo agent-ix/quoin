@@ -172,6 +172,21 @@ pub struct StatisticalDesign {
     pub answer_families: Option<AnswerFamilies>,
     /// The enumerated set of ids a percentage metric is taken over (PLAT-110).
     pub population_set: Option<PopulationSet>,
+    /// Why this plan's percentage has no enumerable population (PLAT-1401):
+    /// a non-empty reason. A `proportion` plan declares this or a
+    /// `population_set`, or its metric cannot read as a pass.
+    pub population_exempt: Option<String>,
+}
+
+impl StatisticalDesign {
+    /// Whether this plan is a `proportion` that neither declares a
+    /// `population_set` nor states why it has none (PLAT-1401).
+    #[must_use]
+    pub fn proportion_without_population(&self) -> bool {
+        self.estimator == Some(Estimator::Proportion)
+            && self.population_set.is_none()
+            && self.population_exempt.is_none()
+    }
 }
 
 /// The plan-declared enumeration of a percentage metric's population: a

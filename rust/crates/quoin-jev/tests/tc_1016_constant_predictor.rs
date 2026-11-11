@@ -158,6 +158,7 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
             decision_rule: Some(decision_rule),
             answer_families: Some(AnswerFamilies::new(["weakness_kind", "coverage"]).unwrap()),
             population_set: None,
+            population_exempt: Some("fixture items are rows, not ids".to_owned()),
         }),
         objective: None,
         protected_apparatus: None,

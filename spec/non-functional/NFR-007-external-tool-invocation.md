@@ -51,6 +51,11 @@ exit makes problems visible to the caller, and emitting (rather than running) th
 reported. No native test is cited for a missing `ix-flow` executable or for the `quire`
 command being emitted rather than executed (PLAT-1275).
 
+NFR-007-M-1 is measured over each workflow command with `ix-flow` absent and with `ix-flow`
+failing, by plan [MP-252](../assurance/MP-252-nfr007-external-tool-failures.md) with the
+test `tc_3004_an_ix_flow_failure_is_a_non_zero_quoin_exit` (FR-131-AC-10). NFR-007-M-2 has no
+producer.
+
 ## Acceptance Criteria
 
 

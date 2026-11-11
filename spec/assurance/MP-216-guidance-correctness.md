@@ -13,6 +13,7 @@ statistical_design:
   sampling: deterministic and consumer-owned; no runtime sample
   repetitions: 1
   estimator: proportion
+  population_exempt: the denominator is a deterministic per-run sample of reviewed records, not a fixed enumerable set of ids
   error_model: an independent reviewer misjudges a recommendation; a producer drops a record with a missing field
   uncertainty: none estimated; the population is enumerated, and the rule requires every selected record to pass
   decision_rule:

@@ -46,6 +46,20 @@ Aborting makes the corruption visible at the source.
 asserts that a malformed manifest is refused before it reaches the host. No native test is
 cited for the skipped manifest-less candidate (PLAT-1275).
 
+NFR-008-M-1 and NFR-008-M-2 are measured over the corrupt and manifest-less candidate kinds
+the producer builds, through `quoin catalog list`, by plans
+[MP-253](../assurance/MP-253-nfr008-corrupt-manifests.md) and
+[MP-254](../assurance/MP-254-nfr008-missing-manifests.md) with the test
+`tc_3005_corrupt_manifests_abort_and_missing_ones_are_skipped` (FR-131-AC-11).
+
+A manifest counts as corrupt when it is not a single YAML mapping: unparseable text, invalid
+UTF-8, two documents, and a document that is empty, `~`, a scalar or a sequence all abort
+assembly with an error naming the candidate's `manifest.yaml`. Duplicate keys and a
+tab-indented document are different. The YAML reader keeps the last value of a repeated key, so
+the module is listed under what the manifest then says; no module is dropped and the catalog is
+not partial, which is the harm this requirement names. Duplicate keys are therefore accepted
+and are not in the measured population; the tab-indented sequence is a sequence and aborts.
+
 ## Dependencies
 
 - **Upstream**: [FR-006](../functional/FR-006-locate-module-roots.md) and

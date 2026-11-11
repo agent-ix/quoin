@@ -13,6 +13,8 @@ statistical_design:
   sampling: none; reads the already-collected upstream observations for lens gap-analysis
   repetitions: 1
   estimator: proportion
+  population_set:
+    ids: [MP-222, MP-223, MP-224]
   error_model: each bar inherits the error of its upstream observation; a not_computed bar counts as unmet
   uncertainty: the verdict inherits the uncertainty of the mutation-graded subset and of MP-225 disagreement under repetition
   decision_rule:
@@ -43,6 +45,8 @@ the skill — that stays a separate, later, user-gated decision even on a GO
 verdict here.
 
 ## Population
+
+The plan's `population_set` names the three bars by their plan ids. No collection of this plan's own exists; an observation of it must state those three ids as `examined_ids`, and the `tc_3006` test checks that each names a plan in this directory.
 
 Every observation reported under `lens: gap-analysis` for MP-222
 (constant-predictor margin), MP-223 (defect / vacuous-class recall) and

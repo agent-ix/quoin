@@ -86,7 +86,8 @@ pub fn load(
     // The legacy client suppressed duplicate roots and module names before it
     // touched semantic input. Preserve that observable failure boundary: an
     // ignored duplicate must not make an otherwise valid catalog fail.
-    let retained = quoin_catalog::build(&documents, &[]).map_err(map_catalog_error)?;
+    let retained =
+        quoin_catalog::build(&documents, &[]).map_err(|error| map_catalog_error(&error))?;
     let retained_roots: BTreeSet<&str> = retained
         .modules
         .iter()
@@ -111,7 +112,8 @@ pub fn load(
             diagnostics: result.diagnostics,
         });
     }
-    let catalog = quoin_catalog::build(&documents, &semantics).map_err(map_catalog_error)?;
+    let catalog =
+        quoin_catalog::build(&documents, &semantics).map_err(|error| map_catalog_error(&error))?;
     ok(&catalog)
 }
 
@@ -183,14 +185,15 @@ fn semantic_host<'a>(
     })
 }
 
-fn map_catalog_error(error: CatalogError) -> CoreError {
-    match error {
-        CatalogError::ManifestYaml { root, detail } => {
-            CoreError::new(CoreErrorCode::Refused, detail)
-                .with_context("op", "catalog.load")
-                .with_context("root", root)
+fn map_catalog_error(error: &CatalogError) -> CoreError {
+    let root = match error {
+        CatalogError::ManifestYaml { root, .. } | CatalogError::ManifestNotMapping { root, .. } => {
+            root.clone()
         }
-    }
+    };
+    CoreError::new(CoreErrorCode::Refused, error.to_string())
+        .with_context("op", "catalog.load")
+        .with_context("root", root)
 }
 
 fn ok(catalog: &Catalog) -> Result<Response, CoreError> {

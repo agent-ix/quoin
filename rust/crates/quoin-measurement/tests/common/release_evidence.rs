@@ -157,6 +157,7 @@ fn governance_text() -> String {
         "  sampling: every run once",
         "  repetitions: 1",
         "  estimator: proportion",
+        "  population_exempt: fixture cases carry no ids",
         "  error_model: a run is misreported",
         "  uncertainty: none estimated",
         "  decision_rule:",

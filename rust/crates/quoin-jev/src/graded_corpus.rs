@@ -111,6 +111,12 @@ pub fn graded_corpus_collection(corpus: &GradedCorpus) -> Result<JsonValue, Meas
     )?;
     let examined = items.len();
     let matched = items.iter().filter(|item| agrees(item)).count();
+    let examined_ids: Vec<&str> = items.iter().map(|item| item.item_id.as_str()).collect();
+    let matched_ids: Vec<&str> = items
+        .iter()
+        .filter(|item| agrees(item))
+        .map(|item| item.item_id.as_str())
+        .collect();
 
     let mut observations = vec![json!({
         "metric": corpus.metric,
@@ -125,6 +131,8 @@ pub fn graded_corpus_collection(corpus: &GradedCorpus) -> Result<JsonValue, Meas
             "matched": matched,
             "complete": true,
             "repetitions": corpus.repetitions,
+            "examined_ids": examined_ids,
+            "matched_ids": matched_ids,
         },
     })];
     for row in &rows {

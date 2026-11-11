@@ -72,7 +72,7 @@ fn plan_with(stage: &str, reference: &str, extra: &str) -> String {
 /// The statistical-design members engineering-assurance's schema requires
 /// besides the decision rule.
 const DESIGN: &str = "  population: fixture cases\n  sampling: every case once\n  repetitions: 1\n  \
-                      estimator: proportion\n  error_model: a case is misjudged\n  \
+                      estimator: proportion\n  population_exempt: fixture cases carry no ids\n  error_model: a case is misjudged\n  \
                       uncertainty: none estimated\n";
 
 const PROTECTED: &str = "protected_apparatus:\n  - harness/answers.json\n  - labels/**\n";
@@ -479,7 +479,7 @@ fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
     }
     let no_rule: String = valid_design
         .lines()
-        .take(7)
+        .take(8)
         .flat_map(|line| [line, "\n"])
         .collect();
     cases.push((

@@ -384,6 +384,7 @@ fn tc_2407_verify_assesses_only_the_declared_population() {
         estimator: Some(Estimator::Proportion),
         decision_rule: None,
         answer_families: None,
+        population_exempt: None,
         population_set: Some(set),
     };
     let run = |population: Value| {

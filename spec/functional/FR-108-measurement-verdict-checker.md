@@ -152,6 +152,7 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `external_reference_unsupplied` | inconclusive | a baseline rule reads `external-reference`, a per-dimension value the checker resolves from a source outside the plan at evaluation time, and the checker has no such source (PLAT-1032) |
 | `interval_unstated` | inconclusive | the plan's rule states `interval_level` and the candidate's observation states no valid `interval` (EA-26) |
 | `rule_not_evaluable` | inconclusive | engineering-assurance could not evaluate the rule on these numbers |
+| `population_set_undeclared` | inconclusive | the plan's estimator is `proportion` and it declares neither a `population_set` nor a `population_exempt` (FR-131-AC-8) |
 | `unit_unsupported` | inconclusive | a `proportion` observation's unit is not `fraction` or `fraction of …` |
 | `slice_missing` | inconclusive | a slice an earlier run measured under this definition is absent from the candidate |
 | `observation_missing` | inconclusive | a collection with the candidate's `subject` and `scope`, not before it in intake order, carries no observation of the plan |

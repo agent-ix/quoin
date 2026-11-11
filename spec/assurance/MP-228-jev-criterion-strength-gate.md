@@ -14,6 +14,7 @@ statistical_design:
   minimum_population: 5
   repetitions: 5
   estimator: proportion
+  population_exempt: the denominator is repeated passes of a live service, not a set of ids
   error_model: agent-labelled ground truth; a lens answer is noisy across passes, measured by MP-225
   uncertainty: fifteen fixtures is a small corpus and one pass can clear by luck; the 3 of 5 repeated-pass condition is the typed rule below; the separate requirement that the gate run itself clears all three bars has no typed form and is stated in Comparison and Enforcement
   decision_rule:
