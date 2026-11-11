@@ -21,6 +21,7 @@ use quoin_store::store::{Content, StorePath, publish};
 use quoin_store::{JsonObject, JsonValue, StoreError, parse_strict_json};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
+use crate::raw_evidence::RawEvidencePath;
 use crate::store::measurement_path;
 use crate::types::ids::CollectionId;
 
@@ -133,6 +134,26 @@ impl AttachmentReference {
     }
 }
 
+/// Refuse a retained-attachment path that passes through a symlink at any
+/// component, the final one included.
+fn refuse_symlinked_path(repo: &Path, digest: &str, name: &str) -> Result<(), MeasurementError> {
+    let relative = format!("spec/evidence/attachments/{digest}");
+    let linked = crate::store::publish::first_symlink_ancestor(repo, &relative)
+        .map(str::to_owned)
+        .or_else(|| {
+            std::fs::symlink_metadata(repo.join(&relative))
+                .is_ok_and(|metadata| metadata.file_type().is_symlink())
+                .then(|| digest.to_owned())
+        });
+    match linked {
+        Some(component) => Err(MeasurementError::new(
+            MeasurementErrorCode::AttachmentUnavailable,
+            format!("attachment {name}: `{component}` is a symlink"),
+        )),
+        None => Ok(()),
+    }
+}
+
 /// Retain `bytes` as an immutable attachment and return its reference.
 ///
 /// Retaining the same bytes again is idempotent. Nothing is ever replaced: if
@@ -167,6 +188,7 @@ pub fn retain_attachment(
     let path = attachment_path(repo, &digest).ok_or_else(|| {
         MeasurementError::new(MeasurementErrorCode::AttachmentInvalid, "malformed digest")
     })?;
+    refuse_symlinked_path(repo, &digest, &format!("sha256:{digest}"))?;
     publish(&StorePath::ContentAddressed(path), Content::Artifact(bytes)).map_err(|error| {
         match error {
             StoreError::ContentCollision { .. } => MeasurementError::new(
@@ -181,6 +203,48 @@ pub fn retain_attachment(
         media_type: media_type.to_owned(),
         byte_length,
     })
+}
+
+/// Retain the file at repository-relative `source` as an attachment.
+///
+/// The path is judged before any byte is loaded: it must be a safe relative
+/// path (no absolute, empty, `.`/`..` or backslash segment), no component of it
+/// may be a symlink, the target must be a regular file, and its size must be
+/// within [`MAX_ATTACHMENT_BYTES`]. The bounded read refuses a non-regular or
+/// oversized file from its metadata, before allocating.
+///
+/// # Errors
+///
+/// [`MeasurementErrorCode::AttachmentInvalid`] for an unsafe path, a symlinked
+/// component, a non-regular or oversized file, or a missing file, and the
+/// refusals of [`retain_attachment`].
+pub fn retain_attachment_file(
+    repo: &Path,
+    source: &str,
+    media_type: &str,
+) -> Result<AttachmentReference, MeasurementError> {
+    let invalid = |what: String| {
+        MeasurementError::new(
+            MeasurementErrorCode::AttachmentInvalid,
+            format!("attachment source {source:?}: {what}"),
+        )
+    };
+    let relative = RawEvidencePath::parse(source)
+        .map_err(|_| invalid("not a safe repository-relative path".to_owned()))?;
+    if let Some(component) = crate::store::publish::first_symlink_ancestor(repo, relative.as_str())
+    {
+        return Err(invalid(format!("`{component}` is a symlink")));
+    }
+    let path = repo.join(relative.as_str());
+    let bytes = read_regular_file_bounded(&path, MAX_ATTACHMENT_BYTES).map_err(|error| {
+        invalid(match error {
+            StoreError::ReadSourceTooLarge { .. } => {
+                format!("larger than {MAX_ATTACHMENT_BYTES} bytes")
+            }
+            other => other.to_string(),
+        })
+    })?;
+    retain_attachment(repo, media_type, &bytes)
 }
 
 /// Read a retained attachment back, verified against its reference.
@@ -205,6 +269,7 @@ pub fn read_attachment(
             format!("attachment {name}: malformed digest"),
         )
     })?;
+    refuse_symlinked_path(repo, &reference.digest, &name)?;
     let bytes = read_regular_file_bounded(&path, reference.byte_length).map_err(|error| {
         let code = match &error {
             StoreError::ReadSourceTooLarge { .. } => MeasurementErrorCode::AttachmentTampered,
@@ -276,11 +341,13 @@ pub fn collection_attachments(
     Ok(references)
 }
 
-/// Verify every attachment a candidate references is retained and intact.
-pub(crate) fn verify_candidate_attachments(
-    repo: &Path,
-    candidate: &JsonValue,
-) -> Result<(), MeasurementError> {
+/// Verify every attachment a collection document references is retained and
+/// intact.
+///
+/// # Errors
+///
+/// As [`collection_attachments`] and [`read_attachment`].
+pub fn verify_attachments(repo: &Path, candidate: &JsonValue) -> Result<(), MeasurementError> {
     for reference in collection_attachments(candidate)? {
         read_attachment(repo, &reference)?;
     }
@@ -310,5 +377,5 @@ pub fn verify_collection_attachments(
     let bytes = read_regular_file_bounded(&path, MAX_COLLECTION_BYTES)
         .map_err(|error| unreadable(&error))?;
     let value = parse_strict_json(&bytes).map_err(|error| unreadable(&error))?;
-    verify_candidate_attachments(repo, &value)
+    verify_attachments(repo, &value)
 }

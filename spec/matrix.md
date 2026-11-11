@@ -233,7 +233,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-122 | FR-122-AC-1, FR-122-AC-2, FR-122-AC-3, FR-122-AC-4, FR-122-AC-5, FR-122-AC-6, FR-122-AC-7 | TC-2109, TC-2110, TC-2111, TC-2112, TC-2113, TC-2114, TC-2115 | 🚧 Pending |
 | FR-123 | FR-123-AC-1, FR-123-AC-2, FR-123-AC-3, FR-123-AC-4, FR-123-AC-5, FR-123-AC-6, FR-123-AC-7, FR-123-AC-8, FR-123-AC-9 | TC-2120, TC-2121, TC-2122, TC-2123, TC-2124, TC-2125, TC-2126, TC-2127, TC-2128 | 🚧 Pending |
 | FR-124 | FR-124-AC-9 | TC-2135 | ✅ Covered |
-| FR-125 | FR-125-AC-1, FR-125-AC-2, FR-125-AC-3, FR-125-AC-4, FR-125-AC-5 | TC-2150, TC-2151, TC-2152, TC-2153, TC-2154 | ✅ Covered |
+| FR-125 | FR-125-AC-1, FR-125-AC-2, FR-125-AC-3, FR-125-AC-4, FR-125-AC-5, FR-125-AC-6, FR-125-AC-7 | TC-2150, TC-2151, TC-2152, TC-2153, TC-2154, TC-2155, TC-2156 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -1371,8 +1371,10 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-2150 | Retained bytes are named by their SHA-256: distinct bytes get distinct addresses, identical bytes reproduce one reference, and the bytes read back exactly | Unit | P0 | FR-125-AC-1 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_001` |
 | TC-2151 | A malformed `attachments` member (non-array, over count, duplicate, bad digest, empty media type, bad length) refuses as `QM-ATTACHMENT-INVALID` and writes no collection | Unit | P0 | FR-125-AC-2 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_002` |
 | TC-2152 | A reference to missing bytes refuses as `QM-ATTACHMENT-UNAVAILABLE`; a wrong declared length or address refuses as `QM-ATTACHMENT-TAMPERED`; no collection is written | Unit | P0 | FR-125-AC-3 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_003` |
-| TC-2153 | Editing, symlink-substituting or deleting a retained attachment after sealing makes verification refuse naming it; re-retaining over edited bytes replaces nothing | Unit | P0 | FR-125-AC-4 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_004` |
+| TC-2153 | Editing, symlink-substituting or deleting a retained attachment after sealing makes verification refuse naming it; re-retaining over edited bytes replaces nothing | Unit | P0 | FR-125-AC-4 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_004`, `tc_165_006` |
 | TC-2154 | A collection with attachments publishes, reads back with the member intact, verifies clean and recovers each attachment byte for byte | Unit | P0 | FR-125-AC-5 | ✅ `quoin-measurement` `tc_165_measurement_attachments.rs` :: `tc_165_005` |
+| TC-2155 | `quoin measurement attach` retains a regular repository file and refuses an absolute path, `..`, an empty path, a symlink at any component, a directory, a file over 64 MiB and a missing file as `QM-ATTACHMENT-INVALID`, retaining nothing | Integration | P0 | FR-125-AC-6 | ✅ `quoin-core` `tc_165_attachments.rs` :: `tc_165_101` |
+| TC-2156 | `quoin measurement verify` refuses, naming the attachment, when a referenced attachment is edited or deleted | Integration | P0 | FR-125-AC-7 | ✅ `quoin-core` `tc_165_attachments.rs` :: `tc_165_102` |
 
 ## Stakeholder Requirement Coverage
 

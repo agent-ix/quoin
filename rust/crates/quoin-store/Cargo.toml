@@ -16,7 +16,7 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
-sha2 = "0.10"
+sha2 = "=0.10.9"
 quire-canonical = { workspace = true }
 engineering-assurance = { workspace = true, features = ["atomic-publish"] }
 

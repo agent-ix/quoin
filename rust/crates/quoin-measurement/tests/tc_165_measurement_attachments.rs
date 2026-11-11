@@ -284,3 +284,33 @@ fn tc_165_005_a_collection_binds_and_recovers_binary_attachments() {
         [255, 254, 0, 0]
     );
 }
+
+#[trace("FR-125-AC-4", "TC-2153")]
+#[test]
+fn tc_165_006_a_symlink_at_any_component_of_the_retained_path_refuses() {
+    let temporary = repository();
+    let root = temporary.path();
+    let reference = retain_attachment(root, "a/b", BINARY).unwrap();
+
+    // The attachments directory itself is a link to a copy holding the bytes.
+    let store = root.join("spec/evidence");
+    let real = store.join("attachments");
+    let moved = root.join("moved");
+    std::fs::rename(&real, &moved).unwrap();
+    std::os::unix::fs::symlink(&moved, &real).unwrap();
+    let error = read_attachment(root, &reference).unwrap_err();
+    assert_eq!(error.code(), MeasurementErrorCode::AttachmentUnavailable);
+    assert!(error.subject().contains("symlink"), "{error}");
+    let error = retain_attachment(root, "a/b", BINARY).unwrap_err();
+    assert_eq!(error.code(), MeasurementErrorCode::AttachmentUnavailable);
+
+    // The final component is a link to correct bytes: store refuses it too.
+    std::fs::remove_file(&real).unwrap();
+    std::fs::rename(&moved, &real).unwrap();
+    let file = real.join(reference.digest_hex());
+    let copy = root.join("copy.bin");
+    std::fs::rename(&file, &copy).unwrap();
+    std::os::unix::fs::symlink(&copy, &file).unwrap();
+    let error = retain_attachment(root, "a/b", BINARY).unwrap_err();
+    assert_eq!(error.code(), MeasurementErrorCode::AttachmentUnavailable);
+}

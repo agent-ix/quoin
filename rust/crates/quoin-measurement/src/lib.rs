@@ -97,7 +97,8 @@ pub mod verify;
 
 pub use attachment::{
     AttachmentReference, MAX_ATTACHMENT_BYTES, MAX_COLLECTION_ATTACHMENTS, collection_attachments,
-    read_attachment, retain_attachment, verify_collection_attachments,
+    read_attachment, retain_attachment, retain_attachment_file, verify_attachments,
+    verify_collection_attachments,
 };
 pub use compare::compare_measurement_collections;
 pub use date_time::Rfc3339DateTime;

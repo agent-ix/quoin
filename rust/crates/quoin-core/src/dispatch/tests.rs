@@ -143,6 +143,11 @@ const OPS_SOURCES: &[(&str, &str, &str)] = &[
     ),
     (
         "measurement",
+        "measurement/attach.rs",
+        include_str!("../ops/measurement/attach.rs"),
+    ),
+    (
+        "measurement",
         "measurement/portfolio.rs",
         include_str!("../ops/measurement/portfolio.rs"),
     ),

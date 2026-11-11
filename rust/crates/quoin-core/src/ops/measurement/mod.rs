@@ -60,6 +60,7 @@
 //! one place a library failure becomes an exit status, and the four operation
 //! modules hold one group of routes each.
 
+mod attach;
 mod portfolio;
 mod produce;
 mod record;
@@ -80,14 +81,15 @@ use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
 pub use self::wire::{
-    AgentEvalRequest, GitHubReleaseRequest, GraphPortfolioRequest, MAX_ASSURANCE_DOCUMENT_BYTES,
-    MAX_COLLECTION_BYTES, MAX_GRAPH_MAPPING_BYTES, MAX_INTERVENTION_RECORD_BYTES,
-    MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES, MAX_PORTFOLIO_ROOTS_BYTES,
-    MAX_PRODUCER_DEFINITION_BYTES, MAX_RECORD_ID_BYTES, MAX_RETAINED_EXPORT_BYTES,
-    MAX_VERIFY_REQUEST_BYTES, MAX_WORKFLOW_YAML_BYTES, PathPayload, PortfolioRequest,
-    RecordRequest, RenderedPayload, RepoRequest, SeriesRequest, VerifyRequest,
+    AgentEvalRequest, AttachRequest, GitHubReleaseRequest, GraphPortfolioRequest,
+    MAX_ASSURANCE_DOCUMENT_BYTES, MAX_COLLECTION_BYTES, MAX_GRAPH_MAPPING_BYTES,
+    MAX_INTERVENTION_RECORD_BYTES, MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES,
+    MAX_PORTFOLIO_ROOTS_BYTES, MAX_PRODUCER_DEFINITION_BYTES, MAX_RECORD_ID_BYTES,
+    MAX_RETAINED_EXPORT_BYTES, MAX_VERIFY_REQUEST_BYTES, MAX_WORKFLOW_YAML_BYTES, PathPayload,
+    PortfolioRequest, RecordRequest, RenderedPayload, RepoRequest, SeriesRequest, VerifyRequest,
 };
 
+pub use self::attach::attach;
 pub use self::portfolio::{
     build_graph_portfolio, build_portfolio, render_graph_portfolio, render_portfolio,
 };

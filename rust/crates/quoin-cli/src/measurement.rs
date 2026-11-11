@@ -27,6 +27,23 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("input").long("input").required(true)),
         )
         .subcommand(
+            Command::new("attach")
+                .about("Retain a repository file as an immutable content-addressed attachment")
+                .arg(repo())
+                .arg(
+                    Arg::new("path")
+                        .long("path")
+                        .required(true)
+                        .help("The file to retain, relative to the repository (at most 64 MiB)."),
+                )
+                .arg(
+                    Arg::new("media-type")
+                        .long("media-type")
+                        .required(true)
+                        .help("The file's media type."),
+                ),
+        )
+        .subcommand(
             Command::new("verify")
                 .about("Decide a plan's verdict from its stored collections, independent of the producer")
                 .arg(repo())
@@ -69,6 +86,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     };
     match name {
         "record" => record(arguments),
+        "attach" => attach(arguments),
         "verify" => verify(arguments),
         "intervention" => produce(
             arguments,
@@ -94,6 +112,26 @@ fn record(arguments: &ArgMatches) -> Result<Response, String> {
         "measurement.record",
         &serde_json::json!({ "repo": repo, "record": record }),
     )
+}
+
+/// `quoin measurement attach` (FR-125): retain a repository file and print the
+/// reference to state in a collection's `attachments` member.
+#[implements("FR-125")]
+fn attach(arguments: &ArgMatches) -> Result<Response, String> {
+    let mut response = invoke(
+        "measurement.attach",
+        &serde_json::json!({
+            "repo": required(arguments, "repo")?,
+            "path": required(arguments, "path")?,
+            "media_type": required(arguments, "media-type")?,
+        }),
+    )?;
+    if response.outcome.carries_payload() {
+        let rendered = quoin_core::protocol::canonical_json(&response.payload)
+            .map_err(|error| error.to_string())?;
+        response.payload = serde_json::json!({ "rendered": rendered });
+    }
+    Ok(response)
 }
 
 /// `quoin measurement verify` (FR-108, PLAT-961): the independent verdict
