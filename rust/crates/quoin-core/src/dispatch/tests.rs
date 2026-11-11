@@ -633,6 +633,10 @@ fn census_of_the_evidence_domain() -> Vec<(&'static str, usize)> {
             crate::ops::evidence::MAX_ASSURANCE_RECORD_BYTES,
         ),
         (
+            "ops::evidence::MAX_SCENARIO_RECORD_BYTES",
+            crate::ops::evidence::MAX_SCENARIO_RECORD_BYTES,
+        ),
+        (
             "ops::evidence::MAX_AUDIT_INPUTS_BYTES",
             crate::ops::evidence::MAX_AUDIT_INPUTS_BYTES,
         ),
