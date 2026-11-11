@@ -7,6 +7,7 @@
 //! # Layout
 //!
 //! * [`json`] - the strict I-JSON reader and the two canonical writers.
+//! * [`attachment`] - the SHA-256 content address of a retained binary attachment.
 //! * [`bounded_read`] - the bounded, no-follow read of one regular file.
 //! * [`store`] - store paths, [`store::STORE_SCHEMA_VERSION`], and durable
 //!   atomic writes.
@@ -18,8 +19,9 @@
 //! `change-assurance/records/<record_id>/<revision>.json` and an attestation at
 //! `change-assurance/attestations/<attestation_id>/`. Both identities are
 //! assigned by the caller; nothing in a path is derived from the bytes it
-//! holds, so this crate computes no digest over either and git history is the
-//! tamper evidence.
+//! holds, so records carry no digest and git history is the tamper evidence. The
+//! one digest here is [`attachment`]'s address for opaque binary attachments,
+//! which binds a file to its bytes.
 //!
 //! # The frozen compatibility surface
 //!
@@ -40,6 +42,7 @@
 //!    precision beyond 2^53 is already lost in retained evidence.
 //! 7. **No Unicode normalization**, ever, on member names or string values.
 
+pub mod attachment;
 pub mod bounded_read;
 pub mod error;
 pub mod instant;

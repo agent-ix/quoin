@@ -2,10 +2,10 @@
 // Copyright (C) 2026 Agent-IX
 //! The bounded, no-follow read of one regular file.
 //!
-//! This crate computes no digest of anything: change-assurance records,
-//! attestations and receipts are addressed by `(record_id, revision)` or an
-//! assigned identity, and experiment and operational records carry an opaque
-//! UUID.
+//! Change-assurance records, attestations and receipts are addressed by
+//! `(record_id, revision)` or an assigned identity, and experiment and
+//! operational records carry an opaque UUID; only attachments are addressed by
+//! content (see [`crate::attachment`]).
 
 use crate::error::StoreError;
 

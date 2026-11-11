@@ -155,6 +155,18 @@ pub struct RecordRequest {
     pub record: serde_json::Value,
 }
 
+/// A repository file to retain as an attachment (FR-125).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttachRequest {
+    /// The repository root holding the measurement store.
+    pub repo: String,
+    /// The file to retain, relative to `repo`.
+    pub path: String,
+    /// The file's media type.
+    pub media_type: String,
+}
+
 /// A plan to verify, and the store holding its collections (FR-108).
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]

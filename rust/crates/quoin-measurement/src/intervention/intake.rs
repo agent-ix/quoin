@@ -132,6 +132,11 @@ impl From<MeasurementError> for InterventionIntakeError {
             // silently absorb.
             | MeasurementErrorCode::ArtifactNameUnsafe
             | MeasurementErrorCode::ArtifactUnreadable
+            // Raised only when a measurement collection is written (FR-125);
+            // kept for the same exhaustiveness reason.
+            | MeasurementErrorCode::AttachmentInvalid
+            | MeasurementErrorCode::AttachmentUnavailable
+            | MeasurementErrorCode::AttachmentTampered
             // Raised only by `validate::measurement_collection` (PLAT-960),
             // which intervention intake does not call; kept for the same
             // exhaustiveness reason as the two arms above.
