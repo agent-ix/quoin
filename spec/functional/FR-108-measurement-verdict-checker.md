@@ -146,6 +146,9 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `constant_predictor_rows_absent` | inconclusive | a `constant-predictor` baseline needs per-item answers by answer family, and the run being decided carries no per-item observations for its metric (PLAT-1016) |
 | `constant_predictor_rows_malformed` | inconclusive | one of the run's constant-predictor item observations lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats another's `item_id` (PLAT-1016) |
 | `constant_predictor_rows_mismatch` | inconclusive | the run's constant-predictor item observations do not number the governed observation's own `population.examined` (PLAT-1016) |
+| `constant_predictor_families_unstated` | inconclusive | a `constant-predictor` baseline is decided under a plan whose `statistical_design` states no `answer_families` (PLAT-1020) |
+| `constant_predictor_family_unexpected` | inconclusive | the run's constant-predictor item rows carry a `family` the plan's `answer_families` does not declare, such as two declared families written under a new name (PLAT-1020) |
+| `constant_predictor_family_missing` | inconclusive | a family the plan's `answer_families` declares has no constant-predictor item row, such as two declared families merged under one declared name (PLAT-1020) |
 | `external_reference_unsupplied` | inconclusive | a baseline rule reads `external-reference`, a per-dimension value the checker resolves from a source outside the plan at evaluation time, and the checker has no such source (PLAT-1032) |
 | `interval_unstated` | inconclusive | the plan's rule states `interval_level` and the candidate's observation states no valid `interval` (EA-26) |
 | `rule_not_evaluable` | inconclusive | engineering-assurance could not evaluate the rule on these numbers |
@@ -195,6 +198,8 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | FR-108-AC-21 | The criterion-strength live harness (`tests/live_criterion_strength.rs`, the `live-api` feature, ignored by default) builds its items with the offline mapping of FR-108-AC-23, builds the collection with `graded_corpus_collection` and, when the environment names a measurement repository, writes it through `write_measurement_collection`; with none named it writes nothing. The write comes before every assertion of the test, including the unanswered and unrecognized checks and the bars, so a failing pass still leaves its evidence stored. The write needs intake's preconditions: the named repository holds the governing plan under `spec/assurance`; that plan's `protected_apparatus` entries resolve in the repository and are all listed in the collection's `verificationStack.artifacts` (FR-110); and the plan is `active` with the `definition_version` and `repetitions` the collection states. End to end, the stored collection is decided by `quoin measurement verify` with a recomputed constant-predictor baseline only against a plan whose `statistical_design` declares `baseline: constant-predictor` with an `estimator: proportion` and a `decision_rule` (FR-108-AC-1). MP-228 states no `statistical_design` today, so `verify` on it is `inconclusive` with `no_decision_rule`; it is the intended future consumer once PLAT-1020 or the plan's owner adds that design, and the end-to-end live check applies from then, not before. | Test (TC-2020) |
 | FR-108-AC-22 | `graded_corpus_collection` states no `buildProfile`: it takes `verificationStack` from the caller and never invents it. Intake admits any stated `verificationStack.buildProfile` (FR-044-AC-14), so the harness states the profile it actually ran under and a debug build never states `release` falsely; a harness that skips the live write for a debug build says so on stderr with the reason. | Test (TC-2021) |
 | FR-108-AC-23 | The mapping from the harness's graded rows to `ConstantPredictorItem` (`item_id` the fixture id, `family` the answer space the fixture is graded in, `expected`, `contested`, `actual` the answer class) is a function separate from the live call, tested offline on the default path over the committed fixture corpus: it yields 15 items in two families, `weakness_kind` 11 and `coverage` 4 (FR-108's worked example), and `graded_corpus_collection` over them passes `quoin_measurement::validate` against a plan fixture. The live write itself is the only part gated by the environment and the `live-api` feature. | Test (TC-2022) |
+| FR-108-AC-24 | A `constant-predictor` baseline holds the run's item rows' distinct `family` values against the plan's `statistical_design.answer_families`, compared as a set (engineering-assurance FR-021), before computing anything: a plan stating none is `inconclusive` with `constant_predictor_families_unstated`; an item row whose `family` is not declared (two declared families merged under a new name, or one split) is `constant_predictor_family_unexpected`; a declared family with no item row (including two declared families merged under one of the declared names) is `constant_predictor_family_missing`. No baseline is computed in any of these cases, the same families in any order are accepted, and an undeclared family is reported before a missing one. | Test (TC-2300) |
+| FR-108-AC-25 | A plan whose `statistical_design.decision_rule.baseline` is `constant-predictor` and which states no `statistical_design.answer_families` is refused at load as `QM-PLAN-INVALID` naming `statistical_design.answer_families`; a plan that states the list loads. Only the current plan is held to this: an earlier revision without the list still parses when read as history, so the definition-change tamper findings between such revisions are kept. | Test (TC-2301, TC-2302) |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-108-AC-13 is withdrawn. It
 > required the engineering-assurance crate `version` to move to a stated value
@@ -325,10 +330,12 @@ not supported.
   separates a collapsed family from an honest one: in the worked example's
   own `weakness_kind` family, `weakness` never co-occurs with `sound` in any
   item's `contested`, so "disjoint label clusters" would flag the correct
-  grouping too. Closing this needs the plan to declare its families in
-  frontmatter so the checker can require the item rows' family set to equal
-  it — an engineering-assurance `MeasurementPlan` schema change, not a check
-  this crate can make alone.
+  grouping too. The plan therefore declares its families in
+  `statistical_design.answer_families` (engineering-assurance FR-021) and the
+  checker requires the item rows' family set to equal it
+  (`constant_predictor_family_unexpected`, `constant_predictor_family_missing`;
+  FR-108-AC-24). The list is the plan author's statement: the checker cannot
+  tell whether a declared family is itself a sound answer space.
 - **The tamper facts attest the history this clone presents.** A history
   rewritten and force-pushed so the tampering commits never existed leaves
   nothing for any reader of it to find; protection of the store's branch

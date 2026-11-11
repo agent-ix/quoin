@@ -75,6 +75,17 @@ pub enum Reason {
     /// number the governed observation's own `population.examined`: they are
     /// not the population the rate was measured over.
     ConstantPredictorRowsMismatch,
+    /// A `constant-predictor` baseline needs the plan's own
+    /// `statistical_design.answer_families` (PLAT-1020) to hold the item rows'
+    /// grouping against, and the plan states none.
+    ConstantPredictorFamiliesUnstated,
+    /// A `constant-predictor` baseline's item rows carry a `family` the plan's
+    /// `answer_families` does not declare (PLAT-1020): the producer grouped
+    /// differently than the plan, so the baseline is not computed.
+    ConstantPredictorFamilyUnexpected,
+    /// A family the plan's `answer_families` declares has no item row
+    /// (PLAT-1020): the producer dropped it, or merged it into another family.
+    ConstantPredictorFamilyMissing,
     /// The rule's baseline is `external-reference`: engineering-assurance
     /// defines it as a per-dimension value the calling checker resolves from
     /// a source outside the plan at evaluation time (PLAT-1032). Quoin has no
@@ -168,6 +179,9 @@ impl Reason {
         ConstantPredictorRowsAbsent,
         ConstantPredictorRowsMalformed,
         ConstantPredictorRowsMismatch,
+        ConstantPredictorFamiliesUnstated,
+        ConstantPredictorFamilyUnexpected,
+        ConstantPredictorFamilyMissing,
         ExternalReferenceUnsupplied,
         RuleNotEvaluable,
         UnitUnsupported,
@@ -229,6 +243,9 @@ impl Reason {
             Self::DefinitionChangedWithoutVersionBump => "definition_changed_without_version_bump",
             Self::ConstantPredictorRowsMalformed => "constant_predictor_rows_malformed",
             Self::ConstantPredictorRowsMismatch => "constant_predictor_rows_mismatch",
+            Self::ConstantPredictorFamiliesUnstated => "constant_predictor_families_unstated",
+            Self::ConstantPredictorFamilyUnexpected => "constant_predictor_family_unexpected",
+            Self::ConstantPredictorFamilyMissing => "constant_predictor_family_missing",
             Self::ExternalReferenceUnsupplied => "external_reference_unsupplied",
         }
     }
@@ -268,6 +285,9 @@ impl Reason {
             | Self::ConstantPredictorRowsAbsent
             | Self::ConstantPredictorRowsMalformed
             | Self::ConstantPredictorRowsMismatch
+            | Self::ConstantPredictorFamiliesUnstated
+            | Self::ConstantPredictorFamilyUnexpected
+            | Self::ConstantPredictorFamilyMissing
             | Self::ExternalReferenceUnsupplied
             | Self::RuleNotEvaluable
             | Self::UnitUnsupported

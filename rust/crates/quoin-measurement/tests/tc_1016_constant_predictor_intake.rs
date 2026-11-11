@@ -68,6 +68,9 @@ fn plan_document(metric: &str) -> String {
          \x20\x20\x20\x20comparator: gt\n\
          \x20\x20\x20\x20baseline: constant-predictor\n\
          \x20\x20\x20\x20margin: 0.05\n\
+         \x20\x20answer_families:\n\
+         \x20\x20\x20\x20- weakness_kind\n\
+         \x20\x20\x20\x20- coverage\n\
          ---\n\
          \n\
          # Example gate\n"
@@ -340,8 +343,8 @@ fn tc_1016_005_compare_leaves_item_rows_out() {
 fn tc_1016_006_lost_item_rows_are_inconclusive_not_a_smaller_baseline() {
     let plans = load(METRIC).unwrap();
     let mut observations = with_items(13, "MP-900");
-    // Drop the four `coverage` rows: 11 items against `examined: 15`.
-    observations.truncate(12);
+    // Drop the last `coverage` row: 14 items against `examined: 15`.
+    observations.truncate(15);
     let admitted = intake(&plans, &collection("run-1016", &observations)).unwrap();
     let result = verify(
         &plans[0],
@@ -359,4 +362,99 @@ fn tc_1016_006_lost_item_rows_are_inconclusive_not_a_smaller_baseline() {
     );
     assert_eq!(result.decisions[0].baseline, None);
     assert_eq!(result.decisions[0].holds, None);
+}
+
+/// Verify `observations` against the plan, as intake stores them.
+fn verdict_of(observations: &[Value]) -> quoin_measurement::verify::MeasurementVerdict {
+    let plans = load(METRIC).unwrap();
+    let admitted = intake(&plans, &collection("run-1020", observations)).unwrap();
+    verify(
+        &plans[0],
+        &[Ranked::new(&admitted, Some(0))],
+        TamperFacts::default(),
+        OrderSource::CallerSupplied,
+        None,
+    )
+}
+
+/// The checker holds the producer's item-row families to the plan's declared
+/// `answer_families`: a producer that merged the two declared families into
+/// one, or split one, is `inconclusive` with `constant_predictor_family_unexpected`,
+/// and one that lost a declared family entirely with
+/// `constant_predictor_family_missing`; no baseline is computed in either.
+///
+/// Provenance: PLAT-1020
+#[trace("FR-108-AC-24", "TC-2300")]
+#[test]
+fn tc_1020_001_item_row_families_that_differ_from_the_declared_list_are_inconclusive() {
+    let mut merged = with_items(13, "MP-900");
+    for row in &mut merged[1..] {
+        row["dimensions"]["family"] = json!("everything");
+    }
+    let result = verdict_of(&merged);
+    assert_eq!(result.verdict, Verdict::Inconclusive);
+    assert!(
+        result
+            .reasons
+            .contains(&Reason::ConstantPredictorFamilyUnexpected),
+        "{result:?}"
+    );
+    assert_eq!(result.decisions[0].baseline, None);
+
+    let mut split = with_items(13, "MP-900");
+    split[1]["dimensions"]["family"] = json!("weakness_kind_odd");
+    let result = verdict_of(&split);
+    assert!(
+        result
+            .reasons
+            .contains(&Reason::ConstantPredictorFamilyUnexpected),
+        "{result:?}"
+    );
+
+    let mut dropped = with_items(13, "MP-900");
+    dropped.truncate(12);
+    dropped[0] = aggregate(8);
+    dropped[0]["population"]["examined"] = json!(11);
+    dropped[0]["value"] = json!(8.0 / 11.0);
+    let result = verdict_of(&dropped);
+    assert!(
+        result
+            .reasons
+            .contains(&Reason::ConstantPredictorFamilyMissing),
+        "{result:?}"
+    );
+    assert_eq!(result.decisions[0].baseline, None);
+}
+
+/// A plan that declares `baseline: constant-predictor` must declare
+/// `statistical_design.answer_families`; without it the plan load is refused
+/// as `QM-PLAN-INVALID` naming the member.
+///
+/// Provenance: PLAT-1020
+#[trace("FR-108-AC-25", "TC-2301")]
+#[test]
+fn tc_1020_002_answer_families_are_required_with_constant_predictor() {
+    let try_load = |document: String| {
+        let temporary = tempfile::tempdir().expect("a temporary directory");
+        let assurance = temporary.path().join("spec").join("assurance");
+        std::fs::create_dir_all(&assurance).expect("creatable");
+        std::fs::write(assurance.join("MP-900.md"), document).expect("writable");
+        load_plans(temporary.path())
+    };
+    let document = plan_document(METRIC);
+
+    let without = document.replace(
+        "  answer_families:\n    - weakness_kind\n    - coverage\n",
+        "",
+    );
+    assert_ne!(without, document);
+    let error = try_load(without).unwrap_err();
+    assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid);
+    assert!(
+        error
+            .to_string()
+            .contains("statistical_design.answer_families")
+    );
+
+    assert!(try_load(document).is_ok());
 }
