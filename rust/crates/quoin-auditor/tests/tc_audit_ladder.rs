@@ -786,7 +786,7 @@ fn with_survivors(symbol: &str, score: f64, count: usize) -> RunEntry {
                 })
                 .collect(),
         ),
-        ..scored(symbol, Outcome::Fail, score, Some(MUTATION_SCORE_METRIC))
+        ..scored(symbol, Outcome::Pass, score, Some(MUTATION_SCORE_METRIC))
     }
 }
 
