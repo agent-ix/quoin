@@ -43,11 +43,45 @@ fn tc_2703_a_cargo_deny_scan_records_under_its_own_tool() {
         "suite": "SUITE-DENY",
         "tool": "cargo-deny 0.19.8",
         "timestamp": "2026-01-01T00:00:00Z",
-        "results": r#"{"type":"summary","fields":{}}"#,
+        "results": r#"{"type":"summary","fields":{"bans":{"errors":0,"warnings":0}}}"#,
     }));
     assert_eq!(payload["kind"], "scan", "{payload}");
     assert_eq!(payload["findings"], json!([]));
     assert!(!dir.path().join("spec/evidence/runs").exists());
+    // The record says which check ran.
+    let scans = dir.path().join("spec/evidence/scans/SUITE-DENY");
+    let written = fs::read_dir(&scans)
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    let text = fs::read_to_string(written).unwrap();
+    assert!(text.contains("ruleset") && text.contains("bans"), "{text}");
+}
+
+/// A failed cargo-deny run whose diagnostics were suppressed prints only a
+/// summary counting an error; recording it is refused and binds nothing.
+#[trace("FR-034-AC-25", "TC-2706")]
+#[test]
+fn tc_2706_a_failed_cargo_deny_run_is_not_recorded_as_clean() {
+    let dir = repo();
+    let response = dispatch(
+        "evidence.record",
+        &json!({
+            "repo": dir.path(),
+            "suite": "SUITE-DENY",
+            "tool": "cargo-deny 0.19.8",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "results": include_str!("../../quoin-evidence/tests/fixtures/cargo-deny-failed-real.jsonl"),
+            "discharges": ["SCA-1"],
+            "obligations": [obligation("SCA-1")],
+        }),
+        &RuntimeSettings::default(),
+    );
+    assert!(response.is_err(), "{response:?}");
+    assert!(!dir.path().join("spec/evidence/scans").exists());
+    assert!(!dir.path().join("spec/evidence/bindings.json").exists());
 }
 
 /// An SBOM carries no trace ids, so the obligation it discharges is stated
@@ -88,7 +122,7 @@ fn tc_2704_an_sbom_discharges_the_obligation_it_is_stated_to_check() {
 /// Without `--discharges` an SBOM binds nothing: it names no obligation.
 #[trace("FR-041-AC-7", "TC-2704")]
 #[test]
-fn tc_2704_an_sbom_with_no_stated_with_no_stated_obligation_binds_nothing() {
+fn tc_2704_an_sbom_with_no_stated_obligation_binds_nothing() {
     let dir = repo();
     let payload = record(&json!({
         "repo": dir.path(),
@@ -100,4 +134,52 @@ fn tc_2704_an_sbom_with_no_stated_with_no_stated_obligation_binds_nothing() {
         "obligations": [obligation("SCA-1")],
     }));
     assert_eq!(payload["bound"], json!([]));
+}
+
+/// An inventory listing nothing has no entry to carry the stated id, so the
+/// id is checked against the obligations directly and still reported.
+#[trace("FR-041-AC-8", "TC-2705")]
+#[test]
+fn tc_2705_an_empty_sbom_still_reports_a_stated_id_no_obligation_states() {
+    let dir = repo();
+    let payload = record(&json!({
+        "repo": dir.path(),
+        "suite": "SUITE-SBOM",
+        "tool": "syft 1.0.0",
+        "timestamp": "2026-01-01T00:00:00Z",
+        "adapter": "sbom",
+        "results": r#"{"bomFormat":"CycloneDX","components":[]}"#,
+        "discharges": ["SCA-1", "NO-SUCH-1"],
+        "obligations": [obligation("SCA-1")],
+    }));
+    assert_eq!(payload["bound"], json!([]));
+    assert_eq!(payload["unmatched"], json!(["NO-SUCH-1"]));
+}
+
+/// A test run derives what it discharges from its own trace ids; stating an
+/// obligation on one would let a red suite discharge it, so it is refused.
+#[trace("FR-041-AC-9", "TC-2708")]
+#[test]
+fn tc_2708_discharges_is_refused_on_a_test_run_adapter() {
+    let dir = repo();
+    let response = dispatch(
+        "evidence.record",
+        &json!({
+            "repo": dir.path(),
+            "suite": "unit",
+            "tool": "vitest 1.0.0",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "adapter": "junit",
+            "results": r#"<testsuite name="unit"><testcase name="t"><failure/></testcase></testsuite>"#,
+            "discharges": ["SCA-1"],
+            "obligations": [obligation("SCA-1")],
+        }),
+        &RuntimeSettings::default(),
+    );
+    let error = response.unwrap_err().to_string();
+    assert!(
+        error.contains("--discharges") && error.contains("junit"),
+        "{error}"
+    );
+    assert!(!dir.path().join("spec/evidence/runs").exists());
 }

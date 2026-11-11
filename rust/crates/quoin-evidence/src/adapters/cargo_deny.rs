@@ -9,7 +9,9 @@
 //! proof the scan executed**, the same job the SARIF `run` envelope does and
 //! `vulnerabilities.found` does for cargo-audit. A clean run is a summary with
 //! zero diagnostics before it; a run that never completed has no summary and is
-//! refused rather than read as clean.
+//! refused rather than read as clean. A summary counting more errors and
+//! warnings than the diagnostics read is refused too: `--log-level off` prints
+//! the summary alone, so the summary's presence is not enough.
 //!
 //! cargo-deny reports no count of the rules it evaluated, so `rules_evaluated`
 //! stays unset: the vacuity question cannot be asked, and the check stays
@@ -23,12 +25,22 @@ use crate::types::Finding;
 
 /// Parse `cargo deny --format json check` output.
 ///
+/// The `summary` must be the last non-empty line and appear once; it must name
+/// at least one check, which is recorded as the `ruleset` so the evidence says
+/// which checks ran. Its error and warning counts must be accounted for by the
+/// diagnostics read: a run whose diagnostics were suppressed (`--log-level off`)
+/// reports `"errors":1` beside no diagnostic, and reading that as clean would
+/// turn a failed run into a discharge.
+///
 /// # Errors
 ///
-/// Refuses a line that is not JSON and output with no `summary` object.
+/// Refuses a line that is not JSON, output without exactly one trailing
+/// `summary`, a summary naming no check, and a summary counting more errors and
+/// warnings than the diagnostics read.
 pub fn parse_cargo_deny(raw: &str) -> Result<FindingResult, EvidenceError> {
     let mut findings: Vec<Finding> = Vec::new();
-    let mut summarised = false;
+    let mut counted_diagnostics: u64 = 0;
+    let mut summary: Option<Value> = None;
     for (index, line) in raw.lines().enumerate() {
         if line.trim().is_empty() {
             continue;
@@ -39,40 +51,78 @@ pub fn parse_cargo_deny(raw: &str) -> Result<FindingResult, EvidenceError> {
                 format!("line {} is not JSON: {error}", index.saturating_add(1)),
             )
         })?;
+        if summary.is_some() {
+            return Err(refuse(
+                "the `summary` object must be the last line and appear once",
+            ));
+        }
         match object.get("type").and_then(Value::as_str) {
-            Some("summary") => summarised = true,
+            Some("summary") => summary = Some(object),
             Some("diagnostic") => {
-                if let Some(finding) = object.get("fields").and_then(diagnostic_finding) {
-                    findings.push(finding);
+                if let Some(fields) = object.get("fields") {
+                    if matches!(
+                        fields.get("severity").and_then(Value::as_str),
+                        Some("error" | "warning")
+                    ) {
+                        counted_diagnostics = counted_diagnostics.saturating_add(1);
+                    }
+                    findings.push(diagnostic_finding(fields));
                 }
             }
             _ => {}
         }
     }
-    if !summarised {
-        return Err(EvidenceError::adapter(
-            "cargo-deny",
+    let Some(summary) = summary else {
+        return Err(refuse(
             "no `summary` object — expected complete `cargo deny --format json check` output; a run that never finished proves no scan executed",
         ));
+    };
+    let checks: Vec<(&String, &Value)> = summary
+        .get("fields")
+        .and_then(Value::as_object)
+        .map(|fields| fields.iter().filter(|(_, v)| v.is_object()).collect())
+        .unwrap_or_default();
+    if checks.is_empty() {
+        return Err(refuse(
+            "the `summary` names no check — it proves nothing was evaluated",
+        ));
     }
+    let reported: u64 = checks
+        .iter()
+        .flat_map(|(_, counts)| ["errors", "warnings"].map(|key| counts.get(key)))
+        .filter_map(|count| count?.as_u64())
+        .fold(0, u64::saturating_add);
+    if reported > counted_diagnostics {
+        return Err(refuse(format!(
+            "the `summary` counts {reported} error and warning diagnostics but only {counted_diagnostics} were read — the run failed or its diagnostics were suppressed (`--log-level off`), so it is not a clean scan"
+        )));
+    }
+    let mut names: Vec<&str> = checks.iter().map(|(name, _)| name.as_str()).collect();
+    names.sort_unstable();
     Ok(FindingResult {
         findings,
         tool: Some("cargo-deny".to_owned()),
-        ruleset: None,
+        ruleset: Some(names.join(",")),
         rules_evaluated: None,
     })
 }
 
+fn refuse(message: impl Into<String>) -> EvidenceError {
+    EvidenceError::adapter("cargo-deny", message)
+}
+
 /// One diagnostic as a finding. An advisory is identified by its RUSTSEC id,
-/// anything else by the check's own `code`; a diagnostic with neither is
-/// skipped. The severity is the tool's word, never normalized (FR-034-CON-2).
-fn diagnostic_finding(fields: &Value) -> Option<Finding> {
+/// anything else by the check's own `code`, and a diagnostic with neither is
+/// kept as `unclassified` rather than dropped. The severity is the tool's word,
+/// never normalized (FR-034-CON-2).
+fn diagnostic_finding(fields: &Value) -> Finding {
     let rule_id = fields
         .get("advisory")
         .and_then(|advisory| advisory.get("id"))
         .and_then(Value::as_str)
         .or_else(|| fields.get("code").and_then(Value::as_str))
-        .filter(|id| !id.is_empty())?;
+        .filter(|id| !id.is_empty())
+        .unwrap_or("unclassified");
     let mut finding = Finding::new(rule_id);
     finding.severity = fields
         .get("severity")
@@ -94,5 +144,5 @@ fn diagnostic_finding(fields: &Value) -> Option<Finding> {
                 None => name.to_owned(),
             })
         });
-    Some(finding)
+    finding
 }

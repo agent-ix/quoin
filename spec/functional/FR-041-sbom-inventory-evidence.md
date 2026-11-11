@@ -75,7 +75,12 @@ obligation) has nothing to read. The recorder therefore states the obligation, a
 (FR-034-AC-16): `quoin evidence record --adapter sbom --discharges <obligation-id>` adds the stated id to
 every entry as a trace id, so the inventory binds through the same join and under the same rules as any run
 — each passing component is a symbol bound to the obligation, an id no obligation states is reported
-`unmatched`, and an inventory listing nothing has no entry to bind and discharges nothing.
+`unmatched` (checked against the obligations directly, so an inventory listing nothing still reports it), and an
+inventory listing nothing has no entry to bind and discharges nothing.
+
+`--discharges` is accepted on the sbom adapter and on finding-shaped recordings, and **refused on every other run
+adapter** with an error naming the adapter: a test run derives what it discharges from the trace ids its entries
+carry, and stating an obligation on one would let a failing suite discharge it.
 
 ### quoin does not generate the SBOM
 
@@ -92,7 +97,8 @@ The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produc
 | FR-041-AC-5 | A component with neither purl nor name is dropped rather than given an invented identity. | Test (TC-235) |
 | FR-041-AC-6 | The adapter is selected by `--adapter sbom` and by the tools that emit these formats. | Test (TC-236) |
 | FR-041-AC-7 | `--discharges` on an SBOM recording binds the stated obligation to the components it listed; without `--discharges` the SBOM binds nothing. | Test (TC-2704) |
-| FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing. | Test (TC-2705) |
+| FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing, including when the inventory lists no component. | Test (TC-2705) |
+| FR-041-AC-9 | `--discharges` on a run adapter other than sbom is refused with an error naming the adapter, and records nothing. | Test (TC-2708) |
 
 ## Constraints
 

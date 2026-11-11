@@ -20,6 +20,8 @@ use ix_trace_rs::trace;
 use quoin_evidence::adapters::{AdapterSelection, parse_cargo_deny, select_finding_adapter};
 
 const BANNED: &str = include_str!("fixtures/cargo-deny-real.jsonl");
+const FAILED: &str = include_str!("fixtures/cargo-deny-failed-real.jsonl");
+const BANS_ONLY: &str = include_str!("fixtures/cargo-deny-bans-real.jsonl");
 const CLEAN: &str = include_str!("fixtures/cargo-deny-clean-real.jsonl");
 
 /// A diagnostic becomes a finding carrying the check's code, the tool's own
@@ -50,7 +52,7 @@ fn tc_2700_an_advisory_diagnostic_is_identified_by_its_advisory_id() {
     let raw = concat!(
         r#"{"type":"diagnostic","fields":{"code":"vulnerability","severity":"error","message":"m","advisory":{"id":"RUSTSEC-2000-0001"},"graphs":[{"Krate":{"name":"p","version":"1.0.0"}}]}}"#,
         "\n",
-        r#"{"type":"summary","fields":{}}"#,
+        r#"{"type":"summary","fields":{"advisories":{"errors":1,"warnings":0}}}"#,
     );
     let result = parse_cargo_deny(raw).unwrap();
     assert_eq!(result.findings[0].rule_id, "RUSTSEC-2000-0001");
@@ -86,6 +88,57 @@ fn tc_2702_output_with_no_summary_or_not_json_is_refused() {
             .unwrap_err()
             .to_string()
             .contains("line 1 is not JSON")
+    );
+}
+
+/// A failed run printed under `--log-level off` is only a summary counting an
+/// error. It is real output, and it must not read as a clean scan.
+#[trace("FR-034-AC-25", "TC-2706")]
+#[test]
+fn tc_2706_a_summary_counting_more_than_the_diagnostics_read_is_refused() {
+    let error = parse_cargo_deny(FAILED).unwrap_err().to_string();
+    assert!(error.contains("counts 3 error and warning"), "{error}");
+    // The same count with its diagnostic present is a finding, not a refusal.
+    let raw = concat!(
+        r#"{"type":"diagnostic","fields":{"code":"rejected","severity":"error","message":"m"}}"#,
+        "\n",
+        r#"{"type":"summary","fields":{"licenses":{"errors":1,"warnings":0}}}"#,
+    );
+    assert_eq!(parse_cargo_deny(raw).unwrap().findings.len(), 1);
+}
+
+/// The summary must name a check, is recorded as the ruleset, and is exactly
+/// one and last. A diagnostic with no id is kept, not dropped.
+#[trace("FR-034-AC-26", "TC-2707")]
+#[test]
+fn tc_2707_the_summary_names_the_checks_that_ran_and_closes_the_output() {
+    assert_eq!(
+        parse_cargo_deny(BANS_ONLY).unwrap().ruleset.as_deref(),
+        Some("bans")
+    );
+    assert_eq!(
+        parse_cargo_deny(CLEAN).unwrap().ruleset.as_deref(),
+        Some("advisories,bans,licenses,sources")
+    );
+    assert!(
+        parse_cargo_deny(r#"{"type":"summary","fields":{}}"#)
+            .unwrap_err()
+            .to_string()
+            .contains("names no check")
+    );
+    let twice = format!("{BANS_ONLY}\n{BANS_ONLY}");
+    assert!(parse_cargo_deny(&twice).is_err());
+    let mut trailing = BANNED.to_owned();
+    trailing.push_str(BANNED.lines().next().unwrap());
+    assert!(parse_cargo_deny(&trailing).is_err());
+    let nameless = concat!(
+        r#"{"type":"diagnostic","fields":{"severity":"warning","message":"m"}}"#,
+        "\n",
+        r#"{"type":"summary","fields":{"bans":{"errors":0,"warnings":1}}}"#,
+    );
+    assert_eq!(
+        parse_cargo_deny(nameless).unwrap().findings[0].rule_id,
+        "unclassified"
     );
 }
 

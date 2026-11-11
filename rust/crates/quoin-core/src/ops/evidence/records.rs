@@ -208,16 +208,31 @@ fn record_entries(
     let result = (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?;
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
     // An inventory (SBOM) names no obligation, so the recorder states which
-    // one it was produced to discharge. Stating it puts the id on every entry
-    // as a trace id, which is the one join `record_run` already makes, so the
-    // same rules apply: only a passing entry binds, and an id no obligation
-    // states comes back as `unmatched` rather than vanishing.
+    // one it was produced to discharge (FR-041). A stated id an obligation
+    // states goes onto every entry as a trace id, which is the one join
+    // `record_run` already makes, so only a passing entry binds. An id no
+    // obligation states is reported `unmatched` here, so an inventory with no
+    // entries cannot swallow it. Only the sbom adapter takes `--discharges`: on
+    // a test run it would let a red suite discharge a stated obligation.
     let stated = stated_obligations(&request.discharges);
+    if !stated.is_empty() && adapter.name != "sbom" {
+        return Err(CoreError::new(
+            CoreErrorCode::BadRequest,
+            format!(
+                "--discharges applies to finding-shaped recordings and the sbom adapter; the {} adapter derives what it discharges from the trace ids its entries carry",
+                adapter.name
+            ),
+        )
+        .with_context("op", op));
+    }
+    let (known, unknown): (Vec<String>, Vec<String>) = stated
+        .into_iter()
+        .partition(|id| request.obligations.iter().any(|o| &o.id == id));
     let mut entries = result.entries;
-    if !stated.is_empty() {
-        for entry in &mut entries {
+    for entry in &mut entries {
+        if !known.is_empty() {
             let trace_ids = entry.trace_ids.get_or_insert_with(Vec::new);
-            for id in &stated {
+            for id in &known {
                 if !trace_ids.contains(id) {
                     trace_ids.push(id.clone());
                 }
@@ -242,7 +257,13 @@ fn record_entries(
         value(&RecordPayload::Run {
             run_path: absolute(&root, &outcome.run_path),
             bound: outcome.bound,
-            unmatched: outcome.unmatched,
+            unmatched: {
+                let mut unmatched = outcome.unmatched;
+                unmatched.extend(unknown.iter().cloned());
+                unmatched.sort();
+                unmatched.dedup();
+                unmatched
+            },
             unrepresented: unrepresented.clone(),
         })
     })
