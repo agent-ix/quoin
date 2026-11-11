@@ -18,9 +18,10 @@ use quoin_store::JsonValue;
 use crate::common::scalar::js_f64_string;
 use crate::error::MeasurementErrorCode as Code;
 use crate::json_bridge::to_serde;
+use crate::population_set::{self, SetFault, StatedCount};
 use crate::report::render::metric_label;
 use crate::types::observation::{MeasurementObservation, MeasurementState};
-use crate::types::plan::MeasurementPlan;
+use crate::types::plan::{MeasurementPlan, StatisticalDesign};
 
 /// One typed population finding, and the `observations[i]`-relative JSON path
 /// of the member it concerns.
@@ -59,6 +60,9 @@ pub(super) fn findings(
     let minimum = design.and_then(|design| design.minimum_population);
     let required = design.and_then(|design| design.repetitions);
     let requires_repetitions = required.is_some_and(|required| required.get() > 1);
+    let strict = minimum.is_some()
+        || requires_repetitions
+        || design.is_some_and(|design| design.population_set.is_some());
     let label = metric_label(
         observation.metric.as_str(),
         observation.dimensions.entries(),
@@ -70,7 +74,7 @@ pub(super) fn findings(
         None => None,
         Some(JsonValue::Object(population)) => Some(population),
         Some(other) => {
-            if minimum.is_some() || requires_repetitions {
+            if strict {
                 out.push(malformed(&label, "population", other, "an object"));
             }
             return out;
@@ -102,34 +106,10 @@ pub(super) fn findings(
     if observation.state != MeasurementState::Measured {
         return out;
     }
-    let Some(plan) = plan else {
-        return out;
-    };
+    let Some(plan) = plan else { return out };
+    out.extend(set_finding(design, population, &label, plan));
     if let Some(minimum) = minimum {
-        out.extend(threshold(
-            &examined,
-            minimum,
-            true,
-            "population.examined",
-            || {
-                format!(
-                    "metric `{label}` states no population.examined; plan {} requires a \
-                     population of at least {minimum}",
-                    plan.id
-                )
-            },
-            |examined| {
-                (
-                    Code::PopulationBelowMinimum,
-                    format!(
-                        "metric `{label}` examined {examined} but plan {} requires a population \
-                         of at least {minimum}",
-                        plan.id
-                    ),
-                    "population.examined",
-                )
-            },
-        ));
+        out.extend(minimum_finding(&examined, minimum, &label, plan));
     }
     if let Some(required) = required {
         out.extend(threshold(
@@ -158,6 +138,68 @@ pub(super) fn findings(
         ));
     }
     out
+}
+
+/// The finding, if any, for an `examined` count against the plan's minimum.
+fn minimum_finding(
+    examined: &Stated,
+    minimum: NonZeroU32,
+    label: &str,
+    plan: &MeasurementPlan,
+) -> Option<Finding> {
+    let unstated = || {
+        format!(
+            "metric `{label}` states no population.examined; plan {} requires a population of \
+             at least {minimum}",
+            plan.id
+        )
+    };
+    let short = |examined: String| {
+        (
+            Code::PopulationBelowMinimum,
+            format!(
+                "metric `{label}` examined {examined} but plan {} requires a population of at \
+                 least {minimum}",
+                plan.id
+            ),
+            "population.examined",
+        )
+    };
+    threshold(
+        examined,
+        minimum,
+        true,
+        "population.examined",
+        unstated,
+        short,
+    )
+}
+
+/// The finding, if any, for not stating the plan's
+/// declared population (PLAT-110).
+fn set_finding(
+    design: Option<&StatisticalDesign>,
+    population: Option<&quoin_store::JsonObject>,
+    label: &str,
+    plan: &MeasurementPlan,
+) -> Option<Finding> {
+    let set = design?.population_set.as_ref()?;
+    let member = |name: &str| population.and_then(|population| population.get(name));
+    let fault = population_set::check(
+        set,
+        member(population_set::EXAMINED_IDS),
+        member(population_set::MATCHED_IDS),
+        StatedCount::of(member(population_set::EXAMINED)),
+        StatedCount::of(member(population_set::MATCHED)),
+    )
+    .err()?;
+    let code = match fault {
+        SetFault::Unstated(_) => Code::PopulationUnstated,
+        SetFault::Malformed(..) => Code::PopulationMalformed,
+        SetFault::Outside(..) => Code::PopulationOutsideSet,
+        SetFault::Partial(_) => Code::PopulationPartial,
+    };
+    Some((code, fault.describe(label, plan.id.as_str()), fault.path()))
 }
 
 /// Read one stated count, calling `report` when it is stated but is not a

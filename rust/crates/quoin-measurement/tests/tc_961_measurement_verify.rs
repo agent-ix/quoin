@@ -161,6 +161,7 @@ fn design(estimator: Estimator) -> StatisticalDesign {
         estimator: Some(estimator),
         decision_rule: Some(DecisionRule::against_threshold(Comparator::Ge, 0.8).unwrap()),
         answer_families: None,
+        population_set: None,
     }
 }
 
