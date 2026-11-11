@@ -84,7 +84,9 @@ pub fn load_measurement_plans<S: MeasurementSource + ?Sized>(
     options: PlanLoadOptions,
 ) -> Result<Vec<MeasurementPlan>, MeasurementError> {
     let mut plans = discovery::documents(source, "MeasurementPlan", |path, value, _text| {
-        plan_from(path, value, options)
+        let plan = plan_from(path, value, options)?;
+        design::require_answer_families(path, plan.statistical_design.as_ref())?;
+        Ok(plan)
     })?;
     // Stable, so documents that agree on metric and id keep the walk's own
     // path order, as `Array.prototype.sort` does in V8.
@@ -109,7 +111,9 @@ pub(crate) fn load_selected_measurement_plans<S: MeasurementSource + ?Sized>(
             .and_then(serde_json::Value::as_str)
             .is_some_and(|id| ids.contains(id))
         {
-            plan_from(path, value, PlanLoadOptions::default()).map(Some)
+            let plan = plan_from(path, value, PlanLoadOptions::default())?;
+            design::require_answer_families(path, plan.statistical_design.as_ref())?;
+            Ok(Some(plan))
         } else {
             Ok(None)
         }
@@ -203,6 +207,7 @@ pub(crate) fn plan_from(
         }
     }
     let cross_profile_comparison = design::cross_profile_comparison_from(path, value)?;
+    let paired_run = design::paired_run_from(path, value, objective)?;
     Ok(MeasurementPlan {
         id,
         title,
@@ -220,6 +225,7 @@ pub(crate) fn plan_from(
         protected_apparatus,
         negative_controls,
         cross_profile_comparison,
+        paired_run,
     })
 }
 

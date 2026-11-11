@@ -10,12 +10,12 @@ use std::cmp::Ordering;
 use std::num::NonZeroU32;
 
 use engineering_assurance::measurement::{
-    AnswerFamilies, DecisionRule, Direction, Estimator, Objective,
+    AnswerFamilies, Baseline, DecisionRule, Direction, Estimator, Objective, RuleReference,
 };
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
-use crate::types::plan::{GroundTruthKind, StatisticalDesign};
+use crate::types::plan::{GroundTruthKind, PairedRelation, PairedRun, StatisticalDesign};
 
 use super::CODE;
 
@@ -38,6 +38,88 @@ pub(super) fn cross_profile_comparison_from(
             )
         }),
     }
+}
+
+/// Read the optional `paired_run` block, `None` when absent.
+///
+/// `relation` is one of `equal`, `within_delta`, `not_worse`; `minimum_pairs`
+/// is a whole number of at least 1, 1 when absent; `delta` is a finite number above 0
+/// and is required exactly when the relation is `within_delta`. `not_worse`
+/// needs an `objective` whose direction can rank two values.
+///
+/// # Errors
+///
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] naming the member that
+/// is missing, mistyped, or not allowed.
+pub(super) fn paired_run_from(
+    path: &str,
+    value: &serde_json::Value,
+    objective: Option<Objective>,
+) -> Result<Option<PairedRun>, MeasurementError> {
+    let Some(block) = value.get("paired_run") else {
+        return Ok(None);
+    };
+    let refuse =
+        |reason: String| MeasurementError::new(CODE, format!("{path}: paired_run {reason}"));
+    let Some(block) = block.as_object() else {
+        return Err(refuse(format!("must be an object; found {block}")));
+    };
+    if let Some(unknown) = block
+        .keys()
+        .find(|key| !["relation", "minimum_pairs", "delta"].contains(&key.as_str()))
+    {
+        return Err(refuse(format!("member `{unknown}` is not defined")));
+    }
+    let minimum_pairs = match block.get("minimum_pairs") {
+        None => NonZeroU32::MIN,
+        Some(stated) => stated
+            .as_u64()
+            .and_then(|count| u32::try_from(count).ok())
+            .and_then(NonZeroU32::new)
+            .ok_or_else(|| {
+                refuse("minimum_pairs must be a whole number from 1 to 4294967295".to_owned())
+            })?,
+    };
+    let delta = match block.get("delta") {
+        None => None,
+        Some(stated) => Some(
+            stated
+                .as_f64()
+                .filter(|delta| delta.is_finite() && *delta > 0.0)
+                .ok_or_else(|| refuse(format!("delta must be a number above 0; found {stated}")))?,
+        ),
+    };
+    let relation = match block.get("relation").and_then(serde_json::Value::as_str) {
+        Some("equal") if delta.is_none() => PairedRelation::Equal,
+        Some("not_worse") if delta.is_none() => {
+            let ranked = objective.is_some_and(|objective| {
+                objective.direction() != Direction::Target || objective.bound().is_some()
+            });
+            if !ranked {
+                return Err(refuse(
+                    "relation not_worse needs an objective that ranks two values".to_owned(),
+                ));
+            }
+            PairedRelation::NotWorse
+        }
+        Some("within_delta") => PairedRelation::WithinDelta(
+            delta.ok_or_else(|| refuse("relation within_delta needs a delta".to_owned()))?,
+        ),
+        Some("equal" | "not_worse") => {
+            return Err(refuse(
+                "delta is allowed only with relation within_delta".to_owned(),
+            ));
+        }
+        _ => {
+            return Err(refuse(
+                "relation must be one of equal, within_delta, not_worse".to_owned(),
+            ));
+        }
+    };
+    Ok(Some(PairedRun {
+        relation,
+        minimum_pairs,
+    }))
 }
 
 /// Read the optional `ground_truth_kind`, or `None` when the document does
@@ -177,6 +259,43 @@ pub(super) fn statistical_design_from(
         decision_rule,
         answer_families,
     }))
+}
+
+/// Refuse a plan that declares `baseline: constant-predictor` without
+/// `statistical_design.answer_families` (engineering-assurance FR-021).
+///
+/// Applied only when loading the current plans, not by the history parser:
+/// an earlier revision of a plan may predate the list, and must still be
+/// readable so tamper detection can compare it with its successor.
+///
+/// # Errors
+///
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] naming
+/// `statistical_design.answer_families`.
+pub(super) fn require_answer_families(
+    path: &str,
+    design: Option<&StatisticalDesign>,
+) -> Result<(), MeasurementError> {
+    let Some(design) = design else {
+        return Ok(());
+    };
+    let constant_predictor = matches!(
+        design.decision_rule.map(|rule| rule.reference()),
+        Some(RuleReference::Baseline {
+            baseline: Baseline::ConstantPredictor,
+            ..
+        })
+    );
+    if constant_predictor && design.answer_families.is_none() {
+        return Err(MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: statistical_design.answer_families is required when \
+                 decision_rule.baseline is constant-predictor"
+            ),
+        ));
+    }
+    Ok(())
 }
 
 /// Refuse a decision rule whose comparator disagrees with the plan's

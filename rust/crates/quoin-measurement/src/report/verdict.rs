@@ -265,7 +265,7 @@ pub fn stage_verdict(
 /// `higher` → `-value`; `lower` → `value`; `zero` → `|value|`; `target` →
 /// `|value - bound|`. The one place a direction's meaning of "better" is
 /// written down.
-fn badness(objective: Objective, value: f64) -> Option<f64> {
+pub(crate) fn badness(objective: Objective, value: f64) -> Option<f64> {
     match objective.direction() {
         Direction::Higher => Some(-value),
         Direction::Lower => Some(value),
