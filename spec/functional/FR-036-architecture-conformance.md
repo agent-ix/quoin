@@ -78,8 +78,8 @@ distinction matters more than the precedent.
 
 Written as shell, the executor check reported five violations on its first run. Every one was
 `LINE.exec(line)`: `RegExp.exec` read as `child_process.exec` by a regex that cannot tell them apart.
-Bad rule, not bad corpus. The TypeScript compiler API can tell them apart, so it is used, and the
-checks run in `make test` where every other assertion about this repository lives.
+Bad rule, not bad corpus. A test over the workspace's resolved dependency graph and its Rust sources
+can tell them apart, so it is used, and the checks run in `make test` where every other assertion about this repository lives.
 
 The adapter is unaffected by that choice — it reads `quire-rs`'s seven existing scripts, which remain
 the right shape for that repository. Whether those seven should instead be `cargo deny` bans and
@@ -87,14 +87,12 @@ clippy lints is `agent-ix/quire-rs#178`.
 
 ### The two boundaries quoin declares
 
-**Commands are leaves.** The library is what the plugin API, the skills and every consumer import;
-oclif is a delivery surface on top. An import in the other direction makes the library unusable
-without the CLI framework, and `tsc` accepts a cycle that only bites at runtime in whichever host
-loads it first.
+**The CLI is a leaf.** The engine crates are what every consumer links; `quoin-cli` is a delivery
+surface on top. A dependency in the other direction makes the engine unusable without the CLI.
 
-**quoin executes exactly `git`, `quire` and `ix-flow`.** This is ADR-0011 invariant 1 made mechanical.
+**quoin executes exactly `git` and `ix-flow`** (plus the operator's `$EDITOR` for `config edit`). `quire` is a library dependency now, not a subprocess. This is ADR-0011 invariant 1 made mechanical.
 A run record's claim is *"this ran in your CI"*, which holds only while quoin is not the thing running
-it. NFR-007 names `quire` and `ix-flow`; `git` is the repository inspection the corpus enumeration uses.
+it. `git` is the repository inspection the corpus enumeration uses.
 
 The set is asserted **whole and sorted**, not as membership. A new binary fails by default rather than
 passing until someone remembers to extend a list — the failure mode of every denylist, and the one
@@ -111,10 +109,10 @@ be read, and a check that silently ignores what it cannot read is asserting over
 | FR-036-AC-2 | A `FAIL` line becomes a finding carrying the acceptance criterion the script names. | Test (TC-198) |
 | FR-036-AC-3 | `OK` lines count toward rules evaluated, so a clean run is not vacuous. | Test (TC-199) |
 | FR-036-AC-4 | Output containing no recognised audit line is rejected. | Test (TC-200) |
-| FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape. | Test (TC-201) |
+| FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape (`audit-script`, `audit-static`, `import-linter`, `dependency-cruiser`, `make ci`); a scan recorded under any of them, with or without `--adapter audit-script`, is accepted, because the format names no producer to disagree with `--tool`. | Test (TC-201, TC-2900) |
 | FR-036-AC-6 | An architectural statement is advised `architecture-conformance`, with both halves of the catalog's rule matching. | Test (TC-204, TC-205) |
-| FR-036-AC-7 | No module outside `src/commands/` imports from `src/commands/`. | Test (TC-202) |
-| FR-036-AC-8 | quoin executes exactly `git`, `quire` and `ix-flow`. | Test (TC-203) |
+| FR-036-AC-7 | No workspace crate depends on `quoin-cli`: the CLI is a leaf and the engine crates load without it. | Test (TC-202) |
+| FR-036-AC-8 | The executables quoin's production code starts are exactly `git`, `ix-flow` and the operator's own `$EDITOR` (`config edit`); build scripts and the developer tools `quoin-suite-trace` and `quoin-workflow-check` are not part of the engine. | Test (TC-203) |
 
 ## Constraints
 
