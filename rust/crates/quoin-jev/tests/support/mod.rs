@@ -67,9 +67,9 @@ use quoin_jev::{AcRow, FrContext, FrVerdict};
     reason = "each test binary links this module separately, so items only one binary uses read as unused in the other"
 )]
 pub(crate) use grading::{
-    Bucket, ClassStats, Graded, Tally, Tier, Verdict, calibration, class_stats, defect_recall,
-    disagreement, expected_calibration_error, is_coverage, no_defect_recall, percent, report,
-    tally, trivial_baseline,
+    Bucket, ClassStats, Graded, Tally, Tier, Verdict, calibration, class_stats,
+    constant_predictor_items, defect_recall, disagreement, expected_calibration_error, is_coverage,
+    no_defect_recall, percent, report, tally, trivial_baseline,
 };
 
 /// The corpus, compiled in from the skill asset so the fixtures and this
@@ -203,7 +203,7 @@ pub(crate) struct WeaknessLabels {
 
 impl WeaknessLabels {
     /// Every reading a reader recorded, primary first.
-    fn readings(&self) -> Vec<&str> {
+    pub(crate) fn readings(&self) -> Vec<&str> {
         self.weakness_kind_contested.as_ref().map_or_else(
             || vec![self.weakness_kind.as_str()],
             |all| all.iter().map(String::as_str).collect(),
@@ -282,7 +282,7 @@ pub(crate) struct CoverageLabels {
 
 impl CoverageLabels {
     /// Every level a reader recorded, primary first.
-    fn readings(&self) -> Vec<u8> {
+    pub(crate) fn readings(&self) -> Vec<u8> {
         self.adverse_case_coverage_contested
             .clone()
             .unwrap_or_else(|| vec![self.adverse_case_coverage])
