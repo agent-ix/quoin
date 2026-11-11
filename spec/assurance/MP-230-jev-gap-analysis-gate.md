@@ -10,7 +10,7 @@ definition_version: jev.gap-analysis-gate-v1
 ground_truth_kind: mechanical
 statistical_design:
   population: the three bars of the gap-analysis gate (MP-222 margin, MP-223 vacuous-class recall, MP-224 not-vacuous-class recall) over the mutation-graded subset MP-232 defines
-  sampling: none; reads the already-collected upstream observations for lens gap-analysis
+  sampling: none; each gate run states the bars it computed over its own collected upstream results for lens gap-analysis
   repetitions: 1
   estimator: proportion
   population_set:

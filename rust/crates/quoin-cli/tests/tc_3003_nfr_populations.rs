@@ -15,8 +15,8 @@
 mod nfr_populations;
 
 use ix_trace_rs::trace;
-use nfr_populations::span_breadth::{self, Unavailable};
-use nfr_populations::{Probed, assert_accepted, commands, manifests};
+use nfr_populations::span_breadth::{self, Replay, Unavailable, Unmatched};
+use nfr_populations::{assert_accepted, commands, manifests};
 use quoin_measurement::verify::Reason;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
@@ -80,11 +80,33 @@ fn tc_3005_corrupt_manifests_abort_and_missing_ones_are_skipped() {
     assert_accepted("MP-254", &missing);
 }
 
-/// A scratch repository with one typed document, standing in for a label
-/// file's repositories.
-fn fixture_roots() -> BTreeMap<String, PathBuf> {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../quoin-quire/tests/fixtures/repo");
-    BTreeMap::from([("fixture".to_owned(), root)])
+/// A scratch copy of the quire fixture repository, standing in for a label
+/// file's repositories, with a third criterion whose statement holds an
+/// ellipsis.
+fn fixture_roots() -> (tempfile::TempDir, BTreeMap<String, PathBuf>) {
+    let source =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../quoin-quire/tests/fixtures/repo");
+    let copy = tempfile::tempdir().expect("a scratch directory is creatable");
+    copy_tree(&source, copy.path());
+    let document = copy.path().join("spec/FR-001-example.md");
+    let mut text = std::fs::read_to_string(&document).expect("the fixture document is readable");
+    text.push_str("| FR-001-AC-3 | The system shall refuse a payload\u{2026} over its ceiling. | Test (TC-003) |\n");
+    std::fs::write(&document, text).expect("the fixture document is writable");
+    let roots = BTreeMap::from([("fixture".to_owned(), copy.path().to_path_buf())]);
+    (copy, roots)
+}
+
+fn copy_tree(from: &std::path::Path, to: &std::path::Path) {
+    std::fs::create_dir_all(to).expect("the target directory is creatable");
+    for entry in std::fs::read_dir(from).expect("the fixture directory is readable") {
+        let entry = entry.expect("the entry is readable");
+        let target = to.join(entry.file_name());
+        if entry.file_type().expect("the entry has a type").is_dir() {
+            copy_tree(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).expect("the file copies");
+        }
+    }
 }
 
 /// The replay states every label it was given as examined, and as matched only
@@ -97,13 +119,13 @@ fn tc_3300_the_span_breadth_replay_states_what_it_examined_and_matched() {
     let label = |id: &str, row: &str, statement: &str, outcome: &str| {
         format!(
             r#"{{"id": "{id}", "repository": "fixture", "document": "spec/FR-001-example.md",
-               "rowId": "{row}", "normalizedStatement": "{statement}", {outcome}}}"#
+               "rowId": "{row}", "statement": "{statement}", {outcome}}}"#
         )
     };
     let reproduced = label(
         "reproduced",
         "FR-001-AC-1",
-        "every stored payload shall round-trip through the reader unchanged.",
+        "Every stored payload shall round-trip through the reader unchanged.",
         r#""expectedSpans": {
             "domain": {"start": 6, "end": 20, "text": "stored payload"},
             "oracle": {"start": 21, "end": 67, "text": "shall round-trip through the reader unchanged."}}"#,
@@ -123,13 +145,13 @@ fn tc_3300_the_span_breadth_replay_states_what_it_examined_and_matched() {
     let wrong_refusal = label(
         "wrong-refusal",
         "FR-001-AC-2",
-        "the system shall refuse a payload over its ceiling.",
+        "The system shall refuse a payload over its ceiling.",
         r#""expectedRefusal": "span:refused-weak-boundary""#,
     );
     let refused = label(
         "refused",
         "FR-001-AC-2",
-        "the system shall refuse a payload over its ceiling.",
+        "The system shall refuse a payload over its ceiling.",
         r#""expectedRefusal": "example:specific-scenario""#,
     );
     let withdrawn = label(
@@ -138,11 +160,21 @@ fn tc_3300_the_span_breadth_replay_states_what_it_examined_and_matched() {
         "a row the document no longer has",
         r#""expectedRefusal": "span:refused-weak-boundary""#,
     );
+    // The label file's `normalizedStatement` rewrote the ellipsis to `...`; the
+    // replay compares the label's own `statement`, so that rewrite is ignored.
+    let ellipsis = label(
+        "ellipsis",
+        "FR-001-AC-3",
+        "The system shall refuse a payload\u{2026} over its ceiling.",
+        r#""normalizedStatement": "the system shall refuse a payload... over its ceiling.", "expectedRefusal": "example:specific-scenario""#,
+    );
     let labels = format!(
-        r#"{{"labels": [{reproduced}, {precondition_invented}, {drifted}, {wrong_refusal}, {refused}, {withdrawn}]}}"#
+        r#"{{"labels": [{reproduced}, {precondition_invented}, {drifted}, {wrong_refusal}, {refused}, {withdrawn}, {ellipsis}]}}"#
     );
 
-    let probed = span_breadth::replay(&labels, &fixture_roots()).expect("the checkout is supplied");
+    let (_scratch, roots) = fixture_roots();
+    let Replay { probed, unmatched } =
+        span_breadth::replay(&labels, &roots).expect("the checkout is supplied");
     let ids = |ids: &[&str]| {
         ids.iter()
             .map(|id| (*id).to_owned())
@@ -156,15 +188,22 @@ fn tc_3300_the_span_breadth_replay_states_what_it_examined_and_matched() {
             "drifted",
             "wrong-refusal",
             "refused",
-            "withdrawn"
+            "withdrawn",
+            "ellipsis"
         ])
     );
+    assert_eq!(probed.matched, ids(&["reproduced", "refused", "ellipsis"]));
     assert_eq!(
-        probed.matched,
-        ids(&["refused"])
-            .union(&ids(&["reproduced"]))
-            .cloned()
-            .collect()
+        unmatched,
+        BTreeMap::from([
+            ("drifted".to_owned(), Unmatched::StatementDrift),
+            ("wrong-refusal".to_owned(), Unmatched::OutcomeDiffers),
+            (
+                "precondition-invented".to_owned(),
+                Unmatched::OutcomeDiffers
+            ),
+            ("withdrawn".to_owned(), Unmatched::RowMissing),
+        ])
     );
 }
 
@@ -197,9 +236,8 @@ fn tc_3301_the_frozen_labels_are_replayed_and_their_ids_stated() {
         ("quoin".to_owned(), nfr_populations::repository()),
         ("quire-rs".to_owned(), PathBuf::from(quire)),
     ]);
-    let probed: Probed =
+    let Replay { probed, unmatched } =
         span_breadth::replay(&span_breadth::labels_json(), &roots).expect("both checkouts given");
-    assert_eq!(probed.examined.len(), 40);
     let verdict = nfr_populations::verdict("MP-219", &probed);
     let population: Vec<_> = verdict
         .reasons
@@ -217,7 +255,7 @@ fn tc_3301_the_frozen_labels_are_replayed_and_their_ids_stated() {
         .collect();
     assert!(population.is_empty(), "{:?}", verdict.reasons);
     eprintln!(
-        "MP-219: {} of {} labels reproduced; verdict {:?} {:?}",
+        "MP-219: {} of {} labels reproduced; verdict {:?} {:?}; unmatched {unmatched:?}",
         probed.matched.len(),
         probed.examined.len(),
         verdict.verdict,

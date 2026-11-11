@@ -21,7 +21,7 @@ mod support;
 use ix_trace_rs::trace;
 use quoin_measurement::error::MeasurementErrorCode;
 use serde_json::json;
-use support::gate::{Bar, admit, collection, plan};
+use support::gate::{Bar, admit, collection, plan, record_into};
 
 fn bars(plan_ids: &[&'static str], unmet: &[&str]) -> Vec<Bar> {
     plan_ids
@@ -83,4 +83,34 @@ fn tc_3302_a_gate_run_that_skipped_or_invented_a_bar_is_refused() {
         admit(&plan, &invented).unwrap_err().code(),
         MeasurementErrorCode::PopulationOutsideSet
     );
+}
+
+/// The function the live gates call keeps an admitted observation and writes
+/// nothing for one intake refuses.
+#[trace("FR-131-AC-14", "TC-3302")]
+#[test]
+fn tc_3302_record_writes_an_admitted_observation_and_refuses_an_invalid_one() {
+    let out = tempfile::tempdir().unwrap();
+    record_into(
+        "MP-230",
+        "shape",
+        &bars(&GAP, &["MP-224"]),
+        Some(out.path()),
+    )
+    .unwrap();
+    let kept: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(out.path().join("MP-230-shape.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        kept["observations"][0]["population"]["matched_ids"],
+        json!(["MP-222", "MP-223"])
+    );
+
+    let refused = record_into("MP-229", "shape", &bars(&EARS[..3], &[]), Some(out.path()));
+    assert_eq!(
+        refused.unwrap_err().code(),
+        MeasurementErrorCode::PopulationPartial
+    );
+    assert!(!out.path().join("MP-229-shape.json").exists());
 }

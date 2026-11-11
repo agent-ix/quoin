@@ -164,6 +164,16 @@ async fn run_pass(
     pass
 }
 
+/// MP-230 bar 1: agreement exceeds the best constant predictor.
+fn beats_baseline(agreement: f64, baseline: f64) -> bool {
+    agreement > baseline
+}
+
+/// MP-230 bars 2 and 3: a recall is computed and above zero.
+fn bar_recall(recall: Option<f64>) -> bool {
+    recall.is_some_and(|value| value > 0.0)
+}
+
 /// Records one variant's MP-230 verdict as an observation stating the three
 /// bars it evaluated and the bars that held. Runs before the bar assertions, so
 /// a NO-GO is recorded as well.
@@ -228,16 +238,16 @@ async fn the_lens_beats_doing_nothing() {
         let agreement = stats.accuracy().expect("non-empty graded set");
         record_gap_gate(
             &format!("{variant:?}"),
-            agreement > baseline,
-            stats.recall().is_some_and(|value| value > 0.0),
-            stats.no_defect_recall().is_some_and(|value| value > 0.0),
+            beats_baseline(agreement, baseline),
+            bar_recall(stats.recall()),
+            bar_recall(stats.no_defect_recall()),
         );
         println!(
             "**{variant:?} GATE 1** agreement {agreement:.1}% vs. constant predictor \
              (`{baseline_label}`) {baseline:.1}%"
         );
         assert!(
-            agreement > baseline,
+            beats_baseline(agreement, baseline),
             "{variant:?} scored {agreement:.1}%, no better than the constant predictor \
              `{baseline_label}` at {baseline:.1}%"
         );
@@ -245,14 +255,14 @@ async fn the_lens_beats_doing_nothing() {
         let recall = stats.recall();
         println!("**{variant:?} GATE 2** vacuous-class recall: {recall:?}");
         assert!(
-            recall.is_some_and(|value| value > 0.0),
+            bar_recall(recall),
             "{variant:?} found none of the mutation-confirmed-vacuous tests"
         );
 
         let no_defect_recall = stats.no_defect_recall();
         println!("**{variant:?} GATE 3** not-vacuous-class recall: {no_defect_recall:?}");
         assert!(
-            no_defect_recall.is_some_and(|value| value > 0.0),
+            bar_recall(no_defect_recall),
             "{variant:?} never once called a mutation-confirmed-NOT-vacuous test \
              clear -- it flags everything, the exact failure PLAT-917 found in a \
              sibling lens"

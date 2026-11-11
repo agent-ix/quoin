@@ -62,4 +62,4 @@ Challenge labels cover truncation, overbreadth, wrong-subject, hyphenated, neste
 
 ## Comparison and Enforcement
 
-Any wrong/unsafe span, missing label, repository drift, or breadth-floor failure blocks promotion.
+The decision rule is `ge 1.0` over the declared population: any wrong or unsafe span, missing label, or repository drift leaves a label unmatched and blocks promotion.

@@ -10,7 +10,7 @@ definition_version: jev.ears-gate-v1
 ground_truth_kind: agent-labelled
 statistical_design:
   population: the four ship-as-advisory bars (MP-222 margin, MP-223 defect recall, MP-224 no-defect recall, MP-231 forward delta beyond MP-225 noise) for one reported variant
-  sampling: none; reads the already-collected upstream observations for lens ears
+  sampling: none; each gate run states the bars it computed over its own collected upstream results for lens ears
   repetitions: 1
   estimator: proportion
   population_set:

@@ -33,8 +33,7 @@ struct Label {
     document: String,
     #[serde(rename = "rowId")]
     row_id: String,
-    #[serde(rename = "normalizedStatement")]
-    normalized_statement: String,
+    statement: String,
     #[serde(rename = "expectedSpans")]
     expected_spans: Option<ExpectedSpans>,
     #[serde(rename = "expectedRefusal")]
@@ -72,22 +71,33 @@ fn same(expected: Option<&LabelSpan>, span: Option<&Span>) -> bool {
 #[derive(Debug)]
 pub(crate) struct Unavailable(pub(crate) BTreeSet<String>);
 
-fn normalized(text: &str) -> String {
-    text.to_lowercase()
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
+/// The statement with its whitespace collapsed; the label's own `statement`
+/// is the comparison, because its `normalizedStatement` was also rewritten
+/// (for example `…` became `...`) and is not what the document holds.
+fn collapsed(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// Why a label did not reproduce.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum Unmatched {
+    /// The document has no criterion with the label's row id.
+    RowMissing,
+    /// The criterion's statement is no longer the labelled one.
+    StatementDrift,
+    /// The statement is unchanged but the spans or refusal differ.
+    OutcomeDiffers,
 }
 
 impl Label {
-    /// Whether the classified criterion is the labelled statement and carries
-    /// the reviewed outcome: the exact reviewed spans, or the justified refusal
-    /// with no span at all.
-    fn reproduced(&self, criterion: &Criterion) -> bool {
-        if normalized(&criterion.statement) != normalized(&self.normalized_statement) {
-            return false;
+    /// Why the classified criterion is not the labelled one with the reviewed
+    /// outcome (the exact reviewed spans, or the justified refusal with no span
+    /// at all); `None` when it is.
+    fn mismatch(&self, criterion: &Criterion) -> Option<Unmatched> {
+        if collapsed(&criterion.statement) != collapsed(&self.statement) {
+            return Some(Unmatched::StatementDrift);
         }
-        match (&self.expected_spans, &self.expected_refusal) {
+        let reproduced = match (&self.expected_spans, &self.expected_refusal) {
             (Some(expected), None) => {
                 same(expected.domain.as_ref(), criterion.domain.as_ref())
                     && same(
@@ -103,8 +113,16 @@ impl Label {
                     && criterion.signals.iter().any(|signal| signal == refusal)
             }
             _ => false,
-        }
+        };
+        (!reproduced).then_some(Unmatched::OutcomeDiffers)
     }
+}
+
+/// What a replay found: the population it states, and why each unmatched label
+/// did not reproduce.
+pub(crate) struct Replay {
+    pub(crate) probed: Probed,
+    pub(crate) unmatched: BTreeMap<String, Unmatched>,
 }
 
 /// Replay every label in `labels_json`. `roots` maps a label's `repository` to
@@ -113,7 +131,7 @@ impl Label {
 pub(crate) fn replay(
     labels_json: &str,
     roots: &BTreeMap<String, PathBuf>,
-) -> Result<Probed, Unavailable> {
+) -> Result<Replay, Unavailable> {
     let file: LabelFile = serde_json::from_str(labels_json).expect("the label file parses");
     let missing: BTreeSet<String> = file
         .labels
@@ -130,6 +148,7 @@ pub(crate) fn replay(
         examined: BTreeSet::new(),
         matched: BTreeSet::new(),
     };
+    let mut unmatched = BTreeMap::new();
     for label in &file.labels {
         let key = (label.repository.clone(), label.document.clone());
         let criteria = classified
@@ -139,11 +158,16 @@ pub(crate) fn replay(
         let found = criteria
             .iter()
             .find(|criterion| criterion.row_id.as_deref() == Some(label.row_id.as_str()));
-        if found.is_some_and(|criterion| label.reproduced(criterion)) {
-            probed.matched.insert(label.id.clone());
+        match found.map_or(Some(Unmatched::RowMissing), |c| label.mismatch(c)) {
+            None => {
+                probed.matched.insert(label.id.clone());
+            }
+            Some(reason) => {
+                unmatched.insert(label.id.clone(), reason);
+            }
         }
     }
-    Ok(probed)
+    Ok(Replay { probed, unmatched })
 }
 
 /// The criteria `document` classifies to under `root`'s own modules; none when

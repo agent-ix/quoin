@@ -98,18 +98,36 @@ pub(crate) fn admit(
 /// Record a live gate run: build the collection, require intake to admit it,
 /// and keep it under `QUOIN_GATE_COLLECTION_OUT` when that names a directory.
 /// Called before the run's assertions so a NO-GO is recorded too.
+///
+/// # Panics
+///
+/// When intake refuses the observation: the run did not evaluate exactly the
+/// plan's bars, and a live run must not go on as though it had.
 pub(crate) fn record(plan_id: &str, variant: &str, bars: &[Bar]) {
-    let plan = plan(plan_id);
-    let collection = collection(&plan, variant, bars);
-    if let Err(error) = admit(&plan, &collection) {
+    let out = std::env::var_os("QUOIN_GATE_COLLECTION_OUT");
+    if let Err(error) = record_into(plan_id, variant, bars, out.as_deref().map(Path::new)) {
         panic!("{plan_id} {variant}: intake refused the gate observation: {error}");
     }
-    if let Some(directory) = std::env::var_os("QUOIN_GATE_COLLECTION_OUT") {
-        std::fs::create_dir_all(&directory).unwrap();
+}
+
+/// [`record`] with the output directory given and the refusal returned. An
+/// observation intake refuses is never written.
+pub(crate) fn record_into(
+    plan_id: &str,
+    variant: &str,
+    bars: &[Bar],
+    out: Option<&Path>,
+) -> Result<(), quoin_measurement::error::MeasurementError> {
+    let plan = plan(plan_id);
+    let collection = collection(&plan, variant, bars);
+    admit(&plan, &collection)?;
+    if let Some(directory) = out {
+        std::fs::create_dir_all(directory).unwrap();
         std::fs::write(
-            Path::new(&directory).join(format!("{plan_id}-{variant}.json")),
+            directory.join(format!("{plan_id}-{variant}.json")),
             serde_json::to_string_pretty(&collection).unwrap(),
         )
         .unwrap();
     }
+    Ok(())
 }
