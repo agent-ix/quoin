@@ -71,6 +71,12 @@ pub const MAX_PARSE_POLICY_BYTES: usize = 8 * 1024 * 1024;
 /// One assurance record as its producer published it.
 pub const MAX_ASSURANCE_RECORD_BYTES: usize = 4 * 1024 * 1024;
 
+/// The largest `evidence.record_scenario` request, in bytes.
+///
+/// One scenario-evidence document: bounded manifests, owners, claims and budget
+/// figures.
+pub const MAX_SCENARIO_RECORD_BYTES: usize = 4 * 1024 * 1024;
+
 /// The largest `evidence.trust_decision` request, in bytes.
 pub const MAX_TRUST_DECISION_BYTES: usize = 4 * 1024 * 1024;
 
@@ -452,6 +458,33 @@ pub struct AssuranceRecordPayload {
     pub created: bool,
     /// The stored record, including the identity derived from its content.
     pub record: serde_json::Value,
+}
+
+/// The request accepted by `evidence.record_scenario`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ScenarioRecordRequest {
+    /// The repository root.
+    pub repo: String,
+    /// The scenario-evidence document as Quire Protocol composed it.
+    pub document: serde_json::Value,
+}
+
+/// The versioned result of an accepted `evidence.record_scenario`.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ScenarioRecordPayload {
+    /// The intake contract version that accepted the record.
+    pub contract: String,
+    /// The owner of that contract.
+    pub owner: String,
+    /// Where the record was filed, as an **absolute** path.
+    pub path: String,
+    /// Whether this call created it, or found identical bytes already there.
+    pub created: bool,
+    /// The accepted record.
+    pub record: quoin_evidence::scenario::ScenarioEvidence,
 }
 
 /// The request accepted by `evidence.audit_inputs`.

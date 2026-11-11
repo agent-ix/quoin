@@ -38,6 +38,8 @@ pub enum EvidenceErrorCode {
     RecordIntegrity,
     /// A value has no canonical spelling, so it has no stored form.
     Canonicalization,
+    /// A Protocol scenario-evidence document was refused by the intake.
+    ScenarioRefused,
 }
 
 impl EvidenceErrorCode {
@@ -52,6 +54,7 @@ impl EvidenceErrorCode {
         Self::PolicyUnknownObligation,
         Self::RecordIntegrity,
         Self::Canonicalization,
+        Self::ScenarioRefused,
     ];
 
     /// The code's contractual spelling.
@@ -67,6 +70,7 @@ impl EvidenceErrorCode {
             Self::PolicyUnknownObligation => "QE-E007",
             Self::RecordIntegrity => "QE-E008",
             Self::Canonicalization => "QE-E009",
+            Self::ScenarioRefused => "QE-E010",
         }
     }
 
@@ -193,6 +197,17 @@ pub enum EvidenceError {
         /// `quoin-store`'s own words.
         detail: String,
     },
+    /// A Protocol scenario-evidence document was refused by the intake.
+    ///
+    /// The refusal kind is the API a producer branches on; the detail names
+    /// the offending component.
+    #[error("scenario evidence refused ({}): {detail}", .kind.as_str())]
+    ScenarioRefused {
+        /// Which rule refused it.
+        kind: crate::scenario::ScenarioRefusal,
+        /// The offending component, in words.
+        detail: String,
+    },
 }
 
 impl EvidenceError {
@@ -211,6 +226,7 @@ impl EvidenceError {
             Self::PolicyUnknownObligations { .. } => EvidenceErrorCode::PolicyUnknownObligation,
             Self::RecordIntegrity { .. } => EvidenceErrorCode::RecordIntegrity,
             Self::Canonicalization { .. } => EvidenceErrorCode::Canonicalization,
+            Self::ScenarioRefused { .. } => EvidenceErrorCode::ScenarioRefused,
         }
     }
 
