@@ -120,3 +120,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-124: Inspect installed semantic modules and their import locks](./FR-124-inspect-installed-semantic-modules.md)
 - [FR-130: Quire Protocol scenario-evidence intake](./FR-130-protocol-scenario-evidence-intake.md)
 - [FR-125: Immutable content-addressed binary attachments for measurements](./FR-125-content-addressed-measurement-attachments.md)
+- [FR-132: Paired-run metrics computed from two compared collections](./FR-132-paired-run-metrics.md)
