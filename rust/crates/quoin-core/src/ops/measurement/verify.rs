@@ -24,7 +24,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
-use quoin_measurement::source::DiskMeasurement;
+use quoin_measurement::source::{DiskMeasurement, MeasurementSource as _};
 use quoin_measurement::store::read_measurement_collection_results;
 use quoin_measurement::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify as check};
 
@@ -84,7 +84,7 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
         None if request.intake_order.is_empty() => OrderSource::None,
         None => OrderSource::CallerSupplied,
     };
-    let collections = collections(&source)?;
+    let collections = collections(&source, Path::new(&request.repo))?;
     // The first group a collection id appears in is its position; a later
     // repeat of the same id is ignored rather than moving it.
     let mut positions = BTreeMap::new();
@@ -144,9 +144,12 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
 }
 
 /// Every retained collection, refusing the read when one is unreadable or
-/// its file name is not its `collectionId`.
+/// its file name is not its `collectionId`, or when an attachment it
+/// references is missing, unreadable or no longer matches its address
+/// (FR-125).
 fn collections(
     source: &DiskMeasurement,
+    repo: &Path,
 ) -> Result<Vec<quoin_measurement::MeasurementCollection>, CoreError> {
     const OP: &str = "measurement.verify";
     let mut out = Vec::new();
@@ -176,7 +179,26 @@ fn collections(
             )
             .with_context("op", OP));
         }
+        verify_attachments_of(source, repo, &result.path)?;
         out.push(collection);
     }
     Ok(out)
+}
+
+/// Check every attachment the collection file at `location` references.
+fn verify_attachments_of(
+    source: &DiskMeasurement,
+    repo: &Path,
+    location: &str,
+) -> Result<(), CoreError> {
+    const OP: &str = "measurement.verify";
+    let name = Path::new(location)
+        .file_name()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or(location);
+    let value = source
+        .collection_bytes(name)
+        .and_then(|bytes| Ok(quoin_store::parse_strict_json(&bytes)?))
+        .map_err(|error| map_measurement(&error, OP))?;
+    quoin_measurement::verify_attachments(repo, &value).map_err(|error| map_measurement(&error, OP))
 }

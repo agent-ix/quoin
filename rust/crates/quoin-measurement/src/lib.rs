@@ -73,6 +73,7 @@
 //!   argument; the probe is three `std::fs` calls and no reader.
 
 mod all_variants;
+pub mod attachment;
 pub mod campaign;
 pub mod common;
 pub mod compare;
@@ -94,6 +95,11 @@ pub mod types;
 pub mod validate;
 pub mod verify;
 
+pub use attachment::{
+    AttachmentReference, MAX_ATTACHMENT_BYTES, MAX_COLLECTION_ATTACHMENTS, collection_attachments,
+    read_attachment, retain_attachment, retain_attachment_file, verify_attachments,
+    verify_collection_attachments,
+};
 pub use compare::compare_measurement_collections;
 pub use date_time::Rfc3339DateTime;
 pub use error::{MeasurementError, MeasurementErrorCode};
