@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! FR-132-AC-12: `report` attests the intake order as `verify` does, so a
+//! FR-132-AC-15 and AC-16: `report` attests the intake order as `verify` does, so a
 //! paired-run plan is decided by both over the same pair (PLAT-1457).
 
 #![allow(
@@ -16,7 +16,7 @@ use std::path::Path;
 use ix_trace_rs::trace;
 use quoin_measurement::json_bridge::from_serde;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
-use quoin_measurement::report::build::build_measurement_report_from_ordered;
+use quoin_measurement::report::build::build_measurement_report_from;
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::types::collection::MeasurementCollection;
 use quoin_measurement::types::plan::MeasurementPlan;
@@ -120,9 +120,8 @@ fn both(plans: &[MeasurementPlan], runs: &[MeasurementCollection], order: &Intak
         order.source,
         None,
     );
-    let report =
-        build_measurement_report_from_ordered(Path::new("/repo"), plans, runs, &[], &[], order)
-            .expect("builds");
+    let report = build_measurement_report_from(Path::new("/repo"), plans, runs, &[], &[], order)
+        .expect("builds");
     Both {
         reasons: verdict.reasons.clone(),
         verdict: verdict.verdict,
@@ -169,7 +168,7 @@ fn abc(c_stamp: &str, c_value: f64) -> [MeasurementCollection; 3] {
 /// More than two collections in a git repo: report names the pair verify
 /// names (the latest two by first-add commit), and an earlier differing
 /// collection changes neither.
-#[trace("FR-132-AC-12", "TC-3600")]
+#[trace("FR-132-AC-15", "TC-3600")]
 #[test]
 fn tc_3600_three_collections_in_git_are_decided_by_both() {
     let runs = abc("2026-08-04T00:00:00.000Z", 3.0);
@@ -199,7 +198,7 @@ fn both_of(runs: &[MeasurementCollection], order: &IntakeOrder) -> Both {
 
 /// Intake a, b, c while c states the earliest timestamp: the stated time
 /// contradicts the attested order, so neither names a count.
-#[trace("FR-132-AC-12", "TC-3601")]
+#[trace("FR-132-AC-16", "TC-3601")]
 #[test]
 fn tc_3601_a_contradicting_timestamp_is_unattested_in_both() {
     let runs = abc("2026-08-01T00:00:00.000Z", 4.0);
@@ -210,7 +209,7 @@ fn tc_3601_a_contradicting_timestamp_is_unattested_in_both() {
 }
 
 /// No order at all, a shallow clone and a tie are each unattested in both.
-#[trace("FR-132-AC-12", "TC-3602")]
+#[trace("FR-132-AC-12", "FR-132-AC-16", "TC-3602")]
 #[test]
 fn tc_3602_a_missing_order_is_unattested_in_both() {
     let runs = abc("2026-08-04T00:00:00.000Z", 3.0);
@@ -225,8 +224,30 @@ fn tc_3602_a_missing_order_is_unattested_in_both() {
     }
 }
 
+/// A shallow clone attests no order for any plan: two collections under
+/// `equal` are `order_unattested` in both, with no count in the report.
+#[trace("FR-132-AC-12", "FR-132-AC-16", "TC-3602")]
+#[test]
+fn tc_3602_a_shallow_clone_is_unattested_for_two_collections_in_both() {
+    let runs = [
+        run_as("a", OWN, "2026-08-02T00:00:00.000Z", &[("r1", 3.0)]),
+        run_as("b", OWN, "2026-08-03T00:00:00.000Z", &[("r1", 3.0)]),
+    ];
+    let shallow = order(OrderSource::GitShallow, &[&["a"], &["b"]]);
+    let both = both_of(&runs, &shallow);
+    assert!(both.unattested());
+    assert_eq!(
+        both.reasons
+            .iter()
+            .filter(|r| **r == Reason::OrderUnattested)
+            .count(),
+        1
+    );
+    agree(&both);
+}
+
 /// Two collections need no order under `equal`, and are decided with none.
-#[trace("FR-132-AC-12", "TC-3603")]
+#[trace("FR-132-AC-15", "TC-3603")]
 #[test]
 fn tc_3603_two_collections_under_equal_need_no_order() {
     let runs = [
@@ -244,7 +265,7 @@ fn tc_3603_two_collections_under_equal_need_no_order() {
 
 /// Under `not_worse` the order ranks the runs: attested, report and verify
 /// agree on the count in both directions; unattested, neither decides.
-#[trace("FR-132-AC-12", "TC-3604")]
+#[trace("FR-132-AC-15", "TC-3604")]
 #[test]
 fn tc_3604_not_worse_is_decided_only_with_an_attested_order() {
     let plans = plans(NOT_WORSE);

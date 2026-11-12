@@ -12,8 +12,8 @@
 use std::path::PathBuf;
 
 use quoin_measurement::{
-    DiskMeasurement, MeasurementReport, build_measurement_report_ordered,
-    render_measurement_report, render_measurement_report_json, render_series_json, series_for,
+    DiskMeasurement, MeasurementReport, build_measurement_report, render_measurement_report,
+    render_measurement_report_json, render_series_json, series_for,
 };
 
 use crate::error::CoreError;
@@ -22,7 +22,8 @@ use crate::protocol::Response;
 use super::taxonomy::map_measurement;
 use super::verify::intake_order;
 use super::wire::{
-    MAX_ASSURANCE_DOCUMENT_BYTES, MAX_METRIC_NAME_BYTES, ReportRequest, SeriesRequest,
+    MAX_ASSURANCE_DOCUMENT_BYTES, MAX_METRIC_NAME_BYTES, MAX_VERIFY_REQUEST_BYTES, ReportRequest,
+    SeriesRequest,
 };
 use super::{bound, bound_field, document, parse, rendered, string_len};
 
@@ -89,10 +90,10 @@ fn report_of(
     request: &serde_json::Value,
     op: &'static str,
 ) -> Result<MeasurementReport, CoreError> {
-    bound(request, op, MAX_ASSURANCE_DOCUMENT_BYTES)?;
+    bound(request, op, MAX_VERIFY_REQUEST_BYTES)?;
     let request: ReportRequest = parse(request, op)?;
     let order = intake_order(request.order_source.as_deref(), request.intake_order, op)?;
     let repo = PathBuf::from(request.repo);
-    build_measurement_report_ordered(&DiskMeasurement::new(&repo), &repo, &order)
+    build_measurement_report(&DiskMeasurement::new(&repo), &repo, &order)
         .map_err(|e| map_measurement(&e, op))
 }

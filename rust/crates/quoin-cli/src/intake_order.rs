@@ -4,7 +4,7 @@
 //! The intake order of the measurement store, obtained from git.
 //!
 //! `quoin measurement verify` and `quoin report` obtain the order here and
-//! nowhere else, so the two name the same pair of collections (FR-132-AC-12).
+//! nowhere else, so the two name the same pair of collections (FR-132-AC-15).
 
 use ix_trace_rs::implements;
 

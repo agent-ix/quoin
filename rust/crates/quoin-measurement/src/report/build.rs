@@ -120,7 +120,8 @@ pub struct MeasurementReport {
 /// Read a repository and build its report.
 ///
 /// `buildMeasurementReport` (`report.ts:48-55`). `repo` is the repository root,
-/// used for the record paths the report quotes; `source` is where the bytes
+/// used for the record paths the report quotes; `order` is as for
+/// [`build_measurement_report_from`]; `source` is where the bytes
 /// come from, so a caller with no filesystem can still build a report.
 ///
 /// # Errors
@@ -132,20 +133,6 @@ pub struct MeasurementReport {
 pub fn build_measurement_report<S: MeasurementSource + ?Sized>(
     source: &S,
     repo: &Path,
-) -> Result<MeasurementReport, MeasurementError> {
-    build_measurement_report_ordered(source, repo, &IntakeOrder::none())
-}
-
-/// [`build_measurement_report`] with the intake order the caller attests, so
-/// a paired-run plan's latest two collections are chosen as `verify` chooses
-/// them (FR-132-AC-12).
-///
-/// # Errors
-///
-/// As [`build_measurement_report`].
-pub fn build_measurement_report_ordered<S: MeasurementSource + ?Sized>(
-    source: &S,
-    repo: &Path,
     order: &IntakeOrder,
 ) -> Result<MeasurementReport, MeasurementError> {
     let plans = load_measurement_plans(source, PlanLoadOptions::default())?;
@@ -155,7 +142,7 @@ pub fn build_measurement_report_ordered<S: MeasurementSource + ?Sized>(
         .into_iter()
         .map(|valid| valid.record().clone())
         .collect();
-    build_measurement_report_from_ordered(
+    build_measurement_report_from(
         repo,
         &plans,
         &collections,
@@ -166,6 +153,10 @@ pub fn build_measurement_report_ordered<S: MeasurementSource + ?Sized>(
 }
 
 /// Build every view from one already-loaded snapshot.
+///
+/// `order` is the intake order the caller attests: it picks a paired-run
+/// plan's latest two collections as `verify` picks them (FR-132-AC-15);
+/// [`IntakeOrder::none`] attests none.
 ///
 /// `buildMeasurementReportFrom` (`report.ts:57-103`). Pure: the records the
 /// retained function reads for itself are arguments here, because the portfolio
@@ -178,29 +169,6 @@ pub fn build_measurement_report_ordered<S: MeasurementSource + ?Sized>(
 /// collection whose id does not name a file — `measurementPath` re-checks the
 /// same grammar on every call (`store.ts:26`).
 pub fn build_measurement_report_from(
-    repo: &Path,
-    all_plans: &[MeasurementPlan],
-    collections: &[MeasurementCollection],
-    interventions: &[InterventionExperimentRecord],
-    operational: &[OperationalEvidenceRecord],
-) -> Result<MeasurementReport, MeasurementError> {
-    build_measurement_report_from_ordered(
-        repo,
-        all_plans,
-        collections,
-        interventions,
-        operational,
-        &IntakeOrder::none(),
-    )
-}
-
-/// [`build_measurement_report_from`] with the intake order the caller
-/// attests (FR-132-AC-12).
-///
-/// # Errors
-///
-/// As [`build_measurement_report_from`].
-pub fn build_measurement_report_from_ordered(
     repo: &Path,
     all_plans: &[MeasurementPlan],
     collections: &[MeasurementCollection],

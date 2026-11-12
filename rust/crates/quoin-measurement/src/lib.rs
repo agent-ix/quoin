@@ -127,8 +127,8 @@ pub use raw_evidence::{
     verify_raw_evidence_references,
 };
 pub use report::{
-    MeasurementReport, build_measurement_report, build_measurement_report_ordered,
-    render_measurement_report, render_measurement_report_json, render_series_json, series_for,
+    MeasurementReport, build_measurement_report, render_measurement_report,
+    render_measurement_report_json, render_series_json, series_for,
 };
 pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement};
 pub use store::{

@@ -101,7 +101,9 @@ struct Check<'a> {
 }
 
 /// Decide `plan`'s verdict from every stored collection, ordered as `order`
-/// says the positions in `collections` were obtained.
+/// says the positions in `collections` were obtained. Callers rank with
+/// [`IntakeOrder::rank`], which drops positions an order of that source
+/// does not attest.
 #[must_use]
 pub fn verify(
     plan: &MeasurementPlan,
@@ -122,16 +124,6 @@ pub fn verify(
             population_set: None,
             population_exempt: None,
         });
-    // Positions are ignored when the order's source attests none.
-    let positioned = order.attests_positions();
-    let collections: Vec<Ranked<'_>> = collections
-        .iter()
-        .map(|ranked| Ranked {
-            intake: ranked.intake.filter(|_| positioned),
-            ..*ranked
-        })
-        .collect();
-    let collections = collections.as_slice();
     let mut check = Check {
         rule: design.decision_rule,
         answer_families: design.answer_families.clone(),
@@ -141,11 +133,11 @@ pub fn verify(
     let counts = count(&check.runs);
     let mut decisions = Vec::new();
     let mut regressed = Vec::new();
-    if order == OrderSource::GitShallow {
+    if order == OrderSource::GitShallow && plan.paired_run.is_none() {
         check.findings.push(plan_level(Reason::OrderUnattested));
     }
     check.findings.extend(tamper::findings(tamper));
-    let pair = paired::judge(plan, &check.runs);
+    let pair = paired::judge(plan, &check.runs, order);
     match (check.rule, design.estimator) {
         // A paired plan's relation is its decision (FR-132-AC-9).
         (None, _) if pair.is_some() => {}

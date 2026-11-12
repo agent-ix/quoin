@@ -88,19 +88,27 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         return series_response(response, metric, json(arguments));
     }
     // Without git (not a work tree, git absent or failing) the report still
-    // renders, and a paired-run pair whose order matters stays unattested.
-    let request = match intake_order(&repo) {
-        Ok(order) => serde_json::json!({
-            "repo": repo, "intake_order": order.groups, "order_source": order.source,
-        }),
-        Err(_) => serde_json::json!({ "repo": repo }),
+    // renders, a paired-run pair whose order matters stays unattested, and the
+    // cause goes to stderr.
+    let (request, warning) = match intake_order(&repo) {
+        Ok(order) => (
+            serde_json::json!({
+                "repo": repo, "intake_order": order.groups, "order_source": order.source,
+            }),
+            order.warning,
+        ),
+        Err(cause) => (serde_json::json!({ "repo": repo }), Some(cause)),
     };
-    present(
+    let mut response = present(
         "measurement.build_report",
         "measurement.render_report",
         &request,
         json(arguments),
-    )
+    )?;
+    if let (Some(warning), Some(payload)) = (warning, response.payload.as_object_mut()) {
+        payload.insert("warning".to_owned(), serde_json::Value::String(warning));
+    }
+    Ok(response)
 }
 
 /// Shape the core request for a regular or graph-enriched portfolio view.

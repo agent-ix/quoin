@@ -310,7 +310,15 @@ fn report_of(
     plans: &[MeasurementPlan],
     runs: &[MeasurementCollection],
 ) -> quoin_measurement::MeasurementReport {
-    build_measurement_report_from(Path::new("/repo"), plans, runs, &[], &[]).expect("builds")
+    build_measurement_report_from(
+        Path::new("/repo"),
+        plans,
+        runs,
+        &[],
+        &[],
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("builds")
 }
 
 /// The report prints the pair, and states `unpaired` for one collection.

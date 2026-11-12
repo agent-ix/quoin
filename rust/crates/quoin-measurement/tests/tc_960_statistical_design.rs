@@ -323,8 +323,12 @@ fn tc_960_005_a_plan_without_the_fields_behaves_exactly_as_before() {
     write_collection(root, &collection(&[observation(None)]))
         .expect("no minimum means nothing new to refuse on");
 
-    let report =
-        build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(root),
+        root,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds");
     let rendered = render_measurement_report(&report).expect("the report renders");
     assert!(
         rendered.contains(
@@ -351,8 +355,12 @@ fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
     write_collection(root, &collection(&[observation(Some(12))]))
         .expect("twelve examined meets a minimum of ten");
 
-    let report =
-        build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(root),
+        root,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds");
     let rendered = render_measurement_report(&report).expect("the report renders");
     assert!(
         rendered.contains(
@@ -589,8 +597,12 @@ fn tc_960_013_the_json_report_carries_a_stated_repetition_count() {
     )
     .expect("three repetitions meet a plan of three");
 
-    let report =
-        build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(root),
+        root,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds");
     let parsed: Value = serde_json::from_str(
         &render_measurement_report_json(&report).expect("the JSON report renders"),
     )
@@ -691,8 +703,12 @@ fn tc_960_016_the_json_report_keeps_a_stored_non_numeric_repetition_count() {
     )
     .expect("the retained collection is writable");
 
-    let report = build_measurement_report(&DiskMeasurement::new(root), root)
-        .expect("the report builds over a retained collection");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(root),
+        root,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds over a retained collection");
     let parsed: Value = serde_json::from_str(
         &render_measurement_report_json(&report).expect("the JSON report renders"),
     )

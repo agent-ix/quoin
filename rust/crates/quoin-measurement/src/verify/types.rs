@@ -106,7 +106,8 @@ impl IntakeOrder {
         }
     }
 
-    /// `collections` with their positions in this order. The first group an id
+    /// `collections` with their positions in this order, none when the source
+    /// attests none. The first group an id
     /// appears in is its position; a later repeat of the same id is ignored
     /// rather than moving it.
     #[must_use]
@@ -125,7 +126,10 @@ impl IntakeOrder {
             .map(|collection| {
                 Ranked::new(
                     collection,
-                    positions.get(collection.collection_id.as_str()).copied(),
+                    positions
+                        .get(collection.collection_id.as_str())
+                        .copied()
+                        .filter(|_| self.source.attests_positions()),
                 )
             })
             .collect()

@@ -32,7 +32,11 @@ pub(super) struct PairedVerdict {
 
 /// Judge `plan`'s latest two `runs`, or `None` when it declares no
 /// `paired_run`.
-pub(super) fn judge<P: Placed>(plan: &MeasurementPlan, runs: &[P]) -> Option<PairedVerdict> {
+pub(super) fn judge<P: Placed>(
+    plan: &MeasurementPlan,
+    runs: &[P],
+    order: OrderSource,
+) -> Option<PairedVerdict> {
     let paired = plan.paired_run?;
     let collections: Vec<&MeasurementCollection> = runs.iter().map(Placed::collection).collect();
     let observation = compare_latest_pair(plan, &collections)?;
@@ -65,11 +69,15 @@ pub(super) fn judge<P: Placed>(plan: &MeasurementPlan, runs: &[P]) -> Option<Pai
         PairedRunOutcome::Inconclusive => findings.push(finding(Reason::PairedRunInconclusive)),
         PairedRunOutcome::Unpaired => findings.push(finding(Reason::PairedRunUnpaired)),
     }
-    // Which two runs are the latest only matters when it can change the answer.
+    // Which two runs are the latest only matters when it can change the answer;
+    // a shallow clone attests no order for any plan (FR-108-AC-8).
     let last = runs.len().saturating_sub(1);
-    if order_matters(paired, runs.len())
-        && runs.len() >= 2
-        && (order::unattested(runs, last) || order::unattested(runs, last.saturating_sub(1)))
+    let shallow =
+        order == OrderSource::GitShallow && observation.outcome != PairedRunOutcome::Unpaired;
+    if shallow
+        || (order_matters(paired, runs.len())
+            && runs.len() >= 2
+            && (order::unattested(runs, last) || order::unattested(runs, last.saturating_sub(1))))
     {
         findings.push(finding(Reason::OrderUnattested));
     }
@@ -80,8 +88,8 @@ pub(super) fn judge<P: Placed>(plan: &MeasurementPlan, runs: &[P]) -> Option<Pai
     })
 }
 
-/// `plan`'s paired-run row for the report, over the collections it stores and
-/// the intake order the caller attests.
+/// `plan`'s paired-run row for the report, over the collections `ranked` by an
+/// intake order whose source is `order`.
 ///
 /// The collections are judged by [`judge`], as `verify` judges them. Where
 /// that finds the order of the latest two unattested, the pair is
@@ -89,19 +97,16 @@ pub(super) fn judge<P: Placed>(plan: &MeasurementPlan, runs: &[P]) -> Option<Pai
 /// pair `verify` would name is not known.
 pub(crate) fn report_pair(
     plan: &MeasurementPlan,
-    stored: &[Ranked<'_>],
+    ranked: &[Ranked<'_>],
     order: OrderSource,
 ) -> Option<PairedRunObservation> {
-    let mut runs: Vec<Ranked<'_>> = stored
+    let mut runs: Vec<Ranked<'_>> = ranked
         .iter()
         .filter(|ranked| measures(plan, ranked.collection))
-        .map(|ranked| Ranked {
-            intake: ranked.intake.filter(|_| order.attests_positions()),
-            ..*ranked
-        })
+        .copied()
         .collect();
     order::sort(&mut runs);
-    let verdict = judge(plan, &runs)?;
+    let verdict = judge(plan, &runs, order)?;
     let mut pair = verdict.observation;
     if verdict
         .findings

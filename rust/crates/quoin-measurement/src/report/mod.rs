@@ -46,7 +46,7 @@ pub mod wire;
 
 pub use build::{
     CollectionSummary, CurrentRow, MeasurementReport, build_measurement_report,
-    build_measurement_report_from, build_measurement_report_ordered,
+    build_measurement_report_from,
 };
 pub use render::render_measurement_report;
 pub use render_json::render_measurement_report_json;
