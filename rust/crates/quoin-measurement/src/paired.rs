@@ -26,7 +26,7 @@ use crate::report::verdict::badness;
 use crate::types::collection::MeasurementCollection;
 use crate::types::comparison::{ComparisonStatus, MeasurementComparison};
 use crate::types::observation::{MeasurementObservation, MeasurementState};
-use crate::types::plan::{MeasurementPlan, PairedRelation};
+use crate::types::plan::{MeasurementPlan, PairedRelation, PairedRun};
 
 /// What a paired comparison established.
 #[derive(Clone, Debug, PartialEq)]
@@ -40,6 +40,21 @@ pub enum PairedRunOutcome {
     Incomparable,
     /// Fewer comparable slices than `minimum_pairs`: no count is offered.
     Inconclusive,
+    /// Fewer than two collections measured the plan, so there is no pair.
+    Unpaired,
+}
+
+impl PairedRunOutcome {
+    /// The stable wire spelling of the status.
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Observed { .. } => "observed",
+            Self::Incomparable => "incomparable",
+            Self::Inconclusive => "inconclusive",
+            Self::Unpaired => "unpaired",
+        }
+    }
 }
 
 /// One plan's paired-run result.
@@ -53,6 +68,8 @@ pub struct PairedRunObservation {
     pub outcome: PairedRunOutcome,
     /// How many slices were compared and comparable.
     pub comparisons: u64,
+    /// The relation the plan states.
+    pub relation: PairedRelation,
     /// The plan's required minimum.
     pub minimum_pairs: u32,
     /// Why the outcome is not `Observed`; empty when it is.
@@ -89,6 +106,80 @@ pub fn compare_paired_runs(
             ))
         })
         .collect())
+}
+
+/// Whether `observation` is of `plan`: its id, metric and definition version.
+///
+/// The one selection of a plan's evidence, shared by `verify` and `report`.
+pub(crate) fn is_of_plan(plan: &MeasurementPlan, observation: &MeasurementObservation) -> bool {
+    observation.plan_id.as_str() == plan.id.as_str()
+        && observation.metric.as_str() == plan.metric.as_str()
+        && observation.definition_version.as_str() == plan.definition_version.as_str()
+}
+
+/// Whether `collection` is a run of `plan`: it holds an observation of it.
+pub(crate) fn measures(plan: &MeasurementPlan, collection: &MeasurementCollection) -> bool {
+    collection
+        .observations
+        .iter()
+        .any(|observation| is_of_plan(plan, observation))
+}
+
+/// Whether which two runs are the latest can change `plan`'s answer: more
+/// than two runs, or a relation that ranks the later run.
+pub(crate) fn order_matters(paired: PairedRun, runs: usize) -> bool {
+    runs > 2 || matches!(paired.relation, PairedRelation::NotWorse)
+}
+
+impl PairedRelation {
+    /// The relation as the report states it.
+    #[must_use]
+    pub fn label(self) -> String {
+        match self {
+            Self::Equal => "equal".to_owned(),
+            Self::WithinDelta(delta) => format!("within_delta {delta}"),
+            Self::NotWorse => "not_worse".to_owned(),
+        }
+    }
+}
+
+/// The paired-run observation `plan` declares over the latest two of
+/// `collections`, oldest first, or `None` when `plan` declares no `paired_run`.
+///
+/// Fewer than two collections is [`PairedRunOutcome::Unpaired`]. A comparison
+/// the store refuses is [`PairedRunOutcome::Inconclusive`], never a count.
+#[must_use]
+pub fn compare_latest_pair(
+    plan: &MeasurementPlan,
+    collections: &[&MeasurementCollection],
+) -> Option<PairedRunObservation> {
+    let paired = plan.paired_run?;
+    let unpaired = |outcome, reason: String| PairedRunObservation {
+        plan_id: plan.id.as_str().to_owned(),
+        metric: plan.metric.as_str().to_owned(),
+        outcome,
+        comparisons: 0,
+        relation: paired.relation,
+        minimum_pairs: paired.minimum_pairs.get(),
+        reasons: vec![reason],
+    };
+    let [.., first, second] = collections else {
+        return Some(unpaired(
+            PairedRunOutcome::Unpaired,
+            format!(
+                "{} collection(s) measured {}, 2 required",
+                collections.len(),
+                plan.metric
+            ),
+        ));
+    };
+    match compare_paired_runs(first, second, std::slice::from_ref(plan)) {
+        Ok(observed) => observed.into_iter().next(),
+        Err(error) => Some(unpaired(
+            PairedRunOutcome::Inconclusive,
+            format!("the pair could not be compared: {error}"),
+        )),
+    }
 }
 
 fn reduce(
@@ -152,6 +243,7 @@ fn reduce(
         metric: plan.metric.as_str().to_owned(),
         outcome,
         comparisons,
+        relation,
         minimum_pairs,
         reasons,
     }

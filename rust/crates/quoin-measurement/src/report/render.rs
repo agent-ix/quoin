@@ -24,6 +24,7 @@ use crate::intervention::report::render_intervention_report;
 use crate::json_bridge::to_serde;
 use crate::operational::report::render_operational_report;
 use crate::report::build::{CurrentRow, MeasurementReport};
+use crate::report::paired_render::paired_run_table;
 use crate::report::quantity::measured_text;
 use crate::report::verdict::{GateOutcome, RatchetOutcome, StageVerdict};
 use crate::report::verdict_render::stage_verdict_table;
@@ -234,6 +235,13 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
             lines.push("## Stage verdicts".to_owned());
             lines.push(String::new());
             lines.extend(verdicts);
+            lines.push(String::new());
+        }
+        let paired = paired_run_table(&report.paired_runs);
+        if !paired.is_empty() {
+            lines.push("## Paired runs".to_owned());
+            lines.push(String::new());
+            lines.extend(paired);
             lines.push(String::new());
         }
     }

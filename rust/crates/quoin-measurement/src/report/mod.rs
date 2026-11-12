@@ -33,6 +33,7 @@
 pub mod build;
 mod gate;
 pub(crate) mod inconclusive;
+mod paired_render;
 mod quantity;
 pub mod render;
 pub mod render_json;

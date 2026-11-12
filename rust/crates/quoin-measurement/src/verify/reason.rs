@@ -62,6 +62,16 @@ pub enum Reason {
     /// The population examined nothing, under a plan with no
     /// `minimum_population` (under one, it is below the minimum).
     PopulationEmpty,
+    /// The plan declares `paired_run` and fewer than two collections measured
+    /// it (FR-132-AC-10).
+    PairedRunUnpaired,
+    /// The plan declares `paired_run` and its latest two collections cannot be
+    /// compared (FR-132-AC-11).
+    PairedRunIncomparable,
+    /// The plan declares `paired_run` and its latest two collections hold
+    /// fewer comparable slices than `minimum_pairs`, or a slice without a
+    /// value (FR-132-AC-11).
+    PairedRunInconclusive,
     /// A baseline rule has no earlier usable run to compare against.
     NoPrior,
     /// The candidate, or the prior a `prior-collection` rule compares
@@ -112,6 +122,9 @@ pub enum Reason {
     /// The plan's rule states an `interval_level` and the candidate's
     /// observation states no `interval` (EA-26, FR-108-AC-12).
     IntervalUnstated,
+    /// The plan declares `paired_run` and its latest two collections violate
+    /// the relation in at least one slice (FR-132-AC-8).
+    PairedRunDiffers,
     /// The rule does not hold for the candidate's estimate.
     RuleNotMet,
     /// A stored `value` disagrees with the estimate recomputed from its
@@ -179,6 +192,9 @@ impl Reason {
         PopulationUnstated,
         PopulationIncomplete,
         PopulationEmpty,
+        PairedRunUnpaired,
+        PairedRunIncomparable,
+        PairedRunInconclusive,
         NoPrior,
         OrderUnattested,
         ConstantPredictorRowsAbsent,
@@ -194,6 +210,7 @@ impl Reason {
         ObservationMissing,
         ApparatusUnrecorded,
         IntervalUnstated,
+        PairedRunDiffers,
         RuleNotMet,
         ValueDisagreesWithRows,
         PopulationBelowMinimum,
@@ -223,6 +240,10 @@ impl Reason {
             Self::PopulationUnstated => "population_unstated",
             Self::PopulationIncomplete => "population_incomplete",
             Self::PopulationEmpty => "population_empty",
+            Self::PairedRunUnpaired => "paired_run_unpaired",
+            Self::PairedRunIncomparable => "paired_run_incomparable",
+            Self::PairedRunInconclusive => "paired_run_inconclusive",
+            Self::PairedRunDiffers => "paired_run_differs",
             Self::NoPrior => "no_prior",
             Self::OrderUnattested => "order_unattested",
             Self::ConstantPredictorRowsAbsent => "constant_predictor_rows_absent",
@@ -287,6 +308,9 @@ impl Reason {
             | Self::PopulationUnstated
             | Self::PopulationIncomplete
             | Self::PopulationEmpty
+            | Self::PairedRunUnpaired
+            | Self::PairedRunIncomparable
+            | Self::PairedRunInconclusive
             | Self::NoPrior
             | Self::OrderUnattested
             | Self::ConstantPredictorRowsAbsent
@@ -302,7 +326,8 @@ impl Reason {
             | Self::ObservationMissing
             | Self::ApparatusUnrecorded
             | Self::IntervalUnstated => Verdict::Inconclusive,
-            Self::RuleNotMet
+            Self::PairedRunDiffers
+            | Self::RuleNotMet
             | Self::ValueDisagreesWithRows
             | Self::PopulationBelowMinimum
             | Self::RepetitionsShort

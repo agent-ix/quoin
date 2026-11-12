@@ -130,6 +130,9 @@ pub struct SliceDecision {
     /// `interval_level` and the candidate's interval decided it (FR-108-AC-11);
     /// `None` otherwise.
     pub interval: Option<Decided>,
+    /// Whether this is a paired-run plan's count (FR-132-AC-8) rather than
+    /// the rule applied to a slice of the candidate.
+    pub paired: bool,
 }
 
 /// What the checker counted.
