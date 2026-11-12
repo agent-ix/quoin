@@ -87,8 +87,7 @@ form the lens.
     quire validate --scope . "spec/reviews/ears-conformance.md"
     ```
 
-    Fix any structural errors in the review doc. The doc syncs into filament-core
-    as a `SpecReview` artifact like every other analysis lens.
+    Fix any structural errors in the review doc.
 
 ## Notes
 

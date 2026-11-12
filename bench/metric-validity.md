@@ -18,10 +18,10 @@ the wrong thing.
 
 ## The design
 
-An independent oracle: `cargo-mutants` kill rates over the tier-2
-corpus.
+An independent oracle: `cargo-mutants` kill rates over quoin
+itself.
 
-1. Run `cargo mutants` over a Rust corpus with requirement-linked tests (quoin itself) at one checked-out
+1. Run `cargo mutants` over quoin itself (a Rust workspace with requirement-linked tests) at one checked-out
    revision, recording each mutant's file, span and outcome (killed / survived /
    unviable).
 2. Run `quire coverage --json` at the same checkout and take `unbacked_rows` plus
@@ -48,15 +48,16 @@ narratable.
 
 Three prerequisites, each real:
 
-1. **The corpus must be the adjudicated tree.** The checked-out corpus is not
-   the tree the adjudication covered, so a score over it would answer a
-   different question than the one adjudicated.
+1. **The checkout must be pinned.** Mutation outcomes, `quire coverage` and
+   the attribution step must all run at the same quoin revision, or the
+   partition compares different trees.
 2. **`implements` coverage.** Step 3 needs requirement→file attribution, and
    quire-rs CR-082 measured that at 55 of 58 requirements _in quire-rs itself_.
-   The tier-2 corpus has not been annotated, so most mutants would attribute to
-   nothing and the partition would be mostly empty.
-3. **A full `cargo mutants` run over 24 crates is hours**, which is why it is a
-   `workflow_dispatch` study and not a gate.
+   Quoin's own `implements` coverage has not been measured for this study, so
+   mutants in unannotated files would attribute to nothing and the partition
+   could be mostly empty.
+3. **A full `cargo mutants` run over quoin's 27 crates is hours**, which is why
+   it is a `workflow_dispatch` study and not a gate.
 
 Recording the design without the run is the honest position: the study is
 specified, its prediction is committed, and the reasons it has not executed are

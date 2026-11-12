@@ -90,8 +90,8 @@ without this document and the root manifest being updated together.
 The policy lives in the manifest rather than only in CI flags so that
 `cargo clippy` on a developer machine enforces what the gate enforces.
 
-- `unsafe_code = "forbid"` — workspace-wide, with no audited-exception carve-out. If you need one, it is a design conversation,
-  not a `#[allow]`.
+- `unsafe_code = "forbid"` — workspace-wide, with no audited-exception
+  carve-out. If you need one, it is a design conversation, not a `#[allow]`.
 - `clippy::all` and `clippy::pedantic` at `warn`, fatal in the gate via
   `-D warnings`.
 - **The panic surface is linted, not policed by review**: `unwrap_used`,
