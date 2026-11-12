@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The agent-ix/quoin#164 payload, read through the Cargo edge.
+//! A synthetic payload the size of the one that killed six commands, read
+//! through the Cargo edge.
 //!
-//! Nothing here runs `node`, `quire`, or any other process: these assertions
-//! stand on their own against the checked-in bytes.
+//! Nothing here runs `node`, `quire`, or any other process, and nothing is
+//! checked in: the payload is generated deterministically at test time.
 
 #![allow(
     clippy::expect_used,
@@ -11,30 +12,117 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use std::sync::LazyLock;
+
 use ix_trace_rs::trace;
 use quoin_quire::{CoveragePayload, ErrorCode, PayloadLimit, payload};
 
-/// The captured payload.
-const VOLUME: &[u8] = include_bytes!("fixtures/coverage-volume/filament-ide-rs-coverage.json");
+const OBLIGATIONS: usize = 2_800;
+const CRITERIA: usize = 1_100;
+const UNBACKED_ROWS: usize = 1_500;
+
+/// The generated payload: realistic structure, synthetic ids and text, no
+/// randomness, so every run reads the same bytes.
+static VOLUME: LazyLock<Vec<u8>> = LazyLock::new(|| {
+    let obligations: Vec<_> = (0..OBLIGATIONS)
+        .map(|n| {
+            let fr = n / 4 + 1;
+            serde_json::json!({
+                "source": "acceptance-criterion",
+                "id": format!("FR-{fr:03}-AC-{}", n % 4 + 1),
+                "document": format!("spec/area-{}/functional/FR-{fr:03}-synthetic-feature.md", fr % 9),
+                "statement": format!(
+                    "Every operation {n} round-trips: a serialized envelope deserializes to an equal value"
+                ),
+                "method": "Test",
+                "target_ids": [format!("TC-{}", n * 3 + 1), format!("TC-{}", n * 3 + 2), format!("TC-{}", n * 3 + 3)],
+            })
+        })
+        .collect();
+    let criteria: Vec<_> = (0..CRITERIA)
+        .map(|n| {
+            serde_json::json!({
+                "document": format!("spec/area-{}/functional/FR-{:03}-synthetic-feature.md", n % 9, n + 1),
+                "archetype": "FR",
+                "criteria": 8,
+                "property_shaped": 7,
+                "specific_shaped": 1,
+                "by_property": {"example": 1, "round-trip": 1, "universal": 6},
+                "grounding": {
+                    "example": {"records": 1, "domain": 0, "precondition": 0, "oracle": 0, "all_three": 0},
+                    "round-trip": {"records": 1, "domain": 0, "precondition": 0, "oracle": 0, "all_three": 0},
+                    "universal": {"records": 6, "domain": 5, "precondition": 0, "oracle": 5, "all_three": 0},
+                },
+            })
+        })
+        .collect();
+    let unbacked_rows: Vec<_> = (0..UNBACKED_ROWS)
+        .map(|n| {
+            serde_json::json!({
+                "reference": "constraint-validation",
+                "document": format!("spec/area-{}/functional/FR-{:03}-synthetic-feature.md", n % 9, n + 1),
+                "row_id": format!("FR-{:03}-CON-{}", n + 1, n % 6 + 1),
+                "target_ids": [format!("FR-{:03}-CON-{}", n + 1, n % 6 + 1), format!("TC-{}", n + 1)],
+                "line": n + 40,
+            })
+        })
+        .collect();
+    let value = serde_json::json!({
+        "unbacked_rows": unbacked_rows,
+        "status_lies": [],
+        "no_symbol_rows": [],
+        "untracked_symbols": [],
+        "shared_trace_ids": [],
+        "groups": [],
+        "minted_targets": [],
+        "diagnostics": [],
+        "diagnostic_reason_registry": [],
+        "vocabulary_coverage": [],
+        "binding_census": [],
+        "unmatched_tags": [],
+        "metrics": [],
+        "suspicions": [],
+        "criteria": criteria,
+        "obligations": obligations,
+        "totals": {
+            "backed": 1_555,
+            "total": OBLIGATIONS,
+            "criteria": CRITERIA,
+            "property_shaped": 553,
+            "specific_shaped": 79,
+        },
+        "engine": {
+            "cli": "0.0.0",
+            "engine": "synthetic",
+            "capabilities": ["binding_census", "metrics_envelope", "minted_targets"],
+        },
+    });
+    let bytes = serde_json::to_vec(&value).expect("the synthetic payload serializes");
+    assert!(
+        bytes.len() > 1_400_000,
+        "the payload must exceed 1 MiB to mean anything: {} bytes",
+        bytes.len(),
+    );
+    bytes
+});
 
 ///
-/// The headline: a payload half again the size of the one that killed six
-/// commands is read whole, by value, with no ceiling anywhere near it.
+/// The headline: a payload the size of the one that killed six commands is read whole, by value, with no ceiling anywhere near it.
 #[test]
-fn tc_379_100_the_incident_payload_is_read_whole() {
+fn tc_379_100_the_volume_payload_is_read_whole() {
     let parsed: CoveragePayload = payload::from_slice(
-        "the #164 coverage payload",
+        "the synthetic coverage payload",
         "CoverageReport",
-        VOLUME,
+        &VOLUME,
         PayloadLimit::DEFAULT,
     )
     .expect("the payload reads");
 
     // The read loses nothing: each collection has exactly the length it has in
     // the raw bytes, which is read here independently of the engine's structs.
-    let raw: serde_json::Value = serde_json::from_slice(VOLUME).expect("the fixture is JSON");
+    let raw: serde_json::Value = serde_json::from_slice(&VOLUME).expect("the payload is JSON");
     let length = |key: &str| raw[key].as_array().map_or(0, Vec::len);
-    assert!(length("obligations") > 0, "the fixture carries obligations");
+    assert!(length("obligations") > 0, "the payload carries obligations");
     assert_eq!(parsed.report.unbacked_rows.len(), length("unbacked_rows"));
     assert_eq!(parsed.report.obligations.len(), length("obligations"));
     assert_eq!(parsed.report.criteria.len(), length("criteria"));
@@ -57,11 +145,11 @@ fn tc_379_100_the_incident_payload_is_read_whole() {
 /// invisible in a single read.
 #[trace("NFR-025")]
 #[test]
-fn tc_379_101_the_incident_payload_round_trips() {
+fn tc_379_101_the_volume_payload_round_trips() {
     let first: CoveragePayload = payload::from_slice(
-        "the #164 coverage payload",
+        "the synthetic coverage payload",
         "CoverageReport",
-        VOLUME,
+        &VOLUME,
         PayloadLimit::DEFAULT,
     )
     .expect("the payload reads");
@@ -95,9 +183,9 @@ fn tc_379_101_the_incident_payload_round_trips() {
 fn tc_379_102_a_ceiling_below_the_payload_refuses_it_by_name() {
     let limit = PayloadLimit::bytes(1_000_000).expect("non-zero");
     let error = payload::from_slice::<CoveragePayload>(
-        "the #164 coverage payload",
+        "the synthetic coverage payload",
         "CoverageReport",
-        VOLUME,
+        &VOLUME,
         limit,
     )
     .expect_err("a payload over the ceiling must be refused");
@@ -107,7 +195,7 @@ fn tc_379_102_a_ceiling_below_the_payload_refuses_it_by_name() {
     assert!(message.contains(&VOLUME.len().to_string()), "{message}");
     assert!(message.contains("1000000"), "{message}");
     assert!(
-        message.contains("the #164 coverage payload"),
+        message.contains("the synthetic coverage payload"),
         "the refusal must name what was being read: {message}",
     );
 }
