@@ -33,7 +33,7 @@ pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Res
     dispatch(operation, request, &settings()).map_err(|error| failed(operation, &error))
 }
 
-/// As [`invoke`], except that a refusal the operation states is returned as a
+/// As [`invoke`], except that a refusal naming the pack (a `pack` context entry) is returned as a
 /// payload-free response carrying the refusal's own status, so the shell exits
 /// with it rather than with the generic command failure.
 pub(crate) fn invoke_refusable(
@@ -41,11 +41,15 @@ pub(crate) fn invoke_refusable(
     request: &serde_json::Value,
 ) -> Result<Response, String> {
     match dispatch(operation, request, &settings()) {
-        Err(error) if error.code == CoreErrorCode::Refused => Ok(Response {
-            payload: serde_json::Value::Null,
-            diagnostics: vec![Diagnostic::from(&error)],
-            outcome: error.outcome(),
-        }),
+        Err(error)
+            if error.code == CoreErrorCode::Refused && error.context.contains_key("pack") =>
+        {
+            Ok(Response {
+                payload: serde_json::Value::Null,
+                diagnostics: vec![Diagnostic::from(&error)],
+                outcome: error.outcome(),
+            })
+        }
         Err(error) => Err(failed(operation, &error)),
         Ok(response) => Ok(response),
     }

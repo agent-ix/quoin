@@ -100,25 +100,28 @@ pub fn evaluate(
     Ok(loaded.evaluate(context.as_map()))
 }
 
-/// The exact identity of every clause set the module at `module` declares.
+/// Evaluate every clause set the module at `module` declares against
+/// `context`, from one load of the module, in the engine's key order.
 ///
 /// # Errors
 /// [`Error::ModuleLoad`] when the module does not load strictly, and
 /// [`Error::ContextEntryMalformed`] when a loaded set has an empty identity
 /// field.
-pub fn clause_set_refs(
+pub fn evaluate_all(
     module: &ModuleRoot,
+    context: &Context,
     notices: &mut Vec<Notice>,
-) -> Result<Vec<ClauseSetRef>> {
+) -> Result<Vec<(ClauseSetRef, quire_rs::ClauseBindingReport)>> {
     let registry = load_strict(module, notices)?;
     registry
         .clause_sets()
         .map(|set| {
-            Ok(ClauseSetRef {
+            let reference = ClauseSetRef {
                 authority: ClauseSetAuthority::new(set.authority.as_str())?,
                 id: ClauseSetId::new(set.id.as_str())?,
                 version: ClauseSetVersion::new(set.version.as_str())?,
-            })
+            };
+            Ok((reference, set.evaluate(context.as_map())))
         })
         .collect()
 }

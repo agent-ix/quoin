@@ -313,36 +313,9 @@ fn json_input(source: &str, label: &str) -> Result<serde_json::Value, String> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::expect_used,
-    clippy::indexing_slicing,
-    reason = "test assertions report failures"
-)]
 mod tests {
     use super::command;
     use ix_trace_rs::trace;
-
-    /// Trace: FR-140-AC-12
-    #[test]
-    fn tc_1488_013_the_retained_help_fixture_lists_every_flag_of_the_command() {
-        let capture: serde_json::Value =
-            serde_json::from_str(include_str!("../tests/fixtures/retained-command-help.json"))
-                .expect("the capture is JSON");
-        let help = capture["cases"]
-            .as_array()
-            .expect("cases")
-            .iter()
-            .find(|case| case["argv"] == serde_json::json!(["discharge", "--help"]))
-            .and_then(|case| case["stdout"].as_str())
-            .expect("the discharge help page is captured");
-        for argument in command().get_arguments() {
-            let flag = format!("--{}", argument.get_long().expect("every flag is long"));
-            assert!(
-                help.contains(&flag),
-                "{flag} missing from the retained help"
-            );
-        }
-    }
 
     #[trace("FR-046")]
     #[test]

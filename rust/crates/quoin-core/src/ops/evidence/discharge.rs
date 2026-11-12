@@ -285,8 +285,11 @@ pub fn pack_matrix(
     let context = quoin_quire::clauses::Context::from_entries(&request.context).map_err(|e| {
         CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
     })?;
-    let refused =
-        |message: String| CoreError::new(CoreErrorCode::Refused, message).with_context("op", op);
+    let refused = |message: String| {
+        CoreError::new(CoreErrorCode::Refused, message)
+            .with_context("op", op)
+            .with_context("pack", request.pack.as_str())
+    };
     let modules = capabilities.modules.ok_or_else(|| {
         CoreError::new(
             CoreErrorCode::Io,

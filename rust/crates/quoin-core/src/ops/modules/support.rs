@@ -36,9 +36,9 @@ use crate::capabilities::ModuleHost;
 /// exercised without a filesystem, so `tests/tc_library_containment.rs`
 /// stays satisfied by construction rather than by exemption.
 #[derive(Default)]
-pub(super) struct FakeHost {
-    pub(super) modules: Vec<InstalledModule>,
-    pub(super) fail_with: Option<ModulesErrorCode>,
+pub(crate) struct FakeHost {
+    pub(crate) modules: Vec<InstalledModule>,
+    pub(crate) fail_with: Option<ModulesErrorCode>,
     /// An installed module whose manifest no longer satisfies the contract.
     ///
     /// Set by `tests::reconciling_revalidates_what_is_installed_and_refuses_a_tampered_module`:
@@ -46,21 +46,23 @@ pub(super) struct FakeHost {
     /// installed and is not acceptable now, which no install-time failure
     /// (`fail_with`) can stand in for, because it fails the reconcile itself
     /// rather than the re-validation after it.
-    pub(super) tampered: Option<&'static str>,
+    pub(crate) tampered: Option<&'static str>,
     /// What `is_pack` answers per module name; a name not listed is not a pack.
-    pub(super) packs: Vec<(&'static str, Result<bool, &'static str>)>,
-    pub(super) calls: RefCell<Vec<String>>,
+    pub(crate) packs: Vec<(&'static str, Result<bool, &'static str>)>,
+    /// When set, `evaluate_clause_sets` fails with this load error.
+    pub(crate) evaluation_error: Option<&'static str>,
+    pub(crate) calls: RefCell<Vec<String>>,
 }
 
 impl FakeHost {
-    pub(super) fn with_module(name: &str) -> Self {
+    pub(crate) fn with_module(name: &str) -> Self {
         Self {
             modules: vec![module(name)],
             ..Self::default()
         }
     }
 
-    pub(super) fn failing(code: ModulesErrorCode) -> Self {
+    pub(crate) fn failing(code: ModulesErrorCode) -> Self {
         Self {
             fail_with: Some(code),
             ..Self::default()
@@ -96,7 +98,8 @@ impl ModuleHost for FakeHost {
         _module: &InstalledModule,
         _context: &quoin_quire::clauses::Context,
     ) -> Result<Vec<quoin_quire_types::ClauseBindingReport>, String> {
-        Ok(Vec::new())
+        self.evaluation_error
+            .map_or_else(|| Ok(Vec::new()), |error| Err(error.to_owned()))
     }
 
     fn install(
@@ -156,7 +159,7 @@ impl ModuleHost for FakeHost {
     }
 }
 
-pub(super) fn module(name: &str) -> InstalledModule {
+pub(crate) fn module(name: &str) -> InstalledModule {
     InstalledModule {
         name: ModuleName::new(name).unwrap(),
         source: Source::Path {

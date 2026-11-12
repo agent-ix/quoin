@@ -70,12 +70,13 @@ fn pack_sets() -> Vec<SetSpec> {
     ]
 }
 
-fn text_sentinel(set: &str, clause: &str) -> String {
-    format!("SENTINEL-text-{set}-{}", clause.len())
+/// The sentinel of the clause at `index` of `set`; one per clause.
+fn text_sentinel(set: &str, index: usize) -> String {
+    format!("SENTINEL-text-{set}-{index}")
 }
 
-fn title_sentinel(set: &str, clause: &str) -> String {
-    format!("SENTINEL-title-{set}-{}", clause.len())
+fn title_sentinel(set: &str, index: usize) -> String {
+    format!("SENTINEL-title-{set}-{index}")
 }
 
 fn set_title_sentinel(set: &str) -> String {
@@ -87,9 +88,9 @@ fn sentinels() -> Vec<String> {
     let mut all = Vec::new();
     for (set, _, clauses) in pack_sets() {
         all.push(set_title_sentinel(set));
-        for (clause, _, _) in clauses {
-            all.push(text_sentinel(set, &clause));
-            all.push(title_sentinel(set, &clause));
+        for index in 0..clauses.len() {
+            all.push(text_sentinel(set, index));
+            all.push(title_sentinel(set, index));
         }
     }
     all
@@ -112,12 +113,12 @@ fn set_yaml(set: &SetSpec) -> String {
          clauses:\n",
         set_title_sentinel(id)
     );
-    for (clause, force, applicability) in clauses {
+    for (index, (clause, force, applicability)) in clauses.iter().enumerate() {
         write!(
             yaml,
             "  - id: \"{clause}\"\n    force: {force}\n    title: \"{}\"\n    text: \"{}\"\n{applicability}",
-            title_sentinel(id, clause),
-            text_sentinel(id, clause)
+            title_sentinel(id, index),
+            text_sentinel(id, index)
         )
         .unwrap();
     }
@@ -494,8 +495,8 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
     let broken = std::fs::read_to_string(env.installed_file("zeta.yaml"))
         .unwrap()
         .replace(
-            &format!("text: \"{}\"", text_sentinel("zeta", "Z-1")),
-            &format!("text: [\"{}\"]", text_sentinel("zeta", "Z-1")),
+            &format!("text: \"{}\"", text_sentinel("zeta", 0)),
+            &format!("text: [\"{}\"]", text_sentinel("zeta", 0)),
         );
     std::fs::write(env.installed_file("zeta.yaml"), broken).unwrap();
     outputs.push(env.report(&[]));
@@ -581,7 +582,7 @@ fn tc_1488_007_an_unknown_name_and_a_non_pack_module_exit_two_with_no_stdout() {
 #[test]
 fn tc_1488_008_a_set_that_fails_to_load_refuses_the_whole_report_without_the_sentinel() {
     let env = env();
-    let sentinel = text_sentinel("zeta", "Z-1");
+    let sentinel = text_sentinel("zeta", 0);
     let broken = std::fs::read_to_string(env.installed_file("zeta.yaml"))
         .unwrap()
         .replace(
@@ -669,35 +670,6 @@ fn tc_1488_009_misused_flags_are_usage_errors_and_a_blank_rationale_refuses_the_
         text(&without).contains("Missing required flag binding"),
         "{}",
         text(&without)
-    );
-
-    // A stored disposition whose rationale is blank, as the store would never
-    // have written it.
-    let disposition = serde_json::json!({
-        "kind": "disposition", "clauseId": "A-1", "decision": "accepted_risk",
-        "rationale": "carried", "approvalRef": "approval://1",
-        "attestation": direct("A-1")["attestation"].clone()
-    });
-    let recorded = record(&env, &env.repo, "alpha", "2", &[disposition]);
-    let path = recorded.split_whitespace().last().unwrap().to_owned();
-    let stored = env.repo.join(".ix/evidence").join(&path);
-    let file = if stored.exists() {
-        stored
-    } else {
-        std::fs::canonicalize(&path).unwrap_or_else(|_| PathBuf::from(&path))
-    };
-    let mut held: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
-    assert_eq!(held["fact"]["rationale"], "carried");
-    held["fact"]["rationale"] = "   ".into();
-    std::fs::write(&file, held.to_string()).unwrap();
-    let refused = env.report(&[]);
-    assert!(!refused.status.success(), "{}", text(&refused));
-    assert!(refused.stdout.is_empty(), "no matrix for any set");
-    assert!(
-        stderr(&refused).contains("rationale"),
-        "{}",
-        stderr(&refused)
     );
 }
 
@@ -791,4 +763,67 @@ fn tc_1488_012_the_retained_discharge_help_lists_pack_and_context() {
     assert!(printed.contains("--pack"), "{printed}");
     assert!(printed.contains("--context"), "{printed}");
     assert!(printed.contains("[--binding <value>]"), "{printed}");
+}
+
+#[trace("FR-140-AC-9")]
+#[test]
+fn tc_1488_014_a_blank_stored_rationale_refuses_the_whole_report_as_fr_135_does() {
+    let env = env();
+    let repo = env.repo.to_str().unwrap();
+    // A stored disposition whose rationale is blank, as the store would never
+    // have written it.
+    let disposition = serde_json::json!({
+        "kind": "disposition", "clauseId": "A-1", "decision": "accepted_risk",
+        "rationale": "carried", "approvalRef": "approval://1",
+        "attestation": direct("A-1")["attestation"].clone()
+    });
+    let recorded = record(&env, &env.repo, "alpha", "2", &[disposition]);
+    let path = recorded.split_whitespace().last().unwrap().to_owned();
+    let stored = env.repo.join(".ix/evidence").join(&path);
+    let file = if stored.exists() {
+        stored
+    } else {
+        std::fs::canonicalize(&path).unwrap_or_else(|_| PathBuf::from(&path))
+    };
+    let mut held: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+    assert_eq!(held["fact"]["rationale"], "carried");
+    held["fact"]["rationale"] = "   ".into();
+    std::fs::write(&file, held.to_string()).unwrap();
+    let refused = env.report(&[]);
+    assert_eq!(refused.status.code(), Some(1), "{}", text(&refused));
+    assert!(refused.stdout.is_empty(), "no matrix for any set");
+
+    // The single-set FR-135-AC-6 run over the same store refuses the same way.
+    let single_binding = env.base.join("single-refusal.json");
+    std::fs::write(&single_binding, env.engine_binding("alpha", "2", &[])).unwrap();
+    let single = env.run(&[
+        "discharge",
+        "--rmm",
+        "--binding",
+        single_binding.to_str().unwrap(),
+        "--repo",
+        repo,
+        "--as-of",
+        AS_OF,
+    ]);
+    assert_eq!(
+        single.status.code(),
+        refused.status.code(),
+        "{}",
+        text(&single)
+    );
+    let refusal = |output: &Output| -> String {
+        let message = stderr(output);
+        let from = message
+            .find("CORE_BAD_REQUEST")
+            .expect("a bad-request refusal");
+        message[from..].trim().to_owned()
+    };
+    assert!(
+        refusal(&refused).contains("rationale"),
+        "{}",
+        stderr(&refused)
+    );
+    assert_eq!(refusal(&refused), refusal(&single));
 }

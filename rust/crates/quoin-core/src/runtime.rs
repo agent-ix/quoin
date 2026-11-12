@@ -349,13 +349,10 @@ impl ModuleHost for HostModules {
             quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
         let root =
             ModuleRoot::open(manifest.parent().unwrap_or(installed)).map_err(|e| e.to_string())?;
-        let mut notices = Vec::new();
-        let sets = quoin_quire::clauses::clause_set_refs(&root, &mut notices)
+        let sets = quoin_quire::clauses::evaluate_all(&root, context, &mut Vec::new())
             .map_err(|e| e.to_string())?;
-        sets.iter()
-            .map(|set| {
-                let report = quoin_quire::clauses::evaluate(&root, set, context, &mut notices)
-                    .map_err(|e| format!("{}/{}@{}: {e}", set.authority, set.id, set.version))?;
+        sets.into_iter()
+            .map(|(set, report)| {
                 let value = serde_json::to_value(&report).map_err(|e| e.to_string())?;
                 serde_json::from_value(value).map_err(|e| {
                     format!(
