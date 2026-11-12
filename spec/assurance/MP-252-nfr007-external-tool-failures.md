@@ -33,8 +33,8 @@ relationships:
 # ix-flow failures reach the caller as a non-zero exit
 
 Measures NFR-007-M-1: external-tool failures surfaced as a non-zero `quoin`
-exit. The only external tool `quoin` runs is `ix-flow`; `quire` is emitted, not
-run (NFR-007-M-2), and `quoin update` fetches over HTTP.
+exit. The only external tool `quoin` runs is `ix-flow`; `quire` is a linked library,
+and `quoin update` fetches over HTTP.
 
 ## Decision Use
 

@@ -281,7 +281,7 @@ fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
     }
 }
 
-#[trace("FR-019-AC-2")]
+#[trace("FR-019-AC-2", "NFR-001-M-1")]
 #[test]
 fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     let h = home();
