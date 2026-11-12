@@ -78,6 +78,7 @@ mod completeness;
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod fixtures;
+mod pack_rmm;
 mod parse;
 mod render;
 mod report;
@@ -88,6 +89,10 @@ pub use build::build_discharge_report;
 pub use completeness::{
     CompletenessSchemaVersion, DispositionCounts, InwardCompleteness, OpenClause,
     render_inward_completeness,
+};
+pub use pack_rmm::{
+    PackIndexEntry, PackRequirementsMapping, PackRequirementsMappingSchemaVersion,
+    build_pack_requirements_mapping, render_pack_requirements_mapping,
 };
 pub use render::render_discharge_report;
 pub use report::{

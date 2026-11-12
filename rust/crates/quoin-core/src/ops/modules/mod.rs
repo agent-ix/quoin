@@ -36,6 +36,8 @@ mod wire;
 #[cfg(test)]
 mod support;
 #[cfg(test)]
+pub(crate) use support::FakeHost;
+#[cfg(test)]
 mod tests;
 
 use std::path::Path;

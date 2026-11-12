@@ -339,6 +339,31 @@ impl ModuleHost for HostModules {
         Ok(!QuirePacks.restricted_sets(dir)?.is_empty())
     }
 
+    fn evaluate_clause_sets(
+        &self,
+        module: &InstalledModule,
+        context: &quoin_quire::clauses::Context,
+    ) -> Result<Vec<quoin_quire_types::ClauseBindingReport>, String> {
+        let installed = Path::new(&module.target_path);
+        let manifest =
+            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
+        let root =
+            ModuleRoot::open(manifest.parent().unwrap_or(installed)).map_err(|e| e.to_string())?;
+        let sets = quoin_quire::clauses::evaluate_all(&root, context, &mut Vec::new())
+            .map_err(|e| e.to_string())?;
+        sets.into_iter()
+            .map(|(set, report)| {
+                let value = serde_json::to_value(&report).map_err(|e| e.to_string())?;
+                serde_json::from_value(value).map_err(|e| {
+                    format!(
+                        "{}/{}@{}: the binding report is not clause-binding-v1: {e}",
+                        set.authority, set.id, set.version
+                    )
+                })
+            })
+            .collect()
+    }
+
     fn list(&self, home: Option<&Path>) -> Result<Vec<InstalledModule>, ModulesError> {
         // The closure is NOT redundant, and clippy's suggested method path does
         // not compile: `with_installer` binds its installer to a lifetime local

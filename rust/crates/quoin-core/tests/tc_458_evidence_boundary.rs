@@ -854,6 +854,31 @@ fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
     );
 }
 
+/// The pack report refuses a name that is not an installed module, with the
+/// refusal status and no payload, before it reads any store (FR-140).
+#[trace("FR-140-AC-7")]
+#[test]
+fn tc_1488_100_the_pack_operation_refuses_an_unknown_module_by_name() {
+    let dir = repo();
+    let refused = run(
+        "evidence.pack_requirements_matrix",
+        &json!({"pack": "no-such-pack-1488", "repo": dir.path(), "asOf": "2026-08-15T00:00:00Z"}),
+    );
+    assert_eq!(refused.status, 2, "{}", refused.stderr);
+    assert_eq!(refused.stdout, "");
+    assert!(
+        refused.stderr.contains("no-such-pack-1488"),
+        "{}",
+        refused.stderr
+    );
+
+    let malformed = run(
+        "evidence.pack_requirements_matrix",
+        &json!({"pack": "p", "repo": dir.path(), "asOf": "x", "context": ["no-equals"]}),
+    );
+    assert_eq!(malformed.status, 3, "{}", malformed.stderr);
+}
+
 /// A stored disposition whose rationale is blank was not written by
 /// `record_discharge`; the operation refuses it and renders no matrix.
 #[trace("FR-135-AC-6", "TC-3205")]

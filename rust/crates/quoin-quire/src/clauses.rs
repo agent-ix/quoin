@@ -14,7 +14,7 @@
 use std::collections::BTreeMap;
 
 use crate::error::{Error, Result};
-use crate::ids::{ClauseSetRef, ModuleRoot};
+use crate::ids::{ClauseSetAuthority, ClauseSetId, ClauseSetRef, ClauseSetVersion, ModuleRoot};
 use crate::modules::{Notice, NoticeKind};
 
 /// The declared context a clause set is evaluated against.
@@ -98,6 +98,32 @@ pub fn evaluate(
     let registry = load_strict(module, notices)?;
     let loaded = exact(&registry, set)?;
     Ok(loaded.evaluate(context.as_map()))
+}
+
+/// Evaluate every clause set the module at `module` declares against
+/// `context`, from one load of the module, in the engine's key order.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] when the module does not load strictly, and
+/// [`Error::ContextEntryMalformed`] when a loaded set has an empty identity
+/// field.
+pub fn evaluate_all(
+    module: &ModuleRoot,
+    context: &Context,
+    notices: &mut Vec<Notice>,
+) -> Result<Vec<(ClauseSetRef, quire_rs::ClauseBindingReport)>> {
+    let registry = load_strict(module, notices)?;
+    registry
+        .clause_sets()
+        .map(|set| {
+            let reference = ClauseSetRef {
+                authority: ClauseSetAuthority::new(set.authority.as_str())?,
+                id: ClauseSetId::new(set.id.as_str())?,
+                version: ClauseSetVersion::new(set.version.as_str())?,
+            };
+            Ok((reference, set.evaluate(context.as_map())))
+        })
+        .collect()
 }
 
 /// The licence-restricted clause sets of the module rooted at `module`, as the

@@ -572,3 +572,34 @@ fn tc_458_the_assurance_family_round_trips_through_its_wire_spelling() {
     assert_ne!(families[0].op(), families[1].op());
     assert_eq!(AssuranceFamily::from_op("evidence.record"), None);
 }
+
+/// A pack that passes the pack check but fails to load when its sets are
+/// evaluated is refused with the refusal status, naming the set and the load
+/// error, and nothing is read from the store (FR-140-AC-8).
+#[trace("FR-140-AC-8")]
+#[test]
+fn tc_1488_101_a_pack_that_fails_to_load_after_the_pack_check_is_refused_whole() {
+    use crate::capabilities::Capabilities;
+    use crate::error::CoreErrorCode;
+    use crate::ops::modules::FakeHost;
+
+    let mut modules = FakeHost::with_module("alpha");
+    modules.packs = vec![("alpha", Ok(true))];
+    modules.evaluation_error = Some("example.invalid/rules@2: malformed clause");
+    let capabilities = Capabilities {
+        modules: Some(&modules),
+        evidence: Some(&RefusingHost),
+        ..Capabilities::none()
+    };
+    let error = pack_matrix(
+        &json!({"pack": "alpha", "repo": "/r", "asOf": "2026-08-15T00:00:00Z"}),
+        &capabilities,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, CoreErrorCode::Refused);
+    assert_eq!(error.outcome().code(), 2);
+    let message = error.to_string();
+    assert!(message.contains("example.invalid/rules@2"), "{message}");
+    assert!(message.contains("alpha"), "{message}");
+    assert!(!message.contains("SENTINEL"), "{message}");
+}
