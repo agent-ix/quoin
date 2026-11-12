@@ -1,17 +1,17 @@
 ---
 id: FR-139
-title: "Installing or using a pack writes nothing into any repository"
+title: "Pack install, list, inspect and remove write nothing into any repository"
 type: FR
 relationships:
   - target: "ix://agent-ix/quoin/FR-137"
     type: "depends_on"
 ---
 
-# FR-139: Installing or using a pack writes nothing into any repository
+# FR-139: Pack install, list, inspect and remove write nothing into any repository
 
 ## Description
 
-Installing, listing, inspecting, or removing a pack SHALL write only under
+`quoin module install`, `list`, `inspect` and `remove` over a pack SHALL write only under
 `IX_HOME` (the registry and the modules directory). Quoin SHALL NOT write any file,
 clause text, path, or registry data from a pack into the source tree or into any
 other directory outside `IX_HOME`.
@@ -19,9 +19,9 @@ other directory outside `IX_HOME`.
 ## Rationale
 
 The pack source is outside every repository (FR-137), and the installed copy is
-under `IX_HOME`. This requirement closes the remaining route: quoin itself copying
-pack content into a working repository, such as a cache, report, log, or evidence
-file.
+under `IX_HOME`. This requirement covers exactly the four module commands above and
+closes the route where one of them copies pack content into a working repository.
+Other commands are out of scope.
 
 ## Behavior
 
@@ -29,7 +29,8 @@ file.
 - Those commands SHALL leave the pack source directory byte-identical.
 - Those commands SHALL NOT write to the current working directory.
 - When any of those commands completes, `git status --porcelain` in the source tree, the working directory's repository, and every other work tree in the test sandbox SHALL be empty.
-- Diagnostics SHALL name sets as `authority/id@version` and SHALL NOT quote clause text.
+- Diagnostics SHALL name sets as `authority/id@version`.
+- Diagnostics SHALL NOT quote clause text.
 
 ## Acceptance Criteria
 

@@ -225,12 +225,12 @@ index; the files are authoritative.
 - [FR-122](./functional/FR-122-architecture-record-keys-mapping.md) — architecture object record keys mapping.
 - [FR-123](./functional/FR-123-model-table-sections-mapping.md) — enumeration `## Values` and model-table sections map to record keys.
 - [FR-124](./functional/FR-124-inspect-installed-semantic-modules.md) — `quoin module inspect` reports each installed module's semantic contract and import locks.
-- [FR-137](./functional/FR-137-detect-and-place-licensed-packs.md) — a module with a restricted clause set is a pack, derived at install, refused from inside a git work tree, and marked in `module list`.
-- [FR-138](./functional/FR-138-never-publish-an-installed-pack.md) — every publish path refuses an installed pack through the engine's publish-check decision.
-- [FR-139](./functional/FR-139-pack-writes-nothing-into-a-repository.md) — pack install and use write only under `IX_HOME`.
 - [FR-130](./functional/FR-130-protocol-scenario-evidence-intake.md) — `evidence.record_scenario` files a typed Quire Protocol scenario-evidence record or refuses it by kind.
 - [FR-133](./functional/FR-133-discharge-facts-in-the-evidence-store.md) — attested clause-discharge facts persist in the evidence store; the partition and an inward-completeness report are re-derived from a live binding report.
 - [FR-135](./functional/FR-135-requirements-mapping-matrix-view.md) — `quoin discharge --repo --rmm` renders a requirements mapping matrix view (Req#, Applicability, Compliance, Tailoring) from the discharge report, gaps as rows, no score.
+- [FR-137](./functional/FR-137-detect-and-place-licensed-packs.md) — a module with a restricted clause set is a pack, derived at install, refused from inside a git work tree, and marked in `module list`.
+- [FR-138](./functional/FR-138-packs-never-come-from-hosted-sources.md) — a pack is never installed from a hosted source and never sits in the default module set.
+- [FR-139](./functional/FR-139-pack-writes-nothing-into-a-repository.md) — pack install, list, inspect and remove write only under `IX_HOME`.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
 - [FR-131](./functional/FR-131-percentage-metrics-over-enumerated-population.md) — a percentage metric is taken over a plan-enumerated population its observations must state exactly.
 - [FR-132](./functional/FR-132-paired-run-metrics.md) — a metric that states two runs agree is computed from a paired comparison of two collections under the plan's `paired_run` relation, inconclusive below `minimum_pairs`.
