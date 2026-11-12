@@ -34,7 +34,7 @@ fn obligation(id: &str) -> Value {
 /// A cargo-deny scan is recorded under `--tool cargo-deny <version>` as a
 /// finding record in `scans/`, not refused as another tool's output and not
 /// written to `runs/`.
-#[trace("FR-034-AC-24", "TC-2703")]
+#[trace("FR-034-AC-24")]
 #[test]
 fn tc_2703_a_cargo_deny_scan_records_under_its_own_tool() {
     let dir = repo();
@@ -62,7 +62,7 @@ fn tc_2703_a_cargo_deny_scan_records_under_its_own_tool() {
 
 /// A failed cargo-deny run whose diagnostics were suppressed prints only a
 /// summary counting an error; recording it is refused and binds nothing.
-#[trace("FR-034-AC-25", "TC-2706")]
+#[trace("FR-034-AC-25")]
 #[test]
 fn tc_2706_a_failed_cargo_deny_run_is_not_recorded_as_clean() {
     let dir = repo();
@@ -87,7 +87,7 @@ fn tc_2706_a_failed_cargo_deny_run_is_not_recorded_as_clean() {
 /// An SBOM carries no trace ids, so the obligation it discharges is stated
 /// with `--discharges`; every component is a passing entry, so the obligation
 /// binds, and an id no obligation states is reported rather than dropped.
-#[trace("FR-041-AC-7", "FR-041-AC-8", "TC-2704", "TC-2705")]
+#[trace("FR-041-AC-7", "FR-041-AC-8")]
 #[test]
 fn tc_2704_an_sbom_discharges_the_obligation_it_is_stated_to_check() {
     let dir = repo();
@@ -120,7 +120,7 @@ fn tc_2704_an_sbom_discharges_the_obligation_it_is_stated_to_check() {
 }
 
 /// Without `--discharges` an SBOM binds nothing: it names no obligation.
-#[trace("FR-041-AC-7", "TC-2704")]
+#[trace("FR-041-AC-7")]
 #[test]
 fn tc_2704_an_sbom_with_no_stated_obligation_binds_nothing() {
     let dir = repo();
@@ -138,7 +138,7 @@ fn tc_2704_an_sbom_with_no_stated_obligation_binds_nothing() {
 
 /// An inventory listing nothing has no entry to carry the stated id, so the
 /// id is checked against the obligations directly and still reported.
-#[trace("FR-041-AC-8", "TC-2705")]
+#[trace("FR-041-AC-8")]
 #[test]
 fn tc_2705_an_empty_sbom_still_reports_a_stated_id_no_obligation_states() {
     let dir = repo();
@@ -158,7 +158,7 @@ fn tc_2705_an_empty_sbom_still_reports_a_stated_id_no_obligation_states() {
 
 /// A test run derives what it discharges from its own trace ids; stating an
 /// obligation on one would let a red suite discharge it, so it is refused.
-#[trace("FR-041-AC-9", "TC-2708")]
+#[trace("FR-041-AC-9")]
 #[test]
 fn tc_2708_discharges_is_refused_on_a_test_run_adapter() {
     let dir = repo();

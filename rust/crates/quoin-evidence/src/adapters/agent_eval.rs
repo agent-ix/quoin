@@ -118,14 +118,7 @@ mod tests {
     /// different facts.
     ///
     /// Provenance: quoin#458
-    #[trace(
-        "FR-042-AC-1",
-        "FR-042-AC-2",
-        "FR-042-AC-3",
-        "FR-042-CON-2",
-        "TC-241",
-        "TC-242"
-    )]
+    #[trace("FR-042-AC-1", "FR-042-AC-2", "FR-042-AC-3", "FR-042-CON-2")]
     #[test]
     fn tc_458_220_keys_each_entry_on_the_scenario_id_and_traces_it_to_itself() {
         let result = parse_agent_eval(
@@ -161,7 +154,7 @@ mod tests {
     /// a file proving only that the harness started.
     ///
     /// Provenance: quoin#458
-    #[trace("FR-042-AC-4", "TC-243")]
+    #[trace("FR-042-AC-4")]
     #[test]
     fn tc_458_221_refuses_a_report_with_no_results() {
         assert_eq!(

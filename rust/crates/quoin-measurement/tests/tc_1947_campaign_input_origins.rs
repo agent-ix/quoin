@@ -334,14 +334,7 @@ fn runtime(repo: &Path, prepare: bool) -> RunMemberBindings {
 }
 
 /// Provenance: PLAT-1061
-#[trace(
-    "FR-114-AC-2",
-    "FR-114-AC-3",
-    "TC-1942",
-    "TC-1947",
-    "FR-044-AC-14",
-    "TC-2147"
-)]
+#[trace("FR-114-AC-2", "FR-114-AC-3", "FR-044-AC-14")]
 #[cfg(target_os = "linux")]
 #[test]
 #[allow(
@@ -399,7 +392,7 @@ fn tc_1947_two_member_authored_origins_are_recorded() {
 /// Provenance: PLAT-1071
 /// A selected input at a path tracked in the source tree is refused before
 /// launch and the tracked file keeps its bytes.
-#[trace("FR-114-AC-2", "TC-1942")]
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1947_selected_input_at_a_tracked_path_is_refused() {
@@ -482,7 +475,7 @@ fn assert_first_attempt(
 
 /// Provenance: PLAT-1043
 /// A producer past its deadline is retained as timed out, with no Collection.
-#[trace("FR-114-AC-2", "TC-1941")]
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1941_timed_out_producer_is_retained() {
@@ -501,7 +494,7 @@ fn tc_1941_timed_out_producer_is_retained() {
 /// Provenance: PLAT-1043
 /// A descendant that escapes the observed process group is retained as a
 /// containment failure, with no Collection.
-#[trace("FR-114-AC-2", "TC-1941")]
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1941_escaped_descendant_containment_failure_is_retained() {
@@ -521,7 +514,7 @@ fn tc_1941_escaped_descendant_containment_failure_is_retained() {
 /// Provenance: PLAT-1043
 /// A caller cancelling the registered Event-bound process is retained as
 /// cancelled, with no Collection.
-#[trace("FR-114-AC-2", "TC-1941")]
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1941_live_event_cancellation_is_retained() {

@@ -72,7 +72,7 @@ fn attach(repo: &Path, path: &str) -> Run {
     )
 }
 
-#[trace("FR-125-AC-6", "TC-2155")]
+#[trace("FR-125-AC-6")]
 #[test]
 fn tc_165_101_attach_retains_a_regular_file_and_refuses_every_unsafe_source() {
     let temporary = repository();
@@ -165,7 +165,7 @@ fn verify(root: &Path) -> Run {
     )
 }
 
-#[trace("FR-125-AC-7", "TC-2156")]
+#[trace("FR-125-AC-7")]
 #[test]
 fn tc_165_102_verify_fails_when_a_retained_attachment_is_tampered_or_missing() {
     let temporary = repository();

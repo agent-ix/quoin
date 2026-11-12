@@ -278,7 +278,7 @@ fn tc_457_600_write_record_retains_a_record_under_its_identity() {
 /// size; a caller-written `retained_output` is refused.
 ///
 /// Provenance: agent-ix/quoin#457
-#[trace("FR-068-AC-2", "FR-068-CON-2", "TC-1318")]
+#[trace("FR-068-AC-2", "FR-068-CON-2")]
 #[test]
 fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
     let prepared = ok(&run(
@@ -530,7 +530,7 @@ fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
 /// constant the writing tests use.
 ///
 /// Provenance: agent-ix/quoin#503
-#[trace("FR-068-AC-8", "TC-1324")]
+#[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
     let listed = ok(&run("change_assurance.schema", &json!({})));
@@ -591,7 +591,7 @@ fn write_protecting_plan(root: &Path, id: &str, entries: &[&str]) {
 /// and not only through the library.
 ///
 /// Provenance: PLAT-997
-#[trace("FR-111-AC-1", "TC-1889")]
+#[trace("FR-111-AC-1")]
 #[test]
 fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
     let root = repo();
@@ -626,7 +626,7 @@ fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
 /// `valid` because the caller omitted `--diff-path` (FR-111-AC-4).
 ///
 /// Provenance: PLAT-997
-#[trace("FR-111-AC-4", "TC-1890")]
+#[trace("FR-111-AC-4")]
 #[test]
 fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
     let root = repo();
@@ -649,7 +649,7 @@ fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
 /// and so is a `plan` id one byte past its ceiling.
 ///
 /// Provenance: PLAT-997
-#[trace("FR-111-CON-2", "TC-1891")]
+#[trace("FR-111-CON-2")]
 #[test]
 fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
     use quoin_core::ops::change_assurance::{MAX_DIFF_PATHS, MAX_SCALAR_BYTES};
@@ -711,7 +711,7 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
 /// silence a genuinely unlinked record would (PLAT-1015).
 ///
 /// Provenance: PLAT-1015
-#[trace("FR-111-AC-5", "TC-1915")]
+#[trace("FR-111-AC-5")]
 #[test]
 fn tc_1015_614_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     let root = repo();

@@ -43,7 +43,7 @@ fn text(output: &Output) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
-#[trace("FR-133-AC-7", "TC-2606")]
+#[trace("FR-133-AC-7")]
 #[test]
 fn tc_2606_recorded_facts_are_read_back_by_the_discharge_command() {
     let dir = tempfile::tempdir().unwrap();
@@ -111,7 +111,7 @@ fn tc_2606_recorded_facts_are_read_back_by_the_discharge_command() {
     assert_eq!(json["binding"]["direct"][0]["clauseId"], "C-1");
 }
 
-#[trace("FR-133-AC-5", "TC-2604")]
+#[trace("FR-133-AC-5")]
 #[test]
 fn tc_2604_a_doubled_binding_clause_is_refused_not_counted_twice() {
     let dir = tempfile::tempdir().unwrap();

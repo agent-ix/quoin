@@ -143,7 +143,7 @@ mod tests {
     use ix_trace_rs::trace;
 
     /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
-    #[trace("FR-040-AC-7", "TC-227")]
+    #[trace("FR-040-AC-7")]
     #[test]
     fn tc_447_420_an_obligation_id_names_the_requirement_it_belongs_to() {
         assert_eq!(requirement_of("FR-001-AC-3"), "FR-001");
@@ -152,7 +152,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
-    #[trace("FR-040-AC-7", "TC-227")]
+    #[trace("FR-040-AC-7")]
     #[test]
     fn tc_447_421_the_suffix_is_read_by_shape_and_never_by_an_allow_list() {
         // The defect a suffix allow-list produces, asserted directly.
@@ -162,7 +162,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
-    #[trace("FR-040-AC-7", "TC-227")]
+    #[trace("FR-040-AC-7")]
     #[test]
     fn tc_447_422_an_id_that_is_not_an_obligation_comes_back_unchanged() {
         assert_eq!(requirement_of("not-an-id"), "not-an-id");
@@ -173,14 +173,14 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
-    #[trace("FR-040-AC-7", "TC-227")]
+    #[trace("FR-040-AC-7")]
     #[test]
     fn tc_447_423_a_bare_requirement_id_is_its_own_requirement() {
         assert_eq!(requirement_of("FR-001"), "FR-001");
     }
 
     /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
-    #[trace("FR-040-AC-7", "TC-227")]
+    #[trace("FR-040-AC-7")]
     #[test]
     fn tc_447_424_a_multi_byte_character_falls_to_unchanged_rather_than_panicking() {
         // The slice above is only safe because every consumed byte is ASCII.

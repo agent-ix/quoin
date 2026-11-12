@@ -115,7 +115,7 @@ fn tc_455_only_output_of_the_declared_size_is_retained() {
 /// Repeated identical intake preserves byte identity and reports that the
 /// evidence was already retained, while a different pair under the same id is
 /// a collision that leaves the first pair exactly as it was.
-#[trace("FR-064-AC-6", "TC-1277")]
+#[trace("FR-064-AC-6")]
 #[test]
 fn tc_455_repeated_intake_is_identical_and_a_collision_preserves_the_first_pair() {
     let (attestation, output) = pair();
@@ -193,7 +193,7 @@ fn tc_455_writing_a_successor_leaves_every_parent_byte_untouched() {
 /// attestation's id never addresses a record and a record's identity never
 /// addresses an attestation. Nothing here reaches outside the change-assurance
 /// root, so evidence written by other families is untouched by construction.
-#[trace("FR-064-AC-8", "TC-1279")]
+#[trace("FR-064-AC-8")]
 #[test]
 fn tc_455_records_and_attestations_are_distinct_store_families() {
     let (attestation, output) = pair();

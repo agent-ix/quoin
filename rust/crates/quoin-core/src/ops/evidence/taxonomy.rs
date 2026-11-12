@@ -161,7 +161,7 @@ mod tests {
     /// The refusal kind rides the envelope as its own context key, so a
     /// producer branches on it rather than on the message text.
     #[test]
-    #[trace("FR-130-AC-9", "TC-2208")]
+    #[trace("FR-130-AC-9")]
     fn a_scenario_refusal_carries_its_kind_as_context() {
         let envelope = map_error(
             &EvidenceError::ScenarioRefused {

@@ -83,7 +83,7 @@ fn stored(items: Vec<quoin_jev::ConstantPredictorItem>) -> serde_json::Value {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-23", "TC-2022")]
+#[trace("FR-108-AC-23")]
 #[test]
 fn tc_2022_the_committed_corpus_maps_to_fifteen_items_in_two_families() {
     let items = constant_predictor_items(&graded());
@@ -105,7 +105,7 @@ fn tc_2022_the_committed_corpus_maps_to_fifteen_items_in_two_families() {
 /// disagreement even when its leftover label equals the corpus's.
 ///
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-20", "FR-108-AC-23", "TC-2022")]
+#[trace("FR-108-AC-20", "FR-108-AC-23")]
 #[test]
 fn tc_2022_an_unrecognized_row_never_agrees_through_a_leftover_label() {
     let mut rows = graded();
@@ -145,7 +145,7 @@ fn declared_set(id: &str) -> std::collections::BTreeSet<String> {
 /// in this directory.
 ///
 /// Provenance: PLAT-1401
-#[trace("FR-131-AC-12", "TC-3006")]
+#[trace("FR-131-AC-12")]
 #[test]
 fn tc_3006_the_jev_plans_declare_the_sets_their_sources_enumerate() {
     let fixtures: std::collections::BTreeSet<String> = {

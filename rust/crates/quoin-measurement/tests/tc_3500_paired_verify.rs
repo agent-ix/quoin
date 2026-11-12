@@ -123,7 +123,7 @@ fn codes(verdict: &MeasurementVerdict) -> Vec<&'static str> {
 }
 
 /// Equal runs accept with a zero count; differing runs reject, counting the slices.
-#[trace("FR-132-AC-8", "TC-3500")]
+#[trace("FR-132-AC-8")]
 #[test]
 fn tc_3500_equal_runs_accept_and_differing_runs_reject() {
     let plans = plans(EQUAL);
@@ -148,7 +148,7 @@ fn tc_3500_equal_runs_accept_and_differing_runs_reject() {
 }
 
 /// `within_delta` admits movement inside the band and rejects beyond it.
-#[trace("FR-132-AC-8", "TC-3501")]
+#[trace("FR-132-AC-8")]
 #[test]
 fn tc_3501_within_delta_admits_the_band() {
     let plans = plans("paired_run:\n  relation: within_delta\n  minimum_pairs: 1\n  delta: 0.5\n");
@@ -165,7 +165,7 @@ fn tc_3501_within_delta_admits_the_band() {
 
 /// A paired plan with no rule is not `no_decision_rule`; a half-declared
 /// rule keeps its reason; a non-paired plan is unchanged.
-#[trace("FR-132-AC-9", "TC-3502")]
+#[trace("FR-132-AC-9")]
 #[test]
 fn tc_3502_the_relation_is_the_decision_of_a_ruleless_paired_plan() {
     let first = run("a", &[("r1", 3.0)]);
@@ -179,7 +179,7 @@ fn tc_3502_the_relation_is_the_decision_of_a_ruleless_paired_plan() {
 }
 
 /// A plan without `paired_run` is verified exactly as before.
-#[trace("FR-132-AC-9", "TC-3503")]
+#[trace("FR-132-AC-9")]
 #[test]
 fn tc_3503_a_plan_without_paired_run_still_has_no_decision_rule() {
     let first = run("a", &[("r1", 3.0)]);
@@ -191,7 +191,7 @@ fn tc_3503_a_plan_without_paired_run_still_has_no_decision_rule() {
 }
 
 /// Fewer than two collections is unpaired and states no count.
-#[trace("FR-132-AC-10", "TC-3504")]
+#[trace("FR-132-AC-10")]
 #[test]
 fn tc_3504_fewer_than_two_collections_are_unpaired() {
     let plans = plans(EQUAL);
@@ -205,7 +205,7 @@ fn tc_3504_fewer_than_two_collections_are_unpaired() {
 }
 
 /// With three collections the pair is the latest two.
-#[trace("FR-132-AC-10", "TC-3505")]
+#[trace("FR-132-AC-10")]
 #[test]
 fn tc_3505_the_pair_is_the_latest_two() {
     let plans = plans(EQUAL);
@@ -224,7 +224,7 @@ fn tc_3505_the_pair_is_the_latest_two() {
 }
 
 /// A changed build profile makes the pair incomparable, with no count.
-#[trace("FR-132-AC-11", "TC-3506")]
+#[trace("FR-132-AC-11")]
 #[test]
 fn tc_3506_a_changed_build_profile_is_incomparable() {
     let plans = plans(EQUAL);
@@ -240,7 +240,7 @@ fn tc_3506_a_changed_build_profile_is_incomparable() {
 }
 
 /// Too few comparable slices, or a slice without a value, is inconclusive.
-#[trace("FR-132-AC-11", "TC-3507")]
+#[trace("FR-132-AC-11")]
 #[test]
 fn tc_3507_too_few_comparisons_are_inconclusive() {
     let few = plans("paired_run:\n  relation: equal\n  minimum_pairs: 3\n");
@@ -260,7 +260,7 @@ fn tc_3507_too_few_comparisons_are_inconclusive() {
 }
 
 /// A slice only one collection states is a violation.
-#[trace("FR-132-AC-11", "TC-3508")]
+#[trace("FR-132-AC-11")]
 #[test]
 fn tc_3508_a_one_sided_slice_rejects() {
     let plans = plans(EQUAL);
@@ -272,7 +272,7 @@ fn tc_3508_a_one_sided_slice_rejects() {
 }
 
 /// Order only matters for `not_worse` or more than two collections.
-#[trace("FR-132-AC-12", "TC-3509")]
+#[trace("FR-132-AC-12")]
 #[test]
 fn tc_3509_an_unattested_order_matters_only_when_it_can_change_the_answer() {
     let first = run("a", &[("r1", 3.0)]);
@@ -322,7 +322,7 @@ fn report_of(
 }
 
 /// The report prints the pair, and states `unpaired` for one collection.
-#[trace("FR-132-AC-13", "TC-3510")]
+#[trace("FR-132-AC-13")]
 #[test]
 fn tc_3510_the_report_prints_the_paired_runs() {
     let plans = plans(EQUAL);
@@ -348,7 +348,7 @@ fn tc_3510_the_report_prints_the_paired_runs() {
 }
 
 /// The JSON carries `pairedRuns` only when a plan declares `paired_run`.
-#[trace("FR-132-AC-13", "TC-3511")]
+#[trace("FR-132-AC-13")]
 #[test]
 fn tc_3511_the_report_json_carries_paired_runs_only_for_paired_plans() {
     let runs = [run("a", &[("r1", 3.0)]), run("b", &[("r1", 3.0)])];
@@ -372,7 +372,7 @@ const ESTIMATED: &str = "statistical_design:\n  population: every case\n  sampli
 /// An estimator without a rule is still decided by the relation; a rule
 /// and an estimator together judge the slices as well, and the paired count
 /// is told apart from a slice decision.
-#[trace("FR-132-AC-9", "TC-3514", "TC-3515")]
+#[trace("FR-132-AC-9")]
 #[test]
 fn tc_3514_an_estimator_without_a_rule_is_decided_by_the_relation() {
     let first = run("a", &[("r1", 3.0)]);
@@ -399,7 +399,7 @@ fn tc_3514_an_estimator_without_a_rule_is_decided_by_the_relation() {
 
 /// Another definition version, or another plan sharing the metric, is not a
 /// run of this plan, in `verify` and in the report alike.
-#[trace("FR-132-AC-14", "TC-3512")]
+#[trace("FR-132-AC-14")]
 #[test]
 fn tc_3512_verify_and_report_select_the_same_collections() {
     let plans = plans(EQUAL);
@@ -431,7 +431,7 @@ fn tc_3512_verify_and_report_select_the_same_collections() {
 
 /// The report attests no intake order, so where the order can change the
 /// answer it defers to `verify` instead of naming a pair of its own.
-#[trace("FR-132-AC-12", "TC-3516")]
+#[trace("FR-132-AC-12")]
 #[test]
 fn tc_3516_the_report_never_names_a_pair_verify_would_not() {
     let plans = plans(EQUAL);

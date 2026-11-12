@@ -192,7 +192,7 @@ impl Clock for VirtualClock {
 /// same-directory no-replace publication.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-1", "TC-1232")]
+#[trace("FR-060-AC-1")]
 #[test]
 fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
     let workspace = temporary_repository();
@@ -259,7 +259,7 @@ fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
 /// `raw_evidence_mismatch`; both identify every mismatch and write nothing.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-2", "TC-1233")]
+#[trace("FR-060-AC-2")]
 #[test]
 fn tc_479_401_invalid_records_and_mismatched_raw_evidence_write_nothing() {
     let cases = intake_refusal_cases();
@@ -363,7 +363,7 @@ fn intake_refusal_cases() -> Vec<(&'static str, Value, InterventionRefusalCode, 
 /// and observed definitions that apply.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-3", "TC-1234")]
+#[trace("FR-060-AC-3")]
 #[test]
 fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing() {
     let (capability, _) = pair_records();
@@ -419,7 +419,7 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
 /// whether the retained record is standalone or a member of an atomic pair.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-4", "TC-1235")]
+#[trace("FR-060-AC-4")]
 #[test]
 fn tc_479_403_identical_bytes_are_idempotent_standalone_and_inside_a_pair() {
     let (capability, exercise) = pair_records();
@@ -465,7 +465,7 @@ fn tc_479_403_identical_bytes_are_idempotent_standalone_and_inside_a_pair() {
 /// intake lock fails closed as `intake_busy`.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-5", "TC-1236")]
+#[trace("FR-060-AC-5")]
 #[test]
 fn tc_479_404_one_logical_id_cannot_be_retained_twice_and_a_stale_lock_fails_closed() {
     let (capability, exercise) = pair_records();
@@ -535,7 +535,7 @@ fn tc_479_404_one_logical_id_cannot_be_retained_twice_and_a_stale_lock_fails_clo
 /// remain independently queryable with their raw-evidence references.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-6", "TC-1237")]
+#[trace("FR-060-AC-6")]
 #[test]
 fn tc_479_405_capabilities_and_every_exercise_outcome_stay_queryable() {
     /// Every outcome the vocabulary admits.
@@ -587,7 +587,7 @@ fn tc_479_405_capabilities_and_every_exercise_outcome_stay_queryable() {
 /// non-discharge or gap.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-7", "TC-1238")]
+#[trace("FR-060-AC-7")]
 #[test]
 fn tc_479_406_discharge_requires_full_identity_mode_success_and_a_met_clock() {
     let (capability, exercise) = pair_records();
@@ -894,7 +894,7 @@ fn entry_for<'a>(entries: &'a [OperationalReportEntry], id: &str) -> &'a Operati
 /// states render as counterevidence or gaps beside owner and actions.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-8", "TC-1239")]
+#[trace("FR-060-AC-8")]
 #[test]
 fn tc_479_407_only_available_capabilities_and_met_successes_render_as_claims() {
     let cases = report_cases();
@@ -948,7 +948,7 @@ fn tc_479_407_only_available_capabilities_and_met_successes_render_as_claims() {
 /// quality score derived from operational records.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-9", "TC-1240")]
+#[trace("FR-060-AC-9")]
 #[test]
 fn tc_479_408_no_derived_trust_confidence_or_quality_score() {
     /// Every member an operational report entry carries, and no other.
@@ -1023,7 +1023,7 @@ fn tc_479_408_no_derived_trust_confidence_or_quality_score() {
 /// actions.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-AC-10", "TC-1241")]
+#[trace("FR-060-AC-10")]
 #[test]
 fn tc_479_409_re_rendering_is_byte_identical_and_the_two_views_agree() {
     let workspace = temporary_repository();
@@ -1104,7 +1104,7 @@ fn tc_479_409_re_rendering_is_byte_identical_and_the_two_views_agree() {
 /// recording or reporting evidence.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-CON-1", "TC-1242")]
+#[trace("FR-060-CON-1")]
 #[test]
 fn tc_479_410_the_operational_modules_hold_no_control_path() {
     /// Nothing here may reach a process, a network, or a shell: every one of
@@ -1142,7 +1142,7 @@ fn tc_479_410_the_operational_modules_hold_no_control_path() {
 /// readable without migration.
 ///
 /// Provenance: quoin#479
-#[trace("FR-060-CON-2", "TC-1243")]
+#[trace("FR-060-CON-2")]
 #[test]
 fn tc_479_411_existing_collections_and_interventions_read_beside_operational_records() {
     let workspace = tempfile::tempdir().expect("a writable workspace");

@@ -124,7 +124,7 @@ mod tests {
     }
 
     /// Provenance: PLAT-1059
-    #[trace("FR-114-AC-2", "TC-1941")]
+    #[trace("FR-114-AC-2")]
     #[test]
     fn tc_1941_nonzero_native_exit_remains_a_completed_observation() {
         let adapter = ProcessEvidenceAdapter::new(

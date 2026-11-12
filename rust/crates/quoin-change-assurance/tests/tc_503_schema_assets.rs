@@ -173,7 +173,7 @@ fn tc_503_015_the_named_constants_and_the_lookup_agree() {
 
 /// The published record schema refuses the same malformed source paths the
 /// reader refuses, and accepts the paths the reader accepts.
-#[trace("FR-063-AC-12", "TC-2011")]
+#[trace("FR-063-AC-12")]
 #[test]
 fn tc_503_the_record_schema_agrees_with_the_reader_on_source_paths() {
     let validator = validator(ASSET_NAMES[0]);

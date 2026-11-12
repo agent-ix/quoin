@@ -173,7 +173,7 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
 /// family and computes exactly `(9 + 3) / 15 = 0.8`.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1919")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_101_the_producer_output_reproduces_the_worked_example_baseline() {
     let items = item_observations(PLAN_ID, DEFINITION_VERSION, METRIC, &corpus()).unwrap();
@@ -209,7 +209,7 @@ fn tc_1016_101_the_producer_output_reproduces_the_worked_example_baseline() {
 /// `rule_not_met`, not `accept`.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1919")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_102_a_margin_not_cleared_over_the_real_baseline_rejects() {
     let items = item_observations(PLAN_ID, DEFINITION_VERSION, METRIC, &corpus()).unwrap();
@@ -236,7 +236,7 @@ fn tc_1016_102_a_margin_not_cleared_over_the_real_baseline_rejects() {
 /// baseline of `0`.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1919")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_103_a_run_with_no_retained_items_is_inconclusive_not_a_false_baseline() {
     let collections = [collection("run-001", vec![aggregate(10.0, 15.0)])];

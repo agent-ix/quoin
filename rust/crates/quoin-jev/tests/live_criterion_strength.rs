@@ -830,7 +830,7 @@ fn store_pass(graded: &[Graded]) {
 ///
 /// Fails the build when it does not. Both bars are stated in this file's
 /// module doc and were fixed before the first live number was taken.
-#[ix_trace_rs::trace("FR-108-AC-21", "TC-2020")]
+#[ix_trace_rs::trace("FR-108-AC-21")]
 #[tokio::test]
 async fn the_lens_beats_the_do_nothing_baseline() {
     let client = live_client();

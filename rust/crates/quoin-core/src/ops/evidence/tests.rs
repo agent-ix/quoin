@@ -503,7 +503,7 @@ fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
 /// The audit-script format carries no tool identity, so a scan is recorded
 /// under whichever claimed tool the suite declares, not refused as another
 /// tool's output.
-#[trace("FR-036-AC-9", "TC-2900")]
+#[trace("FR-036-AC-9")]
 #[test]
 fn tc_2900_an_audit_script_scan_records_under_each_tool_it_claims() {
     let host = TestHost::empty();

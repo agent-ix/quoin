@@ -195,7 +195,7 @@ fn facts(collection: &TranscribedCollection) -> BTreeMap<String, Option<f64>> {
 /// fails with the available names.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-1", "TC-1293")]
+#[trace("FR-066-AC-1")]
 #[test]
 fn tc_480_019_the_registry_is_exactly_the_two_versioned_adapters() {
     assert_eq!(
@@ -216,7 +216,7 @@ fn tc_480_019_the_registry_is_exactly_the_two_versioned_adapters() {
 /// A valid Quire export is preserved and every premise drift is refused.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-2", "TC-1294")]
+#[trace("FR-066-AC-2")]
 #[test]
 fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
     let base = case("assurance/base");
@@ -257,7 +257,7 @@ fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
 /// Every Quire graph collection is handed through without translation.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-3", "TC-1295")]
+#[trace("FR-066-AC-3")]
 #[test]
 fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     let base = case("assurance/base");
@@ -314,7 +314,7 @@ fn tc_480_021_every_quire_collection_passes_through_untranslated() {
 /// producer's, taken as stated.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-4", "TC-1296")]
+#[trace("FR-066-AC-4")]
 #[test]
 fn tc_480_022_the_schema_is_closed_and_the_observation_id_is_taken_as_stated() {
     // Any non-empty producer-assigned observation id is admitted, and the
@@ -345,7 +345,7 @@ fn tc_480_022_the_schema_is_closed_and_the_observation_id_is_taken_as_stated() {
 /// The scorer bytes are retained exactly and an attachment with no type is refused.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-5", "TC-1297")]
+#[trace("FR-066-AC-5")]
 #[test]
 fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
     let base = case("quality/measured");
@@ -386,7 +386,7 @@ fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
 /// at a time.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-6", "FR-066-CON-2", "TC-1298")]
+#[trace("FR-066-AC-6", "FR-066-CON-2")]
 #[test]
 fn tc_480_024_every_attestation_and_producer_field_is_required() {
     /// The attestation paths `graph-adapters.test.ts` deleted that remain
@@ -451,7 +451,7 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
 /// plan alongside the active one is not.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-7", "TC-1299")]
+#[trace("FR-066-AC-7")]
 #[test]
 fn tc_480_025_the_plan_must_be_exactly_one_active_matching_plan() {
     for name in [
@@ -500,7 +500,7 @@ fn tc_480_025_the_plan_must_be_exactly_one_active_matching_plan() {
 /// order the producer wrote its census members in.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-8", "TC-1300")]
+#[trace("FR-066-AC-8")]
 #[test]
 fn tc_480_026_the_census_maps_bijectively_under_every_permutation() {
     /// The four census members, whose 24 orderings must all transcribe alike.
@@ -597,7 +597,7 @@ fn permutations_of(members: &[&'static str; 4]) -> Vec<Vec<&'static str>> {
 /// Result facts map bijectively and a duplicate partition is refused.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-9", "TC-1301")]
+#[trace("FR-066-AC-9")]
 #[test]
 fn tc_480_027_result_facts_map_bijectively_and_duplicates_are_refused() {
     let base = case("quality/measured");
@@ -671,7 +671,7 @@ fn tc_480_027_result_facts_map_bijectively_and_duplicates_are_refused() {
 /// survives it.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-10", "TC-1302")]
+#[trace("FR-066-AC-10")]
 #[test]
 fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
     // The captured not-computed populations, plus the third state the criterion
@@ -755,7 +755,7 @@ fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
 /// Adapted intake is idempotent and refuses a collision.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-11", "FR-066-CON-4", "TC-1303")]
+#[trace("FR-066-AC-11", "FR-066-CON-4")]
 #[test]
 fn tc_480_029_adapted_intake_is_idempotent_and_collision_safe() {
     let transcribed = adapt_quality(&case("quality/measured")).expect("admissible");
@@ -807,7 +807,7 @@ fn tc_480_029_adapted_intake_is_idempotent_and_collision_safe() {
 /// dependency.
 ///
 /// Provenance: quoin#480
-#[trace("FR-066-AC-12", "FR-066-CON-1", "FR-066-CON-3", "TC-1304")]
+#[trace("FR-066-AC-12", "FR-066-CON-1", "FR-066-CON-3")]
 #[test]
 fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() {
     /// The modules that are `graph-adapters.ts`. `loader` and `structural` are
@@ -856,7 +856,7 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
 /// debug or undeclared collection adapts, and an unknown spelling is refused.
 ///
 /// Provenance: PLAT-164
-#[trace("FR-044-AC-14", "TC-2147")]
+#[trace("FR-044-AC-14")]
 #[test]
 fn tc_164_001_the_attestation_accepts_every_profile_intake_accepts() {
     for profile in quoin_measurement::types::collection::BuildProfile::ALL

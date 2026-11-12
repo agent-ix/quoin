@@ -47,7 +47,7 @@ fn module(
 /// satisfy the schema and describe nothing.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-AC-1", "TC-1372")]
+#[trace("FR-075-AC-1")]
 #[test]
 fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declarations() {
     let validators = validators();
@@ -122,7 +122,7 @@ fn tc_452_631_declared_mappings_become_sorted_identities_at_the_root_and_the_pro
 /// ARE installed; an import cycle is refused, naming the cycle.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-AC-3", "TC-1374")]
+#[trace("FR-075-AC-3")]
 #[test]
 fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_names_the_cycle() {
     let validators = validators();
@@ -203,7 +203,7 @@ fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_name
 /// depends on.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-AC-4", "TC-1375")]
+#[trace("FR-075-AC-4")]
 #[test]
 fn tc_452_634_the_loaded_and_the_derived_type_identities_agree() {
     let validators = validators();
@@ -234,7 +234,7 @@ fn tc_452_634_the_loaded_and_the_derived_type_identities_agree() {
 /// shape.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-AC-5", "FR-075-CON-2", "TC-1376", "TC-1378")]
+#[trace("FR-075-AC-5", "FR-075-CON-2")]
 #[test]
 fn tc_452_635_a_url_package_is_refused_and_admitted_packages_derive_ix_identities() {
     let validators = validators();
@@ -288,7 +288,7 @@ fn tc_452_635_a_url_package_is_refused_and_admitted_packages_derive_ix_identitie
 /// the absence it asserts is an absence from an empty string.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-CON-1", "TC-1377")]
+#[trace("FR-075-CON-1")]
 #[test]
 fn tc_452_636_the_derivation_names_no_network_publish_or_subprocess_path() {
     const SOURCE: &str = include_str!("../src/package_manifest.rs");

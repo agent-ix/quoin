@@ -186,7 +186,7 @@ mod tests {
             .map_err(|error| error.to_string())
     }
 
-    #[trace("FR-044-AC-7", "TC-1746")]
+    #[trace("FR-044-AC-7")]
     #[test]
     fn valid_answer_families_are_parsed_into_the_plan() {
         let plan = plan_with_families("[alpha, beta]").unwrap();
@@ -198,7 +198,7 @@ mod tests {
         assert_eq!(Vec::<String>::from(families), vec!["alpha", "beta"]);
     }
 
-    #[trace("FR-044-AC-7", "TC-1746")]
+    #[trace("FR-044-AC-7")]
     #[test]
     fn invalid_answer_families_are_refused_naming_the_path_and_key() {
         for (stated, reason) in [
@@ -215,7 +215,7 @@ mod tests {
         }
     }
 
-    #[trace("FR-108-AC-9", "TC-1896")]
+    #[trace("FR-108-AC-9")]
     #[test]
     fn changed_answer_families_under_the_same_version_are_a_change_without_a_bump() {
         let before = plan_with_families("[alpha, beta]").unwrap();
@@ -223,7 +223,7 @@ mod tests {
         assert!(definition_changed_without_version_bump(&before, &after));
     }
 
-    #[trace("FR-108-AC-9", "TC-1896")]
+    #[trace("FR-108-AC-9")]
     #[test]
     fn answer_families_in_a_different_order_are_not_a_change() {
         let before = plan_with_families("[alpha, beta]").unwrap();
@@ -234,7 +234,7 @@ mod tests {
     /// A constant-predictor revision that predates `answer_families` still
     /// parses as history, so both definition changes against it are seen: a
     /// lowered margin and the list added, each under an unchanged version.
-    #[trace("FR-108-AC-25", "TC-2302")]
+    #[trace("FR-108-AC-25")]
     #[test]
     fn a_constant_predictor_revision_without_families_is_still_readable_history() {
         let design = |margin: &str, families: &str| {

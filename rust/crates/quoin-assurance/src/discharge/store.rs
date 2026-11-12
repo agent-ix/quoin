@@ -452,7 +452,7 @@ mod tests {
         }
     }
 
-    #[trace("FR-133-AC-1", "TC-2600")]
+    #[trace("FR-133-AC-1")]
     #[test]
     fn a_recorded_fact_stores_the_fact_and_clause_set_and_nothing_else() {
         let mut store = MemoryEvidence::new();
@@ -475,7 +475,7 @@ mod tests {
         assert!(!text.contains("SYN-005"), "no other clause is stored");
     }
 
-    #[trace("FR-133-AC-2", "TC-2601")]
+    #[trace("FR-133-AC-2")]
     #[test]
     fn the_report_partitions_the_live_binding_with_the_stored_facts() {
         let mut store = MemoryEvidence::new();
@@ -493,7 +493,7 @@ mod tests {
         assert!(expired.binding.direct.is_empty());
     }
 
-    #[trace("FR-133-AC-3", "TC-2602")]
+    #[trace("FR-133-AC-3")]
     #[test]
     fn recording_again_replaces_the_fact() {
         let mut store = MemoryEvidence::new();
@@ -509,7 +509,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-133-AC-3", "TC-2602")]
+    #[trace("FR-133-AC-3")]
     #[test]
     fn a_refused_list_writes_nothing_whatever_the_refusal() {
         let long = "x".repeat(120);
@@ -531,7 +531,7 @@ mod tests {
         }
     }
 
-    #[trace("FR-133-AC-3", "TC-2602")]
+    #[trace("FR-133-AC-3")]
     #[test]
     fn ids_are_bounded_and_case_collisions_are_typed_refusals() {
         let mut store = MemoryEvidence::new();
@@ -554,7 +554,7 @@ mod tests {
         assert!(facts.iter().all(|f| f.clause_id() != "c-1"));
     }
 
-    #[trace("FR-133-AC-3", "TC-2602")]
+    #[trace("FR-133-AC-3")]
     #[test]
     fn a_binding_report_naming_a_clause_twice_is_refused() {
         let mut value = serde_json::to_value(binding()).unwrap();
@@ -584,7 +584,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-133-AC-4", "TC-2603")]
+    #[trace("FR-133-AC-4")]
     #[test]
     fn a_misplaced_or_corrupt_stored_file_is_an_error_not_an_open_clause() {
         let mut store = MemoryEvidence::new();
@@ -608,7 +608,7 @@ mod tests {
         assert!(read_discharge_facts(&corrupt, &binding().clause_set).is_err());
     }
 
-    #[trace("FR-133-AC-4", "TC-2603")]
+    #[trace("FR-133-AC-4")]
     #[test]
     fn the_stored_fact_count_and_file_size_are_bounded() {
         let mut store = MemoryEvidence::new();

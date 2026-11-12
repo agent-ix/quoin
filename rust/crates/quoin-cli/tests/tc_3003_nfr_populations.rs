@@ -26,7 +26,7 @@ use std::path::PathBuf;
 /// enumerated by the class modules; each plan declares exactly them, and intake
 /// and the checker read the observation as stating that set. The per-class
 /// tests (TC-3700..3706) own what each class reads.
-#[trace("FR-131-AC-9", "TC-3003", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3003_the_nfr003_populations_are_stated_by_class() {
     let (actionable, silent) = nfr003::populations(&context::Context::new());
@@ -39,7 +39,7 @@ fn tc_3003_the_nfr003_populations_are_stated_by_class() {
 /// NFR-007-M-1: every way `ix-flow` fails reaches the caller as a non-zero exit
 /// naming what failed, for every workflow command.
 #[cfg(unix)]
-#[trace("FR-131-AC-10", "TC-3004", "NFR-007-M-1")]
+#[trace("FR-131-AC-10", "NFR-007-M-1")]
 #[test]
 fn tc_3004_the_nfr007_population_is_stated_by_failure_mode() {
     let probed = ix_flow::external_tool_failures(&context::Context::new());
@@ -55,7 +55,7 @@ fn tc_3004_the_nfr007_population_is_stated_by_failure_mode() {
 /// NFR-008-M-1 and NFR-008-M-2: every corrupt manifest aborts assembly naming
 /// its file and every candidate without one is skipped. Both populations are
 /// probed and checked before either observation is recorded.
-#[trace("FR-131-AC-11", "TC-3005", "NFR-008-M-1", "NFR-008-M-2")]
+#[trace("FR-131-AC-11", "NFR-008-M-1", "NFR-008-M-2")]
 #[test]
 fn tc_3005_corrupt_manifests_abort_and_missing_ones_are_skipped() {
     let harness = manifests::Harness::new();
@@ -106,7 +106,7 @@ fn copy_tree(from: &std::path::Path, to: &std::path::Path) {
 /// those whose statement is unchanged and whose reviewed outcome the classifier
 /// reproduces: exact spans, a reviewed refusal, never a drifted statement, a
 /// missing row, or a refusal the classifier did not give.
-#[trace("FR-131-AC-13", "TC-3300")]
+#[trace("FR-131-AC-13")]
 #[test]
 fn tc_3300_the_span_breadth_replay_states_what_it_examined_and_matched() {
     let label = |id: &str, row: &str, statement: &str, outcome: &str| {
@@ -202,7 +202,7 @@ fn tc_3300_the_span_breadth_replay_states_what_it_examined_and_matched() {
 
 /// A label whose repository checkout is not supplied makes the replay refuse,
 /// naming the repository, rather than examine the labels it can reach.
-#[trace("FR-131-AC-13", "TC-3300")]
+#[trace("FR-131-AC-13")]
 #[test]
 fn tc_3300_a_replay_without_a_checkout_refuses_instead_of_examining_a_subset() {
     let only_quoin = BTreeMap::from([("quoin".to_owned(), nfr_populations::repository())]);
@@ -220,7 +220,7 @@ fn tc_3300_a_replay_without_a_checkout_refuses_instead_of_examining_a_subset() {
 ///
 /// Needs a quire-rs checkout in `QUIRE_RS_CHECKOUT`; not part of the default
 /// gate.
-#[trace("FR-131-AC-13", "TC-3301")]
+#[trace("FR-131-AC-13")]
 #[test]
 #[ignore = "needs a quire-rs checkout in QUIRE_RS_CHECKOUT"]
 fn tc_3301_the_frozen_labels_are_replayed_and_their_ids_stated() {

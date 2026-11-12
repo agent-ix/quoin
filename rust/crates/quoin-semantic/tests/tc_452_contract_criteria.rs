@@ -139,7 +139,7 @@ fn tc_452_640_the_module_manifest_schema_admits_the_contract_keys() {
 /// constraint.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-070-CON-1", "NFR-017-AC-4", "TC-1342", "TC-1382")]
+#[trace("FR-070-CON-1", "NFR-017-AC-4")]
 #[test]
 fn tc_452_641_the_pinned_schema_adds_no_required_key_versus_pre_cr003() {
     const PRE_CR003_REQUIRED_ARRAYS: &[(&str, &[&str])] = &[
@@ -238,7 +238,7 @@ fn tc_452_643_the_common_schema_declares_the_published_targets() {
 /// A manifest carrying all eight registry keys validates against the pinned
 /// module-manifest schema, and an unknown root key is still refused, so the
 /// pass is the schema admitting the keys rather than admitting everything.
-#[trace("FR-070-AC-14", "TC-2140")]
+#[trace("FR-070-AC-14")]
 #[test]
 fn tc_452_644_a_manifest_with_all_eight_registry_keys_validates() {
     let path = module_manifest_schema_path(&semantic_root());

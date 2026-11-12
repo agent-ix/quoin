@@ -27,7 +27,7 @@ fn git_config(url: &str) -> String {
     )
 }
 
-#[trace("FR-023-AC-4", "FR-025-AC-1", "TC-078")]
+#[trace("FR-023-AC-4", "FR-025-AC-1")]
 #[test]
 fn tc_381_104_flag_and_env_precedence() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -75,7 +75,7 @@ fn tc_381_104_flag_and_env_precedence() {
     }
 }
 
-#[trace("FR-025-AC-8", "TC-090")]
+#[trace("FR-025-AC-8")]
 #[test]
 fn tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org() {
     // Mirror git's layout: the worktree's `.git` is a file naming a gitdir
@@ -145,7 +145,7 @@ fn tc_381_106_broken_gitdir_pointers_resolve_to_none() {
     }
 }
 
-#[trace("FR-025-AC-4", "TC-086")]
+#[trace("FR-025-AC-4")]
 #[test]
 fn tc_381_107_missing_repository_metadata_resolves_to_none() {
     let root = tempfile::tempdir().expect("temp dir");

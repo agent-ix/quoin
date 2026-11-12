@@ -211,7 +211,7 @@ fn aggregate_score_mention(text: &str) -> Option<String> {
 /// overwritten.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-1", "TC-1204")]
+#[trace("FR-057-AC-1")]
 #[test]
 fn tc_479_200_valid_intake_publishes_once_without_replacing_a_concurrent_writer() {
     let temporary = governed_repo();
@@ -262,7 +262,7 @@ fn tc_479_200_valid_intake_publishes_once_without_replacing_a_concurrent_writer(
 /// `invalid_record` with every failing JSON path and reason.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-2", "TC-1205")]
+#[trace("FR-057-AC-2")]
 #[test]
 fn tc_479_201_every_invalid_record_is_refused_with_its_paths_and_writes_nothing() {
     let base = retained_record();
@@ -341,7 +341,7 @@ fn tc_479_201_every_invalid_record_is_refused_with_its_paths_and_writes_nothing(
 /// and observed definitions that apply.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-3", "TC-1206")]
+#[trace("FR-057-AC-3")]
 #[test]
 fn tc_479_202_an_absent_and_a_mismatched_governing_definition_are_different_refusals() {
     let record = retained_record();
@@ -383,7 +383,7 @@ fn tc_479_202_an_absent_and_a_mismatched_governing_definition_are_different_refu
 /// Repeating an identical record id and canonical payload is byte-idempotent.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-4", "TC-1207")]
+#[trace("FR-057-AC-4")]
 #[test]
 fn tc_479_203_repeating_an_identical_record_is_byte_idempotent() {
     let temporary = governed_repo();
@@ -417,7 +417,7 @@ fn tc_479_203_repeating_an_identical_record_is_byte_idempotent() {
 /// `record_id_collision` without replacing the retained entry.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-5", "TC-1208")]
+#[trace("FR-057-AC-5")]
 #[test]
 fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry() {
     let temporary = governed_repo();
@@ -457,7 +457,7 @@ fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry
 /// independently queryable with their raw-evidence references.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-6", "TC-1209")]
+#[trace("FR-057-AC-6")]
 #[test]
 fn tc_479_205_every_terminal_result_stays_independently_queryable() {
     /// The three terminal statuses the criterion names.
@@ -511,7 +511,7 @@ fn tc_479_205_every_terminal_result_stays_independently_queryable() {
 /// raw references as evidence.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-7", "TC-1210")]
+#[trace("FR-057-AC-7")]
 #[test]
 fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
     /// The conclusion the committed record states, verbatim.
@@ -588,7 +588,7 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
 /// counterevidence; declared gaps render separately beside owner and actions.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-8", "TC-1211")]
+#[trace("FR-057-AC-8")]
 #[test]
 fn tc_479_207_open_qualifiers_render_as_counterevidence_and_gaps_render_apart() {
     /// The three open qualifiers the committed record declares, in the order
@@ -691,7 +691,7 @@ fn tc_479_207_open_qualifiers_render_as_counterevidence_and_gaps_render_apart() 
 /// quality score derived from experiment records.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-9", "FR-057-CON-2", "TC-1212")]
+#[trace("FR-057-AC-9", "FR-057-CON-2")]
 #[test]
 fn tc_479_208_no_view_computes_an_aggregate_trust_or_quality_score() {
     let temporary = governed_repo();
@@ -741,7 +741,7 @@ fn tc_479_208_no_view_computes_an_aggregate_trust_or_quality_score() {
 /// actions.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-10", "TC-1213")]
+#[trace("FR-057-AC-10")]
 #[test]
 fn tc_479_209_a_reordered_store_renders_byte_identically_in_both_views() {
     let temporary = governed_repo();
@@ -911,7 +911,7 @@ fn views_agree(expected_human: &str, expected_json: &str) {
 /// `raw_evidence_mismatch`, identifies each mismatch, and writes no record.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-AC-11", "TC-1216")]
+#[trace("FR-057-AC-11")]
 #[test]
 fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
     let base = retained_record();
@@ -990,7 +990,7 @@ fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
 /// reporting evidence.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-CON-1", "TC-1214")]
+#[trace("FR-057-CON-1")]
 #[test]
 fn tc_479_211_the_intervention_modules_reach_for_no_process_or_network() {
     /// What no intervention module may reach for. `intervention.test.ts:404`
@@ -1028,7 +1028,7 @@ fn tc_479_211_the_intervention_modules_reach_for_no_process_or_network() {
 /// without migration.
 ///
 /// Provenance: quoin#479
-#[trace("FR-057-CON-3", "TC-1215")]
+#[trace("FR-057-CON-3")]
 #[test]
 fn tc_479_212_an_empty_intervention_store_preserves_measurement_reporting() {
     // A repository that has never held an intervention: the store reads as

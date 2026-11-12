@@ -222,7 +222,7 @@ fn with_items(matched: u32, plan_id: &str) -> Vec<Value> {
 /// `0.8` baseline: holds at 13/15, does not at 12/15.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1920")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_001_intake_admits_item_rows_and_the_admitted_collection_verifies() {
     let repository = repository(METRIC);
@@ -263,7 +263,7 @@ fn tc_1016_001_intake_admits_item_rows_and_the_admitted_collection_verifies() {
 /// plan id is refused like any other observation would be.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1921")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_002_an_item_row_naming_another_plan_is_refused() {
     let plans = load(METRIC).unwrap();
@@ -286,7 +286,7 @@ fn tc_1016_002_an_item_row_naming_another_plan_is_refused() {
 /// An item row whose governed metric has no plan is refused as unplanned.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1921")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_003_an_item_row_of_an_unplanned_metric_is_refused() {
     let plans = load("other.metric").unwrap();
@@ -303,7 +303,7 @@ fn tc_1016_003_an_item_row_of_an_unplanned_metric_is_refused() {
 /// read another plan's item rows as its own run.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1922")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_004_a_plan_metric_with_the_reserved_suffix_is_refused() {
     let refusal = load(ITEM_METRIC).unwrap_err();
@@ -320,7 +320,7 @@ fn tc_1016_004_a_plan_metric_with_the_reserved_suffix_is_refused() {
 /// when the graded tool's per-item answers moved between the two runs.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1923")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_005_compare_leaves_item_rows_out() {
     let plans = load(METRIC).unwrap();
@@ -339,7 +339,7 @@ fn tc_1016_005_compare_leaves_item_rows_out() {
 /// survivors.
 ///
 /// Provenance: PLAT-1016
-#[trace("FR-108-AC-10", "TC-1924")]
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_006_lost_item_rows_are_inconclusive_not_a_smaller_baseline() {
     let plans = load(METRIC).unwrap();
@@ -385,7 +385,7 @@ fn verdict_of(observations: &[Value]) -> quoin_measurement::verify::MeasurementV
 /// `constant_predictor_family_missing`; no baseline is computed in either.
 ///
 /// Provenance: PLAT-1020
-#[trace("FR-108-AC-24", "TC-2300")]
+#[trace("FR-108-AC-24")]
 #[test]
 fn tc_1020_001_item_row_families_that_differ_from_the_declared_list_are_inconclusive() {
     let mut merged = with_items(13, "MP-900");
@@ -432,7 +432,7 @@ fn tc_1020_001_item_row_families_that_differ_from_the_declared_list_are_inconclu
 /// as `QM-PLAN-INVALID` naming the member.
 ///
 /// Provenance: PLAT-1020
-#[trace("FR-108-AC-25", "TC-2301")]
+#[trace("FR-108-AC-25")]
 #[test]
 fn tc_1020_002_answer_families_are_required_with_constant_predictor() {
     let try_load = |document: String| {

@@ -125,7 +125,7 @@ const MEASUREMENTS: &str = "spec/evidence/measurements";
 /// cannot defeat "counts every collection".
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1894")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_103_a_collection_deleted_after_being_counted_is_rejected() {
     let repo = tempfile::tempdir().unwrap();
@@ -184,7 +184,7 @@ fn tc_985_103_a_collection_deleted_after_being_counted_is_rejected() {
 /// change intake never made.
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1895")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_104_a_collection_edited_after_intake_is_rejected() {
     let repo = tempfile::tempdir().unwrap();
@@ -230,7 +230,7 @@ fn tc_985_104_a_collection_edited_after_intake_is_rejected() {
 /// wired here with access to the plan's git history).
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1896")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_105_a_decision_rule_edited_without_a_version_bump_is_rejected() {
     let repo = tempfile::tempdir().unwrap();
@@ -290,7 +290,7 @@ fn rewrite(repo: &Path, id: &str, edit: impl FnOnce(&mut Value)) {
 /// the re-add as a fresh intake.
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1898")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_107_a_delete_and_re_add_under_the_same_id_is_edited() {
     let repo = tempfile::tempdir().unwrap();
@@ -333,7 +333,7 @@ fn tc_985_107_a_delete_and_re_add_under_the_same_id_is_edited() {
 /// run was first added under.
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1899")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_108_an_edit_moving_a_run_off_the_plan_is_still_edited() {
     let repo = tempfile::tempdir().unwrap();
@@ -360,7 +360,7 @@ fn tc_985_108_an_edit_moving_a_run_off_the_plan_is_still_edited() {
 /// deletion to the plan intake first added it under.
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1900")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_109_a_collection_corrupted_then_deleted_is_still_attributed() {
     let repo = tempfile::tempdir().unwrap();
@@ -389,7 +389,7 @@ fn tc_985_109_a_collection_corrupted_then_deleted_is_still_attributed() {
 /// path it had in its own commit.
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1901")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_110_a_rename_does_not_hide_the_revisions_before_it() {
     let repo = tempfile::tempdir().unwrap();
@@ -424,7 +424,7 @@ fn tc_985_110_a_rename_does_not_hide_the_revisions_before_it() {
 /// committed one.
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1902")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_111_uncommitted_work_tree_tampering_is_caught() {
     let repo = tempfile::tempdir().unwrap();
@@ -461,7 +461,7 @@ fn tc_985_111_uncommitted_work_tree_tampering_is_caught() {
 /// `definition_version` raise none of the four tamper reasons.
 ///
 /// Provenance: PLAT-985
-#[trace("FR-108-AC-9", "TC-1903")]
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_112_honest_history_raises_no_tamper_reason() {
     let repo = tempfile::tempdir().unwrap();

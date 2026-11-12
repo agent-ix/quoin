@@ -210,7 +210,7 @@ mod tests {
     /// mapping still holds FR-107-AC-10's `rule_not_evaluable` for it.
     ///
     /// Provenance: EA-26
-    #[trace("FR-107-AC-10", "TC-1961")]
+    #[trace("FR-107-AC-10")]
     #[test]
     fn each_interval_refusal_maps_to_its_inconclusive_reason() {
         for (refusal, reason) in [

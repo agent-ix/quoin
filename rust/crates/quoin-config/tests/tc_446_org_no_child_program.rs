@@ -86,7 +86,7 @@ mod tests {
     use ix_trace_rs::trace;
 
     /// Provenance: quoin#446
-    #[trace("FR-025-AC-7", "TC-089")]
+    #[trace("FR-025-AC-7")]
     #[test]
     fn tc_446_070_org_resolution_names_no_child_program() {
         let source = match org_source() {

@@ -287,7 +287,7 @@ mod tests {
 
     /// Every EA terminal state maps to its distinct retained campaign attempt
     /// status, including adapter refusal.
-    #[trace("FR-114-AC-2", "TC-1941")]
+    #[trace("FR-114-AC-2")]
     #[test]
     fn tc_1941_typed_ea_terminal_states_map_to_attempt_statuses() {
         let cases = [

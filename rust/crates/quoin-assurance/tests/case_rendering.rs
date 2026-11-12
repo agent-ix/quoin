@@ -41,7 +41,7 @@ fn mermaid(rendered: &str) -> String {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-8", "TC-228")]
+#[trace("FR-040-AC-8")]
 #[test]
 fn tc_447_410_rendering_is_byte_identical_over_unchanged_inputs() {
     // A store view, never a hand-maintained document: a diff must mean the
@@ -86,7 +86,7 @@ fn tc_447_410_rendering_is_byte_identical_over_unchanged_inputs() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-9", "TC-229")]
+#[trace("FR-040-AC-9")]
 #[test]
 fn tc_447_411_mermaid_cannot_be_broken_by_a_statements_punctuation() {
     // Each of these renders a broken diagram rather than a wrong one, which is
@@ -123,7 +123,7 @@ fn tc_447_411_mermaid_cannot_be_broken_by_a_statements_punctuation() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts, quoin#432
-#[trace("FR-040-AC-15", "TC-1711")]
+#[trace("FR-040-AC-15")]
 #[test]
 fn tc_447_412_a_mermaid_label_truncates_on_a_code_point_while_node_ids_count_code_units() {
     // quoin#432. `String.prototype.slice` counts UTF-16 CODE UNITS, so a label
@@ -201,7 +201,7 @@ fn tc_447_413_a_label_with_no_astral_character_truncates_byte_for_byte_as_before
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-10", "TC-230")]
+#[trace("FR-040-AC-10")]
 #[test]
 fn tc_447_414_an_empty_case_says_there_is_no_case_rather_than_rendering_one() {
     // An empty document reads as "nothing to argue". The truth is that nothing
@@ -224,7 +224,7 @@ fn tc_447_414_an_empty_case_says_there_is_no_case_rather_than_rendering_one() {
 
 /// A claim decomposed by two edge verbs gets one strategy node naming both,
 /// in the markdown and in the mermaid graph.
-#[trace("FR-040-AC-16", "TC-2143")]
+#[trace("FR-040-AC-16")]
 #[test]
 fn tc_363_001_a_decomposition_renders_a_strategy_naming_its_edge_verbs() {
     let documents = vec![
@@ -263,7 +263,7 @@ fn tc_363_001_a_decomposition_renders_a_strategy_naming_its_edge_verbs() {
 
 /// A child declaring two verbs toward one parent is one sub-claim, argued
 /// over both verbs.
-#[trace("FR-040-AC-16", "TC-2143")]
+#[trace("FR-040-AC-16")]
 #[test]
 fn tc_363_003_a_child_with_two_verbs_toward_one_parent_appears_once_under_both() {
     let documents = vec![
@@ -317,7 +317,7 @@ fn leaves(case: &quoin_assurance::case::AssuranceCase) -> &[quoin_assurance::cas
 
 /// A bound leaf lists its suites, the newest run or scan and the auditor's
 /// verdict, in the markdown and the JSON, byte-identically over unchanged input.
-#[trace("FR-040-AC-17", "TC-2144")]
+#[trace("FR-040-AC-17")]
 #[test]
 fn tc_363_002_a_bound_leaf_lists_suites_newest_run_and_the_auditors_verdict() {
     let extra = serde_json::json!({
@@ -363,7 +363,7 @@ fn tc_363_002_a_bound_leaf_lists_suites_newest_run_and_the_auditors_verdict() {
 /// `bound` is the auditor's `healthy`, not "no finding": a ladder that stopped
 /// early raises nothing and is still not healthy, so the leaf is open and says
 /// so; an unevaluated check keeps its reason on the leaf.
-#[trace("FR-040-AC-18", "TC-2145")]
+#[trace("FR-040-AC-18")]
 #[test]
 fn tc_363_004_a_leaf_the_audit_does_not_list_healthy_is_open_not_bound() {
     let case = build_case(&leaf_request(&serde_json::json!({
@@ -392,7 +392,7 @@ fn tc_363_004_a_leaf_the_audit_does_not_list_healthy_is_open_not_bound() {
 
 /// Suspect outranks stale, as in the matrix; another finding kind is
 /// `undischarged`; a bound suite with no run or scan says so.
-#[trace("FR-040-AC-17", "TC-2144")]
+#[trace("FR-040-AC-17")]
 #[test]
 fn tc_363_005_verdicts_follow_the_matrix_precedence_and_missing_runs_are_visible() {
     let case = build_case(&leaf_request(&serde_json::json!({
@@ -425,7 +425,7 @@ fn tc_363_005_verdicts_follow_the_matrix_precedence_and_missing_runs_are_visible
 
 /// "Newest" is the later instant, not the later string: fractional seconds and
 /// zone offsets order lexically wrong.
-#[trace("FR-040-AC-19", "TC-2146")]
+#[trace("FR-040-AC-19")]
 #[test]
 fn tc_363_006_newest_compares_instants_not_strings() {
     let case = build_case(&leaf_request(&serde_json::json!({

@@ -312,7 +312,7 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
 /// the projection equals the engine's `Serialize` output minus `statement`,
 /// so a renamed field or status in quire-rs fails here rather than reading
 /// as an empty or wrong column downstream. An empty matrix stays absent.
-#[trace("FR-115-AC-7", "TC-1970")]
+#[trace("FR-115-AC-7")]
 #[test]
 fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
     let engine = FakeEngine {
@@ -423,7 +423,7 @@ fn properties_answers_with_the_shape_map_keyed_on_the_obligation_id() {
 /// status `runQuireAllowFailure` existed to swallow (agent-ix/quoin#103).
 ///
 /// Provenance: quoin#502
-#[trace("FR-031-AC-11", "TC-150")]
+#[trace("FR-031-AC-11")]
 #[test]
 fn an_unresolved_document_is_a_clean_partial_answer() {
     let engine = FakeEngine {

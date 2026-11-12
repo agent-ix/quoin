@@ -73,7 +73,7 @@ fn tc_455_each_absent_member_is_refused_by_name_rather_than_inferred() {
 /// The four producer results stay four. Each reads back as itself and none is
 /// turned into a verification outcome on the way: `result` is the producer's
 /// word, retained, and a verification outcome is refused in its place.
-#[trace("FR-064-AC-2", "TC-1273")]
+#[trace("FR-064-AC-2")]
 #[test]
 fn tc_455_the_four_producer_results_stay_four_distinct_states() {
     let attestation = json(&attestation_text());
@@ -116,7 +116,7 @@ fn tc_455_the_four_producer_results_stay_four_distinct_states() {
 /// bytes kept. What is never created is evidence for a producer that reported
 /// nothing at all - that is an absent attestation, not a synthetic one, so an
 /// attestation with no `result` is refused rather than defaulted.
-#[trace("FR-064-AC-7", "TC-1278")]
+#[trace("FR-064-AC-7")]
 #[test]
 fn tc_455_a_producer_that_reported_nothing_useful_still_retains_its_output() {
     let attestation = json(&attestation_text());
@@ -151,7 +151,7 @@ fn tc_455_a_producer_that_reported_nothing_useful_still_retains_its_output() {
 /// A proof attestation carries exactly one EA `ClaimStrength`. Every declared
 /// wire name reads back as itself, and writing it out again produces the same
 /// spelling that was read in.
-#[trace("FR-064-AC-10", "TC-1884")]
+#[trace("FR-064-AC-10")]
 #[test]
 fn tc_455_every_claim_strength_round_trips() {
     let attestation = json(&attestation_text());
@@ -186,7 +186,7 @@ fn tc_455_every_claim_strength_round_trips() {
 ///
 /// An attestation with no `strength` is refused by name, not silently
 /// defaulted to one of the four values.
-#[trace("FR-064-AC-10", "TC-1884")]
+#[trace("FR-064-AC-10")]
 #[test]
 fn tc_455_an_attestation_with_no_strength_is_refused_not_defaulted() {
     let attestation = json(&attestation_text());
@@ -203,7 +203,7 @@ fn tc_455_an_attestation_with_no_strength_is_refused_not_defaulted() {
 ///
 /// A `strength` outside the EA vocabulary is refused as malformed, not
 /// coerced to a known value.
-#[trace("FR-064-AC-10", "TC-1884")]
+#[trace("FR-064-AC-10")]
 #[test]
 fn tc_455_an_unknown_strength_is_refused() {
     let attestation = json(&attestation_text());

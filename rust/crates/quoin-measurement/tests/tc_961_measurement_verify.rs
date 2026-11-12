@@ -175,7 +175,7 @@ fn accepted_with(edit: impl FnOnce(&mut MeasurementObservation)) -> MeasurementC
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-1", "TC-1780")]
+#[trace("FR-108-AC-1")]
 #[test]
 fn tc_961_001_estimator_and_decision_rule_are_read_into_eas_types() {
     let gate = plan("MP-961");
@@ -198,7 +198,7 @@ fn plan_document(design: &str, objective: &str) -> String {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-1", "TC-1781")]
+#[trace("FR-108-AC-1")]
 #[test]
 fn tc_961_002_a_malformed_estimator_or_rule_refuses_the_plan_load() {
     let higher = "objective:\n  direction: higher\n";
@@ -243,7 +243,7 @@ fn tc_961_002_a_malformed_estimator_or_rule_refuses_the_plan_load() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-2", "FR-108-AC-4", "TC-1782")]
+#[trace("FR-108-AC-2", "FR-108-AC-4")]
 #[test]
 fn tc_961_003_a_consistent_collection_is_accepted_and_its_estimate_recomputed() {
     let verdict = check("MP-961", "right/accept", Some(Verdict::Accept));
@@ -264,7 +264,7 @@ fn tc_961_003_a_consistent_collection_is_accepted_and_its_estimate_recomputed() 
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-5", "TC-1783")]
+#[trace("FR-108-AC-5")]
 #[test]
 fn tc_961_004_a_wrong_claimed_verdict_is_rejected() {
     let verdict = check(
@@ -287,7 +287,7 @@ fn tc_961_004_a_wrong_claimed_verdict_is_rejected() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-3", "FR-108-AC-4", "TC-1784")]
+#[trace("FR-108-AC-3", "FR-108-AC-4")]
 #[test]
 fn tc_961_005_a_hand_edited_baseline_is_rejected() {
     let verdict = check("MP-961-prior", "wrong/hand-edited-baseline", None);
@@ -308,7 +308,7 @@ fn tc_961_005_a_hand_edited_baseline_is_rejected() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-3", "TC-1785")]
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_006_a_selectively_reported_run_is_rejected_and_the_regression_counted() {
     let verdict = check("MP-961", "wrong/selectively-reported-run", None);
@@ -322,7 +322,7 @@ fn tc_961_006_a_selectively_reported_run_is_rejected_and_the_regression_counted(
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-4", "TC-1786")]
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_007_a_short_population_is_rejected() {
     let verdict = check("MP-961", "wrong/short-population", None);
@@ -331,7 +331,7 @@ fn tc_961_007_a_short_population_is_rejected() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-4", "TC-1787")]
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_008_a_tampered_observation_is_rejected() {
     let verdict = check(
@@ -347,7 +347,7 @@ fn tc_961_008_a_tampered_observation_is_rejected() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-4", "TC-1788")]
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_009_an_empty_incomplete_or_unstated_population_is_inconclusive_never_accepted() {
     let gate = plan("MP-961");
@@ -412,7 +412,7 @@ fn tc_961_009_an_empty_incomplete_or_unstated_population_is_inconclusive_never_a
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-5", "TC-1789")]
+#[trace("FR-108-AC-5")]
 #[test]
 fn tc_961_010_a_plan_without_a_rule_or_estimator_or_any_run_is_inconclusive() {
     let accepted = case("right/accept");
@@ -446,7 +446,7 @@ fn tc_961_010_a_plan_without_a_rule_or_estimator_or_any_run_is_inconclusive() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-3", "TC-1790")]
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_011_a_constant_predictor_baseline_is_inconclusive_without_per_item_rows() {
     let mut gate = plan("MP-961");
@@ -465,7 +465,7 @@ fn tc_961_011_a_constant_predictor_baseline_is_inconclusive_without_per_item_row
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-2", "TC-1791")]
+#[trace("FR-108-AC-2")]
 #[test]
 fn tc_961_012_intake_order_decides_the_candidate_and_a_tie_is_unattested() {
     // Backdate the regressed run's stated timestamp to after the pass: the
@@ -511,7 +511,7 @@ fn tc_961_012_intake_order_decides_the_candidate_and_a_tie_is_unattested() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-3", "TC-1792")]
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_013_baselines_come_from_recomputed_rows_through_eas_rule() {
     let prior = plan("MP-961-prior");
@@ -561,7 +561,7 @@ fn tc_961_013_baselines_come_from_recomputed_rows_through_eas_rule() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-4", "TC-1793")]
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_014_an_estimate_no_row_data_can_check_is_counted_as_asserted() {
     let mut gate = plan("MP-961");
@@ -607,7 +607,7 @@ fn rounds_to(stated: f64, matched: f64, examined: f64) -> bool {
 
 proptest! {
     /// Provenance: PLAT-961
-    #[trace("FR-108-AC-4", "TC-1794")]
+    #[trace("FR-108-AC-4")]
     #[test]
     fn tc_961_015_proportion_and_count_are_recomputed_from_matched_and_examined(
         examined in 1_u32..1_000_000,
@@ -633,7 +633,7 @@ proptest! {
     }
 
     /// Provenance: PLAT-961
-    #[trace("FR-108-AC-4", "TC-1794")]
+    #[trace("FR-108-AC-4")]
     #[test]
     fn tc_961_016_a_stored_value_is_consistent_only_within_its_stated_precision(
         examined in 1_u32..1_000_000,
@@ -678,7 +678,7 @@ proptest! {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-5", "FR-108-AC-6", "TC-1795")]
+#[trace("FR-108-AC-5", "FR-108-AC-6")]
 #[test]
 fn tc_961_017_the_verdict_document_has_the_documented_wire_shape() {
     let verdict = check(
@@ -755,7 +755,7 @@ fn at<'a>(positions: &[(&'a MeasurementCollection, u64)]) -> Vec<Ranked<'a>> {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-4", "TC-1798")]
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_021_a_proportion_or_count_with_no_matched_has_no_rows_and_is_not_asserted() {
     let no_matched = accepted_with(|o| o.population.as_mut().unwrap().matched = None);
@@ -777,7 +777,7 @@ fn tc_961_021_a_proportion_or_count_with_no_matched_has_no_rows_and_is_not_asser
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-2", "TC-1799")]
+#[trace("FR-108-AC-2")]
 #[test]
 fn tc_961_022_a_slice_measured_before_and_dropped_by_the_candidate_is_inconclusive() {
     let earlier = renamed(case("right/accept").remove(0), "earlier");
@@ -800,7 +800,7 @@ fn tc_961_022_a_slice_measured_before_and_dropped_by_the_candidate_is_inconclusi
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-2", "TC-1800")]
+#[trace("FR-108-AC-2")]
 #[test]
 fn tc_961_023_a_later_collection_without_the_plans_observation_leaves_the_pass_open() {
     let pass = case("right/accept").remove(0);
@@ -827,7 +827,7 @@ fn tc_961_023_a_later_collection_without_the_plans_observation_leaves_the_pass_o
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-4", "TC-1801")]
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_024_a_percent_unit_is_unsupported_and_a_rounded_value_is_consistent() {
     let gate = plan("MP-961");
@@ -855,7 +855,7 @@ fn tc_961_024_a_percent_unit_is_unsupported_and_a_rounded_value_is_consistent() 
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-3", "TC-1802")]
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_025_an_earlier_shortfall_is_history_but_earlier_tampering_still_rejects() {
     let gate = plan("MP-961");
@@ -876,7 +876,7 @@ fn tc_961_025_an_earlier_shortfall_is_history_but_earlier_tampering_still_reject
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-2", "FR-108-AC-3", "TC-1803")]
+#[trace("FR-108-AC-2", "FR-108-AC-3")]
 #[test]
 fn tc_961_026_a_prior_collection_tied_with_another_run_is_order_unattested() {
     let prior = plan("MP-961-prior");
@@ -891,7 +891,7 @@ fn tc_961_026_a_prior_collection_tied_with_another_run_is_order_unattested() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-4", "TC-1804")]
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_027_a_count_plan_is_recomputed_from_matched() {
     let mut count = plan("MP-961");
@@ -909,7 +909,7 @@ fn tc_961_027_a_count_plan_is_recomputed_from_matched() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-8", "TC-1805")]
+#[trace("FR-108-AC-8")]
 #[test]
 fn tc_961_028_a_shallow_history_attests_no_order_and_says_where_the_order_came_from() {
     let accepted = case("right/accept");
@@ -954,7 +954,7 @@ fn tc_961_028_a_shallow_history_attests_no_order_and_says_where_the_order_came_f
 /// swallowed by a wildcard match arm.
 ///
 /// Provenance: PLAT-1032
-#[trace("FR-108-AC-3", "TC-1927")]
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_030_an_external_reference_baseline_is_inconclusive_with_its_own_reason() {
     let mut gate = plan("MP-961");

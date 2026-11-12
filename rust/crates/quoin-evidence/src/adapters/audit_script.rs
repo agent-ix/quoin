@@ -125,7 +125,7 @@ mod tests {
     /// is a result rather than a vacuous one.
     ///
     /// Provenance: quoin#458
-    #[trace("FR-036-AC-2", "FR-036-AC-3", "TC-198", "TC-199")]
+    #[trace("FR-036-AC-2", "FR-036-AC-3")]
     #[test]
     fn tc_458_210_counts_ok_lines_as_rules_that_ran_and_passed() {
         let result = parse_audit_script(
@@ -169,7 +169,7 @@ mod tests {
     /// conformance evidence from a file that proves nothing.
     ///
     /// Provenance: quoin#458
-    #[trace("FR-036-AC-4", "TC-200")]
+    #[trace("FR-036-AC-4")]
     #[test]
     fn tc_458_212_refuses_output_with_no_recognised_line() {
         assert_eq!(

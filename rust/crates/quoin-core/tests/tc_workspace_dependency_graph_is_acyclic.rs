@@ -151,7 +151,7 @@ fn cli_dependents(edges: &BTreeMap<String, BTreeSet<String>>) -> Vec<String> {
 }
 
 /// FR-036-AC-7: the CLI is a leaf.
-#[trace("FR-036-AC-7", "TC-202")]
+#[trace("FR-036-AC-7")]
 #[test]
 fn no_workspace_crate_depends_on_the_cli() {
     let edges = workspace_edges();
@@ -164,7 +164,7 @@ fn no_workspace_crate_depends_on_the_cli() {
 
 /// The check must be able to fail: an edge onto the CLI is reported, and a
 /// crate whose name merely contains `quoin-cli` is not the CLI.
-#[trace("FR-036-AC-7", "TC-202")]
+#[trace("FR-036-AC-7")]
 #[test]
 fn the_cli_leaf_check_reports_an_injected_edge() {
     let mut edges: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();

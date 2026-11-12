@@ -216,7 +216,7 @@ mod tests {
         serde_json::from_value(value).unwrap()
     }
 
-    #[trace("FR-133-AC-5", "TC-2604")]
+    #[trace("FR-133-AC-5")]
     #[test]
     fn the_populations_add_up_to_the_binding_clauses_and_the_remainder_is_named() {
         let mut request = request(vec![direct(), disposition()]);
@@ -238,7 +238,7 @@ mod tests {
         assert!(!json.contains("score") && !json.contains("percent"));
     }
 
-    #[trace("FR-133-AC-5", "TC-2604")]
+    #[trace("FR-133-AC-5")]
     #[test]
     fn nothing_discharged_is_all_open_and_renders_the_remainder() {
         let report = build_discharge_report(&request(vec![])).unwrap();
@@ -253,7 +253,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-133-AC-5", "TC-2604")]
+    #[trace("FR-133-AC-5")]
     #[test]
     fn unused_facts_and_expired_facts_are_counted_and_named() {
         let mut unused = disposition();

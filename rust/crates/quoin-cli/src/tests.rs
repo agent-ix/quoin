@@ -115,7 +115,7 @@ fn tc_373_graph_without_a_view_keeps_the_retained_description() {
     );
 }
 
-#[trace("FR-062", "FR-102", "TC-1650")]
+#[trace("FR-062", "FR-102")]
 #[test]
 fn tc_1650_graph_grammar_preserves_the_required_and_repeatable_flags() {
     let matches = command()
@@ -155,7 +155,7 @@ fn tc_1650_graph_grammar_preserves_the_required_and_repeatable_flags() {
     );
 }
 
-#[trace("FR-062", "FR-102", "TC-1650")]
+#[trace("FR-062", "FR-102")]
 #[test]
 fn tc_1650_missing_a_required_graph_input_is_refused_by_the_shell() {
     let error = command().try_get_matches_from([
@@ -204,7 +204,7 @@ fn tc_1650_root_help_uses_the_native_command_inventory() {
     assert!(root_usage().contains("USAGE\n  $ quoin [COMMAND]"));
 }
 
-#[trace("FR-003", "FR-102", "TC-1650")]
+#[trace("FR-003", "FR-102")]
 #[test]
 fn tc_1650_help_is_a_successful_stdout_response_not_a_parse_failure() {
     for arguments in [
@@ -223,7 +223,7 @@ fn tc_1650_help_is_a_successful_stdout_response_not_a_parse_failure() {
     }
 }
 
-#[trace("FR-003", "FR-102", "TC-1650")]
+#[trace("FR-003", "FR-102")]
 #[test]
 fn tc_1650_every_native_command_path_accepts_help_before_required_inputs() {
     for route in NATIVE_OWNED_ROUTES {
@@ -260,7 +260,7 @@ fn tc_373_global_config_flags_are_accepted_after_a_command_path() {
     assert!(invocation.no_project_config());
 }
 
-#[trace("FR-102", "TC-1650")]
+#[trace("FR-102")]
 #[test]
 fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
     let root = command();
@@ -297,7 +297,7 @@ fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
     );
 }
 
-#[trace("FR-062", "FR-102", "TC-1650")]
+#[trace("FR-062", "FR-102")]
 #[test]
 fn tc_1650_native_shell_route_census_matches_the_retained_owned_surface() {
     let expected = NATIVE_OWNED_ROUTES
@@ -319,7 +319,7 @@ fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
     );
 }
 
-#[trace("FR-005", "FR-102", "TC-1650")]
+#[trace("FR-005", "FR-102")]
 #[test]
 fn tc_1650_command_failures_keep_the_retained_error_envelope() {
     let error = ShellError::command("write requires <repo_dir>");
@@ -328,7 +328,7 @@ fn tc_1650_command_failures_keep_the_retained_error_envelope() {
     assert_eq!(error.message, "    Error: write requires <repo_dir>");
 }
 
-#[trace("FR-062", "FR-102", "TC-1650")]
+#[trace("FR-062", "FR-102")]
 #[test]
 fn tc_1650_graph_refusals_keep_the_core_exit_taxonomy() {
     let response = run([

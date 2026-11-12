@@ -241,7 +241,7 @@ mod tests {
         PluginId::new(s).expect("test id is legal")
     }
 
-    #[trace("FR-027-AC-1", "TC-101")]
+    #[trace("FR-027-AC-1")]
     #[test]
     fn tc_381_010_user_config_path_is_xdg_config_d_yaml() {
         let env = FixedEnvironment::new().with_var("XDG_CONFIG_HOME", "/x");
@@ -272,7 +272,7 @@ mod tests {
         assert_eq!(cache_root(&env, &ctx), PathBuf::from("/r/cache"));
     }
 
-    #[trace("FR-027-AC-9", "TC-109")]
+    #[trace("FR-027-AC-9")]
     #[test]
     fn tc_381_012_project_layer_path_and_disable() {
         let ctx = RuntimeContext::for_cwd(Path::new("/repo"), false);

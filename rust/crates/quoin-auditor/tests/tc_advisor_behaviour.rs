@@ -85,7 +85,7 @@ fn temporal_catalog() -> MethodCatalog {
 }
 
 /// Reliability phrasing is recommended fault injection.
-#[trace("FR-031-AC-4", "TC-1987")]
+#[trace("FR-031-AC-4")]
 #[test]
 fn reliability_phrasing_recommends_fault_injection() {
     let catalog = catalog_of(vec![
@@ -110,7 +110,7 @@ fn reliability_phrasing_recommends_fault_injection() {
 
 /// A round-trip property shape recommends property-based and metamorphic
 /// testing, ordered by how many rules matched.
-#[trace("FR-031-AC-5", "TC-1988")]
+#[trace("FR-031-AC-5")]
 #[test]
 fn a_round_trip_shape_recommends_property_based_then_metamorphic() {
     let catalog = catalog_of(vec![
@@ -143,7 +143,7 @@ fn a_round_trip_shape_recommends_property_based_then_metamorphic() {
 
 /// An authored method no recommendation covers is a mismatch; one matching a
 /// recommended method's class is not.
-#[trace("FR-031-AC-6", "TC-1989")]
+#[trace("FR-031-AC-6")]
 #[test]
 fn a_mismatch_needs_an_authored_method_no_recommendation_covers() {
     let mut authored = facts("the invariant always holds");
@@ -158,7 +158,7 @@ fn a_mismatch_needs_an_authored_method_no_recommendation_covers() {
 
 /// An obligation matching no rule is inconclusive, with no recommendation and
 /// no mismatch.
-#[trace("FR-031-AC-7", "TC-135")]
+#[trace("FR-031-AC-7")]
 #[test]
 fn an_obligation_matching_no_rule_is_inconclusive() {
     let mut quiet = facts("nothing lexical here at all");
@@ -171,7 +171,7 @@ fn an_obligation_matching_no_rule_is_inconclusive() {
 
 /// A method naming an axis the advisor cannot observe is still recommended on
 /// the axes it can, with only the observable reasons reported.
-#[trace("FR-031-AC-8", "TC-136")]
+#[trace("FR-031-AC-8")]
 #[test]
 fn an_unobservable_axis_is_skipped_not_fatal() {
     let catalog = catalog_of(vec![method(
@@ -194,7 +194,7 @@ fn an_unobservable_axis_is_skipped_not_fatal() {
 
 /// A module whose manifest cannot be read or parsed is skipped and reported on
 /// the merged catalog, never thrown.
-#[trace("FR-031-AC-9", "TC-133")]
+#[trace("FR-031-AC-9")]
 #[test]
 fn an_unreadable_module_is_skipped_and_reported_not_thrown() {
     let good =
@@ -215,7 +215,7 @@ fn an_unreadable_module_is_skipped_and_reported_not_thrown() {
 }
 
 /// A link's target contributes nothing to characteristics; its text does.
-#[trace("FR-031-AC-14", "TC-249")]
+#[trace("FR-031-AC-14")]
 #[test]
 fn a_link_target_contributes_nothing_but_its_text_does() {
     assert!(!has(
@@ -230,7 +230,7 @@ fn a_link_target_contributes_nothing_but_its_text_does() {
 
 /// `high-criticality` is minted from the declared value, never from a
 /// threshold the engine chose.
-#[trace("FR-031-AC-15", "TC-250")]
+#[trace("FR-031-AC-15")]
 #[test]
 fn high_criticality_comes_from_the_declared_value() {
     let minted = |value: Option<&str>| {
@@ -251,7 +251,7 @@ fn high_criticality_comes_from_the_declared_value() {
 /// A magic-value comparison, constant-time behaviour or reference equivalence
 /// mints its characteristic; a function signature and a recorded-snapshot
 /// comparison mint neither the first nor the last.
-#[trace("FR-031-AC-17", "TC-252")]
+#[trace("FR-031-AC-17")]
 #[test]
 fn magic_value_constant_time_and_reference_equivalence_are_minted() {
     assert!(has(
@@ -285,7 +285,7 @@ fn magic_value_constant_time_and_reference_equivalence_are_minted() {
 /// Fault-detection characteristics follow the evidence: bound with no score is
 /// unmeasured, a weakest score below 1 is failed; unbound and unconsulted mint
 /// neither.
-#[trace("FR-031-AC-18", "TC-253")]
+#[trace("FR-031-AC-18")]
 #[test]
 fn fault_detection_characteristics_follow_the_evidence() {
     let with = |evidence: Option<ObligationEvidence>| {
@@ -311,7 +311,7 @@ fn fault_detection_characteristics_follow_the_evidence() {
 /// The obligation's structured `parameters` reach the advisor: a `target` or
 /// `threshold` key mints `quantified-threshold` whatever the wording, and other
 /// keys mint nothing.
-#[trace("FR-031-AC-19", "TC-266")]
+#[trace("FR-031-AC-19")]
 #[test]
 fn structured_parameters_mint_a_quantified_threshold() {
     let parameters = |key: &str| BTreeMap::from([(key.to_owned(), "< 4 min".to_owned())]);
@@ -362,7 +362,7 @@ fn concessive_while_is_not_temporal_but_while_a_state_is() {
 
 /// A statement claiming an architectural fact in the corpus's own wording mints
 /// `layering` or `module-boundary`; `top-level claim` mints neither.
-#[trace("FR-031-AC-21", "TC-268")]
+#[trace("FR-031-AC-21")]
 #[test]
 fn architectural_claims_mint_layering_or_module_boundary() {
     assert!(has(
@@ -409,7 +409,7 @@ fn uncatalogued(values: &[&str], degraded: bool) -> UncataloguedMethods {
 /// Uncatalogued, mismatch and inconclusive are three states: an uncatalogued
 /// value is never a mismatch, a declared value the advisor disagrees with is,
 /// and the uncatalogued fact survives silence.
-#[trace("FR-031-AC-22", "TC-273")]
+#[trace("FR-031-AC-22")]
 #[test]
 fn uncatalogued_mismatch_and_inconclusive_are_three_states() {
     let obligations = [
@@ -478,7 +478,7 @@ fn a_valueless_diagnostic_degrades_and_silence_does_not() {
 
 /// A declared configuration space advises the combinatorial method
 /// structurally, whatever its words; ordinary prose does not.
-#[trace("FR-035-AC-12", "TC-191")]
+#[trace("FR-035-AC-12")]
 #[test]
 fn a_declared_space_is_a_configuration_matrix_structurally() {
     let space = "2-way over features(default|python|wasm) target(linux|wasm32)";
