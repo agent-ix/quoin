@@ -57,10 +57,16 @@ pub(crate) fn quoin(
     arguments: &[&str],
     configure: impl FnOnce(&mut Command),
 ) -> Output {
+    // A developer's own `~/.config/ix` must not change a reading.
+    let config = home.parent().unwrap_or(home).join("user-config");
+    std::fs::create_dir_all(&config).expect("the isolated config home is creatable");
     let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
     command
         .args(arguments)
         .env("IX_HOME", home)
+        .env("HOME", &config)
+        .env("XDG_CONFIG_HOME", config.join(".config"))
+        .env_remove("IX_CONFIG_ROOT")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());

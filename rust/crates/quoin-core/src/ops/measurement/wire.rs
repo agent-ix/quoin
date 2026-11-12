@@ -13,7 +13,7 @@
 //!
 //! Every route locates a measurement store and then says one more thing about
 //! what to do with it, so the requests are shared rather than declared per
-//! route: [`RepoRequest`] locates one store, [`PortfolioRequest`] locates
+//! route: [`ReportRequest`] locates one store, [`PortfolioRequest`] locates
 //! several, and the four remaining shapes add a record, a definition, a
 //! revision or a metric. A per-route request type would be twelve declarations
 //! of "where is the store", and the twelfth would be the one that spells it
@@ -87,9 +87,8 @@ pub const MAX_RETAINED_EXPORT_BYTES: usize = 2 * 1024 * 1024;
 /// [`MAX_RETAINED_EXPORT_BYTES`] — this bounds the request that names them.
 pub const MAX_WORKFLOW_YAML_BYTES: usize = 2 * 1024 * 1024;
 
-/// The largest single-store report request, in bytes.
+/// The largest single-store series request, in bytes.
 ///
-/// `measurement.build_report`, `measurement.render_report` and
 /// `measurement.build_series`. Named for the `MeasurementPlan` and
 /// `AssuranceProfile` documents these routes read; those are frontmatter in
 /// `spec/assurance/` and are read off disk, so this bounds the request that
@@ -125,20 +124,28 @@ pub const MAX_METRIC_NAME_BYTES: usize = 256;
 /// records the store accepts or admit records it will not write.
 pub const MAX_RECORD_ID_BYTES: usize = quoin_measurement::MAX_RECORD_ID_BYTES;
 
-/// The largest `measurement.verify` request, in bytes.
+/// The largest `measurement.verify`, `measurement.build_report` and
+/// `measurement.render_report` request, in bytes.
 ///
-/// A plan id, an optional claimed verdict and the intake order: one group of
+/// A plan id (verify), an optional claimed verdict and the intake order: one group of
 /// collection ids per git commit that added collections. The order grows with
 /// the store — 49 ids of about 40 bytes today — so this is sized like
 /// [`MAX_PORTFOLIO_ROOTS_BYTES`], not like a single name.
 pub const MAX_VERIFY_REQUEST_BYTES: usize = 4 * 1024 * 1024;
 
-/// One measurement store, located.
+/// The report of one store, and the intake order its paired runs are chosen
+/// by (FR-132-AC-15).
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct RepoRequest {
+pub struct ReportRequest {
     /// The repository root holding the measurement store.
     pub repo: String,
+    /// As [`VerifyRequest::intake_order`].
+    #[serde(default)]
+    pub intake_order: Vec<Vec<String>>,
+    /// As [`VerifyRequest::order_source`].
+    #[serde(default)]
+    pub order_source: Option<String>,
 }
 
 /// A record to publish, and the store to publish it into.

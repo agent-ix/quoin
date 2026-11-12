@@ -57,8 +57,8 @@ relationships:
 # ix-flow failures reach the caller as a non-zero exit
 
 Measures NFR-007-M-1: external-tool failures surfaced as a non-zero `quoin`
-exit. The only external tool `quoin` runs is `ix-flow`; `quire` is emitted, not
-run (NFR-007-M-2), and `quoin update` fetches over HTTP.
+exit. The only external tool `quoin` runs is `ix-flow`; `quire` is a linked library,
+and `quoin update` fetches over HTTP.
 
 ## Decision Use
 
@@ -71,19 +71,19 @@ commands are found by the producer from the binary's own help text; the twelve
 modes are those the producer stages with its stub, and all are in the set. The
 set is compared with this plan's by the `tc_3004` test (TC-3004).
 
-| Mode | The stub | What `quoin` should say |
+| Mode | The stub | The message carries |
 | --- | --- | --- |
-| `ix-flow-absent` | no `ix-flow` on `PATH` | could not start ix-flow |
-| `ix-flow-reports-an-old-version` | `--version` prints 0.1.0 | names ix-flow |
-| `ix-flow-reports-no-version` | `--version` prints a non-version | names ix-flow |
-| `ix-flow-hangs-the-handshake` | `--version` never returns | names ix-flow |
+| `ix-flow-absent` | no `ix-flow` on `PATH` | `could not start ix-flow` |
+| `ix-flow-reports-an-old-version` | `--version` prints 0.1.0 | `ix-flow >=0.3.1 is required` |
+| `ix-flow-reports-no-version` | `--version` prints a non-version | `supported semantic version` |
+| `ix-flow-hangs-the-handshake` | `--version` never returns | `launch deadline` |
 | `ix-flow-fails-the-run` | `run` exits 7 with a marker on stderr | the marker |
-| `ix-flow-hangs-the-run` | `run` never returns | names ix-flow |
-| `ix-flow-prints-garbage` | `run` exits 0 printing text | names ix-flow |
-| `ix-flow-prints-nothing` | `run` exits 0 printing nothing | names ix-flow |
-| `ix-flow-floods-its-output` | `run` prints 2 MB | names ix-flow |
+| `ix-flow-hangs-the-run` | `run` never returns | `launch deadline` |
+| `ix-flow-prints-garbage` | `run` exits 0 printing text | `ix-flow returned invalid JSON` |
+| `ix-flow-prints-nothing` | `run` exits 0 printing nothing | `ix-flow returned invalid JSON` |
+| `ix-flow-floods-its-output` | `run` prints 2 MB | `1 MiB output bound` |
 | `ix-flow-reports-an-error-payload` | `run` exits 0 printing `{"ok":false,"error":{...}}` | the payload's message |
-| `ix-flow-omits-the-instance-id` | `run` exits 0 printing `{"ok":true}` | names ix-flow |
+| `ix-flow-omits-the-instance-id` | `run` exits 0 printing `{"ok":true}` | `ix-flow returned no instance_id` |
 | `ix-flow-fails-the-context` | `add-item` exits 9 with a marker | the marker |
 
 ## Measure Definition
@@ -92,9 +92,9 @@ The producer gives each command a skill directory that satisfies it, and a
 `PATH` holding either nothing or the stub `ix-flow`, which follows the launch
 protocol up to the step the mode breaks and logs each operation it is asked
 for. A pair matches when `quoin` exits non-zero, the stub was asked for the
-operation the mode belongs to, and the evidence of the staged failure is on
-stderr: the stub's marker where the failure is the tool's own message, `ix-flow`
-named where `quoin` wrote the message. A control launch against a stub that
+operation the mode belongs to, and stderr carries the fragment in the table:
+the stub's marker where the message is the tool's own, `quoin`'s own wording
+otherwise. A control launch against a stub that
 succeeds must exit zero first, or the probe panics. Value: matching pairs over
 pairs examined, definition `nfr007.external-failure-exit-v1`.
 

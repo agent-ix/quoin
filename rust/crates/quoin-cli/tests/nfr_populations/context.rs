@@ -13,6 +13,7 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Output;
+use std::sync::OnceLock;
 
 use super::help_tree::{self, CommandHelp};
 use super::quoin;
@@ -59,8 +60,12 @@ pub(crate) struct Context {
     scratch: tempfile::TempDir,
     home: PathBuf,
     modules: std::ffi::OsString,
-    commands: Vec<CommandHelp>,
+    commands: &'static [CommandHelp],
 }
+
+/// The command tree, walked once per test binary: the binary's help does not
+/// depend on the home it is asked in.
+static COMMANDS: OnceLock<Vec<CommandHelp>> = OnceLock::new();
 
 impl Context {
     pub(crate) fn new() -> Self {
@@ -73,7 +78,7 @@ impl Context {
         let traceability =
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../quoin-quire/tests/fixtures/repo");
         let modules = std::env::join_paths([&module, &traceability]).expect("paths join");
-        let commands = help_tree::walk(&home);
+        let commands = COMMANDS.get_or_init(|| help_tree::walk(&home));
         Self {
             scratch,
             home,
@@ -83,8 +88,8 @@ impl Context {
     }
 
     /// The root and every command below it.
-    pub(crate) fn commands(&self) -> &[CommandHelp] {
-        &self.commands
+    pub(crate) fn commands(&self) -> &'static [CommandHelp] {
+        self.commands
     }
 
     /// A path that does not exist, unique to `label`.

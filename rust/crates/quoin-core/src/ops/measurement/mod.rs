@@ -86,7 +86,7 @@ pub use self::wire::{
     MAX_INTERVENTION_RECORD_BYTES, MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES,
     MAX_PORTFOLIO_ROOTS_BYTES, MAX_PRODUCER_DEFINITION_BYTES, MAX_RECORD_ID_BYTES,
     MAX_RETAINED_EXPORT_BYTES, MAX_VERIFY_REQUEST_BYTES, MAX_WORKFLOW_YAML_BYTES, PathPayload,
-    PortfolioRequest, RecordRequest, RenderedPayload, RepoRequest, SeriesRequest, VerifyRequest,
+    PortfolioRequest, RecordRequest, RenderedPayload, ReportRequest, SeriesRequest, VerifyRequest,
 };
 
 pub use self::attach::attach;

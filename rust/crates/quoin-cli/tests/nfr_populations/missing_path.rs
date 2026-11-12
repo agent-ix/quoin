@@ -11,14 +11,13 @@ use super::context::Context;
 use super::failure::{Failure, judge, names};
 
 /// What a diagnostic says about a path it could not use.
-const REASONS: [&str; 7] = [
+const REASONS: [&str; 6] = [
     "not a directory",
     "no such file",
     "not found",
     "does not exist",
     "not a readable",
     "cannot read",
-    "could not",
 ];
 
 /// Whether a help description says its value is a single filesystem location.

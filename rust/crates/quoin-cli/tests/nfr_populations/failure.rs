@@ -7,6 +7,8 @@
 use std::collections::BTreeSet;
 use std::process::Output;
 
+use ix_trace_rs::trace;
+
 use super::{Probed, text};
 
 /// Phrases by which a message points a caller to a next step: usage text, the
@@ -45,15 +47,29 @@ pub(crate) fn judge(id: String, output: &Output, actionable: impl FnOnce(&str) -
     }
 }
 
-/// Whether `message` mentions `token`, ignoring case.
+/// Whether `message` mentions `token` as a whole word, ignoring case: the
+/// characters beside a match are not word characters where the token's own
+/// edges are, so `available` is not found in `unavailable` nor `line` in
+/// `deadline`.
 pub(crate) fn names(message: &str, token: &str) -> bool {
-    message.to_lowercase().contains(&token.to_lowercase())
+    let (message, token) = (message.to_lowercase(), token.to_lowercase());
+    let word = |c: char| c.is_alphanumeric() || c == '_';
+    let (first, last) = (token.chars().next(), token.chars().next_back());
+    message.match_indices(&token).any(|(start, _)| {
+        let before = message.get(..start).and_then(|s| s.chars().next_back());
+        let after = message
+            .get(start + token.len()..)
+            .and_then(|s| s.chars().next());
+        let apart = |beside: Option<char>, edge: Option<char>| {
+            !(beside.is_some_and(word) && edge.is_some_and(word))
+        };
+        apart(before, first) && apart(after, last)
+    })
 }
 
 /// Whether `message` points to usage, help or the available names.
 pub(crate) fn points_forward(message: &str) -> bool {
-    let message = message.to_lowercase();
-    NEXT_STEPS.iter().any(|phrase| message.contains(phrase))
+    NEXT_STEPS.iter().any(|phrase| names(message, phrase))
 }
 
 /// The ids examined, those whose diagnostic was actionable (NFR-003-M-1), and
@@ -77,4 +93,23 @@ pub(crate) fn probed(failures: &[Failure]) -> (Probed, Probed) {
             matched: select(|f| f.silent),
         },
     )
+}
+
+#[trace("FR-131-AC-9", "TC-3707")]
+#[test]
+fn tc_3707_next_steps_and_tokens_match_whole_words_only() {
+    for vacuous in [
+        "the module is unavailable",
+        "registry lookup failed",
+        "pipeline stalled",
+        "past the deadline",
+        "inline value",
+    ] {
+        assert!(!points_forward(vacuous), "{vacuous}");
+        assert!(!names(vacuous, "line"), "{vacuous}");
+    }
+    for forward in ["Usage: quoin x", "run with --help", "Available types: A"] {
+        assert!(points_forward(forward), "{forward}");
+    }
+    assert!(names("expected value at line 1 column 2", "line"));
 }

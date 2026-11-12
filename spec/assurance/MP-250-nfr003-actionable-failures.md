@@ -174,11 +174,10 @@ test.
 
 A command with a required argument besides the one probed is outside
 `missing-path` and `malformed-input`: a placeholder for that argument is read
-first and decides the outcome. Commands that read their own help differently
-from how they behave (an unbracketed positional the help brackets, such as
-`write`'s directory) are probed as they behave. Every probe runs in a home
-seeded from the retained catalog fixture with two modules in scope, so no probe
-reaches the network.
+first and decides the outcome. Every probe runs in a home seeded from the
+retained catalog fixture with two modules in scope, and with `HOME`,
+`XDG_CONFIG_HOME` and `IX_CONFIG_ROOT` isolated from the developer's own, so no
+probe reaches the network or reads a user config.
 
 ## Measure Definition
 
@@ -186,7 +185,8 @@ A pair matches when the process exits non-zero and its stderr is actionable for
 the class, that is it names the cause and points to a next step:
 
 - `unknown-flag`, `unknown-subcommand`: names the offending token and shows
-  usage, the help or the available commands.
+  usage, the help or the available commands. Tokens and next-step phrases are
+  matched as whole words, so `available` is not found in `unavailable`.
 - `missing-argument`: names every flag and positional the help marks required
   and shows usage or the help.
 - `missing-path`: names the path and says what is wrong with it (not a
@@ -213,7 +213,10 @@ and `population.matched_ids`. Each class lives in its own module under
 ## Interpretation
 
 100% means every probed failure names its cause and a next step. A value below
-100% lists the ids that do not: the per-class tests name them, and the set can
-only shrink. The population is the failures the help text lets the producer
+100% lists the ids that do not: the per-class tests name them, and fixing a
+command fails its test until the id is removed from that list. `report
+--portfolio` reads below the target because a missing member is listed on stdout
+rather than refused; whether that is a defect is a design decision NFR-003 does
+not state. The population is the failures the help text lets the producer
 construct; a failure that needs a state the producer does not stage (a corrupt
 evidence store, a module that declares a vocabulary) is not in it.

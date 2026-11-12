@@ -6,19 +6,9 @@
 
 use super::context::{Context, write_module};
 use super::failure::{Failure, judge, names};
-use super::help_tree::CommandHelp;
 
 const TYPE: &str = "NfrDuplicate";
 const MODULES: [&str; 2] = ["nfr003-first", "nfr003-second"];
-
-/// Whether the command's own summary line says it checks for duplicates.
-fn checks_duplicates(cx: &Context, command: &CommandHelp) -> bool {
-    let help = cx.run(command, &["--help"]);
-    String::from_utf8_lossy(&help.stdout)
-        .lines()
-        .next()
-        .is_some_and(|summary| summary.to_lowercase().contains("duplicate"))
-}
 
 pub(crate) fn probe(cx: &Context) -> Vec<Failure> {
     let scratch = tempfile::tempdir().expect("scratch is creatable");
@@ -29,7 +19,7 @@ pub(crate) fn probe(cx: &Context) -> Vec<Failure> {
     let paths = std::env::join_paths(&roots).expect("paths join");
     cx.commands()
         .iter()
-        .filter(|command| checks_duplicates(cx, command))
+        .filter(|command| command.summary.to_lowercase().contains("duplicate"))
         .map(|command| {
             let output = cx.run_with(command, &[], |process| {
                 process.env("QUOIN_MODULE_PATHS", &paths);

@@ -36,6 +36,8 @@ pub(crate) struct CommandHelp {
     /// The words that select it, empty for the root.
     pub(crate) path: Vec<String>,
     /// The words of each subcommand its `COMMANDS` block lists.
+    /// The first line of its help.
+    pub(crate) summary: String,
     pub(crate) subcommands: Vec<String>,
     pub(crate) flags: Vec<Flag>,
     pub(crate) arguments: Vec<Argument>,
@@ -148,6 +150,7 @@ pub(crate) fn walk(home: &Path) -> Vec<CommandHelp> {
 fn parse(path: Vec<String>, help: &str) -> CommandHelp {
     let mut command = CommandHelp {
         path,
+        summary: help.lines().next().unwrap_or_default().to_owned(),
         subcommands: Vec::new(),
         flags: Vec::new(),
         arguments: Vec::new(),

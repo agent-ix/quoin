@@ -156,8 +156,14 @@ fn loaded(
         .into_iter()
         .map(|valid| valid.record().clone())
         .collect::<Vec<_>>();
-    let measurements =
-        build_measurement_report_from(root, &plans, &collections, &interventions, &operational)?;
+    let measurements = build_measurement_report_from(
+        root,
+        &plans,
+        &collections,
+        &interventions,
+        &operational,
+        &crate::verify::IntakeOrder::none(),
+    )?;
 
     let latest = collections.last();
     let previous = collections

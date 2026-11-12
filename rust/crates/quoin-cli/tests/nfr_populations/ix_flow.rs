@@ -10,6 +10,7 @@
 //! that succeeds must exit zero first, so a non-zero exit cannot come from the
 //! staging itself.
 
+#![cfg(unix)]
 #![allow(
     clippy::expect_used,
     reason = "in a test, a panic IS the failure report; the production lints stand"
@@ -24,82 +25,76 @@ use super::{Probed, text};
 /// The `about` line of the commands that launch an `ix-flow` workflow.
 const WORKFLOW_ABOUT: &str = "Start the Quoin-owned specification workflow";
 
-/// What shows the staged failure is what surfaced.
-enum Evidence {
-    /// The text the stub wrote, which `quoin` passes on.
-    Marker(&'static str),
-    /// `quoin`'s own message, which names the tool.
-    NamesTool,
-}
-
 /// One way `ix-flow` fails. `operation` is the stub call the failure belongs
-/// to: the probe reaches it, or the failure was not the staged one.
+/// to: the probe reaches it, or the failure was not the staged one. `evidence`
+/// is the fragment of the message that failure alone produces, from the stub's
+/// marker where the message is the tool's own, otherwise from `quoin`'s wording.
 struct Mode {
     id: &'static str,
     operation: Option<&'static str>,
-    evidence: Evidence,
+    evidence: &'static str,
 }
 
 const MODES: [Mode; 12] = [
     Mode {
         id: "ix-flow-absent",
         operation: None,
-        evidence: Evidence::NamesTool,
+        evidence: "could not start ix-flow",
     },
     Mode {
         id: "ix-flow-reports-an-old-version",
         operation: Some("--version"),
-        evidence: Evidence::NamesTool,
+        evidence: "ix-flow >=0.3.1 is required",
     },
     Mode {
         id: "ix-flow-reports-no-version",
         operation: Some("--version"),
-        evidence: Evidence::NamesTool,
+        evidence: "supported semantic version",
     },
     Mode {
         id: "ix-flow-hangs-the-handshake",
         operation: Some("--version"),
-        evidence: Evidence::NamesTool,
+        evidence: "launch deadline",
     },
     Mode {
         id: "ix-flow-fails-the-run",
         operation: Some("run"),
-        evidence: Evidence::Marker("nfr007-fails-the-run"),
+        evidence: "nfr007-fails-the-run",
     },
     Mode {
         id: "ix-flow-hangs-the-run",
         operation: Some("run"),
-        evidence: Evidence::NamesTool,
+        evidence: "launch deadline",
     },
     Mode {
         id: "ix-flow-prints-garbage",
         operation: Some("run"),
-        evidence: Evidence::NamesTool,
+        evidence: "ix-flow returned invalid JSON",
     },
     Mode {
         id: "ix-flow-prints-nothing",
         operation: Some("run"),
-        evidence: Evidence::NamesTool,
+        evidence: "ix-flow returned invalid JSON",
     },
     Mode {
         id: "ix-flow-floods-its-output",
         operation: Some("run"),
-        evidence: Evidence::NamesTool,
+        evidence: "1 MiB output bound",
     },
     Mode {
         id: "ix-flow-reports-an-error-payload",
         operation: Some("run"),
-        evidence: Evidence::Marker("nfr007-error-payload"),
+        evidence: "nfr007-error-payload",
     },
     Mode {
         id: "ix-flow-omits-the-instance-id",
         operation: Some("run"),
-        evidence: Evidence::NamesTool,
+        evidence: "ix-flow returned no instance_id",
     },
     Mode {
         id: "ix-flow-fails-the-context",
         operation: Some("add-item"),
-        evidence: Evidence::Marker("nfr007-fails-the-context"),
+        evidence: "nfr007-fails-the-context",
     },
 ];
 
@@ -139,20 +134,16 @@ esac
 "#;
 
 /// The commands whose own help says they launch an `ix-flow` workflow.
-fn workflow_commands(cx: &Context) -> Vec<&CommandHelp> {
+fn workflow_commands(cx: &Context) -> Vec<&'static CommandHelp> {
     cx.commands()
         .iter()
         .filter(|command| !command.path.is_empty())
-        .filter(|command| {
-            let help = cx.run(command, &["--help"]);
-            text(&help.stdout).starts_with(WORKFLOW_ABOUT)
-        })
+        .filter(|command| command.summary.starts_with(WORKFLOW_ABOUT))
         .collect()
 }
 
 /// `sleep`, found on the ambient `PATH`, linked into `bin`: the stub's `PATH`
 /// holds nothing else, so an `ix-flow` elsewhere cannot be found.
-#[cfg(unix)]
 fn link_sleep(bin: &std::path::Path) {
     let path = std::env::var_os("PATH").unwrap_or_default();
     let sleep = std::env::split_paths(&path)
@@ -165,7 +156,6 @@ fn link_sleep(bin: &std::path::Path) {
 /// One launch of `command` with `ix-flow` absent (`None`) or the stub in
 /// `stub_mode`, returning the process output and the operations the stub
 /// logged.
-#[cfg(unix)]
 fn launch(
     cx: &Context,
     command: &CommandHelp,
@@ -208,15 +198,11 @@ fn launch(
 /// Whether `command` met `mode` and failed as the mode says it should: a
 /// non-zero exit, the stub reached the step the mode belongs to, and the
 /// evidence of the staged failure reached stderr.
-#[cfg(unix)]
 fn surfaced(cx: &Context, command: &CommandHelp, mode: &Mode) -> bool {
     let stub_mode = (mode.operation.is_some()).then(|| mode.id.trim_start_matches("ix-flow-"));
     let (output, operations) = launch(cx, command, stub_mode);
     let stderr = text(&output.stderr);
-    let evidence = match mode.evidence {
-        Evidence::Marker(marker) => stderr.contains(marker),
-        Evidence::NamesTool => stderr.contains("ix-flow"),
-    };
+    let evidence = stderr.contains(mode.evidence);
     let reached = mode
         .operation
         .is_none_or(|wanted| operations.iter().any(|operation| operation == wanted));
@@ -226,7 +212,6 @@ fn surfaced(cx: &Context, command: &CommandHelp, mode: &Mode) -> bool {
 /// NFR-007-M-1: each workflow command with each way `ix-flow` fails, as
 /// `command:mode`. Every pair is probed on its own thread, so the modes that
 /// run to `quoin`'s launch deadline cost one deadline, not one each.
-#[cfg(unix)]
 pub(crate) fn external_tool_failures(cx: &Context) -> Probed {
     let commands = workflow_commands(cx);
     for command in &commands {

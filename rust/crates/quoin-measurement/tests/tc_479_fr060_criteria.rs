@@ -974,8 +974,15 @@ fn tc_479_408_no_derived_trust_confidence_or_quality_score() {
         .iter()
         .map(|(_, record, _)| record_of(record))
         .collect();
-    let report = build_measurement_report_from(root, &[], &[], &[], &records)
-        .expect("the report builds from the snapshot");
+    let report = build_measurement_report_from(
+        root,
+        &[],
+        &[],
+        &[],
+        &records,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds from the snapshot");
 
     let human = render_operational_report(&report.operational).to_lowercase();
     for needle in FORBIDDEN {
@@ -1033,10 +1040,33 @@ fn tc_479_409_re_rendering_is_byte_identical_and_the_two_views_agree() {
         "the reordering must actually reorder"
     );
 
-    let first = build_measurement_report_from(root, &[], &[], &[], &records).expect("a report");
-    let again = build_measurement_report_from(root, &[], &[], &[], &records).expect("a report");
-    let shuffled =
-        build_measurement_report_from(root, &[], &[], &[], &reordered).expect("a report");
+    let first = build_measurement_report_from(
+        root,
+        &[],
+        &[],
+        &[],
+        &records,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("a report");
+    let again = build_measurement_report_from(
+        root,
+        &[],
+        &[],
+        &[],
+        &records,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("a report");
+    let shuffled = build_measurement_report_from(
+        root,
+        &[],
+        &[],
+        &[],
+        &reordered,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("a report");
 
     let human = render_measurement_report(&first).expect("the human view renders");
     assert_eq!(human, render_measurement_report(&again).unwrap());
@@ -1126,8 +1156,12 @@ fn tc_479_411_existing_collections_and_interventions_read_beside_operational_rec
     write_operational_pair(root, &SystemClock, &capability, &exercise)
         .expect("the operational pair lands beside the existing evidence");
 
-    let report = build_measurement_report(&DiskMeasurement::new(root), root)
-        .expect("the pre-operational evidence reads without migration");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(root),
+        root,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the pre-operational evidence reads without migration");
     assert_eq!(
         report.corpus_gaps,
         Some(3.0),
