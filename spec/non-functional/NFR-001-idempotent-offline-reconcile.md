@@ -41,9 +41,11 @@ reproducible.
 ## Verification
 
 The default-module reconcile is run twice against an already-installed set and
-asserted to perform no further install or git work, confirmed by
+asserted to perform no further install or git work. NFR-001-M-1 is observed by
 `quoin-modules` `tests/install_reconcile.rs` ::
-`tc_381_283_a_settled_lazy_reconcile_performs_no_network_io`.
+`tc_381_283_a_settled_lazy_reconcile_performs_no_network_io`, which counts calls through an
+injected resolver (the first reconcile asserts one call, so the counter is shown live) and asserts
+none on the settled reconcile.
 
 ## Dependencies
 

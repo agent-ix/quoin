@@ -10,9 +10,11 @@
 //!
 //! **What `symbol` means here is not what it means for `JUnit`.** cargo-mutants
 //! exercises PRODUCTION functions, not test symbols, so an entry names
-//! `src/path.rs::function` — the thing mutated. Binding that back to a
-//! requirement needs a requirement→production-code relation, which does not
-//! exist yet (agent-ix/quire-rs#171).
+//! `src/path.rs::function` — the thing mutated. This adapter does not bind an
+//! entry to a requirement. quire's `#[implements("FR-n")]` relation
+//! (`implements` in `quire coverage --json`) links production symbols to
+//! requirements, but only a few are annotated, and survivor attribution
+//! (FR-039) works at suite level and does not read it.
 
 use std::collections::BTreeMap;
 
