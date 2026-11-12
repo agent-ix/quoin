@@ -29,7 +29,7 @@ Purpose, metrics, variation coverage, the scenario definitions (`TC-EV-*`), harn
 
 ## Purpose
 
-This matrix defines the minimum agent-facing eval set for spec creation and
+This document defines the minimum agent-facing eval set for spec creation and
 maintenance. Unit tests prove command behavior; these evals measure whether an
 agent can use the commands efficiently to produce valid spec artifacts.
 
@@ -40,20 +40,13 @@ agent in the loop. The two integration tests
 ([IT-001](./integration/IT-001-default-module-reconcile.md),
 [IT-002](./integration/IT-002-github-plugin-install.md)) name the live-git
 boundaries that warrant a deterministic test in addition to this agent-driven
-coverage; the metric-capture requirement for this matrix is
+coverage; the metric-capture requirement for these evals is
 [NFR-006](./non-functional/NFR-006-eval-metric-capture.md).
 
-> **Runner status (2026-06-15):** the **agent-pty-driven** harness is built and lives
-> in `evals/` (`node evals/run.mjs`, or `make evals` / `make evals-all`). It drives
-> the real agent (Claude) through this CLI + the `/spec-*` skills via `agent-pty`
-> (tmux), and records the metrics below **for real** from the Claude Code session
-> transcript (token usage, tool calls, latency, validation attempts, context
-> fetches). The prior deterministic runner — which faked `tokenUsage` (always null)
-> and counted `contextFetches` mechanically — was removed. Each scenario runs in an
-> isolated repo + `IX_HOME` seeded once from the default modules; success is asserted
-> by file presence + an independent `quire validate` + a completion sentinel. The
-> scenario definitions (TC-EV-001..TC-EV-015) below remain the source of truth; the harness
-> reads them from `evals/scenarios/index.mjs`. See `evals/README.md` for usage.
+> **Runner status:** no eval harness is checked into this repository. The scenario
+> definitions below are the source of truth; an agent-driven runner records the metrics
+> below from the agent session transcript (token usage, tool calls, latency, validation
+> attempts, context fetches).
 
 ## Metrics
 
@@ -96,7 +89,7 @@ coverage; the metric-capture requirement for this matrix is
 | TC-EV-010 | US-003         | Install a GitHub/package plugin fixture and request one of its types.            | `write --types` resolves the installed type and prints usable paths.                                                                                                                                                                                                                                                                                                                                                                         | success, latency, tool calls, tokens                      |
 | TC-EV-011 | US-002         | Request an unknown type in an authoring pack.                                    | CLI reports the missing type clearly and exits non-zero.                                                                                                                                                                                                                                                                                                                                                                                     | success, latency, tool calls                              |
 | TC-EV-012 | US-004         | Validate multiple globs for a changed-file subset.                               | Quire validates only matching files and reports each invalid file with a path.                                                                                                                                                                                                                                                                                                                                                               | success, latency, tool calls, validation attempts         |
-| TC-EV-013 | US-005         | Start a to-plan workflow after accepted requirements.                            | `quoin to-plan` creates a run that `ix-flow status` can inspect. (`quoin matrix` is no longer a workflow: FR-115 renders it in-process, covered by TC-1964..TC-1978, not by an eval.)                                                                                                                                                                                                                                                        | success, latency, tool calls                              |
+| TC-EV-013 | US-005         | Start a to-plan workflow after accepted requirements.                            | `quoin to-plan` creates a run that `ix-flow status` can inspect. (`quoin matrix` is no longer a workflow: FR-115 renders it in-process, not by an eval.)                                                                                                                                                                                                                                                        | success, latency, tool calls                              |
 | TC-EV-014 | US-001, US-002 | Author a complete spec set from a settled conversation.                          | Agent creates spec, use cases, matrix, plan, and eval matrix, then validates all spec files.                                                                                                                                                                                                                                                                                                                                                 | success, latency, tool calls, tokens, context fetches     |
 | TC-EV-015 | US-001, US-004 | Author with sibling development modules present.                                 | Catalog prefers intended dev modules deterministically and validation uses matching contracts.                                                                                                                                                                                                                                                                                                                                               | success, latency, tool calls, tokens                      |
 | TC-EV-016 | US-001, US-004 | Author into two sibling repos in one session.                                    | Agent authors under `core/spec/` and `service/spec/` and validates both with one scoped run.                                                                                                                                                                                                                                                                                                                                                 | success, latency, tool calls, tokens                      |
@@ -144,8 +137,7 @@ Language` (the harvester also reads a dedicated `Glossary` `## Terms` table) —
 > consumes `quire properties --json` (quire-rs FR-052) and generates property
 > tests. TC-EV-050 covers the unattended lane, TC-EV-051 the review-gated lane and the
 > byte-identical tag through acceptance, TC-EV-052 the handoff to `gap-analysis`,
-> TC-EV-053 the refusals and the CON-1 no-verdict rule. All four are implemented in
-> `evals/scenarios/`. Their fixture is a small `codes` library plus one FR whose
+> TC-EV-053 the refusals and the CON-1 no-verdict rule. Their fixture is a small `codes` library plus one FR whose
 > criteria land, verified against the classifier, in the intended buckets:
 > `universal`/`ordering`/`error-case` all extractable plus one `example` witness
 > for TC-EV-050..TC-EV-052, and for TC-EV-053 two criteria the classifier calls extractable
@@ -176,7 +168,7 @@ Language` (the harvester also reads a dedicated `Glossary` `## Terms` table) —
 > shapes (new project, add US, edit FR, add US+FR, backport) and assert via the
 > `artifacts` check that the request produced the exact artifact **types** as
 > discrete files — guarding against requirements authored only as `spec.md` table
-> rows. They live alongside the rest in `evals/scenarios/index.mjs`.
+> rows.
 
 ## Harness Requirements
 
@@ -207,22 +199,13 @@ The harness SHOULD store per-scenario fixtures for:
 
 ## Current Harness Inventory
 
-`quoin` includes an executable deterministic eval runner at `evals/run.mjs`.
-`pnpm run test:evals` builds the CLI, runs TC-EV-001 through TC-EV-015 in disposable
-repositories with isolated `IX_HOME` values, and writes the latest metrics to
-`evals/reports/latest.json`.
-
-The deterministic runner records latency, tool-call count, validation attempts,
-context fetches, command transcripts, and token fields. Token usage is `null`
-for deterministic runs because no LLM is invoked.
-
-The reference `agent-pty`/tmux runner pattern remains available in
-`ix-agent-skills/packages/workflow-evals` for a future opt-in agent layer. Real
-Claude/Codex evals require explicit operator approval because they may send
-workspace context to an external model provider.
+No eval runner is checked into this repository. The reference `agent-pty`/tmux runner
+pattern lives in `ix-agent-skills/packages/workflow-evals`. Real Claude/Codex evals
+require explicit operator approval because they may send workspace context to an
+external model provider.
 
 ## Release Gate
 
-Before a stable release, every eval in this matrix SHOULD pass on the target
+Before a stable release, every eval in this document SHOULD pass on the target
 agent runners. Any scenario without automated token/tool-call instrumentation
 MUST still run the functional command transcript and record latency manually.

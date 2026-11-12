@@ -33,8 +33,8 @@ regenerated against `tests/`.
   `spec-artifacts-iso` US archetype asserts (US-002…US-005 were prose, fixed).
 - ✅ FR clarity/specificity — each FR names concrete inputs, outputs, and
   observable behavior (flags, exit codes, file paths, error text).
-- ✅ FR → behavior verifiable — every FR/NFR maps to a named `tests/` case,
-  found by the computed matrix (`quoin matrix`).
+- ✅ FR → behavior verifiable — each FR/NFR states a verification method; which
+  criteria a test backs is read from the computed matrix (`quoin matrix`).
 - ✅ Error paths documented — unknown command/subcommand, missing repo_dir,
   unknown type, missing/empty manifest name, non-zero/signal ix-flow exit,
   spawn error.
@@ -144,7 +144,7 @@ orders a re-implementation and feeds `spec-to-plan`.)
 
 ### Verification & Evidence — no open gaps
 
-Every FR is `test`; the computed matrix (`quoin matrix`) names the case. Non-test methods:
+Every FR states `test` as its method; the computed matrix (`quoin matrix`) is the source for which criteria a test backs. Non-test methods:
 NFR-004 = inspection (`package.json` deps), NFR-005 = inspection
 (`flows.ts` + bundled skills), NFR-006 = metric (`evals/` harness), NFR-008 =
 test (skip + strict-abort paths). **Open evidence gaps:** none — the FR-017 and
