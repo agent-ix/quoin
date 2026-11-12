@@ -2827,6 +2827,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-anomaly"
+version = "0.30.1"
+dependencies = [
+ "ix-trace-rs",
+ "quoin-yaml",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-assurance"
 version = "0.30.1"
 dependencies = [
@@ -2897,6 +2909,7 @@ dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
  "quire-fixtures",
+ "quoin-anomaly",
  "quoin-assurance",
  "quoin-config",
  "quoin-core",

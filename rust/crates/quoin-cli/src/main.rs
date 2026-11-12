@@ -10,6 +10,7 @@
 //! oclif shell remains published during the staged cutover.
 
 mod advise;
+mod anomaly;
 mod assurance;
 mod catalog;
 mod change_assurance;
@@ -237,6 +238,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("advise", advise)) = matches.subcommand() {
         return advise::run(advise);
     }
+    if let Some(("anomaly", anomaly)) = matches.subcommand() {
+        return anomaly::run(anomaly);
+    }
     if let Some(("assurance", assurance)) = matches.subcommand() {
         return assurance::run(assurance);
     }
@@ -355,6 +359,7 @@ fn command() -> Command {
         .arg_required_else_help(true)
         .subcommand(catalog::command())
         .subcommand(advise::command())
+        .subcommand(anomaly::command())
         .subcommand(assurance::command())
         .subcommand(config::command())
         .subcommand(completeness::command())

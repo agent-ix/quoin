@@ -17,6 +17,12 @@ make evidence       # nextest JUnit run, trace tags added, bound with `quoin evi
 make workflow-test  # build, install the pinned workflow runner under rust/target, run quoin-workflow-check smoke scenarios
 ```
 
+The anomaly tests (`quoin-anomaly`, `quoin anomaly` in `quoin-cli`) read the documents
+`agent-ix/spec-artifacts-process` ships in `tests/fixtures/anomaly`, in place. They need a
+checkout of that repository next to this one (or `SPEC_ARTIFACTS_PROCESS_DIR` naming it);
+nothing is copied here. One test also needs `quire` on `PATH` and the `spec-artifacts-iso`
+module installed.
+
 `rust-gate` is `rust-lint` + `rust-deny` (cargo deny check) + `rust-test`
 (cargo test --workspace --locked) + `workflow-test`. `rust-build`, `rust-lint`,
 `rust-fmt`, `rust-deny` and `rust-test` are the granular targets; the `build`,
