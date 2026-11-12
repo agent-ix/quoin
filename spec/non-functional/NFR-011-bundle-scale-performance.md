@@ -25,7 +25,7 @@ figure SHALL come from a measurement rather than an estimate.
 - Applies to: `quoin completeness`, `quoin advise`, `quoin evidence audit`,
   `quoin matrix` — the commands whose cost grows with bundle size.
 - Operational context: a CI gate and an interactive terminal run.
-- Excluded: `quire` subprocess time, which the engine's own NFRs govern.
+- Excluded: `quire-rs` engine time, which the engine's own NFRs govern.
 
 ## Rationale
 

@@ -41,7 +41,7 @@ problems visible to the caller.
 
 `quoin-cli` `src/flow.rs` ::
 `ix_flow_error_envelope_is_reported_before_missing_run_id` asserts that an `ix-flow` failure is
-reported. `tc_203` (FR-036-AC-8) asserts structurally that the executables `quoin` spawns are
+reported. `quoin_executes_exactly_git_and_ix_flow_and_the_operators_editor` (TC-203, FR-036-AC-8) asserts structurally that the executables `quoin` spawns are
 exactly `git`, `ix-flow` and `$EDITOR`.
 
 NFR-007-M-1 is measured over each workflow command with `ix-flow` absent and with `ix-flow`
