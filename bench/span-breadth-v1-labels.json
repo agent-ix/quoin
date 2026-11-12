@@ -37,37 +37,6 @@
   },
   "labels": [
     {
-      "id": "quoin-FR-029-AC-12-4e0d1f4732",
-      "repository": "quoin",
-      "document": "spec/functional/FR-029-consume-the-quire-json-contract.md",
-      "rowId": "FR-029-AC-12",
-      "property": "invariant",
-      "statement": "A child that never exited on its own \u2014 killed on a buffer overrun, killed by a signal, or never spawned \u2014 is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
-      "normalizedStatement": "a child that never exited on its own \u2014 killed on a buffer overrun, killed by a signal, or never spawned \u2014 is reported by its cause (`enobufs` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
-      "challenge": "nested",
-      "expectedSpans": {
-        "domain": {
-          "end": 7,
-          "start": 2,
-          "text": "child"
-        },
-        "precondition": {
-          "end": 40,
-          "start": 8,
-          "text": "that never exited on its own \u2014"
-        },
-        "oracle": {
-          "end": 261,
-          "start": 41,
-          "text": "killed on a buffer overrun, killed by a signal, or never spawned \u2014 is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr."
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
       "id": "quoin-FR-001-AC-3-920d0c3552",
       "repository": "quoin",
       "document": "spec/functional/FR-001-parse-command-line.md",
@@ -99,13 +68,13 @@
       }
     },
     {
-      "id": "quoin-FR-030-AC-13-a7c4298e61",
+      "id": "quoin-FR-030-AC-13-f178f54192",
       "repository": "quoin",
       "document": "spec/functional/FR-030-evidence-store.md",
       "rowId": "FR-030-AC-13",
       "property": "invariant",
-      "statement": "A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged.",
-      "normalizedStatement": "a store file that exists and is not readable json raises a diagnostic naming the file and the cause, never a bare `syntaxerror`. one unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged.",
+      "statement": "A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged.",
+      "normalizedStatement": "a store file that exists and is not readable json raises a diagnostic naming the file and the cause, never a bare `syntaxerror`. one unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged.",
       "challenge": "coordinated",
       "expectedSpans": {
         "domain": {
@@ -119,14 +88,16 @@
           "text": "that exists and is not readable JSON"
         },
         "oracle": {
-          "end": 321,
+          "end": 303,
           "start": 50,
-          "text": "raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged."
+          "text": "raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged."
         }
       },
       "review": {
         "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+        "rationale": "Each boundary is a statement-relative exact byte-offset substring of the current spec row; the domain names the criterion's subject, the precondition its condition, and the oracle the required result, following the file's convention that the oracle runs to the end of the statement.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
       }
     },
     {
@@ -223,13 +194,13 @@
       }
     },
     {
-      "id": "quoin-FR-031-AC-23-a69def5430",
+      "id": "quoin-FR-031-AC-23-7dc1f9a925",
       "repository": "quoin",
       "document": "spec/functional/FR-031-catalog-driven-advisor.md",
       "rowId": "FR-031-AC-23",
       "property": "invariant",
-      "statement": "A payload whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs CR-091 \u2014 degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
-      "normalizedStatement": "a payload whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs cr-091 \u2014 degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
+      "statement": "A payload whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs CR-091 \u2014 sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
+      "normalizedStatement": "a payload whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs cr-091 \u2014 sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
       "challenge": "hyphenated",
       "expectedSpans": {
         "domain": {
@@ -238,19 +209,21 @@
           "text": "payload"
         },
         "precondition": {
-          "end": 93,
+          "end": 119,
           "start": 10,
-          "text": "whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine"
+          "text": "whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs CR-091"
         },
         "oracle": {
-          "end": 415,
-          "start": 94,
-          "text": "predating quire-rs CR-091 \u2014 degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued."
+          "end": 407,
+          "start": 124,
+          "text": "sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued."
         }
       },
       "review": {
         "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+        "rationale": "Each boundary is a statement-relative exact byte-offset substring of the current spec row; the domain names the criterion's subject, the precondition its condition, and the oracle the required result, following the file's convention that the oracle runs to the end of the statement. Corrected from the redraft: the appositive 'an engine predating quire-rs CR-091' describes the condition, so it closes the precondition; the redraft split it at 'an engine | predating', which put part of the condition into the oracle, and its offsets were character rather than byte offsets.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
       }
     },
     {
@@ -362,33 +335,20 @@
       }
     },
     {
-      "id": "quoin-FR-030-AC-3-28682eefb9",
+      "id": "quoin-FR-030-AC-3-893fd82db2",
       "repository": "quoin",
       "document": "spec/functional/FR-030-evidence-store.md",
       "rowId": "FR-030-AC-3",
       "property": "idempotence",
-      "statement": "Two suites at one commit produce two files, and a re-run at the same commit is last-write-wins with one file retained.",
-      "normalizedStatement": "two suites at one commit produce two files, and a re-run at the same commit is last-write-wins with one file retained.",
+      "statement": "Two suites at one timestamp produce two files, and a re-run at the same timestamp is last-write-wins with one file retained.",
+      "normalizedStatement": "two suites at one timestamp produce two files, and a re-run at the same timestamp is last-write-wins with one file retained.",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-no-explicit-domain",
       "review": {
         "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "quoin-FR-029-AC-14-5d6f45d3cf",
-      "repository": "quoin",
-      "document": "spec/functional/FR-029-consume-the-quire-json-contract.md",
-      "rowId": "FR-029-AC-14",
-      "property": "invariant",
-      "statement": "Vendored schema provenance names an exact 40-character quire-rs commit. Refresh resolves that commit and reads each published schema from the git object, never from the source checkout's current branch or dirty working tree; an unavailable or ambiguously resolved revision is refused.",
-      "normalizedStatement": "vendored schema provenance names an exact 40-character quire-rs commit. refresh resolves that commit and reads each published schema from the git object, never from the source checkout's current branch or dirty working tree; an unavailable or ambiguously resolved revision is refused.",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+        "rationale": "Two coordinated clauses with different subjects (two suites; a re-run) and no quantified noun domain; naming a domain would invent one, so the explicit refusal is right.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
       }
     },
     {
@@ -467,33 +427,20 @@
       }
     },
     {
-      "id": "quoin-FR-048-AC-2-20af68ffdb",
-      "repository": "quoin",
-      "document": "spec/functional/FR-048-append-only-assurance-evidence.md",
-      "rowId": "FR-048-AC-2",
-      "property": "idempotence",
-      "statement": "Canonical content determines the record id; identical publication is idempotent and byte-stable.",
-      "normalizedStatement": "canonical content determines the record id; identical publication is idempotent and byte-stable.",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "quoin-FR-030-AC-8-8154829c83",
+      "id": "quoin-FR-030-AC-8-4d990ad488",
       "repository": "quoin",
       "document": "spec/functional/FR-030-evidence-store.md",
       "rowId": "FR-030-AC-8",
       "property": "invariant",
-      "statement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
-      "normalizedStatement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. the command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
+      "statement": "`gc` deletes only runs that are not the latest for their suite, and `--dry-run` deletes nothing. The command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
+      "normalizedStatement": "`gc` deletes only runs that are not the latest for their suite, and `--dry-run` deletes nothing. the command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-no-explicit-domain",
       "review": {
         "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+        "rationale": "The subject is the `gc` command and the statement chains several behaviours of it; there is no quantified domain with a separable condition, so the explicit refusal is right.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
       }
     },
     {
@@ -954,6 +901,23 @@
       "review": {
         "outcome": "pass",
         "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-057-AC-4-ddf264653b",
+      "repository": "quoin",
+      "document": "spec/functional/FR-057-intervention-experiment-intake-report.md",
+      "rowId": "FR-057-AC-4",
+      "property": "idempotence",
+      "statement": "Repeating an identical record id and canonical payload is byte-idempotent.",
+      "normalizedStatement": "repeating an identical record id and canonical payload is byte-idempotent.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The subject is a gerund action ('Repeating an identical record id and canonical payload'), not a noun domain; like the reviewed 'Loading two paths ...' and 'Replacing a section's content ...' labels, naming a domain would invent one, so the explicit refusal is right.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
       }
     }
   ]
