@@ -41,7 +41,7 @@ disagree with is the requirement itself.
 quoin's.
 
 No SQLite anywhere. quoin writes files; parsing, loading and indexing for an
-application is `filament-ide-rs` territory, and a derived index inside the store
+application belongs to the consuming application, and a derived index inside the store
 would be a second source of truth for facts the files already hold.
 
 ### The store lives under `spec/`

@@ -89,13 +89,6 @@ Validate the bundle with:
 > 0 for whatever it matched.
 
 
-## Open in the review cockpit
-
-After the bundle validates, run `filament open <plan-bundle>/plan.md` to open the
-plan in the running filament-ide cockpit (it fires the `filament-ide://` deep link
-and prints a clickable link as a fallback). Skip silently if the `filament`
-command is not installed.
-
 ## Enforced workflow
 
 This installed skill contains `workflows/to-plan/def.yaml`. From the subject
