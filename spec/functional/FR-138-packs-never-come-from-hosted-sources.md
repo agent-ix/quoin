@@ -21,7 +21,7 @@ status is the one FR-137 derives.
 
 ## Rationale
 
-A pack that arrives from a github, git, git-subdir or package source originates in
+A pack that arrives from a github, git or git-subdir source originates in
 a hosted repository, where the licensed text is already published. Quoin has no
 module-publish command, so there is nothing for quoin to gate on the way out; the
 publish gate for modules is `quire publish-check` (quire-cli FR-029), which this
@@ -31,7 +31,7 @@ distributes.
 
 ## Behavior
 
-- `quoin module install <SOURCE>` SHALL refuse a pack when the source is a github, git, git-subdir or package source.
+- `quoin module install <SOURCE>` SHALL refuse a pack when the source is a github, git or git-subdir source.
 - A refusal SHALL name the module, the source kind and the restricted sets as `authority/id@version`.
 - A refusal SHALL exit non-zero.
 - A refusal SHALL leave the registry and the modules directory unchanged.
@@ -44,7 +44,7 @@ distributes.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-138-AC-1 | For each of a git, git-subdir, github and package source resolving to a synthetic pack, install exits non-zero naming the module, source kind and `authority/id@version`, and the registry and modules directory are byte-identical before and after. | Test |
+| FR-138-AC-1 | For each of a git, git-subdir and github source resolving to a synthetic pack, install exits non-zero naming the module, source kind and `authority/id@version`, and the registry and modules directory are byte-identical before and after. | Test |
 | FR-138-AC-2 | The same sources resolving to a non-pack module install. | Test |
 | FR-138-AC-3 | A default-module entry resolving to a synthetic pack makes `ensure-defaults` exit non-zero naming that module, and the registry holds no entry for it. | Test |
 | FR-138-AC-4 | No refusal on stdout or stderr contains the fixture's clause-text sentinel. | Test |

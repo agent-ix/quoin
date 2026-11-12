@@ -266,6 +266,7 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
     };
     vec![CoverageMatrixRequirement {
         document: "spec/FR-001.md".to_owned(),
+        criticality: None,
         criteria: vec![
             criterion(
                 "FR-001-AC-0",

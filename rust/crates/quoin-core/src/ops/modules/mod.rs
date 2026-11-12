@@ -53,8 +53,8 @@ use crate::protocol::Response;
 use self::taxonomy::map_error;
 pub use self::wire::{
     EnsureDefaultsPayload, EnsureDefaultsRequest, InstallPayload, InstallRequest, ListPayload,
-    ListRequest, MAX_MANIFEST_BYTES, MAX_SCALAR_BYTES, MAX_SOURCE_ARG_BYTES, Mode, RemovePayload,
-    RemoveRequest,
+    ListRequest, ListedModule, MAX_MANIFEST_BYTES, MAX_SCALAR_BYTES, MAX_SOURCE_ARG_BYTES, Mode,
+    RemovePayload, RemoveRequest,
 };
 
 /// Answer a `modules.list`.
@@ -77,9 +77,26 @@ pub fn list(
     )?;
     let host = host(capabilities, "modules.list")?;
 
-    let modules = host
+    let records = host
         .list(request.home.as_deref().map(Path::new))
         .map_err(|e| map_error(&e, "modules.list"))?;
+    // A module that does not load costs its own row a `null` verdict and
+    // nothing else: the listing never fails as a whole.
+    let modules = records
+        .into_iter()
+        .map(|module| match host.is_pack(&module) {
+            Ok(pack) => ListedModule {
+                module,
+                pack: Some(pack),
+                load_error: None,
+            },
+            Err(load_error) => ListedModule {
+                module,
+                pack: None,
+                load_error: Some(load_error),
+            },
+        })
+        .collect();
     ok(&ListPayload { modules })
 }
 

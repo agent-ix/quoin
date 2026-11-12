@@ -16,6 +16,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_modules::ModulesErrorCode;
 
 use super::support::{FakeHost, manifest_yaml, module};
@@ -33,6 +34,31 @@ fn list_returns_the_registry_in_registry_order() {
     assert_eq!(response.payload["modules"][0]["name"], "zulu");
     assert_eq!(response.payload["modules"][1]["name"], "alpha");
     assert_eq!(host.calls.borrow()[0], "list(Some(\"/h\"))");
+}
+
+/// A pack row is `true`, any other row `false`, and a module that does not
+/// load is `null` with its load error while every other row is still listed.
+#[trace("FR-137-AC-11")]
+#[test]
+fn tc_1492_020_list_gives_each_row_a_pack_verdict_and_survives_a_load_failure() {
+    let host = FakeHost {
+        modules: vec![module("plain"), module("licensed"), module("broken")],
+        packs: vec![
+            ("licensed", Ok(true)),
+            ("broken", Err("clause set unreadable")),
+        ],
+        ..FakeHost::default()
+    };
+    let capabilities = Capabilities::with_modules(&host);
+    let response = list(&serde_json::json!({}), &capabilities).unwrap();
+    assert_eq!(response.outcome.code(), 0);
+    let rows = &response.payload["modules"];
+    assert_eq!(rows[0]["pack"], false);
+    assert!(rows[0].get("loadError").is_none());
+    assert_eq!(rows[1]["pack"], true);
+    assert_eq!(rows[2]["pack"], serde_json::Value::Null);
+    assert_eq!(rows[2]["loadError"], "clause set unreadable");
+    assert_eq!(rows[2]["name"], "broken");
 }
 
 #[test]

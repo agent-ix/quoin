@@ -22,6 +22,8 @@ const RECORD_KEYS: &[&str] = &[
     "resolvedPath",
     "targetPath",
     "installedAt",
+    "pack",
+    "loadError",
 ];
 const SOURCE_KEYS: &[&str] = &[
     "type", "repo", "url", "path", "package", "ref", "version", "registry",

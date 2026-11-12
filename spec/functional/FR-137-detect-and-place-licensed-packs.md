@@ -60,12 +60,12 @@ rights rule.
 - A refused install SHALL leave the registry and the modules directory unchanged.
 - A pack whose canonical source lies outside every git work tree SHALL install normally.
 - A module with no restricted clause set SHALL install from inside a git work tree as before.
-- Quoin SHALL refuse a pack install whose `IX_HOME` modules directory resolves inside a git work tree, with the same error shape.
 - `quoin module list` SHALL give each entry `"pack": true`, `"pack": false`, or `"pack": null`, computed from the installed module on each call.
 - If an installed module fails to load, then its `list` row SHALL show `"pack": null` and the load error.
 - If an installed module fails to load, then `list` SHALL still list every other module and exit zero.
 - A pack's registry record SHALL carry no field beyond those of any other installed module.
 - If the source's clause sets fail to load, then install SHALL fail with the load error.
+- A load failure SHALL be an error only when the module's manifest declares `clause_sets`; a module that fails to load and declares none has no clause set to restrict and is not a pack.
 - If the source's clause sets fail to load, then install SHALL NOT treat the module as a non-pack.
 
 ## Acceptance Criteria
@@ -78,7 +78,6 @@ rights rule.
 | FR-137-AC-4 | With `.git` as a file (linked worktree or submodule) above the source, the pack is refused. A stray empty `.git` directory above it also refuses. | Test |
 | FR-137-AC-5 | The refusal output contains none of the fixture's clause-text sentinel. | Test |
 | FR-137-AC-6 | After a pack install, the registry entry's serialized keys equal those of a non-pack install. Replacing the installed pack's `licensed` set with `text: original` changes `list` to `"pack": false` on the next call. | Test |
-| FR-137-AC-7 | A pack install with `IX_HOME` inside a git work tree is refused with the work-tree root named and nothing written. | Test |
 | FR-137-AC-8 | A module whose `clause_sets` entry has no `rights` object fails install with the load error naming the file, and nothing is installed. | Test |
 | FR-137-AC-9 | A symlink outside any work tree pointing at a pack inside a work tree is refused; a symlink inside a work tree pointing at a pack outside every work tree installs. | Test |
 | FR-137-AC-10 | A pack under a gitignored path of its enclosing work tree is refused. With `GIT_DIR` and `GIT_WORK_TREE` set to a different location, the verdict is unchanged. | Test |

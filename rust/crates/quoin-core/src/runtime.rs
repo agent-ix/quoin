@@ -19,8 +19,8 @@ use quoin_evidence::{DiskEvidence, EvidenceSource};
 use quoin_graph_analysis::OsGraphInputReader;
 use quoin_modules::{
     ContractGate, GixResolver, InstallOutcome, InstallPaths, InstalledModule, IxHome,
-    MarketplaceManifest, ModuleInstaller, ModuleName, ModulesError, ReconcileMode, ReconcileReport,
-    Source,
+    MarketplaceManifest, ModuleInstaller, ModuleName, ModulesError, PackProbe, ReconcileMode,
+    ReconcileReport, RestrictedSet, Source,
 };
 use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot};
 use quoin_semantic::{
@@ -283,7 +283,7 @@ impl HostModules {
         let paths = InstallPaths::for_home(&home);
         let resolver = GixResolver::new(paths.cache_root.clone());
         let gate = self.gate(&home)?;
-        work(&ModuleInstaller::new(paths, &resolver, &gate))
+        work(&ModuleInstaller::new(paths, &resolver, &gate, &QuirePacks))
     }
 
     /// The production semantic gate for `home`.
@@ -310,7 +310,35 @@ impl HostModules {
     }
 }
 
+/// The production [`PackProbe`]: the engine's `check_publishable`, through
+/// `quoin-quire`. Quoin restates no rights rule here.
+struct QuirePacks;
+
+impl PackProbe for QuirePacks {
+    fn restricted_sets(&self, module_dir: &Path) -> Result<Vec<RestrictedSet>, String> {
+        let root = ModuleRoot::open(module_dir).map_err(|e| e.to_string())?;
+        let restricted =
+            quoin_quire::clauses::restricted_clause_sets(&root).map_err(|e| e.to_string())?;
+        Ok(restricted
+            .into_iter()
+            .map(|set| RestrictedSet {
+                authority: set.authority,
+                id: set.id,
+                version: set.version,
+            })
+            .collect())
+    }
+}
+
 impl ModuleHost for HostModules {
+    fn is_pack(&self, module: &InstalledModule) -> Result<bool, String> {
+        let installed = Path::new(&module.target_path);
+        let manifest =
+            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
+        let dir = manifest.parent().unwrap_or(installed);
+        Ok(!QuirePacks.restricted_sets(dir)?.is_empty())
+    }
+
     fn list(&self, home: Option<&Path>) -> Result<Vec<InstalledModule>, ModulesError> {
         // The closure is NOT redundant, and clippy's suggested method path does
         // not compile: `with_installer` binds its installer to a lifetime local

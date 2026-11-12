@@ -29,8 +29,8 @@ use quoin_modules::reconcile::{ReconcileMode, ensure_defaults, reconcile};
 use quoin_modules::registry::ModuleRegistry;
 use quoin_modules::semantic::{Diagnostic, SemanticGate, SemanticVerdict, Severity};
 use quoin_modules::{
-    CommitSha, InstallPaths, IxHome, ModuleName, ModulesError, ModulesErrorCode, PermissiveGate,
-    RollbackOutcome, Source, parse_source_arg,
+    CommitSha, InstallPaths, IxHome, ModuleName, ModulesError, ModulesErrorCode, NoPacks,
+    PermissiveGate, RollbackOutcome, Source, parse_source_arg,
 };
 
 /// A resolver that serves a fixed directory per `(url, revision)` and counts
@@ -150,7 +150,7 @@ fn tc_381_280_install_lists_and_removes_a_path_module() {
     let src = write_module(&h.fixtures, "spec-objects-business", "v1");
     let resolver = CountingResolver::new();
     let gate = PermissiveGate;
-    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
 
     let source = parse_source_arg(&format!("path:{}", src.display())).expect("path source");
     let outcome = installer.install_ad_hoc(&source).expect("install succeeds");
@@ -192,7 +192,7 @@ fn tc_381_281_a_rejected_reinstall_restores_the_previous_version() {
     let permissive = PermissiveGate;
 
     let source = parse_source_arg(&format!("path:{}", good.display())).expect("path source");
-    ModuleInstaller::new(h.paths.clone(), &resolver, &permissive)
+    ModuleInstaller::new(h.paths.clone(), &resolver, &permissive, &NoPacks)
         .install_ad_hoc(&source)
         .expect("first install");
 
@@ -202,7 +202,7 @@ fn tc_381_281_a_rejected_reinstall_restores_the_previous_version() {
     let refusing = RefusingGate {
         refuse: vec!["mod".to_owned()],
     };
-    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &refusing);
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &refusing, &NoPacks);
     let bad_source = parse_source_arg(&format!("path:{}", bad.display())).expect("path source");
     let err = installer
         .install_ad_hoc(&bad_source)
@@ -244,7 +244,7 @@ fn tc_381_282_a_rejected_first_install_leaves_nothing_behind() {
     let refusing = RefusingGate {
         refuse: vec!["mod".to_owned()],
     };
-    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &refusing);
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &refusing, &NoPacks);
     let source = parse_source_arg(&format!("path:{}", src.display())).expect("path source");
     let err = installer
         .install_ad_hoc(&source)
@@ -289,7 +289,7 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     let resolver =
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
     let gate = PermissiveGate;
-    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
     let manifest = git_manifest("mod", "v1.0.0");
 
     let first = ensure_defaults(&manifest, &installer).expect("first reconcile");
@@ -321,7 +321,7 @@ fn tc_381_284_sync_mode_re_resolves_an_installed_module() {
     let resolver =
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", v1);
     let gate = PermissiveGate;
-    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
 
     ensure_defaults(&git_manifest("mod", "v1.0.0"), &installer).expect("install v1");
     assert_eq!(resolver.calls(), 1);
@@ -346,7 +346,7 @@ fn tc_381_285_a_disabled_entry_is_skipped_and_never_resolved() {
     let h = home();
     let resolver = CountingResolver::new();
     let gate = PermissiveGate;
-    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
     let mut manifest = git_manifest("mod", "v1.0.0");
     manifest.entries[0].default_enabled = Some(false);
 
@@ -363,7 +363,7 @@ fn tc_381_287_an_entry_with_no_ref_settles_by_name_and_does_no_further_io() {
     let resolver =
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "HEAD", tree);
     let gate = PermissiveGate;
-    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
     let mut manifest = git_manifest("mod", "unused");
     if let Source::Github { r#ref, .. } = &mut manifest.entries[0].source {
         *r#ref = None;

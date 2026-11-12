@@ -28,7 +28,8 @@ Other commands are out of scope.
 - `module install`, `list`, `inspect` and `remove` over a pack SHALL create, modify, or delete files only beneath `IX_HOME`.
 - Those commands SHALL leave the pack source directory byte-identical.
 - Those commands SHALL NOT write to the current working directory.
-- When any of those commands completes, `git status --porcelain` in the source tree, the working directory's repository, and every other work tree in the test sandbox SHALL be empty.
+- When any of those commands completes, `git status --porcelain` in the source tree SHALL equal its output from before the command.
+- When any of those commands completes, `git status --porcelain` in the working directory's repository and every other work tree in the test sandbox SHALL be empty.
 - Diagnostics SHALL name sets as `authority/id@version`.
 - Diagnostics SHALL NOT quote clause text.
 

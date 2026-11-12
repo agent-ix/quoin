@@ -63,6 +63,12 @@ pub enum ModulesErrorCode {
     /// A read-only inspection found an installed module's manifest, semantic
     /// block or import lock invalid. Nothing was rejected or rolled back.
     InstalledModuleInvalid,
+    /// A pack's source directory is inside a git work tree.
+    PackInsideWorkTree,
+    /// A pack arrived from a hosted source or in the default module set.
+    PackSourceRefused,
+    /// The clause sets of a module being installed did not load.
+    PackLoadFailed,
 }
 
 impl ModulesErrorCode {
@@ -93,6 +99,9 @@ impl ModulesErrorCode {
             Self::FetchDeadlineUnavailable => "QM021_FETCH_DEADLINE_UNAVAILABLE",
             Self::SemanticContractUnavailable => "QM022_SEMANTIC_CONTRACT_UNAVAILABLE",
             Self::InstalledModuleInvalid => "QM023_INSTALLED_MODULE_INVALID",
+            Self::PackInsideWorkTree => "QM024_PACK_INSIDE_WORK_TREE",
+            Self::PackSourceRefused => "QM025_PACK_SOURCE_REFUSED",
+            Self::PackLoadFailed => "QM026_PACK_LOAD_FAILED",
         }
     }
 
@@ -123,6 +132,9 @@ impl ModulesErrorCode {
             Self::FetchDeadlineUnavailable,
             Self::SemanticContractUnavailable,
             Self::InstalledModuleInvalid,
+            Self::PackInsideWorkTree,
+            Self::PackSourceRefused,
+            Self::PackLoadFailed,
         ]
     }
 
@@ -368,6 +380,52 @@ pub enum ModulesError {
         /// Whether the previous version was restored, and any failure doing so.
         rollback: RollbackOutcome,
     },
+
+    /// A pack was refused because its source directory is inside a git work
+    /// tree.
+    #[error(
+        "{code}: refusing to install pack {name}: its source directory {path} is inside the git work tree {work_tree}; \
+         a pack is installed from a directory outside any git work tree; restricted sets: {sets}",
+        code = ModulesErrorCode::PackInsideWorkTree,
+        path = path.display(),
+        work_tree = work_tree.display()
+    )]
+    PackInsideWorkTree {
+        /// The module.
+        name: ModuleName,
+        /// The canonical source directory.
+        path: PathBuf,
+        /// The enclosing work-tree root.
+        work_tree: PathBuf,
+        /// The restricted sets as `authority/id@version`, comma separated.
+        sets: String,
+    },
+
+    /// A pack was refused because of where it came from.
+    #[error(
+        "{code}: refusing to install pack {name} from {origin}; a pack is installed only from a local \
+         path:<dir> outside any git work tree; restricted sets: {sets}",
+        code = ModulesErrorCode::PackSourceRefused
+    )]
+    PackSourceRefused {
+        /// The module.
+        name: ModuleName,
+        /// The source kind, or `the default module set`.
+        origin: &'static str,
+        /// The restricted sets as `authority/id@version`, comma separated.
+        sets: String,
+    },
+
+    /// The clause sets of a module being installed did not load.
+    #[error("{code}: cannot install {path}: the module did not load: {detail} ({rollback})", code = ModulesErrorCode::PackLoadFailed, path = path.display())]
+    PackLoadFailed {
+        /// The module directory.
+        path: PathBuf,
+        /// The load error.
+        detail: String,
+        /// Whether the previous version was restored, and any failure doing so.
+        rollback: RollbackOutcome,
+    },
 }
 
 /// What happened to the previous version when an install was rejected.
@@ -440,6 +498,9 @@ impl ModulesError {
             Self::SemanticContractUnavailable { .. } => {
                 ModulesErrorCode::SemanticContractUnavailable
             }
+            Self::PackInsideWorkTree { .. } => ModulesErrorCode::PackInsideWorkTree,
+            Self::PackSourceRefused { .. } => ModulesErrorCode::PackSourceRefused,
+            Self::PackLoadFailed { .. } => ModulesErrorCode::PackLoadFailed,
         }
     }
 }
