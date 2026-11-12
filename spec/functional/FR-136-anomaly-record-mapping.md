@@ -41,14 +41,14 @@ reading of references.
   commit that changed the value of `status`, in commit order, with `status`, `commit`, `author`,
   `authoredAt`, and the signature verdict git reports for that commit (`signed`, `unsigned` or
   `unknown`). The first entry is the commit that added the file.
-- Quoin SHALL NOT derive `status` from `statusHistory`, and SHALL NOT take any author or date from a
-  field typed into the document.
+- Quoin SHALL NOT derive `status` from `statusHistory`.
+- Quoin SHALL NOT take any author or date from a field typed into the document.
 - Quoin SHALL check each consecutive pair of `statusHistory` entries against the legal moves of
   spec-artifacts-process FR-014 and report an illegal-transition diagnostic naming both commits for
   each illegal pair, together with the `resolution` of the later commit where the move is to
   `closed`.
-- The first entry SHALL have `status` `identified`; otherwise Quoin SHALL report an
-  illegal-first-state diagnostic.
+- If the first `statusHistory` entry has a `status` other than `identified`, then Quoin SHALL report
+  an illegal-first-state diagnostic.
 - When a move is `resolved` to `assessed`, Quoin SHALL require that the text of the
   `## Safety Impact Assessment` section differs between the reopen commit and the commit of the next
   later move out of `assessed`, and SHALL otherwise report a reassessment-missing diagnostic naming
