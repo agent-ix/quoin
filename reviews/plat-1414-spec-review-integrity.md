@@ -66,3 +66,5 @@ Checked at f1ad73c against spec-artifacts-process#139 at 0956b64 (FR-011, FR-014
 | FND-003 | fixed | - |
 | FND-004 | fixed | - |
 | FND-005 | fixed | - |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |

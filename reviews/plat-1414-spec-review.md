@@ -72,6 +72,17 @@ Checked at f1ad73c (fix commits 9786a3fc, 5cf39797 and f1ad73c0), against spec-a
 | FND-010 | low | AC-9 restricts tests to the module's documents. But AC-10 needs an anomaly with two `Hazard` rows, and AC-7 needs a hazard that no anomaly names. FR-015 promises one hazard and the AC-4 anomaly (one `Hazard` row), so neither document is promised. Either add them to FR-015's fixture list, or let quoin's tests author these variants | spec/functional/FR-136-anomaly-record-mapping.md:106-109 |
 | FND-011 | low | Scope note, no owner decision needed: quoin owns its CLI, so naming new commands in its own FR is ordinary target-design authoring. However, `quoin anomaly refs` overlaps the existing `quoin graph` reverse-dependency views (FR-062), and `quoin anomaly check` is a located-defect gate of the same kind as `quoin validate`. Say why a new `anomaly` topic is used rather than a `graph` view and a `validate` gate, or move them there | spec/functional/FR-136-anomaly-record-mapping.md:47-52 |
 
+## New findings (disposition pass 2)
+
+Checked at 79e9e3e (fix commit 79e9e3e9) against spec-artifacts-process#139 at ebaa537.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-012 | medium | `statusHistory` reads only the first-parent history of the default branch, and the spec does not count the working-tree `status` as a pending last entry. So `quoin anomaly check` on a PR branch sees the PR's status change only after it has merged, and cannot stop a move out of `closed`, or back to `identified`, before it lands. Once squash reachability has narrowed the check, stopping exactly those moves before merge is what it is for. Judge the working-tree (or HEAD) `status`, when it differs from the last default-branch entry, as a final entry under the same rule, and add an AC | spec/functional/FR-136-anomaly-record-mapping.md:68-72, :93-95 |
+| FND-013 | low | The reachability rule says "and the later commit's `resolution` is consistent with the status reached", but that clause can never fail. Every non-`closed` status reaches `closed` with any resolution, and `resolved` requiring `fixed` is already a FR-014 schema check. Delete the clause, or name a pair it rejects | spec/functional/FR-136-anomaly-record-mapping.md:86-87 |
+| FND-014 | low | `anomaly.reassessment-missing` keys on a `resolved` to `assessed` entry pair. A reopen squashed into one commit (`resolved`, `assessed`, `resolved`) leaves `status` unchanged, adds no entry, and goes unchecked. State the limitation, or compare the assessment text across a commit that leaves the status `resolved` but changes its content | spec/functional/FR-136-anomaly-record-mapping.md:100, :105-107 |
+| FND-015 | low | The Diagnostics preamble gives every diagnostic a code, severity, reason and `status` line, but AC-11 checks the shape only for AC-3, AC-5 and AC-10, so `anomaly.no-record` (AC-2) is never checked. Add AC-2 to AC-11 | spec/functional/FR-136-anomaly-record-mapping.md:134 |
+
 ## Dispositions
 
 | FND | outcome | reason |
@@ -83,3 +94,7 @@ Checked at f1ad73c (fix commits 9786a3fc, 5cf39797 and f1ad73c0), against spec-a
 | FND-005 | fixed | - |
 | FND-006 | fixed | - |
 | FND-007 | fixed | - |
+| FND-008 | fixed | - |
+| FND-009 | fixed | - |
+| FND-010 | fixed | - |
+| FND-011 | fixed | - |

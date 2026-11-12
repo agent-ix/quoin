@@ -76,17 +76,25 @@ read the working tree and git together, so they get their own topic.
   `B`, `R` and `E` (a bad, revoked-key or uncheckable signature is not treated as signed).
 - Quoin SHALL NOT derive `status` from `statusHistory`.
 - Quoin SHALL NOT take any author or date from a field typed into the document.
-- If the file is not under git, then Quoin SHALL report `statusHistory` not applicable and SHALL
-  emit no transition diagnostic.
+- If the file is not under git, then Quoin SHALL report `statusHistory` not applicable.
+- If the file is not under git, then Quoin SHALL emit no transition diagnostic.
+- If the working-tree `status` differs from the last entry's `status`, then Quoin SHALL append a
+  pending final entry with that `status`, `commit` absent and `pending` true, and SHALL judge the
+  move from the last entry to it like any other.
 
 ### Legality over squashed history
 
 These repositories squash-merge, so several status moves can land in one commit and an
 intermediate status never appears in `statusHistory`. A move from one entry to the next is
 therefore legal if the later status is reachable from the earlier one through one or more legal
-moves of FR-014, and the later commit's `resolution` is consistent with the status reached. An
+moves of FR-014. An
 unreachable status, such as `identified` after `assessed`, or anything after `closed`, is illegal.
 Because `identified` reaches every status, a first entry of any status is legal.
+
+A reopen that lands squashed (`resolved`, `assessed`, `resolved` in one commit) leaves `status`
+unchanged and is therefore not seen; `anomaly.reassessment-missing` covers only a reopen that is
+visible as a separate `statusHistory` entry. This limitation is accepted rather than comparing the
+assessment text across commits that leave `status` unchanged.
 
 ### Diagnostics
 
@@ -124,14 +132,14 @@ commit or commits involved.
 | FR-136-AC-1 | A fixture repository whose first-parent default-branch commits set `status` to `identified`, `assessed`, `resolved`, `closed` yields four `statusHistory` entries in order, each with author, authored date, `signature` and `signatureCode`, and a file renamed along the way keeps its entries; no author or date typed in the document is read. | Test |
 | FR-136-AC-2 | A document that fails only a record-schema check (a `closed` anomaly with no `closed_by`) still yields its record and `quoin anomaly check` reports no field diagnostic for it; a document with a mapping error yields `anomaly.no-record` and a `statusHistory` still checked. | Test |
 | FR-136-AC-3 | Over fixture histories, `anomaly.illegal-transition` is emitted for `assessed` then `identified`, `resolved` then `identified`, `closed` then each of `identified`, `assessed` and `resolved`; and is not emitted for `identified` then `resolved` (squashed), `identified` then `closed` with `fixed` (squashed through `resolved`), `assessed` then `closed` with `fixed`, `assessed` then `closed` with `wont-fix`, `identified` then `closed` with `duplicate`, and `resolved` then `assessed`. | Test |
-| FR-136-AC-4 | A history whose first entry is `resolved` or `closed` yields no diagnostic. | Test |
+| FR-136-AC-4 | A history whose first entry is `resolved` or `closed` yields no diagnostic. A working tree whose `status` differs from the last default-branch entry yields a pending final entry that is judged: `closed` in history and `assessed` in the working tree yields `anomaly.illegal-transition`, and `assessed` in history and `resolved` in the working tree yields none. | Test |
 | FR-136-AC-5 | A history `resolved`, `assessed`, `resolved` with the assessment section unchanged yields `anomaly.reassessment-missing` naming the reopen commit, and the same history with an edited assessment section yields none. | Test |
 | FR-136-AC-6 | A fixture file outside git reports `statusHistory` not applicable and no transition diagnostic. | Test |
 | FR-136-AC-7 | For a corpus with a requirement `FR-001`, its criterion `FR-001-AC-1` and a hazard, `quoin anomaly refs` on each lists the anomaly that names it with its `Impact`; on a hazard no anomaly names it prints `[]` under `--json`; an anomaly whose only row is a `None` row appears in no listing. | Test |
 | FR-136-AC-8 | An anomaly with a `Requirement` row targeting `FR-999` is absent from every listing, and `quoin anomaly check` emits no dangling-reference diagnostic for it. | Test |
 | FR-136-AC-9 | The anomaly documents the tests use are those shipped by `agent-ix/spec-artifacts-process` FR-014 and FR-015, including the anomaly with two `Hazard` rows and the hazard no anomaly names; the commit sequences are authored by this repository's tests, and the quoin repository contains no copy of the documents. | Inspection |
 | FR-136-AC-10 | With `spec-objects-safety` not installed, an anomaly with two `Hazard` rows yields exactly one `anomaly.missing-module`, and `quire validate` still reports its own per-row diagnostics. | Test |
-| FR-136-AC-11 | Every diagnostic in AC-3, AC-5 and AC-10 carries its code, severity `error`, its reason, and the line of the document's `status` field. | Test |
+| FR-136-AC-11 | Every diagnostic in AC-2, AC-3, AC-5 and AC-10 carries its code, severity `error`, its reason, and the line of the document's `status` field. | Test |
 | FR-136-AC-12 | Signature codes `G`, `U`, `X`, `Y` map to `signed`, `N` to `unsigned`, and `B`, `R`, `E` to `unknown`, with `signatureCode` equal to the git letter in each case. | Test |
 
 ## Dependencies
