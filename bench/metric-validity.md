@@ -21,7 +21,7 @@ the wrong thing.
 An independent oracle: `cargo-mutants` kill rates over the tier-2
 corpus.
 
-1. Run `cargo mutants` over `agent-ix/filament-ide-rs` at one checked-out
+1. Run `cargo mutants` over a Rust corpus with requirement-linked tests (quoin itself) at one checked-out
    revision, recording each mutant's file, span and outcome (killed / survived /
    unviable).
 2. Run `quire coverage --json` at the same checkout and take `unbacked_rows` plus

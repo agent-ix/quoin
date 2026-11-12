@@ -6,7 +6,7 @@
 //!
 //! `src/quire/exec.ts` carries `QUIRE_MAX_BUFFER = 64 MiB` because Node's
 //! default `maxBuffer` is 1 MiB and a real corpus already exceeded it:
-//! `agent-ix/filament-ide-rs` (268 spec files, 1,107 obligations) emits
+//! a large real corpus (268 spec files, 1,107 obligations) emits
 //! **1,090,714 bytes** of `quire coverage --json` — 4% over — which killed all
 //! six commands that shelled out (agent-ix/quoin#164).
 //!

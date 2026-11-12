@@ -464,8 +464,7 @@ pub fn org_from_remote_url(url: &str) -> Option<OrgName> {
     }
     // The repo is the last segment; its owner is the one before it. Nested
     // namespaces (`org/subgroup/repo`) therefore qualify by the innermost
-    // group, matching filament-ide-rs's repo_identity so both layers name a
-    // repo alike.
+    // group, so every layer names a repo alike.
     segments
         .get(segments.len() - 2)
         .and_then(|s| OrgName::parse_opt(s))

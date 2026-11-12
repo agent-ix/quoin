@@ -13,7 +13,7 @@ relationships:
 
 ## Description
 
-Battletest pass 2 against `agent-ix/filament-ide-rs` delivered one verdict about this toolchain:
+Battletest pass 2 against a large real Rust corpus delivered one verdict about this toolchain:
 **good reporters, poor skeptics.**
 
 - `quire coverage` printed `555/2389 backed (23%)` while its declared tag patterns matched **0 of

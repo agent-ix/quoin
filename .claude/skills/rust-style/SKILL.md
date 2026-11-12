@@ -9,8 +9,8 @@ The idioms **this workspace already uses**. Everything below is true of the
 code in `rust/` as it stands; where a lint or a test enforces a rule, the
 enforcement is named. Nothing here is aspirational — if you find a statement
 that the tree contradicts, the tree is the fact and this document is the
-defect (filament-ide-rs SR-151 FND-003 is the precedent: a "do not" in an idiom
-doc that had been false for two crates, which a reviewer nearly enforced).
+defect (a "do not" in an idiom doc that had been false for two crates is the
+precedent: a reviewer nearly enforced it).
 
 This document **outranks** the ecosystem-wide `rust-review` and `rust-style`
 skills for this repository. Where it is silent, those apply.
@@ -90,8 +90,7 @@ without this document and the root manifest being updated together.
 The policy lives in the manifest rather than only in CI flags so that
 `cargo clippy` on a developer machine enforces what the gate enforces.
 
-- `unsafe_code = "forbid"` — workspace-wide, no audited-exception carve-out of
-  the kind `filament-app` holds. If you need one, it is a design conversation,
+- `unsafe_code = "forbid"` — workspace-wide, with no audited-exception carve-out. If you need one, it is a design conversation,
   not a `#[allow]`.
 - `clippy::all` and `clippy::pedantic` at `warn`, fatal in the gate via
   `-D warnings`.
@@ -245,7 +244,7 @@ is unit-testable without spawning a process.
   ```
   Enforced by `tc_375_every_rust_file_carries_the_agpl_spdx_header`, which walks
   the workspace. Note the identifier ends `-or-later` — quoin's
-  licence, which is not filament-ide-rs's `AGPL-3.0-only`; copying a header
+  licence, which is not `AGPL-3.0-only`; copying a header
   across repositories gets this wrong.
 - A `//!` module header saying what the module owns and citing the governing
   requirement or ticket; `///` on every public item (enforced by `missing_docs`).
