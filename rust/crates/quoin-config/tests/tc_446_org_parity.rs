@@ -142,7 +142,16 @@ fn org_of(resolved: &ResolvedOrg) -> Option<&str> {
 }
 
 /// Provenance: quoin#446
-#[trace("FR-025-AC-1", "FR-025-AC-2", "FR-027-AC-1", "FR-027-AC-2", "FR-027-AC-3", "FR-027-AC-4", "FR-027-AC-9", "FR-096")]
+#[trace(
+    "FR-025-AC-1",
+    "FR-025-AC-2",
+    "FR-027-AC-1",
+    "FR-027-AC-2",
+    "FR-027-AC-3",
+    "FR-027-AC-4",
+    "FR-027-AC-9",
+    "FR-096"
+)]
 #[test]
 fn tc_446_026_the_document_path_answers_what_the_filesystem_path_answers() {
     // The flag beats everything present underneath it.
