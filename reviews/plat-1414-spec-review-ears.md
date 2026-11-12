@@ -34,3 +34,9 @@ clean: false
 scope:
 - {id: FR-136, path: spec/functional/FR-136-anomaly-record-mapping.md, role: examined, excerpt: "Description and Behavior bullets lines 21-54; ubiquitous x6, unwanted (If/then) x3"}
 ```
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | still-open | The cited bullets were rewritten, but the rework still packs two `SHALL`s into one statement in the same way: lines 47-49 (evaluate and print / non-zero exit), 64-65 (report not applicable / emit no diagnostic) and 93-94 (include AC-id entries / include no None or unresolved entries). Low; this needs a split, or a lead `accepted-no-change` |

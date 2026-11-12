@@ -47,3 +47,22 @@ scope:
 - {id: FR-104, path: spec/functional/FR-104-relationships-mapping.md, role: context_only, excerpt: "a bare token that is no artifact id in the bundle ... target-not-id"}
 - {id: FR-015, path: "agent-ix/spec-artifacts-process#139 spec/functional/FR-015-anomaly-safety-impact-assessment.md", role: context_only, excerpt: "A Target that resolves to nothing, or to an artifact of another kind, SHALL fail validation as a dangling reference."}
 ```
+
+## New findings (disposition pass 1)
+
+Checked at f1ad73c against spec-artifacts-process#139 at 0956b64 (FR-011, FR-014, FR-015).
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-006 | medium | FR-136 says "a document that fails module validation still yields its record". spec-artifacts-process FR-011, which FR-136 now depends on, says "The mapping SHALL be strict: any reported error means no record is built for that document". A schema-only failure such as a missing `closed_by` (AC-2) may build a record, but a mapping error such as a malformed assessment table cannot, under FR-011. Narrow the statement to record-validation failures and state what `quoin anomaly check` does when FR-011 builds no record | spec/functional/FR-136-anomaly-record-mapping.md:53-54, :101 |
+| FND-007 | medium | FR-015 makes FR-136 the owner of "report one missing-module diagnostic ... and SHALL NOT report each `Hazard` row as dangling". FR-136 specifies only the `anomaly.missing-module` emission, and leaves dangling references to `quire validate` (quire-rs FR-026). With `spec-objects-safety` absent, every hazard id resolves to nothing, so `quire validate` still reports each `Hazard` row as dangling, and FR-136 cannot suppress that. Either state the per-row suppression in the owner of reference resolution (a quire-rs change), or drop the "SHALL NOT report each row" clause from FR-015 | spec/functional/FR-136-anomaly-record-mapping.md:78, :85-86; spec-artifacts-process FR-015 Behavior |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
