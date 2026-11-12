@@ -44,6 +44,7 @@ fn sandbox() -> Sandbox {
     let repo_other = base.join("repo-other");
     git_init(&repo_cwd);
     git_init(&repo_other);
+    pack_support::semantic_root(&base.join("ix-home"));
     let source = write_module(&base.join("pack-source"), MODULE, "licensed");
     Sandbox {
         home: base.join("ix-home"),

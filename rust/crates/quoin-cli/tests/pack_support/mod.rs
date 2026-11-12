@@ -43,10 +43,15 @@ pub(crate) fn clause_set_yaml(id: &str, text_rights: &str) -> String {
     } else {
         format!("    text: \"{SENTINEL}\"\n")
     };
+    let clearance = if text_rights == "explicitly_cleared" {
+        "  clearance_ref: \"REV-1\"\n"
+    } else {
+        ""
+    };
     format!(
         "schemaVersion: clause-set-v1\nauthority: example.invalid\nid: {id}\n\
          title: Synthetic set {id}\nversion: \"2\"\nrights:\n  structure: original\n  \
-         text: {text_rights}\nclauses:\n  - id: C-1\n    force: mandatory\n{text}"
+         text: {text_rights}\n{clearance}clauses:\n  - id: C-1\n    force: mandatory\n{text}"
     )
 }
 
@@ -68,16 +73,15 @@ pub(crate) fn write_module(parent: &Path, name: &str, text_rights: &str) -> Path
     dir
 }
 
-/// A real, on-disk semantic contract root, so a run writes nothing into the
-/// home beyond the registry and the modules directory.
-pub(crate) fn semantic_root() -> &'static Path {
-    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    ROOT.get_or_init(|| {
-        let root =
-            std::env::temp_dir().join(format!("quoin-cli-packs-semantic-{}", std::process::id()));
+/// A real, on-disk semantic contract root beside `home`, inside the test's own
+/// scratch directory, so a run writes nothing into the home beyond the registry
+/// and the modules directory and nothing is left behind afterwards.
+pub(crate) fn semantic_root(home: &Path) -> PathBuf {
+    let root = home.with_file_name("semantic-contract");
+    if !root.exists() {
         quoin_semantic::materialize_embedded_contract(&root).expect("embedded contract");
-        root
-    })
+    }
+    root
 }
 
 /// Run `quoin` against `home` with `cwd` as the working directory and `extra`
@@ -93,7 +97,7 @@ pub(crate) fn quoin(
         .args(arguments)
         .current_dir(cwd)
         .env("IX_HOME", home)
-        .env("QUOIN_SEMANTIC_ROOT", semantic_root());
+        .env("QUOIN_SEMANTIC_ROOT", semantic_root(home));
     for (key, value) in extra {
         command.env(key, value);
     }

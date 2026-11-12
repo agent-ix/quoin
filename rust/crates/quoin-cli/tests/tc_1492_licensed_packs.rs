@@ -25,6 +25,15 @@ fn pack_in_work_tree(scratch: &std::path::Path) -> (std::path::PathBuf, std::pat
     (repo, module)
 }
 
+/// The refusal is the work-tree code and names the enclosing root.
+fn assert_inside_work_tree(refused: &std::process::Output, root: &std::path::Path) {
+    assert!(!refused.status.success(), "{}", text(refused));
+    let output = text(refused);
+    assert!(output.contains("QM024_PACK_INSIDE_WORK_TREE"), "{output}");
+    let root = root.canonicalize().unwrap();
+    assert!(output.contains(&root.display().to_string()), "{output}");
+}
+
 fn source_arg(dir: &std::path::Path) -> String {
     format!("path:{}", dir.display())
 }
@@ -87,7 +96,11 @@ fn tc_1492_102_a_module_without_licensed_text_installs_from_a_work_tree() {
     let repo = scratch.path().join("repo");
     git_init(&repo);
     let mut names = Vec::new();
-    for (name, rights) in [("a-none", "none"), ("b-original", "original")] {
+    for (name, rights) in [
+        ("a-none", "none"),
+        ("b-original", "original"),
+        ("c-cleared", "explicitly_cleared"),
+    ] {
         let module = write_module(&repo.join("mods"), name, rights);
         let installed = quoin(
             &home,
@@ -99,7 +112,7 @@ fn tc_1492_102_a_module_without_licensed_text_installs_from_a_work_tree() {
         names.push(name);
     }
     let listed = text(&quoin(&home, scratch.path(), &["module", "list"], &[]));
-    assert_eq!(listed.matches("\"pack\": false").count(), 2, "{listed}");
+    assert_eq!(listed.matches("\"pack\": false").count(), 3, "{listed}");
 }
 
 #[trace("FR-137-AC-4")]
@@ -120,7 +133,7 @@ fn tc_1492_103_a_git_file_or_a_stray_empty_git_dir_above_the_source_refuses() {
             &["module", "install", &source_arg(&module)],
             &[],
         );
-        assert!(!refused.status.success(), "{}", text(&refused));
+        assert_inside_work_tree(&refused, tree);
     }
 }
 
@@ -158,6 +171,7 @@ fn tc_1492_104_the_registry_record_is_the_same_shape_and_the_verdict_is_recomput
     )
     .unwrap();
     let listed = text(&quoin(&home, scratch.path(), &["module", "list"], &[]));
+    assert!(listed.contains("\"pack\": false"), "{listed}");
     assert!(!listed.contains("\"pack\": true"), "{listed}");
 }
 
@@ -191,7 +205,7 @@ fn tc_1492_106_a_clause_set_without_rights_fails_install_with_the_load_error() {
 fn tc_1492_107_a_symlink_is_judged_by_what_it_points_at() {
     let scratch = scratch();
     let home = scratch.path().join("ix-home");
-    let (_repo, inside) = pack_in_work_tree(scratch.path());
+    let (repo, inside) = pack_in_work_tree(scratch.path());
     let outside = write_module(&scratch.path().join("clean"), "widget-pack", "licensed");
 
     let to_inside = scratch.path().join("link-to-inside");
@@ -202,7 +216,7 @@ fn tc_1492_107_a_symlink_is_judged_by_what_it_points_at() {
         &["module", "install", &source_arg(&to_inside)],
         &[],
     );
-    assert!(!refused.status.success(), "{}", text(&refused));
+    assert_inside_work_tree(&refused, &repo);
 
     let to_outside = scratch.path().join("repo/link-to-outside");
     std::os::unix::fs::symlink(&outside, &to_outside).unwrap();
@@ -230,7 +244,7 @@ fn tc_1492_108_gitignore_and_the_git_environment_do_not_change_the_verdict() {
         &["module", "install", &source_arg(&module)],
         &[("GIT_DIR", &elsewhere), ("GIT_WORK_TREE", &elsewhere)],
     );
-    assert!(!refused.status.success(), "{}", text(&refused));
+    assert_inside_work_tree(&refused, &repo);
 }
 
 #[cfg(unix)]

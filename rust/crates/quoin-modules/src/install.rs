@@ -232,20 +232,15 @@ impl<'a> ModuleInstaller<'a> {
                 origin: "the default module set",
                 sets,
             }),
-            (Origin::AdHoc, Source::Path { .. }) => {
-                let canonical = content_root
-                    .canonicalize()
-                    .unwrap_or_else(|_| content_root.to_path_buf());
-                match enclosing_work_tree(&canonical) {
-                    Some(work_tree) => Err(ModulesError::PackInsideWorkTree {
-                        name: name.clone(),
-                        path: canonical,
-                        work_tree,
-                        sets,
-                    }),
-                    None => Ok(None),
-                }
-            }
+            (Origin::AdHoc, Source::Path { .. }) => match enclosing_work_tree(content_root) {
+                Some(work_tree) => Err(ModulesError::PackInsideWorkTree {
+                    name: name.clone(),
+                    path: content_root.to_path_buf(),
+                    work_tree,
+                    sets,
+                }),
+                None => Ok(None),
+            },
             (Origin::AdHoc, hosted) => Err(ModulesError::PackSourceRefused {
                 name: name.clone(),
                 origin: hosted.type_name(),
