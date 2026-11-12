@@ -3,7 +3,7 @@
 //! The spec's dependency lists and document ids make claims that nothing else
 //! checks; this reads them against the repository.
 //!
-//! * PLAT-1045: no FR, NFR or StR cites a `*.test.ts` file the repository no
+//! * PLAT-1045: no `FR`, `NFR` or `StR` cites a `*.test.ts` file the repository no
 //!   longer has.
 //! * PLAT-118: every id cited in a `## Dependencies` section resolves to a
 //!   spec document, and a live document does not cite a withdrawn one.
