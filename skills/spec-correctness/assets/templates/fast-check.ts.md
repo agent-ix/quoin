@@ -26,7 +26,7 @@ describe("FR-012-AC-1 duplicate modules are sorted", () => {
    * spec-correctness: row=FR-012-AC-1 property=ordering extraction=extractable origin=regex review=none
    */
   it("holds for any catalog", () => {
-    trace("FR-012-AC-1", "TC-345");
+    trace("FR-012-AC-1");
     fc.assert(
       fc.property(fc.array(entryArb, { maxLength: 32 }), (entries) => {
         for (const d of detectDuplicates(entries).duplicates) {
@@ -38,8 +38,8 @@ describe("FR-012-AC-1 duplicate modules are sorted", () => {
 });
 ```
 
-Both tag carriers: the `trace("FR-012-AC-1", "TC-345")` call (the criterion id plus the
-`spec/matrix.md` row's own `TC-` id; an id in a comment binds nothing), and `FR-012-AC-1` inside
+Both tag carriers: the `trace("FR-012-AC-1")` call (the criterion id; an id in a
+comment binds nothing), and `FR-012-AC-1` inside
 the `describe` title. `trace(...ids: string[]): void` records the ids on the running
 test when `QUIRE_TRACE_EMIT=1` (and does nothing otherwise), so it must be called inside a test
 callback; `quire coverage` binds the quoted ids statically.
@@ -85,7 +85,7 @@ describe("FR-005-AC-1 unknown commands error", () => {
    * spec-correctness: row=FR-005-AC-1 property=error-case extraction=extractable origin=regex review=none
    */
   it("rejects any command outside the known set", () => {
-    trace("FR-005-AC-1", "TC-345");
+    trace("FR-005-AC-1");
     fc.assert(
       fc.property(fc.stringMatching(/^[a-z]{1,12}$/), (cmd) => {
         fc.pre(!KNOWN.has(cmd));
@@ -106,7 +106,7 @@ describe("FR-040-AC-2 session lifecycle", () => {
    * spec-correctness: row=FR-040-AC-2 property=lifecycle extraction=extractable origin=regex review=none
    */
   it("matches the model over any op sequence", () => {
-    trace("FR-040-AC-2", "TC-345");
+    trace("FR-040-AC-2");
     fc.assert(
       fc.property(fc.commands(allCommands, { maxCommands: 24 }), (cmds) =>
         fc.modelRun(() => ({ model: newModel(), real: new Session() }), cmds),
@@ -128,7 +128,7 @@ describe("FR-050-AC-1 concurrent writes", () => {
    * spec-correctness: row=FR-050-AC-1 property=concurrency extraction=extractable origin=regex review=none
    */
   it("linearizes under any interleaving", async () => {
-    trace("FR-050-AC-1", "TC-345");
+    trace("FR-050-AC-1");
     await fc.assert(
       fc.asyncProperty(fc.scheduler(), async (s) => {
         const store = new Store();
@@ -160,7 +160,7 @@ describe("FR-018-AC-3 source maps to one root", () => {
    * spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
    */
   it("holds for any plugin source", () => {
-    trace("FR-018-AC-3", "TC-345");
+    trace("FR-018-AC-3");
     …
   });
 });

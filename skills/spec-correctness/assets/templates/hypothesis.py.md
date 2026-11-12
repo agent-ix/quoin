@@ -20,7 +20,7 @@ entries = st.builds(
 )
 
 
-@pytest.mark.trace("FR-012-AC-1", "TC-345")
+@pytest.mark.trace("FR-012-AC-1")
 @given(catalog=st.lists(entries, max_size=32))
 def test_fr_012_ac_1_duplicate_modules_sorted(catalog):
     """Declaring modules are listed in sorted order.
@@ -31,8 +31,8 @@ def test_fr_012_ac_1_duplicate_modules_sorted(catalog):
         assert dup.modules == sorted(dup.modules)
 ```
 
-Both tag carriers: the `@pytest.mark.trace("FR-012-AC-1", "TC-345")` marker (the criterion id
-plus the `spec/matrix.md` row's own `TC-` id; a docstring id binds nothing; the marker is
+Both tag carriers: the `@pytest.mark.trace("FR-012-AC-1")` marker (the criterion id;
+a docstring id binds nothing; the marker is
 registered by the `ix_trace_py` pytest plugin, or by a `markers = trace(*ids)` entry in the pytest
 config, otherwise `--strict-markers` rejects it), and `fr_012_ac_1_`
 in the function name.
@@ -64,7 +64,7 @@ from hypothesis import assume
 import pytest
 
 
-@pytest.mark.trace("FR-005-AC-1", "TC-345")
+@pytest.mark.trace("FR-005-AC-1")
 @given(cmd=st.from_regex(r"\A[a-z]{1,12}\Z"))
 def test_fr_005_ac_1_unknown_command_errors(cmd):
     """An unknown command raises an error that names the usage.
@@ -88,7 +88,7 @@ too many `assume` rejections trip hypothesis's health checks.
 from hypothesis.stateful import RuleBasedStateMachine, invariant, precondition, rule
 
 
-@pytest.mark.trace("FR-040-AC-2", "TC-345")
+@pytest.mark.trace("FR-040-AC-2")
 class SessionMachine(RuleBasedStateMachine):
     """A session accepts exactly the ops its state allows.
 
@@ -127,7 +127,7 @@ real interleaving coverage. Emit a `RuleBasedStateMachine` over the async model,
 the downgrade as a finding:
 
 ```python
-@pytest.mark.trace("FR-050-AC-1", "TC-345")
+@pytest.mark.trace("FR-050-AC-1")
 class TestConcurrentWrites(RuleBasedStateMachine):
     """Concurrent writers never lose an entry.
 
@@ -143,7 +143,7 @@ person — the test itself is fine to run.
 Same file, same path, and it runs:
 
 ```python
-@pytest.mark.trace("FR-018-AC-3", "TC-345")
+@pytest.mark.trace("FR-018-AC-3")
 @given(src=plugin_sources)
 def test_fr_018_ac_3_source_maps_to_one_root(src):
     """A plugin source maps to exactly one resolved root.

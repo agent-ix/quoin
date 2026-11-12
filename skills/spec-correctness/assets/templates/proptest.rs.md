@@ -22,7 +22,7 @@ fn entry() -> impl Strategy<Value = Entry> {
 proptest! {
     /// Declaring modules are listed in sorted order.
     /// spec-correctness: row=FR-012-AC-1 property=ordering extraction=extractable origin=regex review=none
-    #[trace("FR-012-AC-1", "TC-345")]
+    #[trace("FR-012-AC-1")]
     #[test]
     fn fr_012_ac_1_duplicate_modules_sorted(entries in prop::collection::vec(entry(), 0..32)) {
         for dup in detect_duplicates(&entries).duplicates {
@@ -34,8 +34,8 @@ proptest! {
 }
 ```
 
-Both tag carriers are present: the `#[trace("FR-012-AC-1", "TC-345")]` attribute (the
-criterion id plus the `spec/matrix.md` row's own `TC-` id; a comment id binds nothing), and
+Both tag carriers are present: the `#[trace("FR-012-AC-1")]` attribute (the
+criterion id; a comment id binds nothing), and
 `fr_012_ac_1_` in the function name.
 
 ## Family bodies
@@ -65,7 +65,7 @@ prop_assert!(resolve(&x).len() <= MAX_MODULES);
 proptest! {
     /// An unknown command raises an error that names the usage.
         /// spec-correctness: row=FR-005-AC-1 property=error-case extraction=extractable origin=regex review=none
-    #[trace("FR-005-AC-1", "TC-345")]
+    #[trace("FR-005-AC-1")]
     #[test]
     fn fr_005_ac_1_unknown_command_errors(
         cmd in "[a-z]{1,12}".prop_filter("must be unknown", |c| !KNOWN.contains(&c.as_str()))
@@ -83,7 +83,7 @@ proptest! {
 proptest! {
     /// A session accepts exactly the ops its state allows.
         /// spec-correctness: row=FR-040-AC-2 property=lifecycle extraction=extractable origin=regex review=none
-    #[trace("FR-040-AC-2", "TC-345")]
+    #[trace("FR-040-AC-2")]
     #[test]
     fn fr_040_ac_2_session_lifecycle(ops in prop::collection::vec(any_op(), 1..24)) {
         let (mut model, mut sut) = (Model::default(), Session::new());
@@ -105,7 +105,7 @@ Not a `proptest!` block; `loom` enumerates interleavings itself.
 ```rust
 /// Concurrent writers never lose an entry.
 /// spec-correctness: row=FR-050-AC-1 property=concurrency extraction=extractable origin=regex review=none
-#[trace("FR-050-AC-1", "TC-345")]
+#[trace("FR-050-AC-1")]
 #[test]
 fn fr_050_ac_1_concurrent_writes_linearizable() {
     loom::model(|| {
@@ -131,7 +131,7 @@ to disable a test:
 proptest! {
     /// A plugin source maps to exactly one resolved root.
         /// spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
-    #[trace("FR-018-AC-3", "TC-345")]
+    #[trace("FR-018-AC-3")]
     #[test]
     fn fr_018_ac_3_source_maps_to_one_root(src in plugin_source()) { … }
 }

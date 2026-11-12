@@ -174,7 +174,7 @@ is unit-testable without spawning a process.
   boundary, a real subprocess with real pipes — the stream and exit-status
   properties a library test cannot see are exactly the ones `src/core/exec.ts`
   depends on.
-- **Test functions carry a `#[trace("AC-id", "TC-id")]` attribute** (from
+- **Test functions carry a `#[trace("AC-id")]` attribute** (from
   `ix_trace_rs::trace`, a dev-dependency) naming the acceptance criteria they
   assert, by the criterion's own id, one quoted literal per id. The marker is
   what binds the test into the computed Test Matrix (`quire matrix`) and the
@@ -184,14 +184,11 @@ is unit-testable without spawning a process.
   requirement carries `#[implements("FR-096")]` instead; `#[trace]` on a
   production item binds nothing.
 
-  **Backing needs the row's own TC id.** A test backs a `spec/matrix.md` row
-  only when it carries that row's `TC-` id on the same marker as the criterion
-  the row cites. A criterion tag alone is reported `criterion-tagged-outside-row`
-  ("expected a same-test tag for one of `TC-345`") and provides no backing, so
-  add the TC id the diagnostic names. A `tc_NNN_<description>` function name is
-  allowed but does not bind anything.
+  **Tag by criterion id alone.** There is no hand-kept matrix and no `TC-` id
+  to mint: the computed matrix joins the criterion tag to the criterion. A
+  `tc_NNN_<description>` function name is allowed but does not bind anything.
 
-  Only requirement criteria and the matrix row's `TC-` id belong on the marker — `FR-`, `NFR-`, `StR-`, `US-`,
+  Only requirement criteria belong on the marker — `FR-`, `NFR-`, `StR-`, `US-`,
   `IT-` and their `-AC-`/`-EX-`/`-SC-` forms. Tag the criterion
   (`FR-096-AC-3`) rather than the bare requirement where the test asserts one
   criterion. Issue numbers, `Task-`, `Plan-` and `REV-` go on a sibling
@@ -200,7 +197,7 @@ is unit-testable without spawning a process.
 
   ```rust
   /// Provenance: quoin#375, agent-ix/quoin#103
-  #[trace("FR-096-AC-3", "TC-375")]
+  #[trace("FR-096-AC-3")]
   #[test]
   fn exit_1_still_carries_a_complete_payload() { … }
   ```

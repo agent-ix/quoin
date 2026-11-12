@@ -81,7 +81,7 @@ coverage; the metric-capture requirement for this matrix is
 This matrix covers **use cases**, not FRs — an eval measures whether an agent can
 carry a story out end to end, not whether a unit behaves. The archetype's column
 is named `Functional Req`; the ids below are the US ids each scenario drives.
-Per-FR coverage lives in TM-001 (`spec/matrix.md`).
+Per-FR coverage is computed by `quoin matrix` from the trace tags on tests.
 
 | Functional Req | Acceptance Criteria | Test Cases | Status |
 | --- | --- | --- | --- |

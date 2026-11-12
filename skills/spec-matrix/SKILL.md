@@ -63,11 +63,11 @@ inside the `it(...)` callback (vitest only).
   0.55): ids bind only from the marker attribute, and `quire coverage` reports a comment id as
   `trace-id-outside-marker` naming the replacement form. A production item that implements a
   requirement carries `#[implements("FR-012")]`; a test, bench or fuzz target carries `#[trace(...)]`.
-- Tag the **criterion** (`FR-012-AC-3`), not the requirement. For AC-to-TC-to-code backing
-  (`quire coverage`) the test must also carry the TC id of the `spec/matrix.md` row that cites
-  the criterion: `#[trace("FR-012-AC-3", "TC-345")]`. A criterion tag alone is reported
-  `criterion-tagged-outside-row` ("expected a same-test tag for one of `TC-345`") and gives no
-  backing.
+- Tag the **criterion** (`FR-012-AC-3`), not the requirement. A criterion tag alone binds the test
+  (`#[trace("FR-012-AC-3")]`). Only a repository that still keeps a `TestMatrix` document (a
+  hand-kept table of `TC-` rows) constrains every criterion to its rows: the tag is then reported
+  `criterion-tagged-outside-row` until the test also carries the row's TC id. Do not add such a
+  document; delete it and tag by criterion id.
 - Several ids on one marker are separate quoted arguments: `#[trace("FR-012-AC-3", "FR-012-AC-4")]`.
 - Only tag a test that would fail if the criterion were broken. A tag on a test that does not
   assert the criterion is coverage inflation, and `gap-analysis` reports it as such.
