@@ -10,12 +10,6 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-065"
     type: "references"
-  - target: "ix://agent-ix/quoin/TC-1290"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1291"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1292"
-    type: "verifies"
 ---
 
 # TASK-030: Determinism and compatibility

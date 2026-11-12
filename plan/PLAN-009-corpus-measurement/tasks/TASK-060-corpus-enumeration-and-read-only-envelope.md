@@ -10,32 +10,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/FR-092"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1500"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1501"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1502"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1503"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1504"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1505"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1566"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1567"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1551"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1552"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1553"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1554"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1583"
-    type: verifies
 ---
 
 # TASK-060: Corpus enumeration, pinning and the read-only envelope

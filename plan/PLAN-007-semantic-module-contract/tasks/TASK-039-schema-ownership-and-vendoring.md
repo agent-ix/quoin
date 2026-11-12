@@ -12,8 +12,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/FR-073"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1342"
-    type: verifies
 ---
 
 # TASK-039: Schema ownership and published packages

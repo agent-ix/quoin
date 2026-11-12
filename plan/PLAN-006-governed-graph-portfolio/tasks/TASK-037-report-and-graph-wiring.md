@@ -12,12 +12,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/FR-067"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1295"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1311"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1315"
-    type: verifies
 ---
 
 # TASK-037: Wire report mappings and the stable FR-062 graph interface

@@ -18,12 +18,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/FR-061"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1242"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1243"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1248"
-    type: verifies
 ---
 
 # TASK-015: Close the operational integration gate

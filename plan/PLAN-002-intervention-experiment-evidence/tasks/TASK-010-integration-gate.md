@@ -18,12 +18,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/FR-058"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1214"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1215"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1221"
-    type: verifies
 ---
 
 # TASK-010: Close the intervention integration gate

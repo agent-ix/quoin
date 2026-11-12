@@ -10,8 +10,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/StR-007"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1316"
-    type: verifies
 ---
 
 # TASK-038: Close stakeholder, review, and traceability gates

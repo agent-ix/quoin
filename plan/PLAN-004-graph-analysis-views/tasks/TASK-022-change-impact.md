@@ -10,12 +10,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-062"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1251"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1252"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1253"
-    type: verifies
 ---
 
 # TASK-022: Build deterministic reverse change-impact closure

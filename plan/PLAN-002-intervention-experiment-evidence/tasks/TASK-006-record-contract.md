@@ -10,10 +10,6 @@ relationships:
     type: part_of
   - target: "ix://agent-ix/quoin/FR-056"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1195"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1203"
-    type: verifies
 ---
 
 # TASK-006: Implement the intervention record contract

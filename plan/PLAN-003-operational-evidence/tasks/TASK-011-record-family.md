@@ -10,10 +10,6 @@ relationships:
     type: part_of
   - target: "ix://agent-ix/quoin/FR-059"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1223"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1231"
-    type: verifies
 ---
 
 # TASK-011: Implement the operational record family

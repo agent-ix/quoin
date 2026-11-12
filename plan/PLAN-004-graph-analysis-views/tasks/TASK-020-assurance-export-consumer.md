@@ -8,10 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-062"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1256"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1257"
-    type: verifies
 ---
 
 # TASK-020: Consume the versioned Quire assurance export

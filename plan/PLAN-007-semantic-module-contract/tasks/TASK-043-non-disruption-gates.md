@@ -12,14 +12,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/NFR-017"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1379"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1380"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1381"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1382"
-    type: verifies
 ---
 
 # TASK-043: Non-disruption gates

@@ -10,18 +10,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-075"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1372"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1374"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1375"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1376"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1377"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1378"
-    type: verifies
 ---
 
 # TASK-042: Package manifest derivation

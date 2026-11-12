@@ -8,28 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-067"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1305"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1306"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1307"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1308"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1309"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1310"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1311"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1312"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1313"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1314"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1315"
-    type: verifies
 ---
 
 # TASK-035: Add red governed graph portfolio contract tests

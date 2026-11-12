@@ -14,10 +14,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-061"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1244"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1247"
-    type: verifies
 ---
 
 # TASK-014: Build the GitHub Actions release producer

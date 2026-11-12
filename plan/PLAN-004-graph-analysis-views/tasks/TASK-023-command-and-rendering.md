@@ -14,8 +14,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-062"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1258"
-    type: verifies
 ---
 
 # TASK-023: Expose graph commands and deterministic rendering

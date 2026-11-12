@@ -10,20 +10,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/NFR-022"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1557"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1558"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1559"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1560"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1561"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1562"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1584"
-    type: verifies
 ---
 
 # TASK-068: The reproducibility fixture corpus and the run budget

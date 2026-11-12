@@ -8,26 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-089"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1531"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1532"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1533"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1534"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1535"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1536"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1537"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1575"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1576"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1577"
-    type: verifies
 ---
 
 # TASK-066: Finding identity, classes, owners and dispositions

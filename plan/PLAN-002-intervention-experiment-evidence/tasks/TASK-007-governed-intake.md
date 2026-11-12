@@ -12,12 +12,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-057"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1204"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1209"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1216"
-    type: verifies
 ---
 
 # TASK-007: Implement governed intervention intake

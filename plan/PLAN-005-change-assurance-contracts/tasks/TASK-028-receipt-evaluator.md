@@ -12,18 +12,6 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-065"
     type: "references"
-  - target: "ix://agent-ix/quoin/TC-1281"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1282"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1283"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1284"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1285"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1286"
-    type: "verifies"
 ---
 
 # TASK-028: Pure receipt evaluator

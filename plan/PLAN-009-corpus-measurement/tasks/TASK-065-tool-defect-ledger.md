@@ -8,22 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-091"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1545"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1546"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1547"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1548"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1549"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1550"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1581"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1582"
-    type: verifies
 ---
 
 # TASK-065: The tool-defect ledger and its citations

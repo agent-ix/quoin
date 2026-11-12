@@ -8,28 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-085"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1506"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1507"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1508"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1509"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1510"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1511"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1568"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1569"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1570"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1571"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1556"
-    type: verifies
 ---
 
 # TASK-061: Module set resolution and the toolchain record

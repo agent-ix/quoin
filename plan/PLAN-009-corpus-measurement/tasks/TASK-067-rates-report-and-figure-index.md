@@ -10,32 +10,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/NFR-023"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1538"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1539"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1540"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1541"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1542"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1543"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1544"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1563"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1564"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1565"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1578"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1579"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1580"
-    type: verifies
 ---
 
 # TASK-067: Rates, breakdowns, the report and the figure index

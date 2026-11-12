@@ -8,20 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-063"
     type: "references"
-  - target: "ix://agent-ix/quoin/TC-1261"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1262"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1263"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1264"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1265"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1266"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1267"
-    type: "verifies"
 ---
 
 # TASK-025: Strict canonical integrity core

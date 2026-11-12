@@ -10,10 +10,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-062"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1259"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1260"
-    type: verifies
 ---
 
 # TASK-024: Seal graph-analysis boundaries and regressions
