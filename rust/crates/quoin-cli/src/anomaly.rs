@@ -7,12 +7,15 @@
 //! `quoin anomaly check` reports what no module mapping can express; it never
 //! repeats `quire validate`'s dangling-reference or kind diagnostics.
 
-use std::path::{Path, PathBuf};
+use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
-use quoin_anomaly::{Context, anomaly_documents, check_document, references_to};
-use quoin_core::protocol::Response;
+use quoin_anomaly::{Context, Severity, anomaly_documents, check_document, references_to};
+use quoin_core::protocol::{Diagnostic, Response};
+
+use crate::core_runtime::invoke;
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
 pub(crate) const ABOUT: &str =
@@ -58,7 +61,7 @@ fn module_arg() -> Arg {
         .long("module")
         .value_name("DIR")
         .action(ArgAction::Append)
-        .help("Module root to look for the `hazard` object type in; repeat to add roots")
+        .help("Module root to look for the `hazard` object type in; repeat to add roots. Without it the installed modules are searched")
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
@@ -75,33 +78,69 @@ fn scope_of(arguments: &ArgMatches) -> PathBuf {
         .map_or_else(|| PathBuf::from("."), PathBuf::from)
 }
 
+/// A refusal that names the path and what is wrong with it. It exits with the
+/// refused status, not the "diagnostics found" status of `check`.
+fn refuse_missing(what: &str, path: &std::path::Path) -> Response {
+    Response {
+        payload: serde_json::Value::Null,
+        diagnostics: vec![Diagnostic {
+            code: "anomaly.path_missing".to_owned(),
+            message: format!(
+                "{what} {} does not exist (no such file or directory)",
+                path.display()
+            ),
+            context: BTreeMap::new(),
+        }],
+        outcome: Outcome::Refused,
+    }
+}
+
 fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
     let scope = scope_of(arguments);
+    if !scope.is_dir() {
+        return Ok(refuse_missing("scope", &scope));
+    }
     let roots = arguments
         .get_many::<String>("module")
-        .map_or_else(default_roots, |roots| roots.map(PathBuf::from).collect());
+        .map(|roots| roots.map(PathBuf::from).collect::<Vec<_>>());
+    if let Some(missing) = roots.iter().flatten().find(|root| !root.exists()) {
+        return Ok(refuse_missing("module root", missing));
+    }
     let context = Context {
-        hazard_installed: roots.iter().any(|root| declares_hazard(root)),
+        hazard_installed: hazard_installed(roots.as_deref())?,
     };
     let mut lines = Vec::new();
+    let mut errors = false;
     for (path, text) in anomaly_documents(&scope).map_err(|error| error.to_string())? {
-        for diagnostic in
-            check_document(&path, &text, context).map_err(|error| error.to_string())?
-        {
+        let checked = check_document(&path, &text, context).map_err(|error| error.to_string())?;
+        if !checked.history_applicable {
             lines.push(format!(
-                "{}:{}: error {} ({}) {}",
+                "{}: statusHistory not applicable (the file is not under git)",
+                path.display()
+            ));
+        }
+        for diagnostic in checked.diagnostics {
+            errors |= diagnostic.severity == Severity::Error;
+            let commits = if diagnostic.commits.is_empty() {
+                String::new()
+            } else {
+                format!(" [commits: {}]", diagnostic.commits.join(", "))
+            };
+            lines.push(format!(
+                "{}:{}: {} {} ({}) {}{commits}",
                 path.display(),
                 diagnostic.line,
+                diagnostic.severity.as_str(),
                 diagnostic.code.as_str(),
-                diagnostic.reason,
+                diagnostic.reason(),
                 diagnostic.message,
             ));
         }
     }
-    let outcome = if lines.is_empty() {
-        Outcome::Ok
-    } else {
+    let outcome = if errors {
         Outcome::Partial
+    } else {
+        Outcome::Ok
     };
     Ok(Response {
         payload: serde_json::json!({ "rendered": lines.join("\n") }),
@@ -114,7 +153,11 @@ fn run_refs(arguments: &ArgMatches) -> Result<Response, String> {
     let id = arguments
         .get_one::<String>("id")
         .ok_or_else(|| "<ID> is required".to_owned())?;
-    let entries = references_to(&scope_of(arguments), id).map_err(|error| error.to_string())?;
+    let scope = scope_of(arguments);
+    if !scope.is_dir() {
+        return Ok(refuse_missing("scope", &scope));
+    }
+    let entries = references_to(&scope, id).map_err(|error| error.to_string())?;
     let rendered = if arguments.get_flag("json") {
         serde_json::to_string_pretty(&entries).map_err(|error| error.to_string())?
     } else {
@@ -127,43 +170,25 @@ fn run_refs(arguments: &ArgMatches) -> Result<Response, String> {
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
 }
 
-/// The module roots searched by default: `QUOIN_MODULE_PATHS`, then every
-/// directory under the IX home's `filament/modules`.
-fn default_roots() -> Vec<PathBuf> {
-    let mut roots = std::env::var("QUOIN_MODULE_PATHS")
-        .ok()
-        .map_or_else(Vec::new, |paths| {
-            paths
-                .split(':')
-                .filter(|path| !path.is_empty())
-                .map(PathBuf::from)
-                .collect()
-        });
-    let home = std::env::var_os("IX_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".ix")));
-    if let Some(home) = home
-        && let Ok(entries) = std::fs::read_dir(home.join("filament/modules"))
-    {
-        roots.extend(entries.flatten().map(|entry| entry.path()));
+/// Whether the `hazard` object type is installed, asked of the core's module
+/// catalog: the explicit roots when given, the host's default discovery
+/// otherwise.
+fn hazard_installed(roots: Option<&[PathBuf]>) -> Result<bool, String> {
+    let request = roots.map_or_else(
+        || serde_json::json!({}),
+        |roots| serde_json::json!({ "roots": roots }),
+    );
+    let response = invoke("catalog.load", &request)?;
+    if !response.outcome.carries_payload() {
+        return Err("the module catalog could not be loaded".to_owned());
     }
-    roots
-}
-
-/// Whether the module at `root` declares the `hazard` object type.
-fn declares_hazard(root: &Path) -> bool {
-    let Ok(raw) = std::fs::read_to_string(root.join("manifest.yaml")) else {
-        return false;
-    };
-    let Ok(manifest) = quoin_yaml::from_str(&raw) else {
-        return false;
-    };
-    manifest
-        .get("object_types")
+    Ok(response
+        .payload
+        .get("modules")
         .and_then(serde_json::Value::as_array)
-        .is_some_and(|types| {
-            types.iter().any(|entry| {
-                entry.get("name").and_then(serde_json::Value::as_str) == Some("hazard")
-            })
-        })
+        .into_iter()
+        .flatten()
+        .filter_map(|module| module.get("objectTypes")?.as_array())
+        .flatten()
+        .any(|name| name.as_str() == Some("hazard")))
 }

@@ -13,6 +13,8 @@
 //!
 //! Anomaly documents are the fixtures `spec-artifacts-process` ships, read in
 //! place from `SPEC_ARTIFACTS_PROCESS_DIR` or the checkout next to this one.
+//! That checkout must hold `tests/fixtures/anomaly` (spec-artifacts-process
+//! PLAT-1415, #140); nothing is copied into this repository.
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -27,7 +29,10 @@ fn fixtures() -> PathBuf {
     let dir = root.join("tests/fixtures/anomaly");
     assert!(
         dir.is_dir(),
-        "the spec-artifacts-process fixtures are not at {}; set SPEC_ARTIFACTS_PROCESS_DIR",
+        "the spec-artifacts-process anomaly fixtures are not at {}. These tests read \
+         the documents that repository ships in place and keep no copy: check out \
+         agent-ix/spec-artifacts-process (at or after PLAT-1415, #140) next to this \
+         repository, or set SPEC_ARTIFACTS_PROCESS_DIR to its checkout",
         dir.display()
     );
     dir
@@ -72,6 +77,16 @@ fn refs_prints_one_json_array_and_an_empty_array_for_an_unnamed_hazard() {
     );
 }
 
+fn module_with_hazard() -> tempfile::TempDir {
+    let module = tempfile::tempdir().unwrap();
+    std::fs::write(
+        module.path().join("manifest.yaml"),
+        "name: spec-objects-safety\nversion: 0.0.0\nobject_types:\n- name: hazard\n",
+    )
+    .unwrap();
+    module
+}
+
 #[trace("FR-136-AC-10")]
 #[test]
 fn check_fails_with_one_missing_module_diagnostic_until_the_hazard_type_is_installed() {
@@ -87,15 +102,13 @@ fn check_fails_with_one_missing_module_diagnostic_until_the_hazard_type_is_insta
     ]);
     assert_eq!(missing.status.code(), Some(1));
     let out = String::from_utf8(missing.stdout).unwrap();
-    assert_eq!(out.lines().count(), 1, "{out}");
-    assert!(out.contains("anomaly.missing-module"), "{out}");
+    let diagnostics = out
+        .lines()
+        .filter(|l| l.contains("error anomaly.missing-module (spec-objects-safety)"))
+        .count();
+    assert_eq!(diagnostics, 1, "{out}");
 
-    let module = tempfile::tempdir().unwrap();
-    std::fs::write(
-        module.path().join("manifest.yaml"),
-        "object_types:\n- name: hazard\n",
-    )
-    .unwrap();
+    let module = module_with_hazard();
     let installed = quoin(&[
         "anomaly",
         "check",
@@ -104,4 +117,71 @@ fn check_fails_with_one_missing_module_diagnostic_until_the_hazard_type_is_insta
         module.path().to_str().unwrap(),
     ]);
     assert_eq!(installed.status.code(), Some(0));
+}
+
+#[trace("FR-136-AC-6")]
+#[test]
+fn check_says_status_history_is_not_applicable_for_a_file_outside_git() {
+    let scope = scope();
+    let module = module_with_hazard();
+    let out = quoin(&[
+        "anomaly",
+        "check",
+        scope.path().to_str().unwrap(),
+        "--module",
+        module.path().to_str().unwrap(),
+    ]);
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8(out.stdout).unwrap();
+    assert!(stdout.contains("statusHistory not applicable"), "{stdout}");
+}
+
+#[test]
+fn a_missing_scope_or_module_is_refused_by_name_with_a_status_unlike_findings() {
+    let scope = scope();
+    let gone = scope.path().join("does-not-exist");
+    let gone_arg = gone.to_str().unwrap();
+    for args in [
+        vec!["anomaly", "check", gone_arg],
+        vec!["anomaly", "refs", "FR-001", "--scope", gone_arg],
+        vec![
+            "anomaly",
+            "check",
+            scope.path().to_str().unwrap(),
+            "--module",
+            gone_arg,
+        ],
+    ] {
+        let out = quoin(&args);
+        assert_eq!(out.status.code(), Some(2), "{args:?}");
+        let stderr = String::from_utf8(out.stderr).unwrap();
+        assert!(stderr.contains(gone_arg), "{stderr}");
+        assert!(stderr.contains("does not exist"), "{stderr}");
+        assert!(!stderr.contains("missing-module"), "{stderr}");
+    }
+}
+
+#[test]
+fn git_that_cannot_run_is_an_error_not_a_silent_not_applicable() {
+    let scope = scope();
+    let module = module_with_hazard();
+    let out = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args([
+            "anomaly",
+            "check",
+            scope.path().to_str().unwrap(),
+            "--module",
+            module.path().to_str().unwrap(),
+        ])
+        .env("PATH", "")
+        .output()
+        .unwrap();
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8(out.stderr).unwrap();
+    assert!(stderr.contains("cannot run `git"), "{stderr}");
+    assert!(
+        !String::from_utf8(out.stdout)
+            .unwrap()
+            .contains("not applicable")
+    );
 }

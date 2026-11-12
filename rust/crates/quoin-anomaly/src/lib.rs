@@ -19,9 +19,9 @@ pub mod record;
 pub mod refs;
 pub mod status;
 
-pub use check::{Context, Diagnostic, DiagnosticCode, Severity, check_document};
+pub use check::{Checked, Context, Diagnostic, DiagnosticCode, Severity, check_document};
 pub use error::{AnomalyError, ErrorCode};
 pub use history::{History, Signature, StatusEntry, read_history};
-pub use record::{MappingError, Record, Row, parse_record};
+pub use record::{MappingError, MappingErrorCode, Record, Row, parse_record, status_line};
 pub use refs::{RefEntry, anomaly_documents, references_to};
 pub use status::Status;

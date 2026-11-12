@@ -6,13 +6,14 @@
 //! Nothing here reads an author or a date typed into the document: who moved
 //! the status and when is what git recorded.
 
-use std::path::Path;
-use std::process::Command;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output};
 
 use serde::Serialize;
 
 use crate::error::AnomalyError;
 use crate::record::{assessment_text, status_word};
+use crate::status::Status;
 
 /// What git reported about a commit's signature, reduced to three answers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -45,7 +46,7 @@ impl Signature {
 #[serde(rename_all = "camelCase")]
 pub struct StatusEntry {
     /// The status the commit set.
-    pub status: String,
+    pub status: Status,
     /// The commit; absent for the pending working-tree entry.
     pub commit: Option<String>,
     /// The commit author's name.
@@ -75,43 +76,60 @@ pub enum History {
     },
 }
 
-fn git(dir: &Path, args: &[&str]) -> Result<std::process::Output, AnomalyError> {
+fn run_git(dir: &Path, args: &[&str]) -> Result<Output, AnomalyError> {
     Command::new("git")
         .arg("-C")
         .arg(dir)
         .args(args)
         .output()
-        .map_err(|error| AnomalyError::git(format!("git {}: {error}", args.join(" "))))
+        .map_err(|error| AnomalyError::git(format!("cannot run `git {}`: {error}", args.join(" "))))
 }
 
-fn git_text(dir: &Path, args: &[&str]) -> Option<String> {
-    let output = git(dir, args).ok()?;
-    output
+/// Run git and return stdout when it succeeds, `None` when it answers with a
+/// failure status (an expected answer for a probe), and an error only when git
+/// cannot be run at all.
+fn probe(dir: &Path, args: &[&str]) -> Result<Option<String>, AnomalyError> {
+    let output = run_git(dir, args)?;
+    Ok(output
         .status
         .success()
-        .then(|| String::from_utf8_lossy(&output.stdout).into_owned())
+        .then(|| String::from_utf8_lossy(&output.stdout).into_owned()))
+}
+
+/// Run git where a failure status is a real failure.
+fn require(dir: &Path, args: &[&str]) -> Result<String, AnomalyError> {
+    let output = run_git(dir, args)?;
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    } else {
+        Err(AnomalyError::git(format!(
+            "`git {}` failed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&output.stderr).trim()
+        )))
+    }
 }
 
 /// The ref whose first-parent history is read: the remote default branch, then
 /// `main`, then `master`, then `HEAD`.
-fn default_branch(dir: &Path) -> String {
-    if let Some(head) = git_text(
-        dir,
+fn default_branch(top: &Path) -> Result<String, AnomalyError> {
+    if let Some(head) = probe(
+        top,
         &[
             "symbolic-ref",
             "--quiet",
             "--short",
             "refs/remotes/origin/HEAD",
         ],
-    ) {
-        return head.trim().to_owned();
+    )? {
+        return Ok(head.trim().to_owned());
     }
     for name in ["main", "master"] {
-        if git_text(dir, &["rev-parse", "--verify", "--quiet", name]).is_some() {
-            return name.to_owned();
+        if probe(top, &["rev-parse", "--verify", "--quiet", name])?.is_some() {
+            return Ok(name.to_owned());
         }
     }
-    "HEAD".to_owned()
+    Ok("HEAD".to_owned())
 }
 
 /// Derive `statusHistory` for `file`.
@@ -122,25 +140,36 @@ fn default_branch(dir: &Path) -> String {
 ///
 /// # Errors
 ///
-/// Returns an error when `git` cannot be run.
+/// Returns an error when `git` cannot be run, or when it fails to answer a
+/// history query for a file that is inside a repository.
 pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
     let dir = file.parent().unwrap_or_else(|| Path::new("."));
-    if git_text(dir, &["rev-parse", "--is-inside-work-tree"]).is_none() {
-        return Ok(History::NotApplicable);
-    }
-    let Some(top) = git_text(dir, &["rev-parse", "--show-toplevel"]) else {
+    let dir = if dir.as_os_str().is_empty() {
+        Path::new(".")
+    } else {
+        dir
+    };
+    let Some(top) = probe(dir, &["rev-parse", "--show-toplevel"])? else {
         return Ok(History::NotApplicable);
     };
-    let top = std::path::PathBuf::from(top.trim());
+    let top = PathBuf::from(top.trim());
     let canonical = file.canonicalize().unwrap_or_else(|_| file.to_path_buf());
-    let top_canonical = top.canonicalize().unwrap_or(top);
+    let top_canonical = top.canonicalize().unwrap_or_else(|_| top.clone());
     let Ok(relative) = canonical.strip_prefix(&top_canonical) else {
         return Ok(History::NotApplicable);
     };
     let relative = relative.to_string_lossy().replace('\\', "/");
-    let branch = default_branch(dir);
-    let log = git_text(
-        dir,
+    // Every query runs from the top level so that `relative`, which is relative
+    // to it, is also what git resolves the pathspec against.
+    if probe(&top, &["rev-parse", "--verify", "--quiet", "HEAD"])?.is_none() {
+        return Ok(History::Entries {
+            entries: Vec::new(),
+            assessments: Vec::new(),
+        });
+    }
+    let branch = default_branch(&top)?;
+    let log = require(
+        &top,
         &[
             "log",
             &branch,
@@ -151,8 +180,7 @@ pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
             "--",
             &relative,
         ],
-    )
-    .unwrap_or_default();
+    )?;
     let mut commits = log
         .split('\u{1e}')
         .filter(|block| !block.trim().is_empty())
@@ -161,19 +189,20 @@ pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
     commits.reverse();
     let mut entries = Vec::new();
     let mut assessments = Vec::new();
-    let mut previous: Option<String> = None;
+    let mut previous: Option<Status> = None;
     for commit in commits {
         let spec = format!("{}:{}", commit.hash, commit.path);
-        let Some(content) = git_text(dir, &["show", &spec]) else {
+        // A commit that deleted the file has no content to read.
+        let Some(content) = probe(&top, &["show", &spec])? else {
             continue;
         };
-        let Some(status) = status_word(&content) else {
+        let Some(status) = status_word(&content).as_deref().and_then(Status::parse) else {
             continue;
         };
-        if previous.as_deref() == Some(status.as_str()) {
+        if previous == Some(status) {
             continue;
         }
-        previous = Some(status.clone());
+        previous = Some(status);
         let code = commit.signature_code;
         entries.push(StatusEntry {
             status,

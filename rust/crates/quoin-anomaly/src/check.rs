@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use crate::error::AnomalyError;
 use crate::history::{History, StatusEntry, read_history};
-use crate::record::parse_record;
+use crate::record::{assessment_text, parse_record, status_line, status_word};
 use crate::status::Status;
 
 /// A diagnostic's severity; every anomaly diagnostic is an error.
@@ -19,6 +19,16 @@ use crate::status::Status;
 pub enum Severity {
     /// Fails `quoin anomaly check`.
     Error,
+}
+
+impl Severity {
+    /// The severity as printed.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Error => "error",
+        }
+    }
 }
 
 /// A stable diagnostic code.
@@ -50,7 +60,9 @@ impl DiagnosticCode {
         }
     }
 
-    fn reason(self) -> &'static str {
+    /// The reason that accompanies the code.
+    #[must_use]
+    pub fn reason(self) -> &'static str {
         match self {
             Self::IllegalTransition => "transition",
             Self::ReassessmentMissing => "reopen",
@@ -67,8 +79,6 @@ pub struct Diagnostic {
     pub code: DiagnosticCode,
     /// Always `error`.
     pub severity: Severity,
-    /// The reason: `transition`, `reopen`, `spec-objects-safety` or `mapping-error`.
-    pub reason: String,
     /// 1-based line of the frontmatter `status` field in the working tree.
     pub line: usize,
     /// The commits involved, when the finding is about history.
@@ -86,10 +96,17 @@ fn diagnostic(
     Diagnostic {
         code,
         severity: Severity::Error,
-        reason: code.reason().to_owned(),
         line,
         commits,
         message,
+    }
+}
+
+impl Diagnostic {
+    /// The reason: `transition`, `reopen`, `spec-objects-safety` or `mapping-error`.
+    #[must_use]
+    pub fn reason(&self) -> &'static str {
+        self.code.reason()
     }
 }
 
@@ -104,9 +121,9 @@ fn short(commit: &str) -> &str {
     commit.get(..8).unwrap_or(commit)
 }
 
-fn pending_entry(status: &str) -> StatusEntry {
+fn pending_entry(status: Status) -> StatusEntry {
     StatusEntry {
-        status: status.to_owned(),
+        status,
         commit: None,
         author: None,
         authored_at: None,
@@ -131,10 +148,7 @@ fn transition_diagnostics(
     let mut out = Vec::new();
     for (index, pair) in entries.windows(2).enumerate() {
         let [earlier, later] = pair else { continue };
-        let (Some(from), Some(to)) = (Status::parse(&earlier.status), Status::parse(&later.status))
-        else {
-            continue;
-        };
+        let (from, to) = (earlier.status, later.status);
         let commits = [&earlier.commit, &later.commit]
             .into_iter()
             .flatten()
@@ -147,9 +161,9 @@ fn transition_diagnostics(
                 commits.clone(),
                 format!(
                     "status moved from {} ({}) to {} ({}), which is not reachable by a legal move",
-                    earlier.status,
+                    from.as_str(),
                     describe(earlier),
-                    later.status,
+                    to.as_str(),
                     describe(later),
                 ),
             ));
@@ -177,38 +191,52 @@ fn transition_diagnostics(
     out
 }
 
+/// The outcome of checking one document.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Checked {
+    /// The findings, in the order they were made.
+    pub diagnostics: Vec<Diagnostic>,
+    /// False when the file is not under git: `statusHistory` does not apply
+    /// and no transition was judged.
+    pub history_applicable: bool,
+}
+
 /// Check one `Anomaly` document, whose working-tree text is `text` and which
 /// lives at `path`.
 ///
+/// Every diagnostic is located at the frontmatter `status` field, whether or
+/// not the document yields a record.
+///
 /// # Errors
 ///
-/// Returns an error when `git` cannot be run.
-pub fn check_document(
-    path: &Path,
-    text: &str,
-    context: Context,
-) -> Result<Vec<Diagnostic>, AnomalyError> {
+/// Returns an error when `git` cannot be run or cannot answer a history query.
+pub fn check_document(path: &Path, text: &str, context: Context) -> Result<Checked, AnomalyError> {
     let mut out = Vec::new();
     let record = parse_record(text);
-    let line = match &record {
-        Ok(record) => record.status_line,
-        Err(error) => error.line,
-    };
+    let line = status_line(text);
     if let Err(error) = &record {
         out.push(diagnostic(
             DiagnosticCode::NoRecord,
             line,
             Vec::new(),
-            format!("no record: mapping error {}", error.code),
+            format!(
+                "no record: mapping error {} at line {}",
+                error.code.as_str(),
+                error.line
+            ),
         ));
     }
+    let history = read_history(path)?;
+    let history_applicable = !matches!(history, History::NotApplicable);
     if let History::Entries {
         mut entries,
         mut assessments,
-    } = read_history(path)?
+    } = history
     {
-        let working = crate::record::status_word(text)
-            .map(|status| (pending_entry(&status), crate::record::assessment_text(text)));
+        let working = status_word(text)
+            .as_deref()
+            .and_then(Status::parse)
+            .map(|status| (pending_entry(status), assessment_text(text)));
         if let Some((pending, assessment)) = working
             && entries
                 .last()
@@ -234,5 +262,8 @@ pub fn check_document(
             "the assessment holds a Hazard row but the `hazard` object type is not installed; install spec-objects-safety".to_owned(),
         ));
     }
-    Ok(out)
+    Ok(Checked {
+        diagnostics: out,
+        history_applicable,
+    })
 }

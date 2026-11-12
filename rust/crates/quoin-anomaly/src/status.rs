@@ -3,8 +3,11 @@
 
 //! The status vocabulary and the legal moves between its members.
 
+use serde::Serialize;
+
 /// An anomaly's lifecycle status.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Status {
     /// Reported, not yet assessed.
     Identified,
@@ -36,6 +39,17 @@ impl Status {
             "resolved" => Some(Self::Resolved),
             "closed" => Some(Self::Closed),
             _ => None,
+        }
+    }
+
+    /// The authored word.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Identified => "identified",
+            Self::Assessed => "assessed",
+            Self::Resolved => "resolved",
+            Self::Closed => "closed",
         }
     }
 

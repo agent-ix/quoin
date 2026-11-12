@@ -17,14 +17,20 @@
 //! `SPEC_ARTIFACTS_PROCESS_DIR` or the checkout next to this one, and are never
 //! copied into this repository. Only the commit sequences are authored here, in
 //! throwaway repositories.
+//!
+//! Prerequisite: a checkout of `agent-ix/spec-artifacts-process` that holds
+//! `tests/fixtures/anomaly` (PLAT-1415, #140), next to this repository or named
+//! by `SPEC_ARTIFACTS_PROCESS_DIR`. The tests that compare against the engine's
+//! own reference findings also need `quire` on `PATH` and the
+//! `spec-artifacts-iso` module installed under `~/.ix/filament/modules`.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use ix_trace_rs::trace;
 use quoin_anomaly::{
-    Context, DiagnosticCode, History, Severity, Signature, check_document, read_history,
-    references_to,
+    Checked, Context, DiagnosticCode, History, Severity, Signature, Status, check_document,
+    parse_record, read_history, references_to,
 };
 use tempfile::TempDir;
 
@@ -32,15 +38,21 @@ const INSTALLED: Context = Context {
     hazard_installed: true,
 };
 
-fn fixtures() -> PathBuf {
-    let root = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
+fn process_root() -> PathBuf {
+    std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
         || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-artifacts-process"),
         PathBuf::from,
-    );
-    let dir = root.join("tests/fixtures/anomaly");
+    )
+}
+
+fn fixtures() -> PathBuf {
+    let dir = process_root().join("tests/fixtures/anomaly");
     assert!(
         dir.is_dir(),
-        "the spec-artifacts-process fixtures are not at {}; set SPEC_ARTIFACTS_PROCESS_DIR",
+        "the spec-artifacts-process anomaly fixtures are not at {}. These tests read \
+         the documents that repository ships in place and keep no copy: check out \
+         agent-ix/spec-artifacts-process (at or after PLAT-1415, #140) next to this \
+         repository, or set SPEC_ARTIFACTS_PROCESS_DIR to its checkout",
         dir.display()
     );
     dir
@@ -63,6 +75,9 @@ fn with_status(text: &str, status: &str) -> String {
         .join("\n")
         + "\n"
 }
+
+/// The document at the repository root, and below it as in a real `spec/` tree.
+const LAYOUTS: [&str; 2] = ["AN-001.md", "spec/anomaly/AN-001.md"];
 
 struct Repo {
     dir: TempDir,
@@ -96,8 +111,14 @@ impl Repo {
         self.dir.path().join(name)
     }
 
+    fn write(&self, name: &str, text: &str) {
+        let path = self.path(name);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+    }
+
     fn commit(&mut self, name: &str, text: &str) -> String {
-        std::fs::write(self.path(name), text).unwrap();
+        self.write(name, text);
         self.git(&["add", "-A"]);
         self.tick += 1;
         let date = format!("2026-01-0{}T10:00:00+00:00", self.tick);
@@ -120,23 +141,25 @@ impl Repo {
     }
 }
 
-/// Commit `statuses` in order, then check the document as it stands.
+fn check_working(repo: &Repo, rel: &str, text: &str, context: Context) -> Checked {
+    repo.write(rel, text);
+    check_document(&repo.path(rel), text, context).unwrap()
+}
+
+/// Commit `statuses` in order at `rel`, then check the document as it stands.
 fn check(
     repo: &mut Repo,
+    rel: &str,
     base: &str,
     statuses: &[&str],
     working: Option<&str>,
 ) -> Vec<DiagnosticCode> {
     for status in statuses {
-        repo.commit("AN-001.md", &with_status(base, status));
+        repo.commit(rel, &with_status(base, status));
     }
-    let text = working.map_or_else(
-        || with_status(base, statuses.last().unwrap()),
-        |status| with_status(base, status),
-    );
-    std::fs::write(repo.path("AN-001.md"), &text).unwrap();
-    check_document(&repo.path("AN-001.md"), &text, INSTALLED)
-        .unwrap()
+    let text = with_status(base, working.unwrap_or_else(|| statuses.last().unwrap()));
+    check_working(repo, rel, &text, INSTALLED)
+        .diagnostics
         .into_iter()
         .map(|d| d.code)
         .collect()
@@ -155,48 +178,60 @@ fn history(path: &Path) -> (Vec<quoin_anomaly::StatusEntry>, Vec<Option<String>>
 #[trace("FR-136-AC-1")]
 #[test]
 fn status_history_has_one_entry_per_status_change_and_follows_a_rename() {
-    let mut repo = Repo::new();
-    let base = fixture("valid", "closed-fixed");
-    let first = repo.commit("AN-001.md", &with_status(&base, "identified"));
-    repo.commit("AN-001.md", &with_status(&base, "assessed"));
-    repo.git(&["mv", "AN-001.md", "AN-001-renamed.md"]);
-    repo.commit("AN-001-renamed.md", &with_status(&base, "assessed"));
-    repo.commit("AN-001-renamed.md", &with_status(&base, "resolved"));
-    let last = repo.commit("AN-001-renamed.md", &with_status(&base, "closed"));
-    let (entries, _) = history(&repo.path("AN-001-renamed.md"));
-    let statuses = entries
-        .iter()
-        .map(|e| e.status.as_str())
-        .collect::<Vec<_>>();
-    assert_eq!(statuses, ["identified", "assessed", "resolved", "closed"]);
-    assert_eq!(entries[0].commit.as_deref(), Some(first.as_str()));
-    assert_eq!(entries[3].commit.as_deref(), Some(last.as_str()));
-    for entry in &entries {
-        assert_eq!(entry.author.as_deref(), Some("Fixture Author"));
-        assert!(
-            entry
-                .authored_at
-                .as_deref()
-                .unwrap()
-                .starts_with("2026-01-0")
+    for rel in LAYOUTS {
+        let renamed = rel.replace("AN-001", "AN-001-renamed");
+        let mut repo = Repo::new();
+        let base = fixture("valid", "closed-fixed");
+        let first = repo.commit(rel, &with_status(&base, "identified"));
+        repo.commit(rel, &with_status(&base, "assessed"));
+        repo.git(&["mv", rel, &renamed]);
+        repo.commit(&renamed, &with_status(&base, "assessed"));
+        repo.commit(&renamed, &with_status(&base, "resolved"));
+        let last = repo.commit(&renamed, &with_status(&base, "closed"));
+        let (entries, _) = history(&repo.path(&renamed));
+        let statuses = entries.iter().map(|e| e.status).collect::<Vec<_>>();
+        assert_eq!(
+            statuses,
+            [
+                Status::Identified,
+                Status::Assessed,
+                Status::Resolved,
+                Status::Closed
+            ],
+            "{rel}"
         );
-        assert_eq!(entry.signature_code, Some('N'));
-        assert_eq!(entry.signature, Some(Signature::Unsigned));
-        assert!(!entry.pending);
+        assert_eq!(entries[0].commit.as_deref(), Some(first.as_str()));
+        assert_eq!(entries[3].commit.as_deref(), Some(last.as_str()));
+        for entry in &entries {
+            assert_eq!(entry.author.as_deref(), Some("Fixture Author"));
+            assert!(
+                entry
+                    .authored_at
+                    .as_deref()
+                    .unwrap()
+                    .starts_with("2026-01-0")
+            );
+            assert_eq!(entry.signature_code, Some('N'));
+            assert_eq!(entry.signature, Some(Signature::Unsigned));
+            assert!(!entry.pending);
+        }
     }
 }
 
 #[trace("FR-136-AC-1")]
 #[test]
-fn an_author_typed_into_the_document_is_not_read() {
+fn an_author_and_date_typed_into_the_document_are_not_read() {
     let mut repo = Repo::new();
     let base = fixture("valid", "assessed").replace(
         "type: Anomaly",
-        "type: Anomaly\nauthor: Someone Else\ndate: 1999-01-01",
+        "type: Anomaly\nauthor: Someone Else\ndate: 1999-01-01\nauthoredAt: 1999-01-01",
     );
     repo.commit("AN-001.md", &base);
     let (entries, _) = history(&repo.path("AN-001.md"));
     assert_eq!(entries[0].author.as_deref(), Some("Fixture Author"));
+    let authored = entries[0].authored_at.as_deref().unwrap();
+    assert!(authored.starts_with("2026-01-01"), "{authored}");
+    assert!(!authored.contains("1999"));
 }
 
 #[trace("FR-136-AC-2")]
@@ -204,31 +239,65 @@ fn an_author_typed_into_the_document_is_not_read() {
 fn a_record_schema_failure_still_yields_a_record_and_no_field_diagnostic() {
     let mut repo = Repo::new();
     let base = fixture("invalid", "closed-no-closed-by");
-    assert!(quoin_anomaly::parse_record(&base).is_ok());
-    let found = check(&mut repo, &base, &["closed"], None);
+    assert!(parse_record(&base).is_ok());
+    let found = check(&mut repo, "AN-001.md", &base, &["closed"], None);
     assert!(found.is_empty(), "{found:?}");
+}
+
+#[trace("FR-136-AC-2", "FR-136-AC-11")]
+#[test]
+fn a_mapping_error_is_no_record_at_the_status_line_and_the_history_is_still_checked() {
+    for rel in LAYOUTS {
+        let mut repo = Repo::new();
+        let base = fixture("valid", "assessed").replace("| Kind | Target |", "| Kind | Aim |");
+        let error = parse_record(&base).unwrap_err();
+        assert_eq!(error.code.as_str(), "columns");
+        repo.commit(rel, &with_status(&base, "closed"));
+        let text = with_status(&base, "assessed");
+        let found = check_working(&repo, rel, &text, INSTALLED).diagnostics;
+        let codes = found.iter().map(|d| d.code).collect::<Vec<_>>();
+        assert_eq!(
+            codes,
+            [DiagnosticCode::NoRecord, DiagnosticCode::IllegalTransition]
+        );
+        let status_line = text.lines().position(|l| l.starts_with("status:")).unwrap() + 1;
+        assert_ne!(error.line, status_line, "the mapping error is elsewhere");
+        for diagnostic in &found {
+            assert_eq!(diagnostic.line, status_line, "{diagnostic:?}");
+        }
+    }
 }
 
 #[trace("FR-136-AC-2")]
 #[test]
-fn a_mapping_error_is_no_record_and_the_history_is_still_checked() {
-    let mut repo = Repo::new();
-    let base = fixture("valid", "assessed").replace("| Kind | Target |", "| Kind | Aim |");
-    assert_eq!(
-        quoin_anomaly::parse_record(&base).unwrap_err().code,
-        "columns"
+fn an_out_of_vocabulary_impact_is_not_a_mapping_error() {
+    let base = fixture("invalid", "impact-outside-vocabulary");
+    let record = parse_record(&base).unwrap();
+    assert!(
+        record
+            .assessment
+            .unwrap()
+            .iter()
+            .any(|r| r.impact == "Breaks")
     );
-    let found = check(&mut repo, &base, &["closed", "assessed"], None);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("AN-001.md");
+    std::fs::write(&path, &base).unwrap();
+    let missing = Context {
+        hazard_installed: false,
+    };
+    let found = check_document(&path, &base, missing).unwrap().diagnostics;
     assert_eq!(
-        found,
-        [DiagnosticCode::NoRecord, DiagnosticCode::IllegalTransition]
+        found.iter().map(|d| d.code).collect::<Vec<_>>(),
+        [DiagnosticCode::MissingModule],
+        "the document is not dropped as no-record"
     );
 }
 
 #[trace("FR-136-AC-3")]
 #[test]
 fn illegal_and_legal_moves_are_judged_by_reachability() {
-    let base = fixture("valid", "closed-fixed");
+    let fixed = fixture("valid", "closed-fixed");
     let illegal = [
         ["assessed", "identified"],
         ["resolved", "identified"],
@@ -236,22 +305,28 @@ fn illegal_and_legal_moves_are_judged_by_reachability() {
         ["closed", "assessed"],
         ["closed", "resolved"],
     ];
-    for pair in illegal {
-        let found = check(&mut Repo::new(), &base, &pair, None);
-        assert_eq!(found, [DiagnosticCode::IllegalTransition], "{pair:?}");
-    }
-    let legal = [
-        ["identified", "resolved"],
-        ["identified", "closed"],
-        ["assessed", "closed"],
-        ["resolved", "assessed"],
-    ];
-    for pair in legal {
-        let found = check(&mut Repo::new(), &base, &pair, None);
-        assert!(
-            !found.contains(&DiagnosticCode::IllegalTransition),
-            "{pair:?}: {found:?}"
-        );
+    for rel in LAYOUTS {
+        for pair in illegal {
+            let found = check(&mut Repo::new(), rel, &fixed, &pair, None);
+            assert_eq!(found, [DiagnosticCode::IllegalTransition], "{rel} {pair:?}");
+        }
+        // (base fixture, history): the closing resolution varies as FR-136-AC-3 lists.
+        let legal: [(&str, [&str; 2]); 6] = [
+            ("closed-fixed", ["identified", "resolved"]),
+            ("closed-fixed", ["identified", "closed"]),
+            ("closed-fixed", ["assessed", "closed"]),
+            ("closed-wont-fix", ["assessed", "closed"]),
+            ("closed-duplicate", ["identified", "closed"]),
+            ("closed-fixed", ["resolved", "assessed"]),
+        ];
+        for (name, pair) in legal {
+            let base = fixture("valid", name);
+            let found = check(&mut Repo::new(), rel, &base, &pair, None);
+            assert!(
+                !found.contains(&DiagnosticCode::IllegalTransition),
+                "{rel} {name} {pair:?}: {found:?}"
+            );
+        }
     }
 }
 
@@ -259,38 +334,48 @@ fn illegal_and_legal_moves_are_judged_by_reachability() {
 #[test]
 fn a_first_entry_of_any_status_is_legal_and_the_pending_entry_is_judged() {
     let base = fixture("valid", "closed-fixed");
-    for first in ["resolved", "closed"] {
-        let found = check(&mut Repo::new(), &base, &[first], None);
-        assert!(found.is_empty(), "{first}: {found:?}");
+    for rel in LAYOUTS {
+        for first in ["resolved", "closed"] {
+            let found = check(&mut Repo::new(), rel, &base, &[first], None);
+            assert!(found.is_empty(), "{rel} {first}: {found:?}");
+        }
+        let found = check(&mut Repo::new(), rel, &base, &["closed"], Some("assessed"));
+        assert_eq!(found, [DiagnosticCode::IllegalTransition], "{rel}");
+        let found = check(
+            &mut Repo::new(),
+            rel,
+            &base,
+            &["assessed"],
+            Some("resolved"),
+        );
+        assert!(found.is_empty(), "{rel}: {found:?}");
     }
-    let found = check(&mut Repo::new(), &base, &["closed"], Some("assessed"));
-    assert_eq!(found, [DiagnosticCode::IllegalTransition]);
-    let found = check(&mut Repo::new(), &base, &["assessed"], Some("resolved"));
-    assert!(found.is_empty(), "{found:?}");
 }
 
 #[trace("FR-136-AC-5")]
 #[test]
 fn a_reopen_with_an_unchanged_assessment_is_reported_and_an_edit_clears_it() {
     let base = fixture("valid", "resolved-fixed");
-    let mut repo = Repo::new();
-    repo.commit("AN-001.md", &with_status(&base, "resolved"));
-    let reopen = repo.commit("AN-001.md", &with_status(&base, "assessed"));
-    repo.commit("AN-001.md", &with_status(&base, "resolved"));
-    let text = with_status(&base, "resolved");
-    let found = check_document(&repo.path("AN-001.md"), &text, INSTALLED).unwrap();
-    assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0].code, DiagnosticCode::ReassessmentMissing);
-    assert_eq!(found[0].commits, [reopen]);
+    for rel in LAYOUTS {
+        let mut repo = Repo::new();
+        repo.commit(rel, &with_status(&base, "resolved"));
+        let reopen = repo.commit(rel, &with_status(&base, "assessed"));
+        repo.commit(rel, &with_status(&base, "resolved"));
+        let text = with_status(&base, "resolved");
+        let found = check_working(&repo, rel, &text, INSTALLED).diagnostics;
+        assert_eq!(found.len(), 1, "{rel}: {found:?}");
+        assert_eq!(found[0].code, DiagnosticCode::ReassessmentMissing);
+        assert_eq!(found[0].commits, [reopen]);
 
-    let mut repo = Repo::new();
-    repo.commit("AN-001.md", &with_status(&base, "resolved"));
-    repo.commit("AN-001.md", &with_status(&base, "assessed"));
-    let final_text =
-        with_status(&base, "resolved").replace("is not enforced", "is no longer enforced");
-    repo.commit("AN-001.md", &final_text);
-    let found = check_document(&repo.path("AN-001.md"), &final_text, INSTALLED).unwrap();
-    assert!(found.is_empty(), "{found:?}");
+        let mut repo = Repo::new();
+        repo.commit(rel, &with_status(&base, "resolved"));
+        repo.commit(rel, &with_status(&base, "assessed"));
+        let edited =
+            with_status(&base, "resolved").replace("is not enforced", "is no longer enforced");
+        repo.commit(rel, &edited);
+        let found = check_working(&repo, rel, &edited, INSTALLED).diagnostics;
+        assert!(found.is_empty(), "{rel}: {found:?}");
+    }
 }
 
 #[trace("FR-136-AC-6")]
@@ -301,20 +386,27 @@ fn a_file_outside_git_has_no_history_and_no_transition_diagnostic() {
     let text = fixture("valid", "closed-fixed");
     std::fs::write(&path, &text).unwrap();
     assert_eq!(read_history(&path).unwrap(), History::NotApplicable);
-    assert!(check_document(&path, &text, INSTALLED).unwrap().is_empty());
+    let checked = check_document(&path, &text, INSTALLED).unwrap();
+    assert!(checked.diagnostics.is_empty());
+    assert!(!checked.history_applicable, "not applicable is reported");
 }
 
 fn scope_with(anomalies: &[(&str, &str, &str)]) -> TempDir {
     let scope = tempfile::tempdir().unwrap();
     let corpus = fixtures().join("corpus/spec");
     for entry in walk(&corpus) {
-        let target = scope.path().join(entry.strip_prefix(&corpus).unwrap());
+        let target = scope
+            .path()
+            .join("spec")
+            .join(entry.strip_prefix(&corpus).unwrap());
         std::fs::create_dir_all(target.parent().unwrap()).unwrap();
         std::fs::copy(&entry, target).unwrap();
     }
     for (id, group, name) in anomalies {
         let text = fixture(group, name).replace("id: AN-001", &format!("id: {id}"));
-        std::fs::write(scope.path().join(format!("{id}.md")), text).unwrap();
+        let anomalies = scope.path().join("spec/anomalies");
+        std::fs::create_dir_all(&anomalies).unwrap();
+        std::fs::write(anomalies.join(format!("{id}.md")), text).unwrap();
     }
     scope
 }
@@ -369,14 +461,22 @@ fn reverse_references_list_each_anomaly_that_names_an_id() {
 #[test]
 fn a_dangling_target_is_in_no_listing_and_is_not_reported_by_check() {
     let scope = scope_with(&[("AN-001", "invalid", "dangling-requirement")]);
-    for id in ["FR-999", "FR-001", "HAZ-001"] {
-        let refs = references_to(scope.path(), id).unwrap();
-        assert!(refs.iter().all(|r| r.impact != "Affects" || id != "FR-999"));
-    }
     assert!(references_to(scope.path(), "FR-999").unwrap().is_empty());
+    assert!(
+        references_to(scope.path(), "FR-001").unwrap().is_empty(),
+        "no row of this anomaly names FR-001"
+    );
+    let hazard = references_to(scope.path(), "HAZ-001").unwrap();
+    assert_eq!(hazard.len(), 1, "the resolvable Hazard row is listed");
+    assert_eq!(hazard[0].kind, "Hazard");
     let text = fixture("invalid", "dangling-requirement");
-    let path = scope.path().join("AN-001.md");
-    assert!(check_document(&path, &text, INSTALLED).unwrap().is_empty());
+    let path = scope.path().join("spec/anomalies/AN-001.md");
+    assert!(
+        check_document(&path, &text, INSTALLED)
+            .unwrap()
+            .diagnostics
+            .is_empty()
+    );
 }
 
 #[trace("FR-136-AC-10")]
@@ -389,10 +489,53 @@ fn two_hazard_rows_with_the_module_missing_yield_exactly_one_diagnostic() {
     let missing = Context {
         hazard_installed: false,
     };
-    let found = check_document(&path, &text, missing).unwrap();
+    let found = check_document(&path, &text, missing).unwrap().diagnostics;
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0].code, DiagnosticCode::MissingModule);
-    assert!(check_document(&path, &text, INSTALLED).unwrap().is_empty());
+    assert!(
+        check_document(&path, &text, INSTALLED)
+            .unwrap()
+            .diagnostics
+            .is_empty()
+    );
+}
+
+/// With the hazard documents absent from the bundle, `quire validate` still
+/// reports its own finding for each of the two Hazard rows.
+#[trace("FR-136-AC-10")]
+#[test]
+fn quire_validate_still_reports_its_own_per_row_findings() {
+    let scope = scope_with(&[("AN-001", "valid", "two-hazards")]);
+    std::fs::remove_dir_all(scope.path().join("spec/hazard")).unwrap();
+    let process = process_root().join("spec_artifacts_process");
+    let iso = dirs_modules().join("spec-artifacts-iso");
+    let output = Command::new("quire")
+        .args(["validate", "--okf", "--scope"])
+        .arg(scope.path())
+        .arg("--module")
+        .arg(&process)
+        .arg("--module")
+        .arg(&iso)
+        .output()
+        .expect(
+            "`quire` must be on PATH for this test (it is the engine the clause compares against)",
+        );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let findings = stderr
+        .lines()
+        .filter(|l| l.contains("[dangling-trace-reference]") && l.contains("AN-001.md"))
+        .collect::<Vec<_>>();
+    assert_eq!(findings.len(), 2, "{stderr}");
+    assert!(findings.iter().any(|l| l.contains("'HAZ-001'")));
+    assert!(findings.iter().any(|l| l.contains("'HAZ-002'")));
+}
+
+fn dirs_modules() -> PathBuf {
+    let home = std::env::var_os("IX_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".ix")))
+        .expect("HOME or IX_HOME locates the installed modules");
+    home.join("filament/modules")
 }
 
 #[trace("FR-136-AC-11")]
@@ -400,22 +543,63 @@ fn two_hazard_rows_with_the_module_missing_yield_exactly_one_diagnostic() {
 fn every_diagnostic_carries_its_code_severity_reason_and_the_status_line() {
     let base = fixture("valid", "two-hazards");
     let status_line = base.lines().position(|l| l.starts_with("status:")).unwrap() + 1;
-    let mut repo = Repo::new();
-    repo.commit("AN-001.md", &with_status(&base, "closed"));
-    let text = with_status(&base, "assessed");
-    std::fs::write(repo.path("AN-001.md"), &text).unwrap();
     let missing = Context {
         hazard_installed: false,
     };
-    let found = check_document(&repo.path("AN-001.md"), &text, missing).unwrap();
+    // AC-3 and AC-10: an illegal transition and a missing module.
+    let mut repo = Repo::new();
+    repo.commit("AN-001.md", &with_status(&base, "closed"));
+    let text = with_status(&base, "assessed");
+    let found = check_working(&repo, "AN-001.md", &text, missing).diagnostics;
     assert_eq!(found.len(), 2, "{found:?}");
-    for diagnostic in &found {
-        assert_eq!(diagnostic.severity, Severity::Error);
-        assert_eq!(diagnostic.line, status_line);
-    }
-    let reasons = found.iter().map(|d| d.reason.as_str()).collect::<Vec<_>>();
+    let reasons = found
+        .iter()
+        .map(quoin_anomaly::Diagnostic::reason)
+        .collect::<Vec<_>>();
     assert_eq!(reasons, ["transition", "spec-objects-safety"]);
     assert_eq!(found[0].code.as_str(), "anomaly.illegal-transition");
+    // AC-5: a reopen that changed nothing.
+    let resolved = fixture("valid", "resolved-fixed");
+    let mut reopen = Repo::new();
+    reopen.commit("AN-001.md", &with_status(&resolved, "resolved"));
+    reopen.commit("AN-001.md", &with_status(&resolved, "assessed"));
+    reopen.commit("AN-001.md", &with_status(&resolved, "resolved"));
+    let reopened = check_working(
+        &reopen,
+        "AN-001.md",
+        &with_status(&resolved, "resolved"),
+        INSTALLED,
+    )
+    .diagnostics;
+    assert_eq!(reopened.len(), 1);
+    assert_eq!(reopened[0].reason(), "reopen");
+    assert_eq!(reopened[0].code.as_str(), "anomaly.reassessment-missing");
+    // AC-2: no record.
+    let broken = fixture("valid", "assessed").replace("| Kind | Target |", "| Kind | Aim |");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("AN-001.md");
+    std::fs::write(&path, &broken).unwrap();
+    let no_record = check_document(&path, &broken, INSTALLED)
+        .unwrap()
+        .diagnostics;
+    assert_eq!(no_record.len(), 1);
+    assert_eq!(no_record[0].reason(), "mapping-error");
+    assert_eq!(no_record[0].code.as_str(), "anomaly.no-record");
+    let broken_status = broken
+        .lines()
+        .position(|l| l.starts_with("status:"))
+        .unwrap()
+        + 1;
+    for diagnostic in found.iter().chain(&reopened).chain(&no_record) {
+        assert_eq!(diagnostic.severity, Severity::Error);
+    }
+    assert!(found.iter().all(|d| d.line == status_line));
+    assert!(reopened.iter().all(|d| d.line == status_line_of(&resolved)));
+    assert!(no_record.iter().all(|d| d.line == broken_status));
+}
+
+fn status_line_of(text: &str) -> usize {
+    text.lines().position(|l| l.starts_with("status:")).unwrap() + 1
 }
 
 #[trace("FR-136-AC-12")]
