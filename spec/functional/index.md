@@ -128,3 +128,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-137: Detect a licensed pack at install and require it to live outside any git work tree](./FR-137-detect-and-place-licensed-packs.md)
 - [FR-138: Packs never come from hosted sources](./FR-138-packs-never-come-from-hosted-sources.md)
 - [FR-139: Pack install, list, inspect and remove write nothing into any repository](./FR-139-pack-writes-nothing-into-a-repository.md)
+- [FR-140: Pack-level requirements mapping report: one matrix per clause set and a pack index](./FR-140-pack-requirements-mapping-report.md)
