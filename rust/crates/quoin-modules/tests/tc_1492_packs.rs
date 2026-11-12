@@ -276,7 +276,11 @@ fn tc_1492_037_a_module_whose_clause_sets_do_not_load_fails_install() {
     let error = install(&sb, &FixedResolver(src.clone()), &path_source(&src)).unwrap_err();
     assert_eq!(error.code(), ModulesErrorCode::PackLoadFailed);
     assert!(error.to_string().contains("clause set unreadable"));
-    assert!(!sb.paths.target_root.exists());
+    assert!(!sb.paths.target_root.join("broken").exists());
+    let resolver = FixedResolver(src);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(sb.paths.clone(), &resolver, &gate, &MarkerProbe);
+    assert!(installer.list().unwrap().is_empty());
 }
 
 #[trace("FR-138-AC-1", "FR-138-AC-4")]

@@ -3163,6 +3163,7 @@ dependencies = [
  "quire-rs",
  "quoin-jsonschema",
  "quoin-quire-types",
+ "quoin-yaml",
  "serde",
  "serde_json",
  "thiserror",

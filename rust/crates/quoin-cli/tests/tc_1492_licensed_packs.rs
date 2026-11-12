@@ -200,7 +200,9 @@ fn tc_1492_106_a_clause_set_without_rights_fails_install_with_the_load_error() {
     );
     assert!(!refused.status.success(), "{}", text(&refused));
     assert!(text(&refused).contains("rules.yaml"), "{}", text(&refused));
-    assert!(!home.join("filament/modules").exists());
+    assert!(!home.join("filament/modules/widget-pack").exists());
+    let listed = text(&quoin(&home, scratch.path(), &["module", "list"], &[]));
+    assert!(!listed.contains("widget-pack"), "{listed}");
 }
 
 #[trace("FR-137-AC-9")]

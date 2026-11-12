@@ -82,7 +82,12 @@ pub(crate) fn semantic_root() -> &'static Path {
 
 /// Run `quoin` against `home` with `cwd` as the working directory and `extra`
 /// environment variables set.
-pub(crate) fn quoin(home: &Path, cwd: &Path, arguments: &[&str], extra: &[(&str, &Path)]) -> Output {
+pub(crate) fn quoin(
+    home: &Path,
+    cwd: &Path,
+    arguments: &[&str],
+    extra: &[(&str, &Path)],
+) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
     command
         .args(arguments)
@@ -122,7 +127,7 @@ pub(crate) fn git_porcelain(dir: &Path) -> String {
         .current_dir(dir)
         .output()
         .expect("git runs");
-    assert!(output.status.success(), "git status in {dir:?}");
+    assert!(output.status.success(), "git status in {}", dir.display());
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 

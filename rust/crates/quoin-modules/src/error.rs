@@ -421,12 +421,14 @@ pub enum ModulesError {
     },
 
     /// The clause sets of a module being installed did not load.
-    #[error("{code}: cannot install {path}: the module did not load: {detail}", code = ModulesErrorCode::PackLoadFailed, path = path.display())]
+    #[error("{code}: cannot install {path}: the module did not load: {detail} ({rollback})", code = ModulesErrorCode::PackLoadFailed, path = path.display())]
     PackLoadFailed {
         /// The module directory.
         path: PathBuf,
         /// The load error.
         detail: String,
+        /// Whether the previous version was restored, and any failure doing so.
+        rollback: RollbackOutcome,
     },
 }
 

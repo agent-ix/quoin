@@ -146,7 +146,7 @@ impl<'a> ModuleInstaller<'a> {
             Some(name) => name.clone(),
             None => read_module_name(&content_root)?,
         };
-        self.refuse_unplaceable_pack(source, origin, &name, &content_root)?;
+        let unloaded = self.refuse_unplaceable_pack(source, origin, &name, &content_root)?;
 
         // Snapshot before touching anything: the materialized copy is
         // overwritten before the gate can read it, so this is the only record
@@ -187,6 +187,18 @@ impl<'a> ModuleInstaller<'a> {
             });
         }
 
+        // A module that did not load for the pack check is judged by the gate
+        // first, which owns the reasons a module is unusable, and is failed
+        // here when the gate let it through. It is never taken for a non-pack.
+        if let Some(load_error) = unloaded {
+            let rollback = self.roll_back(&name, previous.as_ref());
+            return Err(ModulesError::PackLoadFailed {
+                path: content_root,
+                detail: load_error,
+                rollback,
+            });
+        }
+
         Ok(InstallOutcome {
             module: record,
             replaced_previous: previous.is_some(),
@@ -197,24 +209,23 @@ impl<'a> ModuleInstaller<'a> {
     ///
     /// Runs before anything is written, so a refusal leaves the registry and
     /// the modules directory as they were. A module whose clause sets do not
-    /// load is an error and is never taken for a non-pack.
+    /// load is never taken for a non-pack: the load error is returned for the
+    /// caller to fail with once the semantic gate has had its say.
     fn refuse_unplaceable_pack(
         &self,
         source: &Source,
         origin: Origin,
         name: &ModuleName,
         content_root: &Path,
-    ) -> Result<(), ModulesError> {
+    ) -> Result<Option<String>, ModulesError> {
         let manifest = locate_manifest(content_root)?;
         let module_dir = manifest.parent().unwrap_or(content_root);
-        let restricted = self.packs.restricted_sets(module_dir).map_err(|detail| {
-            ModulesError::PackLoadFailed {
-                path: module_dir.to_path_buf(),
-                detail,
-            }
-        })?;
+        let restricted = match self.packs.restricted_sets(module_dir) {
+            Ok(restricted) => restricted,
+            Err(load_error) => return Ok(Some(load_error)),
+        };
         if restricted.is_empty() {
-            return Ok(());
+            return Ok(None);
         }
         let sets = render_sets(&restricted);
         match (origin, source) {
@@ -244,7 +255,7 @@ impl<'a> ModuleInstaller<'a> {
                         work_tree,
                         sets,
                     }),
-                    None => Ok(()),
+                    None => Ok(None),
                 }
             }
             (Origin::AdHoc, hosted) => Err(ModulesError::PackSourceRefused {

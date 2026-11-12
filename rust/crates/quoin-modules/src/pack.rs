@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Licensed packs: the seam that tells an install whether a module is one, and
+//! Packs: the seam that tells an install whether a module is one, and
 //! the git work-tree walk that keeps one out of a repository (FR-137, FR-138).
 //!
 //! This crate decides nothing about rights. A [`PackProbe`] is handed the
