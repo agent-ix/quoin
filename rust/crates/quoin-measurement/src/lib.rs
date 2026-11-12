@@ -146,6 +146,6 @@ pub use types::plan::MeasurementPlan;
 pub use types::profile::AssuranceProfileSummary;
 pub use validate::{measurement_collection, stored_measurement_collection};
 pub use verify::{
-    MeasurementVerdict, OrderSource, Ranked, Reason, TamperFacts, VERDICT_SCHEMA, Verdict,
-    verdict_json, verify,
+    IntakeOrder, MeasurementVerdict, OrderSource, Ranked, Reason, TamperFacts, VERDICT_SCHEMA,
+    Verdict, verdict_json, verify,
 };

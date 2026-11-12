@@ -12,6 +12,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Response, canonical_json};
 
 use crate::core_runtime::invoke;
+use crate::intake_order::intake_order;
 
 /// The `report` command and its retained flags.
 pub(crate) fn command() -> Command {
@@ -86,12 +87,28 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         )?;
         return series_response(response, metric, json(arguments));
     }
-    present(
+    // Without git (not a work tree, git absent or failing) the report still
+    // renders, a paired-run pair whose order matters stays unattested, and the
+    // cause goes to stderr.
+    let (request, warning) = match intake_order(&repo) {
+        Ok(order) => (
+            serde_json::json!({
+                "repo": repo, "intake_order": order.groups, "order_source": order.source,
+            }),
+            order.warning,
+        ),
+        Err(cause) => (serde_json::json!({ "repo": repo }), Some(cause)),
+    };
+    let mut response = present(
         "measurement.build_report",
         "measurement.render_report",
-        &serde_json::json!({ "repo": repo }),
+        &request,
         json(arguments),
-    )
+    )?;
+    if let (Some(warning), Some(payload)) = (warning, response.payload.as_object_mut()) {
+        payload.insert("warning".to_owned(), serde_json::Value::String(warning));
+    }
+    Ok(response)
 }
 
 /// Shape the core request for a regular or graph-enriched portfolio view.

@@ -1062,7 +1062,12 @@ fn tc_975_015_a_candidate_with_no_record_under_a_protecting_plan_is_inconclusive
 // ------------------------------------------------------------ report
 
 fn ratchet_outcome(root: &Path) -> RatchetOutcome {
-    let report = build_measurement_report(&DiskMeasurement::new(root), root).unwrap();
+    let report = build_measurement_report(
+        &DiskMeasurement::new(root),
+        root,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .unwrap();
     match report.current[0].stage_verdict.clone() {
         Some(StageVerdict::Ratchet { outcome, .. }) => outcome,
         other => panic!("a ratchet verdict, got {other:?}"),

@@ -153,8 +153,15 @@ fn admitted_many(
 
 /// The report over `collections`, oldest first, under `plans`.
 fn report(plans: &[MeasurementPlan], collections: &[MeasurementCollection]) -> MeasurementReport {
-    build_measurement_report_from(Path::new("/repo"), plans, collections, &[], &[])
-        .expect("the report builds")
+    build_measurement_report_from(
+        Path::new("/repo"),
+        plans,
+        collections,
+        &[],
+        &[],
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds")
 }
 
 /// The one row's verdict, over collections of `values` measured in order.
@@ -592,8 +599,12 @@ fn regressed_repository() -> tempfile::TempDir {
 fn tc_958_010_the_verdict_is_rendered_in_text_json_and_the_portfolio() {
     let repository = regressed_repository();
     let root = repository.path();
-    let report =
-        build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(root),
+        root,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds");
 
     let text = render_measurement_report(&report).expect("the report renders");
     assert!(

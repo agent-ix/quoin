@@ -560,7 +560,12 @@ fn tc_1953_report_and_series_carry_the_stored_interval_exactly() {
         )]);
         let report: Value = serde_json::from_str(
             &render_measurement_report_json(
-                &build_measurement_report(&one, repo.path()).expect("the report builds"),
+                &build_measurement_report(
+                    &one,
+                    repo.path(),
+                    &quoin_measurement::IntakeOrder::none(),
+                )
+                .expect("the report builds"),
             )
             .expect("the JSON report renders"),
         )
@@ -575,7 +580,8 @@ fn tc_1953_report_and_series_carry_the_stored_interval_exactly() {
         retained("run-c", "2026-09-01T00:00:00Z", None),
     )]);
     let plain_report = render_measurement_report_json(
-        &build_measurement_report(&plain, repo.path()).expect("the report builds"),
+        &build_measurement_report(&plain, repo.path(), &quoin_measurement::IntakeOrder::none())
+            .expect("the report builds"),
     )
     .unwrap();
     assert!(!plain_report.contains("interval"), "{plain_report}");

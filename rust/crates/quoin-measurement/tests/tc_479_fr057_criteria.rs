@@ -528,8 +528,12 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
     let repo = temporary.path();
     publish(repo, &retained_record()).expect("the retained record is admissible");
 
-    let report = build_measurement_report(&DiskMeasurement::new(repo), repo)
-        .expect("the report builds over the retained record");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(repo),
+        repo,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds over the retained record");
     let human = render_measurement_report(&report).expect("the report renders");
     let json: Value = serde_json::from_str(
         &render_measurement_report_json(&report).expect("the JSON view renders"),
@@ -602,8 +606,12 @@ fn tc_479_207_open_qualifiers_render_as_counterevidence_and_gaps_render_apart() 
     let base = retained_record();
     publish(repo, &base).expect("the retained record is admissible");
 
-    let report =
-        build_measurement_report(&DiskMeasurement::new(repo), repo).expect("the report builds");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(repo),
+        repo,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds");
     let human = render_measurement_report(&report).expect("the report renders");
 
     let counterevidence = section(&human, "#### Counterevidence");
@@ -662,9 +670,12 @@ fn tc_479_207_open_qualifiers_render_as_counterevidence_and_gaps_render_apart() 
     closed["confounders"][0]["disposition"] = json!("controlled");
     closed["confounders"][1]["disposition"] = json!("not_applicable");
     publish(controlled.path(), &closed).expect("a record with closed qualifiers is admissible");
-    let closed_report =
-        build_measurement_report(&DiskMeasurement::new(controlled.path()), controlled.path())
-            .expect("the report builds");
+    let closed_report = build_measurement_report(
+        &DiskMeasurement::new(controlled.path()),
+        controlled.path(),
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds");
     assert_eq!(
         section(
             &render_measurement_report(&closed_report).expect("the report renders"),
@@ -687,8 +698,12 @@ fn tc_479_208_no_view_computes_an_aggregate_trust_or_quality_score() {
     let repo = temporary.path();
     publish(repo, &retained_record()).expect("the retained record is admissible");
 
-    let report =
-        build_measurement_report(&DiskMeasurement::new(repo), repo).expect("the report builds");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(repo),
+        repo,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("the report builds");
     let human = render_measurement_report(&report).expect("the report renders");
     let rendered_json = render_measurement_report_json(&report).expect("the JSON view renders");
 
@@ -752,16 +767,23 @@ fn tc_479_209_a_reordered_store_renders_byte_identically_in_both_views() {
     let read_back = stored(repo);
     assert_eq!(read_back.len(), 3, "three retained records");
 
+    let built = |records: &[InterventionExperimentRecord]| {
+        build_measurement_report_from(
+            repo,
+            &[],
+            &[],
+            records,
+            &[],
+            &quoin_measurement::IntakeOrder::none(),
+        )
+    };
     // Every ordering of the store's input renders the same bytes: the report is
     // a function of what is retained, not of the order it arrived in.
-    let expected_human = render_measurement_report(
-        &build_measurement_report_from(repo, &[], &[], &read_back, &[]).expect("the report builds"),
-    )
-    .expect("the report renders");
-    let expected_json = render_measurement_report_json(
-        &build_measurement_report_from(repo, &[], &[], &read_back, &[]).expect("the report builds"),
-    )
-    .expect("the JSON view renders");
+    let expected_human = render_measurement_report(&built(&read_back).expect("the report builds"))
+        .expect("the report renders");
+    let expected_json =
+        render_measurement_report_json(&built(&read_back).expect("the report builds"))
+            .expect("the JSON view renders");
 
     // Anti-vacuity: permutation-invariance alone is satisfied by a renderer
     // that emits the same empty string for every ordering. Anchor the expected
@@ -800,8 +822,7 @@ fn tc_479_209_a_reordered_store_renders_byte_identically_in_both_views() {
                     .iter()
                     .map(|index| read_back[*index].clone())
                     .collect();
-                let report = build_measurement_report_from(repo, &[], &[], &permuted, &[])
-                    .expect("the report builds");
+                let report = built(&permuted).expect("the report builds");
                 assert_eq!(
                     render_measurement_report(&report).expect("the report renders"),
                     expected_human,
@@ -1022,8 +1043,12 @@ fn tc_479_212_an_empty_intervention_store_preserves_measurement_reporting() {
             .exists(),
         "this case needs a repository with no interventions directory"
     );
-    let report = build_measurement_report(&DiskMeasurement::new(repo), repo)
-        .expect("a report builds over a store with no interventions");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(repo),
+        repo,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("a report builds over a store with no interventions");
     assert!(
         report.interventions.is_empty(),
         "there is nothing to report"
@@ -1058,7 +1083,8 @@ fn tc_479_212_an_empty_intervention_store_preserves_measurement_reporting() {
         "there is no intervention evidence to read"
     );
     let legacy_report =
-        build_measurement_report(&source, &legacy).expect("the legacy repository still reports");
+        build_measurement_report(&source, &legacy, &quoin_measurement::IntakeOrder::none())
+            .expect("the legacy repository still reports");
     assert!(
         !legacy_report.current.is_empty(),
         "the legacy measurement rows survive an empty intervention store"

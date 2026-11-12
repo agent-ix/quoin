@@ -1047,7 +1047,8 @@ fn tc_969_006_the_report_shows_an_unverified_artifact_next_to_its_provenance() {
         .expect("a label-only artifact is admitted");
 
     let source = DiskMeasurement::new(root);
-    let report = build_measurement_report(&source, root).expect("the report builds");
+    let report = build_measurement_report(&source, root, &quoin_measurement::IntakeOrder::none())
+        .expect("the report builds");
 
     let rendered = render_measurement_report(&report).expect("the report renders");
     assert!(
@@ -1444,11 +1445,13 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
     // shape `tests/measurement.test.ts:244` built by hand.
     let bravo = repo_in_tree("bravo");
     let source = DiskMeasurement::new(&bravo);
-    let report = build_measurement_report(&source, &bravo).expect("bravo's report builds");
+    let report = build_measurement_report(&source, &bravo, &quoin_measurement::IntakeOrder::none())
+        .expect("bravo's report builds");
     let first = render_measurement_report(&report).expect("the report renders");
     assert_eq!(
         render_measurement_report(
-            &build_measurement_report(&source, &bravo).expect("bravo's report builds again")
+            &build_measurement_report(&source, &bravo, &quoin_measurement::IntakeOrder::none())
+                .expect("bravo's report builds again")
         )
         .expect("the report renders again"),
         first,
@@ -1469,8 +1472,12 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
     // dimensional observation, the gap count, the provenance line and the
     // factual attention items.
     let alpha = repo_in_tree("alpha");
-    let report = build_measurement_report(&DiskMeasurement::new(&alpha), &alpha)
-        .expect("alpha's report builds");
+    let report = build_measurement_report(
+        &DiskMeasurement::new(&alpha),
+        &alpha,
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .expect("alpha's report builds");
     let rendered = render_measurement_report(&report).expect("alpha's report renders");
     for literal in [
         "| Metric | Plan | Stage | Current |",

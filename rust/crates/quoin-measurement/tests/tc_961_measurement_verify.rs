@@ -914,9 +914,14 @@ fn tc_961_027_a_count_plan_is_recomputed_from_matched() {
 fn tc_961_028_a_shallow_history_attests_no_order_and_says_where_the_order_came_from() {
     let accepted = case("right/accept");
     let lone = in_order(&accepted);
+    // A shallow history ranks no position (`IntakeOrder::rank`).
+    let unranked: Vec<Ranked<'_>> = lone
+        .iter()
+        .map(|ranked| Ranked::new(ranked.collection, None))
+        .collect();
     let shallow = verify(
         &plan("MP-961"),
-        &lone,
+        &unranked,
         TamperFacts::default(),
         OrderSource::GitShallow,
         None,

@@ -117,8 +117,15 @@ fn reason_of(
         collection(plans, 0, population),
         collection(plans, 1, population),
     ];
-    let report =
-        build_measurement_report_from(Path::new("/repo"), plans, &collections, &[], &[]).unwrap();
+    let report = build_measurement_report_from(
+        Path::new("/repo"),
+        plans,
+        &collections,
+        &[],
+        &[],
+        &quoin_measurement::IntakeOrder::none(),
+    )
+    .unwrap();
     report.current[0]
         .stage_verdict
         .as_ref()
