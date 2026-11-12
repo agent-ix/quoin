@@ -13,6 +13,7 @@
 
 pub(crate) mod commands;
 pub(crate) mod manifests;
+pub(crate) mod span_breadth;
 
 use std::collections::BTreeSet;
 use std::io::Read;
@@ -87,7 +88,7 @@ pub(crate) fn text(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).into_owned()
 }
 
-fn repository() -> PathBuf {
+pub(crate) fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
 }
 
@@ -112,6 +113,20 @@ pub(crate) fn plan(id: &str) -> MeasurementPlan {
 /// and the checker accepts it. Keeps the admitted collection when
 /// `NFR_COLLECTION_OUT` names a directory.
 pub(crate) fn assert_accepted(id: &str, probed: &Probed) {
+    let verdict = verdict(id, probed);
+    assert_eq!(
+        (verdict.verdict, &verdict.reasons),
+        (Verdict::Accept, &vec![]),
+        "{id}: {:?}",
+        verdict.findings
+    );
+}
+
+/// Check `probed` against the authored plan `id` as [`assert_accepted`] does,
+/// and return the checker's verdict without requiring it to be an accept: a
+/// measured value below the plan's bar is a result, an unstated population is
+/// not.
+pub(crate) fn verdict(id: &str, probed: &Probed) -> quoin_measurement::verify::MeasurementVerdict {
     let plan = plan(id);
     let declared: BTreeSet<String> = plan
         .statistical_design
@@ -131,17 +146,17 @@ pub(crate) fn assert_accepted(id: &str, probed: &Probed) {
     let value = matched as f64 / examined as f64;
     let candidate = json!({
         "schemaVersion": 2,
-        "collectionId": format!("nfr-{id}"),
+        "collectionId": format!("population-{id}"),
         "subject": "quoin",
         "scope": { "ids": examined },
-        "toolIdentity": "quoin-cli NFR probes",
+        "toolIdentity": "quoin-cli population probes",
         "toolVersion": format!("quoin-cli {} (engine tc_3003)", env!("CARGO_PKG_VERSION")),
         "timestamp": "2026-11-11T00:00:00.000Z",
         "environment": { "runner": "cargo test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
             "buildProfile": "debug",
-            "capabilities": ["nfr.probe"],
+            "capabilities": ["population.probe"],
             "artifacts": [plan.path],
         },
         "observations": [observation(&plan, value, probed)],
@@ -161,19 +176,13 @@ pub(crate) fn assert_accepted(id: &str, probed: &Probed) {
         .expect("the collection is writable");
     }
 
-    let verdict = verify(
+    verify(
         &plan,
         &[Ranked::new(&admitted, Some(0))],
         TamperFacts::default(),
         OrderSource::CallerSupplied,
         None,
-    );
-    assert_eq!(
-        (verdict.verdict, &verdict.reasons),
-        (Verdict::Accept, &vec![]),
-        "{id}: {:?}",
-        verdict.findings
-    );
+    )
 }
 
 fn observation(plan: &MeasurementPlan, value: f64, probed: &Probed) -> Value {

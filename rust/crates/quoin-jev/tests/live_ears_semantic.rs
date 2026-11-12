@@ -329,27 +329,86 @@ async fn the_ears_lens_gate_mp_229() {
     );
     assert!(m6.input_tokens > 0, "the M6 pass never reached the service");
 
+    record_ears_gate(
+        "shipped",
+        margin,
+        defect_r,
+        no_defect_r,
+        forward_delta,
+        mp225,
+    );
     // ---- GATE ASSERTIONS — copied verbatim from MP-229 ----
     assert!(
-        margin > 0.0,
+        bar_margin(margin),
         "MP-229 bar 1 (MP-222 margin > 0): got {margin:+.1}pp. The lens scored no better \
          than the best constant predictor on the M2 corpus."
     );
     assert!(
-        defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(defect_r),
         "MP-229 bar 2 (MP-223 defect recall > 0%): got {defect_r:?}. The lens found none of \
          the M2 corpus's labelled defects."
     );
     assert!(
-        no_defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(no_defect_r),
         "MP-229 bar 3 (MP-224 no-defect recall > 0%): got {no_defect_r:?}. The lens is the \
          flag-everything failure PLAT-917 measured on the sibling lens."
     );
     assert!(
-        forward_delta.is_some_and(|v| v > 0.0 && v > mp225),
+        bar_delta(forward_delta, mp225),
         "MP-229 bar 4 (MP-231 forward delta both non-zero and above the MP-225 noise floor): \
          forward delta {forward_delta:?}, MP-225 disagreement {mp225:.1}%. A delta at or below \
          the lens's own repetition noise is not evidence it sees something the engine misses."
+    );
+}
+
+/// MP-229 bar 1: the margin over the best constant predictor is positive.
+fn bar_margin(margin: f64) -> bool {
+    margin > 0.0
+}
+
+/// MP-229 bars 2 and 3: a recall is computed and above zero.
+fn bar_recall(recall: Option<f64>) -> bool {
+    recall.is_some_and(|v| v > 0.0)
+}
+
+/// MP-229 bar 4: the forward delta is non-zero and above the MP-225 noise floor.
+fn bar_delta(forward_delta: Option<f64>, mp225: f64) -> bool {
+    forward_delta.is_some_and(|v| v > 0.0 && v > mp225)
+}
+
+/// Records the four-bar MP-229 verdict of one run as an observation stating the
+/// bars it evaluated and the bars that held. Runs before the assertions, so a
+/// NO-GO is recorded as well.
+fn record_ears_gate(
+    variant: &str,
+    margin: f64,
+    defect_r: Option<f64>,
+    no_defect_r: Option<f64>,
+    forward_delta: Option<f64>,
+    mp225: f64,
+) {
+    use support::gate::{Bar, record};
+    record(
+        "MP-229",
+        variant,
+        &[
+            Bar {
+                plan_id: "MP-222",
+                met: bar_margin(margin),
+            },
+            Bar {
+                plan_id: "MP-223",
+                met: bar_recall(defect_r),
+            },
+            Bar {
+                plan_id: "MP-224",
+                met: bar_recall(no_defect_r),
+            },
+            Bar {
+                plan_id: "MP-231",
+                met: bar_delta(forward_delta, mp225),
+            },
+        ],
     );
 }
 
@@ -537,15 +596,15 @@ async fn the_ears_lens_with_noul_derived_defect_v3() {
     let defect_r = defect_recall(&derived, NO_DEFECT);
     let no_defect_r = no_defect_recall(&derived, NO_DEFECT);
     assert!(
-        margin > 0.0,
+        bar_margin(margin),
         "MP-229 bar 1 (MP-222 margin > 0) on v3-derived: got {margin:+.1}pp"
     );
     assert!(
-        defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(defect_r),
         "MP-229 bar 2 (MP-223 defect recall > 0%) on v3-derived: got {defect_r:?}"
     );
     assert!(
-        no_defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(no_defect_r),
         "MP-229 bar 3 (MP-224 no-defect recall > 0%) on v3-derived: got {no_defect_r:?}"
     );
 }
@@ -913,21 +972,22 @@ async fn the_ears_lens_gate_mp_229_v3() {
         forward_delta.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
     );
 
+    record_ears_gate("v3", margin, defect_r, no_defect_r, forward_delta, mp225);
     // ---- GATE ASSERTIONS — MP-229's four bars, verbatim, on the v3 column ----
     assert!(
-        margin > 0.0,
+        bar_margin(margin),
         "MP-229 bar 1 (MP-222 margin > 0) on v3-derived over the grown corpus: got {margin:+.1}pp"
     );
     assert!(
-        defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(defect_r),
         "MP-229 bar 2 (MP-223 defect recall > 0%) on v3-derived: got {defect_r:?}"
     );
     assert!(
-        no_defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(no_defect_r),
         "MP-229 bar 3 (MP-224 no-defect recall > 0%) on v3-derived: got {no_defect_r:?}"
     );
     assert!(
-        forward_delta.is_some_and(|v| v > 0.0 && v > mp225),
+        bar_delta(forward_delta, mp225),
         "MP-229 bar 4 (MP-231 forward delta non-zero and above the MP-225 noise floor), both \
          re-derived under the v3 rule: forward delta {forward_delta:?}, MP-225 {mp225:.1}%"
     );
@@ -1179,20 +1239,21 @@ async fn run_variant_gate(variant: &str, question_set_json: &str, rule: DefectRu
         m6.flagged.len(),
     );
 
+    record_ears_gate(variant, margin, defect_r, no_defect_r, forward_delta, mp225);
     assert!(
-        margin > 0.0,
+        bar_margin(margin),
         "MP-229 bar 1 (MP-222 margin > 0) on {variant}: got {margin:+.1}pp"
     );
     assert!(
-        defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(defect_r),
         "MP-229 bar 2 (MP-223 defect recall > 0%) on {variant}: got {defect_r:?}"
     );
     assert!(
-        no_defect_r.is_some_and(|v| v > 0.0),
+        bar_recall(no_defect_r),
         "MP-229 bar 3 (MP-224 no-defect recall > 0%) on {variant}: got {no_defect_r:?}"
     );
     assert!(
-        forward_delta.is_some_and(|v| v > 0.0 && v > mp225),
+        bar_delta(forward_delta, mp225),
         "MP-229 bar 4 (MP-231 forward delta non-zero and above MP-225) on {variant}: forward \
          delta {forward_delta:?}, MP-225 {mp225:.1}%"
     );
