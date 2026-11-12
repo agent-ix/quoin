@@ -231,6 +231,7 @@ index; the files are authoritative.
 - [FR-137](./functional/FR-137-detect-and-place-licensed-packs.md) — a module with a restricted clause set is a pack, derived at install, refused from inside a git work tree, and marked in `module list`.
 - [FR-138](./functional/FR-138-packs-never-come-from-hosted-sources.md) — a pack is never installed from a hosted source and never sits in the default module set.
 - [FR-139](./functional/FR-139-pack-writes-nothing-into-a-repository.md) — pack install, list, inspect and remove write only under `IX_HOME`.
+- [FR-140](./functional/FR-140-pack-requirements-mapping-report.md) — `quoin discharge --rmm --pack` reports one requirements mapping matrix per clause set plus a pack index, with no clause text.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
 - [FR-131](./functional/FR-131-percentage-metrics-over-enumerated-population.md) — a percentage metric is taken over a plan-enumerated population its observations must state exactly.
 - [FR-132](./functional/FR-132-paired-run-metrics.md) — a metric that states two runs agree is computed from a paired comparison of two collections under the plan's `paired_run` relation, inconclusive below `minimum_pairs`.
