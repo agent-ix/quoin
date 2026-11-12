@@ -91,6 +91,14 @@ pub trait ModuleHost {
     /// Whatever the registry read returns.
     fn list(&self, home: Option<&Path>) -> Result<Vec<InstalledModule>, ModulesError>;
 
+    /// Whether an installed module is a licensed pack, derived from its clause
+    /// sets on this call and never stored (FR-137).
+    ///
+    /// # Errors
+    /// The module's load error. The caller shows it on that module's row and
+    /// lists every other module regardless.
+    fn is_pack(&self, module: &InstalledModule) -> Result<bool, String>;
+
     /// Install one ad-hoc source, rolling back to the previous version on a
     /// semantic-contract rejection.
     ///

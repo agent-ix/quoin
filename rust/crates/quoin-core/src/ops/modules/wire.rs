@@ -50,13 +50,32 @@ pub struct ListRequest {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ListPayload {
-    /// Every installed module, in registry order.
+    /// Every installed module with its pack verdict, in registry order.
     ///
     /// Registry order and not sorted here: `src/commands/module/list.ts`
     /// printed what the registry held, in the order it held it, and a sort
     /// introduced at the boundary would be a user-visible change smuggled in
     /// under a port.
-    pub modules: Vec<InstalledModule>,
+    pub modules: Vec<ListedModule>,
+}
+
+/// One `list` row: the registry record and the pack verdict beside it.
+///
+/// The verdict is computed on each call (FR-137) and is not part of the
+/// registry record, which a pack shares with every other module.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ListedModule {
+    /// The registry record.
+    #[serde(flatten)]
+    pub module: InstalledModule,
+    /// `true` for a licensed pack, `false` for any other module, `null` when
+    /// the module did not load.
+    pub pack: Option<bool>,
+    /// The load error, present exactly when `pack` is `null`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub load_error: Option<String>,
 }
 
 /// The request accepted by `modules.install`.

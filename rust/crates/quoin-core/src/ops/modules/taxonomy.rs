@@ -76,7 +76,10 @@ const fn core_code(code: ModulesErrorCode) -> Option<CoreErrorCode> {
         | ModulesErrorCode::UnsafeTreePath
         | ModulesErrorCode::SemanticContractViolation
         | ModulesErrorCode::SemanticContractUnavailable
-        | ModulesErrorCode::InstalledModuleInvalid => CoreErrorCode::Refused,
+        | ModulesErrorCode::InstalledModuleInvalid
+        | ModulesErrorCode::PackInsideWorkTree
+        | ModulesErrorCode::PackSourceRefused
+        | ModulesErrorCode::PackLoadFailed => CoreErrorCode::Refused,
 
         ModulesErrorCode::RegistryUnreadable
         | ModulesErrorCode::RegistryUnwritable
@@ -135,6 +138,9 @@ mod tests {
             ModulesErrorCode::SemanticContractViolation,
             ModulesErrorCode::SemanticContractUnavailable,
             ModulesErrorCode::InstalledModuleInvalid,
+            ModulesErrorCode::PackInsideWorkTree,
+            ModulesErrorCode::PackSourceRefused,
+            ModulesErrorCode::PackLoadFailed,
         ];
         let internal = [
             ModulesErrorCode::RegistryUnreadable,

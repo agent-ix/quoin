@@ -17,6 +17,7 @@
 //! |---|---|
 //! | [`source`] | Typed source descriptors and CLI argument parsing |
 //! | [`manifest`] | The committed default module set |
+//! | [`pack`] | The licensed-pack probe seam and the git work-tree walk |
 //! | [`registry`] | `~/.ix/filament/registry.json`, wire-compatible with ts-plugin-kit |
 //! | [`git`] | `gix`-backed fetch and tree extraction, with bounds |
 //! | [`install`] | Installing one entry, with rollback |
@@ -37,6 +38,7 @@ pub mod ids;
 pub mod install;
 pub mod manifest;
 pub mod module_name;
+pub mod pack;
 pub mod paths;
 pub mod reconcile;
 pub mod registry;
@@ -50,6 +52,7 @@ pub use ids::{CommitSha, ModuleName};
 pub use install::{InstallOutcome, ModuleInstaller};
 pub use manifest::{MarketplaceEntry, MarketplaceManifest};
 pub use module_name::read_module_name;
+pub use pack::{NoPacks, PackProbe, RestrictedSet};
 pub use paths::{InstallPaths, IxHome};
 pub use reconcile::{ReconcileMode, ReconcileReport};
 pub use registry::{InstalledModule, ModuleRegistry};

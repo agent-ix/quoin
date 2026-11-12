@@ -18,7 +18,10 @@ use crate::error::{ModulesError, RollbackOutcome};
 use crate::git::{GitResolver, Revision};
 use crate::ids::ModuleName;
 use crate::manifest::MarketplaceEntry;
-use crate::module_name::read_module_name;
+use crate::module_name::{locate_manifest, read_module_name};
+use crate::pack::{
+    PackProbe, RestrictedSet, enclosing_work_tree, enclosing_work_tree_of_future_dir,
+};
 use crate::paths::InstallPaths;
 use crate::registry::{InstalledModule, ModuleRegistry};
 use crate::semantic::SemanticGate;
@@ -35,14 +38,26 @@ pub struct InstallOutcome {
 
 /// Installs modules into one home.
 ///
-/// Both collaborators are constructor arguments rather than defaults: a
-/// resolver so the network is a seam the tests can stand in for, and a gate
+/// Every collaborator is a constructor argument rather than a default: a
+/// resolver so the network is a seam the tests can stand in for, a gate
 /// because [`PermissiveGate`](crate::semantic::PermissiveGate) accepting
-/// everything must be a choice a caller made, not one it inherited.
+/// everything must be a choice a caller made, not one it inherited, and a pack
+/// probe because [`NoPacks`](crate::pack::NoPacks) waving a licensed module
+/// through must be a choice as well.
 pub struct ModuleInstaller<'a> {
     paths: InstallPaths,
     resolver: &'a dyn GitResolver,
     gate: &'a dyn SemanticGate,
+    packs: &'a dyn PackProbe,
+}
+
+/// Which door an install came through.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Origin {
+    /// An entry of the default module set.
+    Default,
+    /// A source the caller named.
+    AdHoc,
 }
 
 impl<'a> ModuleInstaller<'a> {
@@ -52,11 +67,13 @@ impl<'a> ModuleInstaller<'a> {
         paths: InstallPaths,
         resolver: &'a dyn GitResolver,
         gate: &'a dyn SemanticGate,
+        packs: &'a dyn PackProbe,
     ) -> Self {
         Self {
             paths,
             resolver,
             gate,
+            packs,
         }
     }
 
@@ -96,7 +113,12 @@ impl<'a> ModuleInstaller<'a> {
     /// module — carrying what happened to the previous version — plus any
     /// resolution, materialization or registry failure.
     pub fn install(&self, entry: &MarketplaceEntry) -> Result<InstallOutcome, ModulesError> {
-        self.install_source(&entry.source, Some(&entry.name), entry.path.as_deref())
+        self.install_source(
+            &entry.source,
+            Some(&entry.name),
+            entry.path.as_deref(),
+            Origin::Default,
+        )
     }
 
     /// Install an ad-hoc source, deriving the module name from its manifest.
@@ -104,7 +126,7 @@ impl<'a> ModuleInstaller<'a> {
     /// # Errors
     /// As [`ModuleInstaller::install`].
     pub fn install_ad_hoc(&self, source: &Source) -> Result<InstallOutcome, ModulesError> {
-        self.install_source(source, None, None)
+        self.install_source(source, None, None, Origin::AdHoc)
     }
 
     fn install_source(
@@ -112,6 +134,7 @@ impl<'a> ModuleInstaller<'a> {
         source: &Source,
         declared_name: Option<&ModuleName>,
         entry_subpath: Option<&str>,
+        origin: Origin,
     ) -> Result<InstallOutcome, ModulesError> {
         source.validate()?;
         let resolved = self.resolve(source)?;
@@ -123,6 +146,7 @@ impl<'a> ModuleInstaller<'a> {
             Some(name) => name.clone(),
             None => read_module_name(&content_root)?,
         };
+        self.refuse_unplaceable_pack(source, origin, &name, &content_root)?;
 
         // Snapshot before touching anything: the materialized copy is
         // overwritten before the gate can read it, so this is the only record
@@ -167,6 +191,68 @@ impl<'a> ModuleInstaller<'a> {
             module: record,
             replaced_previous: previous.is_some(),
         })
+    }
+
+    /// Refuse a pack that may not be installed from here (FR-137, FR-138).
+    ///
+    /// Runs before anything is written, so a refusal leaves the registry and
+    /// the modules directory as they were. A module whose clause sets do not
+    /// load is an error and is never taken for a non-pack.
+    fn refuse_unplaceable_pack(
+        &self,
+        source: &Source,
+        origin: Origin,
+        name: &ModuleName,
+        content_root: &Path,
+    ) -> Result<(), ModulesError> {
+        let manifest = locate_manifest(content_root)?;
+        let module_dir = manifest.parent().unwrap_or(content_root);
+        let restricted = self.packs.restricted_sets(module_dir).map_err(|detail| {
+            ModulesError::PackLoadFailed {
+                path: module_dir.to_path_buf(),
+                detail,
+            }
+        })?;
+        if restricted.is_empty() {
+            return Ok(());
+        }
+        let sets = render_sets(&restricted);
+        match (origin, source) {
+            (Origin::Default, _) => Err(ModulesError::PackSourceRefused {
+                name: name.clone(),
+                origin: "the default module set",
+                sets,
+            }),
+            (Origin::AdHoc, Source::Path { .. }) => {
+                let canonical = content_root
+                    .canonicalize()
+                    .unwrap_or_else(|_| content_root.to_path_buf());
+                if let Some(work_tree) = enclosing_work_tree(&canonical) {
+                    return Err(ModulesError::PackInsideWorkTree {
+                        name: name.clone(),
+                        subject: "source directory",
+                        path: canonical,
+                        work_tree,
+                        sets,
+                    });
+                }
+                match enclosing_work_tree_of_future_dir(&self.paths.target_root) {
+                    Some(work_tree) => Err(ModulesError::PackInsideWorkTree {
+                        name: name.clone(),
+                        subject: "modules directory",
+                        path: self.paths.target_root.clone(),
+                        work_tree,
+                        sets,
+                    }),
+                    None => Ok(()),
+                }
+            }
+            (Origin::AdHoc, hosted) => Err(ModulesError::PackSourceRefused {
+                name: name.clone(),
+                origin: hosted.type_name(),
+                sets,
+            }),
+        }
     }
 
     /// Resolve a source to a content directory.
@@ -224,6 +310,14 @@ impl<'a> ModuleInstaller<'a> {
             detail: err.to_string(),
         })
     }
+}
+
+/// The sets as `authority/id@version`, comma separated.
+fn render_sets(sets: &[RestrictedSet]) -> String {
+    sets.iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// A source resolved to a directory, whatever its type.

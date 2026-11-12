@@ -47,6 +47,8 @@ pub(super) struct FakeHost {
     /// (`fail_with`) can stand in for, because it fails the reconcile itself
     /// rather than the re-validation after it.
     pub(super) tampered: Option<&'static str>,
+    /// What `is_pack` answers per module name; a name not listed is not a pack.
+    pub(super) packs: Vec<(&'static str, Result<bool, &'static str>)>,
     pub(super) calls: RefCell<Vec<String>>,
 }
 
@@ -78,6 +80,15 @@ impl ModuleHost for FakeHost {
     fn list(&self, home: Option<&Path>) -> Result<Vec<InstalledModule>, ModulesError> {
         self.record(format!("list({home:?})"));
         self.fail().map_or_else(|| Ok(self.modules.clone()), Err)
+    }
+
+    fn is_pack(&self, module: &InstalledModule) -> Result<bool, String> {
+        self.packs
+            .iter()
+            .find(|(name, _)| *name == module.name.as_str())
+            .map_or(Ok(false), |(_, verdict)| {
+                verdict.map_err(std::borrow::ToOwned::to_owned)
+            })
     }
 
     fn install(
