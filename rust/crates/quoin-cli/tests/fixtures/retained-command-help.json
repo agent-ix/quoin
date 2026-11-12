@@ -634,7 +634,7 @@
       ],
       "exit": 2,
       "stdout": "",
-      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     },
     {
       "kind": "shell",
@@ -646,7 +646,7 @@
       ],
       "exit": 2,
       "stdout": "",
-      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     },
     {
       "kind": "shell",

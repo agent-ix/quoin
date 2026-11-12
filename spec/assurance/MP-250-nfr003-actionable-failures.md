@@ -18,6 +18,7 @@ statistical_design:
       - "advise --module:missing-path"
       - "advise --repo:missing-path"
       - "advise:unknown-flag"
+      - "anomaly:unknown-flag"
       - "assurance:unknown-flag"
       - "catalog list:unknown-flag"
       - "catalog methods:unknown-flag"
