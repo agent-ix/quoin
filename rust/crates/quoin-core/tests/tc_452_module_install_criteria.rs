@@ -162,7 +162,7 @@ fn scratch() -> (tempfile::TempDir, PathBuf) {
 /// install would satisfy the refusal.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-070-AC-6", "TC-1341")]
+#[trace("FR-070-AC-6")]
 #[test]
 fn tc_452_660_a_second_module_claiming_an_installed_package_is_refused_naming_both() {
     let (dir, home) = scratch();

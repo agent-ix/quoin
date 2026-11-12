@@ -75,7 +75,7 @@ fn text(bytes: &[u8]) -> String {
 /// and human listing shapes without mutating migration evidence in place. This
 /// fixture deliberately has no resolved module roots: its contract is the
 /// empty JSON module list and an entirely empty human response.
-#[trace("FR-099", "FR-102", "TC-1650")]
+#[trace("FR-099", "FR-102")]
 #[test]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");

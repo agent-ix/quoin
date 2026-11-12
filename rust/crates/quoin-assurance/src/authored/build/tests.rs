@@ -267,7 +267,7 @@ fn tc_1131_a_proposed_argument_opens_the_top_claim() {
 /// [`request`] resolves it by default.
 ///
 /// Provenance: PLAT-966
-#[trace("FR-047-AC-8", "TC-1925")]
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1925_a_claim_backed_by_resolved_evidence_passes_clean() {
     let view = build(argument(), vec![decision()], AS_OF);
@@ -278,7 +278,7 @@ fn tc_1925_a_claim_backed_by_resolved_evidence_passes_clean() {
 /// A claim with no evidence references at all is unbacked.
 ///
 /// Provenance: PLAT-966
-#[trace("FR-047-AC-8", "TC-1925")]
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1925_a_claim_with_no_evidence_references_is_unbacked() {
     let claim_without_refs = with(
@@ -302,7 +302,7 @@ fn tc_1925_a_claim_with_no_evidence_references_is_unbacked() {
 /// unbacked, distinctly from citing nothing.
 ///
 /// Provenance: PLAT-966
-#[trace("FR-047-AC-8", "TC-1925")]
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1925_a_claim_citing_an_unresolved_reference_is_unbacked() {
     let view = build_authored_argument_view(&request_with_evidence(
@@ -325,7 +325,7 @@ fn tc_1925_a_claim_citing_an_unresolved_reference_is_unbacked() {
 /// the reason names the auditor's own word for each of the two states.
 ///
 /// Provenance: PLAT-966
-#[trace("FR-047-AC-8", "TC-1925")]
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1925_a_claim_citing_stale_or_vacuous_evidence_is_unbacked() {
     let cases = [
@@ -358,7 +358,7 @@ fn tc_1925_a_claim_citing_stale_or_vacuous_evidence_is_unbacked() {
 /// reference between them contributes nothing.
 ///
 /// Provenance: PLAT-966
-#[trace("FR-047-AC-8", "TC-1925")]
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1925_reports_every_failing_reference_in_authored_order() {
     let claim = with(
@@ -405,7 +405,7 @@ fn tc_1925_reports_every_failing_reference_in_authored_order() {
 /// `resolved` entry mask a `stale` one.
 ///
 /// Provenance: PLAT-966
-#[trace("FR-047-AC-8", "TC-1925")]
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1925_a_duplicate_evidence_index_entry_is_refused() {
     let mut evidence = vec![EvidenceIndexEntry {

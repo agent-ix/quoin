@@ -123,7 +123,7 @@ fn refusal(corpus: &GradedCorpus) -> String {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-15", "TC-2013")]
+#[trace("FR-108-AC-15")]
 #[test]
 fn tc_2013_every_member_comes_from_the_input() {
     let input = corpus(items(0));
@@ -142,7 +142,7 @@ fn tc_2013_every_member_comes_from_the_input() {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-16", "TC-2014")]
+#[trace("FR-108-AC-16")]
 #[test]
 fn tc_2014_the_first_observation_is_the_ratio_aggregate() {
     // Three items disagree; one more agrees only through a contested reading.
@@ -171,7 +171,7 @@ fn tc_2014_the_first_observation_is_the_ratio_aggregate() {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-17", "TC-2015")]
+#[trace("FR-108-AC-17")]
 #[test]
 fn tc_2015_item_rows_are_the_item_observations_for_the_same_items() {
     let input = corpus(items(2));
@@ -265,7 +265,7 @@ fn decide(wrong: usize) -> quoin_measurement::verify::MeasurementVerdict {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-17", "TC-2016")]
+#[trace("FR-108-AC-17")]
 #[test]
 fn tc_2016_the_stored_collection_is_decided_against_a_recomputed_baseline() {
     // 15 of 15 clears 0.8 + 0.05; 12 of 15 equals the baseline and does not.
@@ -292,7 +292,7 @@ fn tc_2016_the_stored_collection_is_decided_against_a_recomputed_baseline() {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-18", "TC-2017")]
+#[trace("FR-108-AC-18")]
 #[test]
 fn tc_2017_every_refusal_names_its_field_and_returns_nothing() {
     let base = || corpus(items(0));
@@ -351,7 +351,7 @@ fn tc_2017_every_refusal_names_its_field_and_returns_nothing() {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-19", "TC-2018")]
+#[trace("FR-108-AC-19")]
 #[test]
 fn tc_2018_the_document_is_deterministic_and_independent_of_item_order() {
     let input = corpus(items(2));
@@ -382,7 +382,7 @@ fn tc_2018_the_document_is_deterministic_and_independent_of_item_order() {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-20", "TC-2019")]
+#[trace("FR-108-AC-20")]
 #[test]
 fn tc_2019_a_disagreement_counts_in_examined_and_never_in_matched() {
     let mut input = items(0);
@@ -399,7 +399,7 @@ fn tc_2019_a_disagreement_counts_in_examined_and_never_in_matched() {
 }
 
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-22", "TC-2021")]
+#[trace("FR-108-AC-22")]
 #[test]
 fn tc_2021_the_function_states_no_build_profile_of_its_own() {
     for stack in [
@@ -418,7 +418,7 @@ fn tc_2021_the_function_states_no_build_profile_of_its_own() {
 /// constant-predictor baseline over the two families.
 ///
 /// Provenance: PLAT-1021
-#[trace("FR-108-AC-21", "TC-2020")]
+#[trace("FR-108-AC-21")]
 #[test]
 fn tc_2020_the_harness_target_plan_declares_a_constant_predictor_baseline() {
     let document =

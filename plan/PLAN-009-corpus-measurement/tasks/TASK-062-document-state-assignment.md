@@ -8,22 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-086"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1512"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1513"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1514"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1515"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1516"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1517"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1573"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1574"
-    type: verifies
 ---
 
 # TASK-062: One measurement state per corpus document

@@ -174,7 +174,7 @@ mod tests {
     use super::*;
     use ix_trace_rs::trace;
 
-    #[trace("FR-037-AC-12", "TC-217")]
+    #[trace("FR-037-AC-12")]
     #[test]
     fn tc_378_240_a_bundle_with_no_declarations_is_unchecked_not_passed() {
         let Ok(temp) = tempfile::tempdir() else {

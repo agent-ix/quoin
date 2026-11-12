@@ -195,7 +195,7 @@ mod tests {
     /// given a fabricated symbol that binds to nothing.
     ///
     /// Provenance: quoin#458
-    #[trace("FR-041-AC-1", "FR-041-AC-5", "FR-041-CON-4", "TC-235")]
+    #[trace("FR-041-AC-1", "FR-041-AC-5", "FR-041-CON-4")]
     #[test]
     fn tc_458_230_cyclonedx_prefers_purl_then_name_at_version_then_name() {
         let result = parse_sbom(
@@ -237,7 +237,7 @@ mod tests {
     }
 
     /// Provenance: quoin#458
-    #[trace("FR-041-AC-3", "TC-233")]
+    #[trace("FR-041-AC-3")]
     #[test]
     fn tc_458_232_an_empty_inventory_is_entries_zero_and_not_a_refusal() {
         // The distinction the record type exists to make: a tool that ran and
@@ -250,7 +250,7 @@ mod tests {
     /// adapter simply could not read must not masquerade as one.
     ///
     /// Provenance: quoin#458
-    #[trace("FR-041-AC-4", "TC-234")]
+    #[trace("FR-041-AC-4")]
     #[test]
     fn tc_458_233_an_unrecognised_document_names_its_first_six_keys() {
         let error = parse_sbom(r#"{"a":1,"b":2,"c":3,"d":4,"e":5,"f":6,"g":7}"#).unwrap_err();

@@ -88,7 +88,7 @@ against another.
 - The advisor SHALL report the rule and value behind every recommendation. A
   recommendation whose reason is not shown cannot be argued with.
 - The advisor SHALL normalize an authored cell before comparing it, so
-  `Test (TC-707)` compares as `Test`.
+  `Test` compares as `Test`.
 - The advisor SHALL treat a match on a recommended method's **class** as
   agreement, because `Test` is a legitimate authored answer for any Test-class
   method.
@@ -116,30 +116,30 @@ against another.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-031-AC-1 | The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty. | Test (TC-1984) |
-| FR-031-AC-2 | An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test. | Test (TC-1985) |
-| FR-031-AC-3 | An obligation whose statement carries temporal phrasing is recommended runtime monitoring and model checking. | Test (TC-1986) |
-| FR-031-AC-4 | An obligation whose statement carries reliability phrasing is recommended fault injection. | Test (TC-1987) |
-| FR-031-AC-5 | A round-trip property shape is recommended property-based and metamorphic testing, and recommendations are ordered by matching-rule count. | Test (TC-1988) |
-| FR-031-AC-6 | An authored method no recommendation covers is flagged as a mismatch, and an authored method matching a recommended method's class is not. | Test (TC-1989) |
-| FR-031-AC-7 | An obligation matching no rule is reported inconclusive with no recommendations and no mismatch. | Test (TC-135) |
-| FR-031-AC-8 | A method whose rule names an axis the advisor cannot observe is still recommended on the axes it can, with only the observable reasons reported. | Test (TC-136) |
-| FR-031-AC-9 | A module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module. | Test (TC-133) |
-| FR-031-AC-10 | The advisor is reachable from a command: `quoin advise` derives the obligations from `quire coverage --json`, reads each criterion's FR-052 property shape from `quire properties --json`, and emits one recommendation set per obligation, with `--mismatch-only`, `--inconclusive-only` and `--json`. | Test (TC-150) |
-| FR-031-AC-11 | A `quire properties` run that exits non-zero because some input document failed to resolve still contributes the shapes it did emit. Two untyped asset files must not cost the whole `property_shapes` axis. | Test (TC-150) |
-| FR-031-AC-12 | Every `characteristics` value the active catalog declares is producible by some fact source, or is listed as exempt with a reason. A value asked for and never produced fails the check by name, alongside the methods it strands. | Test (TC-247) |
-| FR-031-AC-13 | No method keyed solely on `characteristics` is unreachable by every possible statement, unless it is declared unreachable with a reason. | Test (TC-248) |
-| FR-031-AC-14 | Characteristics are read from a statement's prose: a markdown link's **target** contributes nothing, its text does. | Test (TC-249) |
-| FR-031-AC-15 | `high-criticality` is minted from the obligation's own declared criticality value, never from a threshold the engine chose. | Test (TC-250) |
-| FR-031-AC-16 | The join check carries no exemption for a `characteristics` value the active catalog no longer declares. | Test (TC-251) |
-| FR-031-AC-17 | A statement naming a magic-value comparison, constant-time behaviour, or equivalence with a reference implementation mints the corresponding characteristic; a function signature and a recorded-snapshot comparison mint neither of the first or last. | Test (TC-252) |
-| FR-031-AC-18 | An obligation with a binding and no fault-detection score mints `fault-detection-unmeasured`; one whose weakest bound score is below 1 mints `fault-detection-failed`; one with no binding, and one whose evidence was not consulted, mint neither. | Test (TC-253) |
-| FR-031-AC-19 | The obligation's structured `parameters` reach the advisor: a `target` or `threshold` key mints `quantified-threshold` regardless of the statement's wording, and parameters carrying neither key mint nothing. | Test (TC-266) |
-| FR-031-AC-20 | A hyphenated compound is one token: a characteristic keyword appearing as a fragment of one (`unsafe` in `unsafe-audit`) mints nothing, while a regex naming the whole compound (`memory-safe`, `thread-safety`, `use-after-free`) still matches it. | Test (TC-267) |
-| FR-031-AC-21 | A statement claiming an architectural fact in the corpus's own wording — a zero-dependencies declaration, a dependency-check rejection, an acyclicity constraint, an architecture-absence claim — mints `layering` or `module-boundary`, so `architecture-conformance` is reachable; `top-level claim` mints neither. | Test (TC-268) |
-| FR-031-AC-22 | The advisor distinguishes three states rather than two: an authored value the engine's `uncatalogued-verification-method` diagnostic names — joined by the diagnostic's `value`, byte-equal to the obligation's `method` — is reported **uncatalogued** and never as a mismatch; a declared method or class not among the recommendations remains a **mismatch**; an obligation no rule matched remains **inconclusive**, and the uncatalogued fact survives silence rather than being consumed by it. | Test (TC-273, TC-274) |
-| FR-031-AC-23 | A payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs CR-091 — sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued. | Test (TC-273, TC-275) |
-| FR-031-AC-24 | `--mismatch-only` returns only genuine method disagreements; combined `--*-only` filters select the union rather than the guaranteed-empty intersection; and the footer tallies mismatch, uncatalogued and inconclusive over the full obligation population, with the shown count reported separately. | Test (TC-274, TC-276) |
+| FR-031-AC-1 | The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty. | Test |
+| FR-031-AC-2 | An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test. | Test |
+| FR-031-AC-3 | An obligation whose statement carries temporal phrasing is recommended runtime monitoring and model checking. | Test |
+| FR-031-AC-4 | An obligation whose statement carries reliability phrasing is recommended fault injection. | Test |
+| FR-031-AC-5 | A round-trip property shape is recommended property-based and metamorphic testing, and recommendations are ordered by matching-rule count. | Test |
+| FR-031-AC-6 | An authored method no recommendation covers is flagged as a mismatch, and an authored method matching a recommended method's class is not. | Test |
+| FR-031-AC-7 | An obligation matching no rule is reported inconclusive with no recommendations and no mismatch. | Test |
+| FR-031-AC-8 | A method whose rule names an axis the advisor cannot observe is still recommended on the axes it can, with only the observable reasons reported. | Test |
+| FR-031-AC-9 | A module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module. | Test |
+| FR-031-AC-10 | The advisor is reachable from a command: `quoin advise` derives the obligations from `quire coverage --json`, reads each criterion's FR-052 property shape from `quire properties --json`, and emits one recommendation set per obligation, with `--mismatch-only`, `--inconclusive-only` and `--json`. | Test |
+| FR-031-AC-11 | A `quire properties` run that exits non-zero because some input document failed to resolve still contributes the shapes it did emit. Two untyped asset files must not cost the whole `property_shapes` axis. | Test |
+| FR-031-AC-12 | Every `characteristics` value the active catalog declares is producible by some fact source, or is listed as exempt with a reason. A value asked for and never produced fails the check by name, alongside the methods it strands. | Test |
+| FR-031-AC-13 | No method keyed solely on `characteristics` is unreachable by every possible statement, unless it is declared unreachable with a reason. | Test |
+| FR-031-AC-14 | Characteristics are read from a statement's prose: a markdown link's **target** contributes nothing, its text does. | Test |
+| FR-031-AC-15 | `high-criticality` is minted from the obligation's own declared criticality value, never from a threshold the engine chose. | Test |
+| FR-031-AC-16 | The join check carries no exemption for a `characteristics` value the active catalog no longer declares. | Test |
+| FR-031-AC-17 | A statement naming a magic-value comparison, constant-time behaviour, or equivalence with a reference implementation mints the corresponding characteristic; a function signature and a recorded-snapshot comparison mint neither of the first or last. | Test |
+| FR-031-AC-18 | An obligation with a binding and no fault-detection score mints `fault-detection-unmeasured`; one whose weakest bound score is below 1 mints `fault-detection-failed`; one with no binding, and one whose evidence was not consulted, mint neither. | Test |
+| FR-031-AC-19 | The obligation's structured `parameters` reach the advisor: a `target` or `threshold` key mints `quantified-threshold` regardless of the statement's wording, and parameters carrying neither key mint nothing. | Test |
+| FR-031-AC-20 | A hyphenated compound is one token: a characteristic keyword appearing as a fragment of one (`unsafe` in `unsafe-audit`) mints nothing, while a regex naming the whole compound (`memory-safe`, `thread-safety`, `use-after-free`) still matches it. | Test |
+| FR-031-AC-21 | A statement claiming an architectural fact in the corpus's own wording — a zero-dependencies declaration, a dependency-check rejection, an acyclicity constraint, an architecture-absence claim — mints `layering` or `module-boundary`, so `architecture-conformance` is reachable; `top-level claim` mints neither. | Test |
+| FR-031-AC-22 | The advisor distinguishes three states rather than two: an authored value the engine's `uncatalogued-verification-method` diagnostic names — joined by the diagnostic's `value`, byte-equal to the obligation's `method` — is reported **uncatalogued** and never as a mismatch; a declared method or class not among the recommendations remains a **mismatch**; an obligation no rule matched remains **inconclusive**, and the uncatalogued fact survives silence rather than being consumed by it. | Test |
+| FR-031-AC-23 | A payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs CR-091 — sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued. | Test |
+| FR-031-AC-24 | `--mismatch-only` returns only genuine method disagreements; combined `--*-only` filters select the union rather than the guaranteed-empty intersection; and the footer tallies mismatch, uncatalogued and inconclusive over the full obligation population, with the shown count reported separately. | Test |
 
 > **CR-026 note (the advisor reads evidence — 2026-08-19):** `concolic-execution`
 > was the last catalog method no requirement could elicit (CR-025 took that from

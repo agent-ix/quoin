@@ -52,7 +52,7 @@ fn plans_come_back_sorted_by_metric_then_id() {
 }
 
 /// Provenance: PLAT-1043
-#[trace("FR-114-AC-1", "TC-1940")]
+#[trace("FR-114-AC-1")]
 #[test]
 fn tc_1940_runnable_procedure_must_be_a_protected_repo_file() {
     let front = "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\

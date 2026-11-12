@@ -10,14 +10,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-062"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1249"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1250"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1254"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1255"
-    type: verifies
 ---
 
 # TASK-021: Build fan-out projections (churn withdrawn, PLAT-1213)

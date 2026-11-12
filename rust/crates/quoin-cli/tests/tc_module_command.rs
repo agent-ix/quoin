@@ -305,7 +305,7 @@ fn typed_consumer(scratch: &Path, refs: &[&str]) -> PathBuf {
 /// An installed importer that lists or `$ref`s a type its installed provider
 /// does not export is reported with `semantic.unknown-import-type` for each,
 /// and the command exits non-zero.
-#[trace("FR-124-AC-9", "TC-2135")]
+#[trace("FR-124-AC-9")]
 #[test]
 fn tc_212_001_inspect_reports_unknown_import_types_for_list_and_ref() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -342,7 +342,7 @@ fn tc_212_001_inspect_reports_unknown_import_types_for_list_and_ref() {
 
 /// An import no `$ref` references is listed as a warning, and a run whose only
 /// finding is that warning exits zero.
-#[trace("FR-124-AC-9", "TC-2135")]
+#[trace("FR-124-AC-9")]
 #[test]
 fn tc_212_002_inspect_lists_an_unused_import_as_a_warning_and_exits_zero() {
     let scratch = tempfile::tempdir().expect("scratch root is created");

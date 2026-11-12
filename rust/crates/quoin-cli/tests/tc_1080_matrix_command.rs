@@ -188,7 +188,7 @@ fn statuses(matrix: &Value) -> BTreeMap<String, String> {
 /// A passing binding with a mock inspection, a binding whose run is missing
 /// and no binding at all read as three distinct statuses in one matrix, and
 /// agree with what `quoin evidence audit` reports for the same tree.
-#[trace("FR-115-AC-6", "FR-115-AC-14", "TC-1969", "TC-1977")]
+#[trace("FR-115-AC-6", "FR-115-AC-14")]
 #[test]
 fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
     let fixture = populated();
@@ -250,7 +250,7 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
 
 /// Markdown by default, canonical JSON under `--json`, both byte-identical
 /// across two runs.
-#[trace("FR-115-AC-10", "FR-115-AC-11", "TC-1973", "TC-1974")]
+#[trace("FR-115-AC-10", "FR-115-AC-11")]
 #[test]
 fn tc_1080_201_renders_markdown_and_canonical_json_deterministically() {
     let fixture = populated();
@@ -276,7 +276,7 @@ fn tc_1080_201_renders_markdown_and_canonical_json_deterministically() {
 }
 
 /// A module declaring no `obligations:` source renders the reason and exits 0.
-#[trace("FR-115-AC-11", "TC-1974")]
+#[trace("FR-115-AC-11")]
 #[test]
 fn tc_1080_202_no_obligations_source_renders_the_reason() {
     let without = MODULE.replace(
@@ -323,7 +323,7 @@ fn snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
 }
 
 /// `quoin matrix` leaves `spec/` byte-for-byte as it found it.
-#[trace("FR-115-AC-12", "FR-115-CON-3", "TC-1975")]
+#[trace("FR-115-AC-12", "FR-115-CON-3")]
 #[test]
 fn tc_1080_203_writes_nothing_under_spec() {
     let fixture = populated();
@@ -339,7 +339,7 @@ fn tc_1080_203_writes_nothing_under_spec() {
 
 /// `quoin matrix` never launches `ix-flow`: an `ix-flow` on PATH that would
 /// leave a marker is never run.
-#[trace("FR-115-AC-13", "TC-1976")]
+#[trace("FR-115-AC-13")]
 #[test]
 fn tc_1080_205_never_spawns_ix_flow() {
     let fixture = populated();
@@ -373,7 +373,7 @@ fn tc_1080_205_never_spawns_ix_flow() {
 }
 
 /// Help describes the computed view, not the retired workflow.
-#[trace("FR-115-AC-15", "TC-1978")]
+#[trace("FR-115-AC-15")]
 #[test]
 fn tc_1080_206_help_describes_the_evidence_backed_render() {
     let fixture = repository(MODULE);

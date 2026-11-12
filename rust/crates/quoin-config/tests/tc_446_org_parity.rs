@@ -150,12 +150,7 @@ fn org_of(resolved: &ResolvedOrg) -> Option<&str> {
     "FR-027-AC-3",
     "FR-027-AC-4",
     "FR-027-AC-9",
-    "FR-096",
-    "TC-083",
-    "TC-101",
-    "TC-102",
-    "TC-103",
-    "TC-104"
+    "FR-096"
 )]
 #[test]
 fn tc_446_026_the_document_path_answers_what_the_filesystem_path_answers() {
@@ -220,7 +215,7 @@ fn tc_446_026_the_document_path_answers_what_the_filesystem_path_answers() {
 }
 
 /// Provenance: quoin#446
-#[trace("FR-027-AC-5", "FR-096", "TC-105")]
+#[trace("FR-027-AC-5", "FR-096")]
 #[test]
 fn tc_446_027_a_broken_layer_degrades_identically_and_stops_neither_path() {
     let broken = tree()

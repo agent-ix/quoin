@@ -1,29 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The traceability matrix and the spec's dependency lists make claims that
-//! nothing else checks; this reads them against the repository.
+//! The spec's dependency lists and document ids make claims that nothing else
+//! checks; this reads them against the repository.
 //!
-//! * PLAT-1045: a matrix row marked `✅`/`🚧` must not cite a `*.test.ts` file
-//!   that is not in the repository. A `✅` against a deleted test reads as
-//!   discharged coverage and keeps the criterion from being picked up as work.
-//! * PLAT-119: a `TC-` id names one test case. Two rows sharing an id make
-//!   `Traces To` ambiguous for every resolver that joins on it.
+//! * PLAT-1045: no `FR`, `NFR` or `StR` cites a `*.test.ts` file the repository no
+//!   longer has.
 //! * PLAT-118: every id cited in a `## Dependencies` section resolves to a
 //!   spec document, and a live document does not cite a withdrawn one.
 //!
 //! # What a green run does and does not mean
 //!
-//! Green means no matrix row cites a missing test file, no TC id is shared,
-//! and no dependency dangles or names a withdrawn requirement. It does NOT
-//! mean the matrix is complete, that a cited test asserts its criterion, or
-//! that a stated dependency relationship is true. Those stay review
-//! obligations: both defects PLAT-118 was filed for cited live requirements
-//! correctly and described them wrongly.
+//! Green means no dependency dangles or names a withdrawn requirement, no id
+//! names two documents, and no requirement cites a deleted TypeScript test. It
+//! does NOT mean a stated dependency relationship is true: both defects
+//! PLAT-118 was filed for cited live requirements correctly and described them
+//! wrongly.
 //!
 //! This census carries no `Trace:` tag: it is an engineering check, not an
 //! obligation a requirement states.
 //!
-//! Provenance: PLAT-1045, PLAT-119, PLAT-118
+//! Provenance: PLAT-1045, PLAT-118
 
 #![allow(
     clippy::unwrap_used,
@@ -33,7 +29,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 fn repo_root() -> PathBuf {
@@ -58,122 +54,6 @@ fn files_named(root: &Path, extension: &str, into: &mut Vec<PathBuf>) {
     }
 }
 
-// ---- PLAT-1045 -----------------------------------------------------------
-
-/// Backticked `*.test.ts` names cited on a matrix row.
-fn cited_test_files(row: &str) -> Vec<String> {
-    row.split('`')
-        .skip(1)
-        .step_by(2)
-        .filter(|span| span.ends_with(".test.ts"))
-        .map(str::to_owned)
-        .collect()
-}
-
-/// A row claims coverage when any cell begins with `✅` or `🚧`.
-fn claims_coverage(row: &str) -> bool {
-    row.starts_with('|')
-        && row
-            .split('|')
-            .any(|cell| cell.trim_start().starts_with('✅') || cell.trim_start().starts_with('🚧'))
-}
-
-/// `(line, file)` for every covered row citing a test file not in `present`.
-fn missing_cited_tests(matrix: &str, present: &BTreeSet<String>) -> Vec<(usize, String)> {
-    let mut found = Vec::new();
-    for (index, row) in matrix.lines().enumerate() {
-        if !claims_coverage(row) {
-            continue;
-        }
-        for file in cited_test_files(row) {
-            // A bare name is matched on its file name; a path must match as a suffix.
-            let exists = present
-                .iter()
-                .any(|have| have == &file || have.ends_with(&format!("/{file}")));
-            if !exists {
-                found.push((index + 1, file));
-            }
-        }
-    }
-    found
-}
-
-#[test]
-fn tc_1045_001_no_covered_matrix_row_cites_a_missing_test_file() {
-    let root = repo_root();
-    let matrix = std::fs::read_to_string(root.join("spec/matrix.md")).expect("spec/matrix.md");
-    let mut ts = Vec::new();
-    files_named(&root, ".test.ts", &mut ts);
-    let present: BTreeSet<String> = ts
-        .iter()
-        .map(|p| {
-            p.strip_prefix(&root)
-                .unwrap()
-                .to_string_lossy()
-                .replace('\\', "/")
-        })
-        .collect();
-
-    assert!(
-        matrix.lines().filter(|l| l.starts_with("| TC-")).count() > 100,
-        "anti-vacuity: the matrix must still carry its test-case rows"
-    );
-    let missing = missing_cited_tests(&matrix, &present);
-    assert!(
-        missing.is_empty(),
-        "spec/matrix.md marks these rows covered although the cited test file does not exist \
-         (mark them `❌ Unbacked` or cite a real test): {missing:?}"
-    );
-}
-
-#[test]
-fn tc_1045_002_probe_a_planted_missing_citation_is_caught() {
-    let present = BTreeSet::new();
-    let planted = "| TC-1 | title | Unit | P0 | FR-1-AC-1 | ✅ `ghost.test.ts` |\n\
-                   | TC-2 | title | Unit | P0 | FR-1-AC-2 | ❌ Unbacked — `ghost.test.ts` |";
-    assert_eq!(
-        missing_cited_tests(planted, &present),
-        vec![(1, "ghost.test.ts".to_owned())],
-        "only the covered row is a violation; an Unbacked row may name the file it lost"
-    );
-}
-
-// ---- PLAT-119 ------------------------------------------------------------
-
-fn duplicated_tc_ids(matrix: &str) -> BTreeMap<String, Vec<usize>> {
-    let mut seen: BTreeMap<String, Vec<usize>> = BTreeMap::new();
-    for (index, row) in matrix.lines().enumerate() {
-        if let Some(rest) = row.strip_prefix("| TC-") {
-            let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
-            if !digits.is_empty() && rest[digits.len()..].starts_with(' ') {
-                seen.entry(format!("TC-{digits}"))
-                    .or_default()
-                    .push(index + 1);
-            }
-        }
-    }
-    seen.retain(|_, lines| lines.len() > 1);
-    seen
-}
-
-#[test]
-fn tc_119_001_no_tc_id_names_two_rows() {
-    let matrix = std::fs::read_to_string(repo_root().join("spec/matrix.md")).unwrap();
-    let duplicated = duplicated_tc_ids(&matrix);
-    assert!(
-        duplicated.is_empty(),
-        "these TC ids appear on more than one matrix row: {duplicated:?}"
-    );
-}
-
-#[test]
-fn tc_119_002_probe_a_planted_duplicate_is_caught() {
-    let planted = "| TC-7 | a | Unit | P0 | FR-1-AC-1 | ✅ |\n| TC-70 | b | Unit | P0 | FR-1-AC-2 | ✅ |\n| TC-7 | c | Unit | P0 | FR-1-AC-3 | ✅ |";
-    let duplicated = duplicated_tc_ids(planted);
-    assert_eq!(duplicated.len(), 1);
-    assert_eq!(duplicated["TC-7"], vec![1, 3]);
-}
-
 // ---- PLAT-118 ------------------------------------------------------------
 
 /// Spec documents by id: `true` when the document is withdrawn.
@@ -184,7 +64,7 @@ fn spec_documents(root: &Path) -> BTreeMap<String, Vec<(PathBuf, bool)>> {
     for path in paths {
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
         let text = std::fs::read_to_string(&path).unwrap();
-        // A document not named for its id (`evals.md`, `matrix.md`) declares it in frontmatter.
+        // A document not named for its id (`evals.md`) declares it in frontmatter.
         let Some(id) =
             leading_id(name).or_else(|| frontmatter_id(&text).filter(|id| id.starts_with("TM-")))
         else {
@@ -607,8 +487,8 @@ fn test_ts_mentions(text: &str) -> Vec<(usize, String)> {
 
 /// Documents whose narrative, verification cells and frontmatter evidence are
 /// held to the native suite: everything under the `NFR`, `StR` and `FR` directories. A mention
-/// of a deleted TypeScript suite there reads as live evidence. The matrix and
-/// the review records stay outside the set because they narrate the retirement
+/// of a deleted TypeScript suite there reads as live evidence. The review
+/// records stay outside the set because they narrate the retirement
 /// of those suites by name.
 fn native_only_documents(root: &Path) -> Vec<PathBuf> {
     let mut paths = Vec::new();
@@ -662,40 +542,4 @@ fn tc_1045_008_probe_planted_test_ts_mentions_are_caught() {
             (7, "old.test.ts".to_owned()),
         ]
     );
-}
-
-// ---- PLAT-1274 -----------------------------------------------------------
-
-/// Line numbers of test-case rows whose status cell is a bare `✅`, which
-/// claims coverage without naming the test that provides it.
-fn bare_covered_rows(matrix: &str) -> Vec<usize> {
-    matrix
-        .lines()
-        .enumerate()
-        .filter(|(_, row)| row.starts_with("| TC-") && row.trim_end().ends_with("| ✅ |"))
-        .map(|(index, _)| index + 1)
-        .collect()
-}
-
-#[test]
-fn tc_1045_009_no_test_case_row_is_a_bare_tick() {
-    let matrix = std::fs::read_to_string(repo_root().join("spec/matrix.md")).unwrap();
-    assert!(
-        matrix.lines().filter(|l| l.contains("✅ Backed")).count() > 100,
-        "anti-vacuity: the matrix must still carry backed rows"
-    );
-    let bare = bare_covered_rows(&matrix);
-    assert!(
-        bare.is_empty(),
-        "these test-case rows say `✅` with no citation (cite the tagged Rust test as `✅ Backed — \
-         <crate> <file> :: <test>`, or mark the row `❌ Unbacked`): lines {bare:?}"
-    );
-}
-
-#[test]
-fn tc_1045_010_probe_a_planted_bare_tick_is_caught() {
-    let planted = "| TC-1 | a | Unit | P0 | FR-1-AC-1 | ✅ |\n\
-                   | TC-2 | b | Unit | P0 | FR-1-AC-2 | ✅ Backed — `c` `t.rs` :: `t` |\n\
-                   | TC-3 | c | Unit | P0 | FR-1-AC-3 | ❌ Unbacked — none |";
-    assert_eq!(bare_covered_rows(planted), vec![1]);
 }

@@ -144,7 +144,7 @@ fn refused(population: Value) -> quoin_measurement::MeasurementError {
 /// none reads as before.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-1", "TC-2400")]
+#[trace("FR-131-AC-1")]
 #[test]
 fn tc_2400_a_declared_population_set_is_read_into_the_plan() {
     let (_dir, plans) = plans_from(&plan_document(
@@ -171,7 +171,7 @@ fn tc_2400_a_declared_population_set_is_read_into_the_plan() {
 /// a non-object all refuse the plan load.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-1", "TC-2401")]
+#[trace("FR-131-AC-1")]
 #[test]
 fn tc_2401_a_malformed_population_set_refuses_the_plan_load() {
     for (declaration, expected) in [
@@ -218,7 +218,7 @@ fn tc_2401_a_malformed_population_set_refuses_the_plan_load() {
 /// admitted.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-2", "TC-2402")]
+#[trace("FR-131-AC-2")]
 #[test]
 fn tc_2402_the_exact_set_examined_is_admitted() {
     let (_dir, plans) = plans_from(&plan_document(SET_ABC));
@@ -235,7 +235,7 @@ fn tc_2402_the_exact_set_examined_is_admitted() {
 /// admitted on its count alone; a `not_computed` one is not held to it.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-3", "TC-2403")]
+#[trace("FR-131-AC-3")]
 #[test]
 fn tc_2403_unstated_id_lists_are_refused_and_not_computed_is_exempt() {
     for population in [
@@ -261,7 +261,7 @@ fn tc_2403_unstated_id_lists_are_refused_and_not_computed_is_exempt() {
 /// are malformed.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-3", "TC-2404")]
+#[trace("FR-131-AC-3")]
 #[test]
 fn tc_2404_malformed_id_lists_and_disagreeing_counts_are_refused() {
     for population in [
@@ -287,7 +287,7 @@ fn tc_2404_malformed_id_lists_and_disagreeing_counts_are_refused() {
 /// and the finding names it.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-4", "TC-2405")]
+#[trace("FR-131-AC-4")]
 #[test]
 fn tc_2405_ids_outside_the_declared_set_are_refused() {
     let swapped = json!({
@@ -311,7 +311,7 @@ fn tc_2405_ids_outside_the_declared_set_are_refused() {
 /// the omitted ids are named; a count claiming the whole set does not help.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-4", "TC-2406")]
+#[trace("FR-131-AC-4")]
 #[test]
 fn tc_2406_a_convenient_subset_is_refused_naming_the_omitted_ids() {
     let subset = json!({
@@ -374,7 +374,7 @@ fn verify_observation(population: Value) -> MeasurementObservation {
 /// assessed, an unstated list is inconclusive and the rest reject.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-5", "TC-2407")]
+#[trace("FR-131-AC-5")]
 #[test]
 fn tc_2407_verify_assesses_only_the_declared_population() {
     let set = PopulationSet::new(["a", "b", "c"].map(str::to_owned)).unwrap();
@@ -438,7 +438,7 @@ fn tc_2407_verify_assesses_only_the_declared_population() {
 /// size is bounded: ids are summarised and findings are capped.
 ///
 /// Provenance: PLAT-110
-#[trace("FR-131-AC-6", "TC-2408")]
+#[trace("FR-131-AC-6")]
 #[test]
 fn tc_2408_refusal_output_is_bounded_whatever_the_set_or_the_input() {
     let ids: Vec<String> = (0..2000).map(|n| format!("path-{n:05}")).collect();

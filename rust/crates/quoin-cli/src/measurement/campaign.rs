@@ -174,7 +174,7 @@ mod tests {
     use ix_cli_kit::exit::Outcome;
     use ix_trace_rs::trace;
 
-    #[trace("FR-114-AC-5", "TC-1946")]
+    #[trace("FR-114-AC-5")]
     // Response projection only; the native CLI path has a separate test.
     #[test]
     fn inconclusive_campaign_response_renders_its_structured_receipt() {

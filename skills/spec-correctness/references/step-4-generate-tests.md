@@ -12,11 +12,10 @@ Templates per harness:
 `gap-analysis` step 3 greps for four forms. Every generated test carries **two independent
 carriers**, so a single formatting change cannot break reconciliation:
 
-1. The explicit trace marker carrying the criterion id and the `spec/matrix.md` row's own `TC-` id
-   (`#[trace("FR-027-AC-1", "TC-345")]`, `@pytest.mark.trace("FR-027-AC-1", "TC-345")`,
-   `trace("FR-027-AC-1", "TC-345")`). An id written in a comment or docstring binds nothing
-   (`quire coverage` reports `trace-id-outside-marker`); without the row's TC id the tag is
-   `criterion-tagged-outside-row` and gives no backing.
+1. The explicit trace marker carrying the criterion id
+   (`#[trace("FR-027-AC-1")]`, `@pytest.mark.trace("FR-027-AC-1")`, `trace("FR-027-AC-1")`).
+   An id written in a comment or docstring binds nothing (`quire coverage` reports
+   `trace-id-outside-marker`).
 2. The test function or `describe` name containing the id —
    `fr_027_ac_1_…` in Rust/Python, `"FR-027-AC-1 …"` in TypeScript.
 

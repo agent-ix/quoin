@@ -25,7 +25,7 @@ fn chosen(adapter: Option<&str>, tool: Option<&str>) -> &'static str {
         .name
 }
 
-#[trace("FR-033-AC-1", "TC-151")]
+#[trace("FR-033-AC-1")]
 #[test]
 fn tc_151_the_adapter_is_the_flag_then_the_tool_then_the_entries_shape() {
     assert_eq!(
@@ -37,7 +37,7 @@ fn tc_151_the_adapter_is_the_flag_then_the_tool_then_the_entries_shape() {
     assert_eq!(chosen(None, None), "entries");
 }
 
-#[trace("FR-033-AC-2", "TC-152")]
+#[trace("FR-033-AC-2")]
 #[test]
 fn tc_152_an_unknown_adapter_names_the_available_ones() {
     let error = select_adapter(AdapterSelection {
@@ -52,7 +52,7 @@ fn tc_152_an_unknown_adapter_names_the_available_ones() {
     }
 }
 
-#[trace("FR-033-AC-4", "TC-154")]
+#[trace("FR-033-AC-4")]
 #[test]
 fn tc_154_classname_and_name_join_without_doubling_the_member() {
     let xml = concat!(
@@ -69,7 +69,7 @@ fn tc_154_classname_and_name_join_without_doubling_the_member() {
     assert_eq!(symbols, ["mod::sub::case", "mod::case", "bare"]);
 }
 
-#[trace("FR-033-AC-5", "TC-155")]
+#[trace("FR-033-AC-5")]
 #[test]
 fn tc_155_every_outcome_class_and_declared_trace_ids_are_read() {
     let xml = concat!(
@@ -91,7 +91,7 @@ fn tc_155_every_outcome_class_and_declared_trace_ids_are_read() {
     );
 }
 
-#[trace("FR-033-AC-6", "FR-033-CON-3", "TC-156")]
+#[trace("FR-033-AC-6", "FR-033-CON-3")]
 #[test]
 fn tc_156_no_shipped_run_adapter_names_an_evidence_kind() {
     let xml = r#"<testsuite><testcase classname="t" name="a"/></testsuite>"#;
@@ -103,7 +103,7 @@ fn tc_156_no_shipped_run_adapter_names_an_evidence_kind() {
     assert_eq!((by_name.parse)(entries).unwrap().evidence_kind, None);
 }
 
-#[trace("FR-033-AC-7", "TC-157")]
+#[trace("FR-033-AC-7")]
 #[test]
 fn tc_157_no_testcase_is_an_error_and_an_unnamed_case_is_skipped() {
     assert!(parse_junit("<testsuite/>").is_err());
@@ -124,7 +124,7 @@ fn report(items: &[String]) -> String {
     format!(r#"{{"outcomes":[{}]}}"#, items.join(","))
 }
 
-#[trace("FR-033-AC-8", "TC-158")]
+#[trace("FR-033-AC-8")]
 #[test]
 fn tc_158_the_score_is_per_function_and_leaves_unviable_mutants_out() {
     let raw = report(&[
@@ -158,7 +158,7 @@ fn tc_159_the_outcome_is_the_tools_classification_not_a_threshold() {
     assert_eq!(entries[1].outcome, Outcome::Pass);
 }
 
-#[trace("FR-033-AC-10", "TC-160")]
+#[trace("FR-033-AC-10")]
 #[test]
 fn tc_160_bad_mutation_reports_are_rejected_and_a_timeout_survives() {
     assert!(parse_cargo_mutants("not json").is_err());
@@ -175,7 +175,7 @@ fn tc_160_bad_mutation_reports_are_rejected_and_a_timeout_survives() {
     assert!(timed_out[0].score.unwrap().abs() < f64::EPSILON);
 }
 
-#[trace("FR-033-AC-14", "FR-033-CON-4", "TC-164")]
+#[trace("FR-033-AC-14", "FR-033-CON-4")]
 #[test]
 fn tc_164_the_normalized_entries_shape_is_accepted_with_no_adapter() {
     let selected = select_adapter(AdapterSelection::default()).unwrap();
@@ -228,7 +228,7 @@ const REAL_MUTANTS: &str = include_str!(concat!(
 /// A real cargo-mutants 27.1.0 report: the missed mutants of each function are
 /// kept with the line from the span and the description without its locus
 /// prefix; caught mutants are not.
-#[trace("FR-039-AC-13", "TC-3100")]
+#[trace("FR-039-AC-13")]
 #[test]
 fn tc_3100_a_real_report_keeps_each_missed_mutant_with_line_and_description() {
     let entries = parse_cargo_mutants(REAL_MUTANTS).unwrap().entries;
@@ -267,7 +267,7 @@ fn tc_3100_a_real_report_keeps_each_missed_mutant_with_line_and_description() {
 
 /// A description over the cap is cut in the middle: the head and the
 /// `with <replacement>` tail both survive.
-#[trace("FR-039-AC-13", "TC-3100")]
+#[trace("FR-039-AC-13")]
 #[test]
 fn tc_3100_an_over_long_description_keeps_its_replacement_and_the_cap() {
     use quoin_evidence::types::{MAX_SURVIVOR_CHARS, MAX_SURVIVORS_PER_ENTRY};
@@ -293,7 +293,7 @@ fn tc_3100_an_over_long_description_keeps_its_replacement_and_the_cap() {
 
 /// The bounds hold for every adapter, not only cargo-mutants: the generic
 /// `entries` adapter cannot record unbounded or multi-line survivors.
-#[trace("FR-039-AC-13", "TC-3100")]
+#[trace("FR-039-AC-13")]
 #[test]
 fn tc_3100_the_entries_adapter_bounds_survivors_too() {
     use quoin_evidence::adapters::parse_entries;

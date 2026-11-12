@@ -61,7 +61,7 @@ fn plan_protecting(entries: &[&str]) -> GoverningPlan {
 /// the checker configuration is refused credit with `apparatus_touched`,
 /// whichever of the four the plan protects and the diff reaches, and whether
 /// or not the plan declares the `apparatus-edit` control.
-#[trace("FR-111-AC-1", "TC-1868")]
+#[trace("FR-111-AC-1")]
 #[test]
 fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
     let categories: [(&str, &str, &str); 4] = [
@@ -103,7 +103,7 @@ fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
 /// A diff that does not reach any protected entry passes: no
 /// `apparatus_touched`, and the receipt is exactly what it would have been
 /// with no plan linked at all.
-#[trace("FR-111-AC-2", "TC-1869")]
+#[trace("FR-111-AC-2")]
 #[test]
 fn tc_964_002_a_diff_outside_the_protected_set_is_unaffected() {
     let unlinked = verify_change_assurance(&base_input()).expect("verification succeeds");
@@ -137,7 +137,7 @@ fn tc_964_002_a_diff_outside_the_protected_set_is_unaffected() {
 /// `negative_control_uncaught` rather than silently passing, and the
 /// uncaught control alone leaves the outcome `incomplete` rather than
 /// `invalid`.
-#[trace("FR-111-AC-3", "TC-1870")]
+#[trace("FR-111-AC-3")]
 #[test]
 fn tc_964_003_an_uncatchable_negative_control_is_reported() {
     let mut input = base_input();
@@ -163,7 +163,7 @@ fn tc_964_003_an_uncatchable_negative_control_is_reported() {
 /// A plan that protects apparatus, checked with no diff retained, is
 /// `diff_missing` and `incomplete` — never vacuously `valid` — while the same
 /// missing diff with no plan linked changes nothing.
-#[trace("FR-111-AC-4", "TC-1871")]
+#[trace("FR-111-AC-4")]
 #[test]
 fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
     let mut input = base_input();
@@ -185,7 +185,7 @@ fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
 /// so an auditor reading the written receipt afterward can tell "no plan/diff
 /// was ever given" apart from "one was given and found nothing to refuse"
 /// (PLAT-1015, closing the audit gap PLAT-997 left open).
-#[trace("FR-111-AC-5", "TC-1915")]
+#[trace("FR-111-AC-5")]
 #[test]
 fn tc_1015_005_the_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     let mut linked = base_input();
@@ -222,7 +222,7 @@ fn tc_1015_005_the_receipt_records_governing_plan_id_and_diff_paths_supplied() {
 /// judgment, and that receipt still states which plan and whether a diff it
 /// was asked to be checked against — the omission is auditable on every
 /// receipt, not only on the ones whose record parsed.
-#[trace("FR-111-AC-5", "TC-1915")]
+#[trace("FR-111-AC-5")]
 #[test]
 fn tc_1015_006_a_schema_invalid_receipt_records_the_plan_and_diff() {
     let mut linked = base_input();

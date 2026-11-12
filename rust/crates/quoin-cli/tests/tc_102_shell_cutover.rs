@@ -33,7 +33,7 @@ fn node_sources(path: &Path, found: &mut Vec<PathBuf>) {
 }
 
 /// Provenance: quoin#373, quoin#521
-#[trace("FR-102-AC-6", "TC-1654")]
+#[trace("FR-102-AC-6")]
 #[test]
 fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
     let root = repository_root();

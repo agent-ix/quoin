@@ -170,7 +170,7 @@ fn decided(plan: &MeasurementPlan, runs: &[MeasurementCollection]) -> Measuremen
 /// members.
 ///
 /// Provenance: EA-26
-#[trace("FR-108-AC-11", "TC-1954")]
+#[trace("FR-108-AC-11")]
 #[test]
 fn tc_1954_the_rule_is_judged_at_the_unfavourable_bound() {
     let gate = threshold_plan();
@@ -260,7 +260,7 @@ fn tc_1954_the_rule_is_judged_at_the_unfavourable_bound() {
 /// states an `interval`.
 ///
 /// Provenance: EA-26
-#[trace("FR-108-AC-11", "TC-1955")]
+#[trace("FR-108-AC-11")]
 #[test]
 fn tc_1955_a_plan_without_an_interval_level_is_byte_identical() {
     let plain = load(
@@ -306,7 +306,7 @@ fn tc_1955_a_plan_without_an_interval_level_is_byte_identical() {
 /// interval's `method` changes nothing.
 ///
 /// Provenance: EA-26
-#[trace("FR-108-AC-11", "TC-1956")]
+#[trace("FR-108-AC-11")]
 #[test]
 fn tc_1956_every_run_is_judged_on_its_own_interval() {
     let gate = threshold_plan();
@@ -388,7 +388,7 @@ fn tc_1956_every_run_is_judged_on_its_own_interval() {
 /// point estimate is never used instead.
 ///
 /// Provenance: EA-26
-#[trace("FR-108-AC-12", "TC-1957")]
+#[trace("FR-108-AC-12")]
 #[test]
 fn tc_1957_a_missing_malformed_or_short_interval_is_never_judged_on_the_point_estimate() {
     let gate = threshold_plan();
@@ -456,7 +456,7 @@ fn tc_1957_a_missing_malformed_or_short_interval_is_never_judged_on_the_point_es
 /// member; a valid `interval_level` loads.
 ///
 /// Provenance: EA-26
-#[trace("FR-108-AC-12", "TC-1958")]
+#[trace("FR-108-AC-12")]
 #[test]
 fn tc_1958_a_bad_interval_level_refuses_the_plan_load() {
     for (why, rule) in [
@@ -518,7 +518,7 @@ fn tc_1958_a_bad_interval_level_refuses_the_plan_load() {
 /// decides as before.
 ///
 /// Provenance: EA-26
-#[trace("FR-108-AC-14", "TC-1960")]
+#[trace("FR-108-AC-14")]
 #[test]
 fn tc_1960_a_relative_margin_is_applied_in_verify() {
     // `ge` the prior estimate less a margin of 0.05. Run 1 is 0.5 and run 2
@@ -564,7 +564,7 @@ fn gate_outcome(plan: &MeasurementPlan, runs: &[MeasurementCollection]) -> GateO
 /// `interval_level` are byte-identical.
 ///
 /// Provenance: EA-26
-#[trace("FR-107-AC-10", "TC-1961")]
+#[trace("FR-107-AC-10")]
 #[test]
 fn tc_1961_a_gate_is_decided_on_the_newest_observations_interval() {
     let gate = threshold_plan();
@@ -643,7 +643,7 @@ fn tc_1961_a_gate_is_decided_on_the_newest_observations_interval() {
 /// its outcome.
 ///
 /// Provenance: EA-26
-#[trace("FR-107-AC-10", "TC-1961")]
+#[trace("FR-107-AC-10")]
 #[test]
 fn tc_1961_a_gate_baseline_rule_reads_the_interval_before_the_baseline() {
     let inconclusive = |reason| GateOutcome::Inconclusive(reason);
@@ -705,7 +705,7 @@ fn tc_1961_a_gate_baseline_rule_reads_the_interval_before_the_baseline() {
 /// unchanged.
 ///
 /// Provenance: EA-26
-#[trace("FR-107-AC-11", "TC-1962")]
+#[trace("FR-107-AC-11")]
 #[test]
 fn tc_1962_a_relative_margin_is_applied_by_the_gate() {
     let runs = [

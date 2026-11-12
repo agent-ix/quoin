@@ -37,7 +37,7 @@ const EARS: [&str; 4] = ["MP-222", "MP-223", "MP-224", "MP-231"];
 const GAP: [&str; 3] = ["MP-222", "MP-223", "MP-224"];
 
 /// A run that evaluated every bar is admitted, with the bars it met as matched.
-#[trace("FR-131-AC-14", "TC-3302")]
+#[trace("FR-131-AC-14")]
 #[test]
 fn tc_3302_a_gate_run_that_evaluated_every_bar_is_admitted() {
     for (gate, ids) in [("MP-229", &EARS[..]), ("MP-230", &GAP[..])] {
@@ -64,7 +64,7 @@ fn tc_3302_a_gate_run_that_evaluated_every_bar_is_admitted() {
 
 /// A run that left a bar out, or evaluated one the plan does not name, is
 /// refused at intake.
-#[trace("FR-131-AC-14", "TC-3302")]
+#[trace("FR-131-AC-14")]
 #[test]
 fn tc_3302_a_gate_run_that_skipped_or_invented_a_bar_is_refused() {
     let plan = plan("MP-229");
@@ -87,7 +87,7 @@ fn tc_3302_a_gate_run_that_skipped_or_invented_a_bar_is_refused() {
 
 /// The function the live gates call keeps an admitted observation and writes
 /// nothing for one intake refuses.
-#[trace("FR-131-AC-14", "TC-3302")]
+#[trace("FR-131-AC-14")]
 #[test]
 fn tc_3302_record_writes_an_admitted_observation_and_refuses_an_invalid_one() {
     let out = tempfile::tempdir().unwrap();
@@ -116,14 +116,14 @@ fn tc_3302_record_writes_an_admitted_observation_and_refuses_an_invalid_one() {
 }
 
 /// The default gate (no output directory) accepts an admitted observation.
-#[trace("FR-131-AC-14", "TC-3302")]
+#[trace("FR-131-AC-14")]
 #[test]
 fn tc_3302_record_with_the_default_gate_accepts_a_valid_observation() {
     support::gate::record("MP-230", "shape", &bars(&GAP, &["MP-224"]));
 }
 
 /// The default gate stops a live run whose observation intake refuses.
-#[trace("FR-131-AC-14", "TC-3302")]
+#[trace("FR-131-AC-14")]
 #[test]
 #[should_panic(expected = "intake refused the gate observation")]
 fn tc_3302_record_with_the_default_gate_panics_on_an_invalid_observation() {

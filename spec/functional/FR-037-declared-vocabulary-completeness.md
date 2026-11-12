@@ -97,28 +97,28 @@ tell an owned value from an excused one without opening documents. Filed as `age
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-037-AC-1 | The vocabulary's values are read from module data, not minted. | Test (TC-206) |
-| FR-037-AC-2 | A declaration whose vocabulary cannot be resolved is reported, not dropped. | Test (TC-207) |
-| FR-037-AC-3 | A value no document claims is reported as an unowned gap, at `medium`. | Test (TC-208) |
-| FR-037-AC-4 | An exclusion carrying no written reason is `high` — above the gap it replaces. | Test (TC-209) |
-| FR-037-AC-5 | An exclusion naming a value outside the vocabulary is reported, and excuses nothing. | Test (TC-210) |
-| FR-037-AC-6 | A table row naming the value with a real reason accepts the exclusion. | Test (TC-211) |
-| FR-037-AC-7 | A non-answer is not a reason, and a mention in prose is not a justification. | Test (TC-212) |
-| FR-037-AC-8 | A `high` finding fails; a gap fails only under `--strict`. | Test (TC-213) |
-| FR-037-AC-9 | `quoin completeness` reports the gaps over a real bundle and exits 0 while advisory. | Test (TC-214) |
-| FR-037-AC-10 | `quoin completeness` exits non-zero on an unjustified exclusion without `--strict`. | Test (TC-215) |
-| FR-037-AC-11 | `quoin completeness --strict` exits non-zero on gaps alone. | Test (TC-216) |
-| FR-037-AC-12 | A bundle with no declared vocabulary reports `UNCHECKED`, never `PASS`. | Test (TC-217) |
-| FR-037-AC-13 | The unowned set quoin reports equals the one the bundle read yields for the same declaration. | Test (TC-218) |
+| FR-037-AC-1 | The vocabulary's values are read from module data, not minted. | Test |
+| FR-037-AC-2 | A declaration whose vocabulary cannot be resolved is reported, not dropped. | Test |
+| FR-037-AC-3 | A value no document claims is reported as an unowned gap, at `medium`. | Test |
+| FR-037-AC-4 | An exclusion carrying no written reason is `high` — above the gap it replaces. | Test |
+| FR-037-AC-5 | An exclusion naming a value outside the vocabulary is reported, and excuses nothing. | Test |
+| FR-037-AC-6 | A table row naming the value with a real reason accepts the exclusion. | Test |
+| FR-037-AC-7 | A non-answer is not a reason, and a mention in prose is not a justification. | Test |
+| FR-037-AC-8 | A `high` finding fails; a gap fails only under `--strict`. | Test |
+| FR-037-AC-9 | `quoin completeness` reports the gaps over a real bundle and exits 0 while advisory. | Test |
+| FR-037-AC-10 | `quoin completeness` exits non-zero on an unjustified exclusion without `--strict`. | Test |
+| FR-037-AC-11 | `quoin completeness --strict` exits non-zero on gaps alone. | Test |
+| FR-037-AC-12 | A bundle with no declared vocabulary reports `UNCHECKED`, never `PASS`. | Test |
+| FR-037-AC-13 | The unowned set quoin reports equals the one the bundle read yields for the same declaration. | Test |
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-037-CON-1 | quoin SHALL NOT mint a vocabulary. Values come from the artifact type's frontmatter schema, which is where the engine reads them. | Design | Test (TC-206) |
+| FR-037-CON-1 | quoin SHALL NOT mint a vocabulary. Values come from the artifact type's frontmatter schema, which is where the engine reads them. | Design | Test |
 | FR-037-CON-2 | quoin SHALL NOT compute coverage over the corpus. That is quire-rs FR-059; this reads the same declaration to explain and judge the result. | Design | Inspection |
 | FR-037-CON-3 | quoin SHALL NOT parse document structure. It reads the frontmatter block and the raw body; every structural question goes to quire. | Design | Inspection |
-| FR-037-CON-4 | An absent vocabulary SHALL NOT report `PASS`. Nothing checked is not nothing wrong. | Design | Test (TC-217) |
+| FR-037-CON-4 | An absent vocabulary SHALL NOT report `PASS`. Nothing checked is not nothing wrong. | Design | Test |
 
 ## Dependencies
 

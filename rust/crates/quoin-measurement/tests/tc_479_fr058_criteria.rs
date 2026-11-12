@@ -148,7 +148,7 @@ fn refusal(repo: &Path, value: &Value, what: &str) -> InterventionIntakeError {
 /// observation timestamp match the reports.
 ///
 /// Provenance: quoin#479
-#[trace("FR-058-AC-1", "TC-1217")]
+#[trace("FR-058-AC-1")]
 #[test]
 fn tc_479_250_two_retained_runs_produce_the_observations_the_reports_state() {
     let (temporary, retained) = producing_repo();
@@ -207,7 +207,7 @@ fn tc_479_250_two_retained_runs_produce_the_observations_the_reports_state() {
 /// scenario-mismatch reports are refused without an intervention store entry.
 ///
 /// Provenance: quoin#479
-#[trace("FR-058-AC-2", "TC-1218")]
+#[trace("FR-058-AC-2")]
 #[test]
 fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_entry() {
     /// What a case does to the committed base before the producer runs.
@@ -314,7 +314,7 @@ fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_
 /// cannot change them.
 ///
 /// Provenance: quoin#479
-#[trace("FR-058-AC-3", "TC-1219")]
+#[trace("FR-058-AC-3")]
 #[test]
 fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
     let (temporary, _) = producing_repo();
@@ -383,7 +383,7 @@ fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
 /// and explicit gaps rather than a causal conclusion.
 ///
 /// Provenance: quoin#479
-#[trace("FR-058-AC-4", "TC-1220")]
+#[trace("FR-058-AC-4")]
 #[test]
 fn tc_479_253_an_underpowered_production_states_its_gaps_and_claims_no_cause() {
     let (temporary, _) = producing_repo();
@@ -456,7 +456,7 @@ fn tc_479_253_an_underpowered_production_states_its_gaps_and_claims_no_cause() {
 /// and persists the record through FR-057.
 ///
 /// Provenance: quoin#479
-#[trace("FR-058-AC-5", "TC-1221")]
+#[trace("FR-058-AC-5")]
 #[test]
 fn tc_479_254_the_producer_spawns_nothing_and_persists_through_the_intake() {
     /// What the producer may not reach for. A process spawn or a socket is how

@@ -95,7 +95,7 @@ fn verify(repo: &Path) -> (Option<i32>, Value) {
     )
 }
 
-#[trace("FR-132-AC-8", "FR-132-AC-10", "FR-132-AC-13", "TC-3513")]
+#[trace("FR-132-AC-8", "FR-132-AC-10", "FR-132-AC-13")]
 #[test]
 fn tc_3513_verify_and_report_evaluate_a_paired_plan() {
     let repo = tempfile::tempdir().unwrap();
@@ -156,7 +156,7 @@ fn paired_repo(values: &[(&str, f64)]) -> tempfile::TempDir {
 
 /// Without a git work tree, or without git at all, the report still renders
 /// and keeps the honest `order_unattested` for a pair whose order matters.
-#[trace("FR-132-AC-16", "TC-3605")]
+#[trace("FR-132-AC-16")]
 #[test]
 fn tc_3605_report_without_git_state_stays_unattested() {
     let repo = paired_repo(&[("run-a", 1.0), ("run-b", 1.0), ("run-c", 2.0)]);
@@ -188,7 +188,7 @@ fn tc_3605_report_without_git_state_stays_unattested() {
 
 /// The report and `verify` agree on the same git repository: the same pair
 /// and count, and the stated timestamp does not move the attested order.
-#[trace("FR-132-AC-15", "TC-3606")]
+#[trace("FR-132-AC-15")]
 #[test]
 fn tc_3606_report_and_verify_agree_on_a_git_repository() {
     for (values, differing) in [

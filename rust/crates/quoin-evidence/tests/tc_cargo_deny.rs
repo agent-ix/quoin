@@ -26,7 +26,7 @@ const CLEAN: &str = include_str!("fixtures/cargo-deny-clean-real.jsonl");
 
 /// A diagnostic becomes a finding carrying the check's code, the tool's own
 /// severity word, its message and the first crate of the dependency graph.
-#[trace("FR-034-AC-21", "TC-2700")]
+#[trace("FR-034-AC-21")]
 #[test]
 fn tc_2700_a_cargo_deny_diagnostic_is_a_finding() {
     let result = parse_cargo_deny(BANNED).unwrap();
@@ -46,7 +46,7 @@ fn tc_2700_a_cargo_deny_diagnostic_is_a_finding() {
 }
 
 /// An advisory is identified by its RUSTSEC id rather than the generic code.
-#[trace("FR-034-AC-21", "TC-2700")]
+#[trace("FR-034-AC-21")]
 #[test]
 fn tc_2700_an_advisory_diagnostic_is_identified_by_its_advisory_id() {
     let raw = concat!(
@@ -61,7 +61,7 @@ fn tc_2700_an_advisory_diagnostic_is_identified_by_its_advisory_id() {
 
 /// A finished run with no diagnostic is a scan that happened and found
 /// nothing, and cargo-deny reports no rule count, so none is invented.
-#[trace("FR-034-AC-22", "TC-2701")]
+#[trace("FR-034-AC-22")]
 #[test]
 fn tc_2701_a_finished_run_with_no_diagnostic_is_a_clean_scan() {
     let result = parse_cargo_deny(CLEAN).unwrap();
@@ -72,7 +72,7 @@ fn tc_2701_a_finished_run_with_no_diagnostic_is_a_clean_scan() {
 
 /// Output without the closing summary is a run that did not finish, and text
 /// that is not JSON is named as such; neither reads as a clean scan.
-#[trace("FR-034-AC-23", "TC-2702")]
+#[trace("FR-034-AC-23")]
 #[test]
 fn tc_2702_output_with_no_summary_or_not_json_is_refused() {
     let unfinished = BANNED.lines().next().unwrap();
@@ -93,7 +93,7 @@ fn tc_2702_output_with_no_summary_or_not_json_is_refused() {
 
 /// A failed run printed under `--log-level off` is only a summary counting an
 /// error. It is real output, and it must not read as a clean scan.
-#[trace("FR-034-AC-25", "TC-2706")]
+#[trace("FR-034-AC-25")]
 #[test]
 fn tc_2706_a_summary_counting_more_than_the_diagnostics_read_is_refused() {
     let error = parse_cargo_deny(FAILED).unwrap_err().to_string();
@@ -109,7 +109,7 @@ fn tc_2706_a_summary_counting_more_than_the_diagnostics_read_is_refused() {
 
 /// The summary must name a check, is recorded as the ruleset, and is exactly
 /// one and last. A diagnostic with no id is kept, not dropped.
-#[trace("FR-034-AC-26", "TC-2707")]
+#[trace("FR-034-AC-26")]
 #[test]
 fn tc_2707_the_summary_names_the_checks_that_ran_and_closes_the_output() {
     assert_eq!(
@@ -144,7 +144,7 @@ fn tc_2707_the_summary_names_the_checks_that_ran_and_closes_the_output() {
 
 /// `--tool cargo-deny` selects the cargo-deny reader and `--tool cargo-audit`
 /// still selects cargo-audit's.
-#[trace("FR-034-AC-24", "TC-2703")]
+#[trace("FR-034-AC-24")]
 #[test]
 fn tc_2703_the_tool_selects_the_cargo_deny_adapter() {
     let by_tool = |tool| {

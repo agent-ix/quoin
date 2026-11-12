@@ -42,7 +42,7 @@ fn text(output: &Output) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
-#[trace("FR-135-AC-7", "TC-3206")]
+#[trace("FR-135-AC-7")]
 #[test]
 fn tc_3206_the_matrix_command_renders_recorded_facts_and_refuses_misuse() {
     let dir = tempfile::tempdir().unwrap();

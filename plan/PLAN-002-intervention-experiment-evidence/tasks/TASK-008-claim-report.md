@@ -12,10 +12,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-057"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1210"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1213"
-    type: verifies
 ---
 
 # TASK-008: Render intervention claims and evidence

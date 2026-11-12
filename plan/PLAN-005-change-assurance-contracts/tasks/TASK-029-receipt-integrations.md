@@ -12,12 +12,6 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-065"
     type: "references"
-  - target: "ix://agent-ix/quoin/TC-1287"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1288"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1289"
-    type: "verifies"
 ---
 
 # TASK-029: Receipt integrations

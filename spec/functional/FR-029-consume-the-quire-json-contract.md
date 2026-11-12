@@ -55,19 +55,19 @@ schema, reads none from the network, and hashes none.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-029-AC-1 | Withdrawn: required each schema copy to hash to a recorded value. quoin keeps no copy, so nothing remains to check (id not reused). | Withdrawn (TC-110) |
-| FR-029-AC-2 | A conformant coverage payload and a conformant properties payload each validate. | Test (TC-111) |
-| FR-029-AC-3 | A payload missing a required key, carrying an added field, or using a value outside a closed engine enum is rejected, and the report names the failing path. | Test (TC-112) |
-| FR-029-AC-4 | Unreadable JSON is reported as a named violation rather than a panic. | Test (TC-113) |
-| FR-029-AC-5 | Withdrawn: a minimum-version premise on a `quire` subprocess. Quoin links the engine in process; there is no version to read or compare (id not reused). | Withdrawn (TC-114) |
-| FR-029-AC-6 | Withdrawn with AC-5: no version comparison remains (id not reused). | Withdrawn (TC-115) |
-| FR-029-AC-7 | Withdrawn: described the former TypeScript validators' optional-key fixtures (id not reused). | Withdrawn (TC-116) |
+| FR-029-AC-1 | Withdrawn: required each schema copy to hash to a recorded value. quoin keeps no copy, so nothing remains to check (id not reused). | Withdrawn |
+| FR-029-AC-2 | A conformant coverage payload and a conformant properties payload each validate. | Test |
+| FR-029-AC-3 | A payload missing a required key, carrying an added field, or using a value outside a closed engine enum is rejected, and the report names the failing path. | Test |
+| FR-029-AC-4 | Unreadable JSON is reported as a named violation rather than a panic. | Test |
+| FR-029-AC-5 | Withdrawn: a minimum-version premise on a `quire` subprocess. Quoin links the engine in process; there is no version to read or compare (id not reused). | Withdrawn |
+| FR-029-AC-6 | Withdrawn with AC-5: no version comparison remains (id not reused). | Withdrawn |
+| FR-029-AC-7 | Withdrawn: described the former TypeScript validators' optional-key fixtures (id not reused). | Withdrawn |
 | FR-029-AC-8 | Withdrawn earlier; id not reused. | Withdrawn |
-| FR-029-AC-9 | Withdrawn: described payloads emitted by a selected `QUIRE` binary against TypeScript validators; the engine is linked in process (id not reused). | Withdrawn (TC-118) |
-| FR-029-AC-10 | Withdrawn: surfaced a subprocess's stderr; no subprocess exists (id not reused). | Withdrawn (TC-134, TC-256) |
-| FR-029-AC-11 | Withdrawn: a subprocess `maxBuffer`; no subprocess exists (id not reused). | Withdrawn (TC-254) |
-| FR-029-AC-12 | Withdrawn: subprocess death causes; no subprocess exists (id not reused). | Withdrawn (TC-254, TC-255, TC-257) |
-| FR-029-AC-13 | Withdrawn: TypeScript interfaces against the coverage schema; the types are the engine's own Rust types (id not reused). | Withdrawn (TC-272) |
+| FR-029-AC-9 | Withdrawn: described payloads emitted by a selected `QUIRE` binary against TypeScript validators; the engine is linked in process (id not reused). | Withdrawn |
+| FR-029-AC-10 | Withdrawn: surfaced a subprocess's stderr; no subprocess exists (id not reused). | Withdrawn |
+| FR-029-AC-11 | Withdrawn: a subprocess `maxBuffer`; no subprocess exists (id not reused). | Withdrawn |
+| FR-029-AC-12 | Withdrawn: subprocess death causes; no subprocess exists (id not reused). | Withdrawn |
+| FR-029-AC-13 | Withdrawn: TypeScript interfaces against the coverage schema; the types are the engine's own Rust types (id not reused). | Withdrawn |
 
 ## Dependencies
 

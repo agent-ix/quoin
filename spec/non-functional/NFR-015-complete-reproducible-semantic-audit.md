@@ -36,10 +36,10 @@ and reproduce the same canonical content from the same identified inputs.
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Default modules inventoried / default modules declared | 100% | 100% | Test (TC-1188) |
-| Type declarations with complete axis assessments / type declarations inventoried | 100% | 100% | Test (TC-1189) |
-| Markdown paths assigned exactly one parse state / Markdown paths discovered | 100% | 100% | Test (TC-1190) |
-| Canonical artifact bytes differing across equal-input reruns | 0 | 0 | Test (TC-1191) |
+| Default modules inventoried / default modules declared | 100% | 100% | Test |
+| Type declarations with complete axis assessments / type declarations inventoried | 100% | 100% | Test |
+| Markdown paths assigned exactly one parse state / Markdown paths discovered | 100% | 100% | Test |
+| Canonical artifact bytes differing across equal-input reruns | 0 | 0 | Test |
 
 ## Verification
 

@@ -114,11 +114,11 @@ control is its own incompleteness.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-111-AC-1 | A diff touching a path inside `protected_apparatus` — a protected harness file, a labels directory entry, a population file, or a checker-configuration file — is `apparatus_touched` and the receipt is `invalid`, whether or not `apparatus-edit` is declared. | Test (TC-1868) |
-| FR-111-AC-2 | A diff naming no path inside `protected_apparatus` adds neither reason; the receipt is unchanged from an unlinked verification. | Test (TC-1869) |
-| FR-111-AC-3 | A declared `negative_controls` entry whose kind is not `apparatus-edit`, or an `apparatus-edit` entry with no protected list, is `negative_control_uncaught`, and this alone leaves the outcome `incomplete` rather than `invalid`; a declared `apparatus-edit` entry over an untouched diff adds nothing. | Test (TC-1870) |
-| FR-111-AC-4 | A plan that protects apparatus, verified with no diff retained, is `diff_missing` and the receipt is `incomplete`; with no plan linked, a missing diff adds nothing. | Test (TC-1871) |
-| FR-111-AC-5 | The receipt records `governing_plan_id` (the linked plan's id, or `null` when none was asked) and `diff_paths_supplied` (`true` when `diff_paths` was supplied at all, even empty, `false` when it was not) as explicit fields, distinguishable from a caller's omission producing the same silence in `reasons`. | Test (TC-1915) |
+| FR-111-AC-1 | A diff touching a path inside `protected_apparatus` — a protected harness file, a labels directory entry, a population file, or a checker-configuration file — is `apparatus_touched` and the receipt is `invalid`, whether or not `apparatus-edit` is declared. | Test |
+| FR-111-AC-2 | A diff naming no path inside `protected_apparatus` adds neither reason; the receipt is unchanged from an unlinked verification. | Test |
+| FR-111-AC-3 | A declared `negative_controls` entry whose kind is not `apparatus-edit`, or an `apparatus-edit` entry with no protected list, is `negative_control_uncaught`, and this alone leaves the outcome `incomplete` rather than `invalid`; a declared `apparatus-edit` entry over an untouched diff adds nothing. | Test |
+| FR-111-AC-4 | A plan that protects apparatus, verified with no diff retained, is `diff_missing` and the receipt is `incomplete`; with no plan linked, a missing diff adds nothing. | Test |
+| FR-111-AC-5 | The receipt records `governing_plan_id` (the linked plan's id, or `null` when none was asked) and `diff_paths_supplied` (`true` when `diff_paths` was supplied at all, even empty, `false` when it was not) as explicit fields, distinguishable from a caller's omission producing the same silence in `reasons`. | Test |
 
 ## Constraints
 

@@ -32,7 +32,7 @@ can be added, fire a thousand times, and nobody can say whether any of them were
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-043-AC-20 | `quoin validate` reports a `gate-that-gates-nothing` finding only when an explicit negative requirement claim, actual build/CI wiring and an incapable assertion identify the same shell gate. Each finding names the obligation, script, line, wiring file, failure mechanism and remedy. An unwired report, an unclaimed counter and a working gate remain silent. Findings are advisory by default and fail only under `--strict`; human and canonical JSON output describe the same findings. | Test (TC-1067..TC-1071) |
+| FR-043-AC-20 | `quoin validate` reports a `gate-that-gates-nothing` finding only when an explicit negative requirement claim, actual build/CI wiring and an incapable assertion identify the same shell gate. Each finding names the obligation, script, line, wiring file, failure mechanism and remedy. An unwired report, an unclaimed counter and a working gate remain silent. Findings are advisory by default and fail only under `--strict`; human and canonical JSON output describe the same findings. | Test |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-043-AC-32 and FR-043-AC-33
 > are withdrawn. They specified `make verification-relock` preparing a candidate

@@ -11,8 +11,7 @@ Templates: [cargo-fuzz](../assets/templates/cargo-fuzz.rs.md) ·
 Inherited from `spec-correctness` step 4, unchanged, because `gap-analysis` reconciles by the
 same grep. **Two independent carriers**, so one formatting change cannot break reconciliation:
 
-1. The explicit trace marker with the obligation or criterion id (and the matrix row's `TC-` id
-   where a row cites it): `#[trace("NFR-003-M-1")]`, `@pytest.mark.trace("NFR-003-M-1")`,
+1. The explicit trace marker with the obligation or criterion id: `#[trace("NFR-003-M-1")]`, `@pytest.mark.trace("NFR-003-M-1")`,
    `trace("NFR-003-M-1")`. An id in a comment or docstring binds nothing.
 2. The target's own name containing the id — `fuzz_nfr_003_m_1_parse_manifest`.
 

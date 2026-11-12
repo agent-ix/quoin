@@ -211,7 +211,7 @@ fn malformed_intervals() -> Vec<(&'static str, Value)> {
 /// without; a well-formed one, `lower = value = upper` included, is admitted.
 ///
 /// Provenance: EA-26
-#[trace("FR-044-AC-10", "TC-1948")]
+#[trace("FR-044-AC-10")]
 #[test]
 fn tc_1948_a_malformed_interval_is_refused_and_a_well_formed_one_admitted() {
     for document in [level_plan(), plan_document("", "proportion")] {
@@ -277,7 +277,7 @@ fn tc_1948_a_malformed_interval_is_refused_and_a_well_formed_one_admitted() {
 /// stating an interval is stored with it, `schemaVersion` unchanged.
 ///
 /// Provenance: EA-26
-#[trace("FR-044-AC-10", "TC-1949")]
+#[trace("FR-044-AC-10")]
 #[test]
 fn tc_1949_not_computed_forbids_an_interval_and_stored_bytes_are_preserved() {
     let repository = repository_with(&plan_document("", "proportion"));
@@ -329,7 +329,7 @@ fn tc_1949_not_computed_forbids_an_interval_and_stored_bytes_are_preserved() {
 /// plan with no `interval_level` an absent interval is admitted.
 ///
 /// Provenance: EA-26
-#[trace("FR-044-AC-11", "TC-1950")]
+#[trace("FR-044-AC-11")]
 #[test]
 fn tc_1950_an_absent_interval_is_refused_only_under_an_interval_level() {
     let repository = repository_with(&level_plan());
@@ -401,7 +401,7 @@ fn tc_1950_an_absent_interval_is_refused_only_under_an_interval_level() {
 /// 0.99 is admitted, and a malformed interval raises the malformed code only.
 ///
 /// Provenance: EA-26
-#[trace("FR-044-AC-11", "TC-1951")]
+#[trace("FR-044-AC-11")]
 #[test]
 fn tc_1951_a_short_interval_level_is_refused() {
     let repository = repository_with(&level_plan());
@@ -439,7 +439,7 @@ fn tc_1951_a_short_interval_level_is_refused() {
 /// leading with its own code.
 ///
 /// Provenance: EA-26
-#[trace("FR-044-AC-10", "FR-044-AC-11", "TC-1952")]
+#[trace("FR-044-AC-10", "FR-044-AC-11")]
 #[test]
 fn tc_1952_interval_findings_accumulate_with_every_other_finding() {
     let repository = repository_with(&level_plan());
@@ -495,7 +495,7 @@ fn tc_1952_interval_findings_accumulate_with_every_other_finding() {
 /// `tc_473_reporting` goldens stay byte-identical).
 ///
 /// Provenance: EA-26
-#[trace("FR-044-AC-12", "TC-1953")]
+#[trace("FR-044-AC-12")]
 #[test]
 fn tc_1953_report_and_series_carry_the_stored_interval_exactly() {
     let stated = json!({ "lower": 0.7, "upper": 0.99, "level": 0.95, "method": "wilson" });

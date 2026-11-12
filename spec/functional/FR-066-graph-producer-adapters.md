@@ -118,18 +118,18 @@ partially constructed collection or graph input.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-066-AC-1 | The registry exposes exactly versioned Quire-assurance and quire-code graph-quality adapters, and an unknown name fails with the available names before reading records. | Test (TC-1293) |
-| FR-066-AC-2 | A valid Quire export is exposed field-for-field with its source/module premises, while each unknown format or module version is refused before any graph record. | Test (TC-1294) |
-| FR-066-AC-3 | FR-062 receives the adapter's artifacts, obligations, symbols, relations, observations, and availability states without a frontmatter read or relation-kind translation. | Integration (TC-1295) |
-| FR-066-AC-4 | Graph-quality intake validates schema version 1, requires a non-empty producer-assigned `observationId` (taken as stated, never derived from the record), and refuses changed or unknown fields before constructing a collection; the collection records no configuration digest. | Test (TC-1296) |
-| FR-066-AC-5 | The exact scorer bytes are retained with media type and base64 bytes; a missing attachment leaves no collection. | Test (TC-1297) |
-| FR-066-AC-6 | Missing subject, scope, timestamp, environment, verification-stack field, or immutable producer identity is refused independently rather than invented. | Test (TC-1298) |
-| FR-066-AC-7 | Intake refuses an absent, inactive, wrong-id, or wrong-definition graph-quality plan and names both expected and observed premises. | Test (TC-1299) |
-| FR-066-AC-8 | Population totals and all language, node-kind, relation-kind, and resolver-tier census values map bijectively to sorted count observations. | Property (TC-1300) |
-| FR-066-AC-9 | A measured record maps every confusion component, unresolved count, ambiguous count, and recall ratio bijectively; duplicate normalized keys are refused. | Property (TC-1301) |
-| FR-066-AC-10 | Empty, unreadable, and unsupported records retain census facts, emit one distinct `not_computed` state, and emit no result observation. | Test (TC-1302) |
-| FR-066-AC-11 | Repeated identical intake is byte-idempotent, a same-id/different-content collision cannot replace the collection, and existing direct collection intake remains unchanged. | Integration (TC-1303) |
-| FR-066-AC-12 | Static boundaries prove both adapters execute no producer or network operation and the Quire adapter imports no frontmatter reader (CON-1, CON-3). | Inspection (TC-1304) |
+| FR-066-AC-1 | The registry exposes exactly versioned Quire-assurance and quire-code graph-quality adapters, and an unknown name fails with the available names before reading records. | Test |
+| FR-066-AC-2 | A valid Quire export is exposed field-for-field with its source/module premises, while each unknown format or module version is refused before any graph record. | Test |
+| FR-066-AC-3 | FR-062 receives the adapter's artifacts, obligations, symbols, relations, observations, and availability states without a frontmatter read or relation-kind translation. | Integration |
+| FR-066-AC-4 | Graph-quality intake validates schema version 1, requires a non-empty producer-assigned `observationId` (taken as stated, never derived from the record), and refuses changed or unknown fields before constructing a collection; the collection records no configuration digest. | Test |
+| FR-066-AC-5 | The exact scorer bytes are retained with media type and base64 bytes; a missing attachment leaves no collection. | Test |
+| FR-066-AC-6 | Missing subject, scope, timestamp, environment, verification-stack field, or immutable producer identity is refused independently rather than invented. | Test |
+| FR-066-AC-7 | Intake refuses an absent, inactive, wrong-id, or wrong-definition graph-quality plan and names both expected and observed premises. | Test |
+| FR-066-AC-8 | Population totals and all language, node-kind, relation-kind, and resolver-tier census values map bijectively to sorted count observations. | Property |
+| FR-066-AC-9 | A measured record maps every confusion component, unresolved count, ambiguous count, and recall ratio bijectively; duplicate normalized keys are refused. | Property |
+| FR-066-AC-10 | Empty, unreadable, and unsupported records retain census facts, emit one distinct `not_computed` state, and emit no result observation. | Test |
+| FR-066-AC-11 | Repeated identical intake is byte-idempotent, a same-id/different-content collision cannot replace the collection, and existing direct collection intake remains unchanged. | Integration |
+| FR-066-AC-12 | Static boundaries prove both adapters execute no producer or network operation and the Quire adapter imports no frontmatter reader (CON-1, CON-3). | Inspection |
 
 ## Dependencies
 

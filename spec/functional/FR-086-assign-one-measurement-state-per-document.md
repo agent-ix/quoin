@@ -107,14 +107,14 @@ than a failure against itself.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-086-AC-1 | A document whose `type` resolves to exactly one module is `measured` and names that module. | Test (TC-1512) |
-| FR-086-AC-2 | A document with no frontmatter `type` is `out-of-model` with reason `no-declared-type`, and a document with an unrecognised `type` is `out-of-model` with reason `type-not-declared-by-any-module`. | Test (TC-1513) |
-| FR-086-AC-3 | A document whose frontmatter fence is unterminated is `unreadable` with the failure recorded, and the documents beside it are still stated. | Test (TC-1514) |
-| FR-086-AC-4 | A `type` declared by two resolved modules yields `contested` naming both modules, no aggregate reassigns it, and one `contract-defect` finding names the contesting modules. | Test (TC-1515) |
-| FR-086-AC-5 | The four state counts sum to the enumerated document count of FR-084. | Test (TC-1516) |
-| FR-086-AC-6 | No document appears in more than one state record. | Test (TC-1517) |
-| FR-086-AC-7 | A document whose `type` differs from a declared type only by letter case is `out-of-model` with reason `type-not-declared-by-any-module`, not `measured`. | Test (TC-1573) |
-| FR-086-AC-8 | Two modules declaring the same type name yield two distinct type keys in every breakdown, and neither type's documents are attributed to the other. | Test (TC-1574) |
+| FR-086-AC-1 | A document whose `type` resolves to exactly one module is `measured` and names that module. | Test |
+| FR-086-AC-2 | A document with no frontmatter `type` is `out-of-model` with reason `no-declared-type`, and a document with an unrecognised `type` is `out-of-model` with reason `type-not-declared-by-any-module`. | Test |
+| FR-086-AC-3 | A document whose frontmatter fence is unterminated is `unreadable` with the failure recorded, and the documents beside it are still stated. | Test |
+| FR-086-AC-4 | A `type` declared by two resolved modules yields `contested` naming both modules, no aggregate reassigns it, and one `contract-defect` finding names the contesting modules. | Test |
+| FR-086-AC-5 | The four state counts sum to the enumerated document count of FR-084. | Test |
+| FR-086-AC-6 | No document appears in more than one state record. | Test |
+| FR-086-AC-7 | A document whose `type` differs from a declared type only by letter case is `out-of-model` with reason `type-not-declared-by-any-module`, not `measured`. | Test |
+| FR-086-AC-8 | Two modules declaring the same type name yield two distinct type keys in every breakdown, and neither type's documents are attributed to the other. | Test |
 
 ## Dependencies
 

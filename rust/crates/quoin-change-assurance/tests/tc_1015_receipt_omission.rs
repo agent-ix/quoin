@@ -55,7 +55,7 @@ fn minimal() -> VerificationReceipt {
 /// A receipt written with no plan linked and no diff supplied records both
 /// facts explicitly rather than omitting the members: `governing_plan_id:
 /// null`, `diff_paths_supplied: false`, not silence.
-#[trace("FR-111-AC-5", "TC-1915")]
+#[trace("FR-111-AC-5")]
 #[test]
 fn tc_1015_001_an_unlinked_receipt_records_the_omission_explicitly() {
     let value = minimal().to_json().unwrap();
@@ -74,7 +74,7 @@ fn tc_1015_001_an_unlinked_receipt_records_the_omission_explicitly() {
 
 /// A receipt whose `governing_plan_id` and `diff_paths` were both supplied
 /// round-trips both through sealing and `verify_receipt`.
-#[trace("FR-111-AC-5", "TC-1915")]
+#[trace("FR-111-AC-5")]
 #[test]
 fn tc_1015_002_a_linked_receipt_records_the_plan_id_and_that_a_diff_was_supplied() {
     let mut body = minimal();

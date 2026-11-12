@@ -27,12 +27,12 @@ projection can be optimized without becoming a competing definition.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-119-AC-1 | Reviewed typed Markdown is authoritative for human/agent-authored durable knowledge; extracted JSON, graph records, search indexes, embeddings, and rendered views are derived. | Test (TC-1134) |
-| FR-119-AC-2 | Accepted schema/package source and metadata are authoritative for shared definitions; JSON Schema and generated Rust, TypeScript, and Python packages are reproducible outputs and never independent authorities. | Test (TC-1135) |
-| FR-119-AC-3 | The record cites filament-core-data ADR-0005 for the structural schema source (TypeSpec) and does not re-decide, hedge, or describe a fallback for that source. | Test (TC-1136) |
-| FR-119-AC-4 | Owning PostgreSQL or event stores are authoritative for transactional state, and owning run/evidence/event stores are authoritative for operational observations; Markdown reports remain projections unless separately authored as new artifacts. | Test (TC-1137) |
-| FR-119-AC-5 | Interface schema packages govern payload conformance while Protobuf, JSON, and Avro remain selectable wire projections; Arrow/Parquet and CSV/TSV remain analytical or export projections with declared loss. | Test (TC-1138) |
-| FR-119-AC-6 | Apparent competing authorities stop promotion and require an explicit projection, concern split, or reviewed ADR/migration disposition; last-writer-wins is rejected. | Test (TC-1139) |
+| FR-119-AC-1 | Reviewed typed Markdown is authoritative for human/agent-authored durable knowledge; extracted JSON, graph records, search indexes, embeddings, and rendered views are derived. | Test |
+| FR-119-AC-2 | Accepted schema/package source and metadata are authoritative for shared definitions; JSON Schema and generated Rust, TypeScript, and Python packages are reproducible outputs and never independent authorities. | Test |
+| FR-119-AC-3 | The record cites filament-core-data ADR-0005 for the structural schema source (TypeSpec) and does not re-decide, hedge, or describe a fallback for that source. | Test |
+| FR-119-AC-4 | Owning PostgreSQL or event stores are authoritative for transactional state, and owning run/evidence/event stores are authoritative for operational observations; Markdown reports remain projections unless separately authored as new artifacts. | Test |
+| FR-119-AC-5 | Interface schema packages govern payload conformance while Protobuf, JSON, and Avro remain selectable wire projections; Arrow/Parquet and CSV/TSV remain analytical or export projections with declared loss. | Test |
+| FR-119-AC-6 | Apparent competing authorities stop promotion and require an explicit projection, concern split, or reviewed ADR/migration disposition; last-writer-wins is rejected. | Test |
 
 ## Constraints
 

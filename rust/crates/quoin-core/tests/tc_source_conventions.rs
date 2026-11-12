@@ -433,7 +433,7 @@ fn executables_in(path: &str, source: &str) -> Result<BTreeSet<String>, Vec<Stri
 }
 
 /// FR-036-AC-8, CON-1.
-#[trace("FR-036-AC-8", "FR-036-CON-1", "TC-203")]
+#[trace("FR-036-AC-8", "FR-036-CON-1")]
 #[test]
 fn quoin_executes_exactly_git_and_ix_flow_and_the_operators_editor() {
     let crates = workspace_root().join("crates");
@@ -473,7 +473,7 @@ fn injected(source: &str) -> Result<BTreeSet<String>, Vec<String>> {
 
 /// The check must be able to fail: each way the first version silently
 /// dropped an executor now reports it.
-#[trace("FR-036-AC-8", "FR-036-CON-1", "TC-203")]
+#[trace("FR-036-AC-8", "FR-036-CON-1")]
 #[test]
 fn the_executable_check_sees_an_injected_binary() {
     let one = |s: &str| BTreeSet::from([s.to_owned()]);

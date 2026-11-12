@@ -188,7 +188,7 @@ mod tests {
         TraceIndex { ids }
     }
 
-    #[trace("FR-033-AC-15", "TC-2010")]
+    #[trace("FR-033-AC-15")]
     #[test]
     fn a_tagged_case_gains_a_trace_property_and_keeps_its_attributes() {
         let xml = r#"<testsuite><testcase name="a::t" classname="pkg" time="0.1"/></testsuite>"#;
@@ -211,7 +211,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-033-AC-15", "TC-2010")]
+    #[trace("FR-033-AC-15")]
     #[test]
     fn untagged_cases_are_left_alone_and_unrun_tagged_tests_are_named() {
         let xml = r#"<testcase name="other" classname="pkg"/>"#;
@@ -245,7 +245,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-033-AC-15", "TC-2010")]
+    #[trace("FR-033-AC-15")]
     #[test]
     fn the_annotated_report_binds_through_the_evidence_junit_adapter() {
         let xml = r#"<testsuite><testcase name="t" classname="pkg"/></testsuite>"#;

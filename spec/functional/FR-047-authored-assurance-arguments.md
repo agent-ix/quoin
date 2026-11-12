@@ -36,14 +36,14 @@ reference and which condition failed.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-047-AC-1 | The view preserves the authored claim, subject, owner, participants, authority, and independence, and emits no score. | Test (TC-1996) |
-| FR-047-AC-2 | A criterion without an explicit sufficiency decision remains open even when evidence references exist elsewhere. | Test (TC-1997) |
-| FR-047-AC-3 | Expired or future decisions and accepted assumptions whose review is due reopen their branch and the top claim. | Test (TC-1998) |
-| FR-047-AC-4 | A resolved challenge requires resolution references; accepted risk additionally requires a current expiry. | Test (TC-1999) |
-| FR-047-AC-5 | The closed authored contract, decision shape, uniqueness, and timestamps are validated before rendering. | Test (TC-2000) |
-| FR-047-AC-6 | Markdown and JSON preserve every open reason and render unchanged input deterministically. | Test (TC-2001) |
-| FR-047-AC-7 | An authored instant naming a day, hour, minute or second that does not exist is refused, rather than rolled forward into a different instant that then decides a reported status. | Test (TC-1712) |
-| FR-047-AC-8 | The top claim is reported unbacked — kept open, with a stated reason — when it has no evidence references, when a cited reference does not resolve in the caller's evidence index, or when a cited reference is recorded stale or vacuous; every failing reference is reported, and an evidence index naming one reference twice is refused. | Test (TC-1925) |
+| FR-047-AC-1 | The view preserves the authored claim, subject, owner, participants, authority, and independence, and emits no score. | Test |
+| FR-047-AC-2 | A criterion without an explicit sufficiency decision remains open even when evidence references exist elsewhere. | Test |
+| FR-047-AC-3 | Expired or future decisions and accepted assumptions whose review is due reopen their branch and the top claim. | Test |
+| FR-047-AC-4 | A resolved challenge requires resolution references; accepted risk additionally requires a current expiry. | Test |
+| FR-047-AC-5 | The closed authored contract, decision shape, uniqueness, and timestamps are validated before rendering. | Test |
+| FR-047-AC-6 | Markdown and JSON preserve every open reason and render unchanged input deterministically. | Test |
+| FR-047-AC-7 | An authored instant naming a day, hour, minute or second that does not exist is refused, rather than rolled forward into a different instant that then decides a reported status. | Test |
+| FR-047-AC-8 | The top claim is reported unbacked — kept open, with a stated reason — when it has no evidence references, when a cited reference does not resolve in the caller's evidence index, or when a cited reference is recorded stale or vacuous; every failing reference is reported, and an evidence index naming one reference twice is refused. | Test |
 
 ## Constraints
 

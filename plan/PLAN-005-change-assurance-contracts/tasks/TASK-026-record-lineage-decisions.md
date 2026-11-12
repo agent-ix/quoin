@@ -10,14 +10,6 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-063"
     type: "references"
-  - target: "ix://agent-ix/quoin/TC-1268"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1269"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1270"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1271"
-    type: "verifies"
 ---
 
 # TASK-026: Record lineage and decisions

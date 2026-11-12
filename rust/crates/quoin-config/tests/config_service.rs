@@ -105,7 +105,7 @@ fn tc_381_122_set_refuses_a_value_the_schema_rejects() {
     assert!(!f.user_config.exists());
 }
 
-#[trace("FR-027-AC-5", "TC-105")]
+#[trace("FR-027-AC-5")]
 #[test]
 fn tc_381_123_get_is_total_and_records_one_incident_per_failure_class() {
     let f = fixture();
@@ -281,7 +281,7 @@ fn tc_381_127_project_layer_beats_the_user_layer_and_writes_stay_user_level() {
     assert!(user_text.contains("org: written"), "got: {user_text:?}");
 }
 
-#[trace("FR-027-AC-3", "TC-103")]
+#[trace("FR-027-AC-3")]
 #[test]
 fn tc_381_128_env_binding_layers_over_both_files() {
     let f = fixture();

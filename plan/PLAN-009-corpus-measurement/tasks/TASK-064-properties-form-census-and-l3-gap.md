@@ -8,18 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-088"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1525"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1526"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1527"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1528"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1529"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1530"
-    type: verifies
 ---
 
 # TASK-064: The Properties form census and the L3 could-not-run

@@ -64,18 +64,18 @@ states.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-035-AC-1 | The space — strength, dimensions, values — is parsed back out of the obligation statement. | Test (TC-180) |
-| FR-035-AC-2 | A statement that is not a configuration space yields `null`, which is how a combinatorial obligation is told from every other kind. | Test (TC-181) |
-| FR-035-AC-3 | Exclusions are read without being mistaken for dimensions. | Test (TC-182) |
-| FR-035-AC-4 | The demanded-tuple count equals the number of value combinations the declared space demands, counted by independent enumeration of its dimension pairs. | Test (TC-183) |
-| FR-035-AC-5 | A forbidden combination is not demanded. | Test (TC-184) |
-| FR-035-AC-6 | The result names the combinations that never ran, not only how many. | Test (TC-185) |
-| FR-035-AC-7 | A configuration exercising values the spec never declared covers nothing. | Test (TC-186) |
-| FR-035-AC-8 | Full coverage reports an empty gap list. | Test (TC-187) |
-| FR-035-AC-9 | `audit` reports `combinatorial-gap` naming the missing combinations. | Test (TC-188) |
-| FR-035-AC-10 | An obligation whose demanded combinations all ran is healthy. | Test (TC-189) |
-| FR-035-AC-11 | An obligation declaring no configuration space produces no combinatorial finding. | Test (TC-190) |
-| FR-035-AC-12 | A declared space advises the combinatorial method structurally; ordinary prose does not. | Test (TC-191) |
+| FR-035-AC-1 | The space — strength, dimensions, values — is parsed back out of the obligation statement. | Test |
+| FR-035-AC-2 | A statement that is not a configuration space yields `null`, which is how a combinatorial obligation is told from every other kind. | Test |
+| FR-035-AC-3 | Exclusions are read without being mistaken for dimensions. | Test |
+| FR-035-AC-4 | The demanded-tuple count equals the number of value combinations the declared space demands, counted by independent enumeration of its dimension pairs. | Test |
+| FR-035-AC-5 | A forbidden combination is not demanded. | Test |
+| FR-035-AC-6 | The result names the combinations that never ran, not only how many. | Test |
+| FR-035-AC-7 | A configuration exercising values the spec never declared covers nothing. | Test |
+| FR-035-AC-8 | Full coverage reports an empty gap list. | Test |
+| FR-035-AC-9 | `audit` reports `combinatorial-gap` naming the missing combinations. | Test |
+| FR-035-AC-10 | An obligation whose demanded combinations all ran is healthy. | Test |
+| FR-035-AC-11 | An obligation declaring no configuration space produces no combinatorial finding. | Test |
+| FR-035-AC-12 | A declared space advises the combinatorial method structurally; ordinary prose does not. | Test |
 
 ## Constraints
 
@@ -83,7 +83,7 @@ states.
 |----|-----------|------|------------|
 | FR-035-CON-1 | quoin SHALL NOT generate or execute combinations (ADR-0011 invariant 1). The consumer's CI runs them. | Design | Inspection |
 | FR-035-CON-2 | quoin SHALL NOT declare a configuration space. The dimensions are the spec's, read from the obligation quire mints. | Design | Inspection |
-| FR-035-CON-3 | `combinatorial-gap` is `medium`. An incomplete covering array is ordinary work in progress; what would be severe is a run claiming a completeness it does not have, which the gap list makes impossible to do quietly. | Design | Test (TC-188) |
+| FR-035-CON-3 | `combinatorial-gap` is `medium`. An incomplete covering array is ordinary work in progress; what would be severe is a run claiming a completeness it does not have, which the gap list makes impossible to do quietly. | Design | Test |
 
 ## Dependencies
 

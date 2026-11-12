@@ -95,7 +95,7 @@ pub(crate) fn probed(failures: &[Failure]) -> (Probed, Probed) {
     )
 }
 
-#[trace("FR-131-AC-9", "TC-3707")]
+#[trace("FR-131-AC-9")]
 #[test]
 fn tc_3707_next_steps_and_tokens_match_whole_words_only() {
     for vacuous in [

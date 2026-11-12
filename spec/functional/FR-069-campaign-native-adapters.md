@@ -82,17 +82,17 @@ recorded on any of these paths.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-069-AC-1 | The `contract-conformance` adapter transcribes a real conformance run into one entry per replayed fixture, keyed by corpus, operation, and fixture. | Test (TC-1328) |
-| FR-069-AC-2 | The `differential-report` adapter transcribes a real differential report into one entry per compared case. | Test (TC-1329) |
-| FR-069-AC-3 | An unsupported case is not transcribed as a skip, an error, or a pass; it is named with its own state and reason. | Test (TC-1330) |
-| FR-069-AC-4 | An unknown protocol, an unknown schema version, an unknown status, a missing required field, malformed JSON, and an empty result set are each refused with a message naming the line or case. | Property (TC-1331) |
-| FR-069-AC-5 | Both adapters are selectable by name and by declared tool, and appear in the adapter listing. | Test (TC-1332) |
-| FR-069-AC-6 | `quoin evidence record` prints every unrepresented result in both human and JSON output (CON-2). | Test (TC-1333) |
-| FR-069-AC-7 | The inventory names, for every scope item, a real producer and a verdict, and every added adapter names its sample (CON-4). | Test (TC-1334) |
-| FR-069-AC-8 | Static boundaries prove neither adapter spawns a process, performs network work, or scrapes console text for a verdict (CON-1, CON-3). | Inspection (TC-1335) |
-| FR-069-AC-9 | A real conformance row retains every supplied trace id and its order in `RunEntry.traceIds`; legacy rows omitting the field remain readable without trace ids. | Test (TC-1585) |
-| FR-069-AC-10 | A supplied non-array, empty array, non-string id, empty or whitespace-only id, or duplicate id fails naming the line and `trace_ids`; a valid preceding row causes no partial evidence write. | Test (TC-1586, TC-1588) |
-| FR-069-AC-11 | `quoin evidence record --adapter contract-conformance` retains trace ids and binds the real producer's Test Case ids through Quire-derived criterion targets; failing entries bind nothing and unmatched ids remain visible. | Integration (TC-1587) |
+| FR-069-AC-1 | The `contract-conformance` adapter transcribes a real conformance run into one entry per replayed fixture, keyed by corpus, operation, and fixture. | Test |
+| FR-069-AC-2 | The `differential-report` adapter transcribes a real differential report into one entry per compared case. | Test |
+| FR-069-AC-3 | An unsupported case is not transcribed as a skip, an error, or a pass; it is named with its own state and reason. | Test |
+| FR-069-AC-4 | An unknown protocol, an unknown schema version, an unknown status, a missing required field, malformed JSON, and an empty result set are each refused with a message naming the line or case. | Property |
+| FR-069-AC-5 | Both adapters are selectable by name and by declared tool, and appear in the adapter listing. | Test |
+| FR-069-AC-6 | `quoin evidence record` prints every unrepresented result in both human and JSON output (CON-2). | Test |
+| FR-069-AC-7 | The inventory names, for every scope item, a real producer and a verdict, and every added adapter names its sample (CON-4). | Test |
+| FR-069-AC-8 | Static boundaries prove neither adapter spawns a process, performs network work, or scrapes console text for a verdict (CON-1, CON-3). | Inspection |
+| FR-069-AC-9 | A real conformance row retains every supplied trace id and its order in `RunEntry.traceIds`; legacy rows omitting the field remain readable without trace ids. | Test |
+| FR-069-AC-10 | A supplied non-array, empty array, non-string id, empty or whitespace-only id, or duplicate id fails naming the line and `trace_ids`; a valid preceding row causes no partial evidence write. | Test |
+| FR-069-AC-11 | `quoin evidence record --adapter contract-conformance` retains trace ids and binds the real producer's Test Case ids through Quire-derived criterion targets; failing entries bind nothing and unmatched ids remain visible. | Integration |
 
 ## Dependencies
 

@@ -8,22 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-087"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1518"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1519"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1520"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1521"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1522"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1523"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1524"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1572"
-    type: verifies
 ---
 
 # TASK-063: Structural conformance through the Quire engine

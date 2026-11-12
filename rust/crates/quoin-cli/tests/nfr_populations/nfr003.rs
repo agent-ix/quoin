@@ -70,7 +70,7 @@ fn assert_reads(class: &str, failures: &[Failure], known: &[&str]) {
     );
 }
 
-#[trace("FR-131-AC-9", "TC-3700", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3700_every_command_refuses_an_unknown_flag_naming_it() {
     let failures = bad_flag::probe(&Context::new());
@@ -78,7 +78,7 @@ fn tc_3700_every_command_refuses_an_unknown_flag_naming_it() {
     assert_reads("unknown-flag", &failures, &[]);
 }
 
-#[trace("FR-131-AC-9", "TC-3701", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3701_every_command_group_refuses_an_unknown_subcommand_listing_the_known() {
     let failures = unknown_subcommand::probe(&Context::new());
@@ -93,7 +93,7 @@ fn tc_3701_every_command_group_refuses_an_unknown_subcommand_listing_the_known()
     assert_reads("unknown-subcommand", &failures, &[]);
 }
 
-#[trace("FR-131-AC-9", "TC-3702", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3702_a_bare_command_names_every_argument_it_requires() {
     let failures = missing_argument::probe(&Context::new());
@@ -107,7 +107,7 @@ fn tc_3702_a_bare_command_names_every_argument_it_requires() {
     assert_reads("missing-argument", &failures, &[]);
 }
 
-#[trace("FR-131-AC-9", "TC-3703", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3703_a_path_that_does_not_exist_is_named_in_the_refusal() {
     let failures = missing_path::probe(&Context::new());
@@ -137,7 +137,7 @@ fn tc_3703_a_path_that_does_not_exist_is_named_in_the_refusal() {
     );
 }
 
-#[trace("FR-131-AC-9", "TC-3704", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3704_an_unknown_type_is_refused_listing_the_available_types() {
     let failures = unknown_type::probe(&Context::new());
@@ -154,7 +154,7 @@ fn tc_3704_an_unknown_type_is_refused_listing_the_available_types() {
     );
 }
 
-#[trace("FR-131-AC-9", "TC-3705", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3705_malformed_json_is_refused_saying_it_is_not_json_and_where() {
     let failures = malformed_input::probe(&Context::new());
@@ -175,7 +175,7 @@ fn tc_3705_malformed_json_is_refused_saying_it_is_not_json_and_where() {
     );
 }
 
-#[trace("FR-131-AC-9", "TC-3706", "NFR-003-M-1", "NFR-003-M-2")]
+#[trace("FR-131-AC-9", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
 fn tc_3706_a_catalog_conflict_names_the_type_and_both_modules() {
     let failures = catalog_conflict::probe(&Context::new());

@@ -136,7 +136,7 @@ fn reason_of(
 /// refuses the plan load.
 ///
 /// Provenance: PLAT-1401
-#[trace("FR-131-AC-7", "TC-3000")]
+#[trace("FR-131-AC-7")]
 #[test]
 fn tc_3000_an_exemption_is_a_non_empty_reason() {
     let plans = plans_from(&plan_document("proportion", EXEMPT)).unwrap();
@@ -165,7 +165,7 @@ fn tc_3000_an_exemption_is_a_non_empty_reason() {
 /// A plan declaring both a set and an exemption is refused at load.
 ///
 /// Provenance: PLAT-1401
-#[trace("FR-131-AC-7", "TC-3000")]
+#[trace("FR-131-AC-7")]
 #[test]
 fn tc_3000_a_set_and_an_exemption_together_refuse_the_plan_load() {
     let refusal = plans_from(&plan_document("proportion", &format!("{SET}{EXEMPT}")))
@@ -183,7 +183,7 @@ fn tc_3000_a_set_and_an_exemption_together_refuse_the_plan_load() {
 /// estimator, lifts it.
 ///
 /// Provenance: PLAT-1401
-#[trace("FR-131-AC-8", "TC-3001")]
+#[trace("FR-131-AC-8")]
 #[test]
 fn tc_3001_an_undeclared_proportion_plan_is_inconclusive_in_the_report() {
     let population = json!({
@@ -222,7 +222,7 @@ fn tc_3001_an_undeclared_proportion_plan_is_inconclusive_in_the_report() {
 /// observation is.
 ///
 /// Provenance: PLAT-1401
-#[trace("FR-131-AC-8", "TC-3002")]
+#[trace("FR-131-AC-8")]
 #[test]
 fn tc_3002_verify_is_inconclusive_for_an_undeclared_proportion_plan() {
     let plans = plans_from(&plan_document("proportion", "")).unwrap();

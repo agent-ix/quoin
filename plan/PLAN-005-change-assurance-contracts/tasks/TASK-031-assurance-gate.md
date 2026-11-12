@@ -14,10 +14,6 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/quoin/FR-065"
     type: "references"
-  - target: "ix://agent-ix/quoin/TC-1261"
-    type: "verifies"
-  - target: "ix://agent-ix/quoin/TC-1292"
-    type: "verifies"
 ---
 
 # TASK-031: Full assurance gate

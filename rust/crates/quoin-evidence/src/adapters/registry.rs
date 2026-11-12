@@ -318,14 +318,7 @@ mod tests {
     /// that does not exist.
     ///
     /// Provenance: quoin#458
-    #[trace(
-        "FR-036-AC-5",
-        "FR-041-AC-6",
-        "FR-042-AC-5",
-        "TC-201",
-        "TC-236",
-        "TC-244"
-    )]
+    #[trace("FR-036-AC-5", "FR-041-AC-6", "FR-042-AC-5")]
     #[test]
     fn tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool() {
         let by_name = [

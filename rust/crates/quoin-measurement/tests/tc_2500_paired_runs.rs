@@ -89,7 +89,7 @@ fn run(id: &str, values: &[(&str, f64)]) -> MeasurementCollection {
 const EQUAL_2: &str = "paired_run:\n  relation: equal\n  minimum_pairs: 2\n";
 
 /// Identical runs observe zero differing slices; one differing slice observes one.
-#[trace("FR-132-AC-1", "TC-2500")]
+#[trace("FR-132-AC-1")]
 #[test]
 fn tc_2500_equal_counts_the_slices_that_differ() {
     let plans = plans(EQUAL_2, "");
@@ -112,7 +112,7 @@ fn tc_2500_equal_counts_the_slices_that_differ() {
 }
 
 /// `within_delta` tolerates movement up to the delta, in either direction, inclusive.
-#[trace("FR-132-AC-2", "TC-2501")]
+#[trace("FR-132-AC-2")]
 #[test]
 fn tc_2501_within_delta_is_a_symmetric_inclusive_band() {
     let plans = plans(
@@ -129,7 +129,7 @@ fn tc_2501_within_delta_is_a_symmetric_inclusive_band() {
 }
 
 /// `not_worse` reads the plan's objective direction and the order of the runs.
-#[trace("FR-132-AC-3", "TC-2502")]
+#[trace("FR-132-AC-3")]
 #[test]
 fn tc_2502_not_worse_follows_the_objective_direction() {
     let paired = "paired_run:\n  relation: not_worse\n  minimum_pairs: 1\n";
@@ -149,7 +149,7 @@ fn tc_2502_not_worse_follows_the_objective_direction() {
 }
 
 /// Too few comparisons is inconclusive and carries no count, never zero variance.
-#[trace("FR-132-AC-4", "TC-2503")]
+#[trace("FR-132-AC-4")]
 #[test]
 fn tc_2503_fewer_than_the_minimum_is_inconclusive_not_zero() {
     let plans = plans(EQUAL_2, "");
@@ -162,7 +162,7 @@ fn tc_2503_fewer_than_the_minimum_is_inconclusive_not_zero() {
 
 /// A slice only one run states is a violation of every relation, even when
 /// enough shared slices remain to meet the minimum.
-#[trace("FR-132-AC-4", "TC-2507")]
+#[trace("FR-132-AC-4")]
 #[test]
 fn tc_2507_a_slice_in_one_run_only_counts_as_differing() {
     let first = run("a", &[("r1", 3.0), ("r2", 4.0), ("r3", 5.0)]);
@@ -188,7 +188,7 @@ fn tc_2507_a_slice_in_one_run_only_counts_as_differing() {
 
 /// A slice a run states without a value is neither agreement nor
 /// disagreement: the pair is inconclusive, never clean.
-#[trace("FR-132-AC-4", "TC-2508")]
+#[trace("FR-132-AC-4")]
 #[test]
 fn tc_2508_a_slice_without_a_value_makes_the_pair_inconclusive() {
     let plans = plans(EQUAL_2, "");
@@ -202,7 +202,7 @@ fn tc_2508_a_slice_without_a_value_makes_the_pair_inconclusive() {
 }
 
 /// The minimum defaults to 1, so a pair that compared nothing is never clean.
-#[trace("FR-132-AC-7", "TC-2509")]
+#[trace("FR-132-AC-7")]
 #[test]
 fn tc_2509_minimum_pairs_defaults_to_one() {
     let plans = plans("paired_run:\n  relation: equal\n", "");
@@ -219,7 +219,7 @@ fn tc_2509_minimum_pairs_defaults_to_one() {
 }
 
 /// A blocked comparison makes the whole pair incomparable, with no count.
-#[trace("FR-132-AC-5", "TC-2504")]
+#[trace("FR-132-AC-5")]
 #[test]
 fn tc_2504_a_blocked_slice_makes_the_pair_incomparable() {
     let plans = plans(EQUAL_2, "");
@@ -289,7 +289,7 @@ fn tc_2504_a_blocked_slice_makes_the_pair_incomparable() {
 }
 
 /// A plan without `paired_run` yields nothing.
-#[trace("FR-132-AC-6", "TC-2505")]
+#[trace("FR-132-AC-6")]
 #[test]
 fn tc_2505_a_plan_without_paired_run_yields_no_observation() {
     let plans = plans("", "");
@@ -302,7 +302,7 @@ fn tc_2505_a_plan_without_paired_run_yields_no_observation() {
 }
 
 /// The plan load refuses every malformed or inconsistent `paired_run` block.
-#[trace("FR-132-AC-7", "TC-2506")]
+#[trace("FR-132-AC-7")]
 #[test]
 fn tc_2506_a_malformed_paired_run_refuses_the_plan() {
     let lower = "objective:\n  direction: lower\n";

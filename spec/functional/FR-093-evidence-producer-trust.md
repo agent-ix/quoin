@@ -35,13 +35,13 @@ assessment does not turn any claim into a supported claim.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-093-AC-1 | Quoin identifies each trust decision, intended producer use, permitted downstream decisions, decision owner, and acceptance time. | Test (TC-297) |
-| FR-093-AC-2 | Quoin preserves producer, version, configuration, adapter, validation-corpus, input-contract, environment, validation-evidence, and limitation identity without naming a supported analyzer in engine policy. | Test (TC-297) |
-| FR-093-AC-3 | When an observed context differs from an accepted context on a selected trigger, Quoin reports the decision as invalidated and names every changed trigger. | Test (TC-298) |
-| FR-093-AC-4 | When an accepted decision has no observed context, Quoin reports it as unobserved rather than accepted or rejected. | Test (TC-299) |
-| FR-093-AC-5 | Quoin permits two uses of one producer to carry different reliance decisions. | Test (TC-300) |
-| FR-093-AC-6 | Quoin stores valid decisions canonically and reports unreadable or invalid stored decisions without hiding the remaining decisions. | Test (TC-301) |
-| FR-093-AC-7 | Quoin renders trust assessments as assurance context without altering any claim status. | Test (TC-302) |
+| FR-093-AC-1 | Quoin identifies each trust decision, intended producer use, permitted downstream decisions, decision owner, and acceptance time. | Test |
+| FR-093-AC-2 | Quoin preserves producer, version, configuration, adapter, validation-corpus, input-contract, environment, validation-evidence, and limitation identity without naming a supported analyzer in engine policy. | Test |
+| FR-093-AC-3 | When an observed context differs from an accepted context on a selected trigger, Quoin reports the decision as invalidated and names every changed trigger. | Test |
+| FR-093-AC-4 | When an accepted decision has no observed context, Quoin reports it as unobserved rather than accepted or rejected. | Test |
+| FR-093-AC-5 | Quoin permits two uses of one producer to carry different reliance decisions. | Test |
+| FR-093-AC-6 | Quoin stores valid decisions canonically and reports unreadable or invalid stored decisions without hiding the remaining decisions. | Test |
+| FR-093-AC-7 | Quoin renders trust assessments as assurance context without altering any claim status. | Test |
 
 ## Constraints
 
@@ -49,7 +49,7 @@ assessment does not turn any claim into a supported claim.
 |----|-----------|------|------------|
 | FR-093-CON-1 | Quoin SHALL NOT infer trust from producer name, vendor, version, or absence of a decision. | Design | Inspection |
 | FR-093-CON-2 | Quoin SHALL NOT run, certify, approve, or globally qualify a producer. | Design | Inspection |
-| FR-093-CON-3 | Quoin SHALL NOT silently convert invalidated or unobserved reliance to accepted reliance. | Design | Test (TC-298, TC-299) |
+| FR-093-CON-3 | Quoin SHALL NOT silently convert invalidated or unobserved reliance to accepted reliance. | Design | Test |
 
 ## Dependencies
 

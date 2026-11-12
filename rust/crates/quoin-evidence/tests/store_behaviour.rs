@@ -193,7 +193,7 @@ fn operational() -> serde_json::Value {
 
 // ---------------------------------------------------------------- FR-030 -----
 
-#[trace("FR-030-AC-1", "TC-119")]
+#[trace("FR-030-AC-1")]
 #[test]
 fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
     let run_path = record_path("runs", &suite("SUITE-001"), "2026-08-17T00:00:00Z");
@@ -217,7 +217,7 @@ fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
     );
 }
 
-#[trace("FR-030-AC-2", "TC-120")]
+#[trace("FR-030-AC-2")]
 #[test]
 fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
     let mut store = MemoryEvidence::new();
@@ -262,7 +262,7 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
     assert_eq!(first, second_store.read(&path).unwrap().unwrap());
 }
 
-#[trace("FR-030-AC-3", "TC-121")]
+#[trace("FR-030-AC-3")]
 #[test]
 fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     let mut store = MemoryEvidence::new();
@@ -304,7 +304,7 @@ fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     assert!(text.contains("tests::later"), "the later write did not win");
 }
 
-#[trace("FR-030-AC-4", "TC-122")]
+#[trace("FR-030-AC-4")]
 #[test]
 fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
     let obligations = [obligation("FR-001-AC-1")];
@@ -328,7 +328,7 @@ fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
     }
 }
 
-#[trace("FR-030-AC-7", "TC-125")]
+#[trace("FR-030-AC-7")]
 #[test]
 fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
     let mut store = MemoryEvidence::new();
@@ -345,7 +345,7 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
     assert_eq!(outcome.bound.len(), 0);
 }
 
-#[trace("FR-030-AC-8", "FR-030-AC-12", "TC-126", "TC-130")]
+#[trace("FR-030-AC-8", "FR-030-AC-12")]
 #[test]
 fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     let mut store = MemoryEvidence::new();
@@ -370,7 +370,7 @@ fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     assert_eq!(runs[0].timestamp, "2026-08-18T00:00:00Z");
 }
 
-#[trace("FR-030-AC-9", "TC-127")]
+#[trace("FR-030-AC-9")]
 #[test]
 fn tc_456_208_an_unrecorded_store_reads_as_an_empty_graph_not_an_error() {
     let store = MemoryEvidence::new();
@@ -380,7 +380,7 @@ fn tc_456_208_an_unrecorded_store_reads_as_an_empty_graph_not_an_error() {
     assert_eq!(list_recorded_suites(&store).unwrap().len(), 0);
 }
 
-#[trace("FR-030-AC-10", "FR-030-CON-2", "TC-128")]
+#[trace("FR-030-AC-10", "FR-030-CON-2")]
 #[test]
 fn tc_456_209_the_graph_never_keeps_the_statement() {
     let mut store = MemoryEvidence::new();
@@ -400,7 +400,7 @@ fn tc_456_209_the_graph_never_keeps_the_statement() {
     );
 }
 
-#[trace("FR-030-AC-15", "TC-245")]
+#[trace("FR-030-AC-15")]
 #[test]
 fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
     let mut store = MemoryEvidence::new();
@@ -427,7 +427,7 @@ fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
     assert_eq!(outcome.unmatched.len(), 0);
 }
 
-#[trace("FR-030-AC-15", "TC-245")]
+#[trace("FR-030-AC-15")]
 #[test]
 fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
     let mut store = MemoryEvidence::new();
@@ -445,7 +445,7 @@ fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
     assert_eq!(outcome.bound, vec![ObligationId::new("FR-001-AC-2")]);
 }
 
-#[trace("FR-030-AC-16", "TC-1064")]
+#[trace("FR-030-AC-16")]
 #[test]
 fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read() {
     let mut store = MemoryEvidence::new();
@@ -508,7 +508,7 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     );
 }
 
-#[trace("FR-030-AC-12", "TC-130")]
+#[trace("FR-030-AC-12")]
 #[test]
 fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
     let mut store = MemoryEvidence::new();
@@ -533,7 +533,7 @@ fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
     assert_eq!(skipped.len(), 0);
 }
 
-#[trace("FR-030-AC-13", "TC-131")]
+#[trace("FR-030-AC-13")]
 #[test]
 fn tc_456_224_an_unreadable_binding_graph_names_the_file_and_the_cause() {
     let store = MemoryEvidence::new().with_file(
@@ -952,7 +952,7 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
 
 // ---------------------------------------------------------------- FR-032 -----
 
-#[trace("FR-032-AC-16", "TC-1062")]
+#[trace("FR-032-AC-16")]
 #[test]
 fn tc_456_300_the_same_explicit_stand_in_shape_is_found_in_rust_python_and_typescript() {
     let repo = tempfile::tempdir().unwrap();
@@ -988,7 +988,7 @@ fn tc_456_300_the_same_explicit_stand_in_shape_is_found_in_rust_python_and_types
     );
 }
 
-#[trace("FR-032-AC-16", "TC-1063")]
+#[trace("FR-032-AC-16")]
 #[test]
 fn tc_456_301_ordinary_constructors_and_production_calls_are_not_reported() {
     let repo = tempfile::tempdir().unwrap();

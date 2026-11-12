@@ -29,7 +29,7 @@ use crate::common::{attestation_text, base_input, event_text, history, json, rec
 
 /// An undeclared member - a `digest` among them - is refused, on a record and
 /// on an attestation.
-#[trace("FR-063-AC-1", "TC-1261")]
+#[trace("FR-063-AC-1")]
 #[test]
 fn tc_455_001_a_digest_member_is_refused() {
     let mut record = json(&record_text()).as_object().unwrap().clone();

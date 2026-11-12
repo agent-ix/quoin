@@ -78,25 +78,25 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-057-AC-1 | Valid intake writes one complete canonical record by one atomic same-directory no-replace publication; a concurrent destination cannot be overwritten. | Test (TC-1204) |
-| FR-057-AC-2 | Invalid schema or cross-record integrity input writes nothing and returns `invalid_record` with every failing JSON path and reason. | Test (TC-1205) |
-| FR-057-AC-3 | An absent governing plan returns `governing_plan_absent`; a mismatch returns `definition_mismatch`; both write nothing and name the requested, expected, and observed definitions that apply. | Test (TC-1206) |
-| FR-057-AC-4 | Repeating an identical record id and canonical payload is byte-idempotent. | Test (TC-1207) |
-| FR-057-AC-5 | Reusing a record id for different semantic bytes returns `record_id_collision` without replacing the retained entry. | Test (TC-1208) |
-| FR-057-AC-6 | Completed, failed, inconclusive, and `cause_not_established` records remain independently queryable with their raw-evidence references. | Test (TC-1209) |
-| FR-057-AC-7 | The report renders conclusion statements as claims and measured effects plus raw references as evidence. | Test (TC-1210) |
-| FR-057-AC-8 | Uncontrolled or unknown interactions and confounders render as counterevidence; declared gaps render separately beside owner and actions. | Test (TC-1211) |
-| FR-057-AC-9 | Neither human nor JSON output contains an aggregate trust, confidence, or quality score derived from experiment records. | Test (TC-1212) |
-| FR-057-AC-10 | Re-rendering an unchanged store is byte-identical, and human and JSON views expose the same claims, evidence, counterevidence, gaps, owners, and actions. | Test (TC-1213) |
-| FR-057-AC-11 | Unsafe or missing raw evidence returns `raw_evidence_mismatch`, identifies each mismatch, and writes no record. | Test (TC-1216) |
+| FR-057-AC-1 | Valid intake writes one complete canonical record by one atomic same-directory no-replace publication; a concurrent destination cannot be overwritten. | Test |
+| FR-057-AC-2 | Invalid schema or cross-record integrity input writes nothing and returns `invalid_record` with every failing JSON path and reason. | Test |
+| FR-057-AC-3 | An absent governing plan returns `governing_plan_absent`; a mismatch returns `definition_mismatch`; both write nothing and name the requested, expected, and observed definitions that apply. | Test |
+| FR-057-AC-4 | Repeating an identical record id and canonical payload is byte-idempotent. | Test |
+| FR-057-AC-5 | Reusing a record id for different semantic bytes returns `record_id_collision` without replacing the retained entry. | Test |
+| FR-057-AC-6 | Completed, failed, inconclusive, and `cause_not_established` records remain independently queryable with their raw-evidence references. | Test |
+| FR-057-AC-7 | The report renders conclusion statements as claims and measured effects plus raw references as evidence. | Test |
+| FR-057-AC-8 | Uncontrolled or unknown interactions and confounders render as counterevidence; declared gaps render separately beside owner and actions. | Test |
+| FR-057-AC-9 | Neither human nor JSON output contains an aggregate trust, confidence, or quality score derived from experiment records. | Test |
+| FR-057-AC-10 | Re-rendering an unchanged store is byte-identical, and human and JSON views expose the same claims, evidence, counterevidence, gaps, owners, and actions. | Test |
+| FR-057-AC-11 | Unsafe or missing raw evidence returns `raw_evidence_mismatch`, identifies each mismatch, and writes no record. | Test |
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-057-CON-1 | Quoin SHALL NOT execute an experiment or producer while recording or reporting evidence. | Architecture | Static (TC-1214) |
-| FR-057-CON-2 | Quoin SHALL NOT infer causality from an effect, confidence label, missing confounder, or empty gap list. | Integrity | Test (TC-1212) |
-| FR-057-CON-3 | Existing measurement collections and pre-experiment evidence SHALL remain readable without migration. | Compatibility | Test (TC-1215) |
+| FR-057-CON-1 | Quoin SHALL NOT execute an experiment or producer while recording or reporting evidence. | Architecture | Static |
+| FR-057-CON-2 | Quoin SHALL NOT infer causality from an effect, confidence label, missing confounder, or empty gap list. | Integrity | Test |
+| FR-057-CON-3 | Existing measurement collections and pre-experiment evidence SHALL remain readable without migration. | Compatibility | Test |
 
 ## Dependencies
 

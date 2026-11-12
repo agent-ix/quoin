@@ -8,30 +8,6 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/FR-066"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1293"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1294"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1295"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1296"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1297"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1298"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1299"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1300"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1301"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1302"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1303"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1304"
-    type: verifies
 ---
 
 # TASK-033: Add red governed graph adapter contract tests

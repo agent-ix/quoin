@@ -97,19 +97,19 @@ are never reported as success.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-096-AC-1 | `cargo build --workspace --manifest-path rust/Cargo.toml` produces the `quoin` executable with `quoin-core` linked in as a library, from a workspace inside this repository, requiring no additional repository. | Test (TC-1605) |
-| FR-096-AC-2 | Every boundary operation returns exactly one JSON result document and keeps its diagnostics separate from it. | Property (TC-1606) |
-| FR-096-AC-3 | An unknown operation, malformed JSON and an escaping root each refuse before any filesystem write, returning the declared exit status. | Property (TC-1607) |
-| FR-096-AC-4 | A refusal carrying a valid result payload is distinguishable by the caller from a fault carrying no payload, for every declared non-zero exit status. | Test (TC-1608) |
-| FR-096-AC-5 | Withdrawn: `QUOIN_CORE` executable-path resolution. `quoin-core` is a linked library and has no executable to resolve (id not reused). | Withdrawn (TC-1609) |
-| FR-096-AC-6 | Withdrawn: the output-buffer ceiling and the exit/signal/spawn-failure classification of a child process. There is no child process (id not reused). | Withdrawn (TC-1610) |
-| FR-096-AC-7 | A static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is planted. | Test (TC-1611) |
-| FR-096-AC-8 | Over one materialised repository, the verdict reached through the caller's snapshot equals the verdict reached by `quoin-core` reading the same tree from disk, including for a directory the caller's pre-filter does not exclude and for one both sides do; narrowing the caller's pre-filter by one directory fails the comparison. | Test (TC-1713) |
-| FR-096-AC-9 | A request stream one byte past the transport bound is refused with the declared refusal status, without the request being parsed and without the stream being read beyond that bound; a stream of exactly the bound is accepted; and the transport bound is strictly greater than every declared per-operation request bound. | Test (TC-1714) |
+| FR-096-AC-1 | `cargo build --workspace --manifest-path rust/Cargo.toml` produces the `quoin` executable with `quoin-core` linked in as a library, from a workspace inside this repository, requiring no additional repository. | Test |
+| FR-096-AC-2 | Every boundary operation returns exactly one JSON result document and keeps its diagnostics separate from it. | Property |
+| FR-096-AC-3 | An unknown operation, malformed JSON and an escaping root each refuse before any filesystem write, returning the declared exit status. | Property |
+| FR-096-AC-4 | A refusal carrying a valid result payload is distinguishable by the caller from a fault carrying no payload, for every declared non-zero exit status. | Test |
+| FR-096-AC-5 | Withdrawn: `QUOIN_CORE` executable-path resolution. `quoin-core` is a linked library and has no executable to resolve (id not reused). | Withdrawn |
+| FR-096-AC-6 | Withdrawn: the output-buffer ceiling and the exit/signal/spawn-failure classification of a child process. There is no child process (id not reused). | Withdrawn |
+| FR-096-AC-7 | A static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is planted. | Test |
+| FR-096-AC-8 | Over one materialised repository, the verdict reached through the caller's snapshot equals the verdict reached by `quoin-core` reading the same tree from disk, including for a directory the caller's pre-filter does not exclude and for one both sides do; narrowing the caller's pre-filter by one directory fails the comparison. | Test |
+| FR-096-AC-9 | A request stream one byte past the transport bound is refused with the declared refusal status, without the request being parsed and without the stream being read beyond that bound; a stream of exactly the bound is accepted; and the transport bound is strictly greater than every declared per-operation request bound. | Test |
 | FR-096-AC-10 | The native boundary uses the shared outcome type, emits the existing 0/1/2/3/4 status and payload eligibility for every outcome, and emits compact lexicographically sorted JSON including objects nested inside arrays when insertion-order maps are enabled. Serialization errors retain the Quoin Io code. | Test |
-| FR-096-AC-11 | Withdrawn: the `PATH` resolution diagnostic for a missing `quoin-core`. There is no executable to find (id not reused). | Withdrawn (TC-1980) |
-| FR-096-AC-12 | Withdrawn: the resolution-versus-spawn-failure distinction. There is no spawn (id not reused). | Withdrawn (TC-1981) |
-| FR-096-AC-13 | Withdrawn: `core.ping` declared an `expect_protocol` and returned `ProtocolSkew` on a differing recorded revision. The boundary records no protocol revision; caller and engine are bound by `Cargo.lock` (id not reused). | Withdrawn (TC-1982) |
+| FR-096-AC-11 | Withdrawn: the `PATH` resolution diagnostic for a missing `quoin-core`. There is no executable to find (id not reused). | Withdrawn |
+| FR-096-AC-12 | Withdrawn: the resolution-versus-spawn-failure distinction. There is no spawn (id not reused). | Withdrawn |
+| FR-096-AC-13 | Withdrawn: `core.ping` declared an `expect_protocol` and returned `ProtocolSkew` on a differing recorded revision. The boundary records no protocol revision; caller and engine are bound by `Cargo.lock` (id not reused). | Withdrawn |
 
 ## Dependencies
 

@@ -469,7 +469,7 @@ mod tests {
     /// three would pass with one sentence repeated.
     ///
     /// Provenance: agent-ix/quoin#445
-    #[trace("FR-037-AC-2", "TC-207")]
+    #[trace("FR-037-AC-2")]
     #[test]
     fn tc_445_230_an_artifact_type_with_no_schema_is_unresolved_in_its_own_words() {
         let manifest = concat!(
@@ -609,7 +609,7 @@ mod tests {
     /// answer cannot satisfy both.
     ///
     /// Provenance: agent-ix/quoin#449
-    #[trace("FR-037-AC-1", "FR-037-CON-1", "TC-206")]
+    #[trace("FR-037-AC-1", "FR-037-CON-1")]
     #[test]
     fn tc_449_240_the_vocabulary_is_the_schema_enum_not_a_minted_list() {
         let manifest = concat!(

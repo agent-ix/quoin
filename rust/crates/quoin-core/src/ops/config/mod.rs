@@ -406,7 +406,7 @@ mod tests {
     /// A malformed config is a COMPLETE payload with a diagnostic — exit 1, the
     /// `Partial` case — not a failure. An author must keep writing specs
     /// (FR-027-AC-5), and the boundary must still say what went wrong.
-    #[trace("FR-027-AC-5", "TC-105")]
+    #[trace("FR-027-AC-5")]
     #[test]
     fn a_malformed_layer_is_partial_not_refused() {
         let response = resolve_org(&serde_json::json!({

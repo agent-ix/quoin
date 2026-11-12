@@ -113,14 +113,14 @@ successful report.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-100-AC-1 | `cargo tree --manifest-path rust/Cargo.toml` shows no dependency cycle among the workspace crates. | Test (TC-1633) |
-| FR-100-AC-2 | Reading and re-serializing every store reachable in the ecosystem through `quoin-store` returns byte-identical records, and `STORE_SCHEMA_VERSION` is unchanged. | Test (TC-1634) |
-| FR-100-AC-3 | Withdrawn: the retained implementation is gone, so there is no second classification to agree with; each refusal's classification is asserted by FR-065-AC-2 through AC-7 (id not reused). | Withdrawn (TC-1635) |
-| FR-100-AC-4 | Each measurement collection and report produced by the Rust crates carries the same record envelope, plan binding, comparison verdict and rendered figures as the retained TypeScript produces for the same inputs. The comparison is against a report the retained implementation can still generate; it is not stated over the corpus-measurement report, whose generator #388 disposed of. | Test (TC-1636) |
-| FR-100-AC-5 | A measurement run over a read-only governed corpus completes and the corpus working tree is unchanged afterwards. | Test (TC-1637) |
-| FR-100-AC-6 | Every locally retained assurance capability carries a recorded three-part retention answer, and a capability with no recorded answer fails the gate. | Test (TC-1638) |
-| FR-100-AC-8 | A static check over a named non-empty population of crate sources finds store identity and atomic-write operations implemented only in `quoin-store`, RFC 8785 encoding delegated to `quire-canonical`, and fails when a second implementation is planted. | Test (TC-1640) |
-| FR-100-AC-9 | An interrupted record write leaves no torn record readable and no orphaned temporary file after the next run, and concurrent writes to one store root produce a readable store with every completed record intact. | Test (TC-1699) |
+| FR-100-AC-1 | `cargo tree --manifest-path rust/Cargo.toml` shows no dependency cycle among the workspace crates. | Test |
+| FR-100-AC-2 | Reading and re-serializing every store reachable in the ecosystem through `quoin-store` returns byte-identical records, and `STORE_SCHEMA_VERSION` is unchanged. | Test |
+| FR-100-AC-3 | Withdrawn: the retained implementation is gone, so there is no second classification to agree with; each refusal's classification is asserted by FR-065-AC-2 through AC-7 (id not reused). | Withdrawn |
+| FR-100-AC-4 | Each measurement collection and report produced by the Rust crates carries the same record envelope, plan binding, comparison verdict and rendered figures as the retained TypeScript produces for the same inputs. The comparison is against a report the retained implementation can still generate; it is not stated over the corpus-measurement report, whose generator #388 disposed of. | Test |
+| FR-100-AC-5 | A measurement run over a read-only governed corpus completes and the corpus working tree is unchanged afterwards. | Test |
+| FR-100-AC-6 | Every locally retained assurance capability carries a recorded three-part retention answer, and a capability with no recorded answer fails the gate. | Test |
+| FR-100-AC-8 | A static check over a named non-empty population of crate sources finds store identity and atomic-write operations implemented only in `quoin-store`, RFC 8785 encoding delegated to `quire-canonical`, and fails when a second implementation is planted. | Test |
+| FR-100-AC-9 | An interrupted record write leaves no torn record readable and no orphaned temporary file after the next run, and concurrent writes to one store root produce a readable store with every completed record intact. | Test |
 | FR-100-AC-10 | The store JCS adapter and native boundary encoder emit the literal RFC 8785 bytes for supplementary-plane versus BMP member names, integer-shaped names, negative zero, integral floats, and exponent thresholds; their output is unchanged by `serde_json/preserve_order`. | Test |
 | FR-100-AC-11 | Existing RFC 8785 serialization vectors remain byte-identical after encoder adoption. Assurance-record identifiers are opaque UUIDs, with all affected stored identifiers, paths and citations listed before landing. The pretty form remains display/storage only. | Test |
 

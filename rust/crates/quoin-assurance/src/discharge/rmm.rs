@@ -382,7 +382,7 @@ mod tests {
         build_requirements_mapping(&request.binding, &report).unwrap()
     }
 
-    #[trace("FR-135-AC-1", "TC-3200")]
+    #[trace("FR-135-AC-1")]
     #[test]
     fn one_row_per_binding_clause_in_the_reports_order() {
         let matrix = matrix_for(vec![]);
@@ -400,7 +400,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-135-AC-1", "TC-3200")]
+    #[trace("FR-135-AC-1")]
     #[test]
     fn an_empty_binding_report_states_that_it_names_no_clauses() {
         let mut request = request(vec![]);
@@ -416,7 +416,7 @@ mod tests {
         assert!(!text.contains("| Req#"), "{text}");
     }
 
-    #[trace("FR-135-AC-2", "TC-3201")]
+    #[trace("FR-135-AC-2")]
     #[test]
     fn a_current_direct_fact_is_compliant_and_a_disposition_is_tailored_only() {
         let matrix = matrix_for(vec![direct(), disposition("SYN-002")]);
@@ -446,7 +446,7 @@ mod tests {
         fact
     }
 
-    #[trace("FR-135-AC-3", "TC-3202")]
+    #[trace("FR-135-AC-3")]
     #[test]
     fn gaps_are_rows_and_a_fact_that_is_not_current_is_neither_compliant_nor_tailored() {
         let expired = at(
@@ -517,7 +517,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-135-AC-4", "TC-3203")]
+    #[trace("FR-135-AC-4")]
     #[test]
     fn unused_facts_follow_the_table_and_nothing_is_scored() {
         let matrix = matrix_for(vec![disposition("SYN-005"), disposition("SYN-999")]);
@@ -549,7 +549,7 @@ mod tests {
         }
     }
 
-    #[trace("FR-135-AC-5", "TC-3204")]
+    #[trace("FR-135-AC-5")]
     #[test]
     fn the_render_is_the_same_across_independent_builds_whatever_the_fact_order() {
         let first = render_requirements_mapping(&matrix_for(vec![
@@ -565,7 +565,7 @@ mod tests {
         assert_eq!(first, second);
     }
 
-    #[trace("FR-135-AC-5", "TC-3204")]
+    #[trace("FR-135-AC-5")]
     #[test]
     fn untrusted_text_renders_literally_in_every_position() {
         let mut value = serde_json::to_value(binding()).unwrap();

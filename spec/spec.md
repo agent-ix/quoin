@@ -309,7 +309,7 @@ index; the files are authoritative.
 Three layers verify this specification, each named in the requirements above:
 
 - **Unit tests** — deterministic command and module behaviour, mapped requirement
-  to test in [matrix.md](./matrix.md) (`make test`, 100% coverage).
+  to test by the trace tags `quoin matrix` computes (`make test`, 100% coverage).
 - **Agent evals** — the agent-pty matrix [TM-002](./evals.md) drives the real
   agent through `quoin` + `quire` end to end and records efficiency metrics
   (NFR-006).

@@ -107,8 +107,8 @@ module declares a `traceability:` model (FR-050-AC-9). That is a real repo state
 error to swallow.
 
 When the commands refuse, or report zero criteria, fall back to a grep index of trace tags
-across the test tree (`.py` / `.ts` / `.rs`: `#[trace("FR-001-AC-2", "TC-1")]`,
-`@pytest.mark.trace("FR-001-AC-2", "TC-1")`, `trace("FR-001-AC-2", "TC-1")`, criterion ids in test docstrings), reconcile it against
+across the test tree (`.py` / `.ts` / `.rs`: `#[trace("FR-001-AC-2")]`,
+`@pytest.mark.trace("FR-001-AC-2")`, `trace("FR-001-AC-2")`, criterion ids in test docstrings), reconcile it against
 the criteria ids in `spec/` by hand, and **say which path ran** in `## Coverage`:
 
 ```

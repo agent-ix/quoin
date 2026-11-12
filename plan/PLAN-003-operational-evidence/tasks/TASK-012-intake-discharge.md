@@ -12,10 +12,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-060"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1232"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1238"
-    type: verifies
 ---
 
 # TASK-012: Implement operational intake and clock discharge

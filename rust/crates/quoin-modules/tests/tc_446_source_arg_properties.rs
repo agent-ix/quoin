@@ -94,7 +94,7 @@ fn refs() -> Vec<Option<&'static str>> {
 }
 
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
-#[trace("FR-018-AC-1", "TC-056")]
+#[trace("FR-018-AC-1")]
 #[test]
 fn tc_446_062_a_path_prefix_carries_the_remainder_verbatim() {
     // The original generated arbitrary strings up to 40 characters. The rule is
@@ -132,7 +132,7 @@ fn tc_446_062_a_path_prefix_carries_the_remainder_verbatim() {
 }
 
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
-#[trace("FR-018-AC-2", "TC-057")]
+#[trace("FR-018-AC-2")]
 #[test]
 fn tc_446_063_a_github_prefix_yields_owner_repo_and_a_ref_only_when_given() {
     let mut checked = 0_usize;
@@ -161,7 +161,7 @@ fn tc_446_063_a_github_prefix_yields_owner_repo_and_a_ref_only_when_given() {
 }
 
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
-#[trace("FR-018-AC-3", "TC-058")]
+#[trace("FR-018-AC-3")]
 #[test]
 fn tc_446_064_a_double_slash_yields_git_subdir_split_at_the_first_one() {
     let mut checked = 0_usize;
@@ -194,7 +194,7 @@ fn tc_446_064_a_double_slash_yields_git_subdir_split_at_the_first_one() {
 }
 
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
-#[trace("FR-018-AC-4", "TC-059")]
+#[trace("FR-018-AC-4")]
 #[test]
 fn tc_446_065_a_package_prefix_splits_on_the_final_at_so_a_scope_survives() {
     // The whole point of the criterion: `@scope/name` starts with an `@`, so a

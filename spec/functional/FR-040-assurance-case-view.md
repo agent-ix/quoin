@@ -128,32 +128,32 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-040-AC-1 | The case argues from a top-level claim down through its requirements to their obligations. | Test (TC-221) |
-| FR-040-AC-2 | An obligation with an auditor finding stays in the tree as an open node, carrying the reason. | Test (TC-222) |
-| FR-040-AC-3 | Open propagates upward: a claim with a broken branch is not reported as supported. | Test (TC-223) |
-| FR-040-AC-4 | A claim with no sub-claim and no obligation is open, not vacuously supported. | Test (TC-224) |
-| FR-040-AC-5 | Requirements carrying obligations that no claim reaches are reported, not omitted. | Test (TC-225) |
-| FR-040-AC-6 | The claim type comes from the caller; a declared hazard argues as readily as an `StR`. | Test (TC-226) |
-| FR-040-AC-7 | An obligation's owning requirement is derived from its id. | Test (TC-227) |
-| FR-040-AC-8 | Rendering unchanged inputs is byte-identical. | Test (TC-228) |
-| FR-040-AC-9 | Mermaid output survives punctuation in a statement — parentheses, quotes and semicolons. | Test (TC-229) |
-| FR-040-AC-10 | A bundle declaring no claim says so, rather than rendering an empty case. | Test (TC-230) |
-| FR-040-AC-11 | A requirement refining two claims appears under both. | Test (TC-237) |
-| FR-040-AC-12 | A cycle terminates without dropping a legitimately shared child. | Test (TC-238) |
-| FR-040-AC-13 | A case with no claims carries a machine-readable `reason` naming the searched claim types — present exactly when `claims` is empty — so the `--json` consumer can tell a clean case from one where nothing was argued. | Test (TC-261) |
-| FR-040-AC-14 | `--claim-type` is matched case-insensitively against the authored `type:`, and the flag REPLACES the `StR` default rather than adding to it — stated in its help. | Test (TC-262) |
-| FR-040-AC-15 | A mermaid label is truncated on a code-point boundary, so a label whose limit falls inside a surrogate pair stays well-formed rather than ending in a lone surrogate. | Test (TC-1711) |
-| FR-040-AC-16 | A goal decomposed into sub-claims has a strategy node, in markdown and mermaid, that names the edge verbs and the sub-claims argued over each, groups separated unambiguously; a sub-claim declaring two verbs toward one parent appears once. | Test (TC-2143) |
-| FR-040-AC-17 | A bound leaf lists its suites, the newest run or scan timestamp for each and overall, and the auditor's `bound`, `stale`, `suspect` or `undischarged` verdict, in markdown and `--json`; a bound suite with no run or scan says so. | Test (TC-2144) |
-| FR-040-AC-18 | A leaf the audit does not list healthy is open even with no finding, and shows the unevaluated check's reason or that the audit reached no verdict. | Test (TC-2145) |
-| FR-040-AC-19 | "Newest" run or scan is the later instant: fractional seconds and zone offsets order by the instant they name, not by string. | Test (TC-2146) |
+| FR-040-AC-1 | The case argues from a top-level claim down through its requirements to their obligations. | Test |
+| FR-040-AC-2 | An obligation with an auditor finding stays in the tree as an open node, carrying the reason. | Test |
+| FR-040-AC-3 | Open propagates upward: a claim with a broken branch is not reported as supported. | Test |
+| FR-040-AC-4 | A claim with no sub-claim and no obligation is open, not vacuously supported. | Test |
+| FR-040-AC-5 | Requirements carrying obligations that no claim reaches are reported, not omitted. | Test |
+| FR-040-AC-6 | The claim type comes from the caller; a declared hazard argues as readily as an `StR`. | Test |
+| FR-040-AC-7 | An obligation's owning requirement is derived from its id. | Test |
+| FR-040-AC-8 | Rendering unchanged inputs is byte-identical. | Test |
+| FR-040-AC-9 | Mermaid output survives punctuation in a statement — parentheses, quotes and semicolons. | Test |
+| FR-040-AC-10 | A bundle declaring no claim says so, rather than rendering an empty case. | Test |
+| FR-040-AC-11 | A requirement refining two claims appears under both. | Test |
+| FR-040-AC-12 | A cycle terminates without dropping a legitimately shared child. | Test |
+| FR-040-AC-13 | A case with no claims carries a machine-readable `reason` naming the searched claim types — present exactly when `claims` is empty — so the `--json` consumer can tell a clean case from one where nothing was argued. | Test |
+| FR-040-AC-14 | `--claim-type` is matched case-insensitively against the authored `type:`, and the flag REPLACES the `StR` default rather than adding to it — stated in its help. | Test |
+| FR-040-AC-15 | A mermaid label is truncated on a code-point boundary, so a label whose limit falls inside a surrogate pair stays well-formed rather than ending in a lone surrogate. | Test |
+| FR-040-AC-16 | A goal decomposed into sub-claims has a strategy node, in markdown and mermaid, that names the edge verbs and the sub-claims argued over each, groups separated unambiguously; a sub-claim declaring two verbs toward one parent appears once. | Test |
+| FR-040-AC-17 | A bound leaf lists its suites, the newest run or scan timestamp for each and overall, and the auditor's `bound`, `stale`, `suspect` or `undischarged` verdict, in markdown and `--json`; a bound suite with no run or scan says so. | Test |
+| FR-040-AC-18 | A leaf the audit does not list healthy is open even with no finding, and shows the unevaluated check's reason or that the audit reached no verdict. | Test |
+| FR-040-AC-19 | "Newest" run or scan is the later instant: fractional seconds and zone offsets order by the instant they name, not by string. | Test |
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
 | FR-040-CON-1 | quoin SHALL NOT collect data for this view. It reads the store and the spec, and reports what is missing (ADR-0011 L1). | Design | Inspection |
-| FR-040-CON-2 | quoin SHALL NOT omit an unsupported node. A narrowed case reads as a complete one. | Design | Test (TC-224, TC-225) |
+| FR-040-CON-2 | quoin SHALL NOT omit an unsupported node. A narrowed case reads as a complete one. | Design | Test |
 | FR-040-CON-3 | quoin SHALL NOT re-derive freshness or suspicion. The auditor's verdict is the one used. | Design | Inspection |
 | FR-040-CON-4 | quoin SHALL NOT write the rendered case into the repository. It is a view, emitted on stdout. | Design | Inspection |
 

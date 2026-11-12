@@ -37,7 +37,7 @@ fn document(claims: &[&str], excuses: &[&str], body: &str) -> DocumentClaims {
     }
 }
 
-#[trace("FR-037-AC-3", "TC-208")]
+#[trace("FR-037-AC-3")]
 #[test]
 fn tc_208_an_unclaimed_value_is_an_unowned_gap_at_medium() {
     let result = assess_vocabulary(&declaration(), &[document(&["speed", "safety"], &[], "")]);
@@ -48,7 +48,7 @@ fn tc_208_an_unclaimed_value_is_an_unowned_gap_at_medium() {
     assert_eq!(result.rollup.unowned, 1);
 }
 
-#[trace("FR-037-AC-4", "TC-209")]
+#[trace("FR-037-AC-4")]
 #[test]
 fn tc_209_an_exclusion_with_no_written_reason_is_high() {
     let doc = document(&["speed", "reach"], &["safety"], "no table here\n");
@@ -59,7 +59,7 @@ fn tc_209_an_exclusion_with_no_written_reason_is_high() {
     assert!(result.findings[0].severity > Severity::Medium);
 }
 
-#[trace("FR-037-AC-5", "TC-210")]
+#[trace("FR-037-AC-5")]
 #[test]
 fn tc_210_an_exclusion_outside_the_vocabulary_excuses_nothing() {
     let doc = document(
@@ -80,7 +80,7 @@ fn tc_210_an_exclusion_outside_the_vocabulary_excuses_nothing() {
     assert_eq!(result.rollup.excused, 0);
 }
 
-#[trace("FR-037-AC-6", "TC-211")]
+#[trace("FR-037-AC-6")]
 #[test]
 fn tc_211_a_table_row_with_a_real_reason_accepts_the_exclusion() {
     let doc = document(

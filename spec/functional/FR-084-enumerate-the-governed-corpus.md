@@ -99,14 +99,14 @@ the exclusion vocabulary is an input somebody authors, not a detail the walker d
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-084-AC-1 | A directory containing both `.git/` and `spec/` is enumerated as one repository carrying `origin`, `commit`, `clean` and `stable`. | Test (TC-1500) |
-| FR-084-AC-2 | A directory whose `.git` is a file is excluded under `git-link-file`, and a nested repository below an enumerated root is excluded from it under `nested-repository` and evaluated separately. | Test (TC-1501) |
-| FR-084-AC-3 | A repository with no `origin` remote is retained with `origin: null` and its documents are still counted. | Test (TC-1502) |
-| FR-084-AC-4 | A repository whose working tree carries an uncommitted change is recorded `clean: false`, and a repository whose `HEAD` moves during the run is recorded `stable: false`. | Test (TC-1503) |
-| FR-084-AC-5 | Files under a dot-prefixed directory and under each declared excluded directory name are absent from the document count, and the exclusion vocabulary and corpus identifier appear verbatim in the corpus record. | Test (TC-1504) |
-| FR-084-AC-6 | The sum of the per-repository document counts equals the total document count published for the corpus, and no document is counted under two repositories. | Test (TC-1505) |
-| FR-084-AC-7 | A symbolic link to a directory is not traversed, is recorded under the rule `symlink`, and contributes no document; a link cycle terminates the walk. | Test (TC-1566) |
-| FR-084-AC-8 | Changing only the declared exclusion vocabulary changes the enumerated document count, demonstrating the vocabulary is read rather than compiled in. | Test (TC-1567) |
+| FR-084-AC-1 | A directory containing both `.git/` and `spec/` is enumerated as one repository carrying `origin`, `commit`, `clean` and `stable`. | Test |
+| FR-084-AC-2 | A directory whose `.git` is a file is excluded under `git-link-file`, and a nested repository below an enumerated root is excluded from it under `nested-repository` and evaluated separately. | Test |
+| FR-084-AC-3 | A repository with no `origin` remote is retained with `origin: null` and its documents are still counted. | Test |
+| FR-084-AC-4 | A repository whose working tree carries an uncommitted change is recorded `clean: false`, and a repository whose `HEAD` moves during the run is recorded `stable: false`. | Test |
+| FR-084-AC-5 | Files under a dot-prefixed directory and under each declared excluded directory name are absent from the document count, and the exclusion vocabulary and corpus identifier appear verbatim in the corpus record. | Test |
+| FR-084-AC-6 | The sum of the per-repository document counts equals the total document count published for the corpus, and no document is counted under two repositories. | Test |
+| FR-084-AC-7 | A symbolic link to a directory is not traversed, is recorded under the rule `symlink`, and contributes no document; a link cycle terminates the walk. | Test |
+| FR-084-AC-8 | Changing only the declared exclusion vocabulary changes the enumerated document count, demonstrating the vocabulary is read rather than compiled in. | Test |
 
 ## Dependencies
 

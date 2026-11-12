@@ -10,12 +10,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-066"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1296"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1300"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1303"
-    type: verifies
 ---
 
 # TASK-034: Implement lossless governed graph producer adapters

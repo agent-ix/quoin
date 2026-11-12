@@ -57,11 +57,11 @@ plugin disposition, or a remaining Node/oclif shell path blocks the cutover.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-102-AC-1 | Native fixture tests replay the retained command surface before shell replacement. | Test (TC-1649) |
-| FR-102-AC-2 | `quoin-cli` accepts the retained command grammar and preserves exit status. | Property (TC-1650) |
-| FR-102-AC-5 | An unrecognised command exits non-zero and names the command. | Test (TC-1653) |
-| FR-102-AC-6 | The repository contains no Node/oclif shell or generated TypeScript boundary surface, and the binary is named `quoin`. | Test (TC-1654) |
-| FR-102-AC-7 | No first-party crate declares a crates.io publication target. The executable is delivered as GitHub Release assets, and, per FR-112, as npm packages repackaged from those same assets; neither channel rebuilds it. | Test (TC-1703) |
+| FR-102-AC-1 | Native fixture tests replay the retained command surface before shell replacement. | Test |
+| FR-102-AC-2 | `quoin-cli` accepts the retained command grammar and preserves exit status. | Property |
+| FR-102-AC-5 | An unrecognised command exits non-zero and names the command. | Test |
+| FR-102-AC-6 | The repository contains no Node/oclif shell or generated TypeScript boundary surface, and the binary is named `quoin`. | Test |
+| FR-102-AC-7 | No first-party crate declares a crates.io publication target. The executable is delivered as GitHub Release assets, and, per FR-112, as npm packages repackaged from those same assets; neither channel rebuilds it. | Test |
 
 ## Dependencies
 

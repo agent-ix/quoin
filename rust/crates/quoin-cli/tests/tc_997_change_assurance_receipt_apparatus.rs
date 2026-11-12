@@ -159,7 +159,7 @@ fn intake_attestation(root: &Path) -> String {
 /// gap the apparatus-touched constraint recorded until this ticket.
 ///
 /// Provenance: PLAT-997
-#[trace("FR-111-AC-1", "TC-1889")]
+#[trace("FR-111-AC-1")]
 #[test]
 fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
     let root = repo();
@@ -215,7 +215,7 @@ fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
 /// `valid` because the caller supplied no diff.
 ///
 /// Provenance: PLAT-997
-#[trace("FR-111-AC-4", "TC-1890")]
+#[trace("FR-111-AC-4")]
 #[test]
 fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
     let root = repo();
@@ -269,7 +269,7 @@ fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
 /// a caller's omission apart from a genuinely unlinked receipt (PLAT-1015).
 ///
 /// Provenance: PLAT-1015
-#[trace("FR-111-AC-5", "TC-1915")]
+#[trace("FR-111-AC-5")]
 #[test]
 fn tc_1015_622_receipt_records_the_omission_through_the_real_binary() {
     let root = repo();

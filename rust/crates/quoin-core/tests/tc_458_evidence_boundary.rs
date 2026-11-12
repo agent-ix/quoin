@@ -614,7 +614,7 @@ fn scenario_document() -> Value {
 /// The intake answers a versioned payload naming its owner and contract, files
 /// the record under `scenarios/`, and refuses a wrong contract with a typed
 /// refusal kind.
-#[trace("FR-130-AC-1", "FR-130-AC-3", "FR-130-AC-9", "TC-2208")]
+#[trace("FR-130-AC-1", "FR-130-AC-3", "FR-130-AC-9")]
 #[test]
 fn tc_2208_the_scenario_intake_answers_a_versioned_result_or_a_typed_refusal() {
     let dir = repo();
@@ -676,7 +676,7 @@ fn discharge_fact() -> Value {
 
 /// Facts recorded through the wire are the only thing the store keeps; the
 /// partition is re-derived from the live binding report on every read.
-#[trace("FR-133-AC-6", "TC-2605")]
+#[trace("FR-133-AC-6")]
 #[test]
 fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_report() {
     let dir = repo();
@@ -736,7 +736,7 @@ fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_r
     assert_eq!(later["binding"]["direct"], json!([]));
 }
 
-#[trace("FR-133-AC-3", "TC-2602")]
+#[trace("FR-133-AC-3")]
 #[test]
 fn tc_2602_a_refused_fact_list_exits_bad_request_and_writes_nothing() {
     let dir = repo();
@@ -752,7 +752,7 @@ fn tc_2602_a_refused_fact_list_exits_bad_request_and_writes_nothing() {
     assert!(!store_path(dir.path(), "discharge").exists());
 }
 
-#[trace("FR-133-AC-5", "TC-2604")]
+#[trace("FR-133-AC-5")]
 #[test]
 fn tc_2604_a_binding_report_naming_a_clause_twice_is_refused_by_every_discharge_operation() {
     let dir = repo();
@@ -773,7 +773,7 @@ fn tc_2604_a_binding_report_naming_a_clause_twice_is_refused_by_every_discharge_
     }
 }
 
-#[trace("FR-133-AC-3", "TC-2602")]
+#[trace("FR-133-AC-3")]
 #[test]
 fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_writes_nothing() {
     let dir = repo();
@@ -797,7 +797,7 @@ fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_write
 
 /// The requirements mapping matrix is a view of the stored facts: the same
 /// recorded fact is Compliant before its expiry and a not-current gap after.
-#[trace("FR-135-AC-6", "TC-3205")]
+#[trace("FR-135-AC-6")]
 #[test]
 fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
     let dir = repo();
@@ -881,7 +881,7 @@ fn tc_1488_100_the_pack_operation_refuses_an_unknown_module_by_name() {
 
 /// A stored disposition whose rationale is blank was not written by
 /// `record_discharge`; the operation refuses it and renders no matrix.
-#[trace("FR-135-AC-6", "TC-3205")]
+#[trace("FR-135-AC-6")]
 #[test]
 fn tc_3205_a_stored_disposition_with_a_blank_rationale_refuses_the_matrix() {
     let dir = repo();

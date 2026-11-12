@@ -90,15 +90,15 @@ The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produc
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-041-AC-1 | A CycloneDX document yields one passing entry per component, identified by purl. | Test (TC-231) |
-| FR-041-AC-2 | An SPDX document is read through its purl external refs, not its package names. | Test (TC-232) |
-| FR-041-AC-3 | An inventory listing nothing yields no entries, so the existing vacuity check names it. | Test (TC-233) |
-| FR-041-AC-4 | A document that is neither format is refused, not read as empty. | Test (TC-234) |
-| FR-041-AC-5 | A component with neither purl nor name is dropped rather than given an invented identity. | Test (TC-235) |
-| FR-041-AC-6 | The adapter is selected by `--adapter sbom` and by the tools that emit these formats. | Test (TC-236) |
-| FR-041-AC-7 | `--discharges` on an SBOM recording binds the stated obligation to the components it listed; without `--discharges` the SBOM binds nothing. | Test (TC-2704) |
-| FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing, including when the inventory lists no component. | Test (TC-2705) |
-| FR-041-AC-9 | `--discharges` on a run adapter other than sbom is refused with an error naming the adapter, and records nothing. | Test (TC-2708) |
+| FR-041-AC-1 | A CycloneDX document yields one passing entry per component, identified by purl. | Test |
+| FR-041-AC-2 | An SPDX document is read through its purl external refs, not its package names. | Test |
+| FR-041-AC-3 | An inventory listing nothing yields no entries, so the existing vacuity check names it. | Test |
+| FR-041-AC-4 | A document that is neither format is refused, not read as empty. | Test |
+| FR-041-AC-5 | A component with neither purl nor name is dropped rather than given an invented identity. | Test |
+| FR-041-AC-6 | The adapter is selected by `--adapter sbom` and by the tools that emit these formats. | Test |
+| FR-041-AC-7 | `--discharges` on an SBOM recording binds the stated obligation to the components it listed; without `--discharges` the SBOM binds nothing. | Test |
+| FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing, including when the inventory lists no component. | Test |
+| FR-041-AC-9 | `--discharges` on a run adapter other than sbom is refused with an error naming the adapter, and records nothing. | Test |
 
 ## Constraints
 
@@ -107,7 +107,7 @@ The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produc
 | FR-041-CON-1 | quoin SHALL NOT generate an SBOM. The consumer's CI produces it (ADR-0011 invariant 1). | Design | Inspection |
 | FR-041-CON-2 | quoin SHALL NOT introduce a record type for inventories. An SBOM is a run record; advisory findings are FR-034's. | Design | Inspection |
 | FR-041-CON-3 | quoin SHALL NOT judge the inventory's contents. Whether a component's version or licence passes is the auditor's and the consumer's gate policy. | Design | Inspection |
-| FR-041-CON-4 | The adapter SHALL NOT declare an `evidenceKind`. The catalog and the suite registry already carry that vocabulary. | Design | Test (TC-231) |
+| FR-041-CON-4 | The adapter SHALL NOT declare an `evidenceKind`. The catalog and the suite registry already carry that vocabulary. | Design | Test |
 
 ## Dependencies
 

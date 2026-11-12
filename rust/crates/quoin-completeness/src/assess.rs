@@ -391,7 +391,7 @@ mod tests {
     use super::*;
     use ix_trace_rs::trace;
 
-    #[trace("FR-037-AC-7", "TC-212")]
+    #[trace("FR-037-AC-7")]
     #[test]
     fn tc_378_210_non_answers_are_rejected_and_real_sentences_accepted() {
         for non_answer in [
@@ -406,7 +406,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-037-AC-7", "TC-212")]
+    #[trace("FR-037-AC-7")]
     #[test]
     fn tc_378_211_a_mention_in_prose_is_not_a_justification() {
         assert_eq!(
@@ -430,7 +430,7 @@ mod tests {
         assert_eq!(verdict_for(&[high], true, 0), Verdict::Unchecked);
     }
 
-    #[trace("FR-037-AC-8", "TC-213")]
+    #[trace("FR-037-AC-8")]
     #[test]
     fn tc_378_213_strict_promotes_only_admitted_gaps() {
         let medium = CompletenessFinding {

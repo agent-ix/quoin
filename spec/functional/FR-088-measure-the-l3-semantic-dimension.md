@@ -102,12 +102,12 @@ check that never executed.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-088-AC-1 | Each of the five representation forms is classified from a document exhibiting it, and each document carries exactly one form. | Test (TC-1525) |
-| FR-088-AC-2 | The form census counts documents, states that unit, and its per-form counts sum to the enumerated document count. | Test (TC-1526) |
-| FR-088-AC-3 | A free-column table and a bullet list each yield one `unsupported-representation` advisory finding, and neither is counted as a conformance failure. | Test (TC-1527) |
-| FR-088-AC-4 | A document with no `## Properties` heading records `not-applicable` and is absent from both sides of this check's rate. | Test (TC-1528) |
-| FR-088-AC-5 | Every document's field-level record is `could-not-run` carrying a tool-defect ledger citation while no engine surface exposes semantic extraction. | Test (TC-1529) |
-| FR-088-AC-6 | The document set the form census classified is the same set FR-084 enumerated, compared element by element. | Test (TC-1530) |
+| FR-088-AC-1 | Each of the five representation forms is classified from a document exhibiting it, and each document carries exactly one form. | Test |
+| FR-088-AC-2 | The form census counts documents, states that unit, and its per-form counts sum to the enumerated document count. | Test |
+| FR-088-AC-3 | A free-column table and a bullet list each yield one `unsupported-representation` advisory finding, and neither is counted as a conformance failure. | Test |
+| FR-088-AC-4 | A document with no `## Properties` heading records `not-applicable` and is absent from both sides of this check's rate. | Test |
+| FR-088-AC-5 | Every document's field-level record is `could-not-run` carrying a tool-defect ledger citation while no engine surface exposes semantic extraction. | Test |
+| FR-088-AC-6 | The document set the form census classified is the same set FR-084 enumerated, compared element by element. | Test |
 | FR-088-AC-7 | No source file of the measurement resolves a `Type` token, a multiplicity form or a constraint keyword. | Inspection |
 
 ## Dependencies

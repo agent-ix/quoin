@@ -81,12 +81,12 @@ inconclusive rather than as clean.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| NFR-025-AC-1 | A read-back over every reachable store names its non-empty full population and reports zero changed bytes. | Test (TC-1665) |
-| NFR-025-AC-2 | A planted single-byte change in a stored record makes the read-back fail. | Test (TC-1666) |
-| NFR-025-AC-3 | Reading and re-serializing every store without regenerating identity fields returns byte-identical records, including historical assurance records. | Test (TC-1667) |
-| NFR-025-AC-4 | Comparing the evidence and accepted-corpus trees before and after a cutover, after its revert, and after the deletion change finds zero changed bytes. | Test (TC-1668) |
-| NFR-025-AC-5 | A read-back whose population is zero, or whose store inventory is absent, is reported as inconclusive. | Test (TC-1669) |
-| NFR-025-AC-6 | Withdrawn: there is no retained writer whose output new records could be compared with; new records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn (TC-1704) |
+| NFR-025-AC-1 | A read-back over every reachable store names its non-empty full population and reports zero changed bytes. | Test |
+| NFR-025-AC-2 | A planted single-byte change in a stored record makes the read-back fail. | Test |
+| NFR-025-AC-3 | Reading and re-serializing every store without regenerating identity fields returns byte-identical records, including historical assurance records. | Test |
+| NFR-025-AC-4 | Comparing the evidence and accepted-corpus trees before and after a cutover, after its revert, and after the deletion change finds zero changed bytes. | Test |
+| NFR-025-AC-5 | A read-back whose population is zero, or whose store inventory is absent, is reported as inconclusive. | Test |
+| NFR-025-AC-6 | Withdrawn: there is no retained writer whose output new records could be compared with; new records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn |
 
 ## Dependencies
 

@@ -71,9 +71,9 @@ figure is absent from those artifacts or disagrees with them.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| NFR-023-AC-1 | Every numeric figure printed by the report names the result artifact it was taken from. | Test (TC-1563) |
-| NFR-023-AC-2 | Every numeric figure printed by the report equals the value recomputed from the artifact it names. | Test (TC-1564) |
-| NFR-023-AC-3 | Every rate printed by the report carries its unit and its population identifier. | Test (TC-1565) |
+| NFR-023-AC-1 | Every numeric figure printed by the report names the result artifact it was taken from. | Test |
+| NFR-023-AC-2 | Every numeric figure printed by the report equals the value recomputed from the artifact it names. | Test |
+| NFR-023-AC-3 | Every rate printed by the report carries its unit and its population identifier. | Test |
 | NFR-023-AC-4 | A planted figure with no binding fails the check: a printed numeric figure whose observation names no collection, and a printed rate with no unit or no population identifier, are each reported rather than passed over. A run that finds no figure to check is reported as inconclusive, never as zero unbound figures. | Test |
 
 ## Dependencies

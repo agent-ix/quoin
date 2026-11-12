@@ -13,7 +13,7 @@ use quoin_combinatorial::{
 /// A demand past the ceiling is refused, not exhausted.
 ///
 /// Provenance: quoin#382
-#[trace("FR-035-AC-1", "TC-180")]
+#[trace("FR-035-AC-1")]
 #[test]
 #[allow(
     clippy::unwrap_used,

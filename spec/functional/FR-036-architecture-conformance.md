@@ -107,23 +107,23 @@ be read, and a check that silently ignores what it cannot read is asserting over
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-036-AC-1 | A real all-passing audit run reads as rules that ran and found nothing, not as an absent scan. | Test (TC-197) |
-| FR-036-AC-2 | A `FAIL` line becomes a finding carrying the acceptance criterion the script names. | Test (TC-198) |
-| FR-036-AC-3 | `OK` lines count toward rules evaluated, so a clean run is not vacuous. | Test (TC-199) |
-| FR-036-AC-4 | Output containing no recognised audit line is rejected. | Test (TC-200) |
-| FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape (`audit-script`, `audit-static`, `import-linter`, `dependency-cruiser`, `make ci`). | Test (TC-201) |
-| FR-036-AC-6 | An architectural statement is advised `architecture-conformance`, with both halves of the catalog's rule matching. | Test (TC-204, TC-205) |
-| FR-036-AC-7 | No workspace crate depends on `quoin-cli`: the CLI is a leaf and the engine crates load without it. | Test (TC-202) |
-| FR-036-AC-8 | The executables quoin's production code starts are exactly `git`, `ix-flow` and the operator's own `$EDITOR` (`config edit`); build scripts and the developer tools `quoin-suite-trace` and `quoin-workflow-check` are not part of the engine. | Test (TC-203) |
-| FR-036-AC-9 | A scan recorded under any tool the adapter claims, with or without `--adapter audit-script`, is accepted and written as a scan. | Test (TC-2900) |
+| FR-036-AC-1 | A real all-passing audit run reads as rules that ran and found nothing, not as an absent scan. | Test |
+| FR-036-AC-2 | A `FAIL` line becomes a finding carrying the acceptance criterion the script names. | Test |
+| FR-036-AC-3 | `OK` lines count toward rules evaluated, so a clean run is not vacuous. | Test |
+| FR-036-AC-4 | Output containing no recognised audit line is rejected. | Test |
+| FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape (`audit-script`, `audit-static`, `import-linter`, `dependency-cruiser`, `make ci`). | Test |
+| FR-036-AC-6 | An architectural statement is advised `architecture-conformance`, with both halves of the catalog's rule matching. | Test |
+| FR-036-AC-7 | No workspace crate depends on `quoin-cli`: the CLI is a leaf and the engine crates load without it. | Test |
+| FR-036-AC-8 | The executables quoin's production code starts are exactly `git`, `ix-flow` and the operator's own `$EDITOR` (`config edit`); build scripts and the developer tools `quoin-suite-trace` and `quoin-workflow-check` are not part of the engine. | Test |
+| FR-036-AC-9 | A scan recorded under any tool the adapter claims, with or without `--adapter audit-script`, is accepted and written as a scan. | Test |
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-036-CON-1 | quoin SHALL NOT execute a conformance tool. The adapter reads captured output; the consumer's CI runs the check (ADR-0011 invariant 1). | Design | Test (TC-203) |
+| FR-036-CON-1 | quoin SHALL NOT execute a conformance tool. The adapter reads captured output; the consumer's CI runs the check (ADR-0011 invariant 1). | Design | Test |
 | FR-036-CON-2 | quoin SHALL NOT ship a conformance engine. The method rides per-language tooling and the audit-script pattern. | Design | Inspection |
-| FR-036-CON-3 | `module-boundary` and `layering` SHALL NOT match the same phrase. Two characteristics sharing a trigger are one characteristic with two names. | Design | Test (TC-204) |
+| FR-036-CON-3 | `module-boundary` and `layering` SHALL NOT match the same phrase. Two characteristics sharing a trigger are one characteristic with two names. | Design | Test |
 | FR-036-CON-4 | The author of a conformance check SHALL observe it fail against an injected violation before relying on it. A check never seen to fail is not a check. | Process | Inspection |
 
 ## Dependencies

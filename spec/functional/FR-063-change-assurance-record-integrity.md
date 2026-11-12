@@ -346,19 +346,19 @@ person's identity, authority, possession of a key, or non-repudiation.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-063-AC-1 | Schema v1 requires the record identity and revision, repository and base revision, non-empty scope and sources, impact snapshot, complete definition collections, and review-workflow binding; undeclared fields (including any digest member) are refused. | Test (TC-1261) |
-| FR-063-AC-2 | Requirements and proof obligations are non-empty; meaningful empty preservation and unknown arrays remain present; duplicate identities are refused before the record is written. | Property (TC-1262) |
-| FR-063-AC-3 | Every requirement retains its reviewed statement, and every proof fixes its owning evidence obligations, literal argv, repository-relative cwd, evidence kind, tool identity, and configuration reference. | Test (TC-1263) |
-| FR-063-AC-4 | An incomplete or truncated impact snapshot and each open, accepted, deferred, or resolved unknown remain explicit rather than becoming a completeness claim. | Test (TC-1264) |
-| FR-063-AC-5 | Withdrawn: a record carries no digest, so no digest vector remains (id not reused). | Withdrawn (TC-1265) |
-| FR-063-AC-6 | Withdrawn: there is no stored digest for a leaf change to invalidate; tampering is visible in git history (id not reused). | Withdrawn (TC-1266) |
-| FR-063-AC-7 | Withdrawn: there is no digest form to refuse; duplicate names, lone surrogates, non-I-JSON numbers and a byte-order mark are refused under AC-1 and AC-2 (id not reused). | Withdrawn (TC-1267) |
-| FR-063-AC-8 | Revision 1 has no predecessor; a successor requires retained revision N-1 of the same record id; a missing, skipped, or cross-record predecessor fails lineage verification. | Property (TC-1268) |
-| FR-063-AC-9 | Writing a successor leaves the predecessor's path and bytes unchanged, and rejected or revise-requested records remain addressable by `(record_id, revision)` (CON-2). | Integration (TC-1269) |
-| FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, or revision cannot approve it. | Integration (TC-1270) |
-| FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Analysis (TC-1271) |
-| FR-063-AC-12 | Every source connection requires a `path`, and the gate refuses an absolute path, a `..` or `.` segment, an empty segment, a backslash, a NUL, a trailing slash, the bare `.`, and a path shared by two connections; a valid path survives a write and re-read unchanged, and the published schema refuses the same malformed paths. | Test (TC-2011) |
-| FR-063-AC-13 | Only the record body is evidence: a `purpose`, `derived_fields` or lookup-map member placed inside the record body, at the top level or inside a source connection, is refused as undeclared. | Test (TC-2012) |
+| FR-063-AC-1 | Schema v1 requires the record identity and revision, repository and base revision, non-empty scope and sources, impact snapshot, complete definition collections, and review-workflow binding; undeclared fields (including any digest member) are refused. | Test |
+| FR-063-AC-2 | Requirements and proof obligations are non-empty; meaningful empty preservation and unknown arrays remain present; duplicate identities are refused before the record is written. | Property |
+| FR-063-AC-3 | Every requirement retains its reviewed statement, and every proof fixes its owning evidence obligations, literal argv, repository-relative cwd, evidence kind, tool identity, and configuration reference. | Test |
+| FR-063-AC-4 | An incomplete or truncated impact snapshot and each open, accepted, deferred, or resolved unknown remain explicit rather than becoming a completeness claim. | Test |
+| FR-063-AC-5 | Withdrawn: a record carries no digest, so no digest vector remains (id not reused). | Withdrawn |
+| FR-063-AC-6 | Withdrawn: there is no stored digest for a leaf change to invalidate; tampering is visible in git history (id not reused). | Withdrawn |
+| FR-063-AC-7 | Withdrawn: there is no digest form to refuse; duplicate names, lone surrogates, non-I-JSON numbers and a byte-order mark are refused under AC-1 and AC-2 (id not reused). | Withdrawn |
+| FR-063-AC-8 | Revision 1 has no predecessor; a successor requires retained revision N-1 of the same record id; a missing, skipped, or cross-record predecessor fails lineage verification. | Property |
+| FR-063-AC-9 | Writing a successor leaves the predecessor's path and bytes unchanged, and rejected or revise-requested records remain addressable by `(record_id, revision)` (CON-2). | Integration |
+| FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, or revision cannot approve it. | Integration |
+| FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Analysis |
+| FR-063-AC-12 | Every source connection requires a `path`, and the gate refuses an absolute path, a `..` or `.` segment, an empty segment, a backslash, a NUL, a trailing slash, the bare `.`, and a path shared by two connections; a valid path survives a write and re-read unchanged, and the published schema refuses the same malformed paths. | Test |
+| FR-063-AC-13 | Only the record body is evidence: a `purpose`, `derived_fields` or lookup-map member placed inside the record body, at the top level or inside a source connection, is refused as undeclared. | Test |
 
 ## Dependencies
 

@@ -12,12 +12,6 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/FR-067"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1305"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1309"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1312"
-    type: verifies
 ---
 
 # TASK-036: Implement pure governed graph portfolio logic

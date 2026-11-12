@@ -54,7 +54,7 @@ fn finding(obligation_id: &str, kind: &str) -> Finding {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-1", "TC-221")]
+#[trace("FR-040-AC-1")]
 #[test]
 fn tc_447_400_argues_from_the_claim_down_to_its_evidence() {
     let result = build_case(&input(
@@ -95,7 +95,7 @@ fn tc_447_400_argues_from_the_claim_down_to_its_evidence() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-2", "TC-222")]
+#[trace("FR-040-AC-2")]
 #[test]
 fn tc_447_401_an_obligation_with_a_finding_stays_in_the_tree_as_an_open_node() {
     // The point of the whole view. Dropping it produces a case that reads as
@@ -119,7 +119,7 @@ fn tc_447_401_an_obligation_with_a_finding_stays_in_the_tree_as_an_open_node() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-3", "TC-223")]
+#[trace("FR-040-AC-3")]
 #[test]
 fn tc_447_402_one_open_leaf_opens_every_ancestor_up_to_the_claim() {
     let result = build_case(&input(
@@ -151,7 +151,7 @@ fn tc_447_402_one_open_leaf_opens_every_ancestor_up_to_the_claim() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-4", "FR-040-CON-2", "TC-224")]
+#[trace("FR-040-AC-4", "FR-040-CON-2")]
 #[test]
 fn tc_447_403_a_claim_nothing_traces_to_is_undeveloped_and_never_supported() {
     // A goal with no sub-goal and no evidence is open. Rendering it supported
@@ -187,7 +187,7 @@ fn tc_447_403_a_claim_nothing_traces_to_is_undeveloped_and_never_supported() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-5", "TC-225")]
+#[trace("FR-040-AC-5")]
 #[test]
 fn tc_447_404_a_requirement_no_claim_reaches_is_reported_rather_than_rendered_around() {
     // A case drawn only over the reachable half reads as complete. The orphan
@@ -210,7 +210,7 @@ fn tc_447_404_a_requirement_no_claim_reaches_is_reported_rather_than_rendered_ar
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts, quoin#170
-#[trace("FR-040-AC-11", "TC-237")]
+#[trace("FR-040-AC-11")]
 #[test]
 fn tc_447_405_a_requirement_that_traces_to_two_claims_appears_under_both() {
     // Sharing one visited-set across claims put it under the first only, and
@@ -249,7 +249,7 @@ fn tc_447_405_a_requirement_that_traces_to_two_claims_appears_under_both() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-12", "TC-238")]
+#[trace("FR-040-AC-12")]
 #[test]
 fn tc_447_406_a_refinement_cycle_terminates_without_dropping_a_shared_child() {
     // A refines B refines A. The recursion must terminate, and it must do so by
@@ -281,7 +281,7 @@ fn tc_447_406_a_refinement_cycle_terminates_without_dropping_a_shared_child() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
-#[trace("FR-040-AC-6", "TC-226")]
+#[trace("FR-040-AC-6")]
 #[test]
 fn tc_447_407_the_claim_type_comes_from_the_caller_and_never_from_a_constant() {
     // A safety bundle argues from a declared hazard. The vocabulary is module
@@ -308,7 +308,7 @@ fn tc_447_407_the_claim_type_comes_from_the_caller_and_never_from_a_constant() {
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts, quoin#170
-#[trace("FR-040-AC-13", "TC-261")]
+#[trace("FR-040-AC-13")]
 #[test]
 fn tc_447_408_the_machine_readable_reason_is_present_exactly_when_nothing_is_a_claim() {
     // `--json` emits `build_case`'s result verbatim, so this field is what lets
@@ -363,7 +363,7 @@ fn tc_447_408_the_machine_readable_reason_is_present_exactly_when_nothing_is_a_c
 }
 
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts, quoin#170
-#[trace("FR-040-AC-14", "TC-262")]
+#[trace("FR-040-AC-14")]
 #[test]
 fn tc_447_409_claim_type_matching_is_case_insensitive_in_both_directions() {
     // `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0

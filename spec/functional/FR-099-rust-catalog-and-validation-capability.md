@@ -114,18 +114,18 @@ refusal and are never reported as an empty but successful catalog.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-099-AC-1 | `quoin-core validators.run` returns the same verdict and non-success classification as the retained validator path over the golden corpus. | Test (TC-1625) |
-| FR-099-AC-2 | `quoin-core quire.validate` returns the same verdict as the retained `src/quire` adapter for every corpus document, with `quire-rs` consumed as a Cargo dependency. | Test (TC-1626) |
-| FR-099-AC-3 | `quoin-core catalog.list` assembles a catalog identical to the retained catalog for the same configuration root, resolves a type case-insensitively, and reports a planted duplicate type rather than selecting one. | Test (TC-1627) |
-| FR-099-AC-4 | A second reconcile over an already-materialized configuration root performs no git or network access and yields a catalog identical to the first. | Test (TC-1628) |
-| FR-099-AC-5 | A manifest carrying an unknown key is refused by the Rust reader with the same classification as the retained reader. | Test (TC-1629) |
-| FR-099-AC-6 | `quoin-core semantic.validate` and `quoin-core completeness.analyze` return verdicts identical to the retained implementations over the golden corpus. | Test (TC-1630) |
-| FR-099-AC-7 | The Rust skill tests read the shipped Markdown skills and fail on a planted vocabulary drift, and the binary resolves the skills root from an argument, an environment value and its embedded fallback. | Test (TC-1631) |
-| FR-099-AC-8 | `package.json` declares no dependency on `@agent-ix/ix-cli-core`, and each imported symbol recorded in the baseline inventory has a named Rust implementation and a test; the gate reads the inventory rather than a hard-coded count. | Test (TC-1632) |
-| FR-099-AC-9 | Every asset under `skills/**/workflow-assets/**` carries a recorded disposition that distinguishes the first-party invariant shim from the vendored bundle, and an unclassified asset fails the gate. | Test (TC-1683) |
-| FR-099-AC-10 | The ix-flow child process is spawned through one hardened path: real-path resolution, a resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout, and exit, signal and spawn-failure reported as three distinct outcomes. | Test (TC-1696) |
-| FR-099-AC-11 | A partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the already-materialized path. | Test (TC-1697) |
-| FR-099-AC-12 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the duplicate gate and identical to the resolver. | Test (TC-1698) |
+| FR-099-AC-1 | `quoin-core validators.run` returns the same verdict and non-success classification as the retained validator path over the golden corpus. | Test |
+| FR-099-AC-2 | `quoin-core quire.validate` returns the same verdict as the retained `src/quire` adapter for every corpus document, with `quire-rs` consumed as a Cargo dependency. | Test |
+| FR-099-AC-3 | `quoin-core catalog.list` assembles a catalog identical to the retained catalog for the same configuration root, resolves a type case-insensitively, and reports a planted duplicate type rather than selecting one. | Test |
+| FR-099-AC-4 | A second reconcile over an already-materialized configuration root performs no git or network access and yields a catalog identical to the first. | Test |
+| FR-099-AC-5 | A manifest carrying an unknown key is refused by the Rust reader with the same classification as the retained reader. | Test |
+| FR-099-AC-6 | `quoin-core semantic.validate` and `quoin-core completeness.analyze` return verdicts identical to the retained implementations over the golden corpus. | Test |
+| FR-099-AC-7 | The Rust skill tests read the shipped Markdown skills and fail on a planted vocabulary drift, and the binary resolves the skills root from an argument, an environment value and its embedded fallback. | Test |
+| FR-099-AC-8 | `package.json` declares no dependency on `@agent-ix/ix-cli-core`, and each imported symbol recorded in the baseline inventory has a named Rust implementation and a test; the gate reads the inventory rather than a hard-coded count. | Test |
+| FR-099-AC-9 | Every asset under `skills/**/workflow-assets/**` carries a recorded disposition that distinguishes the first-party invariant shim from the vendored bundle, and an unclassified asset fails the gate. | Test |
+| FR-099-AC-10 | The ix-flow child process is spawned through one hardened path: real-path resolution, a resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout, and exit, signal and spawn-failure reported as three distinct outcomes. | Test |
+| FR-099-AC-11 | A partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the already-materialized path. | Test |
+| FR-099-AC-12 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the duplicate gate and identical to the resolver. | Test |
 
 ## Dependencies
 

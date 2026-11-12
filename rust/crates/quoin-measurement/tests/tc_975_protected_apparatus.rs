@@ -209,7 +209,7 @@ fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec
 }
 
 #[test]
-#[trace("TC-1810", "FR-110-AC-1")]
+#[trace("FR-110-AC-1")]
 fn tc_975_022_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
     let fixture = include_str!("fixtures/MP-001-evidence-gate.md");
     let frontmatter = fixture
@@ -278,7 +278,7 @@ fn tc_975_022_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
     assert_eq!(missing.reasons, [Reason::NoCollections]);
 }
 
-#[trace("FR-108-AC-4", "FR-110-AC-1", "TC-1810")]
+#[trace("FR-108-AC-4", "FR-110-AC-1")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_023_active_evidence_gate_uses_retained_conclusive_results() {
@@ -331,7 +331,7 @@ fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> 
 // ------------------------------------------------------------ plan intake
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-1", "TC-1810")]
+#[trace("FR-110-AC-1")]
 #[test]
 fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
     let temporary = repository(&format!(
@@ -409,7 +409,7 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
     }
 }
 
-#[trace("FR-110-AC-1", "TC-1810")]
+#[trace("FR-110-AC-1")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
@@ -497,7 +497,7 @@ fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
     }
 }
 
-#[trace("FR-110-AC-1", "TC-1810")]
+#[trace("FR-110-AC-1")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_025_a_gate_with_a_procedure_and_no_apparatus_is_refused() {
@@ -517,7 +517,7 @@ fn tc_975_025_a_gate_with_a_procedure_and_no_apparatus_is_refused() {
     assert!(error.to_string().contains("execution_procedure"), "{error}");
 }
 
-#[trace("FR-110-AC-1", "TC-1810")]
+#[trace("FR-110-AC-1")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_026_a_retired_gate_without_negative_controls_loads() {
@@ -533,7 +533,7 @@ fn tc_975_026_a_retired_gate_without_negative_controls_loads() {
 /// MP-001's own `count` / `eq 0` rule decides retained evidence: no adverse
 /// outcome accepts, one rejects.
 ///
-#[trace("FR-110-AC-1", "FR-108-AC-4", "TC-1810")]
+#[trace("FR-110-AC-1", "FR-108-AC-4")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule() {
@@ -582,7 +582,7 @@ fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule(
 /// the checker decides by it: 3 of 5 clearing passes accepts, 2 of 5 rejects,
 /// and a population under the five passes is refused.
 ///
-#[trace("FR-110-AC-1", "TC-1810")]
+#[trace("FR-110-AC-1")]
 /// Provenance: PLAT-1162
 #[test]
 fn tc_975_028_the_criterion_strength_gate_states_five_repetitions() {
@@ -660,7 +660,7 @@ fn tc_975_028_the_criterion_strength_gate_states_five_repetitions() {
 type Case = (&'static str, fn(&Path));
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-2", "TC-1811")]
+#[trace("FR-110-AC-2")]
 #[test]
 fn tc_975_002_intake_records_the_resolved_set_it_resolved_itself() {
     let temporary = repository(PROTECTED);
@@ -685,7 +685,7 @@ fn tc_975_002_intake_records_the_resolved_set_it_resolved_itself() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-3", "TC-1812")]
+#[trace("FR-110-AC-3")]
 #[test]
 fn tc_975_003_an_entry_naming_no_file_refuses_the_write() {
     let cases: [Case; 5] = [
@@ -733,7 +733,7 @@ fn tc_975_003_an_entry_naming_no_file_refuses_the_write() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-3", "TC-1813")]
+#[trace("FR-110-AC-3")]
 #[test]
 fn tc_975_004_a_symlink_is_refused_and_never_followed() {
     let cases: [Case; 3] = [
@@ -769,7 +769,7 @@ fn tc_975_004_a_symlink_is_refused_and_never_followed() {
 /// itself and refuses a list that leaves a protected file out.
 ///
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-3", "TC-1814")]
+#[trace("FR-110-AC-3")]
 #[test]
 fn tc_975_005_an_artifact_list_that_omits_a_protected_file_is_refused() {
     let temporary = repository(PROTECTED);
@@ -802,7 +802,7 @@ fn tc_975_005_an_artifact_list_that_omits_a_protected_file_is_refused() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-3", "TC-1815")]
+#[trace("FR-110-AC-3")]
 #[test]
 fn tc_975_006_an_unreadable_protected_file_is_refused() {
     use std::os::unix::fs::PermissionsExt as _;
@@ -838,7 +838,7 @@ fn tc_975_006_an_unreadable_protected_file_is_refused() {
 // ------------------------------------------------------------ comparison
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-4", "TC-1817")]
+#[trace("FR-110-AC-4")]
 #[test]
 fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     let temporary = repository(PROTECTED);
@@ -876,7 +876,7 @@ fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-4", "TC-1818")]
+#[trace("FR-110-AC-4")]
 #[test]
 fn tc_975_009_an_unprotected_artifact_stated_by_one_side_is_reported_and_does_not_block() {
     let temporary = repository(PROTECTED);
@@ -906,7 +906,7 @@ fn tc_975_009_an_unprotected_artifact_stated_by_one_side_is_reported_and_does_no
 /// PLAT-975: no record, and an artifact list is not reported on.
 ///
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-2", "FR-110-AC-4", "TC-1819")]
+#[trace("FR-110-AC-2", "FR-110-AC-4")]
 #[test]
 fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
     let temporary = repository("");
@@ -931,7 +931,7 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
 /// recorded.
 ///
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-5", "TC-1820")]
+#[trace("FR-110-AC-5")]
 #[test]
 fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
     let temporary = repository(PROTECTED);
@@ -960,7 +960,7 @@ fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
 /// unverified, is not comparable with one that recorded the set.
 ///
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-4", "TC-1821")]
+#[trace("FR-110-AC-4")]
 #[test]
 fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
     let temporary = repository(PROTECTED);
@@ -993,7 +993,7 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
 // ------------------------------------------------------------ checker
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-7", "TC-1822")]
+#[trace("FR-110-AC-7")]
 #[test]
 fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
     let temporary = repository(PROTECTED);
@@ -1020,7 +1020,7 @@ fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-7", "TC-1823")]
+#[trace("FR-110-AC-7")]
 #[test]
 fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
     let temporary = repository(&format!(
@@ -1039,7 +1039,7 @@ fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-7", "TC-1824")]
+#[trace("FR-110-AC-7")]
 #[test]
 fn tc_975_015_a_candidate_with_no_record_under_a_protecting_plan_is_inconclusive() {
     let temporary = repository(PROTECTED);
@@ -1075,7 +1075,7 @@ fn ratchet_outcome(root: &Path) -> RatchetOutcome {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-6", "TC-1825")]
+#[trace("FR-110-AC-6")]
 #[test]
 fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
     let temporary = repository(PROTECTED);
@@ -1098,7 +1098,7 @@ fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-8", "TC-1826")]
+#[trace("FR-110-AC-8")]
 #[test]
 fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
     let temporary = repository(PROTECTED);
@@ -1130,7 +1130,7 @@ fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
 /// `..` segment is not a shape intake's own resolver ever writes.
 ///
 /// Provenance: PLAT-985, quoin#600
-#[trace("FR-110-AC-8", "TC-1833")]
+#[trace("FR-110-AC-8")]
 #[test]
 fn tc_985_001_protected_apparatus_key_shapes_are_validated_on_read() {
     let temporary = repository(PROTECTED);
@@ -1160,7 +1160,7 @@ fn tc_985_001_protected_apparatus_key_shapes_are_validated_on_read() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-2", "TC-1827")]
+#[trace("FR-110-AC-2")]
 #[test]
 fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
     let temporary = repository(PROTECTED);
@@ -1189,7 +1189,7 @@ fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
 /// recorded under it still carry their sets.
 ///
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-6", "FR-110-AC-7", "TC-1828")]
+#[trace("FR-110-AC-6", "FR-110-AC-7")]
 #[test]
 fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
     let temporary = repository(PROTECTED);
@@ -1231,7 +1231,7 @@ fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
 /// excuse it.
 ///
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-7", "FR-108-AC-3", "TC-1829")]
+#[trace("FR-110-AC-7", "FR-108-AC-3")]
 #[test]
 fn tc_975_020_an_uncommitted_answer_key_edit_then_a_pass_is_a_rerun() {
     let temporary = repository("");
@@ -1252,7 +1252,7 @@ fn tc_975_020_an_uncommitted_answer_key_edit_then_a_pass_is_a_rerun() {
 }
 
 /// Provenance: PLAT-975
-#[trace("FR-110-AC-6", "TC-1830")]
+#[trace("FR-110-AC-6")]
 #[test]
 fn tc_975_021_a_ratchet_whose_newest_collection_recorded_nothing_is_inconclusive() {
     let temporary = repository(PROTECTED);

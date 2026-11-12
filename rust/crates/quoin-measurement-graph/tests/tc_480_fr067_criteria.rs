@@ -293,7 +293,7 @@ fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_
 /// History keeps every structurally readable collection in timestamp then id
 /// order, including one the active plan no longer governs.
 ///
-#[trace("FR-067-AC-2", "TC-1306")]
+#[trace("FR-067-AC-2")]
 #[test]
 fn tc_480_051_history_keeps_every_readable_collection_in_order() {
     let stale = collection_with("h-mid", "2026-02-01T00:00:00Z", |value| {
@@ -342,7 +342,7 @@ fn tc_480_051_history_keeps_every_readable_collection_in_order() {
 /// Every measure/dimension/key partition is its own row in the text and the
 /// JSON, and nothing is summed or averaged across them.
 ///
-#[trace("FR-067-AC-3", "TC-1307")]
+#[trace("FR-067-AC-3")]
 #[test]
 fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
     let report = build(&[
@@ -394,7 +394,7 @@ fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
 /// numeric zero.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-4", "TC-1308")]
+#[trace("FR-067-AC-4")]
 #[test]
 fn tc_480_040_availability_is_separate_from_state_and_from_numeric_zero() {
     for availability in GapAvailability::ALL {
@@ -576,7 +576,7 @@ fn retired_plan_evidence_is_reported_incomparable() {
 /// The producer's observation id reaches every view.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-6", "TC-1310")]
+#[trace("FR-067-AC-6")]
 #[test]
 fn tc_480_042_the_observation_id_reaches_every_view() {
     let report = build(&[one(
@@ -609,7 +609,7 @@ fn tc_480_042_the_observation_id_reaches_every_view() {
 /// stated rather than implied.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-7", "TC-1311")]
+#[trace("FR-067-AC-7")]
 #[test]
 fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
     let fan_out_value = json!({ "rows": [{ "id": "FR-001", "count": 2 }], "type": "fan-out" });
@@ -706,7 +706,7 @@ fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
 /// Corrupt collections and graph inputs become local gaps that hide no sibling.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-8", "TC-1312")]
+#[trace("FR-067-AC-8")]
 #[test]
 fn tc_480_044_corruption_is_a_local_gap() {
     let refused = GraphCollectionRead::refused(
@@ -772,7 +772,7 @@ fn tc_480_044_corruption_is_a_local_gap() {
 /// The report is canonical under permutation, and the mappings are too.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-9", "TC-1313")]
+#[trace("FR-067-AC-9")]
 #[test]
 fn tc_480_045_the_report_and_the_mappings_are_canonical_under_permutation() {
     let build_from = |order: [(&str, [&str; 2]); 2]| {
@@ -909,7 +909,7 @@ fn mappings_resolve_canonically() {
 /// its own.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-10", "TC-1314")]
+#[trace("FR-067-AC-10")]
 #[test]
 fn tc_480_046_old_evidence_stays_historical_and_nothing_is_aggregated() {
     let report = build(&[one(
@@ -943,7 +943,7 @@ fn tc_480_046_old_evidence_stays_historical_and_nothing_is_aggregated() {
 /// graph and writes nothing.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-11", "TC-1315")]
+#[trace("FR-067-AC-11")]
 #[test]
 fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
     /// The modules that are `graph-portfolio.ts`. `loader` and `structural` are

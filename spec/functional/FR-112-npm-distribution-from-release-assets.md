@@ -46,10 +46,10 @@ and a second version to track.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-112-AC-1 | `npm install -g @agent-ix/quoin@<v>` installs the native `<v>` binary for `linux-x64`, `linux-arm64`, `darwin-arm64` and `win32-x64`, and the installed `quoin --version` reports `<v>` on each. | Test (TC-1885) |
-| FR-112-AC-2 | The npm packages published for tag `v<v>` are built from that tag's GitHub Release assets from the assets `quoin-update-manifest.json` names; a manifest naming no asset, or an asset file absent from the release, fails the workflow before anything is published, and no artifact is rebuilt from source for npm. | Test (TC-1886) |
-| FR-112-AC-3 | Under an npm install, `quoin update` given as the first argument makes no change to the installation, exits non-zero, and its stderr names the npm command that manages it (`npm install -g @agent-ix/quoin@latest`) and states that quoin was installed with npm. | Test (TC-1887) |
-| FR-112-AC-4 | Every Linux platform package (`@agent-ix/quoin-linux-x64`, `@agent-ix/quoin-linux-arm64`) declares `libc: ["glibc"]` in `package.json`, matching the glibc floor the archived binary was built against. | Test (TC-1888) |
+| FR-112-AC-1 | `npm install -g @agent-ix/quoin@<v>` installs the native `<v>` binary for `linux-x64`, `linux-arm64`, `darwin-arm64` and `win32-x64`, and the installed `quoin --version` reports `<v>` on each. | Test |
+| FR-112-AC-2 | The npm packages published for tag `v<v>` are built from that tag's GitHub Release assets from the assets `quoin-update-manifest.json` names; a manifest naming no asset, or an asset file absent from the release, fails the workflow before anything is published, and no artifact is rebuilt from source for npm. | Test |
+| FR-112-AC-3 | Under an npm install, `quoin update` given as the first argument makes no change to the installation, exits non-zero, and its stderr names the npm command that manages it (`npm install -g @agent-ix/quoin@latest`) and states that quoin was installed with npm. | Test |
+| FR-112-AC-4 | Every Linux platform package (`@agent-ix/quoin-linux-x64`, `@agent-ix/quoin-linux-arm64`) declares `libc: ["glibc"]` in `package.json`, matching the glibc floor the archived binary was built against. | Test |
 
 ## Constraints
 

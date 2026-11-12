@@ -92,15 +92,15 @@ it accompanies.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| NFR-027-AC-1 | Every crate root declares `#![forbid(unsafe_code)]`, and a planted `unsafe` block fails the build. | Test (TC-1674) |
-| NFR-027-AC-2 | The lint policy is declared once in `[workspace.lints]` at `rust/Cargo.toml`, every crate manifest opts in with `[lints] workspace = true`, and a per-crate override fails the gate. | Test (TC-1675) |
-| NFR-027-AC-3 | `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` both exit zero, and their output is recorded with the run. | Test (TC-1676) |
-| NFR-027-AC-4 | Each crate boundary exposes exactly one `thiserror`-derived error type whose every code appears in that crate's checked-in code catalog, and a code absent from the catalog fails the gate. | Test (TC-1677) |
-| NFR-027-AC-5 | No public library signature returns `Box<dyn Error>` or an `anyhow` error, and a planted one fails the gate. | Test (TC-1678) |
-| NFR-027-AC-6 | No public library signature takes or returns a bare `String` or `Uuid` as an identifier or resource reference, and a planted one fails the gate. | Test (TC-1679) |
-| NFR-027-AC-7 | Every Rust test function carries a tracking tag whose cited criterion ids resolve to an artefact under `spec/`, and an untagged or unresolvable-tag test fails the gate. | Test (TC-1680) |
-| NFR-027-AC-8 | A continuous-integration change that removes a gate lane, narrows one, or adds `continue-on-error` fails this requirement's check. | Test (TC-1681) |
-| NFR-027-AC-9 | Each of the source and test checks reports the population it scanned, and a check that scanned nothing is reported as inconclusive rather than as passing. | Test (TC-1682) |
+| NFR-027-AC-1 | Every crate root declares `#![forbid(unsafe_code)]`, and a planted `unsafe` block fails the build. | Test |
+| NFR-027-AC-2 | The lint policy is declared once in `[workspace.lints]` at `rust/Cargo.toml`, every crate manifest opts in with `[lints] workspace = true`, and a per-crate override fails the gate. | Test |
+| NFR-027-AC-3 | `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` both exit zero, and their output is recorded with the run. | Test |
+| NFR-027-AC-4 | Each crate boundary exposes exactly one `thiserror`-derived error type whose every code appears in that crate's checked-in code catalog, and a code absent from the catalog fails the gate. | Test |
+| NFR-027-AC-5 | No public library signature returns `Box<dyn Error>` or an `anyhow` error, and a planted one fails the gate. | Test |
+| NFR-027-AC-6 | No public library signature takes or returns a bare `String` or `Uuid` as an identifier or resource reference, and a planted one fails the gate. | Test |
+| NFR-027-AC-7 | Every Rust test function carries a tracking tag whose cited criterion ids resolve to an artefact under `spec/`, and an untagged or unresolvable-tag test fails the gate. | Test |
+| NFR-027-AC-8 | A continuous-integration change that removes a gate lane, narrows one, or adds `continue-on-error` fails this requirement's check. | Test |
+| NFR-027-AC-9 | Each of the source and test checks reports the population it scanned, and a check that scanned nothing is reported as inconclusive rather than as passing. | Test |
 
 ## Dependencies
 

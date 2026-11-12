@@ -12,34 +12,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/FR-073"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1336"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1337"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1338"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1339"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1340"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1341"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1360"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1361"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1362"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1363"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1364"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1365"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1366"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1383"
-    type: verifies
 ---
 
 # TASK-040: Manifest block and data_schema references

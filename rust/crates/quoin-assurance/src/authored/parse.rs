@@ -211,7 +211,7 @@ mod tests {
     }
 
     /// Provenance: quoin#436, quoin#445
-    #[trace("FR-047-AC-7", "TC-1712")]
+    #[trace("FR-047-AC-7")]
     #[test]
     fn tc_1712_refuses_an_instant_naming_a_day_or_hour_that_does_not_exist() {
         // `Date.parse` ROLLED each of these rather than rejecting it.

@@ -67,7 +67,7 @@ struct Input {
 /// The query engine does not panic on any selector against any document.
 ///
 /// spec-fuzz: obligation=FR-010-AC-3 harness=cargo-fuzz entry=query::run_query origin=authored
-#[trace("FR-010-AC-3", "TC-345")]
+#[trace("FR-010-AC-3")]
 fn fuzz_fr_010_ac_3_run_query(input: Input) {
     if let Ok(query) = Query::parse(&input.selector) {
         let _ = run_query(&query, &input.document);

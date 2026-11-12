@@ -90,7 +90,7 @@ fn judged(candidate: &SemanticModule, installed: &[SemanticModule]) -> Vec<Strin
 
 /// A manifest with imports and no `import_types` loads as before, and one with
 /// `import_types` loads and reports the lists.
-#[trace("FR-070-AC-8", "TC-2130")]
+#[trace("FR-070-AC-8")]
 #[test]
 fn tc_212_001_import_types_load_and_are_reported() {
     let validators = validators();
@@ -130,7 +130,7 @@ fn tc_212_001_import_types_load_and_are_reported() {
 }
 
 /// Each malformed `import_types` is refused naming the package and the entry.
-#[trace("FR-070-AC-9", "TC-2131")]
+#[trace("FR-070-AC-9")]
 #[test]
 fn tc_212_002_malformed_import_types_are_refused_naming_package_and_entry() {
     let validators = validators();
@@ -211,7 +211,7 @@ fn locus_package(locus: &str) -> &str {
 
 /// An `import_types` type the installed provider does not export fails install
 /// with `semantic.unknown-import-type`; an exported one raises none.
-#[trace("FR-070-AC-10", "TC-2132")]
+#[trace("FR-070-AC-10")]
 #[test]
 fn tc_212_003_an_unexported_import_type_is_refused() {
     let validators = validators();
@@ -253,7 +253,7 @@ fn tc_212_003_an_unexported_import_type_is_refused() {
 }
 
 /// With the provider absent, only the unresolved-import error is raised.
-#[trace("FR-070-AC-11", "TC-2133")]
+#[trace("FR-070-AC-11")]
 #[test]
 fn tc_212_004_an_absent_provider_raises_only_the_unresolved_import() {
     let validators = validators();
@@ -278,7 +278,7 @@ fn tc_212_004_an_absent_provider_raises_only_the_unresolved_import() {
 
 /// An unreferenced import warns, with and without a type list; a referenced one
 /// does not; install-time severity is warning.
-#[trace("FR-070-AC-12", "TC-2134")]
+#[trace("FR-070-AC-12")]
 #[test]
 fn tc_212_005_an_unreferenced_import_warns_and_a_referenced_one_does_not() {
     let validators = validators();
@@ -336,7 +336,7 @@ fn tc_212_005_an_unreferenced_import_warns_and_a_referenced_one_does_not() {
 
 /// A `$ref` naming an unexported type is refused at the data-schema locus,
 /// with and without an `import_types` list; an exported type raises none.
-#[trace("FR-070-AC-13", "TC-2139")]
+#[trace("FR-070-AC-13")]
 #[test]
 fn tc_212_006_a_ref_to_an_unexported_type_is_refused_at_the_schema_locus() {
     let validators = validators();
@@ -371,7 +371,7 @@ fn tc_212_006_a_ref_to_an_unexported_type_is_refused_at_the_schema_locus() {
 
 /// The derived package manifest's import entry carries the declared type list,
 /// `[]` when none, and still validates.
-#[trace("FR-075-AC-6", "TC-2136")]
+#[trace("FR-075-AC-6")]
 #[test]
 fn tc_212_007_derived_imports_carry_the_declared_type_list() {
     let validators = validators();
@@ -440,7 +440,7 @@ fn mutual(
 
 /// A package cycle always fails install; it is named over type nodes only when
 /// the `$ref`-derived type edges form a cycle themselves.
-#[trace("FR-075-AC-7", "TC-2137")]
+#[trace("FR-075-AC-7")]
 #[test]
 fn tc_212_008_an_import_cycle_is_named_over_types_only_when_the_types_cycle() {
     let scratch = Scratch::new();
@@ -509,7 +509,7 @@ fn linked(
 
 /// A longer package cycle is named over its own type edges, not over a shorter
 /// type cycle among the same packages.
-#[trace("FR-075-AC-7", "TC-2137")]
+#[trace("FR-075-AC-7")]
 #[test]
 fn tc_212_009_a_long_cycle_is_named_along_its_own_edges() {
     let scratch = Scratch::new();
@@ -535,7 +535,7 @@ fn tc_212_009_a_long_cycle_is_named_along_its_own_edges() {
 
 /// A `$ref` to a package the module does not import is `schema-ref-unshipped`,
 /// including one that climbs out of an imported package's base with `..`.
-#[trace("FR-073-AC-3", "TC-1362")]
+#[trace("FR-073-AC-3")]
 #[test]
 fn tc_212_010_a_ref_to_an_undeclared_package_is_unshipped() {
     let validators = validators();
@@ -563,7 +563,7 @@ fn tc_212_010_a_ref_to_an_undeclared_package_is_unshipped() {
 
 /// The `<section>[T]` locus follows the declaring section: an `artifact_types`
 /// type is judged at `artifact_types[T].data_schema.schema`.
-#[trace("FR-070-AC-13", "TC-2139")]
+#[trace("FR-070-AC-13")]
 #[test]
 fn tc_212_011_an_artifact_type_ref_is_judged_at_its_own_locus() {
     let validators = validators();

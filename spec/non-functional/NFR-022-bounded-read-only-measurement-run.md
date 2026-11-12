@@ -68,9 +68,9 @@ an open-mode assertion records the mode of every corpus and module file the meas
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| NFR-022-AC-1 | A full run over a corpus of up to 30,000 documents in 300 repositories completes within 15 minutes of wall-clock time, and the run manifest records the machine it was measured on. | Test (TC-1560) |
-| NFR-022-AC-2 | Peak resident memory during a full run stays at or below 4 GiB. | Test (TC-1561) |
-| NFR-022-AC-3 | Every corpus and module file the measurement opens is opened in a read-only mode. | Test (TC-1562) |
+| NFR-022-AC-1 | A full run over a corpus of up to 30,000 documents in 300 repositories completes within 15 minutes of wall-clock time, and the run manifest records the machine it was measured on. | Test |
+| NFR-022-AC-2 | Peak resident memory during a full run stays at or below 4 GiB. | Test |
+| NFR-022-AC-3 | Every corpus and module file the measurement opens is opened in a read-only mode. | Test |
 
 ## Dependencies
 

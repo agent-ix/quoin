@@ -144,7 +144,7 @@ fn verify(root: &Path, receipt: &Path, candidate: &str) -> Output {
 /// verdict: 0 for `valid`, 1 for `invalid` or `incomplete`.
 ///
 /// Provenance: quoin#543
-#[trace("FR-068-AC-6", "FR-068-AC-7", "TC-1322", "TC-1323")]
+#[trace("FR-068-AC-6", "FR-068-AC-7")]
 #[test]
 fn tc_1322_a_rederived_receipt_exits_with_its_verdict() {
     let root = retained_repo();
@@ -168,7 +168,7 @@ fn tc_1322_a_rederived_receipt_exits_with_its_verdict() {
 /// re-derived receipt is refused, whatever member was edited.
 ///
 /// Provenance: quoin#543
-#[trace("FR-068-AC-6", "FR-068-AC-7", "TC-1322", "TC-1323")]
+#[trace("FR-068-AC-6", "FR-068-AC-7")]
 #[test]
 fn tc_1322_an_edited_receipt_exits_two() {
     let root = retained_repo();
@@ -192,7 +192,7 @@ fn tc_1322_an_edited_receipt_exits_two() {
 /// caller supplied, not command failures: both exit 2.
 ///
 /// Provenance: quoin#543
-#[trace("FR-068-AC-6", "FR-068-AC-8", "TC-1322", "TC-1324")]
+#[trace("FR-068-AC-6", "FR-068-AC-8")]
 #[test]
 fn tc_1324_unparseable_input_and_an_unknown_schema_name_exit_two() {
     let root = retained_repo();
@@ -219,7 +219,7 @@ fn tc_1324_unparseable_input_and_an_unknown_schema_name_exit_two() {
 /// shell's exit 3 until quoin#543.
 ///
 /// Provenance: quoin#543
-#[trace("FR-068", "FR-068-AC-6", "TC-1322")]
+#[trace("FR-068", "FR-068-AC-6")]
 #[test]
 fn tc_1322_a_usage_error_on_the_surface_exits_two() {
     for argv in [

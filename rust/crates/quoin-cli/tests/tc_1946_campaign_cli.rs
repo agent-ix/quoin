@@ -136,7 +136,7 @@ fn fixture() -> tempfile::TempDir {
 
 /// SIGINT reaches the exact Event-bound EA request and preserves a
 /// non-success verdict document after the bounded process is cancelled.
-#[trace("FR-114-AC-2", "FR-114-AC-5", "TC-1941", "TC-1946")]
+#[trace("FR-114-AC-2", "FR-114-AC-5")]
 #[test]
 #[allow(
     clippy::too_many_lines,

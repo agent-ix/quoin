@@ -51,7 +51,7 @@ fn refusal(document: &Value) -> ScenarioRefusal {
 }
 
 #[test]
-#[trace("FR-130-AC-1", "TC-2200")]
+#[trace("FR-130-AC-1")]
 fn a_complete_record_is_filed_under_its_integration_and_scenario() {
     let mut store = MemoryEvidence::default();
     let stored = write_scenario_evidence(&mut store, &full()).unwrap();
@@ -63,7 +63,7 @@ fn a_complete_record_is_filed_under_its_integration_and_scenario() {
 }
 
 #[test]
-#[trace("FR-130-AC-2", "TC-2201")]
+#[trace("FR-130-AC-2")]
 fn partial_and_legacy_shapes_are_admitted_without_a_full_manifest() {
     let mut partial = full();
     partial["resolution"] = json!({
@@ -82,7 +82,7 @@ fn partial_and_legacy_shapes_are_admitted_without_a_full_manifest() {
 }
 
 #[test]
-#[trace("FR-130-AC-3", "TC-2202")]
+#[trace("FR-130-AC-3")]
 fn a_wrong_or_absent_contract_version_is_refused_before_the_shape_is_read() {
     let mut wrong = full();
     wrong["contract"] = json!("quoin.protocol-scenario-intake/v2");
@@ -95,7 +95,7 @@ fn a_wrong_or_absent_contract_version_is_refused_before_the_shape_is_read() {
 }
 
 #[test]
-#[trace("FR-130-AC-4", "TC-2203")]
+#[trace("FR-130-AC-4")]
 fn a_missing_field_an_unknown_field_and_a_blank_component_are_refused() {
     for field in [
         "valueOwners",
@@ -129,7 +129,7 @@ fn a_missing_field_an_unknown_field_and_a_blank_component_are_refused() {
 }
 
 #[test]
-#[trace("FR-130-AC-5", "TC-2204")]
+#[trace("FR-130-AC-5")]
 fn a_cross_wired_attribution_is_refused() {
     let mut owner = full();
     owner["valueOwners"][0]["owner"] = json!("elsewhere");
@@ -157,7 +157,7 @@ fn a_cross_wired_attribution_is_refused() {
 }
 
 #[test]
-#[trace("FR-130-AC-6", "TC-2205")]
+#[trace("FR-130-AC-6")]
 fn duplicate_entries_values_and_dimensions_are_refused() {
     let mut entries = full();
     entries["resolution"]["entries"] = json!([entry("qobs"), entry("qobs")]);
@@ -177,7 +177,7 @@ fn duplicate_entries_values_and_dimensions_are_refused() {
 }
 
 #[test]
-#[trace("FR-130-AC-7", "TC-2206")]
+#[trace("FR-130-AC-7")]
 fn the_budget_is_per_dimension_and_an_absent_grant_is_not_zero() {
     let mut store = MemoryEvidence::default();
     let stored = write_scenario_evidence(&mut store, &full()).unwrap();
@@ -204,7 +204,7 @@ fn the_budget_is_per_dimension_and_an_absent_grant_is_not_zero() {
 }
 
 #[test]
-#[trace("FR-130-AC-8", "TC-2207")]
+#[trace("FR-130-AC-8")]
 fn a_second_different_record_for_one_scenario_is_refused_and_the_first_kept() {
     let mut store = MemoryEvidence::default();
     let stored = write_scenario_evidence(&mut store, &full()).unwrap();
@@ -227,7 +227,7 @@ fn refusal_spellings_are_distinct() {
 }
 
 #[test]
-#[trace("FR-130-AC-10", "TC-2209")]
+#[trace("FR-130-AC-10")]
 fn identifiers_are_bounded_and_need_a_suffix() {
     let mut long = full();
     long["scenario"] = json!(format!("IT-002-{}", "A".repeat(80)));
@@ -248,7 +248,7 @@ fn identifiers_are_bounded_and_need_a_suffix() {
 }
 
 #[test]
-#[trace("FR-130-AC-3", "TC-2209")]
+#[trace("FR-130-AC-3")]
 fn a_non_string_contract_is_a_wrong_contract() {
     let mut document = full();
     document["contract"] = json!(2);
@@ -256,7 +256,7 @@ fn a_non_string_contract_is_a_wrong_contract() {
 }
 
 #[test]
-#[trace("FR-130-AC-11", "TC-2210")]
+#[trace("FR-130-AC-11")]
 fn ids_differing_only_in_case_share_a_folded_name_and_collide_by_name() {
     let mut store = MemoryEvidence::default();
     let stored = write_scenario_evidence(&mut store, &full()).unwrap();
@@ -275,7 +275,7 @@ fn ids_differing_only_in_case_share_a_folded_name_and_collide_by_name() {
 }
 
 #[test]
-#[trace("FR-130-AC-12", "TC-2211")]
+#[trace("FR-130-AC-12")]
 fn attribution_is_checked_by_lookup_not_by_scanning_every_entry() {
     let n = 100_000;
     let entries: Vec<Value> = (0..n)

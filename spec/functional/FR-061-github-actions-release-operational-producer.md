@@ -68,11 +68,11 @@ FR-060 intake boundary.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-061-AC-1 | A release workflow and a completed workflow-run/jobs export produce one linked standing-capability and exercise pair whose workflow, actor, timing, outcome, and observations match the source artifacts. | Test (TC-1244) |
-| FR-061-AC-2 | Missing or malformed YAML/JSON, a workflow/path/event mismatch, a release-job run-id, attempt, or `head_sha` mismatch, or an absent, duplicate, unstarted, or incomplete release job is refused without either operational record. | Test (TC-1245) |
-| FR-061-AC-3 | Capability state is derived from the parsed workflow and exercise state and clock status are derived from the retained API exports; caller-supplied replacements cannot change them. | Test (TC-1246) |
-| FR-061-AC-4 | Every non-success GitHub conclusion remains a named non-success exercise and cannot discharge the clocked release obligation. | Test (TC-1247) |
-| FR-061-AC-5 | The Quoin producer consumes the retained workflow-run and jobs files without network or process execution and atomically persists the pair through FR-060. | Test (TC-1248) |
+| FR-061-AC-1 | A release workflow and a completed workflow-run/jobs export produce one linked standing-capability and exercise pair whose workflow, actor, timing, outcome, and observations match the source artifacts. | Test |
+| FR-061-AC-2 | Missing or malformed YAML/JSON, a workflow/path/event mismatch, a release-job run-id, attempt, or `head_sha` mismatch, or an absent, duplicate, unstarted, or incomplete release job is refused without either operational record. | Test |
+| FR-061-AC-3 | Capability state is derived from the parsed workflow and exercise state and clock status are derived from the retained API exports; caller-supplied replacements cannot change them. | Test |
+| FR-061-AC-4 | Every non-success GitHub conclusion remains a named non-success exercise and cannot discharge the clocked release obligation. | Test |
+| FR-061-AC-5 | The Quoin producer consumes the retained workflow-run and jobs files without network or process execution and atomically persists the pair through FR-060. | Test |
 
 ## Constraints
 
