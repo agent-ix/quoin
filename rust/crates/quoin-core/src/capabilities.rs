@@ -99,6 +99,17 @@ pub trait ModuleHost {
     /// lists every other module regardless.
     fn is_pack(&self, module: &InstalledModule) -> Result<bool, String>;
 
+    /// Evaluate every clause set the installed module declares against
+    /// `context`, through the engine (FR-140).
+    ///
+    /// # Errors
+    /// The module's load error or a set's evaluation error, as text.
+    fn evaluate_clause_sets(
+        &self,
+        module: &InstalledModule,
+        context: &quoin_quire::clauses::Context,
+    ) -> Result<Vec<quoin_quire_types::ClauseBindingReport>, String>;
+
     /// Install one ad-hoc source, rolling back to the previous version on a
     /// semantic-contract rejection.
     ///

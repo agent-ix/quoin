@@ -80,9 +80,9 @@ pub use self::wire::{
 
 pub use self::discharge::{
     DischargeReportRequest, InwardCompletenessPayload, MAX_DISCHARGE_BYTES,
-    RecordDischargeOpRequest, RecordDischargePayload, RecordedDischargeFact,
-    RequirementsMatrixPayload, discharge_report, inward_completeness, record_discharge,
-    requirements_matrix,
+    PackRequirementsMatrixPayload, PackRequirementsMatrixRequest, RecordDischargeOpRequest,
+    RecordDischargePayload, RecordedDischargeFact, RequirementsMatrixPayload, discharge_report,
+    inward_completeness, pack_matrix, record_discharge, requirements_matrix,
 };
 pub use self::documents::{parse_lineage, parse_policy, parse_results, store_facts};
 pub use self::records::{

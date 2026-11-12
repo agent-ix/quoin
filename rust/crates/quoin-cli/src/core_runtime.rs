@@ -7,23 +7,48 @@
 //! preserves the core response/diagnostic taxonomy while eliminating the
 //! Rust-to-Rust subprocess and its JSON reparse.
 
-use quoin_core::protocol::Response;
+use quoin_core::error::{CoreError, CoreErrorCode};
+use quoin_core::protocol::{Diagnostic, Response};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 use crate::invocation;
 
-/// Invoke one command-shaped core operation through the governed runtime.
-pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Response, String> {
+fn settings() -> RuntimeSettings {
     // An explicit root remains a developer override. Release binaries instead
     // materialize their compiled contract under IX_HOME; `CARGO_MANIFEST_DIR`
     // points at a build checkout and is invalid after installation (#527).
     let semantic_root = std::env::var_os("QUOIN_SEMANTIC_ROOT").map(std::path::PathBuf::from);
-    let settings = RuntimeSettings {
+    RuntimeSettings {
         ix_home: invocation::current().config_root().cloned(),
         semantic_root,
-    };
-    dispatch(operation, request, &settings)
-        .map_err(|error| format!("native runtime {operation} failed: {error}"))
+    }
+}
+
+fn failed(operation: &str, error: &CoreError) -> String {
+    format!("native runtime {operation} failed: {error}")
+}
+
+/// Invoke one command-shaped core operation through the governed runtime.
+pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Response, String> {
+    dispatch(operation, request, &settings()).map_err(|error| failed(operation, &error))
+}
+
+/// As [`invoke`], except that a refusal the operation states is returned as a
+/// payload-free response carrying the refusal's own status, so the shell exits
+/// with it rather than with the generic command failure.
+pub(crate) fn invoke_refusable(
+    operation: &str,
+    request: &serde_json::Value,
+) -> Result<Response, String> {
+    match dispatch(operation, request, &settings()) {
+        Err(error) if error.code == CoreErrorCode::Refused => Ok(Response {
+            payload: serde_json::Value::Null,
+            diagnostics: vec![Diagnostic::from(&error)],
+            outcome: error.outcome(),
+        }),
+        Err(error) => Err(failed(operation, &error)),
+        Ok(response) => Ok(response),
+    }
 }
 
 #[cfg(test)]

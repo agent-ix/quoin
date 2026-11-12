@@ -91,6 +91,14 @@ impl ModuleHost for FakeHost {
             })
     }
 
+    fn evaluate_clause_sets(
+        &self,
+        _module: &InstalledModule,
+        _context: &quoin_quire::clauses::Context,
+    ) -> Result<Vec<quoin_quire_types::ClauseBindingReport>, String> {
+        Ok(Vec::new())
+    }
+
     fn install(
         &self,
         home: Option<&Path>,

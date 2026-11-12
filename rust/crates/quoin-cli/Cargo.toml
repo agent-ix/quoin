@@ -52,6 +52,11 @@ semver = { workspace = true }
 time = { workspace = true }
 
 [dev-dependencies]
+# FR-140-AC-11 validates the pack report against the schema derived from its
+# own type, which only exists under the `schema` feature.
+quoin-assurance = { workspace = true, features = ["schema"] }
+quoin-jsonschema = { workspace = true }
+schemars = { workspace = true }
 quire-fixtures = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }

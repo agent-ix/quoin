@@ -11,9 +11,10 @@
 use std::path::Path;
 
 use quoin_assurance::{
-    DischargeStoreError, RecordDischargeRequest, build_requirements_mapping,
-    discharge_report_from_store, inward_completeness_from_store, record_discharge_facts,
-    render_inward_completeness, render_requirements_mapping,
+    DischargeStoreError, RecordDischargeRequest, build_pack_requirements_mapping,
+    build_requirements_mapping, discharge_report_from_store, inward_completeness_from_store,
+    record_discharge_facts, render_inward_completeness, render_pack_requirements_mapping,
+    render_requirements_mapping,
 };
 use quoin_quire_types::ClauseBindingReport;
 use serde::{Deserialize, Serialize};
@@ -230,6 +231,98 @@ pub fn requirements_matrix(
         value(&RequirementsMatrixPayload {
             rendered: render_requirements_mapping(&matrix),
             matrix,
+        })
+    })?;
+    Ok(Response::ok(payload))
+}
+
+/// The request accepted by `evidence.pack_requirements_matrix`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct PackRequirementsMatrixRequest {
+    /// The installed module name.
+    pub pack: String,
+    /// The repository root holding the evidence store.
+    pub repo: String,
+    /// The explicit evaluation instant.
+    pub as_of: String,
+    /// `KEY=VALUE` context entries shared by every clause set.
+    #[serde(default)]
+    pub context: Vec<String>,
+}
+
+/// The result of an `evidence.pack_requirements_matrix`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct PackRequirementsMatrixPayload {
+    /// The index and one matrix per clause set.
+    pub report: quoin_assurance::PackRequirementsMapping,
+    /// The same report as deterministic Markdown.
+    pub rendered: String,
+}
+
+/// Answer an `evidence.pack_requirements_matrix`: one FR-135 matrix for every
+/// clause set of an installed pack, behind an index (FR-140).
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::Refused`] when the name is not an installed module, the
+///   module is not a pack, or the pack fails to load.
+/// - [`CoreErrorCode::BadRequest`] when a context entry is malformed or a
+///   stored fact is refused.
+/// - [`CoreErrorCode::Io`] when no module or evidence host was granted.
+pub fn pack_matrix(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    let op = "evidence.pack_requirements_matrix";
+    bound(request, op, MAX_DISCHARGE_BYTES)?;
+    let request: PackRequirementsMatrixRequest = parse(request, op)?;
+    check_scalar(op, "repo", &request.repo)?;
+    check_scalar(op, "pack", &request.pack)?;
+
+    let context = quoin_quire::clauses::Context::from_entries(&request.context).map_err(|e| {
+        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
+    })?;
+    let refused =
+        |message: String| CoreError::new(CoreErrorCode::Refused, message).with_context("op", op);
+    let modules = capabilities.modules.ok_or_else(|| {
+        CoreError::new(
+            CoreErrorCode::Io,
+            "this build dispatched a pack operation without granting a module host",
+        )
+        .with_context("op", op)
+    })?;
+    let installed = modules
+        .list(None)
+        .map_err(|e| refused(format!("the installed modules cannot be listed: {e}")))?
+        .into_iter()
+        .find(|module| module.name.as_str() == request.pack)
+        .ok_or_else(|| refused(format!("{} is not an installed module", request.pack)))?;
+    let is_pack = modules
+        .is_pack(&installed)
+        .map_err(|e| refused(format!("module {} failed to load: {e}", request.pack)))?;
+    if !is_pack {
+        return Err(refused(format!("module {} is not a pack", request.pack)));
+    }
+    let bindings = modules
+        .evaluate_clause_sets(&installed, &context)
+        .map_err(|e| refused(format!("pack {} failed to load: {e}", request.pack)))?;
+
+    let host = host(capabilities, op)?;
+    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
+        let report = build_pack_requirements_mapping(
+            &*source,
+            &request.pack,
+            &request.as_of,
+            context.as_map(),
+            &bindings,
+        )
+        .map_err(|e| map_store_error(e, op))?;
+        value(&PackRequirementsMatrixPayload {
+            rendered: render_pack_requirements_mapping(&report),
+            report,
         })
     })?;
     Ok(Response::ok(payload))

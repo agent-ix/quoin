@@ -309,7 +309,7 @@ fn table_row(row: &RmmRow) -> String {
 /// it renders as the literal text it is: control characters become spaces and
 /// each CommonMark/GFM punctuation character that can start markup, HTML, a
 /// link, an image, a table cell or a code span is backslash-escaped.
-fn escape(text: &str) -> String {
+pub(super) fn escape(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     for ch in text.chars() {
         if ch.is_control() {
