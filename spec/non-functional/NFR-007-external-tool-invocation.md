@@ -44,9 +44,12 @@ problems visible to the caller.
 reported. `quoin_executes_exactly_git_and_ix_flow_and_the_operators_editor` (TC-203, FR-036-AC-8) asserts structurally that the executables `quoin` spawns are
 exactly `git`, `ix-flow` and `$EDITOR`.
 
-NFR-007-M-1 is measured over each workflow command with `ix-flow` absent and with `ix-flow`
-failing, by plan [MP-252](../assurance/MP-252-nfr007-external-tool-failures.md) with the
-test `tc_3004_an_ix_flow_failure_is_a_non_zero_quoin_exit` (FR-131-AC-10).
+NFR-007-M-1 is measured over each workflow command crossed with twelve ways `ix-flow` fails,
+by plan [MP-252](../assurance/MP-252-nfr007-external-tool-failures.md) with the test
+`tc_3004_the_nfr007_population_is_stated_by_failure_mode` (FR-131-AC-10): absent from `PATH`,
+an old or unreadable version, a hang in the handshake or in the run, a non-zero exit, output
+that is garbage, empty or over the bound, an error payload, a missing instance id, and a
+failing context step. Each must be a non-zero `quoin` exit whose message names the failure.
 
 ## Acceptance Criteria
 

@@ -46,15 +46,20 @@ agent recover in one step, whereas a silent failure stalls the loop.
 `quoin-cli` `tests/tc_shell_contract.rs` ::
 `tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue` and
 `tc_1650_nested_unknown_command_keeps_the_oclif_path_identity` assert that unknown commands
-and subcommands are refused with a non-zero exit. No native test is cited for unknown
-types, missing manifests, or catalog conflicts (PLAT-1275).
+and subcommands are refused with a non-zero exit.
 
-NFR-003-M-1 and NFR-003-M-2 are measured over the commands the `quoin` binary lists, each
-given an unknown flag, by plans
+NFR-003-M-1 and NFR-003-M-2 are measured over command x error-class pairs by plans
 [MP-250](../assurance/MP-250-nfr003-actionable-failures.md) and
-[MP-251](../assurance/MP-251-nfr003-silent-failures.md) with the test
-`tc_3003_every_command_fails_a_bad_argument_out_loud` (FR-131-AC-9). That population
-covers argument validation of top-level commands only.
+[MP-251](../assurance/MP-251-nfr003-silent-failures.md), whose declared set the test
+`tc_3003_the_nfr003_populations_are_stated_by_class` (FR-131-AC-9) ties to what the producer
+enumerates from the binary's help text. The classes are unknown flag (TC-3700), unknown
+subcommand (TC-3701), missing argument (TC-3702), missing path (TC-3703), unknown type
+(TC-3704), malformed JSON input (TC-3705) and catalog conflict (TC-3706); each is a module
+under `tests/nfr_populations/` and its test names the pairs that read below the target. A
+pair is actionable when the message names the cause and points to a next step. The population
+is the failures the help text lets the producer construct: it excludes commands with a second
+required argument for the path and input classes, failures that need a staged evidence store
+or vocabulary module, and failures inside a running command.
 
 ## Dependencies
 
