@@ -12,16 +12,17 @@
 use std::path::PathBuf;
 
 use quoin_measurement::{
-    DiskMeasurement, build_measurement_report, render_measurement_report,
-    render_measurement_report_json, render_series_json, series_for,
+    DiskMeasurement, MeasurementReport, build_measurement_report_ordered,
+    render_measurement_report, render_measurement_report_json, render_series_json, series_for,
 };
 
 use crate::error::CoreError;
 use crate::protocol::Response;
 
 use super::taxonomy::map_measurement;
+use super::verify::intake_order;
 use super::wire::{
-    MAX_ASSURANCE_DOCUMENT_BYTES, MAX_METRIC_NAME_BYTES, RepoRequest, SeriesRequest,
+    MAX_ASSURANCE_DOCUMENT_BYTES, MAX_METRIC_NAME_BYTES, ReportRequest, SeriesRequest,
 };
 use super::{bound, bound_field, document, parse, rendered, string_len};
 
@@ -30,14 +31,12 @@ use super::{bound, bound_field, document, parse, rendered, string_len};
 /// # Errors
 ///
 /// - [`crate::error::CoreErrorCode::BadRequest`] when stdin is not a
-///   [`RepoRequest`].
+///   [`ReportRequest`].
 /// - [`crate::error::CoreErrorCode::Refused`] when the ceiling is exceeded, or
 ///   when the store cannot be read.
 pub fn build_report(request: &serde_json::Value) -> Result<Response, CoreError> {
     const OP: &str = "measurement.build_report";
-    let repo = locate(request, OP)?;
-    let report = build_measurement_report(&DiskMeasurement::new(&repo), &repo)
-        .map_err(|e| map_measurement(&e, OP))?;
+    let report = report_of(request, OP)?;
     let canonical = render_measurement_report_json(&report).map_err(|e| map_measurement(&e, OP))?;
     document(&canonical, OP)
 }
@@ -49,9 +48,7 @@ pub fn build_report(request: &serde_json::Value) -> Result<Response, CoreError> 
 /// As [`build_report`].
 pub fn render_report(request: &serde_json::Value) -> Result<Response, CoreError> {
     const OP: &str = "measurement.render_report";
-    let repo = locate(request, OP)?;
-    let report = build_measurement_report(&DiskMeasurement::new(&repo), &repo)
-        .map_err(|e| map_measurement(&e, OP))?;
+    let report = report_of(request, OP)?;
     let markdown = render_measurement_report(&report).map_err(|e| map_measurement(&e, OP))?;
     rendered(markdown, OP)
 }
@@ -86,9 +83,16 @@ pub fn build_series(request: &serde_json::Value) -> Result<Response, CoreError> 
     document(&canonical, OP)
 }
 
-/// Bound and parse a request that names one store, and nothing else.
-fn locate(request: &serde_json::Value, op: &'static str) -> Result<PathBuf, CoreError> {
+/// Bound and parse a [`ReportRequest`], and build the report of its store with
+/// the intake order it states.
+fn report_of(
+    request: &serde_json::Value,
+    op: &'static str,
+) -> Result<MeasurementReport, CoreError> {
     bound(request, op, MAX_ASSURANCE_DOCUMENT_BYTES)?;
-    let request: RepoRequest = parse(request, op)?;
-    Ok(PathBuf::from(request.repo))
+    let request: ReportRequest = parse(request, op)?;
+    let order = intake_order(request.order_source.as_deref(), request.intake_order, op)?;
+    let repo = PathBuf::from(request.repo);
+    build_measurement_report_ordered(&DiskMeasurement::new(&repo), &repo, &order)
+        .map_err(|e| map_measurement(&e, op))
 }

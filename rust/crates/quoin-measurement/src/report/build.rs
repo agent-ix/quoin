@@ -27,9 +27,7 @@ use crate::intervention::report::{InterventionReportEntry, build_intervention_re
 use crate::operational::read::read_operational_records;
 use crate::operational::record::OperationalEvidenceRecord;
 use crate::operational::report::{OperationalReportEntry, build_operational_report};
-use crate::paired::{
-    PairedRunObservation, PairedRunOutcome, compare_latest_pair, measures, order_matters,
-};
+use crate::paired::PairedRunObservation;
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
 use crate::report::vanished::{VanishedSlice, vanished_slices};
 use crate::report::verdict::{StageVerdict, stage_verdict};
@@ -40,6 +38,7 @@ use crate::types::collection::MeasurementCollection;
 use crate::types::ids::CollectionId;
 use crate::types::observation::MeasurementObservation;
 use crate::types::plan::{GroundTruthKind, LifecycleStatus, MeasurementPlan, MeasurementStage};
+use crate::verify::{IntakeOrder, report_pair};
 
 /// The collection members a report row quotes, and where the record lives.
 ///
@@ -134,6 +133,21 @@ pub fn build_measurement_report<S: MeasurementSource + ?Sized>(
     source: &S,
     repo: &Path,
 ) -> Result<MeasurementReport, MeasurementError> {
+    build_measurement_report_ordered(source, repo, &IntakeOrder::none())
+}
+
+/// [`build_measurement_report`] with the intake order the caller attests, so
+/// a paired-run plan's latest two collections are chosen as `verify` chooses
+/// them (FR-132-AC-12).
+///
+/// # Errors
+///
+/// As [`build_measurement_report`].
+pub fn build_measurement_report_ordered<S: MeasurementSource + ?Sized>(
+    source: &S,
+    repo: &Path,
+    order: &IntakeOrder,
+) -> Result<MeasurementReport, MeasurementError> {
     let plans = load_measurement_plans(source, PlanLoadOptions::default())?;
     let collections = read_measurement_collections(source)?;
     let interventions = read_intervention_records(source)?;
@@ -141,7 +155,14 @@ pub fn build_measurement_report<S: MeasurementSource + ?Sized>(
         .into_iter()
         .map(|valid| valid.record().clone())
         .collect();
-    build_measurement_report_from(repo, &plans, &collections, &interventions, &operational)
+    build_measurement_report_from_ordered(
+        repo,
+        &plans,
+        &collections,
+        &interventions,
+        &operational,
+        order,
+    )
 }
 
 /// Build every view from one already-loaded snapshot.
@@ -163,6 +184,30 @@ pub fn build_measurement_report_from(
     interventions: &[InterventionExperimentRecord],
     operational: &[OperationalEvidenceRecord],
 ) -> Result<MeasurementReport, MeasurementError> {
+    build_measurement_report_from_ordered(
+        repo,
+        all_plans,
+        collections,
+        interventions,
+        operational,
+        &IntakeOrder::none(),
+    )
+}
+
+/// [`build_measurement_report_from`] with the intake order the caller
+/// attests (FR-132-AC-12).
+///
+/// # Errors
+///
+/// As [`build_measurement_report_from`].
+pub fn build_measurement_report_from_ordered(
+    repo: &Path,
+    all_plans: &[MeasurementPlan],
+    collections: &[MeasurementCollection],
+    interventions: &[InterventionExperimentRecord],
+    operational: &[OperationalEvidenceRecord],
+    order: &IntakeOrder,
+) -> Result<MeasurementReport, MeasurementError> {
     let plans: Vec<MeasurementPlan> = all_plans
         .iter()
         .filter(|plan| plan.status == LifecycleStatus::Active)
@@ -172,12 +217,9 @@ pub fn build_measurement_report_from(
     let mut current = Vec::new();
     let mut vanished = Vec::new();
     let mut paired_runs = Vec::new();
+    let ranked = order.rank(collections);
     for plan in &plans {
-        let measuring: Vec<&MeasurementCollection> = collections
-            .iter()
-            .filter(|candidate| measures(plan, candidate))
-            .collect();
-        paired_runs.extend(report_pair(plan, &measuring));
+        paired_runs.extend(report_pair(plan, &ranked, order.source));
         // `[...collections].reverse().find(…)` — the newest collection that
         // computed this metric at all, not the newest collection.
         let newest = collections
@@ -233,31 +275,6 @@ pub fn build_measurement_report_from(
         interventions: build_intervention_report(interventions),
         operational: build_operational_report(operational),
     })
-}
-
-/// `plan`'s pair over its `measuring` collections, as the report states it.
-///
-/// The report reads no git, so it attests no intake order (FR-108-AC-2): where
-/// the order can change the answer (`order_matters`), the pair is
-/// `inconclusive` with `order_unattested` and `quoin measurement verify`
-/// decides it, so the two never name different pairs (FR-132-AC-12).
-fn report_pair(
-    plan: &MeasurementPlan,
-    measuring: &[&MeasurementCollection],
-) -> Option<PairedRunObservation> {
-    let mut pair = compare_latest_pair(plan, measuring)?;
-    if plan
-        .paired_run
-        .is_some_and(|paired| order_matters(paired, measuring.len()))
-        && pair.outcome != PairedRunOutcome::Unpaired
-    {
-        pair.outcome = PairedRunOutcome::Inconclusive;
-        pair.reasons.push(
-            "order_unattested: the report reads no intake order; `quoin measurement verify` decides"
-                .to_owned(),
-        );
-    }
-    Some(pair)
 }
 
 /// Whether a collection computed `metric` at all.

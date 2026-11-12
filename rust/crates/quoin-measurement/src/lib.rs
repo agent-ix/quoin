@@ -127,8 +127,8 @@ pub use raw_evidence::{
     verify_raw_evidence_references,
 };
 pub use report::{
-    MeasurementReport, build_measurement_report, render_measurement_report,
-    render_measurement_report_json, render_series_json, series_for,
+    MeasurementReport, build_measurement_report, build_measurement_report_ordered,
+    render_measurement_report, render_measurement_report_json, render_series_json, series_for,
 };
 pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement};
 pub use store::{
@@ -146,6 +146,6 @@ pub use types::plan::MeasurementPlan;
 pub use types::profile::AssuranceProfileSummary;
 pub use validate::{measurement_collection, stored_measurement_collection};
 pub use verify::{
-    MeasurementVerdict, OrderSource, Ranked, Reason, TamperFacts, VERDICT_SCHEMA, Verdict,
-    verdict_json, verify,
+    IntakeOrder, MeasurementVerdict, OrderSource, Ranked, Reason, TamperFacts, VERDICT_SCHEMA,
+    Verdict, verdict_json, verify,
 };

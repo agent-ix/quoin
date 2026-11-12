@@ -24,7 +24,7 @@ use std::process::Output;
 
 use serde_json::Value;
 
-use super::MEASUREMENTS_DIRECTORY;
+use crate::intake_order::MEASUREMENTS_DIRECTORY;
 
 /// The `sourceState` stored when the claim could not be checked.
 pub(super) const UNVERIFIED: &str = "unverified";

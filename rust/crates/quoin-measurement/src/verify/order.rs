@@ -13,7 +13,32 @@ use crate::date_time::Rfc3339DateTime;
 use crate::store::read::collection_order;
 use crate::types::collection::MeasurementCollection;
 
-use super::Run;
+use super::{Ranked, Run};
+
+/// Something with an intake position and the collection it belongs to: a
+/// [`Run`] the checker holds, or a [`Ranked`] collection a report holds.
+pub(super) trait Placed {
+    fn intake(&self) -> Option<u64>;
+    fn collection(&self) -> &MeasurementCollection;
+}
+
+impl Placed for Run<'_> {
+    fn intake(&self) -> Option<u64> {
+        self.intake
+    }
+    fn collection(&self) -> &MeasurementCollection {
+        self.collection
+    }
+}
+
+impl Placed for Ranked<'_> {
+    fn intake(&self) -> Option<u64> {
+        self.intake
+    }
+    fn collection(&self) -> &MeasurementCollection {
+        self.collection
+    }
+}
 
 /// The sort key of an intake position: positioned runs first, by position.
 const fn key(intake: Option<u64>) -> (bool, Option<u64>) {
@@ -22,11 +47,11 @@ const fn key(intake: Option<u64>) -> (bool, Option<u64>) {
 
 /// Sort `runs` into intake order. The stated timestamp only makes a tie's
 /// listing deterministic.
-pub(super) fn sort(runs: &mut [Run<'_>]) {
+pub(super) fn sort<P: Placed>(runs: &mut [P]) {
     runs.sort_by(|a, b| {
-        key(a.intake)
-            .cmp(&key(b.intake))
-            .then_with(|| collection_order(a.collection, b.collection))
+        key(a.intake())
+            .cmp(&key(b.intake()))
+            .then_with(|| collection_order(a.collection(), b.collection()))
     });
 }
 
@@ -39,14 +64,14 @@ pub(super) fn not_before(later: Option<u64>, earlier: Option<u64>) -> bool {
 /// Whether the run at `index` has no attested place in `runs`: it shares
 /// its intake position with another run, or a run on one side of it states a
 /// timestamp on the other side.
-pub(super) fn unattested(runs: &[Run<'_>], index: usize) -> bool {
+pub(super) fn unattested<P: Placed>(runs: &[P], index: usize) -> bool {
     let Some(run) = runs.get(index) else {
         return false;
     };
     runs.iter().enumerate().any(|(other, candidate)| {
         other != index
-            && (candidate.intake == run.intake
-                || stated_disagrees(other.cmp(&index), candidate.collection, run.collection))
+            && (candidate.intake() == run.intake()
+                || stated_disagrees(other.cmp(&index), candidate.collection(), run.collection()))
     })
 }
 

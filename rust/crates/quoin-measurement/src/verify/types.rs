@@ -53,6 +53,13 @@ impl OrderSource {
         }
     }
 
+    /// Whether positions from this source are used: only an order the caller
+    /// has, not one that is known to be missing or untrustworthy.
+    #[must_use]
+    pub const fn attests_positions(self) -> bool {
+        matches!(self, Self::GitFirstParentAdd | Self::CallerSupplied)
+    }
+
     /// Recover a source from its wire spelling.
     #[must_use]
     pub fn from_wire(value: &str) -> Option<Self> {
@@ -75,6 +82,53 @@ impl<'a> Ranked<'a> {
     #[must_use]
     pub const fn new(collection: &'a MeasurementCollection, intake: Option<u64>) -> Self {
         Self { collection, intake }
+    }
+}
+
+/// The intake order a caller obtained: collection ids in order, earliest
+/// group first, and where the order came from.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IntakeOrder {
+    /// Where `groups` came from.
+    pub source: OrderSource,
+    /// Collection ids in intake order, earliest group first; ids in one group
+    /// are tied. A collection named in no group has no position.
+    pub groups: Vec<Vec<String>>,
+}
+
+impl IntakeOrder {
+    /// No order at all.
+    #[must_use]
+    pub const fn none() -> Self {
+        Self {
+            source: OrderSource::None,
+            groups: Vec::new(),
+        }
+    }
+
+    /// `collections` with their positions in this order. The first group an id
+    /// appears in is its position; a later repeat of the same id is ignored
+    /// rather than moving it.
+    #[must_use]
+    pub fn rank<'a>(
+        &self,
+        collections: impl IntoIterator<Item = &'a MeasurementCollection>,
+    ) -> Vec<Ranked<'a>> {
+        let mut positions = BTreeMap::new();
+        for (position, group) in (0_u64..).zip(&self.groups) {
+            for id in group {
+                positions.entry(id.as_str()).or_insert(position);
+            }
+        }
+        collections
+            .into_iter()
+            .map(|collection| {
+                Ranked::new(
+                    collection,
+                    positions.get(collection.collection_id.as_str()).copied(),
+                )
+            })
+            .collect()
     }
 }
 

@@ -72,10 +72,12 @@ use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
 use crate::types::observation::MeasurementObservation;
 use crate::types::plan::{MeasurementPlan, StatisticalDesign};
 
+pub(crate) use paired::report_pair;
 pub use reason::{Reason, Verdict};
 pub use rows::{Estimate, EstimateBasis};
 pub use types::{
-    Counts, Finding, MeasurementVerdict, OrderSource, Ranked, SliceDecision, TamperFacts,
+    Counts, Finding, IntakeOrder, MeasurementVerdict, OrderSource, Ranked, SliceDecision,
+    TamperFacts,
 };
 pub use wire::{VERDICT_SCHEMA, verdict_json};
 
@@ -121,10 +123,7 @@ pub fn verify(
             population_exempt: None,
         });
     // Positions are ignored when the order's source attests none.
-    let positioned = matches!(
-        order,
-        OrderSource::GitFirstParentAdd | OrderSource::CallerSupplied
-    );
+    let positioned = order.attests_positions();
     let collections: Vec<Ranked<'_>> = collections
         .iter()
         .map(|ranked| Ranked {

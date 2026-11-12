@@ -20,13 +20,14 @@
 //! names one collection while holding another would take a position that is
 //! not its own.
 
-use std::collections::BTreeMap;
 use std::path::Path;
 
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::{DiskMeasurement, MeasurementSource as _};
 use quoin_measurement::store::read_measurement_collection_results;
-use quoin_measurement::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify as check};
+use quoin_measurement::{
+    IntakeOrder, OrderSource, TamperFacts, Verdict, verdict_json, verify as check,
+};
 
 use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::Response;
@@ -73,33 +74,10 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
             )
             .with_context("op", OP)
         })?;
-    let order = match request.order_source.as_deref() {
-        Some(stated) => OrderSource::from_wire(stated).ok_or_else(|| {
-            CoreError::new(
-                CoreErrorCode::BadRequest,
-                format!("unknown order source `{stated}`"),
-            )
-            .with_context("op", OP)
-        })?,
-        None if request.intake_order.is_empty() => OrderSource::None,
-        None => OrderSource::CallerSupplied,
-    };
+    let intake = intake_order(request.order_source.as_deref(), request.intake_order, OP)?;
+    let order = intake.source;
     let collections = collections(&source, Path::new(&request.repo))?;
-    // The first group a collection id appears in is its position; a later
-    // repeat of the same id is ignored rather than moving it.
-    let mut positions = BTreeMap::new();
-    for (position, group) in (0_u64..).zip(&request.intake_order) {
-        for id in group {
-            positions.entry(id.as_str()).or_insert(position);
-        }
-    }
-    let ranked: Vec<Ranked<'_>> = collections
-        .iter()
-        .map(|collection| Ranked {
-            collection,
-            intake: positions.get(collection.collection_id.as_str()).copied(),
-        })
-        .collect();
+    let ranked = intake.rank(&collections);
     // A deleted or edited collection is attributed to this plan when the
     // caller read this plan's id among the observations it carried, in any
     // content it had (PLAT-985); the caller alone has git and did that
@@ -141,6 +119,31 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
     .with_context("verdict", verdict.verdict.as_str())
     .with_context("reasons", reasons.join(","));
     Ok(Response::partial(payload, &diagnostic))
+}
+
+/// The intake order a request states: its source as stated, or, when it
+/// states none, `caller-supplied` for a non-empty order and `none` otherwise.
+///
+/// # Errors
+///
+/// [`CoreErrorCode::BadRequest`] for an unknown source.
+pub(super) fn intake_order(
+    stated: Option<&str>,
+    groups: Vec<Vec<String>>,
+    op: &'static str,
+) -> Result<IntakeOrder, CoreError> {
+    let source = match stated {
+        Some(stated) => OrderSource::from_wire(stated).ok_or_else(|| {
+            CoreError::new(
+                CoreErrorCode::BadRequest,
+                format!("unknown order source `{stated}`"),
+            )
+            .with_context("op", op)
+        })?,
+        None if groups.is_empty() => OrderSource::None,
+        None => OrderSource::CallerSupplied,
+    };
+    Ok(IntakeOrder { source, groups })
 }
 
 /// Every retained collection, refusing the read when one is unreadable or

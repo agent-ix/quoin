@@ -3,7 +3,7 @@
 
 //! Git-derived tamper facts for `quoin measurement verify` (PLAT-985).
 //!
-//! `quoin-measurement`'s checker is pure and reads no git; [`super::intake_order`]
+//! `quoin-measurement`'s checker is pure and reads no git; [`crate::intake_order`]
 //! already crosses that line once, for the intake order itself, because only
 //! this binary has git. These three checks are the same kind of fact,
 //! gathered the same way, and handed to `measurement.verify` alongside the
@@ -22,7 +22,7 @@
 //! Every check degrades to "nothing found" rather than an error when git
 //! cannot answer — outside a work tree, a shallow clone missing the revision
 //! in question, or a path git does not track — the same posture
-//! [`super::intake_order`] takes for the order itself: a caller with no git
+//! [`crate::intake_order`] takes for the order itself: a caller with no git
 //! access attests nothing, rather than manufacturing a false tamper finding.
 //!
 //! Every check attests the history this clone presents. A history rewritten
@@ -41,7 +41,7 @@ use quoin_measurement::MeasurementPlan;
 use quoin_measurement::plans::{PlanLoadOptions, definition_changed_without_version_bump};
 use quoin_measurement::source::{DiskMeasurement, MeasurementSource as _};
 
-use super::MEASUREMENTS_DIRECTORY;
+use crate::intake_order::MEASUREMENTS_DIRECTORY;
 
 /// One collection the store's git history shows was tampered with — removed,
 /// or changed after intake added it — and the plan ids its observations
@@ -105,7 +105,7 @@ struct History {
 /// since `measurement.verify` reads the work tree: a modified file is
 /// edited, a removed one is deleted. A path this crate cannot key to a
 /// collection id (nested, or not `.json`) is ignored, matching
-/// [`super::intake_order`].
+/// [`crate::intake_order`].
 ///
 /// Plan ids are read from the content intake first added *and* the content
 /// last seen (before removal, or on disk now), so neither an edit that

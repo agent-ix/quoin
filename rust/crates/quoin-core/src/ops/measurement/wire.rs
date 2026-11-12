@@ -13,7 +13,7 @@
 //!
 //! Every route locates a measurement store and then says one more thing about
 //! what to do with it, so the requests are shared rather than declared per
-//! route: [`RepoRequest`] locates one store, [`PortfolioRequest`] locates
+//! route: [`ReportRequest`] locates one store, [`PortfolioRequest`] locates
 //! several, and the four remaining shapes add a record, a definition, a
 //! revision or a metric. A per-route request type would be twelve declarations
 //! of "where is the store", and the twelfth would be the one that spells it
@@ -133,12 +133,19 @@ pub const MAX_RECORD_ID_BYTES: usize = quoin_measurement::MAX_RECORD_ID_BYTES;
 /// [`MAX_PORTFOLIO_ROOTS_BYTES`], not like a single name.
 pub const MAX_VERIFY_REQUEST_BYTES: usize = 4 * 1024 * 1024;
 
-/// One measurement store, located.
+/// The report of one store, and the intake order its paired runs are chosen
+/// by (FR-132-AC-12).
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct RepoRequest {
+pub struct ReportRequest {
     /// The repository root holding the measurement store.
     pub repo: String,
+    /// As [`VerifyRequest::intake_order`].
+    #[serde(default)]
+    pub intake_order: Vec<Vec<String>>,
+    /// As [`VerifyRequest::order_source`].
+    #[serde(default)]
+    pub order_source: Option<String>,
 }
 
 /// A record to publish, and the store to publish it into.
