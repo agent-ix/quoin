@@ -57,7 +57,10 @@ const COMMANDS: &[(&str, &str)] = &[
         "advise",
         "Recommend a verification method for each obligation, from\n                    the catalog.",
     ),
-    ("anomaly", crate::anomaly::ABOUT),
+    (
+        "anomaly",
+        "Check anomaly status history and list the anomalies\n                    that name an id.",
+    ),
     (
         "assurance",
         "Render the assurance case: claim → argument → evidence, from\n                    the store.",

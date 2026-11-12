@@ -509,6 +509,15 @@ fn quire_validate_still_reports_its_own_per_row_findings() {
     std::fs::remove_dir_all(scope.path().join("spec/hazard")).unwrap();
     let process = process_root().join("spec_artifacts_process");
     let iso = dirs_modules().join("spec-artifacts-iso");
+    // This clause compares against the engine's own findings, so the `quire` CLI
+    // and the spec-artifacts-iso module are prerequisites. Like the rest of this
+    // suite the test fails, rather than skips, when one is missing.
+    assert!(
+        iso.is_dir(),
+        "the spec-artifacts-iso module is not installed at {}: install it \
+         (`quoin module ensure-defaults`) before running this test",
+        iso.display()
+    );
     let output = Command::new("quire")
         .args(["validate", "--okf", "--scope"])
         .arg(scope.path())
@@ -517,9 +526,12 @@ fn quire_validate_still_reports_its_own_per_row_findings() {
         .arg("--module")
         .arg(&iso)
         .output()
-        .expect(
-            "`quire` must be on PATH for this test (it is the engine the clause compares against)",
-        );
+        .unwrap_or_else(|error| {
+            panic!(
+                "this test runs the `quire` CLI and cannot: {error}. Install it \
+                 (`npm install -g @agent-ix/quire-cli`) and put it on PATH"
+            )
+        });
     let stderr = String::from_utf8_lossy(&output.stderr);
     let findings = stderr
         .lines()

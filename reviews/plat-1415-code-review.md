@@ -51,3 +51,24 @@ scope:
 - {id: quoin-cli registration, path: rust/crates/quoin-cli/src/help.rs, role: examined, excerpt: "COMMANDS entry, unknown_command catalogue, NATIVE_OWNED_ROUTES, retained-command-help.json"}
 - {id: MP-250/MP-251, path: spec/assurance/MP-250-nfr003-actionable-failures.md, role: examined, excerpt: "population_set adds anomaly:unknown-flag"}
 ```
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-010 | high | `tc_retained_help_capture` fails 2 of 6 (`tc_1650_native_root_help_matches_the_retained_capture` and `tc_1650_native_help_preserves_retained_routes_and_current_workflow_paths`). Root `--help` now lists `anomaly`, but the retained root-help capture was not updated. The new COMMANDS row is also not wrapped to the 80-column layout the other rows use, so `cargo test --workspace` (make test) is red. The row was added in 91a5f857 and was missed in the review pass | rust/crates/quoin-cli/src/help.rs:60; rust/crates/quoin-cli/tests/tc_retained_help_capture.rs:131,162 |
+| FND-011 | low | The new AC-10 `quire validate` test depends on a `quire` on PATH and on `spec-artifacts-iso` under `~/.ix/filament/modules`, which is not the sibling checkout. It also matches quire's stderr text `[dangling-trace-reference]`, and it panics through `expect` when quire is absent. The dependency is documented in CLAUDE.md, but the test is coupled to another tool's message format | rust/crates/quoin-anomaly/tests/tc_136_anomaly.rs:505-539 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Every git query runs from the top level (645b2510). Tests cover `AN-001.md` and `spec/anomaly/AN-001.md`. Re-probed: the subdirectory case now reports illegal-transition |
+| FND-002 | fixed | `status_line(text)` is used for every diagnostic. Re-probed: no-record and illegal-transition at line 5, with the mapping-error line kept in the message |
+| FND-003 | fixed | `probe`/`require`: a spawn failure is an error, and so is a failing `git log`. `NotApplicable` is returned only for a file outside any repository. The CLI test runs with an empty PATH |
+| FND-004 | fixed | record.rs is marked TEMPORARY and cites quire-rs#393 with a removal condition. A CR note is in FR-136. The `KINDS`/`IMPACTS` and `column-choices` checks are removed. Re-probed: `impact-outside-vocabulary` yields a record. The author's decision to keep `status_word` plus `status()` is accepted: an out-of-vocabulary status is quire validate's, per the FR-014 owner table |
+| FND-005 | fixed | Discovery goes through the core `catalog.load` operation. A nonexistent `--module` or scope is refused by name with exit 2. Re-probed: default discovery finds the installed spec-objects-safety |
+| FND-006 | fixed | MP-250 and MP-251 add the seven anomaly entries, with help captures for `anomaly`, `anomaly check` and `anomaly refs` |
+| FND-007 | fixed | spec-artifacts-process#140 is merged, so the fixtures are on its main. The panic message is actionable and the prerequisite is documented in CLAUDE.md and the test docs. No copy is in the repo |
+| FND-008 | fixed | The CLI prints `severity.as_str()`, lists commits and exits 1 only on an error-severity diagnostic. A missing path is refused with exit 2 |
+| FND-009 | fixed | `MappingErrorCode` is a Copy enum. `StatusEntry.status` is `Status`. `reason()` is derived from the code |

@@ -49,3 +49,15 @@ scope:
 - {id: FR-014, path: "spec-artifacts-process spec/functional/FR-014-anomaly-archetype-and-state-lifecycle.md", role: context_only, excerpt: "single legal moves and reachability over squashed history, owned by quoin FR-136"}
 - {id: FR-015, path: "spec-artifacts-process spec/functional/FR-015-anomaly-safety-impact-assessment.md", role: context_only, excerpt: "one missing-module diagnostic per document naming spec-objects-safety"}
 ```
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The AC-11 test now asserts code, severity, reason and status line for illegal-transition, missing-module, reassessment-missing and no-record |
+| FND-002 | fixed | `LAYOUTS = ["AN-001.md", "spec/anomaly/AN-001.md"]` drives the history tests |
+| FND-003 | fixed | `quoin anomaly check` prints `statusHistory not applicable (the file is not under git)`, asserted by `check_says_status_history_is_not_applicable_for_a_file_outside_git` |
+| FND-004 | fixed | FR-136 carries a CR note recording the temporary exception, and record.rs carries the matching marker with a removal condition |
+| FND-005 | fixed | AC-3 runs the `closed-wont-fix` and `closed-duplicate` fixtures for their pairs |
+| FND-006 | fixed | AC-8 asserts FR-001 empty and HAZ-001 listed once. AC-1 asserts `authored_at` does not contain the typed 1999 date |
+| FND-007 | fixed | `quire_validate_still_reports_its_own_per_row_findings` asserts two dangling-trace-reference findings, for HAZ-001 and HAZ-002 |
