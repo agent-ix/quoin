@@ -30,7 +30,7 @@ first-party producer for retained real GitHub Actions release evidence.
 - GitHub Actions owns workflow execution, API observations, and release effects.
 - The adapter performs no network call, process execution, workflow dispatch,
   release publication, drill, or operational-control alteration.
-- Quoin #286 and `filament-ide-rs` are outside this plan.
+- Quoin #286 is outside this plan.
 
 ## Dependency Graph
 

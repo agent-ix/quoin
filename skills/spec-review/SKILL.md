@@ -94,8 +94,7 @@ The seven analyses:
 > `.` — so a run launched from a parent directory validates the **wrong tree** and exits
 > 0 for whatever it matched.
 
-    -   The docs sync into filament-core as `SpecReview` artifacts; do not proceed to
-        implementation until reviewed.
+    -   Do not proceed to implementation until reviewed.
 
 ## Enforced runs (workflow mode)
 

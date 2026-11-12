@@ -16,46 +16,39 @@ mod nfr_populations;
 
 use ix_trace_rs::trace;
 use nfr_populations::span_breadth::{self, Replay, Unavailable, Unmatched};
-use nfr_populations::{assert_accepted, commands, manifests};
-use quoin_measurement::verify::Reason;
+use nfr_populations::{
+    assert_accepted, assert_population_stated, context, ix_flow, manifests, nfr003,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-fn home() -> tempfile::TempDir {
-    tempfile::tempdir().expect("an isolated home is creatable")
-}
-
-/// NFR-003-M-1 and NFR-003-M-2: every command refuses an unknown flag out loud,
-/// and none fails silently.
+/// NFR-003-M-1 and NFR-003-M-2: the populations are command x error class,
+/// enumerated by the class modules; each plan declares exactly them, and intake
+/// and the checker read the observation as stating that set. The per-class
+/// tests (TC-3700..3706) own what each class reads.
 #[trace("FR-131-AC-9", "TC-3003", "NFR-003-M-1", "NFR-003-M-2")]
 #[test]
-fn tc_3003_every_command_fails_a_bad_argument_out_loud() {
-    let home = home();
-    let (actionable, silent) = commands::bad_arguments(home.path());
-    assert!(
-        actionable.examined.contains("catalog") && actionable.examined.len() > 10,
-        "{:?}",
-        actionable.examined
-    );
-    assert_eq!(
-        actionable.matched, actionable.examined,
-        "a command fails quietly"
-    );
-    assert!(silent.matched.is_empty(), "{:?}", silent.matched);
-    assert_accepted("MP-250", &actionable);
-    assert_accepted("MP-251", &silent);
+fn tc_3003_the_nfr003_populations_are_stated_by_class() {
+    let (actionable, silent) = nfr003::populations(&context::Context::new());
+    assert!(actionable.examined.len() > 100, "{:?}", actionable.examined);
+    for (plan, probed) in [("MP-250", &actionable), ("MP-251", &silent)] {
+        assert_population_stated(plan, probed);
+    }
 }
 
-/// NFR-007-M-1: `ix-flow` absent and `ix-flow` failing both reach the caller as a
-/// non-zero exit, for every workflow command.
+/// NFR-007-M-1: every way `ix-flow` fails reaches the caller as a non-zero exit
+/// naming what failed, for every workflow command.
 #[cfg(unix)]
 #[trace("FR-131-AC-10", "TC-3004", "NFR-007-M-1")]
 #[test]
-fn tc_3004_an_ix_flow_failure_is_a_non_zero_quoin_exit() {
-    let home = home();
-    let probed = commands::external_tool_failures(home.path());
-    assert_eq!(probed.examined.len(), 4, "{:?}", probed.examined);
-    assert_eq!(probed.matched, probed.examined);
+fn tc_3004_the_nfr007_population_is_stated_by_failure_mode() {
+    let probed = ix_flow::external_tool_failures(&context::Context::new());
+    assert!(probed.examined.len() >= 24, "{:?}", probed.examined);
+    let unmatched: BTreeSet<_> = probed.examined.difference(&probed.matched).collect();
+    assert!(
+        unmatched.is_empty(),
+        "an ix-flow failure is not surfaced: {unmatched:?}"
+    );
     assert_accepted("MP-252", &probed);
 }
 
@@ -238,27 +231,6 @@ fn tc_3301_the_frozen_labels_are_replayed_and_their_ids_stated() {
     ]);
     let Replay { probed, unmatched } =
         span_breadth::replay(&span_breadth::labels_json(), &roots).expect("both checkouts given");
-    let verdict = nfr_populations::verdict("MP-219", &probed);
-    let population: Vec<_> = verdict
-        .reasons
-        .iter()
-        .filter(|reason| {
-            matches!(
-                reason,
-                Reason::PopulationUnstated
-                    | Reason::PopulationMalformed
-                    | Reason::PopulationPartial
-                    | Reason::PopulationOutsideSet
-                    | Reason::PopulationSetUndeclared
-            )
-        })
-        .collect();
-    assert!(population.is_empty(), "{:?}", verdict.reasons);
-    eprintln!(
-        "MP-219: {} of {} labels reproduced; verdict {:?} {:?}; unmatched {unmatched:?}",
-        probed.matched.len(),
-        probed.examined.len(),
-        verdict.verdict,
-        verdict.reasons
-    );
+    nfr_populations::assert_population_stated("MP-219", &probed);
+    eprintln!("MP-219: unmatched {unmatched:?}");
 }

@@ -24,8 +24,8 @@ identically to the `quoin` CLI, in service of
 The durable cross-tool contract is the **shared store layout** plus the
 `@agent-ix/ts-plugin-kit` source/registry model: a consumer may either import this
 library (Node tools) or interoperate at the store level over the same registry and
-module directories (as filament-ide does, to avoid pulling quoin's CLI dependency
-tree into a desktop bundle). Either way an install/removal by one tool is observed
+module directories (to avoid pulling quoin's CLI dependency tree into its
+bundle). Either way an install/removal by one tool is observed
 by the other.
 
 This formalizes the existing exports as a consumed contract: the CLI behavior in
@@ -57,7 +57,6 @@ not only the command line.
   catalog; the CLI plugin operations [FR-019](./FR-019-manage-plugin-registry.md)
   and catalog assembly [FR-007](./FR-007-assemble-module-roots.md) whose internals
   this surface re-exports.
-- **Downstream**: filament-ide interoperates over the same shared store via
+- **Downstream**: store-level consumers interoperate over the same shared store via
   `@agent-ix/ts-plugin-kit` and these store conventions — rather than importing this
-  library — to install, list, remove, and load plugins
-  (`ix://agent-ix/filament-ide/FR-023`, `ix://agent-ix/filament-ide/FR-020`).
+  library — to install, list, remove, and load plugins.

@@ -16,6 +16,7 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
+use super::context::seed_home;
 use super::{Probed, quoin, text};
 
 /// The module every probe lists after the candidate.
@@ -52,28 +53,12 @@ pub(crate) struct Harness {
     companion: PathBuf,
 }
 
-fn copy_tree(source: &Path, destination: &Path) {
-    std::fs::create_dir_all(destination).expect("the destination is creatable");
-    for entry in std::fs::read_dir(source).expect("the fixture is readable") {
-        let entry = entry.expect("the entry is readable");
-        let target = destination.join(entry.file_name());
-        if entry.file_type().expect("the type is readable").is_dir() {
-            copy_tree(&entry.path(), &target);
-        } else {
-            std::fs::copy(entry.path(), target).expect("the file copies");
-        }
-    }
-}
-
 impl Harness {
     /// Seed the home, write the companion, and require the control to list it.
     pub(crate) fn new() -> Self {
         let scratch = tempfile::tempdir().expect("scratch is creatable");
         let home = scratch.path().join("ix-home");
-        copy_tree(
-            &Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/retained-catalog/ix-home"),
-            &home,
-        );
+        seed_home(&home);
         let companion = scratch.path().join(COMPANION);
         std::fs::create_dir_all(&companion).expect("the companion is creatable");
         std::fs::write(
