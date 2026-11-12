@@ -81,8 +81,6 @@ answer.
 
 - The view SHALL NOT persist anything, SHALL NOT embed a standard's requirement
   text, and SHALL carry no score, percentage, ratio or count of compliant rows.
-  The pack index of [FR-140](./FR-140-pack-requirements-mapping-report.md) is a separate
-  document and states counts per Compliance value; each embedded matrix still carries none.
 
 ## Acceptance Criteria
 
