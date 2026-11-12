@@ -11,9 +11,20 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-pub(crate) mod commands;
+pub(crate) mod bad_flag;
+pub(crate) mod catalog_conflict;
+pub(crate) mod context;
+pub(crate) mod failure;
+pub(crate) mod help_tree;
+pub(crate) mod ix_flow;
+pub(crate) mod malformed_input;
 pub(crate) mod manifests;
+pub(crate) mod missing_argument;
+pub(crate) mod missing_path;
+pub(crate) mod nfr003;
 pub(crate) mod span_breadth;
+pub(crate) mod unknown_subcommand;
+pub(crate) mod unknown_type;
 
 use std::collections::BTreeSet;
 use std::io::Read;
@@ -26,7 +37,7 @@ use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::MemoryMeasurement;
 use quoin_measurement::types::plan::MeasurementPlan;
 use quoin_measurement::validate;
-use quoin_measurement::verify::{OrderSource, Ranked, TamperFacts, Verdict, verify};
+use quoin_measurement::verify::{OrderSource, Ranked, Reason, TamperFacts, Verdict, verify};
 use serde_json::{Value, json};
 
 /// What one producer found: the ids it examined and the ids that matched.
@@ -183,6 +194,40 @@ pub(crate) fn verdict(id: &str, probed: &Probed) -> quoin_measurement::verify::M
         OrderSource::CallerSupplied,
         None,
     )
+}
+
+/// Check `probed` against the authored plan `id` as [`verdict`] does and
+/// require that the checker found nothing wrong with how the population is
+/// stated. Whether the measured value meets the plan's bar is the reading, not
+/// asserted here. Returns the verdict so a caller can report it.
+pub(crate) fn assert_population_stated(
+    id: &str,
+    probed: &Probed,
+) -> quoin_measurement::verify::MeasurementVerdict {
+    let verdict = verdict(id, probed);
+    let population: Vec<_> = verdict
+        .reasons
+        .iter()
+        .filter(|reason| {
+            matches!(
+                reason,
+                Reason::PopulationUnstated
+                    | Reason::PopulationMalformed
+                    | Reason::PopulationPartial
+                    | Reason::PopulationOutsideSet
+                    | Reason::PopulationSetUndeclared
+            )
+        })
+        .collect();
+    assert!(population.is_empty(), "{id}: {:?}", verdict.reasons);
+    eprintln!(
+        "{id}: {} of {} matched; verdict {:?} {:?}",
+        probed.matched.len(),
+        probed.examined.len(),
+        verdict.verdict,
+        verdict.reasons
+    );
+    verdict
 }
 
 fn observation(plan: &MeasurementPlan, value: f64, probed: &Probed) -> Value {
