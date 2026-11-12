@@ -111,17 +111,17 @@ receipt is retained on any of these paths.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-068-AC-1 | `write-record` writes an explicit record body, retains it at its `(record_id, revision)` path, and reports id, revision and path; a body carrying an undeclared field is refused with exit 2 and nothing is retained. | Test (TC-1317) |
-| FR-068-AC-2 | `prepare-attestation` derives only media type and size for the retained output from the named file and the caller's flag, and refuses a body that supplies `retained_output`. | Test (TC-1318) |
-| FR-068-AC-3 | `intake` retains exact attestation and output bytes atomically; a contradicting size is refused, an identical re-intake is idempotent, and an `attestation_id` collision with differing bytes is refused. | Test (TC-1319) |
-| FR-068-AC-4 | `receipt` builds its verification input only from the named record, parents, explicit selections, decision history, and audits; an unselected stored attestation changes no receipt field. | Test (TC-1320) |
-| FR-068-AC-5 | `unavailable`, `not_computed`, and missing evidence appear as their own receipt outcomes and reasons and are never converted to a pass or a failure. | Property (TC-1321) |
-| FR-068-AC-6 | Exit status is 0 for `valid`, 1 for `invalid` and `incomplete`, and 2 for usage, parse, and integrity errors, with the receipt still emitted for the first two. | Test (TC-1322) |
-| FR-068-AC-7 | `verify-receipt` accepts a receipt that equals, byte for byte, the receipt re-derived from its named retained inputs, and refuses one whose semantic field was altered. | Test (TC-1323) |
-| FR-068-AC-8 | `schema` lists the three normative asset names and emits each by name byte-identically to the packaged asset; an unknown name is refused with exit 2. | Test (TC-1324) |
-| FR-068-AC-9 | `recover` removes only interrupted-intake staging directories, reports the count, and leaves retained records, attestations, and outputs untouched. | Test (TC-1325) |
-| FR-068-AC-10 | Golden fixtures for a record, an attestation, and a valid receipt reproduce byte-identical canonical JSON through the CLI (CON-4). | Integration (TC-1326) |
-| FR-068-AC-11 | Static boundaries prove no command executes an attested command or performs Git or network work, that the one process boundary any command reaches is the FR-096 engine module, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection (TC-1327) |
+| FR-068-AC-1 | `write-record` writes an explicit record body, retains it at its `(record_id, revision)` path, and reports id, revision and path; a body carrying an undeclared field is refused with exit 2 and nothing is retained. | Test |
+| FR-068-AC-2 | `prepare-attestation` derives only media type and size for the retained output from the named file and the caller's flag, and refuses a body that supplies `retained_output`. | Test |
+| FR-068-AC-3 | `intake` retains exact attestation and output bytes atomically; a contradicting size is refused, an identical re-intake is idempotent, and an `attestation_id` collision with differing bytes is refused. | Test |
+| FR-068-AC-4 | `receipt` builds its verification input only from the named record, parents, explicit selections, decision history, and audits; an unselected stored attestation changes no receipt field. | Test |
+| FR-068-AC-5 | `unavailable`, `not_computed`, and missing evidence appear as their own receipt outcomes and reasons and are never converted to a pass or a failure. | Property |
+| FR-068-AC-6 | Exit status is 0 for `valid`, 1 for `invalid` and `incomplete`, and 2 for usage, parse, and integrity errors, with the receipt still emitted for the first two. | Test |
+| FR-068-AC-7 | `verify-receipt` accepts a receipt that equals, byte for byte, the receipt re-derived from its named retained inputs, and refuses one whose semantic field was altered. | Test |
+| FR-068-AC-8 | `schema` lists the three normative asset names and emits each by name byte-identically to the packaged asset; an unknown name is refused with exit 2. | Test |
+| FR-068-AC-9 | `recover` removes only interrupted-intake staging directories, reports the count, and leaves retained records, attestations, and outputs untouched. | Test |
+| FR-068-AC-10 | Golden fixtures for a record, an attestation, and a valid receipt reproduce byte-identical canonical JSON through the CLI (CON-4). | Integration |
+| FR-068-AC-11 | Static boundaries prove no command executes an attested command or performs Git or network work, that the one process boundary any command reaches is the FR-096 engine module, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection |
 
 ## Dependencies
 

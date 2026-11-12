@@ -34,8 +34,8 @@ Recording the target model must not make the target model operational by implica
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Production source, manifest, schema, generated package, or migration files changed | 0 | 0 | Test (TC-1154) |
-| Existing tests regressed | 0 | 0 | Test (TC-1154) |
+| Production source, manifest, schema, generated package, or migration files changed | 0 | 0 | Test |
+| Existing tests regressed | 0 | 0 | Test |
 
 ## Verification
 

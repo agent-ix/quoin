@@ -75,10 +75,10 @@ a shuffled directory order and produces the same bytes.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| NFR-021-AC-1 | Two runs over the same recorded corpus and module revisions produce byte-identical artifacts, excluding the run manifest's timestamp field. | Test (TC-1557) |
-| NFR-021-AC-2 | No emitted collection depends on filesystem enumeration order; every collection carries a declared ordering key. | Test (TC-1558) |
-| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus produces byte-identical artifacts to a run with networking available. | Test (TC-1559) |
-| NFR-021-AC-4 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record. | Test (TC-1584) |
+| NFR-021-AC-1 | Two runs over the same recorded corpus and module revisions produce byte-identical artifacts, excluding the run manifest's timestamp field. | Test |
+| NFR-021-AC-2 | No emitted collection depends on filesystem enumeration order; every collection carries a declared ordering key. | Test |
+| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus produces byte-identical artifacts to a run with networking available. | Test |
+| NFR-021-AC-4 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record. | Test |
 
 ## Dependencies
 

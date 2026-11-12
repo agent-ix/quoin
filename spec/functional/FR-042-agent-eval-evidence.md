@@ -64,18 +64,18 @@ id through coverage's declared targets. Filed as `agent-ix/quoin#144`.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-042-AC-1 | A real report yields one entry per scenario, keyed on the scenario id. | Test (TC-240) |
-| FR-042-AC-2 | The scenario id is its own trace id; no second identity is invented. | Test (TC-241) |
-| FR-042-AC-3 | The outcome is the harness's `ok`, and `passRate` is kept so flaky is distinguishable from failing. | Test (TC-242) |
-| FR-042-AC-4 | A report with no scenario results is refused. | Test (TC-243) |
-| FR-042-AC-5 | The adapter is selected by `--adapter agent-eval` and by the harness name. | Test (TC-244) |
+| FR-042-AC-1 | A real report yields one entry per scenario, keyed on the scenario id. | Test |
+| FR-042-AC-2 | The scenario id is its own trace id; no second identity is invented. | Test |
+| FR-042-AC-3 | The outcome is the harness's `ok`, and `passRate` is kept so flaky is distinguishable from failing. | Test |
+| FR-042-AC-4 | A report with no scenario results is refused. | Test |
+| FR-042-AC-5 | The adapter is selected by `--adapter agent-eval` and by the harness name. | Test |
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
 | FR-042-CON-1 | quoin SHALL NOT run the eval suite. The consumer's CI does (ADR-0011 invariant 1). | Design | Inspection |
-| FR-042-CON-2 | quoin SHALL NOT recompute a scenario's verdict from its runs. The harness states it. | Design | Test (TC-242) |
+| FR-042-CON-2 | quoin SHALL NOT recompute a scenario's verdict from its runs. The harness states it. | Design | Test |
 | FR-042-CON-3 | quoin SHALL NOT claim a binding it cannot make. An unmatched trace id is reported, not assumed. | Design | Inspection |
 
 ## Dependencies

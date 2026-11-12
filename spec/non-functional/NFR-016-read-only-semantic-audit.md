@@ -41,9 +41,9 @@ registries, schemas, skeletons, generated packages, runtime behavior, persistenc
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Writes outside the configured audit output directory | 0 | 0 | Test (TC-1192) |
-| Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Test (TC-1193) |
-| Major-interference recommendation advanced without its named gate | 0 | 0 | Inspection (TC-1194) |
+| Writes outside the configured audit output directory | 0 | 0 | Test |
+| Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Test |
+| Major-interference recommendation advanced without its named gate | 0 | 0 | Inspection |
 
 ## Verification
 

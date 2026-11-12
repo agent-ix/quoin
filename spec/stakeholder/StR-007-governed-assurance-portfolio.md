@@ -36,7 +36,7 @@ leaving production and judgment with their declared owners.
 
 | ID | Criteria | Validation |
 | --- | --- | --- |
-| StR-007-VC-1 | Versioned adapters retain complete producer identity and raw evidence, and portfolio reports preserve partitions, availability, and compatibility premises without executing a producer or deriving an aggregate verdict. | Integration (TC-1316) |
+| StR-007-VC-1 | Versioned adapters retain complete producer identity and raw evidence, and portfolio reports preserve partitions, availability, and compatibility premises without executing a producer or deriving an aggregate verdict. | Integration |
 
 ## Stakeholders
 

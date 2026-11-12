@@ -68,11 +68,11 @@ submits it through the FR-057 intake boundary.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-058-AC-1 | Two real agent-eval reports governed by a supported input-schema declaration and carrying the same non-empty scenario set produce treatment-linked observations whose sample counts, pass rates, computed effects, and observation timestamp match the reports. | Test (TC-1217) |
-| FR-058-AC-2 | An absent or unsupported input-schema declaration and empty, malformed, structurally incompatible, duplicate-scenario, or baseline/treatment scenario-mismatch reports are refused without an intervention store entry. | Test (TC-1218) |
-| FR-058-AC-3 | The observation timestamp and raw-evidence media type are computed from the exact unmodified reports; caller-supplied substitutes cannot change them. Withdrawn: the raw-evidence byte size (a recorded size). | Test (TC-1219) |
-| FR-058-AC-4 | Inadequate repetition, an uncontrolled/unknown qualifier, or absent attribution method produces `cause_not_established` with `none` confidence and explicit gaps rather than a causal conclusion. | Test (TC-1220) |
-| FR-058-AC-5 | A real two-run integration invokes `cli-agent-evals` outside Quoin, then the Quoin producer consumes the retained reports without spawning any process and persists the record through FR-057. | Test (TC-1221) |
+| FR-058-AC-1 | Two real agent-eval reports governed by a supported input-schema declaration and carrying the same non-empty scenario set produce treatment-linked observations whose sample counts, pass rates, computed effects, and observation timestamp match the reports. | Test |
+| FR-058-AC-2 | An absent or unsupported input-schema declaration and empty, malformed, structurally incompatible, duplicate-scenario, or baseline/treatment scenario-mismatch reports are refused without an intervention store entry. | Test |
+| FR-058-AC-3 | The observation timestamp and raw-evidence media type are computed from the exact unmodified reports; caller-supplied substitutes cannot change them. Withdrawn: the raw-evidence byte size (a recorded size). | Test |
+| FR-058-AC-4 | Inadequate repetition, an uncontrolled/unknown qualifier, or absent attribution method produces `cause_not_established` with `none` confidence and explicit gaps rather than a causal conclusion. | Test |
+| FR-058-AC-5 | A real two-run integration invokes `cli-agent-evals` outside Quoin, then the Quoin producer consumes the retained reports without spawning any process and persists the record through FR-057. | Test |
 
 ## Constraints
 

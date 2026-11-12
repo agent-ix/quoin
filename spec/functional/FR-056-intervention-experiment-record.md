@@ -509,16 +509,16 @@ The table declares the record's top-level fields and their cardinality. Which ke
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-056-AC-1 | The schema requires version, record type and identity, observation timestamp, subject identity, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
-| FR-056-AC-2 | The producer tuple rejects a missing field, a mutable tool version, an empty environment, and an empty configuration reference. | Test (TC-1196) |
-| FR-056-AC-3 | Repeated, randomized, and factorial designs require a positive repetition count, assignment method, and non-empty sampling conditions; randomized assignment requires a reproducible seed. | Test (TC-1197) |
-| FR-056-AC-4 | Every record carries one uniquely identified baseline, one or more uniquely identified treatments, treatment-linked changed variables, and an explicit list of held-constant variables. | Test (TC-1198) |
-| FR-056-AC-5 | Measured effects preserve treatment identity, baseline value, treatment value, effect, metric identity, and unit without replacing a missing value with zero or permitting duplicate treatment/metric keys. | Test (TC-1199) |
-| FR-056-AC-6 | Interactions and confounders remain separate collections whose entries distinguish controlled, uncontrolled, unknown, and not-applicable dispositions. | Test (TC-1200) |
-| FR-056-AC-7 | Completed, failed, and inconclusive statuses validate; failed and inconclusive records require the first-class `cause_not_established` conclusion. | Test (TC-1201) |
-| FR-056-AC-8 | A causal-effect conclusion requires positive baseline and treatment samples, at least one non-null measured effect, non-`none` attribution confidence, and no uncontrolled or unknown interaction or confounder; a no-effect conclusion requires positive samples and an observed comparison. | Test (TC-1202) |
-| FR-056-AC-9 | Gaps, owner, actions, and at least one raw-evidence reference with media type are retained; unsafe paths and undeclared fields are refused. | Test (TC-1203) |
-| FR-056-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `tested` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1882) |
+| FR-056-AC-1 | The schema requires version, record type and identity, observation timestamp, subject identity, and the unchanged FR-044 producer tuple. | Test |
+| FR-056-AC-2 | The producer tuple rejects a missing field, a mutable tool version, an empty environment, and an empty configuration reference. | Test |
+| FR-056-AC-3 | Repeated, randomized, and factorial designs require a positive repetition count, assignment method, and non-empty sampling conditions; randomized assignment requires a reproducible seed. | Test |
+| FR-056-AC-4 | Every record carries one uniquely identified baseline, one or more uniquely identified treatments, treatment-linked changed variables, and an explicit list of held-constant variables. | Test |
+| FR-056-AC-5 | Measured effects preserve treatment identity, baseline value, treatment value, effect, metric identity, and unit without replacing a missing value with zero or permitting duplicate treatment/metric keys. | Test |
+| FR-056-AC-6 | Interactions and confounders remain separate collections whose entries distinguish controlled, uncontrolled, unknown, and not-applicable dispositions. | Test |
+| FR-056-AC-7 | Completed, failed, and inconclusive statuses validate; failed and inconclusive records require the first-class `cause_not_established` conclusion. | Test |
+| FR-056-AC-8 | A causal-effect conclusion requires positive baseline and treatment samples, at least one non-null measured effect, non-`none` attribution confidence, and no uncontrolled or unknown interaction or confounder; a no-effect conclusion requires positive samples and an observed comparison. | Test |
+| FR-056-AC-9 | Gaps, owner, actions, and at least one raw-evidence reference with media type are retained; unsafe paths and undeclared fields are refused. | Test |
+| FR-056-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `tested` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test |
 
 ## Dependencies
 

@@ -133,18 +133,18 @@ returned.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-062-AC-1 | Fan-out reports each suite once with the exact sorted set and count of distinct live obligations; duplicate symbols and duplicate `(suite, obligation)` entries do not increase the count. | Test (TC-1249) |
-| FR-062-AC-2 | A binding to an obligation absent from the accepted export is named under its suite and in report gaps, and is excluded from the live count rather than dropped or treated as live. | Test (TC-1250) |
-| FR-062-AC-3 | Change impact records its default or replacement relationship-kind selection, computes the reverse transitive dependency closure from every requested requirement, terminates on cycles, retains shared dependents, and selects the lexicographically first shortest path deterministically. | Test (TC-1251) |
-| FR-062-AC-4 | Every reached StR, US, FR, or NFR requirement is joined to all of its live obligations and bound suites with depth and path, while an unknown or non-requirement requested id is reported and returns no partial closure for that seed. | Test (TC-1252) |
-| FR-062-AC-5 | Each impacted binding carries its unchanged FR-032 verdict in a field distinct from change exposure; reachability alone never changes the verdict (CON-3). | Test (TC-1253) |
-| FR-062-AC-6 | Withdrawn (CR note, 2026-10-29): required churn to deduplicate affirmation events. The store keeps no affirmations and the churn view is removed. | Withdrawn (TC-1254) |
-| FR-062-AC-7 | Withdrawn (CR note, 2026-10-29): required churn rows and affirmation-history gaps. The churn view is removed. | Withdrawn (TC-1255) |
-| FR-062-AC-8 | Every view carries the export/module premises; repeated analysis over identical accepted inputs preserves those fields byte-for-byte. | Test (TC-1256) |
-| FR-062-AC-9 | Invalid inputs, absent or unreadable required `--export`/`--premises`/`--audit` paths, rejected premises, and mismatched audit premises fail before rows; absent, unreadable, incomplete, and empty retained inputs produce distinct report states and reasons, never an invented healthy zero. | Test (TC-1257) |
-| FR-062-AC-10 | Reordered equivalent inputs produce byte-identical JSON, and human and JSON renderings are projections of the same sorted report object. | Test (TC-1258) |
-| FR-062-AC-11 | Static boundaries and a non-JSON command-path regression prove the two views execute and write nothing, disable the inherited update check, and consume no frontmatter reader or independently built graph (CON-1, CON-4). | Inspection (TC-1259) |
-| FR-062-AC-12 | Existing evidence audit, assurance-case, and measurement reports remain byte-compatible when graph analysis is not invoked, and graph reports contain no derived score or threshold label (CON-2). | Test (TC-1260) |
+| FR-062-AC-1 | Fan-out reports each suite once with the exact sorted set and count of distinct live obligations; duplicate symbols and duplicate `(suite, obligation)` entries do not increase the count. | Test |
+| FR-062-AC-2 | A binding to an obligation absent from the accepted export is named under its suite and in report gaps, and is excluded from the live count rather than dropped or treated as live. | Test |
+| FR-062-AC-3 | Change impact records its default or replacement relationship-kind selection, computes the reverse transitive dependency closure from every requested requirement, terminates on cycles, retains shared dependents, and selects the lexicographically first shortest path deterministically. | Test |
+| FR-062-AC-4 | Every reached StR, US, FR, or NFR requirement is joined to all of its live obligations and bound suites with depth and path, while an unknown or non-requirement requested id is reported and returns no partial closure for that seed. | Test |
+| FR-062-AC-5 | Each impacted binding carries its unchanged FR-032 verdict in a field distinct from change exposure; reachability alone never changes the verdict (CON-3). | Test |
+| FR-062-AC-6 | Withdrawn (CR note, 2026-10-29): required churn to deduplicate affirmation events. The store keeps no affirmations and the churn view is removed. | Withdrawn |
+| FR-062-AC-7 | Withdrawn (CR note, 2026-10-29): required churn rows and affirmation-history gaps. The churn view is removed. | Withdrawn |
+| FR-062-AC-8 | Every view carries the export/module premises; repeated analysis over identical accepted inputs preserves those fields byte-for-byte. | Test |
+| FR-062-AC-9 | Invalid inputs, absent or unreadable required `--export`/`--premises`/`--audit` paths, rejected premises, and mismatched audit premises fail before rows; absent, unreadable, incomplete, and empty retained inputs produce distinct report states and reasons, never an invented healthy zero. | Test |
+| FR-062-AC-10 | Reordered equivalent inputs produce byte-identical JSON, and human and JSON renderings are projections of the same sorted report object. | Test |
+| FR-062-AC-11 | Static boundaries and a non-JSON command-path regression prove the two views execute and write nothing, disable the inherited update check, and consume no frontmatter reader or independently built graph (CON-1, CON-4). | Inspection |
+| FR-062-AC-12 | Existing evidence audit, assurance-case, and measurement reports remain byte-compatible when graph analysis is not invoked, and graph reports contain no derived score or threshold label (CON-2). | Test |
 
 > **CR note (2026-10-29, PLAT-1213):** The reaffirmation-churn view is removed
 > with the affirmation history it counted (FR-030 CR note). `quoin graph churn`

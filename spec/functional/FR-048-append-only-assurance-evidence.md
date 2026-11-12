@@ -33,13 +33,13 @@ separate versioned decision and migration plan.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-048-AC-1 | Every experiment and operational record carries the complete closed producer-provenance contract. | Test (TC-2002) |
-| FR-048-AC-2 | The record id is an opaque UUID not derived from content (FR-098 Behavior); re-publishing the same record is idempotent and byte-stable. | Test (TC-2003) |
-| FR-048-AC-3 | Invalid or incomplete provenance is rejected before any record is published. | Test (TC-2004) |
-| FR-048-AC-4 | A different file at an immutable record path is never overwritten and produces a named error. | Test (TC-2005) |
-| FR-048-AC-5 | Operational evidence records bind a subject, environment, ordered time window, observations, interpretations, raw evidence, and outcome. | Test (TC-2006) |
-| FR-048-AC-6 | Reads do not read or write FR-030 run-record paths. | Test (TC-2007) |
-| FR-048-AC-7 | `quoin evidence record-experiment` and `record-operational` accept JSON files or stdin and report the immutable id, path, and whether publication created a file. | Test (TC-2008) |
+| FR-048-AC-1 | Every experiment and operational record carries the complete closed producer-provenance contract. | Test |
+| FR-048-AC-2 | The record id is an opaque UUID not derived from content (FR-098 Behavior); re-publishing the same record is idempotent and byte-stable. | Test |
+| FR-048-AC-3 | Invalid or incomplete provenance is rejected before any record is published. | Test |
+| FR-048-AC-4 | A different file at an immutable record path is never overwritten and produces a named error. | Test |
+| FR-048-AC-5 | Operational evidence records bind a subject, environment, ordered time window, observations, interpretations, raw evidence, and outcome. | Test |
+| FR-048-AC-6 | Reads do not read or write FR-030 run-record paths. | Test |
+| FR-048-AC-7 | `quoin evidence record-experiment` and `record-operational` accept JSON files or stdin and report the immutable id, path, and whether publication created a file. | Test |
 
 ## Constraints
 

@@ -398,16 +398,16 @@ The table declares the record's top-level fields and their cardinality. Which ke
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-059-AC-1 | The envelope requires version, record and subject identities, observation timestamp, deployed scope, shape, control kind, governance fields, raw evidence, and every unchanged FR-044 producer-tuple field. | Test (TC-1223) |
-| FR-059-AC-2 | The control vocabulary admits releases, flags, canary and shadow deployment, rollback and kill, override and appeal, abstention and fallback, reporting. | Test (TC-1224) |
-| FR-059-AC-3 | A standing-capability record requires its control surface, availability state, authorized roles, coverage, limitations, supported transitions, and an explicit clock-support choice; supported clocks require start event, completion event, and positive deadline, while unsupported clocks exclude them. | Test (TC-1225) |
-| FR-059-AC-4 | An exercise record requires actual-or-drill mode, ordered start and completion timestamps, actor, trigger, outcome, before/after state, at least one observation, and clock applicability. | Test (TC-1226) |
-| FR-059-AC-5 | Exactly one shape payload is present: standing capability excludes exercise data, and exercise excludes capability data. | Test (TC-1227) |
-| FR-059-AC-6 | An `operational_with_clock` exercise requires ordered start and deadline timestamps and a status consistent with completion and immutable observation time; a not-applicable clock requires `not_applicable` status and no clock timestamps. | Test (TC-1228) |
+| FR-059-AC-1 | The envelope requires version, record and subject identities, observation timestamp, deployed scope, shape, control kind, governance fields, raw evidence, and every unchanged FR-044 producer-tuple field. | Test |
+| FR-059-AC-2 | The control vocabulary admits releases, flags, canary and shadow deployment, rollback and kill, override and appeal, abstention and fallback, reporting. | Test |
+| FR-059-AC-3 | A standing-capability record requires its control surface, availability state, authorized roles, coverage, limitations, supported transitions, and an explicit clock-support choice; supported clocks require start event, completion event, and positive deadline, while unsupported clocks exclude them. | Test |
+| FR-059-AC-4 | An exercise record requires actual-or-drill mode, ordered start and completion timestamps, actor, trigger, outcome, before/after state, at least one observation, and clock applicability. | Test |
+| FR-059-AC-5 | Exactly one shape payload is present: standing capability excludes exercise data, and exercise excludes capability data. | Test |
+| FR-059-AC-6 | An `operational_with_clock` exercise requires ordered start and deadline timestamps and a status consistent with completion and immutable observation time; a not-applicable clock requires `not_applicable` status and no clock timestamps. | Test |
 | FR-059-AC-7 | Withdrawn: a version pin recorded a typed `(kind, identity, revision)` and required a matching pin for each `*_pin` control. A recorded revision is a pin; the pins, the `*_pin` control kinds and the `configuration` member are removed with their duplicate and kind-match checks, with no replacement contract (id not reused). | Withdrawn |
-| FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test (TC-1230) |
-| FR-059-AC-9 | Gaps, owner, actions, and at least one safe raw-evidence reference with media type are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
-| FR-059-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `observed` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1883) |
+| FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test |
+| FR-059-AC-9 | Gaps, owner, actions, and at least one safe raw-evidence reference with media type are retained; invalid capability links and undeclared fields are refused. | Test |
+| FR-059-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `observed` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test |
 
 ## Dependencies
 

@@ -117,16 +117,16 @@ rather than lowering it.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-089-AC-1 | Every reported finding appears in exactly one partition entry, and the partition entry count equals the reported finding count. | Test (TC-1531) |
-| FR-089-AC-2 | A finding no ledger entry matches is classified `unknown` with disposition `undispositioned`, and both counts appear in the partition summary. | Test (TC-1532) |
-| FR-089-AC-3 | A ledger entry claiming `tool-defect` without a repository and issue number is refused, and its findings stay `unknown`. | Test (TC-1533) |
-| FR-089-AC-4 | A `deferred-corpus-fix` disposition with no named later campaign is refused, a `contract-fix-this-campaign` with no named module repository is refused, and an `accepted` with no named human is refused. | Test (TC-1534) |
-| FR-089-AC-5 | Every partition entry names an owner, and an entry whose owner is absent or is a bare role is refused. | Test (TC-1535) |
-| FR-089-AC-6 | Classifying a finding `contract-defect` requires a ledger entry recording that the declaration is wrong; without one the finding stays `unknown`. | Test (TC-1536) |
-| FR-089-AC-7 | The per-class counts sum to the reported finding count. | Test (TC-1537) |
-| FR-089-AC-8 | Moving a finding's document line without changing its diagnostic keeps the ledger match, and changing its diagnostic code loses it and returns the finding to `unknown`. | Test (TC-1575) |
-| FR-089-AC-9 | A ledger entry that matches no finding appears in `unmatched-ledger-entries` and in the headline count. | Test (TC-1576) |
-| FR-089-AC-10 | A finding of each of `malformed-document`, `missing-structure` and `stale-module` is produced from a ledger entry recording that condition, and none of the three can be assigned without one. | Test (TC-1577) |
+| FR-089-AC-1 | Every reported finding appears in exactly one partition entry, and the partition entry count equals the reported finding count. | Test |
+| FR-089-AC-2 | A finding no ledger entry matches is classified `unknown` with disposition `undispositioned`, and both counts appear in the partition summary. | Test |
+| FR-089-AC-3 | A ledger entry claiming `tool-defect` without a repository and issue number is refused, and its findings stay `unknown`. | Test |
+| FR-089-AC-4 | A `deferred-corpus-fix` disposition with no named later campaign is refused, a `contract-fix-this-campaign` with no named module repository is refused, and an `accepted` with no named human is refused. | Test |
+| FR-089-AC-5 | Every partition entry names an owner, and an entry whose owner is absent or is a bare role is refused. | Test |
+| FR-089-AC-6 | Classifying a finding `contract-defect` requires a ledger entry recording that the declaration is wrong; without one the finding stays `unknown`. | Test |
+| FR-089-AC-7 | The per-class counts sum to the reported finding count. | Test |
+| FR-089-AC-8 | Moving a finding's document line without changing its diagnostic keeps the ledger match, and changing its diagnostic code loses it and returns the finding to `unknown`. | Test |
+| FR-089-AC-9 | A ledger entry that matches no finding appears in `unmatched-ledger-entries` and in the headline count. | Test |
+| FR-089-AC-10 | A finding of each of `malformed-document`, `missing-structure` and `stale-module` is produced from a ledger entry recording that condition, and none of the three can be assigned without one. | Test |
 
 ## Dependencies
 

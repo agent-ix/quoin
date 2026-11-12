@@ -30,11 +30,11 @@ profiles, not mutually exclusive architectures.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-049-AC-1 | A dynamic consumer may load a previously unknown namespaced module and preserve its validated data through generic open-value surfaces. | Test (TC-1140) |
-| FR-049-AC-2 | A static consumer receives a finite, versioned export set with native generated types and explicit package dependencies. | Test (TC-1141) |
-| FR-049-AC-3 | An unknown extension is preserved, rejected, or surfaced according to a named profile and is never misclassified as a known native type. | Test (TC-1142) |
-| FR-049-AC-4 | Installing a new dynamic module does not require regeneration unless a static consumer elects to adopt that module's native package. | Test (TC-1143) |
-| FR-049-AC-5 | Module manifests retain catalog/distribution concerns while package exports, generation targets, and representation mappings remain distinct declarative concerns. | Test (TC-1144) |
+| FR-049-AC-1 | A dynamic consumer may load a previously unknown namespaced module and preserve its validated data through generic open-value surfaces. | Test |
+| FR-049-AC-2 | A static consumer receives a finite, versioned export set with native generated types and explicit package dependencies. | Test |
+| FR-049-AC-3 | An unknown extension is preserved, rejected, or surfaced according to a named profile and is never misclassified as a known native type. | Test |
+| FR-049-AC-4 | Installing a new dynamic module does not require regeneration unless a static consumer elects to adopt that module's native package. | Test |
+| FR-049-AC-5 | Module manifests retain catalog/distribution concerns while package exports, generation targets, and representation mappings remain distinct declarative concerns. | Test |
 
 ## Constraints
 

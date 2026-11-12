@@ -52,9 +52,9 @@ NFR-003-M-1 and NFR-003-M-2 are measured over command x error-class pairs by pla
 [MP-250](../assurance/MP-250-nfr003-actionable-failures.md) and
 [MP-251](../assurance/MP-251-nfr003-silent-failures.md), whose declared set the test
 `tc_3003_the_nfr003_populations_are_stated_by_class` (FR-131-AC-9) ties to what the producer
-enumerates from the binary's help text. The classes are unknown flag (TC-3700), unknown
-subcommand (TC-3701), missing argument (TC-3702), missing path (TC-3703), unknown type
-(TC-3704), malformed JSON input (TC-3705) and catalog conflict (TC-3706); each is a module
+enumerates from the binary's help text. The classes are unknown flag, unknown
+subcommand, missing argument, missing path, unknown type
+, malformed JSON input and catalog conflict; each is a module
 under `tests/nfr_populations/` and its test names the pairs that read below the target. A
 pair is actionable when the message names the cause and points to a next step. The population
 is the failures the help text lets the producer construct: it excludes commands with a second

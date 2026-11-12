@@ -88,13 +88,13 @@ could not speak for.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-091-AC-1 | A tool-defect entry without a repository and issue number is refused with the entry named, by the same refusal FR-089-AC-3 exercises over the one shared ledger. | Test (TC-1545) |
-| FR-091-AC-2 | A document inside a declared scope reports `could-not-run` citing the entry identifier and is absent from the pass numerator and denominator, including when FR-086 assigned it `unreadable`. | Test (TC-1546) |
-| FR-091-AC-3 | A failure covered by a declared entry is classified `tool-defect` in the partition and carries the citation. | Test (TC-1547) |
-| FR-091-AC-4 | An entry declaring a row-level effect reports both an affected document count and an affected row count. | Test (TC-1548) |
-| FR-091-AC-5 | A document outside every declared scope that fails is not classified `tool-defect`. | Test (TC-1549) |
-| FR-091-AC-6 | The published report states the share of the population covered by declared tool-defect exclusions beside the aggregate rate. | Test (TC-1550) |
-| FR-091-AC-7 | Every tool-defect entry's citation resolves to an existing issue in the named repository. | Test (TC-1581) |
+| FR-091-AC-1 | A tool-defect entry without a repository and issue number is refused with the entry named, by the same refusal FR-089-AC-3 exercises over the one shared ledger. | Test |
+| FR-091-AC-2 | A document inside a declared scope reports `could-not-run` citing the entry identifier and is absent from the pass numerator and denominator, including when FR-086 assigned it `unreadable`. | Test |
+| FR-091-AC-3 | A failure covered by a declared entry is classified `tool-defect` in the partition and carries the citation. | Test |
+| FR-091-AC-4 | An entry declaring a row-level effect reports both an affected document count and an affected row count. | Test |
+| FR-091-AC-5 | A document outside every declared scope that fails is not classified `tool-defect`. | Test |
+| FR-091-AC-6 | The published report states the share of the population covered by declared tool-defect exclusions beside the aggregate rate. | Test |
+| FR-091-AC-7 | Every tool-defect entry's citation resolves to an existing issue in the named repository. | Test |
 
 ## Dependencies
 

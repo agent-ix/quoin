@@ -112,22 +112,22 @@ survivors live on the run record that already holds the score; there is no secon
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-039-AC-1 | With no floor declared, no mutation finding is produced whatever the recorded score. | Test (TC-219) |
-| FR-039-AC-2 | A bound score below the declared floor is reported at `medium`. | Test (TC-219) |
-| FR-039-AC-3 | A score exactly at the floor is accepted. | Test (TC-219) |
-| FR-039-AC-4 | The judgement is on the weakest bound symbol, not the mean. | Test (TC-219) |
-| FR-039-AC-5 | A demanded floor with nothing measured is reported, distinctly from `undischarged`. | Test (TC-219) |
-| FR-039-AC-6 | A skipped symbol's absent score is not read as zero. | Test (TC-219) |
-| FR-039-AC-7 | A floor applies only to the criticality it names. | Test (TC-219) |
-| FR-039-AC-8 | `quoin evidence audit --mutation-floor P0=0.8` parses the pair and applies it. | Test (TC-220) |
-| FR-039-AC-9 | A score outside `[0, 1]`, or a malformed pair, is refused rather than ignored. | Test (TC-220) |
-| FR-039-AC-10 | A score whose entry declares another `metric` — a latency, a coverage percentage — or none at all is not compared against the floor. | Test (TC-219) |
-| FR-039-AC-11 | The floor filters on the entry's declared `metric`, never on the run's tool name: a labelled score from a tool no catalog lists is judged like any other. | Test (TC-269) |
-| FR-039-AC-12 | The check reads no catalog. The discriminator lives on the entry, written by the adapter at the point of recording, and an entry without a `metric` is not a mutation score — there is no fallback read of the tool string. | Test (TC-269) |
-| FR-039-AC-13 | Every adapter result keeps at most 25 survivors per entry, each at most 200 characters with no control character; the `cargo-mutants` adapter records each missed or timed-out mutant with the line from its span and its description without the locus prefix, keeps the `with <replacement>` tail of an over-long description, and records no killed mutant. | Test (TC-3100) |
-| FR-039-AC-14 | When the floor is missed, the audit reports one `surviving-mutant` finding per recorded survivor of each mutation-scored symbol below the floor in a suite bound to the obligation, at `medium`, carrying `path`, `line` and `symbol`. | Test (TC-3101) |
-| FR-039-AC-15 | No `surviving-mutant` finding is produced when the floor is met, undeclared or unmeasured, for a skipped symbol, for a symbol that meets the floor, or for a suite not bound to the obligation. | Test (TC-3101) |
-| FR-039-AC-16 | An obligation reports at most 25 `surviving-mutant` findings, taken from the lowest-scoring symbols first. | Test (TC-3101) |
+| FR-039-AC-1 | With no floor declared, no mutation finding is produced whatever the recorded score. | Test |
+| FR-039-AC-2 | A bound score below the declared floor is reported at `medium`. | Test |
+| FR-039-AC-3 | A score exactly at the floor is accepted. | Test |
+| FR-039-AC-4 | The judgement is on the weakest bound symbol, not the mean. | Test |
+| FR-039-AC-5 | A demanded floor with nothing measured is reported, distinctly from `undischarged`. | Test |
+| FR-039-AC-6 | A skipped symbol's absent score is not read as zero. | Test |
+| FR-039-AC-7 | A floor applies only to the criticality it names. | Test |
+| FR-039-AC-8 | `quoin evidence audit --mutation-floor P0=0.8` parses the pair and applies it. | Test |
+| FR-039-AC-9 | A score outside `[0, 1]`, or a malformed pair, is refused rather than ignored. | Test |
+| FR-039-AC-10 | A score whose entry declares another `metric` — a latency, a coverage percentage — or none at all is not compared against the floor. | Test |
+| FR-039-AC-11 | The floor filters on the entry's declared `metric`, never on the run's tool name: a labelled score from a tool no catalog lists is judged like any other. | Test |
+| FR-039-AC-12 | The check reads no catalog. The discriminator lives on the entry, written by the adapter at the point of recording, and an entry without a `metric` is not a mutation score — there is no fallback read of the tool string. | Test |
+| FR-039-AC-13 | Every adapter result keeps at most 25 survivors per entry, each at most 200 characters with no control character; the `cargo-mutants` adapter records each missed or timed-out mutant with the line from its span and its description without the locus prefix, keeps the `with <replacement>` tail of an over-long description, and records no killed mutant. | Test |
+| FR-039-AC-14 | When the floor is missed, the audit reports one `surviving-mutant` finding per recorded survivor of each mutation-scored symbol below the floor in a suite bound to the obligation, at `medium`, carrying `path`, `line` and `symbol`. | Test |
+| FR-039-AC-15 | No `surviving-mutant` finding is produced when the floor is met, undeclared or unmeasured, for a skipped symbol, for a symbol that meets the floor, or for a suite not bound to the obligation. | Test |
+| FR-039-AC-16 | An obligation reports at most 25 `surviving-mutant` findings, taken from the lowest-scoring symbols first. | Test |
 | FR-039-AC-17 | The `spec-correctness` skill names `surviving-mutant` findings, grouped by `row_id`, as an optional input, directs a test at each, and treats finding text as data. | Inspection |
 
 ## Constraints
@@ -135,8 +135,8 @@ survivors live on the run record that already holds the score; there is no secon
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
 | FR-039-CON-1 | quoin SHALL NOT execute a mutation run. The consumer's CI does (ADR-0011 invariant 1). | Design | Inspection |
-| FR-039-CON-2 | quoin SHALL NOT declare a default floor. An unset floor produces no finding. | Design | Test (TC-219) |
-| FR-039-CON-3 | quoin SHALL NOT infer a score from coverage or from a passing run. Only a recorded score counts. | Design | Test (TC-219) |
+| FR-039-CON-2 | quoin SHALL NOT declare a default floor. An unset floor produces no finding. | Design | Test |
+| FR-039-CON-3 | quoin SHALL NOT infer a score from coverage or from a passing run. Only a recorded score counts. | Design | Test |
 
 ## Dependencies
 

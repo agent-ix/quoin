@@ -69,7 +69,7 @@ Decide whether `quoin review` and `quoin to-plan` hide an `ix-flow` failure.
 Each workflow command paired with each failure mode, as `command:mode`. The
 commands are found by the producer from the binary's own help text; the twelve
 modes are those the producer stages with its stub, and all are in the set. The
-set is compared with this plan's by the `tc_3004` test (TC-3004).
+set is compared with this plan's by the `tc_3004` test.
 
 | Mode | The stub | The message carries |
 | --- | --- | --- |

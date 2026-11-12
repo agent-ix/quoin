@@ -95,14 +95,14 @@ a statement about the real contract, and makes everything the engine cannot do v
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-087-AC-1 | A document the engine reports no error against records `pass`. | Test (TC-1518) |
-| FR-087-AC-2 | A document the engine reports a missing required section against records `fail` carrying the engine's diagnostic code, reason and line. | Test (TC-1519) |
-| FR-087-AC-3 | The module contract applied is the resolved module set, demonstrated by a repository-local module declaring the same type having no effect on the outcome. | Test (TC-1520) |
-| FR-087-AC-4 | A batch whose engine invocation terminates abnormally records every document of that batch `could-not-run` naming the termination, and none of them enters the pass numerator or denominator. | Test (TC-1521) |
-| FR-087-AC-5 | A document the engine reports only warnings against records `pass` and carries those warnings as advisory findings. | Test (TC-1522) |
-| FR-087-AC-6 | A document carrying three engine errors records all three in one evaluation record. | Test (TC-1523) |
-| FR-087-AC-7 | Changing only the module declaration in the resolved set changes the recorded outcome of an unchanged document. | Test (TC-1524) |
-| FR-087-AC-8 | The evaluation output names the engine version the outcomes were produced by. | Test (TC-1572) |
+| FR-087-AC-1 | A document the engine reports no error against records `pass`. | Test |
+| FR-087-AC-2 | A document the engine reports a missing required section against records `fail` carrying the engine's diagnostic code, reason and line. | Test |
+| FR-087-AC-3 | The module contract applied is the resolved module set, demonstrated by a repository-local module declaring the same type having no effect on the outcome. | Test |
+| FR-087-AC-4 | A batch whose engine invocation terminates abnormally records every document of that batch `could-not-run` naming the termination, and none of them enters the pass numerator or denominator. | Test |
+| FR-087-AC-5 | A document the engine reports only warnings against records `pass` and carries those warnings as advisory findings. | Test |
+| FR-087-AC-6 | A document carrying three engine errors records all three in one evaluation record. | Test |
+| FR-087-AC-7 | Changing only the module declaration in the resolved set changes the recorded outcome of an unchanged document. | Test |
+| FR-087-AC-8 | The evaluation output names the engine version the outcomes were produced by. | Test |
 | FR-087-AC-9 | No source file of the measurement parses a module's `mappings.yaml` parse rules or builds a semantic record from Markdown. | Inspection |
 
 ## Dependencies

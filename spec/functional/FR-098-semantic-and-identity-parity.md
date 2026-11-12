@@ -100,17 +100,17 @@ differential run whose compared population is empty each block cutover.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-098-AC-1 | Native Rust tests replay retained expected fixtures over the golden corpora and report the compared population count with each run. | Test (TC-1618) |
-| FR-098-AC-2 | For every schema in the corpus, Rust returns the retained expected verdict, and diagnostics agree as normalized instance-location, keyword and schema-path tuples. | Property (TC-1619) |
-| FR-098-AC-3 | Withdrawn: the replay of captured records through the retained implementation is gone; records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn (TC-1620) |
-| FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property (TC-1621) |
-| FR-098-AC-5 | Each ported refusal path returns the same non-success classification from the Rust implementation as from the retained one. | Property (TC-1622) |
-| FR-098-AC-6 | Every `tests/props` property has a `proptest` counterpart asserting the same property, and a property holding in TypeScript and violated in Rust fails the run. | Test (TC-1623) |
-| FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn (TC-1624) |
-| FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test (TC-1692) |
-| FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test (TC-1693) |
-| FR-098-AC-10 | Withdrawn: the identifier format is stated once in the Behavior clause, and no legacy identifier form remains (id not reused). | Withdrawn (TC-1694) |
-| FR-098-AC-11 | After a capability cuts over, the native fixture suite spawns no retained implementation for that capability and compares against committed fixtures. | Test (TC-1695) |
+| FR-098-AC-1 | Native Rust tests replay retained expected fixtures over the golden corpora and report the compared population count with each run. | Test |
+| FR-098-AC-2 | For every schema in the corpus, Rust returns the retained expected verdict, and diagnostics agree as normalized instance-location, keyword and schema-path tuples. | Property |
+| FR-098-AC-3 | Withdrawn: the replay of captured records through the retained implementation is gone; records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn |
+| FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property |
+| FR-098-AC-5 | Each ported refusal path returns the same non-success classification from the Rust implementation as from the retained one. | Property |
+| FR-098-AC-6 | Every `tests/props` property has a `proptest` counterpart asserting the same property, and a property holding in TypeScript and violated in Rust fails the run. | Test |
+| FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn |
+| FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test |
+| FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test |
+| FR-098-AC-10 | Withdrawn: the identifier format is stated once in the Behavior clause, and no legacy identifier form remains (id not reused). | Withdrawn |
+| FR-098-AC-11 | After a capability cuts over, the native fixture suite spawns no retained implementation for that capability and compares against committed fixtures. | Test |
 
 ## Dependencies
 

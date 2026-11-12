@@ -97,32 +97,32 @@ The cargo-audit adapter is verified against output captured with `cargo audit --
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-034-AC-1 | A SARIF run with an empty `results` array is read as a scan that executed, reporting the tool and how many rules it evaluated. | Test (TC-165) |
-| FR-034-AC-2 | A SARIF log whose `runs` array is empty is **rejected** — it proves no scan executed. | Test (TC-166) |
-| FR-034-AC-3 | The SARIF adapter reads rule id, level, message and first location. | Test (TC-167) |
-| FR-034-AC-4 | The nested `rule.id` form is accepted; a result naming no rule at all is skipped. | Test (TC-168) |
-| FR-034-AC-5 | Malformed SARIF and a log with no `runs` array are rejected. | Test (TC-169) |
-| FR-034-AC-6 | The cargo-audit adapter parses `cargo audit --json` output, reading the advisory-database size as the rule count. | Test (TC-170) |
-| FR-034-AC-7 | Each cargo-audit warning kind is kept as its own severity rather than flattened. | Test (TC-171) |
-| FR-034-AC-8 | Malformed input and output that is not cargo-audit's are rejected; an advisory with no id is skipped. | Test (TC-172) |
-| FR-034-AC-9 | A clean scan discharges its binding: the obligation is neither `undischarged` nor `vacuous-evidence`. | Test (TC-173) |
-| FR-034-AC-10 | A scan that evaluated **no rules** is reported `vacuous-evidence` at `high`. | Test (TC-174) |
-| FR-034-AC-11 | When the tool reports no rule count the vacuity check stays silent. | Test (TC-175) |
-| FR-034-AC-12 | Every run-shaped check pairs a binding with **its own** suite's run when a scan is also bound to the same obligation. | Test (TC-176) |
-| FR-034-AC-13 | `quoin evidence record --adapter sarif --results <file>` writes a `FindingRecord` under `scans/` and writes **nothing** under `runs/`. | Test (TC-177) |
-| FR-034-AC-14 | A clean scan recorded through the command keeps `findings: []` and its rule count, so zero findings is still evidence. | Test (TC-178) |
-| FR-034-AC-15 | The command selects a finding adapter from `--tool` when none is named. | Test (TC-179) |
-| FR-034-AC-16 | `--discharges` binds the obligations a scan was run to check. A clean scan carries no finding to bind from, so they are stated rather than inferred. | Test (TC-192) |
-| FR-034-AC-17 | A scan that evaluated **no rules** binds nothing, whatever `--discharges` names. | Test (TC-193) |
-| FR-034-AC-18 | A suite that recorded only scans is enumerated by `listRecordedSuites`. | Test (TC-194) |
-| FR-034-AC-19 | `gc` collects superseded scans, keeping the newest by timestamp. | Test (TC-195) |
-| FR-034-AC-20 | A tool reporting **zero** rules is distinguishable from a tool reporting **no** rule count. | Test (TC-196) |
-| FR-034-AC-21 | The cargo-deny adapter reads each `cargo deny --format json check` diagnostic as a finding: the advisory id (else the check's `code`) as rule id, the tool's own severity word, the message and the first crate of the dependency graph. | Test (TC-2700) |
-| FR-034-AC-22 | A cargo-deny run that finished with a conforming summary and no diagnostic is a clean scan, reporting no rule count. | Test (TC-2701) |
-| FR-034-AC-23 | cargo-deny output with no `summary` object, and a line that is not JSON, are rejected rather than read as a clean scan. | Test (TC-2702) |
-| FR-034-AC-24 | `quoin evidence record --tool cargo-deny` selects the cargo-deny adapter and writes a `FindingRecord` under `scans/`; `--tool cargo-audit` still selects the cargo-audit adapter. | Test (TC-2703) |
-| FR-034-AC-25 | A cargo-deny summary counting more errors and warnings than the diagnostics read is refused, so a failed run printed under `--log-level off` is not a clean scan. | Test (TC-2706) |
-| FR-034-AC-26 | A cargo-deny summary must name at least one check, appear once and last, and the checks it names are recorded as the ruleset; a diagnostic with no id is kept as `unclassified`. | Test (TC-2707) |
+| FR-034-AC-1 | A SARIF run with an empty `results` array is read as a scan that executed, reporting the tool and how many rules it evaluated. | Test |
+| FR-034-AC-2 | A SARIF log whose `runs` array is empty is **rejected** — it proves no scan executed. | Test |
+| FR-034-AC-3 | The SARIF adapter reads rule id, level, message and first location. | Test |
+| FR-034-AC-4 | The nested `rule.id` form is accepted; a result naming no rule at all is skipped. | Test |
+| FR-034-AC-5 | Malformed SARIF and a log with no `runs` array are rejected. | Test |
+| FR-034-AC-6 | The cargo-audit adapter parses `cargo audit --json` output, reading the advisory-database size as the rule count. | Test |
+| FR-034-AC-7 | Each cargo-audit warning kind is kept as its own severity rather than flattened. | Test |
+| FR-034-AC-8 | Malformed input and output that is not cargo-audit's are rejected; an advisory with no id is skipped. | Test |
+| FR-034-AC-9 | A clean scan discharges its binding: the obligation is neither `undischarged` nor `vacuous-evidence`. | Test |
+| FR-034-AC-10 | A scan that evaluated **no rules** is reported `vacuous-evidence` at `high`. | Test |
+| FR-034-AC-11 | When the tool reports no rule count the vacuity check stays silent. | Test |
+| FR-034-AC-12 | Every run-shaped check pairs a binding with **its own** suite's run when a scan is also bound to the same obligation. | Test |
+| FR-034-AC-13 | `quoin evidence record --adapter sarif --results <file>` writes a `FindingRecord` under `scans/` and writes **nothing** under `runs/`. | Test |
+| FR-034-AC-14 | A clean scan recorded through the command keeps `findings: []` and its rule count, so zero findings is still evidence. | Test |
+| FR-034-AC-15 | The command selects a finding adapter from `--tool` when none is named. | Test |
+| FR-034-AC-16 | `--discharges` binds the obligations a scan was run to check. A clean scan carries no finding to bind from, so they are stated rather than inferred. | Test |
+| FR-034-AC-17 | A scan that evaluated **no rules** binds nothing, whatever `--discharges` names. | Test |
+| FR-034-AC-18 | A suite that recorded only scans is enumerated by `listRecordedSuites`. | Test |
+| FR-034-AC-19 | `gc` collects superseded scans, keeping the newest by timestamp. | Test |
+| FR-034-AC-20 | A tool reporting **zero** rules is distinguishable from a tool reporting **no** rule count. | Test |
+| FR-034-AC-21 | The cargo-deny adapter reads each `cargo deny --format json check` diagnostic as a finding: the advisory id (else the check's `code`) as rule id, the tool's own severity word, the message and the first crate of the dependency graph. | Test |
+| FR-034-AC-22 | A cargo-deny run that finished with a conforming summary and no diagnostic is a clean scan, reporting no rule count. | Test |
+| FR-034-AC-23 | cargo-deny output with no `summary` object, and a line that is not JSON, are rejected rather than read as a clean scan. | Test |
+| FR-034-AC-24 | `quoin evidence record --tool cargo-deny` selects the cargo-deny adapter and writes a `FindingRecord` under `scans/`; `--tool cargo-audit` still selects the cargo-audit adapter. | Test |
+| FR-034-AC-25 | A cargo-deny summary counting more errors and warnings than the diagnostics read is refused, so a failed run printed under `--log-level off` is not a clean scan. | Test |
+| FR-034-AC-26 | A cargo-deny summary must name at least one check, appear once and last, and the checks it names are recorded as the ruleset; a diagnostic with no id is kept as `unclassified`. | Test |
 
 ### Reachability is part of the contract
 
@@ -157,7 +157,7 @@ over the command and passed; no criterion asked whether anything ever read what 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
 | FR-034-CON-1 | A `FindingRecord` SHALL be written only for a report envelope an adapter actually read. Writing one for an absent scan destroys the single distinction this record type exists to make. | Design | Inspection |
-| FR-034-CON-2 | quoin SHALL NOT normalize a scanner's severity strings. Scanners disagree about what "high" means; translating would invent a comparison the tools never made. | Design | Test (TC-171) |
+| FR-034-CON-2 | quoin SHALL NOT normalize a scanner's severity strings. Scanners disagree about what "high" means; translating would invent a comparison the tools never made. | Design | Test |
 | FR-034-CON-3 | Judging whether a reported finding is *acceptable* stays with the consumer's gate policy. | Design | Inspection |
 | FR-034-CON-4 | Scan ordering SHALL be by timestamp, never by file name (`agent-ix/quoin#104`). | Design | Inspection |
 

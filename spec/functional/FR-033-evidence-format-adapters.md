@@ -97,21 +97,21 @@ record every run as bound to nothing.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-033-AC-1 | An adapter is selected by `--adapter`, else by the suite's declared `--tool`, else the normalized `entries` shape. | Test (TC-151) |
-| FR-033-AC-2 | An unknown `--adapter` is an error naming the available adapters, never a silent fall back. | Test (TC-152) |
-| FR-033-AC-3 | Adapters are registered as data, each carrying a name, a summary and a parse function. | Test (TC-153) |
-| FR-033-AC-4 | JUnit `classname` + `name` map to the qualified name the symbol extractor emits, without doubling a classname that already ends with the member. | Test (TC-154, TC-160, TC-162) |
-| FR-033-AC-5 | Every JUnit outcome class is read — `error` outranks `failure` outranks `skipped` — along with declared trace ids. | Test (TC-155, TC-159, TC-161) |
-| FR-033-AC-6 | The JUnit adapter names **no** evidence kind, because the format does not carry one. | Test (TC-156) |
-| FR-033-AC-7 | Input carrying no `<testcase>` is an error, not an empty run; a case with neither `classname` nor `name` is skipped. | Test (TC-157, TC-164) |
-| FR-033-AC-8 | The cargo-mutants adapter produces a per-function `score`, with unviable mutants in neither side of the ratio. | Test (TC-158) |
-| FR-033-AC-9 | Outcome reflects the **tool's own** classification, never a threshold. | Test (TC-159) |
-| FR-033-AC-10 | Malformed, empty and unattributable mutation reports are rejected; a timed-out mutant counts as survived. | Test (TC-160, TC-163) |
-| FR-033-AC-11 | `quoin evidence record --adapter junit --results <file>` records a JUnit file end to end, preserving symbols and trace ids. | Test (TC-161) |
-| FR-033-AC-12 | `quoin evidence record --adapter cargo-mutants` records a mutation report end to end, preserving `score`. | Test (TC-162) |
-| FR-033-AC-13 | `quoin evidence record` selects the adapter from `--tool` when none is named. | Test (TC-163) |
-| FR-033-AC-14 | `quoin evidence record` still accepts the normalized shape with no adapter at all. | Test (TC-164) |
-| FR-033-AC-15 | Interim, removed when the PLAT-333 Rust emitter lands (ADR-100): a cargo-nextest JUnit report annotated by `quoin-suite-trace` carries, on each tagged test case, a `trace` property naming that test's acceptance criteria, so `quoin evidence record --adapter junit` binds the run to them. | Test (TC-2010) |
+| FR-033-AC-1 | An adapter is selected by `--adapter`, else by the suite's declared `--tool`, else the normalized `entries` shape. | Test |
+| FR-033-AC-2 | An unknown `--adapter` is an error naming the available adapters, never a silent fall back. | Test |
+| FR-033-AC-3 | Adapters are registered as data, each carrying a name, a summary and a parse function. | Test |
+| FR-033-AC-4 | JUnit `classname` + `name` map to the qualified name the symbol extractor emits, without doubling a classname that already ends with the member. | Test |
+| FR-033-AC-5 | Every JUnit outcome class is read — `error` outranks `failure` outranks `skipped` — along with declared trace ids. | Test |
+| FR-033-AC-6 | The JUnit adapter names **no** evidence kind, because the format does not carry one. | Test |
+| FR-033-AC-7 | Input carrying no `<testcase>` is an error, not an empty run; a case with neither `classname` nor `name` is skipped. | Test |
+| FR-033-AC-8 | The cargo-mutants adapter produces a per-function `score`, with unviable mutants in neither side of the ratio. | Test |
+| FR-033-AC-9 | Outcome reflects the **tool's own** classification, never a threshold. | Test |
+| FR-033-AC-10 | Malformed, empty and unattributable mutation reports are rejected; a timed-out mutant counts as survived. | Test |
+| FR-033-AC-11 | `quoin evidence record --adapter junit --results <file>` records a JUnit file end to end, preserving symbols and trace ids. | Test |
+| FR-033-AC-12 | `quoin evidence record --adapter cargo-mutants` records a mutation report end to end, preserving `score`. | Test |
+| FR-033-AC-13 | `quoin evidence record` selects the adapter from `--tool` when none is named. | Test |
+| FR-033-AC-14 | `quoin evidence record` still accepts the normalized shape with no adapter at all. | Test |
+| FR-033-AC-15 | Interim, removed when the PLAT-333 Rust emitter lands (ADR-100): a cargo-nextest JUnit report annotated by `quoin-suite-trace` carries, on each tagged test case, a `trace` property naming that test's acceptance criteria, so `quoin evidence record --adapter junit` binds the run to them. | Test |
 
 ## Constraints
 
@@ -119,8 +119,8 @@ record every run as bound to nothing.
 |----|-----------|------|------------|
 | FR-033-CON-1 | An adapter SHALL NOT read a file, spawn a process, or reach the network. It receives text and returns entries. | Design | Inspection |
 | FR-033-CON-2 | An adapter SHALL NOT judge. No threshold, no policy, no verdict — only what the tool reported. | Design | Inspection |
-| FR-033-CON-3 | The shipped adapters SHALL NOT name an evidence kind, so no fourth copy of that vocabulary is minted. | Design | Test (TC-156) |
-| FR-033-CON-4 | The normalized `entries` shape SHALL remain available, so the registry is never a gate on recording evidence. | Design | Test (TC-164) |
+| FR-033-CON-3 | The shipped adapters SHALL NOT name an evidence kind, so no fourth copy of that vocabulary is minted. | Design | Test |
+| FR-033-CON-4 | The normalized `entries` shape SHALL remain available, so the registry is never a gate on recording evidence. | Design | Test |
 
 ## Dependencies
 

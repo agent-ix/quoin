@@ -326,18 +326,18 @@ authenticity, signature, or non-repudiation.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-065-AC-1 | Receipt schema v1 records the exact record/candidate, decision event and its sequence, predecessor revisions, record/lineage/review/impact checks, every proof and auditor finding, unknowns, overall outcome, and reasons; undeclared fields are refused. | Test (TC-1281) |
-| FR-065-AC-2 | Valid, invalid, and incomplete remain distinct; any invalid check dominates incomplete, any incomplete check dominates valid, and an empty reason set is permitted only for valid. | Property (TC-1282) |
-| FR-065-AC-3 | Exactly one proof receipt is emitted per reviewed proof in id order; missing selection is incomplete, duplicate or unknown-proof selection is invalid, and unselected stored attestations do not affect the result. | Property (TC-1283) |
-| FR-065-AC-4 | Changing record id or revision, candidate revision, proof id, argv/cwd, tool identity, or configuration independently makes the selected attestation invalid and names the mismatched premise. | Property (TC-1284) |
-| FR-065-AC-5 | Passed evidence can discharge only when its retained output has the declared size and all owning obligations are healthy; failed, stale, vacuous, unrelated, output-mismatched, or other defect evidence is invalid. | Property (TC-1285) |
-| FR-065-AC-6 | A missing attestation or output, unavailable or not-computed result, or audit not-evaluated state is incomplete and never valid or numeric zero. | Test (TC-1286) |
-| FR-065-AC-7 | Exactly one intact matching human `approved` event permits review validity; missing history/event is incomplete; duplicate matching decisions, a sequence gap or repeat, mismatched event, rejection, or revise request are invalid. | Integration (TC-1287) |
-| FR-065-AC-8 | Incomplete/truncated impact evidence and every non-resolved unknown remain named and force incomplete verification while preserving an advisory workflow's ability to continue. | Test (TC-1288) |
-| FR-065-AC-9 | The receipt retains each FR-032 finding kind and obligation id byte-for-byte beside its mapped reason without changing the source auditor result (CON-2). | Integration (TC-1289) |
-| FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts, compared byte for byte. | Property (TC-1290) |
-| FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration (TC-1291) |
-| FR-065-AC-12 | Golden terminology describes actor labels only as recorded attribution, never identity, authority, authenticity, signature, or non-repudiation (CON-3). | Analysis (TC-1292) |
+| FR-065-AC-1 | Receipt schema v1 records the exact record/candidate, decision event and its sequence, predecessor revisions, record/lineage/review/impact checks, every proof and auditor finding, unknowns, overall outcome, and reasons; undeclared fields are refused. | Test |
+| FR-065-AC-2 | Valid, invalid, and incomplete remain distinct; any invalid check dominates incomplete, any incomplete check dominates valid, and an empty reason set is permitted only for valid. | Property |
+| FR-065-AC-3 | Exactly one proof receipt is emitted per reviewed proof in id order; missing selection is incomplete, duplicate or unknown-proof selection is invalid, and unselected stored attestations do not affect the result. | Property |
+| FR-065-AC-4 | Changing record id or revision, candidate revision, proof id, argv/cwd, tool identity, or configuration independently makes the selected attestation invalid and names the mismatched premise. | Property |
+| FR-065-AC-5 | Passed evidence can discharge only when its retained output has the declared size and all owning obligations are healthy; failed, stale, vacuous, unrelated, output-mismatched, or other defect evidence is invalid. | Property |
+| FR-065-AC-6 | A missing attestation or output, unavailable or not-computed result, or audit not-evaluated state is incomplete and never valid or numeric zero. | Test |
+| FR-065-AC-7 | Exactly one intact matching human `approved` event permits review validity; missing history/event is incomplete; duplicate matching decisions, a sequence gap or repeat, mismatched event, rejection, or revise request are invalid. | Integration |
+| FR-065-AC-8 | Incomplete/truncated impact evidence and every non-resolved unknown remain named and force incomplete verification while preserving an advisory workflow's ability to continue. | Test |
+| FR-065-AC-9 | The receipt retains each FR-032 finding kind and obligation id byte-for-byte beside its mapped reason without changing the source auditor result (CON-2). | Integration |
+| FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts, compared byte for byte. | Property |
+| FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration |
+| FR-065-AC-12 | Golden terminology describes actor labels only as recorded attribution, never identity, authority, authenticity, signature, or non-repudiation (CON-3). | Analysis |
 
 ## Dependencies
 
