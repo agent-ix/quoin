@@ -125,3 +125,6 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-131: Percentage metrics are taken over a plan-enumerated population](./FR-131-percentage-metrics-over-enumerated-population.md)
 - [FR-132: Paired-run metrics computed from two compared collections](./FR-132-paired-run-metrics.md)
 - [FR-136: Anomaly document mapping to record keys and corpus-resolved assessment links](./FR-136-anomaly-record-mapping.md)
+- [FR-137: Detect a licensed pack at install and require it to live outside any git work tree](./FR-137-detect-and-place-licensed-packs.md)
+- [FR-138: Packs never come from hosted sources](./FR-138-packs-never-come-from-hosted-sources.md)
+- [FR-139: Pack install, list, inspect and remove write nothing into any repository](./FR-139-pack-writes-nothing-into-a-repository.md)
