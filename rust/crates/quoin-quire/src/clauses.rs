@@ -100,6 +100,40 @@ pub fn evaluate(
     Ok(loaded.evaluate(context.as_map()))
 }
 
+/// The licence-restricted clause sets of the module rooted at `module`, as the
+/// engine's `check_publishable` reports them; empty means no restricted set.
+///
+/// Quoin restates no rights rule: the verdict is the engine's alone. A module
+/// that does not load is an error here and never an empty answer, because a
+/// module that could not be read must not be taken for one without licensed
+/// text.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] when the manifest or any clause-set file fails to
+/// load, naming the failing file where the engine names one.
+pub fn restricted_clause_sets(module: &ModuleRoot) -> Result<Vec<quire_rs::RestrictedClauseSet>> {
+    let root = module.as_path();
+    let load_error = |path: &std::path::Path, reason: String| Error::ModuleLoad {
+        path: path.to_path_buf(),
+        reason,
+    };
+    let outcome = quire_rs::loader::load_single_module(root);
+    if let Some(failure) = outcome.manifest_errors.first() {
+        return Err(load_error(&failure.path, failure.message.clone()));
+    }
+    if let Some(failure) = outcome.failures.first() {
+        return Err(load_error(&failure.path, failure.reason.clone()));
+    }
+    let mut modules = outcome.modules.iter();
+    match (modules.next(), modules.next()) {
+        (Some(loaded), None) => Ok(quire_rs::check_publishable(loaded)),
+        _ => Err(load_error(
+            root,
+            "expected exactly one module at this root".to_owned(),
+        )),
+    }
+}
+
 /// Compare two exact versions of the same clause set.
 ///
 /// # Errors
@@ -177,6 +211,86 @@ fn exact<'a>(
 mod tests {
     use super::*;
     use ix_trace_rs::trace;
+
+    use crate::testing::Scratch;
+
+    fn clause_set(id: &str, text_rights: &str) -> String {
+        let text = if text_rights == "none" {
+            ""
+        } else {
+            "    text: sentinel-text\n"
+        };
+        format!(
+            "schemaVersion: clause-set-v1\nauthority: example.invalid\nid: {id}\n\
+             title: Synthetic {id}\nversion: \"2\"\nrights:\n  structure: original\n  \
+             text: {text_rights}\nclauses:\n  - id: C-1\n    force: mandatory\n{text}"
+        )
+    }
+
+    fn write_module(scratch: &Scratch, sets: &[(&str, &str)]) -> ModuleRoot {
+        let mut manifest = String::from("name: synthetic-pack\nversion: 0.1.0\nclause_sets:\n");
+        for (id, rights) in sets {
+            manifest.push_str(&format!("  - {id}.yaml\n"));
+            std::fs::write(
+                scratch.path().join(format!("{id}.yaml")),
+                clause_set(id, rights),
+            )
+            .expect("clause set written");
+        }
+        std::fs::write(scratch.path().join("manifest.yaml"), manifest).expect("manifest written");
+        ModuleRoot::open(scratch.path()).expect("module root")
+    }
+
+    #[trace("FR-137-AC-12")]
+    #[test]
+    fn tc_1492_001_restricted_sets_are_exactly_what_check_publishable_reports() {
+        let scratch = Scratch::new("tc-1492-001");
+        let root = write_module(
+            &scratch,
+            &[
+                ("zeta", "licensed"),
+                ("alpha", "licensed"),
+                ("open", "none"),
+            ],
+        );
+        let reported = restricted_clause_sets(&root).expect("loads");
+
+        let outcome = quire_rs::loader::load_single_module(root.as_path());
+        let expected = quire_rs::check_publishable(&outcome.modules[0]);
+        assert_eq!(reported, expected);
+        let ids: Vec<&str> = reported.iter().map(|set| set.id.as_str()).collect();
+        assert_eq!(ids, ["alpha", "zeta"]);
+    }
+
+    #[trace("FR-137-AC-3")]
+    #[test]
+    fn tc_1492_002_a_module_without_licensed_text_has_no_restricted_set() {
+        let scratch = Scratch::new("tc-1492-002");
+        let root = write_module(&scratch, &[("a", "none"), ("b", "original")]);
+        assert!(restricted_clause_sets(&root).expect("loads").is_empty());
+    }
+
+    #[trace("FR-137-AC-8")]
+    #[test]
+    fn tc_1492_003_a_clause_set_without_rights_is_a_load_error_naming_the_file() {
+        let scratch = Scratch::new("tc-1492-003");
+        std::fs::write(
+            scratch.path().join("manifest.yaml"),
+            "name: synthetic-pack\nversion: 0.1.0\nclause_sets:\n  - bare.yaml\n",
+        )
+        .expect("manifest");
+        std::fs::write(
+            scratch.path().join("bare.yaml"),
+            "schemaVersion: clause-set-v1\nauthority: example.invalid\nid: bare\n\
+             title: Bare\nversion: \"1\"\nclauses: []\n",
+        )
+        .expect("clause set");
+        let root = ModuleRoot::open(scratch.path()).expect("root");
+        let error =
+            restricted_clause_sets(&root).expect_err("a missing rights object is no verdict");
+        assert_eq!(error.code(), crate::ErrorCode::ModuleLoad);
+        assert!(error.to_string().contains("bare.yaml"), "{error}");
+    }
 
     #[trace("FR-096")]
     #[test]

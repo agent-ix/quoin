@@ -69,6 +69,8 @@ pub const CAPABILITIES: &[&str] = &[
     "minted_targets",
     // `AcClassification` spans and the safe-refusal signal trail (#241).
     "property_spans.safe_refusal",
+    // `check_publishable` over a loaded module (quire-rs FR-083).
+    "publish_check",
     // `AcClassification::property.is_specific()` (quire-rs CR-095).
     "specific_shaped",
     // `CoverageReport.suspicions` (quire-rs FR-064).
@@ -159,6 +161,9 @@ mod capability_witnesses {
                 .iter()
                 .any(|s| s.starts_with("span:refused-"))
     };
+    // `publish_check`
+    const _: fn(&quire_rs::loader::LoadedModule) -> Vec<quire_rs::RestrictedClauseSet> =
+        quire_rs::check_publishable;
     // `specific_shaped`
     const _: fn(&quire_rs::AcClassification) -> bool = |record| record.property.is_specific();
     // `suspicions`

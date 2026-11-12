@@ -39,6 +39,7 @@
 //! | criterion classification | [`properties::classify`] | `runQuireAllowFailure(["properties", …])` + `parseProperties` |
 //! | document validation | [`validate::run`] | `runQuireBatch(["validate", …])` |
 //! | clause-set evaluation and diff | [`clauses::evaluate`], [`clauses::diff`] | `parseClauseBinding` |
+//! | restricted clause sets of a module | [`clauses::restricted_clause_sets`] | (new) |
 //! | assurance export | [`assurance::build`], [`assurance::read`] | `parseAssurance` |
 //! | assurance **shape** check, no premises | [`schema::validate_assurance`] | `validateAssurance` |
 //! | payload ingest under a ceiling | [`payload`] | `QUIRE_MAX_BUFFER` + `validate*` |
@@ -106,5 +107,6 @@ pub mod model {
     pub use quire_rs::{
         AcceptedAssurancePremises, AssuranceError, AssuranceExport, ClauseBinding,
         ClauseBindingReport, ClauseForce, ClauseSet, ClauseSetDiff, ClauseSetKey, CoverageReport,
+        RestrictedClauseSet,
     };
 }
