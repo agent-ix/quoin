@@ -813,17 +813,22 @@ fn tc_1488_014_a_blank_stored_rationale_refuses_the_whole_report_as_fr_135_does(
         "{}",
         text(&single)
     );
-    let refusal = |output: &Output| -> String {
+    // The refusal kind and the store-file sentence are the single-set run's.
+    let sentence = |output: &Output| -> String {
         let message = stderr(output);
+        assert!(message.contains("CORE_REFUSED"), "{message}");
         let from = message
-            .find("CORE_BAD_REQUEST")
-            .expect("a bad-request refusal");
-        message[from..].trim().to_owned()
+            .find("discharge/")
+            .expect("the refusal names the file");
+        let until = message[from..]
+            .find(" at line")
+            .map_or(message.len(), |at| from + at);
+        message[from..until].to_owned()
     };
     assert!(
-        refusal(&refused).contains("rationale"),
+        sentence(&refused).contains("rationale must not be empty"),
         "{}",
         stderr(&refused)
     );
-    assert_eq!(refusal(&refused), refusal(&single));
+    assert_eq!(sentence(&refused), sentence(&single));
 }
