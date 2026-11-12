@@ -114,3 +114,18 @@ fn tc_3302_record_writes_an_admitted_observation_and_refuses_an_invalid_one() {
     );
     assert!(!out.path().join("MP-229-shape.json").exists());
 }
+
+/// The default gate (no output directory) accepts an admitted observation.
+#[trace("FR-131-AC-14", "TC-3302")]
+#[test]
+fn tc_3302_record_with_the_default_gate_accepts_a_valid_observation() {
+    support::gate::record("MP-230", "shape", &bars(&GAP, &["MP-224"]));
+}
+
+/// The default gate stops a live run whose observation intake refuses.
+#[trace("FR-131-AC-14", "TC-3302")]
+#[test]
+#[should_panic(expected = "intake refused the gate observation")]
+fn tc_3302_record_with_the_default_gate_panics_on_an_invalid_observation() {
+    support::gate::record("MP-229", "shape", &bars(&EARS[..3], &[]));
+}
