@@ -56,7 +56,7 @@ producer-execution` do not compile**. `pub mod evaluation;` is
 5. **`source_audit`'s `RequirementTests` role assumes `ix-trace-rs`
    `#[trace(...)]` attributes.** quoin's convention, stated in
    `.claude/skills/rust-style/SKILL.md`, was a `/// Trace:` doc line with
-   comma-separated criteria (it is now the `#[trace("AC-id", "TC-id")]`
+   comma-separated criteria (it is now the `#[trace("AC-id")]`
    attribute). Measured over quoin's three integration-test files:
    **13 findings, 13 false positives, 0 true positives** — one
    `TraceImportMissing` per file and one `TestTraceMissing` per test, on tests

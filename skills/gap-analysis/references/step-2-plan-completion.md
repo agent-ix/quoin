@@ -40,7 +40,7 @@ priority: P0 | P1 | P2 | P3
 relationships:
   - { target: "ix://org/component/Task-000", type: depends_on }
   - { target: "ix://org/component/FR-002",   type: references }   # requirement ownership
-  - { target: "ix://org/component/TC-004",   type: verifies }     # test-case trace
+  - { target: "ix://org/component/FR-002-AC-1", type: verifies }  # criterion trace
 ---
 ```
 

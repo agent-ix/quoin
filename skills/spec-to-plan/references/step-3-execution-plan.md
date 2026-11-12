@@ -106,8 +106,8 @@ relationships:
     type: depends_on       # DAG edge — one per upstream task
   - target: ix://<org>/<component>/FR-002
     type: references       # requirement(s) this task owns
-  - target: ix://<org>/<component>/TC-004
-    type: verifies         # test case(s) this task is verified by
+  - target: ix://<org>/<component>/FR-002-AC-1
+    type: verifies         # criterion id(s) the task's tests assert
 ---
 # Task-002: FR-002 — greeting + runtime versions
 
@@ -131,7 +131,7 @@ relationships:
   and `<component>` come from `spec.md` frontmatter (`org`, `name`).
 - Use only the registered `Task` edge verbs: `depends_on`, `verifies`, `references`.
 - Encode the DAG as `depends_on` edges (not prose). One edge per direct upstream task.
-- Every task carries ≥1 `references` (requirement) and ≥1 `verifies` (test) edge.
+- Every task carries ≥1 `references` (requirement) and ≥1 `verifies` (criterion id) edge.
 - `status`/`track`/`priority` are flat operational fields (allowed by the schema's
   `additionalProperties`). Downstream tooling (and the GitHub-issue sync) reads these.
 
@@ -157,17 +157,17 @@ the `plan.md` body — see the Output Format below.
 DAG, and test traces are authoritative in **task frontmatter** (`references`,
 `depends_on`, `verifies`). State each fact **once**: the requirement checklist in
 Requirements Summary (Step 1), the dependency *reasons* in the Dependency Graph (Step 1),
-the TC enumeration in the Test Plan (Step 2), and the per-task row in the Task File
+the test enumeration in the Test Plan (Step 2), and the per-task row in the Task File
 Mapping below. Step 3 appends only the sections below — it does **not** re-emit the
 dependency graph, add a separate "Execution Tracks" section, restate any task's
-`## Scope`, or re-list TC ids per track.
+`## Scope`, or re-list criterion ids per track.
 
 ```markdown
 ## Remaining Work
 
 Describe the tracks **once**, here. One line per item: title, difficulty (optional
 size estimate), and a *behavioral* exit criterion. The item's scope and subtasks live
-in its task file — do not repeat them. Do not list TC ids here; they live in the Test
+in its task file — do not repeat them. Do not list test or criterion ids here; they live in the Test
 Plan and the Task File Mapping.
 
 ### Track A: Critical Path (serial)
@@ -192,7 +192,7 @@ authoritative for status and edges.
 
 | Task     | Track | Owns (references) | Verified by (verifies) | Status      |
 | -------- | ----- | ----------------- | ---------------------- | ----------- |
-| Task-NNN | A     | FR-00X            | TC-0XX…TC-0XX          | not_started |
+| Task-NNN | A     | FR-00X            | FR-00X-AC-N            | not_started |
 
 ## Coordination Rules
 [What to freeze, what not to start early, shared-file/shared-state single-writer
@@ -204,9 +204,9 @@ discipline, merge sequencing.]
 - **Mirroring frontmatter in prose.** `plan.md` is an orchestration overview; ownership,
   the DAG, and test traces are authoritative in task frontmatter (`references`,
   `depends_on`, `verifies`). State each fact once — requirement checklist (Requirements
-  Summary), dependency reasons (Dependency Graph), TC enumeration (Test Plan), per-task
+  Summary), dependency reasons (Dependency Graph), test enumeration (Test Plan), per-task
   row (Task File Mapping). Do not add a second "Execution Tracks" section, re-emit the
-  dependency graph, re-list TC ids in track exit-criteria, restate a task's `## Scope`,
+  dependency graph, re-list criterion ids in track exit-criteria, restate a task's `## Scope`,
   or describe a gate twice.
 - **Bundling done + remaining work in one task.** If build is done but scan isn't, they're separate tasks even if they were originally planned together.
 - **Missing shared dependencies.** If two items need the same algorithm, extract it as a deliverable — don't let two parallel workers implement it independently.
