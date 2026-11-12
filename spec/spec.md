@@ -283,7 +283,7 @@ index; the files are authoritative.
 - [NFR-004](./non-functional/NFR-004-standalone-dependencies.md) — quoin runs as a standalone package.
 - [NFR-005](./non-functional/NFR-005-catalog-driven-workflows.md) — workflows reference catalog-defined types.
 - [NFR-006](./non-functional/NFR-006-eval-metric-capture.md) — the agent eval set captures efficiency metrics.
-- [NFR-007](./non-functional/NFR-007-external-tool-invocation.md) — external tools are invoked by name and surface their failures.
+- [NFR-007](./non-functional/NFR-007-external-tool-invocation.md) — `ix-flow` is invoked by name and its failures surface.
 - [NFR-008](./non-functional/NFR-008-strict-manifest-parsing.md) — corrupt manifests abort assembly rather than drop silently.
 - [NFR-013](./non-functional/NFR-013-traceable-semantic-architecture.md) — decisions remain traceable and standalone-readable.
 - [NFR-014](./non-functional/NFR-014-non-disruptive-architecture-record.md) — architecture recording remains non-disruptive.

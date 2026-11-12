@@ -47,6 +47,6 @@ quoting.
 
 - **Upstream**: [StR-003](../stakeholder/StR-003-shared-catalog.md) shared catalog;
   [US-004](../usecase/US-004-validate-changed-spec-files.md).
-- **Downstream**: the calling agent runs the emitted command; `quoin` emits it
-  rather than executing it (see
-  [NFR-007](../non-functional/NFR-007-external-tool-invocation.md)).
+- **Downstream**: the calling agent runs the emitted command; the `write` command
+  emits it rather than executing it. (`quoin` validates documents elsewhere
+  through the linked `quire-rs` engine, not through this command.)

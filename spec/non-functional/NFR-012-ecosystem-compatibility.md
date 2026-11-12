@@ -66,6 +66,6 @@ diagnostic rather than an empty result.
 
 - **Upstream**: [FR-029](../functional/FR-029-consume-the-quire-json-contract.md)
   (the quire JSON contract), [NFR-007](./NFR-007-external-tool-invocation.md)
-  (external tools resolved from `PATH`).
+  (`ix-flow` resolved from `PATH`).
 - **Downstream**: [NFR-009](./NFR-009-single-source-skills-across-agents.md), whose
   agent surfaces are the third skewing axis.
