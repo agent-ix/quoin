@@ -161,25 +161,6 @@ fn tc_1492_104_the_registry_record_is_the_same_shape_and_the_verdict_is_recomput
     assert!(!listed.contains("\"pack\": true"), "{listed}");
 }
 
-#[trace("FR-137-AC-7")]
-#[test]
-fn tc_1492_105_a_home_inside_a_work_tree_refuses_a_pack_and_writes_nothing() {
-    let scratch = scratch();
-    let repo = scratch.path().join("repo");
-    git_init(&repo);
-    let home = repo.join("ix-home");
-    let module = write_module(&scratch.path().join("src"), "widget-pack", "licensed");
-    let refused = quoin(
-        &home,
-        scratch.path(),
-        &["module", "install", &source_arg(&module)],
-        &[],
-    );
-    assert!(!refused.status.success(), "{}", text(&refused));
-    assert!(text(&refused).contains(&repo.canonicalize().unwrap().display().to_string()));
-    assert!(!home.join("filament").exists());
-}
-
 #[trace("FR-137-AC-8")]
 #[test]
 fn tc_1492_106_a_clause_set_without_rights_fails_install_with_the_load_error() {

@@ -221,24 +221,6 @@ fn tc_1492_033_a_git_file_above_the_source_refuses_a_pack() {
     assert_eq!(error.code(), ModulesErrorCode::PackInsideWorkTree);
 }
 
-#[trace("FR-137-AC-7")]
-#[test]
-fn tc_1492_034_a_modules_directory_inside_a_work_tree_refuses_a_pack() {
-    let sb = sandbox();
-    let root = sb.root.path().canonicalize().unwrap();
-    fs::create_dir_all(root.join("ixhome/.git")).unwrap();
-    let src = sb.module("src", "widget-pack", Some("PACK"));
-    let error = install(&sb, &FixedResolver(src.clone()), &path_source(&src)).unwrap_err();
-    assert_eq!(error.code(), ModulesErrorCode::PackInsideWorkTree);
-    assert!(
-        error
-            .to_string()
-            .contains(&root.join("ixhome").display().to_string())
-    );
-    assert!(!sb.paths.target_root.exists());
-    assert!(!sb.paths.registry_path.exists());
-}
-
 #[trace("FR-137-AC-9")]
 #[test]
 fn tc_1492_035_symlinks_are_resolved_before_the_work_tree_is_judged() {

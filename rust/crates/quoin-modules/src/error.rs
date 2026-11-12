@@ -63,8 +63,7 @@ pub enum ModulesErrorCode {
     /// A read-only inspection found an installed module's manifest, semantic
     /// block or import lock invalid. Nothing was rejected or rolled back.
     InstalledModuleInvalid,
-    /// A pack's source directory, or the modules directory, is inside a git
-    /// work tree.
+    /// A pack's source directory is inside a git work tree.
     PackInsideWorkTree,
     /// A pack arrived from a hosted source or in the default module set.
     PackSourceRefused,
@@ -382,10 +381,10 @@ pub enum ModulesError {
         rollback: RollbackOutcome,
     },
 
-    /// A pack was refused because a directory it would live in is inside a git
-    /// work tree.
+    /// A pack was refused because its source directory is inside a git work
+    /// tree.
     #[error(
-        "{code}: refusing to install pack {name}: its {subject} {path} is inside the git work tree {work_tree}; \
+        "{code}: refusing to install pack {name}: its source directory {path} is inside the git work tree {work_tree}; \
          a pack is installed from a directory outside any git work tree; restricted sets: {sets}",
         code = ModulesErrorCode::PackInsideWorkTree,
         path = path.display(),
@@ -394,10 +393,7 @@ pub enum ModulesError {
     PackInsideWorkTree {
         /// The module.
         name: ModuleName,
-        /// Which directory is inside the work tree: the source directory or
-        /// the modules directory.
-        subject: &'static str,
-        /// That directory.
+        /// The canonical source directory.
         path: PathBuf,
         /// The enclosing work-tree root.
         work_tree: PathBuf,

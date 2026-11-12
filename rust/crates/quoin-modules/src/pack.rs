@@ -64,14 +64,6 @@ pub fn enclosing_work_tree(path: &Path) -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
-/// [`enclosing_work_tree`] for a directory that may not exist yet: the walk
-/// starts at its nearest existing ancestor, after symlinks are resolved.
-#[must_use]
-pub fn enclosing_work_tree_of_future_dir(path: &Path) -> Option<PathBuf> {
-    let existing = path.ancestors().find_map(|dir| dir.canonicalize().ok())?;
-    enclosing_work_tree(&existing)
-}
-
 #[cfg(test)]
 mod tests {
     #![allow(
@@ -115,18 +107,6 @@ mod tests {
         let clean = base.join("clean");
         fs::create_dir_all(&clean).unwrap();
         assert_eq!(enclosing_work_tree(&clean), None);
-        fs::remove_dir_all(&base).unwrap();
-    }
-
-    #[trace("FR-137-AC-7")]
-    #[test]
-    fn tc_1492_011_a_directory_not_yet_created_is_judged_by_its_existing_ancestor() {
-        let base = scratch("future");
-        fs::create_dir_all(base.join(".git")).unwrap();
-        assert_eq!(
-            enclosing_work_tree_of_future_dir(&base.join("filament/modules")),
-            Some(base.clone())
-        );
         fs::remove_dir_all(&base).unwrap();
     }
 }

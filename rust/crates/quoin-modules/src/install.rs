@@ -19,9 +19,7 @@ use crate::git::{GitResolver, Revision};
 use crate::ids::ModuleName;
 use crate::manifest::MarketplaceEntry;
 use crate::module_name::{locate_manifest, read_module_name};
-use crate::pack::{
-    PackProbe, RestrictedSet, enclosing_work_tree, enclosing_work_tree_of_future_dir,
-};
+use crate::pack::{PackProbe, RestrictedSet, enclosing_work_tree};
 use crate::paths::InstallPaths;
 use crate::registry::{InstalledModule, ModuleRegistry};
 use crate::semantic::SemanticGate;
@@ -238,20 +236,10 @@ impl<'a> ModuleInstaller<'a> {
                 let canonical = content_root
                     .canonicalize()
                     .unwrap_or_else(|_| content_root.to_path_buf());
-                if let Some(work_tree) = enclosing_work_tree(&canonical) {
-                    return Err(ModulesError::PackInsideWorkTree {
-                        name: name.clone(),
-                        subject: "source directory",
-                        path: canonical,
-                        work_tree,
-                        sets,
-                    });
-                }
-                match enclosing_work_tree_of_future_dir(&self.paths.target_root) {
+                match enclosing_work_tree(&canonical) {
                     Some(work_tree) => Err(ModulesError::PackInsideWorkTree {
                         name: name.clone(),
-                        subject: "modules directory",
-                        path: self.paths.target_root.clone(),
+                        path: canonical,
                         work_tree,
                         sets,
                     }),
