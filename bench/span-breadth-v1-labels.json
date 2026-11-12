@@ -78,20 +78,26 @@
       "challenge": "coordinated",
       "expectedSpans": {
         "domain": {
-          "start": 2,
           "end": 12,
+          "start": 2,
           "text": "store file"
         },
         "precondition": {
-          "start": 13,
           "end": 49,
+          "start": 13,
           "text": "that exists and is not readable JSON"
         },
         "oracle": {
-          "start": 50,
           "end": 303,
+          "start": 50,
           "text": "raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged."
         }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each boundary is a statement-relative exact byte-offset substring of the current spec row; the domain names the criterion's subject, the precondition its condition, and the oracle the required result, following the file's convention that the oracle runs to the end of the statement.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
       }
     },
     {
@@ -198,20 +204,26 @@
       "challenge": "hyphenated",
       "expectedSpans": {
         "domain": {
-          "start": 2,
           "end": 9,
+          "start": 2,
           "text": "payload"
         },
         "precondition": {
+          "end": 119,
           "start": 10,
-          "end": 91,
-          "text": "whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine"
+          "text": "whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs CR-091"
         },
         "oracle": {
-          "start": 92,
-          "end": 403,
-          "text": "predating quire-rs CR-091 \u2014 sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued."
+          "end": 407,
+          "start": 124,
+          "text": "sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued."
         }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each boundary is a statement-relative exact byte-offset substring of the current spec row; the domain names the criterion's subject, the precondition its condition, and the oracle the required result, following the file's convention that the oracle runs to the end of the statement. Corrected from the redraft: the appositive 'an engine predating quire-rs CR-091' describes the condition, so it closes the precondition; the redraft split it at 'an engine | predating', which put part of the condition into the oracle, and its offsets were character rather than byte offsets.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
       }
     },
     {
@@ -331,7 +343,13 @@
       "statement": "Two suites at one timestamp produce two files, and a re-run at the same timestamp is last-write-wins with one file retained.",
       "normalizedStatement": "two suites at one timestamp produce two files, and a re-run at the same timestamp is last-write-wins with one file retained.",
       "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain"
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "Two coordinated clauses with different subjects (two suites; a re-run) and no quantified noun domain; naming a domain would invent one, so the explicit refusal is right.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
+      }
     },
     {
       "id": "quoin-FR-052-AC-5-31fdf1fc5b",
@@ -417,7 +435,13 @@
       "statement": "`gc` deletes only runs that are not the latest for their suite, and `--dry-run` deletes nothing. The command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
       "normalizedStatement": "`gc` deletes only runs that are not the latest for their suite, and `--dry-run` deletes nothing. the command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
       "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain"
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The subject is the `gc` command and the statement chains several behaviours of it; there is no quantified domain with a separable condition, so the explicit refusal is right.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
+      }
     },
     {
       "id": "quire-rs-FR-050-AC-14-3b8b7b2477",
@@ -888,7 +912,13 @@
       "statement": "Repeating an identical record id and canonical payload is byte-idempotent.",
       "normalizedStatement": "repeating an identical record id and canonical payload is byte-idempotent.",
       "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain"
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The subject is a gerund action ('Repeating an identical record id and canonical payload'), not a noun domain; like the reviewed 'Loading two paths ...' and 'Replacing a section's content ...' labels, naming a domain would invent one, so the explicit refusal is right.",
+        "reviewer": "Claude Opus 5 (independent agent review, delegated by Peter on 2026-11-11)",
+        "reviewedAt": "2026-11-11"
+      }
     }
   ]
 }
