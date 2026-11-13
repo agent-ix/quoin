@@ -99,3 +99,10 @@ audit gaps on the same path. The rest are low.
 | FND-003 | fixed | `audit_outcome` carries `healthy` plus every finding and every `unevaluated` check for the obligation. `qualify` refuses on each detail, and on `!healthy` with no details. The host now supplies `injections` and `mock_inspection_suites` on `Request`. Tested by `without_the_hosts_mock_inspection_the_audit_cannot_call_the_obligation_healthy` (keeps `mocked-confirmation`). |
 | FND-007 | still-open | The substring rule is gone, so the wrong refusals are fixed. But limitations are now never read, so a limitation that excludes the target or act is accepted outright. The test asserts that "does not cover FR-001-AC-1" counts FR-001-AC-1. FR-116 (line 152) and FR-116-AC-6 forbid this. The stated reason ("the owner's real decision carries free-text limitations, so unevaluated-forever was rejected") arrived as relayed text. No FR-093, FR-116 or FR-184 amendment and no recorded owner ruling on the branch or main says free-text limitations are provenance-only. Close it one of three ways: record that owner ruling and amend FR-116/FR-093 (then accepted-no-change); add structured limitation scope; or keep a decision with limitations `unevaluated`. |
 | FND-008 | fixed | `AuditFailed { code: AuditorErrorCode, reason }` maps `error.code` and `error.message` instead of `to_string()`. |
+
+## Dispositions (round 3)
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-007 | fixed | `reliance` fails closed. A decision with any limitation is `unevaluated` on the bounded-reliance premise, and the limitation text is kept in the detail. This matches FR-116 line 152 and FR-116-AC-6 without guessing at free text. |
+| FND-009 | fixed | The test was split. `the_reliance_decision_must_be_for_the_reports_producer` is tagged FR-116-AC-15 and covers the producer mismatch and the no-limitation positive case. `a_reliance_decision_with_any_limitation_grants_no_positive_decision` is tagged FR-116-AC-6 and shows an excluding limitation and a harmless-looking one are each uncounted and unevaluated, with the text kept. |
