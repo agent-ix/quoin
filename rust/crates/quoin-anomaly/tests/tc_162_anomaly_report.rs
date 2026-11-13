@@ -26,7 +26,7 @@ use std::path::Path;
 use common::{Repo, fixture, fixtures, walk, with_status};
 use ix_trace_rs::trace;
 use quoin_anomaly::{
-    Context, Derived, Report, Signature, build_report, check_document, parse_record,
+    Context, Derived, GateMode, Report, Signature, build_report, check_document, parse_record,
     rationale_change,
 };
 use serde_json::{Value, json};
@@ -85,7 +85,11 @@ fn corpus_with(anomalies: &[(&str, &str, &str)]) -> Repo {
 }
 
 fn report(repo: &Repo) -> Report {
-    build_report(repo.dir.path()).unwrap()
+    build_report(repo.dir.path(), &[]).unwrap()
+}
+
+fn report_with(repo: &Repo, modes: &[GateMode]) -> Report {
+    build_report(repo.dir.path(), modes).unwrap()
 }
 
 fn json_of(report: &Report) -> Value {
@@ -374,7 +378,9 @@ fn the_json_has_exactly_its_keys_and_the_markdown_its_sections_in_order() {
             "unreadable"
         ])
     );
-    let markdown = plain.to_markdown();
+    let gated = report_with(&repo, &[GateMode::Unassessed]);
+    assert!(keys(&json_of(&gated)).contains("gate"));
+    let markdown = gated.to_markdown();
     let at = |heading: &str| {
         markdown
             .find(heading)
@@ -385,8 +391,9 @@ fn the_json_has_exactly_its_keys_and_the_markdown_its_sections_in_order() {
             && at("## By hazard") < at("## By requirement")
             && at("## By requirement") < at("## Ungrouped")
             && at("## Ungrouped") < at("## Unreadable")
+            && at("## Unreadable") < at("## Gate")
     );
-    assert!(!markdown.contains("## Gate"));
+    assert!(!plain.to_markdown().contains("## Gate"));
 }
 
 fn tree(dir: &Path) -> Vec<(String, Vec<u8>)> {
@@ -411,10 +418,15 @@ fn two_runs_give_identical_bytes_and_change_no_file() {
         ("AN-003", "valid", "closed-wont-fix-rationale"),
     ]);
     let before = tree(repo.dir.path());
-    let first = report(&repo);
-    let second = report(&repo);
-    assert_eq!(first.to_markdown(), second.to_markdown());
-    assert_eq!(first.to_json().unwrap(), second.to_json().unwrap());
+    for modes in [
+        &[][..],
+        &[GateMode::Unassessed, GateMode::UnjustifiedImpacting],
+    ] {
+        let first = report_with(&repo, modes);
+        let second = report_with(&repo, modes);
+        assert_eq!(first.to_markdown(), second.to_markdown());
+        assert_eq!(first.to_json().unwrap(), second.to_json().unwrap());
+    }
     assert_eq!(tree(repo.dir.path()), before);
 }
 
@@ -503,7 +515,7 @@ fn the_four_states_are_encoded_in_json_and_markdown() {
         fx("valid", "rationale-resolved-with", "AN-001"),
     )
     .unwrap();
-    let outside = build_report(outside.path()).unwrap();
+    let outside = build_report(outside.path(), &[]).unwrap();
     let json = json_of(&outside);
     assert_eq!(
         state(&json["anomalies"][0]["fixingChange"]),
@@ -751,4 +763,214 @@ fn the_fixing_change_is_absent_without_a_fixed_resolution_pending_or_not_applica
     let checked = check_document(&path, &text, CONTEXT).unwrap();
     assert_eq!(checked.fixing_change, Some(Derived::NotApplicable));
     assert!(checked.diagnostics.is_empty());
+}
+
+fn gate_ids(report: &Report, mode: GateMode) -> Vec<(String, String)> {
+    report
+        .gate
+        .as_ref()
+        .unwrap()
+        .failures
+        .iter()
+        .filter(|failure| failure.mode == mode)
+        .map(|failure| (failure.anomaly.clone(), failure.path.clone()))
+        .collect()
+}
+
+#[trace("FR-164-AC-1", "FR-164-AC-2")]
+#[test]
+fn the_unassessed_gate_names_every_unassessed_anomaly_and_passes_without_one() {
+    let repo = corpus_with(&[
+        ("AN-001", "valid", "identified"),
+        ("AN-002", "invalid", "closed-unassessed"),
+        ("AN-003", "valid", "assessed"),
+    ]);
+    let report = report_with(&repo, &[GateMode::Unassessed]);
+    assert!(report.failed());
+    let failures = gate_ids(&report, GateMode::Unassessed);
+    assert_eq!(failures.len(), 2);
+    assert_eq!(failures[0].0, "AN-001");
+    assert!(failures[0].1.ends_with("spec/anomalies/AN-001.md"));
+    assert_eq!(failures[1].0, "AN-002");
+
+    let passing = corpus_with(&[("AN-003", "valid", "assessed")]);
+    let report = report_with(&passing, &[GateMode::Unassessed]);
+    assert!(!report.failed());
+    assert!(report.gate.as_ref().unwrap().failures.is_empty());
+    assert_eq!(
+        ids(&report),
+        ["AN-003"],
+        "the full report is still rendered"
+    );
+    assert!(
+        report
+            .to_markdown()
+            .contains("No anomaly fails the evaluated modes: unassessed.")
+    );
+}
+
+#[trace("FR-164-AC-3", "FR-164-AC-4", "FR-164-AC-7")]
+#[test]
+fn the_unjustified_gate_fails_without_a_real_rationale_and_passes_with_one() {
+    let repo = corpus_with(&[
+        ("AN-001", "valid", "rationale-assessed-without"),
+        ("AN-002", "valid", "rationale-resolved-without"),
+    ]);
+    let report = report_with(&repo, &[GateMode::UnjustifiedImpacting]);
+    let failures = gate_ids(&report, GateMode::UnjustifiedImpacting);
+    assert_eq!(
+        failures.iter().map(|f| f.0.as_str()).collect::<Vec<_>>(),
+        ["AN-001", "AN-002"]
+    );
+    assert!(report.failed());
+
+    let with = corpus_with(&[
+        ("AN-001", "valid", "rationale-assessed-with"),
+        ("AN-002", "valid", "rationale-resolved-with"),
+    ]);
+    assert!(!report_with(&with, &[GateMode::UnjustifiedImpacting]).failed());
+
+    // A placeholder or empty cell does not count, in any letter case; a bare
+    // `x` does.
+    let mut cases = Vec::new();
+    for placeholder in ["TBD", "n/a", "-", "None", "UNKNOWN", ""] {
+        cases.push(format!("| {placeholder} | A reason. |"));
+        cases.push(format!("| Morgan Reyes | {placeholder} |"));
+    }
+    for (index, row) in cases.iter().enumerate() {
+        let mut repo = corpus();
+        let text = fx("valid", "rationale-assessed-with", "AN-001").replace(
+            "| Morgan Reyes | The checksum path is not on a safety function and the operator procedure catches the case until the next release. |",
+            row,
+        );
+        repo.commit(&anomaly_path("AN-001"), &text);
+        let report = report_with(&repo, &[GateMode::UnjustifiedImpacting]);
+        assert!(report.failed(), "{index}: {row}");
+    }
+    let mut repo = corpus();
+    let text = fx("valid", "rationale-assessed-with", "AN-001").replace(
+        "The checksum path is not on a safety function and the operator procedure catches the case until the next release.",
+        "x",
+    );
+    repo.commit(&anomaly_path("AN-001"), &text);
+    assert!(!report_with(&repo, &[GateMode::UnjustifiedImpacting]).failed());
+}
+
+#[trace("FR-164-AC-5")]
+#[test]
+fn only_a_carried_impacting_anomaly_without_a_rationale_fails_the_unjustified_gate() {
+    let repo = corpus_with(&[
+        ("AN-001", "valid", "closed-fixed"),
+        ("AN-002", "valid", "closed-duplicate"),
+        ("AN-003", "valid", "closed-not-a-defect"),
+        ("AN-004", "valid", "none"),
+        ("AN-005", "valid", "identified"),
+        ("AN-006", "valid", "closed-wont-fix"),
+    ]);
+    let report = report_with(&repo, &[GateMode::UnjustifiedImpacting]);
+    let failed = gate_ids(&report, GateMode::UnjustifiedImpacting)
+        .into_iter()
+        .map(|f| f.0)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        failed,
+        ["AN-006"],
+        "wont-fix with no rationale is the only failure"
+    );
+    let with = corpus_with(&[("AN-006", "valid", "closed-wont-fix-rationale")]);
+    assert!(!report_with(&with, &[GateMode::UnjustifiedImpacting]).failed());
+}
+
+#[trace("FR-164-AC-6", "FR-164-AC-12")]
+#[test]
+fn both_modes_list_each_failure_once_by_anomaly_id_then_mode() {
+    let mut repo = corpus();
+    repo.commit(
+        &anomaly_path("AN-002"),
+        &fx("valid", "identified", "AN-002"),
+    );
+    repo.commit(
+        &anomaly_path("AN-001"),
+        &fx("valid", "rationale-assessed-without", "AN-001"),
+    );
+    let both = [GateMode::UnjustifiedImpacting, GateMode::Unassessed];
+    let report = report_with(&repo, &both);
+    let json = json_of(&report);
+    assert_eq!(
+        json["gate"]["modes"],
+        json!(["unassessed", "unjustified-impacting"])
+    );
+    let failures = json["gate"]["failures"].as_array().unwrap();
+    let summary = failures
+        .iter()
+        .map(|f| (f["anomaly"].as_str().unwrap(), f["mode"].as_str().unwrap()))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        summary,
+        [
+            ("AN-001", "unjustified-impacting"),
+            ("AN-002", "unassessed")
+        ]
+    );
+    for failure in failures {
+        assert_eq!(keys(failure), BTreeSet::from(["mode", "anomaly", "path"]));
+    }
+}
+
+#[trace("FR-164-AC-8")]
+#[test]
+fn an_unreadable_document_fails_the_gate_even_when_every_readable_one_passes() {
+    let mut repo = corpus_with(&[("AN-001", "valid", "assessed")]);
+    let broken = set_key(&fx("valid", "assessed", "AN-002"), "safety_impact", None);
+    repo.commit(&anomaly_path("AN-002"), &broken);
+    let report = report_with(&repo, &[GateMode::Unassessed]);
+    assert!(report.gate.as_ref().unwrap().failures.is_empty());
+    assert!(report.failed());
+    assert_eq!(report.unreadable.len(), 1);
+}
+
+#[trace("FR-164-AC-9")]
+#[test]
+fn without_fail_on_there_is_no_gate_and_unassessed_anomalies_do_not_fail() {
+    let repo = corpus_with(&[("AN-001", "valid", "identified")]);
+    let report = report(&repo);
+    assert!(report.gate.is_none());
+    assert!(!report.failed());
+    assert!(!keys(&json_of(&report)).contains("gate"));
+}
+
+#[trace("FR-164-AC-11", "NFR-035-AC-2", "NFR-035-AC-3")]
+#[test]
+fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
+    let repo = corpus_with(&[
+        ("AN-001", "valid", "closed-wont-fix-rationale"),
+        ("AN-002", "valid", "rationale-resolved-with"),
+        ("AN-003", "valid", "identified"),
+    ]);
+    let modes = [GateMode::Unassessed, GateMode::UnjustifiedImpacting];
+    let report = report_with(&repo, &modes);
+    // The stem may appear only in values copied from a record: the table rows.
+    let markdown = report.to_markdown().to_lowercase();
+    let prose = markdown
+        .lines()
+        .filter(|line| !line.starts_with('|'))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(!prose.contains("accept"), "{prose}");
+    let json = report.to_json().unwrap();
+    for key in ["score", "rank", "verdict", "grade", "recommend", "priority"] {
+        assert!(!json.to_lowercase().contains(&format!("\"{key}")), "{key}");
+    }
+    let clean = report_with(
+        &corpus_with(&[("AN-001", "valid", "closed-wont-fix-rationale")]),
+        &modes,
+    );
+    let markdown = clean.to_markdown().to_lowercase();
+    assert!(markdown.contains("no anomaly fails the evaluated modes"));
+    assert!(
+        markdown
+            .lines()
+            .filter(|line| !line.starts_with('|'))
+            .all(|line| !line.contains("accept"))
+    );
 }

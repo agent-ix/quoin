@@ -29,5 +29,5 @@ pub use record::{
     MappingError, MappingErrorCode, RationaleEntry, Record, Row, parse_record, status_line,
 };
 pub use refs::{RefEntry, acceptance_criteria, anomaly_documents, is_hazard, references_to};
-pub use report::{Report, build_report};
+pub use report::{Gate, GateMode, Report, build_report};
 pub use status::Status;

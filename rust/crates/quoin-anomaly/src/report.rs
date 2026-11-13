@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `quoin anomaly report` (FR-162, FR-163, NFR-035): the anomalies a release
-//! still carries, grouped by affected hazard and requirement.
+//! `quoin anomaly report` (FR-162, FR-163, FR-164, NFR-035): the anomalies a
+//! release still carries, grouped by affected hazard and requirement, and the
+//! `--fail-on` gate over them.
 //!
 //! The report is a view. It prints only what a person wrote in an `Anomaly`
 //! document, what git recorded about its commits, and the group and gate facts
@@ -21,6 +22,27 @@ use crate::error::AnomalyError;
 use crate::history::read_history;
 use crate::record::{RationaleEntry, Record};
 use crate::refs::anomaly_documents;
+
+/// A condition the gate tests (FR-164).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum GateMode {
+    /// A listed anomaly whose `safety_impact` is `unassessed`.
+    Unassessed,
+    /// A carried `impacting` anomaly with no release rationale.
+    UnjustifiedImpacting,
+}
+
+impl GateMode {
+    /// The mode as given to `--fail-on`.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Unassessed => "unassessed",
+            Self::UnjustifiedImpacting => "unjustified-impacting",
+        }
+    }
+}
 
 /// One `assessment` entry, as the record carries it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -115,6 +137,26 @@ pub struct Unreadable {
     pub code: &'static str,
 }
 
+/// One gate failure.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Failure {
+    /// The mode that failed.
+    pub mode: GateMode,
+    /// The anomaly id.
+    pub anomaly: String,
+    /// The document path.
+    pub path: String,
+}
+
+/// The `--fail-on` result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Gate {
+    /// The modes evaluated.
+    pub modes: Vec<GateMode>,
+    /// Every failure, by anomaly id then mode.
+    pub failures: Vec<Failure>,
+}
+
 /// The anomaly report.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -129,13 +171,17 @@ pub struct Report {
     pub ungrouped: Vec<Ungrouped>,
     /// Documents with a mapping error and so no record.
     pub unreadable: Vec<Unreadable>,
+    /// The gate, when `--fail-on` was given.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gate: Option<Gate>,
 }
 
 impl Report {
-    /// Whether the command exits non-zero: a document was unreadable.
+    /// Whether the command exits non-zero: a document was unreadable, or the
+    /// gate has a failure.
     #[must_use]
     pub fn failed(&self) -> bool {
-        !self.unreadable.is_empty()
+        !self.unreadable.is_empty() || self.gate.as_ref().is_some_and(|g| !g.failures.is_empty())
     }
 
     /// The report as Markdown.
@@ -164,6 +210,20 @@ fn is_listed(record: &Record) -> bool {
 /// `wont-fix`.
 fn carried(record: &Record) -> bool {
     record.status_word != "closed" || record.resolution.as_deref() == Some("wont-fix")
+}
+
+fn is_placeholder(value: &str) -> bool {
+    matches!(
+        value.trim().to_lowercase().as_str(),
+        "" | "n/a" | "none" | "unknown" | "tbd" | "-"
+    )
+}
+
+/// An entry counts as a release rationale when its author and rationale each
+/// satisfy the value rule of spec-artifacts-process FR-016. Whether it is
+/// adequate is never read.
+fn counts_as_rationale(entry: &RationaleEntry) -> bool {
+    !is_placeholder(&entry.author) && !is_placeholder(&entry.rationale)
 }
 
 /// The path as shown: as given under the scope, without a leading `./`.
@@ -240,12 +300,42 @@ fn groups(rows: &[ReportRow], kind: &str) -> Vec<Group> {
         .collect()
 }
 
-/// Build the report over the `Anomaly` documents under `scope`.
+fn gate(rows: &[ReportRow], modes: &[GateMode]) -> Gate {
+    let modes = modes.iter().copied().collect::<BTreeSet<_>>();
+    let mut failures = Vec::new();
+    for row in rows {
+        for &mode in &modes {
+            let fails = match mode {
+                GateMode::Unassessed => row.unassessed,
+                GateMode::UnjustifiedImpacting => {
+                    row.safety_impact == "impacting"
+                        && (row.status != "closed" || row.resolution.as_deref() == Some("wont-fix"))
+                        && !row.release_rationale.iter().any(counts_as_rationale)
+                }
+            };
+            if fails {
+                failures.push(Failure {
+                    mode,
+                    anomaly: row.id.clone(),
+                    path: row.path.clone(),
+                });
+            }
+        }
+    }
+    failures.sort_by(|a, b| (&a.anomaly, a.mode, &a.path).cmp(&(&b.anomaly, b.mode, &b.path)));
+    Gate {
+        modes: modes.into_iter().collect(),
+        failures,
+    }
+}
+
+/// Build the report over the `Anomaly` documents under `scope`, and evaluate
+/// the gate when `modes` is not empty.
 ///
 /// # Errors
 ///
 /// Returns an error when `scope` cannot be read or `git` cannot be run.
-pub fn build_report(scope: &Path) -> Result<Report, AnomalyError> {
+pub fn build_report(scope: &Path, modes: &[GateMode]) -> Result<Report, AnomalyError> {
     let mut rows = Vec::new();
     let mut unreadable = Vec::new();
     for (path, text) in anomaly_documents(scope)? {
@@ -279,11 +369,13 @@ pub fn build_report(scope: &Path) -> Result<Report, AnomalyError> {
             },
         })
         .collect();
+    let gate = (!modes.is_empty()).then(|| gate(&rows, modes));
     Ok(Report {
         anomalies: rows,
         by_hazard,
         by_requirement,
         ungrouped,
         unreadable,
+        gate,
     })
 }

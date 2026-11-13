@@ -9,7 +9,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-//! The `quoin anomaly report` command surface (FR-162, FR-163, NFR-035).
+//! The `quoin anomaly report` command surface (FR-162 to FR-164, NFR-035).
 //!
 //! Anomaly documents are the fixtures `spec-artifacts-process` ships
 //! (FR-014 to FR-016), read in place from `SPEC_ARTIFACTS_PROCESS_DIR` or the
@@ -236,7 +236,11 @@ fn the_markdown_and_json_match_their_snapshots_over_one_corpus() {
 #[test]
 fn two_runs_give_the_same_bytes_in_both_formats() {
     let repo = repo();
-    for args in [&["anomaly", "report"][..], &["anomaly", "report", "--json"]] {
+    for args in [
+        &["anomaly", "report"][..],
+        &["anomaly", "report", "--json"],
+        &["anomaly", "report", "--fail-on", "unassessed", "--json"],
+    ] {
         assert_eq!(stdout(&repo.quoin(args)), stdout(&repo.quoin(args)));
     }
 }
@@ -260,6 +264,107 @@ fn an_unreadable_document_exits_non_zero_and_an_empty_scope_exits_zero() {
         .unwrap();
     assert_eq!(out.status.code(), Some(0));
     assert_eq!(stdout(&out).matches("\nnone\n").count(), 5);
+}
+
+#[trace("FR-164-AC-1", "FR-164-AC-12")]
+#[test]
+fn fail_on_unassessed_exits_non_zero_and_names_each_anomaly() {
+    let repo = repo();
+    let out = repo.quoin(&["anomaly", "report", "--fail-on", "unassessed", "--json"]);
+    assert_eq!(out.status.code(), Some(1));
+    let json: serde_json::Value = serde_json::from_str(&stdout(&out)).unwrap();
+    let failures = json["gate"]["failures"].as_array().unwrap();
+    let ids = failures
+        .iter()
+        .map(|f| f["anomaly"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(ids, ["AN-001", "AN-002", "AN-011"]);
+    assert_eq!(failures[0]["path"], "spec/anomalies/AN-001.md");
+    assert_eq!(json["gate"]["modes"], serde_json::json!(["unassessed"]));
+    assert!(!json["anomalies"].as_array().unwrap().is_empty());
+}
+
+#[trace("FR-164-AC-3", "FR-164-AC-6")]
+#[test]
+fn fail_on_unjustified_impacting_names_the_open_impacting_anomalies_without_a_rationale() {
+    let repo = repo();
+    let out = repo.quoin(&[
+        "anomaly",
+        "report",
+        "--fail-on",
+        "unjustified-impacting",
+        "--fail-on",
+        "unassessed",
+    ]);
+    assert_eq!(out.status.code(), Some(1));
+    let text = stdout(&out);
+    for line in [
+        "- unassessed: AN-001 (spec/anomalies/AN-001.md)",
+        "- unjustified-impacting: AN-007 (spec/anomalies/AN-007.md)",
+        "- unjustified-impacting: AN-009 (spec/anomalies/AN-009.md)",
+        "- unjustified-impacting: AN-012 (spec/anomalies/AN-012.md)",
+        "- unjustified-impacting: AN-013 (spec/anomalies/AN-013.md)",
+    ] {
+        assert!(text.contains(line), "{line}\n{text}");
+    }
+    // AN-003's working tree carries a rationale; AN-004 has one too.
+    assert!(!text.contains("- unjustified-impacting: AN-003"));
+    assert!(!text.contains("- unjustified-impacting: AN-004"));
+    assert!(!text.contains("- unjustified-impacting: AN-006"));
+}
+
+#[trace("FR-164-AC-2", "FR-164-AC-9", "FR-164-AC-11")]
+#[test]
+fn a_passing_gate_exits_zero_with_the_full_report_and_no_gate_without_fail_on() {
+    let mut repo = Repo::new();
+    repo.commit(
+        "spec/anomalies/AN-001.md",
+        &fixture("valid", "rationale-assessed-with", "AN-001"),
+    );
+    let out = repo.quoin(&[
+        "anomaly",
+        "report",
+        "--fail-on",
+        "unassessed",
+        "--fail-on",
+        "unjustified-impacting",
+    ]);
+    assert_eq!(out.status.code(), Some(0));
+    let text = stdout(&out);
+    assert!(text.contains("| AN-001 "));
+    assert!(
+        text.contains("No anomaly fails the evaluated modes: unassessed, unjustified-impacting.")
+    );
+    let plain = repo.quoin(&["anomaly", "report"]);
+    assert_eq!(plain.status.code(), Some(0));
+    assert!(!stdout(&plain).contains("## Gate"));
+
+    let unassessed = repo_with_identified();
+    let out = unassessed.quoin(&["anomaly", "report"]);
+    assert_eq!(out.status.code(), Some(0), "no --fail-on, no gate");
+}
+
+fn repo_with_identified() -> Repo {
+    let mut repo = Repo::new();
+    repo.commit(
+        "spec/anomalies/AN-001.md",
+        &fixture("valid", "identified", "AN-001"),
+    );
+    repo
+}
+
+#[trace("FR-164-AC-10")]
+#[test]
+fn an_unknown_fail_on_value_is_refused_naming_the_modes_and_prints_no_report() {
+    let repo = repo_with_identified();
+    let out = repo.quoin(&["anomaly", "report", "--fail-on", "nonsense"]);
+    assert_ne!(out.status.code(), Some(0));
+    assert!(out.stdout.is_empty());
+    let err = String::from_utf8(out.stderr).unwrap();
+    assert!(
+        err.contains("unassessed") && err.contains("unjustified-impacting"),
+        "{err}"
+    );
 }
 
 #[trace("FR-163-AC-3", "NFR-035-AC-1")]
@@ -291,7 +396,7 @@ fn no_anomaly_command_offers_to_write_a_rationale_and_a_run_writes_no_file() {
         String::from_utf8(out.stdout).unwrap()
     };
     let before = status(&repo);
-    let _ = repo.quoin(&["anomaly", "report"]);
+    let _ = repo.quoin(&["anomaly", "report", "--fail-on", "unassessed"]);
     assert_eq!(status(&repo), before);
 }
 

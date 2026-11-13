@@ -8,7 +8,7 @@
 
 use std::fmt::Write as _;
 
-use super::{Report, ReportRow};
+use super::{Gate, Report, ReportRow};
 
 const NOT_STATED: &str = "not stated";
 
@@ -118,6 +118,29 @@ fn groups(title: &str, groups: &[super::Group], out: &mut String) {
     out.push('\n');
 }
 
+fn gate_section(gate: &Gate, out: &mut String) {
+    let modes = gate
+        .modes
+        .iter()
+        .map(|mode| mode.as_str())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let _ = write!(out, "\n## Gate\n\nModes: {modes}\n\n");
+    if gate.failures.is_empty() {
+        let _ = writeln!(out, "No anomaly fails the evaluated modes: {modes}.");
+        return;
+    }
+    for failure in &gate.failures {
+        let _ = writeln!(
+            out,
+            "- {}: {} ({})",
+            failure.mode.as_str(),
+            failure.anomaly,
+            failure.path,
+        );
+    }
+}
+
 pub(super) fn markdown(report: &Report) -> String {
     let mut out = String::from("# Anomaly report\n\n");
     rows_table(report, &mut out);
@@ -136,6 +159,9 @@ pub(super) fn markdown(report: &Report) -> String {
     }
     for entry in &report.unreadable {
         let _ = writeln!(out, "- {}: {}", entry.path, entry.code);
+    }
+    if let Some(gate) = &report.gate {
+        gate_section(gate, &mut out);
     }
     out
 }

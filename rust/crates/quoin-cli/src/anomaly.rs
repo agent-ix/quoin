@@ -6,8 +6,8 @@
 //!
 //! `quoin anomaly check` reports what no module mapping can express; it never
 //! repeats `quire validate`'s dangling-reference or kind diagnostics.
-//! `quoin anomaly report` lists the anomalies a release still carries
-//! (FR-162, FR-163).
+//! `quoin anomaly report` lists the anomalies a release still carries, with the
+//! `--fail-on` gate over them (FR-162 to FR-164).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_anomaly::{
-    Context, Severity, anomaly_documents, build_report, check_document, references_to,
+    Context, GateMode, Severity, anomaly_documents, build_report, check_document, references_to,
 };
 use quoin_core::protocol::{Diagnostic, Response};
 
@@ -73,6 +73,14 @@ pub(crate) fn command() -> Command {
                         .action(ArgAction::SetTrue)
                         .help("Emit one JSON object instead of Markdown"),
                 )
+                .arg(
+                    Arg::new("fail-on")
+                        .long("fail-on")
+                        .value_name("MODE")
+                        .action(ArgAction::Append)
+                        .value_parser(["unassessed", "unjustified-impacting"])
+                        .help("Exit non-zero when a listed anomaly is unassessed, or an open impacting anomaly has no release rationale; repeat to evaluate both"),
+                ),
         )
 }
 
@@ -182,7 +190,19 @@ fn run_report(arguments: &ArgMatches) -> Result<Response, String> {
     if !scope.is_dir() {
         return Ok(refuse_missing("scope", &scope));
     }
-    let report = build_report(&scope).map_err(|error| error.to_string())?;
+    let modes = arguments
+        .get_many::<String>("fail-on")
+        .into_iter()
+        .flatten()
+        .map(|mode| match mode.as_str() {
+            "unassessed" => Ok(GateMode::Unassessed),
+            "unjustified-impacting" => Ok(GateMode::UnjustifiedImpacting),
+            other => Err(format!(
+                "an unknown --fail-on mode {other} reached dispatch"
+            )),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let report = build_report(&scope, &modes).map_err(|error| error.to_string())?;
     let rendered = if arguments.get_flag("json") {
         report.to_json().map_err(|error| error.to_string())?
     } else {
