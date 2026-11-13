@@ -133,3 +133,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-142: Join advisory findings onto SOUP records](./FR-142-advisory-join-onto-soup-records.md)
 - [FR-143: Support status and end-of-support dates come from supplied public data](./FR-143-support-status-and-end-of-support-input.md)
 - [FR-144: SOUP report: one row per record, unresolved and past-end-of-support first](./FR-144-soup-report.md)
+- [FR-149: Grype advisory report adapter](./FR-149-grype-advisory-report-adapter.md)
