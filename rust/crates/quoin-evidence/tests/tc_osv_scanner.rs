@@ -81,7 +81,7 @@ fn invalid_truncated_empty_and_missing_package_reports_are_refused() {
     ] {
         assert!(parse_osv_scanner(raw).is_err(), "accepted {raw}");
     }
-    let error = parse_osv_scanner(r#"{"results":[{"packages":[{"vulnerabilities":[]}]}]}"#)
+    let error = parse_osv_scanner(r#"{"results":[{"source":{}}]}"#)
         .unwrap_err()
         .to_string();
     assert!(error.contains("packages"), "{error}");
