@@ -27,6 +27,8 @@ stored, and FR-173 names the stale fact so a person can withdraw it.
 
 - The report SHALL show a clause answered by an `effective` control and attested as `Compliant`, with the control ids as its Evidence.
 - The report SHALL show a clause with a `scope_exclusion` and a recorded `delegated`, `accepted_risk` or `temporary_exception` disposition under that exact disposition, never `Compliant`.
+- The report SHALL treat a recorded `temporary_exception` as current only while `asOf` is earlier than its persisted `decisionExpiresAt` and its attestation is current.
+- At or after `decisionExpiresAt`, the report SHALL show the clause as `Not compliant - temporary exception expired`, even when the attestation remains current.
 - The report SHALL show a clause whose controls are not `effective` and that has no stored fact as `Not compliant - undischarged`.
 - Re-running the chain SHALL replace the stored fact of each clause it emits (FR-133).
 - A stored `direct` fact SHALL stay in force, and its clause `Compliant`, until its attestation expires or its file is removed from the store, even after the control is reassessed.
@@ -42,6 +44,7 @@ stored, and FR-173 names the stale fact so a person can withdraw it.
 | FR-174-AC-3 | The rendered matrix and the chain's intermediate files contain none of the set's clause-text sentinel and no percentage or count of compliant rows. | Test |
 | FR-174-AC-4 | The same chain against a synthetic pack installed in a temp `IX_HOME` renders the same states by clause id. | Test |
 | FR-174-AC-5 | After the control of a recorded `Compliant` clause is changed to `ineffective` and the chain is re-run, the clause still renders `Compliant` and FR-173 reports `stale` for it; after its fact file is removed it renders `Not compliant - undischarged`. | Test |
+| FR-174-AC-6 | For a stored `temporary_exception` with `decisionExpiresAt` earlier than `attestation.expiresAt`, `--as-of` immediately before `decisionExpiresAt` renders that disposition; at `decisionExpiresAt` and after it renders `Not compliant - temporary exception expired`. | Test |
 
 ## Dependencies
 

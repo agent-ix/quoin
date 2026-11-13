@@ -36,6 +36,11 @@ verified; a discharge attestation is the same kind of fact.
   list, force, expected output or applicability: which clauses bind is decided
   by Quire from the clause set and the declared context, and the binding report
   is supplied live on every read (FR-030, governing principle).
+- `evidence.record_discharge` SHALL persist a disposition fact's
+  `decisionExpiresAt`, when present for `temporary_exception` under FR-046, as
+  part of the fact unchanged. At read time,
+  `asOf >= decisionExpiresAt` leaves that clause open even if the attestation's
+  `expiresAt` is later.
 - A fact is stored at
   `discharge/<authority>/<id>/<version>/<clause>.json`, one file per
   (clause set, clause). Each of the four ids is 1 to 64 bytes, is escaped so it
@@ -58,9 +63,11 @@ verified; a discharge attestation is the same kind of fact.
 - Reading a clause set refuses more than 10000 stored files or a file over
   1 MiB, and refuses (never skips) a file that is not valid, belongs to another
   clause set, or sits at another clause's path.
-- Currency is decided at read time from the fact's own attestation. A fact whose
-  attestation has expired or is not yet valid leaves its clause open with the
-  reason visible (FR-046-AC-4).
+- Currency is decided at read time from the fact's own attestation and, for a
+  `temporary_exception`, its `decisionExpiresAt`. A fact whose attestation has
+  expired or is not yet valid leaves its clause open with the reason visible
+  (FR-046-AC-4); a temporary exception also leaves it open at or after
+  `decisionExpiresAt` (FR-046-AC-8).
 - `evidence.inward_completeness` takes the live binding report, an explicit
   `asOf` and the repository, and builds the discharge report itself from the
   binding report and the stored facts, so the populations add up by
@@ -83,7 +90,7 @@ verified; a discharge attestation is the same kind of fact.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-133-AC-1 | A recorded fact is stored as the FR-046 fact beside its clause set key and a schema version, and the stored file holds no other clause of the binding report, no force or expected outputs, and no recording time or tool identity. | Test |
-| FR-133-AC-2 | The discharge partition for a live binding report uses the stored facts of its clause set; the same stored fact discharges a clause before its attestation expires and leaves it open after. | Test |
+| FR-133-AC-2 | The discharge partition for a live binding report uses the stored facts of its clause set; a `temporary_exception` fact discharges only while its attestation is current and `asOf` is earlier than `decisionExpiresAt`, and leaves the clause open when `asOf` equals or exceeds `decisionExpiresAt`. | Test |
 | FR-133-AC-3 | Recording a clause again replaces its fact. A list with a malformed fact, an unknown field, a bad instant, a duplicate clause, a clause id over 64 bytes, two ids that fold to one file name, an id folding onto a different stored id, or a binding report naming a clause twice is refused with a bad-request status (`invalid-identifier` or `case-collision` where those apply) and writes nothing. | Test |
 | FR-133-AC-4 | A stored file that is not valid JSON, that names another clause set or clause than its path, or that is over 1 MiB, and a clause set holding more than 10000 files, are each an error naming the file or directory, never an open clause. | Test |
 | FR-133-AC-5 | `evidence.inward_completeness` derives its report from the live binding report and the stored facts, and states `binding`, `discharged`, dispositions by decision and the open remainder by clause with its reason, such that `discharged + Σ dispositions + open == binding`; clause ids in the binding report are unique, so a binding report naming a clause twice is refused; an expired fact leaves its clause in the open remainder; unresolved applicability and unused facts are counted outside `binding`; the report carries no score. | Test |
