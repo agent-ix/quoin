@@ -84,7 +84,16 @@ read the working tree and git together, so they get their own topic.
   signature is present; trust and expiry are not judged here), `unsigned` for `N`, and `unknown` for
   `B`, `R` and `E` (a bad, revoked-key or uncheckable signature is not treated as signed).
 - Quoin SHALL NOT derive `status` from `statusHistory`.
-- Quoin SHALL NOT take any author or date from a field typed into the document.
+- The fixing change of an anomaly resolved as `fixed` (spec-artifacts-process FR-015) SHALL be the
+  first `statusHistory` entry whose `status` is `resolved` after the most recent entry whose
+  `status` is `assessed`.
+- Quoin SHALL expose the fixing change as the record key `fixingChange`, holding that entry's
+  `commit`, `author`, `authoredAt`, `signature` and `signatureCode`, absent when no such entry
+  exists or when `resolved` is only pending.
+- Quoin SHALL NOT read a hash of the fix from the document.
+- Quoin SHALL NOT check that the severity, the `## Fix Verification` links and the fixing change
+  agree beyond the checks stated here; the presence and shape of `severity` and of the section are
+  the module's (spec-artifacts-process FR-014, FR-015).
 - If the file is not under git, then Quoin SHALL report `statusHistory` not applicable.
 - If the file is not under git, then Quoin SHALL emit no transition diagnostic.
 - If the working-tree `status` differs from the last entry's `status`, then Quoin SHALL append a
@@ -150,6 +159,8 @@ commit or commits involved.
 | FR-136-AC-10 | With `spec-objects-safety` not installed, an anomaly with two `Hazard` rows yields exactly one `anomaly.missing-module`, and `quire validate` still reports its own per-row diagnostics. | Test |
 | FR-136-AC-11 | Every diagnostic in AC-2, AC-3, AC-5 and AC-10 carries its code, severity `error`, its reason, and the line of the document's `status` field. | Test |
 | FR-136-AC-12 | Signature codes `G`, `U`, `X`, `Y` map to `signed`, `N` to `unsigned`, and `B`, `R`, `E` to `unknown`, with `signatureCode` equal to the git letter in each case. | Test |
+| FR-136-AC-13 | For a history `identified`, `assessed`, `resolved`, `closed` (resolution `fixed`), `fixingChange` holds the commit, author, authored date, `signature` and `signatureCode` of the `resolved` entry; for a history `resolved`, `assessed`, `resolved`, it is the second `resolved` commit; no hash typed in the document is read. | Test |
+| FR-136-AC-14 | `fixingChange` is absent for an anomaly not yet `resolved`, for a pending-only `resolved` working-tree status, and for a file outside git, and `quoin anomaly check` emits no diagnostic for its absence. | Test |
 
 ## Dependencies
 
