@@ -51,6 +51,7 @@ pub use types::{
     Challenge, ChallengeStatus, Participant, Reasoning, Relationship, RelationshipType, TopClaim,
 };
 
-pub(crate) use instant::{instant_epoch_millis, js_trim_end, js_trim_is_empty};
+pub use instant::instant_epoch_millis;
+pub(crate) use instant::{js_trim_end, js_trim_is_empty};
 pub(crate) use read::{exact_keys, literal, optional_string_at, record, string_array, string_at};
 pub(crate) use types::reject;

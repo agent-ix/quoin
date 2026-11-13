@@ -94,7 +94,8 @@ pub(crate) fn is_instant(value: &str) -> bool {
 /// fraction digits and discards the rest, so `.0009` and `.0001` are the same
 /// instant on both sides and an ordering built from full precision would not
 /// agree with the oracle at a boundary.
-pub(crate) fn instant_epoch_millis(value: &str) -> Option<i64> {
+#[must_use]
+pub fn instant_epoch_millis(value: &str) -> Option<i64> {
     Instant::parse(value, InstantGrammar::CalendarInstant)?.epoch_millis()
 }
 

@@ -93,6 +93,12 @@ pub(super) struct Existing {
     pub(super) purl: String,
     /// The record's `id`, when it states one.
     pub(super) id: Option<String>,
+    /// The record's `disposition_clause`, when it names one (FR-142).
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "`quoin soup report` (FR-144) reads it")
+    )]
+    pub(super) disposition_clause: Option<String>,
 }
 
 /// The first two records that carry one purl.
@@ -307,11 +313,13 @@ mod tests {
                 path: PathBuf::from("a.md"),
                 purl: "pkg:npm/a@1".to_owned(),
                 id: None,
+                disposition_clause: None,
             },
             Existing {
                 path: PathBuf::from("b.md"),
                 purl: "pkg:npm/b@1".to_owned(),
                 id: None,
+                disposition_clause: None,
             },
         ];
         let symbols: Vec<String> = ["pkg:npm/a@1", "pkg:npm/b@2", "pkg:npm/b@2", "c@3"]
