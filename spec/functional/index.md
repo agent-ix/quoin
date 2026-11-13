@@ -150,3 +150,6 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-160: Per-class evidence floors: required methods, mutation floor and independence configured per software safety class](./FR-160-per-class-evidence-floors.md)
 - [FR-161: Per-class obligations report: the activities and evidence a requirement's software safety class demands](./FR-161-per-class-obligations-report.md)
 - [FR-165: Design column in the evidence-backed test matrix](./FR-165-matrix-design-column.md)
+- [FR-166: quoin release snapshot: write the evidence state of a release as one file, running no git](./FR-166-release-snapshot-command.md)
+- [FR-167: Release snapshot format: a closed, ordered JSON document the dossier documents read](./FR-167-release-snapshot-format.md)
+- [FR-168: Release snapshot change records: the change-assurance records since the previous release, taken as data](./FR-168-release-snapshot-change-records.md)
