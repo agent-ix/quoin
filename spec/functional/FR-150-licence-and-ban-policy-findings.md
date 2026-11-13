@@ -38,7 +38,7 @@ read: no package registry, no licence database and no package file is consulted.
 
 **No new producer.** The evaluation needs no execution path of its own. The SBOM is an existing retained input, the
 policy is a text file, and the evaluation is a pure function of the two, so it is a finding-shaped adapter of the
-FR-033 registry beside `grype` (FR-149): it runs no subprocess, opens no network connection and fetches no data. No
+FR-033 registry beside `osv-scanner` (FR-149): it runs no subprocess, opens no network connection and fetches no data. No
 new producer request is added. The one engineering-assurance change is a licence-bearing fixture for its tests
 (`ix://agent-ix/engineering-assurance/FR-039-AC-8`), because the existing FR-039 fixtures give Syft no licence to
 record. The SBOM is read through the FR-041 reader, which is amended to expose each component's declared licences
@@ -135,7 +135,7 @@ traceable to the policy that produced it.
 | FR-150-AC-10 | The adapter source opens no file other than its two inputs, runs no subprocess, opens no network connection, and contains no licence identifier list, no default policy and no standard text. | Inspection |
 | FR-150-AC-11 | The recorded findings carry the adapter's own severity words, and the recorded scan carries no score, class or rank. | Test |
 | FR-150-AC-12 | The fixtures for AC-1 are Syft output captured from the engineering-assurance FR-039 licence fixture (FR-039-AC-8: five entries, four with a licence) and checked in unedited, the test policy allowing one permissive id, denying the copyleft id, listing neither of the others and banning one purl; a case Syft cannot produce from it uses a minimal hand-written CycloneDX document, clearly marked as hand-written in its file. | Inspection |
-| FR-150-AC-13 | `--policy` given with `--adapter sbom`, `grype` or `cargo-deny` is refused with an error naming the adapter and records nothing. | Test |
+| FR-150-AC-13 | `--policy` given with `--adapter sbom`, `osv-scanner` or `cargo-deny` is refused with an error naming the adapter and records nothing. | Test |
 | FR-150-AC-14 | A component with one id in `allow` and one free-text name not in `allow` is `licence-unknown`; with one id in `allow` and one id in neither list, `licence-not-allowed`; with one id in `deny` and any other licence, `licence-denied`; each component has at most one licence finding. | Test |
 | FR-150-AC-15 | The recorded scan lists, in `evaluated`, the symbol of every component of the SBOM, and its ruleset holds the policy's entries. | Test |
 | FR-150-AC-16 | The message of a `licence-unknown` finding for an unlicensed component is `no licence declared`; of a `package-banned` finding is `banned by <entry purl>` with the entry's reason where it states one; of a licence finding the joined offending texts. | Test |
