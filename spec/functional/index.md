@@ -138,3 +138,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-147: Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard or the implementing requirement](./FR-147-risk-advise-evidence-gaps.md)
 - [FR-148: Risk advice decision queue: undecided residual-risk, benefit-risk and overall decisions, ordered by id](./FR-148-risk-advise-decision-queue.md)
 - [FR-149: Grype advisory report adapter](./FR-149-grype-advisory-report-adapter.md)
+- [FR-150: Differential report v2 adapter](./FR-150-differential-report-v2-adapter.md)

@@ -25,8 +25,9 @@ SHALL decide no question of assurance sufficiency.
 
 - Contract conformance JSONL under the declared protocol
   `quire.contract.conformance-jsonl/v1`, one replayed corpus fixture per line.
-- A domain differential summary under a declared
-  `<domain>.differential-summary/v1` schema version.
+- A `quire.differential-report/v2` document, read by the `differential-report` adapter of
+  [FR-150](./FR-150-differential-report-v2-adapter.md), which replaces the earlier
+  `<domain>.differential-summary/v1` reader (no producer wrote that schema).
 
 ## Outputs
 
@@ -83,8 +84,8 @@ recorded on any of these paths.
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-069-AC-1 | The `contract-conformance` adapter transcribes a real conformance run into one entry per replayed fixture, keyed by corpus, operation, and fixture. | Test |
-| FR-069-AC-2 | The `differential-report` adapter transcribes a real differential report into one entry per compared case. | Test |
-| FR-069-AC-3 | An unsupported case is not transcribed as a skip, an error, or a pass; it is named with its own state and reason. | Test |
+| FR-069-AC-2 | The `differential-report` adapter transcribes a real `quire.differential-report/v2` report as FR-150 states. | Test |
+| FR-069-AC-3 | An unavailable differential (FR-150) is not transcribed as a skip, an error, or a pass; it is named with its own state and reason. | Test |
 | FR-069-AC-4 | An unknown protocol, an unknown schema version, an unknown status, a missing required field, malformed JSON, and an empty result set are each refused with a message naming the line or case. | Property |
 | FR-069-AC-5 | Both adapters are selectable by name and by declared tool, and appear in the adapter listing. | Test |
 | FR-069-AC-6 | `quoin evidence record` prints every unrepresented result in both human and JSON output (CON-2). | Test |
