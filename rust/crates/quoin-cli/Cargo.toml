@@ -49,7 +49,7 @@ thiserror = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
 semver = { workspace = true }
-time = { workspace = true, features = ["parsing"] }
+time = { workspace = true }
 
 [dev-dependencies]
 # FR-140-AC-11 validates the pack report against the schema derived from its

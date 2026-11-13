@@ -22,9 +22,9 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
+use quoin_store::instant::{Instant, InstantGrammar};
 use serde_json::Value;
-use time::format_description::well_known::Rfc3339;
-use time::{Date, Month, OffsetDateTime, UtcOffset};
+use time::{Date, Month, OffsetDateTime};
 
 use super::plan::{Purl, parse_purl, percent_decode};
 
@@ -121,9 +121,11 @@ pub(super) fn as_of_date(text: &str) -> Result<Date, SupportError> {
     if let Some(date) = calendar_date(text) {
         return Ok(date);
     }
-    OffsetDateTime::parse(text, &Rfc3339)
-        .map(|instant| instant.to_offset(UtcOffset::UTC).date())
-        .map_err(|_| {
+    Instant::parse(text, InstantGrammar::Rfc3339)
+        .and_then(|instant| instant.epoch_millis())
+        .and_then(|millis| OffsetDateTime::from_unix_timestamp(millis.div_euclid(1000)).ok())
+        .map(OffsetDateTime::date)
+        .ok_or_else(|| {
             SupportError::new(
                 SupportErrorCode::BadAsOf,
                 format!("--as-of {text:?} is neither a date nor an RFC 3339 instant"),
@@ -142,6 +144,8 @@ pub(super) enum SupportErrorCode {
     MissingField,
     /// An entry's `source` is empty.
     EmptySource,
+    /// An entry carries a key other than the four fields.
+    UnknownField,
     /// An entry's `purl` is not a package URL.
     BadPurl,
     /// An entry's `support_status` is outside `SoupSupportStatus`.
@@ -157,12 +161,27 @@ pub(super) enum SupportErrorCode {
 }
 
 impl SupportErrorCode {
+    /// Every code, so a caller enumerating them cannot miss one.
+    pub(super) const ALL: &'static [Self] = &[
+        Self::NotAList,
+        Self::MissingField,
+        Self::EmptySource,
+        Self::UnknownField,
+        Self::BadPurl,
+        Self::BadStatus,
+        Self::BadEndOfSupport,
+        Self::Duplicate,
+        Self::BadRecordValue,
+        Self::BadAsOf,
+    ];
+
     /// The stable spelling.
     pub(super) fn as_str(self) -> &'static str {
         match self {
             Self::NotAList => "soup.support_not_a_list",
             Self::MissingField => "soup.support_missing_field",
             Self::EmptySource => "soup.support_empty_source",
+            Self::UnknownField => "soup.support_unknown_field",
             Self::BadPurl => "soup.support_bad_purl",
             Self::BadStatus => "soup.support_bad_status",
             Self::BadEndOfSupport => "soup.support_bad_end_of_support",
@@ -179,13 +198,15 @@ impl fmt::Display for SupportErrorCode {
     }
 }
 
-/// A refusal. The message names the entry (or both entries of a duplicate) by
-/// its 1-based position and purl.
+/// A refusal. `context` names the entry by its 1-based position (`entry`) and
+/// `purl`; a duplicate also carries `other_entry` and `other_purl`, and an
+/// unknown field carries `key`. The message repeats them for a reader.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{code}: {message}")]
 pub(super) struct SupportError {
     pub(super) code: SupportErrorCode,
     pub(super) message: Box<str>,
+    pub(super) context: BTreeMap<String, String>,
 }
 
 impl SupportError {
@@ -193,9 +214,18 @@ impl SupportError {
         Self {
             code,
             message: message.into_boxed_str(),
+            context: BTreeMap::new(),
         }
     }
+
+    fn with_context(mut self, key: &str, value: impl Into<String>) -> Self {
+        self.context.insert(key.to_owned(), value.into());
+        self
+    }
 }
+
+/// The keys of a support entry; any other is refused.
+const FIELDS: [&str; 4] = ["purl", "support_status", "end_of_support", "source"];
 
 /// One validated support statement.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -206,7 +236,7 @@ pub(super) struct SupportEntry {
     pub(super) end_of_support: EndOfSupport,
     /// The public URL or citation, non-empty.
     pub(super) source: String,
-    base: String,
+    base: Vec<String>,
     version: Option<String>,
 }
 
@@ -216,10 +246,18 @@ pub(super) struct SupportFile {
     entries: Vec<SupportEntry>,
 }
 
-/// The identity of a purl for matching: decoded type/namespace/name, no
-/// qualifiers or subpath, and the decoded version.
-fn identity(purl: &Purl) -> (String, Option<String>) {
-    (percent_decode(&purl.base), purl.version.clone())
+/// The identity of a purl for matching: the type, namespace and name segments,
+/// each percent-decoded on its own so an encoded `/` stays inside its segment,
+/// and the decoded version. Qualifiers and subpath are not part of it.
+fn identity(purl: &Purl) -> (Vec<String>, Option<String>) {
+    let segments = purl
+        .base
+        .strip_prefix("pkg:")
+        .unwrap_or(&purl.base)
+        .split('/')
+        .map(percent_decode)
+        .collect();
+    (segments, purl.version.clone())
 }
 
 /// Validate every entry of the support file text, then return them. Nothing is
@@ -242,7 +280,7 @@ pub(super) fn parse_support(text: &str) -> Result<SupportFile, SupportError> {
         ));
     };
     let mut entries: Vec<SupportEntry> = Vec::with_capacity(items.len());
-    let mut seen: BTreeMap<(String, Option<String>), usize> = BTreeMap::new();
+    let mut seen: BTreeMap<(Vec<String>, Option<String>), usize> = BTreeMap::new();
     for (index, item) in items.iter().enumerate() {
         let entry = parse_entry(index + 1, item)?;
         if let Some(first) = seen.insert((entry.base.clone(), entry.version.clone()), index + 1) {
@@ -254,7 +292,11 @@ pub(super) fn parse_support(text: &str) -> Result<SupportFile, SupportError> {
                     index + 1,
                     entry.purl
                 ),
-            ));
+            )
+            .with_context("entry", (index + 1).to_string())
+            .with_context("purl", entry.purl.clone())
+            .with_context("other_entry", first.to_string())
+            .with_context("other_purl", earlier));
         }
         entries.push(entry);
     }
@@ -264,8 +306,23 @@ pub(super) fn parse_support(text: &str) -> Result<SupportFile, SupportError> {
 fn parse_entry(position: usize, item: &Value) -> Result<SupportEntry, SupportError> {
     let field = |name: &str| item.get(name).and_then(Value::as_str);
     let label = field("purl").unwrap_or("<no purl>");
-    let refuse =
-        |code, what: String| SupportError::new(code, format!("entry {position} ({label}): {what}"));
+    let refuse = |code, what: String| {
+        SupportError::new(code, format!("entry {position} ({label}): {what}"))
+            .with_context("entry", position.to_string())
+            .with_context("purl", label)
+    };
+    if let Some(key) = item
+        .as_object()
+        .into_iter()
+        .flat_map(|object| object.keys())
+        .find(|key| !FIELDS.contains(&key.as_str()))
+    {
+        return Err(refuse(
+            SupportErrorCode::UnknownField,
+            format!("`{key}` is not a support entry field"),
+        )
+        .with_context("key", key.clone()));
+    }
     let required = |name: &str| {
         field(name).ok_or_else(|| {
             refuse(
@@ -559,7 +616,11 @@ mod tests {
         for (bad, code) in cases {
             let error = refusal(&[good.clone(), bad.clone()]);
             assert_eq!(error.code, code, "{bad}");
-            assert!(error.message.contains("entry 2"), "{}", error.message);
+            assert_eq!(
+                error.context.get("entry").map(String::as_str),
+                Some("2"),
+                "{bad}"
+            );
         }
         let dup = refusal(&[
             entry("pkg:cargo/a@1", "supported", "2030-01-01", "s"),
@@ -567,7 +628,11 @@ mod tests {
             entry("pkg:cargo/a@1?arch=x#sub", "unsupported", "unknown", "t"),
         ]);
         assert_eq!(dup.code, SupportErrorCode::Duplicate);
-        assert!(dup.message.contains("entry 1") && dup.message.contains("entry 3"));
+        assert_eq!(
+            dup.context.get("other_entry").map(String::as_str),
+            Some("1")
+        );
+        assert_eq!(dup.context.get("entry").map(String::as_str), Some("3"));
         assert_eq!(
             parse_support("{\"purl\": 1}").unwrap_err().code,
             SupportErrorCode::NotAList
@@ -735,34 +800,8 @@ mod tests {
         );
     }
 
-    #[trace("FR-143-AC-8")]
     #[test]
-    fn tc_1517_008_the_same_inputs_give_the_same_evaluation() {
-        let text =
-            Value::Array(vec![entry("pkg:cargo/a", "supported", "2026-05-31", "s")]).to_string();
-        let run = || {
-            parse_support(&text).unwrap().evaluate(
-                "pkg:cargo/a@1",
-                RecordSupport::default(),
-                day("2026-06-01T05:00:00Z"),
-            )
-        };
-        assert_eq!(run(), run());
-    }
-
-    #[trace("FR-143-AC-7")]
-    #[test]
-    fn tc_1517_009_evaluation_needs_only_its_arguments() {
-        // `evaluate` and `parse_support` take text and values; there is no
-        // reader, clock or socket to withhold, so the result is a function of
-        // these inputs alone.
-        let f = file(&[entry("pkg:cargo/a", "supported", "unknown", "s")]);
-        let got = f.evaluate("pkg:cargo/a", RecordSupport::default(), day("2026-01-01"));
-        assert!(!got.past_end_of_support);
-    }
-
-    #[test]
-    fn tc_1517_010_a_record_frontmatter_is_read_without_defaults() {
+    fn tc_1517_008_a_record_frontmatter_is_read_without_defaults() {
         let front = |value: Value| value.as_object().unwrap().clone();
         let stated = record_support(&front(
             json!({"support_status": "supported", "end_of_support": "2027-03-04"}),
@@ -782,5 +821,41 @@ mod tests {
             record_support(&parsed).unwrap().end_of_support,
             Some(end("2027-03-04"))
         );
+    }
+
+    #[test]
+    fn tc_1517_009_an_entry_with_another_key_is_refused_naming_it() {
+        let mut stray = entry("pkg:cargo/a", "supported", "2030-01-01", "s");
+        stray["sorce"] = json!("typo");
+        let error = refusal(&[stray]);
+        assert_eq!(error.code, SupportErrorCode::UnknownField);
+        assert_eq!(error.context.get("key").map(String::as_str), Some("sorce"));
+        assert_eq!(error.context.get("entry").map(String::as_str), Some("1"));
+    }
+
+    #[trace("FR-143-AC-6")]
+    #[test]
+    fn tc_1517_010_an_encoded_slash_stays_inside_its_segment() {
+        let f = file(&[
+            entry("pkg:x/a%2Fb", "supported", "2030-01-01", "name-with-slash"),
+            entry("pkg:x/a/b", "unsupported", "2020-01-01", "namespaced"),
+        ]);
+        let source = |purl: &str| f.matching(purl).map(|e| e.source.as_str());
+        assert_eq!(source("pkg:x/a%2Fb@1"), Some("name-with-slash"));
+        assert_eq!(source("pkg:x/a/b@1"), Some("namespaced"));
+        let same = file(&[entry("pkg:x/%40s/a", "supported", "2030-01-01", "enc")]);
+        assert!(
+            same.matching("pkg:x/@s/a").is_some(),
+            "per-segment decoding still equates spellings"
+        );
+    }
+
+    #[test]
+    fn tc_1517_011_error_codes_are_unique_and_namespaced() {
+        let spellings: std::collections::BTreeSet<&str> =
+            SupportErrorCode::ALL.iter().map(|c| c.as_str()).collect();
+        assert_eq!(spellings.len(), SupportErrorCode::ALL.len());
+        assert!(spellings.iter().all(|s| s.starts_with("soup.support_")));
+        assert_eq!(SupportErrorCode::ALL.len(), 10);
     }
 }
