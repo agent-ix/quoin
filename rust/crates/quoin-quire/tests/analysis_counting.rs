@@ -563,9 +563,9 @@ fn the_actor_needs_an_admission_reference_and_authority_over_the_target() {
     );
 }
 
-#[trace("FR-116-AC-6", "FR-116-AC-15")]
+#[trace("FR-116-AC-15")]
 #[test]
-fn the_reliance_decision_must_be_for_the_reports_producer_and_its_limits_read() {
+fn the_reliance_decision_must_be_for_the_reports_producer() {
     let store = satisfied_store(&[AC1]);
     for producer in [("other-tool", "0.1.0"), ("quire-analyze", "9.9.9")] {
         let host = HostObservations {
@@ -578,45 +578,31 @@ fn the_reliance_decision_must_be_for_the_reports_producer_and_its_limits_read() 
             "bounded reliance premise",
         );
     }
-    // Free-text limitations are not read: one that says the use is excluded
-    // neither refuses the decision nor changes who it is for.
-    let wordy = HostObservations {
-        reliance: Some(decision(
-            ("quire-analyze", "0.1.0"),
-            &["does not cover FR-001-AC-1"],
-        )),
-        ..admitted()
-    };
-    let outcome = store.count(&[AC1], wordy);
-    assert_eq!(counted(&outcome), 1);
-    assert!(
-        outcome.report.record_binders.as_ref().unwrap()[0]
-            .provenance
-            .contains(&"limitation:does not cover FR-001-AC-1".to_owned())
-    );
-    let wrong_producer = HostObservations {
-        reliance: Some(decision(
-            ("other-tool", "0.1.0"),
-            &["valid for quire-analyze 0.1.0"],
-        )),
-        ..admitted()
-    };
-    assert_uncounted_naming(
-        &store.count(&[AC1], wrong_producer),
-        CauseCode::QualificationRejected,
-        "bounded reliance premise",
-    );
-    let harmless = HostObservations {
-        reliance: Some(decision(("quire-analyze", "0.1.0"), &["Linux x86-64 only"])),
-        ..admitted()
-    };
-    let outcome = store.count(&[AC1], harmless);
-    let binder = &outcome.report.record_binders.as_ref().unwrap()[0];
-    assert!(
-        binder
-            .provenance
-            .contains(&"limitation:Linux x86-64 only".to_owned())
-    );
+    // A decision with no limitations is the positive case.
+    assert_eq!(counted(&store.count(&[AC1], admitted())), 1);
+}
+
+#[trace("FR-116-AC-6")]
+#[test]
+fn a_reliance_decision_with_any_limitation_grants_no_positive_decision() {
+    let store = satisfied_store(&[AC1]);
+    // An excluding limitation, and one that looks harmless: both are free text
+    // that cannot be shown not to exclude this use.
+    for limitation in ["does not cover FR-001-AC-1", "Linux x86-64 only"] {
+        let host = HostObservations {
+            reliance: Some(decision(("quire-analyze", "0.1.0"), &[limitation])),
+            ..admitted()
+        };
+        let outcome = store.count(&[AC1], host);
+        assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "bounded reliance premise");
+        assert!(
+            causes(&outcome)
+                .iter()
+                .any(|(_, detail)| detail.contains(limitation)),
+            "the limitation text is kept: {:?}",
+            causes(&outcome)
+        );
+    }
 }
 
 #[trace("FR-184-AC-10", "FR-184-AC-11", "FR-184-AC-12")]

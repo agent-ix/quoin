@@ -85,3 +85,17 @@ audit gaps on the same path. The rest are low.
 | FND-004 | fixed | `ActorAdmission { actor, admission_ref, authorized }`. A missing ref is unevaluated, out of scope is qualification-rejected, and provenance is `actor-authority:<actor>:<ref>`. Tested. |
 | FND-005 | fixed | Refusals sort by `(locator, cause, premise, detail)`. |
 | FND-006 | fixed | Entries are collected once into `Vec<CriterionEntry>` and indexed with `get`. |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-009 | medium | `the_reliance_decision_must_be_for_the_reports_producer_and_its_limits_read` is tagged `FR-116-AC-6`, but it now asserts the opposite of that criterion. A decision whose limitation reads "does not cover FR-001-AC-1" yields `counted == 1` for FR-001-AC-1. FR-116-AC-6 says a "limitation excluding the required act grants no positive verification decision". A test that passes only while the AC is violated is a wrong trace and locks in the violation. The test name ("its limits read") also no longer describes the behaviour. | rust/crates/quoin-quire/tests/analysis_counting.rs:566-600 |
+
+## Dispositions (round 2)
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-003 | fixed | `audit_outcome` carries `healthy` plus every finding and every `unevaluated` check for the obligation. `qualify` refuses on each detail, and on `!healthy` with no details. The host now supplies `injections` and `mock_inspection_suites` on `Request`. Tested by `without_the_hosts_mock_inspection_the_audit_cannot_call_the_obligation_healthy` (keeps `mocked-confirmation`). |
+| FND-007 | still-open | The substring rule is gone, so the wrong refusals are fixed. But limitations are now never read, so a limitation that excludes the target or act is accepted outright. The test asserts that "does not cover FR-001-AC-1" counts FR-001-AC-1. FR-116 (line 152) and FR-116-AC-6 forbid this. The stated reason ("the owner's real decision carries free-text limitations, so unevaluated-forever was rejected") arrived as relayed text. No FR-093, FR-116 or FR-184 amendment and no recorded owner ruling on the branch or main says free-text limitations are provenance-only. Close it one of three ways: record that owner ruling and amend FR-116/FR-093 (then accepted-no-change); add structured limitation scope; or keep a decision with limitations `unevaluated`. |
+| FND-008 | fixed | `AuditFailed { code: AuditorErrorCode, reason }` maps `error.code` and `error.message` instead of `to_string()`. |

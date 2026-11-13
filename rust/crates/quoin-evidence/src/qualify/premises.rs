@@ -53,8 +53,9 @@ pub(super) fn evaluate(
 
 /// The FR-093 premise: a decision for this exact producer and positive use.
 ///
-/// Free-text limitations are not read (FR-093 gives them no structure); they
-/// stay in provenance only and neither refuse nor admit a use.
+/// A decision that states any limitation is `unevaluated`: limitations are free
+/// text and cannot be shown not to exclude the target or the act. It stays so
+/// until an owner ruling or a structured limitation scope says otherwise.
 fn reliance(
     probe: &Probe<'_>,
     producer: Option<(&str, &str)>,
@@ -138,22 +139,24 @@ fn reliance(
         }
         Some(_) => {}
     }
-    // Free-text limitations are deliberately NOT read: FR-093 records them as
-    // prose with no structure the qualifier could test, so reading them would
-    // be guessing, and refusing on them would block counting for any real
-    // decision, which carries some. They stay visible on the decision as
-    // provenance and neither refuse nor admit a use.
+    // Fail closed (FR-116, FR-116-AC-6): limitations are free text, so a
+    // limitation cannot be shown not to exclude this target or this act. Any
+    // limitation leaves the use unevaluated, with the text kept in the detail.
+    if !assessment.limitations.is_empty() {
+        refuse(
+            Cause::Unevaluated,
+            &format!(
+                "the decision states limitations that cannot be shown not to exclude this use: {}",
+                assessment.limitations.join("; ")
+            ),
+        );
+        return;
+    }
     provenance.push(format!(
         "reliance:{}:{}",
         assessment.id,
         assessment.status.as_str()
     ));
-    provenance.extend(
-        assessment
-            .limitations
-            .iter()
-            .map(|limitation| format!("limitation:{limitation}")),
-    );
 }
 
 fn actor(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Refusal>) {
