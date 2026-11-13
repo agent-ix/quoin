@@ -190,3 +190,88 @@ fn tc_001_the_command_applies_the_report_limit_not_a_lower_request_limit() {
     );
     assert!(!fixture.runs_exist());
 }
+
+fn audit(fixture: &Fixture) -> serde_json::Value {
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args([
+            "evidence", "audit", "--repo", ".", "--module", ".", "--json",
+        ])
+        .current_dir(fixture.repo.path())
+        .env("IX_HOME", fixture.home.path())
+        .env(
+            "GIT_CEILING_DIRECTORIES",
+            fixture.repo.path().parent().unwrap(),
+        )
+        .output()
+        .unwrap();
+    serde_json::from_str(&stdout(&output)).unwrap()
+}
+
+fn undischarged(audit: &serde_json::Value, obligation: &str) -> bool {
+    audit["findings"].as_array().is_some_and(|findings| {
+        findings
+            .iter()
+            .any(|f| f["kind"] == "undischarged" && f["obligation"] == obligation)
+    })
+}
+
+#[trace("FR-152-AC-2")]
+#[test]
+fn tc_002_audit_reports_the_obligation_undischarged_until_it_is_stated() {
+    let fixture = fixture();
+    let results = fixture.results(SATISFIED.as_bytes());
+    let output = fixture.record(&results, &[]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let before = audit(&fixture);
+    assert!(undischarged(&before, "FR-001-AC-1"), "{before}");
+
+    let stated = self::fixture();
+    let results = stated.results(SATISFIED.as_bytes());
+    let output = stated.record(&results, &["--discharges", "FR-001-AC-1"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let after = audit(&stated);
+    assert!(!undischarged(&after, "FR-001-AC-1"), "{after}");
+}
+
+#[trace("FR-152-AC-6")]
+#[test]
+fn tc_002_the_comma_separated_form_binds_both_and_reports_the_unknown_id() {
+    let fixture = fixture();
+    let results = fixture.results(SATISFIED.as_bytes());
+    let output = fixture.record(&results, &["--discharges", "FR-001-AC-1,NOPE-1", "--json"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let payload: serde_json::Value = serde_json::from_str(&stdout(&output)).unwrap();
+    assert_eq!(payload["bound"], serde_json::json!(["FR-001-AC-1"]));
+    assert_eq!(payload["unmatched"], serde_json::json!(["NOPE-1"]));
+}
+
+#[trace("FR-152-AC-5")]
+#[test]
+fn tc_002_a_stated_disagreement_prints_the_unrepresented_result_in_human_output() {
+    let fixture = fixture();
+    let results = fixture.results(DISAGREEMENT.as_bytes());
+    let output = fixture.record(&results, &["--discharges", "FR-001-AC-1"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(
+        stdout(&output).contains("not transcribed — consistency::"),
+        "{}",
+        stdout(&output)
+    );
+}
+
+#[trace("FR-152-AC-7")]
+#[test]
+fn tc_002_a_refused_report_with_stated_ids_exits_non_zero_and_writes_no_run() {
+    let fixture = fixture();
+    for bytes in [
+        padded(MAX_REPORT_BYTES + 1),
+        b"\xff\xfe".to_vec(),
+        SATISFIED
+            .replace("differential-report/v2", "differential-report/v1")
+            .into_bytes(),
+    ] {
+        let output = fixture.record(&fixture.results(&bytes), &["--discharges", "FR-001-AC-1"]);
+        assert_ne!(output.status.code(), Some(0));
+        assert!(!fixture.runs_exist());
+    }
+}

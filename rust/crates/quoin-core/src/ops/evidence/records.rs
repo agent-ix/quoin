@@ -202,6 +202,9 @@ fn stated_obligations(discharges: &[String]) -> Vec<String> {
     ids
 }
 
+/// Run adapters that accept `--discharges` (FR-041, FR-152).
+const DISCHARGING_ADAPTERS: [&str; 2] = ["sbom", "differential-report"];
+
 /// The run-shaped half of [`record`]: transcribe the entries and let
 /// `quoin_evidence::record::record_run` update the binding graph.
 fn record_entries(
@@ -224,11 +227,12 @@ fn record_entries(
     // (FR-152) take `--discharges`: on a test run it would let a red suite
     // discharge a stated obligation.
     let stated = stated_obligations(&request.discharges);
-    if !stated.is_empty() && !matches!(adapter.name, "sbom" | "differential-report") {
+    if !stated.is_empty() && !DISCHARGING_ADAPTERS.contains(&adapter.name) {
         return Err(CoreError::new(
             CoreErrorCode::BadRequest,
             format!(
-                "--discharges applies to finding-shaped recordings and the sbom and differential-report adapters; the {} adapter derives what it discharges from the trace ids its entries carry",
+                "--discharges applies to finding-shaped recordings and the {} adapters; the {} adapter derives what it discharges from the trace ids its entries carry",
+                DISCHARGING_ADAPTERS.join(" and "),
                 adapter.name
             ),
         )

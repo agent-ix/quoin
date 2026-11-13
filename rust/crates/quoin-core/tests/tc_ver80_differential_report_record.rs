@@ -189,7 +189,17 @@ fn symbol_of(run: &Value) -> String {
     run["entries"][0]["symbol"].as_str().unwrap().to_owned()
 }
 
-#[trace("FR-152-AC-1", "FR-152-CON-1")]
+/// `<analysisKind>::<requestDigest>`, built from the report's own fields.
+fn expected_symbol(report: &str) -> String {
+    let report: Value = serde_json::from_str(report).unwrap();
+    format!(
+        "{}::{}",
+        report["analysisKind"].as_str().unwrap(),
+        report["requestDigest"].as_str().unwrap()
+    )
+}
+
+#[trace("FR-152-AC-1")]
 #[test]
 fn tc_002_a_stated_obligation_binds_a_satisfied_report() {
     let dir = repo();
@@ -208,22 +218,30 @@ fn tc_002_a_stated_obligation_binds_a_satisfied_report() {
     let held = bindings(dir.path());
     assert_eq!(held.len(), 1, "{held:?}");
     assert_eq!(held[0]["obligation"], "FR-001-AC-1");
-    assert_eq!(held[0]["symbols"], json!([symbol_of(&run)]));
+    let expected = expected_symbol(SATISFIED);
+    assert_eq!(symbol_of(&run), expected);
+    assert_eq!(held[0]["symbols"], json!([expected]));
 }
 
 #[trace("FR-152-AC-2", "FR-152-AC-3")]
 #[test]
 fn tc_002_no_stated_obligation_leaves_the_entry_unbound() {
-    let dir = repo();
-    let mut body = request(dir.path(), "quire-analyze 0.1.0", SATISFIED);
-    // Obligation ids unrelated to the symbol, analysisKind and requestDigest.
-    body["obligations"] = json!([obligation("FR-001-AC-1"), obligation("consistency")]);
-    let payload = dispatch("evidence.record", &body, &RuntimeSettings::default())
-        .unwrap()
-        .payload;
-    assert_eq!(payload["bound"], json!([]), "{payload}");
-    assert!(the_run(dir.path())["entries"][0].get("traceIds").is_none());
-    assert!(bindings(dir.path()).is_empty());
+    // AC-3: ids unrelated to the symbol, analysisKind and requestDigest.
+    // NFR-033: an id equal to the analysisKind still binds nothing.
+    for ids in [
+        ["FR-001-AC-1", "FR-002-AC-1"],
+        ["FR-001-AC-1", "consistency"],
+    ] {
+        let dir = repo();
+        let mut body = request(dir.path(), "quire-analyze 0.1.0", SATISFIED);
+        body["obligations"] = ids.iter().map(|id| obligation(id)).collect();
+        let payload = dispatch("evidence.record", &body, &RuntimeSettings::default())
+            .unwrap()
+            .payload;
+        assert_eq!(payload["bound"], json!([]), "{payload}");
+        assert!(the_run(dir.path())["entries"][0].get("traceIds").is_none());
+        assert!(bindings(dir.path()).is_empty());
+    }
 }
 
 #[trace("FR-152-AC-4")]

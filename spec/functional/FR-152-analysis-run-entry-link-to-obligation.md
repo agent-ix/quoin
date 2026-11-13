@@ -123,7 +123,7 @@ count it.
 | FR-152-AC-3 | A valid report recorded without `--discharges`, in a fixture whose obligation ids differ from the symbol, the `analysisKind` and the `requestDigest`, adds no binding. The report is not edited: it is a report the validator accepts. | Test |
 | FR-152-AC-4 | An `agreement`/`refuted` report and an `inconclusive` report, each recorded with `--discharges FR-001-AC-1`, store an entry whose `traceIds` are the stated id and add no binding; an `unavailable` report does the same. | Test |
 | FR-152-AC-5 | A `disagreement` report recorded with `--discharges FR-001-AC-1` writes a run with zero entries, adds no binding and prints the `unrepresented` result in human and JSON output. | Test |
-| FR-152-AC-6 | `--discharges` given twice with two obligation ids stores `traceIds` sorted and deduplicated and binds both obligations to the same symbol; an id naming no obligation is listed among the unmatched ids, is not stored on the entry and binds nothing, while a valid id given beside it still binds. | Test |
+| FR-152-AC-6 | `--discharges FR-001-AC-1,FR-001-AC-2` (one comma-separated value) with two obligation ids stores `traceIds` sorted and deduplicated and binds both obligations to the same symbol; an id naming no obligation is listed among the unmatched ids, is not stored on the entry and binds nothing, while a valid id given beside it still binds. | Test |
 | FR-152-AC-7 | A refused report (wrong schema, non-canonical form, oversize) recorded with `--discharges` writes no run and no binding and exits non-zero as FR-151 states. | Test |
 | FR-152-AC-8 | `--discharges` with `--adapter junit` is still refused before any run is written, naming the adapter, as FR-041 states. | Test |
 
