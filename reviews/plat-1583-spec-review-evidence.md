@@ -24,3 +24,10 @@ Changes requested, minor. Test is the right method for AC-1 to AC-10 and Inspect
 | --- | --- | --- | --- |
 | FND-001 | medium | 'any such entry in any suite's newest run' (failing in one suite wins over passing in another) has no criterion. AC-4 uses one suite only. An implementation that read only the single newest run across all suites would pass every AC. Add an AC with two suites whose newest runs disagree on TC-001. | spec/functional/FR-175-anomaly-check-fix-verification-evidence.md:56 |
 | FND-002 | low | Nothing tests the 'or another Criterion row is passing' clause (two Criterion rows, one passing and one missing), or a criterion-only table whose criterion is `failing`, which should give `fix-test-failing` and also `fix-no-passing-link` under line 77. Add an AC for each, or state the intended output. | spec/functional/FR-175-anomaly-check-fix-verification-evidence.md:75-79 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Round 1 (b1a6c35e): With two suites, one whose newest run passes `TC-001` and one whose newest run fails it, the result is `failing`. |
+| FND-002 | fixed | Round 1 (b1a6c35e): A fixture whose table holds only `Criterion` rows (`valid/closed-fixed-criterion-only.md`) yields no finding when the criterion id has no entry, no finding when it has a `pass` entry, and `anomaly.fix-result-failing` naming the criterion id when it has a `fail` entry. / With a `Criterion` row and a `Test` row (`valid/closed-fixed.md`), a `passing` `Test` row with a `missing` or `passing` `Criterion` row yields no finding; a `failing` `Criterion` row yields `anomaly.fix-result-failing` naming the criterion id; a `missing` `Test` row with a `passing` `Criterion` row  |

@@ -53,7 +53,8 @@ fix (NFR-035).
 - The check SHALL evaluate every `Test` row.
 - The check SHALL evaluate a `Criterion` row whose `Target` is an acceptance-criterion id.
 - The check SHALL NOT evaluate a `Criterion` row whose `Target` names an `FR`, `NFR` or hazard document, which FR-015 allows, because no run entry carries a document id as a result.
-- The check SHALL read the evidence store under `spec/evidence/` of the scope and SHALL write nothing to it or to any document.
+- The check SHALL read the evidence store under `spec/evidence/` of the scope.
+- The check SHALL write nothing to the store or to any document.
 
 ### What counts as a result
 
@@ -61,12 +62,15 @@ The result of a row is derived from the newest run of each suite in the store (F
 entries that match the row's `Target`.
 
 - An entry matches a `Test` row if its trace ids include the `Target`.
-- An entry matches a `Criterion` row if its trace ids include the `Target`, or include the id of a test case that declares that criterion, as FR-030-AC-15 defines.
+- An entry matches a `Criterion` row if its trace ids include the `Target`.
+- An entry matches a `Criterion` row if its trace ids include a test case id named in the Verification cell of that criterion (for example `Test (TC-001)`), as FR-030-AC-15 defines.
 - An entry's outcome is its recorded `pass`, `fail`, `error` or `skip` (FR-120).
 - The result of a row SHALL be `failing` if any matching entry in any suite's newest run has outcome `fail` or `error`.
 - The result of a row SHALL be `passing` if it is not `failing` and any matching entry has outcome `pass`.
 - The result of a row SHALL be `missing` otherwise: no matching entry, only `skip` entries, or no store (an absent store reads as empty, FR-030).
-- If a suite's newest run file is unreadable, then that suite SHALL contribute no entry, and an older run of it SHALL NOT stand in; FR-030-AC-13 still reports the file.
+- If any run file of a suite is unreadable, then that suite SHALL contribute no entry, because an unreadable file has no timestamp and cannot be ruled out as the newest.
+- An older run of such a suite SHALL NOT stand in for it.
+- FR-030-AC-13 reports the unreadable file.
 - An older run, a binding in `bindings.json` and a trace tag in source SHALL NOT make a result `passing`.
 
 ### Findings
@@ -100,16 +104,16 @@ would be without them.
 | FR-175-AC-3 | With the same fixture and a store holding no entry that carries `TC-001`, only a `skip` entry for it, or no store at all, the check emits `anomaly.fix-test-missing-result` naming `TC-001`. | Test |
 | FR-175-AC-4 | With an older run that passes `TC-001` and a newest run of that suite that fails it, the result is `failing`; with an older failing run and a newest passing run, it is `passing`; a `bindings.json` binding for `TC-001` with no run entry does not make it `passing`. | Test |
 | FR-175-AC-5 | With two suites, one whose newest run passes `TC-001` and one whose newest run fails it, the result is `failing`. | Test |
-| FR-175-AC-6 | With a suite whose newest run file is unreadable and whose older run passes `TC-001`, the result is `missing`, and the older run does not stand in. | Test |
+| FR-175-AC-6 | With a suite holding one unreadable run file and a readable run that passes `TC-001`, the result is `missing`, whichever of the two is older, and the readable run does not stand in. | Test |
 | FR-175-AC-7 | A fixture whose table holds only `Criterion` rows (`valid/closed-fixed-criterion-only.md`) yields no finding when the criterion id has no entry, no finding when it has a `pass` entry, and `anomaly.fix-result-failing` naming the criterion id when it has a `fail` entry. | Test |
-| FR-175-AC-8 | For a `Criterion` row targeting `FR-001-AC-1`, an entry carrying the test case `TC-001` that declares `FR-001-AC-1` (corpus `tests.md`) is matched as FR-030-AC-15 defines: a `fail` entry for `TC-001` makes the result `failing`, a `pass` entry makes it `passing`. | Test |
+| FR-175-AC-8 | For a `Criterion` row targeting `FR-001-AC-1`, whose Verification cell in the corpus names `Test (TC-001)`, an entry carrying `TC-001` is matched as FR-030-AC-15 defines: a `fail` entry for `TC-001` makes the result `failing`, a `pass` entry makes it `passing`. | Test |
 | FR-175-AC-9 | With a `Criterion` row and a `Test` row (`valid/closed-fixed.md`), a `passing` `Test` row with a `missing` or `passing` `Criterion` row yields no finding; a `failing` `Criterion` row yields `anomaly.fix-result-failing` naming the criterion id; a `missing` `Test` row with a `passing` `Criterion` row still yields `anomaly.fix-test-missing-result`. | Test |
 | FR-175-AC-10 | A `Criterion` row whose `Target` names an `FR`, `NFR` or hazard document is not evaluated and yields no finding, whatever the store holds. | Test |
 | FR-175-AC-11 | A `resolved` anomaly with `resolution` `fixed` (`valid/resolved-fixed.md`) is evaluated like a `closed` one; anomalies with `resolution` `not-a-defect`, `duplicate` or `wont-fix`, and an anomaly at `assessed`, yield neither code. | Test |
 | FR-175-AC-12 | An anomaly whose only row is a `Test` row with a dangling target (`invalid/verification-dangling-test.md`) yields neither code and no dangling-reference diagnostic from `quoin anomaly check`; a document with a verification table that has a wrong header or no row yields `anomaly.no-record` and neither code. | Test |
 | FR-175-AC-13 | Every finding of AC-2 and AC-3 carries its code, severity `warning`, its reason, the line of the document's `status` field and its `Target`. | Test |
 | FR-175-AC-14 | Every file of the scope and the store has identical bytes before and after a run, two runs give identical output, and the output contains no sentence stating that a fix is verified, accepted or acceptable. | Test |
-| FR-175-AC-15 | The anomaly documents and corpus are those shipped by `agent-ix/spec-artifacts-process`, read in place from its sibling checkout. Because the store is read from the scope's own `spec/evidence/`, each test builds a temporary scope at test time that holds the fixture documents and the store, which is never committed; the quoin repository contains no copy of either. | Inspection |
+| FR-175-AC-15 | The quoin repository commits no copy of the anomaly documents or the corpus. Each test builds its temporary scope at test time from the `agent-ix/spec-artifacts-process` sibling checkout, read in place at a state that contains the `Test (TC-001)` Verification cell for `FR-001-AC-1`, and adds the store to that scope. | Inspection |
 
 ## Dependencies
 
