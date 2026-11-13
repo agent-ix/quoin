@@ -25,6 +25,8 @@ statistical_design:
       - "anomaly refs --scope:missing-path"
       - "anomaly refs:missing-argument"
       - "anomaly refs:unknown-flag"
+      - "anomaly report scope:missing-path"
+      - "anomaly report:unknown-flag"
       - "anomaly:unknown-subcommand"
       - "assurance:unknown-flag"
       - "catalog list:unknown-flag"

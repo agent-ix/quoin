@@ -21,6 +21,7 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin anomaly",
     "quoin anomaly check",
     "quoin anomaly refs",
+    "quoin anomaly report",
     "quoin assurance",
     "quoin catalog",
     "quoin catalog list",

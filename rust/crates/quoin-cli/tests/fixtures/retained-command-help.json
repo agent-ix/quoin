@@ -704,7 +704,7 @@
         "--help"
       ],
       "exit": 0,
-      "stdout": "Check anomaly status history and list the anomalies that name an id.\n\nUSAGE\n  $ quoin anomaly [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Check anomaly status history and list the anomalies that name an id.\n\n  Subcommands:\n  quoin anomaly check  check each Anomaly document against its git history\n  quoin anomaly refs   list the anomalies whose assessment names an id\n\nEXAMPLES\n  $ quoin anomaly check spec\n\n  $ quoin anomaly refs FR-001 --json\n\nCOMMANDS\n  anomaly check  Check every Anomaly document in the scope against its git\n                 history.\n  anomaly refs   List the anomalies whose assessment names an id.\n\n",
+      "stdout": "Check anomaly status history and list the anomalies that name an id.\n\nUSAGE\n  $ quoin anomaly [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Check anomaly status history and list the anomalies that name an id.\n\n  Subcommands:\n  quoin anomaly check   check each Anomaly document against its git history\n  quoin anomaly refs    list the anomalies whose assessment names an id\n  quoin anomaly report  report the anomalies a release carries, with a gate\n\nEXAMPLES\n  $ quoin anomaly check spec\n\n  $ quoin anomaly refs FR-001 --json\n\n  $ quoin anomaly report spec --fail-on unassessed\n\nCOMMANDS\n  anomaly check   Check every Anomaly document in the scope against its git\n                  history.\n  anomaly refs    List the anomalies whose assessment names an id.\n  anomaly report  Report the anomalies a release still carries, grouped by\n                  hazard and requirement.\n\n",
       "stderr": ""
     },
     {
@@ -716,6 +716,17 @@
       ],
       "exit": 0,
       "stdout": "Check every Anomaly document in the scope against its git history.\n\nUSAGE\n  $ quoin anomaly check [SCOPE] [--config-root <value>]\n    [--no-project-config] [--module <value>...]\n\nARGUMENTS\n  [SCOPE]  [default: .] Directory searched for Anomaly documents.\n\nFLAGS\n  --module=<value>...  Module root to look for the `hazard` object type in.\n                       Repeatable. Without it the installed modules are\n                       searched.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Check every Anomaly document in the scope against its git history.\n\n  Prints one diagnostic per line and exits 1 when any has severity error.\n\nEXAMPLES\n  $ quoin anomaly check spec\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "anomaly",
+        "report",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Report the anomalies a release still carries, grouped by hazard and requirement.\n\nUSAGE\n  $ quoin anomaly report [SCOPE] [--config-root <value>]\n    [--no-project-config] [--json] [--fail-on unassessed|unjustified-impacting...]\n\nARGUMENTS\n  [SCOPE]  [default: .] Directory searched for Anomaly documents.\n\nFLAGS\n  --fail-on=<option>...  Exit non-zero when a listed anomaly is unassessed, or a\n                         carried impacting anomaly (not closed, or closed as\n                         wont-fix) has no release rationale. Repeatable to\n                         evaluate both.\n                         <options: unassessed|unjustified-impacting>\n  --json                 Emit one JSON object instead of Markdown.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Report the anomalies a release still carries, grouped by hazard and requirement.\n\n  Prints what the Anomaly documents record and what git recorded about their\n  commits. Exits 1 when a document is unreadable or the gate has a failure.\n\nEXAMPLES\n  $ quoin anomaly report spec\n\n  $ quoin anomaly report spec --json --fail-on unjustified-impacting\n\n",
       "stderr": ""
     },
     {

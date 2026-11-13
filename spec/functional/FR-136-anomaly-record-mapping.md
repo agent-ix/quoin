@@ -35,8 +35,9 @@ that mapping. Reference resolution and kind checks of the assessment links are q
 FR-040, reported by `quire validate`; Quoin SHALL NOT report them again.
 
 > **CR note (PLAT-1415, temporary exception):** the quire-rs record extractor
-> (`agent-ix/quire-rs#393`) does not exist yet, so `quoin-anomaly` reads the five record keys
-> (`status`, `resolution`, `closed_by`, `safety_impact` and the assessment table) itself, which
+> (`agent-ix/quire-rs#393`) does not exist yet, so `quoin-anomaly` reads the eight record keys
+> (`status`, `resolution`, `closed_by`, `safety_impact`, the assessment table, and, widened by FR-162,
+> `title`, `severity` and the release rationale table) itself, which
 > repeats part of the module mapping this requirement says Quoin repeats none of. The reader is
 > marked in `rust/crates/quoin-anomaly/src/record.rs` and is deleted when the extractor lands. It
 > makes no vocabulary check: an out-of-vocabulary `Impact` or `status` is `quire validate`'s
