@@ -46,6 +46,7 @@ scheduler for the work an attestation describes.
 - `verify-receipt`: one receipt JSON file; it re-derives the receipt from the
   retained inputs the receipt names and compares the two byte for byte.
 - `schema`: an optional `--name` naming one of the three normative assets.
+- `record-digest`: `--record`, a stored record id, and `--revision`.
 - `recover`: no input beyond `--repo`.
 
 `--repo` names the repository root holding the evidence store and defaults to
@@ -54,7 +55,11 @@ the working directory.
 ## Outputs
 
 - `write-record` writes the record into the store at
-  `records/<record_id>/<revision>.json` and reports its id, revision and path.
+  `records/<record_id>/<revision>.json` and reports its id, revision, path and
+  FR-063 record digest.
+- `record-digest` reports the FR-063 record digest of a stored revision, so an
+  approver can write it into the `Approved-Record-Digest` trailer of the approval
+  tag (Engineering Assurance FR-041).
 - `prepare-attestation` emits the attestation JSON on standard output; it
   writes nothing.
 - `intake` reports the retained attestation directory.
@@ -89,6 +94,15 @@ re-serialization would no longer be the file consumers validate against.
   emitted receipt remains the machine-readable result in every case.
 - `recover` SHALL remove only staging directories left by an interrupted
   intake, and SHALL report the count it removed.
+- `record-digest` SHALL hash the stored file bytes unchanged and SHALL write nothing.
+- The `receipt` output and help text SHALL label `claimed_approval` as the event
+  writer's claim that has not been verified by Quoin.
+- A party relying on a `claimed_approval` approver SHALL re-run Engineering
+  Assurance's `approval-verify` with a request built from the retained claim:
+  `tag`, `record_id`, `record_digest` and `trust` (`allowed_signers`, and `gitsign`
+  when present) from the claim, and a `repository` the relying party supplies. The
+  claim is relied on only when the re-run yields `approved` with the same approver.
+  That step runs in Engineering Assurance, not in Quoin.
 
 ## Error Conditions
 
@@ -121,6 +135,8 @@ receipt is retained on any of these paths.
 | FR-068-AC-8 | `schema` lists the three normative asset names and emits each by name byte-identically to the packaged asset; an unknown name is refused with exit 2. | Test |
 | FR-068-AC-9 | `recover` removes only interrupted-intake staging directories, reports the count, and leaves retained records, attestations, and outputs untouched. | Test |
 | FR-068-AC-10 | Golden fixtures for a record, an attestation, and a valid receipt reproduce byte-identical canonical JSON through the CLI (CON-4). | Integration |
+| FR-068-AC-12 | `write-record` and `record-digest` report the same digest for a stored revision, equal to `sha256:` plus the SHA-256 hex of the file's bytes, and `record-digest` of an unstored revision fails with exit 2 and writes nothing. | Test |
+| FR-068-AC-13 | The `receipt` output and help text name a non-null `claimed_approval` as a claim not verified by Quoin and name `approval-verify` as its re-verification; a re-run of `approval-verify` built from the retained members is the documented way to rely on the approver. | Inspection |
 | FR-068-AC-11 | Static boundaries prove no command executes an attested command or performs Git or network work, that the one process boundary any command reaches is the FR-096 engine module, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection |
 
 ## Dependencies

@@ -26,10 +26,12 @@ versioned JSON Schema below.
 Approval is not a field added after the record is written. An ix-flow decision
 event names the record by `record_id` and `revision`, so the record and the
 decision are joined by identity. A record carries no digest and no hash is
-stored in it. A decision may additionally carry a verified approval: the retained
-result of Engineering Assurance's verification (its FR-041) that a named person's
-signed git tag approved this exact record digest. Quoin consumes that result as
-data and never verifies a signature itself. A record revision is
+stored in it. A decision may additionally carry a claimed approval: a claim, written by the
+event's writer, that a named person's signed git tag approved this exact record
+digest, shaped as a projection of Engineering Assurance's `approval-verify` result
+(its FR-041). Quoin retains the claim as data and never verifies a signature, so
+the claim has the same standing as the actor label until someone re-runs
+`approval-verify` from the retained members. A record revision is
 immutable once written (a new revision is a new file, never an edit), and git
 history is the tamper evidence. A record qualifies as approved only when
 FR-065 finds a matching `approved` event.
@@ -55,8 +57,8 @@ The table declares the record's top-level fields and their cardinality. Which ke
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://agent-ix.github.io/quoin/schemas/change-assurance-record-v1.schema.json",
-  "title": "ChangeAssuranceRecordV1",
+  "$id": "https://agent-ix.github.io/quoin/schemas/change-assurance-record-v2.schema.json",
+  "title": "ChangeAssuranceRecordV2",
   "type": "object",
   "required": [
     "schema_version",
@@ -70,7 +72,7 @@ The table declares the record's top-level fields and their cardinality. Which ke
     "review_workflow"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "record_type": { "const": "change_assurance" },
     "record_id": { "$ref": "#/$defs/identity" },
     "revision": { "type": "integer", "minimum": 1 },
@@ -144,11 +146,22 @@ The table declares the record's top-level fields and their cardinality. Which ke
     },
     "review_workflow": {
       "type": "object",
-      "required": ["run_id", "decision_event_kind"],
+      "required": ["run_id", "decision_event_kind", "signed_approval"],
       "properties": {
         "run_id": { "$ref": "#/$defs/identity" },
         "decision_event_kind": {
           "const": "change_assurance.review_decided"
+        },
+        "signed_approval": {
+          "type": "object",
+          "required": ["required", "allowed_signers_path"],
+          "properties": {
+            "required": { "type": "boolean" },
+            "allowed_signers_path": {
+              "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -332,26 +345,50 @@ is revised from version 1, which carried no `verified_approval`; the event set
 stays closed and version 1 payloads are not read (the system is prerelease and
 keeps no compatibility reader).
 
-`verified_approval`, when present, SHALL be an object carrying the retained result
-of Engineering Assurance's `approval-verify` and nothing else:
+`verified_approval`, when present, SHALL be an object that projects the
+`engineering-assurance.approval-verify-result/v1` result (Engineering Assurance
+FR-041): it keeps `protocol`, the fields the verification rules need and the trust
+input needed to re-run `approval-verify`, and omits the result's `signature`,
+`binding` and `reason` members. It is closed:
 
 | Member | Type | Presence |
 | --- | --- | --- |
+| protocol | exactly `engineering-assurance.approval-verify-result/v1` | always |
 | status | `approved`, `wrong_record`, `untrusted_signer`, `meaning_missing`, `signed_bad`, `unsigned`, `unverifiable` | always |
 | tag | non-empty string, the signed annotated tag name | always |
 | record_id | identity | always |
 | record_digest | non-empty string of at most 256 bytes | always |
-| approver | non-empty string, the principal the signer maps to | exactly when status is `approved` |
+| trust | object: `allowed_signers` (non-empty string path) and, when `approval-verify` was given one, `gitsign` (`certificate_identity`, `certificate_oidc_issuer`, `principal`, each a non-empty string) | always |
+| approver | non-empty string, the principal the trust input names for the signer | exactly when status is `approved` |
 | meaning | non-empty array of strings, the `Signed-off-meaning` values in order | exactly when status is `approved` |
 | signature_kind | `ssh` or `gitsign` | exactly when status is `approved` |
 
-The object is closed; an undeclared member, a member present outside its row, or a
-`verified_approval` on a decision other than `approved` makes the event a refused
-candidate, not an approval. Quoin does not interpret `meaning`, compare `approver`
-to the event's actor, or decide who may approve.
+An undeclared member, a member present outside its row, a `protocol` other than the
+one above, or a `verified_approval` on a decision other than `approved` makes the
+event a refused candidate, not an approval. Quoin does not interpret `meaning`,
+compare `approver` to the event's actor, or decide who may approve.
+
+**Standing of the claim.** Nothing binds the payload to a run of
+`approval-verify`: the event's writer supplies it, and Quoin cannot re-verify a
+signature. `verified_approval` is therefore the writer's claim, with the same
+standing as the actor label, until `approval-verify` is re-run against the retained
+`tag`, `record_id`, `record_digest` and `trust` (FR-068). The name `verified_approval`
+describes the shape of the claim, not a check Quoin made.
+
+**Policy.** `review_workflow.signed_approval` is part of the reviewed record, so the
+record digest covers it. `required: true` demands a `verified_approval` on the
+deciding event and fixes `allowed_signers_path`, a non-empty string, as the trust
+input an acceptable claim must carry; `required: false` takes `allowed_signers_path`
+`null`. Any other combination is refused when the record is written. The record
+schema is revised to version 2 by this member; version 1 records are not read
+(prerelease, no compatibility reader).
 
 The record digest is `sha256:` followed by the lowercase hexadecimal SHA-256 of the
-exact stored bytes of `records/<record_id>/<revision>.json`. It is computed by the
+exact bytes of the file `records/<record_id>/<revision>.json`, which are the
+deterministic serialization with no trailing newline. The reader hashes the bytes it
+reads, with no newline, end-of-line or encoding normalization, and a repository
+holding records SHALL mark `records/**` as `-text` so a checkout converts nothing.
+It is computed by the
 reader from those bytes (a local computation, not a Git, network or identity
 operation) and is never stored in the record, so the record body stays digest-free.
 
@@ -362,9 +399,9 @@ The event's run id SHALL equal `review_workflow.run_id`.
 The event's record id and revision SHALL equal the record's id and revision.
 
 The event's actor label is recorded attribution only and does not prove a
-person's identity, authority, possession of a key, or non-repudiation. Only a
-`verified_approval` whose status is `approved` carries a signer claim, and that claim
-is Engineering Assurance's verified result retained as data, not an inference Quoin makes.
+person's identity, authority, possession of a key, or non-repudiation. A
+`verified_approval` whose status is `approved` adds a claimed signer, with the same
+standing, that Quoin retains and does not check.
 
 ## Constraints
 
@@ -372,13 +409,13 @@ is Engineering Assurance's verified result retained as data, not an inference Qu
 | --- | --- | --- | --- |
 | FR-063-CON-1 | Writing and verification SHALL perform no Git, workflow, proof, network, or identity-provider operation. | Architecture | Inspection |
 | FR-063-CON-2 | The store SHALL preserve every earlier revision and every rejected or revise-requested revision by `(record_id, revision)`. | Integrity | Test |
-| FR-063-CON-3 | Documentation and output SHALL make no identity, authorization, signature, authenticity, or non-repudiation claim of Quoin's own; the only signer claim is a retained `verified_approval` reported as received. | Responsibility | Inspection |
+| FR-063-CON-3 | Documentation and output SHALL make no identity, authorization, signature, authenticity, or non-repudiation claim of Quoin's own; the only signer statement is a retained `verified_approval`, reported as a claim. | Responsibility | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-063-AC-1 | Schema v1 requires the record identity and revision, repository and base revision, non-empty scope and sources, impact snapshot, complete definition collections, and review-workflow binding; undeclared fields (including any digest member) are refused. | Test |
+| FR-063-AC-1 | Schema v2 requires the record identity and revision, repository and base revision, non-empty scope and sources, impact snapshot, complete definition collections, and review-workflow binding with its `signed_approval` policy; undeclared fields (including any digest member) are refused. | Test |
 | FR-063-AC-2 | Requirements and proof obligations are non-empty; meaningful empty preservation and unknown arrays remain present; duplicate identities are refused before the record is written. | Property |
 | FR-063-AC-3 | Every requirement retains its reviewed statement, and every proof fixes its owning evidence obligations, literal argv, repository-relative cwd, evidence kind, tool identity, and configuration reference. | Test |
 | FR-063-AC-4 | An incomplete or truncated impact snapshot and each open, accepted, deferred, or resolved unknown remain explicit rather than becoming a completeness claim. | Test |
@@ -388,11 +425,12 @@ is Engineering Assurance's verified result retained as data, not an inference Qu
 | FR-063-AC-8 | Revision 1 has no predecessor; a successor requires retained revision N-1 of the same record id; a missing, skipped, or cross-record predecessor fails lineage verification. | Property |
 | FR-063-AC-9 | Writing a successor leaves the predecessor's path and bytes unchanged, and rejected or revise-requested records remain addressable by `(record_id, revision)` (CON-2). | Integration |
 | FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, revision, or a payload `schema_version` other than 2 cannot approve it. | Integration |
-| FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation, and that a signer claim appears only as a retained `verified_approval` (CON-1, CON-3). | Analysis |
+| FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation, and that a signer appears only as a retained `verified_approval` described as a claim (CON-1, CON-3). | Analysis |
 | FR-063-AC-12 | Every source connection requires a `path`, and the gate refuses an absolute path, a `..` or `.` segment, an empty segment, a backslash, a NUL, a trailing slash, the bare `.`, and a path shared by two connections; a valid path survives a write and re-read unchanged, and the published schema refuses the same malformed paths. | Test |
 | FR-063-AC-13 | Only the record body is evidence: a `purpose`, `derived_fields` or lookup-map member placed inside the record body, at the top level or inside a source connection, is refused as undeclared. | Test |
-| FR-063-AC-14 | A v2 payload with a well-formed `verified_approval` on an `approved` decision is a candidate; each of an undeclared member, `approver`, `meaning` or `signature_kind` on a non-`approved` status, a missing one on `approved`, an empty `meaning`, and a `verified_approval` on `rejected` or `revise` is refused as a candidate. | Test |
-| FR-063-AC-15 | The record digest of a stored revision equals `sha256:` plus the lowercase SHA-256 hex of its stored bytes, is identical across two writes of the same body, differs for a one-byte change, and the record body, schema and stored file contain no digest member. | Test |
+| FR-063-AC-14 | A v2 payload with a well-formed `verified_approval` on an `approved` decision is a candidate; each of an undeclared member, a `protocol` other than the FR-041 result protocol, a missing `trust`, `approver`, `meaning` or `signature_kind` on a non-`approved` status, a missing one on `approved`, an empty `meaning`, and a `verified_approval` on `rejected` or `revise` is refused as a candidate. | Test |
+| FR-063-AC-15 | The record digest of a stored revision equals `sha256:` plus the lowercase SHA-256 hex of its stored bytes, is identical across two writes of the same body, differs for a one-byte change, is computed without newline or end-of-line normalization, and the record body, schema and stored file contain no digest member. | Test |
+| FR-063-AC-16 | A `signed_approval` with `required` true and a null or empty `allowed_signers_path`, or with `required` false and a non-null path, is refused when the record is written; a record without `signed_approval` is refused as v2; and changing `signed_approval` changes the record digest. | Test |
 
 ## Dependencies
 
