@@ -41,6 +41,8 @@ statistical_design:
       - "change-assurance prepare-attestation:unknown-flag"
       - "change-assurance receipt:missing-argument"
       - "change-assurance receipt:unknown-flag"
+      - "change-assurance record-digest:missing-argument"
+      - "change-assurance record-digest:unknown-flag"
       - "change-assurance recover --repo:missing-path"
       - "change-assurance recover:unknown-flag"
       - "change-assurance schema:unknown-flag"

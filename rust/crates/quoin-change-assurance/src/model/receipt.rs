@@ -19,6 +19,7 @@ use crate::ids::{
     AttestationId, EventId, NonEmptyText, ObligationId, ProofId, RecordId, Revision, RunId,
     StatementId,
 };
+use crate::model::approval::ClaimedApproval;
 use crate::model::decision::ReviewDecision;
 use crate::model::json::{Fields, number, object, string_values};
 use crate::model::outcome::{Check, Outcome, Reason, normalize_reasons, outcome_for_reasons};
@@ -28,7 +29,7 @@ use crate::model::record::Disposition;
 pub const RECORD_TYPE: &str = "verification_receipt";
 
 /// The schema version every receipt in this family carries.
-pub const SCHEMA_VERSION: u64 = 1;
+pub const SCHEMA_VERSION: u64 = 2;
 
 const SUBJECT: Subject = Subject::Receipt;
 
@@ -45,6 +46,9 @@ pub struct ReceiptDecisionEvent {
     pub recorded_actor: NonEmptyText,
     /// What was decided.
     pub decision: ReviewDecision,
+    /// The event writer's claimed approval, present only when every rule of the
+    /// review check held. A claim that Quoin has not verified.
+    pub claimed_approval: Option<ClaimedApproval>,
 }
 
 /// One audit finding carried through to the receipt.
@@ -228,6 +232,7 @@ fn read_decision_event(
         "sequence",
         "recorded_actor",
         "decision",
+        "claimed_approval",
     ])?;
     Ok(Some(ReceiptDecisionEvent {
         run_id: RunId::parse(event.text("run_id")?, SUBJECT, "decision run_id")?,
@@ -249,6 +254,13 @@ fn read_decision_event(
         decision: ReviewDecision::parse(event.text("decision")?).ok_or_else(|| {
             ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("decision"))
         })?,
+        claimed_approval: match event.value("claimed_approval")? {
+            JsonValue::Null => None,
+            _ => Some(ClaimedApproval::from_json(
+                event.nested("claimed_approval")?,
+                SUBJECT,
+            )?),
+        },
     }))
 }
 
@@ -503,5 +515,12 @@ fn decision_event_json(receipt: &VerificationReceipt) -> Result<JsonValue, Chang
             JsonValue::string(event.recorded_actor.as_str()),
         ),
         ("decision", JsonValue::string(event.decision.as_str())),
+        (
+            "claimed_approval",
+            event
+                .claimed_approval
+                .as_ref()
+                .map_or(JsonValue::Null, ClaimedApproval::to_json),
+        ),
     ]))
 }

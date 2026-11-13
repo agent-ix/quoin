@@ -36,6 +36,7 @@ use crate::ids::{
     ImpactIdentity, NonEmptyText, ObligationId, ProofId, RecordId, Revision, RunId, SourceId,
     StatementId,
 };
+use crate::model::approval::SignatureKind;
 use crate::model::json::{Fields, object, string_values};
 
 /// The one `record_type` a change-assurance record carries.
@@ -45,7 +46,7 @@ pub const RECORD_TYPE: &str = "change_assurance";
 pub const DECISION_EVENT_KIND: &str = "change_assurance.review_decided";
 
 /// The schema version every record in this family carries.
-pub const SCHEMA_VERSION: u64 = 1;
+pub const SCHEMA_VERSION: u64 = 2;
 
 /// The kind of artifact a source connection points at.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -344,16 +345,34 @@ pub struct Definition {
     pub unknowns: Vec<Unknown>,
 }
 
+/// What a decision's claimed approval must satisfy for this record.
+///
+/// The policy only narrows: it names no trust input, no allowed-signers file and
+/// no key, because a record's author writes the record and could name their own.
+/// `required` false takes both lists empty; `required` true takes at least one
+/// kind. Approvers empty means any principal the relying party's trust names.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SignedApprovalPolicy {
+    /// Whether the deciding event must carry a claimed approval.
+    pub required: bool,
+    /// The acceptable `signature_kind` values, unique.
+    pub signature_kinds: Vec<SignatureKind>,
+    /// The acceptable approver principals, unique and non-empty strings.
+    pub approvers: Vec<String>,
+}
+
 /// The ix-flow run whose decision approves this record.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReviewWorkflow {
     /// The run's identity.
     pub run_id: RunId,
+    /// The narrowing policy for a claimed approval.
+    pub signed_approval: SignedApprovalPolicy,
 }
 
 /// A change-assurance record.
 ///
-/// Every value of this type has passed the v1 schema. A record is addressed by
+/// Every value of this type has passed the v2 schema. A record is addressed by
 /// `(record_id, revision)`; nothing about it is derived from its content.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ChangeAssuranceRecord {
@@ -380,7 +399,7 @@ impl ChangeAssuranceRecord {
     ///
     /// # Errors
     ///
-    /// Every refusal of the v1 schema, including an undeclared member such as
+    /// Every refusal of the v2 schema, including an undeclared member such as
     /// a `digest`.
     pub fn from_json(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
         read_record(value)

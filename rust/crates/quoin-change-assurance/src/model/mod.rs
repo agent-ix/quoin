@@ -7,6 +7,7 @@
 //! Nothing here touches a filesystem: the shapes are values, and where they
 //! are retained is [`crate::intake`]'s question.
 
+pub mod approval;
 pub mod attestation;
 pub mod attestation_shape;
 pub mod decision;
@@ -15,6 +16,10 @@ pub mod outcome;
 pub mod receipt;
 pub mod record;
 
+pub use approval::{
+    APPROVAL_PROTOCOL, ApprovalStatus, ApprovedFacts, ClaimTrust, ClaimedApproval, GitsignTrust,
+    SignatureKind, VerifiedApproval,
+};
 pub use attestation::{
     EnvironmentValue, ProducerResult, ProofAttestation, RetainedOutput, ToolBinding,
 };
@@ -29,6 +34,6 @@ pub use receipt::{
 };
 pub use record::{
     ChangeAssuranceRecord, CommandBinding, Completeness, Definition, Disposition, ImpactSnapshot,
-    ProofObligation, RecordSubject, ReviewWorkflow, SourceConnection, SourceKind, Statement,
-    Unknown, normalize_record,
+    ProofObligation, RecordSubject, ReviewWorkflow, SignedApprovalPolicy, SourceConnection,
+    SourceKind, Statement, Unknown, normalize_record,
 };

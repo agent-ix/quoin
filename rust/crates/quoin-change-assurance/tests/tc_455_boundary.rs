@@ -48,12 +48,36 @@ fn sources() -> Vec<(String, String)> {
     files
 }
 
-/// The lowercase words of one line, hyphenated compounds kept whole.
+/// The wire identifiers that name a member and are not a claim of their own.
+/// Everything else in prose stays subject to the census.
+const WIRE_IDENTIFIERS: [&str; 4] = [
+    "signed_approval",
+    "signature_kinds",
+    "signature_kind",
+    "signed_bad",
+];
+
+/// The lowercase words of one line, hyphenated compounds kept whole, with the
+/// four [`WIRE_IDENTIFIERS`] removed first.
 fn words(line: &str) -> Vec<String> {
+    let mut line = line.to_owned();
+    for identifier in WIRE_IDENTIFIERS {
+        line = line.replace(identifier, " ");
+    }
     line.split(|character: char| !character.is_ascii_alphabetic() && character != '-')
         .filter(|word| !word.is_empty())
         .map(str::to_lowercase)
         .collect()
+}
+
+/// The census still fails on prose that uses a claim word, even beside an
+/// allowlisted identifier.
+#[trace("FR-063-AC-11")]
+#[test]
+fn tc_1511_the_claim_word_census_stays_strict_for_prose() {
+    assert!(!words("the `signed_approval` policy").is_empty());
+    assert!(!words("the `signed_approval` policy").contains(&"signed".to_owned()));
+    assert!(words("this record was signed by a person").contains(&"signed".to_owned()));
 }
 
 /// The library half names no host capability. `std::fs`, the process id, the
@@ -159,7 +183,7 @@ fn tc_455_no_second_canonicalization_implementation_exists_here() {
 /// recorded attribution; it is never authentication, authorization, a
 /// signature or non-repudiation. Every place this crate's prose reaches for
 /// one of those words, it is to deny it.
-#[trace("FR-063-AC-11")]
+#[trace("FR-063-AC-11", "FR-065-AC-12")]
 #[test]
 fn tc_455_the_integrity_boundary_is_stated_and_never_overstated() {
     assert_eq!(
@@ -205,7 +229,7 @@ fn tc_455_the_integrity_boundary_is_stated_and_never_overstated() {
 /// socket, or reads the environment, so an attestation's contents can only
 /// have come from the producer that wrote it — which is the whole reason a
 /// recorded result is evidence rather than a rerun.
-#[trace("FR-064-AC-9")]
+#[trace("FR-064-AC-9", "FR-065-AC-18")]
 #[test]
 fn tc_455_intake_runs_nothing_and_reports_only_what_a_producer_wrote() {
     let forbidden = [
@@ -220,6 +244,29 @@ fn tc_455_intake_runs_nothing_and_reports_only_what_a_producer_wrote() {
             assert!(
                 !contents.contains(pattern),
                 "{name} reaches for `{pattern}`; intake runs nothing"
+            );
+        }
+    }
+}
+
+/// The approval check is a comparison of strings and a local hash. The modules
+/// that read and judge a claimed approval name no `std` item at all, so they
+/// cannot start a process, touch a file, or open a socket; the digest is the one
+/// computation they ask of `quoin-store`, and verification passes it in.
+#[trace("FR-065-AC-18", "FR-063-AC-11")]
+#[test]
+fn tc_1511_the_approval_modules_start_no_process_and_name_no_host_capability() {
+    let approval_modules = ["model/approval.rs", "verify/approval.rs"];
+    let sources = sources();
+    for module in approval_modules {
+        let (_, contents) = sources
+            .iter()
+            .find(|(name, _)| name == module)
+            .unwrap_or_else(|| panic!("{module} is part of this crate"));
+        for forbidden in ["std::", "Command", "git ", "ssh-keygen", "TcpStream"] {
+            assert!(
+                !contents.contains(forbidden),
+                "{module} reaches for `{forbidden}`; the claim is compared, never verified"
             );
         }
     }

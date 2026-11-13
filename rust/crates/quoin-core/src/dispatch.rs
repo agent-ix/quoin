@@ -36,6 +36,7 @@ pub const OPERATIONS: &[&str] = &[
     "change_assurance.intake",
     "change_assurance.prepare_attestation",
     "change_assurance.receipt",
+    "change_assurance.record_digest",
     "change_assurance.recover",
     "change_assurance.schema",
     "change_assurance.verify_receipt",
@@ -107,6 +108,10 @@ pub const OPERATIONS: &[&str] = &[
 ///
 /// [`CoreErrorCode::UnknownOp`] when `op` names nothing this build implements,
 /// or whatever the operation itself returns.
+#[allow(
+    clippy::too_many_lines,
+    reason = "the routing table: one arm per operation and no logic, which the drift guard reads"
+)]
 pub fn dispatch(
     op: &str,
     request: &serde_json::Value,
@@ -133,6 +138,9 @@ pub fn dispatch(
             crate::ops::change_assurance::prepare_attestation(request)
         }
         "change_assurance.receipt" => crate::ops::change_assurance::receipt(request, capabilities),
+        "change_assurance.record_digest" => {
+            crate::ops::change_assurance::record_digest(request, capabilities)
+        }
         "change_assurance.recover" => crate::ops::change_assurance::recover(request, capabilities),
         "change_assurance.schema" => crate::ops::change_assurance::schema(request),
         "change_assurance.verify_receipt" => {

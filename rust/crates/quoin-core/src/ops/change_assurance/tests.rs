@@ -48,7 +48,7 @@ const OUTPUT: &[u8] = b"all tests passed\n";
 /// The record body a caller writes.
 fn record_body() -> Value {
     json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "record_type": "change_assurance",
         "record_id": "change-1",
         "revision": 1,
@@ -69,7 +69,7 @@ fn record_body() -> Value {
             }],
             "unknowns": []
         },
-        "review_workflow": {"run_id": "run-1", "decision_event_kind": "change_assurance.review_decided"}
+        "review_workflow": {"run_id": "run-1", "decision_event_kind": "change_assurance.review_decided", "signed_approval": {"required": false, "signature_kinds": [], "approvers": []}}
     })
 }
 
@@ -100,7 +100,7 @@ fn decisions() -> Value {
             "id": "event-1", "ts": "2026-08-31T00:00:00.000Z", "sequence": 1,
             "actor": {"id": "reviewer-1", "kind": "human"},
             "kind": "change_assurance.review_decided",
-            "payload": {"schema_version": 1, "record_id": "change-1", "revision": 1, "decision": "approved"}
+            "payload": {"schema_version": 2, "record_id": "change-1", "revision": 1, "decision": "approved"}
         }]
     })
 }
@@ -286,6 +286,11 @@ fn every_operation_refuses_a_request_past_its_own_ceiling() {
         (
             "verify_receipt",
             verify_receipt(&filler(MAX_VERIFY_RECEIPT_BYTES), &capabilities).unwrap_err(),
+        ),
+        (
+            "record_digest",
+            super::record_digest(&filler(super::MAX_RECORD_DIGEST_BYTES), &capabilities)
+                .unwrap_err(),
         ),
         ("schema", schema(&filler(MAX_SCHEMA_BYTES)).unwrap_err()),
     ] {
@@ -600,9 +605,9 @@ fn tc_503_the_vocabulary_comes_back_without_an_asset() {
     assert_eq!(
         payload["schemas"],
         json!([
-            "change-assurance-record-v1.schema.json",
+            "change-assurance-record-v2.schema.json",
             "proof-attestation-v1.schema.json",
-            "verification-receipt-v1.schema.json"
+            "verification-receipt-v2.schema.json"
         ])
     );
     assert_eq!(payload["schema"], Value::Null);
@@ -633,16 +638,16 @@ fn tc_503_a_named_asset_comes_back_byte_for_byte() {
 #[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_an_unknown_asset_name_is_refused_naming_the_known_ones() {
-    let error = schema(&json!({ "name": "change-assurance-record-v2.schema.json" }))
+    let error = schema(&json!({ "name": "change-assurance-record-v1.schema.json" }))
         .expect_err("an unknown name is refused");
     assert_eq!(error.code, CoreErrorCode::BadRequest);
     assert_eq!(error.context["op"], "change_assurance.schema");
     assert_eq!(
         error.context["name"],
-        "change-assurance-record-v2.schema.json"
+        "change-assurance-record-v1.schema.json"
     );
     assert!(
-        error.context["known"].contains("change-assurance-record-v1.schema.json"),
+        error.context["known"].contains("change-assurance-record-v2.schema.json"),
         "the refusal must name what this build ships, said {}",
         error.context["known"]
     );
