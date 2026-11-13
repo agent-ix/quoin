@@ -232,6 +232,10 @@ index; the files are authoritative.
 - [FR-138](./functional/FR-138-packs-never-come-from-hosted-sources.md) — a pack is never installed from a hosted source and never sits in the default module set.
 - [FR-139](./functional/FR-139-pack-writes-nothing-into-a-repository.md) — pack install, list, inspect and remove write only under `IX_HOME`.
 - [FR-140](./functional/FR-140-pack-requirements-mapping-report.md) — `quoin discharge --rmm --pack` reports one requirements mapping matrix per clause set plus a pack index, with no clause text.
+- [FR-141](./functional/FR-141-promote-sbom-components-to-soup-records.md) — `quoin soup promote` turns ingested SBOM components into `soup_record` files, one per purl, idempotently and without overwriting reviewer-authored fields.
+- [FR-142](./functional/FR-142-advisory-join-onto-soup-records.md) — retained cargo-audit and cargo-deny findings join onto SOUP records by purl at read time; failed scans are refused, unmatched findings are listed.
+- [FR-143](./functional/FR-143-support-status-and-end-of-support-input.md) — support status and end-of-support dates come from a supplied file of public-source entries; unknown stays unknown.
+- [FR-144](./functional/FR-144-soup-report.md) — `quoin soup report` renders one row per SOUP record, unresolved advisories and past-end-of-support components first.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
 - [FR-131](./functional/FR-131-percentage-metrics-over-enumerated-population.md) — a percentage metric is taken over a plan-enumerated population its observations must state exactly.
 - [FR-132](./functional/FR-132-paired-run-metrics.md) — a metric that states two runs agree is computed from a paired comparison of two collections under the plan's `paired_run` relation, inconclusive below `minimum_pairs`.
@@ -298,6 +302,7 @@ index; the files are authoritative.
 - [NFR-022](./non-functional/NFR-022-bounded-read-only-measurement-run.md) — bounded, read-only measurement run. ⛔ **Withdrawn** (#388)
 - [NFR-023](./non-functional/NFR-023-figures-carry-their-provenance.md) — published figures carry their provenance.
 - [NFR-029](./non-functional/NFR-029-self-contained-result-evidence.md) — a result artifact is interpretable without its source tree.
+- [NFR-030](./non-functional/NFR-030-soup-views-state-and-never-derive.md) — SOUP promotion and report never invent a fact or a score.
 
 ### Integration Tests
 

@@ -129,3 +129,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-138: Packs never come from hosted sources](./FR-138-packs-never-come-from-hosted-sources.md)
 - [FR-139: Pack install, list, inspect and remove write nothing into any repository](./FR-139-pack-writes-nothing-into-a-repository.md)
 - [FR-140: Pack-level requirements mapping report: one matrix per clause set and a pack index](./FR-140-pack-requirements-mapping-report.md)
+- [FR-141: Promote ingested SBOM components to SOUP records](./FR-141-promote-sbom-components-to-soup-records.md)
+- [FR-142: Join advisory findings onto SOUP records by purl](./FR-142-advisory-join-onto-soup-records.md)
+- [FR-143: Support status and end-of-support dates come from supplied public data](./FR-143-support-status-and-end-of-support-input.md)
+- [FR-144: SOUP report: one row per record, unresolved and past-end-of-support first](./FR-144-soup-report.md)
