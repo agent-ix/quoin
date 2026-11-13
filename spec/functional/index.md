@@ -146,4 +146,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-155: Risk discrepancy findings: the finding tokens, their shape and the strict flag](./FR-155-risk-discrepancy-findings.md)
 - [FR-160: Per-class evidence floors: required methods, mutation floor and independence configured per software safety class](./FR-160-per-class-evidence-floors.md)
 - [FR-161: Per-class obligations report: the activities and evidence a requirement's software safety class demands](./FR-161-per-class-obligations-report.md)
-- [FR-162: Design column in the evidence-backed test matrix](./FR-162-matrix-design-column.md)
+- [FR-165: Design column in the evidence-backed test matrix](./FR-165-matrix-design-column.md)
