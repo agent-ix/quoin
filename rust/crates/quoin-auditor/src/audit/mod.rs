@@ -168,10 +168,7 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
     let mut independence: Vec<IndependenceAssessment> = Vec::new();
     let mut class_independence: Vec<ClassIndependenceAssessment> = Vec::new();
     // Built before the loop consumes the obligations, and only under a policy.
-    let class_report = indexed
-        .class
-        .as_ref()
-        .map(|class| class.report(&obligations));
+    let class_report = class_report(&indexed, &obligations);
 
     for obligation in obligations {
         let mut bindings: Vec<&Binding> = indexed
@@ -291,6 +288,17 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
         unevaluated,
         other,
     })
+}
+
+/// Build the class report only when the caller supplied a class policy.
+fn class_report(
+    indexed: &Indexed<'_>,
+    obligations: &[&quoin_quire_types::Obligation],
+) -> Option<serde_json::Value> {
+    indexed
+        .class
+        .as_ref()
+        .map(|class| class.report(obligations))
 }
 
 /// `assessment.status === "insufficient"`.
