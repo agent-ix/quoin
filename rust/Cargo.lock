@@ -3448,6 +3448,9 @@ version = "0.31.0"
 dependencies = [
  "ix-trace-rs",
  "quire-rs",
+ "quoin-auditor",
+ "quoin-evidence",
+ "quoin-finding-types",
  "quoin-jsonschema",
  "quoin-quire-types",
  "quoin-yaml",

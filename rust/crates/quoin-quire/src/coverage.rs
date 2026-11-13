@@ -54,6 +54,27 @@ pub struct Outcome {
 /// subprocess printed it to stderr, the stderr was discarded, and the operator
 /// got "quire exited 1". Here it is a variant of the return type.
 pub fn compute(request: &Request) -> Result<Outcome> {
+    let Walked {
+        registry,
+        spec,
+        graph,
+        notices,
+    } = walk(request)?;
+    let report = quire_rs::compute_coverage(&spec, &registry, &graph, request.scope.as_path())
+        .map_err(coverage_error)?;
+    Ok(Outcome { report, notices })
+}
+
+/// What one coverage run reads before it reconciles.
+pub(crate) struct Walked {
+    pub(crate) registry: quire_rs::Registry,
+    pub(crate) spec: quire_rs::Spec,
+    pub(crate) graph: quire_rs::symbols::trace::SymbolGraph,
+    pub(crate) notices: Vec<Notice>,
+}
+
+/// The module, corpus and symbol walks a coverage run reconciles.
+pub(crate) fn walk(request: &Request) -> Result<Walked> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
 
@@ -87,17 +108,23 @@ pub fn compute(request: &Request) -> Result<Outcome> {
     }
 
     let graph = quire_rs::symbols::trace::bind(&extraction, model);
-    let report = quire_rs::compute_coverage(&spec, &registry, &graph, request.scope.as_path())
-        .map_err(|error| match error {
-            // The engine's coverage errors, each mapped onto this crate's
-            // variant rather than stringified. An exhaustive match, so a new
-            // engine variant fails the build instead of collapsing into a
-            // catch-all that reports the wrong condition.
-            quire_rs::CoverageError::ModelUndeclared => Error::TraceabilityModelUndeclared,
-            quire_rs::CoverageError::ExtractionUnavailable(unavailable) => unavailable.into(),
-        })?;
+    Ok(Walked {
+        registry,
+        spec,
+        graph,
+        notices,
+    })
+}
 
-    Ok(Outcome { report, notices })
+/// The engine's coverage errors, each mapped onto this crate's variant rather
+/// than stringified. An exhaustive match, so a new engine variant fails the
+/// build instead of collapsing into a catch-all that reports the wrong
+/// condition.
+pub(crate) fn coverage_error(error: quire_rs::CoverageError) -> Error {
+    match error {
+        quire_rs::CoverageError::ModelUndeclared => Error::TraceabilityModelUndeclared,
+        quire_rs::CoverageError::ExtractionUnavailable(unavailable) => unavailable.into(),
+    }
 }
 
 /// One test symbol and one trace id it verifies.
