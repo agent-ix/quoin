@@ -68,6 +68,18 @@ pub(crate) fn command() -> Command {
         )
 }
 
+/// The one-line summary of `quoin risk-summary`.
+pub(crate) const SUMMARY_ABOUT: &str =
+    "Print the hazard-to-decision chain, one row per situation.";
+
+pub(crate) fn summary_command() -> Command {
+    Command::new("risk-summary")
+        .about(SUMMARY_ABOUT)
+        .arg(scope_arg())
+        .arg(format_arg())
+        .arg(module_arg())
+}
+
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     match arguments.subcommand() {
         Some(("advise", advise)) => run_advise(advise),
@@ -132,6 +144,32 @@ fn run_advise(arguments: &ArgMatches) -> Result<Response, String> {
     let rendered = match arguments.get_one::<String>("format").map(String::as_str) {
         Some("json") => advice.to_json().map_err(|error| error.to_string())?,
         _ => advice.to_markdown(),
+    };
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered.trim_end() }),
+        diagnostics,
+        outcome: Outcome::Ok,
+    })
+}
+
+pub(crate) fn run_summary(arguments: &ArgMatches) -> Result<Response, String> {
+    let (scope, modules) = match inputs(arguments) {
+        Ok(inputs) => inputs,
+        Err(refusal) => return Ok(refusal),
+    };
+    let summary = match quoin_risk_advice::summarize(&scope, &modules) {
+        Ok(summary) => summary,
+        Err(error) => {
+            return Ok(refused(
+                &format!("risk.{}", error.code.as_str()),
+                &error.message,
+            ));
+        }
+    };
+    let diagnostics = unreadable_diagnostics(&summary.unreadable);
+    let rendered = match arguments.get_one::<String>("format").map(String::as_str) {
+        Some("json") => summary.to_json().map_err(|error| error.to_string())?,
+        _ => summary.to_markdown(),
     };
     Ok(Response {
         payload: serde_json::json!({ "rendered": rendered.trim_end() }),

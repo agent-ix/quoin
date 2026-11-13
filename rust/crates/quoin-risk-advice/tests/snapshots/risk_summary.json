@@ -1,0 +1,165 @@
+{
+  "attribution": "Regions come from the project's policy. Decisions come from the named person who made them.",
+  "rows": [
+    {
+      "hazard": "HAZ-1",
+      "situation": "SIT-1",
+      "harms": [
+        "HARM-1"
+      ],
+      "pre_control": [
+        {
+          "estimate": "EST-A",
+          "severity": "Serious",
+          "probability": "Likely",
+          "policy_region": "High"
+        }
+      ],
+      "controls": [
+        {
+          "control": "CTRL-1",
+          "requirements": [
+            "FR-9"
+          ],
+          "verifications": [
+            "TC-9"
+          ]
+        }
+      ],
+      "post_control": [
+        {
+          "estimate": "EST-B",
+          "severity": "Minor",
+          "probability": "Rare",
+          "policy_region": "Low"
+        }
+      ],
+      "residual_risks": [
+        {
+          "residual_risk": "RR-1",
+          "decision": "accepted",
+          "decided_by": "Pat"
+        }
+      ],
+      "findings": []
+    },
+    {
+      "hazard": "HAZ-2",
+      "situation": "SIT-2",
+      "harms": [],
+      "pre_control": [],
+      "controls": [
+        {
+          "control": "CTRL-2",
+          "requirements": [],
+          "verifications": []
+        }
+      ],
+      "post_control": [
+        {
+          "estimate": "EST-C",
+          "severity": "Serious",
+          "probability": "Likely",
+          "policy_region": "High"
+        },
+        {
+          "estimate": "EST-D",
+          "severity": "Serious",
+          "probability": "not_assessed",
+          "policy_region": null
+        }
+      ],
+      "residual_risks": [
+        {
+          "residual_risk": "RR-2",
+          "decision": "accepted",
+          "decided_by": "Pat"
+        },
+        {
+          "residual_risk": "RR-3",
+          "decision": "not_accepted",
+          "decided_by": "Pat"
+        }
+      ],
+      "findings": [
+        {
+          "finding": "situation-without-harm",
+          "names": [
+            "SIT-2"
+          ]
+        },
+        {
+          "finding": "control-without-requirement",
+          "names": [
+            "CTRL-2"
+          ]
+        },
+        {
+          "finding": "control-without-verification",
+          "names": [
+            "CTRL-2"
+          ]
+        },
+        {
+          "finding": "post-control-without-control",
+          "names": [
+            "EST-D"
+          ]
+        },
+        {
+          "finding": "decision-without-region",
+          "names": [
+            "RR-3"
+          ]
+        },
+        {
+          "finding": "benefit-risk-undecided",
+          "names": [
+            "RR-2",
+            "BR-1"
+          ]
+        }
+      ]
+    },
+    {
+      "hazard": "HAZ-3",
+      "situation": null,
+      "harms": [],
+      "pre_control": [],
+      "controls": [],
+      "post_control": [],
+      "residual_risks": [],
+      "findings": [
+        {
+          "finding": "hazard-without-situation",
+          "names": [
+            "HAZ-3"
+          ]
+        }
+      ]
+    },
+    {
+      "hazard": null,
+      "situation": "SIT-3",
+      "harms": [],
+      "pre_control": [],
+      "controls": [],
+      "post_control": [],
+      "residual_risks": [],
+      "findings": [
+        {
+          "finding": "situation-without-hazard",
+          "names": [
+            "SIT-3"
+          ]
+        },
+        {
+          "finding": "situation-without-harm",
+          "names": [
+            "SIT-3"
+          ]
+        }
+      ]
+    }
+  ]
+}
