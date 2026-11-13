@@ -30,3 +30,11 @@ Conformant apart from wording. No finding blocks on its own.
 
 Examined (role examined): all 12 FR-171 Behavior bullets, all 8 FR-172 Behavior bullets, all 12 FR-173 Behavior
 bullets, all 5 FR-174 Behavior bullets, and the four NFR-038 Statement SHALLs.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The disposition bullet is split into emit, rationale, approvalRef and absent-flag bullets (5d1878c2). |
+| FND-002 | fixed | Each refusal is now its own "If ..., then the command SHALL refuse" bullet under a shared exit rule. |
+| FND-003 | fixed | The FR-172 no-text rule moved to Behavior. The FR-174 Description no longer holds a SHALL, and its states are Behavior bullets. |

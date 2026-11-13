@@ -37,3 +37,12 @@ The quoin side's own edges are sound. The author's claim that "quire-rs FR-083 c
 FR-015 requires" did not hold up: FR-083 exists, but it specifies publishability, not resolution against loaded
 sets (FND-001). That finding blocks #49 rather than #871. FND-002 and FND-003 are cross-PR consistency gaps to
 settle before either PR lands.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | spo#49 at f61e87f drops the Quire-side resolution, duplicate and contradiction rules; FR-014 assigns them to quoin FR-173, which now refuses each case (FR-173-AC-5). No quire-rs capability is needed. |
+| FND-002 | fixed | spo#49 adds FR-017, under which the module declares `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` in `clause_sets` with rights metadata. FR-172 references it. |
+| FND-003 | fixed | FR-172 and spo FR-017 both admit `none`, `original` or `explicitly_cleared`, and merged spo FR-021-AC-3 now defers to `quire publish-check`, which accepts all three. |
+| FND-004 | fixed | FR-173 relationships now reference spo FR-014 and FR-016 (the renumbered scope_exclusion). The contradiction rule FR-018 is gone from #49. |

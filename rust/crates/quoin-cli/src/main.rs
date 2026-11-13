@@ -143,7 +143,10 @@ fn is_root_help_request(arguments: &[OsString]) -> bool {
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
     let args = args.into_iter().collect::<Vec<_>>();
-    let change_assurance = routed_family(&args).as_deref() == Some("change-assurance");
+    let family = routed_family(&args);
+    let change_assurance = family.as_deref() == Some("change-assurance");
+    // FR-169: a malformed `risk-summary` flag is a usage error, exit 2.
+    let usage_refused = change_assurance || family.as_deref() == Some("risk-summary");
     let matches = command().try_get_matches_from(&args).map_err(|error| {
         let rendered_error = error.to_string();
         let is_help = matches!(
@@ -164,7 +167,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
                 0
             } else if invalid_subcommand || missing_required {
                 EXIT_UNKNOWN_COMMAND
-            } else if change_assurance {
+            } else if usage_refused {
                 // A malformed flag is the "usage error" arm of FR-068's
                 // grammar, and it is refused here rather than at dispatch.
                 // Without this the surface answered 2 for everything the
@@ -258,6 +261,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     }
     if let Some(("risk", risk)) = matches.subcommand() {
         return risk::run(risk);
+    }
+    if let Some(("risk-summary", summary)) = matches.subcommand() {
+        return risk::run_summary(summary);
     }
     if let Some(("soup", soup)) = matches.subcommand() {
         return soup::run(soup);
@@ -385,6 +391,7 @@ fn command() -> Command {
         .subcommand(report::command())
         .subcommand(semantic::command())
         .subcommand(risk::command())
+        .subcommand(risk::summary_command())
         .subcommand(soup::command())
         .subcommand(validate::command())
         .subcommand(write::command())

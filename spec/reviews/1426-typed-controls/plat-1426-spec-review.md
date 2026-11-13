@@ -42,3 +42,23 @@ owner and the no-name-cleanup rule; FR-172 covers the publishable sets and the l
 cover the record-discharge feed and the per-clause RMM. The licence boundary is sound. FR-171-AC-1 to AC-5,
 FR-172-AC-1 to AC-3 and AC-5, FR-173-AC-1 and AC-5 to AC-7 (apart from FND-001), and FR-174-AC-1 to AC-4 were
 examined and are otherwise testable. The RMM state strings FR-174 uses match quoin-assurance discharge/rmm.rs:75-78.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-009 | medium | The branch no longer merges cleanly with main. quoin#870 has merged, so main's `spec/functional/index.md` now ends at FR-180 to FR-182 and `spec/non-functional/index.md` at NFR-037. Both files conflict with this PR's appended lines (git merge-tree, base 701f9611). The ids do not collide. Rebase onto main, put FR-171 to FR-174 before FR-180, and put NFR-038 after NFR-037. | spec/functional/index.md:158; spec/non-functional/index.md:41 |
+| FND-010 | low | `spec/spec.md` on main lists each FR with a one-line summary, through FR-170 and FR-180 to FR-182. This PR adds no lines for FR-171 to FR-174, so the spec overview omits them. | spec/spec.md:251-252 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-173 now defines `--attestation` as exactly the four FR-046 fields and refuses an extra field (FR-173-AC-5); fix commit 5d1878c2. |
+| FND-002 | fixed | FR-174 now states that a stored fact stays in force until it expires or is removed; FR-173 reports a `stale` line (FR-173-AC-9, FR-174-AC-5). |
+| FND-003 | fixed | The synopsis lists every flag; `--approval-ref` is optional; `--spec` defaults to `spec`; the stderr report has a fixed line form; `--json` is dropped. |
+| FND-004 | fixed | The correction is scoped to NIST and ASVS numbers against the cited releases, SOC 2 and ISO numbers are left as they are, and FR-171-AC-6 backs it (Analysis). |
+| FND-005 | fixed | The key is now `nist/sp800-53@5.2.0`, and FR-171-AC-7 pins the skill to Rev 5.2.0. |
+| FND-006 | fixed | The rationale form is fixed as `<rationale> (owner: <owner>)` and asserted by FR-173-AC-4. |
+| FND-007 | fixed | NFR-038 gains an effectiveness metric and AC-1 to AC-4. The file check is FR-173-AC-8. |
+| FND-008 | fixed | FR-172-AC-4 is now a Demonstration over the FR-172-AC-3 skill run. |

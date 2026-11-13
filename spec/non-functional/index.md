@@ -38,4 +38,5 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-035: The anomaly report states what people recorded and never decides acceptance](./NFR-035-anomaly-report-states-and-never-decides.md)
 - [NFR-034: Class floors and class obligations state what people wrote and never assign a class](./NFR-034-class-reports-state-and-never-assign.md)
 - [NFR-036: The release snapshot is deterministic for the same evidence and never decides a release](./NFR-036-release-snapshot-is-deterministic-and-never-decides.md)
+- [NFR-037: Source profile evaluation is deterministic, offline, and never decides compliance](./NFR-037-source-profile-evaluation-is-deterministic-and-states-only.md)
 - [NFR-038: Facts from mappings state what people wrote and never invent an attestation or a verdict](./NFR-038-mapping-facts-state-and-never-decide.md)
