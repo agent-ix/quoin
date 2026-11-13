@@ -26,14 +26,15 @@ its `origin/main`.
 | Advisory scans                    | `cargo audit`, `cargo deny`                                                                                                     | **Covered** by `cargo-audit` and `cargo-deny`                                                                   |
 | Measurements                      | `scripts/measure_rlib_size.sh` in `quire-contract-runtime`                                                                      | **Covered** by `quoin measurement record`; not an adapter concern                                 |
 | Contract conformance JSONL        | `quire-contract-conformance run --manifest` in `quire-contract-ir`                                                              | **Adapter added** — `contract-conformance`                                                        |
-| Domain differential reports       | `corpus/r2u2-v4.2/differential-report.json` in `tl-mltl`                                                                        | **Adapter added** — `differential-report`                                                         |
+| Differential reports              | `quire-analyze run-package` (`quire.differential-report/v2`)                                                                   | **Adapter added** — `differential-report`                                                         |
+| tl-mltl live differential outputs | `tl-mltl.r2u2-past-differential/v1`, `tl-mltl.r2u2-future-differential/v1` (`src/r2u2_live.rs`), `tl-mltl.campaign-run/v1` (`src/campaign.rs`) in `tl-mltl` | **Not covered** — `differential-report` does not read them; a reader needs its own ticket and a captured sample |
 | Corpus reports                    | `corpus/*/manifest.json` in `quire-contract-ir` and `tl-mltl`                                                                   | **Out of scope** — a corpus manifest is a verification _definition_, owned by Quire, not a result |
 | Kani outputs                      | none of the eight runs Kani today                                                                                               | **No adapter** — nothing to pin                                                                   |
-| Solver analysis reports           | `quire-analyze` is a stub whose library surface is `hello()`                                                                    | **No adapter** — nothing to pin                                                                   |
-| Counterexamples                   | carried inside the differential report's own cases                                                                              | **Covered** by `differential-report`                                                              |
+| Solver analysis reports           | `quire-analyze run-package`                                                                                                     | **Covered** by `differential-report` (FR-151)                                                     |
+| Counterexamples                   | retained inside the v2 report as engine model bytes                                                                              | **Not transcribed** — the adapter decodes no raw solver output (FR-151)                           |
 | Domain-specific proof reports     | none emitted today                                                                                                              | **No adapter** — nothing to pin                                                                   |
 
-Three scope items get no adapter for the same reason: **no producer emits
+Two scope items get no adapter for the same reason: **no producer emits
 them yet.** Writing a reader for a format nobody produces means inventing the
 format, and the first real sample would then be shaped to fit the reader rather
 than the other way round. When one of those repositories emits a real sample,
@@ -52,17 +53,17 @@ that is the ticket to reopen.
 
 ### `differential-report`
 
-- **Producer** — `agent-ix/tl-mltl`, comparing its engine against R2U2 4.2-release / C2PO 4.1.0.
-- **Sample** — `corpus/r2u2-v4.2/differential-report.json` in `agent-ix/tl-mltl`, the committed report, which that repository owns; quoin keeps no copy. It carries eight agreements and one `unsupported`.
-- **Governed target record** — `RunRecord` entries, one per compared case.
-- **Why nothing existing represents it** — `junit` has no state for "the external reference cannot express this case"; `cargo-mutants` is mutation-shaped; `agent-eval` is measurement-shaped; the finding-shaped adapters would record a disagreement as a rule violation, which is a different claim from "two implementations disagree" and one the report does not make.
-- **Schema family** — `<domain>.differential-summary/v1`, so another domain can use the shape without claiming `tl-mltl`'s identity. A `v2` is refused rather than read by a `v1` reader that happens to recognise the fields.
+- **Producer** — `quire-analyze run-package`, `agent-ix/quire-analyze`, which publishes one `quire.differential-report/v2` per analysis request (two engines, Z3 and cvc5). Specified in FR-151; it replaces the earlier `<domain>.differential-summary/v1` reader, whose schema no code wrote.
+- **Sample** — byte-exact reports captured from `quire-analyze run-package`, one per disposition the runner can produce, kept as test fixtures under `tests/fixtures/evidence/` by the implementing change (VER-80); the `unsupported-platform` fixture is captured on a non-Linux host or hand-constructed and validated by the owner's validator. quoin keeps no copy of the schema.
+- **Governed target record** — one `RunRecord` entry per report (`agreement` is `pass` or `fail`; `inconclusive` and `unavailable` are `error`); a `disagreement` is named, not transcribed, and writes a run with no entries.
+- **Why nothing existing represents it** — `junit` has no state for "the engines disagreed" or "an engine could not run"; the finding-shaped adapters would record a disagreement as a rule violation, which is a different claim.
 
 ## The state that does not fit, and what happens to it
 
 `RunEntry.outcome` is `pass | fail | skip | error`. A differential report's
-`unsupported` is none of those: nothing chose to omit the case, and nothing
-failed.
+`disagreement` (two engines that both ran and reached opposite conclusions) is
+none of those: it asserts no refutation, and it is not a producer that failed
+to run.
 
 Rather than round it to the nearest word, the adapter **does not transcribe it
 and names it**. `AdapterResult.unrepresented` carries the producer's own state
@@ -70,8 +71,8 @@ verbatim with the reason no outcome holds it, and `quoin evidence record`
 prints each one:
 
 ```
-  not transcribed — closed-profile-not-mapped-v1 reported unsupported: the external
-  reference does not support this case; that is neither a skip nor an error,
+  not transcribed — <analysisKind>::<requestDigest> reported disagreement: <engine> <status>/<outcome>,
+  <engine> <status>/<outcome>; that is neither a pass nor a fail nor an error,
   and no run-entry outcome carries it
 ```
 
@@ -85,5 +86,6 @@ made against a count of how many real producers need it — not against this one
 Neither adapter runs a producer, reads a repository, or decides whether the
 evidence was sufficient. Both fail closed on an unknown protocol or schema
 version, on an unknown status, and on an empty result set: a conformance run
-that emitted no line did not report that every fixture matched, and a
-differential that compared no case did not report agreement.
+that emitted no line did not report that every fixture matched. A differential
+report always holds one comparison, and is refused unless `quire-analyze`'s own
+validator accepts it.

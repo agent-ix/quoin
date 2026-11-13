@@ -241,6 +241,7 @@ index; the files are authoritative.
 - [FR-147](./functional/FR-147-risk-advise-evidence-gaps.md) — controls with no linked requirement or verification, and open anomalies on the hazard or the implementing requirement, show where an estimate rests on weak evidence.
 - [FR-148](./functional/FR-148-risk-advise-decision-queue.md) — undecided residual-risk, benefit-risk and overall decisions are queued by id, with no proposed decision.
 - [FR-149](./functional/FR-149-grype-advisory-report-adapter.md) — the Grype JSON report is a finding-shaped adapter: an empty `matches` inside a valid envelope is a clean scan; a missing envelope or a non-empty `ignoredMatches` is refused.
+- [FR-151](./functional/FR-151-differential-report-v2-adapter.md) — the `differential-report` adapter reads `quire.differential-report/v2` directly (replacing the producerless `differential-summary/v1` reader): agreement is one `pass` or `fail`, inconclusive and unavailable are `error`, disagreement is named and not transcribed, and any other schema or non-canonical or malformed report is refused by `quire-analyze`'s own validator.
 - [FR-150](./functional/FR-150-licence-and-ban-policy-findings.md) — a person-authored `licence-policy-v1` file is evaluated over the licences in the ingested Syft SBOM as a finding-shaped adapter (no new producer, no shipped policy); disallowed, banned and unknown-licence components become findings that join onto SOUP records and the SOUP report with person-owned dispositions.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
 - [FR-131](./functional/FR-131-percentage-metrics-over-enumerated-population.md) — a percentage metric is taken over a plan-enumerated population its observations must state exactly.
@@ -310,9 +311,11 @@ index; the files are authoritative.
 - [NFR-029](./non-functional/NFR-029-self-contained-result-evidence.md) — a result artifact is interpretable without its source tree.
 - [NFR-030](./non-functional/NFR-030-soup-views-state-and-never-derive.md) — SOUP promotion and report never invent a fact or a score.
 - [NFR-031](./non-functional/NFR-031-risk-advice-states-and-never-decides.md) — risk advice states what people wrote and never decides.
+- [NFR-032](./non-functional/NFR-032-differential-report-intake-is-bounded-and-deterministic.md) — differential report intake refuses input over `MAX_REPORT_BYTES` unparsed and is deterministic.
 
 ### Integration Tests
 
+- [TC-001](./test/TC-001-differential-report-v2-adapter.md) — the differential report v2 adapter transcribes every disposition and refuses malformed reports.
 - [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from git, then serves offline.
 - [IT-002](./integration/IT-002-github-plugin-install.md) — community plugin installs from a GitHub source into the catalog.
 

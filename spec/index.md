@@ -15,6 +15,7 @@ okf_version: "0.1"
 - [Functional](./functional/index.md) - Functional requirements (FR).
 - [Non-Functional](./non-functional/index.md) - Non-functional requirements (NFR).
 - [Integration](./integration/index.md) - Integration tests (IT).
+- [Test cases](./test/index.md) - Test cases (TC).
 - [Architecture decisions](./adrs/index.md) - Architecture decision records (ADR).
 - [Evals: quoin Authoring Evals](./evals.md)
 - [Plan-001: quoin Implementation Plan](./plan.md)

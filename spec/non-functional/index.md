@@ -33,3 +33,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-029: A result artifact is interpretable without its source tree](./NFR-029-self-contained-result-evidence.md)
 - [NFR-030: SOUP promotion and report never invent a fact or a score](./NFR-030-soup-views-state-and-never-derive.md)
 - [NFR-031: Risk advice states what people wrote and never decides](./NFR-031-risk-advice-states-and-never-decides.md)
+- [NFR-032: Differential report intake is bounded and deterministic](./NFR-032-differential-report-intake-is-bounded-and-deterministic.md)
