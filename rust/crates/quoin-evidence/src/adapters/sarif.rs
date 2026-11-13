@@ -111,6 +111,7 @@ pub fn parse_sarif(raw: &str) -> Result<FindingResult, EvidenceError> {
     Ok(FindingResult {
         findings,
         tool: (!tools.is_empty()).then(|| tools.join(", ")),
+        evaluated: None,
         ruleset: None,
         rules_evaluated,
     })
@@ -212,6 +213,7 @@ pub fn parse_cargo_audit(raw: &str) -> Result<FindingResult, EvidenceError> {
     Ok(FindingResult {
         findings,
         tool: Some("cargo-audit".to_owned()),
+        evaluated: None,
         ruleset: None,
         rules_evaluated: report
             .get("database")

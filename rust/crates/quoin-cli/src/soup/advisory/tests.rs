@@ -25,8 +25,8 @@ use super::{
 };
 use crate::soup::plan::Existing;
 
-const BEFORE: &str = "2026-07-31T00:00:00.000Z";
-const AFTER: &str = "2026-08-02T00:00:00.000Z";
+pub(in crate::soup) const BEFORE: &str = "2026-07-31T00:00:00.000Z";
+pub(in crate::soup) const AFTER: &str = "2026-08-02T00:00:00.000Z";
 
 fn evidence_fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../tests/fixtures/evidence")
@@ -38,7 +38,7 @@ fn audit_document() -> Value {
     serde_json::from_str(&raw).unwrap()
 }
 
-fn audit_entry(id: &str, name: &str, version: &str) -> Value {
+pub(in crate::soup) fn audit_entry(id: &str, name: &str, version: &str) -> Value {
     json!({
         "advisory": { "id": id, "title": format!("{id} title") },
         "package": { "name": name, "version": version }
@@ -47,7 +47,7 @@ fn audit_entry(id: &str, name: &str, version: &str) -> Value {
 
 /// The real fixture with its warnings replaced and `vulnerabilities`
 /// listing `vulns`; `warnings` is `(kind, entry)` pairs.
-fn audit_text(vulns: &[Value], warnings: &[(&str, Value)]) -> String {
+pub(in crate::soup) fn audit_text(vulns: &[Value], warnings: &[(&str, Value)]) -> String {
     let mut document = audit_document();
     document["vulnerabilities"] = json!({
         "found": !vulns.is_empty(), "count": vulns.len(), "list": vulns
@@ -67,7 +67,12 @@ fn audit_text(vulns: &[Value], warnings: &[(&str, Value)]) -> String {
 
 /// One `cargo deny --format json check` diagnostic in the shape of the
 /// real `cargo-deny-real.jsonl` fixture.
-fn deny_diagnostic(key: Option<(&str, &str)>, name: &str, version: &str, severity: &str) -> Value {
+pub(in crate::soup) fn deny_diagnostic(
+    key: Option<(&str, &str)>,
+    name: &str,
+    version: &str,
+    severity: &str,
+) -> Value {
     let mut fields = json!({
         "graphs": [{ "Krate": { "name": name, "version": version } }],
         "message": "a diagnostic",
@@ -81,7 +86,7 @@ fn deny_diagnostic(key: Option<(&str, &str)>, name: &str, version: &str, severit
     json!({ "fields": fields, "type": "diagnostic" })
 }
 
-fn deny_text(diagnostics: &[Value]) -> String {
+pub(in crate::soup) fn deny_text(diagnostics: &[Value]) -> String {
     let mut lines: Vec<String> = diagnostics.iter().map(Value::to_string).collect();
     lines.push(
         json!({ "fields": { "advisories": { "errors": 0, "warnings": 0 } }, "type": "summary" })
@@ -92,13 +97,13 @@ fn deny_text(diagnostics: &[Value]) -> String {
 
 /// A retained scan, made the way recording makes one: through the adapter
 /// the registry selects for `tool`.
-fn scan(tool: &str, suite: &str, timestamp: &str, raw: &str) -> FindingRecord {
+pub(in crate::soup) fn scan(tool: &str, suite: &str, timestamp: &str, raw: &str) -> FindingRecord {
     let adapter = select_finding_adapter(AdapterSelection {
         adapter: None,
         tool: Some(tool),
     })
     .unwrap();
-    let parsed = (adapter.parse)(raw).unwrap();
+    let parsed = adapter.run(raw, None).unwrap();
     FindingRecord {
         schema_version: STORE_SCHEMA_VERSION,
         suite: SuiteId::new(suite),
@@ -108,10 +113,11 @@ fn scan(tool: &str, suite: &str, timestamp: &str, raw: &str) -> FindingRecord {
         ruleset: parsed.ruleset,
         rules_evaluated: parsed.rules_evaluated,
         findings: parsed.findings,
+        evaluated: parsed.evaluated,
     }
 }
 
-fn record(purl: &str, clause: Option<&str>) -> Existing {
+pub(in crate::soup) fn record(purl: &str, clause: Option<&str>) -> Existing {
     Existing {
         path: PathBuf::from(format!("{purl}.md")),
         purl: purl.to_owned(),
@@ -121,14 +127,14 @@ fn record(purl: &str, clause: Option<&str>) -> Existing {
     }
 }
 
-fn attestation(at: &str, until: &str) -> Value {
+pub(in crate::soup) fn attestation(at: &str, until: &str) -> Value {
     json!({
         "attestedBy": "reviewer-1", "authority": "quality-lead",
         "attestedAt": at, "expiresAt": until
     })
 }
 
-fn disposition(clause: &str, at: &str, until: &str) -> Value {
+pub(in crate::soup) fn disposition(clause: &str, at: &str, until: &str) -> Value {
     json!({
         "kind": "disposition", "clauseId": clause, "decision": "accepted_risk",
         "rationale": "no reachable path", "approvalRef": "approval://CAB-7",
@@ -140,7 +146,7 @@ fn disposition(clause: &str, at: &str, until: &str) -> Value {
 /// current disposition attested 2026-08-01, `C-OLD` an expired one,
 /// `C-DIRECT` a direct fact, `C-NONE` no fact, `C-NB` does not bind and
 /// `C-UNRES` has undecided applicability.
-fn discharge() -> DischargeReport {
+pub(in crate::soup) fn discharge() -> DischargeReport {
     discharge_with(&disposition(
         "C-DISP",
         "2026-08-01T00:00:00.000Z",
@@ -148,7 +154,7 @@ fn discharge() -> DischargeReport {
     ))
 }
 
-fn discharge_with(fact: &Value) -> DischargeReport {
+pub(in crate::soup) fn discharge_with(fact: &Value) -> DischargeReport {
     let binding_clause = |id: &str, outcome: &str, reasons: Value| {
         json!({ "clauseId": id, "force": "mandatory", "outcome": outcome,
                 "reasons": reasons, "expectedOutputs": [] })
@@ -425,6 +431,7 @@ fn tc_1516_004_not_run_is_not_clean() {
             ruleset: parsed.ruleset,
             rules_evaluated: parsed.rules_evaluated,
             findings: parsed.findings,
+            evaluated: parsed.evaluated,
         });
     }
     assert_eq!(retained.len(), 1, "the refused log leaves no record");
@@ -572,6 +579,9 @@ fn tc_1516_008_a_newer_scan_unresolves_every_advisory_until_attested_again() {
     );
 }
 
+/// A source finding and an `unclassified` one are set aside and counted; a
+/// licence or ban finding is neither an advisory nor set aside: the policy join
+/// reads it (FR-142-AC-28).
 #[trace("FR-142-AC-13")]
 #[test]
 fn tc_1516_009_deny_diagnostics_that_are_not_advisories_are_set_aside() {
@@ -582,6 +592,7 @@ fn tc_1516_009_deny_diagnostics_that_are_not_advisories_are_set_aside() {
         &deny_text(&[
             deny_diagnostic(Some(("code", "rejected")), "a", "1.0.0", "error"),
             deny_diagnostic(Some(("code", "banned")), "a", "1.0.0", "error"),
+            deny_diagnostic(Some(("code", "source-not-allowed")), "a", "1.0.0", "error"),
             deny_diagnostic(None, "a", "1.0.0", "warning"),
             deny_diagnostic(
                 Some(("advisory", "GHSA-xxxx-yyyy-zzzz")),
@@ -592,10 +603,20 @@ fn tc_1516_009_deny_diagnostics_that_are_not_advisories_are_set_aside() {
             deny_diagnostic(Some(("advisory", "CVE-2026-1")), "a", "1.0.0", "error"),
         ]),
     );
-    let joined = join(&[record("pkg:cargo/a@1.0.0", None)], &[deny], &discharge());
-    assert_eq!(read_counts(state(&joined, Tool::CargoDeny)), Some((2, 3)));
+    let records = [record("pkg:cargo/a@1.0.0", None)];
+    let joined = join(&records, std::slice::from_ref(&deny), &discharge());
+    // Two advisories; the source and the unclassified finding are set aside;
+    // the `rejected` and `banned` ones are in neither count.
+    assert_eq!(read_counts(state(&joined, Tool::CargoDeny)), Some((2, 2)));
     assert_eq!(joined.records[0].advisories.len(), 2);
     assert!(joined.unmatched.is_empty());
+    let policies = crate::soup::policy::join(&records, &[deny], &discharge());
+    let attached: Vec<&str> = policies.records[&records[0].path]
+        .findings
+        .iter()
+        .map(|f| f.rule_id.as_str())
+        .collect();
+    assert_eq!(attached, ["banned", "rejected"]);
 }
 
 #[trace("FR-142-AC-14", "FR-142-AC-10", "FR-142-CON-1")]
