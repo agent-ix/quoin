@@ -29,9 +29,9 @@ Nothing is written into `spec/spec.md` because the artifacts are the record.
 - The skill SHALL fill `## Mappings` with Set and Clause rows (spec-objects-security FR-014).
 - The skill SHALL link each control to the FR, NFR or StR it implements, in the control's frontmatter `relationships`.
 - The skill SHALL report a clause that applies with no covering requirement as a gap in its reply.
-- For a clause outside the component, the skill SHALL author a `scope_exclusion` with `## Set`, `## Clause`, `## Owner` and `## Rationale` sections (spec-objects-security FR-016). `## Owner` names the responsible component by `ix://` id.
-- When no owner is known, the skill SHALL write no exclusion.
-- When no owner is known, the skill SHALL list the clause as unowned in its reply.
+- For a clause outside the component, the skill SHALL author a `scope_exclusion` with `## Set`, `## Clause`, `## Responsible` and `## Rationale` sections (spec-objects-security FR-016). `## Owner` names the responsible component by the bare id of a bundle artifact.
+- When no responsible party is known, the skill SHALL write no exclusion.
+- When no responsible party is known, the skill SHALL list the clause as having no responsible party in its reply.
 - The skill SHALL write a control's `## Effectiveness` section as `not_assessed` unless a person supplied another value.
 - The skill SHALL run `quire validate` over the artifacts it wrote and report failures.
 - The skill's template and example SHALL be a `control` and a `scope_exclusion` artifact, replacing the Section 19 template and example.
@@ -46,7 +46,7 @@ Nothing is written into `spec/spec.md` because the artifacts are the record.
 |----|----------|--------------|
 | FR-171-AC-1 | `skills/spec-security-analysis/SKILL.md` contains no instruction to write Section 19, and its output step names the `control` and `scope_exclusion` artifacts. | Inspection |
 | FR-171-AC-2 | The shipped template and example artifacts each pass `quire validate` with the spec-objects-security module installed. | Test |
-| FR-171-AC-3 | `SKILL.md` instructs `not_assessed` as the default `## Effectiveness` value and instructs no exclusion without an owner. | Inspection |
+| FR-171-AC-3 | `SKILL.md` instructs `not_assessed` as the default `## Effectiveness` value and instructs no exclusion without a responsible party. | Inspection |
 | FR-171-AC-4 | A diff of the skill against its base shows no changed standard name and no changed SOC 2 or ISO/IEC 27001 number. | Inspection |
 | FR-171-AC-5 | `SKILL.md` instructs the gap and unowned-clause reply and the `quire validate` run. | Inspection |
 | FR-171-AC-6 | Every NIST SP 800-53 and OWASP ASVS control number cited anywhere under `skills/spec-security-analysis` is a control of Rev 5.2.0 and of ASVS 5.0.0 respectively, checked against the published catalogues; each number the check finds wrong is listed in the PR with its correction, and none remains. | Analysis |

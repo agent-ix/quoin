@@ -56,7 +56,7 @@ Facts:
 - The command SHALL emit no fact for a mapping to a clause that does not bind.
 - The command SHALL emit no fact for a mapping to a set other than the binding report's set.
 - For a binding clause that has a `scope_exclusion`, the command SHALL emit one `disposition` fact with `decision: delegated`.
-- The `rationale` of that fact SHALL be the exclusion's `rationale`, then ` (owner: `, then the exclusion's `owner`, then `)`.
+- The `rationale` of that fact SHALL be the exclusion's `rationale`, then ` (responsible: `, then the exclusion's `responsible`, then `)`.
 - The `approvalRef` of that fact SHALL be the `--approval-ref` value.
 - When `--approval-ref` is absent, the command SHALL emit no disposition fact.
 
@@ -88,7 +88,7 @@ Determinism:
 | FR-173-AC-1 | Over a synthetic set `example.invalid/std@1` with two binding clauses and a corpus where a control with `## Effectiveness` `effective` maps clause C1, stdout holds one `direct` fact for C1 with that control's id in `evidenceRefs` and an `attestation` equal to the supplied object. | Test |
 | FR-173-AC-2 | A clause mapped only by a control that is `not_assessed`, `ineffective`, `partially_effective` or has no `## Effectiveness` section yields no fact and an `open` line naming the control ids. | Test |
 | FR-173-AC-3 | A mapping to a non-binding clause and one to another set yield no fact and an `unused` line each. | Test |
-| FR-173-AC-4 | A binding clause with a `scope_exclusion` and `--approval-ref X` yields a `delegated` disposition fact with `approvalRef` X and a `rationale` of the form `<rationale> (owner: <owner>)`; without `--approval-ref` it yields none and a `needs-approval` line. | Test |
+| FR-173-AC-4 | A binding clause with a `scope_exclusion` and `--approval-ref X` yields a `delegated` disposition fact with `approvalRef` X and a `rationale` of the form `<rationale> (responsible: <responsible>)`; without `--approval-ref` it yields none and a `needs-approval` line. | Test |
 | FR-173-AC-5 | Each refusal case above, namely a missing attestation, an attestation with an extra field, an invalid corpus, an unknown clause in the binding report's set, a duplicate row in one control, a duplicate exclusion, a mapped-and-excluded clause and an identifier that folds onto another, exits non-zero with empty stdout and a message naming the control or exclusion, set and clause. | Test |
 | FR-173-AC-6 | Two runs over identical inputs, with the corpus files in different directory order, produce byte-identical stdout and stderr. | Test |
 | FR-173-AC-7 | The stdout of a successful run is accepted by `quoin evidence record-discharge --facts -` against the same binding report. | Test |
