@@ -17,11 +17,11 @@ use std::path::Path;
 
 use serde::Serialize;
 
+use crate::carried::read_carried;
 use crate::derived::{Derived, fixing_change, rationale_in};
 use crate::error::AnomalyError;
 use crate::history::{history_of, locate};
 use crate::record::{RationaleEntry, Record};
-use crate::refs::anomaly_documents;
 
 /// A condition the gate tests (FR-164).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -83,8 +83,8 @@ pub struct Affected {
 pub struct ReportRow {
     /// The document id.
     pub id: String,
-    /// The authored title.
-    pub title: String,
+    /// The authored title; `null` when absent.
+    pub title: Option<String>,
     /// The document path.
     pub path: String,
     /// The authored status.
@@ -208,17 +208,6 @@ impl Report {
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
-}
-
-/// Whether the report lists the anomaly (FR-162 Selection).
-fn is_listed(record: &Record) -> bool {
-    carried(record) || record.safety_impact == "unassessed"
-}
-
-/// Whether the release carries the anomaly: not `closed`, or `closed` as
-/// `wont-fix`.
-fn carried(record: &Record) -> bool {
-    record.status_word != "closed" || record.resolution.as_deref() == Some("wont-fix")
 }
 
 fn is_placeholder(value: &str) -> bool {
@@ -345,17 +334,18 @@ fn gate(rows: &[ReportRow], modes: &[GateMode]) -> Gate {
 ///
 /// Returns an error when `scope` cannot be read or `git` cannot be run.
 pub fn build_report(scope: &Path, modes: &[GateMode]) -> Result<Report, AnomalyError> {
+    let read = read_carried(scope)?;
+    let unreadable = read
+        .unreadable
+        .iter()
+        .map(|entry| Unreadable {
+            path: shown(&entry.path),
+            code: entry.code.as_str(),
+        })
+        .collect();
     let mut rows = Vec::new();
-    let mut unreadable = Vec::new();
-    for (path, text) in anomaly_documents(scope)? {
-        match crate::record::parse_record(&text) {
-            Err(error) => unreadable.push(Unreadable {
-                path: shown(&path),
-                code: error.code.as_str(),
-            }),
-            Ok(record) if is_listed(&record) => rows.push(row_of(&path, record)?),
-            Ok(_) => {}
-        }
+    for entry in read.carried {
+        rows.push(row_of(&entry.path, entry.record)?);
     }
     rows.sort_by(|a, b| (&a.id, &a.path).cmp(&(&b.id, &b.path)));
     let by_hazard = groups(&rows, "Hazard");

@@ -35,7 +35,7 @@ source and restates no vocabulary.
 | `as_of` | the `--as-of` instant, as supplied | FR-166 |
 | `baseline_commit` | the `--baseline-commit` hash, as supplied | FR-166 |
 | `previous_release` | `{ tag, commit }` of the previous release, or `null` for a first release | FR-168 |
-| `coverage` | per requirement, per criterion: `id`, `static_status`, `evidence_status` | FR-115 |
+| `coverage` | per requirement: `id` and `criteria`, a list holding for each criterion `id`, `static_status` and `evidence_status` | FR-115 |
 | `evidence_freshness` | the count of criteria at each of the five evidence statuses | FR-115 |
 | `open_findings` | each auditor finding of every criterion: `obligation`, `kind`, `summary`, `path`, `line`, `symbol` | FR-115 `evidence_detail.findings` |
 | `soup` | `rows`: per record `purl`, `version`, `group`, `support_status`, `end_of_support`; and `not_assessed`: each item FR-144 appends after its rows, as `{ kind, tool, detail }` | FR-144 |
@@ -45,11 +45,11 @@ source and restates no vocabulary.
 `group` is not a member of FR-144's JSON; it is the row's FR-144 ordering group, and `unassessed` is the FR-162 row flag
 (true exactly when `safety_impact` is `unassessed`). `group` is one of `unresolved_advisory`, `past_end_of_support`, `other`, the three ordering groups of FR-144.
 `kind` of a `not_assessed` item is one of `unmatched_advisory`, `unmatched_policy_finding`, `scan_not_run`,
-`scan_refused`, `scan_vacuous`, `scan_unordered`; `tool` names the scanner (`grype`, `cargo-audit`, `cargo-deny`,
+`scan_vacuous`, `scan_unordered`; `tool` names the scanner (`grype`, `cargo-audit`, `cargo-deny`,
 `licence-policy`); `detail` is defined per `kind`: for `unmatched_advisory`, the advisory id as the scan reports it, a `|`, and the purl the
 advisory names (empty when it names none); for `unmatched_policy_finding`, the rule id, a `|`, and the purl the
-finding names (empty when it names none); for the four `scan_` kinds, the state word `not run`, `refused`, `vacuous`
-or `unordered` that FR-144 and FR-142 use for that state. `evidence_freshness` has exactly the five keys `bound`, `stale`, `suspect`, `undischarged`, `no run evidence`.
+finding names (empty when it names none); for the three `scan_` kinds, the state word `not run`, `vacuous`
+or `unordered` that FR-144 and FR-142 use for that state. FR-144 renders a scan log refused at recording as `not run`, so no separate refused kind exists. `evidence_freshness` has exactly the five keys `bound`, `stale`, `suspect`, `undischarged`, `no run evidence`.
 `release_rationale` is the list of `{ author, rationale }` entries of FR-163 as authored. The snapshot carries
 neither `fixingChange` (FR-136) nor `rationaleChange` (FR-163), because both derive from git history and the command
 runs no git ([FR-166](./FR-166-release-snapshot-command.md)).

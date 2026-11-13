@@ -915,14 +915,29 @@ fn a_commit_that_moves_one_anomaly_and_adds_a_similar_one_keeps_both_histories()
     assert_eq!(moved[0].commit.as_deref(), Some(added.as_str()));
 }
 
+#[trace("FR-162-AC-3")]
+#[test]
+fn a_missing_title_reads_as_null_and_the_record_is_readable() {
+    let mut repo = corpus();
+    repo.commit(
+        &anomaly_path("AN-001"),
+        &set_key(&fx("valid", "assessed", "AN-001"), "title", None),
+    );
+    let report = report(&repo);
+    assert!(report.unreadable.is_empty());
+    assert_eq!(json_of(&report)["anomalies"][0]["title"], Value::Null);
+    let markdown = report.to_markdown();
+    let line = markdown
+        .lines()
+        .find(|l| l.starts_with("| AN-001 "))
+        .unwrap();
+    assert!(line.starts_with("| AN-001 | not stated |"), "{line}");
+}
+
 #[trace("FR-162-AC-9")]
 #[test]
-fn a_missing_title_or_a_malformed_rationale_table_is_a_mapping_error() {
+fn a_malformed_rationale_table_is_a_mapping_error() {
     let cases = [
-        (
-            "missing",
-            set_key(&fx("valid", "assessed", "AN-001"), "title", None),
-        ),
         ("columns", fx("invalid", "rationale-bad-headers", "AN-001")),
         ("min-rows", fx("invalid", "rationale-no-rows", "AN-001")),
         (

@@ -30,7 +30,16 @@ fn failed(operation: &str, error: &CoreError) -> String {
 
 /// Invoke one command-shaped core operation through the governed runtime.
 pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Response, String> {
-    dispatch(operation, request, &settings()).map_err(|error| failed(operation, &error))
+    invoke_typed(operation, request).map_err(|error| failed(operation, &error))
+}
+
+/// As [`invoke`], keeping the core's typed error so a caller can tell a
+/// request the core rejected from a failure of the host.
+pub(crate) fn invoke_typed(
+    operation: &str,
+    request: &serde_json::Value,
+) -> Result<Response, CoreError> {
+    dispatch(operation, request, &settings())
 }
 
 /// As [`invoke`], except that a refusal naming the pack (a `pack` context entry) is returned as a

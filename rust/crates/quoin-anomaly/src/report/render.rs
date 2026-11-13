@@ -84,7 +84,7 @@ fn rows_table(report: &Report, out: &mut String) {
             out,
             "| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |",
             cell(&row.id),
-            cell(&row.title),
+            or_not_stated(row.title.as_deref()),
             cell(&row.path),
             cell(&row.status),
             or_not_stated(row.resolution.as_deref()),

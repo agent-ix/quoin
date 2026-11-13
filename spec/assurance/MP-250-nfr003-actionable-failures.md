@@ -127,6 +127,7 @@ statistical_design:
       - "module:unknown-subcommand"
       - "quoin:unknown-flag"
       - "quoin:unknown-subcommand"
+      - "release:unknown-flag"
       - "report --portfolio:missing-path"
       - "report --repo:missing-path"
       - "report:unknown-flag"

@@ -12,6 +12,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod carried;
 pub mod check;
 pub mod derived;
 pub mod error;
@@ -21,6 +22,7 @@ pub mod refs;
 pub mod report;
 pub mod status;
 
+pub use carried::{CarriedAnomaly, CarriedRead, UnreadableAnomaly, is_carried, read_carried};
 pub use check::{Checked, Context, Diagnostic, DiagnosticCode, Severity, check_document};
 pub use derived::{Change, Derived, fixing_change, rationale_change};
 pub use error::{AnomalyError, ErrorCode};

@@ -64,8 +64,8 @@ pub struct RationaleEntry {
 pub struct Record {
     /// The document id.
     pub id: String,
-    /// The authored `title`.
-    pub title: String,
+    /// The authored `title`, when present (FR-162 Row: absent reads as `null`).
+    pub title: Option<String>,
     /// The authored `status` word, verbatim; see [`Record::status`].
     pub status_word: String,
     /// 1-based document line of the frontmatter `status` field.
@@ -328,7 +328,6 @@ pub fn parse_record(text: &str) -> Result<Record, MappingError> {
     let safety_impact = scalar(&front, "safety_impact")
         .ok_or_else(|| error(MappingErrorCode::Missing, status_line))?;
     let id = scalar(&front, "id").ok_or_else(|| error(MappingErrorCode::Missing, 1))?;
-    let title = scalar(&front, "title").ok_or_else(|| error(MappingErrorCode::Missing, 1))?;
     let (assessment, assessment_text) = match section(text, SECTION) {
         None => (None, None),
         Some((heading, body)) => (Some(rows(heading, &body)?), assessment_text(text)),
@@ -342,7 +341,7 @@ pub fn parse_record(text: &str) -> Result<Record, MappingError> {
     };
     Ok(Record {
         id,
-        title,
+        title: scalar(&front, "title"),
         status_word: status,
         status_line,
         resolution: scalar(&front, "resolution"),
