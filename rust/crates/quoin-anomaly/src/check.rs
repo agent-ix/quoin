@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 
 //! The anomaly diagnostics (FR-136): illegal transition, missing reassessment,
-//! missing module and no record.
+//! missing module and no record; and the fix-verification evidence findings
+//! (FR-175) from [`crate::verification`].
 
 use std::path::Path;
 
@@ -14,12 +15,14 @@ use crate::history::{History, StatusEntry, pending_entry, read_history};
 use crate::record::{assessment_text, parse_record, status_line, status_word};
 use crate::status::Status;
 
-/// A diagnostic's severity; every anomaly diagnostic is an error.
+/// A diagnostic's severity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {
     /// Fails `quoin anomaly check`.
     Error,
+    /// Reported; leaves the exit status as it would be without it (FR-175).
+    Warning,
 }
 
 impl Severity {
@@ -28,6 +31,7 @@ impl Severity {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Error => "error",
+            Self::Warning => "warning",
         }
     }
 }
@@ -47,6 +51,12 @@ pub enum DiagnosticCode {
     /// A document the mapping cannot read.
     #[serde(rename = "anomaly.no-record")]
     NoRecord,
+    /// A fix-verification row whose result is failing (FR-175).
+    #[serde(rename = "anomaly.fix-result-failing")]
+    FixResultFailing,
+    /// A `Test` fix-verification row with no result (FR-175).
+    #[serde(rename = "anomaly.fix-test-missing-result")]
+    FixTestMissingResult,
 }
 
 impl DiagnosticCode {
@@ -58,6 +68,8 @@ impl DiagnosticCode {
             Self::ReassessmentMissing => "anomaly.reassessment-missing",
             Self::MissingModule => "anomaly.missing-module",
             Self::NoRecord => "anomaly.no-record",
+            Self::FixResultFailing => "anomaly.fix-result-failing",
+            Self::FixTestMissingResult => "anomaly.fix-test-missing-result",
         }
     }
 
@@ -69,6 +81,20 @@ impl DiagnosticCode {
             Self::ReassessmentMissing => "reopen",
             Self::MissingModule => "spec-objects-safety",
             Self::NoRecord => "mapping-error",
+            Self::FixResultFailing => "failing-result",
+            Self::FixTestMissingResult => "missing-result",
+        }
+    }
+
+    /// The severity every finding of this code carries.
+    #[must_use]
+    pub fn severity(self) -> Severity {
+        match self {
+            Self::FixResultFailing | Self::FixTestMissingResult => Severity::Warning,
+            Self::IllegalTransition
+            | Self::ReassessmentMissing
+            | Self::MissingModule
+            | Self::NoRecord => Severity::Error,
         }
     }
 }
@@ -78,17 +104,19 @@ impl DiagnosticCode {
 pub struct Diagnostic {
     /// The stable code.
     pub code: DiagnosticCode,
-    /// Always `error`.
+    /// `error`, except for the fix-verification findings, which are `warning`.
     pub severity: Severity,
     /// 1-based line of the frontmatter `status` field in the working tree.
     pub line: usize,
     /// The commits involved, when the finding is about history.
     pub commits: Vec<String>,
+    /// The fix-verification `Target` the finding concerns, when it concerns one.
+    pub target: Option<String>,
     /// Human-readable detail.
     pub message: String,
 }
 
-fn diagnostic(
+pub(crate) fn diagnostic(
     code: DiagnosticCode,
     line: usize,
     commits: Vec<String>,
@@ -96,15 +124,17 @@ fn diagnostic(
 ) -> Diagnostic {
     Diagnostic {
         code,
-        severity: Severity::Error,
+        severity: code.severity(),
         line,
         commits,
+        target: None,
         message,
     }
 }
 
 impl Diagnostic {
-    /// The reason: `transition`, `reopen`, `spec-objects-safety` or `mapping-error`.
+    /// The reason: `transition`, `reopen`, `spec-objects-safety`, `mapping-error`,
+    /// `failing-result` or `missing-result`.
     #[must_use]
     pub fn reason(&self) -> &'static str {
         self.code.reason()

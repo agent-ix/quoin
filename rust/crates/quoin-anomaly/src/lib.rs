@@ -21,6 +21,7 @@ pub mod record;
 pub mod refs;
 pub mod report;
 pub mod status;
+pub mod verification;
 
 pub use carried::{CarriedAnomaly, CarriedRead, UnreadableAnomaly, is_carried, read_carried};
 pub use check::{Checked, Context, Diagnostic, DiagnosticCode, Severity, check_document};
@@ -28,8 +29,13 @@ pub use derived::{Change, Derived, fixing_change, rationale_change};
 pub use error::{AnomalyError, ErrorCode};
 pub use history::{History, Signature, StatusEntry, read_history};
 pub use record::{
-    MappingError, MappingErrorCode, RationaleEntry, Record, Row, parse_record, status_line,
+    MappingError, MappingErrorCode, RationaleEntry, Record, Row, VerificationRow, parse_record,
+    status_line,
 };
-pub use refs::{RefEntry, acceptance_criteria, anomaly_documents, is_hazard, references_to};
+pub use refs::{
+    CorpusIds, RefEntry, acceptance_criteria, anomaly_documents, corpus_ids, is_hazard,
+    references_to, test_case_ids,
+};
 pub use report::{Gate, GateMode, Report, build_report};
 pub use status::Status;
+pub use verification::{FixResult, Verification, evaluates_criteria};
