@@ -94,9 +94,12 @@ pub const MAX_PARSE_RESULTS_BYTES: usize = 32 * 1024 * 1024;
 
 /// The largest `evidence.record` request, in bytes.
 ///
-/// [`MAX_PARSE_RESULTS_BYTES`] worth of producer document, plus every
-/// obligation quire derived for the repository.
-pub const MAX_RECORD_BYTES: usize = 48 * 1024 * 1024;
+/// The largest producer document any adapter accepts (64 MiB, the
+/// `differential-report` adapter's `MAX_REPORT_BYTES`), plus 16 MiB for every
+/// obligation quire derived for the repository and the other request members.
+/// The bound is on the serialized request, so a report whose JSON string
+/// escaping grows it past the allowance is refused on the request, not the report.
+pub const MAX_RECORD_BYTES: usize = 80 * 1024 * 1024;
 
 /// The largest single path, identity or timestamp this domain accepts, in
 /// bytes.

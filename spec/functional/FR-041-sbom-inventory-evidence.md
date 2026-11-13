@@ -80,8 +80,8 @@ every entry as a trace id, so the inventory binds through the same join and unde
 `unmatched` (checked against the obligations directly, so an inventory listing nothing still reports it), and an
 inventory listing nothing has no entry to bind and discharges nothing.
 
-`--discharges` is accepted on the sbom adapter and on finding-shaped recordings, and **refused on every other run
-adapter** with an error naming the adapter: a test run derives what it discharges from the trace ids its entries
+`--discharges` is accepted on the sbom adapter, on finding-shaped recordings and on the `differential-report` adapter
+([FR-152](./FR-152-analysis-run-entry-link-to-obligation.md)), and **refused on every other run adapter** with an error naming the adapter: a test run derives what it discharges from the trace ids its entries
 carry, and stating an obligation on one would let a failing suite discharge it.
 
 ### quoin does not generate the SBOM

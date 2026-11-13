@@ -28,6 +28,7 @@ workspace = true
 
 [dependencies]
 ix-trace-rs = { workspace = true }
+quire-analyze = { workspace = true }
 quoin-quire-types = { workspace = true }
 quoin-store = { workspace = true }
 quoin-yaml = { workspace = true }

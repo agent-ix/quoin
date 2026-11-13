@@ -140,8 +140,8 @@ pub static ADAPTERS: &[RunAdapter] = &[
     },
     RunAdapter {
         name: "differential-report",
-        summary: "Domain differential summary (<domain>.differential-summary/v1) — engine versus external reference, case by case.",
-        tools: &["differential-report", "tl-mltl", "r2u2", "c2po"],
+        summary: "quire-analyze differential report (quire.differential-report/v2) — one analysis request judged by two SMT engines.",
+        tools: &["differential-report", "quire-analyze"],
         parse: differential_report::parse_differential_report,
     },
 ];
