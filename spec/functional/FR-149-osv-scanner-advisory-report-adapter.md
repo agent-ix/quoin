@@ -14,7 +14,7 @@ relationships:
   - target: "ix://agent-ix/quoin/FR-142"
     type: "references"
   - target: "ix://agent-ix/engineering-assurance/FR-044"
-    type: "references"
+    type: "depends_on"
 ---
 
 # FR-149: OSV-Scanner advisory report adapter
@@ -32,15 +32,14 @@ adapter of the FR-033 registry, beside `sarif`, `cargo-audit` and `cargo-deny`, 
 
 The adapter is the only place that knows the OSV-Scanner JSON layout. It emits the same finding shape as every
 other finding adapter and records the tool name `osv-scanner`. The join (FR-142) and the report (FR-144) read
-`FindingRecord` entries by tool name and know nothing of OSV-Scanner's layout, so a later Rust scanner is added
-as a new adapter and a new tool name, and the join is unchanged except for one row of its assessed-types table.
+`FindingRecord` entries by tool name and know nothing of OSV-Scanner's layout, so a later scanner using a new adapter and tool name is added, and the join is unchanged except for one row of its assessed-types table.
 
 ### Research status
 
-Every statement below was read from the OSV-Scanner documentation and source at release `v2.7.1`
-(`docs/output.md`, `docs/offline-mode.md`, `docs/configuration.md`, `pkg/models/results.go`,
-`cmd/osv-scanner/`) and is VERIFIED to that reading, or it is marked UNVERIFIED. No binary was run by the spec
-author. The adapter fixtures (FR-149-AC-10) decide each UNVERIFIED row.
+The documented report shape below was reviewed from OSV-Scanner project documentation and source. A fixture-only runtime
+check confirmed `-L` accepts a retained SBOM named with a `.cdx.json` suffix; with no local offline database, the scan stopped
+with an error before producing a report. This did not verify vulnerability matching, report completeness, or adapter behavior.
+The Rust tests use authentic captured reports and fixture-only malformed inputs; no captured report is fabricated.
 
 | # | Statement | Status |
 | --- | --- | --- |
@@ -74,11 +73,11 @@ One finding per vulnerability per package.
 | rule id | `id` of the vulnerability, as written (`GHSA-`, `CVE-`, `GO-`, `PYSEC-` or any other OSV id). Aliases are not merged. |
 | severity | `max_severity` of the `groups` entry whose `ids` holds the rule id, as written and unmapped (FR-034-CON-2); unset where no group names it. |
 | message | `summary` of the vulnerability where present, else the rule id. |
-| path | `package.purl` of the package; where a package has no purl, `<package.name>@<package.version>`. |
+| path | A valid `package.purl` of the package; where a package has no purl but has a non-empty `package.name` and `package.version`, `<package.name>@<package.version>`. |
 
 OSV-Scanner reports no count of the rules it evaluated, so `rulesEvaluated` stays unset and the vacuity check
-stays silent rather than guess. The ruleset is the database identity if the report exposes one (row 2: it does
-not at this release), otherwise unset; the evidence then states the database as `not recorded`.
+stays silent rather than guess. The ruleset is the database identity if the report exposes one (row 2: none is
+documented in the reviewed report shape), otherwise unset; the evidence then states the database as `not recorded`.
 
 ## Data terms
 
@@ -97,6 +96,11 @@ terms are as recorded in `ix://agent-ix/engineering-assurance/FR-044` and are no
 - Where the report exposes no database identity, the adapter SHALL leave the ruleset unset.
 - The adapter SHALL leave `rulesEvaluated` unset.
 - If a vulnerability names no `id`, then the adapter SHALL refuse the document, because a dropped vulnerability could leave a component read as clean.
+- For every package containing a vulnerability, the adapter SHALL require a package object.
+- If `package.purl` is present for a package containing a vulnerability, then the adapter SHALL require that purl to be syntactically valid and use it as the finding path.
+- If a package containing a vulnerability has no purl, then the adapter SHALL require non-empty package name and version and use `<name>@<version>` as the finding path.
+- If a package containing a vulnerability has neither a valid purl nor a non-empty name and version, then the adapter SHALL refuse the entire document and write no `FindingRecord`.
+- The adapter SHALL NOT record an ambiguous path or allow the affected component to appear clean.
 - If the document is not a JSON object, has no `results` array, has an empty `results` array, or has a source with no non-empty `packages` array, then the adapter SHALL refuse it.
 - If the document is refused, then `quoin evidence record` SHALL write no `FindingRecord` and exit non-zero with an error naming the reason.
 - The adapter SHALL NOT run OSV-Scanner, read an SBOM, read a vulnerability database or open the network.
@@ -113,13 +117,14 @@ terms are as recorded in `ix://agent-ix/engineering-assurance/FR-044` and are no
 | FR-149-AC-4 | A source with no `packages` array, or an empty one, is refused with an error naming `packages`, and writes no `FindingRecord`. | Test |
 | FR-149-AC-5 | A report with a vulnerability lacking an `id` is refused with an error naming the vulnerability and its package, and writes no `FindingRecord`. | Test |
 | FR-149-AC-6 | `--tool osv-scanner` selects the adapter, and `--tool cargo-audit` and `--tool cargo-deny` still select theirs. | Test |
-| FR-149-AC-7 | A package with no purl is recorded with the path `<name>@<version>` and the join lists it unmatched with the reason `no purl` (FR-142-AC-26). | Test |
+| FR-149-AC-7 | A package with no purl and non-empty name and version is recorded with path `<name>@<version>`; the adapter test asserts only this fallback path. FR-142-AC-26 tests the separate unmatched-join behavior. | Test |
 | FR-149-AC-8 | A report that exposes no database identity is recorded with an unset ruleset and unset `rulesEvaluated`, and the vacuity check is silent. | Test |
-| FR-149-AC-9 | The adapter source opens no file other than its input, runs no subprocess and opens no network connection. | Inspection |
-| FR-149-AC-10 | The adapter fixtures are captured from an OSV-Scanner run, by the FR-044 request definition, over the SBOMs of the engineering-assurance fixtures (`ix://agent-ix/engineering-assurance/FR-039`: npm and Python; the Go module fixture is added by the PLAT-1601 implementation) and checked in unedited, and the captures record the outcome of each UNVERIFIED row of Research status. | Inspection |
-| FR-149-AC-11 | The Research status table of this requirement states VERIFIED or UNVERIFIED for every row, and a retained finding record or success output states the database as `not recorded` when the report exposes none. | Inspection |
-
+| FR-149-AC-9 | Rust tests in the existing harness exercise the adapter boundary and assert that recording reads only the supplied input, invokes no subprocess and opens no network connection. | Test |
+| FR-149-AC-10 | Rust adapter tests in the existing harness parse authentic, unedited OSV-Scanner reports captured through the FR-044 request over the npm, Python, Go and container OS-package fixtures defined by FR-044; malformed and truncated inputs are derived test fixtures and are not represented as captured scanner outputs. The tests assert parsing and package identity behavior without using tool results as compliance evidence. | Test |
+| FR-149-AC-11 | When a captured report exposes no database identity, a Rust test asserts the retained finding record or success output states the database as `not recorded`. | Test |
+| FR-149-AC-12 | Rust tests in the existing harness each supply a vulnerability with a missing package, an empty package name, an empty package version, or a present malformed purl and assert the entire report is refused with a package-identity error and no `FindingRecord` is written. | Test |
+| FR-149-AC-13 | The Research status table states VERIFIED or UNVERIFIED for every documented claim, and does not mark a fixture-only path-recognition check as proof of advisory matching or report completeness. | Inspection |
 ## Dependencies
 
-- **Upstream**: [FR-033](./FR-033-evidence-format-adapters.md), [FR-034](./FR-034-finding-shaped-evidence.md); `ix://agent-ix/engineering-assurance/FR-044` produces the report.
+- **Upstream**: [FR-033](./FR-033-evidence-format-adapters.md), [FR-034](./FR-034-finding-shaped-evidence.md); [engineering-assurance FR-044](ix://agent-ix/engineering-assurance/FR-044) produces the report.
 - **Downstream**: [FR-142](./FR-142-advisory-join-onto-soup-records.md), [FR-144](./FR-144-soup-report.md)

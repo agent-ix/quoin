@@ -18,7 +18,7 @@ relationships:
   - target: "ix://agent-ix/quoin/FR-150"
     type: "depends_on"
   - target: "ix://agent-ix/engineering-assurance/FR-044"
-    type: "references"
+    type: "depends_on"
   - target: "ix://agent-ix/spec-objects-security/FR-011"
     type: "depends_on"
   - target: "ix://agent-ix/spec-objects-security/FR-012"
@@ -32,8 +32,9 @@ relationships:
 `cargo-audit`, `cargo-deny` and `osv-scanner` findings are already retained as `FindingRecord` entries through the adapters
 of the FR-033 registry, FR-034 and [FR-149](./FR-149-osv-scanner-advisory-report-adapter.md). This requirement joins them onto `soup_record` entries at read time. The
 `soup_record` schema admits no advisory list and no severity (`agent-ix/spec-objects-security` FR-012), so the
-join is computed when a report is produced and is never written into a record. `osv-scanner` (OSV-Scanner, behind the adapter boundary of FR-149, so a later scanner reuses this join) is the one scanner for the non-Cargo components of the Syft SBOM (npm, PyPI and Go module;
-OS packages are not assessed until OSV-Scanner's handling of a Syft OS-package purl is verified, research row 7 of engineering-assurance FR-044), run through `producer-execute` by `ix://agent-ix/engineering-assurance/FR-044`. No new
+join is computed when a report is produced and is never written into a record. `osv-scanner` (OSV-Scanner, behind the adapter boundary of FR-149, so a later scanner reuses this join) is the one scanner for the non-Cargo components of the Syft SBOM (npm, PyPI, Go module and the Debian OS-package fixture);
+its OS-package advisory match is specified by engineering-assurance FR-044 and exercised by Rust fixture tests, run through
+`producer-execute` by `ix://agent-ix/engineering-assurance/FR-044`. No new
 advisory parser is added beyond the FR-149 adapter, and no severity is translated or scored (FR-034-CON-2).
 
 The join is scan-only. The `vulnerability` object of spec-objects-security, whose `affects` edge may name a
@@ -87,11 +88,13 @@ The ecosystems each tool assesses are a property of the tool, stated here and no
 | Tool | Purl types assessed |
 |---|---|
 | `cargo-audit`, `cargo-deny` | `cargo` |
-| `osv-scanner` | `npm` (covering npm, pnpm and yarn lock files), `pypi`, `golang` |
+| `osv-scanner` | `npm` (covering npm, pnpm and yarn lock files), `pypi`, `golang`, and `deb` for the container OS-package fixture defined by FR-044 |
 
-Neither Syft nor OSV-Scanner has a cataloger or advisory source for Lean lake manifests. A record whose purl type is
-assessed by no tool in the table (for example `pkg:lake/…`, `pkg:generic/…` or an OS-package type such as `pkg:deb/…`, `pkg:apk/…` or `pkg:rpm/…`, which no tool assesses until verified) has its advisories **not
-assessed**: the join states the record `unsupported` for its purl type, and never reports it free of advisories.
+Neither Syft nor OSV-Scanner has a cataloger or advisory source for Lean lake manifests. A `pkg:lake/…` record is explicitly
+unsupported: the join states its advisories are **not assessed** and never reports it free of advisories, even when every retained
+scan is clean. A `pkg:generic/…` record or any other purl type not listed in the table is handled the same way. OS-package purl types
+present in the FR-044 container fixtures are assessed by `osv-scanner`; the required Rust tests verify their purl join against the
+fixture advisory. No fixture result is treated as compliance evidence.
 A record whose purl type a tool assesses, but whose scan was not read, is not `unsupported`; it is not free of that
 tool's advisories, and the output names the tool's scan state (not run, unordered or vacuous).
 
@@ -109,7 +112,7 @@ name and version segments, percent-decoded, are equal, and the type is compared 
 subpath are ignored. No ecosystem-specific name normalisation is applied, so a finding whose purl differs from the
 record's in spelling is listed as unmatched and is not dropped. A finding never attaches to a record of another
 purl type, whatever the name. The `<name>@<version>` rule belongs to `cargo-audit` and `cargo-deny` findings only: a
-`osv-scanner` finding whose path is not a purl (FR-149 records `<name>@<version>` for a match with no purl) is never matched
+`osv-scanner` finding whose path is not a purl (FR-149 records `<name>@<version>` for a valid package identity with no purl) is never matched
 by it, and is listed as unmatched with the reason `no purl`.
 
 ### Resolution
@@ -194,14 +197,14 @@ advisory therefore leaves that advisory unresolved until a person attests again.
 | FR-142-AC-16 | A finding whose path is `pkg:cargo/a@1.0.0?arch=x86#sub` attaches to the record with purl `pkg:cargo/a@1.0.0`. | Test |
 | FR-142-AC-17 | With a retained cargo-audit scan whose `timestamp` is not an instant beside a well-formed one, the output states cargo-audit unordered, reads neither scan, and shows no record free of cargo-audit advisories. | Test |
 | FR-142-AC-18 | The same advisory reported by cargo-audit at an earlier scan and by cargo-deny at a later one, on one record attested between them, is attached once per tool and both are unresolved with the reason `scan newer than attestation`. | Test |
-| FR-142-AC-19 | Given retained osv-scanner scans over fixture SBOMs holding npm (including a scoped package), PyPI and Go module components (the Go module fixture is added to the engineering-assurance fixtures by the implementation of PLAT-1601, because the existing FR-039 fixtures have none), each fixture component with a known fixture advisory receives exactly the matches whose purl equals its own, and no component receives another's advisory, including a PyPI and an npm record of the same name. | Test |
-| FR-142-AC-20 | A record of purl type `lake`, `generic` or `deb` is reported `unsupported` and is not reported free of advisories, even when every retained scan is clean. | Test |
+| FR-142-AC-19 | Given retained osv-scanner scans over authentic captured reports from FR-044 fixtures holding npm (including a scoped package), PyPI, Go module, and container OS-package components, each fixture component with a known fixture advisory receives exactly the findings whose valid purl equals its own, and no component receives another's advisory, including a PyPI and npm record of the same name. Rust tests in the existing harness exercise this purl join over fixture records. | Test |
+| FR-142-AC-20 | A Lean lake record with purl type `lake` is reported `unsupported` and is never reported free of advisories, even when every retained scan is clean; a `generic` record is handled the same way. | Test |
 | FR-142-AC-21 | With no retained osv-scanner scan the output states osv-scanner not run; with a retained clean osv-scanner scan it states a clean scan for an npm record; the two differ. | Test |
 | FR-142-AC-22 | A osv-scanner report refused at recording (FR-149-AC-3 to FR-149-AC-5) leaves osv-scanner not run and no record free of osv-scanner advisories; with an older osv-scanner scan retained, the older scan is read and its timestamp and database identity (or `database not recorded`) are stated. | Test |
 | FR-142-AC-23 | A osv-scanner finding whose purl matches no record, and one whose purl differs from a record's only in spelling, each appear once in the unmatched list with rule id and package, and attached + unmatched equals the distinct findings read. | Test |
 | FR-142-AC-24 | A osv-scanner advisory on a record with a current approved disposition attested at or after the osv-scanner scan shows resolved with the fact copied unchanged; attested earlier it shows unresolved with `scan newer than attestation`. | Test |
 | FR-142-AC-25 | An npm record is shown free of osv-scanner advisories only from a read, non-vacuous osv-scanner scan, and is not shown free of `cargo-audit` advisories, which do not assess its purl type. | Test |
-| FR-142-AC-26 | A osv-scanner finding with no purl is listed unmatched with the reason `no purl` and attaches to no record, including a `pkg:cargo/` record of the same name and version, and no npm, PyPI or Go module record is shown free of osv-scanner advisories while it is read. | Test |
+| FR-142-AC-26 | A osv-scanner finding with no purl is listed unmatched with the reason `no purl` and attaches to no record, including a `pkg:cargo/` record of the same name and version, and no record of any purl type assessed by osv-scanner in the FR-044 fixtures is shown free of advisories while it is read. | Test |
 | FR-142-AC-27 | An npm record with a clean osv-scanner scan and a PyPI record whose purl type is also assessed are each free of advisories; a `lake` record is `unsupported` and a cargo record with no read cargo scan is not free of advisories. | Test |
 | FR-142-AC-28 | A retained cargo-deny diagnostic of each of `rejected`, `unlicensed`, `banned` and `not-allowed` attaches to its `pkg:cargo/` record as a policy finding, is not counted as an advisory, and is resolved by the disposition rule; a `duplicate`, `wildcard`, `license-not-encountered` and `unmatched-skip` diagnostic are set aside and counted. The `rejected` and `unlicensed` fixtures are captured from cargo-deny unedited. | Test |
 | FR-142-AC-29 | Given a retained `licence-policy` scan over a fixture SBOM holding an allowed, a denied, a not-listed, an unlicensed and a banned npm or PyPI component, each finding attaches to the record with its own purl and to no other, carrying its rule id, severity word and message unchanged, and the allowed component's record has none. | Test |
