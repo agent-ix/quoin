@@ -19,6 +19,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 quoin-yaml = { workspace = true }
+quoin-evidence = { workspace = true }
 
 [dev-dependencies]
 ix-trace-rs = { workspace = true }
