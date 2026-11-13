@@ -13,7 +13,7 @@ use crate::ids::{RecordId, Revision};
 use crate::model::json::{number, object, string_values};
 use crate::model::record::{
     DECISION_EVENT_KIND, Definition, ImpactSnapshot, RECORD_TYPE, RecordSubject, ReviewWorkflow,
-    SCHEMA_VERSION, SourceConnection, Statement,
+    SCHEMA_VERSION, SignedApprovalPolicy, SourceConnection, Statement,
 };
 
 /// Build the JSON form of a record.
@@ -95,9 +95,26 @@ pub(super) fn write_record(
                 "decision_event_kind",
                 JsonValue::string(DECISION_EVENT_KIND),
             ),
+            (
+                "signed_approval",
+                write_policy(&review_workflow.signed_approval),
+            ),
         ]),
     ));
     Ok(object(members))
+}
+
+fn write_policy(policy: &SignedApprovalPolicy) -> JsonValue {
+    let kinds: Vec<&str> = policy
+        .signature_kinds
+        .iter()
+        .map(|kind| kind.as_str())
+        .collect();
+    object(vec![
+        ("required", JsonValue::Bool(policy.required)),
+        ("signature_kinds", string_values(&kinds)),
+        ("approvers", string_values(&policy.approvers)),
+    ])
 }
 
 fn write_definition(definition: &Definition) -> JsonValue {

@@ -550,6 +550,10 @@ const CENSUS_OF_THE_OLDER_DOMAINS: &[(&str, usize)] = &[
         crate::ops::change_assurance::MAX_RECEIPT_BYTES,
     ),
     (
+        "ops::change_assurance::MAX_RECORD_DIGEST_BYTES",
+        crate::ops::change_assurance::MAX_RECORD_DIGEST_BYTES,
+    ),
+    (
         "ops::change_assurance::MAX_RECOVER_BYTES",
         crate::ops::change_assurance::MAX_RECOVER_BYTES,
     ),

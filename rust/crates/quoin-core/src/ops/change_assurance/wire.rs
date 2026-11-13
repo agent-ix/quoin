@@ -75,6 +75,12 @@ pub const MAX_RECEIPT_BYTES: usize = 32 * 1024 * 1024;
 /// carries, because the receipt is re-derived from them.
 pub const MAX_VERIFY_RECEIPT_BYTES: usize = 36 * 1024 * 1024;
 
+/// The largest `change_assurance.record_digest` request this domain will decide
+/// over, in bytes.
+///
+/// A repository root, a record id and a revision.
+pub const MAX_RECORD_DIGEST_BYTES: usize = 8 * 1024;
+
 /// The largest `change_assurance.schema` request this domain will decide over,
 /// in bytes.
 ///
@@ -123,6 +129,35 @@ pub struct WriteRecordPayload {
     /// Whether this call retained the record, or found the same bytes already
     /// there. Re-writing an identical record is not an error and never was.
     pub retained: bool,
+    /// The record digest of the retained revision: `sha256:` and the SHA-256 of
+    /// its stored bytes (FR-063), the value an approval tag's
+    /// `Approved-Record-Digest` trailer names.
+    pub record_digest: String,
+}
+
+/// The request accepted by `change_assurance.record_digest`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct RecordDigestRequest {
+    /// Repository root holding the evidence store.
+    pub repo: String,
+    /// Identity of the stored record.
+    pub record_id: String,
+    /// The revision of that record.
+    pub revision: u64,
+}
+
+/// The payload `change_assurance.record_digest` writes to stdout.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct RecordDigestPayload {
+    /// The record's identity.
+    pub record_id: String,
+    /// The revision hashed.
+    pub revision: u64,
+    /// `sha256:` and the lowercase SHA-256 of the stored file's exact bytes.
+    pub record_digest: String,
 }
 
 /// The request accepted by `change_assurance.prepare_attestation`.

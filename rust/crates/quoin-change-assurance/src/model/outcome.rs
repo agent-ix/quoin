@@ -95,7 +95,7 @@ macro_rules! reasons {
 }
 
 reasons! {
-    /// The record did not satisfy its v1 schema.
+    /// The record did not satisfy its v2 schema.
     SchemaInvalid => "schema_invalid", false;
     /// The record read did not carry the id and revision it was asked for.
     RecordRevisionMismatch => "record_revision_mismatch", false;
@@ -121,6 +121,20 @@ reasons! {
     EventChainInvalid => "event_chain_invalid", false;
     /// The decision event did not identify this record and revision.
     DecisionMismatch => "decision_mismatch", false;
+    /// The claimed approval names another record, or a digest other than the
+    /// reviewed revision's stored bytes.
+    ApprovalRecordMismatch => "approval_record_mismatch", false;
+    /// The claimed approval's signer is untrusted, or falls outside the
+    /// record's narrowing policy.
+    ApprovalSignerUntrusted => "approval_signer_untrusted", false;
+    /// The claimed approval reports a status of `signed_bad`.
+    ApprovalSignatureBad => "approval_signature_bad", false;
+    /// The claimed approval reports a tag that is unsigned or could not be checked.
+    ApprovalUnverified => "approval_unverified", true;
+    /// The claimed approval reports a tag with no meaning.
+    ApprovalMeaningMissing => "approval_meaning_missing", true;
+    /// The record's policy requires a claimed approval and the event carries none.
+    ApprovalMissing => "approval_missing", true;
     /// The review decision was a rejection.
     ReviewRejected => "review_rejected", false;
     /// The review decision requested a revision.
@@ -272,7 +286,7 @@ mod tests {
     }
 
     #[test]
-    fn exactly_thirteen_reasons_leave_the_outcome_incomplete() {
+    fn exactly_sixteen_reasons_leave_the_outcome_incomplete() {
         let incomplete: Vec<&str> = Reason::ALL
             .iter()
             .filter(|reason| reason.is_incomplete())
@@ -287,6 +301,9 @@ mod tests {
                 "unresolved_unknown",
                 "decision_missing",
                 "event_chain_missing",
+                "approval_unverified",
+                "approval_meaning_missing",
+                "approval_missing",
                 "attestation_missing",
                 "output_missing",
                 "result_unavailable",

@@ -17,6 +17,7 @@
 
 use quoin_change_assurance::error::Subject;
 use quoin_change_assurance::ids::{RecordId, Revision};
+use quoin_change_assurance::record_digest;
 use quoin_change_assurance::verify::input::{
     AuditReport, RetainedAttestation, RetainedAudit, Selection, VerificationInput,
 };
@@ -33,7 +34,7 @@ pub(crate) fn json(text: &str) -> JsonValue {
 /// The record body, as a producer would hand it in.
 pub(crate) fn record_text() -> String {
     r#"{
-      "schema_version": 1,
+      "schema_version": 2,
       "record_type": "change_assurance",
       "record_id": "change-1",
       "revision": 1,
@@ -54,7 +55,7 @@ pub(crate) fn record_text() -> String {
         }],
         "unknowns": []
       },
-      "review_workflow": {"run_id": "run-1", "decision_event_kind": "change_assurance.review_decided"}
+      "review_workflow": {"run_id": "run-1", "decision_event_kind": "change_assurance.review_decided", "signed_approval": {"required": false, "signature_kinds": [], "approvers": []}}
     }"#
     .to_owned()
 }
@@ -89,7 +90,7 @@ pub(crate) fn event_text(id: &str, sequence: u64, kind: &str) -> String {
       "id": "{id}", "ts": "2026-08-31T00:00:00.000Z", "sequence": {sequence},
       "actor": {{"id": "reviewer-1", "kind": "human"}},
       "kind": "{kind}",
-      "payload": {{"schema_version": 1, "record_id": "change-1", "revision": 1, "decision": "approved"}}
+      "payload": {{"schema_version": 2, "record_id": "change-1", "revision": 1, "decision": "approved"}}
     }}"#
     )
 }
@@ -102,12 +103,20 @@ pub(crate) fn history(events: &[String]) -> JsonValue {
     ))
 }
 
+/// The record digest of the bytes a store would retain for `record`: the
+/// canonical serialization of the record the way `write-record` stores it.
+pub(crate) fn digest_of(record: &JsonValue) -> String {
+    let prepared = quoin_change_assurance::prepare_change_record(record).unwrap();
+    record_digest(&quoin_change_assurance::records::record_bytes(&prepared).unwrap())
+}
+
 /// The scenario in which everything agrees.
 pub(crate) fn base_input() -> VerificationInput {
     VerificationInput {
         record_id: RecordId::parse("change-1", Subject::Record, "record_id").unwrap(),
         record_revision: Revision::new(1, Subject::Record, "revision").unwrap(),
         record: json(&record_text()),
+        record_digest: digest_of(&json(&record_text())),
         parents: Vec::new(),
         candidate_revision: "candidate-1".to_owned(),
         selections: vec![Selection {

@@ -101,7 +101,7 @@ const OUTPUT: &[u8] = b"all tests passed\n";
 /// The record body a caller writes.
 fn record_body() -> Value {
     json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "record_type": "change_assurance",
         "record_id": "change-1",
         "revision": 1,
@@ -122,7 +122,7 @@ fn record_body() -> Value {
             }],
             "unknowns": []
         },
-        "review_workflow": {"run_id": "run-1", "decision_event_kind": "change_assurance.review_decided"}
+        "review_workflow": {"run_id": "run-1", "decision_event_kind": "change_assurance.review_decided", "signed_approval": {"required": false, "signature_kinds": [], "approvers": []}}
     })
 }
 
@@ -153,7 +153,7 @@ fn decisions() -> Value {
             "id": "event-1", "ts": "2026-08-31T00:00:00.000Z", "sequence": 1,
             "actor": {"id": "reviewer-1", "kind": "human"},
             "kind": "change_assurance.review_decided",
-            "payload": {"schema_version": 1, "record_id": "change-1", "revision": 1, "decision": "approved"}
+            "payload": {"schema_version": 2, "record_id": "change-1", "revision": 1, "decision": "approved"}
         }]
     })
 }
@@ -521,6 +521,122 @@ fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
     assert!(written.get("digest").is_none());
 }
 
+/// An approving history whose event carries `claim`.
+fn claiming_decisions(claim: &Value) -> Value {
+    let mut history = decisions();
+    history["events"][0]["payload"]["verified_approval"] = claim.clone();
+    history
+}
+
+/// A well-formed `approved` claim bound to `digest`.
+fn approved_claim(digest: &str) -> Value {
+    json!({
+        "protocol": "engineering-assurance.approval-verify-result/v1",
+        "status": "approved",
+        "tag": "approval/change-1/1",
+        "record_id": "change-1",
+        "record_digest": digest,
+        "trust": {"allowed_signers": "/keys/allowed_signers"},
+        "approver": "reviewer@example.test",
+        "meaning": ["reviewed"],
+        "signature_kind": "ssh",
+    })
+}
+
+/// `write_record` and `record_digest` report one digest for a stored revision,
+/// equal to `sha256:` and the SHA-256 hex of the stored file's bytes;
+/// `record_digest` of an unstored revision is refused with exit 2, and neither
+/// it nor a successful call writes anything. A stored byte appended after the
+/// write (a checkout rewriting line endings) changes the digest and breaks a
+/// claim bound to the old one.
+///
+/// Provenance: PLAT-1511
+#[trace("FR-068-AC-12", "FR-063-AC-15", "FR-065-AC-13", "FR-065-AC-14")]
+#[test]
+fn tc_1511_615_record_digest_hashes_the_stored_bytes_and_binds_a_claim() {
+    let root = repo();
+    let repo_arg = root.path().to_str().unwrap();
+    let written = ok(&run(
+        "change_assurance.write_record",
+        &json!({ "repo": repo_arg, "record_hex": hex_json(&record_body()) }),
+    ));
+    let file = root
+        .path()
+        .join("spec/evidence/change-assurance/records/change-1/1.json");
+    let stored = fs::read(&file).unwrap();
+    let digest = written["record_digest"].as_str().unwrap().to_owned();
+    assert_eq!(
+        digest,
+        format!("sha256:{}", quoin_store::attachment::sha256_hex(&stored))
+    );
+    assert!(digest.starts_with("sha256:") && digest.len() == 71);
+
+    let before = retained(root.path());
+    let reported = ok(&run(
+        "change_assurance.record_digest",
+        &json!({ "repo": repo_arg, "record_id": "change-1", "revision": 1 }),
+    ));
+    assert_eq!(reported["record_digest"], json!(digest));
+    assert_eq!(reported["record_id"], json!("change-1"));
+    assert_eq!(reported["revision"], json!(1));
+    assert_eq!(retained(root.path()), before);
+    assert_eq!(fs::read(&file).unwrap(), stored);
+
+    let unstored = failed(
+        &run(
+            "change_assurance.record_digest",
+            &json!({ "repo": repo_arg, "record_id": "change-1", "revision": 2 }),
+        ),
+        2,
+    );
+    assert_eq!(unstored[0]["context"]["field"], json!("record_id"));
+    assert_eq!(retained(root.path()), before);
+
+    // A claim bound to the stored digest keeps the receipt valid and is
+    // reported as the claim it is.
+    retain_everything(root.path());
+    let mut request = receipt_request(root.path());
+    request["decisions_hex"] = json!(hex_json(&claiming_decisions(&approved_claim(&digest))));
+    let bound = ok(&run("change_assurance.receipt", &request));
+    assert_eq!(bound["receipt"]["outcome"], json!("valid"), "{bound}");
+    assert_eq!(
+        bound["receipt"]["decision_event"]["claimed_approval"]["record_digest"],
+        json!(digest)
+    );
+    assert_eq!(
+        bound["receipt"]["decision_event"]["claimed_approval"]["approver"],
+        json!("reviewer@example.test")
+    );
+
+    // The same file with a line ending appended hashes differently, and the
+    // claim bound to the old digest is a record mismatch.
+    let mut rewritten = stored.clone();
+    rewritten.extend_from_slice(b"\r\n");
+    fs::write(&file, &rewritten).unwrap();
+    let moved = ok(&run(
+        "change_assurance.record_digest",
+        &json!({ "repo": repo_arg, "record_id": "change-1", "revision": 1 }),
+    ));
+    assert_eq!(
+        moved["record_digest"],
+        json!(format!(
+            "sha256:{}",
+            quoin_store::attachment::sha256_hex(&rewritten)
+        ))
+    );
+    assert_ne!(moved["record_digest"], json!(digest));
+    let stale = ok(&run("change_assurance.receipt", &request));
+    assert_eq!(stale["receipt"]["outcome"], json!("invalid"), "{stale}");
+    assert_eq!(
+        stale["receipt"]["reasons"],
+        json!(["approval_record_mismatch"])
+    );
+    assert_eq!(
+        stale["receipt"]["decision_event"]["claimed_approval"],
+        Value::Null
+    );
+}
+
 /// `change_assurance.schema` emits the three normative assets from the binary
 /// itself, and refuses a name this build does not ship.
 ///
@@ -537,17 +653,17 @@ fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
     assert_eq!(
         listed["schemas"],
         json!([
-            "change-assurance-record-v1.schema.json",
+            "change-assurance-record-v2.schema.json",
             "proof-attestation-v1.schema.json",
-            "verification-receipt-v1.schema.json"
+            "verification-receipt-v2.schema.json"
         ])
     );
     assert_eq!(listed["schema"], Value::Null);
 
     for name in [
-        "change-assurance-record-v1.schema.json",
+        "change-assurance-record-v2.schema.json",
         "proof-attestation-v1.schema.json",
-        "verification-receipt-v1.schema.json",
+        "verification-receipt-v2.schema.json",
     ] {
         let payload = ok(&run("change_assurance.schema", &json!({ "name": name })));
         let text = payload["schema"].as_str().expect("the asset is a string");
@@ -561,7 +677,7 @@ fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
 
     let refused = run(
         "change_assurance.schema",
-        &json!({ "name": "verification-receipt-v2.schema.json" }),
+        &json!({ "name": "verification-receipt-v1.schema.json" }),
     );
     failed(&refused, 3);
 }

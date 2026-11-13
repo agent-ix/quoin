@@ -61,7 +61,7 @@ fn event(
       "id": "event-{sequence}", "ts": "2026-08-31T00:00:00.000Z", "sequence": {sequence},
       "actor": {{"id": "reviewer-1", "kind": "{actor_kind}"}},
       "kind": "{kind}",
-      "payload": {{"schema_version": 1, "record_id": "{record_id}", "revision": {revision}, "decision": "{decision}"}}
+      "payload": {{"schema_version": 2, "record_id": "{record_id}", "revision": {revision}, "decision": "{decision}"}}
     }}"#
     )
 }

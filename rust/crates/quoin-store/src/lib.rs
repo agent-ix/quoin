@@ -21,7 +21,9 @@
 //! assigned by the caller; nothing in a path is derived from the bytes it
 //! holds, so records carry no digest and git history is the tamper evidence. The
 //! one digest here is [`attachment`]'s address for opaque binary attachments,
-//! which binds a file to its bytes.
+//! which binds a file to its bytes; its hash is also what the change-assurance
+//! reader applies to a stored record's bytes to bind an approval to them (FR-063).
+//! That value is computed on read and never stored.
 //!
 //! # The frozen compatibility surface
 //!

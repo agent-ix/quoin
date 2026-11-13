@@ -60,12 +60,14 @@ pub use crate::ids::{
 };
 pub use crate::intake::{
     EvidenceStore, Published, RetainedPair, intake_attestation, read_attestation,
-    read_change_record, write_change_record,
+    read_change_record, read_change_record_with_digest, write_change_record,
 };
 pub use crate::model::attestation::ProofAttestation;
 pub use crate::model::outcome::{Check, Outcome, Reason};
 pub use crate::model::receipt::{ProofResult, VerificationReceipt};
 pub use crate::model::record::ChangeAssuranceRecord;
-pub use crate::records::{prepare_change_record, read_change_record_json, verify_lineage};
+pub use crate::records::{
+    prepare_change_record, read_change_record_json, record_digest, verify_lineage,
+};
 pub use crate::verify::input::VerificationInput;
 pub use crate::verify::{verify_change_assurance, verify_receipt};

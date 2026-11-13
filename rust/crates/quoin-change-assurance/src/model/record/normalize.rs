@@ -48,6 +48,16 @@ pub fn normalize_record(value: &JsonValue) -> JsonValue {
         sort_nested_string_member(&mut definition, "proof_obligations", "obligation_ids");
         normalized.set("definition", JsonValue::Object(definition));
     }
+    if let Some(JsonValue::Object(workflow)) = normalized.get("review_workflow")
+        && let Some(JsonValue::Object(policy)) = workflow.get("signed_approval")
+    {
+        let mut policy = policy.clone();
+        sort_string_member(&mut policy, "signature_kinds");
+        sort_string_member(&mut policy, "approvers");
+        let mut workflow = workflow.clone();
+        workflow.set("signed_approval", JsonValue::Object(policy));
+        normalized.set("review_workflow", JsonValue::Object(workflow));
+    }
     JsonValue::Object(normalized)
 }
 

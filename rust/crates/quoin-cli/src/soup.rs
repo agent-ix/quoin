@@ -14,6 +14,8 @@
 )]
 mod advisory;
 mod plan;
+#[expect(dead_code, reason = "`quoin soup report` (PLAT-1518) is the caller")]
+mod support;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;

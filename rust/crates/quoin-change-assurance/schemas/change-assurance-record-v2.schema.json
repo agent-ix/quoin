@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://agent-ix.github.io/quoin/schemas/change-assurance-record-v1.schema.json",
-  "title": "ChangeAssuranceRecordV1",
+  "$id": "https://agent-ix.github.io/quoin/schemas/change-assurance-record-v2.schema.json",
+  "title": "ChangeAssuranceRecordV2",
   "type": "object",
   "required": [
     "schema_version",
@@ -15,7 +15,7 @@
     "review_workflow"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "record_type": { "const": "change_assurance" },
     "record_id": { "$ref": "#/$defs/identity" },
     "revision": { "type": "integer", "minimum": 1 },
@@ -41,13 +41,7 @@
     },
     "impact_snapshot": {
       "type": "object",
-      "required": [
-        "identity",
-        "revision",
-        "completeness",
-        "truncated",
-        "gaps"
-      ],
+      "required": ["identity", "revision", "completeness", "truncated", "gaps"],
       "properties": {
         "identity": { "$ref": "#/$defs/identity" },
         "revision": { "type": "string", "minLength": 1 },
@@ -95,11 +89,41 @@
     },
     "review_workflow": {
       "type": "object",
-      "required": ["run_id", "decision_event_kind"],
+      "required": ["run_id", "decision_event_kind", "signed_approval"],
       "properties": {
         "run_id": { "$ref": "#/$defs/identity" },
         "decision_event_kind": {
           "const": "change_assurance.review_decided"
+        },
+        "signed_approval": {
+          "type": "object",
+          "required": ["required", "signature_kinds", "approvers"],
+          "properties": {
+            "required": { "type": "boolean" },
+            "signature_kinds": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "enum": ["ssh", "gitsign"] }
+            },
+            "approvers": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "required": { "const": true } } },
+              "then": { "properties": { "signature_kinds": { "minItems": 1 } } },
+              "else": {
+                "properties": {
+                  "signature_kinds": { "maxItems": 0 },
+                  "approvers": { "maxItems": 0 }
+                }
+              }
+            }
+          ],
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

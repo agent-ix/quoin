@@ -39,7 +39,7 @@ use crate::error::{ChangeAssuranceError, Subject};
 use crate::ids::{AttestationId, RecordId, Revision};
 use crate::model::attestation::ProofAttestation;
 use crate::model::record::ChangeAssuranceRecord;
-use crate::records::{read_change_record_json, record_bytes};
+use crate::records::{read_change_record_json, record_bytes, record_digest};
 
 /// Whether a publish added evidence or found it already retained.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -154,12 +154,26 @@ pub fn read_change_record<S: EvidenceStore + ?Sized>(
     record_id: &RecordId,
     revision: Revision,
 ) -> Result<Option<ChangeAssuranceRecord>, ChangeAssuranceError> {
+    Ok(read_change_record_with_digest(store, record_id, revision)?.map(|(record, _)| record))
+}
+
+/// Read the record retained at `(record_id, revision)` together with its record
+/// digest, computed from the exact bytes read.
+///
+/// # Errors
+///
+/// As [`read_change_record`].
+pub fn read_change_record_with_digest<S: EvidenceStore + ?Sized>(
+    store: &S,
+    record_id: &RecordId,
+    revision: Revision,
+) -> Result<Option<(ChangeAssuranceRecord, String)>, ChangeAssuranceError> {
     let Some(bytes) = store.record(record_id, revision)? else {
         return Ok(None);
     };
     let record = read_change_record_json(&parse_strict_json(&bytes)?)?;
     if &record.record_id == record_id && record.revision == revision {
-        Ok(Some(record))
+        Ok(Some((record, record_digest(&bytes))))
     } else {
         Err(ChangeAssuranceError::PathIdentityMismatch {
             what: Subject::Record,
