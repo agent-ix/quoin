@@ -57,12 +57,38 @@ pub(crate) enum Assembly {
     Declined(Response),
 }
 
+/// The auditor's inputs that come from flags.
+#[derive(Default)]
+pub(crate) struct AuditOptions {
+    modules: Vec<String>,
+    multiplicity_requires: Vec<String>,
+    mutation_floor: Vec<String>,
+    independence_policy: Option<String>,
+}
+
+impl AuditOptions {
+    /// The options a command with the shared flag grammar was given.
+    pub(crate) fn from_arguments(arguments: &ArgMatches) -> Self {
+        Self {
+            modules: values(arguments, "module"),
+            multiplicity_requires: values(arguments, "multiplicity-requires"),
+            mutation_floor: values(arguments, "mutation-floor"),
+            independence_policy: arguments.get_one::<String>("independence-policy").cloned(),
+        }
+    }
+}
+
 /// Assemble and run the audit: coverage, the store, the catalog, the policy.
 ///
 /// The one assembly `quoin evidence audit` and `quoin matrix` share, so the
 /// two commands cannot audit the same working tree differently.
 pub(crate) fn assemble(arguments: &ArgMatches, repo: &str) -> Result<Assembly, String> {
-    let modules = values(arguments, "module");
+    assemble_with(&AuditOptions::from_arguments(arguments), repo)
+}
+
+/// [`assemble`] over options already read from the flags.
+pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assembly, String> {
+    let modules = options.modules.clone();
     let coverage = invoke(
         "quire.coverage",
         &serde_json::json!({ "scope": repo, "modules": modules }),
@@ -71,7 +97,7 @@ pub(crate) fn assemble(arguments: &ArgMatches, repo: &str) -> Result<Assembly, S
         return Ok(Assembly::Declined(coverage));
     }
     let obligations = field(&coverage.payload, "obligations")?;
-    let policy = policy(arguments, &obligations)?;
+    let policy = policy(options.independence_policy.as_deref(), &obligations)?;
     let store = invoke(
         "evidence.audit_inputs",
         &serde_json::json!({ "repo": repo, "independence_policy": policy }),
@@ -99,8 +125,8 @@ pub(crate) fn assemble(arguments: &ArgMatches, repo: &str) -> Result<Assembly, S
         "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
         "independence": field(&store.payload, "independence")?,
         "catalog": catalog.payload,
-        "multiplicityRequires": values(arguments, "multiplicity-requires"),
-        "mutationFloor": mutation_floor(&values(arguments, "mutation-floor"))?,
+        "multiplicityRequires": options.multiplicity_requires,
+        "mutationFloor": mutation_floor(&options.mutation_floor)?,
         "independencePolicy": policy,
     });
     let request = serde_json::json!({ "input": input });
@@ -156,10 +182,10 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 }
 
 fn policy(
-    arguments: &ArgMatches,
+    path: Option<&str>,
     obligations: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let Some(path) = arguments.get_one::<String>("independence-policy") else {
+    let Some(path) = path else {
         return Ok(serde_json::Value::Null);
     };
     let text =

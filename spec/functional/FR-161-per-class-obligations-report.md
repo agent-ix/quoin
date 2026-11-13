@@ -88,5 +88,5 @@ rows is not an approval of the requirement.
 
 ## Dependencies
 
-- **Upstream**: [FR-160](./FR-160-per-class-evidence-floors.md), quire-rs FR-086 (merged) and FR-090
+- **Upstream**: [FR-160](./FR-160-per-class-evidence-floors.md), [quire-rs FR-086](ix://agent-ix/quire-rs/FR-086) (merged) and [quire-rs FR-090](ix://agent-ix/quire-rs/FR-090)
 - **Downstream**: [NFR-034](../non-functional/NFR-034-class-reports-state-and-never-assign.md)

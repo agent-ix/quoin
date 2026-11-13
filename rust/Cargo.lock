@@ -3200,6 +3200,7 @@ dependencies = [
  "quoin-measurement",
  "quoin-modules",
  "quoin-quire",
+ "quoin-risk-advice",
  "quoin-semantic",
  "quoin-store",
  "quoin-validators",
@@ -3460,6 +3461,19 @@ dependencies = [
  "schemars 1.2.2",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "quoin-risk-advice"
+version = "0.31.0"
+dependencies = [
+ "ix-trace-rs",
+ "quoin-anomaly",
+ "quoin-quire",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]

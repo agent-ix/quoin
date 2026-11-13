@@ -38,8 +38,9 @@ flag), so ordering by region would be a prioritisation nobody authored. The regi
 
 - The command SHALL list one entry for every `residual_risk`, `benefit_risk` and `overall_residual_risk_evaluation` in scope whose `decision` is `undecided`.
 - The command SHALL order entries by kind (`residual_risk`, then `benefit_risk`, then `overall_residual_risk_evaluation`), then by record id.
-- For a `residual_risk` entry, the command SHALL carry the estimate id, the policy id from the record's own `policy` reference, the estimate's entered levels, and the region and `outside_acceptable` flag as `agent-ix/spec-objects-safety` FR-102 resolves them.
-- If FR-102 resolves no region for a `residual_risk` entry, then the entry SHALL carry `level-not-in-policy` or `level-not-assessed` as FR-146 does and no region.
+- For a `residual_risk` entry, the command SHALL carry the estimate id, the policy id the record names with its `references` edge (frontmatter `relationships` only; a link in the body is no edge), the estimate's entered levels, and the region and `outside_acceptable` flag as `agent-ix/spec-objects-safety` FR-102 resolves them.
+- If the record names no policy in scope, then the entry SHALL carry `policy-not-found` and no region; if it names more than one policy, the entry SHALL carry `policy-ambiguous` naming them, no policy id and no region, as FR-146 does.
+- If FR-102 resolves no region for a `residual_risk` entry, then the entry SHALL carry `level-not-in-policy`, `level-not-assessed` or `cell-not-in-policy` as FR-146 does and no region.
 - For a `benefit_risk` entry, the command SHALL carry in `references` the ids of the residual risks it covers.
 - For an `overall_residual_risk_evaluation` entry, the command SHALL carry in `references` the ids it considers.
 - The command SHALL list in a separate `no_record` group each post-control estimate that no `residual_risk` references, with the finding `post-control-estimate-without-decision`, ordered by estimate id.
@@ -61,9 +62,9 @@ Every key is present, `null` or `[]` when empty. The section is an object with t
 | `severity`, `probability` | as entered on the estimate (`residual_risk` only), else `null` |
 | `region`, `outside_acceptable` | as the policy wrote them, or `null` |
 | `references` | covered or considered ids (`benefit_risk`, `overall_residual_risk_evaluation`), else `[]` |
-| `findings` | `level-not-in-policy` or `level-not-assessed` where they apply |
+| `findings` | `{ finding, names }` objects for `level-not-in-policy`, `level-not-assessed`, `cell-not-in-policy`, `policy-not-found` or `policy-ambiguous` where they apply |
 
-An element of `no_record` has exactly the keys `estimate` and `findings`.
+An element of `no_record` has exactly the keys `estimate` and `findings`, the latter one `{ finding, names }` object with `finding` `post-control-estimate-without-decision` and `names` `[]`.
 
 ## Acceptance Criteria
 
@@ -73,12 +74,13 @@ An element of `no_record` has exactly the keys `estimate` and `findings`.
 | FR-148-AC-2 | Undecided records of all three kinds are listed in the order residual risk, benefit risk, overall evaluation, and two of one kind are ordered by id. | Test |
 | FR-148-AC-3 | Reordering the region list of the fixture policy leaves the queue order unchanged. | Test |
 | FR-148-AC-4 | An undecided residual risk whose estimate has `probability: not_assessed` carries `level-not-assessed` and no region. | Test |
-| FR-148-AC-5 | Each residual risk entry carries the policy id of its own `policy` reference, and two residual risks on different policies each show their own region. | Test |
+| FR-148-AC-5 | Each residual risk entry carries the policy id of its own `references` edge, and two residual risks on different policies each show their own region. | Test |
 | FR-148-AC-6 | A post-control estimate with no referencing `residual_risk` is listed in `no_record` with `post-control-estimate-without-decision`, and adding a record removes it from `no_record` and adds it to the queue. | Test |
 | FR-148-AC-7 | A hazard at `status: accepted` with an `undecided` residual risk still lists the residual risk. | Test |
 | FR-148-AC-8 | The keys of every entry and of each `no_record` element equal the key tables, with no decision, proposal, due date or priority key. | Test |
 | FR-148-AC-9 | The Markdown of every entry reads "waiting for a decision by a named person" and holds no wording that a risk can be accepted or is low priority. | Test |
 | FR-148-AC-10 | An undecided benefit-risk record lists the residual risks it covers in `references`, and an undecided overall evaluation lists the ids it considers. | Test |
+| FR-148-AC-11 | A residual risk that names two policies carries `policy-ambiguous` naming both, no policy id and no region; a link to a hazard in its Rationale cell changes neither its policy nor its region. | Test |
 
 ## Dependencies
 

@@ -18,7 +18,7 @@ Use this reference to identify which security controls are most relevant based o
 | SOC 2 | CC6.1-CC6.3, CC6.6 | Core logical access controls |
 | ISO 27001 | A.9.x (all) | Access control is primary function |
 | NIST | AC-1 through AC-8, AC-19 | Access enforcement and management |
-| OWASP ASVS | V4 (all) | Access control verification |
+| OWASP ASVS | V8 (all) | Authorization verification |
 | GDPR | Art. 25, 32 | Processing authorization |
 
 ### Secondary Focus
@@ -38,7 +38,7 @@ Use this reference to identify which security controls are most relevant based o
 | SOC 2 | CC6.7 (transmission), CC7.x | Data protection and operations |
 | ISO 27001 | A.9.4.1, A.18.1.4 | Information restriction, privacy |
 | NIST | AC-4 (flow), AU-2/AU-9 | Information flow, audit protection |
-| OWASP ASVS | V5 (validation) | Input/output validation |
+| OWASP ASVS | V1, V2 | Encoding, input validation |
 | GDPR | Art. 17, 20, 30, 32 | Erasure, portability, records |
 
 ### Secondary Focus
@@ -58,12 +58,12 @@ Use this reference to identify which security controls are most relevant based o
 | SOC 2 | CC6.1, CC6.6, CC6.7 | Boundary and transmission |
 | ISO 27001 | A.9.1.2, A.9.4.1 | Network and information access |
 | NIST | AC-3, AC-4, AU-2 | Enforcement, flow, events |
-| OWASP ASVS | V4.1.2 (enforcement points) | Gateway as enforcement |
+| OWASP ASVS | V8.3.1 (trusted enforcement layer) | Gateway as enforcement |
 | GDPR | Art. 32(1)(b) | Confidentiality/integrity |
 
 ### Secondary Focus
 - Rate limiting and abuse prevention
-- Request/response validation (V5)
+- Request/response validation (V2)
 
 ---
 
@@ -78,12 +78,12 @@ Use this reference to identify which security controls are most relevant based o
 | SOC 2 | CC6.1, CC7.2, CC7.3 | Access, monitoring, response |
 | ISO 27001 | A.9.2.3, A.12.4.1 | Privileged access, logging |
 | NIST | AC-5 (separation), AC-6 (least privilege), AU-x | Duty separation, minimal access |
-| OWASP ASVS | V4.1.3, V4.3.1 | Privilege controls |
+| OWASP ASVS | V8.2.1, V13.2.2 | Privilege controls |
 | GDPR | Art. 32(4) | Authorized processing only |
 
 ### Secondary Focus
 - Credential handling (A.9.2.4)
-- Error handling (V7)
+- Error handling (V16)
 
 ---
 
@@ -98,7 +98,7 @@ Use this reference to identify which security controls are most relevant based o
 | SOC 2 | CC7.2, CC7.3 | Event monitoring, response |
 | ISO 27001 | A.12.4.1-4 | Event logging, protection |
 | NIST | AU-2 through AU-12 | Full audit family |
-| OWASP ASVS | V7 (all) | Error handling and logging |
+| OWASP ASVS | V16 (all) | Error handling and logging |
 | GDPR | Art. 30, 32(1)(d) | Processing records, testing |
 
 ### Secondary Focus
@@ -117,8 +117,8 @@ Use this reference to identify which security controls are most relevant based o
 |----------|----------|-----------|
 | SOC 2 | Varies by library function | Function-specific |
 | ISO 27001 | A.9.4.5 (source code access) | Code security |
-| NIST | SA-15, SA-24 | Supply chain (Rev 5.2.0) |
-| OWASP ASVS | V5 (if handles input) | Validation |
+| NIST | SA-15, SR-3 | Supply chain (Rev 5.2.0) |
+| OWASP ASVS | V2 (if handles input) | Validation |
 | GDPR | Art. 25(1) | Privacy by design |
 
 ### Key Considerations

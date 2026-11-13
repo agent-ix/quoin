@@ -60,7 +60,7 @@ hazard its situation `arises_from` (`agent-ix/spec-objects-safety` FR-202). An a
 - For each control of the estimate, the entry SHALL carry `control-without-verification` under the rule above.
 - If the estimate assumes no control, then the entry SHALL carry `post-control-without-control`.
 - If the estimate has no situation, then the entry SHALL carry `estimate-without-situation`.
-- If the estimate's situation arises from no hazard, then the entry SHALL carry `situation-without-hazard`.
+- If the estimate's situation arises from no hazard, then the entry SHALL carry `situation-without-hazard`, and where the estimate has several situations it SHALL carry one such finding naming each situation that arises from no hazard.
 - The entry SHALL list each open anomaly whose assessment names a hazard of the estimate.
 - The entry SHALL list each open anomaly whose assessment names an `FR` or `NFR` that `satisfies` a control of the estimate, or an acceptance criterion of that requirement.
 - Each listed anomaly SHALL carry `anomaly`, `kind` and `impact` as `quoin anomaly refs` reports them, and `names`, the id the assessment names.
@@ -79,11 +79,11 @@ Every key is present, `null` or `[]` when empty.
 | Key | Content |
 |---|---|
 | `estimate` | the post-control estimate id |
-| `situation` | the estimate's situation id, or `null` |
-| `hazards` | ids of the hazards of the estimate |
-| `controls` | each control of the estimate: `control`, `requirements` (ids), `verifications` (ids of verifying documents), `findings` |
+| `situation` | the estimate's situation id, or `null`; where the estimate has several situations (`agent-ix/spec-objects-safety` FR-203), the first by id |
+| `hazards` | ids of the hazards of the estimate, taken over all of its situations |
+| `controls` | each control of the estimate: `control`, `requirements` (ids), `verifications` (ids of verifying documents), `findings` (`{ finding, names }` objects with `names` `[]`) |
 | `anomalies` | each open anomaly listed above, as `{ anomaly, kind, impact, names }` |
-| `findings` | the estimate-level tokens above that name this entry |
+| `findings` | `{ finding, names }` objects for the estimate-level tokens above that name this entry; `names` is `[]` except for `situation-without-hazard`, which names the situation |
 
 ## Acceptance Criteria
 

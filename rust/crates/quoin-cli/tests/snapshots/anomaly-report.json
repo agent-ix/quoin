@@ -1,0 +1,740 @@
+{
+  "anomalies": [
+    {
+      "id": "AN-001",
+      "title": "Fixture identified with severity",
+      "path": "spec/anomalies/AN-001.md",
+      "status": "identified",
+      "resolution": null,
+      "severity": "minor",
+      "safetyImpact": "unassessed",
+      "unassessed": true,
+      "assessment": [],
+      "affected": [],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-002",
+      "title": "Fixture identified",
+      "path": "spec/anomalies/AN-002.md",
+      "status": "identified",
+      "resolution": null,
+      "severity": null,
+      "safetyImpact": "unassessed",
+      "unassessed": true,
+      "assessment": [],
+      "affected": [],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-003",
+      "title": "Fixture rationale resolved",
+      "path": "spec/anomalies/AN-003.md",
+      "status": "resolved",
+      "resolution": "fixed",
+      "severity": "major",
+      "safetyImpact": "impacting",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "Requirement",
+          "target": "FR-001",
+          "impact": "Affects",
+          "rationale": "The anomaly shows FR-001 is not enforced."
+        },
+        {
+          "kind": "Requirement",
+          "target": "FR-001-AC-1",
+          "impact": "Affects",
+          "rationale": "The criterion is not met."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        }
+      ],
+      "affected": [
+        {
+          "target": "FR-001",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "FR-001-AC-1",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        }
+      ],
+      "releaseRationale": [
+        {
+          "author": "Morgan Reyes",
+          "rationale": "The checksum path is not on a safety function and the operator procedure catches the case until the next release."
+        }
+      ],
+      "fixingChange": {
+        "state": "pending",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "pending",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-004",
+      "title": "Fixture rationale resolved",
+      "path": "spec/anomalies/AN-004.md",
+      "status": "resolved",
+      "resolution": "fixed",
+      "severity": "major",
+      "safetyImpact": "impacting",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "Requirement",
+          "target": "FR-001",
+          "impact": "Affects",
+          "rationale": "The anomaly shows FR-001 is not enforced."
+        },
+        {
+          "kind": "Requirement",
+          "target": "FR-001-AC-1",
+          "impact": "Affects",
+          "rationale": "The criterion is not met."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        }
+      ],
+      "affected": [
+        {
+          "target": "FR-001",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "FR-001-AC-1",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        }
+      ],
+      "releaseRationale": [
+        {
+          "author": "Morgan Reyes",
+          "rationale": "The checksum path is not on a safety function and the operator procedure catches the case until the next release."
+        }
+      ],
+      "fixingChange": {
+        "state": "present",
+        "commit": "<commit-1>",
+        "author": "Fixture Author",
+        "authoredAt": "2026-01-01T00:05:00+00:00",
+        "signature": "unsigned",
+        "signatureCode": "N"
+      },
+      "rationaleChange": {
+        "state": "present",
+        "commit": "<commit-1>",
+        "author": "Fixture Author",
+        "authoredAt": "2026-01-01T00:05:00+00:00",
+        "signature": "unsigned",
+        "signatureCode": "N"
+      }
+    },
+    {
+      "id": "AN-006",
+      "title": "Fixture closed wont-fix",
+      "path": "spec/anomalies/AN-006.md",
+      "status": "closed",
+      "resolution": "wont-fix",
+      "severity": "major",
+      "safetyImpact": "impacting",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "Requirement",
+          "target": "FR-001",
+          "impact": "Affects",
+          "rationale": "The anomaly shows FR-001 is not enforced."
+        },
+        {
+          "kind": "Requirement",
+          "target": "FR-001-AC-1",
+          "impact": "Affects",
+          "rationale": "The criterion is not met."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        }
+      ],
+      "affected": [
+        {
+          "target": "FR-001",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "FR-001-AC-1",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        }
+      ],
+      "releaseRationale": [
+        {
+          "author": "Morgan Reyes",
+          "rationale": "The checksum path is not on a safety function and the operator procedure catches the case until the next release."
+        }
+      ],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "present",
+        "commit": "<commit-2>",
+        "author": "Fixture Author",
+        "authoredAt": "2026-01-01T00:07:00+00:00",
+        "signature": "unsigned",
+        "signatureCode": "N"
+      }
+    },
+    {
+      "id": "AN-007",
+      "title": "Fixture closed wont-fix",
+      "path": "spec/anomalies/AN-007.md",
+      "status": "closed",
+      "resolution": "wont-fix",
+      "severity": "major",
+      "safetyImpact": "impacting",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "Requirement",
+          "target": "FR-001",
+          "impact": "Affects",
+          "rationale": "The anomaly shows FR-001 is not enforced."
+        },
+        {
+          "kind": "Requirement",
+          "target": "FR-001-AC-1",
+          "impact": "Affects",
+          "rationale": "The criterion is not met."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        }
+      ],
+      "affected": [
+        {
+          "target": "FR-001",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "FR-001-AC-1",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        }
+      ],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-009",
+      "title": "Fixture two hazards",
+      "path": "spec/anomalies/AN-009.md",
+      "status": "assessed",
+      "resolution": null,
+      "severity": "major",
+      "safetyImpact": "impacting",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-002",
+          "impact": "Affects",
+          "rationale": "A second corrupt-artifact path."
+        }
+      ],
+      "affected": [
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        },
+        {
+          "target": "HAZ-002",
+          "kind": "Hazard",
+          "impact": "Affects"
+        }
+      ],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-010",
+      "title": "Fixture none",
+      "path": "spec/anomalies/AN-010.md",
+      "status": "assessed",
+      "resolution": null,
+      "severity": "major",
+      "safetyImpact": "none",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "None",
+          "target": null,
+          "impact": "None",
+          "rationale": "Cosmetic message only; no safety function involved."
+        }
+      ],
+      "affected": [],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-011",
+      "title": "Fixture f3",
+      "path": "spec/anomalies/AN-011.md",
+      "status": "closed",
+      "resolution": "fixed",
+      "severity": "major",
+      "safetyImpact": "unassessed",
+      "unassessed": true,
+      "assessment": [
+        {
+          "kind": "Requirement",
+          "target": "FR-001",
+          "impact": "Affects",
+          "rationale": "The anomaly shows FR-001 is not enforced."
+        },
+        {
+          "kind": "Requirement",
+          "target": "FR-001-AC-1",
+          "impact": "Affects",
+          "rationale": "The criterion is not met."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        }
+      ],
+      "affected": [
+        {
+          "target": "FR-001",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "FR-001-AC-1",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        }
+      ],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "present",
+        "commit": "<commit-3>",
+        "author": "Fixture Author",
+        "authoredAt": "2026-01-01T00:12:00+00:00",
+        "signature": "unsigned",
+        "signatureCode": "N"
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-012",
+      "title": "Fixture g",
+      "path": "spec/anomalies/AN-012.md",
+      "status": "assessed",
+      "resolution": null,
+      "severity": "major",
+      "safetyImpact": "impacting",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "Requirement",
+          "target": "FR-999",
+          "impact": "Affects",
+          "rationale": "Names a requirement that does not exist."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        }
+      ],
+      "affected": [
+        {
+          "target": "FR-999",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        }
+      ],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    },
+    {
+      "id": "AN-013",
+      "title": "Fixture rationale assessed",
+      "path": "spec/anomalies/AN-013.md",
+      "status": "assessed",
+      "resolution": null,
+      "severity": "major",
+      "safetyImpact": "impacting",
+      "unassessed": false,
+      "assessment": [
+        {
+          "kind": "Requirement",
+          "target": "FR-001",
+          "impact": "Affects",
+          "rationale": "The anomaly shows FR-001 is not enforced."
+        },
+        {
+          "kind": "Requirement",
+          "target": "FR-001-AC-1",
+          "impact": "Affects",
+          "rationale": "The criterion is not met."
+        },
+        {
+          "kind": "Hazard",
+          "target": "HAZ-001",
+          "impact": "Introduces",
+          "rationale": "A corrupt artifact is accepted."
+        }
+      ],
+      "affected": [
+        {
+          "target": "FR-001",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "FR-001-AC-1",
+          "kind": "Requirement",
+          "impact": "Affects"
+        },
+        {
+          "target": "HAZ-001",
+          "kind": "Hazard",
+          "impact": "Introduces"
+        }
+      ],
+      "releaseRationale": [],
+      "fixingChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      },
+      "rationaleChange": {
+        "state": "absent",
+        "commit": null,
+        "author": null,
+        "authoredAt": null,
+        "signature": null,
+        "signatureCode": null
+      }
+    }
+  ],
+  "byHazard": [
+    {
+      "target": "HAZ-001",
+      "anomalies": [
+        {
+          "anomaly": "AN-003",
+          "impact": "Introduces"
+        },
+        {
+          "anomaly": "AN-004",
+          "impact": "Introduces"
+        },
+        {
+          "anomaly": "AN-006",
+          "impact": "Introduces"
+        },
+        {
+          "anomaly": "AN-007",
+          "impact": "Introduces"
+        },
+        {
+          "anomaly": "AN-009",
+          "impact": "Introduces"
+        },
+        {
+          "anomaly": "AN-011",
+          "impact": "Introduces"
+        },
+        {
+          "anomaly": "AN-012",
+          "impact": "Introduces"
+        },
+        {
+          "anomaly": "AN-013",
+          "impact": "Introduces"
+        }
+      ]
+    },
+    {
+      "target": "HAZ-002",
+      "anomalies": [
+        {
+          "anomaly": "AN-009",
+          "impact": "Affects"
+        }
+      ]
+    }
+  ],
+  "byRequirement": [
+    {
+      "target": "FR-001",
+      "anomalies": [
+        {
+          "anomaly": "AN-003",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-004",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-006",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-007",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-011",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-013",
+          "impact": "Affects"
+        }
+      ]
+    },
+    {
+      "target": "FR-001-AC-1",
+      "anomalies": [
+        {
+          "anomaly": "AN-003",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-004",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-006",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-007",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-011",
+          "impact": "Affects"
+        },
+        {
+          "anomaly": "AN-013",
+          "impact": "Affects"
+        }
+      ]
+    },
+    {
+      "target": "FR-999",
+      "anomalies": [
+        {
+          "anomaly": "AN-012",
+          "impact": "Affects"
+        }
+      ]
+    }
+  ],
+  "ungrouped": [
+    {
+      "anomaly": "AN-001",
+      "reason": "unassessed"
+    },
+    {
+      "anomaly": "AN-002",
+      "reason": "unassessed"
+    },
+    {
+      "anomaly": "AN-010",
+      "reason": "no-affected-id"
+    }
+  ],
+  "unreadable": [
+    {
+      "path": "spec/anomalies/AN-014.md",
+      "code": "missing"
+    }
+  ]
+}

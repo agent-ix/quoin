@@ -21,6 +21,7 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin anomaly",
     "quoin anomaly check",
     "quoin anomaly refs",
+    "quoin anomaly report",
     "quoin assurance",
     "quoin catalog",
     "quoin catalog list",
@@ -76,8 +77,14 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin plugin install",
     "quoin plugin list",
     "quoin plugin remove",
+    "quoin release",
+    "quoin release snapshot",
     "quoin report",
     "quoin review",
+    "quoin risk",
+    "quoin risk advise",
+    "quoin risk discrepancies",
+    "quoin risk-summary",
     "quoin semantic",
     "quoin semantic sweep",
     "quoin soup",
@@ -290,8 +297,11 @@ fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
             "matrix",
             "measurement",
             "module",
+            "release",
             "report",
             "review",
+            "risk",
+            "risk-summary",
             "semantic",
             "soup",
             "to-plan",
@@ -320,7 +330,7 @@ fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
     assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
     assert_eq!(
         error.message,
-        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     );
 }
 

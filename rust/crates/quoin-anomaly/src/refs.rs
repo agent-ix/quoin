@@ -70,6 +70,32 @@ pub fn anomaly_documents(scope: &Path) -> Result<Vec<(PathBuf, String)>, Anomaly
     Ok(out)
 }
 
+/// Whether a document's frontmatter declares a hazard: `type` and `object` are
+/// both `hazard`.
+#[must_use]
+pub fn is_hazard(frontmatter: &serde_json::Map<String, serde_json::Value>) -> bool {
+    let word = |key: &str| frontmatter.get(key).and_then(serde_json::Value::as_str);
+    word("type") == Some("hazard") && word("object") == Some("hazard")
+}
+
+/// The acceptance-criterion ids a requirement document declares: the first
+/// cell of each table row that starts `<id>-AC-`.
+#[must_use]
+pub fn acceptance_criteria(text: &str, id: &str) -> Vec<String> {
+    let prefix = format!("{id}-AC-");
+    text.lines()
+        .filter_map(|line| {
+            let first = line
+                .trim_start()
+                .strip_prefix('|')?
+                .split('|')
+                .next()?
+                .trim();
+            first.starts_with(&prefix).then(|| first.to_owned())
+        })
+        .collect()
+}
+
 /// The ids a `Target` can resolve to in the corpus under `scope`: requirement
 /// documents, their acceptance criteria, and hazard documents.
 fn resolvable_ids(scope: &Path) -> Result<BTreeSet<String>, AnomalyError> {
@@ -87,31 +113,15 @@ fn resolvable_ids(scope: &Path) -> Result<BTreeSet<String>, AnomalyError> {
             .get("type")
             .and_then(|v| v.as_str())
             .unwrap_or_default();
-        let object = front
-            .get("object")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default();
         let Some(id) = front.get("id").and_then(|v| v.as_str()) else {
             continue;
         };
-        let hazard = kind == "hazard" && object == "hazard";
-        if matches!(kind, "FR" | "NFR") || hazard {
+        let requirement = matches!(kind, "FR" | "NFR");
+        if requirement || front.as_object().is_some_and(is_hazard) {
             ids.insert(id.to_owned());
         }
-        if matches!(kind, "FR" | "NFR") {
-            let prefix = format!("{id}-AC-");
-            for line in text.lines() {
-                let first = line
-                    .trim_start()
-                    .strip_prefix('|')
-                    .and_then(|rest| rest.split('|').next())
-                    .map(str::trim);
-                if let Some(cell) = first
-                    && cell.starts_with(&prefix)
-                {
-                    ids.insert(cell.to_owned());
-                }
-            }
+        if requirement {
+            ids.extend(acceptance_criteria(&text, id));
         }
     }
     Ok(ids)

@@ -13,7 +13,7 @@ use clap::{ArgMatches, Command};
 use quoin_core::protocol::{Response, canonical_json};
 
 use crate::core_runtime::invoke;
-use crate::evidence::audit::{Assembly, assemble, module_arg, policy_args};
+use crate::evidence::audit::{Assembly, AuditOptions, assemble_with, module_arg, policy_args};
 use crate::evidence::{json_arg, repo_arg, required};
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
@@ -30,9 +30,57 @@ pub(crate) fn command() -> Command {
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
-    let audited = match assemble(arguments, &repo)? {
+    let options = AuditOptions::from_arguments(arguments);
+    let built = match build(&options, &repo)? {
+        Built::Matrix(built) => built,
+        Built::Declined(response) => return Ok(response),
+    };
+    if !built.response.outcome.carries_payload() {
+        return Ok(built.response);
+    }
+    let rendered = if arguments.get_flag("json") {
+        canonical_json(&built.response.payload).map_err(|error| error.to_string())?
+    } else {
+        let matrix: quoin_assurance::matrix::MatrixOutput =
+            serde_json::from_value(built.response.payload.clone())
+                .map_err(|error| error.to_string())?;
+        quoin_assurance::matrix::render_markdown(&matrix)
+            .trim_end()
+            .to_owned()
+    };
+    let mut diagnostics = built.audit_diagnostics;
+    diagnostics.extend(built.response.diagnostics);
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered }),
+        diagnostics,
+        outcome: built.response.outcome,
+    })
+}
+
+/// The matrix `matrix.build` answered, and the audit diagnostics that came
+/// with the assembly.
+pub(crate) struct MatrixBuilt {
+    /// The `matrix.build` response.
+    pub(crate) response: Response,
+    /// The diagnostics of the `auditor.audit` step.
+    pub(crate) audit_diagnostics: Vec<quoin_core::protocol::Diagnostic>,
+}
+
+/// What [`build`] produced.
+pub(crate) enum Built {
+    /// The matrix step ran; its response may still decline.
+    Matrix(MatrixBuilt),
+    /// An earlier step declined; its response is the command's answer.
+    Declined(Response),
+}
+
+/// Assemble the audit over `repo` and join it into the evidence-backed matrix.
+///
+/// The one path `quoin matrix` and `quoin release snapshot` share (FR-115).
+pub(crate) fn build(options: &AuditOptions, repo: &str) -> Result<Built, String> {
+    let audited = match assemble_with(options, repo)? {
         Assembly::Audited(audited) => audited,
-        Assembly::Declined(response) => return Ok(response),
+        Assembly::Declined(response) => return Ok(Built::Declined(response)),
     };
     let report = audited
         .response
@@ -55,24 +103,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         request.insert("coverage".to_owned(), coverage.clone());
     }
     let request = serde_json::Value::Object(request);
-    let built = invoke("matrix.build", &request)?;
-    if !built.outcome.carries_payload() {
-        return Ok(built);
-    }
-    let rendered = if arguments.get_flag("json") {
-        canonical_json(&built.payload).map_err(|error| error.to_string())?
-    } else {
-        let matrix: quoin_assurance::matrix::MatrixOutput =
-            serde_json::from_value(built.payload.clone()).map_err(|error| error.to_string())?;
-        quoin_assurance::matrix::render_markdown(&matrix)
-            .trim_end()
-            .to_owned()
-    };
-    let mut diagnostics = audited.response.diagnostics;
-    diagnostics.extend(built.diagnostics);
-    Ok(Response {
-        payload: serde_json::json!({ "rendered": rendered }),
-        diagnostics,
-        outcome: built.outcome,
-    })
+    let response = invoke("matrix.build", &request)?;
+    Ok(Built::Matrix(MatrixBuilt {
+        response,
+        audit_diagnostics: audited.response.diagnostics,
+    }))
 }
