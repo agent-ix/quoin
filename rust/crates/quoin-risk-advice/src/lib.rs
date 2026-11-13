@@ -15,6 +15,7 @@
 
 #![forbid(unsafe_code)]
 
+mod discrepancies;
 mod error;
 mod evidence;
 mod finding;
@@ -31,6 +32,7 @@ use quoin_quire::records::read;
 
 use serde::Serialize;
 
+pub use discrepancies::{Discrepancies, Discrepancy, DiscrepancyToken, Refs};
 pub use error::{AdviceError, ErrorCode};
 pub use evidence::{AnomalyRef, ControlEvidence, EvidenceEntry};
 pub use finding::{Finding, Token};
@@ -68,21 +70,67 @@ pub struct Advice {
 /// residual-risk, benefit-risk, overall-evaluation or policy record breaks the
 /// contract its type declares.
 pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceError> {
-    let corpus =
-        read(scope, modules, &records::CHECKED).map_err(|error| AdviceError::read(&error))?;
-    let records = records::Records::read(&corpus.documents)?;
+    let (records, unreadable) = load(scope, modules)?;
     let links = links::Links::build(&records);
     Ok(Advice {
         attribution: ATTRIBUTION,
         policy_cells: policy::cells(&records, &links),
         evidence_gaps: evidence::gaps(&records, &links),
         decision_queue: queue::build(&records, &links),
-        unreadable: corpus
-            .unreadable
-            .iter()
-            .map(|file| format!("{}: {}", file.path.display(), file.reason))
-            .collect(),
+        unreadable,
     })
+}
+
+/// The records below `scope`, and the files the reader could not load.
+fn load(
+    scope: &Path,
+    modules: &ModuleSelection,
+) -> Result<(records::Records, Vec<String>), AdviceError> {
+    let corpus =
+        read(scope, modules, &records::CHECKED).map_err(|error| AdviceError::read(&error))?;
+    let records = records::Records::read(&corpus.documents)?;
+    let unreadable = corpus
+        .unreadable
+        .iter()
+        .map(|file| format!("{}: {}", file.path.display(), file.reason))
+        .collect();
+    Ok((records, unreadable))
+}
+
+/// Read the records below `scope` and report where a recorded residual-risk
+/// decision disagrees with the region its own policy lists (FR-154, FR-155).
+///
+/// # Errors
+///
+/// Returns an error as [`advise`] does.
+pub fn discrepancies(
+    scope: &Path,
+    modules: &ModuleSelection,
+) -> Result<Discrepancies, AdviceError> {
+    let (records, unreadable) = load(scope, modules)?;
+    let links = links::Links::build(&records);
+    Ok(Discrepancies {
+        attribution: ATTRIBUTION,
+        findings: discrepancies::build(&records, &links),
+        unreadable,
+    })
+}
+
+impl Discrepancies {
+    /// The report as Markdown.
+    #[must_use]
+    pub fn to_markdown(&self) -> String {
+        discrepancies::markdown(self)
+    }
+
+    /// The report as one pretty-printed JSON object.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when serialization fails.
+    pub fn to_json(&self) -> Result<String, AdviceError> {
+        serde_json::to_string_pretty(self).map_err(|error| AdviceError::render(&error))
+    }
 }
 
 impl Advice {
