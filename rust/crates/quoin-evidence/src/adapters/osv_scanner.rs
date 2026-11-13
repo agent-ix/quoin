@@ -144,7 +144,9 @@ fn valid_purl(purl: &str) -> bool {
     }) {
         return false;
     }
-    let Some((_, components)) = purl.strip_prefix("pkg:").and_then(|purl| purl.split_once('/'))
+    let Some((_, components)) = purl
+        .strip_prefix("pkg:")
+        .and_then(|purl| purl.split_once('/'))
     else {
         return false;
     };
@@ -159,9 +161,11 @@ fn valid_purl(purl: &str) -> bool {
         .split_once('#')
         .map_or(qualifiers_and_subpath, |(qualifiers, _)| qualifiers);
     !qualifiers.is_empty()
-        && qualifiers
-            .split('&')
-            .all(|qualifier| qualifier.split_once('=').is_some_and(|(key, value)| !key.is_empty() && !value.is_empty()))
+        && qualifiers.split('&').all(|qualifier| {
+            qualifier
+                .split_once('=')
+                .is_some_and(|(key, value)| !key.is_empty() && !value.is_empty())
+        })
 }
 
 fn group_severities(groups: Option<&Value>) -> BTreeMap<String, String> {
