@@ -10,7 +10,9 @@
 
 use std::path::Path;
 
-use quoin_evidence::adapters::{AdapterSelection, select_adapter, select_finding_adapter};
+use quoin_evidence::adapters::{
+    AdapterSelection, refuse_policy, select_adapter, select_finding_adapter,
+};
 use quoin_evidence::assurance_records::{
     write_experiment_record, write_operational_evidence_record,
 };
@@ -103,7 +105,9 @@ fn record_scan(
     host: &dyn EvidenceHost,
     op: &'static str,
 ) -> Result<serde_json::Value, CoreError> {
-    let result = (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?;
+    let result = adapter
+        .run(&request.results, request.policy.as_deref())
+        .map_err(|e| map_error(&e, op))?;
     // The scanner's own claim about its identity, checked against the suite's
     // declared tool. A scan recorded under the wrong tool is a transcript that
     // names a producer that did not produce it.
@@ -136,6 +140,7 @@ fn record_scan(
                 ruleset: result.ruleset.clone(),
                 rules_evaluated: result.rules_evaluated,
                 findings: result.findings.clone(),
+                evaluated: result.evaluated.clone(),
             },
         )
         .map_err(|e| map_error(&e, op))?;
@@ -205,6 +210,9 @@ fn record_entries(
     host: &dyn EvidenceHost,
     op: &'static str,
 ) -> Result<serde_json::Value, CoreError> {
+    if request.policy.is_some() {
+        return Err(map_error(&refuse_policy(adapter.name), op));
+    }
     let result = (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?;
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
     // An inventory (SBOM) names no obligation, so the recorder states which

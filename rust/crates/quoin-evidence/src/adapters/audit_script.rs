@@ -105,6 +105,7 @@ pub fn parse_audit_script(raw: &str) -> Result<FindingResult, EvidenceError> {
     Ok(FindingResult {
         findings,
         tool: None,
+        evaluated: None,
         ruleset: None,
         rules_evaluated: Some(evaluated),
     })

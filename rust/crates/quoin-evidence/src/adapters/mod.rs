@@ -23,6 +23,7 @@ mod contract_conformance;
 mod differential_report;
 mod entries;
 mod junit;
+mod licence_policy;
 mod registry;
 mod sarif;
 mod sbom;
@@ -35,12 +36,13 @@ pub use contract_conformance::{PROTOCOL, parse_contract_conformance};
 pub use differential_report::parse_differential_report;
 pub use entries::parse_entries;
 pub use junit::{parse_junit, qualified_name};
+pub use licence_policy::parse_licence_policy;
 pub use registry::{
-    ADAPTERS, AdapterSelection, FINDING_ADAPTERS, FindingAdapter, RunAdapter, adapter_names,
-    select_adapter, select_finding_adapter,
+    ADAPTERS, AdapterSelection, FINDING_ADAPTERS, FindingAdapter, FindingParser, RunAdapter,
+    adapter_names, refuse_policy, select_adapter, select_finding_adapter,
 };
 pub use sarif::{parse_cargo_audit, parse_sarif};
-pub use sbom::parse_sbom;
+pub use sbom::{DeclaredLicence, LicenceKind, SbomComponent, parse_sbom, read_components};
 
 use crate::types::RunEntry;
 
@@ -115,4 +117,7 @@ pub struct FindingResult {
     /// difference: the first is a question that cannot be asked, the second is
     /// a vacuous scan.
     pub rules_evaluated: Option<u64>,
+    /// The symbols of the components the scan evaluated, set by an adapter whose
+    /// tool evaluates a stated inventory (FR-034-AC-27). `None` claims nothing.
+    pub evaluated: Option<Vec<String>>,
 }

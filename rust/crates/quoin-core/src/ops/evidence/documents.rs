@@ -11,7 +11,9 @@
 use std::path::Path;
 
 use quoin_evidence::MUTATION_SCORE_METRIC;
-use quoin_evidence::adapters::{AdapterSelection, select_adapter, select_finding_adapter};
+use quoin_evidence::adapters::{
+    AdapterSelection, refuse_policy, select_adapter, select_finding_adapter,
+};
 use quoin_evidence::independence::{
     require_known_policy_obligations, validate_evidence_lineage, validate_independence_policy,
 };
@@ -100,6 +102,7 @@ pub fn parse_results(request: &serde_json::Value) -> Result<Response, CoreError>
         &request.text,
         request.adapter.as_deref(),
         request.tool.as_deref(),
+        request.policy.as_deref(),
         op,
     )?)
 }
@@ -161,19 +164,24 @@ pub(super) fn parsed_results(
     text: &str,
     adapter: Option<&str>,
     tool: Option<&str>,
+    policy: Option<&str>,
     op: &'static str,
 ) -> Result<ParseResultsPayload, CoreError> {
     let selection = AdapterSelection { adapter, tool };
     if let Some(finding) = select_finding_adapter(selection) {
-        let result = (finding.parse)(text).map_err(|e| map_error(&e, op))?;
+        let result = finding.run(text, policy).map_err(|e| map_error(&e, op))?;
         return Ok(ParseResultsPayload::Finding {
             findings: result.findings,
             tool: result.tool,
             ruleset: result.ruleset,
             rules_evaluated: result.rules_evaluated,
+            evaluated: result.evaluated,
         });
     }
     let run = select_adapter(selection).map_err(|e| map_error(&e, op))?;
+    if policy.is_some() {
+        return Err(map_error(&refuse_policy(run.name), op));
+    }
     let result = (run.parse)(text).map_err(|e| map_error(&e, op))?;
     Ok(ParseResultsPayload::Run {
         unrepresented: result.unrepresented.as_deref().map(unrepresented_views),

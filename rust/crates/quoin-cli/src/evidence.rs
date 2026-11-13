@@ -68,6 +68,7 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("lineage").long("lineage"))
                 .arg(Arg::new("discharges").long("discharges"))
                 .arg(Arg::new("adapter").long("adapter"))
+                .arg(Arg::new("policy").long("policy"))
                 .arg(Arg::new("results").long("results").required(true))
                 .arg(repo_arg())
                 .arg(Arg::new("module").long("module"))
@@ -121,6 +122,13 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
         MAX_RECORD_RESULTS_BYTES,
     )?)
     .map_err(|error| format!("results are not UTF-8: {error}"))?;
+    let policy = arguments
+        .get_one::<String>("policy")
+        .map(|path| {
+            String::from_utf8(bounded_input(path, MAX_RECORD_RESULTS_BYTES)?)
+                .map_err(|error| format!("policy is not UTF-8: {error}"))
+        })
+        .transpose()?;
     let lineage = arguments
         .get_one::<String>("lineage")
         .map(|source| json_input(source))
@@ -150,7 +158,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
         "evidence.record",
         &serde_json::json!({
             "repo": repo, "suite": required(arguments, "suite")?, "tool": required(arguments, "tool")?,
-            "kind": arguments.get_one::<String>("kind"), "lineage": lineage, "timestamp": timestamp, "adapter": arguments.get_one::<String>("adapter"),
+            "kind": arguments.get_one::<String>("kind"), "lineage": lineage, "timestamp": timestamp, "adapter": arguments.get_one::<String>("adapter"), "policy": policy,
             "results": results, "discharges": discharges, "obligations": coverage.payload.get("obligations").cloned().unwrap_or_else(|| serde_json::json!([])),
         }),
     )?;

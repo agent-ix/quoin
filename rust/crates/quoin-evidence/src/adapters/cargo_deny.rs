@@ -102,6 +102,7 @@ pub fn parse_cargo_deny(raw: &str) -> Result<FindingResult, EvidenceError> {
     Ok(FindingResult {
         findings,
         tool: Some("cargo-deny".to_owned()),
+        evaluated: None,
         ruleset: Some(names.join(",")),
         rules_evaluated: None,
     })

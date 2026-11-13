@@ -48,26 +48,7 @@ pub(super) fn parse_purl(symbol: &str) -> Option<Purl> {
     })
 }
 
-pub(super) fn percent_decode(text: &str) -> String {
-    let bytes = text.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut index = 0;
-    while let Some(&byte) = bytes.get(index) {
-        let decoded = (byte == b'%')
-            .then(|| bytes.get(index + 1..index + 3))
-            .flatten()
-            .and_then(|pair| std::str::from_utf8(pair).ok())
-            .and_then(|pair| u8::from_str_radix(pair, 16).ok());
-        if let Some(value) = decoded {
-            out.push(value);
-            index += 3;
-        } else {
-            out.push(byte);
-            index += 1;
-        }
-    }
-    String::from_utf8(out).unwrap_or_else(|_| text.to_owned())
-}
+pub(super) use quoin_evidence::purl::percent_decode;
 
 /// The record file name of a purl: its identity without qualifiers and subpath,
 /// every byte outside `A-Za-z0-9._-` as `%` and its two uppercase hex digits,

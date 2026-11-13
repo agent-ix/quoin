@@ -3312,6 +3312,7 @@ dependencies = [
  "quire-analyze",
  "quoin-quire-types",
  "quoin-store",
+ "quoin-yaml",
  "regex",
  "schemars 1.2.2",
  "serde",

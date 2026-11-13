@@ -41,6 +41,7 @@ pub mod ids;
 pub mod independence;
 pub mod mock_inspection;
 pub mod paths;
+pub mod purl;
 pub mod record;
 pub mod scenario;
 pub mod source;
