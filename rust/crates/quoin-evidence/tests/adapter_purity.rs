@@ -63,7 +63,7 @@ fn adapters_dir() -> PathBuf {
 /// Every adapter module is pure over the text it was handed.
 ///
 /// Provenance: quoin#323, quoin#458
-#[trace("FR-033-CON-1")]
+#[trace("FR-033-CON-1", "FR-149-AC-9")]
 #[test]
 fn tc_458_250_no_adapter_module_names_a_host_capability() {
     for entry in fs::read_dir(adapters_dir()).expect("src/adapters is readable") {

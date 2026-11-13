@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The advisory join (FR-142): `cargo-audit` and `cargo-deny` findings laid
-//! onto `soup_record` entries at read time.
+//! The advisory join (FR-142): scanner findings laid onto `soup_record` entries at read time.
 //!
 //! Pure. [`join`] takes the records, the retained [`FindingRecord`]s and the
 //! discharge report of the `--binding` clause set, and returns a [`Join`]; it
@@ -13,9 +12,8 @@
 //! There is no advisory parser here. The scans were parsed when they were
 //! recorded, by the FR-034 adapters of the FR-033 registry; this module only
 //! asks the registry which adapter a retained scan's tool selects. A finding
-//! carries no purl, so the match is the crate `<name>@<version>` its path
-//! records against the record's `pkg:cargo/<name>@<version>` purl. A scanner's
-//! severity word is carried unchanged and nothing is scored (FR-034-CON-2).
+//! Cargo findings match `<name>@<version>` against cargo purls; OSV findings
+//! match purls by identity. A scanner's severity word is carried unchanged.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
@@ -45,16 +43,19 @@ pub(super) enum Tool {
     CargoAudit,
     /// `cargo deny --format json check`.
     CargoDeny,
+    /// OSV-Scanner JSON report.
+    OsvScanner,
 }
 
 impl Tool {
-    pub(super) const ALL: [Self; 2] = [Self::CargoAudit, Self::CargoDeny];
+    pub(super) const ALL: [Self; 3] = [Self::CargoAudit, Self::CargoDeny, Self::OsvScanner];
 
     /// The registry name of the tool's adapter.
     pub(super) fn name(self) -> &'static str {
         match self {
             Self::CargoAudit => "cargo-audit",
             Self::CargoDeny => "cargo-deny",
+            Self::OsvScanner => "osv-scanner",
         }
     }
 
@@ -77,6 +78,20 @@ impl Tool {
             Self::CargoDeny => DENY_ADVISORY_PREFIXES
                 .iter()
                 .any(|prefix| finding.rule_id.starts_with(prefix)),
+            Self::OsvScanner => true,
+        }
+    }
+
+    /// Whether this scanner assesses the record's package-url type.
+    pub(super) fn assesses(self, purl: &str) -> bool {
+        match self {
+            Self::CargoAudit | Self::CargoDeny => index::purl_type(purl) == Some("cargo"),
+            Self::OsvScanner => {
+                matches!(
+                    index::purl_type(purl),
+                    Some("npm" | "pypi" | "golang" | "deb")
+                )
+            }
         }
     }
 }
@@ -86,6 +101,8 @@ impl Tool {
 pub(super) struct ScanState {
     /// The tool.
     pub(super) tool: Tool,
+    /// The ruleset or database identity exposed by the retained report.
+    pub(super) ruleset: Option<String>,
     /// What became of its scan.
     pub(super) outcome: ScanOutcome,
     /// The suites of the tool's older retained scans, which the join did not
@@ -261,7 +278,7 @@ pub(super) struct Unmatched {
 /// The whole join.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct Join {
-    /// One entry per tool, `cargo-audit` first.
+    /// One entry per tool, in [`Tool::ALL`] order.
     pub(super) scans: Vec<ScanState>,
     /// Every record, sorted by purl then path.
     pub(super) records: Vec<RecordJoin>,
@@ -269,7 +286,7 @@ pub(super) struct Join {
     pub(super) unmatched: Vec<Unmatched>,
 }
 
-/// Join the newest retained `cargo-audit` and `cargo-deny` scans onto `records`
+/// Join the newest retained advisory scans onto `records`
 /// (FR-142).
 ///
 /// `scans` is every retained finding-shaped record the store holds; the newest
@@ -299,6 +316,7 @@ pub(super) fn join(
             Newest::Unordered(suites) => {
                 states.push(ScanState {
                     tool,
+                    ruleset: None,
                     outcome: ScanOutcome::Unordered { suites },
                     unread: Vec::new(),
                 });
@@ -349,6 +367,7 @@ pub(super) fn join(
         };
         states.push(ScanState {
             tool,
+            ruleset: chosen.and_then(|(scan, _)| scan.ruleset.clone()),
             outcome,
             unread,
         });
@@ -430,7 +449,8 @@ fn record_joins(
                 .iter()
                 .copied()
                 .filter(|tool| {
-                    advisories.iter().all(|a| a.tool != *tool)
+                    tool.assesses(&record.purl)
+                        && advisories.iter().all(|a| a.tool != *tool)
                         && !could_belong.contains(&(*tool, position))
                 })
                 .collect();
@@ -529,7 +549,10 @@ fn read_scan(tool: Tool, scan: &FindingRecord, index: &RecordIndex) -> Read {
             continue;
         }
         if tool.is_advisory(finding) {
-            let hit = index.find(finding.path.as_deref());
+            let hit = match tool {
+                Tool::OsvScanner => index.find_osv(finding.path.as_deref()),
+                Tool::CargoAudit | Tool::CargoDeny => index.find(finding.path.as_deref()),
+            };
             advisories.push((finding.clone(), hit));
         } else if !is_policy(tool, finding) {
             set_aside = set_aside.saturating_add(1);
@@ -607,3 +630,6 @@ fn find_clause<'a>(discharge: &'a DischargeReport, clause: &str) -> Option<&'a C
 
 #[cfg(test)]
 pub(in crate::soup) mod tests;
+
+#[cfg(test)]
+pub(in crate::soup) mod osv_tests;

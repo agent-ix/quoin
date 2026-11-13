@@ -195,6 +195,8 @@ fn tool_lines(row: &Row, tool: Tool) -> Vec<String> {
         found
     } else if row.join.free_of.contains(&tool) {
         vec![format!("{}: no advisory reported (scan read)", tool.name())]
+    } else if tool == Tool::OsvScanner && !tool.assesses(&row.join.purl) {
+        vec!["advisories not assessed: unsupported purl type".to_owned()]
     } else {
         vec![format!("{}: not assessed (see Scans)", tool.name())]
     }
@@ -366,6 +368,10 @@ fn scan_text(state: &ScanState) -> String {
     };
     if !state.unread.is_empty() {
         let _ = write!(text, "; older scans not read: {}", state.unread.join(", "));
+    }
+    if state.tool == Tool::OsvScanner && matches!(state.outcome, ScanOutcome::Read { .. }) {
+        let database = state.ruleset.as_deref().unwrap_or("not recorded");
+        let _ = write!(text, "; database: {database}");
     }
     text
 }
@@ -557,6 +563,9 @@ fn scan_json(state: &ScanState) -> Value {
         "tool": state.tool.name(),
         "older_suites_not_read": state.unread,
     });
+    if state.tool == Tool::OsvScanner && matches!(state.outcome, ScanOutcome::Read { .. }) {
+        scan["database"] = json!(state.ruleset.as_deref().unwrap_or("not recorded"));
+    }
     if let (Some(scan), Value::Object(detail)) = (scan.as_object_mut(), detail) {
         scan.extend(detail);
     }

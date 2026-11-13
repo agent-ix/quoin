@@ -24,6 +24,7 @@ mod differential_report;
 mod entries;
 mod junit;
 mod licence_policy;
+mod osv_scanner;
 mod registry;
 mod sarif;
 mod sbom;
@@ -37,6 +38,7 @@ pub use differential_report::parse_differential_report;
 pub use entries::parse_entries;
 pub use junit::{parse_junit, qualified_name};
 pub use licence_policy::parse_licence_policy;
+pub use osv_scanner::parse_osv_scanner;
 pub use registry::{
     ADAPTERS, AdapterSelection, FINDING_ADAPTERS, FindingAdapter, FindingParser, RunAdapter,
     adapter_names, refuse_policy, select_adapter, select_finding_adapter,
