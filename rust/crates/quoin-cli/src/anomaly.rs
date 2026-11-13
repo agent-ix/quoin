@@ -16,7 +16,8 @@ use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_anomaly::{
-    Context, GateMode, Severity, anomaly_documents, build_report, check_document, references_to,
+    Context, GateMode, Severity, Verification, anomaly_documents, build_report, check_document,
+    evaluates_criteria, references_to,
 };
 use quoin_core::protocol::{Diagnostic, Response};
 
@@ -139,10 +140,23 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
     let context = Context {
         hazard_installed: hazard_installed(roots.as_deref())?,
     };
+    let documents = anomaly_documents(&scope).map_err(|error| error.to_string())?;
+    let criterion_tests = if documents.iter().any(|(_, text)| evaluates_criteria(text)) {
+        match criterion_tests(&scope, roots.as_deref())? {
+            Ok(tests) => tests,
+            Err(refused) => return Ok(refused),
+        }
+    } else {
+        BTreeMap::new()
+    };
+    let verification =
+        Verification::read(&scope, criterion_tests).map_err(|error| error.to_string())?;
     let mut lines = Vec::new();
     let mut errors = false;
-    for (path, text) in anomaly_documents(&scope).map_err(|error| error.to_string())? {
-        let checked = check_document(&path, &text, context).map_err(|error| error.to_string())?;
+    for (path, text) in documents {
+        let mut checked =
+            check_document(&path, &text, context).map_err(|error| error.to_string())?;
+        checked.diagnostics.extend(verification.diagnostics(&text));
         if !checked.history_applicable {
             lines.push(format!(
                 "{}: statusHistory not applicable (the file is not under git)",
@@ -156,8 +170,12 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
             } else {
                 format!(" [commits: {}]", diagnostic.commits.join(", "))
             };
+            let target = diagnostic
+                .target
+                .as_ref()
+                .map_or_else(String::new, |target| format!(" [target: `{target}`]"));
             lines.push(format!(
-                "{}:{}: {} {} ({}) {}{commits}",
+                "{}:{}: {} {} ({}) {}{target}{commits}",
                 path.display(),
                 diagnostic.line,
                 diagnostic.severity.as_str(),
@@ -173,6 +191,14 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
                 fixing.markdown()
             ));
         }
+    }
+    // An unreadable run file is skipped and named, as `quoin evidence` does
+    // (FR-030-AC-13); the exit status is unchanged.
+    for skipped in verification.skipped() {
+        lines.push(format!(
+            "{}: unreadable run file skipped; its suite contributes no result",
+            scope.join("spec/evidence").join(skipped).display()
+        ));
     }
     let outcome = if errors {
         Outcome::Partial
@@ -237,6 +263,48 @@ fn run_refs(arguments: &ArgMatches) -> Result<Response, String> {
             .join("\n")
     };
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
+}
+
+/// The test case ids each criterion's obligation names (`target_ids`,
+/// quire-rs FR-053-AC-11), asked of the core's coverage derivation over the
+/// same module roots as the rest of the check. An id that is itself an
+/// obligation id is dropped, as the evidence store drops it (FR-030-AC-15).
+fn criterion_tests(
+    scope: &std::path::Path,
+    roots: Option<&[PathBuf]>,
+) -> Result<Result<BTreeMap<String, Vec<String>>, Response>, String> {
+    let response = invoke(
+        "quire.coverage",
+        &serde_json::json!({ "scope": scope, "modules": roots.unwrap_or_default() }),
+    )?;
+    if !response.outcome.carries_payload() {
+        return Ok(Err(response));
+    }
+    let obligations = response
+        .payload
+        .get("obligations")
+        .and_then(serde_json::Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or_default();
+    let ids = obligations
+        .iter()
+        .filter_map(|obligation| obligation.get("id")?.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    Ok(Ok(obligations
+        .iter()
+        .filter_map(|obligation| {
+            let id = obligation.get("id")?.as_str()?;
+            let tests = obligation
+                .get("target_ids")?
+                .as_array()?
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .filter(|test| !ids.contains(test))
+                .map(str::to_owned)
+                .collect();
+            Some((id.to_owned(), tests))
+        })
+        .collect()))
 }
 
 /// Whether the `hazard` object type is installed, asked of the core's module

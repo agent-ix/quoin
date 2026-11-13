@@ -412,17 +412,31 @@ fn no_anomaly_command_offers_to_write_a_rationale_and_a_run_writes_no_file() {
 #[test]
 fn check_prints_a_fixing_change_line_for_each_document() {
     let repo = repo();
-    let out = repo.quoin(&["anomaly", "check", "spec", "--module", "."]);
+    // The scope is the repository root, and the module root is a real one: the
+    // check derives the corpus obligations.
+    let module = fixtures()
+        .ancestors()
+        .nth(3)
+        .unwrap()
+        .join("spec_artifacts_process");
+    let out = repo.quoin(&[
+        "anomaly",
+        "check",
+        ".",
+        "--module",
+        module.to_str().unwrap(),
+    ]);
     let text = stdout(&out);
     assert!(
-        text.lines()
-            .any(|l| l.starts_with("spec/anomalies/AN-004.md: fixingChange ")
+        text.lines().any(
+            |l| l.starts_with("./spec/anomalies/AN-004.md: fixingChange ")
                 && l.contains("Fixture Author")
-                && l.contains("unsigned (N)")),
+                && l.contains("unsigned (N)")
+        ),
         "{text}"
     );
     assert!(
-        text.contains("spec/anomalies/AN-001.md: fixingChange absent"),
+        text.contains("./spec/anomalies/AN-001.md: fixingChange absent"),
         "{text}"
     );
 }

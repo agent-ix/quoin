@@ -8,7 +8,7 @@
 //! spec-artifacts-process's `mappings.yaml` that the checks here need. Remove
 //! this module's table and frontmatter reading, and read the extractor's
 //! `title`, `status`, `resolution`, `closedBy`, `severity`, `safetyImpact`,
-//! `assessment` and `releaseRationale` keys instead, when #393 lands. The exception is recorded in FR-136.
+//! `assessment`, `releaseRationale` and `fixVerification` keys instead, when #393 lands. The exception is recorded in FR-136.
 //!
 //! Vocabulary checks (an unknown `Kind` or `Impact`, an unknown `status`) are
 //! `quire validate`'s under spec-artifacts-process FR-014/FR-015 and are not
@@ -16,9 +16,10 @@
 //!
 //! The parts of an `Anomaly` document this crate reads: `title`, `status`,
 //! `resolution`, `closed_by`, `safety_impact`, `severity`, the
-//! `## Safety Impact Assessment` table and the `## Release Rationale` table
+//! `## Safety Impact Assessment` table, the `## Release Rationale` table
 //! (the report of FR-162 and FR-163 widens the reader to `severity`, `title`
-//! and `releaseRationale`).
+//! and `releaseRationale`) and the `## Fix Verification` table (FR-175 widens
+//! it to the rows' `Kind`, `Target` and `Rationale`).
 //!
 //! Field vocabularies and the legality of a field combination are the module's
 //! (spec-artifacts-process FR-014/FR-015) and `quire validate`'s. A document
@@ -34,6 +35,8 @@ const COLUMNS: [&str; 4] = ["Kind", "Target", "Impact", "Rationale"];
 const SECTION: &str = "## Safety Impact Assessment";
 const RATIONALE_COLUMNS: [&str; 2] = ["Author", "Rationale"];
 const RATIONALE_SECTION: &str = "## Release Rationale";
+const VERIFICATION_COLUMNS: [&str; 3] = ["Kind", "Target", "Rationale"];
+const VERIFICATION_SECTION: &str = "## Fix Verification";
 
 /// One assessment row, as authored.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -57,6 +60,21 @@ pub struct RationaleEntry {
     pub author: String,
     /// The written reason, verbatim.
     pub rationale: String,
+}
+
+/// One `## Fix Verification` row, as authored.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VerificationRow {
+    /// `Criterion` or `Test` (or a word outside the vocabulary, which is
+    /// `quire validate`'s to report).
+    pub kind: String,
+    /// The authored reference token; absent for a row whose `Target` is empty
+    /// or `-`.
+    pub target: Option<String>,
+    /// What the row says demonstrates the fix, verbatim.
+    pub rationale: String,
+    /// 1-based document line of the row.
+    pub line: usize,
 }
 
 /// The record of one `Anomaly` document.
@@ -87,6 +105,9 @@ pub struct Record {
     /// The text of the release-rationale section, trimmed; `None` while it is
     /// absent.
     pub release_rationale_text: Option<String>,
+    /// The fix-verification rows in document order; `None` while the section
+    /// is absent.
+    pub fix_verification: Option<Vec<VerificationRow>>,
 }
 
 impl Record {
@@ -168,7 +189,7 @@ fn scalar(value: &Value, key: &str) -> Option<String> {
 }
 
 /// Split one table row on its unescaped pipes, trimming each cell.
-fn cells(line: &str) -> Vec<String> {
+pub(crate) fn cells(line: &str) -> Vec<String> {
     let trimmed = line.trim();
     let inner = trimmed.strip_prefix('|').unwrap_or(trimmed);
     let inner = inner.strip_suffix('|').unwrap_or(inner);
@@ -273,6 +294,21 @@ fn rationale_entries(
         .collect())
 }
 
+fn verification_rows(
+    heading: usize,
+    body: &[(usize, &str)],
+) -> Result<Vec<VerificationRow>, MappingError> {
+    Ok(table(heading, body, VERIFICATION_COLUMNS)?
+        .into_iter()
+        .map(|(line, [kind, target, rationale])| VerificationRow {
+            kind,
+            target: (!target.is_empty() && target != "-").then_some(target),
+            rationale,
+            line,
+        })
+        .collect())
+}
+
 /// The trimmed text of the section under `heading`, when the document has it.
 fn section_text(text: &str, heading: &str) -> Option<String> {
     let (_, body) = section(text, heading)?;
@@ -339,6 +375,10 @@ pub fn parse_record(text: &str) -> Result<Record, MappingError> {
             release_rationale_text(text),
         ),
     };
+    let fix_verification = match section(text, VERIFICATION_SECTION) {
+        None => None,
+        Some((heading, body)) => Some(verification_rows(heading, &body)?),
+    };
     Ok(Record {
         id,
         title: scalar(&front, "title"),
@@ -352,5 +392,6 @@ pub fn parse_record(text: &str) -> Result<Record, MappingError> {
         assessment_text,
         release_rationale,
         release_rationale_text,
+        fix_verification,
     })
 }
