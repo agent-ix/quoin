@@ -36,3 +36,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-032: Differential report intake is bounded and deterministic](./NFR-032-differential-report-intake-is-bounded-and-deterministic.md)
 - [NFR-033: Counting an analysis result never infers a binding and is order-independent](./NFR-033-analysis-counting-never-infers-a-binding.md)
 - [NFR-035: The anomaly report states what people recorded and never decides acceptance](./NFR-035-anomaly-report-states-and-never-decides.md)
+- [NFR-034: Class floors and class obligations state what people wrote and never assign a class](./NFR-034-class-reports-state-and-never-assign.md)

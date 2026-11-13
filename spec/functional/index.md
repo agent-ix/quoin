@@ -147,3 +147,5 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-162: quoin anomaly report: the anomalies a release still carries, grouped by affected hazard and requirement](./FR-162-anomaly-report.md)
 - [FR-163: Anomaly report release rationale: stated as authored, attributed by git, never written by the tool](./FR-163-anomaly-report-release-rationale.md)
 - [FR-164: quoin anomaly report --fail-on: a gate for CI and release decisions](./FR-164-anomaly-report-gate.md)
+- [FR-160: Per-class evidence floors: required methods, mutation floor and independence configured per software safety class](./FR-160-per-class-evidence-floors.md)
+- [FR-161: Per-class obligations report: the activities and evidence a requirement's software safety class demands](./FR-161-per-class-obligations-report.md)
