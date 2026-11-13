@@ -36,6 +36,8 @@ set. Four sources have a stated home:
 - When a source's clause set is not installed, the skill SHALL write no mapping for that source.
 - When a source's clause set is not installed, the skill SHALL state in its reply that the source was not mapped because its set is not installed.
 - The skill SHALL NOT supply the text, title or summary of a licence-restricted clause in any artifact or reply it produces.
+- The skill SHALL NOT ship a reference table, summary or index of the controls of a licence-restricted source, and SHALL NOT read one.
+- When a licensed pack is installed, the skill SHALL take the clause ids of its source only from the pack's clause set and write them by reference.
 - The NIST and ASVS clause sets SHALL declare a `rights.text` value of `none`, `original` or `explicitly_cleared`, chosen to match their source licence, and never `licensed`, so that quire-rs FR-083 treats them as publishable.
 - `quire publish-check` SHALL accept the module that ships the NIST and ASVS clause sets.
 
@@ -49,6 +51,8 @@ set. Four sources have a stated home:
 | FR-172-AC-4 | No artifact or reply of the FR-172-AC-3 skill run contains the pack's clause-text sentinel. | Demonstration |
 | FR-172-AC-5 | `SKILL.md` instructs the installed-set check, the not-mapped statement and the no-text rule. | Inspection |
 | FR-172-AC-6 | The keys `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` appear in this requirement, in spec-objects-security FR-014 and FR-017, and in `SKILL.md`. | Inspection |
+| FR-172-AC-7 | No file shipped under `skills/spec-security-analysis`, and no fixture or expected output under `tests/fixtures/security-analysis`, contains the clause-text sentinel of a synthetic licensed pack `example.invalid/std@1` installed in a temp `IX_HOME` where `quoin module list` shows it as `pack=true`. | Test |
+| FR-172-AC-8 | The skill ships no `references/soc2` or `references/iso27001` directory, and `SKILL.md` links to none and instructs ids of a restricted source only from an installed pack's clause set. | Test |
 
 ## Dependencies
 

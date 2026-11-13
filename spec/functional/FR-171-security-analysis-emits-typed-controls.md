@@ -39,7 +39,7 @@ Nothing is written into `spec/spec.md` because the artifacts are the record.
 - The change to the skill SHALL correct each NIST SP 800-53 and OWASP ASVS control number that the skill cites and that either is not a control of the cited release of the free source or identifies a control other than the one the citing row describes. A row that carries a shortened, older or reworded title of the control its number identifies is not wrong, and the change does not rename it.
 - When an ASVS chapter id or title differs from the cited release, the change to the skill SHALL replace it with the cited release's chapter id and title.
 - The change to the skill SHALL leave every other standard name in `SKILL.md` and the references as it is.
-- The change to the skill SHALL leave every SOC 2 and ISO/IEC 27001 number as it is, because no free source checks them.
+- The change to the skill SHALL leave every SOC 2 and ISO/IEC 27001 number it keeps as it is, because no free source checks them; the licence-restricted reference tables are not kept ([FR-172](./FR-172-clause-set-sources-and-licence-boundary.md)).
 
 ## Acceptance Criteria
 
@@ -48,7 +48,7 @@ Nothing is written into `spec/spec.md` because the artifacts are the record.
 | FR-171-AC-1 | `skills/spec-security-analysis/SKILL.md` contains no instruction to write Section 19, and its output step names the `control` and `scope_exclusion` artifacts. | Inspection |
 | FR-171-AC-2 | The shipped template and example artifacts each pass `quire validate` with the spec-objects-security module installed. | Test |
 | FR-171-AC-3 | `SKILL.md` instructs `not_assessed` as the default `## Effectiveness` value and instructs no exclusion without a responsible party. | Inspection |
-| FR-171-AC-4 | A diff of the skill against its base shows no changed standard name, other than ASVS chapter ids and titles replaced by those of ASVS 5.0.0, and no changed SOC 2 or ISO/IEC 27001 number. | Inspection |
+| FR-171-AC-4 | A diff of the skill against its base shows no changed standard name, other than ASVS chapter ids and titles replaced by those of ASVS 5.0.0, and no changed SOC 2 or ISO/IEC 27001 number among those the skill keeps. | Inspection |
 | FR-171-AC-5 | `SKILL.md` instructs the gap and no-responsible-party reply and the `quire validate` run. | Inspection |
 | FR-171-AC-6 | Every NIST SP 800-53 and OWASP ASVS control number cited anywhere under `skills/spec-security-analysis` is a control of Rev 5.2.0 and of ASVS 5.0.0 respectively and identifies the control its row describes, checked against the published catalogues; a number is wrong when the catalogue has no such control, or when the control it identifies is a different control from the one the row's name and description denote, and a shortened, older or reworded title of the same control does not make a number wrong; each wrong number is listed in the PR with its correction, and none remains. | Analysis |
 | FR-171-AC-7 | `SKILL.md` names NIST SP 800-53 as Rev 5.2.0 and no other revision string. | Inspection |

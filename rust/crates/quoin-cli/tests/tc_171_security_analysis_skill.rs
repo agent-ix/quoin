@@ -326,7 +326,7 @@ fn skill_text_instructs_the_defaults_the_reply_and_the_set_check() {
         "quoin module list",
         "not mapped, set not installed",
         "Never supply the text, title or summary",
-        "Licensed standards are used for id lookup only",
+        "Licensed standards come from an installed pack only",
         "nist/sp800-53@5.2.0",
         "owasp/asvs@5.0.0",
     ] {
