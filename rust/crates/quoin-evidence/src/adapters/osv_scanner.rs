@@ -122,13 +122,16 @@ fn package_path(package: &serde_json::Map<String, Value>) -> Option<String> {
 }
 
 fn valid_purl(purl: &str) -> bool {
+    if purl.chars().any(char::is_whitespace) {
+        return false;
+    }
     let Some(identity) = PurlIdentity::parse(purl) else {
         return false;
     };
     if identity.kind.is_empty() || identity.name.is_empty() {
         return false;
     }
-    purl.as_bytes().iter().enumerate().all(|(index, byte)| {
+    if !purl.as_bytes().iter().enumerate().all(|(index, byte)| {
         *byte != b'%' || {
             let Some(hex) = purl
                 .as_bytes()
@@ -138,7 +141,27 @@ fn valid_purl(purl: &str) -> bool {
             };
             hex.len() == 2 && hex.iter().all(u8::is_ascii_hexdigit)
         }
-    })
+    }) {
+        return false;
+    }
+    let Some((_, components)) = purl.strip_prefix("pkg:").and_then(|purl| purl.split_once('/'))
+    else {
+        return false;
+    };
+    let path = components.split(['?', '#']).next().unwrap_or_default();
+    if path.ends_with('@') {
+        return false;
+    }
+    let Some((_, qualifiers_and_subpath)) = components.split_once('?') else {
+        return true;
+    };
+    let qualifiers = qualifiers_and_subpath
+        .split_once('#')
+        .map_or(qualifiers_and_subpath, |(qualifiers, _)| qualifiers);
+    !qualifiers.is_empty()
+        && qualifiers
+            .split('&')
+            .all(|qualifier| qualifier.split_once('=').is_some_and(|(key, value)| !key.is_empty() && !value.is_empty()))
 }
 
 fn group_severities(groups: Option<&Value>) -> BTreeMap<String, String> {
