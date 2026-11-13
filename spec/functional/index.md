@@ -144,3 +144,6 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-150: Licence and ban policy findings from the ingested SBOM](./FR-150-licence-and-ban-policy-findings.md)
 - [FR-154: quoin risk discrepancies: a read-only report of where a recorded risk decision disagrees with the authored policy](./FR-154-risk-discrepancies-command.md)
 - [FR-155: Risk discrepancy findings: the finding tokens, their shape and the strict flag](./FR-155-risk-discrepancy-findings.md)
+- [FR-162: quoin anomaly report: unresolved and unassessed anomalies, grouped by affected hazard and requirement](./FR-162-anomaly-report.md)
+- [FR-163: Anomaly report release rationale: stated as authored, attributed by git, never written by the tool](./FR-163-anomaly-report-release-rationale.md)
+- [FR-164: quoin anomaly report --fail-on: a gate for CI and release decisions](./FR-164-anomaly-report-gate.md)

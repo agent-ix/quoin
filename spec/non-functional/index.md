@@ -35,3 +35,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-031: Risk advice states what people wrote and never decides](./NFR-031-risk-advice-states-and-never-decides.md)
 - [NFR-032: Differential report intake is bounded and deterministic](./NFR-032-differential-report-intake-is-bounded-and-deterministic.md)
 - [NFR-033: Counting an analysis result never infers a binding and is order-independent](./NFR-033-analysis-counting-never-infers-a-binding.md)
+- [NFR-035: The anomaly report states what people recorded and never decides acceptance](./NFR-035-anomaly-report-states-and-never-decides.md)
