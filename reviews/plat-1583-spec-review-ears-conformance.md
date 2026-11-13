@@ -41,3 +41,5 @@ Minor. The trigger and unwanted-behaviour forms are correct (line 77 `If ... the
 | FND-002 | still-open | Line 56 still reads 'The check SHALL read the evidence store under spec/evidence/ of the scope and SHALL write nothing to it or to any document'. It is two obligations and was not split. |
 | FND-003 | fixed | Round 1 (b1a6c35e): - A row whose result is `passing` SHALL yield no finding. |
 | FND-004 | fixed | Round 1 (b1a6c35e): - The check SHALL NOT state that a fix is verified, accepted or acceptable. - The check SHALL NOT judge whether a test is adequate for the fix. |
+| FND-002 | fixed | Round 2 (79ee908b): - The check SHALL read the evidence store under `spec/evidence/` of the scope. - The check SHALL write nothing to the store or to any document. |
+| FND-005 | fixed | Round 2 (79ee908b): - If any run file of a suite is unreadable, then that suite SHALL contribute no entry, because an unreadable file has no timestamp and cannot be ruled out as the newest. - An older run of such a suite SHALL NOT stand in for it. - FR-030-AC-13 reports the unreadable file. |
