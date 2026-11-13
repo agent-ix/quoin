@@ -42,5 +42,5 @@ would hide the very inconsistency Quire reports (quire-rs FR-091).
 
 ## Verification
 
-The first metric is checked by FR-160-AC-9 and FR-161-AC-7, which fix an item's class away from a requirement's. The second and
+The first metric is checked by FR-160-AC-9 and FR-161-AC-7, which fix an obligation's and a requirement's class away from any allocated part's. The second and
 third are checked by FR-160-AC-12 for the audit and the matrix and by FR-161-AC-9 for the report.

@@ -111,7 +111,7 @@ reports the same class findings and class column as the audit for the same input
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
 | FR-160-CON-1 | Quoin SHALL NOT derive, default, suggest or write a class, from criticality, relationships, item classes or evidence. | Design | Test (FR-160-AC-9) |
-| FR-160-CON-2 | Quoin SHALL NOT parse requirement or item Markdown; it reads the class from the Quire payload. | Design | Inspection |
+| FR-160-CON-2 | Quoin SHALL NOT parse requirement Markdown; it reads the class from the Quire payload. | Design | Inspection |
 
 ## Dependencies
 
