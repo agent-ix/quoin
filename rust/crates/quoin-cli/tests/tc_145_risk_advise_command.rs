@@ -149,7 +149,7 @@ fn each_failure_exits_2_with_its_own_diagnostic_code_and_an_unreadable_file_is_n
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
     let stderr = code_of(&out);
-    assert!(stderr.contains("risk.type-undeclared"), "{stderr}");
+    assert!(stderr.contains("risk.type_undeclared"), "{stderr}");
     assert!(stderr.contains("--module DIR"), "{stderr}");
 
     std::fs::write(
@@ -159,7 +159,7 @@ fn each_failure_exits_2_with_its_own_diagnostic_code_and_an_unreadable_file_is_n
     .unwrap();
     let out = advise(dir.path(), &[]);
     assert!(
-        code_of(&out).contains("risk.record-invalid"),
+        code_of(&out).contains("risk.record_invalid"),
         "{}",
         code_of(&out)
     );

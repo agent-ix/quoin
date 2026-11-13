@@ -35,11 +35,11 @@ impl ErrorCode {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Self::Scope => "scope-unreadable",
-            Self::Modules => "modules-unloadable",
-            Self::TypeUndeclared => "type-undeclared",
-            Self::Record => "record-invalid",
-            Self::Render => "render-failed",
+            Self::Scope => "scope_unreadable",
+            Self::Modules => "modules_unloadable",
+            Self::TypeUndeclared => "type_undeclared",
+            Self::Record => "record_invalid",
+            Self::Render => "render_failed",
         }
     }
 }

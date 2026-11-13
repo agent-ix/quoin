@@ -86,6 +86,14 @@ Against head e7389f42, which was rebased on main and includes #853.
 | FND-010 | low | `advise` collects the reader's corpus notices into a local `notices` and drops them. A document the engine walker cannot load (`DocumentUnreadable`, for example a non-UTF-8 residual_risk file) is therefore absent from the report without a word. That is the same silent-drop class FND-001 closed for contract violations. | rust/crates/quoin-risk-advice/src/lib.rs:66-68 |
 | FND-011 | low | FR-146's new `cell-not-in-policy` clause says "`quire validate` reports the incomplete policy (FR-101)". The safety manifest says the per-pairing cell rule "is a cross-table rule the assertions cannot state ... waits on an engine assertion", so today nothing reports it, and the token is the only signal. The token choice itself is sound: FR-102 defines only `level-not-in-policy` and `level-not-assessed`, both naming a level, and FR-105 folds every "FR-102 resolves no region" case into `decision-without-region`. Correct the clause. | spec/functional/FR-146-risk-advise-policy-cells.md:55 |
 
+## New findings (disposition pass 2)
+
+Against head a5b91437, which was rebased on main and includes #859.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-012 | low | The `quoin risk advise` diagnostic codes mix two spellings. `risk.scope_missing`, `risk.module_missing` and `risk.document_unreadable` are snake_case, like the rest of quoin-cli (`anomaly.path_missing`, `evidence.*`). The new `ErrorCode::as_str` values `risk.scope-unreadable`, `risk.modules-unloadable`, `risk.type-undeclared`, `risk.record-invalid` and `risk.render-failed` are kebab-case. Codes are API and are never renamed once shipped, so choose one spelling before merge. | rust/crates/quoin-risk-advice/src/error.rs:33-43, rust/crates/quoin-cli/src/risk.rs:61-94 |
+
 ## Dispositions
 
 Round 1, against commit e7389f42.
@@ -97,3 +105,14 @@ Round 1, against commit e7389f42.
 | FND-003 | fixed | - |
 | FND-004 | fixed | - |
 | FND-005 | fixed | - |
+
+Round 2, against commit a5b91437.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |
+| FND-008 | fixed | - |
+| FND-009 | fixed | - |
+| FND-010 | fixed | - |
+| FND-011 | fixed | - |
