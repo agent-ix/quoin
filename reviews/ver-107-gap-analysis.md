@@ -60,3 +60,13 @@ round, because each is a criterion its tagged test does not actually exercise.
 | FR-184-AC-12 | examined | FND-003 |
 | FR-184-AC-16 | examined | Covered: two act-scope causes, none counted |
 | TC-002 steps 3-6 | context_only | Steps 3 to 6 map to the tests above; step 3's audit is FND-001 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | `a_passing_entry_with_a_healthy_audit_and_no_decision_is_not_counted` runs `quoin_auditor::audit`, asserts no findings and `healthy` contains AC1, then shows the entry is not counted without a decision. |
+| FND-002 | fixed | The trace test now runs `trace_search` with `Query::SymbolName(<entry identity>)` (no claim, unresolved) and with `Query::Id(FR-001-AC-1)`, which shows the id in fixture `lib/prose.rs` as a citation and not a claim. |
+| FND-003 | fixed | Missing `identity.version`, `identity`, `status`, `outcome` and a relative `configuredExecutable` are each asserted `unevaluated`, naming the tool and configuration premise. |
+| FND-004 | fixed | Added a report whose `analysisKind` and `requestDigest` both equal `FR-001-AC-1`, recorded with no discharges: no binding and no claim. |
+| FND-005 | fixed | `#[implements("FR-116")]` is on `qualify` and `#[implements("FR-153")]` is on `compute`. |

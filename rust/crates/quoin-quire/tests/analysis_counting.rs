@@ -272,11 +272,18 @@ fn count(
     requested: &[&str],
     host: HostObservations,
 ) -> Counted {
+    // The host inspected every suite for mocks and found none.
+    let suites: std::collections::BTreeSet<String> = runs
+        .iter()
+        .map(|run| run.record.suite.as_str().to_owned())
+        .collect();
     compute(&Request {
         scope: scope(),
         requested: requested.iter().map(|id| (*id).to_owned()).collect(),
         runs,
         bindings,
+        injections: Some(Vec::new()),
+        mock_inspection_suites: Some(suites.into_iter().collect()),
         host,
     })
     .unwrap()
@@ -411,6 +418,8 @@ fn the_shipped_default_and_a_missing_checkout_sha_leave_the_obligation_unevaluat
             })
             .collect(),
         bindings: store.bindings(),
+        injections: Some(Vec::new()),
+        mock_inspection_suites: Some(vec!["SUITE-A".to_owned()]),
         host: HostObservations::default(),
     })
     .unwrap();
@@ -459,6 +468,30 @@ fn the_bridge_runs_the_fr_032_audit_and_a_finding_leaves_the_entry_uncounted() {
     });
     let outcome = count(store.runs(), bindings, &[AC1], admitted());
     assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "FR-032 audit premise");
+}
+
+#[trace("FR-153-AC-1", "FR-116-AC-12")]
+#[test]
+fn without_the_hosts_mock_inspection_the_audit_cannot_call_the_obligation_healthy() {
+    let store = satisfied_store(&[AC1]);
+    let outcome = compute(&Request {
+        scope: scope(),
+        requested: vec![AC1.to_owned()],
+        runs: store.runs(),
+        bindings: store.bindings(),
+        injections: None,
+        mock_inspection_suites: None,
+        host: admitted(),
+    })
+    .unwrap();
+    assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "FR-032 audit premise");
+    assert!(
+        causes(&outcome)
+            .iter()
+            .any(|(_, detail)| detail.contains("mocked-confirmation")),
+        "the audit's unevaluated check is kept: {:?}",
+        causes(&outcome)
+    );
 }
 
 #[trace("FR-116-AC-7", "FR-116-AC-8")]
@@ -545,15 +578,31 @@ fn the_reliance_decision_must_be_for_the_reports_producer_and_its_limits_read() 
             "bounded reliance premise",
         );
     }
-    let excluding = HostObservations {
+    // Free-text limitations are not read: one that says the use is excluded
+    // neither refuses the decision nor changes who it is for.
+    let wordy = HostObservations {
         reliance: Some(decision(
             ("quire-analyze", "0.1.0"),
             &["does not cover FR-001-AC-1"],
         )),
         ..admitted()
     };
+    let outcome = store.count(&[AC1], wordy);
+    assert_eq!(counted(&outcome), 1);
+    assert!(
+        outcome.report.record_binders.as_ref().unwrap()[0]
+            .provenance
+            .contains(&"limitation:does not cover FR-001-AC-1".to_owned())
+    );
+    let wrong_producer = HostObservations {
+        reliance: Some(decision(
+            ("other-tool", "0.1.0"),
+            &["valid for quire-analyze 0.1.0"],
+        )),
+        ..admitted()
+    };
     assert_uncounted_naming(
-        &store.count(&[AC1], excluding),
+        &store.count(&[AC1], wrong_producer),
         CauseCode::QualificationRejected,
         "bounded reliance premise",
     );

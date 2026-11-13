@@ -432,8 +432,10 @@ pub enum Error {
     },
 
     /// The FR-032 audit the retained-evidence bridge runs could not be built.
-    #[error("the retained-run audit could not be built: {reason}")]
+    #[error("the retained-run audit could not be built: {code}: {reason}")]
     AuditFailed {
+        /// The auditor's own stable code.
+        code: quoin_auditor::AuditorErrorCode,
         /// The auditor's reason.
         reason: String,
     },
@@ -616,6 +618,7 @@ mod tests {
                 required: "b".repeat(40),
             },
             Error::AuditFailed {
+                code: quoin_auditor::AuditorErrorCode::DemandTooLarge,
                 reason: "demand too large".into(),
             },
         ];

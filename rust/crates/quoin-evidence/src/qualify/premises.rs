@@ -52,6 +52,9 @@ pub(super) fn evaluate(
 }
 
 /// The FR-093 premise: a decision for this exact producer and positive use.
+///
+/// Free-text limitations are not read (FR-093 gives them no structure); they
+/// stay in provenance only and neither refuse nor admit a use.
 fn reliance(
     probe: &Probe<'_>,
     producer: Option<(&str, &str)>,
@@ -135,17 +138,11 @@ fn reliance(
         }
         Some(_) => {}
     }
-    // A limitation that excludes this target or this act is not an accepted
-    // exception; any other limitation stays visible on the decision.
-    if let Some(excluding) = assessment.limitations.iter().find(|limitation| {
-        limitation.contains(probe.obligation) || limitation.contains("analysis-act")
-    }) {
-        refuse(
-            Cause::QualificationRejected,
-            &format!("a stated limitation excludes this use: {excluding}"),
-        );
-        return;
-    }
+    // Free-text limitations are deliberately NOT read: FR-093 records them as
+    // prose with no structure the qualifier could test, so reading them would
+    // be guessing, and refusing on them would block counting for any real
+    // decision, which carries some. They stay visible on the decision as
+    // provenance and neither refuse nor admit a use.
     provenance.push(format!(
         "reliance:{}:{}",
         assessment.id,

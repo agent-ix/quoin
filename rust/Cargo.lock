@@ -3449,6 +3449,7 @@ dependencies = [
  "quire-rs",
  "quoin-auditor",
  "quoin-evidence",
+ "quoin-finding-types",
  "quoin-jsonschema",
  "quoin-quire-types",
  "quoin-yaml",

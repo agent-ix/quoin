@@ -192,13 +192,23 @@ pub struct HostObservations {
     pub selected_head: Option<String>,
 }
 
-/// One finding of the FR-032 audit about the obligation.
+/// One reason the FR-032 audit does not establish the obligation as healthy:
+/// a finding, or a check the audit could not evaluate.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditFinding {
-    /// The finding kind.
+    /// The finding kind, or the name of the unevaluated check.
     pub kind: String,
-    /// The audit's own summary.
+    /// The audit's own summary or reason.
     pub summary: String,
+}
+
+/// What the shared FR-032 audit says about one obligation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuditOutcome {
+    /// Whether the audit lists the obligation as healthy.
+    pub healthy: bool,
+    /// Every finding and unevaluated check about it.
+    pub details: Vec<AuditFinding>,
 }
 
 /// One obligation's qualification question.
@@ -210,9 +220,9 @@ pub struct Request<'a> {
     pub declared_method: Option<&'a str>,
     /// Every retained run, in any order.
     pub runs: &'a [RetainedRun],
-    /// The findings of the shared FR-032 audit about this obligation, run by
-    /// the bridge over the same latest runs; absent when no audit ran.
-    pub audit: Option<&'a [AuditFinding]>,
+    /// The shared FR-032 audit about this obligation, run by the bridge over
+    /// the same latest runs; absent when no audit ran.
+    pub audit: Option<&'a AuditOutcome>,
     /// The host's admitted observations.
     pub host: &'a HostObservations,
 }
@@ -265,19 +275,28 @@ pub fn qualify(request: &Request<'_>) -> Qualification {
         mut refusals,
     } = runs::dispositions(request.obligation, request.runs);
     if !candidates.is_empty() {
+        let audit_refusal = |reason: String| Refusal {
+            cause: Cause::Unevaluated,
+            premise: Some(Premise::Audit),
+            locator: None,
+            detail: Premise::Audit.detail(&reason),
+        };
         match request.audit {
-            None => refusals.push(Refusal {
-                cause: Cause::Unevaluated,
-                premise: Some(Premise::Audit),
-                locator: None,
-                detail: Premise::Audit.detail("no audit of the latest runs was supplied"),
-            }),
-            Some(findings) => refusals.extend(findings.iter().map(|finding| Refusal {
-                cause: Cause::Unevaluated,
-                premise: Some(Premise::Audit),
-                locator: None,
-                detail: Premise::Audit.detail(&format!("{}: {}", finding.kind, finding.summary)),
-            })),
+            None => refusals.push(audit_refusal(
+                "no audit of the latest runs was supplied".into(),
+            )),
+            Some(audit) => {
+                refusals.extend(
+                    audit.details.iter().map(|detail| {
+                        audit_refusal(format!("{}: {}", detail.kind, detail.summary))
+                    }),
+                );
+                if !audit.healthy && audit.details.is_empty() {
+                    refusals.push(audit_refusal(
+                        "the audit does not list the obligation as healthy".into(),
+                    ));
+                }
+            }
         }
     }
     let mut decisions = Vec::new();

@@ -26,10 +26,10 @@ use quire_rs::obligation::inventory::{
     CriterionEntry, InventoryOptions, SelectedInventory, inventory,
 };
 use quoin_evidence::qualify::{
-    self, AuditFinding, Cause, Decision, HostObservations, Qualification, Refusal, RetainedRun,
-    RunLocator,
+    self, AuditFinding, AuditOutcome, Cause, Decision, HostObservations, Qualification, Refusal,
+    RetainedRun, RunLocator,
 };
-use quoin_evidence::types::Binding;
+use quoin_evidence::types::{Binding, MockInjection};
 
 use crate::coverage::{self, Request as ScopeRequest, Walked};
 use crate::error::{Error, Result};
@@ -46,6 +46,12 @@ pub struct Request {
     pub runs: Vec<RetainedRun>,
     /// The binding graph, read by the FR-032 audit.
     pub bindings: Vec<Binding>,
+    /// What each suite's tests inject in place of real behaviour, as the host
+    /// inspected it. Absent means nobody looked, so the audit cannot call an
+    /// obligation healthy (FR-032, #204).
+    pub injections: Option<Vec<MockInjection>>,
+    /// The suites with a current completed mock inspection.
+    pub mock_inspection_suites: Option<Vec<String>>,
     /// The host's observations that belong to no one record.
     pub host: HostObservations,
 }
@@ -126,10 +132,10 @@ fn ordinals_stating(entries: &[CriterionEntry<'_>], id: &str) -> Vec<usize> {
 
 /// The shared FR-032 audit, run over the newest run of every suite the
 /// qualifier also reads, for the requested obligations.
-fn audit_findings(
+fn audit_report(
     request: &Request,
     entries: &[CriterionEntry<'_>],
-) -> Result<Vec<(String, AuditFinding)>> {
+) -> Result<quoin_finding_types::AuditReport> {
     let obligations = request
         .requested
         .iter()
@@ -153,31 +159,46 @@ fn audit_findings(
             }
         })
         .collect();
-    let report = quoin_auditor::audit(&quoin_auditor::AuditInput {
+    quoin_auditor::audit(&quoin_auditor::AuditInput {
         obligations,
         bindings: request.bindings.clone(),
         runs: qualify::latest_per_suite(&request.runs)
             .into_iter()
             .map(|run| run.record.clone())
             .collect(),
+        injections: request.injections.clone(),
+        mock_inspection_suites: request.mock_inspection_suites.clone(),
         ..quoin_auditor::AuditInput::default()
     })
     .map_err(|error| Error::AuditFailed {
-        reason: error.to_string(),
-    })?;
-    Ok(report
+        code: error.code,
+        reason: error.message.into_string(),
+    })
+}
+
+/// What the audit says about one obligation: healthy or not, with every
+/// finding and every check it could not evaluate.
+fn audit_outcome(report: &quoin_finding_types::AuditReport, id: &str) -> AuditOutcome {
+    let findings = report
         .findings
-        .into_iter()
-        .map(|finding| {
-            (
-                finding.obligation,
-                AuditFinding {
-                    kind: finding.kind,
-                    summary: finding.summary,
-                },
-            )
-        })
-        .collect())
+        .iter()
+        .filter(|finding| finding.obligation == id)
+        .map(|finding| AuditFinding {
+            kind: finding.kind.clone(),
+            summary: finding.summary.clone(),
+        });
+    let unevaluated = report
+        .unevaluated
+        .iter()
+        .filter(|check| check.obligation == id)
+        .map(|check| AuditFinding {
+            kind: check.check.clone(),
+            summary: check.reason.clone(),
+        });
+    AuditOutcome {
+        healthy: report.healthy.iter().any(|healthy| healthy == id),
+        details: findings.chain(unevaluated).collect(),
+    }
 }
 
 /// Count the requested obligations.
@@ -208,7 +229,7 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         InventoryOptions::default(),
     );
     let entries: Vec<CriterionEntry<'_>> = selected.entries().collect();
-    let findings = audit_findings(request, &entries)?;
+    let audit = audit_report(request, &entries)?;
 
     let mut accepted: Vec<(usize, Decision)> = Vec::new();
     let mut pending: Vec<Pending> = Vec::new();
@@ -238,11 +259,7 @@ pub fn compute(request: &Request) -> Result<Outcome> {
                 continue;
             }
         };
-        let about: Vec<AuditFinding> = findings
-            .iter()
-            .filter(|(obligation, _)| obligation == id)
-            .map(|(_, finding)| finding.clone())
-            .collect();
+        let about = audit_outcome(&audit, id);
         let answer = qualify::qualify(&qualify::Request {
             obligation: id,
             declared_method: method.as_deref(),

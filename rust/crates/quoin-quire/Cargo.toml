@@ -40,6 +40,7 @@ workspace = true
 # agree by version number rather than by construction.
 quoin-auditor = { workspace = true }
 quoin-evidence = { workspace = true }
+quoin-finding-types = { workspace = true }
 quoin-quire-types = { workspace = true }
 ix-trace-rs = { workspace = true }
 quoin-jsonschema = { workspace = true }

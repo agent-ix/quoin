@@ -67,3 +67,21 @@ audit gaps on the same path. The rest are low.
 | Vendoring, workflow edits | examined | None; fixtures are the repo's own `tests/fixtures` |
 | FR-116 exact correlation | examined | FND-001, FND-002 |
 | FR-116 audit invocation | examined | FND-003 |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | medium | The fix's FR-093 limitation rule is a free-text substring test: a limitation refuses the use when it `contains` the obligation id or the text `analysis-act`. Neither spec states this rule. It refuses wrongly in two ways. `FR-001-AC-1` matches a limitation about `FR-001-AC-10`. A limitation that confines reliance *to* the act, for example "valid for analysis-act/1 on Linux only", refuses the very use it permits. It also accepts wrongly: a limitation that excludes the act or target in other words ("not for consistency checks of FR-001") is accepted, and only recorded in provenance. Free-text limitations cannot be evaluated by matching strings. Either treat a decision with limitations as `unevaluated` on the bounded-reliance premise until limitations are structured, or get an owner ruling. | rust/crates/quoin-evidence/src/qualify/premises.rs:138-148 |
+| FND-008 | low | `Error::AuditFailed { reason: String }` stringifies the `AuditorError` with `to_string()`. This crate's own convention, in `coverage_error`, is to map an engine error onto a typed variant rather than stringify it, so a new variant fails the build. Carry the source (`#[source]`) or map `AuditorErrorCode` explicitly. | rust/crates/quoin-quire/src/error.rs:434-439; rust/crates/quoin-quire/src/evidence.rs:165-167 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | Observations are now per record: `RetainedRun.observation: RunObservation` (performed revision, execution, actor), and `HostObservations` keeps only reliance and selected HEAD. Tested by `an_observation_of_one_record_never_qualifies_another`. |
+| FND-002 | fixed | `reliance` runs `assess_trust` and compares `accepted_context.name`/`version` with the report's producer, which is qualification-rejected on mismatch. Limitations are now read; see new FND-007 for the rule used. |
+| FND-003 | still-open | The bridge now runs `quoin_auditor::audit` over `latest_per_suite`, but turns only `report.findings` into refusals. It ignores `report.unevaluated` and `report.healthy`. With the default `AuditInput` the bridge builds (`injections` and `mock_inspection_suites` both `None`), the ladder records a mocked-confirmation check under `unevaluated` for every run-backed suite, so the obligation is NOT healthy (audit/mod.rs:166-176; ladder.rs:189-226). The bridge still qualifies it, which is what `an_admitted_passing_report_is_a_qualified_record_for_its_own_target_only` counts. The PR's own AC-8 test had to supply `injections` and `mock_inspection_suites` to make the audit healthy. FR-116 says the qualifier SHALL retain the audit's failure/unevaluated details "without granting positive qualification". Fix: require `healthy.contains(id)`, map `unevaluated` entries to `unevaluated` refusals, and have the host supply the mock-inspection inputs, or get an owner ruling that the check does not apply to analysis suites. |
+| FND-004 | fixed | `ActorAdmission { actor, admission_ref, authorized }`. A missing ref is unevaluated, out of scope is qualification-rejected, and provenance is `actor-authority:<actor>:<ref>`. Tested. |
+| FND-005 | fixed | Refusals sort by `(locator, cause, premise, detail)`. |
+| FND-006 | fixed | Entries are collected once into `Vec<CriterionEntry>` and indexed with `get`. |
