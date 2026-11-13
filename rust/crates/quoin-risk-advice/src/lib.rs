@@ -24,6 +24,7 @@ mod policy;
 mod queue;
 mod records;
 mod render;
+mod summary;
 
 use std::path::Path;
 
@@ -38,6 +39,7 @@ pub use evidence::{AnomalyRef, ControlEvidence, EvidenceEntry};
 pub use finding::{Finding, Token};
 pub use policy::{CellKey, PolicyCell};
 pub use queue::{NoRecord, Queue, QueueEntry};
+pub use summary::{ControlEntry, EstimateEntry, ResidualEntry, Row, RowFinding, RowToken, Summary};
 
 /// The statement of where regions and decisions come from (FR-145).
 pub const ATTRIBUTION: &str =
@@ -109,6 +111,40 @@ fn load(
     }
     let records = records::Records::read(&corpus.documents)?;
     Ok((records, unreadable))
+}
+
+/// Read the records below `scope` and build the hazard-to-decision summary
+/// (FR-169, FR-170). Files the reader cannot load are listed in
+/// [`Summary::unreadable`] and are absent from the rows.
+///
+/// # Errors
+///
+/// Returns an error as [`advise`] does.
+pub fn summarize(scope: &Path, modules: &ModuleSelection) -> Result<Summary, AdviceError> {
+    let (records, unreadable) = load(scope, modules, &records::CHECKED, false)?;
+    let links = links::Links::build(&records);
+    Ok(Summary {
+        attribution: ATTRIBUTION,
+        rows: summary::build(&records, &links),
+        unreadable,
+    })
+}
+
+impl Summary {
+    /// The report as Markdown.
+    #[must_use]
+    pub fn to_markdown(&self) -> String {
+        summary::markdown(self)
+    }
+
+    /// The report as one pretty-printed JSON object.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when serialization fails.
+    pub fn to_json(&self) -> Result<String, AdviceError> {
+        serde_json::to_string_pretty(self).map_err(|error| AdviceError::render(&error))
+    }
 }
 
 /// Read the records below `scope` and report where a recorded residual-risk
