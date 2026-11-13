@@ -109,23 +109,32 @@ fn finding_text(
     format!("{tool} {rule_id} {package} (severity: {severity}; scan {scan_timestamp}): {outcome}")
 }
 
-/// What a row with no policy finding says of its policy status.
-fn policy_status_text(status: &PolicyStatus) -> Option<String> {
+/// The spec wording of a row's policy status, or `None` when the row lists
+/// findings instead.
+fn policy_status_word(status: &PolicyStatus) -> Option<&'static str> {
     Some(match status {
         PolicyStatus::Findings => return None,
+        PolicyStatus::NoFindings { .. } => "no policy findings in the scan read",
+        PolicyStatus::NotRun => "policy findings not assessed: licence-policy not run",
+        PolicyStatus::Vacuous => "policy findings not assessed: licence-policy scan vacuous",
+        PolicyStatus::Unordered => "policy findings not assessed: licence-policy scan unordered",
+        PolicyStatus::NotEvaluated => "not evaluated by the licence-policy scan read",
+        PolicyStatus::Blocked => {
+            "policy findings not assessed: an unmatched licence-policy finding could belong to this record"
+        }
+    })
+}
+
+/// The Markdown line of a row's policy status: the wording, and for a clean
+/// scan the scan read.
+fn policy_status_text(status: &PolicyStatus) -> Option<String> {
+    let word = policy_status_word(status)?;
+    Some(match status {
         PolicyStatus::NoFindings { timestamp, ruleset } => format!(
-            "no policy findings in the scan read (licence-policy, {timestamp}, ruleset: {})",
+            "{word} (licence-policy, {timestamp}, ruleset: {})",
             ruleset.as_deref().unwrap_or(NOT_STATED)
         ),
-        PolicyStatus::NotRun => "policy findings not assessed: licence-policy not run".to_owned(),
-        PolicyStatus::Vacuous => {
-            "policy findings not assessed: licence-policy scan vacuous".to_owned()
-        }
-        PolicyStatus::Unordered => {
-            "policy findings not assessed: licence-policy scan unordered".to_owned()
-        }
-        PolicyStatus::NotEvaluated => "not evaluated by the licence-policy scan read".to_owned(),
-        PolicyStatus::Blocked => "policy findings not assessed: an unmatched licence-policy finding could belong to this record (see Unmatched policy findings)".to_owned(),
+        _ => word.to_owned(),
     })
 }
 
@@ -431,9 +440,12 @@ fn policy_finding_json(finding: &PolicyFinding) -> Value {
 }
 
 fn policy_status_json(status: &PolicyStatus) -> Value {
-    match policy_status_text(status) {
-        None => json!({ "state": "findings" }),
-        Some(text) => json!({ "state": text }),
+    match (policy_status_word(status), status) {
+        (None, _) => json!({ "state": "findings" }),
+        (Some(word), PolicyStatus::NoFindings { timestamp, ruleset }) => {
+            json!({ "state": word, "scan_timestamp": timestamp, "ruleset": ruleset })
+        }
+        (Some(word), _) => json!({ "state": word }),
     }
 }
 

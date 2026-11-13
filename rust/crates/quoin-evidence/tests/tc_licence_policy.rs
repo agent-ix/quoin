@@ -510,3 +510,54 @@ fn tc_1671_013_an_evaluated_list_is_kept_and_its_absence_claims_nothing() {
         .unwrap();
     assert!(!stored.contains("evaluated"), "{stored}");
 }
+
+/// A licence entry the reader cannot read is still a declared licence: the
+/// component is unknown, never all-allowed because the entry vanished.
+#[trace("FR-150-AC-2", "FR-150-AC-3")]
+#[test]
+fn tc_1671_014_an_unreadable_licence_entry_is_unknown_never_allowed() {
+    let sbom = cdx(
+        r#"{"name":"a","version":"1","licenses":[{"license":{"id":"MIT"}},{"license":{"url":"https://x"}}]},
+           {"name":"b","version":"1","licenses":[{"license":{"id":"MIT"}},{"expression":42}]},
+           {"name":"c","version":"1","licenses":[{"license":{"id":"MIT"}},{"license":{"id":""}}]}"#,
+    );
+    let findings = run(&sbom, "format: licence-policy-v1\nallow: [MIT]\n");
+    let names: Vec<(&str, &str)> = findings
+        .iter()
+        .map(|f| (f.0.as_str(), f.3.as_str()))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            ("licence-unknown", "a@1"),
+            ("licence-unknown", "b@1"),
+            ("licence-unknown", "c@1")
+        ]
+    );
+    assert!(findings[0].2.contains("https://x"), "{}", findings[0].2);
+}
+
+/// An SPDX value with the `+` operator is an expression, not an id; several
+/// offending texts are joined with `, `.
+#[trace("FR-041-AC-10", "FR-150-AC-16")]
+#[test]
+fn tc_1671_015_operators_make_an_expression_and_messages_join_their_texts() {
+    let spdx = r#"{"spdxVersion":"SPDX-2.3","packages":[
+        {"name":"a","versionInfo":"1","licenseDeclared":"GPL-2.0+"}]}"#;
+    assert_eq!(
+        read_components(spdx).unwrap()[0].licences[0].kind,
+        LicenceKind::Expression
+    );
+    let sbom = cdx(
+        r#"{"name":"m","version":"1","licenses":[{"license":{"id":"Zlib"}},{"license":{"id":"ISC"}}]}"#,
+    );
+    assert_eq!(
+        run(&sbom, "format: licence-policy-v1\nallow: [MIT]\n"),
+        [finding(
+            "licence-not-allowed",
+            "not-allowed",
+            "Zlib, ISC",
+            "m@1"
+        )]
+    );
+}

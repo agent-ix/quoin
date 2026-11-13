@@ -137,6 +137,12 @@ fn cyclone_dx_components(root: &Value) -> Option<Vec<SbomComponent>> {
 }
 
 /// `licenses`: `{"license": {"id"|"name": …}}` or `{"expression": …}` entries.
+///
+/// An entry that names no readable licence (no `id` or `name`, a non-string or
+/// empty text, not an object) is still a declared licence the document made and
+/// the reader could not read. It is exposed as an expression holding the entry
+/// as written, so a policy classes it unknown and never reads the component as
+/// all-allowed because the entry vanished (FR-150: unknown is never allowed).
 fn cyclone_dx_licences(component: &Value) -> Vec<DeclaredLicence> {
     component
         .get("licenses")
@@ -144,20 +150,26 @@ fn cyclone_dx_licences(component: &Value) -> Vec<DeclaredLicence> {
         .map(Vec::as_slice)
         .unwrap_or_default()
         .iter()
-        .filter_map(|entry| {
-            let (kind, text) = if let Some(license) = entry.get("license") {
+        .map(|entry| {
+            let readable = if let Some(license) = entry.get("license") {
                 match (string_member(license, "id"), string_member(license, "name")) {
-                    (Some(id), _) => (LicenceKind::Id, id),
-                    (None, Some(name)) => (LicenceKind::Name, name),
-                    (None, None) => return None,
+                    (Some(id), _) => Some((LicenceKind::Id, id)),
+                    (None, Some(name)) => Some((LicenceKind::Name, name)),
+                    (None, None) => None,
                 }
             } else {
-                (LicenceKind::Expression, string_member(entry, "expression")?)
+                string_member(entry, "expression").map(|text| (LicenceKind::Expression, text))
             };
-            (!text.is_empty()).then(|| DeclaredLicence {
-                kind,
-                text: text.to_owned(),
-            })
+            match readable {
+                Some((kind, text)) if !text.is_empty() => DeclaredLicence {
+                    kind,
+                    text: text.to_owned(),
+                },
+                _ => DeclaredLicence {
+                    kind: LicenceKind::Expression,
+                    text: entry.to_string(),
+                },
+            }
         })
         .collect()
 }
@@ -193,14 +205,14 @@ fn spdx_components(root: &Value) -> Option<Vec<SbomComponent>> {
 }
 
 /// The `licenseDeclared` value of a package. `NOASSERTION` and `NONE` declare
-/// nothing; a value with no whitespace or parenthesis is one identifier, any
-/// other is an expression.
+/// nothing; a value with no whitespace, parenthesis or operator is one
+/// identifier, any other is an expression.
 fn spdx_licence(package: &Value) -> Option<DeclaredLicence> {
     let text = string_member(package, "licenseDeclared")?;
     if text.is_empty() || text == "NOASSERTION" || text == "NONE" {
         return None;
     }
-    let single = !text.contains(|c: char| c.is_whitespace() || c == '(' || c == ')');
+    let single = !text.contains(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '+'));
     Some(DeclaredLicence {
         kind: if single {
             LicenceKind::Id

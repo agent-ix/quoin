@@ -13,7 +13,9 @@
 use std::path::Path;
 
 use ix_trace_rs::trace;
+use quoin_evidence::MemoryEvidence;
 use quoin_evidence::adapters::parse_licence_policy;
+use quoin_evidence::store::{latest_scans, write_scan};
 use quoin_evidence::types::FindingRecord;
 use quoin_evidence::{STORE_SCHEMA_VERSION, SuiteId};
 
@@ -22,7 +24,9 @@ use crate::soup::advisory::tests::{
     AFTER, BEFORE, audit_entry, audit_text, deny_diagnostic, deny_text, discharge, discharge_with,
     disposition, record, scan,
 };
-use crate::soup::advisory::{self, Resolution, ScanOutcome, Tool, UnmatchedReason, Unresolved};
+use crate::soup::advisory::{
+    self, Hit, RecordIndex, Resolution, ScanOutcome, Tool, UnmatchedReason, Unresolved,
+};
 use crate::soup::plan::Existing;
 
 const SYFT: &str =
@@ -135,18 +139,41 @@ fn tc_1671_021_not_run_clean_and_refused_recordings_are_distinct() {
     assert!(ruleset.as_deref().unwrap().contains("Apache-2.0"));
     assert_ne!(none, read);
 
-    // A refused policy, and a refused SBOM, retain nothing: the earlier scan
-    // is still the newest scan, read with its own timestamp and ruleset.
-    assert!(parse_licence_policy(SYFT, "allow: [MIT]").is_err());
-    assert!(parse_licence_policy("{}", clean_policy).is_err());
-    let after_refusal = join(&records, std::slice::from_ref(&earlier), &discharge());
+    // A refused policy, and a refused SBOM, retain nothing: recording writes the
+    // scan only after the adapter accepts its inputs, so the store still holds
+    // the earlier scan, and what the store returns is read with its own
+    // timestamp and ruleset.
+    let mut store = MemoryEvidence::new();
+    write_scan(&mut store, &earlier).unwrap();
+    for refused in [
+        parse_licence_policy(SYFT, "allow: [MIT]"),
+        parse_licence_policy("{}", clean_policy),
+    ] {
+        let Err(_) = refused else {
+            panic!("the input was accepted")
+        };
+        // Nothing is written for a refusal.
+    }
+    let retained = latest_scans(&store, &mut Vec::new()).unwrap();
+    assert_eq!(retained, [earlier]);
+    let after_refusal = join(&records, &retained, &discharge());
     assert_eq!(after_refusal, read);
+    assert_eq!(
+        after_refusal.licence.outcome,
+        LicenceOutcome::Read {
+            suite: "lic".to_owned(),
+            timestamp: BEFORE.to_owned(),
+            ruleset: retained[0].ruleset.clone(),
+            evaluated: 5,
+            findings: 1,
+        }
+    );
 }
 
 /// An unknown licence is a finding, unresolved without a disposition, resolved
 /// by one attested at or after the scan and `scan newer than attestation` when
 /// attested before it. No record is ever stated allowed.
-#[trace("FR-142-AC-31", "FR-142-AC-8", "FR-142-AC-24")]
+#[trace("FR-142-AC-31")]
 #[test]
 fn tc_1671_022_licence_unknown_is_resolved_only_by_a_disposition_after_its_scan() {
     let without = npm_records(None);
@@ -473,4 +500,27 @@ fn tc_1671_028_real_cargo_deny_licence_and_ban_codes_are_policy_findings() {
         Resolution::Resolved(_)
     ));
     assert_eq!(itoa.findings[0].severity.as_deref(), Some("error"));
+}
+
+/// One purl rule serves the advisory and policy joins: a record spelled with an
+/// upper-case type and a percent-encoded namespace is selected by the same purl
+/// written plainly, through both entry points.
+#[test]
+fn tc_1671_029_both_joins_apply_one_purl_equality_rule() {
+    let records = [record("pkg:NPM/%40scope/x@1.0.0", None)];
+    let index = RecordIndex::new(&records);
+    for path in [
+        "pkg:npm/@scope/x@1.0.0",
+        "pkg:npm/%40scope/x@1.0.0?arch=x#sub",
+    ] {
+        assert!(matches!(index.find(Some(path)), Hit::One(_)), "find {path}");
+        assert!(
+            matches!(index.find_purl(Some(path)), Hit::One(_)),
+            "find_purl {path}"
+        );
+    }
+    assert!(matches!(
+        index.find(Some("pkg:npm/@scope/y@1.0.0")),
+        Hit::Not(UnmatchedReason::NoRecord, _)
+    ));
 }

@@ -24,11 +24,12 @@ use quoin_assurance::{
     ClauseDischarge, DischargeFact, DischargeReport, DischargeState, DispositionDecision,
 };
 use quoin_evidence::adapters::{AdapterSelection, select_finding_adapter};
+use quoin_evidence::purl::PurlIdentity;
 use quoin_evidence::store::scan_is_vacuous;
 use quoin_evidence::types::{Finding, FindingRecord};
 use quoin_store::instant::{Instant, InstantGrammar};
 
-use super::plan::{Existing, parse_purl};
+use super::plan::Existing;
 use super::policy::is_policy;
 
 /// The rule-id prefixes of a `cargo-deny` diagnostic that is an advisory. A
@@ -552,77 +553,85 @@ fn read_scan(tool: Tool, scan: &FindingRecord, index: &RecordIndex) -> Read {
     }
 }
 
-/// Records by the identity a finding's path names: the purl without qualifiers
-/// and subpath, and its version.
+/// Records by the purl identity a finding's path names (FR-142: type compared
+/// case-insensitively, namespace, name and version percent-decoded, qualifiers
+/// and subpath ignored). One rule, `PurlIdentity`, for every join.
 pub(super) struct RecordIndex {
-    by_identity: BTreeMap<(String, String), Vec<usize>>,
-    /// Every record by its purl base, with or without a version.
-    by_base: BTreeMap<String, Vec<usize>>,
+    by_identity: BTreeMap<PurlIdentity, Vec<usize>>,
+    /// Every parseable record purl, with or without a version.
+    identities: Vec<(usize, PurlIdentity)>,
     count: usize,
 }
 
 impl RecordIndex {
     pub(super) fn new(records: &[Existing]) -> Self {
-        let mut by_identity: BTreeMap<(String, String), Vec<usize>> = BTreeMap::new();
-        let mut by_base: BTreeMap<String, Vec<usize>> = BTreeMap::new();
-        for (position, record) in records.iter().enumerate() {
-            if let Some(purl) = parse_purl(&record.purl) {
-                by_base.entry(purl.base.clone()).or_default().push(position);
-                if let Some(version) = purl.version {
-                    by_identity
-                        .entry((purl.base, version))
-                        .or_default()
-                        .push(position);
-                }
-            }
+        let identities: Vec<(usize, PurlIdentity)> = records
+            .iter()
+            .enumerate()
+            .filter_map(|(position, record)| Some((position, PurlIdentity::parse(&record.purl)?)))
+            .collect();
+        let mut by_identity: BTreeMap<PurlIdentity, Vec<usize>> = BTreeMap::new();
+        for (position, identity) in &identities {
+            by_identity
+                .entry(identity.clone())
+                .or_default()
+                .push(*position);
         }
         Self {
             by_identity,
-            by_base,
+            identities,
             count: records.len(),
         }
     }
 
-    /// The record a finding path selects: `<name>@<version>` as the cargo crate
-    /// it names, or a purl compared as it is. A finding that names no version,
-    /// or no path, is unmatched and could belong to every record of its crate,
-    /// or to every record.
-    pub(super) fn find(&self, path: Option<&str>) -> Hit {
-        let Some(path) = path else {
-            return Hit::Not(UnmatchedReason::NoVersion, (0..self.count).collect());
-        };
-        let Some(identity) = identity_of(path) else {
-            let base = base_of(path);
-            let candidates = self.by_base.get(&base).cloned().unwrap_or_default();
-            return Hit::Not(UnmatchedReason::NoVersion, candidates);
-        };
-        match self.by_identity.get(&identity).map(Vec::as_slice) {
+    /// The records of the same package, whatever their version.
+    fn same_package(&self, identity: &PurlIdentity) -> Vec<usize> {
+        self.identities
+            .iter()
+            .filter(|(_, other)| other.same_package(identity))
+            .map(|(position, _)| *position)
+            .collect()
+    }
+
+    fn lookup(&self, identity: &PurlIdentity) -> Hit {
+        match self.by_identity.get(identity).map(Vec::as_slice) {
             None | Some([]) => Hit::Not(UnmatchedReason::NoRecord, Vec::new()),
             Some([only]) => Hit::One(RecordRef(*only)),
             Some(many) => Hit::Not(UnmatchedReason::Ambiguous, many.to_vec()),
         }
     }
-}
 
-/// The `(purl base, version)` a finding path names. `None` when it names no
-/// version.
-fn identity_of(path: &str) -> Option<(String, String)> {
-    if path.starts_with("pkg:") {
-        let purl = parse_purl(path)?;
-        return Some((purl.base, purl.version?));
+    /// The record a `cargo-audit` or `cargo-deny` finding path selects:
+    /// `<name>@<version>` as the cargo crate it names, or a purl. A finding
+    /// that names no version, or no path, is unmatched and could belong to
+    /// every record of its crate, or to every record.
+    pub(super) fn find(&self, path: Option<&str>) -> Hit {
+        let Some(path) = path else {
+            return Hit::Not(UnmatchedReason::NoVersion, (0..self.count).collect());
+        };
+        let identity = if path.starts_with("pkg:") {
+            PurlIdentity::parse(path)
+        } else {
+            let (name, version) = path.rsplit_once('@').unwrap_or((path, ""));
+            PurlIdentity::parse(&format!("pkg:cargo/{name}@{version}"))
+        };
+        match identity {
+            Some(identity) if identity.version.is_some() => self.lookup(&identity),
+            Some(identity) => Hit::Not(UnmatchedReason::NoVersion, self.same_package(&identity)),
+            None => Hit::Not(UnmatchedReason::NoVersion, Vec::new()),
+        }
     }
-    let (name, version) = path.rsplit_once('@')?;
-    (!name.is_empty() && !version.is_empty())
-        .then(|| (format!("pkg:cargo/{name}"), version.to_owned()))
-}
 
-/// The purl base a path names, version or not.
-fn base_of(path: &str) -> String {
-    if path.starts_with("pkg:") {
-        return parse_purl(path).map_or_else(|| path.to_owned(), |purl| purl.base);
+    /// The record a finding whose path is a component purl selects (the
+    /// `licence-policy` tool). A path that is not a purl names no record and
+    /// could belong to any.
+    pub(super) fn find_purl(&self, path: Option<&str>) -> Hit {
+        match path.and_then(PurlIdentity::parse) {
+            None => Hit::Not(UnmatchedReason::NoPurl, (0..self.count).collect()),
+            Some(identity) if identity.version.is_some() => self.lookup(&identity),
+            Some(identity) => Hit::Not(UnmatchedReason::NoVersion, self.same_package(&identity)),
+        }
     }
-    let name = path.rsplit_once('@').map_or(path, |(name, _)| name);
-    format!("pkg:cargo/{name}")
 }
 
 /// Decide one attached advisory against the fact under its record's clause.

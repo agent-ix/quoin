@@ -195,56 +195,6 @@ struct Pending {
     scan_millis: i64,
 }
 
-/// Records by the identity of their purl, for matching a `licence-policy`
-/// finding, whose path is the component purl.
-struct IdentityIndex {
-    by_identity: BTreeMap<PurlIdentity, Vec<usize>>,
-    all: Vec<(usize, PurlIdentity)>,
-    count: usize,
-}
-
-impl IdentityIndex {
-    fn new(records: &[Existing]) -> Self {
-        let all: Vec<(usize, PurlIdentity)> = records
-            .iter()
-            .enumerate()
-            .filter_map(|(position, record)| Some((position, PurlIdentity::parse(&record.purl)?)))
-            .collect();
-        let mut by_identity: BTreeMap<PurlIdentity, Vec<usize>> = BTreeMap::new();
-        for (position, identity) in &all {
-            by_identity
-                .entry(identity.clone())
-                .or_default()
-                .push(*position);
-        }
-        Self {
-            by_identity,
-            all,
-            count: records.len(),
-        }
-    }
-
-    fn find(&self, path: Option<&str>) -> Hit {
-        let Some(identity) = path.and_then(PurlIdentity::parse) else {
-            return Hit::Not(UnmatchedReason::NoPurl, (0..self.count).collect());
-        };
-        if identity.version.is_none() {
-            let candidates = self
-                .all
-                .iter()
-                .filter(|(_, other)| other.same_package(&identity))
-                .map(|(position, _)| *position)
-                .collect();
-            return Hit::Not(UnmatchedReason::NoVersion, candidates);
-        }
-        match self.by_identity.get(&identity).map(Vec::as_slice) {
-            None | Some([]) => Hit::Not(UnmatchedReason::NoRecord, Vec::new()),
-            Some([only]) => Hit::One(RecordRef(*only)),
-            Some(many) => Hit::Not(UnmatchedReason::Ambiguous, many.to_vec()),
-        }
-    }
-}
-
 /// The findings of a scan, each distinct `(rule id, path)` once.
 fn distinct(scan: &FindingRecord) -> impl Iterator<Item = &Finding> {
     let mut seen: BTreeSet<(&str, Option<&str>)> = BTreeSet::new();
@@ -284,7 +234,7 @@ pub(super) fn join(
             timestamp: scan.timestamp.clone(),
         },
         Ok((scan, millis)) => {
-            let index = IdentityIndex::new(records);
+            let index = RecordIndex::new(records);
             evaluated.extend(
                 scan.evaluated
                     .iter()
@@ -294,7 +244,7 @@ pub(super) fn join(
             let mut findings = 0_usize;
             for finding in distinct(scan) {
                 findings = findings.saturating_add(1);
-                match index.find(finding.path.as_deref()) {
+                match index.find_purl(finding.path.as_deref()) {
                     Hit::One(RecordRef(record)) => pending.push(Pending {
                         tool: PolicyTool::LicencePolicy,
                         record,

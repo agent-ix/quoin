@@ -1103,12 +1103,35 @@ fn a_row_states_why_it_has_no_policy_verdict_and_never_allowed() {
     repo.licence("vacuous", "2026-08-03T00:00:00.000Z", &sbom);
     let read = report_json(&repo, &binding, &[]);
     let clean = row(&read, "pkg:npm/clean-pkg@1.0.0");
+    assert_eq!(
+        clean["policy_status"]["state"],
+        "no policy findings in the scan read"
+    );
+    assert_eq!(
+        clean["policy_status"]["scan_timestamp"],
+        "2026-08-03T00:00:00.000Z"
+    );
     assert!(
-        clean["policy_status"]["state"]
+        clean["policy_status"]["ruleset"]
             .as_str()
             .unwrap()
-            .starts_with("no policy findings in the scan read (licence-policy, ")
+            .contains("GPL-3.0-only")
     );
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert!(
+        markdown.contains("no policy findings in the scan read (licence-policy, 2026-08-03T00:00:00.000Z, ruleset: "),
+        "{markdown}"
+    );
+    // No record is ever stated allowed: no word `allowed` stands alone in either rendering.
+    let json_text = serde_json::to_string(&read).unwrap();
+    for rendering in [&markdown, &json_text] {
+        assert!(
+            !rendering
+                .split(|c: char| !(c.is_alphanumeric() || c == '-'))
+                .any(|word| word == "allowed"),
+            "{rendering}"
+        );
+    }
     assert_eq!(
         row(&read, "pkg:npm/later-pkg@1.0.0")["policy_status"]["state"],
         "not evaluated by the licence-policy scan read"
@@ -1175,4 +1198,24 @@ fn a_disposition_does_not_cover_a_later_policy_scan() {
     );
     let markdown = text(&repo.report(&binding, &[]).stdout);
     assert!(markdown.contains("- Disposition scope: "), "{markdown}");
+}
+
+/// An unmatched no-purl finding could belong to an evaluated record, so the row
+/// states why it cannot be called clean (FR-144's closed status list names it).
+#[trace("FR-144-AC-19", "NFR-030-AC-5")]
+#[test]
+fn an_unmatched_finding_that_could_belong_blocks_a_clean_statement() {
+    let repo = Repo::new();
+    repo.record("clean", "pkg:npm/clean-pkg@1.0.0", &[]);
+    let binding = repo.binding(&["C-DISP"]);
+    let sbom = r#"{"bomFormat":"CycloneDX","components":[
+        {"name":"clean-pkg","version":"1.0.0","purl":"pkg:npm/clean-pkg@1.0.0","licenses":[{"license":{"id":"MIT"}}]},
+        {"name":"mystery","version":"2"}]}"#;
+    repo.licence("lic", SCANNED, sbom);
+    let report = report_json(&repo, &binding, &[]);
+    assert_eq!(
+        row(&report, "pkg:npm/clean-pkg@1.0.0")["policy_status"]["state"],
+        "policy findings not assessed: an unmatched licence-policy finding could belong to this record"
+    );
+    assert_eq!(report["unmatched_policy_findings"][0]["reason"], "no purl");
 }
