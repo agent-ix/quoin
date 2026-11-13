@@ -4,7 +4,7 @@ title: "Differential report intake is bounded and deterministic"
 type: NFR
 quality_attribute: reliability
 relationships:
-  - target: "ix://agent-ix/quoin/FR-150"
+  - target: "ix://agent-ix/quoin/FR-151"
     type: "constrains"
   - target: "ix://agent-ix/quoin/StR-009"
     type: "traces_to"
@@ -21,7 +21,7 @@ The differential report adapter SHALL return the same result for the same bytes 
 
 ## Scope
 
-- Applies to: the `differential-report` adapter of FR-150, including its refusal paths.
+- Applies to: the `differential-report` adapter of FR-151, including its refusal paths.
 - Not applied to: the producer, which bounds its own report through its solver limits.
 
 ## Rationale
@@ -41,4 +41,4 @@ report.
 
 ## Verification
 
-Covered by FR-150-AC-8, FR-150-AC-10 and FR-150-AC-11, executed as TC-001.
+Covered by FR-151-AC-8, FR-151-AC-10 and FR-151-AC-11, executed as TC-001.

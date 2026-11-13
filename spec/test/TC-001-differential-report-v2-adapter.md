@@ -3,7 +3,7 @@ id: TC-001
 title: "Differential report v2 adapter transcribes every disposition and refuses malformed reports"
 type: TC
 relationships:
-  - target: "ix://agent-ix/quoin/FR-150"
+  - target: "ix://agent-ix/quoin/FR-151"
     type: "verifies"
   - target: "ix://agent-ix/quoin/NFR-032"
     type: "verifies"
@@ -14,7 +14,7 @@ relationships:
 ## Description
 
 Verify that the `differential-report` adapter maps each `quire.differential-report/v2` disposition to the run
-entry or `unrepresented` result of FR-150, and refuses reports that are the wrong version, malformed,
+entry or `unrepresented` result of FR-151, and refuses reports that are the wrong version, malformed,
 self-contradictory or oversized, writing no run in any refusal.
 
 ## Test Procedure
@@ -25,7 +25,7 @@ self-contradictory or oversized, writing no run in any refusal.
    captured or hand-constructed v2 document, accepted by the owner's validator, with an engine `unsupported-platform`
    (a Linux runner reports `cleanup-failed` instead, so this one is not a runner capture). Read the store and the
    command's human and JSON output after each.
-2. Run the same command, each time against a fresh store, over the refusal table of FR-150-AC-14, one row per
+2. Run the same command, each time against a fresh store, over the refusal table of FR-151-AC-14, one row per
    refusal class, each derived from a capture by one stated change: wrong, absent or non-string `schema`; a missing,
    extra (top level and engine), wrongly typed or out-of-set member; empty, truncated, non-UTF-8, array, scalar and
    non-JSON input; the four self-contradiction reports; a reordered copy and a pretty-printed copy.

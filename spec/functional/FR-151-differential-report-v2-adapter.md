@@ -1,5 +1,5 @@
 ---
-id: FR-150
+id: FR-151
 title: "Differential report v2 adapter"
 type: FR
 relationships:
@@ -15,7 +15,7 @@ relationships:
     type: "references"
 ---
 
-# FR-150: Differential report v2 adapter
+# FR-151: Differential report v2 adapter
 
 ## Description
 
@@ -151,29 +151,29 @@ no `traceIds` and binds nothing by itself.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-150-CON-1 | quoin SHALL contain no copy of the v2 schema, its enums or its text, and no copy of a report except a byte-exact capture used as a test input (or a document derived from one by the changes AC-14 states). | Integrity | Inspection |
-| FR-150-CON-2 | The adapter SHALL introduce no record family and change no stored schema (FR-069-CON-2). | Compatibility | Test |
-| FR-150-CON-3 | quoin SHALL reach the validator and `MAX_REPORT_BYTES` only through a Cargo git dependency on `agent-ix/quire-analyze` pinned by `rev`. | Architecture | Inspection |
-| FR-150-CON-4 | The `quire-analyze` dependency SHALL build on every quoin release target, including `x86_64-pc-windows-msvc`. | Compatibility | Test |
+| FR-151-CON-1 | quoin SHALL contain no copy of the v2 schema, its enums or its text, and no copy of a report except a byte-exact capture used as a test input (or a document derived from one by the changes AC-14 states). | Integrity | Inspection |
+| FR-151-CON-2 | The adapter SHALL introduce no record family and change no stored schema (FR-069-CON-2). | Compatibility | Test |
+| FR-151-CON-3 | quoin SHALL reach the validator and `MAX_REPORT_BYTES` only through a Cargo git dependency on `agent-ix/quire-analyze` pinned by `rev`. | Architecture | Inspection |
+| FR-151-CON-4 | The `quire-analyze` dependency SHALL build on every quoin release target, including `x86_64-pc-windows-msvc`. | Compatibility | Test |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-150-AC-1 | A report produced by `quire-analyze run-package` with `disposition` `agreement` and `agreedStatus` `satisfied` is recorded as one entry with outcome `pass` and symbol `<analysisKind>::<requestDigest>`. | Test |
-| FR-150-AC-2 | A report with `disposition` `agreement` and `agreedStatus` `refuted` is recorded as one entry with outcome `fail`. | Test |
-| FR-150-AC-3 | A report with `disposition` `disagreement` (one engine `satisfied`, the other `refuted`) is recorded as no entry and one `unrepresented` result with symbol `<analysisKind>::<requestDigest>` and state `disagreement`, whose reason names both engines with their `status` and `outcome` verbatim; the run written has zero entries; `quoin evidence record` prints the result in human and JSON output. It is not recorded as `pass`, `fail`, `skip` or `error`. | Test |
-| FR-150-AC-4 | A report with `disposition` `inconclusive` (for example an engine `timeout` or `unknown`) is recorded as one entry with outcome `error`. | Test |
-| FR-150-AC-5 | A report with `disposition` `unavailable` (an engine `missing-executable`, and separately an engine `unsupported-platform`) is recorded as one entry with outcome `error` and symbol `<analysisKind>::<requestDigest>`. The `unsupported-platform` input is a captured or hand-constructed v2 document that the owner's validator accepts, not a runner capture: a Linux runner reports a containment failure as `cleanup-failed`, which is `inconclusive`. | Test |
-| FR-150-AC-6 | A document whose `schema` is `quire.differential-report/v1`, `tl-mltl.differential-summary/v1`, `quire.differential-report/v3`, absent, or not a string is refused naming the value, and no run is written. | Test |
-| FR-150-AC-7 | A v2 document with a missing required member, an undeclared extra member (at the top level and inside an engine), a wrongly typed member, and each of an unknown `disposition`, engine `status` and engine `outcome` is refused naming the member, and no run is written. | Test |
-| FR-150-AC-8 | Empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar and non-JSON text are each refused, and no run is written. | Test |
-| FR-150-AC-9 | A report with `agreement` and a `null` `agreedStatus`, a report with `disagreement` and a non-null `agreedStatus`, a report with `agreement` whose engine `status` differs from `agreedStatus`, and a report naming the same engine twice are each refused. | Test |
-| FR-150-AC-10 | An input of `quire_analyze::MAX_REPORT_BYTES` + 1 bytes is refused with an error naming the size limit before any JSON parsing; an input of exactly `MAX_REPORT_BYTES` bytes is not refused for size (it may be refused for another reason). | Test |
-| FR-150-AC-11 | Two runs over the same bytes, from different paths, working directories and environments, return identical results. A copy of a valid report whose members are reordered, or that is pretty-printed, is refused, with the same error on every run. | Test |
-| FR-150-AC-12 | `--adapter differential-report`, `--tool differential-report` and `--tool quire-analyze` each select the adapter, `--tool tl-mltl`, `--tool r2u2` and `--tool c2po` do not, and the adapter appears in the adapter listing naming `quire.differential-report/v2` and not `differential-summary`. | Test |
-| FR-150-AC-13 | The adapter source opens no file other than its input, spawns no process and opens no network connection, and contains no `differential-summary` reader and no schema copy; `rust/Cargo.toml` names `agent-ix/quire-analyze` as a git dependency with a `rev`. | Inspection |
-| FR-150-AC-14 | The adapter's accepted fixtures are reports captured unedited from `quire-analyze run-package` (one per disposition that the runner can produce; the `unsupported-platform` fixture is AC-5's). Each refusal fixture is derived from one capture by one stated change, stays canonical unless the change is the non-canonical form itself, and the refusal tests are table-driven with one row per refusal class: schema `quire.differential-report/v1`, `tl-mltl.differential-summary/v1`, `quire.differential-report/v3`, schema absent, schema not a string, a required member removed, an undeclared top-level member, an undeclared engine member, a wrongly typed member, an unknown `disposition`, an unknown engine `status`, an unknown engine `outcome`, empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar, non-JSON text, `agreement` with a `null` `agreedStatus`, `disagreement` with a non-null `agreedStatus`, `agreement` with an engine `status` differing from `agreedStatus`, the same engine twice, members reordered, a pretty-printed copy, and an input of `MAX_REPORT_BYTES` + 1 bytes (synthetic padding, the only fixture that is neither a capture nor a one-change derivation). | Inspection |
+| FR-151-AC-1 | A report produced by `quire-analyze run-package` with `disposition` `agreement` and `agreedStatus` `satisfied` is recorded as one entry with outcome `pass` and symbol `<analysisKind>::<requestDigest>`. | Test |
+| FR-151-AC-2 | A report with `disposition` `agreement` and `agreedStatus` `refuted` is recorded as one entry with outcome `fail`. | Test |
+| FR-151-AC-3 | A report with `disposition` `disagreement` (one engine `satisfied`, the other `refuted`) is recorded as no entry and one `unrepresented` result with symbol `<analysisKind>::<requestDigest>` and state `disagreement`, whose reason names both engines with their `status` and `outcome` verbatim; the run written has zero entries; `quoin evidence record` prints the result in human and JSON output. It is not recorded as `pass`, `fail`, `skip` or `error`. | Test |
+| FR-151-AC-4 | A report with `disposition` `inconclusive` (for example an engine `timeout` or `unknown`) is recorded as one entry with outcome `error`. | Test |
+| FR-151-AC-5 | A report with `disposition` `unavailable` (an engine `missing-executable`, and separately an engine `unsupported-platform`) is recorded as one entry with outcome `error` and symbol `<analysisKind>::<requestDigest>`. The `unsupported-platform` input is a captured or hand-constructed v2 document that the owner's validator accepts, not a runner capture: a Linux runner reports a containment failure as `cleanup-failed`, which is `inconclusive`. | Test |
+| FR-151-AC-6 | A document whose `schema` is `quire.differential-report/v1`, `tl-mltl.differential-summary/v1`, `quire.differential-report/v3`, absent, or not a string is refused naming the value, and no run is written. | Test |
+| FR-151-AC-7 | A v2 document with a missing required member, an undeclared extra member (at the top level and inside an engine), a wrongly typed member, and each of an unknown `disposition`, engine `status` and engine `outcome` is refused naming the member, and no run is written. | Test |
+| FR-151-AC-8 | Empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar and non-JSON text are each refused, and no run is written. | Test |
+| FR-151-AC-9 | A report with `agreement` and a `null` `agreedStatus`, a report with `disagreement` and a non-null `agreedStatus`, a report with `agreement` whose engine `status` differs from `agreedStatus`, and a report naming the same engine twice are each refused. | Test |
+| FR-151-AC-10 | An input of `quire_analyze::MAX_REPORT_BYTES` + 1 bytes is refused with an error naming the size limit before any JSON parsing; an input of exactly `MAX_REPORT_BYTES` bytes is not refused for size (it may be refused for another reason). | Test |
+| FR-151-AC-11 | Two runs over the same bytes, from different paths, working directories and environments, return identical results. A copy of a valid report whose members are reordered, or that is pretty-printed, is refused, with the same error on every run. | Test |
+| FR-151-AC-12 | `--adapter differential-report`, `--tool differential-report` and `--tool quire-analyze` each select the adapter, `--tool tl-mltl`, `--tool r2u2` and `--tool c2po` do not, and the adapter appears in the adapter listing naming `quire.differential-report/v2` and not `differential-summary`. | Test |
+| FR-151-AC-13 | The adapter source opens no file other than its input, spawns no process and opens no network connection, and contains no `differential-summary` reader and no schema copy; `rust/Cargo.toml` names `agent-ix/quire-analyze` as a git dependency with a `rev`. | Inspection |
+| FR-151-AC-14 | The adapter's accepted fixtures are reports captured unedited from `quire-analyze run-package` (one per disposition that the runner can produce; the `unsupported-platform` fixture is AC-5's). Each refusal fixture is derived from one capture by one stated change, stays canonical unless the change is the non-canonical form itself, and the refusal tests are table-driven with one row per refusal class: schema `quire.differential-report/v1`, `tl-mltl.differential-summary/v1`, `quire.differential-report/v3`, schema absent, schema not a string, a required member removed, an undeclared top-level member, an undeclared engine member, a wrongly typed member, an unknown `disposition`, an unknown engine `status`, an unknown engine `outcome`, empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar, non-JSON text, `agreement` with a `null` `agreedStatus`, `disagreement` with a non-null `agreedStatus`, `agreement` with an engine `status` differing from `agreedStatus`, the same engine twice, members reordered, a pretty-printed copy, and an input of `MAX_REPORT_BYTES` + 1 bytes (synthetic padding, the only fixture that is neither a capture nor a one-change derivation). | Inspection |
 
 ## Dependencies
 
