@@ -5,8 +5,8 @@
 # version is resolved, not conceded.
 #
 # quoin#379 added the workspace's first git source — the `rev`-pinned quire-rs
-# engine. Every AGPL admission below is a named per-crate exception (quire-rs,
-# quire-code-parse, ix-trace-rs); nothing else in the graph gains one.
+# engine. Every AGPL admission below is a named per-crate exception (quire-code-parse,
+# quire-verification-contracts, ix-trace-rs); nothing else in the graph gains one.
 
 [licenses]
 version = 2
@@ -57,10 +57,6 @@ confidence-threshold = 0.9
 # exception is named per crate ON PURPOSE: the `allow` list above stays
 # permissive-only, so AGPL is admitted for this one dependency and cannot
 # arrive unnoticed in another.
-[[licenses.exceptions]]
-crate = "quire-rs"
-allow = ["AGPL-3.0-or-later"]
-
 # `ix-trace-rs` (agent-ix/ix-trace-rs) is AGPL-3.0-or-later, the same licence
 # quoin itself carries. It is a proc-macro crate with no dependencies whose
 # attributes return the annotated item unchanged. It is a normal dependency only
@@ -98,6 +94,22 @@ allow = ["MPL-2.0"]
 crate = "quire-code-parse"
 allow = ["AGPL-3.0-or-later"]
 
+# `quire-verification-contracts` (agent-ix/quire-analyze's dependency, reached
+# through quoin-evidence's `quire-analyze` report validator, VER-80) is
+# AGPL-3.0-or-later, the same licence quoin carries. Named per crate for the
+# same reason as `quire-code-parse`: the `allow` list stays permissive-only.
+[[licenses.exceptions]]
+crate = "quire-verification-contracts"
+allow = ["AGPL-3.0-or-later"]
+
+# `ar_archive_writer` (reached through psm <- stacker under the quire-analyze
+# validator's typify code generation) is Apache-2.0 WITH LLVM-exception. The
+# exception clause only widens Apache-2.0 for object-code distribution, so it
+# is a named exception rather than an allow-list entry, as `uluru` is.
+[[licenses.exceptions]]
+crate = "ar_archive_writer"
+allow = ["Apache-2.0 WITH LLVM-exception"]
+
 [bans]
 multiple-versions = "deny"
 wildcards = "deny"
@@ -128,7 +140,10 @@ allow-wildcard-paths = true
 #
 # Three granted exceptions do not make a fourth self-granting. Every other
 # duplicate in this workspace is resolved by converging a pin, and a duplicate
-# outside these three groups is escalated, not skipped.
+# outside these three groups is escalated, not skipped. The VER-80 group at the
+# head of the array is a further ruled group (exact versions, written removal
+# condition) for the quire-analyze report validator, the precedent being the
+# quoin#402 jsonschema concession above.
 #
 # ---------------------------------------------------------------------------
 #
@@ -173,6 +188,35 @@ allow-wildcard-paths = true
 # of the same crate — still fails. This concedes these resolutions, not the
 # check.
 skip = [
+    # --- The quire-analyze validator entries (VER-80). ---
+    #
+    # `quoin-evidence` links quire-analyze's `validate_report_document`, which
+    # pulls three JSON-schema generations: quire-analyze itself on
+    # jsonschema 0.17.1, quire-verification-contracts on jsonschema 0.55.1
+    # (and typify's schemars 0.8.22), against the workspace's jsonschema 0.56.0
+    # and schemars 1.x. None of the three is ours to converge from this
+    # repository; the skipped sides are the ones reachable only through
+    # quire-analyze. 0.56.0 and schemars 1.x, which our own crates reach, stay
+    # checked.
+    #
+    # REMOVAL CONDITION: this group goes when quire-analyze and
+    # quire-verification-contracts converge on jsonschema 0.56 and schemars 1.x,
+    # or when the report validator moves into its own small crate that does not
+    # carry the runner's dependency tree. `cargo deny check bans` MUST pass with
+    # the group removed -- RUN IT rather than assuming it.
+    { crate = "jsonschema@0.17.1", reason = "VER-80: quire-analyze's validator (quoin-evidence); jsonschema 0.56.0 stays checked" },
+    { crate = "jsonschema@0.55.1", reason = "VER-80: quire-verification-contracts under quire-analyze; jsonschema 0.56.0 stays checked" },
+    { crate = "schemars@0.8.22", reason = "VER-80: typify under quire-verification-contracts; schemars 1.x, our root pin, stays checked" },
+    { crate = "base64@0.21.7", reason = "VER-80: reached only through jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "bit-set@0.5.3", reason = "VER-80: reached only through fancy-regex 0.11.0 <- jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "bit-vec@0.6.3", reason = "VER-80: reached only through bit-set 0.5.3 <- jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "fancy-regex@0.11.0", reason = "VER-80: reached only through jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "fraction@0.13.1", reason = "VER-80: reached only through jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "referencing@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "jsonschema-regex@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "jsonschema-value@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "serde_derive_internals@0.29.1", reason = "VER-80: reached only through schemars_derive 0.8.22 <- schemars 0.8.22 <- typify (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "schemars_derive@0.8.22", reason = "VER-80: reached only through schemars 0.8.22 <- typify (quire-analyze validator subtree); the other version stays checked" },
     { crate = "getrandom@0.2.17", reason = "ring 0.17.14 (rustls 0.23.46 under reqwest 0.12.28 via typesafe-sdk-http, and reqwest 0.13.5 via gix-transport) and jsonschema 0.18.3 via quire-rs; ring 0.17 depends on getrandom 0.2" },
     { crate = "getrandom@0.3.4", reason = "tempfile 3.27.0 (gix, quoin-measurement), ahash 0.8.12 (jsonschema 0.18.3 and 0.56.0) and jsonschema 0.56.0 / referencing (quoin-semantic); 0.4.3 stays checked and is reached by gix-utils and uuid" },
     { crate = "r-efi@5.3.0", reason = "reached only through getrandom 0.3.4 (UEFI target dependency); see the getrandom@0.3.4 entry" },
@@ -280,6 +324,14 @@ unknown-git = "deny"
 # git source. A fifth git dependency is listed here in the commit that adds it,
 # or this check refuses it.
 allow-git = [
+    # VER-80: the report validator quoin-evidence links, and its transitive
+    # agent-ix git crates.
+    "https://github.com/agent-ix/quire-analyze",
+    "https://github.com/agent-ix/quire-contract-ir",
+    "https://github.com/agent-ix/quire-verification-contracts",
+    "https://github.com/agent-ix/quire-exact",
+    "https://github.com/agent-ix/quire-walk",
+    "https://github.com/agent-ix/quire-semantic-value",
     # Compile-checked trace binders: a dev-dependency for `#[trace]` tests, and a
     # normal dependency of the crates that carry `#[implements]` on production items.
     "https://github.com/agent-ix/ix-trace-rs",

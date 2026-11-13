@@ -1256,7 +1256,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c91d8cffac8849493a82233811bd02b2b183b8cf39bf704de0fa0841b737595"
 dependencies = [
  "bstr",
- "hashbrown 0.16.1",
+ "hashbrown 0.17.1",
 ]
 
 [[package]]
@@ -2191,7 +2191,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 [[package]]
 name = "ix-cli-kit"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/ix-cli-kit?branch=main#be26cf02836e25f8ec7efa6de51e974d331a5816"
+source = "git+https://github.com/agent-ix/ix-cli-kit?branch=main#7f3b58b6a65e237bf733437c1c10cd609c84f835"
 dependencies = [
  "serde",
  "serde_json",
@@ -2202,11 +2202,6 @@ dependencies = [
 name = "ix-trace-rs"
 version = "0.1.2"
 source = "git+https://github.com/agent-ix/ix-trace-rs?branch=main#3cd3285055e32e4c08fb124d76e489b9dd412b6b"
-
-[[package]]
-name = "ix-trace-rs"
-version = "0.1.2"
-source = "git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4#e29cc07f70394ff018884d12406c1e150bded5f4"
 
 [[package]]
 name = "jiff"
@@ -2945,7 +2940,7 @@ dependencies = [
 [[package]]
 name = "quire-analyze"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-analyze?rev=27c4fbb1e387cf2c3c5fd63becfff2e2c65e22ac#27c4fbb1e387cf2c3c5fd63becfff2e2c65e22ac"
+source = "git+https://github.com/agent-ix/quire-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
 dependencies = [
  "ix-cli-kit",
  "jsonschema 0.17.1",
@@ -2960,27 +2955,14 @@ dependencies = [
 [[package]]
 name = "quire-analyze-method-contract"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-analyze?rev=27c4fbb1e387cf2c3c5fd63becfff2e2c65e22ac#27c4fbb1e387cf2c3c5fd63becfff2e2c65e22ac"
+source = "git+https://github.com/agent-ix/quire-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
 
 [[package]]
 name = "quire-canonical"
 version = "0.3.0"
 source = "git+https://github.com/agent-ix/quire-canonical?branch=main#7d2f8389d01fcbf318e658746015b85a31526cc9"
 dependencies = [
- "quire-canonical-derive 0.3.0 (git+https://github.com/agent-ix/quire-canonical?branch=main)",
- "ryu-js",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
-]
-
-[[package]]
-name = "quire-canonical"
-version = "0.3.0"
-source = "git+https://github.com/agent-ix/quire-canonical?rev=5dc4e12db63b8fae647825b4e4b78df9b6dcadfe#5dc4e12db63b8fae647825b4e4b78df9b6dcadfe"
-dependencies = [
- "quire-canonical-derive 0.3.0 (git+https://github.com/agent-ix/quire-canonical?rev=5dc4e12db63b8fae647825b4e4b78df9b6dcadfe)",
+ "quire-canonical-derive",
  "ryu-js",
  "serde",
  "serde_json",
@@ -2992,16 +2974,6 @@ dependencies = [
 name = "quire-canonical-derive"
 version = "0.3.0"
 source = "git+https://github.com/agent-ix/quire-canonical?branch=main#7d2f8389d01fcbf318e658746015b85a31526cc9"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 3.0.5",
-]
-
-[[package]]
-name = "quire-canonical-derive"
-version = "0.3.0"
-source = "git+https://github.com/agent-ix/quire-canonical?rev=5dc4e12db63b8fae647825b4e4b78df9b6dcadfe#5dc4e12db63b8fae647825b4e4b78df9b6dcadfe"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3034,12 +3006,12 @@ name = "quire-contract-model"
 version = "0.1.0"
 source = "git+https://github.com/agent-ix/quire-contract-ir?branch=main#f582c0c428c997a5e3b23b45d32567274c3a8a14"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?branch=main)",
+ "ix-trace-rs",
  "jsonschema 0.17.1",
  "num-bigint",
  "num-integer",
  "num-traits",
- "quire-canonical 0.3.0 (git+https://github.com/agent-ix/quire-canonical?branch=main)",
+ "quire-canonical",
  "quire-exact",
  "quire-semantic-value",
  "quire-verification-contracts",
@@ -3058,7 +3030,7 @@ dependencies = [
 [[package]]
 name = "quire-exact"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-exact?branch=main#147f1fe914f4e58f00ac4e90de04d6976a4c4d07"
+source = "git+https://github.com/agent-ix/quire-exact?branch=main#e87ea030302e0abd762a88b4bbe2a6f148c4869d"
 dependencies = [
  "allocator-api2",
  "arrayvec",
@@ -3106,7 +3078,7 @@ name = "quire-semantic-value"
 version = "0.1.0"
 source = "git+https://github.com/agent-ix/quire-semantic-value?branch=main#3c4616dafd4f739573c86af049661646f24dc293"
 dependencies = [
- "quire-canonical 0.3.0 (git+https://github.com/agent-ix/quire-canonical?branch=main)",
+ "quire-canonical",
  "quire-exact",
  "thiserror",
 ]
@@ -3118,7 +3090,7 @@ source = "git+https://github.com/agent-ix/quire-verification-contracts?branch=ma
 dependencies = [
  "chrono",
  "jsonschema 0.55.1",
- "quire-canonical 0.3.0 (git+https://github.com/agent-ix/quire-canonical?branch=main)",
+ "quire-canonical",
  "regress",
  "schemars 0.8.22",
  "serde",
@@ -3137,7 +3109,7 @@ source = "git+https://github.com/agent-ix/quire-walk?branch=main#b48d991914a964f
 name = "quoin-anomaly"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-yaml",
  "serde",
  "serde_json",
@@ -3150,7 +3122,7 @@ name = "quoin-assurance"
 version = "0.31.0"
 dependencies = [
  "engineering-assurance",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-evidence-types",
  "quoin-finding-types",
@@ -3165,7 +3137,7 @@ dependencies = [
 name = "quoin-auditor"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "proptest",
  "quoin-combinatorial",
  "quoin-evidence",
@@ -3199,7 +3171,7 @@ name = "quoin-change-assurance"
 version = "0.31.0"
 dependencies = [
  "engineering-assurance",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-jsonschema",
  "quoin-store",
  "serde_json",
@@ -3214,7 +3186,8 @@ dependencies = [
  "clap",
  "engineering-assurance",
  "ix-cli-kit",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
+ "quire-analyze",
  "quire-fixtures",
  "quoin-anomaly",
  "quoin-assurance",
@@ -3246,7 +3219,7 @@ dependencies = [
 name = "quoin-combinatorial"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "proptest",
  "regex",
  "serde",
@@ -3258,7 +3231,7 @@ dependencies = [
 name = "quoin-completeness"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-yaml",
  "schemars 1.2.2",
  "serde",
@@ -3272,7 +3245,7 @@ name = "quoin-config"
 version = "0.31.0"
 dependencies = [
  "engineering-assurance",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "schemars 1.2.2",
  "serde",
  "serde_json",
@@ -3287,8 +3260,8 @@ version = "0.31.0"
 dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
- "quire-canonical 0.3.0 (git+https://github.com/agent-ix/quire-canonical?rev=5dc4e12db63b8fae647825b4e4b78df9b6dcadfe)",
+ "ix-trace-rs",
+ "quire-canonical",
  "quire-fixtures",
  "quoin-assurance",
  "quoin-auditor",
@@ -3319,7 +3292,7 @@ name = "quoin-delivery"
 version = "0.31.0"
 dependencies = [
  "flate2",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "reqwest 0.13.5",
  "semver",
  "serde",
@@ -3335,7 +3308,7 @@ dependencies = [
 name = "quoin-evidence"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quire-analyze",
  "quoin-quire-types",
  "quoin-store",
@@ -3370,7 +3343,7 @@ dependencies = [
 name = "quoin-graph-analysis"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-finding-types",
  "quoin-quire",
@@ -3386,7 +3359,7 @@ version = "0.31.0"
 dependencies = [
  "async-trait",
  "engineering-assurance",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-measurement",
  "quoin-modules",
  "quoin-store",
@@ -3410,7 +3383,7 @@ dependencies = [
 name = "quoin-jsonschema"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "jsonschema 0.56.0",
  "quoin-measurement",
  "serde_json",
@@ -3422,7 +3395,7 @@ name = "quoin-measurement"
 version = "0.31.0"
 dependencies = [
  "engineering-assurance",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "proptest",
  "quoin-evidence",
  "quoin-jsonschema",
@@ -3438,7 +3411,7 @@ dependencies = [
 name = "quoin-measurement-graph"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-graph-analysis",
  "quoin-measurement",
  "quoin-quire",
@@ -3454,7 +3427,7 @@ name = "quoin-modules"
 version = "0.31.0"
 dependencies = [
  "gix",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quire-fixtures",
  "quoin-semantic",
  "schemars 1.2.2",
@@ -3469,7 +3442,7 @@ dependencies = [
 name = "quoin-quire"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quire-rs",
  "quoin-jsonschema",
  "quoin-quire-types",
@@ -3492,7 +3465,7 @@ dependencies = [
 name = "quoin-semantic"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quire-fixtures",
  "quoin-jsonschema",
  "quoin-yaml",
@@ -3508,9 +3481,9 @@ name = "quoin-store"
 version = "0.31.0"
 dependencies = [
  "engineering-assurance",
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "libc",
- "quire-canonical 0.3.0 (git+https://github.com/agent-ix/quire-canonical?rev=5dc4e12db63b8fae647825b4e4b78df9b6dcadfe)",
+ "quire-canonical",
  "serde_json",
  "sha2",
  "thiserror",
@@ -3520,7 +3493,7 @@ dependencies = [
 name = "quoin-suite-trace"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-quire",
  "regex",
@@ -3532,7 +3505,7 @@ dependencies = [
 name = "quoin-validators"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "regex",
  "schemars 1.2.2",
  "serde",
@@ -3553,7 +3526,7 @@ dependencies = [
 name = "quoin-yaml"
 version = "0.31.0"
 dependencies = [
- "ix-trace-rs 0.1.2 (git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4)",
+ "ix-trace-rs",
  "saphyr",
  "serde_json",
  "thiserror",

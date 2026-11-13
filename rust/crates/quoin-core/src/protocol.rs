@@ -51,18 +51,19 @@ use ix_cli_kit::exit::Outcome;
 /// reach. `ops::validators::run` has no bound of its own precisely because
 /// this one is the whole of its answer.
 ///
-/// 64 MiB is far past what any caller produces, and the number is measured
+/// 96 MiB is far past what any caller produces (it sits above the 80 MiB
+/// `evidence.record` bound, which must hold a 64 MiB differential report), and the number is measured
 /// rather than guessed. `validators.run` is the largest request the boundary
 /// accepts today and it carries only the files `quoin-validators` can
 /// classify: `repoSnapshot(".")` on this repository walks 1056 files and puts
 /// **13 of them, 71.1 KiB, on the wire** — 0.1% of this ceiling (measured
-/// 2026-09-13 on this tree). A repository that reached 64 MiB of shell scripts
-/// and build wiring would carry some 900 times quoin's gate surface.
+/// 2026-09-13 on this tree). A repository that reached 96 MiB of shell scripts
+/// and build wiring would carry some 1,300 times quoin's gate surface.
 ///
 /// The refusal is therefore a real one a real caller can hit only by sending
 /// something no repository looks like, which is what a ceiling on an untrusted
 /// stream is for.
-pub const MAX_REQUEST_BYTES: usize = 64 * 1024 * 1024;
+pub const MAX_REQUEST_BYTES: usize = 96 * 1024 * 1024;
 
 /// One entry of the stderr array.
 ///

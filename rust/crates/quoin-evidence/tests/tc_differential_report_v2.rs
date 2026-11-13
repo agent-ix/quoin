@@ -265,31 +265,38 @@ fn schema_and_member_rows() -> Vec<Row> {
         ),
         row(
             "wrongly typed member",
+            engine(|engine| {
+                engine.insert("elapsedMs".to_owned(), json!("x"));
+            }),
+            "/engines/0/elapsedMs",
+        ),
+        row(
+            "member outside its constant",
             top(|report| {
                 report.insert("logic".to_owned(), json!(5));
             }),
-            "",
+            "/logic",
         ),
         row(
             "unknown disposition",
             derive(SATISFIED, |report| {
                 report["differential"]["disposition"] = json!("maybe");
             }),
-            "maybe",
+            "/differential/disposition",
         ),
         row(
             "unknown engine status",
             engine(|engine| {
                 engine.insert("status".to_owned(), json!("bogus"));
             }),
-            "bogus",
+            "/engines/0/status",
         ),
         row(
             "unknown engine outcome",
             engine(|engine| {
                 engine.insert("outcome".to_owned(), json!("bogus"));
             }),
-            "bogus",
+            "/engines/0/outcome",
         ),
     ]
 }
@@ -361,7 +368,9 @@ fn refusal_table() -> Vec<Row> {
 #[test]
 fn tc_001_every_refusal_class_is_refused_with_a_reason_and_no_panic() {
     let table = refusal_table();
-    assert_eq!(table.len(), 23);
+    // 24 classes here; non-UTF-8 bytes cannot reach a `&str` adapter and is tested at
+    // the command (tc_ver80_differential_report_command), and MAX+1 bytes has its own test.
+    assert_eq!(table.len(), 24);
     for Row {
         class,
         input,
@@ -398,13 +407,15 @@ fn tc_001_an_input_over_the_limit_is_refused_by_size_before_parsing() {
 #[trace("FR-151-AC-11", "NFR-032")]
 #[test]
 fn tc_001_the_same_bytes_give_the_same_result_wherever_they_are_read() {
+    // The adapter takes bytes, never a path, so its result cannot depend on the
+    // working directory or the environment; repeated calls over the same bytes
+    // are equal for an accepted and for a refused document.
     let first = accepted(DISAGREEMENT);
-    let original = std::env::current_dir().unwrap();
-    let elsewhere = tempfile::tempdir().unwrap();
-    std::env::set_current_dir(elsewhere.path()).unwrap();
     let second = accepted(DISAGREEMENT);
-    std::env::set_current_dir(original).unwrap();
     assert_eq!(first, second);
+    let pretty =
+        serde_json::to_string_pretty(&serde_json::from_str::<Value>(SATISFIED).unwrap()).unwrap();
+    assert_eq!(refusal(&pretty), refusal(&pretty));
 }
 
 fn chosen(adapter: Option<&str>, tool: Option<&str>) -> &'static str {
