@@ -44,3 +44,12 @@ met by EA FR-041 but not carried through to quoin's receipt.
 | --- | --- | --- |
 | FND-001 | fixed | ac9b1237/d47d5f90: claim standing stated, receipt member renamed claimed_approval, re-run inputs retained, FR-068 re-verification step; quoin still runs no git/network. Residual trust-source defect recorded as FND-003 |
 | FND-002 | fixed | ac9b1237: record-level signed_approval policy, approval_missing, AC-16/AC-19. Residual holes recorded as FND-004/FND-005 |
+| FND-003 | fixed | 0ef776be: re-run uses pinned or relying-party trust, never the claim's; required false is not relied on. Residual: FND-006 |
+| FND-004 | fixed | 0ef776be: repository_path pattern (same as the source-connection path rule; tested: rejects absolute, '..', '.', empty segment, trailing slash, backslash, NUL); path equality dropped |
+| FND-005 | fixed | 0ef776be: gitsign pin compared member by member under required true |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-006 | high | The record author chooses the pinned trust that the re-run treats as sufficient: `subject.base_revision` (any commit, which quoin cannot check and FR-068 does not require to be on a protected ref), the allowed-signers file content at it, and the gitsign identity, issuer and principal. A hostile change author commits an allowed-signers file mapping their own key to alice@example.test, sets base_revision to that commit (or pins gitsign principal 'alice' to their own identity), signs the tag, and the FR-068 re-run with 'the record's pinned trust' yields approved with approver alice. That is a wrong result: self-approval under another person's name. My round-1 fix suggestion ('the record's reviewed trust input') introduced this; it is withdrawn. Fix: the relying party SHALL use trust it controls, being its own allowed-signers file and gitsign identities, or the pinned file read at a ref the relying party protects (for example its target-branch head), not at a revision the record names. The pin may only narrow which signer kind and identity is acceptable, and never establishes trust by itself. | spec/functional/FR-068-change-assurance-cli-surface.md:101-108 | wrong-requirement |

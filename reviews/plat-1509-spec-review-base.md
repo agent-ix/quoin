@@ -60,3 +60,4 @@ medium findings here need fixing in this PR.
 | FND-004 | fixed | ac9b1237: order aligned with FR-041; AC-20 |
 | FND-005 | fixed | ac9b1237: no trailing newline, no normalization, records/** -text |
 | FND-006 | fixed | ac9b1237: record-digest command and write-record digest; AC-12 |
+| FND-007 | fixed | 0ef776be: CON-4 now covers records of the current schema version only |

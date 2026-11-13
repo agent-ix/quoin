@@ -381,11 +381,11 @@ then meaning.
 1. status `signed_bad` is `invalid` with `approval_signature_bad`; status
    `untrusted_signer` is `invalid` with `approval_signer_untrusted`; status
    `unsigned` or `unverifiable` is `incomplete` with `approval_unverified`;
-2. when `signed_approval.required` is true and status is `approved`: an `ssh`
-   claim with a null `allowed_signers_path` pin, or a `gitsign` claim with a null
-   `gitsign` pin or a `trust.gitsign` that differs from the pin in any member, is
-   `invalid` with `approval_signer_untrusted`. Quoin compares no path, because the
-   claim's `trust.allowed_signers` is informational (FR-063);
+2. when `signed_approval.required` is true and status is `approved`: a
+   `signature_kind` not in `signature_kinds`, or, when `approvers` is non-empty, an
+   `approver` not in `approvers`, is `invalid` with `approval_signer_untrusted`. The
+   policy only narrows (FR-063); Quoin compares no trust input, and the claim's
+   `trust` is informational;
 3. status `wrong_record`, or a `record_id` other than the record's, or a
    `record_digest` other than the digest of the reviewed revision's stored bytes
    (FR-063), is `invalid` with `approval_record_mismatch`;
@@ -449,9 +449,9 @@ compatibility reader).
 | FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts, compared byte for byte. | Property |
 | FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration |
 | FR-065-AC-12 | Golden terminology describes actor labels only as recorded attribution, never identity, authority, authenticity, signature, or non-repudiation, and `claimed_approval` only as a claim to be re-verified (CON-3). | Analysis |
-| FR-065-AC-13 | A matching `approved` event whose `verified_approval` is `approved`, carries the record's id and the digest of the stored revision, and, under a `required` policy, a signature kind whose pinned trust form is present (a `gitsign` claim equal to the pin), keeps the review check valid, and the receipt's `claimed_approval` carries the protocol, tag, digest, trust, approver, every meaning value in order and the signature kind. | Integration |
+| FR-065-AC-13 | A matching `approved` event whose `verified_approval` is `approved` and carries the record's id and the digest of the stored revision, and, under a `required` policy, a `signature_kind` in `signature_kinds` and an `approver` in `approvers` (or `approvers` empty), keeps the review check valid, and the receipt's `claimed_approval` carries the protocol, tag, digest, trust, approver, every meaning value in order and the signature kind. | Integration |
 | FR-065-AC-14 | A `verified_approval` with status `wrong_record`, or `approved` with a digest that is not the digest of the stored revision (the record changed after the tag), makes the receipt `invalid` with `approval_record_mismatch` and `claimed_approval` null. | Integration |
-| FR-065-AC-15 | A `verified_approval` with status `untrusted_signer` (an unmapped signer) makes the receipt `invalid` with `approval_signer_untrusted`; `signed_bad` makes it `invalid` with `approval_signature_bad`; under a `required` policy an `ssh` claim with a null `allowed_signers_path` pin, and a `gitsign` claim with a null pin or an identity, issuer or principal differing from the pin, each make it `invalid` with `approval_signer_untrusted`, while a different absolute `trust.allowed_signers` alone changes nothing. | Integration |
+| FR-065-AC-15 | A `verified_approval` with status `untrusted_signer` (an unmapped signer) makes the receipt `invalid` with `approval_signer_untrusted`; `signed_bad` makes it `invalid` with `approval_signature_bad`; under a `required` policy a `signature_kind` outside `signature_kinds`, or an `approver` outside a non-empty `approvers`, also makes it `invalid` with `approval_signer_untrusted`, while a different `trust` member alone changes nothing. | Integration |
 | FR-065-AC-16 | A `verified_approval` with status `meaning_missing` makes the receipt `incomplete` with `approval_meaning_missing`; `unsigned` or `unverifiable` makes it `incomplete` with `approval_unverified`; none of them is `valid`, and `invalid` still dominates when another check is invalid. | Integration |
 | FR-065-AC-17 | Two matching `approved` events that each carry a `verified_approval` make the receipt `invalid` with `decision_mismatch`, and `claimed_approval` is null. | Integration |
 | FR-065-AC-18 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is false yields `claimed_approval` null and the same review check as before; a version 1 payload or receipt is not accepted; static boundaries prove the approval check starts no process and performs no Git, network or identity-provider operation (CON-1). | Test |

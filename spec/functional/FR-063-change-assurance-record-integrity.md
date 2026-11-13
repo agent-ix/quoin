@@ -154,32 +154,28 @@ The table declares the record's top-level fields and their cardinality. Which ke
         },
         "signed_approval": {
           "type": "object",
-          "required": ["required", "allowed_signers_path", "gitsign"],
+          "required": ["required", "signature_kinds", "approvers"],
           "properties": {
             "required": { "type": "boolean" },
-            "allowed_signers_path": {
-              "anyOf": [
-                { "$ref": "#/$defs/repository_path" },
-                { "type": "null" }
-              ]
+            "signature_kinds": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "enum": ["ssh", "gitsign"] }
             },
-            "gitsign": {
-              "anyOf": [{ "$ref": "#/$defs/gitsign_pin" }, { "type": "null" }]
+            "approvers": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
             }
           },
           "allOf": [
             {
               "if": { "properties": { "required": { "const": true } } },
-              "then": {
-                "anyOf": [
-                  { "properties": { "allowed_signers_path": { "type": "string" } } },
-                  { "properties": { "gitsign": { "type": "object" } } }
-                ]
-              },
+              "then": { "properties": { "signature_kinds": { "minItems": 1 } } },
               "else": {
                 "properties": {
-                  "allowed_signers_path": { "type": "null" },
-                  "gitsign": { "type": "null" }
+                  "signature_kinds": { "maxItems": 0 },
+                  "approvers": { "maxItems": 0 }
                 }
               }
             }
@@ -191,20 +187,6 @@ The table declares the record's top-level fields and their cardinality. Which ke
     }
   },
   "$defs": {
-    "repository_path": {
-      "type": "string",
-      "pattern": "^(?!\\.\\.?(?:/|$))[^/\\\\\\u0000]+(?:/(?!\\.\\.?(?:/|$))[^/\\\\\\u0000]+)*$"
-    },
-    "gitsign_pin": {
-      "type": "object",
-      "required": ["certificate_identity", "certificate_oidc_issuer", "principal"],
-      "properties": {
-        "certificate_identity": { "type": "string", "minLength": 1 },
-        "certificate_oidc_issuer": { "type": "string", "minLength": 1 },
-        "principal": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
     "identity": {
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
@@ -413,29 +395,28 @@ standing as the actor label, until `approval-verify` is re-run against the retai
 describes the shape of the claim, not a check Quoin made.
 
 **Policy.** `review_workflow.signed_approval` is part of the reviewed record, so the
-record digest covers it. It is the closed object `{required, allowed_signers_path,
-gitsign}` and pins the trust a signed approval must meet:
+record digest covers it. It is the closed object `{required, signature_kinds,
+approvers}` and may only narrow what is acceptable:
 
-- `allowed_signers_path` is `null` or a repository-relative path under the source
-  connection `path` rule, naming an allowed-signers file as it exists at the
-  record's `subject.base_revision`. It is a path in the repository, never an
-  absolute path on any one machine.
-- `gitsign` is `null` or `{certificate_identity, certificate_oidc_issuer,
-  principal}`, the identity, issuer and principal a gitsign approval must carry.
-- `required: true` demands a `verified_approval` on the deciding event and at least
-  one non-null trust form; `required: false` takes both forms `null`. Any other
+- `required: true` demands a `verified_approval` on the deciding event.
+- `signature_kinds` lists the acceptable `signature_kind` values (`ssh`, `gitsign`),
+  at least one when `required` is true.
+- `approvers` lists the acceptable approver principals, empty meaning any principal
+  the relying party's trust names.
+- `required: false` takes `signature_kinds` and `approvers` empty. Any other
   combination is refused when the record is written.
 
-A claim is acceptable only against the trust form of its own `signature_kind`: an
-`ssh` claim needs a non-null `allowed_signers_path`, and a `gitsign` claim needs a
-non-null `gitsign` pin that equals the claim's `trust.gitsign` member by member.
-Quoin compares the pinned `gitsign` members to the claim and compares nothing about
-the allowed-signers path, because the claim's `trust.allowed_signers` is an
-absolute path on the verifying machine and the pin is a repository path, so no
-like-for-like comparison exists. The claim's `trust` is informational: the
-re-verification of FR-068 uses the pinned trust, never the claim's. The record
-schema is revised to version 2 by this member; version 1 records are not read
-(prerelease, no compatibility reader).
+**The record cannot establish trust.** The record names no allowed-signers file, no
+repository revision to read one from, no gitsign identity or issuer, and no key. The
+author of a change writes the record and can write anything into it, including a
+signers file and a principal naming their own key, so any trust root taken from the
+record or from a revision it names would let an author approve their own change as
+someone else. The trust that makes an approver credible comes only from the relying
+party (FR-068): its own allowed-signers file and gitsign identities, or a file read
+at a ref it protects, such as the head of its target branch. The claim's `trust`
+member records what the writer used and is informational only. Quoin checks a claim
+only against the narrowing policy above. The record schema is revised to version 2 by
+this member; version 1 records are not read (prerelease, no compatibility reader).
 
 The record digest is `sha256:` followed by the lowercase hexadecimal SHA-256 of the
 exact bytes of the file `records/<record_id>/<revision>.json`, which are the
@@ -484,7 +465,7 @@ standing, that Quoin retains and does not check.
 | FR-063-AC-13 | Only the record body is evidence: a `purpose`, `derived_fields` or lookup-map member placed inside the record body, at the top level or inside a source connection, is refused as undeclared. | Test |
 | FR-063-AC-14 | A v2 payload with a well-formed `verified_approval` on an `approved` decision is a candidate; each of an undeclared member, a `protocol` other than the FR-041 result protocol, a missing `trust`, `approver`, `meaning` or `signature_kind` on a non-`approved` status, a missing one on `approved`, an empty `meaning`, and a `verified_approval` on `rejected` or `revise` is refused as a candidate. | Test |
 | FR-063-AC-15 | The record digest of a stored revision equals `sha256:` plus the lowercase SHA-256 hex of its stored bytes, is identical across two writes of the same body, differs for a one-byte change, is computed without newline or end-of-line normalization, and the record body, schema and stored file contain no digest member. | Test |
-| FR-063-AC-16 | A `signed_approval` with `required` true and both trust forms null, or with `required` false and either form non-null, an `allowed_signers_path` that is not a valid repository-relative path (absolute, `..`, empty segment, backslash), or a `gitsign` pin with a missing or empty member, is refused when the record is written, and the published schema refuses the same; a record without `signed_approval` is refused as v2; and changing `signed_approval` changes the record digest. | Test |
+| FR-063-AC-16 | A `signed_approval` with `required` true and no `signature_kinds`, with `required` false and any kind or approver, with a repeated or unknown kind, or with an empty or repeated approver, is refused when the record is written, and the published schema refuses the same; a record without `signed_approval` is refused as v2; changing `signed_approval` changes the record digest; and the schema has no member that names an allowed-signers file, a revision, a gitsign identity, an issuer or a key. | Test |
 
 ## Dependencies
 

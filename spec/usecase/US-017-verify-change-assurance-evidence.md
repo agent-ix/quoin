@@ -55,7 +55,8 @@ authorization, or non-repudiation of its own; git history is the tamper evidence
 decision may carry a claim that a named person's signed approval tag approved the
 record; Quoin retains it as the event writer's claim, with the standing of the actor
 label, and never verifies a signature. Whoever relies on the approver re-runs
-Engineering Assurance's `approval-verify` on the retained inputs.
+Engineering Assurance's `approval-verify` on the retained inputs with trust the
+relying party controls; the record, which its author writes, cannot establish trust.
 
 ## Dependencies (Contextual)
 

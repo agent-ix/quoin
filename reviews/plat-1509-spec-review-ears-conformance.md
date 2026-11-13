@@ -26,3 +26,15 @@ so they are out of scope.
 | ID | Severity | Summary | Refs | Escape Cause |
 | --- | --- | --- | --- | --- |
 | FND-002 | low | New Behavior bullet 'record-digest SHALL hash the stored file bytes unchanged and SHALL write nothing' has two shalls (quire ears:non-singular, FR-068 line 97). Split. | spec/functional/FR-068-change-assurance-cli-surface.md:97 | wrong-requirement |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-002 | fixed | 0ef776be: split into two bullets |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-003 | low | New bullet 'The re-run SHALL be compared with the claim' is agentless passive (quire quality:agentless-passive, FR-068 line 109): it names no one who compares. Fix: 'The relying party SHALL compare the re-run with the claim'. Non-blocking. | spec/functional/FR-068-change-assurance-cli-surface.md:109-110 | wrong-requirement |

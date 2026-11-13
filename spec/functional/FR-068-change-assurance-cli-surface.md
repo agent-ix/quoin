@@ -100,16 +100,19 @@ re-serialization would no longer be the file consumers validate against.
   writer's claim that has not been verified by Quoin.
 - A party relying on a `claimed_approval` approver SHALL re-run Engineering
   Assurance's `approval-verify` with `tag`, `record_id` and `record_digest` from the
-  claim and a `repository` the relying party supplies, and with trust that is not
-  taken from the claim: the record's pinned trust (`signed_approval`, FR-063), being
-  the allowed-signers file at `allowed_signers_path` read from the repository at
-  the record's `subject.base_revision` and the pinned `gitsign` identity, issuer
-  and principal, or the relying party's own trust. The claim's `trust` is
-  informational only.
-- The re-run SHALL be compared with the claim, and the claim is relied on only when
-  the re-run yields `approved` with the same approver, meaning and signature kind.
+  claim and a `repository` the relying party supplies.
+- The relying party SHALL supply the trust for that re-run: its own allowed-signers
+  file and gitsign identity, issuer and principal, or an allowed-signers file read at
+  a ref the relying party protects, such as the head of its target branch. It SHALL
+  NOT take trust from the claim's `trust`, and SHALL NOT take it from the record or
+  from any revision the record names, because the record's author can write both
+  (FR-063).
+- The relying party SHALL compare the re-run with the claim, and the claim is relied
+  on only when the re-run yields `approved` with the same approver, meaning and
+  signature kind, and only when the record's `signed_approval.required` is true and
+  the approver satisfies its `signature_kinds` and `approvers`.
 - A party SHALL NOT rely on a `claimed_approval` approver when the record's
-  `signed_approval.required` is false, because no trust was reviewed for it.
+  `signed_approval.required` is false, because no approval was demanded for it.
 - The re-run is a step of Engineering Assurance, not of Quoin.
 
 ## Error Conditions
@@ -144,7 +147,7 @@ receipt is retained on any of these paths.
 | FR-068-AC-9 | `recover` removes only interrupted-intake staging directories, reports the count, and leaves retained records, attestations, and outputs untouched. | Test |
 | FR-068-AC-10 | Golden fixtures for a record, an attestation, and a valid receipt reproduce byte-identical canonical JSON through the CLI (CON-4). | Integration |
 | FR-068-AC-12 | `write-record` and `record-digest` report the same digest for a stored revision, equal to `sha256:` plus the SHA-256 hex of the file's bytes, and `record-digest` of an unstored revision fails with exit 2 and writes nothing. | Test |
-| FR-068-AC-13 | The `receipt` output and help text name a non-null `claimed_approval` as a claim not verified by Quoin and name `approval-verify` as its re-verification; a re-run of `approval-verify` with the record's pinned trust, not the claim's `trust`, is the documented way to rely on the approver, and a claim under a record whose `signed_approval.required` is false is documented as not relied on. | Inspection |
+| FR-068-AC-13 | The `receipt` output and help text name a non-null `claimed_approval` as a claim not verified by Quoin and name `approval-verify` as its re-verification, with trust supplied by the relying party and not taken from the claim, the record or a revision the record names; a claim under a record whose `signed_approval.required` is false is documented as not relied on. | Inspection |
 | FR-068-AC-11 | Static boundaries prove no command executes an attested command or performs Git or network work, that the one process boundary any command reaches is the FR-096 engine module, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection |
 
 ## Dependencies
