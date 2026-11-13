@@ -44,5 +44,8 @@ medium defect is that the FR-171-AC-6 check cannot see 345 of the 350 ASVS ids i
 
 | FND | outcome | reason |
 | --- | --- | --- |
-| FND-001 | fixed | Round 1, head 33521a3. Each `set` part is now `[!-.0-?A-~]{1,64}` (printable ASCII except `/` and `@`) and `clause` is `[!-~]{1,64}`, in both schemas and both TypeSpec models, so character counts equal byte counts. TC-188 now rejects non-ASCII values. It has no separate non-ASCII case for `ScopeExclusion`, but that schema's pattern is identical and is emitted from the same TypeSpec source |
-| FND-002 | deferred: the PR no longer extends `spec/tests.md`, because round 1 removed its 20 rows. Removing the whole TM-001 table touches `spec.md`, older review files (which are never deleted) and `evidence.md`, which is a repo-wide change outside this PR. There is no owning ticket; the lead decides whether to file one | - |
+| FND-001 | fixed | Round 1, head c98fb578. `asvs_ids_cited` also reads the first-column dotted triples of the `references/owasp-asvs/V*.md` chapter tables and checks them as `V<id>`, so the 345 bare ids are now checked |
+| FND-002 | fixed | Round 1, head c98fb578. The fixture summary now says nine clauses |
+| FND-003 | fixed | Round 1, head c98fb578. The manifest is read with `quoin_yaml` (`manifest["clause_sets"]`); requirement and component ids come from frontmatter `id` via `artifact_id` |
+| FND-004 | accepted-no-change | The dead `subdir` parameter is removed. The variable meanings are kept per module to match the existing tests that read the same modules (`tc_1515_soup_promote` reads `SPEC_OBJECTS_SECURITY_DIR` as the module directory; `tc_136_anomaly_command` reads `SPEC_ARTIFACTS_PROCESS_DIR` as the repository root, verified). Unifying them means changing those tests too, which is outside this PR; the module doc now states each meaning |
+| FND-005 | fixed | Round 1, head c98fb578. The template, example and the three expected controls name the invariant `EffectivenessIsStated`, which is what `self.effectiveness->notEmpty()` states |
