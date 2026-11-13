@@ -19,7 +19,7 @@ Tracked by Linear PLAT-1528 and PLAT-1586. `quoin anomaly report --fail-on <mode
 check that CI or a release step can run. It tests a structural condition of the records at the checked-out commit:
 whether an anomaly is still unassessed, and whether a carried safety-impacting anomaly has a release rationale
 (FR-163). A carried anomaly is one FR-162 lists because it is not `closed`, or is `closed` as `wont-fix`: a defect
-deliberately shipped must not pass the gate by being closed. It does not decide whether a person should release with an anomaly; that is the rationale's author's
+deliberately shipped must not pass the gate by being closed. It does not decide whether releasing with an anomaly is justified; that is the rationale's author's
 judgement, and the gate does not read the rationale for sense.
 
 ## Behavior
