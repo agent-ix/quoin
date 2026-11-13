@@ -159,6 +159,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-172: Mapped standards are served as clause sets: publishable sets here, licensed sets from local packs by clause id](./FR-172-clause-set-sources-and-licence-boundary.md)
 - [FR-173: quoin evidence facts-from-mappings: discharge facts proposed from effective controls](./FR-173-facts-from-mappings.md)
 - [FR-174: quoin discharge --rmm reports per-clause compliance for facts recorded from mappings](./FR-174-per-clause-compliance-from-mappings.md)
+- [FR-175: quoin anomaly check reports a fixed anomaly whose verifying test has a failing or missing result](./FR-175-anomaly-check-fix-verification-evidence.md)
 - [FR-180: A repository selects one source profile, and Quoin resolves the sources that apply](./FR-180-source-profile-selection.md)
 - [FR-181: quoin profile evaluate: evaluate every set of the effective profile against its context](./FR-181-source-profile-evaluation.md)
 - [FR-182: A locally installed licensed pack joins a profile from local configuration only](./FR-182-local-pack-joins-a-profile.md)
