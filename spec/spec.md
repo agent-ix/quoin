@@ -233,7 +233,7 @@ index; the files are authoritative.
 - [FR-139](./functional/FR-139-pack-writes-nothing-into-a-repository.md) — pack install, list, inspect and remove write only under `IX_HOME`.
 - [FR-140](./functional/FR-140-pack-requirements-mapping-report.md) — `quoin discharge --rmm --pack` reports one requirements mapping matrix per clause set plus a pack index, with no clause text.
 - [FR-141](./functional/FR-141-promote-sbom-components-to-soup-records.md) — `quoin soup promote` turns ingested SBOM components into `soup_record` files, one per purl, idempotently and without overwriting reviewer-authored fields.
-- [FR-142](./functional/FR-142-advisory-join-onto-soup-records.md) — retained cargo-audit and cargo-deny findings join onto SOUP records by purl at read time; failed scans are refused, unmatched findings are listed.
+- [FR-142](./functional/FR-142-advisory-join-onto-soup-records.md) — retained cargo-audit and cargo-deny advisories join onto SOUP records by crate name and version at read time; absent scans are reported not run, unmatched findings are listed, and an advisory is resolved only by a disposition attested after the scan.
 - [FR-143](./functional/FR-143-support-status-and-end-of-support-input.md) — support status and end-of-support dates come from a supplied file of public-source entries; unknown stays unknown.
 - [FR-144](./functional/FR-144-soup-report.md) — `quoin soup report` renders one row per SOUP record, unresolved advisories and past-end-of-support components first.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
