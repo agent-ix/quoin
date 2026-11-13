@@ -62,7 +62,7 @@ The entry's `evidenceKind` is unset (FR-151), and a stated `evidenceKind` establ
 so neither supplies a qualification premise. Qualification of an analysis entry needs a producer definition that
 Quoin FR-116 requires the owner to have approved for this act. The owner has approved it
 ([FR-184](./FR-184-analysis-act-producer-definition.md)). An analysis-backed obligation is `unevaluated`, and none is
-counted, while no FR-093 assessment exists (the bounded-reliance premise) and when the run-package step has no CI
+counted, while no FR-093 assessment exists (the bounded-reliance premise) or when the run-package step has no CI
 checkout SHA (the performed-revision premise). The credit is consistency evidence only.
 
 ### What is decided here and what is not
@@ -76,10 +76,14 @@ Decided here, from the text of FR-152, FR-116 and FR-078:
 - A `disagreement` is not distinguishable from an absent result after recording, because the `unrepresented` result is
   printed and not stored (FR-151). A store change under FR-030 would be a separate requirement.
 
-Not decided here; these need the owner:
+Ruled by the owner, not yet specified in quire-rs:
 
-- How an owner waiver of an analysis result is represented. quire-rs FR-078 holds waivers for the owner's ruling for
-  all methods.
+- Waivers. The FR-116 owner ruled (relayed by the planner 2026-11-13), option A: a waiver is a named person's
+  decision with an approval reference, signed through the signed-records feature, reported as its own waiver outcome
+  and never as a pass. Strict mode still fails by default; a policy setting must opt in before approved waivers pass.
+  It reuses the person-owned disposition pattern of the advisory join (PLAT-1516) and the anomaly release rationale
+  (PLAT-1584). The quire-rs FR-078 side still needs its own spec change from the IR and quire-rs owners; until it
+  lands nothing is waivable (FR-184 item 9).
 
 ## Behavior
 

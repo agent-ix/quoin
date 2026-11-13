@@ -64,45 +64,48 @@ act, and a report from a solver started any other way is not an observation of i
 
 ## Outputs
 
-- One `quire.differential-report/v2` document and the runner's exit status (`0` satisfied, `1` refuted, `2` usage or
-  input error, `3` non-conclusive, `4` publication or executor failure; quire-analyze FR-009). The report is read by
+- One `quire.differential-report/v2` document and the runner's exit status, whose classes are those of
+  [quire-analyze FR-009](ix://agent-ix/quire-analyze/FR-009). The report is read by
   the `differential-report` adapter, which accepts it only when `quire_analyze::validate_report_document` does
   (FR-151).
-- The report supplies to the FR-116 tool and configuration context only what quire-analyze FR-005-AC-6 requires it to
-  retain: `producer.name` and `producer.version`; for each engine its name, `configuredExecutable`, observed
-  `identity.path` and `identity.version` (when available), `limits`, `status` and `outcome`; the `disposition` and
-  `agreedStatus`; the `requestDigest`. These are the transcribed observations the performed-act premise reads.
+- The report supplies to the FR-116 tool and configuration context what the closed `quire.differential-report/v2`
+  schema retains (quire-analyze FR-005; FR-005-AC-6 names `producer.name`, `producer.version`, each engine's
+  `configuredExecutable`, observed `identity.path` and `identity.version` when available, `requestDigest` and the raw
+  solver output). The per-engine `status` and `outcome`, the `disposition` and the `agreedStatus` are read from the same
+  document (FR-151). These are the transcribed observations the performed-act premise reads.
 - The report supplies no CI system, run, attempt or job, no actor, no performed-at time and no source revision. The
   adapter's entry carries no `evidenceKind` and no `traceIds` (FR-151). Those premises come from the host (FR-116) or
   are open points below.
 
 ### Execution association
 
-The act is run by CI only; a manual run is not an association this definition admits. The required invocation is the
+The qualifier SHALL admit an execution association only from CI; a manual run is not an association this definition
+admits. The required invocation is the
 `run-package` step of the CI workflow that runs the analysis act. The host supplies the association FR-116 requires:
 the exact system, project, run, attempt, job and invocation of that step. This requirement names the step and edits no
 workflow file; changing the step needs the owner's clearance.
 
 ### Source revision
 
-The performed revision FR-116 compares with the selected HEAD is the CI checkout SHA of the `run-package` step,
-supplied by the host. The report carries none. Without one, the result is `unevaluated`, naming the performed-revision
-premise.
+The qualifier SHALL take the performed revision FR-116 compares with the selected HEAD from the CI checkout SHA of
+the `run-package` step, supplied by the host. The report carries none. Without one, the result is `unevaluated`,
+naming the performed-revision premise.
 
 ### Tool and configuration
 
-No named version set and no pin is required. The definition records the observed solver `identity.version` and the
-`producer.version` the report supplies, and requires no particular value of either (FR-184-CON-1 below).
+No named version set and no pin is required. The qualifier reads the observed solver `identity.version` and the
+`producer.version` the report retains, and requires no particular value of either; the definition records neither
+(FR-184-CON-1 below).
 
 ### Actor authority
 
-The asserting actor is the signer of the record, mapped to a person through the signed-records feature
-([PLAT-1433](https://linear.app/agent-ix/issue/PLAT-1433)). `--discharges` together with that authority is sufficient
+The qualifier SHALL take the asserting actor to be the signer of the record, mapped to a person through the
+signed-records feature ([PLAT-1433](https://linear.app/agent-ix/issue/PLAT-1433)). `--discharges` together with that authority is sufficient
 to bind the obligation; no further link is required and FR-152 is unchanged.
 
 ### What a positive qualifier decision means
 
-The bridge MAY emit a record claim for an obligation only when **all** of these hold, and each is a premise the
+The bridge SHALL NOT emit a record claim for an obligation unless **all** of these hold, and each is a premise the
 qualifier evaluates and retains (FR-116):
 
 1. the report's `disposition` is `agreement` and `agreedStatus` is `satisfied`, so both engines, Z3 and cvc5, are
@@ -113,11 +116,15 @@ qualifier evaluates and retains (FR-116):
    (FR-153; the run is not superseded);
 5. every other FR-116 premise holds: bounded reliance (FR-093), actor authority, performed revision against the
    selected HEAD, tool and configuration, execution association, and freshness. Freshness is revision and
-   supersession only; no age rule applies.
+   supersession only; no age rule applies;
+6. the report is an observation of a solver started through `producer-execute` (see Producer-execute evidence below).
+
+Freshness SHALL be decided by the performed revision and supersession only; the qualifier SHALL apply no age rule.
 
 The decision is use-specific (FR-116): it says that this act, run under this definition, completed with both solvers
-agreeing the analysed clauses are consistent, for this exact target and method. One report qualifies only the one
-obligation stated with it. The credit is **consistency evidence only**: it says the analysed clauses are consistent and
+agreeing the analysed clauses are consistent, for this exact target and method. A report whose `--discharges` states more than
+one obligation qualifies none of them: each stays `unevaluated`, and only a report stating a single obligation can
+qualify (the reading of owner answer 8, flagged in Open points). The credit is **consistency evidence only**: it says the analysed clauses are consistent and
 nothing about the obligation's meaning. The requirement-to-formalization link
 ([Linear VER-75](https://linear.app/agent-ix/issue/VER-75)) will tighten it. A decision **does not assert**:
 
@@ -127,6 +134,16 @@ nothing about the obligation's meaning. The requirement-to-formalization link
 - that a solver is sound, or that any property beyond the one consistency request the runner built holds;
 - the outcome of any other obligation bound to the same entry, or of a sibling criterion (FR-116 per-target rule);
 - anything about a `disagreement`, which is stored as a zero-entry run and counts as `absent` (FR-153).
+
+### Producer-execute evidence
+
+A report is an observation of the act only when its solvers were started through `producer-execute`
+(quire-analyze FR-009 starts them no other way). The qualifier SHALL read only the report's own fields to decide
+this, as FR-184-CON-2 requires: `producer.name` and `producer.version` of the runner, and for each of the Z3 and cvc5
+engines a `configuredExecutable` that is an absolute path, an observed `identity.path` and `identity.version` (the
+version invocation that `producer-execute` ran first, FR-009), and a `status` and `outcome` from the closed set
+(FR-005-AC-6; FR-009 result-state table). If any of these is absent for either engine, the report is not an observation
+of the act, the result is `unevaluated` naming the tool and configuration premise, and no positive decision is made.
 
 A `refuted` agreement is `failed`; an `inconclusive` or `unavailable` report is `errored`; neither can qualify.
 
@@ -138,6 +155,13 @@ The definition is approved, and two premises keep the result `unevaluated`, each
   ([FR-093](./FR-093-evidence-producer-trust.md)) is open: no assessment exists. Every analysis-backed obligation
   SHALL stay `unevaluated` and uncounted until an assessment is written.
 - **Premise: no CI checkout SHA.** A result with no CI checkout SHA of the `run-package` step SHALL be `unevaluated`.
+
+### Open points
+
+- **Report stating several obligations.** Rule stated by the lead from answer 8, owner may amend: a report whose
+  `--discharges` states more than one obligation qualifies none of them.
+- **Producer-execute marker.** The report carries no field that names `producer-execute` directly; the qualifier
+  reads the engine fields listed above. A dedicated marker would be a quire-analyze change and is not required here.
 
 ## Owner approval
 
@@ -155,9 +179,15 @@ approved this definition with these answers:
    obligation `unevaluated` until an assessment is written.
 7. **Freshness.** Nothing beyond revision and supersession.
 8. **Scope of one act.** One report qualifies only the one obligation stated.
-9. **Waiver.** OPEN. It stays with quire-rs FR-078, as a separate ruling.
+9. **Waiver.** Ruled (FR-116 owner, relayed by the planner 2026-11-13); the quire-rs side is pending. Option A: a
+   waiver is a named person's decision with an approval reference, signed through the signed-records feature
+   ([PLAT-1433](https://linear.app/agent-ix/issue/PLAT-1433)), and reported as its own waiver outcome and never as a
+   pass. Strict mode still fails by default; a policy setting must opt in before approved waivers pass. It reuses the
+   person-owned disposition pattern of the advisory join (PLAT-1516) and the anomaly release rationale (PLAT-1584).
+   The quire-rs FR-078 side still needs its own spec change from the IR and quire-rs owners; until it lands nothing is
+   waivable, and this requirement edits no quire-rs requirement.
 
-Items 6 and 9 are unresolved.
+Item 6 is unresolved: nothing counts as covered until the FR-093 assessment exists.
 
 ## Constraints
 
@@ -174,11 +204,20 @@ The criteria describe the approved definition; none claims an implemented qualif
 |----|----------|--------------|
 | FR-184-AC-1 | With no FR-093 assessment of `quire-analyze` and the solvers, every analysis-backed obligation is `unevaluated` naming the bounded-reliance premise and none is counted. | Test |
 | FR-184-AC-2 | A `satisfied` agreement bound by `--discharges` to an Analysis obligation, latest in its suite, with a CI checkout SHA and every other FR-116 premise admitted, yields a positive decision for that target only. | Test |
-| FR-184-AC-3 | A `refuted`, `inconclusive`, `unavailable` or `disagreement` report, a superseded run, a Test-method obligation, or a missing or non-CI execution association yields no positive decision, each with its FR-153 or FR-116 category. | Test |
-| FR-184-AC-4 | The definition names `quire-analyze run-package` with Z3 and cvc5 started only through `producer-execute`, and the inputs and outputs above, each citing its owning requirement. | Inspection |
-| FR-184-AC-5 | The text states that a positive decision asserts no request relevance and is consistency evidence only, and records the owner approval with items 6 and 9 explicitly open. | Inspection |
-| FR-184-AC-6 | A satisfied agreement with no CI checkout SHA for the `run-package` step yields `unevaluated` naming the performed-revision premise. | Test |
-| FR-184-AC-7 | One report with `--discharges` for one obligation yields a decision for that obligation only; no sibling obligation is qualified by it. | Test |
+| FR-184-AC-3 | A `refuted` agreement report bound to an Analysis obligation yields `failed` and no positive decision. | Test |
+| FR-184-AC-4 | An `inconclusive` report yields `errored` and no positive decision. | Test |
+| FR-184-AC-5 | An `unavailable` report yields `errored` and no positive decision. | Test |
+| FR-184-AC-6 | A `disagreement` report yields `absent` (zero-entry run) and no positive decision. | Test |
+| FR-184-AC-7 | A passing run followed by a later run of the suite that fails or errors on the bound symbol yields `stale` and no positive decision. | Test |
+| FR-184-AC-8 | A passing run followed by a later run of the suite that lacks the bound symbol yields `absent` and no positive decision. | Test |
+| FR-184-AC-9 | A passing report stated for an obligation whose declared method is Test yields `qualification-rejected` naming the method and act pairing premise. | Test |
+| FR-184-AC-10 | A passing report whose supplied execution association is not CI (for example a manual association) yields `qualification-rejected` naming the execution association premise (FR-116-AC-9; quire-rs FR-078-AC-7). | Test |
+| FR-184-AC-11 | A passing report with no supplied execution association yields `unevaluated` naming the execution association premise (FR-078-AC-7). | Test |
+| FR-184-AC-12 | A passing report whose engine record lacks the observed `identity.version`, `configuredExecutable` or a `status` and `outcome` (so it is not an observation of a solver started through `producer-execute`) yields `unevaluated` naming the tool and configuration premise and no positive decision. | Test |
+| FR-184-AC-13 | A satisfied agreement for an Analysis obligation yields a decision whose retained premises and result name the credit as consistency evidence only, and do not assert that the analysis request is relevant to the obligation's statement; the bridge adds no relevance claim. | Test |
+| FR-184-AC-14 | A satisfied agreement with no CI checkout SHA for the `run-package` step yields `unevaluated` naming the performed-revision premise. | Test |
+| FR-184-AC-15 | One report with `--discharges` for one obligation yields a decision for that obligation only; no sibling obligation is qualified by it. | Test |
+| FR-184-AC-16 | One satisfied report recorded with `--discharges FR-001-AC-1,FR-001-AC-2` qualifies neither obligation: each is `unevaluated` and uncounted. | Test |
 
 ## Dependencies
 
