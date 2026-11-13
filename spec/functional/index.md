@@ -143,4 +143,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-153: An analysis result counts toward an obligation only as a qualified passing record](./FR-153-analysis-result-counting-by-disposition.md)
 - [FR-150: Licence and ban policy findings from the ingested SBOM](./FR-150-licence-and-ban-policy-findings.md)
 - [FR-154: quoin risk discrepancies: a read-only report of where a recorded risk decision disagrees with the authored policy](./FR-154-risk-discrepancies-command.md)
-- [FR-155: Risk discrepancy findings: the finding tokens, their shape and the severity flag](./FR-155-risk-discrepancy-findings.md)
+- [FR-155: Risk discrepancy findings: the finding tokens, their shape and the strict flag](./FR-155-risk-discrepancy-findings.md)
