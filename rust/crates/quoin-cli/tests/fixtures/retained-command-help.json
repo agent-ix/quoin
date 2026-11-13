@@ -8,7 +8,7 @@
         "--help"
       ],
       "exit": 0,
-      "stdout": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.\n\nVERSION\n  @agent-ix/quoin/<VERSION>\n\nUSAGE\n  $ quoin [COMMAND]\n\nTOPICS\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           Inspect the active artifact/object catalog (list, show,\n                    validate).\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  config            Read and store quoin configuration (get, set, edit, doctor).\n  evidence          The evidence store — what actually ran, and against which\n                    statement (record, gc).\n  graph             Read-only evidence-graph analysis views.\n  measurement       Record plan-validated QA measurements as atomic producer\n                    collections.\n  module            Install and manage user/community spec modules (list,\n                    install, remove, ensure-defaults).\n  semantic          Classify every Markdown artifact's Properties form across\n                    corpus roots (FR-074).\n\nCOMMANDS\n  advise            Recommend a verification method for each obligation, from\n                    the catalog.\n  anomaly           Check anomaly status history and list the anomalies\n                    that name an id.\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           List the active artifact/object catalog modules.\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  completeness      Report which declared vocabulary values no requirement owns,\n                    and judge the excuses.\n  config            Read a stored quoin config value.\n  discharge         Partition binding clauses into direct evidence,\n                    dispositions, and open work.\n  evidence          The evidence store — what actually ran, and against which\n                    statement.\n  graph             Read-only evidence-graph analysis views.\n  matrix            Render the evidence-backed test matrix, per criterion.\n  measurement       Record and inspect versioned QA measurements.\n  module            List installed spec modules.\n  report            Render QA plans and measurements from the evidence store.\n  review            Run a composite spec review workflow.\n  soup              Promote SBOM components to SOUP records and report on them.\n  to-plan           Convert accepted requirements into an implementation plan.\n  update            Check for and install the latest published quoin.\n  validate          Validate repository QA gates and report located defects.\n  write             Build an authoring pack for spec files an agent is about to\n                    create or edit.\n\n",
+      "stdout": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.\n\nVERSION\n  @agent-ix/quoin/<VERSION>\n\nUSAGE\n  $ quoin [COMMAND]\n\nTOPICS\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           Inspect the active artifact/object catalog (list, show,\n                    validate).\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  config            Read and store quoin configuration (get, set, edit, doctor).\n  evidence          The evidence store — what actually ran, and against which\n                    statement (record, gc).\n  graph             Read-only evidence-graph analysis views.\n  measurement       Record plan-validated QA measurements as atomic producer\n                    collections.\n  module            Install and manage user/community spec modules (list,\n                    install, remove, ensure-defaults).\n  semantic          Classify every Markdown artifact's Properties form across\n                    corpus roots (FR-074).\n\nCOMMANDS\n  advise            Recommend a verification method for each obligation, from\n                    the catalog.\n  anomaly           Check anomaly status history and list the anomalies\n                    that name an id.\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           List the active artifact/object catalog modules.\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  completeness      Report which declared vocabulary values no requirement owns,\n                    and judge the excuses.\n  config            Read a stored quoin config value.\n  discharge         Partition binding clauses into direct evidence,\n                    dispositions, and open work.\n  evidence          The evidence store — what actually ran, and against which\n                    statement.\n  graph             Read-only evidence-graph analysis views.\n  matrix            Render the evidence-backed test matrix, per criterion.\n  measurement       Record and inspect versioned QA measurements.\n  module            List installed spec modules.\n  report            Render QA plans and measurements from the evidence store.\n  review            Run a composite spec review workflow.\n  risk              Advise on risk decisions from the safety records, without deciding.\n  soup              Promote SBOM components to SOUP records and report on them.\n  to-plan           Convert accepted requirements into an implementation plan.\n  update            Check for and install the latest published quoin.\n  validate          Validate repository QA gates and report located defects.\n  write             Build an authoring pack for spec files an agent is about to\n                    create or edit.\n\n",
       "stderr": ""
     },
     {
@@ -645,7 +645,7 @@
       ],
       "exit": 2,
       "stdout": "",
-      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, risk, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     },
     {
       "kind": "shell",
@@ -657,7 +657,7 @@
       ],
       "exit": 2,
       "stdout": "",
-      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, risk, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     },
     {
       "kind": "shell",
@@ -759,6 +759,27 @@
       ],
       "exit": 0,
       "stdout": "Render one row per soup_record with its advisories and support status.\n\nUSAGE\n  $ quoin soup report --as-of <value> --binding <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>] [--records <value>]\n    [--support <value>] [--json]\n\nFLAGS\n  --as-of=<value>    (required) Explicit evaluation instant; its UTC date is the\n                     end-of-support comparison date.\n  --binding=<value>  (required) Quire clause-binding-v1 JSON report whose\n                     clauses the records' disposition_clause names.\n  --json             Emit the report as JSON instead of Markdown.\n  --records=<value>  Where the soup_record files are read; defaults to\n                     <repo>/spec/soup.\n  --repo=<value>     [default: .] Repository root.\n  --support=<value>  JSON file of public support statements: [{purl,\n                     support_status, end_of_support, source}].\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Render one row per soup_record with its advisories and support status.\n\n  Reads the soup_record files below --records, the retained scans, the stored\n  discharge facts of the --binding report and the optional --support file. It\n  writes nothing, states what no input stated as unknown, and emits no score.\n\nEXAMPLES\n  $ quoin soup report --binding binding.json --as-of 2026-08-15T00:00:00Z\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "risk",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Advise on risk decisions from the safety records, without deciding.\n\nUsage: quoin risk [OPTIONS] <COMMAND>\n\nCommands:\n  advise  Print the policy cell of each estimate, its evidence gaps and the undecided decisions\n\nOptions:\n      --config-root <DIR>  Override the IX configuration and module home\n      --no-project-config  Ignore the project-local .ix configuration layer\n  -h, --help               Print help\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "risk",
+        "advise",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Print the policy cell of each estimate, its evidence gaps and the undecided decisions\n\nUsage: quoin risk advise [OPTIONS] [SCOPE]\n\nArguments:\n  [SCOPE]  Directory holding the safety records, policies, requirements and anomalies [default: .]\n\nOptions:\n      --config-root <DIR>  Override the IX configuration and module home\n      --format <FORMAT>    Output format [default: markdown] [possible values: markdown, json]\n      --no-project-config  Ignore the project-local .ix configuration layer\n  -h, --help               Print help\n\n",
       "stderr": ""
     }
   ]

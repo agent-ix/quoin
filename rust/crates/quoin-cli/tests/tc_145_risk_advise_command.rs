@@ -38,9 +38,7 @@ fn json_over_an_empty_scope_exits_zero_with_the_four_keys() {
         "{}",
         String::from_utf8_lossy(&out.stderr)
     );
-    let payload: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    let report: serde_json::Value =
-        serde_json::from_str(payload["rendered"].as_str().unwrap()).unwrap();
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     let mut keys: Vec<&str> = report
         .as_object()
         .unwrap()

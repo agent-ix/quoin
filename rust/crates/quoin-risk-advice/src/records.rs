@@ -166,18 +166,15 @@ fn policy(doc: &Doc) -> Policy {
 
 fn decision(doc: &Doc) -> DecisionRecord {
     let word = doc
-        .table(
-            "Determination",
-            &["DecisionRecord", "Rationale", "Decided by"],
-        )
+        .table("Determination", &["Decision", "Rationale", "Decided by"])
         .into_iter()
         .chain(doc.table(
             "Determination",
-            &["Benefit", "DecisionRecord", "Rationale", "Decided by"],
+            &["Benefit", "Decision", "Rationale", "Decided by"],
         ))
         .chain(doc.table(
             "Determination",
-            &["Product", "DecisionRecord", "Rationale", "Decided by"],
+            &["Product", "Decision", "Rationale", "Decided by"],
         ))
         .next()
         .and_then(|row| {
