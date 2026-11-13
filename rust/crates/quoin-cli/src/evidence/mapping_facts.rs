@@ -129,11 +129,13 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn propose_from(arguments: &ArgMatches) -> Result<Proposal, String> {
     let binding_source = required(arguments, "binding")?;
-    let attestation = read_json(&required(arguments, "attestation")?, "attestation")?;
-    let binding: ClauseBindingReport =
-        serde_json::from_value(read_json(&binding_source, "clause binding")?).map_err(|error| {
-            format!("clause binding is not a clause-binding-v1 report: {error}")
-        })?;
+    let attestation =
+        crate::discharge::json_input(&required(arguments, "attestation")?, "attestation")?;
+    let binding: ClauseBindingReport = serde_json::from_value(crate::discharge::json_input(
+        &binding_source,
+        "clause binding",
+    )?)
+    .map_err(|error| format!("clause binding is not a clause-binding-v1 report: {error}"))?;
     let spec = arguments
         .get_one::<String>("spec")
         .map_or_else(|| PathBuf::from("spec"), PathBuf::from);
@@ -148,18 +150,6 @@ fn propose_from(arguments: &ArgMatches) -> Result<Proposal, String> {
             .map(String::as_str),
         stored.as_ref(),
     )
-}
-
-fn read_json(source: &str, label: &str) -> Result<Value, String> {
-    let bytes = if source == "-" {
-        let mut bytes = Vec::new();
-        std::io::Read::read_to_end(&mut std::io::stdin(), &mut bytes)
-            .map_err(|error| format!("cannot read {label}: {error}"))?;
-        bytes
-    } else {
-        std::fs::read(source).map_err(|error| format!("cannot read {label} {source}: {error}"))?
-    };
-    serde_json::from_slice(&bytes).map_err(|error| format!("{label} is not JSON: {error}"))
 }
 
 /// A refusal: exit status 2, one diagnostic and nothing on stdout.

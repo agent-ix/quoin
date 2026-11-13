@@ -4,10 +4,10 @@
 //! `quoin evidence facts-from-mappings`, `record-discharge` and
 //! `discharge --rmm` over a corpus of typed controls (FR-173, FR-174, NFR-038).
 //!
-//! The control and `scope_exclusion` types belong to `spec-objects-security`,
-//! read in place: `SPEC_OBJECTS_SECURITY_DIR` names its `spec_objects_security`
-//! module directory, else the checkout next to this repository is used. The
-//! synthetic clause set `example.invalid/std@1` carries no clause text.
+//! Generated minimal security-record archetypes keep the tests independent of
+//! another repository. The synthetic clause set `example.invalid/std@1` carries
+//! a clause-text sentinel so the rendered and stored chain can be checked for
+//! accidental disclosure.
 
 #![allow(
     clippy::unwrap_used,
@@ -23,26 +23,10 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
+mod pack_support;
+
 const SET: &str = "example.invalid/std@1";
 const AS_OF: &str = "2026-08-15T00:00:00Z";
-
-fn security_module() -> PathBuf {
-    let root = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map_or_else(
-        || {
-            Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../../../spec-objects-security/spec_objects_security")
-        },
-        PathBuf::from,
-    );
-    let root = std::fs::canonicalize(&root).unwrap_or_else(|error| {
-        panic!(
-            "spec-objects-security is not at {}: {error}; set SPEC_OBJECTS_SECURITY_DIR",
-            root.display()
-        )
-    });
-    assert!(root.join("skeletons/scope_exclusion.md").is_file());
-    root
-}
 
 fn attestation() -> Value {
     json!({"attestedBy": "reviewer-1", "authority": "security lead",
@@ -97,6 +81,7 @@ impl World {
         }
         std::fs::write(world.path("binding.json"), binding.to_string()).unwrap();
         std::fs::write(world.path("attestation.json"), attestation().to_string()).unwrap();
+        synthetic_types_module(&world.path("modules"));
         world
     }
 
@@ -109,19 +94,29 @@ impl World {
     }
 
     fn run(&self, arguments: &[&str], stdin: Option<&str>) -> Output {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        self.run_with_installed_modules(arguments, stdin, false)
+    }
+
+    fn run_with_installed_modules(
+        &self,
+        arguments: &[&str],
+        stdin: Option<&str>,
+        installed: bool,
+    ) -> Output {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+        command
             .args(arguments)
             .env("IX_HOME", self.home.path())
-            .env(
-                "IX_FILAMENT_MODULES_PATH",
-                security_module().parent().unwrap(),
-            )
             .current_dir(self.dir.path())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .unwrap();
+            .stderr(Stdio::piped());
+        if installed {
+            command.env_remove("IX_FILAMENT_MODULES_PATH");
+        } else {
+            command.env("IX_FILAMENT_MODULES_PATH", self.path("modules"));
+        }
+        let mut child = command.spawn().unwrap();
         if let Some(stdin) = stdin {
             std::io::Write::write_all(&mut child.stdin.take().unwrap(), stdin.as_bytes()).unwrap();
         }
@@ -150,6 +145,24 @@ impl World {
         self.facts_with(&[])
     }
 
+    fn facts_with_installed_modules(&self, extra: &[&str]) -> Output {
+        let binding = self.path("binding.json");
+        let attestation = self.path("attestation.json");
+        let spec = self.spec();
+        let mut arguments = vec![
+            "evidence",
+            "facts-from-mappings",
+            "--binding",
+            binding.to_str().unwrap(),
+            "--attestation",
+            attestation.to_str().unwrap(),
+            "--spec",
+            spec.to_str().unwrap(),
+        ];
+        arguments.extend_from_slice(extra);
+        self.run_with_installed_modules(&arguments, None, true)
+    }
+
     fn record(&self, facts: &str) -> Output {
         let binding = self.path("binding.json");
         self.run(
@@ -164,6 +177,24 @@ impl World {
                 "-",
             ],
             Some(facts),
+        )
+    }
+
+    fn record_installed(&self, facts: &str) -> Output {
+        let binding = self.path("binding.json");
+        self.run_with_installed_modules(
+            &[
+                "evidence",
+                "record-discharge",
+                "--repo",
+                self.dir.path().to_str().unwrap(),
+                "--binding",
+                binding.to_str().unwrap(),
+                "--facts",
+                "-",
+            ],
+            Some(facts),
+            true,
         )
     }
 
@@ -185,6 +216,132 @@ impl World {
         assert!(output.status.success(), "{output:?}");
         out(&output)
     }
+
+    fn rmm_installed(&self, as_of: &str) -> String {
+        let binding = self.path("binding.json");
+        let output = self.run_with_installed_modules(
+            &[
+                "discharge",
+                "--binding",
+                binding.to_str().unwrap(),
+                "--repo",
+                self.dir.path().to_str().unwrap(),
+                "--as-of",
+                as_of,
+                "--rmm",
+            ],
+            None,
+            true,
+        );
+        assert!(output.status.success(), "{output:?}");
+        out(&output)
+    }
+
+    fn install_pack(&self, source: &Path) {
+        let source = format!("path:{}", source.display());
+        let output = self.run(&["module", "install", &source], None);
+        assert!(output.status.success(), "{output:?}");
+    }
+
+    fn install_synthetic_clause_set(&self) {
+        let pack_source = synthetic_pack_source_dir();
+        let pack = synthetic_pack(pack_source.path());
+        self.install_pack(&pack);
+        let module_root = self
+            .home
+            .path()
+            .join("filament/modules/synthetic-discharge-pack");
+        let root = quoin_quire::ModuleRoot::open(&module_root).unwrap();
+        let reference = quoin_quire::ClauseSetRef {
+            authority: quoin_quire::ClauseSetAuthority::new("example.invalid").unwrap(),
+            id: quoin_quire::ClauseSetId::new("std").unwrap(),
+            version: quoin_quire::ClauseSetVersion::new("1").unwrap(),
+        };
+        let binding = quoin_quire::clauses::evaluate(
+            &root,
+            &reference,
+            &quoin_quire::clauses::Context::default(),
+            &mut Vec::new(),
+        )
+        .unwrap();
+        std::fs::write(
+            self.path("binding.json"),
+            serde_json::to_string(&binding).unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn discharge_files(&self) -> Vec<String> {
+        let mut pending = vec![self.path("spec/evidence/discharge")];
+        let mut contents = Vec::new();
+        while let Some(directory) = pending.pop() {
+            let Ok(entries) = std::fs::read_dir(directory) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    pending.push(path);
+                } else if let Ok(text) = std::fs::read_to_string(path) {
+                    contents.push(text);
+                }
+            }
+        }
+        contents
+    }
+}
+
+fn synthetic_pack_source_dir() -> tempfile::TempDir {
+    let outside_worktree = |directory: &Path| {
+        directory
+            .ancestors()
+            .all(|ancestor| !ancestor.join(".git").exists())
+    };
+    let candidate = std::env::var_os("RUNNER_TEMP")
+        .map(PathBuf::from)
+        .filter(|directory| directory.is_dir() && outside_worktree(directory))
+        .or_else(|| {
+            let directory = PathBuf::from("/run/user/1000");
+            (directory.is_dir() && outside_worktree(&directory)).then_some(directory)
+        })
+        .unwrap_or_else(pack_support::clean_base);
+    tempfile::tempdir_in(candidate).expect("pack source is outside git")
+}
+
+fn synthetic_object_types() -> &'static str {
+    r"object_types:
+  - name: control
+    data_schema: {type: object}
+    body_extraction:
+      yield_pattern:
+        match:
+          id: {from: frontmatter_field, path: [id], required: true}
+          title: {from: frontmatter_field, path: [title], required: true}
+          type: {from: frontmatter_field, path: [type], required: true}
+  - name: scope_exclusion
+    data_schema: {type: object}
+    body_extraction:
+      yield_pattern:
+        match:
+          id: {from: frontmatter_field, path: [id], required: true}
+          title: {from: frontmatter_field, path: [title], required: true}
+          type: {from: frontmatter_field, path: [type], required: true}
+"
+}
+
+fn synthetic_types_module(parent: &Path) -> PathBuf {
+    let module = parent.join("synthetic-security-types");
+    std::fs::create_dir_all(&module).unwrap();
+    std::fs::write(
+        module.join("manifest.yaml"),
+        format!(
+            "manifest_version: 1.0.0\nname: synthetic-security-types\n\
+             version: 0.1.0\n{}",
+            synthetic_object_types()
+        ),
+    )
+    .unwrap();
+    module
 }
 
 fn out(output: &Output) -> String {
@@ -202,6 +359,65 @@ fn parsed(output: &Output) -> Vec<Value> {
 
 fn two_clauses() -> Value {
     binding(&[("C1", "binding"), ("C2", "binding")])
+}
+
+fn synthetic_pack(parent: &Path) -> PathBuf {
+    let module = parent.join("synthetic-discharge-pack");
+    std::fs::create_dir_all(&module).unwrap();
+    std::fs::write(
+        module.join("manifest.yaml"),
+        format!(
+            "manifest_version: 1.0.0\nname: synthetic-discharge-pack\n\
+             version: 0.1.0\nclause_sets:\n  - std.yaml\n{}",
+            synthetic_object_types()
+        ),
+    )
+    .unwrap();
+    std::fs::write(
+        module.join("std.yaml"),
+        format!(
+            r#"schemaVersion: clause-set-v1
+authority: example.invalid
+id: std
+title: Synthetic discharge set
+version: "1"
+rights:
+  structure: original
+  text: licensed
+clauses:
+  - id: C1
+    force: mandatory
+    title: C1
+    text: "{CLAUSE_TEXT_SENTINEL}"
+  - id: C2
+    force: mandatory
+    title: C2
+    text: "{CLAUSE_TEXT_SENTINEL}"
+  - id: C3
+    force: mandatory
+    title: C3
+    text: "{CLAUSE_TEXT_SENTINEL}"
+"#
+        ),
+    )
+    .unwrap();
+    module
+}
+
+const CLAUSE_TEXT_SENTINEL: &str = "SYNTHETIC-CLAUSE-TEXT-MUST-NOT-LEAK";
+
+fn assert_no_compliant_count_or_clause_text(text: &str) {
+    assert!(!text.contains(CLAUSE_TEXT_SENTINEL), "{text}");
+    assert!(!text.contains('%'), "{text}");
+    for line in text
+        .lines()
+        .filter(|line| line.to_ascii_lowercase().contains("compliant"))
+    {
+        assert!(
+            line.trim_start().starts_with('|'),
+            "unexpected compliance summary: {line}"
+        );
+    }
 }
 
 #[trace("FR-173-AC-1", "NFR-038-AC-1", "NFR-038-AC-3")]
@@ -440,6 +656,27 @@ fn tc_173_a_run_writes_no_file() {
     assert_eq!(before, listing(world.dir.path()));
 }
 
+#[trace("FR-173-AC-5")]
+#[test]
+fn tc_173_a_control_missing_its_id_or_type_is_rejected_as_an_invalid_corpus() {
+    for (field, missing) in [("id", "id: CTRL-A\n"), ("type", "type: control\n")] {
+        let world = World::new(
+            &two_clauses(),
+            &[("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")]))],
+        );
+        let path = world.spec().join("A.md");
+        let original = std::fs::read_to_string(&path).unwrap();
+        let malformed = original.replace(missing, "");
+        assert_ne!(malformed, original, "fixture includes {field}");
+        std::fs::write(path, malformed).unwrap();
+
+        let output = world.facts();
+        assert!(!output.status.success(), "missing {field}: {output:?}");
+        assert!(output.stdout.is_empty(), "missing {field}: {output:?}");
+        assert!(err(&output).contains("fails validation"), "{output:?}");
+    }
+}
+
 #[trace("FR-173-AC-9")]
 #[test]
 fn tc_173_a_stored_direct_fact_whose_control_is_no_longer_effective_is_named_stale() {
@@ -484,8 +721,17 @@ fn chain(world: &World) {
 #[test]
 fn tc_174_the_chain_renders_compliant_tailored_and_undischarged_rows_without_a_score() {
     let world = three_clauses();
-    chain(&world);
-    let report = world.rmm(AS_OF);
+    world.install_synthetic_clause_set();
+    let facts = world.facts_with_installed_modules(&["--approval-ref", "APPR-7"]);
+    assert!(facts.status.success(), "{facts:?}");
+    assert_no_compliant_count_or_clause_text(&out(&facts));
+    assert_no_compliant_count_or_clause_text(
+        &std::fs::read_to_string(world.path("binding.json")).unwrap(),
+    );
+    let recorded = world.record_installed(&out(&facts));
+    assert!(recorded.status.success(), "{recorded:?}");
+    assert_no_compliant_count_or_clause_text(&out(&recorded));
+    let report = world.rmm_installed(AS_OF);
     assert!(
         report.contains("| C1 | Applicable | Compliant | ix://CTRL-A |"),
         "{report}"
@@ -495,7 +741,10 @@ fn tc_174_the_chain_renders_compliant_tailored_and_undischarged_rows_without_a_s
         report.contains("| C3 | Applicable | Not compliant - undischarged"),
         "{report}"
     );
-    assert!(!report.contains('%'), "{report}");
+    assert_no_compliant_count_or_clause_text(&report);
+    for text in world.discharge_files() {
+        assert_no_compliant_count_or_clause_text(&text);
+    }
 }
 
 #[trace("FR-174-AC-2")]
@@ -546,24 +795,46 @@ fn tc_174_a_stored_fact_stays_compliant_until_its_file_is_removed() {
 /// The typed-control fixture of the `spec-security-analysis` skill, end to end:
 /// the skill's committed output, a person's `effective` verdict on one control,
 /// `facts-from-mappings`, `record-discharge` and `discharge --rmm`.
+#[trace("FR-174-AC-4")]
+#[test]
+fn tc_174_the_chain_uses_a_synthetic_pack_installed_in_the_temporary_ix_home() {
+    let world = three_clauses();
+    world.install_synthetic_clause_set();
+
+    let facts = world.facts_with_installed_modules(&["--approval-ref", "APPR-7"]);
+    assert!(facts.status.success(), "{facts:?}");
+    let recorded = world.record_installed(&out(&facts));
+    assert!(recorded.status.success(), "{recorded:?}");
+    let report = world.rmm_installed(AS_OF);
+    assert!(
+        report.contains("| C1 | Applicable | Compliant | ix://CTRL-A |"),
+        "{report}"
+    );
+    assert!(report.contains("| C2 | Applicable | Tailored"), "{report}");
+    assert!(
+        report.contains("| C3 | Applicable | Not compliant - undischarged"),
+        "{report}"
+    );
+    assert_no_compliant_count_or_clause_text(&report);
+}
+
+/// The typed-control fixture of the `spec-security-analysis` skill, end to end:
+/// the skill's committed output, a person's `effective` verdict on one control,
+/// `facts-from-mappings`, `record-discharge` and `discharge --rmm`.
 #[trace("FR-174-AC-1")]
 #[test]
 fn tc_1525_skill_output_on_the_fixture_repo_flows_to_the_matrix() {
     let fixture =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../tests/fixtures/security-analysis");
-    let sets = security_module().join("clauses/nist-sp800-53-5.2.0.json");
-    let set: Value = serde_json::from_str(&std::fs::read_to_string(sets).unwrap()).unwrap();
-    let clauses: Vec<(String, &str)> = set["clauses"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|clause| (clause["id"].as_str().unwrap().to_owned(), "binding"))
-        .collect();
-    let refs: Vec<(&str, &str)> = clauses
-        .iter()
-        .map(|(id, outcome)| (id.as_str(), *outcome))
-        .collect();
-    let mut nist = binding(&refs);
+    let mut nist = binding(&[
+        ("AC-3", "binding"),
+        ("AC-6", "binding"),
+        ("AC-12", "binding"),
+        ("IA-5", "binding"),
+        ("AU-2", "binding"),
+        ("AU-12", "binding"),
+        ("PE-3", "binding"),
+    ]);
     nist["clauseSet"] = json!({"authority": "nist", "id": "sp800-53", "version": "5.2.0"});
     let world = World::new(&nist, &[]);
     let security = fixture.join("expected/spec/security");

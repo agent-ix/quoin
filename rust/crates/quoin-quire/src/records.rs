@@ -88,15 +88,16 @@ pub struct Corpus {
     /// The files the walker could not load, ordered by path.
     pub unreadable: Vec<Unreadable>,
     /// The files that open a frontmatter fence (`---`) yet yield no parseable
-    /// frontmatter: a complete fence that is not a mapping, or one never
-    /// closed. A file with no fence at all is not listed. They contribute no
-    /// document, ordered by path.
+    /// frontmatter, or yield a document with no non-empty `id` or `type`. A
+    /// file with no fence at all is not listed. They contribute no document,
+    /// ordered by path.
     pub malformed: Vec<PathBuf>,
 }
 
 /// Every document below `scope` that carries an `id` and a `type`, ordered by
-/// path. Documents whose `type` is in `checked_types` are also checked against
-/// validation for their type.
+/// path. Documents with valid frontmatter but missing either field are listed
+/// in [`Corpus::malformed`]. Documents whose `type` is in `checked_types` are
+/// also checked against validation for their type.
 ///
 /// # Errors
 /// [`Error::ScopeNotADirectory`] when `scope` is not a directory,
@@ -129,7 +130,24 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
             _ => None,
         })
         .collect();
+    // `load_repo_with` also returns documents whose frontmatter parsed but
+    // lacks the identity fields required for a record. Do not silently drop
+    // those files: callers validating a corpus must be able to distinguish an
+    // empty corpus from one containing invalid records.
+    malformed.extend(loaded.documents.iter().filter_map(|document| {
+        let frontmatter = document.frontmatter()?;
+        let has_id = frontmatter
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| !id.trim().is_empty());
+        let has_type = frontmatter
+            .get("type")
+            .and_then(Value::as_str)
+            .is_some_and(|kind| !kind.trim().is_empty());
+        (!has_id || !has_type).then(|| document.path.clone())
+    }));
     malformed.sort();
+    malformed.dedup();
     let mut documents = Vec::new();
     for found in &loaded.documents {
         let Some(frontmatter) = found.frontmatter() else {
