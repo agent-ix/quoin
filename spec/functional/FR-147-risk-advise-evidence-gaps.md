@@ -103,6 +103,6 @@ Every key is present, `null` or `[]` when empty.
 
 ## Dependencies
 
-- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-136](./FR-136-anomaly-record-mapping.md); `agent-ix/spec-objects-safety` FR-202, FR-203, FR-204, FR-205, FR-301, FR-302.
-- **Context only**: `agent-ix/spec-objects-safety` FR-305.
+- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-136](./FR-136-anomaly-record-mapping.md); [FR-202](ix://agent-ix/spec-objects-safety/FR-202), [FR-203](ix://agent-ix/spec-objects-safety/FR-203), [FR-204](ix://agent-ix/spec-objects-safety/FR-204), [FR-205](ix://agent-ix/spec-objects-safety/FR-205), [FR-301](ix://agent-ix/spec-objects-safety/FR-301), [FR-302](ix://agent-ix/spec-objects-safety/FR-302).
+- **Context only**: [FR-305](ix://agent-ix/spec-objects-safety/FR-305).
 - **Downstream**: none.
