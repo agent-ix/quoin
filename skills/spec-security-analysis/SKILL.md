@@ -45,42 +45,60 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
      - SOC 2 TSC: https://en.wikipedia.org/wiki/SOC_2 (reference summary - no login)
      - ISO 27001: https://en.wikipedia.org/wiki/ISO/IEC_27001 (control list - no login)
    - Local references are summaries; use web search for specific control details
+   - **Licensed standards are used for id lookup only.** The `soc2/` and `iso27001/` references name controls and describe them briefly, and the two web sources above list them. Use them only to decide which clause ids to look up in an installed pack. Copy no name, title, description or paraphrase of a SOC 2 or ISO/IEC 27001 control into any artifact or reply; the id and the set key are the whole reference
+   - **Read the installed clause sets** before writing any mapping. Run `quoin module list`, then read each installed module's manifest `clause_sets` files. A clause set is keyed `authority/id@version`; this skill's free sets are `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` (both in the `spec-objects-security` module). SOC 2, ISO/IEC 27001 and every other licence-restricted source are served only from a locally installed pack, by clause id. A set is installed only if it appears there.
 
 3. **Map Controls to Requirements**
-   - Link each applicable control to existing FR/NFR/StR requirements
-   - Identify gaps where controls lack requirement coverage
-   - Document requirement-to-control bidirectional traceability
+   - Link each applicable clause to the FR/NFR/StR that covers it
+   - Group clauses by the capability that answers them; each group is one control
+   - A clause that applies and has no covering requirement is a gap
+   - A clause is mapped only when its set is installed and the set holds the clause id exactly
 
 4. **Define Scope Boundaries**
-   - Identify controls outside component scope
-   - Assign responsible component for out-of-scope controls
-   - Document explicitly what is NOT covered and why
+   - Identify clauses outside the component's boundary
+   - Name the responsible component for each, as the bare id of an artifact in this bundle (for example `COMP-002`)
+   - When no responsible party is known, write no exclusion and list the clause as having no responsible party
 
 5. **Generate Output**
-   - Use template: [assets/security-analysis-template.md](assets/security-analysis-template.md)
-   - Output as Section 19 "Compliance Standards Traceability" in `spec/spec.md`
-   - Example: [assets/security-analysis-example.md](assets/security-analysis-example.md)
+   - Write typed artifacts; write no prose compliance section into `spec/spec.md`
+   - One `control` artifact per control, authored with `quoin write <repo> --types control` and the skeleton it returns. Template: [assets/control-template.md](assets/control-template.md); example: [assets/control-example.md](assets/control-example.md)
+   - One `scope_exclusion` artifact per clause outside the component, authored with `quoin write <repo> --types scope_exclusion`. Template: [assets/scope-exclusion-template.md](assets/scope-exclusion-template.md); example: [assets/scope-exclusion-example.md](assets/scope-exclusion-example.md)
+   - Put the files under `spec/security/`, named `CTRL-NNN-<slug>.md` and `SCOPEX-NNN-<slug>.md`
+   - Run `quire validate --scope <repo> "spec/security/*.md"` over what you wrote and report every failure
 
-## Output Sections
+6. **Report**
+   - Record each gap as a finding in a `SpecReview` under `reviews/` (see the `spec-review` skill), and repeat it in the reply
+   - The reply lists, by set key and clause id: each clause that applies with no covering requirement; each clause outside the component with no responsible party; each source not mapped because its set is not installed
 
-- **19.1 Targeted Standards**: All 5 mandatory standards with version and scope
-- **19.2 Control Mapping**: Control ID → Standard → Name → Component Requirement
-- **19.3 GDPR Compliance**: Specific GDPR article coverage
-- **19.4 Audit Support Controls**: Cross-standard audit and logging controls
-- **19.5 Out of Scope**: Controls outside component boundary with responsible component
+## Control Artifact
+
+- `## Mappings` is a table with the columns Set and Clause, one row per clause: Set is the clause set key (`nist/sp800-53@5.2.0`, `owasp/asvs@5.0.0`, or an installed pack's key), Clause is the clause id
+- A mapping never carries a title, quotation, summary or note of a clause; the set key and clause id are the whole reference
+- Frontmatter `relationships` carry one `implements` entry per FR, NFR or StR the control answers
+- `## Effectiveness` is `` `not_assessed` `` unless a person supplied another value; never write `effective` yourself
+- Threats and risks the control addresses are `mitigates` relationships, never mapping rows
+
+## Scope Exclusion Artifact
+
+- Four sections, each one inline-code value: `## Set`, `## Clause`, `## Responsible`, `## Rationale`
+- `## Responsible` is the bare id of a bundle artifact, never an `ix://` identity of another repository
+- It is a boundary statement, not an approval: it carries no decision, status or approver
 
 ## Rules
 
-- Apply ALL standards - comprehensive coverage trumps minimal compliance
-- Every control mapping MUST reference specific FR/NFR/StR identifiers
-- Overlapping controls from multiple standards reinforce coverage
-- Out-of-scope controls MUST identify the responsible component
-- Gap identification is required - missing control coverage is a finding
+- Apply ALL standards - comprehensive coverage trumps minimal compliance, subject to the installed sets below
+- When a source's clause set is not installed, write no mapping for it and state in the reply "not mapped, set not installed" with the source name
+- Never supply the text, title or summary of a licence-restricted clause (SOC 2, ISO/IEC 27001) in any artifact or reply; reference such a clause by id only, and only from an installed pack
+- Every control links to the FR/NFR/StR it implements through frontmatter `relationships`
+- Overlapping clauses from multiple standards reinforce coverage
+- Out-of-scope clauses MUST identify the responsible component; with none known, write no exclusion
+- Gap identification is required - a clause with no covering requirement is a finding
 
 ## References
 
-- Template: [assets/security-analysis-template.md](assets/security-analysis-template.md)
-- Example: [assets/security-analysis-example.md](assets/security-analysis-example.md)
+- Control template: [assets/control-template.md](assets/control-template.md)
+- Control example: [assets/control-example.md](assets/control-example.md)
+- Scope exclusion template: [assets/scope-exclusion-template.md](assets/scope-exclusion-template.md)
+- Scope exclusion example: [assets/scope-exclusion-example.md](assets/scope-exclusion-example.md)
 - Standards Index: [references/standards-index.md](references/standards-index.md)
 - Component Mapping: [references/component-type-mapping.md](references/component-type-mapping.md)
-

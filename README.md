@@ -129,7 +129,7 @@ The default module set defines the spec archetypes and domain-object vocabulary.
   - **`spec-evidence-analysis`** — verification methods and evidence artifacts per requirement
   - **`spec-failure-domain-analysis`** — unstated failure modes, identity confusion, edge cases
   - **`spec-risk-complexity-analysis`** — technical risk and volatility before tasking
-  - **`spec-security-analysis`** — applicable security standards and compliance traceability
+  - **`spec-security-analysis`** — applicable security standards, written as typed `control` and `scope_exclusion` artifacts that map to clause sets
 
 ## Install
 
