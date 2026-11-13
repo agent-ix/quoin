@@ -112,16 +112,11 @@ implementation as `quoin risk advise`. This requirement states no second lookup 
 - Every control entry SHALL have exactly the keys `control`, `requirements` and `verifications`. `requirements` SHALL hold the ids of the `FR` and `NFR` documents with a `satisfies` edge to the control. `verifications` SHALL hold the ids of the documents of any type with a `verifies` edge to the control. Both SHALL be ascending, `[]` when none.
 - Every residual-risk entry SHALL have exactly the keys `residual_risk`, `decision` and `decided_by`. `decision` SHALL be `undecided`, `accepted` or `not_accepted` as the record wrote it. `decided_by` SHALL be as the record wrote it, `null` where the record has none.
 - When two or more estimates of a phase exist for one situation, the command SHALL list all of them and SHALL mark none as in force (the choice among them belongs to the people who authored them, [FR-203](ix://agent-ix/spec-objects-safety/FR-203)).
-- A residual risk whose estimate has no `estimates` edge to a situation SHALL appear in no row.
 - A control assumed by several post-control estimates of one situation SHALL appear once in that row.
 
 ### Two policy sources
 
 - The command SHALL take `policy_region` from the estimate's single policy by the FR-146 rules, and SHALL take the region behind each residual-risk finding from that residual risk's own `policy` reference, as [FR-155](./FR-155-risk-discrepancy-findings.md) does. The two agree whenever the estimate has exactly one policy. Where two residual risks on one estimate name different policies, `policy_region` is `null` (FR-146 `policy-ambiguous`) while each residual risk's finding rests on its own policy's region; the row SHALL state neither as the other.
-
-### Divergence from the safety module's contract
-
-- This specification differs from [FR-305](ix://agent-ix/spec-objects-safety/FR-305) in two places: each finding is a `{finding, names}` object and not a bare token, and the entry id keys are `estimate`, `control` and `residual_risk` and not `id`; [spec-objects-safety PR 42](https://github.com/agent-ix/spec-objects-safety/pull/42) (PLAT-1576) amends FR-305 to match.
 
 ### Ordering
 

@@ -38,3 +38,21 @@ FR-301..305; quoin FR-145..148, FR-154, FR-155.
 
 Not mergeable as written: four medium findings. FND-001..003 are spec-text fixes inside this PR.
 FND-004 needs one sentence here; the contract change itself belongs in the safety module's FR-305.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | low | The new "Divergence from the safety module's contract" section says FR-169 differs from FR-305, but agent-ix/spec-objects-safety PR #42 aligns FR-305, so the sentence is false as soon as both land; it also cites "amends FR-305" as a bare other-repo id. Drop the section when PR #42 merges (merge #42 first, or both together). | FR-169:122-124 |
+| FND-006 | low | The rule that an estimate with no situation, and its residual risk, appear in no row is stated three times. Keep the FR-169:78 statement and the FR-170:71 no-token rule; drop FR-169:115. | FR-169:78, FR-169:115, FR-170:71 |
+
+## Dispositions
+
+Round 1, against commit 68717d15.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

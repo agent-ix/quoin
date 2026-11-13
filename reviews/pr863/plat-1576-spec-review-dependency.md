@@ -37,3 +37,12 @@ quoin FR-145, FR-147, FR-155.
 ## Verdict
 
 Mergeable on this lens once the two low findings are fixed; neither blocks on its own.
+
+## Dispositions
+
+Round 1, against commit 68717d15.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |

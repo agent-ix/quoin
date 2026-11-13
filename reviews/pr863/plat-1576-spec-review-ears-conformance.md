@@ -29,3 +29,12 @@ diagnostics, Output contract, Ordering, No verdict) and of FR-170.
 ## Verdict
 
 Mergeable on this lens once the two low findings are fixed.
+
+## Dispositions
+
+Round 1, against commit 68717d15.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |

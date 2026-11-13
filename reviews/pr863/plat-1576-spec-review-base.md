@@ -49,3 +49,15 @@ FR-301..305; quoin FR-144..148, FR-154, FR-155, NFR-031.
 
 Not mergeable as written: one high (FND-001, a wrong result for an evidence-verified control) and two
 medium findings. All are spec-text fixes inside this PR.
+
+## Dispositions
+
+Round 1, against commit 68717d15.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
