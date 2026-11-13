@@ -31,3 +31,12 @@ FAIL. The new prose pins an exact external tool version, and the amended require
 ## Verdict details
 
 Other examined changes preserve the `producer-execute` boundary, text-only adapter purity, per-person dispositions, explicit unsupported states, and unchanged severity words. No paywalled standard name or text was added. No digest or signature record was added. The database being reported as `not recorded` is consistent with the research claim that the report exposes no database identity.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | after_excerpt: “The documented report shape below was reviewed from OSV-Scanner project documentation and source.” |
+| FND-002 | fixed | after_excerpt: “Given retained osv-scanner scans over authentic captured reports from FR-044 fixtures holding npm (including a scoped package), PyPI, Go module, and container OS-package components, each fixture component with a known fixture advisory receives exactly the findings whose valid purl equals its own, and no component receives another’s advisory, including a PyPI and npm record of the same name.” |
+| FND-003 | fixed | after_excerpt: “Rust adapter tests in the existing harness parse authentic, unedited OSV-Scanner reports captured through the FR-044 request over the npm, Python, Go and container OS-package fixtures defined by FR-044; malformed and truncated inputs are derived test fixtures and are not represented as captured scanner outputs.” |
+| FND-004 | fixed | after_excerpt: “The join (FR-142) and the report (FR-144) read `FindingRecord` entries by tool name and know nothing of OSV-Scanner’s layout, so a later scanner using a new adapter and tool name is added, and the join is unchanged except for one row of its assessed-types table.” |

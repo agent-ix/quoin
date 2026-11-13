@@ -22,3 +22,9 @@ Reviewed the requirement graph and enablement/feature ordering for the new adapt
 ## Ordering
 
 The natural order is the producer request and report contract, then the finding adapter, then the advisory join, then the rendered report. No cycle exists among the requirement-level `relationships`, but the cross-requirement AC currently adds the reverse test dependency described above.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | after_excerpt: “A package with no purl and non-empty name and version is recorded with path `<name>@<version>`; the adapter test asserts only this fallback path. FR-142-AC-26 tests the separate unmatched-join behavior.” |

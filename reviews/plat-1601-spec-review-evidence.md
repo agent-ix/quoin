@@ -22,3 +22,9 @@ Ran `quoin advise --json` and reviewed its recommendations for the changed oblig
 ## Evidence details
 
 The deterministic advisor recommends integration testing, unit testing, or BDD examples for the adapter-boundary criteria. The changed FR-142 and FR-144 criteria declare Test and their recommended methods agree. `quoin matrix --repo . --json` currently finds no tagged tests for changed FR-142, FR-144, FR-149, or NFR-030 criteria; this is expected before implementation on this spec-only PR.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | after_excerpt: “Rust adapter tests in the existing harness parse authentic, unedited OSV-Scanner reports captured through the FR-044 request over the npm, Python, Go and container OS-package fixtures defined by FR-044; malformed and truncated inputs are derived test fixtures and are not represented as captured scanner outputs.” |

@@ -22,3 +22,9 @@ Reviewed completeness, consistency, and testability of the changed adapter and j
 ## Integrity checks
 
 The new IDs are sequential within FR-149 and the new FR-142 / FR-144 criteria are in their existing tables. Relative links resolve. The ticket's container OS-package outcome and exact-version pin are recorded in the base review; the old Grype file is removed as part of the adapter replacement.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | after_excerpt: “Rust adapter tests in the existing harness parse authentic, unedited OSV-Scanner reports captured through the FR-044 request over the npm, Python, Go and container OS-package fixtures defined by FR-044.” |

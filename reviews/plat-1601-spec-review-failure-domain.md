@@ -22,3 +22,9 @@ Reviewed the OSV report boundary, identity and match rules, failure refusal case
 ## Findings rationale
 
 The remaining failure-domain checks are clean for this change: the adapter opens only the input, does not execute tools or network calls, and the join does not infer identities across purl types. No graph traversal or callback extension point is introduced.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | after_excerpt: “If a package containing a vulnerability has neither a valid purl nor a non-empty name and version, then the adapter SHALL refuse the entire document and write no `FindingRecord`.” |
