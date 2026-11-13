@@ -62,6 +62,9 @@ pub struct Document {
     pub edges: Vec<(String, String)>,
     /// The first table of each level-2 section, by section heading.
     pub tables: BTreeMap<String, Table>,
+    /// The text of each level-2 section, by section heading, as the engine's
+    /// parser reads it.
+    pub sections: BTreeMap<String, String>,
     /// The verbatim file text.
     pub raw: String,
     /// The result of the declared-contract check.
@@ -144,7 +147,12 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
             Contract::NotChecked
         };
         let body = found.body();
-        let tables = sections(body, Some(2))
+        let parsed = sections(body, Some(2));
+        let section_text = parsed
+            .iter()
+            .map(|section| (section.heading.clone(), section.content.clone()))
+            .collect();
+        let tables = parsed
             .into_iter()
             .filter_map(|section| {
                 let table = parse_table(&section.content)?;
@@ -164,6 +172,7 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
             frontmatter: frontmatter.clone(),
             edges: relationships(frontmatter),
             tables,
+            sections: section_text,
             raw: found.raw().to_owned(),
             contract,
         });
