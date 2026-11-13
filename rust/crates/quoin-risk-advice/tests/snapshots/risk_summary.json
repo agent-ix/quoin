@@ -139,6 +139,112 @@
       ]
     },
     {
+      "hazard": "HAZ-4",
+      "situation": "SIT-4",
+      "harms": [
+        "HARM-4"
+      ],
+      "pre_control": [],
+      "controls": [
+        {
+          "control": "CTRL-1",
+          "requirements": [
+            "FR-9"
+          ],
+          "verifications": [
+            "TC-9"
+          ]
+        }
+      ],
+      "post_control": [
+        {
+          "estimate": "EST-E",
+          "severity": "Serious",
+          "probability": "Likely",
+          "policy_region": "High"
+        },
+        {
+          "estimate": "EST-F",
+          "severity": "Serious",
+          "probability": "Likely",
+          "policy_region": "High"
+        },
+        {
+          "estimate": "EST-G",
+          "severity": "Minor",
+          "probability": "Rare",
+          "policy_region": "Low"
+        },
+        {
+          "estimate": "EST-H",
+          "severity": "Minor",
+          "probability": "Rare",
+          "policy_region": "Low"
+        },
+        {
+          "estimate": "EST-I",
+          "severity": "Minor",
+          "probability": "Rare",
+          "policy_region": null
+        }
+      ],
+      "residual_risks": [
+        {
+          "residual_risk": "RR-4",
+          "decision": "accepted",
+          "decided_by": "Pat"
+        },
+        {
+          "residual_risk": "RR-5",
+          "decision": "accepted",
+          "decided_by": "Pat"
+        },
+        {
+          "residual_risk": "RR-6",
+          "decision": "not_accepted",
+          "decided_by": "Pat"
+        },
+        {
+          "residual_risk": "RR-7",
+          "decision": "undecided",
+          "decided_by": null
+        }
+      ],
+      "findings": [
+        {
+          "finding": "post-control-estimate-without-decision",
+          "names": [
+            "EST-I"
+          ]
+        },
+        {
+          "finding": "residual-risk-undecided",
+          "names": [
+            "RR-7"
+          ]
+        },
+        {
+          "finding": "accepted-outside-acceptable-region",
+          "names": [
+            "RR-4"
+          ]
+        },
+        {
+          "finding": "benefit-risk-not-accepted",
+          "names": [
+            "RR-5",
+            "BR-2"
+          ]
+        },
+        {
+          "finding": "not-accepted-inside-acceptable-region",
+          "names": [
+            "RR-6"
+          ]
+        }
+      ]
+    },
+    {
       "hazard": null,
       "situation": "SIT-3",
       "harms": [],

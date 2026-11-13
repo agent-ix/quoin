@@ -15,6 +15,7 @@ mod common;
 
 use common::*;
 use ix_trace_rs::trace;
+use quoin_quire::{ModuleRoot, ModuleSelection};
 use quoin_risk_advice::{ErrorCode, advise, discrepancies, summarize};
 use serde_json::{Value, json};
 
@@ -106,6 +107,64 @@ fn complete(c: &Corpus) {
     residual(c, "RR-1", "EST-B", "POL-1", "accepted");
 }
 
+/// Every cell of a Markdown table row, split on unescaped pipes.
+fn cells(line: &str) -> Vec<String> {
+    let mut cells = vec![String::new()];
+    let mut chars = line.chars().peekable();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\\' if chars.peek() == Some(&'|') => {
+                chars.next();
+                cells.last_mut().unwrap().push_str("\\|");
+            }
+            '|' => cells.push(String::new()),
+            other => cells.last_mut().unwrap().push(other),
+        }
+    }
+    cells
+        .into_iter()
+        .map(|cell| cell.trim().to_owned())
+        .collect()
+}
+
+/// The voice rules of FR-169-AC-13 over any rendered Markdown.
+fn assert_markdown_voice(md: &str) {
+    let mut lines = md.lines();
+    let attribution = lines.next().unwrap();
+    assert!(attribution.contains("policy") && attribution.contains("named person"));
+    for line in md.lines().skip(1).filter(|line| line.contains("accept")) {
+        let stripped = line
+            .replace("decision=accepted", "")
+            .replace("decision=not_accepted", "")
+            .replace("accepted-outside-acceptable-region", "")
+            .replace("not-accepted-inside-acceptable-region", "")
+            .replace("not-accepted", "");
+        assert!(!stripped.contains("accept"), "{line}");
+    }
+    for line in md.lines().filter(|line| line.starts_with("| ")) {
+        for cell in cells(line).iter().filter(|cell| cell.contains("estimate=")) {
+            for entry in cell.split("<br>") {
+                let region = entry.contains("the policy marks this cell as ");
+                let null = entry.ends_with("policy_region=null");
+                assert!(region != null, "{entry}");
+            }
+        }
+    }
+}
+
+fn without_the_safety_types() -> ModuleSelection {
+    let checkout = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
+        || {
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../../spec-artifacts-process")
+        },
+        std::path::PathBuf::from,
+    );
+    ModuleSelection::Closed(vec![
+        ModuleRoot::open(checkout.join("spec_artifacts_process")).unwrap(),
+    ])
+}
+
 fn tokens(row: &Value) -> Vec<String> {
     row["findings"]
         .as_array()
@@ -136,9 +195,7 @@ fn names(row: &Value, token: &str) -> Vec<String> {
     "FR-169-AC-1",
     "FR-169-AC-2",
     "FR-169-AC-22",
-    "FR-170-AC-1",
     "FR-170-AC-12",
-    "FR-170-AC-13",
     "FR-170-AC-14"
 )]
 #[test]
@@ -436,6 +493,74 @@ fn the_region_is_the_one_risk_advise_shows_and_two_policies_give_null_with_each_
         ["RR-3"]
     );
     assert_eq!(row["residual_risks"].as_array().unwrap().len(), 3);
+
+    // The control findings equal those `risk advise` gives for the same controls.
+    let advice: Value =
+        serde_json::from_str(&advise(c.dir.path(), &modules()).unwrap().to_json().unwrap())
+            .unwrap();
+    let row = c.row(Some("HAZ-1"), Some("SIT-1"));
+    c.put("CTRL-2", "control", "", "");
+    estimate(
+        &c,
+        "EST-J",
+        "post_control",
+        ("Minor", "Rare"),
+        &[("SIT-1", "estimates"), ("CTRL-2", "assumes")],
+    );
+    estimate(
+        &c,
+        "EST-K",
+        "post_control",
+        ("Minor", "Rare"),
+        &[("SIT-1", "estimates")],
+    );
+    let row_after = c.row(Some("HAZ-1"), Some("SIT-1"));
+    let advice_after: Value =
+        serde_json::from_str(&advise(c.dir.path(), &modules()).unwrap().to_json().unwrap())
+            .unwrap();
+    for (row, advice) in [(&row, &advice), (&row_after, &advice_after)] {
+        for control in row["controls"].as_array().unwrap() {
+            let id = control["control"].as_str().unwrap();
+            let from_advise: std::collections::BTreeSet<String> = advice["evidence_gaps"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .flat_map(|gap| gap["controls"].as_array().unwrap())
+                .filter(|entry| entry["control"] == id)
+                .flat_map(|entry| entry["findings"].as_array().unwrap())
+                .map(|f| f["finding"].as_str().unwrap().to_owned())
+                .collect();
+            let from_row: std::collections::BTreeSet<String> = row["findings"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|f| f["names"] == json!([id]))
+                .map(|f| f["finding"].as_str().unwrap().to_owned())
+                .filter(|t| t.starts_with("control-without-"))
+                .collect();
+            assert_eq!(from_row, from_advise, "{id}");
+        }
+    }
+    // `post-control-without-control` equals the estimate-level finding of `risk advise`.
+    for gap in advice_after["evidence_gaps"].as_array().unwrap() {
+        let missing = gap["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|f| f["finding"] == "post-control-without-control");
+        let estimate = gap["estimate"].as_str().unwrap();
+        assert_eq!(
+            names(&row_after, "post-control-without-control").contains(&estimate.to_owned()),
+            missing,
+            "{estimate}"
+        );
+    }
+    assert_markdown_voice(&c.markdown());
+    let md = c.markdown();
+    let line = md.lines().find(|line| line.contains("EST-H")).unwrap();
+    assert!(
+        line.contains("estimate=EST-H; severity=Serious; probability=Likely; policy_region=null")
+    );
 
     // The residual-risk tokens equal those of `risk discrepancies`.
     let report: Value = serde_json::from_str(
@@ -743,6 +868,56 @@ fn a_missing_scope_and_an_undeclared_type_use_the_advise_codes() {
     let error = summarize(&gone, &modules()).err().unwrap();
     assert_eq!(error.code, advise(&gone, &modules()).err().unwrap().code);
     assert!(error.message.contains("absent"));
+
+    complete(&c);
+    let error = summarize(c.dir.path(), &without_the_safety_types())
+        .err()
+        .unwrap();
+    assert_eq!(error.code, ErrorCode::TypeUndeclared);
+    assert!(error.message.contains("--module DIR"));
+    assert_eq!(
+        advise(c.dir.path(), &without_the_safety_types())
+            .err()
+            .unwrap()
+            .code,
+        error.code
+    );
+}
+
+#[trace("FR-169-AC-20")]
+#[test]
+fn a_scope_that_exists_but_cannot_be_read_uses_the_advise_code() {
+    use std::os::unix::fs::PermissionsExt as _;
+    let c = corpus();
+    complete(&c);
+    let locked = c.dir.path().join("locked");
+    let scope = locked.join("inner");
+    std::fs::create_dir_all(&scope).unwrap();
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
+    let ours = summarize(&scope, &modules());
+    let theirs = advise(&scope, &modules());
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let error = ours.err().unwrap();
+    assert_eq!(error.code, theirs.err().unwrap().code);
+    assert!(error.message.contains("inner"), "{}", error.message);
+}
+
+#[trace("FR-169-AC-27")]
+#[test]
+fn a_pipe_in_a_copied_value_is_escaped_so_the_row_keeps_eight_cells() {
+    let c = corpus();
+    complete(&c);
+    c.put(
+        "RR-1",
+        "residual_risk",
+        &rels(&[("EST-B", "estimate"), ("POL-1", "references")]),
+        "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| accepted | r | Pat \\| Lee |\n",
+    );
+    let md = c.markdown();
+    let row = md.lines().find(|line| line.starts_with("| HAZ-1")).unwrap();
+    assert!(row.contains("decided_by=Pat \\| Lee"), "{row}");
+    assert_eq!(cells(row).len(), 10, "{row}");
+    assert_eq!(cells(row)[1], "HAZ-1");
 }
 
 #[trace("FR-169-AC-21")]
@@ -829,6 +1004,36 @@ fn snapshot_corpus() -> Corpus {
         &rels(&[("RR-2", "references")]),
         "## Determination\n\n| Benefit | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n| b | undecided | r | |\n",
     );
+    // HAZ-4: one decision gap of each other kind, on a chain with a harm and
+    // a complete control.
+    hazard(&c, "HAZ-4");
+    situation(&c, "SIT-4", &["HAZ-4"]);
+    harm(&c, "HARM-4", "SIT-4");
+    for (id, levels) in [
+        ("EST-E", ("Serious", "Likely")),
+        ("EST-F", ("Serious", "Likely")),
+        ("EST-G", ("Minor", "Rare")),
+        ("EST-H", ("Minor", "Rare")),
+        ("EST-I", ("Minor", "Rare")),
+    ] {
+        estimate(
+            &c,
+            id,
+            "post_control",
+            levels,
+            &[("SIT-4", "estimates"), ("CTRL-1", "assumes")],
+        );
+    }
+    residual(&c, "RR-4", "EST-E", "POL-1", "accepted");
+    residual(&c, "RR-5", "EST-F", "POL-1", "accepted");
+    residual(&c, "RR-6", "EST-G", "POL-1", "not_accepted");
+    residual(&c, "RR-7", "EST-H", "POL-1", "undecided");
+    c.put(
+        "BR-2",
+        "benefit_risk",
+        &rels(&[("RR-5", "references")]),
+        "## Determination\n\n| Benefit | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n| b | not_accepted | r | Pat |\n",
+    );
     c
 }
 
@@ -838,11 +1043,22 @@ fn snapshot_path(name: &str) -> std::path::PathBuf {
         .join(name)
 }
 
-#[trace("FR-169-AC-19")]
+#[trace("FR-169-AC-19", "FR-170-AC-1", "FR-170-AC-13")]
 #[test]
 fn the_markdown_and_the_json_equal_their_checked_in_snapshots() {
     let c = snapshot_corpus();
     let summary = summarize(c.dir.path(), &modules()).unwrap();
+    // The corpus holds every token of the FR-170 table, with exact keys.
+    let json = c.json();
+    let mut seen = std::collections::BTreeSet::new();
+    for row in json["rows"].as_array().unwrap() {
+        for finding in row["findings"].as_array().unwrap() {
+            assert_eq!(keys(finding), ["finding", "names"]);
+            seen.insert(finding["finding"].as_str().unwrap().to_owned());
+        }
+    }
+    assert_eq!(seen.len(), 13, "{seen:?}");
+    assert_markdown_voice(&summary.to_markdown());
     let markdown = std::fs::read_to_string(snapshot_path("risk_summary.md")).unwrap();
     let json = std::fs::read_to_string(snapshot_path("risk_summary.json")).unwrap();
     assert_eq!(summary.to_markdown(), markdown);

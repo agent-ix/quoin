@@ -15,6 +15,8 @@ use std::fmt::Write as _;
 use serde::Serialize;
 
 use crate::discrepancies::{self, Discrepancy, DiscrepancyToken};
+use crate::evidence::{assumed_controls, control_evidence};
+use crate::finding::Token;
 use crate::links::Links;
 use crate::policy::lookup;
 use crate::records::{Estimate, Phase, Records};
@@ -77,6 +79,17 @@ impl RowToken {
             Self::BenefitRiskUndecided => "benefit-risk-undecided",
             Self::BenefitRiskNotAccepted => "benefit-risk-not-accepted",
             Self::NotAcceptedInsideAcceptableRegion => "not-accepted-inside-acceptable-region",
+        }
+    }
+}
+
+impl RowToken {
+    /// The row token of a per-control token of `quoin risk advise`.
+    fn from_control(token: Token) -> Option<Self> {
+        match token {
+            Token::ControlWithoutRequirement => Some(Self::ControlWithoutRequirement),
+            Token::ControlWithoutVerification => Some(Self::ControlWithoutVerification),
+            _ => None,
         }
     }
 }
@@ -224,10 +237,6 @@ struct Chain<'a> {
     regions: BTreeMap<&'a str, Option<String>>,
 }
 
-fn kind_is(records: &Records, id: &str, kind: &str) -> bool {
-    records.others.get(id).is_some_and(|doc| doc.kind == kind)
-}
-
 fn is_hazard(records: &Records, id: &str) -> bool {
     records.others.get(id).is_some_and(|doc| doc.hazard)
 }
@@ -284,16 +293,6 @@ impl<'a> Chain<'a> {
             .collect()
     }
 
-    fn control_entry(&self, control: &str) -> ControlEntry {
-        let listed =
-            |map: &BTreeMap<String, Vec<String>>| map.get(control).cloned().unwrap_or_default();
-        ControlEntry {
-            control: control.to_owned(),
-            requirements: listed(&self.links.requirements),
-            verifications: listed(&self.links.verifications),
-        }
-    }
-
     fn row(&self, hazard: Option<&str>, situation: Option<&str>) -> Row {
         let mut findings = BTreeSet::new();
         let mut add = |finding: RowToken, names: Vec<String>| {
@@ -327,11 +326,7 @@ impl<'a> Chain<'a> {
         let mut control_ids = BTreeSet::new();
         let mut residual_ids = BTreeSet::new();
         for estimate in &post {
-            let assumed: Vec<&String> = estimate
-                .controls
-                .iter()
-                .filter(|id| kind_is(self.records, id, "control"))
-                .collect();
+            let assumed = assumed_controls(self.records, estimate);
             if assumed.is_empty() {
                 add(
                     RowToken::PostControlWithoutControl,
@@ -353,18 +348,19 @@ impl<'a> Chain<'a> {
                     .cloned(),
             );
         }
-        let controls: Vec<ControlEntry> = control_ids
-            .iter()
-            .map(|control| self.control_entry(control))
-            .collect();
-        for control in &controls {
-            let names = vec![control.control.clone()];
-            if control.requirements.is_empty() {
-                add(RowToken::ControlWithoutRequirement, names.clone());
+        let mut controls = Vec::new();
+        for id in &control_ids {
+            let evidence = control_evidence(self.links, id);
+            for found in &evidence.findings {
+                if let Some(token) = RowToken::from_control(found.finding) {
+                    add(token, vec![id.clone()]);
+                }
             }
-            if control.verifications.is_empty() {
-                add(RowToken::ControlWithoutVerification, names);
-            }
+            controls.push(ControlEntry {
+                control: evidence.control,
+                requirements: evidence.requirements,
+                verifications: evidence.verifications,
+            });
         }
         let residual_risks = residual_ids
             .iter()
@@ -433,16 +429,21 @@ pub(crate) fn build(records: &Records, links: &Links) -> Vec<Row> {
     rows
 }
 
+/// A copied value in a table cell: a pipe would end the cell, so it is escaped.
+fn esc(value: &str) -> String {
+    value.replace('|', "\\|")
+}
+
 fn ids(list: &[String]) -> String {
     if list.is_empty() {
         "[]".to_owned()
     } else {
-        list.join(", ")
+        list.iter().map(|id| esc(id)).collect::<Vec<_>>().join(", ")
     }
 }
 
-fn or_null(value: Option<&String>) -> &str {
-    value.map_or("null", String::as_str)
+fn or_null(value: Option<&String>) -> String {
+    value.map_or_else(|| "null".to_owned(), |value| esc(value))
 }
 
 fn entries<T>(list: &[T], render: impl Fn(&T) -> String) -> String {
@@ -456,18 +457,20 @@ fn entries<T>(list: &[T], render: impl Fn(&T) -> String) -> String {
 fn estimate_cell(entry: &EstimateEntry) -> String {
     let region = entry.policy_region.as_ref().map_or_else(
         || "policy_region=null".to_owned(),
-        |region| format!("the policy marks this cell as {region}"),
+        |region| format!("the policy marks this cell as {}", esc(region)),
     );
     format!(
         "estimate={}; severity={}; probability={}; {region}",
-        entry.estimate, entry.severity, entry.probability
+        esc(&entry.estimate),
+        esc(&entry.severity),
+        esc(&entry.probability)
     )
 }
 
 fn control_cell(entry: &ControlEntry) -> String {
     format!(
         "control={}; requirements={}; verifications={}",
-        entry.control,
+        esc(&entry.control),
         ids(&entry.requirements),
         ids(&entry.verifications)
     )
@@ -476,8 +479,8 @@ fn control_cell(entry: &ControlEntry) -> String {
 fn residual_cell(entry: &ResidualEntry) -> String {
     format!(
         "residual_risk={}; decision={}; decided_by={}",
-        entry.residual_risk,
-        entry.decision,
+        esc(&entry.residual_risk),
+        esc(&entry.decision),
         or_null(entry.decided_by.as_ref())
     )
 }
@@ -507,8 +510,8 @@ pub(crate) fn markdown(summary: &Summary) -> String {
     let _ = writeln!(out, "|{}", " --- |".repeat(COLUMNS.len()));
     for row in &summary.rows {
         let cells = [
-            or_null(row.hazard.as_ref()).to_owned(),
-            or_null(row.situation.as_ref()).to_owned(),
+            or_null(row.hazard.as_ref()),
+            or_null(row.situation.as_ref()),
             ids(&row.harms),
             entries(&row.pre_control, estimate_cell),
             entries(&row.controls, control_cell),
