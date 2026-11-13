@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-risk-advice"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The read-only risk advice report: policy cells, evidence gaps and the decision queue (quoin FR-145 to FR-148)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+quoin-anomaly = { workspace = true }
+quoin-quire = { workspace = true }
+
+[dev-dependencies]
+ix-trace-rs = { workspace = true }
+tempfile = { workspace = true }

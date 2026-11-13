@@ -58,6 +58,7 @@ pub mod ids;
 pub mod modules;
 pub mod payload;
 pub mod properties;
+pub mod records;
 pub mod schema;
 pub mod validate;
 

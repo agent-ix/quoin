@@ -39,12 +39,20 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 
 ## Behavior
 
-- When a user runs `quoin risk advise <scope> [--format markdown|json]`, the command SHALL print the three sections `policy_cells`, `evidence_gaps` and `decision_queue`, in that order.
+- When a user runs `quoin risk advise <scope> [--format markdown|json] [--module DIR]...`, the command SHALL print the three sections `policy_cells`, `evidence_gaps` and `decision_queue`, in that order.
 - The command SHALL read only the safety-module records below `<scope>` (hazards, hazardous situations, risk estimates, controls, residual risks, benefit-risk records, overall evaluations), the `acceptability_policy` documents they reference, the requirement and test documents that link to a control, and the anomaly documents of FR-136.
+- The command SHALL read the documents with the quire engine's reader and SHALL check each `risk_estimate`, `acceptability_policy`, `residual_risk`, `benefit_risk` and `overall_residual_risk_evaluation` against the `body_extraction` its type's module declares, taking the module from each `--module` root or, with none given, from the installed modules.
+- If a type it must check is declared by no loaded module, then the command SHALL exit 2 naming the document and the type, and the message SHALL name `--module DIR` and say that the module version must include the `residual_risk`, `benefit_risk` and `acceptability_policy` types.
+- The command SHALL take the edges of a record from the frontmatter `relationships` only; a link in a table cell or elsewhere in the body is no edge.
+- If the reader cannot load a file below `<scope>`, then the command SHALL name the file and the reason on stderr and still render, and the file is absent from the report.
+- Each distinct failure (unreadable scope, a module that does not load, a type no loaded module declares, a record that breaks its contract) SHALL exit 2 with its own diagnostic code.
+- If an `acceptability_policy`, `residual_risk`, `benefit_risk` or `overall_residual_risk_evaluation` breaks that contract, then the command SHALL exit 2 naming the record and the engine's reason, and print no report, because dropping the record would drop an undecided decision or a policy without a word.
+- The command SHALL skip a `risk_estimate` whose frontmatter `phase` is not `pre_control` or `post_control`, or that breaks the contract of its type (no judgement table, a placeholder level), and `quire validate` reports each such estimate as invalid (`agent-ix/spec-objects-safety` FR-203, FR-303-AC-5), so the command is silent about it by design.
 - The command SHALL NOT write any file or any record.
 - The command SHALL store no score, region, finding or verdict.
 - The command SHALL render Markdown by default and one JSON object with `--format json`.
 - The JSON object SHALL have exactly the keys `attribution`, `policy_cells`, `evidence_gaps` and `decision_queue`.
+- Every `findings` array in the JSON SHALL hold objects with exactly the keys `finding` (the token) and `names` (the ids or values the token names, `[]` when it names none).
 - The `attribution` string SHALL state that regions come from the project's policy and that decisions come from the named person.
 - If `<scope>` contains no risk record, then the command SHALL print the three sections empty and the attribution, and exit zero.
 - The command SHALL exit zero whenever it renders, whatever the sections contain.
@@ -60,6 +68,7 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 | FR-145-AC-4 | Over an empty scope the command exits zero and prints the three sections empty with the attribution. | Test |
 | FR-145-AC-5 | The attribution string names the policy as the source of regions and the named person as the source of decisions. | Test |
 | FR-145-AC-6 | The JSON holds no `hazard`/`situation` row-per-pairing structure and no `harms` key; the only chain ids are those named by the key tables of FR-146 to FR-148. | Test |
+| FR-145-AC-7 | A `residual_risk` whose Determination table has an unknown decision word, a `benefit_risk` whose header is not the declared one, and an `acceptability_policy` with an unfilled placeholder level each make the command exit 2 naming the record, and print no report. A `risk_estimate` with a `phase` outside the two members, and one with no judgement table, are skipped and exit zero. | Test |
 
 ## Dependencies
 

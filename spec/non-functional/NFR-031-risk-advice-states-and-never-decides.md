@@ -60,4 +60,4 @@ All criteria are tests over fixtures.
 
 ## Dependencies
 
-- **Upstream**: [FR-145](../functional/FR-145-risk-advise-command.md), [FR-146](../functional/FR-146-risk-advise-policy-cells.md), [FR-147](../functional/FR-147-risk-advise-evidence-gaps.md), [FR-148](../functional/FR-148-risk-advise-decision-queue.md); `agent-ix/spec-objects-safety` FR-104.
+- **Upstream**: [FR-145](../functional/FR-145-risk-advise-command.md), [FR-146](../functional/FR-146-risk-advise-policy-cells.md), [FR-147](../functional/FR-147-risk-advise-evidence-gaps.md), [FR-148](../functional/FR-148-risk-advise-decision-queue.md); [FR-104](ix://agent-ix/spec-objects-safety/FR-104).

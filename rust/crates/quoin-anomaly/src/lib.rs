@@ -23,5 +23,5 @@ pub use check::{Checked, Context, Diagnostic, DiagnosticCode, Severity, check_do
 pub use error::{AnomalyError, ErrorCode};
 pub use history::{History, Signature, StatusEntry, read_history};
 pub use record::{MappingError, MappingErrorCode, Record, Row, parse_record, status_line};
-pub use refs::{RefEntry, anomaly_documents, references_to};
+pub use refs::{RefEntry, acceptance_criteria, anomaly_documents, is_hazard, references_to};
 pub use status::Status;

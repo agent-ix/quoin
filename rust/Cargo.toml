@@ -102,6 +102,7 @@ quoin-measurement = { path = "crates/quoin-measurement" }
 quoin-measurement-graph = { path = "crates/quoin-measurement-graph" }
 quoin-modules = { path = "crates/quoin-modules" }
 quoin-quire = { path = "crates/quoin-quire" }
+quoin-risk-advice = { path = "crates/quoin-risk-advice" }
 quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-semantic = { path = "crates/quoin-semantic" }
 quoin-store = { path = "crates/quoin-store" }

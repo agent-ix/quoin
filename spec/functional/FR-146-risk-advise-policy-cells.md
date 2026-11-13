@@ -52,9 +52,10 @@ FR-101 defines them: the regions whose `outside_acceptable` flag is `false`, and
 - The Markdown rendering of a resolved entry SHALL read "the policy marks this cell as <region>".
 - If the region's flag is `true`, then the Markdown rendering SHALL add "the policy flags this region as outside its acceptable region".
 - If a level is not in the policy's lists, then the entry SHALL carry the finding `level-not-in-policy` naming the level and no region.
+- If both levels are in the policy's lists and the policy lists no region for the pair, or lists a region absent from its region list, then the entry SHALL carry the finding `cell-not-in-policy` naming the severity, the probability and the policy, and no region. Nothing else reports this case today: the safety module's manifest cannot yet assert the one-region-per-pairing rule of `agent-ix/spec-objects-safety` FR-101, so the finding is the signal.
 - If a level is `unknown`, `not_assessed` or `not_applicable`, then the entry SHALL carry the finding `level-not-assessed` naming the marker and no region.
 - If the estimate has no policy, then the entry SHALL carry the finding `policy-not-found` and no region.
-- If the estimate has no single policy, then the entry SHALL carry the finding `policy-ambiguous` naming the policies and no region.
+- If the estimate has no single policy, then the entry SHALL carry the finding `policy-ambiguous` naming the policies and no region; this includes an estimate whose one residual risk names two policies.
 - The command SHALL NOT substitute a level for a marker.
 - The command SHALL NOT combine, rank, weight or average levels.
 - The command SHALL NOT compare a post-control entry with a pre-control entry of the same situation.
@@ -74,7 +75,7 @@ Every key is present, `null` or `[]` when empty.
 | `cell` | `{ severity, probability }` of the matched cell, or `null` |
 | `region` | the policy's region name, or `null` |
 | `outside_acceptable` | the region's flag as the policy wrote it, or `null` |
-| `findings` | the finding tokens above that name this entry |
+| `findings` | `{ finding, names }` objects for the finding tokens above that name this entry; `names` holds the level or marker (and the policy), or the policies, the token names |
 
 ## Acceptance Criteria
 
@@ -85,11 +86,12 @@ Every key is present, `null` or `[]` when empty.
 | FR-146-AC-3 | A region with `outside_acceptable: true` adds the "outside its acceptable region" wording, and a region with `false` does not. | Test |
 | FR-146-AC-4 | A severity absent from the policy lists yields `level-not-in-policy` naming the level and no region. | Test |
 | FR-146-AC-5 | A probability of `not_assessed`, `unknown` and `not_applicable` each yields `level-not-assessed` naming the marker, no region and no substituted level. | Test |
-| FR-146-AC-6 | A post-control estimate with no referencing residual risk yields `policy-not-found`, and one referenced by two residual risks on different policies yields `policy-ambiguous`; neither shows a region. | Test |
+| FR-146-AC-6 | A post-control estimate with no referencing residual risk yields `policy-not-found`, and one referenced by two residual risks on different policies yields `policy-ambiguous`, and so does one referenced by a single residual risk that names two policies; none shows a region. | Test |
 | FR-146-AC-7 | A pre-control estimate takes the policy of the residual risk on a post-control estimate of its situation, and shows the same policy id. | Test |
 | FR-146-AC-8 | The keys of every entry equal the entry key table, with no numeric, rank or verdict key. | Test |
 | FR-146-AC-9 | A pre-control and a post-control estimate of one situation each show their own cell and no key relates them. | Test |
 | FR-146-AC-10 | For each fixture estimate, the region equals the region named by the fixture policy's cell for the estimate's levels, looked up directly in the policy document. | Test |
+| FR-146-AC-11 | A policy that declares both levels of an estimate but lists no region for the pair yields `cell-not-in-policy` naming the severity, the probability and the policy, and no region. | Test |
 
 ## Dependencies
 
