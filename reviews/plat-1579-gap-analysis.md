@@ -213,3 +213,50 @@ dispositions:
     explicitly permitted spec correction. The documented profile record source is still absent from user-visible
     audit output.'
 ```
+
+
+### Round 2
+
+Reviewer: `gpt-6-astra`; run `54480e2e-e540-493d-8253-ad85c3112839`. PLAT-1579 / quoin#880.
+Inspected pushed head `2b55708a85edb3c98b7209cf72089ff0a9d17990`, fixes `6526e53a` and `2b55708a`,
+and the complete delta from round-1 head `fb4c9ab7`. The three committed SR files matched
+these scratch copies before this append; original findings and round-1 rows remain intact.
+
+Current outcome: **FND-007 fixed; all seven findings now fixed.** No new findings. Across all three artifacts every finding's
+latest disposition is now fixed. Review dispositions permit merge after the lead's remaining
+required checks and commitment of the latest scratch artifacts; this is not a gate result.
+
+Inspection traced library source insertion through `quoin-core/src/ops/auditor/mod.rs`, the
+new typed wrapper in `wire.rs`, and CLI JSON forwarding at `quoin-cli/src/evidence/audit.rs:175`.
+The wrapper reuses `IndependenceAssessment` with flattening and keeps the source optional, so
+ordinary assessment fields and output without a class policy retain their prior shape.
+The new boundary test reaches production dispatch and serialized output. No unrelated source
+or spec changes landed in this fix round. Existing closed findings require no repeat rows.
+
+Verification in this pass: code, diff and test-assertion inspection only. No builds, tests or
+gates were run. The user's handoff reports fmt, focused quoin-core clippy and four boundary
+tests passing through locked-build.sh; these are supplied results, not fresh reviewer runs.
+Tools: quoin 0.30.1; quire 0.44.0 (engine 0.59.1); spec-artifacts-process v0.31.0.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-007 | fixed | 6526e53a changes the core conversion and AuditPayload to ProfileIndependenceAssessment, which flattens the existing assessment and declares optional source: IndependenceSource. The Profile variant serializes as profile; absent source is omitted. Thus the library-added marker survives the typed core boundary and the CLI forwards it unchanged. The new tc_501_601_profile_assessment_source_survives_audit_boundary exercises production dispatch and serialized output with and without a class policy. 2b55708a formats that fix. No new defect found. |
+
+```yaml
+dispositions:
+- fnd: FND-007
+  outcome: fixed
+  reason: '6526e53a changes the core conversion and AuditPayload to ProfileIndependenceAssessment, which flattens
+    the existing assessment and declares optional source: IndependenceSource. The Profile variant serializes as
+    profile; absent source is omitted. Thus the library-added marker survives the typed core boundary and the CLI
+    forwards it unchanged. The new tc_501_601_profile_assessment_source_survives_audit_boundary exercises production
+    dispatch and serialized output with and without a class policy. 2b55708a formats that fix. No new defect found.'
+  after_path: rust/crates/quoin-core/src/ops/auditor/mod.rs
+  after_lines: 72-76
+  after_excerpt: |2-
+        let independence = report
+            .other
+            .remove("independence")
+            .map(serde_json::from_value::<Vec<ProfileIndependenceAssessment>>)
+            .transpose()
+```
