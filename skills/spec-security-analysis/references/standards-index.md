@@ -32,7 +32,7 @@ Comprehensive security and privacy controls for federal information systems. 20 
 **Apply when**: US federal systems, government contractors, or as comprehensive baseline.
 
 ### OWASP ASVS 5.0.0
-Application Security Verification Standard. 14 verification areas for testing application security.
+Application Security Verification Standard. 17 verification chapters for testing application security.
 
 **Apply when**: Web applications, APIs, any user-facing software.
 

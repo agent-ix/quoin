@@ -1,4 +1,4 @@
-# NIST SP 800-53 Rev 5
+# NIST SP 800-53 Rev 5.2.0
 
 **Version**: Revision 5.2.0  
 **Scope**: Security and privacy controls for information systems  
