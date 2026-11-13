@@ -9,6 +9,8 @@ relationships:
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-040"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-150"
+    type: "references"
 ---
 
 # FR-041: SBOM inventories as run evidence
@@ -86,6 +88,13 @@ carry, and stating an obligation on one would let a failing suite discharge it.
 
 The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produced.
 
+### The reader exposes declared licences, and judges none
+
+The reader also exposes, for each component it returns, the licences the document declares: each a CycloneDX
+`license.id`, `license.name` or `expression` (SPDX: the declared licence field), kept as written, or nothing where none
+is declared. This is data for callers ([FR-150](./FR-150-licence-and-ban-policy-findings.md)); the run entries it emits are unchanged, and
+FR-041-CON-3 stands: the reader decides whether no licence passes.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -99,6 +108,7 @@ The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produc
 | FR-041-AC-7 | `--discharges` on an SBOM recording binds the stated obligation to the components it listed; without `--discharges` the SBOM binds nothing. | Test |
 | FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing, including when the inventory lists no component. | Test |
 | FR-041-AC-9 | `--discharges` on a run adapter other than sbom is refused with an error naming the adapter, and records nothing. | Test |
+| FR-041-AC-10 | For a CycloneDX component with a `license.id`, one with a `license.name`, one with an `expression` and one with no `licenses`, the reader exposes the declared text as written for the first three and nothing for the last; the run entries emitted for the same document are byte-identical to those emitted before the licences were exposed. | Test |
 
 ## Constraints
 

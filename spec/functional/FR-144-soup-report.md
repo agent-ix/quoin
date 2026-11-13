@@ -9,6 +9,8 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-149"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-150"
+    type: "references"
   - target: "ix://agent-ix/quoin/FR-143"
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-133"
@@ -31,6 +33,12 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 
 - When a user runs `quoin soup report --repo <repo> --binding <clause-binding-v1 report> --as-of <instant>`, the command SHALL render one row for each `soup_record` in the repository.
 - Each row SHALL state the component's purl, version, the requirements it serves, its known anomalies, support status, end-of-support date, its attached advisories (from cargo-audit, cargo-deny and grype, each naming its tool) and the disposition of each advisory.
+- Each row SHALL state its attached policy findings (licence and ban findings from `licence-policy` and `cargo-deny`, each naming its tool, rule id and severity word) and the disposition of each, apart from its advisories.
+- Each row SHALL state its policy status as `no policy findings in the scan read` (as FR-142 defines it), `policy findings not assessed: licence-policy not run`, or the attached policy findings.
+- The command SHALL count a record with an unresolved policy finding in the group of rows that carry an unresolved advisory.
+- The command SHALL append unmatched policy findings and a `licence-policy` or `cargo-deny` scan reported not run, refused or vacuous after the rows.
+- The command SHALL NOT state a record `allowed`.
+- The command SHALL render an `unknown` licence as a policy finding with its disposition, never as absent.
 - Each row SHALL state its advisory status as `free of advisories` (as FR-142 defines it), `advisories not assessed: unsupported purl type`, or the attached advisories and the state of each blocking scan.
 - If a record is `unsupported` under FR-142, its row SHALL NOT state `free of advisories`.
 - The command SHALL place an `unsupported` record in the group of rows that are neither unresolved nor past end of support, ordered by purl.
@@ -72,6 +80,8 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 | FR-144-AC-15 | A record whose `version` is a number, or whose anomaly `source_ref` is a number, exits non-zero naming the field and prints no report. | Test |
 | FR-144-AC-16 | A fixture with an npm record carrying a grype advisory, resolved by an attested disposition, and a PyPI record carrying another, unresolved, renders both advisories on their own rows with tool `grype`, the resolved one carrying decision and attester and the unresolved one its reason. | Test |
 | FR-144-AC-17 | A `lake` record states `advisories not assessed: unsupported purl type` in the third ordering group, never `free of advisories`; grype not run renders after the rows. | Test |
+| FR-144-AC-18 | A fixture with an npm record carrying a `licence-denied` finding resolved by an attested disposition, a PyPI record carrying a `licence-unknown` finding unresolved, and an npm record carrying `package-banned`, renders each on its own row with tool, rule id and severity word, in a list apart from advisories, the unresolved ones sorting in the first group. | Test |
+| FR-144-AC-19 | With no retained `licence-policy` scan, every row states `policy findings not assessed: licence-policy not run` and none states `no policy findings in the scan read`; a finding for a purl with no record appears after the rows as unmatched. | Test |
 
 ## Dependencies
 
