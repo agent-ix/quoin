@@ -237,6 +237,9 @@ pub struct ParseResultsRequest {
     /// The suite's declared tool, which selects an adapter when none is named.
     #[serde(default)]
     pub tool: Option<String>,
+    /// The policy file's text, for the `licence-policy` adapter (FR-150).
+    #[serde(default)]
+    pub policy: Option<String>,
 }
 
 /// The payload `evidence.parse_results` writes to stdout.
@@ -272,6 +275,9 @@ pub enum ParseResultsPayload {
         /// How many rules the scanner reported evaluating.
         #[serde(skip_serializing_if = "Option::is_none")]
         rules_evaluated: Option<u64>,
+        /// The symbols of the components the scan evaluated (FR-034-AC-27).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        evaluated: Option<Vec<String>>,
     },
 }
 
@@ -332,6 +338,11 @@ pub struct RecordRequest {
     /// refuses it.
     #[serde(default)]
     pub discharges: Vec<String>,
+    /// The text of the person-authored policy file the `licence-policy`
+    /// adapter evaluates the results against (FR-150). Any other adapter
+    /// refuses it.
+    #[serde(default)]
+    pub policy: Option<String>,
     /// The obligations as quire derives them today.
     #[serde(default)]
     pub obligations: Vec<quoin_quire_types::Obligation>,

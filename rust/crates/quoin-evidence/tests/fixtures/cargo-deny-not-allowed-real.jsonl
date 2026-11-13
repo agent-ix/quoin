@@ -1,0 +1,3 @@
+{"fields":{"code":"not-allowed","graphs":[{"Krate":{"name":"denyscratch","version":"0.1.0"}}],"message":"crate 'denyscratch = 0.1.0' is not explicitly allowed","severity":"error"},"type":"diagnostic"}
+{"fields":{"code":"not-allowed","graphs":[{"Krate":{"name":"itoa","version":"1.0.19"},"parents":[{"Krate":{"name":"denyscratch","version":"0.1.0"}}]}],"message":"crate 'itoa = 1.0.19' is not explicitly allowed","severity":"error"},"type":"diagnostic"}
+{"fields":{"bans":{"errors":2,"helps":0,"notes":1,"warnings":0}},"type":"summary"}

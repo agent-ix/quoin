@@ -28,6 +28,37 @@ fn string_member<'a>(object: &'a Value, name: &str) -> Option<&'a str> {
     object.get(name).and_then(Value::as_str)
 }
 
+/// How a declared licence is written (FR-041).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LicenceKind {
+    /// A `CycloneDX` `license.id`, or an SPDX value that is one identifier.
+    Id,
+    /// A `CycloneDX` `license.name`.
+    Name,
+    /// A `CycloneDX` `expression`, or any other SPDX value.
+    Expression,
+}
+
+/// One licence a component declares, kept as written. The reader judges none.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeclaredLicence {
+    /// How it is written.
+    pub kind: LicenceKind,
+    /// The text as the document wrote it.
+    pub text: String,
+}
+
+/// One component of an inventory, as the reader returns it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SbomComponent {
+    /// The purl, else `name@version`, else `name`: the identity a run entry carries.
+    pub symbol: String,
+    /// The purl, when the document states one.
+    pub purl: Option<String>,
+    /// The licences it declares, in document order. Empty when it declares none.
+    pub licences: Vec<DeclaredLicence>,
+}
+
 /// Parse a `CycloneDX` or SPDX JSON inventory.
 ///
 /// # Errors
@@ -35,6 +66,23 @@ fn string_member<'a>(object: &'a Value, name: &str) -> Option<&'a str> {
 /// Refuses input that is not JSON, input that is not a JSON object, and a
 /// document that is neither a `CycloneDX` nor an SPDX inventory.
 pub fn parse_sbom(raw: &str) -> Result<AdapterResult, EvidenceError> {
+    // No `tool` here: run-shaped adapters do not report one, and the record
+    // takes it from `--tool` at record time.
+    let entries = read_components(raw)?
+        .into_iter()
+        .map(|component| RunEntry::new(component.symbol, Outcome::Pass))
+        .collect();
+    Ok(AdapterResult::from_entries(entries))
+}
+
+/// Read every component of a `CycloneDX` or SPDX JSON inventory, with the
+/// licences it declares (FR-041-AC-10). The one SBOM reader: [`parse_sbom`] and
+/// the licence-policy adapter (FR-150-CON-1) both go through it.
+///
+/// # Errors
+///
+/// As [`parse_sbom`].
+pub fn read_components(raw: &str) -> Result<Vec<SbomComponent>, EvidenceError> {
     let document: Value = serde_json::from_str(raw).map_err(|error| {
         EvidenceError::adapter(
             "sbom",
@@ -49,21 +97,14 @@ pub fn parse_sbom(raw: &str) -> Result<AdapterResult, EvidenceError> {
     if !(document.is_object() || document.is_array()) {
         return Err(EvidenceError::adapter("sbom", "expected a JSON object"));
     }
-
-    // No `tool` here: run-shaped adapters do not report one, and the record
-    // takes it from `--tool` at record time.
-    let entries = match cyclone_dx_entries(&document) {
-        Some(entries) => entries,
-        None => match spdx_entries(&document) {
-            Some(entries) => entries,
-            None => return Err(unrecognised(&document)),
-        },
-    };
-    Ok(AdapterResult::from_entries(entries))
+    match cyclone_dx_components(&document) {
+        Some(components) => Ok(components),
+        None => spdx_components(&document).ok_or_else(|| unrecognised(&document)),
+    }
 }
 
 /// `CycloneDX`: `bomFormat: "CycloneDX"` with a `components` array.
-fn cyclone_dx_entries(root: &Value) -> Option<Vec<RunEntry>> {
+fn cyclone_dx_components(root: &Value) -> Option<Vec<SbomComponent>> {
     // `String(root.bomFormat ?? "")` in the retained source: a non-string
     // `bomFormat` is stringified and will not equal `"CycloneDX"`, so only the
     // exact string selects this branch.
@@ -85,15 +126,44 @@ fn cyclone_dx_entries(root: &Value) -> Option<Vec<RunEntry>> {
                 let purl = string_member(component, "purl");
                 let name = string_member(component, "name");
                 let version = string_member(component, "version");
-                symbol(purl, name, version)
+                Some(SbomComponent {
+                    symbol: symbol(purl, name, version)?,
+                    purl: purl.filter(|value| !value.is_empty()).map(str::to_owned),
+                    licences: cyclone_dx_licences(component),
+                })
             })
-            .map(|symbol| RunEntry::new(symbol, Outcome::Pass))
             .collect(),
     )
 }
 
+/// `licenses`: `{"license": {"id"|"name": …}}` or `{"expression": …}` entries.
+fn cyclone_dx_licences(component: &Value) -> Vec<DeclaredLicence> {
+    component
+        .get("licenses")
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|entry| {
+            let (kind, text) = if let Some(license) = entry.get("license") {
+                match (string_member(license, "id"), string_member(license, "name")) {
+                    (Some(id), _) => (LicenceKind::Id, id),
+                    (None, Some(name)) => (LicenceKind::Name, name),
+                    (None, None) => return None,
+                }
+            } else {
+                (LicenceKind::Expression, string_member(entry, "expression")?)
+            };
+            (!text.is_empty()).then(|| DeclaredLicence {
+                kind,
+                text: text.to_owned(),
+            })
+        })
+        .collect()
+}
+
 /// SPDX JSON: `spdxVersion` with a `packages` array.
-fn spdx_entries(root: &Value) -> Option<Vec<RunEntry>> {
+fn spdx_components(root: &Value) -> Option<Vec<SbomComponent>> {
     string_member(root, "spdxVersion")?;
     let packages = root.get("packages").and_then(Value::as_array);
     Some(
@@ -112,11 +182,33 @@ fn spdx_entries(root: &Value) -> Option<Vec<RunEntry>> {
                     .and_then(|reference| string_member(reference, "referenceLocator"));
                 let name = string_member(package, "name");
                 let version = string_member(package, "versionInfo");
-                symbol(locator, name, version)
+                Some(SbomComponent {
+                    symbol: symbol(locator, name, version)?,
+                    purl: locator.filter(|value| !value.is_empty()).map(str::to_owned),
+                    licences: spdx_licence(package).into_iter().collect(),
+                })
             })
-            .map(|symbol| RunEntry::new(symbol, Outcome::Pass))
             .collect(),
     )
+}
+
+/// The `licenseDeclared` value of a package. `NOASSERTION` and `NONE` declare
+/// nothing; a value with no whitespace or parenthesis is one identifier, any
+/// other is an expression.
+fn spdx_licence(package: &Value) -> Option<DeclaredLicence> {
+    let text = string_member(package, "licenseDeclared")?;
+    if text.is_empty() || text == "NOASSERTION" || text == "NONE" {
+        return None;
+    }
+    let single = !text.contains(|c: char| c.is_whitespace() || c == '(' || c == ')');
+    Some(DeclaredLicence {
+        kind: if single {
+            LicenceKind::Id
+        } else {
+            LicenceKind::Expression
+        },
+        text: text.to_owned(),
+    })
 }
 
 /// `locator ?? (version ? name@version : name)`, and `None` when neither a

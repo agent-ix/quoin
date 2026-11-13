@@ -23,6 +23,7 @@ use serde_json::{Map, Value};
 
 use super::advisory::{self, RecordJoin, ScanState, Unmatched};
 use super::plan;
+use super::policy::{self, LicenceState, PolicyUnmatched, RecordPolicy};
 use super::support::{
     Evaluation, RecordSupport, SupportError, SupportFile, as_of_date, parse_support, record_support,
 };
@@ -54,14 +55,27 @@ struct Row {
     serves: Listed<String>,
     anomalies: Listed<Anomaly>,
     support: Evaluation,
+    policy: RecordPolicy,
 }
 
 impl Row {
-    fn unresolved(&self) -> bool {
+    fn unresolved_advisory(&self) -> bool {
         self.join
             .advisories
             .iter()
             .any(|a| matches!(a.resolution, advisory::Resolution::Unresolved(_)))
+    }
+
+    fn unresolved_policy(&self) -> bool {
+        self.policy
+            .findings
+            .iter()
+            .any(|f| matches!(f.resolution, advisory::Resolution::Unresolved(_)))
+    }
+
+    /// An unresolved advisory or policy finding.
+    fn unresolved(&self) -> bool {
+        self.unresolved_advisory() || self.unresolved_policy()
     }
 
     /// 0: an unresolved advisory; 1: past end of support; 2: the rest.
@@ -82,6 +96,12 @@ struct Report {
     rows: Vec<Row>,
     scans: Vec<ScanState>,
     unmatched: Vec<Unmatched>,
+    /// The `licence-policy` scan, which the advisory scans do not cover.
+    licence: LicenceState,
+    /// Distinct `cargo-deny` policy findings read, when its scan was read.
+    deny_policy_read: Option<usize>,
+    /// Policy findings attached to no record.
+    unmatched_policy: Vec<PolicyUnmatched>,
     /// Retained scan files that could not be read, which no scan state covers.
     unreadable_scans: Vec<String>,
 }
@@ -132,6 +152,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
     let scans = latest_scans(&DiskEvidence::new(&repo), &mut unreadable_scans)
         .map_err(|error| format!("cannot read the retained scans: {error}"))?;
     let joined = advisory::join(&existing, &scans, &discharge);
+    let mut policy = policy::join(&existing, &scans, &discharge);
     let mut fronts: BTreeMap<PathBuf, Map<String, Value>> = existing
         .into_iter()
         .map(|record| (record.path, record.front))
@@ -140,7 +161,11 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
     let mut rows = Vec::with_capacity(joined.records.len());
     for record in joined.records {
         let front = fronts.remove(&record.path).unwrap_or_default();
-        rows.push(row(record, &front, &support, as_of_day)?);
+        let own_policy = policy
+            .records
+            .remove(&record.path)
+            .ok_or_else(|| Stop::Fail(format!("no policy join for {}", record.path.display())))?;
+        rows.push(row(record, &front, &support, as_of_day, own_policy)?);
     }
     rows.sort_by(|a, b| {
         (a.group(), &a.join.purl, &a.join.path).cmp(&(b.group(), &b.join.purl, &b.join.path))
@@ -151,6 +176,9 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
         rows,
         scans: joined.scans,
         unmatched: joined.unmatched,
+        licence: policy.licence,
+        deny_policy_read: policy.deny_read,
+        unmatched_policy: policy.unmatched,
         unreadable_scans,
     };
     let rendered = if arguments.get_flag("json") {
@@ -216,6 +244,7 @@ fn row(
     front: &Map<String, Value>,
     support: &SupportFile,
     as_of: time::Date,
+    policy: RecordPolicy,
 ) -> Result<Row, Stop> {
     let own: RecordSupport = record_support(front).map_err(|error| {
         refuse(
@@ -263,6 +292,7 @@ fn row(
         serves,
         anomalies,
         support: support.evaluate(&join.purl, own, as_of),
+        policy,
         join,
     })
 }
