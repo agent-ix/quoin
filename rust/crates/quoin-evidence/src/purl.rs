@@ -88,9 +88,9 @@ mod tests {
         let b = PurlIdentity::parse("pkg:npm/@scope/name@1.0.0").unwrap();
         assert_eq!(a, b);
         assert_eq!(a.namespace, "@scope");
-        assert!(
-            PurlIdentity::parse("pkg:npm/Name").unwrap()
-                != PurlIdentity::parse("pkg:npm/name").unwrap()
+        assert_ne!(
+            PurlIdentity::parse("pkg:npm/Name").unwrap(),
+            PurlIdentity::parse("pkg:npm/name").unwrap()
         );
         assert!(PurlIdentity::parse("not a purl").is_none());
         assert!(PurlIdentity::parse("pkg:npm/").is_none());

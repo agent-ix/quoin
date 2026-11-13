@@ -955,7 +955,7 @@ fn a_version_or_source_ref_of_the_wrong_type_refuses_instead_of_reading_as_not_s
     }
 }
 
-/// A minimal CycloneDX inventory written by hand for the report fixtures; the
+/// A minimal `CycloneDX` inventory written by hand for the report fixtures; the
 /// real Syft capture is exercised by the join tests.
 fn hand_written_sbom(components: &[(&str, &str, Option<&str>)]) -> String {
     let components: Vec<Value> = components
@@ -995,7 +995,7 @@ impl Repo {
 }
 
 /// An npm record with a denied licence resolved by an attested disposition, a
-/// PyPI record with an unknown licence unresolved, and an npm record banned:
+/// `PyPI` record with an unknown licence unresolved, and an npm record banned:
 /// each on its own row with tool, rule id and severity word, apart from the
 /// advisories, the unresolved ones in the first group.
 #[trace("FR-144-AC-18")]

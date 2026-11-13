@@ -84,6 +84,7 @@ impl FindingAdapter {
 }
 
 /// `--policy` given to an adapter that takes none (FR-150-AC-13).
+#[must_use]
 pub fn refuse_policy(adapter: &str) -> EvidenceError {
     EvidenceError::adapter(
         adapter,
