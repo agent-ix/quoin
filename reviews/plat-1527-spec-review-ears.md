@@ -33,3 +33,10 @@ clean: false
 scope:
 - {id: FR-136, path: spec/functional/FR-136-anomaly-record-mapping.md, role: examined, excerpt: "Behavior lines 87-96: fixing-change definition (non-system subject), expose fixingChange (ubiquitous with embedded condition), SHALL NOT read a hash (ubiquitous negative), SHALL NOT check agreement (ubiquitous negative)"}
 ```
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |

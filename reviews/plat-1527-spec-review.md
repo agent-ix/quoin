@@ -52,3 +52,21 @@ scope:
 - {id: FR-136-AC-3, path: spec/functional/FR-136-anomaly-record-mapping.md, role: context_only, excerpt: "not emitted for `identified` then `resolved` (squashed), `identified` then `closed` with `fixed` (squashed through `resolved`), `assessed` then `closed` with `fixed`"}
 - {id: FR-136-AC-4, path: spec/functional/FR-136-anomaly-record-mapping.md, role: context_only, excerpt: "A history whose first entry is `resolved` or `closed` yields no diagnostic."}
 - {id: FR-014, path: "agent-ix/spec-artifacts-process#145 spec/functional/FR-014-anomaly-archetype-and-state-lifecycle.md", role: context_only, excerpt: "When `status` is `resolved`, `resolution` SHALL be `fixed`. ... `resolved` to `closed` ... legal moves"}
+
+## New findings (disposition pass 1)
+
+Checked at c02423ad against spec-artifacts-process#145 as revised.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-006 | low | The new `### Fixing change` subsection was put in front of the last three `statusHistory` bullets: "not under git, report `statusHistory` not applicable", "not under git, emit no transition diagnostic", and the pending final entry rule. So those bullets now sit under the `Fixing change` heading. A reader who looks up the `statusHistory` rules under `### statusHistory` misses them, and that includes the pending-entry rule the fixing change itself depends on. Move the three bullets back above `### Fixing change` | spec/functional/FR-136-anomaly-record-mapping.md:111-115 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |

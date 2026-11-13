@@ -84,6 +84,11 @@ read the working tree and git together, so they get their own topic.
   signature is present; trust and expiry are not judged here), `unsigned` for `N`, and `unknown` for
   `B`, `R` and `E` (a bad, revoked-key or uncheckable signature is not treated as signed).
 - Quoin SHALL NOT derive `status` from `statusHistory`.
+- If the file is not under git, then Quoin SHALL report `statusHistory` not applicable.
+- If the file is not under git, then Quoin SHALL emit no transition diagnostic.
+- If the working-tree `status` differs from the last entry's `status`, then Quoin SHALL append a
+  pending final entry with that `status`, `commit` absent and `pending` true, and SHALL judge the
+  move from the last entry to it like any other.
 - Quoin SHALL NOT take any author or date from a field typed into the document.
 - Quoin SHALL NOT read a hash of the fix from the document.
 
@@ -107,12 +112,6 @@ The fixing change is a value Quoin derives from the git history of the file and 
   absent with the reason `pending`.
 - If the file is not under git, then Quoin SHALL report `fixingChange` not applicable.
 - Quoin SHALL emit no diagnostic for an absent or not-applicable `fixingChange`.
-
-- If the file is not under git, then Quoin SHALL report `statusHistory` not applicable.
-- If the file is not under git, then Quoin SHALL emit no transition diagnostic.
-- If the working-tree `status` differs from the last entry's `status`, then Quoin SHALL append a
-  pending final entry with that `status`, `commit` absent and `pending` true, and SHALL judge the
-  move from the last entry to it like any other.
 
 ### Legality over squashed history
 

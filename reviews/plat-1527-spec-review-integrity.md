@@ -42,3 +42,10 @@ scope:
 - {id: FR-014, path: "agent-ix/spec-artifacts-process#145 spec/functional/FR-014-anomaly-archetype-and-state-lifecycle.md", role: context_only, excerpt: "When `status` is `assessed`, `resolved` or `closed`, `severity` SHALL be present. ... The key `statusHistory` is not authored anywhere: quoin FR-136 derives it from git."}
 - {id: mappings.yaml, path: "agent-ix/spec-artifacts-process spec_artifacts_process/mappings.yaml", role: context_only, excerpt: "`statusHistory` is not authored anywhere and is not a property of this record"}
 ```
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
