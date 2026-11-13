@@ -155,3 +155,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-168: Release snapshot change records: the change-assurance records since the previous release, taken as data](./FR-168-release-snapshot-change-records.md)
 - [FR-169: quoin risk-summary: a read-only report of the hazard-to-decision chain, one row per hazard and situation](./FR-169-risk-summary-command.md)
 - [FR-170: Risk summary row findings: the chain's completeness findings placed against the row they name](./FR-170-risk-summary-row-findings.md)
+- [FR-175: quoin anomaly check reports a fixed anomaly whose verifying test has no passing result](./FR-175-anomaly-check-fix-verification-evidence.md)
