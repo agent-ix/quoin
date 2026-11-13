@@ -1,22 +1,24 @@
 ---
-id: NFR-040
+id: NFR-038
 title: "Facts from mappings state what people wrote and never invent an attestation or a verdict"
 type: NFR
 quality_attribute: reliability
 relationships:
-  - target: "ix://agent-ix/quoin/FR-182"
+  - target: "ix://agent-ix/quoin/FR-173"
     type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-183"
+  - target: "ix://agent-ix/quoin/FR-174"
     type: "constrains"
 ---
 
-# NFR-040: Facts from mappings state what people wrote and never invent an attestation or a verdict
+# NFR-038: Facts from mappings state what people wrote and never invent an attestation or a verdict
 
 ## Statement
 
 Quoin SHALL take every actor, authority, instant, revision, digest and approval reference of a fact from a person's input.
 
-Quoin SHALL NOT mark a clause discharged, and SHALL NOT assign an effectiveness, from a mapping alone (FR-182).
+Quoin SHALL NOT mark a clause discharged from a mapping alone (FR-173).
+
+Quoin SHALL NOT assign an effectiveness from a mapping alone (FR-173).
 
 Quoin SHALL write no file from `facts-from-mappings`.
 
@@ -39,4 +41,4 @@ A fact generated with a made-up attestor would read as an authorised decision no
 
 ## Verification
 
-The first is checked by FR-182-AC-1 and FR-182-AC-5, the second by FR-182-AC-2, and the third by a directory listing before and after a run.
+The first is checked by FR-173-AC-1 and FR-173-AC-5, the second by FR-173-AC-2, and the third by a directory listing before and after a run.
