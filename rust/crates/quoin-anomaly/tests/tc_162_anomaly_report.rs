@@ -26,8 +26,8 @@ use std::path::Path;
 use common::{Repo, fixture, fixtures, walk, with_status};
 use ix_trace_rs::trace;
 use quoin_anomaly::{
-    Context, Derived, GateMode, Report, Signature, build_report, check_document, parse_record,
-    rationale_change,
+    Context, Derived, DiagnosticCode, GateMode, Report, Signature, build_report, check_document,
+    parse_record, rationale_change,
 };
 use serde_json::{Value, json};
 
@@ -430,6 +430,19 @@ fn two_runs_give_identical_bytes_and_change_no_file() {
     assert_eq!(tree(repo.dir.path()), before);
 }
 
+/// The five value keys of a derived value that is not `present`.
+fn assert_all_null(derived: &Value) {
+    for key in [
+        "commit",
+        "author",
+        "authoredAt",
+        "signature",
+        "signatureCode",
+    ] {
+        assert_eq!(derived[key], Value::Null, "{key} of {derived}");
+    }
+}
+
 fn state(value: &Value) -> &str {
     value["state"].as_str().unwrap()
 }
@@ -485,18 +498,10 @@ fn the_four_states_are_encoded_in_json_and_markdown() {
     assert_eq!(state(&by_id("AN-001")["rationaleChange"]), "present");
     let absent = &by_id("AN-002")["fixingChange"];
     assert_eq!(state(absent), "absent");
-    for key in [
-        "commit",
-        "author",
-        "authoredAt",
-        "signature",
-        "signatureCode",
-    ] {
-        assert_eq!(absent[key], Value::Null, "{key}");
-    }
     let pending = &by_id("AN-003")["fixingChange"];
     assert_eq!(state(pending), "pending");
-    assert_eq!(pending["commit"], Value::Null);
+    assert_all_null(absent);
+    assert_all_null(pending);
     assert_eq!(state(&by_id("AN-003")["rationaleChange"]), "pending");
 
     let markdown = report.to_markdown();
@@ -525,6 +530,8 @@ fn the_four_states_are_encoded_in_json_and_markdown() {
         state(&json["anomalies"][0]["rationaleChange"]),
         "not-applicable"
     );
+    assert_all_null(&json["anomalies"][0]["fixingChange"]);
+    assert_all_null(&json["anomalies"][0]["rationaleChange"]);
     assert!(
         outside
             .to_markdown()
@@ -558,7 +565,7 @@ fn the_release_rationale_is_stated_as_authored_in_document_order() {
     );
 }
 
-#[trace("FR-163-AC-2", "NFR-035-AC-4")]
+#[trace("FR-163-AC-2")]
 #[test]
 fn an_anomaly_without_the_section_states_none_and_no_template() {
     let repo = corpus_with(&[("AN-001", "valid", "rationale-assessed-without")]);
@@ -574,6 +581,43 @@ fn an_anomaly_without_the_section_states_none_and_no_template() {
     assert!(line.contains("| none | absent | absent |"), "{line}");
     for word in ["Author |", "TBD", "tbd", "suggest", "template"] {
         assert!(!markdown.contains(word), "{word}\n{markdown}");
+    }
+}
+
+#[trace("NFR-035-AC-4")]
+#[test]
+fn with_every_optional_value_absent_each_printed_value_reads_as_absent_or_is_copied() {
+    // `identified` has no severity, resolution, assessment or rationale.
+    let repo = corpus_with(&[("AN-001", "valid", "identified")]);
+    let report = report(&repo);
+    let json = json_of(&report);
+    let entry = &json["anomalies"][0];
+    for key in ["resolution", "severity"] {
+        assert_eq!(entry[key], Value::Null, "{key}");
+    }
+    for key in ["assessment", "affected", "releaseRationale"] {
+        assert_eq!(entry[key], json!([]), "{key}");
+    }
+    assert_eq!(state(&entry["fixingChange"]), "absent");
+    assert_eq!(state(&entry["rationaleChange"]), "absent");
+    let markdown = report.to_markdown();
+    let line = markdown
+        .lines()
+        .find(|l| l.starts_with("| AN-001 "))
+        .unwrap();
+    let cells = line
+        .trim_matches('|')
+        .split(" | ")
+        .map(str::trim)
+        .collect::<Vec<_>>();
+    // ID, Title, Path, Status, Safety impact are copied from the record or the
+    // path; every other cell is an absent marker or a flag word.
+    let allowed = ["not stated", "none", "absent", "unassessed"];
+    for (index, cell) in cells.iter().enumerate() {
+        if matches!(index, 0 | 1 | 2 | 3 | 6) {
+            continue;
+        }
+        assert!(allowed.contains(cell), "cell {index}: {cell} in {line}");
     }
 }
 
@@ -605,7 +649,7 @@ fn rationale_of(repo: &Repo, id: &str) -> Derived {
     rationale_change(&path, &record).unwrap()
 }
 
-#[trace("FR-163-AC-5", "FR-163-AC-9")]
+#[trace("FR-163-AC-5")]
 #[test]
 fn the_rationale_change_is_the_latest_commit_that_changed_the_section() {
     let mut repo = corpus();
@@ -654,6 +698,27 @@ fn a_changed_or_re_added_section_is_pending_and_none_yields_a_diagnostic() {
     assert_eq!(rationale_of(&repo, "AN-001"), Derived::Absent);
 }
 
+#[trace("FR-163-AC-6")]
+#[test]
+fn pending_absent_and_not_applicable_rationale_changes_yield_no_diagnostic() {
+    let mut repo = corpus();
+    let path = anomaly_path("AN-001");
+    let with = fx("valid", "rationale-assessed-with", "AN-001");
+    repo.commit(&path, &with);
+    let edited = with.replace("until the next release", "until release 2");
+    let without = fx("valid", "rationale-assessed-without", "AN-001");
+    for text in [&edited, &without] {
+        repo.write(&path, text);
+        let checked = check_document(&repo.path(&path), text, CONTEXT).unwrap();
+        assert!(checked.diagnostics.is_empty(), "{:?}", checked.diagnostics);
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let outside = dir.path().join("AN-001.md");
+    std::fs::write(&outside, &with).unwrap();
+    let checked = check_document(&outside, &with, CONTEXT).unwrap();
+    assert!(checked.diagnostics.is_empty());
+}
+
 #[trace("FR-163-AC-7", "FR-136-AC-16")]
 #[test]
 fn a_typed_commit_author_or_date_never_reaches_the_derived_values() {
@@ -697,7 +762,7 @@ fn fixing(
     statuses: &[&str],
     working: Option<&str>,
     resolution: Option<&str>,
-) -> (Derived, Vec<String>) {
+) -> (Derived, Vec<String>, Vec<DiagnosticCode>) {
     let mut repo = Repo::new();
     let base = set_key(
         &fixture("valid", "closed-fixed"),
@@ -711,7 +776,8 @@ fn fixing(
     let text = with_status(&base, working.unwrap_or_else(|| statuses.last().unwrap()));
     repo.write("AN-001.md", &text);
     let checked = check_document(&repo.path("AN-001.md"), &text, CONTEXT).unwrap();
-    (checked.fixing_change.unwrap(), commits)
+    let codes = checked.diagnostics.iter().map(|d| d.code).collect();
+    (checked.fixing_change.unwrap(), commits, codes)
 }
 
 fn commit_of(derived: &Derived) -> Option<&str> {
@@ -733,7 +799,7 @@ fn the_fixing_change_is_the_first_resolved_or_closed_entry_after_the_last_assess
         (&["identified", "closed"], 1),
     ];
     for (statuses, expected) in cases {
-        let (derived, commits) = fixing(statuses, None, Some("fixed"));
+        let (derived, commits, _) = fixing(statuses, None, Some("fixed"));
         assert_eq!(
             commit_of(&derived),
             Some(commits[expected].as_str()),
@@ -751,11 +817,19 @@ fn the_fixing_change_is_absent_without_a_fixed_resolution_pending_or_not_applica
         Some("not-a-defect"),
         None,
     ] {
-        let (derived, _) = fixing(&["identified", "assessed", "closed"], None, resolution);
+        let (derived, _, codes) = fixing(&["identified", "assessed", "closed"], None, resolution);
         assert_eq!(derived, Derived::Absent, "{resolution:?}");
+        assert!(
+            codes.is_empty(),
+            "no diagnostic for an absent fixing change"
+        );
     }
-    let (derived, _) = fixing(&["assessed"], Some("resolved"), Some("fixed"));
+    let (derived, _, codes) = fixing(&["assessed"], Some("resolved"), Some("fixed"));
     assert_eq!(derived, Derived::Pending);
+    assert!(
+        codes.is_empty(),
+        "no diagnostic for a pending fixing change"
+    );
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("AN-001.md");
     let text = fixture("valid", "closed-fixed");
@@ -763,6 +837,89 @@ fn the_fixing_change_is_absent_without_a_fixed_resolution_pending_or_not_applica
     let checked = check_document(&path, &text, CONTEXT).unwrap();
     assert_eq!(checked.fixing_change, Some(Derived::NotApplicable));
     assert!(checked.diagnostics.is_empty());
+}
+
+#[trace("FR-162-AC-14", "FR-163-AC-5", "FR-136-AC-1")]
+#[test]
+fn similar_files_committed_separately_each_keep_their_own_history() {
+    let mut repo = corpus();
+    // Three near-identical anomalies added one commit each: git's copy
+    // detection would trace the later ones into the earlier ones' history.
+    let first = repo.commit(
+        &anomaly_path("AN-001"),
+        &fx("valid", "rationale-resolved-with", "AN-001"),
+    );
+    let second = repo.commit(
+        &anomaly_path("AN-002"),
+        &fx("valid", "closed-wont-fix-rationale", "AN-002"),
+    );
+    let third = repo.commit(
+        &anomaly_path("AN-003"),
+        &fx("valid", "rationale-resolved-with", "AN-003"),
+    );
+    let report = report(&repo);
+    for (id, own) in [("AN-001", &first), ("AN-002", &second), ("AN-003", &third)] {
+        let row = row(&report, id);
+        assert_eq!(change_commit(&row.rationale_change), own, "{id} rationale");
+        if id != "AN-002" {
+            assert_eq!(change_commit(&row.fixing_change), own, "{id} fixing");
+        }
+        let path = repo.path(&anomaly_path(id));
+        let text = std::fs::read_to_string(&path).unwrap();
+        let checked = check_document(&path, &text, CONTEXT).unwrap();
+        assert!(
+            checked.diagnostics.is_empty(),
+            "{id}: {:?}",
+            checked.diagnostics
+        );
+        let (entries, _) = match quoin_anomaly::read_history(&path).unwrap() {
+            quoin_anomaly::History::Entries {
+                entries,
+                assessments,
+            } => (entries, assessments),
+            quoin_anomaly::History::NotApplicable => panic!("under git"),
+        };
+        assert_eq!(entries.len(), 1, "{id} has only its own add commit");
+    }
+}
+
+#[trace("FR-162-AC-9")]
+#[test]
+fn a_missing_title_or_a_malformed_rationale_table_is_a_mapping_error() {
+    let cases = [
+        (
+            "missing",
+            set_key(&fx("valid", "assessed", "AN-001"), "title", None),
+        ),
+        ("columns", fx("invalid", "rationale-bad-headers", "AN-001")),
+        ("min-rows", fx("invalid", "rationale-no-rows", "AN-001")),
+        (
+            "min-rows",
+            fx("invalid", "rationale-bare-heading", "AN-001"),
+        ),
+        (
+            "min-rows",
+            fx("invalid", "rationale-no-delimiter", "AN-001"),
+        ),
+    ];
+    for (code, text) in cases {
+        let mut repo = corpus();
+        repo.commit(&anomaly_path("AN-001"), &text);
+        let report = report(&repo);
+        assert!(report.anomalies.is_empty(), "{code}");
+        assert_eq!(report.unreadable.len(), 1, "{code}");
+        assert_eq!(report.unreadable[0].code, code);
+        assert!(report.failed());
+        let checked = check_document(&repo.path(&anomaly_path("AN-001")), &text, CONTEXT).unwrap();
+        assert!(
+            checked
+                .diagnostics
+                .iter()
+                .any(|d| d.code == DiagnosticCode::NoRecord),
+            "{code}: {:?}",
+            checked.diagnostics
+        );
+    }
 }
 
 fn gate_ids(report: &Report, mode: GateMode) -> Vec<(String, String)> {
@@ -792,6 +949,7 @@ fn the_unassessed_gate_names_every_unassessed_anomaly_and_passes_without_one() {
     assert_eq!(failures[0].0, "AN-001");
     assert!(failures[0].1.ends_with("spec/anomalies/AN-001.md"));
     assert_eq!(failures[1].0, "AN-002");
+    assert!(failures[1].1.ends_with("spec/anomalies/AN-002.md"));
 
     let passing = corpus_with(&[("AN-003", "valid", "assessed")]);
     let report = report_with(&passing, &[GateMode::Unassessed]);
@@ -862,11 +1020,19 @@ fn only_a_carried_impacting_anomaly_without_a_rationale_fails_the_unjustified_ga
     let repo = corpus_with(&[
         ("AN-001", "valid", "closed-fixed"),
         ("AN-002", "valid", "closed-duplicate"),
-        ("AN-003", "valid", "closed-not-a-defect"),
         ("AN-004", "valid", "none"),
         ("AN-005", "valid", "identified"),
         ("AN-006", "valid", "closed-wont-fix"),
     ]);
+    // The shipped not-a-defect fixture is `none`; make it `impacting` so the
+    // closed-resolution branch, not the impact, is what spares it.
+    let impacting = set_key(
+        &fx("valid", "closed-not-a-defect", "AN-003"),
+        "safety_impact",
+        Some("safety_impact: impacting"),
+    );
+    let mut repo = repo;
+    repo.commit(&anomaly_path("AN-003"), &impacting);
     let report = report_with(&repo, &[GateMode::UnjustifiedImpacting]);
     let failed = gate_ids(&report, GateMode::UnjustifiedImpacting)
         .into_iter()
@@ -927,6 +1093,18 @@ fn an_unreadable_document_fails_the_gate_even_when_every_readable_one_passes() {
     assert!(report.gate.as_ref().unwrap().failures.is_empty());
     assert!(report.failed());
     assert_eq!(report.unreadable.len(), 1);
+    assert!(
+        report.unreadable[0]
+            .path
+            .ends_with("spec/anomalies/AN-002.md")
+    );
+    let json = json_of(&report);
+    assert!(
+        json["unreadable"][0]["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("AN-002.md")
+    );
 }
 
 #[trace("FR-164-AC-9")]
@@ -939,6 +1117,26 @@ fn without_fail_on_there_is_no_gate_and_unassessed_anomalies_do_not_fail() {
     assert!(!keys(&json_of(&report)).contains("gate"));
 }
 
+/// The stem "accept" may appear only in cells copied from a record: the
+/// title, the assessment, the affected targets and the release rationale.
+fn assert_accept_only_in_copied_values(markdown: &str) {
+    for line in markdown.lines() {
+        let lower = line.to_lowercase();
+        if !lower.contains("accept") {
+            continue;
+        }
+        assert!(line.starts_with("| AN-"), "tool prose says accept: {line}");
+        for (index, cell) in line.trim_matches('|').split(" | ").enumerate() {
+            if !matches!(index, 1 | 8 | 9 | 10) {
+                assert!(
+                    !cell.to_lowercase().contains("accept"),
+                    "cell {index} is not copied from a record: {cell}"
+                );
+            }
+        }
+    }
+}
+
 #[trace("FR-164-AC-11", "NFR-035-AC-2", "NFR-035-AC-3")]
 #[test]
 fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
@@ -946,31 +1144,31 @@ fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
         ("AN-001", "valid", "closed-wont-fix-rationale"),
         ("AN-002", "valid", "rationale-resolved-with"),
         ("AN-003", "valid", "identified"),
+        ("AN-004", "valid", "assessed"),
+        ("AN-005", "valid", "two-hazards"),
+        ("AN-006", "valid", "none"),
+        ("AN-007", "invalid", "closed-unassessed"),
+        ("AN-008", "valid", "rationale-assessed-without"),
     ]);
     let modes = [GateMode::Unassessed, GateMode::UnjustifiedImpacting];
-    let report = report_with(&repo, &modes);
-    // The stem may appear only in values copied from a record: the table rows.
-    let markdown = report.to_markdown().to_lowercase();
-    let prose = markdown
-        .lines()
-        .filter(|line| !line.starts_with('|'))
-        .collect::<Vec<_>>()
-        .join("\n");
-    assert!(!prose.contains("accept"), "{prose}");
-    let json = report.to_json().unwrap();
-    for key in ["score", "rank", "verdict", "grade", "recommend", "priority"] {
-        assert!(!json.to_lowercase().contains(&format!("\"{key}")), "{key}");
+    for modes in [&[][..], &modes[..]] {
+        let report = report_with(&repo, modes);
+        let markdown = report.to_markdown();
+        assert!(
+            markdown.to_lowercase().contains("accept"),
+            "values are copied"
+        );
+        assert_accept_only_in_copied_values(&markdown);
+        let json = report.to_json().unwrap().to_lowercase();
+        for key in ["score", "rank", "verdict", "grade", "recommend", "priority"] {
+            assert!(!json.contains(&format!("\"{key}")), "{key}");
+        }
     }
     let clean = report_with(
         &corpus_with(&[("AN-001", "valid", "closed-wont-fix-rationale")]),
         &modes,
     );
-    let markdown = clean.to_markdown().to_lowercase();
-    assert!(markdown.contains("no anomaly fails the evaluated modes"));
-    assert!(
-        markdown
-            .lines()
-            .filter(|line| !line.starts_with('|'))
-            .all(|line| !line.contains("accept"))
-    );
+    let markdown = clean.to_markdown();
+    assert!(markdown.contains("No anomaly fails the evaluated modes"));
+    assert_accept_only_in_copied_values(&markdown);
 }

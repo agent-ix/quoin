@@ -12,7 +12,7 @@ use std::path::Path;
 use serde::{Serialize, Serializer};
 
 use crate::error::AnomalyError;
-use crate::history::{Commit, History, Signature, StatusEntry, locate, pending_entry};
+use crate::history::{Commit, History, Located, Signature, StatusEntry, locate, pending_entry};
 use crate::record::{Record, release_rationale_text};
 use crate::status::Status;
 
@@ -175,28 +175,73 @@ pub fn fixing_change(history: &History, record: &Record) -> Derived {
 ///
 /// Returns an error when `git` cannot be run or cannot answer a history query.
 pub fn rationale_change(file: &Path, record: &Record) -> Result<Derived, AnomalyError> {
-    let Some(located) = locate(file)? else {
-        return Ok(Derived::NotApplicable);
+    Ok(rationale_in(locate(file)?.as_ref(), record))
+}
+
+/// [`rationale_change`] over an already-read history.
+pub(crate) fn rationale_in(located: Option<&Located>, record: &Record) -> Derived {
+    let Some(located) = located else {
+        return Derived::NotApplicable;
     };
     let Some(working) = record.release_rationale_text.as_deref() else {
-        return Ok(Derived::Absent);
+        return Derived::Absent;
     };
     let mut previous: Option<String> = None;
     let mut changed: Option<&Commit> = None;
-    for commit in &located.commits {
-        let text = located
-            .content(commit)?
-            .and_then(|content| release_rationale_text(&content));
+    for (commit, text) in located.commits.iter().zip(&located.texts) {
+        let text = text.as_deref().and_then(release_rationale_text);
         if text != previous {
             changed = Some(commit);
         }
         previous = text;
     }
     // `previous` is now the section text at the tip of the default branch.
-    Ok(match changed {
+    match changed {
         Some(commit) if previous.as_deref() == Some(working) => {
             Derived::Present(Change::of_commit(commit))
         }
         _ => Derived::Pending,
-    })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(
+        clippy::unwrap_used,
+        clippy::indexing_slicing,
+        reason = "in a test, a panic IS the failure report; the production lints stand"
+    )]
+
+    use ix_trace_rs::trace;
+
+    use super::{Change, Signature};
+    use crate::history::Commit;
+
+    #[trace("FR-163-AC-9")]
+    #[test]
+    fn every_signature_letter_maps_in_the_rationale_change_as_in_the_status_history() {
+        let cases = [
+            ('G', Signature::Signed),
+            ('U', Signature::Signed),
+            ('X', Signature::Signed),
+            ('Y', Signature::Signed),
+            ('N', Signature::Unsigned),
+            ('B', Signature::Unknown),
+            ('R', Signature::Unknown),
+            ('E', Signature::Unknown),
+        ];
+        for (letter, expected) in cases {
+            let commit = Commit {
+                hash: "abc".to_owned(),
+                author: "A".to_owned(),
+                authored_at: "2026-01-01T00:00:00+00:00".to_owned(),
+                signature_code: letter,
+                path: "AN-001.md".to_owned(),
+                created: false,
+            };
+            let change = Change::of_commit(&commit);
+            assert_eq!(change.signature, expected, "{letter}");
+            assert_eq!(change.signature_code, letter);
+        }
+    }
 }

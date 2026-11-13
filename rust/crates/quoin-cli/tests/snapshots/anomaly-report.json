@@ -258,9 +258,9 @@
       },
       "rationaleChange": {
         "state": "present",
-        "commit": "<commit-1>",
+        "commit": "<commit-2>",
         "author": "Fixture Author",
-        "authoredAt": "2026-01-01T00:05:00+00:00",
+        "authoredAt": "2026-01-01T00:07:00+00:00",
         "signature": "unsigned",
         "signatureCode": "N"
       }
@@ -467,9 +467,9 @@
       "releaseRationale": [],
       "fixingChange": {
         "state": "present",
-        "commit": "<commit-1>",
+        "commit": "<commit-3>",
         "author": "Fixture Author",
-        "authoredAt": "2026-01-01T00:05:00+00:00",
+        "authoredAt": "2026-01-01T00:12:00+00:00",
         "signature": "unsigned",
         "signatureCode": "N"
       },

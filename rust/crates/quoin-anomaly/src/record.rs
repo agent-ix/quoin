@@ -226,6 +226,14 @@ fn table<const N: usize>(
     if cells(header) != columns {
         return Err(error(MappingErrorCode::Columns, header_line));
     }
+    // A pipe block without a delimiter row is not a table (the extractor reads
+    // no row from it), so it holds no rows.
+    if !table
+        .next()
+        .is_some_and(|&(_, line)| is_separator(&cells(line)))
+    {
+        return Err(error(MappingErrorCode::MinRows, header_line));
+    }
     let mut out = Vec::new();
     for &(line, raw) in table {
         let row = cells(raw);

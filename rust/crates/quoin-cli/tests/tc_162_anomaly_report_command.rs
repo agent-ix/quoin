@@ -226,6 +226,10 @@ fn the_markdown_and_json_match_their_snapshots_over_one_corpus() {
     let repo = repo();
     let markdown = repo.quoin(&["anomaly", "report"]);
     assert_eq!(markdown.status.code(), Some(1), "AN-014 is unreadable");
+    assert!(
+        markdown.stderr.is_empty(),
+        "pending, absent and not-applicable values emit no diagnostic"
+    );
     snapshot("anomaly-report.md", &normalise(&stdout(&markdown)));
     let json = repo.quoin(&["anomaly", "report", "--json"]);
     assert_eq!(json.status.code(), Some(1));
@@ -358,7 +362,11 @@ fn repo_with_identified() -> Repo {
 fn an_unknown_fail_on_value_is_refused_naming_the_modes_and_prints_no_report() {
     let repo = repo_with_identified();
     let out = repo.quoin(&["anomaly", "report", "--fail-on", "nonsense"]);
-    assert_ne!(out.status.code(), Some(0));
+    assert_eq!(
+        out.status.code(),
+        Some(3),
+        "a parser refusal, not a gate failure"
+    );
     assert!(out.stdout.is_empty());
     let err = String::from_utf8(out.stderr).unwrap();
     assert!(

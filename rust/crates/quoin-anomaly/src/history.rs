@@ -153,30 +153,29 @@ pub(crate) struct Commit {
     pub(crate) authored_at: String,
     pub(crate) signature_code: char,
     pub(crate) path: String,
+    /// Whether the commit created the file (`A`, or a copy `C`): the history
+    /// of the document starts here.
+    pub(crate) created: bool,
 }
 
-/// The commits of a file's first-parent history on the default branch.
+/// The first-parent history of a file on the default branch, read once: the
+/// commits and the file's text at each.
 pub(crate) struct Located {
-    /// The repository's top level, from which every query runs so that each
-    /// commit's `path` (relative to it) is what git resolves the pathspec
-    /// against.
-    pub(crate) top: PathBuf,
     /// Oldest first; empty while the repository has no commit.
     pub(crate) commits: Vec<Commit>,
-}
-
-impl Located {
-    /// The text of the file at `commit`, or `None` when that commit deleted it.
-    pub(crate) fn content(&self, commit: &Commit) -> Result<Option<String>, AnomalyError> {
-        probe(
-            &self.top,
-            &["show", &format!("{}:{}", commit.hash, commit.path)],
-        )
-    }
+    /// The file's text at each commit, same order; `None` where that commit
+    /// deleted it.
+    pub(crate) texts: Vec<Option<String>>,
 }
 
 /// Find the first-parent history of `file`, following renames. `None` when the
 /// file is not inside a git repository.
+///
+/// `git log --follow` also follows *copies*: a new anomaly file that resembles
+/// an existing one would inherit that file's history and so its status moves,
+/// its fixing change and its rationale change. The walk therefore stops at the
+/// commit that created the file (`A`, or the copy `C` git reports for it) and
+/// continues only across a rename (`R`).
 pub(crate) fn locate(file: &Path) -> Result<Option<Located>, AnomalyError> {
     let dir = file.parent().unwrap_or_else(|| Path::new("."));
     let dir = if dir.as_os_str().is_empty() {
@@ -196,8 +195,8 @@ pub(crate) fn locate(file: &Path) -> Result<Option<Located>, AnomalyError> {
     let relative = relative.to_string_lossy().replace('\\', "/");
     if probe(&top, &["rev-parse", "--verify", "--quiet", "HEAD"])?.is_none() {
         return Ok(Some(Located {
-            top,
             commits: Vec::new(),
+            texts: Vec::new(),
         }));
     }
     let branch = default_branch(&top)?;
@@ -208,19 +207,36 @@ pub(crate) fn locate(file: &Path) -> Result<Option<Located>, AnomalyError> {
             &branch,
             "--first-parent",
             "--follow",
-            "--name-only",
+            "--name-status",
             "--format=%x1e%H%x1f%an%x1f%aI%x1f%G?",
             "--",
             &relative,
         ],
     )?;
-    let mut commits = log
+    // Newest first: keep commits down to and including the one that created
+    // the file.
+    let mut commits = Vec::new();
+    for commit in log
         .split('\u{1e}')
         .filter(|block| !block.trim().is_empty())
         .filter_map(parse_block)
-        .collect::<Vec<_>>();
+    {
+        let created = commit.created;
+        commits.push(commit);
+        if created {
+            break;
+        }
+    }
     commits.reverse();
-    Ok(Some(Located { top, commits }))
+    let mut texts = Vec::with_capacity(commits.len());
+    for commit in &commits {
+        // A commit that deleted the file has no content to read.
+        texts.push(probe(
+            &top,
+            &["show", &format!("{}:{}", commit.hash, commit.path)],
+        )?);
+    }
+    Ok(Some(Located { commits, texts }))
 }
 
 /// Derive `statusHistory` for `file`.
@@ -234,18 +250,20 @@ pub(crate) fn locate(file: &Path) -> Result<Option<Located>, AnomalyError> {
 /// Returns an error when `git` cannot be run, or when it fails to answer a
 /// history query for a file that is inside a repository.
 pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
-    let Some(located) = locate(file)? else {
-        return Ok(History::NotApplicable);
+    Ok(history_of(locate(file)?.as_ref()))
+}
+
+/// `statusHistory` from an already-read history.
+pub(crate) fn history_of(located: Option<&Located>) -> History {
+    let Some(located) = located else {
+        return History::NotApplicable;
     };
     let mut entries = Vec::new();
     let mut assessments = Vec::new();
     let mut previous: Option<Status> = None;
-    for commit in &located.commits {
-        // A commit that deleted the file has no content to read.
-        let Some(content) = located.content(commit)? else {
-            continue;
-        };
-        let Some(status) = status_word(&content).as_deref().and_then(Status::parse) else {
+    for (commit, text) in located.commits.iter().zip(&located.texts) {
+        let Some(content) = text else { continue };
+        let Some(status) = status_word(content).as_deref().and_then(Status::parse) else {
             continue;
         };
         if previous == Some(status) {
@@ -262,12 +280,12 @@ pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
             signature_code: Some(code),
             pending: false,
         });
-        assessments.push(assessment_text(&content));
+        assessments.push(assessment_text(content));
     }
-    Ok(History::Entries {
+    History::Entries {
         entries,
         assessments,
-    })
+    }
 }
 
 fn parse_block(block: &str) -> Option<Commit> {
@@ -277,15 +295,17 @@ fn parse_block(block: &str) -> Option<Commit> {
     let author = fields.next()?.to_owned();
     let authored_at = fields.next()?.to_owned();
     let signature_code = fields.next()?.trim().chars().next().unwrap_or('N');
-    let path = rest
-        .lines()
-        .find(|line| !line.trim().is_empty())?
-        .to_owned();
+    // `<status>\t<path>` or, for a rename or copy, `<status>\t<from>\t<to>`.
+    let entry = rest.lines().find(|line| !line.trim().is_empty())?;
+    let mut columns = entry.split('\t');
+    let status = columns.next()?;
+    let path = columns.next_back()?.to_owned();
     Some(Commit {
         hash,
         author,
         authored_at,
         signature_code,
         path,
+        created: status.starts_with(['A', 'C']),
     })
 }

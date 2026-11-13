@@ -12,6 +12,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
+use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_anomaly::{
@@ -78,8 +79,8 @@ pub(crate) fn command() -> Command {
                         .long("fail-on")
                         .value_name("MODE")
                         .action(ArgAction::Append)
-                        .value_parser(["unassessed", "unjustified-impacting"])
-                        .help("Exit non-zero when a listed anomaly is unassessed, or an open impacting anomaly has no release rationale; repeat to evaluate both"),
+                        .value_parser(PossibleValuesParser::new(GateMode::ALL.map(GateMode::as_str)))
+                        .help("Exit non-zero when a listed anomaly is unassessed, or a carried impacting anomaly (not closed, or closed as wont-fix) has no release rationale; repeat to evaluate both"),
                 ),
         )
 }

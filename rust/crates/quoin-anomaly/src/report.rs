@@ -17,9 +17,9 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use crate::derived::{Derived, fixing_change, rationale_change};
+use crate::derived::{Derived, fixing_change, rationale_in};
 use crate::error::AnomalyError;
-use crate::history::read_history;
+use crate::history::{history_of, locate};
 use crate::record::{RationaleEntry, Record};
 use crate::refs::anomaly_documents;
 
@@ -34,6 +34,15 @@ pub enum GateMode {
 }
 
 impl GateMode {
+    /// Every mode, in canonical order.
+    pub const ALL: [Self; 2] = [Self::Unassessed, Self::UnjustifiedImpacting];
+
+    /// The mode a `--fail-on` value names.
+    #[must_use]
+    pub fn parse(word: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|mode| mode.as_str() == word)
+    }
+
     /// The mode as given to `--fail-on`.
     #[must_use]
     pub fn as_str(self) -> &'static str {
@@ -233,9 +242,9 @@ fn shown(path: &Path) -> String {
 }
 
 fn row_of(path: &Path, record: Record) -> Result<ReportRow, AnomalyError> {
-    let history = read_history(path)?;
-    let fixing = fixing_change(&history, &record);
-    let rationale = rationale_change(path, &record)?;
+    let located = locate(path)?;
+    let fixing = fixing_change(&history_of(located.as_ref()), &record);
+    let rationale = rationale_in(located.as_ref(), &record);
     let assessment = record
         .assessment
         .iter()
