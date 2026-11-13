@@ -76,6 +76,8 @@ pub enum ErrorCode {
     EnginePremise,
     /// A stored payload names a different engine object id.
     EngineRevisionMismatch,
+    /// The FR-032 audit of the retained runs could not be built.
+    AuditFailed,
 }
 
 impl ErrorCode {
@@ -105,6 +107,7 @@ impl ErrorCode {
             Self::VendoredSchemaInvalid => "QQ-1064",
             Self::EnginePremise => "QQ-1080",
             Self::EngineRevisionMismatch => "QQ-1081",
+            Self::AuditFailed => "QQ-1090",
         }
     }
 
@@ -138,6 +141,7 @@ impl ErrorCode {
             Self::VendoredSchemaInvalid,
             Self::EnginePremise,
             Self::EngineRevisionMismatch,
+            Self::AuditFailed,
         ]
     }
 
@@ -426,6 +430,13 @@ pub enum Error {
         /// What was being read.
         subject: String,
     },
+
+    /// The FR-032 audit the retained-evidence bridge runs could not be built.
+    #[error("the retained-run audit could not be built: {reason}")]
+    AuditFailed {
+        /// The auditor's reason.
+        reason: String,
+    },
 }
 
 impl Error {
@@ -455,6 +466,7 @@ impl Error {
             Self::VendoredSchemaInvalid { .. } => ErrorCode::VendoredSchemaInvalid,
             Self::EnginePremise { .. } => ErrorCode::EnginePremise,
             Self::EngineRevisionMismatch { .. } => ErrorCode::EngineRevisionMismatch,
+            Self::AuditFailed { .. } => ErrorCode::AuditFailed,
         }
     }
 }
@@ -602,6 +614,9 @@ mod tests {
                 subject: "coverage".into(),
                 found: "a".repeat(40),
                 required: "b".repeat(40),
+            },
+            Error::AuditFailed {
+                reason: "demand too large".into(),
             },
         ];
         let seen: BTreeSet<ErrorCode> = samples.iter().map(Error::code).collect();

@@ -17,13 +17,17 @@
 //! `<analysisKind>::<requestDigest>` identity is a locator, not a symbol
 //! (FR-153-AC-9).
 
+use ix_trace_rs::implements;
 use quire_rs::evidence::{
     ActResult, BackingInput, CauseCode, EvidenceTarget, RecordBinder, RecordClaim, RecordLocator,
     TraceQuery,
 };
-use quire_rs::obligation::inventory::{InventoryOptions, SelectedInventory, inventory};
+use quire_rs::obligation::inventory::{
+    CriterionEntry, InventoryOptions, SelectedInventory, inventory,
+};
 use quoin_evidence::qualify::{
-    self, Cause, Decision, HostObservations, Qualification, Refusal, RetainedRun, RunLocator,
+    self, AuditFinding, Cause, Decision, HostObservations, Qualification, Refusal, RetainedRun,
+    RunLocator,
 };
 use quoin_evidence::types::Binding;
 
@@ -38,11 +42,11 @@ pub struct Request {
     pub scope: ScopeRequest,
     /// The obligation ids to count, as the caller requests them.
     pub requested: Vec<String>,
-    /// Every retained run, in any order.
+    /// Every retained run, in any order, with its own host observations.
     pub runs: Vec<RetainedRun>,
-    /// The binding graph.
+    /// The binding graph, read by the FR-032 audit.
     pub bindings: Vec<Binding>,
-    /// The host's admitted observations.
+    /// The host's observations that belong to no one record.
     pub host: HostObservations,
 }
 
@@ -111,19 +115,77 @@ fn locator_of(locator: &RunLocator) -> RecordLocator<'_> {
 }
 
 /// The inventory entries that state `id`, as their ordinals.
-fn entries_stating(inventory: &SelectedInventory, id: &str) -> Vec<usize> {
-    inventory
-        .entries()
+fn ordinals_stating(entries: &[CriterionEntry<'_>], id: &str) -> Vec<usize> {
+    entries
+        .iter()
         .enumerate()
         .filter(|(_, entry)| entry.obligation().id == id)
         .map(|(ordinal, _)| ordinal)
         .collect()
 }
 
+/// The shared FR-032 audit, run over the newest run of every suite the
+/// qualifier also reads, for the requested obligations.
+fn audit_findings(
+    request: &Request,
+    entries: &[CriterionEntry<'_>],
+) -> Result<Vec<(String, AuditFinding)>> {
+    let obligations = request
+        .requested
+        .iter()
+        .filter_map(|id| {
+            let found = ordinals_stating(entries, id);
+            // An unresolved or ambiguous id is refused before any audit.
+            match found.as_slice() {
+                [ordinal] => entries.get(*ordinal).map(|entry| {
+                    let source = entry.obligation();
+                    quoin_quire_types::Obligation {
+                        id: source.id.clone(),
+                        statement: source.statement.clone(),
+                        target_ids: None,
+                        method: source.method.clone(),
+                        criticality: source.criticality.clone(),
+                        parameters: (!source.parameters.is_empty())
+                            .then(|| source.parameters.clone()),
+                    }
+                }),
+                _ => None,
+            }
+        })
+        .collect();
+    let report = quoin_auditor::audit(&quoin_auditor::AuditInput {
+        obligations,
+        bindings: request.bindings.clone(),
+        runs: qualify::latest_per_suite(&request.runs)
+            .into_iter()
+            .map(|run| run.record.clone())
+            .collect(),
+        ..quoin_auditor::AuditInput::default()
+    })
+    .map_err(|error| Error::AuditFailed {
+        reason: error.to_string(),
+    })?;
+    Ok(report
+        .findings
+        .into_iter()
+        .map(|finding| {
+            (
+                finding.obligation,
+                AuditFinding {
+                    kind: finding.kind,
+                    summary: finding.summary,
+                },
+            )
+        })
+        .collect())
+}
+
 /// Count the requested obligations.
 ///
 /// # Errors
-/// As [`coverage::compute`].
+/// As [`coverage::compute`], and [`Error::AuditFailed`] when the FR-032 audit
+/// of the retained runs cannot be built.
+#[implements("FR-153")]
 pub fn compute(request: &Request) -> Result<Outcome> {
     let Walked {
         registry,
@@ -145,17 +207,18 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         &sources,
         InventoryOptions::default(),
     );
+    let entries: Vec<CriterionEntry<'_>> = selected.entries().collect();
+    let findings = audit_findings(request, &entries)?;
 
     let mut accepted: Vec<(usize, Decision)> = Vec::new();
     let mut pending: Vec<Pending> = Vec::new();
     for id in &request.requested {
-        let found = entries_stating(&selected, id);
+        let found = ordinals_stating(&entries, id);
         let (ordinal, method) = match found.as_slice() {
             [ordinal] => (
                 *ordinal,
-                selected
-                    .entries()
-                    .nth(*ordinal)
+                entries
+                    .get(*ordinal)
                     .and_then(|entry| entry.obligation().method.clone()),
             ),
             [] => {
@@ -175,11 +238,16 @@ pub fn compute(request: &Request) -> Result<Outcome> {
                 continue;
             }
         };
+        let about: Vec<AuditFinding> = findings
+            .iter()
+            .filter(|(obligation, _)| obligation == id)
+            .map(|(_, finding)| finding.clone())
+            .collect();
         let answer = qualify::qualify(&qualify::Request {
             obligation: id,
             declared_method: method.as_deref(),
             runs: &request.runs,
-            bindings: &request.bindings,
+            audit: Some(&about),
             host: &request.host,
         });
         match answer {
@@ -196,7 +264,7 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         }
     }
 
-    let report = with_backing(&selected, &accepted, &pending, |backing| {
+    let report = with_backing(&selected, &entries, &accepted, &pending, |backing| {
         quire_rs::coverage::compute_with_evidence(
             &spec,
             &registry,
@@ -206,6 +274,7 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         )
         .map_err(coverage::coverage_error)
     })?;
+    drop(entries);
     Ok(Outcome {
         report,
         notices,
@@ -217,14 +286,14 @@ pub fn compute(request: &Request) -> Result<Outcome> {
 /// Build the engine's input over borrowed views and run `use_backing` on it.
 fn with_backing<T>(
     selected: &SelectedInventory,
+    entries: &[CriterionEntry<'_>],
     accepted: &[(usize, Decision)],
     pending: &[Pending],
     use_backing: impl FnOnce(&BackingInput<'_>) -> T,
 ) -> T {
     let target = |ordinal: usize| {
-        selected
-            .entries()
-            .nth(ordinal)
+        entries
+            .get(ordinal)
             .map(|entry| EvidenceTarget::from(entry.identity()))
     };
     let provenance: Vec<Vec<&str>> = accepted
@@ -277,14 +346,16 @@ impl Outcome {
     /// same projection the coverage report used.
     #[must_use]
     pub fn trace(&self, query: Query<'_>) -> Vec<RecordBinder> {
+        let entries: Vec<CriterionEntry<'_>> = self.inventory.entries().collect();
         with_backing(
             &self.inventory,
+            &entries,
             &self.accepted,
             &[],
             |backing| match query {
-                Query::Obligation(id) => entries_stating(&self.inventory, id)
+                Query::Obligation(id) => ordinals_stating(&entries, id)
                     .into_iter()
-                    .filter_map(|ordinal| self.inventory.entries().nth(ordinal))
+                    .filter_map(|ordinal| entries.get(ordinal))
                     .flat_map(|entry| {
                         quire_rs::evidence::trace(
                             backing,

@@ -18,9 +18,12 @@
 mod premises;
 mod runs;
 
+pub use runs::latest_per_suite;
+
+use ix_trace_rs::implements;
 use serde_json::Value;
 
-use crate::types::{Binding, RunRecord, TrustAssessment};
+use crate::types::{RunRecord, TrustDecision};
 
 /// The declared method an analysis act can discharge.
 pub const ANALYSIS_METHOD: &str = "Analysis";
@@ -58,8 +61,8 @@ pub enum Cause {
 /// The FR-116 premise a refusal names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Premise {
-    /// The binding of the obligation to the passing symbol.
-    Binding,
+    /// The FR-032 audit of the latest run (FR-153 credit step 2).
+    Audit,
     /// The declared method and the act kind pair (FR-116-AC-11).
     MethodActPairing,
     /// The FR-093 assessment for the positive use.
@@ -81,7 +84,7 @@ impl Premise {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Self::Binding => "binding",
+            Self::Audit => "FR-032 audit",
             Self::MethodActPairing => "method and act pairing",
             Self::BoundedReliance => "bounded reliance",
             Self::ActorAuthority => "actor authority",
@@ -119,6 +122,32 @@ pub struct RetainedRun {
     /// The `quire.differential-report/v2` document the record was transcribed
     /// from. Absent when the host did not supply it.
     pub report: Option<Value>,
+    /// What the host observed of the act that produced this record. It belongs
+    /// to this record alone (FR-116 exact correlation): another record's
+    /// checkout SHA, CI invocation or actor never qualifies it.
+    pub observation: RunObservation,
+}
+
+/// The host's admitted observations of one retained run (FR-116 Inputs).
+#[derive(Debug, Clone, Default)]
+pub struct RunObservation {
+    /// The CI checkout SHA of the `run-package` step that produced the record.
+    pub performed_revision: Option<String>,
+    /// The execution association of that step.
+    pub execution: Option<ExecutionAssociation>,
+    /// The signer admitted as the asserting actor for the record.
+    pub actor: Option<ActorAdmission>,
+}
+
+/// An actor and the host's admission of it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActorAdmission {
+    /// The signer mapped to a person through the signed-records feature.
+    pub actor: String,
+    /// The host's authority-admission reference.
+    pub admission_ref: String,
+    /// The obligation ids the actor is authorized to assert.
+    pub authorized: Vec<String>,
 }
 
 /// The CI invocation an act ran in.
@@ -152,20 +181,24 @@ pub enum ExecutionAssociation {
     },
 }
 
-/// The observations the host admits and supplies (FR-116 Inputs).
+/// The observations that are not tied to one record (FR-116 Inputs).
 #[derive(Debug, Clone, Default)]
 pub struct HostObservations {
-    /// The FR-093 assessment of `quire-analyze` and the solvers for the
-    /// positive use, when one exists.
-    pub reliance: Option<TrustAssessment>,
-    /// The CI checkout SHA of the `run-package` step.
-    pub performed_revision: Option<String>,
+    /// The FR-093 decision for `quire-analyze` and the solvers for the positive
+    /// use, when one exists. The qualifier assesses it and compares its
+    /// accepted context with the report's producer.
+    pub reliance: Option<TrustDecision>,
     /// The source HEAD selected for this qualification.
     pub selected_head: Option<String>,
-    /// The execution association of the `run-package` step.
-    pub execution: Option<ExecutionAssociation>,
-    /// The signer mapped to a person, asserting the discharge.
-    pub actor: Option<String>,
+}
+
+/// One finding of the FR-032 audit about the obligation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuditFinding {
+    /// The finding kind.
+    pub kind: String,
+    /// The audit's own summary.
+    pub summary: String,
 }
 
 /// One obligation's qualification question.
@@ -177,8 +210,9 @@ pub struct Request<'a> {
     pub declared_method: Option<&'a str>,
     /// Every retained run, in any order.
     pub runs: &'a [RetainedRun],
-    /// The binding graph.
-    pub bindings: &'a [Binding],
+    /// The findings of the shared FR-032 audit about this obligation, run by
+    /// the bridge over the same latest runs; absent when no audit ran.
+    pub audit: Option<&'a [AuditFinding]>,
     /// The host's admitted observations.
     pub host: &'a HostObservations,
 }
@@ -197,7 +231,7 @@ pub struct Decision {
 }
 
 /// A non-qualified result.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Refusal {
     /// The category.
     pub cause: Cause,
@@ -224,11 +258,28 @@ pub enum Qualification {
 /// erroring, superseded or unqualified entry leaves the obligation uncounted
 /// (FR-032, FR-153-AC-6).
 #[must_use]
+#[implements("FR-116")]
 pub fn qualify(request: &Request<'_>) -> Qualification {
     let runs::Disposition {
         candidates,
         mut refusals,
-    } = runs::dispositions(request.obligation, request.runs, request.bindings);
+    } = runs::dispositions(request.obligation, request.runs);
+    if !candidates.is_empty() {
+        match request.audit {
+            None => refusals.push(Refusal {
+                cause: Cause::Unevaluated,
+                premise: Some(Premise::Audit),
+                locator: None,
+                detail: Premise::Audit.detail("no audit of the latest runs was supplied"),
+            }),
+            Some(findings) => refusals.extend(findings.iter().map(|finding| Refusal {
+                cause: Cause::Unevaluated,
+                premise: Some(Premise::Audit),
+                locator: None,
+                detail: Premise::Audit.detail(&format!("{}: {}", finding.kind, finding.summary)),
+            })),
+        }
+    }
     let mut decisions = Vec::new();
     for candidate in &candidates {
         let mut provenance = vec![
@@ -261,30 +312,39 @@ pub fn qualify(request: &Request<'_>) -> Qualification {
                     .detail("one report states more than one obligation, so it qualifies none"),
             });
         }
-        premises::host_premises(
-            request.host,
-            &candidate.locator,
-            &mut provenance,
-            &mut refusals,
-        );
-        premises::report_premises(
-            candidate.run.report.as_ref(),
-            candidate.entry,
-            &candidate.locator,
+        premises::evaluate(
+            &premises::Probe {
+                obligation: request.obligation,
+                host: request.host,
+                run: candidate.run,
+                entry: candidate.entry,
+                locator: &candidate.locator,
+            },
             &mut provenance,
             &mut refusals,
         );
         decisions.push(Decision {
             locator: candidate.locator.clone(),
             method: ANALYSIS_METHOD.to_owned(),
-            actor: request.host.actor.clone().unwrap_or_default(),
+            actor: candidate
+                .run
+                .observation
+                .actor
+                .as_ref()
+                .map(|admission| admission.actor.clone())
+                .unwrap_or_default(),
             provenance,
         });
     }
     if refusals.is_empty() && !decisions.is_empty() {
         Qualification::Qualified(decisions)
     } else {
-        refusals.sort();
+        // FR-116: target (one per call), then the record/entry locus, then the
+        // cause category, with the premise and detail as stable tie-breakers.
+        refusals.sort_by(|a, b| {
+            (&a.locator, a.cause, a.premise, &a.detail)
+                .cmp(&(&b.locator, b.cause, b.premise, &b.detail))
+        });
         refusals.dedup();
         Qualification::NotQualified(refusals)
     }

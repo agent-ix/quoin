@@ -11,12 +11,23 @@ use serde_json::Value;
 
 use super::{
     Cause, ExecutionAssociation, HostObservations, POSITIVE_USE_DECISION, Premise, Refusal,
-    RunLocator,
+    RetainedRun, RunLocator,
 };
+use crate::trust::assess_trust;
 use crate::types::{RunEntry, TrustStatus};
 
 /// The two engines a `quire.differential-report/v2` agreement names.
 const ENGINES: [&str; 2] = ["z3", "cvc5"];
+
+/// What one candidate's premises are evaluated over. Every observation read is
+/// the run's own, so none can belong to another record (FR-116).
+pub(super) struct Probe<'a> {
+    pub(super) obligation: &'a str,
+    pub(super) host: &'a HostObservations,
+    pub(super) run: &'a RetainedRun,
+    pub(super) entry: &'a RunEntry,
+    pub(super) locator: &'a RunLocator,
+}
 
 fn refusal(cause: Cause, premise: Premise, locator: &RunLocator, reason: &str) -> Refusal {
     Refusal {
@@ -27,109 +38,177 @@ fn refusal(cause: Cause, premise: Premise, locator: &RunLocator, reason: &str) -
     }
 }
 
-/// The host-wide premises, each with the reference a positive decision retains.
-pub(super) fn host_premises(
-    host: &HostObservations,
-    locator: &RunLocator,
+/// Evaluate every premise of one passing candidate.
+pub(super) fn evaluate(
+    probe: &Probe<'_>,
     provenance: &mut Vec<String>,
     refusals: &mut Vec<Refusal>,
 ) {
-    reliance(host, locator, provenance, refusals);
-    actor(host, locator, provenance, refusals);
-    revision(host, locator, provenance, refusals);
-    association(host, locator, provenance, refusals);
+    let producer = report_premises(probe, provenance, refusals);
+    reliance(probe, producer, provenance, refusals);
+    actor(probe, provenance, refusals);
+    revision(probe, provenance, refusals);
+    association(probe, provenance, refusals);
 }
 
+/// The FR-093 premise: a decision for this exact producer and positive use.
 fn reliance(
-    host: &HostObservations,
-    locator: &RunLocator,
+    probe: &Probe<'_>,
+    producer: Option<(&str, &str)>,
     provenance: &mut Vec<String>,
     refusals: &mut Vec<Refusal>,
 ) {
-    match &host.reliance {
-        None => refusals.push(refusal(
+    let locator = probe.locator;
+    let mut refuse = |cause, reason: &str| {
+        refusals.push(refusal(cause, Premise::BoundedReliance, locator, reason));
+    };
+    let Some(decision) = &probe.host.reliance else {
+        refuse(
             Cause::Unevaluated,
-            Premise::BoundedReliance,
-            locator,
             "no FR-093 assessment of quire-analyze and the solvers exists for this positive use",
-        )),
-        Some(assessment) => match assessment.status {
-            TrustStatus::Accepted | TrustStatus::AcceptedWithLimitations
-                if assessment
-                    .permitted_decisions
-                    .iter()
-                    .any(|decision| decision == POSITIVE_USE_DECISION) =>
-            {
-                provenance.push(format!(
-                    "reliance:{}:{}",
-                    assessment.id,
-                    assessment.status.as_str()
-                ));
-            }
-            TrustStatus::Accepted | TrustStatus::AcceptedWithLimitations => {
-                refusals.push(refusal(
-                    Cause::QualificationRejected,
-                    Premise::BoundedReliance,
-                    locator,
-                    &format!("the assessed use does not permit {POSITIVE_USE_DECISION}"),
-                ));
-            }
-            TrustStatus::Invalidated => refusals.push(refusal(
-                Cause::Stale,
-                Premise::BoundedReliance,
-                locator,
-                "the assessment is invalidated by a changed producer context",
-            )),
-            TrustStatus::NotAccepted => refusals.push(refusal(
-                Cause::QualificationRejected,
-                Premise::BoundedReliance,
-                locator,
-                "the producer is not relied upon for this use",
-            )),
-            TrustStatus::Unobserved => refusals.push(refusal(
+        );
+        return;
+    };
+    let assessment = match assess_trust(decision) {
+        Ok(assessment) => assessment,
+        Err(error) => {
+            refuse(
                 Cause::Unevaluated,
-                Premise::BoundedReliance,
-                locator,
+                &format!("the decision is invalid: {error}"),
+            );
+            return;
+        }
+    };
+    match assessment.status {
+        TrustStatus::Invalidated => {
+            refuse(
+                Cause::Stale,
+                "the assessment is invalidated by a changed producer context",
+            );
+            return;
+        }
+        TrustStatus::NotAccepted => {
+            refuse(
+                Cause::QualificationRejected,
+                "the producer is not relied upon for this use",
+            );
+            return;
+        }
+        TrustStatus::Unobserved => {
+            refuse(
+                Cause::Unevaluated,
                 "the assessment has no observed context to compare",
-            )),
-        },
+            );
+            return;
+        }
+        TrustStatus::Accepted | TrustStatus::AcceptedWithLimitations => {}
     }
+    if !assessment
+        .permitted_decisions
+        .iter()
+        .any(|permitted| permitted == POSITIVE_USE_DECISION)
+    {
+        refuse(
+            Cause::QualificationRejected,
+            &format!("the assessed use does not permit {POSITIVE_USE_DECISION}"),
+        );
+        return;
+    }
+    let accepted = &decision.accepted_context;
+    match producer {
+        None => {
+            refuse(
+                Cause::Unevaluated,
+                "the report names no producer to compare with the assessed context",
+            );
+            return;
+        }
+        Some((name, version)) if name != accepted.name || version != accepted.version => {
+            refuse(
+                Cause::QualificationRejected,
+                &format!(
+                    "the assessment is for {} {}, not the report's producer {name} {version}",
+                    accepted.name, accepted.version
+                ),
+            );
+            return;
+        }
+        Some(_) => {}
+    }
+    // A limitation that excludes this target or this act is not an accepted
+    // exception; any other limitation stays visible on the decision.
+    if let Some(excluding) = assessment.limitations.iter().find(|limitation| {
+        limitation.contains(probe.obligation) || limitation.contains("analysis-act")
+    }) {
+        refuse(
+            Cause::QualificationRejected,
+            &format!("a stated limitation excludes this use: {excluding}"),
+        );
+        return;
+    }
+    provenance.push(format!(
+        "reliance:{}:{}",
+        assessment.id,
+        assessment.status.as_str()
+    ));
+    provenance.extend(
+        assessment
+            .limitations
+            .iter()
+            .map(|limitation| format!("limitation:{limitation}")),
+    );
 }
 
-fn actor(
-    host: &HostObservations,
-    locator: &RunLocator,
-    provenance: &mut Vec<String>,
-    refusals: &mut Vec<Refusal>,
-) {
-    match host.actor.as_deref().filter(|actor| !actor.is_empty()) {
-        Some(actor) => provenance.push(format!("actor-authority:{actor}")),
-        None => refusals.push(refusal(
+fn actor(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Refusal>) {
+    let locator = probe.locator;
+    let mut refuse = |cause, reason: &str| {
+        refusals.push(refusal(cause, Premise::ActorAuthority, locator, reason));
+    };
+    let Some(admission) = &probe.run.observation.actor else {
+        refuse(Cause::Unevaluated, "no signer admitted for the record");
+        return;
+    };
+    if admission.actor.is_empty() || admission.admission_ref.is_empty() {
+        refuse(
             Cause::Unevaluated,
-            Premise::ActorAuthority,
-            locator,
-            "no signer admitted for the asserting actor",
-        )),
+            "the actor has no host authority-admission reference",
+        );
+    } else if !admission
+        .authorized
+        .iter()
+        .any(|authorized| authorized == probe.obligation)
+    {
+        refuse(
+            Cause::QualificationRejected,
+            &format!("the admitted authority does not cover {}", probe.obligation),
+        );
+    } else {
+        provenance.push(format!(
+            "actor-authority:{}:{}",
+            admission.actor, admission.admission_ref
+        ));
     }
 }
 
-fn revision(
-    host: &HostObservations,
-    locator: &RunLocator,
-    provenance: &mut Vec<String>,
-    refusals: &mut Vec<Refusal>,
-) {
-    let performed = host
+fn revision(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Refusal>) {
+    let locator = probe.locator;
+    let performed = probe
+        .run
+        .observation
         .performed_revision
         .as_deref()
         .filter(|sha| !sha.is_empty());
-    let head = host.selected_head.as_deref().filter(|sha| !sha.is_empty());
+    let head = probe
+        .host
+        .selected_head
+        .as_deref()
+        .filter(|sha| !sha.is_empty());
     match (performed, head) {
         (None, _) => refusals.push(refusal(
             Cause::Unevaluated,
             Premise::PerformedRevision,
             locator,
-            "the run-package step has no CI checkout SHA",
+            "the run-package step has no CI checkout SHA for this record",
         )),
         (Some(_), None) => refusals.push(refusal(
             Cause::Unevaluated,
@@ -150,18 +229,14 @@ fn revision(
     }
 }
 
-fn association(
-    host: &HostObservations,
-    locator: &RunLocator,
-    provenance: &mut Vec<String>,
-    refusals: &mut Vec<Refusal>,
-) {
-    match &host.execution {
+fn association(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Refusal>) {
+    let locator = probe.locator;
+    match &probe.run.observation.execution {
         None => refusals.push(refusal(
             Cause::Unevaluated,
             Premise::ExecutionAssociation,
             locator,
-            "no execution association supplied",
+            "no execution association supplied for this record",
         )),
         Some(ExecutionAssociation::Manual { .. }) => refusals.push(refusal(
             Cause::QualificationRejected,
@@ -231,22 +306,22 @@ fn engine_fact(report: &Value, engine: &str) -> Result<String, String> {
 
 /// The tool and configuration premise, and the report's own agreement with the
 /// passing entry it is supplied for.
-pub(super) fn report_premises(
-    report: Option<&Value>,
-    entry: &RunEntry,
-    locator: &RunLocator,
+fn report_premises<'a>(
+    probe: &Probe<'a>,
     provenance: &mut Vec<String>,
     refusals: &mut Vec<Refusal>,
-) {
+) -> Option<(&'a str, &'a str)> {
+    let (entry, locator) = (probe.entry, probe.locator);
     let tool = Premise::ToolAndConfiguration;
-    let Some(report) = report else {
+    let run: &'a RetainedRun = probe.run;
+    let Some(report) = run.report.as_ref() else {
         refusals.push(refusal(
             Cause::Unevaluated,
             tool,
             locator,
             "no report observation supplied for the record",
         ));
-        return;
+        return None;
     };
     let symbol = match (text(report, "analysisKind"), text(report, "requestDigest")) {
         (Some(kind), Some(digest)) => format!("{kind}::{digest}"),
@@ -259,7 +334,7 @@ pub(super) fn report_premises(
             locator,
             "the supplied report does not correspond to the entry",
         ));
-        return;
+        return None;
     }
     let differential = report.get("differential");
     let agreed = differential.and_then(|differential| text(differential, "disposition"))
@@ -273,7 +348,7 @@ pub(super) fn report_premises(
             locator: Some(locator.clone()),
             detail: tool.detail("the entry passed but the report is not a satisfied agreement"),
         });
-        return;
+        return None;
     }
     let producer = report.get("producer");
     let (Some(name), Some(version)) = (
@@ -286,7 +361,7 @@ pub(super) fn report_premises(
             locator,
             "the report has no producer name and version",
         ));
-        return;
+        return None;
     };
     let mut facts = vec![format!("tool:{name}:{version}")];
     for engine in ENGINES {
@@ -298,4 +373,5 @@ pub(super) fn report_premises(
     if facts.len() == ENGINES.len() + 1 {
         provenance.extend(facts);
     }
+    Some((name, version))
 }

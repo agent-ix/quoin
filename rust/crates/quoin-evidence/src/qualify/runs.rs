@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 
 use super::{Cause, Refusal, RetainedRun, RunLocator};
 use crate::ids::SuiteId;
-use crate::types::{Binding, Outcome, RunEntry};
+use crate::types::{Outcome, RunEntry};
 
 /// A passing entry that is the latest word of its suite on one symbol.
 pub(super) struct Candidate<'a> {
@@ -42,30 +42,39 @@ fn locator(run: &RetainedRun, entry: &RunEntry) -> RunLocator {
     }
 }
 
-fn bound(bindings: &[Binding], obligation: &str, suite: &SuiteId, entry: &RunEntry) -> bool {
-    bindings.iter().any(|binding| {
-        binding.obligation.as_str() == obligation
-            && &binding.suite == suite
-            && binding.symbols.contains(&entry.symbol)
-    })
+/// The suite's runs in the store's order (FR-030): the run's timestamp, then
+/// the record's file name, whatever order they were supplied in.
+fn ordered(mut runs: Vec<&RetainedRun>) -> Vec<&RetainedRun> {
+    runs.sort_by(|a, b| (&a.record.timestamp, &a.file).cmp(&(&b.record.timestamp, &b.file)));
+    runs
 }
 
-/// Classify every symbol of every suite that states `obligation`.
-pub(super) fn dispositions<'a>(
-    obligation: &str,
-    runs: &'a [RetainedRun],
-    bindings: &[Binding],
-) -> Disposition<'a> {
+fn by_suite(runs: &[RetainedRun]) -> BTreeMap<&SuiteId, Vec<&RetainedRun>> {
     let mut suites: BTreeMap<&SuiteId, Vec<&RetainedRun>> = BTreeMap::new();
     for run in runs {
         suites.entry(&run.record.suite).or_default().push(run);
     }
+    suites
+}
+
+/// The newest run of every suite, by the store's order. The one place the
+/// latest run is chosen: the FR-032 audit is given these runs and the
+/// supersession rules below read the same ones.
+#[must_use]
+pub fn latest_per_suite(runs: &[RetainedRun]) -> Vec<&RetainedRun> {
+    by_suite(runs)
+        .into_values()
+        .filter_map(|suite_runs| ordered(suite_runs).pop())
+        .collect()
+}
+
+/// Classify every symbol of every suite that states `obligation`.
+pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Disposition<'a> {
     let mut candidates = Vec::new();
     let mut refusals = Vec::new();
     let mut stated_anywhere = false;
-    for (suite, mut suite_runs) in suites {
-        suite_runs
-            .sort_by(|a, b| (&a.record.timestamp, &a.file).cmp(&(&b.record.timestamp, &b.file)));
+    for (suite, suite_runs) in by_suite(runs) {
+        let suite_runs = ordered(suite_runs);
         let Some((latest, earlier)) = suite_runs.split_last() else {
             continue;
         };
@@ -131,19 +140,11 @@ pub(super) fn dispositions<'a>(
                     locator: Some(here),
                     detail: format!("{symbol} in suite {suite} {what}"),
                 });
-            } else if bound(bindings, obligation, suite, current) {
+            } else {
                 candidates.push(Candidate {
                     locator: here,
                     run: latest,
                     entry: current,
-                });
-            } else {
-                refusals.push(Refusal {
-                    cause: Cause::Unevaluated,
-                    premise: Some(super::Premise::Binding),
-                    locator: Some(here),
-                    detail: super::Premise::Binding
-                        .detail("no binding of this obligation to the passing symbol survives"),
                 });
             }
         }

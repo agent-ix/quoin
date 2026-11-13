@@ -26,11 +26,11 @@ use quire_rs::coverage::CoverageMatrixStatus;
 use quire_rs::evidence::{CauseCode, strict_decision};
 use quoin_evidence::adapters::parse_differential_report;
 use quoin_evidence::qualify::{
-    CiAssociation, ExecutionAssociation, HostObservations, POSITIVE_USE_DECISION, RetainedRun,
+    ActorAdmission, CiAssociation, ExecutionAssociation, HostObservations, POSITIVE_USE_DECISION,
+    RetainedRun, RunObservation,
 };
 use quoin_evidence::record::{RecordRequest, record_run};
 use quoin_evidence::store::read_bindings;
-use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{
     Binding, ProducerContext, RunRecord, TrustDecision, TrustDecisionKind, TrustTrigger, TrustUse,
 };
@@ -90,19 +90,20 @@ fn obligations() -> Vec<quoin_quire_types::Obligation> {
         .collect()
 }
 
-/// An FR-093 assessment from the trust-decision mechanism, permitting the
-/// positive use. Built here; no decision file exists in any store.
-fn assessment() -> quoin_evidence::types::TrustAssessment {
+/// An FR-093 decision from the trust-decision mechanism for `producer`,
+/// permitting the positive use. Built here; no decision file exists in any
+/// store.
+fn decision(producer: (&str, &str), limitations: &[&str]) -> TrustDecision {
     let context = ProducerContext {
-        name: "quire-analyze".to_owned(),
-        version: "0.1.0".to_owned(),
+        name: producer.0.to_owned(),
+        version: producer.1.to_owned(),
         configuration: "run-package".to_owned(),
         validation_corpus: "tc-001-captures".to_owned(),
         input_contract: "quire.differential-report/v2".to_owned(),
         environment: "ci".to_owned(),
         adapter: None,
     };
-    assess_trust(&TrustDecision {
+    TrustDecision {
         schema_version: STORE_SCHEMA_VERSION,
         id: TrustDecisionId::parse("ETD-1").unwrap(),
         r#use: TrustUse {
@@ -124,28 +125,38 @@ fn assessment() -> quoin_evidence::types::TrustAssessment {
             id: "V-1".to_owned(),
             reference: Some("evidence/v-1".to_owned()),
         }],
-        limitations: Vec::new(),
+        limitations: limitations.iter().map(|text| (*text).to_owned()).collect(),
         owner: "owner".to_owned(),
         decided_at: "2026-11-13T00:00:00Z".to_owned(),
-    })
-    .unwrap()
+    }
 }
 
-/// Every premise admitted.
+/// The host facts that belong to no one record, every premise admitted.
 fn admitted() -> HostObservations {
     HostObservations {
-        reliance: Some(assessment()),
-        performed_revision: Some(HEAD.to_owned()),
+        reliance: Some(decision(("quire-analyze", "0.1.0"), &[])),
         selected_head: Some(HEAD.to_owned()),
+    }
+}
+
+/// What the host observed of the one act that produced `file`: its own CI
+/// invocation, its own checkout SHA and its own admitted signer.
+fn admitted_run(file: &str) -> RunObservation {
+    RunObservation {
+        performed_revision: Some(HEAD.to_owned()),
         execution: Some(ExecutionAssociation::Ci(CiAssociation {
             system: "github".to_owned(),
             project: "agent-ix/quoin".to_owned(),
             run: "100".to_owned(),
             attempt: "1".to_owned(),
             job: "analysis".to_owned(),
-            invocation: "run-package".to_owned(),
+            invocation: format!("run-package:{file}"),
         })),
-        actor: Some("signer-1".to_owned()),
+        actor: Some(ActorAdmission {
+            actor: "signer-1".to_owned(),
+            admission_ref: "admission-7".to_owned(),
+            authorized: vec![AC1.to_owned(), AC2.to_owned(), AC3.to_owned()],
+        }),
     }
 }
 
@@ -227,6 +238,7 @@ impl Recorded {
                 )
                 .unwrap(),
                 report: Some(report.clone()),
+                observation: admitted_run(path),
             })
             .collect()
     }
@@ -237,6 +249,20 @@ impl Recorded {
 
     fn count(&self, requested: &[&str], host: HostObservations) -> Counted {
         count(self.runs(), self.bindings(), requested, host)
+    }
+
+    /// As [`Self::count`], with each run's own observation changed by `tweak`.
+    fn count_with(
+        &self,
+        requested: &[&str],
+        host: HostObservations,
+        tweak: impl Fn(&mut RunObservation),
+    ) -> Counted {
+        let mut runs = self.runs();
+        for run in &mut runs {
+            tweak(&mut run.observation);
+        }
+        count(runs, self.bindings(), requested, host)
     }
 }
 
@@ -337,7 +363,22 @@ fn an_admitted_passing_report_is_a_qualified_record_for_its_own_target_only() {
     assert!(strict_decision(&outcome.report, &[]).is_err());
 }
 
-#[trace("FR-153-AC-2", "FR-153-AC-8", "FR-184-AC-1", "FR-184-AC-14")]
+/// Assert the obligation is uncounted and one cause names `premise`.
+fn assert_uncounted_naming(outcome: &Counted, cause: CauseCode, premise: &str) {
+    assert_eq!(counted(outcome), 0);
+    assert_ne!(status(outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+    assert!(unbacked(outcome).contains(&AC1.to_owned()));
+    assert!(
+        causes(outcome)
+            .iter()
+            .any(|(found, detail)| *found == cause && detail.starts_with(premise)),
+        "{premise}: {:?}",
+        causes(outcome)
+    );
+    assert!(strict_decision(&outcome.report, &[]).is_err());
+}
+
+#[trace("FR-153-AC-2", "FR-184-AC-1", "FR-184-AC-14")]
 #[test]
 fn the_shipped_default_and_a_missing_checkout_sha_leave_the_obligation_unevaluated() {
     let store = satisfied_store(&[AC1]);
@@ -345,92 +386,254 @@ fn the_shipped_default_and_a_missing_checkout_sha_leave_the_obligation_unevaluat
         reliance: None,
         ..admitted()
     };
-    let no_sha = HostObservations {
-        performed_revision: None,
+    let outcome = store.count(&[AC1], no_assessment);
+    assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "bounded reliance premise");
+
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.performed_revision = None;
+    });
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::Unevaluated,
+        "performed revision premise",
+    );
+
+    // What ships today: no assessment exists and the host supplies nothing.
+    let outcome = compute(&Request {
+        scope: scope(),
+        requested: vec![AC1.to_owned()],
+        runs: store
+            .runs()
+            .into_iter()
+            .map(|run| RetainedRun {
+                observation: RunObservation::default(),
+                ..run
+            })
+            .collect(),
+        bindings: store.bindings(),
+        host: HostObservations::default(),
+    })
+    .unwrap();
+    assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "bounded reliance premise");
+}
+
+#[trace("FR-153-AC-8")]
+#[test]
+fn a_passing_entry_with_a_healthy_audit_and_no_decision_is_not_counted() {
+    let store = satisfied_store(&[AC1]);
+    let latest: Vec<RunRecord> = store.runs().iter().map(|run| run.record.clone()).collect();
+    // The audit this entry survives: nothing found, and healthy.
+    let audit = quoin_auditor::audit(&quoin_auditor::AuditInput {
+        obligations: obligations()
+            .into_iter()
+            .filter(|obligation| obligation.id == AC1)
+            .collect(),
+        bindings: store.bindings(),
+        runs: latest,
+        injections: Some(Vec::new()),
+        mock_inspection_suites: Some(vec!["SUITE-A".to_owned()]),
+        ..quoin_auditor::AuditInput::default()
+    })
+    .unwrap();
+    assert!(audit.findings.is_empty(), "{:?}", audit.findings);
+    assert!(audit.healthy.contains(&AC1.to_owned()), "{audit:?}");
+
+    // Healthy, bound and passing, but no FR-116 decision: not counted.
+    let outcome = store.count(&[AC1], HostObservations::default());
+    assert_eq!(counted(&outcome), 0);
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+    assert!(unbacked(&outcome).contains(&AC1.to_owned()));
+}
+
+#[trace("FR-153-AC-1", "FR-153-CON-3")]
+#[test]
+fn the_bridge_runs_the_fr_032_audit_and_a_finding_leaves_the_entry_uncounted() {
+    let store = satisfied_store(&[AC1]);
+    // A binding whose suite has no recorded run: the audit calls it stale.
+    let mut bindings = store.bindings();
+    bindings.push(Binding {
+        obligation: quoin_evidence::ObligationId::new(AC1),
+        suite: SuiteId::new("SUITE-GHOST"),
+        symbols: vec![quoin_evidence::SymbolId::new("ghost")],
+        lineage: None,
+    });
+    let outcome = count(store.runs(), bindings, &[AC1], admitted());
+    assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "FR-032 audit premise");
+}
+
+#[trace("FR-116-AC-7", "FR-116-AC-8")]
+#[test]
+fn an_observation_of_one_record_never_qualifies_another() {
+    let mut store = Recorded::new();
+    store.record("SUITE-A", "2026-11-13T10:00:00Z", SATISFIED, &[AC1]);
+    store.record("SUITE-B", "2026-11-13T10:00:00Z", SATISFIED, &[AC1]);
+    assert_eq!(counted(&store.count(&[AC1], admitted())), 2);
+
+    let mut runs = store.runs();
+    runs[1].observation.performed_revision = Some("old-sha".to_owned());
+    let outcome = count(runs.clone(), store.bindings(), &[AC1], admitted());
+    assert_eq!(counted(&outcome), 0);
+    let wrong: Vec<_> = outcome
+        .report
+        .evidence_results
+        .clone()
+        .unwrap()
+        .into_iter()
+        .filter(|result| result.cause == CauseCode::WrongRevision)
+        .collect();
+    assert_eq!(wrong.len(), 1);
+    assert_eq!(
+        wrong[0].locator.as_ref().unwrap().record,
+        runs[1].file,
+        "the refusal names the record whose own revision differs"
+    );
+
+    // No observation of its own: unevaluated, whatever the other record has.
+    runs[1].observation = RunObservation::default();
+    let outcome = count(runs, store.bindings(), &[AC1], admitted());
+    assert_eq!(counted(&outcome), 0);
+    assert!(causes(&outcome).iter().any(|(cause, detail)| {
+        *cause == CauseCode::Unevaluated && detail.starts_with("execution association premise")
+    }));
+}
+
+#[trace("FR-116-AC-6", "FR-116-AC-18")]
+#[test]
+fn the_actor_needs_an_admission_reference_and_authority_over_the_target() {
+    let store = satisfied_store(&[AC1]);
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.actor = None;
+    });
+    assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "actor authority premise");
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        if let Some(actor) = &mut observation.actor {
+            actor.admission_ref = String::new();
+        }
+    });
+    assert_uncounted_naming(&outcome, CauseCode::Unevaluated, "actor authority premise");
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        if let Some(actor) = &mut observation.actor {
+            actor.authorized = vec![AC2.to_owned()];
+        }
+    });
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::QualificationRejected,
+        "actor authority premise",
+    );
+    let counted_run = store.count(&[AC1], admitted());
+    let binder = &counted_run.report.record_binders.as_ref().unwrap()[0];
+    assert!(
+        binder
+            .provenance
+            .contains(&"actor-authority:signer-1:admission-7".to_owned())
+    );
+}
+
+#[trace("FR-116-AC-6", "FR-116-AC-15")]
+#[test]
+fn the_reliance_decision_must_be_for_the_reports_producer_and_its_limits_read() {
+    let store = satisfied_store(&[AC1]);
+    for producer in [("other-tool", "0.1.0"), ("quire-analyze", "9.9.9")] {
+        let host = HostObservations {
+            reliance: Some(decision(producer, &[])),
+            ..admitted()
+        };
+        assert_uncounted_naming(
+            &store.count(&[AC1], host),
+            CauseCode::QualificationRejected,
+            "bounded reliance premise",
+        );
+    }
+    let excluding = HostObservations {
+        reliance: Some(decision(
+            ("quire-analyze", "0.1.0"),
+            &["does not cover FR-001-AC-1"],
+        )),
         ..admitted()
     };
-    for (host, premise) in [
-        (no_assessment, "bounded reliance premise"),
-        (no_sha, "performed revision premise"),
-        (HostObservations::default(), "bounded reliance premise"),
-    ] {
-        let outcome = store.count(&[AC1], host);
-        assert_eq!(counted(&outcome), 0);
-        assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
-        assert!(unbacked(&outcome).contains(&AC1.to_owned()));
-        assert!(
-            causes(&outcome)
-                .iter()
-                .any(|(cause, detail)| *cause == CauseCode::Unevaluated
-                    && detail.starts_with(premise)),
-            "{premise}: {:?}",
-            causes(&outcome)
-        );
-        assert!(strict_decision(&outcome.report, &[]).is_err());
-    }
+    assert_uncounted_naming(
+        &store.count(&[AC1], excluding),
+        CauseCode::QualificationRejected,
+        "bounded reliance premise",
+    );
+    let harmless = HostObservations {
+        reliance: Some(decision(("quire-analyze", "0.1.0"), &["Linux x86-64 only"])),
+        ..admitted()
+    };
+    let outcome = store.count(&[AC1], harmless);
+    let binder = &outcome.report.record_binders.as_ref().unwrap()[0];
+    assert!(
+        binder
+            .provenance
+            .contains(&"limitation:Linux x86-64 only".to_owned())
+    );
 }
 
 #[trace("FR-184-AC-10", "FR-184-AC-11", "FR-184-AC-12")]
 #[test]
 fn association_and_engine_observations_are_premises_of_the_decision() {
     let store = satisfied_store(&[AC1]);
-    let manual = HostObservations {
-        execution: Some(ExecutionAssociation::Manual {
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.execution = Some(ExecutionAssociation::Manual {
             attester: "someone".to_owned(),
             reason: "no CI".to_owned(),
-        }),
-        ..admitted()
-    };
-    let none = HostObservations {
-        execution: None,
-        ..admitted()
-    };
-    for (host, cause, premise) in [
+        });
+    });
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::QualificationRejected,
+        "execution association premise",
+    );
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.execution = None;
+    });
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::Unevaluated,
+        "execution association premise",
+    );
+
+    // An engine record missing what producer-execute observes is no
+    // observation of a solver it started.
+    for (change, label) in [
         (
-            manual,
-            CauseCode::QualificationRejected,
-            "execution association premise",
+            (&["engines", "1", "identity", "version"][..], Value::Null),
+            "identity.version",
         ),
+        ((&["engines", "1", "identity"][..], Value::Null), "identity"),
+        ((&["engines", "0", "status"][..], Value::Null), "status"),
+        ((&["engines", "0", "outcome"][..], Value::Null), "outcome"),
         (
-            none,
-            CauseCode::Unevaluated,
-            "execution association premise",
+            (
+                &["engines", "0", "configuredExecutable"][..],
+                Value::from("z3"),
+            ),
+            "relative configuredExecutable",
         ),
     ] {
-        let outcome = store.count(&[AC1], host);
-        assert_eq!(counted(&outcome), 0);
+        let mut incomplete = Recorded::new();
+        incomplete.record("SUITE-A", "2026-11-13T10:00:00Z", SATISFIED, &[AC1]);
+        let mut target = &mut incomplete.reports[0].1;
+        let (path, value) = change;
+        for key in path {
+            target = match key.parse::<usize>() {
+                Ok(index) => &mut target[index],
+                Err(_) => &mut target[*key],
+            };
+        }
+        *target = value;
+        let outcome = incomplete.count(&[AC1], admitted());
+        assert_uncounted_naming(
+            &outcome,
+            CauseCode::Unevaluated,
+            "tool and configuration premise",
+        );
         assert!(
-            causes(&outcome)
-                .iter()
-                .any(|(found, detail)| *found == cause && detail.starts_with(premise)),
-            "{:?}",
-            causes(&outcome)
+            !causes(&outcome).is_empty(),
+            "{label} must leave a named cause"
         );
     }
-
-    // An engine record without its observed version is no observation of a
-    // solver started through producer-execute.
-    let mut incomplete = Recorded::new();
-    incomplete.record("SUITE-A", "2026-11-13T10:00:00Z", SATISFIED, &[AC1]);
-    incomplete.reports[0].1["engines"][1]["identity"]["version"] = Value::Null;
-    let outcome = incomplete.count(&[AC1], admitted());
-    assert_eq!(counted(&outcome), 0);
-    assert!(
-        causes(&outcome)
-            .iter()
-            .any(|(cause, detail)| *cause == CauseCode::Unevaluated
-                && detail.starts_with("tool and configuration premise")),
-        "{:?}",
-        causes(&outcome)
-    );
-    incomplete.reports[0].1["engines"][1]["identity"]["version"] = Value::from("cvc5 1.1.2");
-    incomplete.reports[0].1["engines"][0]["configuredExecutable"] = Value::from("z3");
-    let outcome = incomplete.count(&[AC1], admitted());
-    assert_eq!(
-        counted(&outcome),
-        0,
-        "a relative executable is not absolute"
-    );
 }
 
 #[trace("FR-153-AC-3", "FR-184-AC-3", "FR-184-AC-4", "FR-184-AC-5")]
@@ -651,6 +854,44 @@ fn trace_returns_the_record_claim_and_never_a_source_symbol() {
     assert_eq!(outcome.trace(Query::Record(&locator)), binders);
     assert_eq!(outcome.trace(Query::Run(&locator.run)), binders);
     assert!(outcome.trace(Query::Obligation(AC2)).is_empty());
+
+    // A source-symbol query for the retained entry's own identity returns no
+    // claim, and the obligation id in prose stays a citation (FR-077).
+    let symbol = binders[0].locator.entry.clone();
+    let registry = quire_rs::Registry::load_module(&fixture()).unwrap();
+    let model = registry.traceability().unwrap();
+    let extraction = quire_rs::symbols::extract_tree_scoped(
+        &fixture(),
+        &[std::path::Path::new("spec")],
+        &model.source_exclude,
+    );
+    let graph = quire_rs::symbols::trace::bind(&extraction, model);
+    let by_symbol = quire_rs::symbols::trace_search::search(
+        &graph,
+        &extraction,
+        &quire_rs::symbols::trace_search::Query::SymbolName(symbol),
+    )
+    .unwrap();
+    assert!(by_symbol.verifies.is_empty() && by_symbol.implements.is_empty());
+    assert!(
+        !by_symbol.resolved,
+        "no source symbol carries that identity"
+    );
+    let by_id = quire_rs::symbols::trace_search::search(
+        &graph,
+        &extraction,
+        &quire_rs::symbols::trace_search::Query::Id(AC1.to_owned()),
+    )
+    .unwrap();
+    assert!(by_id.verifies.is_empty(), "prose makes no claim");
+    assert!(
+        by_id
+            .citations
+            .iter()
+            .any(|mention| mention.path.ends_with("prose.rs")),
+        "the id in prose stays a citation: {:?}",
+        by_id.citations
+    );
 }
 
 #[trace("FR-153-AC-10")]
@@ -660,6 +901,24 @@ fn a_report_recorded_without_discharges_counts_for_no_obligation() {
     let outcome = store.count(&[AC1, AC2], admitted());
     assert_eq!(counted(&outcome), 0);
     assert!(store.bindings().is_empty());
+
+    // Even where the entry's symbol and the report's digest text equal an
+    // obligation id: the text is not a binding source.
+    let mut colliding = Recorded::new();
+    let mut report = satisfied_report();
+    report["analysisKind"] = Value::from("FR-001-AC-1");
+    report["requestDigest"] = Value::from("FR-001-AC-1");
+    colliding.record_entry(
+        "SUITE-A",
+        "2026-11-13T10:00:00Z",
+        ("FR-001-AC-1::FR-001-AC-1", Outcome::Pass),
+        &[],
+        report,
+    );
+    assert!(colliding.bindings().is_empty());
+    let outcome = colliding.count(&[AC1], admitted());
+    assert_eq!(counted(&outcome), 0);
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
 }
 
 #[trace("FR-153-AC-11", "FR-184-AC-9")]
