@@ -19,7 +19,32 @@ use std::process::{Command, Output};
 
 use serde_json::Value;
 
-const MODULE: &str = "name: licence-fixture\nversion: 0.1.0\ndescription: Fixture module\nartifact_types:\n  - name: FR\n    grammar_ref: iso-spec-core\n    defaults:\n      id_pattern: FR-{next:03d}\n";
+const MODULE: &str = r##"name: quoin-cli-matrix-fixture
+version: 0.1.0
+description: Fixture module for the quoin matrix command tests
+artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  trace_tags:
+    markers:
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: "#[trace({ids})]"
+"##;
 const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: One\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|----|----------|--------------|\n| FR-001-AC-1 | It works. |  |\n";
 const POLICY: &str = "format: licence-policy-v1\nallow: [MIT]\ndeny: [GPL-3.0-only]\nban:\n  - purl: pkg:npm/fx-vale\n";
 
