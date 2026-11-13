@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The SBOM adapter (FR-041) read against a real Syft CycloneDX document,
+//! The SBOM adapter (FR-041) read against a real Syft `CycloneDX` document,
 //! captured from Syft 1.57.1 over a four-package scratch `Cargo.lock` and
 //! checked in unedited (`tests/fixtures/evidence/syft-cyclonedx-real.json`).
 
