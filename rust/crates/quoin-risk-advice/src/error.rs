@@ -3,11 +3,15 @@
 
 //! The crate's failure envelope.
 
+use std::path::Path;
+
 /// A stable, `Copy` classification of an operational failure.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
-    /// A file or directory could not be read.
-    Io,
+    /// The scope or the modules that declare the record types could not be read.
+    Read,
+    /// A record breaks the contract its type declares.
+    Record,
     /// The report could not be serialized.
     Render,
 }
@@ -23,10 +27,20 @@ pub struct AdviceError {
 }
 
 impl AdviceError {
-    pub(crate) fn io(path: &std::path::Path, error: &std::io::Error) -> Self {
+    pub(crate) fn read(error: &quoin_quire::Error) -> Self {
         Self {
-            code: ErrorCode::Io,
-            message: format!("{}: {error}", path.display()),
+            code: ErrorCode::Read,
+            message: error.to_string(),
+        }
+    }
+
+    pub(crate) fn record(path: &Path, id: &str, reason: &str) -> Self {
+        Self {
+            code: ErrorCode::Record,
+            message: format!(
+                "{} ({id}) breaks its type's contract: {reason}",
+                path.display()
+            ),
         }
     }
 

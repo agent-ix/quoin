@@ -52,6 +52,7 @@ FR-101 defines them: the regions whose `outside_acceptable` flag is `false`, and
 - The Markdown rendering of a resolved entry SHALL read "the policy marks this cell as <region>".
 - If the region's flag is `true`, then the Markdown rendering SHALL add "the policy flags this region as outside its acceptable region".
 - If a level is not in the policy's lists, then the entry SHALL carry the finding `level-not-in-policy` naming the level and no region.
+- If both levels are in the policy's lists and the policy lists no region for the pair, or lists a region absent from its region list, then the entry SHALL carry the finding `cell-not-in-policy` naming the severity, the probability and the policy, and no region; `quire validate` reports the incomplete policy (`agent-ix/spec-objects-safety` FR-101).
 - If a level is `unknown`, `not_assessed` or `not_applicable`, then the entry SHALL carry the finding `level-not-assessed` naming the marker and no region.
 - If the estimate has no policy, then the entry SHALL carry the finding `policy-not-found` and no region.
 - If the estimate has no single policy, then the entry SHALL carry the finding `policy-ambiguous` naming the policies and no region.
@@ -90,6 +91,7 @@ Every key is present, `null` or `[]` when empty.
 | FR-146-AC-8 | The keys of every entry equal the entry key table, with no numeric, rank or verdict key. | Test |
 | FR-146-AC-9 | A pre-control and a post-control estimate of one situation each show their own cell and no key relates them. | Test |
 | FR-146-AC-10 | For each fixture estimate, the region equals the region named by the fixture policy's cell for the estimate's levels, looked up directly in the policy document. | Test |
+| FR-146-AC-11 | A policy that declares both levels of an estimate but lists no region for the pair yields `cell-not-in-policy` naming the severity, the probability and the policy, and no region. | Test |
 
 ## Dependencies
 

@@ -5,13 +5,22 @@
 
 use std::collections::BTreeMap;
 
-use quoin_anomaly::{Record as Anomaly, parse_record};
+use quoin_anomaly::{Record as Anomaly, acceptance_criteria, is_hazard, parse_record};
+use quoin_quire::records::{Contract, Document, Table};
 
-use crate::corpus::Doc;
+use crate::error::AdviceError;
+
+/// The types whose declared `body_extraction` contract is checked.
+pub(crate) const CHECKED: [&str; 5] = [
+    "risk_estimate",
+    "acceptability_policy",
+    "residual_risk",
+    "benefit_risk",
+    "overall_residual_risk_evaluation",
+];
 
 /// Whether an estimate was made before or after the controls.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Phase {
     PreControl,
     PostControl,
@@ -46,7 +55,7 @@ pub(crate) struct Policy {
 }
 
 /// A record that holds a decision: residual risk, benefit-risk or evaluation.
-pub(crate) struct DecisionRecord {
+pub(crate) struct Choice {
     pub(crate) id: String,
     pub(crate) decision: String,
     /// `estimate` for a residual risk.
@@ -56,10 +65,11 @@ pub(crate) struct DecisionRecord {
     pub(crate) references: Vec<String>,
 }
 
-/// A document the report only needs to know by kind and id.
+/// A document the report only needs to know by kind and links.
 pub(crate) struct Plain {
     pub(crate) id: String,
     pub(crate) kind: String,
+    pub(crate) hazard: bool,
     pub(crate) arises_from: Vec<String>,
     pub(crate) satisfies: Vec<String>,
     pub(crate) verifies: Vec<String>,
@@ -71,19 +81,32 @@ pub(crate) struct Plain {
 pub(crate) struct Records {
     pub(crate) estimates: BTreeMap<String, Estimate>,
     pub(crate) policies: BTreeMap<String, Policy>,
-    pub(crate) residual_risks: BTreeMap<String, DecisionRecord>,
-    pub(crate) benefit_risks: BTreeMap<String, DecisionRecord>,
-    pub(crate) evaluations: BTreeMap<String, DecisionRecord>,
+    pub(crate) residual_risks: BTreeMap<String, Choice>,
+    pub(crate) benefit_risks: BTreeMap<String, Choice>,
+    pub(crate) evaluations: BTreeMap<String, Choice>,
     pub(crate) others: BTreeMap<String, Plain>,
     pub(crate) anomalies: Vec<Anomaly>,
 }
 
 impl Records {
-    pub(crate) fn read(docs: &[Doc]) -> Self {
+    /// Build the records from the documents.
+    ///
+    /// An estimate that breaks its type's contract is skipped (FR-145): `quire
+    /// validate` reports it. Any other checked record that breaks its contract
+    /// stops the report, because dropping it would drop an undecided decision
+    /// or a policy from the output without a word.
+    pub(crate) fn read(docs: &[Document]) -> Result<Self, AdviceError> {
         let mut records = Self::default();
         for doc in docs {
+            if let Contract::Violated(reason) = &doc.contract
+                && doc.kind != "risk_estimate"
+            {
+                return Err(AdviceError::record(&doc.path, &doc.id, reason));
+            }
+            let satisfied = doc.contract != Contract::NotChecked
+                && !matches!(doc.contract, Contract::Violated(_));
             match doc.kind.as_str() {
-                "risk_estimate" => {
+                "risk_estimate" if satisfied => {
                     if let Some(estimate) = estimate(doc) {
                         records.estimates.insert(doc.id.clone(), estimate);
                     }
@@ -92,16 +115,16 @@ impl Records {
                     records.policies.insert(doc.id.clone(), policy(doc));
                 }
                 "residual_risk" => {
-                    records.residual_risks.insert(doc.id.clone(), decision(doc));
+                    records.residual_risks.insert(doc.id.clone(), choice(doc));
                 }
                 "benefit_risk" => {
-                    records.benefit_risks.insert(doc.id.clone(), decision(doc));
+                    records.benefit_risks.insert(doc.id.clone(), choice(doc));
                 }
                 "overall_residual_risk_evaluation" => {
-                    records.evaluations.insert(doc.id.clone(), decision(doc));
+                    records.evaluations.insert(doc.id.clone(), choice(doc));
                 }
                 "Anomaly" => {
-                    if let Ok(anomaly) = parse_record(&doc.text) {
+                    if let Ok(anomaly) = parse_record(&doc.raw) {
                         records.anomalies.push(anomaly);
                     }
                 }
@@ -109,109 +132,131 @@ impl Records {
             }
             records.others.insert(doc.id.clone(), plain(doc));
         }
-        records
+        Ok(records)
     }
 }
 
-fn estimate(doc: &Doc) -> Option<Estimate> {
-    let phase = match doc.front_str("phase")? {
+impl Records {
+    /// The policy a residual risk names: its first `references` target that is
+    /// a policy in scope, else its first `references` target.
+    pub(crate) fn policy_of(&self, risk: &Choice) -> Option<String> {
+        risk.references
+            .iter()
+            .find(|id| self.policies.contains_key(*id))
+            .or_else(|| risk.references.first())
+            .cloned()
+    }
+}
+
+/// The target ids of the document's edges of type `verb`, sorted and distinct.
+fn edges(doc: &Document, verb: &str) -> Vec<String> {
+    let mut targets: Vec<String> = doc
+        .edges
+        .iter()
+        .filter(|(_, edge)| edge == verb)
+        .map(|(target, _)| target.clone())
+        .collect();
+    targets.sort();
+    targets.dedup();
+    targets
+}
+
+fn column(table: &Table, name: &str) -> Option<usize> {
+    table.headers.iter().position(|header| header == name)
+}
+
+fn cell(table: &Table, row: usize, name: &str) -> Option<String> {
+    table.rows.get(row)?.get(column(table, name)?).cloned()
+}
+
+fn estimate(doc: &Document) -> Option<Estimate> {
+    let phase = match doc.frontmatter.get("phase")?.as_str()? {
         "pre_control" => Phase::PreControl,
         "post_control" => Phase::PostControl,
         _ => return None,
     };
-    let rows = doc.table("Judgement", &["Severity", "Probability", "Rationale"]);
-    let row = rows.first()?;
+    let table = doc.tables.get("Judgement")?;
     Some(Estimate {
         id: doc.id.clone(),
         phase,
-        severity: row.first()?.clone(),
-        probability: row.get(1)?.clone(),
-        situations: doc.edges("estimates"),
-        controls: doc.edges("assumes"),
+        severity: cell(table, 0, "Severity")?,
+        probability: cell(table, 0, "Probability")?,
+        situations: edges(doc, "estimates"),
+        controls: edges(doc, "assumes"),
     })
 }
 
-fn column(doc: &Doc, heading: &str, name: &str) -> Vec<String> {
-    doc.table(heading, &[name])
-        .into_iter()
-        .filter_map(|row| row.into_iter().next())
-        .collect()
+fn levels(doc: &Document, heading: &str, name: &str) -> Vec<String> {
+    doc.tables.get(heading).map_or_else(Vec::new, |table| {
+        (0..table.rows.len())
+            .filter_map(|row| cell(table, row, name))
+            .collect()
+    })
 }
 
-fn policy(doc: &Doc) -> Policy {
+fn policy(doc: &Document) -> Policy {
     let regions = doc
-        .table("Regions", &["Region", "Outside acceptable"])
-        .into_iter()
-        .filter_map(|row| {
-            let [name, flag] = <[String; 2]>::try_from(row).ok()?;
-            Some((name, flag.parse::<bool>().ok()?))
-        })
-        .collect();
-    let cells = doc
-        .table("Cells", &["Severity", "Probability", "Region"])
-        .into_iter()
-        .filter_map(|row| {
-            let [severity, probability, region] = <[String; 3]>::try_from(row).ok()?;
-            Some(((severity, probability), region))
-        })
-        .collect();
+        .tables
+        .get("Regions")
+        .map_or_else(BTreeMap::new, |table| {
+            (0..table.rows.len())
+                .filter_map(|row| {
+                    let flag = cell(table, row, "Outside acceptable")?
+                        .parse::<bool>()
+                        .ok()?;
+                    Some((cell(table, row, "Region")?, flag))
+                })
+                .collect()
+        });
+    let cells = doc.tables.get("Cells").map_or_else(BTreeMap::new, |table| {
+        (0..table.rows.len())
+            .filter_map(|row| {
+                Some((
+                    (
+                        cell(table, row, "Severity")?,
+                        cell(table, row, "Probability")?,
+                    ),
+                    cell(table, row, "Region")?,
+                ))
+            })
+            .collect()
+    });
     Policy {
         id: doc.id.clone(),
-        severities: column(doc, "Severity levels", "Severity level"),
-        probabilities: column(doc, "Probability levels", "Probability level"),
+        severities: levels(doc, "Severity levels", "Severity level"),
+        probabilities: levels(doc, "Probability levels", "Probability level"),
         regions,
         cells,
     }
 }
 
-fn decision(doc: &Doc) -> DecisionRecord {
-    let word = doc
-        .table("Determination", &["Decision", "Rationale", "Decided by"])
-        .into_iter()
-        .chain(doc.table(
-            "Determination",
-            &["Benefit", "Decision", "Rationale", "Decided by"],
-        ))
-        .chain(doc.table(
-            "Determination",
-            &["Product", "Decision", "Rationale", "Decided by"],
-        ))
-        .next()
-        .and_then(|row| {
-            let at = usize::from(row.len() > 3);
-            row.into_iter().nth(at)
-        })
+fn choice(doc: &Document) -> Choice {
+    let decision = doc
+        .tables
+        .get("Determination")
+        .and_then(|table| cell(table, 0, "Decision"))
         .unwrap_or_default();
-    DecisionRecord {
+    Choice {
         id: doc.id.clone(),
-        decision: word,
-        estimate: doc.edges("estimate").into_iter().next(),
-        references: doc.edges("references"),
+        decision,
+        estimate: edges(doc, "estimate").into_iter().next(),
+        references: edges(doc, "references"),
     }
 }
 
-fn plain(doc: &Doc) -> Plain {
-    let prefix = format!("{}-AC-", doc.id);
-    let criteria = if matches!(doc.kind.as_str(), "FR" | "NFR") {
-        doc.text
-            .lines()
-            .filter_map(|line| {
-                let first = line.trim_start().strip_prefix('|')?.split('|').next()?;
-                first
-                    .trim()
-                    .starts_with(&prefix)
-                    .then(|| first.trim().to_owned())
-            })
-            .collect()
-    } else {
-        Vec::new()
-    };
+fn plain(doc: &Document) -> Plain {
+    let is_requirement = matches!(doc.kind.as_str(), "FR" | "NFR");
     Plain {
         id: doc.id.clone(),
         kind: doc.kind.clone(),
-        arises_from: doc.edges("arises_from"),
-        satisfies: doc.edges("satisfies"),
-        verifies: doc.edges("verifies"),
-        criteria,
+        hazard: is_hazard(&doc.frontmatter),
+        arises_from: edges(doc, "arises_from"),
+        satisfies: edges(doc, "satisfies"),
+        verifies: edges(doc, "verifies"),
+        criteria: if is_requirement {
+            acceptance_criteria(&doc.raw, &doc.id)
+        } else {
+            Vec::new()
+        },
     }
 }

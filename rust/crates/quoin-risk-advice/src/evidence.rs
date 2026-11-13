@@ -58,7 +58,13 @@ pub struct EvidenceEntry {
 }
 
 fn exists(records: &Records, id: &str, kind: &str) -> bool {
-    records.others.get(id).is_some_and(|doc| doc.kind == kind)
+    records.others.get(id).is_some_and(|doc| {
+        if kind == "hazard" {
+            doc.hazard
+        } else {
+            doc.kind == kind
+        }
+    })
 }
 
 fn entry(records: &Records, links: &Links, estimate: &Estimate) -> EvidenceEntry {

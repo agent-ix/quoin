@@ -12,10 +12,10 @@ use std::path::PathBuf;
 use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::{Diagnostic, Response};
+use quoin_quire::{ModuleRoot, ModuleSelection};
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
-pub(crate) const ABOUT: &str =
-    "Advise on risk decisions from the safety records, without deciding.";
+pub(crate) const ABOUT: &str = "Advise on risk decisions without making them.";
 
 pub(crate) fn command() -> Command {
     Command::new("risk").about(ABOUT).subcommand_required(true).subcommand(
@@ -34,6 +34,13 @@ pub(crate) fn command() -> Command {
                     .default_value("markdown")
                     .value_parser(["markdown", "json"])
                     .help("Output format"),
+            )
+            .arg(
+                Arg::new("module")
+                    .long("module")
+                    .value_name("DIR")
+                    .action(clap::ArgAction::Append)
+                    .help("Module root that declares the safety record types; repeat to add roots. Without it the installed modules are searched"),
             ),
     )
 }
@@ -50,20 +57,31 @@ fn run_advise(arguments: &ArgMatches) -> Result<Response, String> {
         .get_one::<String>("scope")
         .map_or_else(|| PathBuf::from("."), PathBuf::from);
     if !scope.is_dir() {
-        return Ok(Response {
-            payload: serde_json::Value::Null,
-            diagnostics: vec![Diagnostic {
-                code: "risk.scope_missing".to_owned(),
-                message: format!(
-                    "scope {} does not exist (no such file or directory)",
-                    scope.display()
-                ),
-                context: BTreeMap::new(),
-            }],
-            outcome: Outcome::Refused,
-        });
+        return Ok(refused(
+            "risk.scope_missing",
+            &format!(
+                "scope {} does not exist (no such file or directory)",
+                scope.display()
+            ),
+        ));
     }
-    let advice = quoin_risk_advice::advise(&scope).map_err(|error| error.to_string())?;
+    let modules =
+        arguments
+            .get_many::<String>("module")
+            .map_or(Ok(ModuleSelection::Ambient), |roots| {
+                roots
+                    .map(ModuleRoot::open)
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(ModuleSelection::Closed)
+            });
+    let modules = match modules {
+        Ok(modules) => modules,
+        Err(error) => return Ok(refused("risk.module_missing", &error.to_string())),
+    };
+    let advice = match quoin_risk_advice::advise(&scope, &modules) {
+        Ok(advice) => advice,
+        Err(error) => return Ok(refused("risk.unreadable", &error.to_string())),
+    };
     let rendered = match arguments.get_one::<String>("format").map(String::as_str) {
         Some("json") => advice.to_json().map_err(|error| error.to_string())?,
         _ => advice.to_markdown(),
@@ -71,4 +89,17 @@ fn run_advise(arguments: &ArgMatches) -> Result<Response, String> {
     Ok(Response::ok(
         serde_json::json!({ "rendered": rendered.trim_end() }),
     ))
+}
+
+/// A refusal: exit status 2 with one diagnostic, and nothing on stdout.
+fn refused(code: &str, message: &str) -> Response {
+    Response {
+        payload: serde_json::Value::Null,
+        diagnostics: vec![Diagnostic {
+            code: code.to_owned(),
+            message: message.to_owned(),
+            context: BTreeMap::new(),
+        }],
+        outcome: Outcome::Refused,
+    }
 }

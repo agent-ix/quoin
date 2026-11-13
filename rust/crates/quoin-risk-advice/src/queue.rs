@@ -11,7 +11,7 @@ use serde::Serialize;
 use crate::finding::{Finding, Token};
 use crate::links::Links;
 use crate::policy::resolve;
-use crate::records::{DecisionRecord, Phase, Records};
+use crate::records::{Choice, Phase, Records};
 
 const UNDECIDED: &str = "undecided";
 
@@ -58,7 +58,7 @@ pub struct Queue {
     pub no_record: Vec<NoRecord>,
 }
 
-fn plain(record: &DecisionRecord, kind: &'static str) -> QueueEntry {
+fn plain(record: &Choice, kind: &'static str) -> QueueEntry {
     QueueEntry {
         record: record.id.clone(),
         kind,
@@ -73,11 +73,11 @@ fn plain(record: &DecisionRecord, kind: &'static str) -> QueueEntry {
     }
 }
 
-fn residual(records: &Records, record: &DecisionRecord) -> QueueEntry {
+fn residual(records: &Records, record: &Choice) -> QueueEntry {
     let mut entry = plain(record, "residual_risk");
     entry.references = Vec::new();
     entry.estimate.clone_from(&record.estimate);
-    entry.policy = record.references.first().cloned();
+    entry.policy = records.policy_of(record);
     let estimate = record
         .estimate
         .as_ref()

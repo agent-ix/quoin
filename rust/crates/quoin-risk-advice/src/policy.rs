@@ -86,8 +86,12 @@ pub(crate) fn resolve(policy: &Policy, severity: &str, probability: &str) -> Res
         .and_then(|name| Some((name.clone(), *policy.regions.get(name)?)));
     let findings = if region.is_none() {
         vec![Finding::naming(
-            Token::LevelNotInPolicy,
-            vec![format!("{severity}/{probability}"), policy.id.clone()],
+            Token::CellNotInPolicy,
+            vec![
+                severity.to_owned(),
+                probability.to_owned(),
+                policy.id.clone(),
+            ],
         )]
     } else {
         Vec::new()

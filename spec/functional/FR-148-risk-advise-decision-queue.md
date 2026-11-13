@@ -39,7 +39,7 @@ flag), so ordering by region would be a prioritisation nobody authored. The regi
 - The command SHALL list one entry for every `residual_risk`, `benefit_risk` and `overall_residual_risk_evaluation` in scope whose `decision` is `undecided`.
 - The command SHALL order entries by kind (`residual_risk`, then `benefit_risk`, then `overall_residual_risk_evaluation`), then by record id.
 - For a `residual_risk` entry, the command SHALL carry the estimate id, the policy id from the record's own `policy` reference, the estimate's entered levels, and the region and `outside_acceptable` flag as `agent-ix/spec-objects-safety` FR-102 resolves them.
-- If FR-102 resolves no region for a `residual_risk` entry, then the entry SHALL carry `level-not-in-policy` or `level-not-assessed` as FR-146 does and no region.
+- If FR-102 resolves no region for a `residual_risk` entry, then the entry SHALL carry `level-not-in-policy`, `level-not-assessed` or `cell-not-in-policy` as FR-146 does and no region.
 - For a `benefit_risk` entry, the command SHALL carry in `references` the ids of the residual risks it covers.
 - For an `overall_residual_risk_evaluation` entry, the command SHALL carry in `references` the ids it considers.
 - The command SHALL list in a separate `no_record` group each post-control estimate that no `residual_risk` references, with the finding `post-control-estimate-without-decision`, ordered by estimate id.
@@ -61,7 +61,7 @@ Every key is present, `null` or `[]` when empty. The section is an object with t
 | `severity`, `probability` | as entered on the estimate (`residual_risk` only), else `null` |
 | `region`, `outside_acceptable` | as the policy wrote them, or `null` |
 | `references` | covered or considered ids (`benefit_risk`, `overall_residual_risk_evaluation`), else `[]` |
-| `findings` | `{ finding, names }` objects for `level-not-in-policy` or `level-not-assessed` where they apply |
+| `findings` | `{ finding, names }` objects for `level-not-in-policy`, `level-not-assessed` or `cell-not-in-policy` where they apply |
 
 An element of `no_record` has exactly the keys `estimate` and `findings`, the latter one `{ finding, names }` object with `finding` `post-control-estimate-without-decision` and `names` `[]`.
 

@@ -5,9 +5,9 @@
 
 use serde::Serialize;
 
-/// A finding token. The first six are `spec-objects-safety` FR-102, FR-203,
-/// FR-204, FR-301, FR-302 and FR-303; `policy-not-found` and `policy-ambiguous`
-/// are FR-146's.
+/// A finding token. Those of `spec-objects-safety` FR-102, FR-203, FR-204,
+/// FR-301, FR-302 and FR-303 keep its spelling; `cell-not-in-policy`,
+/// `policy-not-found` and `policy-ambiguous` are quoin FR-146's own.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Token {
@@ -15,6 +15,8 @@ pub enum Token {
     LevelNotInPolicy,
     /// A level is an epistemic marker.
     LevelNotAssessed,
+    /// The policy lists no region for a pair of levels it declares.
+    CellNotInPolicy,
     /// No residual risk gives the estimate a policy.
     PolicyNotFound,
     /// Residual risks give the estimate more than one policy.

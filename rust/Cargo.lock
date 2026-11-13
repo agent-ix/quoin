@@ -3469,6 +3469,7 @@ version = "0.31.0"
 dependencies = [
  "ix-trace-rs",
  "quoin-anomaly",
+ "quoin-quire",
  "serde",
  "serde_json",
  "tempfile",

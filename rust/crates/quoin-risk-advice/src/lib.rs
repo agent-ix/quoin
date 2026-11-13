@@ -9,13 +9,12 @@
 //! entered, a policy cell a person wrote, or a link that exists in the records.
 //! It writes nothing and originates no verdict.
 //!
-//! The record types belong to `spec-objects-safety`. Until the quire-rs record
-//! extractor serves them, `records` reads the parts of their frontmatter and
-//! determination tables that the report needs.
+//! The record types belong to `spec-objects-safety`. The documents are read
+//! with the quire engine's walker and parser through `quoin-quire`, and a
+//! record is checked against the `body_extraction` its type's module declares.
 
 #![forbid(unsafe_code)]
 
-mod corpus;
 mod error;
 mod evidence;
 mod finding;
@@ -26,6 +25,9 @@ mod records;
 mod render;
 
 use std::path::Path;
+
+use quoin_quire::ModuleSelection;
+use quoin_quire::records::read;
 
 use serde::Serialize;
 
@@ -52,13 +54,19 @@ pub struct Advice {
     pub decision_queue: Queue,
 }
 
-/// Read the records below `scope` and build the report.
+/// Read the records below `scope`, with the record types of the modules
+/// `modules` selects, and build the report.
 ///
 /// # Errors
 ///
-/// Returns an error when `scope` or a file below it cannot be read.
-pub fn advise(scope: &Path) -> Result<Advice, AdviceError> {
-    let records = records::Records::read(&corpus::load(scope)?);
+/// Returns an error when `scope` or the modules cannot be read, or when a
+/// residual-risk, benefit-risk, overall-evaluation or policy record breaks the
+/// contract its type declares.
+pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceError> {
+    let mut notices = Vec::new();
+    let documents = read(scope, modules, &records::CHECKED, &mut notices)
+        .map_err(|error| AdviceError::read(&error))?;
+    let records = records::Records::read(&documents)?;
     let links = links::Links::build(&records);
     Ok(Advice {
         attribution: ATTRIBUTION,
