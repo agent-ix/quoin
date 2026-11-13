@@ -689,4 +689,4 @@ fn find_clause<'a>(discharge: &'a DischargeReport, clause: &str) -> Option<&'a C
 }
 
 #[cfg(test)]
-mod tests;
+pub(in crate::soup) mod tests;
