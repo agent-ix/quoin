@@ -34,3 +34,18 @@ Examined (role examined): FR-154 Behavior lines 43-56; FR-155 Behavior lines 39-
 ## Verdict
 
 Mergeable on EARS grounds. Both findings are low wording fixes.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | medium | The fix made the exit-zero rule unconditional: "When the command renders, it SHALL exit zero." With --strict and findings the command renders, so it must exit zero and exit 1 at once. The old "Without --strict" condition is gone. Restore it: "Where --strict is not given, the command SHALL exit zero whenever it renders." | FR-154:63-64, FR-154-AC-5 |
+
+## Dispositions
+
+Round 1, against commit 678a797b.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |

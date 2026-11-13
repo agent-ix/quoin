@@ -46,3 +46,13 @@ quoin FR-032, FR-145..148, NFR-031.
 
 Not mergeable as written: two medium findings, both spec-text fixes inside this PR. The
 dependency review has a high finding (tc_118_001 dangling citations) that blocks the merge too.
+
+## Dispositions
+
+Round 1, against commit 678a797b.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

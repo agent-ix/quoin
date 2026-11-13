@@ -45,3 +45,13 @@ FR-101..106, FR-303; quoin FR-145..148.
 
 Not mergeable: FND-001 turns a repository test red. All three fixes are citation edits inside
 this PR. The pre-existing main failures in FR-145/146/148 need their own fix.
+
+## Dispositions
+
+Round 1, against commit 678a797b.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

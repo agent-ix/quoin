@@ -38,3 +38,14 @@ spec-objects-safety FR-101..106, FR-303.
 
 Not mergeable as written: FND-001 is a real contradiction on a reachable edge, and FND-002 is
 a false consistency claim. Both are spec-text fixes inside this PR.
+
+## Dispositions
+
+Round 1, against commit 678a797b.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

@@ -60,7 +60,7 @@ The absence of findings is not an acceptance.
 - The JSON object SHALL have exactly the keys `attribution` and `findings`.
 - The `attribution` string SHALL state that regions come from the project's policy and that decisions come from the named person.
 - If `<scope>` contains no residual risk and no post-control estimate, then the command SHALL print an empty `findings` list and the attribution, and exit zero.
-- When the command renders, it SHALL exit zero.
+- Where `--strict` is not given, the command SHALL exit zero whenever it renders.
 - Where `--strict` is given and the command reports one or more findings, the command SHALL exit 1.
 - Where `--strict` is given and the command reports no finding, the command SHALL exit zero.
 - If `<scope>` does not exist or a record in it cannot be parsed, then the command SHALL exit 2 with an error naming the path or the record, whether or not `--strict` is given.
