@@ -93,6 +93,7 @@ implementation as `quoin risk advise`. This requirement states no second lookup 
 - In a Markdown cell, a list of ids SHALL render as its elements joined by `, `, an empty list as `[]`, and an absent value as `null`.
 - In a Markdown cell, a list of entries SHALL render as its entries joined by `<br>`, and one entry SHALL render as its `key=value` pairs in key-table order joined by `; `, with a list value rendered as above.
 - In a Markdown cell, an estimate entry with a region SHALL render its last pair as "the policy marks this cell as <region>" in place of `policy_region=<region>`, and one without a region SHALL render `policy_region=null`.
+- In a Markdown cell, the command SHALL write each `|` of a value copied from a record as `\|`, so that a row has exactly one cell for each column.
 - The `attribution` string SHALL state that regions come from the project's policy and that decisions come from the named person.
 - The command SHALL write one row for each pairing of a hazard and a hazardous situation that `arises_from` it ([FR-202](ix://agent-ix/spec-objects-safety/FR-202)). A hazard with no such situation has one row with `situation: null`. A situation with no `arises_from` edge to a hazard has one row with `hazard: null`. A situation that arises from two hazards appears in two rows with the same situation content.
 - Every row SHALL have exactly the keys below, each present, `null` or `[]` when empty.
@@ -163,6 +164,7 @@ These rules bind this command itself. NFR-031 binds `quoin risk advise` only and
 | FR-169-AC-24 | A `risk_estimate` with no `estimates` edge, and a residual risk that references only it, appear in no row, and `quoin risk advise` lists the estimate with `estimate-without-situation`. | Test |
 | FR-169-AC-25 | Over a fixture where two residual risks on different policies reference one post-control estimate, the row shows `policy_region: null` for that estimate and each residual risk's finding rests on the region its own policy lists; where the estimate has one policy, `policy_region` equals the region behind each finding. | Test |
 | FR-169-AC-26 | Without `--format` the output equals the output of `--format markdown`. | Test |
+| FR-169-AC-27 | A residual risk whose `Decided by` value contains a vertical bar renders it in the Markdown with a backslash before the bar, and the row of that residual risk splits into exactly one cell per column at its unescaped bars. | Test |
 | FR-169-AC-17 | A `risk_estimate` with a `phase` outside the two members, and one with no judgement table, are skipped silently and the command exits zero. | Test |
 | FR-169-AC-18 | `--format xml` exits 2 and prints no report; omitting `--format` renders Markdown. | Test |
 | FR-169-AC-19 | Over a snapshot fixture corpus holding one complete chain and one chain with each gap of FR-170, the Markdown and the JSON each equal their checked-in snapshots byte for byte. | Test |

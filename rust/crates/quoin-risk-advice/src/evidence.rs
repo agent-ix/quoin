@@ -67,6 +67,39 @@ fn exists(records: &Records, id: &str, kind: &str) -> bool {
     })
 }
 
+/// The controls the estimate assumes that exist as `control` records.
+pub(crate) fn assumed_controls<'a>(records: &Records, estimate: &'a Estimate) -> Vec<&'a String> {
+    estimate
+        .controls
+        .iter()
+        .filter(|id| exists(records, id, "control"))
+        .collect()
+}
+
+/// A control with the requirements and verifications that link to it, and the
+/// tokens for the links that are missing (FR-147).
+pub(crate) fn control_evidence(links: &Links, control: &str) -> ControlEvidence {
+    let requirements = links.requirements.get(control).cloned().unwrap_or_default();
+    let verifications = links
+        .verifications
+        .get(control)
+        .cloned()
+        .unwrap_or_default();
+    let mut findings = Vec::new();
+    if requirements.is_empty() {
+        findings.push(Finding::bare(Token::ControlWithoutRequirement));
+    }
+    if verifications.is_empty() {
+        findings.push(Finding::bare(Token::ControlWithoutVerification));
+    }
+    ControlEvidence {
+        control: control.to_owned(),
+        requirements,
+        verifications,
+        findings,
+    }
+}
+
 fn entry(records: &Records, links: &Links, estimate: &Estimate) -> EvidenceEntry {
     let situations: Vec<&String> = estimate
         .situations
@@ -82,11 +115,7 @@ fn entry(records: &Records, links: &Links, estimate: &Estimate) -> EvidenceEntry
         .collect();
     hazards.sort();
     hazards.dedup();
-    let controls: Vec<&String> = estimate
-        .controls
-        .iter()
-        .filter(|id| exists(records, id, "control"))
-        .collect();
+    let controls = assumed_controls(records, estimate);
 
     let mut findings = Vec::new();
     if controls.is_empty() {
@@ -111,31 +140,7 @@ fn entry(records: &Records, links: &Links, estimate: &Estimate) -> EvidenceEntry
 
     let control_entries: Vec<ControlEvidence> = controls
         .iter()
-        .map(|control| {
-            let requirements = links
-                .requirements
-                .get(*control)
-                .cloned()
-                .unwrap_or_default();
-            let verifications = links
-                .verifications
-                .get(*control)
-                .cloned()
-                .unwrap_or_default();
-            let mut findings = Vec::new();
-            if requirements.is_empty() {
-                findings.push(Finding::bare(Token::ControlWithoutRequirement));
-            }
-            if verifications.is_empty() {
-                findings.push(Finding::bare(Token::ControlWithoutVerification));
-            }
-            ControlEvidence {
-                control: (*control).clone(),
-                requirements,
-                verifications,
-                findings,
-            }
-        })
+        .map(|control| control_evidence(links, control))
         .collect();
 
     let mut names: BTreeSet<&str> = hazards.iter().map(String::as_str).collect();

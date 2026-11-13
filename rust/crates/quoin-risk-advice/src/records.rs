@@ -66,6 +66,8 @@ pub(crate) struct Policy {
 pub(crate) struct Choice {
     pub(crate) id: String,
     pub(crate) decision: String,
+    /// The `Decided by` cell as written; `None` when empty or absent.
+    pub(crate) decided_by: Option<String>,
     /// `estimate` for a residual risk.
     pub(crate) estimate: Option<String>,
     /// `references` edges: the policy of a residual risk, the covered or
@@ -232,9 +234,15 @@ fn choice(doc: &Document) -> Choice {
         .get("Determination")
         .and_then(|table| cell(table, 0, "Decision"))
         .unwrap_or_default();
+    let decided_by = doc
+        .tables
+        .get("Determination")
+        .and_then(|table| cell(table, 0, "Decided by"))
+        .filter(|by| !by.trim().is_empty());
     Choice {
         id: doc.id.clone(),
         decision,
+        decided_by,
         estimate: edges(doc, "estimate").into_iter().next(),
         references: edges(doc, "references"),
     }

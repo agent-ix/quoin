@@ -131,6 +131,7 @@ statistical_design:
       - "report:unknown-flag"
       - "review:unknown-flag"
       - "risk:unknown-flag"
+      - "risk-summary:unknown-flag"
       - "soup promote --module:missing-path"
       - "soup promote --repo:missing-path"
       - "soup promote:missing-argument"
