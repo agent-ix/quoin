@@ -444,7 +444,7 @@ fn an_alias_bomb_or_an_oversized_selection_file_is_refused_cheaply() {
     let mut bomb = String::from("profile: p\nx0: &a0 [y, y, y, y, y, y, y, y, y]\n");
     for level in 1..12 {
         let refs = vec![format!("*a{}", level - 1); 9].join(", ");
-        bomb.push_str(&format!("x{level}: &a{level} [{refs}]\n"));
+        writeln!(bomb, "x{level}: &a{level} [{refs}]").unwrap();
     }
     env.select(&bomb);
     let started = std::time::Instant::now();
