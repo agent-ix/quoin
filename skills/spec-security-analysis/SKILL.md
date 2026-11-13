@@ -34,7 +34,7 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
      - [soc2/index.md](references/soc2/index.md) → CC1-CC9 categories
      - [iso27001/index.md](references/iso27001/index.md) → A5-A8 themes
      - [nist-800-53/index.md](references/nist-800-53/index.md) → Control families
-     - [owasp-asvs/index.md](references/owasp-asvs/index.md) → V1-V14 areas
+     - [owasp-asvs/index.md](references/owasp-asvs/index.md) → V1-V17 chapters
      - [gdpr/index.md](references/gdpr/index.md) → Chapters II-V
    - Use index decision guides to choose specific chapters to investigate
    - Reference [component-type-mapping.md](references/component-type-mapping.md) for scope guidance

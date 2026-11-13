@@ -249,6 +249,10 @@ index; the files are authoritative.
 - [FR-155](./functional/FR-155-risk-discrepancy-findings.md) — the findings are the safety module's discrepancy tokens as `{ finding, refs }` objects, plus an estimate with no decision record.
 - [FR-169](./functional/FR-169-risk-summary-command.md) — `quoin risk-summary` is a read-only chain report, one row per hazard and situation with harms, estimates, controls, requirements, verifications and recorded decisions, and it computes no score or verdict.
 - [FR-170](./functional/FR-170-risk-summary-row-findings.md) — the chain's completeness findings are placed against the row they name, with the safety module's own tokens.
+- [FR-171](./functional/FR-171-security-analysis-emits-typed-controls.md) — the security analysis skill writes typed `control` and `scope_exclusion` artifacts instead of a prose section.
+- [FR-172](./functional/FR-172-clause-set-sources-and-licence-boundary.md) — mapped standards are clause sets: NIST and ASVS publishable, licensed sources only from local packs by clause id.
+- [FR-173](./functional/FR-173-facts-from-mappings.md) — `quoin evidence facts-from-mappings` turns control mappings into discharge facts for `record-discharge`, with the cross-document mapping checks.
+- [FR-174](./functional/FR-174-per-clause-compliance-from-mappings.md) — `quoin discharge --rmm` reports per-clause compliance for facts recorded from mappings, including the stale-fact case.
 - [FR-180](./functional/FR-180-source-profile-selection.md) — a repository selects one named source profile shipped as module data, and Quoin resolves its clause sets and effective context.
 - [FR-181](./functional/FR-181-source-profile-evaluation.md) — `quoin profile evaluate` runs the engine's clause-set evaluation for each listed set, reports sets no module declares as unavailable, and computes no score.
 - [FR-182](./functional/FR-182-local-pack-joins-a-profile.md) — a locally installed licensed pack joins a profile only through unpublished local configuration.
