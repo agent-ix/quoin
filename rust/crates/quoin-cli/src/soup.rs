@@ -8,6 +8,11 @@
 //! this command has no SBOM reader. The record type, skeleton and schema belong
 //! to `spec-objects-security`, found through the module catalog.
 
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "`quoin soup report` (FR-144) is the caller")
+)]
+mod advisory;
 mod plan;
 #[expect(dead_code, reason = "`quoin soup report` (PLAT-1518) is the caller")]
 mod support;
@@ -359,6 +364,7 @@ fn read_record(path: &Path) -> Result<Option<Existing>, Stop> {
         path: path.to_path_buf(),
         purl: purl.to_owned(),
         id: text_of("id").map(str::to_owned),
+        disposition_clause: text_of("disposition_clause").map(str::to_owned),
     }))
 }
 
