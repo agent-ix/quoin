@@ -49,3 +49,23 @@ FR-161 cites the design join only as the ticket "PLAT-1417". It does not cite th
 Changes requested. The class-not-assigned, no-built-in-floor and separate-axis rules are sound. FND-001 is the blocker:
 the required-method floor and `item-evidence` depend on a method-to-evidence join that the store does not have. FND-003
 carries the FR-090-AC-4 / FR-082-AC-7 contradiction from quire-rs#669 into FR-160-AC-5.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-008 | medium | FR-161 sets the boundary between `not-available` and `unmet` for `design-trace` at "no FR-086 join in the payload". FR-086 on main never leaves the join absent. A corpus with no `design_relations` yields `{"relations": []}` (FR-086-AC-9), and a requirement that no design relation obliges, such as an NFR when only an FR relation is declared, simply has no row. FR-161 does not say whether an empty join, or a requirement with no join row, is `not-available` or `unmet`. Two implementers would split there, and FR-161-AC-4's precondition cannot be built from FR-086 output. State that an empty `relations` list, and a requirement with no row in any design relation, are `not-available` (or `unmet`), and pin both cases in AC-4. | FR-161-AC-4; quire-rs spec/functional/FR-086-design-element-join.md (No design relations, AC-9) |
+
+## Dispositions
+
+Round 1, checked against head fa1fa4ce.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | Required methods now join on the run `evidence_kind` against the catalog `evidence_kind` of the method. Methods of one kind are stated as interchangeable, and no store change is made (FR-160 Required methods, AC-2). Every shipped catalog method declares a kind. |
+| FND-002 | fixed | Without `--class-policy` the audit and matrix add nothing, and with it the deltas are named (FR-160-AC-1, Unclassified and unconfigured). |
+| FND-003 | fixed | Criticality floors read the FR-053 per-criterion column, and frontmatter `criticality` is stated not to be obligation criticality (FR-160 Description, AC-5). |
+| FND-004 | fixed | JSON omits the class key for an absent class, and `unassigned` is human output only (FR-160-AC-6, AC-11; FR-161-AC-6). |
+| FND-005 | fixed | Items, allocation and item class come from the policy's `item_relation` (FR-084 rows) and `carried` on the row `document` (quire-rs FR-090-AC-9). The system part case is pinned (FR-161-AC-10). |
+| FND-006 | fixed | `design-trace` reads the FR-086 join row `state: covered`, which matches FR-086 as merged. The `realized_criteria` description matches FR-086 (per resolved `linked` entry). The remaining boundary case is FND-008. |
+| FND-007 | fixed | The examples use `unit-testing` (FR-161-AC-1). |

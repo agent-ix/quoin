@@ -25,3 +25,12 @@ NFR-034 line 19.
 ## Verdict
 
 Minor wording only; no blocking statement-grammar defect.
+
+## Dispositions
+
+Round 1, checked against head fa1fa4ce.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The NFR-034 Statement is split into three single-SHALL sentences. `quire validate` no longer reports `ears:non-singular`. |
+| FND-002 | fixed | FR-160 and FR-161 each open with a principal SHALL statement. |

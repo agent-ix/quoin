@@ -32,3 +32,22 @@ does not hold as written.
 
 Changes requested. The independence reuse (FND-001, FND-002) and the class-enumeration input (FND-003) need stating
 before implementation. The rest are small.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | medium | FR-160 Independence says quoin builds one `IndependenceAssessment` per obligation "with the profile named `class:<value>`" and hands it to the existing assessment step. `IndependenceAssessment.profile` is a `ProfileId`, and `ProfileId::parse` refuses anything that is not `AP-<digits>`, so `class:<value>` cannot be constructed. The struct also requires a `requirement` id, which FR-160 does not name for a class floor. As written the class floor cannot be built on the existing type, and FR-160-AC-10's finding that names the source (`profile` or `class`) has no field to carry the source. State the type change (a source enum or an optional profile with a class) or define the class assessment as its own record. | FR-160-AC-10; FR-160-AC-4; rust/crates/quoin-evidence/src/types/independence.rs:123-139; rust/crates/quoin-evidence/src/ids.rs:141-156 |
+
+## Dispositions
+
+Round 1, checked against head fa1fa4ce.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | Only the FR-039 rule is reused. Required methods and independence are defined in full, FR-032 and FR-094 are `references`, and a class has no multiplicity floor (FR-160 The floors). |
+| FND-002 | fixed | With `--independence-policy` and a class both applying, both must hold, each on its own dimensions, with a finding per source (FR-160 Independence, AC-10). The type defect is new finding FND-007. |
+| FND-003 | fixed | The class vocabulary comes from `carried_vocabulary` (quire-rs FR-090-AC-10 at 5f7b2fd), and a run without it is refused (FR-160-AC-8). |
+| FND-004 | fixed | `quoin matrix` accepts `--class-policy` and reports the same class output (FR-160 quoin matrix, AC-1, AC-11). |
+| FND-005 | fixed | The quire-rs links use `ix://agent-ix/quire-rs/FR-NNN`. No `spec/functional` form remains in the changed files. |
+| FND-006 | fixed | NFR-034 Verification now cites FR-160-AC-12 (determinism, no write) and FR-161-AC-9. |
