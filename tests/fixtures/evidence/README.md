@@ -38,3 +38,9 @@ a scan that never ran.
 `cargo mutants` 27.1.0 (fresh target dir, one job) over a three-function
 scratch crate, with missed and caught mutants, unedited except that the absolute path of the `cargo` binary is shortened to `cargo`. Its `name` carries the
 `<file>:<line>:<col>: ` locus prefix that the adapter strips.
+
+`syft-cyclonedx-real.json` is the unedited output of Syft 1.57.1,
+`SYFT_FILE_METADATA_SELECTION=none syft scan dir:. -o cyclonedx-json=...`, run with an empty
+config over a scratch crate whose `Cargo.lock` lists the fictional `fictional-widget`
+(the root package, which Syft emits with no purl) and three fictional registry
+dependencies. It holds four components: three carry a purl, one is identified by name and version.
