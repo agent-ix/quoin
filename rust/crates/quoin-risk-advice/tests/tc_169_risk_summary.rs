@@ -576,39 +576,40 @@ fn findings_are_in_table_order_then_by_first_name() {
     );
 }
 
+fn walk(value: &Value) {
+    match value {
+        Value::Number(n) => panic!("numeric value {n}"),
+        Value::Array(items) => items.iter().for_each(walk),
+        Value::Object(map) => {
+            for (key, inner) in map {
+                for banned in [
+                    "score",
+                    "weight",
+                    "total",
+                    "rank",
+                    "verdict",
+                    "recommend",
+                    "proposal",
+                    "priority",
+                    "count",
+                    "remedy",
+                    "severity_of",
+                ] {
+                    assert!(!key.contains(banned), "{key}");
+                }
+                walk(inner);
+            }
+        }
+        _ => {}
+    }
+}
+
 #[trace("FR-169-AC-12", "FR-170-AC-13")]
 #[test]
 fn no_key_is_a_score_and_no_value_is_numeric() {
     let c = corpus();
     complete(&c);
     situation(&c, "SIT-0", &[]);
-    fn walk(value: &Value) {
-        match value {
-            Value::Number(n) => panic!("numeric value {n}"),
-            Value::Array(items) => items.iter().for_each(walk),
-            Value::Object(map) => {
-                for (key, inner) in map {
-                    for banned in [
-                        "score",
-                        "weight",
-                        "total",
-                        "rank",
-                        "verdict",
-                        "recommend",
-                        "proposal",
-                        "priority",
-                        "count",
-                        "remedy",
-                        "severity_of",
-                    ] {
-                        assert!(!key.contains(banned), "{key}");
-                    }
-                    walk(inner);
-                }
-            }
-            _ => {}
-        }
-    }
     walk(&c.json());
 }
 

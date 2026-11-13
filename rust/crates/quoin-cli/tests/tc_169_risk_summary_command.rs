@@ -145,7 +145,7 @@ fn each_failure_exits_2_with_the_diagnostic_code_of_risk_advise_and_an_unreadabl
     assert_eq!(s.status.code(), Some(2));
     assert!(s.stdout.is_empty());
     assert!(stderr(&s).contains("risk.scope_missing"), "{}", stderr(&s));
-    assert_eq!(stderr(&a).contains("risk.scope_missing"), true);
+    assert!(stderr(&a).contains("risk.scope_missing"));
 
     let out = Command::new(env!("CARGO_BIN_EXE_quoin"))
         .arg("risk-summary")
