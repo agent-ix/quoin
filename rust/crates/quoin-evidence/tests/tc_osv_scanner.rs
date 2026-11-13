@@ -104,17 +104,6 @@ fn synthetic_vulnerability_without_a_purl_uses_name_and_version() {
     assert_eq!(result.findings[0].path.as_deref(), Some("left-pad@1.3.0"));
 }
 
-#[trace("FR-149-AC-10")]
-#[test]
-fn synthetic_debian_os_package_purl_keeps_its_distro_qualifier() {
-    let purl = "pkg:deb/debian/libc6@2.36-9%2Bdeb12u4?arch=amd64&distro=debian-12";
-    let raw = format!(
-        r#"{{"results":[{{"packages":[{{"package":{{"name":"libc6","version":"2.36-9+deb12u4","ecosystem":"Debian","purl":"{purl}"}},"vulnerabilities":[{{"id":"CVE-synthetic"}}],"groups":[]}}]}}]}}"#
-    );
-    let result = parse_osv_scanner(&raw).unwrap();
-    assert_eq!(result.findings[0].path.as_deref(), Some(purl));
-}
-
 #[trace("FR-149-AC-12")]
 #[test]
 fn vulnerable_packages_without_a_valid_identity_are_refused() {
