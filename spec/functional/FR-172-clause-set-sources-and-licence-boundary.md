@@ -1,0 +1,56 @@
+---
+id: FR-172
+title: "Mapped standards are served as clause sets: publishable sets here, licensed sets from local packs by clause id"
+type: FR
+relationships:
+  - target: "ix://agent-ix/quoin/FR-171"
+    type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-137"
+    type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-138"
+    type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-security/FR-017"
+    type: "references"
+---
+
+# FR-172: Mapped standards are served as clause sets: publishable sets here, licensed sets from local packs by clause id
+
+## Description
+
+Every standard the skill maps is a clause set. The skill writes a mapping only to a clause that exists in an installed clause
+set. Four sources have a stated home:
+
+- NIST SP 800-53 Rev 5.2.0 and OWASP ASVS 5.0.0 are free sources. They are clause sets of the `spec-objects-security` module
+  (its FR-017), keyed `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0`. The keys carry the exact release because a clause set is
+  compared and stored by exact version. Authoring them is PLAT-1521 (NIST) and PLAT-1522 (ASVS), which also fix their
+  classification and applicability dimensions.
+- GDPR and HIPAA clause sets come from the EU and US packs (PLAT-1627 and PLAT-1612). This requirement owns neither.
+- FDA cybersecurity clause sets come from PLAT-1593 and are not owned here.
+- Every other source the skill maps (SOC 2, ISO/IEC 27001) is licence-restricted. It is served only from a locally installed
+  pack (FR-137), by clause id, and a pack is never in the default module set (FR-138).
+
+## Behavior
+
+- When the skill is about to write a mapping, it SHALL read the installed clause sets (`quoin module list` and the clause set of the module).
+- The skill SHALL write the mapping only when the set key and clause id are present.
+- When a source's clause set is not installed, the skill SHALL write no mapping for that source.
+- When a source's clause set is not installed, the skill SHALL state in its reply that the source was not mapped because its set is not installed.
+- The skill SHALL NOT supply the text, title or summary of a licence-restricted clause in any artifact or reply it produces.
+- The NIST and ASVS clause sets SHALL declare a `rights.text` value of `none`, `original` or `explicitly_cleared`, chosen to match their source licence, and never `licensed`, so that quire-rs FR-083 treats them as publishable.
+- `quire publish-check` SHALL accept the module that ships the NIST and ASVS clause sets.
+
+## Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| FR-172-AC-1 | `quire publish-check --module <spec-objects-security>` exits 0 once the NIST and ASVS sets are present; the sets are authored under PLAT-1521 and PLAT-1522 and this criterion is run by those tickets' tests. | Test |
+| FR-172-AC-2 | The `rights.text` value of each of the two sets is `none`, `original` or `explicitly_cleared`, and the set's rights metadata names its source licence. | Inspection |
+| FR-172-AC-3 | Against a synthetic licensed pack `example.invalid/std@1` installed in a temp `IX_HOME`, a skill run yields mappings only for clause ids present in the pack, and a source with no installed set yields no mapping and a not-mapped statement. | Demonstration |
+| FR-172-AC-4 | No artifact or reply of the FR-172-AC-3 skill run contains the pack's clause-text sentinel. | Demonstration |
+| FR-172-AC-5 | `SKILL.md` instructs the installed-set check, the not-mapped statement and the no-text rule. | Inspection |
+| FR-172-AC-6 | The keys `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` appear in this requirement, in spec-objects-security FR-014 and FR-017, and in `SKILL.md`. | Inspection |
+
+## Dependencies
+
+- **Upstream**: [FR-171](./FR-171-security-analysis-emits-typed-controls.md), [FR-137](./FR-137-detect-and-place-licensed-packs.md), [FR-138](./FR-138-packs-never-come-from-hosted-sources.md); quire-rs FR-083
+- **Downstream**: [FR-173](./FR-173-facts-from-mappings.md); PLAT-1521 and PLAT-1522 author the sets; PLAT-1593, PLAT-1612, PLAT-1627 supply sets this one does not
