@@ -44,7 +44,7 @@ pub(super) enum Tool {
 }
 
 impl Tool {
-    const ALL: [Self; 2] = [Self::CargoAudit, Self::CargoDeny];
+    pub(super) const ALL: [Self; 2] = [Self::CargoAudit, Self::CargoDeny];
 
     /// The registry name of the tool's adapter.
     pub(super) fn name(self) -> &'static str {

@@ -66,7 +66,7 @@ are equal in type, namespace, name and version (an absent version equals only an
 | FR-143-AC-5 | With `--as-of 2026-06-01`, a component whose end of support is 2026-05-31 is flagged past end of support and one whose date is 2026-06-01 or later is not. | Test |
 | FR-143-AC-6 | A versioned entry takes precedence over a version-less entry for the same package; a version-less entry matches a record of any version, and an entry for a different version matches nothing; `pkg:cargo/a` and `pkg:cargo/a@1` in one file are not duplicates. | Test |
 | FR-143-AC-9 | With `--as-of 2026-05-31T12:00:00Z` a component ending 2026-05-31 is not flagged, and with `--as-of 2026-06-01T00:00:00Z` it is flagged; an `--as-of` with a non-UTC offset is compared by its UTC date. | Test |
-| FR-143-AC-10 | A record with `support_status: maintained` refuses the report naming the record. Not yet backed: the `quoin soup report` command that tests it is PLAT-1518. | Test |
+| FR-143-AC-10 | A record with `support_status: maintained` refuses the report naming the record. | Test |
 | FR-143-AC-7 | The command run with no network available produces the same output as with it. | Test |
 | FR-143-AC-8 | Two runs with different wall-clock times and the same `--as-of` produce identical output. | Test |
 

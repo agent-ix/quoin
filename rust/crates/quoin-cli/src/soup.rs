@@ -2,19 +2,16 @@
 // Copyright (C) 2026 Agent-IX
 
 //! `quoin soup promote`: write one `soup_record` per purl of an ingested SBOM
-//! (FR-141).
+//! (FR-141); `quoin soup report`: render them with their advisories and
+//! support (FR-144).
 //!
 //! The components are the FR-041 adapter's (`quoin_evidence::adapters::sbom`);
 //! this command has no SBOM reader. The record type, skeleton and schema belong
 //! to `spec-objects-security`, found through the module catalog.
 
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "`quoin soup report` (FR-144) is the caller")
-)]
 mod advisory;
 mod plan;
-#[expect(dead_code, reason = "`quoin soup report` (PLAT-1518) is the caller")]
+mod report;
 mod support;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -34,7 +31,7 @@ use plan::{Existing, NewRecord, Plan};
 const MAX_FILE_NAME: usize = 255;
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
-pub(crate) const ABOUT: &str = "Promote ingested SBOM components to SOUP records.";
+pub(crate) const ABOUT: &str = "Promote SBOM components to SOUP records and report on them.";
 
 /// The module that owns the `soup_record` object type.
 const OWNER: &str = "spec-objects-security";
@@ -88,16 +85,61 @@ pub(crate) fn command() -> Command {
                         .help("Module root to look for the soup_record type in; repeat to add roots. Without it the installed modules are searched"),
                 ),
         )
+        .subcommand(
+            Command::new("report")
+                .about("Render one row per soup_record with its advisories and support status")
+                .arg(
+                    Arg::new("repo")
+                        .long("repo")
+                        .value_name("DIR")
+                        .default_value(".")
+                        .help("Repository root; --records defaults to <repo>/spec/soup"),
+                )
+                .arg(
+                    Arg::new("records")
+                        .long("records")
+                        .value_name("DIR")
+                        .help("Where the soup_record files are read"),
+                )
+                .arg(
+                    Arg::new("binding")
+                        .long("binding")
+                        .value_name("FILE")
+                        .required(true)
+                        .help("Quire clause-binding-v1 JSON report whose clauses the records' disposition_clause names"),
+                )
+                .arg(
+                    Arg::new("as-of")
+                        .long("as-of")
+                        .value_name("INSTANT")
+                        .required(true)
+                        .help("Explicit evaluation instant; its UTC date is the end-of-support comparison date"),
+                )
+                .arg(
+                    Arg::new("support")
+                        .long("support")
+                        .value_name("FILE")
+                        .help("JSON file of public support statements: [{purl, support_status, end_of_support, source}]"),
+                )
+                .arg(
+                    Arg::new("json")
+                        .long("json")
+                        .action(clap::ArgAction::SetTrue)
+                        .help("Emit the report as JSON instead of Markdown"),
+                ),
+        )
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
-    match arguments.subcommand() {
-        Some(("promote", promote)) => match run_promote(promote) {
-            Ok(response) => Ok(response),
-            Err(Stop::Refuse(response)) => Ok(*response),
-            Err(Stop::Fail(message)) => Err(message),
-        },
-        _ => Err("an unknown soup command reached dispatch".to_owned()),
+    let outcome = match arguments.subcommand() {
+        Some(("promote", promote)) => run_promote(promote),
+        Some(("report", report)) => report::run(report),
+        _ => return Err("an unknown soup command reached dispatch".to_owned()),
+    };
+    match outcome {
+        Ok(response) => Ok(response),
+        Err(Stop::Refuse(response)) => Ok(*response),
+        Err(Stop::Fail(message)) => Err(message),
     }
 }
 

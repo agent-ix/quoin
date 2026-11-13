@@ -94,10 +94,6 @@ pub(super) struct Existing {
     /// The record's `id`, when it states one.
     pub(super) id: Option<String>,
     /// The record's `disposition_clause`, when it names one (FR-142).
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "`quoin soup report` (FR-144) reads it")
-    )]
     pub(super) disposition_clause: Option<String>,
 }
 

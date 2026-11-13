@@ -82,6 +82,7 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin semantic sweep",
     "quoin soup",
     "quoin soup promote",
+    "quoin soup report",
     "quoin to-plan",
     "quoin update",
     "quoin validate",

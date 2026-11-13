@@ -133,6 +133,8 @@ statistical_design:
       - "soup promote --repo:missing-path"
       - "soup promote:missing-argument"
       - "soup promote:unknown-flag"
+      - "soup report:missing-argument"
+      - "soup report:unknown-flag"
       - "soup:unknown-flag"
       - "soup:unknown-subcommand"
       - "to-plan:unknown-flag"
