@@ -93,6 +93,7 @@ const COMMANDS: &[(&str, &str)] = &[
         "Record and inspect versioned QA measurements.",
     ),
     ("module", "List installed spec modules."),
+    ("profile", "Evaluate the selected source profile."),
     ("release", crate::release::ABOUT),
     (
         "report",
