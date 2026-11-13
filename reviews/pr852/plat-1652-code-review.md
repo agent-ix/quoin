@@ -72,3 +72,28 @@ Not mergeable as is: two medium findings and three low ones, with no high findin
 logic meets FR-145..148 and NFR-031 as written. FND-001 is the substantive one, because a
 malformed undecided record is invisible in a report whose purpose is to show undecided
 decisions.
+
+## New findings (disposition pass 1)
+
+Against head e7389f42, which was rebased on main and includes #853.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-006 | high | `quoin_quire::records::read` takes edges from `harvest_edges`, and `harvest_edges` adds every body `ix://` link as a `references` edge. The two sections then pick a residual risk's policy differently. `links::policies_of` (policy_cells) still takes `references.first()`, while `queue.rs` takes `Records::policy_of`. Reproduced at e7389f42 with an undecided RR-1 whose Rationale cell links `ix://agent-ix/demo/HAZ-1`. policy_cells shows `policy: HAZ-1` with `policy-not-found`, and decision_queue shows `policy: POL-1`, region Low, for the same record. A benefit_risk whose Benefit cell links an FR also lists that FR in `references` as a covered residual risk. Read only frontmatter `relationships` for these verbs, use one policy rule in both sections, and test a body link. | rust/crates/quoin-quire/src/records.rs:124, rust/crates/quoin-risk-advice/src/links.rs:88-98, rust/crates/quoin-risk-advice/src/records.rs:142-148 |
+| FND-007 | medium | A residual risk whose frontmatter has two `references` edges to policies in scope resolves silently to the alphabetically first one. Both sections then print that policy's region and flag. Reproduced: RR-1 references POL-0 (Low flagged outside) and POL-1 (Low not flagged), and the report printed only POL-0's "outside its acceptable region" wording. Quire does not catch this, because the manifest's `allowed_links` has no cardinality. FR-146 defines `policy-ambiguous` for more than one policy, and that should apply to one record naming two. | rust/crates/quoin-risk-advice/src/records.rs:142-148, rust/crates/quoin-risk-advice/src/links.rs:88-98 |
+| FND-008 | medium | The new runtime dependency is not met by the default modules. `default-modules.yaml` pins spec-objects-safety `v0.8.0`, which predates the decision-record types (#39, d4fcf97, untagged). With installed modules, a repository holding a `benefit_risk` exits 2 with `risk.unreadable` and the message `...BR-1.md: unknown type 'benefit_risk' (no archetype registered for it)`, so the command is unusable without `--module` pointed at a main checkout. The refusal mentions neither `--module` nor the module and version needed. Release spec-objects-safety and bump the pin, or at least name the module and `--module` in the refusal. | default-modules.yaml:84-90, rust/crates/quoin-cli/src/risk.rs:81-84 |
+| FND-009 | low | `AdviceError` distinguishes `Read` from `Record`, but the CLI maps every error to the one diagnostic code `risk.unreadable`. A broken record, an unreadable scope and a missing record type therefore look the same to a caller. quoin's rust-style says each condition a caller must distinguish gets its own code. | rust/crates/quoin-cli/src/risk.rs:81-84, rust/crates/quoin-risk-advice/src/error.rs:9-17 |
+| FND-010 | low | `advise` collects the reader's corpus notices into a local `notices` and drops them. A document the engine walker cannot load (`DocumentUnreadable`, for example a non-UTF-8 residual_risk file) is therefore absent from the report without a word. That is the same silent-drop class FND-001 closed for contract violations. | rust/crates/quoin-risk-advice/src/lib.rs:66-68 |
+| FND-011 | low | FR-146's new `cell-not-in-policy` clause says "`quire validate` reports the incomplete policy (FR-101)". The safety manifest says the per-pairing cell rule "is a cross-table rule the assertions cannot state ... waits on an engine assertion", so today nothing reports it, and the token is the only signal. The token choice itself is sound: FR-102 defines only `level-not-in-policy` and `level-not-assessed`, both naming a level, and FR-105 folds every "FR-102 resolves no region" case into `decision-without-region`. Correct the clause. | spec/functional/FR-146-risk-advise-policy-cells.md:55 |
+
+## Dispositions
+
+Round 1, against commit e7389f42.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |

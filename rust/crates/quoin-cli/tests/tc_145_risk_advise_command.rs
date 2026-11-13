@@ -105,3 +105,73 @@ fn a_missing_scope_and_a_malformed_record_each_exit_2_naming_what_is_wrong() {
     assert!(out.stdout.is_empty());
     assert!(String::from_utf8_lossy(&out.stderr).contains("RR-1"));
 }
+
+#[trace("FR-145-AC-7")]
+#[test]
+fn each_failure_exits_2_with_its_own_diagnostic_code_and_an_unreadable_file_is_named_on_stderr() {
+    let dir = tempfile::tempdir().unwrap();
+    let code_of = |out: &Output| String::from_utf8_lossy(&out.stderr).into_owned();
+    let out = advise(&dir.path().join("absent"), &[]);
+    assert!(
+        code_of(&out).contains("risk.scope_missing"),
+        "{}",
+        code_of(&out)
+    );
+
+    let out = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["risk", "advise"])
+        .arg(dir.path())
+        .args(["--module", "/nonexistent-module-root"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    assert!(
+        code_of(&out).contains("risk.module_missing"),
+        "{}",
+        code_of(&out)
+    );
+
+    std::fs::write(
+        dir.path().join("RR-1.md"),
+        "---\nid: RR-1\ntitle: \"RR-1\"\ntype: residual_risk\nobject: residual_risk\n---\n# [RR-1] RR-1\n",
+    )
+    .unwrap();
+    let process = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-artifacts-process"),
+        PathBuf::from,
+    );
+    let out = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["risk", "advise"])
+        .arg(dir.path())
+        .arg("--module")
+        .arg(process.join("spec_artifacts_process"))
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = code_of(&out);
+    assert!(stderr.contains("risk.type-undeclared"), "{stderr}");
+    assert!(stderr.contains("--module DIR"), "{stderr}");
+
+    std::fs::write(
+        dir.path().join("RR-1.md"),
+        "---\nid: RR-1\ntitle: x\ntype: residual_risk\nobject: residual_risk\n---\n# x\n",
+    )
+    .unwrap();
+    let out = advise(dir.path(), &[]);
+    assert!(
+        code_of(&out).contains("risk.record-invalid"),
+        "{}",
+        code_of(&out)
+    );
+
+    std::fs::remove_file(dir.path().join("RR-1.md")).unwrap();
+    std::fs::write(dir.path().join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+    let out = advise(dir.path(), &[]);
+    assert!(out.status.success());
+    assert!(
+        code_of(&out).contains("risk.document_unreadable"),
+        "{}",
+        code_of(&out)
+    );
+    assert!(code_of(&out).contains("RR-9.md"));
+}

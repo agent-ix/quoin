@@ -16,14 +16,14 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use quire_rs::{
-    Registry, WalkOptions, harvest_edges, load_repo_with, parse_table, sections,
+    Diagnostic, Registry, WalkOptions, load_repo_with, parse_table, sections,
     validate_document_in_registry,
 };
 use serde_json::{Map, Value};
 
 use crate::error::{Error, Result};
 use crate::ids::ScopeRoot;
-use crate::modules::{ModuleSelection, Notice, NoticeKind};
+use crate::modules::ModuleSelection;
 
 /// Whether a document passes the engine's validation for its type.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,8 +56,9 @@ pub struct Document {
     pub kind: String,
     /// The whole frontmatter mapping.
     pub frontmatter: Map<String, Value>,
-    /// The edges the engine harvests: target id and edge type, sorted and
-    /// distinct.
+    /// The edges the frontmatter `relationships` declare, as the engine reads
+    /// them: target id and edge type, sorted and distinct. Links in the body
+    /// are not edges here.
     pub edges: Vec<(String, String)>,
     /// The first table of each level-2 section, by section heading.
     pub tables: BTreeMap<String, Table>,
@@ -65,6 +66,24 @@ pub struct Document {
     pub raw: String,
     /// The result of the declared-contract check.
     pub contract: Contract,
+}
+
+/// A file the engine's walker could not load.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Unreadable {
+    /// The file.
+    pub path: PathBuf,
+    /// The engine's reason.
+    pub reason: String,
+}
+
+/// What [`read`] found below the scope.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Corpus {
+    /// The documents, ordered by path.
+    pub documents: Vec<Document>,
+    /// The files the walker could not load, ordered by path.
+    pub unreadable: Vec<Unreadable>,
 }
 
 /// Every document below `scope` that carries an `id` and a `type`, ordered by
@@ -76,16 +95,22 @@ pub struct Document {
 /// [`Error::ModuleLoad`] or [`Error::ModuleSetEmpty`] when the modules do not
 /// load, and [`Error::ArchetypeUnknown`] when a checked type has no registered
 /// archetype.
-pub fn read(
-    scope: &Path,
-    selection: &ModuleSelection,
-    checked_types: &[&str],
-    notices: &mut Vec<Notice>,
-) -> Result<Vec<Document>> {
+pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -> Result<Corpus> {
     let root = ScopeRoot::open(scope)?;
-    let registry = selection.resolve(&root, notices)?;
+    let registry = selection.resolve(&root, &mut Vec::new())?;
     let loaded = load_repo_with(root.as_path(), &WalkOptions::default());
-    crate::modules::collect(NoticeKind::Corpus, &loaded.diagnostics, notices);
+    let mut unreadable: Vec<Unreadable> = loaded
+        .diagnostics
+        .iter()
+        .filter_map(|diagnostic| match diagnostic {
+            Diagnostic::DocumentUnreadable { path, reason } => Some(Unreadable {
+                path: path.clone(),
+                reason: reason.clone(),
+            }),
+            _ => None,
+        })
+        .collect();
+    unreadable.sort_by(|a, b| a.path.cmp(&b.path));
     let mut documents = Vec::new();
     for found in &loaded.documents {
         let Some(frontmatter) = found.frontmatter() else {
@@ -121,14 +146,42 @@ pub fn read(
             id: found.id.clone(),
             kind: kind.to_owned(),
             frontmatter: frontmatter.clone(),
-            edges: harvest_edges(found),
+            edges: relationships(frontmatter),
             tables,
             raw: found.raw().to_owned(),
             contract,
         });
     }
     documents.sort_by(|a, b| a.path.cmp(&b.path));
-    Ok(documents)
+    Ok(Corpus {
+        documents,
+        unreadable,
+    })
+}
+
+/// The `(target id, edge type)` pairs of the frontmatter `relationships`, read
+/// as the engine reads them: the target is the last `/`-segment of an `ix://`
+/// URI or a bare id, and an entry with no `type` is a `references` edge.
+fn relationships(frontmatter: &Map<String, Value>) -> Vec<(String, String)> {
+    let mut edges: Vec<(String, String)> = frontmatter
+        .get("relationships")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            let target = entry.get("target")?.as_str()?;
+            let target = target.strip_prefix("ix://").unwrap_or(target);
+            let id = target.rsplit('/').next().unwrap_or(target);
+            let kind = entry
+                .get("type")
+                .and_then(Value::as_str)
+                .unwrap_or("references");
+            Some((id.to_owned(), kind.to_owned()))
+        })
+        .collect();
+    edges.sort();
+    edges.dedup();
+    edges
 }
 
 /// Validate the document against its type as `quire validate` does, so the

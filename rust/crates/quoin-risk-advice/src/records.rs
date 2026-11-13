@@ -136,18 +136,6 @@ impl Records {
     }
 }
 
-impl Records {
-    /// The policy a residual risk names: its first `references` target that is
-    /// a policy in scope, else its first `references` target.
-    pub(crate) fn policy_of(&self, risk: &Choice) -> Option<String> {
-        risk.references
-            .iter()
-            .find(|id| self.policies.contains_key(*id))
-            .or_else(|| risk.references.first())
-            .cloned()
-    }
-}
-
 /// The target ids of the document's edges of type `verb`, sorted and distinct.
 fn edges(doc: &Document, verb: &str) -> Vec<String> {
     let mut targets: Vec<String> = doc

@@ -99,50 +99,78 @@ pub(crate) fn resolve(policy: &Policy, severity: &str, probability: &str) -> Res
     Resolution { region, findings }
 }
 
+/// What the policies a record names list for a pair of levels.
+pub(crate) struct Lookup {
+    pub(crate) policy: Option<String>,
+    pub(crate) region: Option<(String, bool)>,
+    pub(crate) findings: Vec<Finding>,
+}
+
+/// The one rule that turns the policies a record names into a region: none
+/// gives `policy-not-found`, several give `policy-ambiguous` naming them all,
+/// and exactly one is looked up as FR-102 does.
+pub(crate) fn lookup(
+    records: &Records,
+    policies: &[String],
+    severity: &str,
+    probability: &str,
+) -> Lookup {
+    match policies {
+        [] => Lookup {
+            policy: None,
+            region: None,
+            findings: vec![Finding::bare(Token::PolicyNotFound)],
+        },
+        [id] => match records.policies.get(id) {
+            None => Lookup {
+                policy: Some(id.clone()),
+                region: None,
+                findings: vec![Finding::naming(Token::PolicyNotFound, vec![id.clone()])],
+            },
+            Some(policy) => {
+                let found = resolve(policy, severity, probability);
+                Lookup {
+                    policy: Some(id.clone()),
+                    region: found.region,
+                    findings: found.findings,
+                }
+            }
+        },
+        many => Lookup {
+            policy: None,
+            region: None,
+            findings: vec![Finding::naming(Token::PolicyAmbiguous, many.to_vec())],
+        },
+    }
+}
+
 pub(crate) fn cells(records: &Records, links: &Links) -> Vec<PolicyCell> {
     records
         .estimates
         .values()
         .map(|estimate| {
             let policies = links.policies_of(records, estimate);
-            let mut entry = PolicyCell {
+            let found = lookup(
+                records,
+                &policies,
+                &estimate.severity,
+                &estimate.probability,
+            );
+            let cell = found.region.as_ref().map(|_| CellKey {
+                severity: estimate.severity.clone(),
+                probability: estimate.probability.clone(),
+            });
+            PolicyCell {
                 estimate: estimate.id.clone(),
                 phase: estimate.phase.as_str(),
                 severity: estimate.severity.clone(),
                 probability: estimate.probability.clone(),
-                policy: None,
-                cell: None,
-                region: None,
-                outside_acceptable: None,
-                findings: Vec::new(),
-            };
-            match policies.as_slice() {
-                [] => entry.findings.push(Finding::bare(Token::PolicyNotFound)),
-                [id] => {
-                    entry.policy = Some(id.clone());
-                    match records.policies.get(id) {
-                        None => entry
-                            .findings
-                            .push(Finding::naming(Token::PolicyNotFound, vec![id.clone()])),
-                        Some(policy) => {
-                            let found = resolve(policy, &estimate.severity, &estimate.probability);
-                            entry.findings = found.findings;
-                            if let Some((region, outside)) = found.region {
-                                entry.cell = Some(CellKey {
-                                    severity: estimate.severity.clone(),
-                                    probability: estimate.probability.clone(),
-                                });
-                                entry.region = Some(region);
-                                entry.outside_acceptable = Some(outside);
-                            }
-                        }
-                    }
-                }
-                many => entry
-                    .findings
-                    .push(Finding::naming(Token::PolicyAmbiguous, many.to_vec())),
+                policy: found.policy,
+                cell,
+                outside_acceptable: found.region.as_ref().map(|(_, outside)| *outside),
+                region: found.region.map(|(region, _)| region),
+                findings: found.findings,
             }
-            entry
         })
         .collect()
 }

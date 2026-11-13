@@ -80,15 +80,31 @@ fn run_advise(arguments: &ArgMatches) -> Result<Response, String> {
     };
     let advice = match quoin_risk_advice::advise(&scope, &modules) {
         Ok(advice) => advice,
-        Err(error) => return Ok(refused("risk.unreadable", &error.to_string())),
+        Err(error) => {
+            return Ok(refused(
+                &format!("risk.{}", error.code.as_str()),
+                &error.message,
+            ));
+        }
     };
+    let diagnostics = advice
+        .unreadable
+        .iter()
+        .map(|file| Diagnostic {
+            code: "risk.document_unreadable".to_owned(),
+            message: format!("{file}; the file is absent from the report"),
+            context: BTreeMap::new(),
+        })
+        .collect();
     let rendered = match arguments.get_one::<String>("format").map(String::as_str) {
         Some("json") => advice.to_json().map_err(|error| error.to_string())?,
         _ => advice.to_markdown(),
     };
-    Ok(Response::ok(
-        serde_json::json!({ "rendered": rendered.trim_end() }),
-    ))
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered.trim_end() }),
+        diagnostics,
+        outcome: Outcome::Ok,
+    })
 }
 
 /// A refusal: exit status 2 with one diagnostic, and nothing on stdout.

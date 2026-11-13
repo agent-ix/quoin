@@ -88,14 +88,8 @@ impl Links {
         let mut policies: Vec<String> = sources
             .into_iter()
             .flat_map(|source| self.residual_risks_of(source))
-            .filter_map(|risk| {
-                records
-                    .residual_risks
-                    .get(risk)?
-                    .references
-                    .first()
-                    .cloned()
-            })
+            .filter_map(|risk| records.residual_risks.get(risk))
+            .flat_map(|risk| risk.references.iter().cloned())
             .collect();
         policies.sort();
         policies.dedup();

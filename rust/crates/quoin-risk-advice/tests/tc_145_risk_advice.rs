@@ -1078,3 +1078,121 @@ fn an_all_acceptable_policy_and_an_undecided_risk_state_nothing_accepted() {
         assert!(!md.contains(forbidden), "{forbidden} in {md}");
     }
 }
+
+fn without_the_safety_types() -> ModuleSelection {
+    let checkout = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-artifacts-process"),
+        PathBuf::from,
+    );
+    ModuleSelection::Closed(vec![
+        ModuleRoot::open(checkout.join("spec_artifacts_process")).unwrap(),
+    ])
+}
+
+#[trace("FR-145-AC-7")]
+#[test]
+fn a_type_no_loaded_module_declares_stops_the_report_naming_the_flag_and_the_types() {
+    let c = corpus();
+    chain(&c);
+    let error = advise(c.dir.path(), &without_the_safety_types())
+        .err()
+        .unwrap();
+    assert_eq!(error.code, ErrorCode::TypeUndeclared);
+    for needle in [
+        "--module DIR",
+        "residual_risk",
+        "benefit_risk",
+        "acceptability_policy",
+        "unknown type",
+    ] {
+        assert!(
+            error.message.contains(needle),
+            "{needle} in {}",
+            error.message
+        );
+    }
+}
+
+#[trace("FR-145-AC-7")]
+#[test]
+fn a_link_in_a_table_cell_is_no_edge_and_both_sections_name_one_policy() {
+    let c = corpus();
+    chain(&c);
+    c.put(
+        "RR-1",
+        "residual_risk",
+        &rels(&[("EST-B", "estimate"), ("POL-1", "references")]),
+        "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n\
+         | undecided | see [the hazard](ix://agent-ix/demo/HAZ-1) | |\n",
+    );
+    c.put(
+        "BR-1",
+        "benefit_risk",
+        &rels(&[("RR-1", "references")]),
+        "## Determination\n\n| Benefit | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n\
+         | meets [FR-9](ix://agent-ix/demo/FR-9) | undecided | r | |\n",
+    );
+    let json = c.json();
+    assert_eq!(cell(&json, "EST-B")["policy"], "POL-1");
+    assert_eq!(tokens(cell(&json, "EST-B")), Vec::<String>::new());
+    let queue = json["decision_queue"]["queue"].as_array().unwrap();
+    assert_eq!(queue[0]["record"], "RR-1");
+    assert_eq!(queue[0]["policy"], "POL-1");
+    assert_eq!(queue[0]["region"], "Low");
+    assert_eq!(queue[1]["record"], "BR-1");
+    assert_eq!(queue[1]["references"], serde_json::json!(["RR-1"]));
+}
+
+#[trace("FR-146-AC-6", "FR-148-AC-11")]
+#[test]
+fn one_residual_risk_naming_two_policies_is_ambiguous_in_both_sections() {
+    let c = corpus();
+    chain(&c);
+    policy_with(&c, "POL-0", false, &REGIONS);
+    c.put(
+        "RR-1",
+        "residual_risk",
+        &rels(&[("EST-B", "estimate"), ("POL-1", "references"), ("POL-0", "references")]),
+        "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| undecided | r | |\n",
+    );
+    let json = c.json();
+    let entry = cell(&json, "EST-B");
+    assert_eq!(tokens(entry), ["policy-ambiguous"]);
+    assert_eq!(
+        entry["findings"][0]["names"],
+        serde_json::json!(["POL-0", "POL-1"])
+    );
+    assert_eq!(
+        (&entry["policy"], &entry["region"]),
+        (&Value::Null, &Value::Null)
+    );
+    let queued = &json["decision_queue"]["queue"][0];
+    assert_eq!(tokens(queued), ["policy-ambiguous"]);
+    assert_eq!(
+        queued["findings"][0]["names"],
+        serde_json::json!(["POL-0", "POL-1"])
+    );
+    assert_eq!(
+        (
+            &queued["policy"],
+            &queued["region"],
+            &queued["outside_acceptable"]
+        ),
+        (&Value::Null, &Value::Null, &Value::Null)
+    );
+}
+
+#[trace("FR-145-AC-7")]
+#[test]
+fn a_file_the_reader_cannot_load_is_listed_not_dropped() {
+    let c = corpus();
+    chain(&c);
+    std::fs::write(c.dir.path().join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+    let advice = advise(c.dir.path(), &modules()).unwrap();
+    assert_eq!(advice.unreadable.len(), 1);
+    assert!(
+        advice.unreadable[0].contains("RR-9.md"),
+        "{:?}",
+        advice.unreadable
+    );
+}

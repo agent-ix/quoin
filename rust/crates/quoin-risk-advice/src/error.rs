@@ -8,8 +8,12 @@ use std::path::Path;
 /// A stable, `Copy` classification of an operational failure.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
-    /// The scope or the modules that declare the record types could not be read.
-    Read,
+    /// The scope or a file below it could not be read.
+    Scope,
+    /// A module could not be loaded.
+    Modules,
+    /// No loaded module declares a record type the report must check.
+    TypeUndeclared,
     /// A record breaks the contract its type declares.
     Record,
     /// The report could not be serialized.
@@ -26,11 +30,40 @@ pub struct AdviceError {
     pub message: String,
 }
 
+impl ErrorCode {
+    /// The code as printed.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Scope => "scope-unreadable",
+            Self::Modules => "modules-unloadable",
+            Self::TypeUndeclared => "type-undeclared",
+            Self::Record => "record-invalid",
+            Self::Render => "render-failed",
+        }
+    }
+}
+
 impl AdviceError {
     pub(crate) fn read(error: &quoin_quire::Error) -> Self {
-        Self {
-            code: ErrorCode::Read,
-            message: error.to_string(),
+        use quoin_quire::ErrorCode as Engine;
+        match error.code() {
+            Engine::ModuleLoad | Engine::ModuleSetEmpty => Self {
+                code: ErrorCode::Modules,
+                message: error.to_string(),
+            },
+            Engine::ArchetypeUnknown => Self {
+                code: ErrorCode::TypeUndeclared,
+                message: format!(
+                    "{error}. The record types come from the spec-objects-safety module: pass \
+                     --module DIR for a module root whose version includes the residual_risk, \
+                     benefit_risk and acceptability_policy types"
+                ),
+            },
+            _ => Self {
+                code: ErrorCode::Scope,
+                message: error.to_string(),
+            },
         }
     }
 

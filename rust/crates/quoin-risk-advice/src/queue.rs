@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use crate::finding::{Finding, Token};
 use crate::links::Links;
-use crate::policy::resolve;
+use crate::policy::lookup;
 use crate::records::{Choice, Phase, Records};
 
 const UNDECIDED: &str = "undecided";
@@ -77,26 +77,34 @@ fn residual(records: &Records, record: &Choice) -> QueueEntry {
     let mut entry = plain(record, "residual_risk");
     entry.references = Vec::new();
     entry.estimate.clone_from(&record.estimate);
-    entry.policy = records.policy_of(record);
     let estimate = record
         .estimate
         .as_ref()
         .and_then(|id| records.estimates.get(id));
-    if let Some(estimate) = estimate {
-        entry.severity = Some(estimate.severity.clone());
-        entry.probability = Some(estimate.probability.clone());
-        let policy = entry
-            .policy
-            .as_ref()
-            .and_then(|id| records.policies.get(id));
-        if let Some(policy) = policy {
-            let found = resolve(policy, &estimate.severity, &estimate.probability);
-            entry.findings = found.findings;
-            if let Some((region, outside)) = found.region {
-                entry.region = Some(region);
-                entry.outside_acceptable = Some(outside);
-            }
+    let (severity, probability) = estimate.map_or(("", ""), |estimate| {
+        (estimate.severity.as_str(), estimate.probability.as_str())
+    });
+    let found = lookup(records, &record.references, severity, probability);
+    entry.policy = found.policy;
+    if estimate.is_some() {
+        entry.severity = Some(severity.to_owned());
+        entry.probability = Some(probability.to_owned());
+        entry.findings = found.findings;
+        if let Some((region, outside)) = found.region {
+            entry.region = Some(region);
+            entry.outside_acceptable = Some(outside);
         }
+    } else {
+        entry.findings = found
+            .findings
+            .into_iter()
+            .filter(|finding| {
+                matches!(
+                    finding.finding,
+                    Token::PolicyNotFound | Token::PolicyAmbiguous
+                )
+            })
+            .collect();
     }
     entry
 }

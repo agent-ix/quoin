@@ -52,6 +52,11 @@ pub struct Advice {
     pub evidence_gaps: Vec<EvidenceEntry>,
     /// The undecided decisions (FR-148).
     pub decision_queue: Queue,
+    /// The files the reader could not load, each as `path: reason`. They are
+    /// absent from the report, so the caller says so; they are not part of
+    /// the rendered output.
+    #[serde(skip)]
+    pub unreadable: Vec<String>,
 }
 
 /// Read the records below `scope`, with the record types of the modules
@@ -63,16 +68,20 @@ pub struct Advice {
 /// residual-risk, benefit-risk, overall-evaluation or policy record breaks the
 /// contract its type declares.
 pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceError> {
-    let mut notices = Vec::new();
-    let documents = read(scope, modules, &records::CHECKED, &mut notices)
-        .map_err(|error| AdviceError::read(&error))?;
-    let records = records::Records::read(&documents)?;
+    let corpus =
+        read(scope, modules, &records::CHECKED).map_err(|error| AdviceError::read(&error))?;
+    let records = records::Records::read(&corpus.documents)?;
     let links = links::Links::build(&records);
     Ok(Advice {
         attribution: ATTRIBUTION,
         policy_cells: policy::cells(&records, &links),
         evidence_gaps: evidence::gaps(&records, &links),
         decision_queue: queue::build(&records, &links),
+        unreadable: corpus
+            .unreadable
+            .iter()
+            .map(|file| format!("{}: {}", file.path.display(), file.reason))
+            .collect(),
     })
 }
 

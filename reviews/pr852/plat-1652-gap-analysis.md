@@ -50,3 +50,25 @@ FR-147-AC-5..9, FR-147-AC-11, FR-148-AC-1, -2, -4, -6..10, and NFR-031-AC-1..3 a
 PARTIAL. Every criterion is tagged and the implementation meets each one I traced. Two medium
 test gaps (FR-148-AC-3 cannot fail, and FR-148-AC-5 is half covered) and five low ones need tests
 inside this PR. No production gap was found.
+
+## New findings (disposition pass 1)
+
+Against head e7389f42.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-008 | low | FR-145's new behaviour, that a type to check which no loaded module declares makes the command exit 2 naming the document and the type, has no test. Every test passes `--module` or a closed module selection. | spec/functional/FR-145-risk-advise-command.md:45, rust/crates/quoin-cli/tests/tc_145_risk_advise_command.rs:38-47 |
+
+## Dispositions
+
+Round 1, against commit e7389f42.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |
