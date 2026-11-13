@@ -16,6 +16,9 @@ pub enum ErrorCode {
     TypeUndeclared,
     /// A record breaks the contract its type declares.
     Record,
+    /// A file below the scope cannot be read or parsed, and the report is one
+    /// that must not pass over it.
+    Unparseable,
     /// The report could not be serialized.
     Render,
 }
@@ -39,6 +42,7 @@ impl ErrorCode {
             Self::Modules => "modules_unloadable",
             Self::TypeUndeclared => "type_undeclared",
             Self::Record => "record_invalid",
+            Self::Unparseable => "document_unparseable",
             Self::Render => "render_failed",
         }
     }
@@ -73,6 +77,16 @@ impl AdviceError {
             message: format!(
                 "{} ({id}) breaks its type's contract: {reason}",
                 path.display()
+            ),
+        }
+    }
+
+    pub(crate) fn unparseable(files: &[String]) -> Self {
+        Self {
+            code: ErrorCode::Unparseable,
+            message: format!(
+                "{} cannot be read or parsed, so a decision in it would go unreported",
+                files.join("; ")
             ),
         }
     }

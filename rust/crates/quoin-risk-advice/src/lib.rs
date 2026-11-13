@@ -70,7 +70,7 @@ pub struct Advice {
 /// residual-risk, benefit-risk, overall-evaluation or policy record breaks the
 /// contract its type declares.
 pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceError> {
-    let (records, unreadable) = load(scope, modules)?;
+    let (records, unreadable) = load(scope, modules, &records::CHECKED, false)?;
     let links = links::Links::build(&records);
     Ok(Advice {
         attribution: ATTRIBUTION,
@@ -81,19 +81,33 @@ pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceE
     })
 }
 
-/// The records below `scope`, and the files the reader could not load.
+/// The records below `scope` with the types in `checked` contract-checked, and
+/// the files the reader could not load. With `refuse_unreadable`, a file that
+/// cannot be read or whose frontmatter does not parse is an error naming it,
+/// because the report is a gate that must not pass over a record it never read.
 fn load(
     scope: &Path,
     modules: &ModuleSelection,
+    checked: &[&str],
+    refuse_unreadable: bool,
 ) -> Result<(records::Records, Vec<String>), AdviceError> {
-    let corpus =
-        read(scope, modules, &records::CHECKED).map_err(|error| AdviceError::read(&error))?;
-    let records = records::Records::read(&corpus.documents)?;
-    let unreadable = corpus
+    let corpus = read(scope, modules, checked).map_err(|error| AdviceError::read(&error))?;
+    let unreadable: Vec<String> = corpus
         .unreadable
         .iter()
         .map(|file| format!("{}: {}", file.path.display(), file.reason))
         .collect();
+    if refuse_unreadable {
+        let malformed = corpus
+            .malformed
+            .iter()
+            .map(|path| format!("{}: frontmatter does not parse", path.display()));
+        let all: Vec<String> = unreadable.iter().cloned().chain(malformed).collect();
+        if !all.is_empty() {
+            return Err(AdviceError::unparseable(&all));
+        }
+    }
+    let records = records::Records::read(&corpus.documents)?;
     Ok((records, unreadable))
 }
 
@@ -107,12 +121,11 @@ pub fn discrepancies(
     scope: &Path,
     modules: &ModuleSelection,
 ) -> Result<Discrepancies, AdviceError> {
-    let (records, unreadable) = load(scope, modules)?;
+    let (records, _) = load(scope, modules, &records::DISCREPANCY_CHECKED, true)?;
     let links = links::Links::build(&records);
     Ok(Discrepancies {
         attribution: ATTRIBUTION,
         findings: discrepancies::build(&records, &links),
-        unreadable,
     })
 }
 

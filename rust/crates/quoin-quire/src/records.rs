@@ -84,6 +84,9 @@ pub struct Corpus {
     pub documents: Vec<Document>,
     /// The files the walker could not load, ordered by path.
     pub unreadable: Vec<Unreadable>,
+    /// The files whose frontmatter fence is complete but does not parse as a
+    /// mapping, ordered by path. They contribute no document.
+    pub malformed: Vec<PathBuf>,
 }
 
 /// Every document below `scope` that carries an `id` and a `type`, ordered by
@@ -111,6 +114,18 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
         })
         .collect();
     unreadable.sort_by(|a, b| a.path.cmp(&b.path));
+    let mut malformed: Vec<PathBuf> = loaded
+        .diagnostics
+        .iter()
+        .filter_map(|diagnostic| match diagnostic {
+            Diagnostic::DocumentWithoutFrontmatter {
+                path,
+                malformed: true,
+            } => Some(path.clone()),
+            _ => None,
+        })
+        .collect();
+    malformed.sort();
     let mut documents = Vec::new();
     for found in &loaded.documents {
         let Some(frontmatter) = found.frontmatter() else {
@@ -156,6 +171,7 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
     Ok(Corpus {
         documents,
         unreadable,
+        malformed,
     })
 }
 

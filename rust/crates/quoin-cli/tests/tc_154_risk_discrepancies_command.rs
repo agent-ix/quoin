@@ -113,6 +113,13 @@ fn strict_exits_1_only_with_findings_and_changes_neither_the_report_nor_a_file()
     assert_eq!(strict.status.code(), Some(1));
     assert_eq!(strict.stdout, plain.stdout);
 
+    let markdown = discrepancies(dir.path(), &[]);
+    let markdown_strict = discrepancies(dir.path(), &["--strict"]);
+    assert_eq!(markdown.stdout, markdown_strict.stdout);
+    assert!(
+        String::from_utf8_lossy(&markdown.stdout).contains("the policy marks this cell as High")
+    );
+
     assert_eq!(tree(dir.path()), before);
 }
 
@@ -147,5 +154,13 @@ fn a_missing_scope_and_a_malformed_record_exit_2_with_and_without_strict() {
         assert_eq!(out.status.code(), Some(2));
         assert!(out.stdout.is_empty());
         assert!(String::from_utf8_lossy(&out.stderr).contains("RR-1"));
+    }
+    std::fs::remove_file(dir.path().join("RR-1.md")).unwrap();
+    std::fs::write(dir.path().join("RR-2.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+    for extra in [&[][..], &["--strict"][..]] {
+        let out = discrepancies(dir.path(), extra);
+        assert_eq!(out.status.code(), Some(2));
+        assert!(out.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&out.stderr).contains("RR-2.md"));
     }
 }

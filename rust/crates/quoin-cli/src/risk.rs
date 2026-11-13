@@ -165,7 +165,7 @@ fn run_discrepancies(arguments: &ArgMatches) -> Result<Response, String> {
     };
     Ok(Response {
         payload: serde_json::json!({ "rendered": rendered.trim_end() }),
-        diagnostics: unreadable_diagnostics(&report.unreadable),
+        diagnostics: Vec::new(),
         outcome,
     })
 }

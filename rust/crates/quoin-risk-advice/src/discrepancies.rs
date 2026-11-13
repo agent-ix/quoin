@@ -71,7 +71,7 @@ pub struct Refs {
     pub policy: Option<String>,
     /// The ids of the covering benefit-risk records.
     pub benefit_risk: Vec<String>,
-    /// `level-not-in-policy` or `level-not-assessed` for `decision-without-region`.
+    /// Why a `decision-without-region` has no region, else `null`.
     pub region_missing: Option<&'static str>,
 }
 
@@ -91,9 +91,6 @@ pub struct Discrepancies {
     pub attribution: &'static str,
     /// The disagreements, ordered by estimate, residual risk, then token.
     pub findings: Vec<Discrepancy>,
-    /// The files the reader could not load; absent from the report.
-    #[serde(skip)]
-    pub unreadable: Vec<String>,
 }
 
 /// The benefit-risk records that list each record id.
@@ -132,10 +129,14 @@ fn token_for(
     }
 }
 
+/// Why the lookup resolved no region, in the spelling of FR-146's tokens.
 fn region_missing(findings: &[crate::finding::Finding]) -> Option<&'static str> {
     findings.iter().find_map(|finding| match finding.finding {
         Token::LevelNotInPolicy => Some("level-not-in-policy"),
         Token::LevelNotAssessed => Some("level-not-assessed"),
+        Token::CellNotInPolicy => Some("cell-not-in-policy"),
+        Token::PolicyNotFound => Some("policy-not-found"),
+        Token::PolicyAmbiguous => Some("policy-ambiguous"),
         _ => None,
     })
 }
@@ -162,7 +163,7 @@ fn residual_finding(
             let missing = region_missing(&found.findings);
             (found.policy, found.region, missing)
         }
-        None => (None, None, None),
+        None => (None, None, Some("estimate-not-found")),
     };
     let covering = covering
         .get(risk.id.as_str())

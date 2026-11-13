@@ -24,10 +24,14 @@ impl Corpus {
         serde_json::from_str(&report.to_json().unwrap()).unwrap()
     }
 
+    /// The Markdown, checked against the voice rules of FR-154-AC-7 on every
+    /// fixture it is read from.
     fn markdown(&self) -> String {
-        discrepancies(self.dir.path(), &modules())
+        let md = discrepancies(self.dir.path(), &modules())
             .unwrap()
-            .to_markdown()
+            .to_markdown();
+        assert_no_acceptance_voice(&md);
+        md
     }
 
     fn findings(&self) -> Vec<(String, Option<String>)> {
@@ -49,6 +53,27 @@ impl Corpus {
             .into_iter()
             .map(|(token, _)| token)
             .collect()
+    }
+}
+
+/// The stem "accept" appears only in the attribution, in a finding token and in
+/// a decision value copied from a record; no risk is called compliant or passing.
+fn assert_no_acceptance_voice(md: &str) {
+    for line in md.lines().filter(|line| line.contains("accept")) {
+        if let Some(entry) = line.strip_prefix("- ") {
+            let (token, rest) = entry.split_once(':').unwrap();
+            assert!(!token.contains(' '), "{line}");
+            let copied = rest
+                .split(", ")
+                .find_map(|part| part.strip_prefix("recorded decision "));
+            let remainder = rest.replace(copied.unwrap_or("\u{0}"), "");
+            assert!(!remainder.contains("accept"), "{line}");
+        } else {
+            assert!(line.contains("Decisions come from"), "{line}");
+        }
+    }
+    for forbidden in ["compliant", "passing", "is acceptable", "acceptable risk"] {
+        assert!(!md.contains(forbidden), "{forbidden} in {md}");
     }
 }
 
@@ -101,6 +126,7 @@ fn an_accepted_risk_outside_the_region_is_reported_until_a_covering_record_is_ac
 
     benefit(&c, "BR-1", "undecided");
     assert_eq!(c.tokens(), ["benefit-risk-undecided"]);
+    c.markdown();
     assert_eq!(
         c.report()["findings"][0]["refs"]["benefit_risk"],
         json!(["BR-1"])
@@ -108,6 +134,7 @@ fn an_accepted_risk_outside_the_region_is_reported_until_a_covering_record_is_ac
 
     benefit(&c, "BR-1", "not_accepted");
     assert_eq!(c.tokens(), ["benefit-risk-not-accepted"]);
+    c.markdown();
 
     benefit(&c, "BR-2", "accepted");
     assert!(c.findings().is_empty());
@@ -125,6 +152,7 @@ fn the_other_decisions_are_compared_with_the_flag_of_their_region() {
     estimate(&c, "EST-1", "post_control", ("Minor", "Rare"), &[]);
     residual(&c, "RR-1", "EST-1", "POL-1", "not_accepted");
     assert_eq!(c.tokens(), ["not-accepted-inside-acceptable-region"]);
+    c.markdown();
     residual(&c, "RR-1", "EST-1", "POL-1", "accepted");
     assert!(c.findings().is_empty());
 
@@ -158,6 +186,7 @@ fn a_level_the_policy_cannot_place_gives_a_decision_without_region() {
         estimate(&c, "EST-2", "post_control", ("Catastrophic", "Rare"), &[]);
         residual(&c, "RR-1", "EST-1", "POL-1", decision);
         residual(&c, "RR-2", "EST-2", "POL-1", decision);
+        c.markdown();
         let report = c.report();
         let findings = report["findings"].as_array().unwrap();
         assert_eq!(findings.len(), 2);
@@ -222,6 +251,7 @@ fn a_hazard_status_is_not_a_decision() {
     );
     residual(&c, "RR-1", "EST-1", "POL-1", "undecided");
     assert_eq!(c.tokens(), ["residual-risk-undecided"]);
+    c.markdown();
 }
 
 #[trace("FR-155-AC-11", "FR-155-AC-13", "FR-154-AC-10")]
@@ -236,6 +266,7 @@ fn findings_have_the_fixed_shape_in_order_and_each_risk_uses_its_own_policy() {
     residual(&c, "RR-2", "EST-B", "POL-2", "undecided");
     residual(&c, "RR-1", "EST-B", "POL-1", "accepted");
     residual(&c, "RR-3", "EST-A", "POL-1", "undecided");
+    c.markdown();
     let report = c.report();
     let findings = report["findings"].as_array().unwrap();
     let order: Vec<(&str, &str)> = findings
@@ -309,7 +340,7 @@ fn the_region_equals_the_one_risk_advise_shows_for_the_estimate() {
     assert_eq!(report["findings"][0]["refs"]["policy"], cell["policy"]);
 }
 
-#[trace("FR-154-AC-1", "FR-154-AC-4", "FR-155-AC-12")]
+#[trace("FR-154-AC-1", "FR-154-AC-4")]
 #[test]
 fn the_json_has_the_two_keys_and_an_empty_scope_has_no_findings() {
     let report = outside("accepted").report();
@@ -330,7 +361,7 @@ fn a_run_changes_no_file_and_two_runs_are_byte_identical() {
     assert_eq!(snapshot(c.dir.path()), before);
 }
 
-#[trace("FR-154-AC-6", "FR-154-AC-7", "FR-155-AC-12")]
+#[trace("FR-154-AC-6", "FR-154-AC-7")]
 #[test]
 fn the_markdown_names_the_policy_and_the_person_and_never_says_the_tool_accepts() {
     let c = outside("accepted");
@@ -384,4 +415,96 @@ fn a_malformed_residual_risk_is_an_error_naming_the_record() {
     );
     let error = discrepancies(c.dir.path(), &modules()).unwrap_err();
     assert!(error.message.contains("RR-1"), "{}", error.message);
+}
+
+#[trace("FR-155-AC-14")]
+#[test]
+fn each_other_reason_no_region_resolves_is_named_in_region_missing() {
+    let reasons = |c: &Corpus| -> Vec<Value> {
+        c.report()["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| f["refs"]["region_missing"].clone())
+            .collect()
+    };
+    for decision in ["accepted", "not_accepted"] {
+        let c = corpus();
+        policy(&c, "POL-1");
+        policy(&c, "POL-2");
+        estimate(&c, "EST-1", "post_control", ("Serious", "Likely"), &[]);
+        estimate(&c, "EST-2", "post_control", ("Serious", "Likely"), &[]);
+        residual(&c, "RR-1", "EST-1", "POL-MISSING", decision);
+        c.put(
+            "RR-2",
+            "residual_risk",
+            &rels(&[("EST-2", "estimate"), ("POL-1", "references"), ("POL-2", "references")]),
+            &format!("## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| {decision} | r | Pat |\n"),
+        );
+        residual(&c, "RR-3", "EST-GONE", "POL-1", decision);
+        c.markdown();
+        assert_eq!(
+            reasons(&c),
+            [
+                json!("policy-not-found"),
+                json!("policy-ambiguous"),
+                json!("estimate-not-found")
+            ]
+        );
+        let report = c.report();
+        assert_eq!(report["findings"][0]["refs"]["policy"], "POL-MISSING");
+        assert_eq!(report["findings"][1]["refs"]["policy"], Value::Null);
+        assert!(c.markdown().contains("policy-not-found"));
+    }
+    let c = corpus();
+    policy(&c, "POL-1");
+    let text = std::fs::read_to_string(c.dir.path().join("POL-1.md")).unwrap();
+    std::fs::write(
+        c.dir.path().join("POL-1.md"),
+        text.replace("| Minor | Rare | Low |\n", ""),
+    )
+    .unwrap();
+    estimate(&c, "EST-1", "post_control", ("Minor", "Rare"), &[]);
+    residual(&c, "RR-1", "EST-1", "POL-1", "accepted");
+    assert_eq!(reasons(&c), [json!("cell-not-in-policy")]);
+}
+
+#[trace("FR-154-AC-9")]
+#[test]
+fn an_unreadable_file_or_unparseable_frontmatter_is_an_error_naming_the_path() {
+    let c = outside("accepted");
+    std::fs::write(c.dir.path().join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+    let error = discrepancies(c.dir.path(), &modules()).unwrap_err();
+    assert!(error.message.contains("RR-9.md"), "{}", error.message);
+    std::fs::remove_file(c.dir.path().join("RR-9.md")).unwrap();
+
+    std::fs::write(
+        c.dir.path().join("RR-8.md"),
+        "---\nid: RR-8\ntype: residual_risk\nrelationships: [unclosed\n  - : :\n---\n# RR-8\n",
+    )
+    .unwrap();
+    let error = discrepancies(c.dir.path(), &modules()).unwrap_err();
+    assert!(error.message.contains("RR-8.md"), "{}", error.message);
+
+    // `risk advise` keeps listing such a file instead of refusing.
+    std::fs::remove_file(c.dir.path().join("RR-8.md")).unwrap();
+    std::fs::write(c.dir.path().join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+    assert_eq!(
+        advise(c.dir.path(), &modules()).unwrap().unreadable.len(),
+        1
+    );
+}
+
+#[trace("FR-154-AC-9")]
+#[test]
+fn records_the_command_does_not_read_cannot_stop_it() {
+    let c = outside("accepted");
+    c.put(
+        "ORE-1",
+        "overall_residual_risk_evaluation",
+        &rels(&[("RR-1", "references")]),
+        "## Determination\n\n| Product | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n| p | maybe | <why> | |\n",
+    );
+    c.put("ANOM-1", "Anomaly", "status: bogus\n", "");
+    assert_eq!(c.tokens(), ["accepted-outside-acceptable-region"]);
 }
