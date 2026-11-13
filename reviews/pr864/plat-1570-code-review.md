@@ -68,3 +68,20 @@ the ordering, the reuse of the reader and the lookup, the `--strict` exit mappin
 no-write and no-verdict rules all meet FR-154 and FR-155. FND-001 is the blocker, because a
 `--strict` gate that exits 0 over an unparseable residual-risk file defeats the gate. FND-002 is
 the coder's open question, and the answer is a small FR-155 edit in this PR.
+
+## New findings (disposition pass 1)
+
+Against head e8f758d8.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | A residual-risk file whose frontmatter fence is never closed still passes the gate. Probe: `---` / `id: RR-1` / `type: residual_risk` / ... with no closing `---`. `risk discrepancies` prints empty findings and exits 0 with and without `--strict`, and writes nothing to stderr. quire-rs reports such a file as `DocumentWithoutFrontmatter { malformed: false }`, the same flavor it uses for a plain README. The new `Corpus::malformed` collects only `malformed: true`, so this case falls through. That is the same FR-154 rule as FND-001 ("a record in it cannot be parsed" exits 2), on a narrower input. Fix: also refuse a `malformed: false` file whose text opens with a `---` fence. A README without a fence stays quiet, as the probe over a plain README confirms. Add a test. | rust/crates/quoin-quire/src/records.rs:117-128, rust/crates/quoin-risk-advice/src/lib.rs:88-112 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | deferred: follow-up ticket filed | PLAT-1683 (the NFR-003 help_tree walker reads only the uppercase COMMANDS layout). The coordinator filed it because the fix is larger than this PR. |

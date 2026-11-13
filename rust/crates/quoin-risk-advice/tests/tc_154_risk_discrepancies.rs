@@ -486,8 +486,24 @@ fn an_unreadable_file_or_unparseable_frontmatter_is_an_error_naming_the_path() {
     let error = discrepancies(c.dir.path(), &modules()).unwrap_err();
     assert!(error.message.contains("RR-8.md"), "{}", error.message);
 
-    // `risk advise` keeps listing such a file instead of refusing.
     std::fs::remove_file(c.dir.path().join("RR-8.md")).unwrap();
+
+    // A fence that is never closed is as unparseable; a plain README is not a record.
+    std::fs::write(
+        c.dir.path().join("RR-7.md"),
+        "---\nid: RR-7\ntype: residual_risk\n# RR-7\n",
+    )
+    .unwrap();
+    let error = discrepancies(c.dir.path(), &modules()).unwrap_err();
+    assert!(error.message.contains("RR-7.md"), "{}", error.message);
+    assert!(!error.message.contains("cannot be read or parsed"));
+    assert!(advise(c.dir.path(), &modules()).is_ok());
+    std::fs::remove_file(c.dir.path().join("RR-7.md")).unwrap();
+    std::fs::write(c.dir.path().join("README.md"), "# Notes\n\nno fence here\n").unwrap();
+    assert_eq!(c.tokens(), ["accepted-outside-acceptable-region"]);
+    std::fs::remove_file(c.dir.path().join("README.md")).unwrap();
+
+    // `risk advise` keeps listing such a file instead of refusing.
     std::fs::write(c.dir.path().join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
     assert_eq!(
         advise(c.dir.path(), &modules()).unwrap().unreadable.len(),
@@ -495,7 +511,7 @@ fn an_unreadable_file_or_unparseable_frontmatter_is_an_error_naming_the_path() {
     );
 }
 
-#[trace("FR-154-AC-9")]
+#[trace("FR-154-AC-11")]
 #[test]
 fn records_the_command_does_not_read_cannot_stop_it() {
     let c = outside("accepted");

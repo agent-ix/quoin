@@ -101,7 +101,7 @@ fn load(
         let malformed = corpus
             .malformed
             .iter()
-            .map(|path| format!("{}: frontmatter does not parse", path.display()));
+            .map(|path| format!("{} (frontmatter does not parse)", path.display()));
         let all: Vec<String> = unreadable.iter().cloned().chain(malformed).collect();
         if !all.is_empty() {
             return Err(AdviceError::unparseable(&all));

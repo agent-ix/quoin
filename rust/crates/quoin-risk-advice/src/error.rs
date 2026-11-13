@@ -85,7 +85,7 @@ impl AdviceError {
         Self {
             code: ErrorCode::Unparseable,
             message: format!(
-                "{} cannot be read or parsed, so a decision in it would go unreported",
+                "cannot read or parse {}; a decision in it would go unreported",
                 files.join("; ")
             ),
         }

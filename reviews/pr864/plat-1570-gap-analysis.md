@@ -42,3 +42,19 @@ owning requirement: the `risk.rs` refactor serves FR-154's CLI, and `load` is th
 Not mergeable as is: one medium finding and two low. Traceability is complete at AC level, and
 the behaviour tests are real. The medium gap is in the untested no-region branches. It goes with
 the FR-155 spec edit raised in the code review.
+
+## New findings (disposition pass 1)
+
+Against head e8f758d8.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | `records_the_command_does_not_read_cannot_stop_it` is tagged FR-154-AC-9. AC-9 says a nonexistent scope and a malformed residual-risk record each exit 2. This test asserts the opposite case: a malformed `overall_residual_risk_evaluation` and a bad Anomaly do not stop the report. That behaviour is the FR-154 Behavior line "SHALL read only the residual_risk, benefit_risk and risk_estimate records ... and the acceptability_policy documents", and no AC states it. Either add an FR-154 AC for the read set and tag the test to it, or drop the AC-9 tag. | rust/crates/quoin-risk-advice/tests/tc_154_risk_discrepancies.rs:498-510 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
