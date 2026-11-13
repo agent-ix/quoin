@@ -31,7 +31,7 @@ SHALL decide no question of assurance sufficiency.
 
 ## Outputs
 
-- `RunRecord` entries, one per replayed fixture or compared case.
+- `RunRecord` entries, one per replayed fixture (contract-conformance) or one per report (differential-report, FR-150).
 - An `unrepresented` list naming each producer result that no run-entry outcome
   carries, with the producer's own state verbatim and the reason.
 - A published inventory recording, for every campaign-native format, the real
@@ -45,8 +45,9 @@ SHALL decide no question of assurance sufficiency.
 - An unknown case or fixture status SHALL be refused rather than mapped to the
   nearest outcome.
 - An empty result set SHALL be refused: a conformance run that emitted no line
-  did not report that every fixture matched, and a differential that compared
-  no case did not report agreement.
+  did not report that every fixture matched. A differential report always holds
+  exactly one comparison, so this refusal applies to the contract-conformance
+  adapter; the differential adapter's refusals are FR-150's.
 - A conformance entry's identity SHALL include its corpus and operation, so one
   replayed fixture cannot overwrite another.
 - A supplied conformance `trace_ids` SHALL be a non-empty array of distinct
@@ -66,8 +67,9 @@ SHALL decide no question of assurance sufficiency.
 ## Error Conditions
 
 Malformed JSON, a wrong protocol or schema version, a missing corpus, fixture,
-operation, case id or status, an unknown status, and an empty result set each
-fail with an `AdapterError` naming the offending line or case. No partial run is
+operation, fixture id or status, an unknown status, and an empty result set each
+fail with an `AdapterError` naming the offending line (a differential report is
+refused as FR-150 states). No partial run is
 recorded on any of these paths.
 
 ## Constraints
@@ -85,8 +87,8 @@ recorded on any of these paths.
 |----|----------|--------------|
 | FR-069-AC-1 | The `contract-conformance` adapter transcribes a real conformance run into one entry per replayed fixture, keyed by corpus, operation, and fixture. | Test |
 | FR-069-AC-2 | The `differential-report` adapter transcribes a real `quire.differential-report/v2` report as FR-150 states. | Test |
-| FR-069-AC-3 | An unavailable differential (FR-150) is not transcribed as a skip, an error, or a pass; it is named with its own state and reason. | Test |
-| FR-069-AC-4 | An unknown protocol, an unknown schema version, an unknown status, a missing required field, malformed JSON, and an empty result set are each refused with a message naming the line or case. | Property |
+| FR-069-AC-3 | A differential disagreement (FR-150) is not transcribed as a skip, an error, a fail or a pass; it is named with its own state `disagreement` and a reason. | Test |
+| FR-069-AC-4 | An unknown protocol, an unknown schema version, an unknown status, a missing required field, malformed JSON, and an empty result set are each refused by the contract-conformance adapter with a message naming the line (the differential adapter: FR-150-AC-6 to AC-11). | Property |
 | FR-069-AC-5 | Both adapters are selectable by name and by declared tool, and appear in the adapter listing. | Test |
 | FR-069-AC-6 | `quoin evidence record` prints every unrepresented result in both human and JSON output (CON-2). | Test |
 | FR-069-AC-7 | The inventory names, for every scope item, a real producer and a verdict, and every added adapter names its sample (CON-4). | Test |

@@ -14,8 +14,10 @@ relationships:
 
 ## Statement
 
-The differential report adapter SHALL bound the work it does on any input by the input's size, refuse an input over
-16 MiB before parsing it, and return the same result for the same bytes on every run.
+The differential report adapter SHALL refuse an input larger than `quire_analyze::MAX_REPORT_BYTES` (64 MiB) before
+parsing it.
+
+The differential report adapter SHALL return the same result for the same bytes on every run.
 
 ## Scope
 
@@ -26,7 +28,7 @@ The differential report adapter SHALL bound the work it does on any input by the
 
 A v2 report embeds the raw output of two solver processes as hex, so its size is set by a producer's limits and
 not by quoin. An intake that parses without a bound lets one oversized or hostile file exhaust the recording
-process, and an intake whose result varies with time, path or member order records different evidence for the same
+process, and an intake whose result varies with time, path or environment records different evidence for the same
 report.
 
 ## Measurement and Evaluation
