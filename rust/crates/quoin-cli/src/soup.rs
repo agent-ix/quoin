@@ -59,13 +59,13 @@ pub(crate) fn command() -> Command {
                     Arg::new("out")
                         .long("out")
                         .value_name("DIR")
-                        .help("Directory new records are written to"),
+                        .help("Where new records are written"),
                 )
                 .arg(
                     Arg::new("records")
                         .long("records")
                         .value_name("DIR")
-                        .help("Directory searched for existing records; defaults to --out"),
+                        .help("Where existing records are looked up; defaults to --out"),
                 )
                 .arg(
                     Arg::new("discharges")
@@ -135,6 +135,24 @@ fn run_promote(arguments: &ArgMatches) -> Result<Response, Stop> {
     let roots: Option<Vec<String>> = arguments
         .get_many::<String>("module")
         .map(|roots| roots.cloned().collect());
+
+    for (what, path) in std::iter::once(("--repo", repo.as_path())).chain(
+        roots
+            .iter()
+            .flatten()
+            .map(|root| ("--module", Path::new(root))),
+    ) {
+        if !path.exists() {
+            return Err(refuse(
+                "soup.path_missing",
+                format!(
+                    "{what} {} does not exist (no such file or directory)",
+                    path.display()
+                ),
+                &[("path", path.display().to_string())],
+            ));
+        }
+    }
 
     let skeleton = owning_skeleton(roots.as_deref())?;
 
