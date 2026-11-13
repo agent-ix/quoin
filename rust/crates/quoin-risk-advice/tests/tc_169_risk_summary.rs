@@ -443,6 +443,22 @@ fn several_estimates_are_all_listed_a_shared_control_once_and_links_are_edges_on
     assert_eq!(second["verifications"], json!([]));
 }
 
+/// A second policy for the same levels, and two residual risks on one
+/// post-control estimate that rest on different policies.
+fn two_policies(c: &Corpus) {
+    // A second policy whose region for the same levels is not outside.
+    policy_with(c, "POL-2", false, &REGIONS);
+    estimate(
+        c,
+        "EST-H",
+        "post_control",
+        ("Serious", "Likely"),
+        &[("SIT-1", "estimates"), ("CTRL-1", "assumes")],
+    );
+    residual(c, "RR-2", "EST-H", "POL-1", "not_accepted");
+    residual(c, "RR-3", "EST-H", "POL-2", "not_accepted");
+}
+
 #[trace("FR-169-AC-9", "FR-169-AC-25", "FR-170-AC-10")]
 #[test]
 fn the_region_is_the_one_risk_advise_shows_and_two_policies_give_null_with_each_finding_on_its_own()
@@ -468,17 +484,7 @@ fn the_region_is_the_one_risk_advise_shows_and_two_policies_give_null_with_each_
         assert_eq!(cell["region"], entry["policy_region"]);
     }
 
-    // A second policy whose region for the same levels is not outside.
-    policy_with(&c, "POL-2", false, &REGIONS);
-    estimate(
-        &c,
-        "EST-H",
-        "post_control",
-        ("Serious", "Likely"),
-        &[("SIT-1", "estimates"), ("CTRL-1", "assumes")],
-    );
-    residual(&c, "RR-2", "EST-H", "POL-1", "not_accepted");
-    residual(&c, "RR-3", "EST-H", "POL-2", "not_accepted");
+    two_policies(&c);
     let row = c.row(Some("HAZ-1"), Some("SIT-1"));
     let h = row["post_control"]
         .as_array()
@@ -494,6 +500,54 @@ fn the_region_is_the_one_risk_advise_shows_and_two_policies_give_null_with_each_
     );
     assert_eq!(row["residual_risks"].as_array().unwrap().len(), 3);
 
+    // The residual-risk tokens equal those of `risk discrepancies`.
+    let report: Value = serde_json::from_str(
+        &discrepancies(c.dir.path(), &modules())
+            .unwrap()
+            .to_json()
+            .unwrap(),
+    )
+    .unwrap();
+    let mut from_report: Vec<(String, String)> = report["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["refs"]["residual_risk"].is_string())
+        .map(|f| {
+            (
+                f["refs"]["residual_risk"].as_str().unwrap().to_owned(),
+                f["finding"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect();
+    from_report.sort();
+    let mut from_row: Vec<(String, String)> = row["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| {
+            f["finding"] != "control-without-requirement"
+                && f["finding"] != "control-without-verification"
+                && f["finding"] != "post-control-without-control"
+                && f["finding"] != "situation-without-harm"
+        })
+        .map(|f| {
+            (
+                f["names"][0].as_str().unwrap().to_owned(),
+                f["finding"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect();
+    from_row.sort();
+    assert_eq!(from_row, from_report);
+}
+
+#[trace("FR-170-AC-10", "FR-169-AC-13")]
+#[test]
+fn control_findings_equal_those_of_risk_advise_and_the_markdown_keeps_its_voice() {
+    let c = corpus();
+    complete(&c);
+    two_policies(&c);
     // The control findings equal those `risk advise` gives for the same controls.
     let advice: Value =
         serde_json::from_str(&advise(c.dir.path(), &modules()).unwrap().to_json().unwrap())
@@ -561,47 +615,6 @@ fn the_region_is_the_one_risk_advise_shows_and_two_policies_give_null_with_each_
     assert!(
         line.contains("estimate=EST-H; severity=Serious; probability=Likely; policy_region=null")
     );
-
-    // The residual-risk tokens equal those of `risk discrepancies`.
-    let report: Value = serde_json::from_str(
-        &discrepancies(c.dir.path(), &modules())
-            .unwrap()
-            .to_json()
-            .unwrap(),
-    )
-    .unwrap();
-    let mut from_report: Vec<(String, String)> = report["findings"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|f| f["refs"]["residual_risk"].is_string())
-        .map(|f| {
-            (
-                f["refs"]["residual_risk"].as_str().unwrap().to_owned(),
-                f["finding"].as_str().unwrap().to_owned(),
-            )
-        })
-        .collect();
-    from_report.sort();
-    let mut from_row: Vec<(String, String)> = row["findings"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|f| {
-            f["finding"] != "control-without-requirement"
-                && f["finding"] != "control-without-verification"
-                && f["finding"] != "post-control-without-control"
-                && f["finding"] != "situation-without-harm"
-        })
-        .map(|f| {
-            (
-                f["names"][0].as_str().unwrap().to_owned(),
-                f["finding"].as_str().unwrap().to_owned(),
-            )
-        })
-        .collect();
-    from_row.sort();
-    assert_eq!(from_row, from_report);
 }
 
 #[trace("FR-170-AC-7", "FR-170-AC-8")]
