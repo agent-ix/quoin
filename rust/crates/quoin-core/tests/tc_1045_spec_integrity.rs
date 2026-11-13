@@ -81,7 +81,7 @@ fn spec_documents(root: &Path) -> BTreeMap<String, Vec<(PathBuf, bool)>> {
 /// `FR-046` from `FR-046-clause-discharge.md`.
 fn leading_id(name: &str) -> Option<String> {
     let (prefix, rest) = name.split_once('-')?;
-    if !matches!(prefix, "StR" | "US" | "FR" | "NFR" | "IT") {
+    if !matches!(prefix, "StR" | "US" | "FR" | "NFR" | "IT" | "ADR") {
         return None;
     }
     let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
