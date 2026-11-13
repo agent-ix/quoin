@@ -29,7 +29,7 @@ Nothing is written into `spec/spec.md` because the artifacts are the record.
 - The skill SHALL fill `## Mappings` with Set and Clause rows (spec-objects-security FR-014).
 - The skill SHALL link each control to the FR, NFR or StR it implements, in the control's frontmatter `relationships`.
 - The skill SHALL report a clause that applies with no covering requirement as a gap in its reply.
-- For a clause outside the component, the skill SHALL author a `scope_exclusion` with `## Set`, `## Clause`, `## Responsible` and `## Rationale` sections (spec-objects-security FR-016). `## Owner` names the responsible component by the bare id of a bundle artifact.
+- For a clause outside the component, the skill SHALL author a `scope_exclusion` with `## Set`, `## Clause`, `## Responsible` and `## Rationale` sections (spec-objects-security FR-016). `## Responsible` names the responsible component by the bare id of a bundle artifact.
 - When no responsible party is known, the skill SHALL write no exclusion.
 - When no responsible party is known, the skill SHALL list the clause as having no responsible party in its reply.
 - The skill SHALL write a control's `## Effectiveness` section as `not_assessed` unless a person supplied another value.
