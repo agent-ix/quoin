@@ -61,9 +61,9 @@ Every key is present, `null` or `[]` when empty. The section is an object with t
 | `severity`, `probability` | as entered on the estimate (`residual_risk` only), else `null` |
 | `region`, `outside_acceptable` | as the policy wrote them, or `null` |
 | `references` | covered or considered ids (`benefit_risk`, `overall_residual_risk_evaluation`), else `[]` |
-| `findings` | `level-not-in-policy` or `level-not-assessed` where they apply |
+| `findings` | `{ finding, names }` objects for `level-not-in-policy` or `level-not-assessed` where they apply |
 
-An element of `no_record` has exactly the keys `estimate` and `findings`.
+An element of `no_record` has exactly the keys `estimate` and `findings`, the latter one `{ finding, names }` object with `finding` `post-control-estimate-without-decision` and `names` `[]`.
 
 ## Acceptance Criteria
 

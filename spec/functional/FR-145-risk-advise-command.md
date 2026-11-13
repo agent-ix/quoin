@@ -41,10 +41,12 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 
 - When a user runs `quoin risk advise <scope> [--format markdown|json]`, the command SHALL print the three sections `policy_cells`, `evidence_gaps` and `decision_queue`, in that order.
 - The command SHALL read only the safety-module records below `<scope>` (hazards, hazardous situations, risk estimates, controls, residual risks, benefit-risk records, overall evaluations), the `acceptability_policy` documents they reference, the requirement and test documents that link to a control, and the anomaly documents of FR-136.
+- The command SHALL skip a `risk_estimate` whose frontmatter `phase` is not `pre_control` or `post_control`, or that has no judgement table, and `quire validate` reports each such estimate as invalid (`agent-ix/spec-objects-safety` FR-203, FR-303-AC-5), so the command is silent about it by design.
 - The command SHALL NOT write any file or any record.
 - The command SHALL store no score, region, finding or verdict.
 - The command SHALL render Markdown by default and one JSON object with `--format json`.
 - The JSON object SHALL have exactly the keys `attribution`, `policy_cells`, `evidence_gaps` and `decision_queue`.
+- Every `findings` array in the JSON SHALL hold objects with exactly the keys `finding` (the token) and `names` (the ids or values the token names, `[]` when it names none).
 - The `attribution` string SHALL state that regions come from the project's policy and that decisions come from the named person.
 - If `<scope>` contains no risk record, then the command SHALL print the three sections empty and the attribution, and exit zero.
 - The command SHALL exit zero whenever it renders, whatever the sections contain.

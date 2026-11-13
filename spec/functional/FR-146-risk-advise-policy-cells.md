@@ -74,7 +74,7 @@ Every key is present, `null` or `[]` when empty.
 | `cell` | `{ severity, probability }` of the matched cell, or `null` |
 | `region` | the policy's region name, or `null` |
 | `outside_acceptable` | the region's flag as the policy wrote it, or `null` |
-| `findings` | the finding tokens above that name this entry |
+| `findings` | `{ finding, names }` objects for the finding tokens above that name this entry; `names` holds the level or marker (and the policy), or the policies, the token names |
 
 ## Acceptance Criteria
 
