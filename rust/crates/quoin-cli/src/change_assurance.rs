@@ -15,6 +15,9 @@ use quoin_core::protocol::Response;
 
 use crate::core_runtime::invoke;
 
+mod render;
+use render::receipt_text;
+
 const DESCRIPTION: &str = "Producer-facing surface over the FR-063 record, FR-064 proof attestation,\nretained-output intake, and FR-065 verification receipt contracts (FR-068).\n\nThese commands transcribe and verify what a producer supplies. None of them\nruns the command an attestation describes, invokes Git, or performs a network\nrequest. The only process any of them starts is the quoin-core engine that\ndecides the FR-063..FR-065 contracts (FR-096). Records are addressed by record id and revision and\nattestations by attestation id; recorded actor labels are attribution only, and\nnothing here establishes authorization or non-repudiation, and no output is a\ncertification.\n\nSubcommands:\n  quoin change-assurance write-record\n  quoin change-assurance prepare-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance record-digest\n  quoin change-assurance recover\n\nExit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\nfor a usage, parse, or integrity error.";
 
 /// The change-assurance command grammar.
@@ -448,125 +451,6 @@ fn receipt_response(response: Response, json: bool, verified: bool) -> Result<Re
             ix_cli_kit::exit::Outcome::Partial
         },
     })
-}
-
-fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Result<String, String> {
-    let record_id = receipt
-        .get("record_id")
-        .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| "receipt has no record_id".to_owned())?;
-    let revision = receipt
-        .get("record_revision")
-        .and_then(serde_json::Value::as_u64)
-        .ok_or_else(|| "receipt has no record_revision".to_owned())?;
-    let outcome = receipt
-        .get("outcome")
-        .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| "receipt has no outcome".to_owned())?;
-    let mut lines = vec![
-        if verified {
-            format!("receipt for {record_id} revision {revision} verified")
-        } else {
-            format!("receipt for {record_id} revision {revision}")
-        },
-        format!("  outcome: {outcome}"),
-    ];
-    if let Some(reasons) = receipt.get("reasons").and_then(serde_json::Value::as_array) {
-        let reasons = reasons
-            .iter()
-            .filter_map(serde_json::Value::as_str)
-            .collect::<Vec<_>>();
-        if !reasons.is_empty() {
-            lines.push(format!("  reasons: {}", reasons.join(", ")));
-        }
-    }
-    if !verified && let Some(proofs) = receipt.get("proofs").and_then(serde_json::Value::as_array) {
-        for proof in proofs {
-            let id = proof
-                .get("proof_id")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("");
-            let result = proof
-                .get("outcome")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("");
-            let reasons = proof
-                .get("reasons")
-                .and_then(serde_json::Value::as_array)
-                .map(|items| {
-                    items
-                        .iter()
-                        .filter_map(serde_json::Value::as_str)
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default();
-            lines.push(if reasons.is_empty() {
-                format!("  {id}: {result}")
-            } else {
-                format!("  {id}: {result} ({})", reasons.join(", "))
-            });
-        }
-    }
-    if let Some(claim) = receipt
-        .get("decision_event")
-        .and_then(|event| event.get("claimed_approval"))
-        .filter(|claim| !claim.is_null())
-    {
-        let text = |name: &str| {
-            claim
-                .get(name)
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("")
-        };
-        let meaning = claim
-            .get("meaning")
-            .and_then(serde_json::Value::as_array)
-            .map(|items| {
-                items
-                    .iter()
-                    .filter_map(serde_json::Value::as_str)
-                    .collect::<Vec<_>>()
-                    .join("; ")
-            })
-            .unwrap_or_default();
-        lines.push(
-            "  claimed approval, the event writer's claim and not verified by Quoin:".to_owned(),
-        );
-        lines.push(format!("    approver: {}", text("approver")));
-        lines.push(format!("    {}", claimed_time_line(claim)));
-        lines.push(format!("    meaning: {meaning}"));
-        lines.push(format!(
-            "    via {} ({}), tag {}",
-            text("signature_kind"),
-            text("record_digest"),
-            text("tag"),
-        ));
-        lines.push(
-            "    re-verify with Engineering Assurance approval-verify before relying on it"
-                .to_owned(),
-        );
-        lines.push(
-            "    trust comes from the relying party, never from the claim's trust, the record or a revision it names; a claim under a record whose signed_approval.required is false is not relied on"
-                .to_owned(),
-        );
-    }
-    Ok(lines.join("\n"))
-}
-
-/// The line that shows a claimed approval's time: the instant with its source
-/// as the signer's claim, or `time missing`. A missing time is never replaced
-/// by another instant.
-fn claimed_time_line(claim: &serde_json::Value) -> String {
-    let member = |name: &str| claim.get(name).and_then(serde_json::Value::as_str);
-    match (member("signed_at"), member("signed_at_source")) {
-        (Some(instant), Some(source)) => {
-            format!("signing time claimed by the signer: {instant} (source: {source})")
-        }
-        _ => match member("signed_at_missing") {
-            Some(reason) => format!("signing time claimed by the signer: time missing ({reason})"),
-            None => "signing time claimed by the signer: time missing".to_owned(),
-        },
-    }
 }
 
 fn render(
