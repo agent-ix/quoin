@@ -2,19 +2,16 @@
 // Copyright (C) 2026 Agent-IX
 
 //! `quoin soup promote`: write one `soup_record` per purl of an ingested SBOM
-//! (FR-141).
+//! (FR-141); `quoin soup report`: render them with their advisories and
+//! support (FR-144).
 //!
 //! The components are the FR-041 adapter's (`quoin_evidence::adapters::sbom`);
 //! this command has no SBOM reader. The record type, skeleton and schema belong
 //! to `spec-objects-security`, found through the module catalog.
 
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "`quoin soup report` (FR-144) is the caller")
-)]
 mod advisory;
 mod plan;
-#[expect(dead_code, reason = "`quoin soup report` (PLAT-1518) is the caller")]
+mod report;
 mod support;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -34,7 +31,7 @@ use plan::{Existing, NewRecord, Plan};
 const MAX_FILE_NAME: usize = 255;
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
-pub(crate) const ABOUT: &str = "Promote ingested SBOM components to SOUP records.";
+pub(crate) const ABOUT: &str = "Promote SBOM components to SOUP records and report on them.";
 
 /// The module that owns the `soup_record` object type.
 const OWNER: &str = "spec-objects-security";
@@ -88,16 +85,61 @@ pub(crate) fn command() -> Command {
                         .help("Module root to look for the soup_record type in; repeat to add roots. Without it the installed modules are searched"),
                 ),
         )
+        .subcommand(
+            Command::new("report")
+                .about("Render one row per soup_record with its advisories and support status")
+                .arg(
+                    Arg::new("repo")
+                        .long("repo")
+                        .value_name("DIR")
+                        .default_value(".")
+                        .help("Repository root; --records defaults to <repo>/spec/soup"),
+                )
+                .arg(
+                    Arg::new("records")
+                        .long("records")
+                        .value_name("DIR")
+                        .help("Where the soup_record files are read"),
+                )
+                .arg(
+                    Arg::new("binding")
+                        .long("binding")
+                        .value_name("FILE")
+                        .required(true)
+                        .help("Quire clause-binding-v1 JSON report whose clauses the records' disposition_clause names"),
+                )
+                .arg(
+                    Arg::new("as-of")
+                        .long("as-of")
+                        .value_name("INSTANT")
+                        .required(true)
+                        .help("Explicit evaluation instant; its UTC date is the end-of-support comparison date"),
+                )
+                .arg(
+                    Arg::new("support")
+                        .long("support")
+                        .value_name("FILE")
+                        .help("JSON file of public support statements: [{purl, support_status, end_of_support, source}]"),
+                )
+                .arg(
+                    Arg::new("json")
+                        .long("json")
+                        .action(clap::ArgAction::SetTrue)
+                        .help("Emit the report as JSON instead of Markdown"),
+                ),
+        )
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
-    match arguments.subcommand() {
-        Some(("promote", promote)) => match run_promote(promote) {
-            Ok(response) => Ok(response),
-            Err(Stop::Refuse(response)) => Ok(*response),
-            Err(Stop::Fail(message)) => Err(message),
-        },
-        _ => Err("an unknown soup command reached dispatch".to_owned()),
+    let outcome = match arguments.subcommand() {
+        Some(("promote", promote)) => run_promote(promote),
+        Some(("report", report)) => report::run(report),
+        _ => return Err("an unknown soup command reached dispatch".to_owned()),
+    };
+    match outcome {
+        Ok(response) => Ok(response),
+        Err(Stop::Refuse(response)) => Ok(*response),
+        Err(Stop::Fail(message)) => Err(message),
     }
 }
 
@@ -302,7 +344,26 @@ fn stated_obligations(repo: &Path, id: &str) -> Result<bool, Stop> {
 /// that cannot be seen could be written a second time.
 fn read_records(dir: &Path) -> Result<Vec<Existing>, Stop> {
     let mut found = Vec::new();
-    collect_records(dir, &mut found)?;
+    collect_records(dir, false, &mut found)?;
+    found.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(found)
+}
+
+/// Like [`read_records`], for a view that must show every record: a missing
+/// directory and a `soup_record` that states no purl are refusals.
+fn read_all_records(dir: &Path) -> Result<Vec<Existing>, Stop> {
+    if !dir.is_dir() {
+        return Err(refuse(
+            "soup.path_missing",
+            format!(
+                "--records {} is not a directory (no such directory)",
+                dir.display()
+            ),
+            &[("path", dir.display().to_string())],
+        ));
+    }
+    let mut found = Vec::new();
+    collect_records(dir, true, &mut found)?;
     found.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(found)
 }
@@ -315,7 +376,7 @@ fn unreadable(path: &Path, why: &str) -> Stop {
     )
 }
 
-fn collect_records(dir: &Path, found: &mut Vec<Existing>) -> Result<(), Stop> {
+fn collect_records(dir: &Path, require_purl: bool, found: &mut Vec<Existing>) -> Result<(), Stop> {
     let entries = match std::fs::read_dir(dir) {
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
@@ -332,10 +393,10 @@ fn collect_records(dir: &Path, found: &mut Vec<Existing>) -> Result<(), Stop> {
             continue;
         };
         if kind.is_dir() {
-            collect_records(&path, found)?;
+            collect_records(&path, require_purl, found)?;
         } else if kind.is_file()
             && path.extension().is_some_and(|ext| ext == "md")
-            && let Some(record) = read_record(&path)?
+            && let Some(record) = read_record(&path, require_purl)?
         {
             found.push(record);
         }
@@ -344,7 +405,7 @@ fn collect_records(dir: &Path, found: &mut Vec<Existing>) -> Result<(), Stop> {
 }
 
 /// The `soup_record` in `path`, or `None` for any other document.
-fn read_record(path: &Path) -> Result<Option<Existing>, Stop> {
+fn read_record(path: &Path, require_purl: bool) -> Result<Option<Existing>, Stop> {
     let length = std::fs::metadata(path)
         .map_err(|error| unreadable(path, &format!("cannot be read: {error}")))?
         .len();
@@ -360,11 +421,22 @@ fn read_record(path: &Path) -> Result<Option<Existing>, Stop> {
     if text_of("type") != Some(OBJECT) {
         return Ok(None);
     }
-    Ok(text_of("purl").map(|purl| Existing {
+    let Some(purl) = text_of("purl") else {
+        if require_purl {
+            return Err(refuse(
+                "soup.record_purl_missing",
+                format!("{} is a soup_record that states no purl", path.display()),
+                &[("path", path.display().to_string())],
+            ));
+        }
+        return Ok(None);
+    };
+    Ok(Some(Existing {
         path: path.to_path_buf(),
         purl: purl.to_owned(),
         id: text_of("id").map(str::to_owned),
         disposition_clause: text_of("disposition_clause").map(str::to_owned),
+        front: front.clone(),
     }))
 }
 
@@ -389,7 +461,7 @@ fn check_destinations(planned: &Plan, out: &Path) -> Result<BTreeSet<String>, St
             ));
         }
         if path.exists() {
-            match read_record(&path)? {
+            match read_record(&path, false)? {
                 Some(existing) if existing.purl == record.purl => {
                     adopted.insert(record.purl.clone());
                 }

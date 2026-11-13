@@ -161,7 +161,8 @@ pub(super) enum SupportErrorCode {
 }
 
 impl SupportErrorCode {
-    /// Every code, so a caller enumerating them cannot miss one.
+    /// Every code, so a test enumerating them cannot miss one.
+    #[cfg(test)]
     pub(super) const ALL: &'static [Self] = &[
         Self::NotAList,
         Self::MissingField,

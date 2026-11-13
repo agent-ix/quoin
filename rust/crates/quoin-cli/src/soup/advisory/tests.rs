@@ -117,6 +117,7 @@ fn record(purl: &str, clause: Option<&str>) -> Existing {
         purl: purl.to_owned(),
         id: None,
         disposition_clause: clause.map(str::to_owned),
+        front: serde_json::Map::new(),
     }
 }
 
