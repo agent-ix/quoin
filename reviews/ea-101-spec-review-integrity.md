@@ -28,3 +28,18 @@ for EA FR-049, FR-051, FR-052 and NFR-007 exist. One relative link is broken, wh
 ## Verdict
 
 Minor. FND-001 is a broken link to fix. FND-002 to FND-004 are testability tightenings.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | The new codes overlap. Under FR-166, an input that "fails its own format" is refused with `release_snapshot_input_invalid`. Under FR-168, a history file with the wrong protocol or a missing member is refused with `release_snapshot_history_invalid`. A malformed history file matches both rules, so implementers can choose different codes. State that FR-168's code takes precedence for `--history`, or exclude `--history` from the FR-166 rule. | spec/functional/FR-166-release-snapshot-command.md:85-86; spec/functional/FR-168-release-snapshot-change-records.md (Behavior) |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Both FR-063 links now point to `./FR-063-change-assurance-record-integrity.md`. |
+| FND-002 | fixed | The refusal is split into `release_snapshot_input_unreadable` and `release_snapshot_input_invalid`, and AC-5 asserts each code. The overlap this creates is FND-005. |
+| FND-003 | fixed | FR-167-AC-8 is deleted. |
+| FND-004 | fixed | AC-2 now reads "exactly the five keys and no other", with no order clause. |

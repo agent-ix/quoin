@@ -27,3 +27,11 @@ Three statements do not conform.
 ## Verdict
 
 Minor. These are wording fixes with no change in behaviour.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Split into "SHALL NOT read the system clock." and "SHALL take every instant in the snapshot from `--as-of`." |
+| FND-002 | fixed | Now reads "SHALL write exactly the supplied entries, ordered as Outputs states." |
+| FND-003 | fixed | The NFR-036 Statement is split into two SHALL statements, one for byte determinism and one for no verdict. |

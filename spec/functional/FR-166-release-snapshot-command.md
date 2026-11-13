@@ -82,8 +82,13 @@ and any digest, hash, manifest or pin of the snapshot or of what it covers.
   refuse with `release_snapshot_baseline_commit_invalid`.
 - If an input named under Inputs is missing or unreadable, then the command SHALL refuse with
   `release_snapshot_input_unreadable` naming the input.
-- If an input named under Inputs fails its own format, then the command SHALL refuse with
+- If an input named under Inputs other than `--history` fails its own format, then the command SHALL refuse with
   `release_snapshot_input_invalid` naming the input.
+- If `--history` fails its format, then the command SHALL refuse with `release_snapshot_history_invalid`, as
+  [FR-168](./FR-168-release-snapshot-change-records.md) states, and never with `release_snapshot_input_invalid`.
+- If an `Anomaly` document in scope has a mapping error and so no record (FR-136 `anomaly.no-record`), then the
+  command SHALL refuse with `release_snapshot_anomaly_unreadable` naming the path and the mapping error's code.
+  The snapshot has no `unreadable` member, so a carried anomaly never disappears from it unannounced.
 - If the command refuses, then it SHALL write no file.
 - The command SHALL write nothing other than `--out`.
 - The command SHALL NOT sign, tag, commit or stage the file.
@@ -104,7 +109,10 @@ and any digest, hash, manifest or pin of the snapshot or of what it covers.
 | FR-166-AC-3 | A `--baseline-commit` that is a branch name, a short hash or an upper-case hash is refused with `release_snapshot_baseline_commit_invalid` and no file exists. | Test |
 | FR-166-AC-4 | An existing `--out` is refused with `release_snapshot_exists` and its bytes are unchanged. | Test |
 | FR-166-AC-5 | A missing `--history` is refused with `release_snapshot_input_unreadable` naming it; a malformed `--binding` is refused with `release_snapshot_input_invalid` naming it; each with exit status 2 and no file. | Test |
-| FR-166-AC-6 | For the same repository, `--records`, `--support`, `--binding` and `--as-of`, every member that FR-167 names for a coverage row, a SOUP row and an anomaly equals the same-named value in the JSON output of `quoin matrix`, `quoin soup report` and `quoin anomaly report` (compared member by member, with the report's camelCase keys read as the snapshot's snake_case keys), and the snapshot has no member those reports do not define. | Test |
+| FR-166-AC-6 | For the same repository, `--records`, `--support`, `--binding` and `--as-of`, every member that FR-167 names for a coverage row, a SOUP row and an anomaly equals the same-named value in the JSON output of `quoin matrix`, `quoin soup report` and `quoin anomaly report` (compared member by member, with the report's camelCase keys read as the snapshot's snake_case keys), and the snapshot has no member those reports do not define, except two that FR-167 derives: `group` of a SOUP row,
+which is FR-144's ordering group of the row, and `unassessed` of an anomaly, which is true exactly when the anomaly's
+`safety_impact` is `unassessed` (FR-162's row flag). Both are compared against those definitions instead. | Test |
+| FR-166-AC-9 | An `Anomaly` document with a mapping error yields `release_snapshot_anomaly_unreadable` naming its path and the mapping code, exit status 2 and no file, while a fixture without one writes the snapshot; a malformed `--history` yields `release_snapshot_history_invalid`, not `release_snapshot_input_invalid`. | Test |
 | FR-166-AC-7 | Static inspection finds no git process, git library or hashing code in the command (CON-1, CON-2). | Inspection |
 | FR-166-AC-8 | A `soup_record` with `end_of_support` `unknown` and a `--support` file stating a past date places the record in the `past_end_of_support` group, and the same run without `--support` places it in `other`; a `--records` directory other than the default is read. | Test |
 

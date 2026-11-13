@@ -42,11 +42,14 @@ source and restates no vocabulary.
 | `anomalies` | each carried anomaly: `id`, `title`, `status`, `resolution`, `severity`, `safety_impact`, `unassessed`, `release_rationale` | FR-162, FR-163 |
 | `change_records` | the change-assurance records since the previous release | FR-168 |
 
-`group` is one of `unresolved_advisory`, `past_end_of_support`, `other`, the three ordering groups of FR-144.
+`group` is not a member of FR-144's JSON; it is the row's FR-144 ordering group, and `unassessed` is the FR-162 row flag
+(true exactly when `safety_impact` is `unassessed`). `group` is one of `unresolved_advisory`, `past_end_of_support`, `other`, the three ordering groups of FR-144.
 `kind` of a `not_assessed` item is one of `unmatched_advisory`, `unmatched_policy_finding`, `scan_not_run`,
 `scan_refused`, `scan_vacuous`, `scan_unordered`; `tool` names the scanner (`grype`, `cargo-audit`, `cargo-deny`,
-`licence-policy`); `detail` is the identifying text FR-144 states for the item (the advisory or finding id and purl,
-or the reason). `evidence_freshness` has exactly the five keys `bound`, `stale`, `suspect`, `undischarged`, `no run evidence`.
+`licence-policy`); `detail` is defined per `kind`: for `unmatched_advisory`, the advisory id as the scan reports it, a `|`, and the purl the
+advisory names (empty when it names none); for `unmatched_policy_finding`, the rule id, a `|`, and the purl the
+finding names (empty when it names none); for the four `scan_` kinds, the state word `not run`, `refused`, `vacuous`
+or `unordered` that FR-144 and FR-142 use for that state. `evidence_freshness` has exactly the five keys `bound`, `stale`, `suspect`, `undischarged`, `no run evidence`.
 `release_rationale` is the list of `{ author, rationale }` entries of FR-163 as authored. The snapshot carries
 neither `fixingChange` (FR-136) nor `rationaleChange` (FR-163), because both derive from git history and the command
 runs no git ([FR-166](./FR-166-release-snapshot-command.md)).

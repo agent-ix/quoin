@@ -44,3 +44,25 @@ are scoped to finding scoring and Jev lenses, so neither applies to this spec.
 Changes required. FND-001 and FND-002 are contradictions with existing requirements, and as written either
 blocks a correct implementation. The other findings are real gaps in edge cases or testability. On the quoin side,
 the ticket's acceptance criteria for contents, determinism, ownership split and version history are otherwise met.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-010 | medium | The reworded FR-166-AC-6 requires that "the snapshot has no member those reports do not define". FR-167 puts `group` in each SOUP row, but `group` is FR-144's ordering group, not a member of its JSON. FR-167 also puts `unassessed` in each anomaly row, but FR-162 calls it a row flag and FR-162-AC-3's row-key list has no `unassessed` key. A correct snapshot therefore fails AC-6. Exempt these two members by name and state where each value comes from. | FR-166-AC-6; spec/functional/FR-167-release-snapshot-format.md (soup, anomalies rows); FR-144; FR-162-AC-3 |
+| FND-011 | medium | FR-166 now limits its use of FR-162 to Selection and Row. That leaves out FR-162's "Unreadable documents" rule, under which a document with a mapping error is listed in `unreadable` and the command exits non-zero. The snapshot has no `unreadable` member and FR-166 has no refusal for this case, so a carried anomaly whose document fails mapping disappears from the snapshot without notice. Fix: refuse with a named code, or carry `unreadable`. | spec/functional/FR-166-release-snapshot-command.md:72; FR-162 Unreadable documents |
+| FND-012 | low | `detail`, the identifying text FR-144 states for a `not_assessed` item, is a member of the closed schema and the last sort key. FR-144 defines no such text field, so two implementers could produce different bytes. Define `detail` for each `kind`, for example the advisory id plus the purl, or the FR-142 reason word. | spec/functional/FR-167-release-snapshot-format.md:46-49 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-166 now limits anomaly use to FR-162 Selection/Row and FR-163 As authored, forbids deriving `fixingChange`/`rationaleChange` and calling the git-reading code, and adds AC-2 and FR-167-AC-9 for this (49a3bd0f). |
+| FND-002 | fixed | FR-167-AC-6 now expects one `undischarged` finding per criterion, consistent with FR-032-AC-5 and FR-115-AC-3. |
+| FND-003 | fixed | FR-168 reads `baseline_commit` and refuses `release_snapshot_history_baseline_mismatch` on a byte-for-byte string difference, resolving neither value (AC-6). EA FR-052 at PR #226 head 14a7af2 echoes "the request's value, byte for byte", so the two specs agree. |
+| FND-004 | fixed | AC-6 now compares member by member, maps camelCase to snake_case, and names the shared inputs. Its new "no undefined member" clause raises FND-010. |
+| FND-005 | fixed | `--records` and `--support` were added to Inputs, with AC-8 covering both. |
+| FND-006 | fixed | `not_assessed` now carries every item FR-144 appends, as `{kind, tool, detail}` with six kinds, ordered, and covered by AC-4. FND-012 is raised on `detail`. |
+| FND-007 | fixed | `open_findings` is now totally ordered by obligation, kind, path, line, symbol and summary, with an absent value sorting before a present one; AC-3 tests ties on line and on summary. |
+| FND-008 | fixed | The NFR-036 metric now counts absolute-path and host-dependent values and exempts the repository-relative `path` members. |
+| FND-009 | fixed | FR-166 Description now states the caller precondition: a clean checkout of the baseline commit. |
