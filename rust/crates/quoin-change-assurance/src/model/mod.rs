@@ -21,7 +21,7 @@ pub use approval::{
     APPROVAL_PROTOCOL, ApprovalStatus, ApprovedFacts, ClaimTrust, ClaimedApproval, GitsignTrust,
     SignatureKind, VerifiedApproval,
 };
-pub use approval_time::{ClaimedTime, TimeMissing, TimeSource};
+pub use approval_time::{ClaimedTime, SignedAt, TimeMissing, TimeSource};
 pub use attestation::{
     EnvironmentValue, ProducerResult, ProofAttestation, RetainedOutput, ToolBinding,
 };

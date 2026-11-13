@@ -376,8 +376,7 @@ fn tc_1592_an_approved_claim_carries_exactly_one_time_form() {
         &time_text(),
         r#", "signed_at_missing": "tagger_date_unreadable""#,
     );
-    let log_form = good.replace("\"tagger_date\"", "\"transparency_log\"");
-    for accepted in [&good, &missing_form, &log_form] {
+    for accepted in [&good, &missing_form] {
         assert!(
             is_candidate(&decided("approved", &tail(accepted))),
             "{accepted}"
@@ -411,8 +410,11 @@ fn tc_1592_an_approved_claim_carries_exactly_one_time_form() {
         good.replace("2026-08-31T10:20:30Z", "2026-08-31T24:20:30Z"),
         good.replace("2026-08-31T10:20:30Z", "2026-08-31t10:20:30z"),
         good.replace("2026-08-31T10:20:30Z", ""),
-        // An unknown source, reason or time member.
+        // The reserved transparency-log source, another unknown source, an
+        // unknown reason and an unknown time member.
+        good.replace("\"tagger_date\"", "\"transparency_log\""),
         good.replace("\"tagger_date\"", "\"clock\""),
+        good.replace("2026-08-31T10:20:30Z", "2026-02-31T10:20:30Z"),
         missing_form.replace("tagger_date_unreadable", "unknown"),
         good.replace(
             &time_text(),

@@ -280,7 +280,7 @@ The table declares the record's top-level fields and their cardinality. Which ke
         },
         "signed_at_source": {
           "type": "string",
-          "enum": ["tagger_date", "transparency_log"]
+          "enum": ["tagger_date"]
         },
         "signed_at_missing": {
           "type": "string",
@@ -288,8 +288,19 @@ The table declares the record's top-level fields and their cardinality. Which ke
         }
       },
       "oneOf": [
-        { "required": ["signed_at", "signed_at_source"] },
-        { "required": ["signed_at_missing"] }
+        {
+          "required": ["signed_at", "signed_at_source"],
+          "not": { "required": ["signed_at_missing"] }
+        },
+        {
+          "required": ["signed_at_missing"],
+          "not": {
+            "anyOf": [
+              { "required": ["signed_at"] },
+              { "required": ["signed_at_source"] }
+            ]
+          }
+        }
       ],
       "additionalProperties": false
     },
@@ -415,8 +426,13 @@ then meaning.
 
 **The time.** The claim's time is the one Engineering Assurance FR-041 reports on
 an `approved` result: a UTC instant `signed_at` of the form `YYYY-MM-DDTHH:MM:SSZ`
-with its `signed_at_source` (`tagger_date`, or the reserved `transparency_log`),
+with its `signed_at_source` (`tagger_date`, the only source Engineering Assurance
+reports; a `transparency_log` source is refused until an Engineering Assurance
+amendment produces it and this requirement is amended with it),
 or `signed_at_missing` (`tagger_date_unreadable`) when no time was obtainable. The
+reader checks that `signed_at` names a real second beyond what the schema pattern can
+express: the day exists in its month, leap years counted, and a leap second
+(`23:59:60Z`) is refused because Engineering Assurance never emits one. The
 receipt copies it as the claim states it. It is the signer's own claim and Quoin
 attests nothing about it: Quoin does not check it against a clock, the event's timestamp
 or a log, does not judge it plausible, and never defaults a missing time to the
@@ -489,8 +505,8 @@ kept.
 | FR-065-AC-18 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is false yields `claimed_approval` null and the same review check as before; a version 1 payload or receipt is not accepted; static boundaries prove the approval check starts no process and performs no Git, network or identity-provider operation (CON-1). | Test |
 | FR-065-AC-19 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is true makes the receipt `incomplete` with `approval_missing`, and the same record with `required` false is not affected. | Integration |
 | FR-065-AC-20 | When a `signed_bad` claim also carries a digest that differs from the stored record, the receipt reports `approval_signature_bad` and not `approval_record_mismatch`, following the status order of Engineering Assurance FR-041. | Test |
-| FR-065-AC-21 | The receipt schema and reader require a non-null `claimed_approval` to carry exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`; a claim with both, neither, one half of the first form, an instant not of the form `YYYY-MM-DDTHH:MM:SSZ`, an unknown source or reason, or an undeclared time member is refused, and the receipt reports a claim's time, source or missing reason unchanged. | Test |
-| FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Integration |
+| FR-065-AC-21 | The receipt schema and reader require a non-null `claimed_approval` to carry exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`; a claim with both, neither, one half of the first form, an instant not of the form `YYYY-MM-DDTHH:MM:SSZ` or not a real calendar second, a `transparency_log` or other unknown source or reason, or an undeclared time member is refused, and the receipt reports a claim's time, source or missing reason unchanged. | Test |
+| FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Test |
 
 ## Dependencies
 

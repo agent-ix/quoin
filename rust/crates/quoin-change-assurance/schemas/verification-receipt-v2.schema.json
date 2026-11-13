@@ -214,7 +214,7 @@
         },
         "signed_at_source": {
           "type": "string",
-          "enum": ["tagger_date", "transparency_log"]
+          "enum": ["tagger_date"]
         },
         "signed_at_missing": {
           "type": "string",
@@ -222,8 +222,19 @@
         }
       },
       "oneOf": [
-        { "required": ["signed_at", "signed_at_source"] },
-        { "required": ["signed_at_missing"] }
+        {
+          "required": ["signed_at", "signed_at_source"],
+          "not": { "required": ["signed_at_missing"] }
+        },
+        {
+          "required": ["signed_at_missing"],
+          "not": {
+            "anyOf": [
+              { "required": ["signed_at"] },
+              { "required": ["signed_at_source"] }
+            ]
+          }
+        }
       ],
       "additionalProperties": false
     },

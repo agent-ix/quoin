@@ -314,8 +314,7 @@ fn tc_1511_policy_narrowing_precedes_binding_and_binding_precedes_meaning() {
 }
 
 /// The claim's time, source and missing reason reach the receipt unchanged: an
-/// instant with `tagger_date`, the reserved `transparency_log` source as
-/// reported, and `signed_at_missing` with no instant of any kind beside it. The
+/// instant with `tagger_date` and `signed_at_missing` with no instant of any kind beside it. The
 /// receipt's own verification adds no time.
 #[trace("FR-065-AC-13", "FR-065-AC-21")]
 #[test]
@@ -330,13 +329,6 @@ fn tc_1592_the_claims_time_reaches_the_receipt_as_reported_and_never_defaulted()
     assert_eq!(
         member(&time, "signed_at_source"),
         &JsonValue::string("tagger_date")
-    );
-
-    let log = claim("approved", &digest).replace("\"tagger_date\"", "\"transparency_log\"");
-    let receipt = verify(&input(POLICY_OFF, Some(&log)));
-    assert_eq!(
-        member(&claimed(&receipt), "signed_at_source"),
-        &JsonValue::string("transparency_log")
     );
 
     let missing = claim("approved", &digest).replace(

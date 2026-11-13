@@ -384,8 +384,8 @@ and omits the result's `signature`,
 | approver | non-empty string, the principal the trust input names for the signer | exactly when status is `approved` |
 | meaning | non-empty array of strings, the `Signed-off-meaning` values in order | exactly when status is `approved` |
 | signature_kind | `ssh` or `gitsign` | exactly when status is `approved` |
-| signed_at | UTC instant of the form `YYYY-MM-DDTHH:MM:SSZ`, when the signer claims the approval was made | exactly when status is `approved` and `signed_at_missing` is absent |
-| signed_at_source | `tagger_date` or `transparency_log` (the latter reserved by Engineering Assurance FR-041), the source of `signed_at` | exactly when `signed_at` is present |
+| signed_at | UTC instant of the form `YYYY-MM-DDTHH:MM:SSZ` naming a real calendar second (the schema pattern cannot check days per month; the reader does, and refuses `23:59:60Z`), when the signer claims the approval was made | exactly when status is `approved` and `signed_at_missing` is absent |
+| signed_at_source | `tagger_date`, the source of `signed_at` (`transparency_log` is refused until an Engineering Assurance amendment produces it and this requirement is amended) | exactly when `signed_at` is present |
 | signed_at_missing | `tagger_date_unreadable`, why no time was obtainable | exactly when status is `approved` and `signed_at` is absent |
 
 The time is exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`,
@@ -396,7 +396,7 @@ a time for a missing one.
 
 An undeclared member, a member present outside its row (a time on any status other
 than `approved` included), both time forms or neither, a `signed_at` not of the stated
-form, an unknown source or reason, a `protocol` other than the
+form or not a real calendar second, a `transparency_log` or other unknown source, an unknown reason, a `protocol` other than the
 one above, or a `verified_approval` on a decision other than `approved` makes the
 event a refused candidate, not an approval. Quoin does not interpret `meaning`,
 compare `approver` to the event's actor, or decide who may approve.
@@ -480,7 +480,7 @@ standing, that Quoin retains and does not check.
 | FR-063-AC-14 | A v2 payload with a well-formed `verified_approval` on an `approved` decision is a candidate; each of an undeclared member, a `protocol` other than the FR-041 result protocol, a missing `trust`, `approver`, `meaning` or `signature_kind` on a non-`approved` status, a missing one on `approved`, an empty `meaning`, and a `verified_approval` on `rejected` or `revise` is refused as a candidate. | Test |
 | FR-063-AC-15 | The record digest of a stored revision equals `sha256:` plus the lowercase SHA-256 hex of its stored bytes, is identical across two writes of the same body, differs for a one-byte change, is computed without newline or end-of-line normalization, and the record body, schema and stored file contain no digest member. | Test |
 | FR-063-AC-16 | A `signed_approval` with `required` true and no `signature_kinds`, with `required` false and any kind or approver, with a repeated or unknown kind, or with an empty or repeated approver, is refused when the record is written, and the published schema refuses the same; a record without `signed_approval` is refused as v2; changing `signed_approval` changes the record digest; and the schema has no member that names an allowed-signers file, a revision, a gitsign identity, an issuer or a key. | Test |
-| FR-063-AC-17 | A well-formed `approved` `verified_approval` carries exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`, and each is retained and reported unchanged; both forms, neither, a lone `signed_at` or `signed_at_source`, a `signed_at` not of the form `YYYY-MM-DDTHH:MM:SSZ`, an unknown source or reason, and any time member on a status other than `approved` make the event a refused candidate. | Test |
+| FR-063-AC-17 | A well-formed `approved` `verified_approval` carries exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`, and each is retained and reported unchanged; both forms, neither, a lone `signed_at` or `signed_at_source`, a `signed_at` not of the form `YYYY-MM-DDTHH:MM:SSZ`, a `transparency_log` or other unknown source, an unknown reason, and any time member on a status other than `approved` make the event a refused candidate. | Test |
 
 ## Dependencies
 

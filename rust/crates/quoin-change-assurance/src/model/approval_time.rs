@@ -17,8 +17,10 @@
 
 use quoin_store::JsonValue;
 
+use std::fmt;
+
 use crate::error::{ChangeAssuranceError, FieldFailure, Subject};
-use crate::model::json::{Fields, object};
+use crate::model::json::Fields;
 
 /// The member names of the instant form, in wire order.
 pub const KNOWN_MEMBERS: [&str; 2] = ["signed_at", "signed_at_source"];
@@ -30,10 +32,11 @@ pub const MISSING_MEMBER: &str = "signed_at_missing";
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum TimeSource {
     /// The annotated tag's tagger date: the writer's own statement.
+    ///
+    /// The only source Engineering Assurance reports. A transparency-log
+    /// source is refused here until an Engineering Assurance amendment
+    /// produces one and this reader is amended with it.
     TaggerDate,
-    /// A transparency-log time. Reserved by Engineering Assurance; carried as
-    /// reported when a release reports it.
-    TransparencyLog,
 }
 
 impl TimeSource {
@@ -42,14 +45,11 @@ impl TimeSource {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::TaggerDate => "tagger_date",
-            Self::TransparencyLog => "transparency_log",
         }
     }
 
     fn parse(value: &str) -> Option<Self> {
-        [Self::TaggerDate, Self::TransparencyLog]
-            .into_iter()
-            .find(|source| source.as_str() == value)
+        (value == Self::TaggerDate.as_str()).then_some(Self::TaggerDate)
     }
 }
 
@@ -74,6 +74,43 @@ impl TimeMissing {
     }
 }
 
+/// A UTC instant of the form `YYYY-MM-DDTHH:MM:SSZ` that names a real calendar
+/// second. Held as the text the claim gave, so it round-trips unchanged.
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct SignedAt(String);
+
+impl SignedAt {
+    /// Read an instant, refusing any other form and any date or time that does
+    /// not exist.
+    ///
+    /// # Errors
+    ///
+    /// [`ChangeAssuranceError::Shape`] naming `field` when `value` is not a
+    /// real instant of the stated form.
+    pub fn parse(value: &str, subject: Subject, field: &str) -> Result<Self, ChangeAssuranceError> {
+        if is_utc_instant(value) {
+            Ok(Self(value.to_owned()))
+        } else {
+            Err(ChangeAssuranceError::shape(
+                subject,
+                FieldFailure::malformed(field),
+            ))
+        }
+    }
+
+    /// The instant as given.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for SignedAt {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
 /// The time a claim reports: an instant with its source, or the reason it is
 /// missing. Never both, never neither.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -81,7 +118,7 @@ pub enum ClaimedTime {
     /// A UTC instant of the form `YYYY-MM-DDTHH:MM:SSZ`, as reported.
     Reported {
         /// The instant.
-        instant: String,
+        instant: SignedAt,
         /// Where it came from.
         source: TimeSource,
     },
@@ -117,16 +154,10 @@ impl ClaimedTime {
                 .map(Self::Missing)
                 .ok_or_else(|| malformed(MISSING_MEMBER));
         }
-        let instant = fields.text("signed_at")?;
-        if !is_utc_instant(instant) {
-            return Err(malformed("signed_at"));
-        }
+        let instant = SignedAt::parse(fields.text("signed_at")?, subject, "signed_at")?;
         let source = TimeSource::parse(fields.text("signed_at_source")?)
             .ok_or_else(|| malformed("signed_at_source"))?;
-        Ok(Self::Reported {
-            instant: instant.to_owned(),
-            source,
-        })
+        Ok(Self::Reported { instant, source })
     }
 
     /// The members this form adds to a JSON object, in wire order.
@@ -134,7 +165,7 @@ impl ClaimedTime {
     pub fn members(&self) -> Vec<(&'static str, JsonValue)> {
         match self {
             Self::Reported { instant, source } => vec![
-                ("signed_at", JsonValue::string(instant)),
+                ("signed_at", JsonValue::string(instant.as_str())),
                 ("signed_at_source", JsonValue::string(source.as_str())),
             ],
             Self::Missing(reason) => {
@@ -142,17 +173,12 @@ impl ClaimedTime {
             }
         }
     }
-
-    /// The members as a standalone object, for tests and callers that want the
-    /// form alone.
-    #[must_use]
-    pub fn to_json(&self) -> JsonValue {
-        object(self.members())
-    }
 }
 
-/// Whether `text` has the shape `YYYY-MM-DDTHH:MM:SSZ` with every field in its
-/// calendar range. A shape check only; the instant is not judged plausible.
+/// Whether `text` has the shape `YYYY-MM-DDTHH:MM:SSZ` and names a real second:
+/// the day exists in the month (leap years counted), the hour is below 24 and
+/// the minute and second below 60, so a leap second is refused. The instant is
+/// not judged plausible.
 fn is_utc_instant(text: &str) -> bool {
     let bytes = text.as_bytes();
     if bytes.len() != 20 {
@@ -188,10 +214,21 @@ fn is_utc_instant(text: &str) -> bool {
     ) else {
         return false;
     };
-    number(0, 4).is_some()
-        && (1..=12).contains(&month)
-        && (1..=31).contains(&day)
-        && hour < 24
-        && minute < 60
-        && second < 60
+    let Some(year) = number(0, 4) else {
+        return false;
+    };
+    (1..=days_in_month(year, month)).contains(&day) && hour < 24 && minute < 60 && second < 60
+}
+
+/// The days in `month` of `year`; zero for a month that does not exist.
+const fn days_in_month(year: u32, month: u32) -> u32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400)) => {
+            29
+        }
+        2 => 28,
+        _ => 0,
+    }
 }

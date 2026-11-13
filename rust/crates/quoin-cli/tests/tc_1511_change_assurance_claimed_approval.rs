@@ -383,6 +383,17 @@ fn plain_receipt_with(claim_time: &serde_json::Value) -> String {
     text(&output.stdout)
 }
 
+/// Whether `text` holds a substring shaped `YYYY-MM-DDTHH:MM:SS`.
+fn has_instant_shape(text: &str) -> bool {
+    const SHAPE: &[u8] = b"dddd-dd-ddTdd:dd:dd";
+    text.as_bytes().windows(SHAPE.len()).any(|window| {
+        window.iter().zip(SHAPE).all(|(byte, shape)| match shape {
+            b'd' => byte.is_ascii_digit(),
+            other => byte == other,
+        })
+    })
+}
+
 /// The plain receipt shows the approver, the time as the signer's claim with
 /// its source, and the meaning together; a claim with no time shows `time
 /// missing` and its reason, and no other instant stands in for it.
@@ -402,6 +413,7 @@ fn tc_1592_the_receipt_shows_person_time_and_meaning_together() {
     );
     assert!(timed.contains("meaning: reviewed; tested"), "{timed}");
     assert!(!timed.contains("time missing"), "{timed}");
+    assert!(has_instant_shape(&timed), "{timed}");
 
     let missing = plain_receipt_with(&serde_json::json!({
         "signed_at_missing": "tagger_date_unreadable",
@@ -416,7 +428,7 @@ fn tc_1592_the_receipt_shows_person_time_and_meaning_together() {
         "{missing}"
     );
     assert!(missing.contains("meaning: reviewed; tested"), "{missing}");
-    assert!(!missing.contains("2026-"), "{missing}");
+    assert!(!has_instant_shape(&missing), "{missing}");
 }
 
 /// The help names the time as the signer's own claim, not attested and never
@@ -432,6 +444,7 @@ fn tc_1592_the_receipt_help_describes_the_claimed_time() {
         "the signer's own claim",
         "time missing",
         "never replaced by another time",
+        "The same signing time means the same form",
     ] {
         assert!(
             help.contains(literal),

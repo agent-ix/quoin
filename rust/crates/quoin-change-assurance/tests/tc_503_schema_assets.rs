@@ -342,56 +342,94 @@ fn collect_property_names(value: &serde_json::Value, into: &mut Vec<String>) {
     }
 }
 
+/// The receipt schema, a receipt carrying no claim, and a claim of the
+/// approved shape, for the tests below.
+struct ClaimFixture {
+    validator: SchemaValidator,
+    base: serde_json::Value,
+    claim: serde_json::Value,
+}
+
+impl ClaimFixture {
+    fn new() -> Self {
+        let receipt = verify_change_assurance(&base_input()).unwrap();
+        Self {
+            validator: validator(ASSET_NAMES[2]),
+            base: as_instance(&receipt.to_json().unwrap()),
+            claim: serde_json::json!({
+                "protocol": "engineering-assurance.approval-verify-result/v1",
+                "tag": "approval/change-1/1",
+                "record_digest": "sha256:00",
+                "trust": {"allowed_signers": "/keys/allowed"},
+                "approver": "a@example.test",
+                "meaning": ["reviewed"],
+                "signature_kind": "ssh",
+                "signed_at": "2026-08-31T10:20:30Z",
+                "signed_at_source": "tagger_date",
+            }),
+        }
+    }
+
+    /// The receipt with `claim` as its `claimed_approval`.
+    fn with(&self, claim: serde_json::Value) -> serde_json::Value {
+        let mut receipt = self.base.clone();
+        receipt["decision_event"]["claimed_approval"] = claim;
+        receipt
+    }
+
+    /// The claim with `member` set to `value`.
+    fn changed(&self, member: &str, value: serde_json::Value) -> serde_json::Value {
+        let mut changed = self.claim.clone();
+        changed[member] = value;
+        self.with(changed)
+    }
+
+    /// The claim with `member` removed.
+    fn without(&self, member: &str) -> serde_json::Value {
+        let mut changed = self.claim.clone();
+        changed.as_object_mut().unwrap().remove(member);
+        self.with(changed)
+    }
+
+    /// Whether the receipt reader accepts `instance`.
+    fn reads(instance: &serde_json::Value) -> bool {
+        let bytes = serde_json::to_vec(instance).unwrap();
+        quoin_change_assurance::VerificationReceipt::from_json(
+            &quoin_store::parse_strict_json(&bytes).unwrap(),
+        )
+        .is_ok()
+    }
+
+    /// Assert the schema and the reader both refuse every instance.
+    fn assert_refused(&self, forged: &[serde_json::Value]) {
+        for instance in forged {
+            assert!(
+                !self.validator.is_valid(instance),
+                "schema accepted {instance}"
+            );
+            assert!(!Self::reads(instance), "reader accepted {instance}");
+        }
+    }
+}
+
 /// The receipt carries `claimed_approval` as null or as exactly the declared
 /// shape: the schema and the reader accept a real claim and refuse a forged
 /// shape, an absent member and a version 1 receipt.
-#[trace("FR-065-AC-1", "FR-065-AC-13", "FR-065-AC-18", "FR-065-AC-21")]
+#[trace("FR-065-AC-1", "FR-065-AC-13", "FR-065-AC-18")]
 #[test]
 fn tc_1511_the_receipt_schema_and_reader_agree_on_the_claimed_approval() {
-    use quoin_change_assurance::VerificationReceipt;
-
-    let validator = validator(ASSET_NAMES[2]);
-    let receipt = verify_change_assurance(&base_input()).unwrap();
-    let base = as_instance(&receipt.to_json().unwrap());
-    let claim = serde_json::json!({
-        "protocol": "engineering-assurance.approval-verify-result/v1",
-        "tag": "approval/change-1/1",
-        "record_digest": "sha256:00",
-        "trust": {"allowed_signers": "/keys/allowed"},
-        "approver": "a@example.test",
-        "meaning": ["reviewed"],
-        "signature_kind": "ssh",
-        "signed_at": "2026-08-31T10:20:30Z",
-        "signed_at_source": "tagger_date",
-    });
-    let with = |claim: serde_json::Value| {
-        let mut receipt = base.clone();
-        receipt["decision_event"]["claimed_approval"] = claim;
-        receipt
-    };
-    let reads = |instance: &serde_json::Value| {
-        let bytes = serde_json::to_vec(instance).unwrap();
-        VerificationReceipt::from_json(&quoin_store::parse_strict_json(&bytes).unwrap()).is_ok()
-    };
-
-    let mut missing_time = claim.clone();
-    missing_time.as_object_mut().unwrap().remove("signed_at");
-    missing_time
-        .as_object_mut()
-        .unwrap()
-        .remove("signed_at_source");
-    missing_time["signed_at_missing"] = serde_json::json!("tagger_date_unreadable");
+    let fixture = ClaimFixture::new();
     for accepted in [
-        with(serde_json::Value::Null),
-        with(claim.clone()),
-        with(missing_time),
+        fixture.with(serde_json::Value::Null),
+        fixture.with(fixture.claim.clone()),
     ] {
-        assert!(validator.is_valid(&accepted));
-        assert!(reads(&accepted));
+        assert!(fixture.validator.is_valid(&accepted));
+        assert!(ClaimFixture::reads(&accepted));
     }
     let mut forged = vec![
-        with(serde_json::json!({"approver": "a"})),
-        with(serde_json::json!("approved")),
+        fixture.with(serde_json::json!({"approver": "a"})),
+        fixture.with(serde_json::json!("approved")),
+        fixture.without("approver"),
     ];
     for (member, value) in [
         ("extra", serde_json::json!(1)),
@@ -401,50 +439,89 @@ fn tc_1511_the_receipt_schema_and_reader_agree_on_the_claimed_approval() {
         ("trust", serde_json::json!({})),
         ("tag", serde_json::json!("")),
     ] {
-        let mut changed = claim.clone();
-        changed[member] = value;
-        forged.push(with(changed));
+        forged.push(fixture.changed(member, value));
     }
-    let mut missing = claim.clone();
-    missing.as_object_mut().unwrap().remove("approver");
-    forged.push(with(missing));
-    // Exactly one time form: both, neither, half, a malformed instant, an
-    // unknown source or reason.
-    let mut both = claim.clone();
-    both["signed_at_missing"] = serde_json::json!("tagger_date_unreadable");
-    forged.push(with(both));
-    for member in ["signed_at", "signed_at_source"] {
-        let mut half = claim.clone();
-        half.as_object_mut().unwrap().remove(member);
-        forged.push(with(half));
-    }
-    let mut neither = claim.clone();
-    neither.as_object_mut().unwrap().remove("signed_at");
-    neither.as_object_mut().unwrap().remove("signed_at_source");
-    forged.push(with(neither.clone()));
-    for (member, value) in [
-        ("signed_at", serde_json::json!("2026-08-31T10:20:30+00:00")),
-        ("signed_at", serde_json::json!("2026-13-31T10:20:30Z")),
-        ("signed_at_source", serde_json::json!("clock")),
-    ] {
-        let mut changed = claim.clone();
-        changed[member] = value;
-        forged.push(with(changed));
-    }
-    let mut unknown_reason = neither.clone();
-    unknown_reason["signed_at_missing"] = serde_json::json!("unknown");
-    forged.push(with(unknown_reason));
-    let mut absent = base.clone();
+    let mut absent = fixture.base.clone();
     absent["decision_event"]
         .as_object_mut()
         .unwrap()
         .remove("claimed_approval");
     forged.push(absent);
-    let mut version_one = base.clone();
+    let mut version_one = fixture.base.clone();
     version_one["schema_version"] = serde_json::json!(1);
     forged.push(version_one);
-    for instance in &forged {
-        assert!(!validator.is_valid(instance), "schema accepted {instance}");
-        assert!(!reads(instance), "reader accepted {instance}");
+    fixture.assert_refused(&forged);
+}
+
+/// A claim carries exactly one time form: the instant with its source, or the
+/// missing reason. Both, neither, half of the first form, the missing form
+/// beside half of it, a malformed instant, an unknown source (the reserved
+/// `transparency_log` included), an unknown reason and an undeclared time
+/// member are refused by the schema and the reader.
+#[trace("FR-065-AC-21")]
+#[test]
+fn tc_1592_the_receipt_schema_and_reader_agree_on_the_time_forms() {
+    let fixture = ClaimFixture::new();
+    let missing = |extra: Option<(&str, serde_json::Value)>| {
+        let mut claim = fixture.claim.clone();
+        let members = claim.as_object_mut().unwrap();
+        members.remove("signed_at");
+        members.remove("signed_at_source");
+        members.insert(
+            "signed_at_missing".to_owned(),
+            serde_json::json!("tagger_date_unreadable"),
+        );
+        if let Some((name, value)) = extra {
+            members.insert(name.to_owned(), value);
+        }
+        claim
+    };
+    let missing_form = fixture.with(missing(None));
+    assert!(fixture.validator.is_valid(&missing_form));
+    assert!(ClaimFixture::reads(&missing_form));
+
+    let mut neither = fixture.claim.clone();
+    neither.as_object_mut().unwrap().remove("signed_at");
+    neither.as_object_mut().unwrap().remove("signed_at_source");
+    let mut unknown_reason = missing(None);
+    unknown_reason["signed_at_missing"] = serde_json::json!("unknown");
+    let mut forged = vec![
+        fixture.changed(
+            "signed_at_missing",
+            serde_json::json!("tagger_date_unreadable"),
+        ),
+        fixture.without("signed_at"),
+        fixture.without("signed_at_source"),
+        fixture.with(neither),
+        fixture.with(missing(Some((
+            "signed_at",
+            serde_json::json!("2026-08-31T10:20:30Z"),
+        )))),
+        fixture.with(missing(Some((
+            "signed_at_source",
+            serde_json::json!("tagger_date"),
+        )))),
+        fixture.with(missing(Some(("signed_at_zone", serde_json::json!("UTC"))))),
+        fixture.with(unknown_reason),
+    ];
+    for (member, value) in [
+        ("signed_at", serde_json::json!("2026-08-31T10:20:30+00:00")),
+        ("signed_at", serde_json::json!("2026-13-31T10:20:30Z")),
+        ("signed_at", serde_json::json!("2026-08-31T23:59:60Z")),
+        ("signed_at_source", serde_json::json!("clock")),
+        ("signed_at_source", serde_json::json!("transparency_log")),
+        ("signed_at_zone", serde_json::json!("UTC")),
+    ] {
+        forged.push(fixture.changed(member, value));
     }
+    fixture.assert_refused(&forged);
+
+    // A day the month lacks matches the schema pattern; the reader alone
+    // checks the calendar.
+    let impossible_day = fixture.changed("signed_at", serde_json::json!("2026-02-31T10:20:30Z"));
+    assert!(fixture.validator.is_valid(&impossible_day));
+    assert!(
+        !ClaimFixture::reads(&impossible_day),
+        "reader accepted {impossible_day}"
+    );
 }
