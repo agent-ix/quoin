@@ -43,3 +43,4 @@ Minor. FND-001 is a broken link to fix. FND-002 to FND-004 are testability tight
 | FND-002 | fixed | The refusal is split into `release_snapshot_input_unreadable` and `release_snapshot_input_invalid`, and AC-5 asserts each code. The overlap this creates is FND-005. |
 | FND-003 | fixed | FR-167-AC-8 is deleted. |
 | FND-004 | fixed | AC-2 now reads "exactly the five keys and no other", with no order clause. |
+| FND-005 | fixed | FR-166 excludes `--history` from `release_snapshot_input_invalid` and refuses a malformed `--history` with `release_snapshot_history_invalid`, as FR-168 does. FR-166-AC-9 asserts this. |

@@ -66,3 +66,6 @@ the ticket's acceptance criteria for contents, determinism, ownership split and 
 | FND-007 | fixed | `open_findings` is now totally ordered by obligation, kind, path, line, symbol and summary, with an absent value sorting before a present one; AC-3 tests ties on line and on summary. |
 | FND-008 | fixed | The NFR-036 metric now counts absolute-path and host-dependent values and exempts the repository-relative `path` members. |
 | FND-009 | fixed | FR-166 Description now states the caller precondition: a clean checkout of the baseline commit. |
+| FND-010 | fixed | FR-166-AC-6 now exempts `group` (FR-144's ordering group for the row) and `unassessed` (true exactly when `safety_impact` is `unassessed`, the FR-162 row flag), and compares each against its stated definition. FR-167 now states both sources (dfff14e0, a844d37c). |
+| FND-011 | fixed | FR-166 now refuses with `release_snapshot_anomaly_unreadable`, naming the path and the mapping code, when a document in scope has FR-136 `anomaly.no-record`. FR-166-AC-9 covers this. |
+| FND-012 | fixed | FR-167 now defines `detail` for each `kind`: the advisory id or rule id, then `\|`, then the purl (empty when none) for the unmatched kinds, and the FR-144/FR-142 state word for the four `scan_` kinds. |
