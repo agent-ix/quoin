@@ -319,5 +319,9 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 > criteria" is unchanged: `matrix.build` renders `reason` whenever the
 > flattened criterion population is empty, which the absent form always is.
 
-> **CR-004 (PLAT-1529):** [FR-165](./FR-165-matrix-design-column.md) adds the design column. With entries that
-> have no criteria, `reason` and a non-empty `requirements` can coexist, as FR-165 states.
+> **CR-004 (PLAT-1529):** [FR-165](./FR-165-matrix-design-column.md) adds the design column and supersedes
+> three statements here. (1) Inputs: `coverage` is the quire-rs `design_matrix` payload, so the request type
+> under `deny_unknown_fields` (AC-2) accepts the entry keys `id`, `repo` and `design` and the criterion key
+> `design_elements`. (2) Behavior: `quoin matrix` assembles `coverage` by calling `quire.design_matrix`, not
+> by running `quire coverage`. (3) Outputs: with entries that have no criteria, `reason` and a non-empty
+> `requirements` can coexist. Everything else here is unchanged.
