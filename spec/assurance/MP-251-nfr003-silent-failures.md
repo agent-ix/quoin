@@ -125,6 +125,7 @@ statistical_design:
       - "module remove:unknown-flag"
       - "module:unknown-flag"
       - "module:unknown-subcommand"
+      - "profile:unknown-flag"
       - "quoin:unknown-flag"
       - "quoin:unknown-subcommand"
       - "release:unknown-flag"
