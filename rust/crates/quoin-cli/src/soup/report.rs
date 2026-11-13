@@ -11,6 +11,7 @@
 
 mod render;
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
@@ -25,7 +26,7 @@ use super::plan;
 use super::support::{
     Evaluation, RecordSupport, SupportError, SupportFile, as_of_date, parse_support, record_support,
 };
-use super::{Stop, arg, read_records, refuse};
+use super::{Stop, arg, read_all_records, refuse};
 use crate::core_runtime::invoke;
 
 /// A support file larger than this is not read.
@@ -109,7 +110,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
         None => SupportFile::default(),
     };
 
-    let existing = read_records(&records_dir)?;
+    let existing = read_all_records(&records_dir)?;
     if let Some((first, second)) = plan::duplicate_records(&existing) {
         return Err(refuse(
             "soup.duplicate_records",
@@ -131,10 +132,15 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
     let scans = latest_scans(&DiskEvidence::new(&repo), &mut unreadable_scans)
         .map_err(|error| format!("cannot read the retained scans: {error}"))?;
     let joined = advisory::join(&existing, &scans, &discharge);
+    let mut fronts: BTreeMap<PathBuf, Map<String, Value>> = existing
+        .into_iter()
+        .map(|record| (record.path, record.front))
+        .collect();
 
     let mut rows = Vec::with_capacity(joined.records.len());
     for record in joined.records {
-        rows.push(row(record, &support, as_of_day)?);
+        let front = fronts.remove(&record.path).unwrap_or_default();
+        rows.push(row(record, &front, &support, as_of_day)?);
     }
     rows.sort_by(|a, b| {
         (a.group(), &a.join.purl, &a.join.path).cmp(&(b.group(), &b.join.purl, &b.join.path))
@@ -204,12 +210,14 @@ fn support_refusal(error: SupportError) -> Stop {
     refuse(error.code.as_str(), error.message.into_string(), &context)
 }
 
-/// The row of one joined record: its own fields, read again from its file.
-fn row(join: RecordJoin, support: &SupportFile, as_of: time::Date) -> Result<Row, Stop> {
-    let text = std::fs::read_to_string(&join.path)
-        .map_err(|error| format!("cannot read {}: {error}", join.path.display()))?;
-    let front = quoin_quire::validate::frontmatter(&text).unwrap_or_default();
-    let own: RecordSupport = record_support(&front).map_err(|error| {
+/// The row of one joined record, from the frontmatter read with it.
+fn row(
+    join: RecordJoin,
+    front: &Map<String, Value>,
+    support: &SupportFile,
+    as_of: time::Date,
+) -> Result<Row, Stop> {
+    let own: RecordSupport = record_support(front).map_err(|error| {
         refuse(
             error.code.as_str(),
             format!("{}: {}", join.path.display(), error.message),
@@ -219,24 +227,39 @@ fn row(join: RecordJoin, support: &SupportFile, as_of: time::Date) -> Result<Row
             ],
         )
     })?;
-    let serves = list(&front, "serves", &join, |item| {
+    let serves = list(front, "serves", &join, |item| {
         item.as_str().map(str::to_owned)
     })?;
-    let anomalies = list(&front, "known_anomalies", &join, |item| {
+    let anomalies = list(front, "known_anomalies", &join, |item| {
         let object = item.as_object()?;
+        let source_ref = match object.get("source_ref") {
+            None | Some(Value::Null) => None,
+            Some(value) => Some(value.as_str()?.to_owned()),
+        };
         Some(Anomaly {
             statement: object.get("statement")?.as_str()?.to_owned(),
-            source_ref: object
-                .get("source_ref")
-                .and_then(Value::as_str)
-                .map(str::to_owned),
+            source_ref,
         })
     })?;
+    let version = match front.get("version") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(version)) => Some(version.clone()),
+        Some(_) => {
+            return Err(refuse(
+                "soup.record_field_invalid",
+                format!(
+                    "{} states `version` in a shape the soup_record type does not allow",
+                    join.path.display()
+                ),
+                &[
+                    ("path", join.path.display().to_string()),
+                    ("field", "version".to_owned()),
+                ],
+            ));
+        }
+    };
     Ok(Row {
-        version: front
-            .get("version")
-            .and_then(Value::as_str)
-            .map(str::to_owned),
+        version,
         serves,
         anomalies,
         support: support.evaluate(&join.purl, own, as_of),

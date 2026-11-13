@@ -95,6 +95,8 @@ pub(super) struct Existing {
     pub(super) id: Option<String>,
     /// The record's `disposition_clause`, when it names one (FR-142).
     pub(super) disposition_clause: Option<String>,
+    /// The record's whole frontmatter, as parsed once.
+    pub(super) front: serde_json::Map<String, serde_json::Value>,
 }
 
 /// The first two records that carry one purl.
@@ -310,12 +312,14 @@ mod tests {
                 purl: "pkg:npm/a@1".to_owned(),
                 id: None,
                 disposition_clause: None,
+                front: serde_json::Map::new(),
             },
             Existing {
                 path: PathBuf::from("b.md"),
                 purl: "pkg:npm/b@1".to_owned(),
                 id: None,
                 disposition_clause: None,
+                front: serde_json::Map::new(),
             },
         ];
         let symbols: Vec<String> = ["pkg:npm/a@1", "pkg:npm/b@2", "pkg:npm/b@2", "c@3"]

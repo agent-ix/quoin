@@ -344,7 +344,26 @@ fn stated_obligations(repo: &Path, id: &str) -> Result<bool, Stop> {
 /// that cannot be seen could be written a second time.
 fn read_records(dir: &Path) -> Result<Vec<Existing>, Stop> {
     let mut found = Vec::new();
-    collect_records(dir, &mut found)?;
+    collect_records(dir, false, &mut found)?;
+    found.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(found)
+}
+
+/// Like [`read_records`], for a view that must show every record: a missing
+/// directory and a `soup_record` that states no purl are refusals.
+fn read_all_records(dir: &Path) -> Result<Vec<Existing>, Stop> {
+    if !dir.is_dir() {
+        return Err(refuse(
+            "soup.path_missing",
+            format!(
+                "--records {} is not a directory (no such directory)",
+                dir.display()
+            ),
+            &[("path", dir.display().to_string())],
+        ));
+    }
+    let mut found = Vec::new();
+    collect_records(dir, true, &mut found)?;
     found.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(found)
 }
@@ -357,7 +376,7 @@ fn unreadable(path: &Path, why: &str) -> Stop {
     )
 }
 
-fn collect_records(dir: &Path, found: &mut Vec<Existing>) -> Result<(), Stop> {
+fn collect_records(dir: &Path, require_purl: bool, found: &mut Vec<Existing>) -> Result<(), Stop> {
     let entries = match std::fs::read_dir(dir) {
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
@@ -374,10 +393,10 @@ fn collect_records(dir: &Path, found: &mut Vec<Existing>) -> Result<(), Stop> {
             continue;
         };
         if kind.is_dir() {
-            collect_records(&path, found)?;
+            collect_records(&path, require_purl, found)?;
         } else if kind.is_file()
             && path.extension().is_some_and(|ext| ext == "md")
-            && let Some(record) = read_record(&path)?
+            && let Some(record) = read_record(&path, require_purl)?
         {
             found.push(record);
         }
@@ -386,7 +405,7 @@ fn collect_records(dir: &Path, found: &mut Vec<Existing>) -> Result<(), Stop> {
 }
 
 /// The `soup_record` in `path`, or `None` for any other document.
-fn read_record(path: &Path) -> Result<Option<Existing>, Stop> {
+fn read_record(path: &Path, require_purl: bool) -> Result<Option<Existing>, Stop> {
     let length = std::fs::metadata(path)
         .map_err(|error| unreadable(path, &format!("cannot be read: {error}")))?
         .len();
@@ -402,11 +421,22 @@ fn read_record(path: &Path) -> Result<Option<Existing>, Stop> {
     if text_of("type") != Some(OBJECT) {
         return Ok(None);
     }
-    Ok(text_of("purl").map(|purl| Existing {
+    let Some(purl) = text_of("purl") else {
+        if require_purl {
+            return Err(refuse(
+                "soup.record_purl_missing",
+                format!("{} is a soup_record that states no purl", path.display()),
+                &[("path", path.display().to_string())],
+            ));
+        }
+        return Ok(None);
+    };
+    Ok(Some(Existing {
         path: path.to_path_buf(),
         purl: purl.to_owned(),
         id: text_of("id").map(str::to_owned),
         disposition_clause: text_of("disposition_clause").map(str::to_owned),
+        front: front.clone(),
     }))
 }
 
@@ -431,7 +461,7 @@ fn check_destinations(planned: &Plan, out: &Path) -> Result<BTreeSet<String>, St
             ));
         }
         if path.exists() {
-            match read_record(&path)? {
+            match read_record(&path, false)? {
                 Some(existing) if existing.purl == record.purl => {
                     adopted.insert(record.purl.clone());
                 }

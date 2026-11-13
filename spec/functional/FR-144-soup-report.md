@@ -36,6 +36,9 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 - The command SHALL order rows with those carrying an unresolved advisory first, then those past end of support, then the rest, each group ordered by purl.
 - The command SHALL append the unmatched advisories of FR-142 and the scans reported not run, refused or vacuous after the rows.
 - If two `soup_record` files carry one purl, then the command SHALL refuse with an error naming both files.
+- If `--records` does not exist, then the command SHALL refuse with an error naming the path.
+- If a `soup_record` file states no purl, then the command SHALL refuse with an error naming the file.
+- If a record's `version`, or a known anomaly's `source_ref`, is not a string, then the command SHALL refuse with an error naming the record and the field.
 - The command SHALL render Markdown by default and a JSON document with `--json`.
 - The command SHALL read only the `soup_record` files below `--records <dir>` (default `spec/soup/`), the retained scans, the `--binding` report, the stored discharge facts and the `--support` file.
 - The command SHALL NOT read the SBOM document.
@@ -59,6 +62,9 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 | FR-144-AC-9 | After the command runs, no file in the repository is changed or created. | Test |
 | FR-144-AC-10 | The JSON output has no key named or typed as a score, rank, class or percentage. | Test |
 | FR-144-AC-11 | The row of a component with an unresolved advisory states the reason the advisory is unresolved, and the row of a resolved advisory states the disposition's decision and attester. | Test |
+| FR-144-AC-13 | `--records` naming a directory that does not exist exits non-zero with an error naming the path and prints no report. | Test |
+| FR-144-AC-14 | A `soup_record` file with no purl exits non-zero with an error naming the file and prints no report. | Test |
+| FR-144-AC-15 | A record whose `version` is a number, or whose anomaly `source_ref` is a number, exits non-zero naming the field and prints no report. | Test |
 
 ## Dependencies
 

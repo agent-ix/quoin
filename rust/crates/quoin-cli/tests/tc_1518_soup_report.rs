@@ -276,7 +276,7 @@ fn keys(value: &Value, found: &mut Vec<String>) {
     }
 }
 
-#[trace("FR-144-AC-1", "FR-144-AC-3", "FR-144-AC-4", "FR-144-AC-11")]
+#[trace("FR-144-AC-1", "FR-144-AC-3", "FR-144-AC-11")]
 #[test]
 fn rows_carry_every_column_and_sort_unresolved_then_past_support_then_the_rest() {
     let (repo, binding) = standard();
@@ -442,13 +442,7 @@ fn two_records_with_one_purl_refuse_the_report_naming_both_files() {
     assert!(output.stdout.is_empty());
 }
 
-#[trace(
-    "FR-144-AC-7",
-    "FR-144-AC-8",
-    "FR-144-AC-9",
-    "FR-143-AC-7",
-    "FR-143-AC-8"
-)]
+#[trace("FR-144-AC-7", "FR-144-AC-8", "FR-144-AC-9")]
 #[test]
 fn the_same_inputs_give_the_same_bytes_without_the_sbom_and_write_nothing() {
     let (repo, binding) = standard();
@@ -678,4 +672,276 @@ fn a_versioned_entry_beats_a_version_less_one() {
     let status = &row(&report, "pkg:cargo/a@1.0.0")["support_status"];
     assert_eq!(status["value"], "unsupported");
     assert_eq!(status["source"], "specific");
+}
+
+#[trace("FR-144-AC-4")]
+#[test]
+fn a_record_with_both_flags_appears_once_in_the_first_group_showing_both() {
+    let repo = Repo::new();
+    repo.record(
+        "both",
+        "pkg:cargo/zboth@1.0.0",
+        &["version: \"1.0.0\"", "end_of_support: \"2026-05-31\""],
+    );
+    repo.record("adv", "pkg:cargo/adv@1.0.0", &["version: \"1.0.0\""]);
+    repo.record(
+        "old",
+        "pkg:cargo/old@1.0.0",
+        &["version: \"1.0.0\"", "end_of_support: \"2026-05-31\""],
+    );
+    repo.audit(&[
+        ("RUSTSEC-2026-0001", "zboth", "1.0.0"),
+        ("RUSTSEC-2026-0002", "adv", "1.0.0"),
+    ]);
+    let binding = repo.binding(&["C-DISP"]);
+    let report = report_json(&repo, &binding, &[]);
+    let purls: Vec<&str> = report["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| row["purl"].as_str().unwrap())
+        .collect();
+    // Once, and in the first group (ordered by purl), ahead of the record
+    // that is only past end of support.
+    assert_eq!(
+        purls,
+        [
+            "pkg:cargo/adv@1.0.0",
+            "pkg:cargo/zboth@1.0.0",
+            "pkg:cargo/old@1.0.0"
+        ]
+    );
+    let both = row(&report, "pkg:cargo/zboth@1.0.0");
+    assert_eq!(both["unresolved_advisory"], true);
+    assert_eq!(both["past_end_of_support"], true);
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert_eq!(
+        markdown.matches("pkg:cargo/zboth@1.0.0").count(),
+        1,
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains("- Flags: unresolved advisory, past end of support"),
+        "{markdown}"
+    );
+}
+
+#[trace("FR-143-AC-7")]
+#[test]
+fn the_report_is_the_same_with_no_network_available() {
+    let (repo, binding) = standard();
+    let normal = repo.report(&binding, &[]);
+    assert!(normal.status.success(), "{}", text(&normal.stderr));
+    let mut arguments = vec![
+        "-rn".to_owned(),
+        env!("CARGO_BIN_EXE_quoin").to_owned(),
+        "soup".to_owned(),
+        "report".to_owned(),
+    ];
+    arguments.extend(
+        [
+            "--repo",
+            repo.path().to_str().unwrap(),
+            "--binding",
+            binding.to_str().unwrap(),
+            "--as-of",
+            AS_OF,
+        ]
+        .map(str::to_owned),
+    );
+    let probe = Command::new("unshare").args(["-rn", "true"]).output();
+    if !probe.is_ok_and(|probe| probe.status.success()) {
+        eprintln!("skipped: unshare -rn (a network namespace) is unavailable here");
+        return;
+    }
+    let isolated = Command::new("unshare")
+        .args(&arguments)
+        .env("IX_HOME", repo.home.path())
+        .output()
+        .unwrap();
+    assert!(isolated.status.success(), "{}", text(&isolated.stderr));
+    assert_eq!(isolated.stdout, normal.stdout);
+}
+
+#[trace("FR-143-AC-8")]
+#[test]
+fn the_wall_clock_is_not_an_input_only_as_of_is() {
+    let repo = Repo::new();
+    // Past by today's clock, not yet at the `--as-of` instant of 2026-08-15.
+    repo.record(
+        "a",
+        "pkg:cargo/a@1.0.0",
+        &["end_of_support: \"2999-01-01\""],
+    );
+    repo.record(
+        "b",
+        "pkg:cargo/b@1.0.0",
+        &["end_of_support: \"2026-10-01\""],
+    );
+    repo.record(
+        "c",
+        "pkg:cargo/c@1.0.0",
+        &["end_of_support: \"2026-08-14\""],
+    );
+    let binding = repo.binding(&["C-DISP"]);
+    let report = report_json(&repo, &binding, &[]);
+    assert_eq!(
+        row(&report, "pkg:cargo/a@1.0.0")["past_end_of_support"],
+        false
+    );
+    assert_eq!(
+        row(&report, "pkg:cargo/b@1.0.0")["past_end_of_support"],
+        false
+    );
+    assert_eq!(
+        row(&report, "pkg:cargo/c@1.0.0")["past_end_of_support"],
+        true
+    );
+    let later = repo.report(&binding, &["--json"]);
+    assert_eq!(later.stdout, repo.report(&binding, &["--json"]).stdout);
+}
+
+#[trace("FR-144-AC-5", "NFR-030-AC-2")]
+#[test]
+fn a_cargo_deny_log_refused_at_recording_leaves_the_scan_not_run_and_no_record_free() {
+    let refused = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../quoin-evidence/tests/fixtures/cargo-deny-failed-real.jsonl"),
+    )
+    .unwrap();
+    let adapter = select_finding_adapter(AdapterSelection {
+        adapter: None,
+        tool: Some("cargo-deny"),
+    })
+    .unwrap();
+    assert!(
+        (adapter.parse)(&refused).is_err(),
+        "the log must be refused"
+    );
+
+    let repo = Repo::new();
+    repo.record("a", "pkg:cargo/a@1.0.0", &[]);
+    repo.audit(&[]);
+    let binding = repo.binding(&["C-DISP"]);
+    let report = report_json(&repo, &binding, &[]);
+    let deny = report["scans"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|scan| scan["tool"] == "cargo-deny")
+        .unwrap();
+    assert_eq!(deny["state"], "not run");
+    let free = report["rows"][0]["no_advisory_reported_by"]
+        .as_array()
+        .unwrap();
+    assert!(!free.contains(&json!("cargo-deny")), "{report}");
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert!(markdown.contains("cargo-deny: not assessed"), "{markdown}");
+}
+
+fn walk(value: &Value, found: &mut Vec<Value>) {
+    match value {
+        Value::Object(map) => map.values().for_each(|inner| walk(inner, found)),
+        Value::Array(items) => items.iter().for_each(|item| walk(item, found)),
+        other => found.push(other.clone()),
+    }
+}
+
+#[trace("NFR-030-AC-1")]
+#[test]
+fn with_every_optional_input_absent_every_value_is_unknown_not_stated_or_an_input() {
+    let repo = Repo::new();
+    repo.record("a", "pkg:cargo/a@1.0.0", &[]);
+    let binding = repo.binding(&[]);
+    let report = report_json(&repo, &binding, &[]);
+    let row = row(&report, "pkg:cargo/a@1.0.0");
+    let inputs = [
+        row["purl"].as_str().unwrap(),
+        row["id"].as_str().unwrap(),
+        row["path"].as_str().unwrap(),
+    ];
+    let mut leaves = Vec::new();
+    walk(row, &mut leaves);
+    for leaf in leaves {
+        match leaf {
+            Value::String(word) => assert!(
+                ["unknown", "not stated", "none"].contains(&word.as_str())
+                    || inputs.contains(&word.as_str()),
+                "{word} in {row}"
+            ),
+            // Absent, or a flag computed from the inputs (nothing is past
+            // support or unresolved when no input says so).
+            other => assert!(
+                other.is_null() || other == Value::Bool(false),
+                "{other} in {row}"
+            ),
+        }
+    }
+    assert_eq!(row["advisories"], json!([]));
+}
+
+#[trace("FR-144-AC-13")]
+#[test]
+fn a_records_directory_that_does_not_exist_refuses_naming_it() {
+    let repo = Repo::new();
+    repo.record("a", "pkg:cargo/a@1.0.0", &[]);
+    let binding = repo.binding(&["C-DISP"]);
+    let output = repo.report(&binding, &["--records", "spec/typo"]);
+    assert!(!output.status.success());
+    let stderr = text(&output.stderr);
+    assert!(
+        stderr.contains("spec/typo") && stderr.contains("soup.path_missing"),
+        "{stderr}"
+    );
+    assert!(output.stdout.is_empty());
+}
+
+#[trace("FR-144-AC-14")]
+#[test]
+fn a_soup_record_with_no_purl_refuses_naming_its_file() {
+    let repo = Repo::new();
+    repo.record("a", "pkg:cargo/a@1.0.0", &[]);
+    let path = repo.records().join("nopurl.md");
+    std::fs::write(
+        &path,
+        "---\nid: SOUP-x\ntitle: x\ntype: soup_record\n---\n# x\n",
+    )
+    .unwrap();
+    let binding = repo.binding(&["C-DISP"]);
+    let output = repo.report(&binding, &[]);
+    assert!(!output.status.success());
+    let stderr = text(&output.stderr);
+    assert!(
+        stderr.contains("nopurl.md") && stderr.contains("no purl"),
+        "{stderr}"
+    );
+    assert!(output.stdout.is_empty());
+}
+
+#[trace("FR-144-AC-15")]
+#[test]
+fn a_version_or_source_ref_of_the_wrong_type_refuses_instead_of_reading_as_not_stated() {
+    for (extra, field) in [
+        (vec!["version: 1.0"], "version"),
+        (
+            vec![
+                "known_anomalies:",
+                "  - statement: \"leaks\"",
+                "    source_ref: 7",
+            ],
+            "known_anomalies",
+        ),
+    ] {
+        let repo = Repo::new();
+        repo.record("a", "pkg:cargo/a@1.0.0", &extra);
+        let binding = repo.binding(&["C-DISP"]);
+        let output = repo.report(&binding, &[]);
+        assert!(!output.status.success(), "{field}");
+        let stderr = text(&output.stderr);
+        assert!(
+            stderr.contains("soup.record_field_invalid") && stderr.contains(field),
+            "{stderr}"
+        );
+        assert!(output.stdout.is_empty());
+    }
 }
