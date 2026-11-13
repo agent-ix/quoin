@@ -84,6 +84,11 @@ pub struct Corpus {
     pub documents: Vec<Document>,
     /// The files the walker could not load, ordered by path.
     pub unreadable: Vec<Unreadable>,
+    /// The files that open a frontmatter fence (`---`) yet yield no parseable
+    /// frontmatter: a complete fence that is not a mapping, or one never
+    /// closed. A file with no fence at all is not listed. They contribute no
+    /// document, ordered by path.
+    pub malformed: Vec<PathBuf>,
 }
 
 /// Every document below `scope` that carries an `id` and a `type`, ordered by
@@ -111,6 +116,17 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
         })
         .collect();
     unreadable.sort_by(|a, b| a.path.cmp(&b.path));
+    let mut malformed: Vec<PathBuf> = loaded
+        .diagnostics
+        .iter()
+        .filter_map(|diagnostic| match diagnostic {
+            Diagnostic::DocumentWithoutFrontmatter { path, malformed } => {
+                (*malformed || opens_a_fence(path)).then(|| path.clone())
+            }
+            _ => None,
+        })
+        .collect();
+    malformed.sort();
     let mut documents = Vec::new();
     for found in &loaded.documents {
         let Some(frontmatter) = found.frontmatter() else {
@@ -156,6 +172,17 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
     Ok(Corpus {
         documents,
         unreadable,
+        malformed,
+    })
+}
+
+/// Whether the file's text opens with a frontmatter fence line.
+fn opens_a_fence(path: &Path) -> bool {
+    std::fs::read_to_string(path).is_ok_and(|text| {
+        text.trim_start_matches('\u{feff}')
+            .lines()
+            .next()
+            .is_some_and(|line| line.trim_end() == "---")
     })
 }
 

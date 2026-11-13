@@ -32,8 +32,11 @@ benefit-risk record covers a residual risk when it lists that risk
 ([FR-106](ix://agent-ix/spec-objects-safety/FR-106)). The region is the one
 [FR-102](ix://agent-ix/spec-objects-safety/FR-102) resolves in the residual risk's own policy
 ([FR-103](ix://agent-ix/spec-objects-safety/FR-103)). When no region resolves, the finding
-`decision-without-region` carries in `refs.region_missing` the reason: `level-not-in-policy` when a level is not
-in the policy's lists, or `level-not-assessed` when a level is `unknown`, `not_assessed` or `not_applicable`.
+`decision-without-region` carries in `refs.region_missing` the reason, spelled as [FR-146](./FR-146-risk-advise-policy-cells.md) spells its tokens: `level-not-in-policy` when a level is not
+in the policy's lists, `level-not-assessed` when a level is `unknown`, `not_assessed` or `not_applicable`,
+`cell-not-in-policy` when the policy lists no region for the pair of levels, `policy-not-found` when the residual
+risk names no policy or a policy that is not loaded, `policy-ambiguous` when it names more than one, or
+`estimate-not-found` when the estimate it references is not loaded or was skipped for breaking its type's contract.
 
 The token `post-control-estimate-without-decision` is owned by [FR-303](ix://agent-ix/spec-objects-safety/FR-303),
 and `quoin risk advise` lists it in the `no_record` group of [FR-148](./FR-148-risk-advise-decision-queue.md). A
@@ -65,7 +68,7 @@ waiting for a residual-risk record.
 | `region` | the policy's region name, or `null` |
 | `policy` | the policy id from the residual risk's own `policy` reference, or `null` |
 | `benefit_risk` | the ids of the covering benefit-risk records, `[]` if none |
-| `region_missing` | `level-not-in-policy` or `level-not-assessed` for `decision-without-region`, else `null` |
+| `region_missing` | the reason above for `decision-without-region`, else `null` |
 
 - The Markdown rendering of each finding SHALL name the token, the estimate id, the residual risk if any, its recorded decision, the region and the policy.
 - The Markdown rendering of a region SHALL read "the policy marks this cell as <region>".
@@ -88,6 +91,7 @@ waiting for a residual-risk record.
 | FR-155-AC-11 | Every finding in JSON has exactly the keys `finding` and `refs`, and every `refs` has exactly the keys of the table above; findings are in the stated order. | Test |
 | FR-155-AC-12 | The same fixture yields the same findings with and without `--strict`, and the Markdown of each finding with a region contains "the policy marks this cell as" followed by the region. | Test |
 | FR-155-AC-13 | Two residual risks on different policies each show their own policy id and their own region. | Test |
+| FR-155-AC-14 | An `accepted` or `not_accepted` residual risk whose policy is not loaded, whose references name two policies, whose pair of levels the policy lists no region for, or whose estimate is not loaded, each yield `decision-without-region` with `refs.region_missing` `policy-not-found`, `policy-ambiguous`, `cell-not-in-policy` and `estimate-not-found` respectively. | Test |
 
 ## Dependencies
 
