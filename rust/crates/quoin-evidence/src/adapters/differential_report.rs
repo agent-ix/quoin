@@ -15,6 +15,7 @@
 
 use ix_trace_rs::implements;
 use quire_analyze::{MAX_REPORT_BYTES, validate_report_document};
+use quoin_store::{canonical_bytes, parse_strict_json_str};
 use serde_json::Value;
 
 use super::{AdapterResult, UnrepresentedResult};
@@ -43,6 +44,25 @@ fn refusal(raw: &str, validator_error: &str) -> EvidenceError {
     match found {
         Some(found) => refuse(format!("schema {found} is not {SCHEMA}: {validator_error}")),
         None => refuse(validator_error.to_owned()),
+    }
+}
+
+/// Refuse a report whose bytes are not the canonical compact form, whatever
+/// the validator's own check accepted.
+///
+/// The validator compares the input with a re-serialisation of the parsed
+/// document, which preserves member order whenever any crate in the build
+/// enables `serde_json/preserve_order`; a report with reordered members then
+/// round-trips and is accepted. The re-encoding here sorts members through the
+/// store's canonical JSON, so the answer does not depend on feature unification.
+fn require_canonical(raw: &str) -> Result<(), EvidenceError> {
+    let canonical = parse_strict_json_str(raw)
+        .and_then(|value| canonical_bytes(&value))
+        .map_err(|error| refuse(format!("report is not canonical JSON: {error}")))?;
+    if canonical == raw.as_bytes() {
+        Ok(())
+    } else {
+        Err(refuse("report JSON is not in canonical compact form"))
     }
 }
 
@@ -81,6 +101,7 @@ pub fn parse_differential_report(raw: &str) -> Result<AdapterResult, EvidenceErr
         )));
     }
     validate_report_document(raw.as_bytes()).map_err(|error| refusal(raw, &error))?;
+    require_canonical(raw)?;
     let report: Value = serde_json::from_str(raw)
         .map_err(|error| refuse(format!("validated report is not JSON: {error}")))?;
 
