@@ -45,6 +45,7 @@ signal-hook = { workspace = true }
 quoin-store = { workspace = true }
 quoin-yaml = { workspace = true }
 quoin-quire = { workspace = true }
+quoin-quire-types = { workspace = true }
 quoin-risk-advice = { workspace = true }
 thiserror = { workspace = true }
 serde_json = { workspace = true }

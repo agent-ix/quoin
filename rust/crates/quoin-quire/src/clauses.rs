@@ -126,6 +126,32 @@ pub fn evaluate_all(
         .collect()
 }
 
+/// The exact clause-set keys the module rooted at `module` declares, in the
+/// engine's key order; empty for a module whose manifest lists no clause sets.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] when a module that lists clause sets does not load
+/// strictly, and when the manifest cannot be read to tell.
+pub fn declared_clause_sets(
+    module: &ModuleRoot,
+    notices: &mut Vec<Notice>,
+) -> Result<Vec<ClauseSetRef>> {
+    if !declares_clause_sets(module.as_path())? {
+        return Ok(Vec::new());
+    }
+    let registry = load_strict(module, notices)?;
+    registry
+        .clause_sets()
+        .map(|set| {
+            Ok(ClauseSetRef {
+                authority: ClauseSetAuthority::new(set.authority.as_str())?,
+                id: ClauseSetId::new(set.id.as_str())?,
+                version: ClauseSetVersion::new(set.version.as_str())?,
+            })
+        })
+        .collect()
+}
+
 /// The licence-restricted clause sets of the module rooted at `module`, as the
 /// engine's `check_publishable` reports them; empty means no restricted set.
 ///

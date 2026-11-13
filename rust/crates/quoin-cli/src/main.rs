@@ -27,6 +27,7 @@ mod matrix;
 mod measurement;
 mod module;
 mod plugin;
+mod profile;
 mod release;
 mod report;
 mod risk;
@@ -283,6 +284,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("module", module)) = matches.subcommand() {
         return module::run(module);
     }
+    if let Some(("profile", profile)) = matches.subcommand() {
+        return profile::run(profile);
+    }
     if let Some(("measurement", measurement)) = matches.subcommand() {
         return measurement::run(measurement);
     }
@@ -385,6 +389,7 @@ fn command() -> Command {
         .subcommand(evidence::command())
         .subcommand(discharge::command())
         .subcommand(module::command())
+        .subcommand(profile::command())
         .subcommand(measurement::command())
         .subcommand(plugin::command())
         .subcommand(release::command())

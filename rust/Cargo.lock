@@ -3200,6 +3200,7 @@ dependencies = [
  "quoin-measurement",
  "quoin-modules",
  "quoin-quire",
+ "quoin-quire-types",
  "quoin-risk-advice",
  "quoin-semantic",
  "quoin-store",
