@@ -118,7 +118,7 @@ receipt is retained on any of these paths.
 |----|------------|------|------------|
 | FR-068-CON-1 | No command SHALL execute the attested command, invoke Git, or perform a network request. The only process any command SHALL start is the `quoin-core` engine that decides the FR-063..FR-065 contracts, reached through the single FR-096 boundary module. (Amended at [quoin#457](https://github.com/agent-ix/quoin/issues/457), which moved those contracts out of TypeScript; before the cutover the surface decided them in process and spawned nothing at all.) | Architecture | Inspection |
 | FR-068-CON-2 | No command SHALL infer a candidate revision, proof id, command binding, tool or configuration identity, result, environment, or decision. Sizes computed from named bytes are not inferences. | Integrity | Test |
-| FR-068-CON-3 | No command output or help text SHALL make an identity, authorization, non-repudiation, or certification claim of its own; the receipt's `approval` reports a retained verification as received (FR-065). | Responsibility | Inspection |
+| FR-068-CON-3 | No command output or help text SHALL make an identity, authorization, non-repudiation, or certification claim of its own; the receipt's `claimed_approval` reports the event writer's claim, labelled as a claim (FR-065). | Responsibility | Inspection |
 | FR-068-CON-4 | The library contracts, stored layout, and schema assets SHALL be unchanged by this surface, and existing retained records SHALL remain readable. | Compatibility | Test |
 
 ## Acceptance Criteria
