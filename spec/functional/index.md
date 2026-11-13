@@ -155,6 +155,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-168: Release snapshot change records: the change-assurance records since the previous release, taken as data](./FR-168-release-snapshot-change-records.md)
 - [FR-169: quoin risk-summary: a read-only report of the hazard-to-decision chain, one row per hazard and situation](./FR-169-risk-summary-command.md)
 - [FR-170: Risk summary row findings: the chain's completeness findings placed against the row they name](./FR-170-risk-summary-row-findings.md)
+- [FR-175: quoin anomaly check reports a fixed anomaly whose verifying test has a failing or missing result](./FR-175-anomaly-check-fix-verification-evidence.md)
 - [FR-180: A repository selects one source profile, and Quoin resolves the sources that apply](./FR-180-source-profile-selection.md)
 - [FR-181: quoin profile evaluate: evaluate every set of the effective profile against its context](./FR-181-source-profile-evaluation.md)
 - [FR-182: A locally installed licensed pack joins a profile from local configuration only](./FR-182-local-pack-joins-a-profile.md)
