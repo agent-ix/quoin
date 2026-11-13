@@ -44,7 +44,7 @@ recorded fact into an assessment nobody made.
 |----|----------|--------------|
 | NFR-037-AC-1 | Two runs over identical inputs produce byte-identical stdout and `--out-dir` files. | Test |
 | NFR-037-AC-2 | A run with networking disabled gives the same output as a run with it enabled. | Test |
-| NFR-037-AC-3 | The report schema has no field named or typed as a verdict, score, grade or percentage. | Test |
+| NFR-037-AC-3 | The `source-profile-evaluation-v1` shape ([FR-181](../functional/FR-181-source-profile-evaluation.md)) has no field named or typed as a verdict, score, grade or percentage. | Test |
 
 ## Verification
 
