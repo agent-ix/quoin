@@ -540,6 +540,8 @@ fn approved_claim(digest: &str) -> Value {
         "approver": "reviewer@example.test",
         "meaning": ["reviewed"],
         "signature_kind": "ssh",
+        "signed_at": "2026-08-31T10:20:30Z",
+        "signed_at_source": "tagger_date",
     })
 }
 

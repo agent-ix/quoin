@@ -108,9 +108,17 @@ re-serialization would no longer be the file consumers validate against.
   from any revision the record names, because the record's author can write both
   (FR-063).
 - The relying party SHALL compare the re-run with the claim, and the claim is relied
-  on only when the re-run yields `approved` with the same approver, meaning and
-  signature kind, and only when the record's `signed_approval.required` is true and
+  on only when the re-run yields `approved` with the same approver, meaning,
+  signature kind and signing time, and only when the record's `signed_approval.required` is true and
   the approver satisfies its `signature_kinds` and `approvers`.
+- The same signing time means the same form: an equal `signed_at` and an equal
+  `signed_at_source`, or `signed_at_missing` with the same reason on both. Any other
+  difference, including a time against a missing time, means the claim is not
+  relied on.
+- The `receipt` output SHALL show a non-null `claimed_approval` as the approver,
+  the time labelled as claimed by the signer with its source, and the meaning
+  together. A claim whose time is missing SHALL show `time missing` and its reason,
+  and no output SHALL substitute the verification time or any other instant.
 - A party SHALL NOT rely on a `claimed_approval` approver when the record's
   `signed_approval.required` is false, because no approval was demanded for it.
 - The re-run is a step of Engineering Assurance, not of Quoin.
@@ -149,6 +157,7 @@ receipt is retained on any of these paths.
 | FR-068-AC-12 | `write-record` and `record-digest` report the same digest for a stored revision, equal to `sha256:` plus the SHA-256 hex of the file's bytes, and `record-digest` of an unstored revision fails with exit 2 and writes nothing. | Test |
 | FR-068-AC-13 | The `receipt` output and help text name a non-null `claimed_approval` as a claim not verified by Quoin and name `approval-verify` as its re-verification, with trust supplied by the relying party and not taken from the claim, the record or a revision the record names; a claim under a record whose `signed_approval.required` is false is documented as not relied on. | Inspection |
 | FR-068-AC-11 | Static boundaries prove no command executes an attested command or performs Git or network work, that the one process boundary any command reaches is the FR-096 engine module, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection |
+| FR-068-AC-14 | The `receipt` output for a non-null `claimed_approval` shows the approver, the time labelled as claimed by the signer with its `signed_at_source`, and every meaning value together; a claim with `signed_at_missing` shows `time missing` with its reason and no other time; and the help names the time as the signer's own claim, never replaced by another time, and defines the same signing time as the same form. | Test |
 
 ## Dependencies
 

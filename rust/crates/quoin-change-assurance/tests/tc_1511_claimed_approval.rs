@@ -45,7 +45,7 @@ fn digest_under(policy: &str) -> String {
 /// A claim of `status`, bound to `digest`; `approved` carries its extra facts.
 fn claim(status: &str, digest: &str) -> String {
     let facts = if status == "approved" {
-        r#", "approver": "reviewer@example.test", "meaning": ["reviewed", "tested"], "signature_kind": "ssh""#
+        r#", "approver": "reviewer@example.test", "meaning": ["reviewed", "tested"], "signature_kind": "ssh", "signed_at": "2026-08-31T10:20:30Z", "signed_at_source": "tagger_date""#
     } else {
         ""
     };
@@ -311,4 +311,57 @@ fn tc_1511_policy_narrowing_precedes_binding_and_binding_precedes_meaning() {
 
     let receipt = verify(&input(POLICY_OFF, Some(&claim("meaning_missing", &stale))));
     assert_refused(&receipt, Outcome::Invalid, &["approval_record_mismatch"]);
+}
+
+/// The claim's time, source and missing reason reach the receipt unchanged: an
+/// instant with `tagger_date` and `signed_at_missing` with no instant of any kind beside it. The
+/// receipt's own verification adds no time.
+#[trace("FR-065-AC-13", "FR-065-AC-21")]
+#[test]
+fn tc_1592_the_claims_time_reaches_the_receipt_as_reported_and_never_defaulted() {
+    let digest = digest_under(POLICY_OFF);
+    let reported = verify(&input(POLICY_OFF, Some(&claim("approved", &digest))));
+    let time = claimed(&reported);
+    assert_eq!(
+        member(&time, "signed_at"),
+        &JsonValue::string("2026-08-31T10:20:30Z")
+    );
+    assert_eq!(
+        member(&time, "signed_at_source"),
+        &JsonValue::string("tagger_date")
+    );
+
+    let missing = claim("approved", &digest).replace(
+        r#", "signed_at": "2026-08-31T10:20:30Z", "signed_at_source": "tagger_date""#,
+        r#", "signed_at_missing": "tagger_date_unreadable""#,
+    );
+    let receipt = verify(&input(POLICY_OFF, Some(&missing)));
+    assert_eq!(receipt.outcome, Outcome::Valid, "{:?}", reasons(&receipt));
+    let object = claimed(&receipt);
+    assert_eq!(
+        member(&object, "signed_at_missing"),
+        &JsonValue::string("tagger_date_unreadable")
+    );
+    let members = object.as_object().expect("the claim is an object");
+    assert!(members.get("signed_at").is_none());
+    assert!(members.get("signed_at_source").is_none());
+
+    // A receipt written and read again keeps the time.
+    let reread = VerificationReceipt::from_json(&reported.to_json().unwrap()).unwrap();
+    assert_eq!(reread, reported);
+}
+
+/// A time on a claim whose status is not `approved` makes the event a refused
+/// candidate, so the receipt reports no claim and `decision_mismatch`.
+#[trace("FR-063-AC-17")]
+#[test]
+fn tc_1592_a_time_on_a_claim_that_is_not_approved_is_refused() {
+    let digest = digest_under(POLICY_OFF);
+    let timed = claim("signed_bad", &digest).replace(
+        "}}",
+        r#"}, "signed_at": "2026-08-31T10:20:30Z", "signed_at_source": "tagger_date"}"#,
+    );
+    let receipt = verify(&input(POLICY_OFF, Some(&timed)));
+    assert_eq!(receipt.outcome, Outcome::Invalid);
+    assert_eq!(reasons(&receipt), ["decision_mismatch"]);
 }

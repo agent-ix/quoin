@@ -68,7 +68,7 @@ The table declares the record's top-level fields and their cardinality. Which ke
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-ix.github.io/quoin/schemas/verification-receipt-v2.schema.json",
   "title": "VerificationReceiptV2",
-  "$comment": "governing_plan_id and diff_paths_supplied (PLAT-1015, FR-111) and claimed_approval are required on every receipt. Version 1 receipts are not read.",
+  "$comment": "governing_plan_id and diff_paths_supplied (PLAT-1015, FR-111) and claimed_approval are required on every receipt. A non-null claimed_approval carries exactly one of signed_at with signed_at_source, or signed_at_missing (PLAT-1592). Version 1 receipts are not read.",
   "type": "object",
   "required": [
     "schema_version",
@@ -273,8 +273,35 @@ The table declares the record's top-level fields and their cardinality. Which ke
           "minItems": 1,
           "items": { "type": "string" }
         },
-        "signature_kind": { "type": "string", "enum": ["ssh", "gitsign"] }
+        "signature_kind": { "type": "string", "enum": ["ssh", "gitsign"] },
+        "signed_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+        },
+        "signed_at_source": {
+          "type": "string",
+          "enum": ["tagger_date"]
+        },
+        "signed_at_missing": {
+          "type": "string",
+          "enum": ["tagger_date_unreadable"]
+        }
       },
+      "oneOf": [
+        {
+          "required": ["signed_at", "signed_at_source"],
+          "not": { "required": ["signed_at_missing"] }
+        },
+        {
+          "required": ["signed_at_missing"],
+          "not": {
+            "anyOf": [
+              { "required": ["signed_at"] },
+              { "required": ["signed_at_source"] }
+            ]
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "audit_finding": {
@@ -392,9 +419,26 @@ then meaning.
 4. status `meaning_missing` is `incomplete` with `approval_meaning_missing`;
 5. status `approved` with all of the above satisfied leaves the review check as
    above and fills `claimed_approval` with `protocol`, `tag`, `record_digest`,
-   `trust`, `approver`, `meaning` and `signature_kind` from the claim.
+   `trust`, `approver`, `meaning`, `signature_kind` and the time (`signed_at` with
+   `signed_at_source`, or `signed_at_missing`) from the claim.
 
 `claimed_approval` is `null` in every case except rule 5.
+
+**The time.** The claim's time is the one Engineering Assurance FR-041 reports on
+an `approved` result: a UTC instant `signed_at` of the form `YYYY-MM-DDTHH:MM:SSZ`
+with its `signed_at_source` (`tagger_date`, the only source Engineering Assurance
+reports; a `transparency_log` source is refused until an Engineering Assurance
+amendment produces it and this requirement is amended with it),
+or `signed_at_missing` (`tagger_date_unreadable`) when no time was obtainable. The
+reader checks that `signed_at` names a real second beyond what the schema pattern can
+express: the day exists in its month, leap years counted, and a leap second
+(`23:59:60Z`) is refused because Engineering Assurance never emits one. The
+receipt copies it as the claim states it. It is the signer's own claim and Quoin
+attests nothing about it: Quoin does not check it against a clock, the event's timestamp
+or a log, does not judge it plausible, and never defaults a missing time to the
+verification time or any other instant. Rendered beside the approver and the
+meaning, a reported time is labelled as claimed by the signer with its source,
+and a missing time is rendered `time missing`.
 
 Duplicate decisions stay `invalid` with `decision_mismatch` under the exactly-one
 rule: when two matching events carry approvals, none is selected. Quoin recomputes the
@@ -423,7 +467,10 @@ it is evidence that the named approver signed only after Engineering Assurance's
 
 The receipt schema is revised to version 2 by the `claimed_approval` member and the
 six `approval_*` reasons; version 1 receipts are not read (prerelease, no
-compatibility reader).
+compatibility reader). The time members (PLAT-1592) amend the closed
+`claimed_approval` of that same version 2, which is current and prerelease: the
+version does not change and no reader for a `claimed_approval` without a time is
+kept.
 
 ## Constraints
 
@@ -450,7 +497,7 @@ compatibility reader).
 | FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts, compared byte for byte. | Property |
 | FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration |
 | FR-065-AC-12 | Golden terminology describes actor labels only as recorded attribution, never identity, authority, authenticity, signature, or non-repudiation, and `claimed_approval` only as a claim to be re-verified (CON-3). | Analysis |
-| FR-065-AC-13 | A matching `approved` event whose `verified_approval` is `approved` and carries the record's id and the digest of the stored revision, and, under a `required` policy, a `signature_kind` in `signature_kinds` and an `approver` in `approvers` (or `approvers` empty), keeps the review check valid, and the receipt's `claimed_approval` carries the protocol, tag, digest, trust, approver, every meaning value in order and the signature kind. | Integration |
+| FR-065-AC-13 | A matching `approved` event whose `verified_approval` is `approved` and carries the record's id and the digest of the stored revision, and, under a `required` policy, a `signature_kind` in `signature_kinds` and an `approver` in `approvers` (or `approvers` empty), keeps the review check valid, and the receipt's `claimed_approval` carries the protocol, tag, digest, trust, approver, every meaning value in order, the signature kind and the claim's time exactly as the claim states it. | Integration |
 | FR-065-AC-14 | A `verified_approval` with status `wrong_record`, or `approved` with a digest that is not the digest of the stored revision (the record changed after the tag), makes the receipt `invalid` with `approval_record_mismatch` and `claimed_approval` null. | Integration |
 | FR-065-AC-15 | A `verified_approval` with status `untrusted_signer` (an unmapped signer) makes the receipt `invalid` with `approval_signer_untrusted`; `signed_bad` makes it `invalid` with `approval_signature_bad`; under a `required` policy a `signature_kind` outside `signature_kinds`, or an `approver` outside a non-empty `approvers`, also makes it `invalid` with `approval_signer_untrusted`, while a different `trust` member alone changes nothing. | Integration |
 | FR-065-AC-16 | A `verified_approval` with status `meaning_missing` makes the receipt `incomplete` with `approval_meaning_missing`; `unsigned` or `unverifiable` makes it `incomplete` with `approval_unverified`; none of them is `valid`, and `invalid` still dominates when another check is invalid. | Integration |
@@ -458,6 +505,8 @@ compatibility reader).
 | FR-065-AC-18 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is false yields `claimed_approval` null and the same review check as before; a version 1 payload or receipt is not accepted; static boundaries prove the approval check starts no process and performs no Git, network or identity-provider operation (CON-1). | Test |
 | FR-065-AC-19 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is true makes the receipt `incomplete` with `approval_missing`, and the same record with `required` false is not affected. | Integration |
 | FR-065-AC-20 | When a `signed_bad` claim also carries a digest that differs from the stored record, the receipt reports `approval_signature_bad` and not `approval_record_mismatch`, following the status order of Engineering Assurance FR-041. | Test |
+| FR-065-AC-21 | The receipt schema and reader require a non-null `claimed_approval` to carry exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`; a claim with both, neither, one half of the first form, an instant not of the form `YYYY-MM-DDTHH:MM:SSZ` or not a real calendar second, a `transparency_log` or other unknown source or reason, or an undeclared time member is refused, and the receipt reports a claim's time, source or missing reason unchanged. | Test |
+| FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Test |
 
 ## Dependencies
 
