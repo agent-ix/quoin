@@ -5,7 +5,7 @@
 //! A record is addressed by `(record_id, revision)` and carries no digest;
 //! [`record_digest`] hashes the stored bytes for the reader that needs it.
 //! Preparing normalizes the input's collections into identity order, validates
-//! the result against the v1 schema, and returns the typed record - the bytes
+//! the result against the v2 schema, and returns the typed record - the bytes
 //! written are those of [`record_bytes`], so two runs over the same input write
 //! the same bytes.
 

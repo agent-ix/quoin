@@ -341,13 +341,20 @@ fn read_signed_approval(
     let policy = workflow.nested("signed_approval")?;
     policy.exact(&["required", "signature_kinds", "approvers"])?;
     let required = policy.boolean("required")?;
+    let kind_names = policy.string_array("signature_kinds", false, true)?;
+    require_sorted(
+        kind_names.iter().map(String::as_str),
+        SUBJECT,
+        "signature_kinds",
+    )?;
     let mut signature_kinds = Vec::new();
-    for kind in policy.string_array("signature_kinds", false, true)? {
+    for kind in kind_names {
         signature_kinds.push(SignatureKind::parse(&kind).ok_or_else(|| {
             ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("signature_kinds"))
         })?);
     }
     let approvers = policy.string_array("approvers", false, true)?;
+    require_sorted(approvers.iter().map(String::as_str), SUBJECT, "approvers")?;
     let well_formed = if required {
         !signature_kinds.is_empty()
     } else {

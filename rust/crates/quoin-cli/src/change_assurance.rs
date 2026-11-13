@@ -529,6 +529,10 @@ fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Result<String, S
             "    re-verify with Engineering Assurance approval-verify before relying on it"
                 .to_owned(),
         );
+        lines.push(
+            "    trust comes from the relying party, never from the claim's trust, the record or a revision it names; a claim under a record whose signed_approval.required is false is not relied on"
+                .to_owned(),
+        );
     }
     Ok(lines.join("\n"))
 }

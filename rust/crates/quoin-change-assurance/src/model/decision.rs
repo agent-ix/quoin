@@ -302,7 +302,7 @@ pub fn read_review_event(event: &RetainedDecisionEvent) -> Option<ReviewEvent> {
     // must be one of the three.
     // Compared as a JSON value rather than as a double: `JsonNumber`'s
     // equality is equality of the canonical serialization, which is the
-    // comparison the oracle's `=== 1` actually performs on a parsed number.
+    // comparison the oracle's `=== n` performs on a parsed number.
     if payload.value("schema_version").ok()? != &number(PAYLOAD_SCHEMA_VERSION).ok()?
         || kind != ActorKind::Human
     {

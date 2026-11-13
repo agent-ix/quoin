@@ -214,6 +214,14 @@ fn tc_1511_a_receipt_labels_the_claimed_approval_as_an_unverified_claim() {
         "{human}"
     );
     assert!(human.contains("approval-verify"), "{human}");
+    assert!(
+        human.contains("trust comes from the relying party, never from the claim's trust, the record or a revision it names"),
+        "{human}"
+    );
+    assert!(
+        human.contains("signed_approval.required is false is not relied on"),
+        "{human}"
+    );
     assert!(human.contains("reviewer@example.test"), "{human}");
 }
 
@@ -222,7 +230,7 @@ fn tc_1511_a_receipt_labels_the_claimed_approval_as_an_unverified_claim() {
 /// supplies and not taken from the claim, the record or a revision the record
 /// names, and documents a claim under an optional policy as not relied on; the
 /// write-record and record-digest pages describe the digest.
-#[trace("FR-068-AC-13", "FR-068-AC-11")]
+#[trace("FR-068-AC-13")]
 #[test]
 fn tc_1511_the_help_pages_describe_the_claim_and_the_digest() {
     let help = |argv: &[&str]| {
@@ -240,6 +248,7 @@ fn tc_1511_the_help_pages_describe_the_claim_and_the_digest() {
         "trust you supply",
         "Take no trust from the claim's `trust`, from the record, or from any revision the record names",
         "never rely on a claim under a record whose `signed_approval.required` is false",
+        "the receipt's `record_id`",
     ] {
         assert!(
             receipt.contains(literal),
@@ -253,4 +262,74 @@ fn tc_1511_the_help_pages_describe_the_claim_and_the_digest() {
     assert!(written.contains("record digest"), "{written}");
     let listing = help(&[]);
     assert!(listing.contains("record-digest"), "{listing}");
+}
+
+/// No command executes the attested command, invokes Git or performs a network
+/// request, and the change-assurance help pages and description make no
+/// authorization, non-repudiation, authenticity or certification claim of
+/// their own: each such word sits within two lines of a denial.
+#[trace("FR-068-AC-11")]
+#[test]
+fn tc_1511_the_surface_runs_nothing_and_claims_nothing() {
+    let source = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("src/change_assurance.rs"),
+    )
+    .expect("the surface source");
+    for forbidden in [
+        "std::process",
+        "TcpStream",
+        "reqwest",
+        "UdpSocket",
+        "\"git\"",
+    ] {
+        assert!(
+            !source.contains(forbidden),
+            "the surface reaches for `{forbidden}`"
+        );
+    }
+
+    let capture: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/retained-command-help.json"),
+        )
+        .expect("the help capture"),
+    )
+    .expect("JSON");
+    let mut pages: Vec<String> = capture["cases"]
+        .as_array()
+        .expect("cases")
+        .iter()
+        .filter(|case| case["argv"][0] == "change-assurance")
+        .map(|case| case["stdout"].as_str().expect("stdout").to_owned())
+        .collect();
+    assert!(pages.len() >= 8, "every change-assurance page is captured");
+    let output = quoin(&[]);
+    pages.push(text(&output.stdout));
+    let claims = [
+        "authorization",
+        "authorize",
+        "non-repudiation",
+        "authenticity",
+        "certification",
+        "certified",
+    ];
+    let denials = ["not", "no", "nothing", "never", "nor", "without"];
+    for page in &pages {
+        let lines: Vec<&str> = page.lines().collect();
+        for (index, line) in lines.iter().enumerate() {
+            let lowered = line.to_lowercase();
+            if !claims.iter().any(|claim| lowered.contains(claim)) {
+                continue;
+            }
+            let window = lines[index.saturating_sub(2)..lines.len().min(index + 2)]
+                .join(" ")
+                .to_lowercase();
+            assert!(
+                window
+                    .split(|c: char| !c.is_ascii_alphabetic() && c != '-')
+                    .any(|word| denials.contains(&word)),
+                "a claim word is used without a denial: {line}"
+            );
+        }
+    }
 }

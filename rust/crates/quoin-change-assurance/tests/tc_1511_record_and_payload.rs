@@ -109,6 +109,12 @@ fn tc_1511_only_a_closed_well_formed_claim_on_an_approval_is_a_candidate() {
         good.replace(&digest, &"d".repeat(257)),
         good.replace(r#""record_id": "change-1""#, r#""record_id": "-bad""#),
         gitsign.replace(r#""principal": "a""#, r#""principal": """#),
+        // A non-approved status without its `trust`.
+        good.replace(r#""trust": {"allowed_signers": "/keys/allowed"}, "#, "")
+            .replace(r#""status": "approved""#, r#""status": "signed_bad""#)
+            .replace(r#", "approver": "a@example.test""#, "")
+            .replace(r#", "meaning": ["reviewed"]"#, "")
+            .replace(r#", "signature_kind": "ssh""#, ""),
         // A member outside its row: `approver` on a status that is not approved.
         good.replace(r#""status": "approved""#, r#""status": "signed_bad""#),
     ];
@@ -124,6 +130,13 @@ fn tc_1511_only_a_closed_well_formed_claim_on_an_approval_is_a_candidate() {
             "a claim on {decision} must be refused as a candidate"
         );
     }
+    // The same non-approved status with its row complete is a candidate.
+    let bad_signature = good
+        .replace(r#""status": "approved""#, r#""status": "signed_bad""#)
+        .replace(r#", "approver": "a@example.test""#, "")
+        .replace(r#", "meaning": ["reviewed"]"#, "")
+        .replace(r#", "signature_kind": "ssh""#, "");
+    assert!(is_candidate(&decided("approved", &tail(&bad_signature))));
     let at_limit = good.replace(&digest, &"d".repeat(256));
     assert!(is_candidate(&decided("approved", &tail(&at_limit))));
 }
@@ -274,6 +287,9 @@ fn tc_1511_the_policy_is_closed_and_narrowing_only() {
         r#"{"required": true, "signature_kinds": ["pgp"], "approvers": []}"#,
         r#"{"required": true, "signature_kinds": ["ssh"], "approvers": [""]}"#,
         r#"{"required": true, "signature_kinds": ["ssh"], "approvers": ["a", "a"]}"#,
+        // Unsorted lists are refused like every other record array.
+        r#"{"required": true, "signature_kinds": ["ssh", "gitsign"], "approvers": []}"#,
+        r#"{"required": true, "signature_kinds": ["ssh"], "approvers": ["b", "a"]}"#,
         r#"{"required": true, "signature_kinds": ["ssh"], "approvers": [], "allowed_signers": "f"}"#,
         r#"{"required": true, "signature_kinds": ["ssh"]}"#,
         r#"{"required": "yes", "signature_kinds": [], "approvers": []}"#,

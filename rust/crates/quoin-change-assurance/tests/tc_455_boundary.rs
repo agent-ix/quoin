@@ -48,16 +48,36 @@ fn sources() -> Vec<(String, String)> {
     files
 }
 
-/// The lowercase words of one line, hyphenated compounds kept whole and
-/// `snake_case` wire identifiers (`signed_approval`, `signature_kind`) kept as one
-/// word: an identifier names a member and is not a claim of its own.
+/// The wire identifiers that name a member and are not a claim of their own.
+/// Everything else in prose stays subject to the census.
+const WIRE_IDENTIFIERS: [&str; 4] = [
+    "signed_approval",
+    "signature_kinds",
+    "signature_kind",
+    "signed_bad",
+];
+
+/// The lowercase words of one line, hyphenated compounds kept whole, with the
+/// four [`WIRE_IDENTIFIERS`] removed first.
 fn words(line: &str) -> Vec<String> {
-    line.split(|character: char| {
-        !character.is_ascii_alphabetic() && character != '-' && character != '_'
-    })
-    .filter(|word| !word.is_empty())
-    .map(str::to_lowercase)
-    .collect()
+    let mut line = line.to_owned();
+    for identifier in WIRE_IDENTIFIERS {
+        line = line.replace(identifier, " ");
+    }
+    line.split(|character: char| !character.is_ascii_alphabetic() && character != '-')
+        .filter(|word| !word.is_empty())
+        .map(str::to_lowercase)
+        .collect()
+}
+
+/// The census still fails on prose that uses a claim word, even beside an
+/// allowlisted identifier.
+#[trace("FR-063-AC-11")]
+#[test]
+fn tc_1511_the_claim_word_census_stays_strict_for_prose() {
+    assert!(!words("the `signed_approval` policy").is_empty());
+    assert!(!words("the `signed_approval` policy").contains(&"signed".to_owned()));
+    assert!(words("this record was signed by a person").contains(&"signed".to_owned()));
 }
 
 /// The library half names no host capability. `std::fs`, the process id, the
