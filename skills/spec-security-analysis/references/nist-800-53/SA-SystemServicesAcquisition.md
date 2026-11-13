@@ -26,12 +26,12 @@
 | SA-10 | Developer Configuration Management | Dev config mgmt | **HIGH** - SCM |
 | SA-11 | Developer Testing and Evaluation | Dev testing | **HIGH** - Testing |
 | SA-15 | Development Process, Standards, and Tools | Dev standards | **HIGH** - Standards |
-| SA-15(13) | Vulnerability Disclosure | Disclosure program | MEDIUM - Security.txt |
+| RA-5(11) | Vulnerability Disclosure | Disclosure program | MEDIUM - Security.txt |
 | SA-16 | Developer-Provided Training | Dev training | LOW - Training |
 | SA-17 | Developer Security and Privacy Architecture and Design | Secure design | **HIGH** - Architecture |
 | SA-21 | Developer Screening | Screen developers | LOW - HR |
 | SA-22 | Unsupported System Components | Address unsupported | **HIGH** - EOL tracking |
-| SA-24 | Software Supply Chain | Supply chain security | **HIGH** - SBOM |
+| SR-3 | Software Supply Chain | Supply chain security | **HIGH** - SBOM |
 
 ## Mapping Guidance
 
@@ -43,8 +43,8 @@ NFR-XXX (Testing) → SA-11
 NFR-XXX (Standards) → SA-15
 ```
 
-### Supply Chain (SA-9, SA-22, SA-24)
+### Supply Chain (SA-9, SA-22, SR-3)
 ```
-NFR-XXX (Dependencies) → SA-9, SA-24
+NFR-XXX (Dependencies) → SA-9, SR-3
 NFR-XXX (EOL Tracking) → SA-22
 ```

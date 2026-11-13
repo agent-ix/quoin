@@ -18,7 +18,7 @@
 |---------|------|-------------|-------------------|
 | SI-1 | Policy and Procedures | Document SI policies | LOW - Docs |
 | SI-2 | Flaw Remediation | Remediate flaws | **HIGH** - Patching |
-| SI-2(7) | Automated Patch Verification | Verify patches | **HIGH** - CI/CD |
+| SI-2(2) | Automated Patch Verification | Verify patches | **HIGH** - CI/CD |
 | SI-3 | Malicious Code Protection | Protect against malware | MEDIUM - Scanning |
 | SI-4 | System Monitoring | Monitor systems | **HIGH** - Observability |
 | SI-5 | Security Alerts, Advisories, and Directives | Receive alerts | MEDIUM - Security feeds |
@@ -48,5 +48,5 @@ NFR-XXX (Fail-Safe) → SI-17
 ### Patching (SI-2)
 ```
 NFR-XXX (Dependency Updates) → SI-2
-NFR-XXX (Automated Patching) → SI-2(7)
+NFR-XXX (Automated Patching) → SI-2(2)
 ```

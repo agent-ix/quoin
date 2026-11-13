@@ -14,8 +14,8 @@ This specification targets alignment with the following industry security and pr
 |----------|---------|-------|--------|
 | AICPA SOC 2 | 2017 TSC | CC6 (Logical Access Controls) | Global |
 | ISO/IEC 27001 | 2022 | Annex A.9 (Access Control) | Global |
-| NIST SP 800-53 | Rev 5 | AC Family (Access Control) | US Federal |
-| OWASP ASVS | 4.0 | V4 (Access Control Verification) | Global |
+| NIST SP 800-53 | Rev 5.2.0 | AC Family (Access Control) | US Federal |
+| OWASP ASVS | 5.0.0 | V8 (Authorization) | Global |
 | EU GDPR | 2016/679 | Articles 25, 32 (Security of Processing) | EU/EEA |
 
 ### 19.2 Control Mapping
@@ -37,8 +37,8 @@ This specification targets alignment with the following industry security and pr
 | AC-5 | NIST | Separation of Duties | FR-008 (RBAC) |
 | AC-6 | NIST | Least Privilege | FR-005, FR-008 |
 | AU-2 | NIST | Audit Events | FR-013 |
-| 4.1.1 | ASVS | Access Control Model | FR-008, FR-009 |
-| 4.2.1 | ASVS | Sensitive Data Access Control | FR-005, FR-007 |
+| 8.1.1 | ASVS | Access Control Model | FR-008, FR-009 |
+| 8.2.2 | ASVS | Sensitive Data Access Control | FR-005, FR-007 |
 
 ### 19.3 GDPR Compliance
 
