@@ -38,12 +38,12 @@ mod tests;
 use ix_trace_rs::implements;
 use serde::{Deserialize, Serialize};
 
-use quoin_auditor::{
-    advise_all, audit as run_audit, mintable_characteristics, uncatalogued_authored_methods,
-};
 use crate::error::{CoreError, CoreErrorCode};
 use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
+use quoin_auditor::{
+    advise_all, audit as run_audit, mintable_characteristics, uncatalogued_authored_methods,
+};
 
 use self::taxonomy::map_error;
 pub use self::wire::{

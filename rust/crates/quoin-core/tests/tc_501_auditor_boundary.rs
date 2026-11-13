@@ -123,7 +123,10 @@ fn profile_source_request(with_class_policy: bool) -> Value {
         }
     });
     if !with_class_policy {
-        request["input"].as_object_mut().unwrap().remove("classPolicy");
+        request["input"]
+            .as_object_mut()
+            .unwrap()
+            .remove("classPolicy");
     }
     request
 }
@@ -150,7 +153,10 @@ fn tc_501_601_profile_assessment_source_survives_audit_boundary() {
         "auditor.audit",
         &profile_source_request(true).to_string(),
     ));
-    assert_eq!(with_class["independence"][0]["source"], "profile", "{with_class}");
+    assert_eq!(
+        with_class["independence"][0]["source"], "profile",
+        "{with_class}"
+    );
 
     let without_class = payload(&run(
         "auditor.audit",
