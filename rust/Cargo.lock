@@ -3200,6 +3200,7 @@ dependencies = [
  "quoin-measurement",
  "quoin-modules",
  "quoin-quire",
+ "quoin-quire-types",
  "quoin-risk-advice",
  "quoin-semantic",
  "quoin-store",
@@ -3543,6 +3544,7 @@ version = "0.31.0"
 dependencies = [
  "ix-trace-rs",
  "saphyr",
+ "saphyr-parser",
  "serde_json",
  "thiserror",
 ]

@@ -24,6 +24,9 @@ thiserror = { workspace = true }
 # quoin-semantic/DIVERGENCE.md section 6 (D4). Any replacement must be
 # YAML 1.2 core-schema or the D4 parity tests fail.
 saphyr = { version = "=0.0.12", default-features = false }
+# The event parser `saphyr` itself drives; used only to look for aliases before
+# a loader expands them (`from_str_without_aliases`).
+saphyr-parser = { version = "=0.0.12" }
 
 [dev-dependencies]
 ix-trace-rs = { workspace = true }

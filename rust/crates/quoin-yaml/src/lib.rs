@@ -79,6 +79,28 @@ pub fn from_str(yaml: &str) -> Result<Value, YamlError> {
     }
 }
 
+/// As [`from_str`], for a small file a repository or user controls.
+///
+/// Refuses a document that uses an alias. `saphyr` expands an alias by cloning
+/// the anchored node while it loads, so a few hundred bytes of nested aliases
+/// ("billion laughs") cost gigabytes before any caller can bound the result.
+/// The events are scanned first and nothing is expanded.
+///
+/// # Errors
+///
+/// As [`from_str`], plus [`YamlError::Unrepresentable`] when an alias appears.
+pub fn from_str_without_aliases(yaml: &str) -> Result<Value, YamlError> {
+    for event in saphyr_parser::Parser::new_from_str(yaml) {
+        let (event, _) = event?;
+        if matches!(event, saphyr_parser::Event::Alias(_)) {
+            return Err(YamlError::Unrepresentable(
+                "YAML aliases are not accepted in this file".to_owned(),
+            ));
+        }
+    }
+    from_str(yaml)
+}
+
 fn convert(node: &Yaml<'_>) -> Result<Value, YamlError> {
     match node {
         Yaml::Value(scalar) => Ok(scalar_to_value(scalar)),
@@ -156,7 +178,7 @@ fn scalar_to_value(scalar: &Scalar<'_>) -> Value {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{YamlError, from_str};
+    use super::{YamlError, from_str, from_str_without_aliases};
     use ix_trace_rs::trace;
     use serde_json::json;
 
@@ -204,5 +226,23 @@ mod tests {
             from_str("1: v\ntrue: w\nnull: x\n").expect("well-formed"),
             json!({"1": "v", "true": "w", "null": "x"})
         );
+    }
+
+    /// Provenance: PLAT-1536
+    #[trace("FR-180")]
+    #[test]
+    fn an_alias_is_refused_before_it_is_expanded() {
+        assert_eq!(
+            from_str_without_aliases("a: &x 1\nb: 2\n").expect("anchors alone are fine"),
+            json!({"a": 1, "b": 2})
+        );
+        let bomb = "a: &a [x, x, x, x, x, x, x, x, x]\nb: &b [*a, *a, *a, *a, *a, *a, *a, *a, *a]\n\
+                    c: &c [*b, *b, *b, *b, *b, *b, *b, *b, *b]\nd: &d [*c, *c, *c, *c, *c, *c, *c, *c, *c]\n\
+                    e: &e [*d, *d, *d, *d, *d, *d, *d, *d, *d]\nf: &f [*e, *e, *e, *e, *e, *e, *e, *e, *e]\n\
+                    g: &g [*f, *f, *f, *f, *f, *f, *f, *f, *f]\nh: &h [*g, *g, *g, *g, *g, *g, *g, *g, *g]\n";
+        assert!(matches!(
+            from_str_without_aliases(bomb),
+            Err(YamlError::Unrepresentable(_))
+        ));
     }
 }
