@@ -74,11 +74,10 @@ impl Tool {
     /// Whether a finding of this tool is an advisory.
     fn is_advisory(self, finding: &Finding) -> bool {
         match self {
-            Self::CargoAudit => true,
+            Self::CargoAudit | Self::OsvScanner => true,
             Self::CargoDeny => DENY_ADVISORY_PREFIXES
                 .iter()
                 .any(|prefix| finding.rule_id.starts_with(prefix)),
-            Self::OsvScanner => true,
         }
     }
 

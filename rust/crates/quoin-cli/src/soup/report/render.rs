@@ -580,7 +580,12 @@ fn scan_json(state: &ScanState) -> Value {
         "older_suites_not_read": state.unread,
     });
     if state.tool == Tool::OsvScanner && matches!(state.outcome, ScanOutcome::Read { .. }) {
-        scan["database"] = json!(state.ruleset.as_deref().unwrap_or("not recorded"));
+        if let Some(fields) = scan.as_object_mut() {
+            fields.insert(
+                "database".to_owned(),
+                json!(state.ruleset.as_deref().unwrap_or("not recorded")),
+            );
+        }
     }
     if let (Some(scan), Value::Object(detail)) = (scan.as_object_mut(), detail) {
         scan.extend(detail);
