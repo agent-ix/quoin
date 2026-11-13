@@ -51,7 +51,7 @@ fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
     let stderr = text(&output.stderr);
     assert_eq!(
         stderr,
-        " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+        " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, risk, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     );
 }
 
@@ -65,6 +65,6 @@ fn tc_1650_nested_unknown_command_keeps_the_oclif_path_identity() {
     assert_eq!(output.stdout.len(), 0);
     assert_eq!(
         text(&output.stderr),
-        " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+        " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, risk, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     );
 }

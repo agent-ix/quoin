@@ -28,6 +28,7 @@ mod measurement;
 mod module;
 mod plugin;
 mod report;
+mod risk;
 mod semantic;
 mod soup;
 mod update;
@@ -254,6 +255,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
     }
+    if let Some(("risk", risk)) = matches.subcommand() {
+        return risk::run(risk);
+    }
     if let Some(("soup", soup)) = matches.subcommand() {
         return soup::run(soup);
     }
@@ -375,6 +379,7 @@ fn command() -> Command {
         .subcommand(plugin::command())
         .subcommand(report::command())
         .subcommand(semantic::command())
+        .subcommand(risk::command())
         .subcommand(soup::command())
         .subcommand(validate::command())
         .subcommand(write::command())
