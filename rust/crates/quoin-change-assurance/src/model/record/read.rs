@@ -13,12 +13,13 @@ use crate::ids::{
     ImpactIdentity, NonEmptyText, ObligationId, ProofId, RecordId, Revision, RunId, SourceId,
     StatementId,
 };
+use crate::model::approval::SignatureKind;
 use crate::model::json::{Fields, number, require_sorted, require_unique_values};
 use crate::model::record::{
     ChangeAssuranceRecord, CommandBinding, Completeness, DECISION_EVENT_KIND, Definition,
     Disposition, ImpactSnapshot, ProofObligation, RECORD_TYPE, RecordSubject, ReviewWorkflow,
-    SCHEMA_VERSION, SUBJECT, SourceConnection, SourceKind, Statement, Unknown,
-    is_normalized_relative_posix_path,
+    SCHEMA_VERSION, SUBJECT, SignedApprovalPolicy, SourceConnection, SourceKind, Statement,
+    Unknown, is_normalized_relative_posix_path,
 };
 
 /// Read the record shape.
@@ -321,11 +322,46 @@ fn read_unknowns(definition: Fields<'_>) -> Result<Vec<Unknown>, ChangeAssurance
 
 fn read_review_workflow(root: Fields<'_>) -> Result<ReviewWorkflow, ChangeAssuranceError> {
     let workflow = root.nested("review_workflow")?;
-    workflow.exact(&["run_id", "decision_event_kind"])?;
+    workflow.exact(&["run_id", "decision_event_kind", "signed_approval"])?;
     let run_id = RunId::parse(workflow.text("run_id")?, SUBJECT, "run_id")?;
     workflow.equals(
         "decision_event_kind",
         &JsonValue::string(DECISION_EVENT_KIND),
     )?;
-    Ok(ReviewWorkflow { run_id })
+    let signed_approval = read_signed_approval(workflow)?;
+    Ok(ReviewWorkflow {
+        run_id,
+        signed_approval,
+    })
+}
+
+fn read_signed_approval(
+    workflow: Fields<'_>,
+) -> Result<SignedApprovalPolicy, ChangeAssuranceError> {
+    let policy = workflow.nested("signed_approval")?;
+    policy.exact(&["required", "signature_kinds", "approvers"])?;
+    let required = policy.boolean("required")?;
+    let mut signature_kinds = Vec::new();
+    for kind in policy.string_array("signature_kinds", false, true)? {
+        signature_kinds.push(SignatureKind::parse(&kind).ok_or_else(|| {
+            ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("signature_kinds"))
+        })?);
+    }
+    let approvers = policy.string_array("approvers", false, true)?;
+    let well_formed = if required {
+        !signature_kinds.is_empty()
+    } else {
+        signature_kinds.is_empty() && approvers.is_empty()
+    };
+    if !well_formed {
+        return Err(ChangeAssuranceError::shape(
+            SUBJECT,
+            FieldFailure::malformed("signed_approval"),
+        ));
+    }
+    Ok(SignedApprovalPolicy {
+        required,
+        signature_kinds,
+        approvers,
+    })
 }

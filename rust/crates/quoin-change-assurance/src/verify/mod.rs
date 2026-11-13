@@ -17,6 +17,7 @@
 //! byte.
 
 pub mod apparatus;
+pub mod approval;
 pub mod audit;
 pub mod input;
 pub mod lineage;
@@ -65,7 +66,11 @@ pub fn verify_change_assurance(
     }
     let lineage_check = Check::from_reasons(&lineage_reasons, Outcome::Invalid);
 
-    let decision = validate_decision(&record, input.decision_history.as_ref());
+    let decision = validate_decision(
+        &record,
+        &input.record_digest,
+        input.decision_history.as_ref(),
+    );
     let review_check = Check {
         outcome: decision.outcome,
         reasons: decision.reasons.clone(),

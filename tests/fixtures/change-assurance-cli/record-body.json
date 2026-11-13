@@ -1,5 +1,5 @@
 {
- "schema_version": 1,
+ "schema_version": 2,
  "record_type": "change_assurance",
  "record_id": "change-1",
  "revision": 1,
@@ -59,6 +59,11 @@
  },
  "review_workflow": {
   "run_id": "run-1",
-  "decision_event_kind": "change_assurance.review_decided"
+  "decision_event_kind": "change_assurance.review_decided",
+  "signed_approval": {
+   "required": false,
+   "signature_kinds": [],
+   "approvers": []
+  }
  }
 }

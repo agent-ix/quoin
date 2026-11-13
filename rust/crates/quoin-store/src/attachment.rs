@@ -7,7 +7,9 @@
 //! the bytes, so the name binds the file to exactly what it held when it was
 //! retained: byte-distinct inputs cannot share an address, and the same bytes
 //! always reproduce it. This is the only digest this crate computes; records
-//! stay addressed by assigned identity.
+//! stay addressed by assigned identity. [`sha256_hex`] is also the hash behind
+//! the FR-063 record digest, which the change-assurance reader computes over a
+//! stored record's bytes at verification time and never stores.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};

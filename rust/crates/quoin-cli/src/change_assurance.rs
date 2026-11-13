@@ -15,7 +15,7 @@ use quoin_core::protocol::Response;
 
 use crate::core_runtime::invoke;
 
-const DESCRIPTION: &str = "Producer-facing surface over the FR-063 record, FR-064 proof attestation,\nretained-output intake, and FR-065 verification receipt contracts (FR-068).\n\nThese commands transcribe and verify what a producer supplies. None of them\nruns the command an attestation describes, invokes Git, or performs a network\nrequest. The only process any of them starts is the quoin-core engine that\ndecides the FR-063..FR-065 contracts (FR-096). Records are addressed by record id and revision and\nattestations by attestation id; recorded actor labels are attribution only, and\nnothing here establishes authorization or non-repudiation, and no output is a\ncertification.\n\nSubcommands:\n  quoin change-assurance write-record\n  quoin change-assurance prepare-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance recover\n\nExit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\nfor a usage, parse, or integrity error.";
+const DESCRIPTION: &str = "Producer-facing surface over the FR-063 record, FR-064 proof attestation,\nretained-output intake, and FR-065 verification receipt contracts (FR-068).\n\nThese commands transcribe and verify what a producer supplies. None of them\nruns the command an attestation describes, invokes Git, or performs a network\nrequest. The only process any of them starts is the quoin-core engine that\ndecides the FR-063..FR-065 contracts (FR-096). Records are addressed by record id and revision and\nattestations by attestation id; recorded actor labels are attribution only, and\nnothing here establishes authorization or non-repudiation, and no output is a\ncertification.\n\nSubcommands:\n  quoin change-assurance write-record\n  quoin change-assurance prepare-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance record-digest\n  quoin change-assurance recover\n\nExit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\nfor a usage, parse, or integrity error.";
 
 /// The change-assurance command grammar.
 pub(crate) fn command() -> Command {
@@ -24,6 +24,24 @@ pub(crate) fn command() -> Command {
         .subcommand(
             Command::new("recover")
                 .about("Remove interrupted intake staging directories")
+                .arg(repo_arg())
+                .arg(json_arg()),
+        )
+        .subcommand(
+            Command::new("record-digest")
+                .about("Report the record digest of a stored record revision")
+                .arg(
+                    Arg::new("record")
+                        .long("record")
+                        .required(true)
+                        .value_name("RECORD_ID"),
+                )
+                .arg(
+                    Arg::new("revision")
+                        .long("revision")
+                        .required(true)
+                        .value_parser(clap::value_parser!(u64)),
+                )
                 .arg(repo_arg())
                 .arg(json_arg()),
         )
@@ -127,6 +145,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     };
     match subcommand {
         "recover" => recover(arguments),
+        "record-digest" => record_digest(arguments),
         "schema" => schema(arguments),
         "write-record" => write_record(arguments),
         "prepare-attestation" => prepare_attestation(arguments),
@@ -206,6 +225,35 @@ fn schema(arguments: &ArgMatches) -> Result<Response, String> {
     })
 }
 
+fn record_digest(arguments: &ArgMatches) -> Result<Response, String> {
+    let repo = required(arguments, "repo")?;
+    let record_id = required(arguments, "record")?;
+    let revision = arguments
+        .get_one::<u64>("revision")
+        .copied()
+        .ok_or("--revision is required")?;
+    let response = invoke(
+        "change_assurance.record_digest",
+        &serde_json::json!({ "repo": repo, "record_id": record_id, "revision": revision }),
+    )?;
+    render(response, arguments.get_flag("json"), |payload| {
+        let digest = payload
+            .get("record_digest")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                "change_assurance.record_digest did not return record_digest".to_owned()
+            })?;
+        if arguments.get_flag("json") {
+            serde_json::to_string(&serde_json::json!({
+                "record_digest": digest, "record_id": record_id, "revision": revision,
+            }))
+            .map_err(|error| error.to_string())
+        } else {
+            Ok(digest.to_owned())
+        }
+    })
+}
+
 fn write_record(arguments: &ArgMatches) -> Result<Response, String> {
     let input = bytes_of(&required(arguments, "input")?)?;
     let repo = required(arguments, "repo")?;
@@ -230,14 +278,20 @@ fn write_record(arguments: &ArgMatches) -> Result<Response, String> {
             .get("path")
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| "change_assurance.write_record did not return path".to_owned())?;
+        let digest = payload
+            .get("record_digest")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                "change_assurance.write_record did not return record_digest".to_owned()
+            })?;
         if arguments.get_flag("json") {
             return serde_json::to_string(&serde_json::json!({
-                "path": path, "record_id": record_id, "revision": revision,
+                "path": path, "record_digest": digest, "record_id": record_id, "revision": revision,
             }))
             .map_err(|error| error.to_string());
         }
         Ok(format!(
-            "wrote {record_id} revision {revision}\n  retained: {path}"
+            "wrote {record_id} revision {revision}\n  retained: {path}\n  record digest: {digest}"
         ))
     })
 }
@@ -452,6 +506,29 @@ fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Result<String, S
                 format!("  {id}: {result} ({})", reasons.join(", "))
             });
         }
+    }
+    if let Some(claim) = receipt
+        .get("decision_event")
+        .and_then(|event| event.get("claimed_approval"))
+        .filter(|claim| !claim.is_null())
+    {
+        let text = |name: &str| {
+            claim
+                .get(name)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("")
+        };
+        lines.push(format!(
+            "  claimed approval, the event writer's claim and not verified by Quoin: {} via {} ({}), tag {}",
+            text("approver"),
+            text("signature_kind"),
+            text("record_digest"),
+            text("tag"),
+        ));
+        lines.push(
+            "    re-verify with Engineering Assurance approval-verify before relying on it"
+                .to_owned(),
+        );
     }
     Ok(lines.join("\n"))
 }

@@ -26,7 +26,7 @@ use std::path::Path;
 use quoin_change_assurance::attestations::read_attestation_json;
 use quoin_change_assurance::records::prepare_change_record;
 use quoin_change_assurance::schemas::{
-    ASSET_NAMES, CHANGE_ASSURANCE_RECORD_V1, PROOF_ATTESTATION_V1, VERIFICATION_RECEIPT_V1, asset,
+    ASSET_NAMES, CHANGE_ASSURANCE_RECORD_V2, PROOF_ATTESTATION_V1, VERIFICATION_RECEIPT_V2, asset,
 };
 use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_jsonschema::SchemaValidator;
@@ -89,7 +89,8 @@ fn tc_503_010_the_asset_vocabulary_is_closed() {
     for name in [
         "not-a-schema.json",
         "change-assurance-record-v1",
-        "change-assurance-record-v2.schema.json",
+        "change-assurance-record-v1.schema.json",
+        "verification-receipt-v1.schema.json",
         "",
     ] {
         assert!(asset(name).is_none(), "{name} resolved to an asset");
@@ -166,9 +167,9 @@ fn tc_503_012_written_documents_satisfy_their_schemas() {
 #[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_015_the_named_constants_and_the_lookup_agree() {
-    assert_eq!(asset(ASSET_NAMES[0]), Some(CHANGE_ASSURANCE_RECORD_V1));
+    assert_eq!(asset(ASSET_NAMES[0]), Some(CHANGE_ASSURANCE_RECORD_V2));
     assert_eq!(asset(ASSET_NAMES[1]), Some(PROOF_ATTESTATION_V1));
-    assert_eq!(asset(ASSET_NAMES[2]), Some(VERIFICATION_RECEIPT_V1));
+    assert_eq!(asset(ASSET_NAMES[2]), Some(VERIFICATION_RECEIPT_V2));
 }
 
 /// The published record schema refuses the same malformed source paths the
@@ -218,4 +219,193 @@ fn set_first_path(record: &mut JsonValue, path: &str) {
     connections[0] = JsonValue::Object(first);
     root.set("source_connections", JsonValue::Array(connections));
     *record = JsonValue::Object(root);
+}
+
+fn record_with_policy(policy: &str) -> JsonValue {
+    let text = common::record_text().replace(
+        r#"{"required": false, "signature_kinds": [], "approvers": []}"#,
+        policy,
+    );
+    common::json(&text)
+}
+
+/// The published record schema refuses the same `signed_approval` policies the
+/// reader refuses, accepts the same ones, and names no trust input anywhere.
+#[trace("FR-063-AC-16", "FR-063-AC-1")]
+#[test]
+fn tc_1511_the_record_schema_agrees_with_the_reader_on_the_policy() {
+    let validator = validator(ASSET_NAMES[0]);
+    for (policy, accepted) in [
+        (
+            r#"{"required": false, "signature_kinds": [], "approvers": []}"#,
+            true,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": ["ssh"], "approvers": []}"#,
+            true,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": ["gitsign", "ssh"], "approvers": ["a", "b"]}"#,
+            true,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": [], "approvers": []}"#,
+            false,
+        ),
+        (
+            r#"{"required": false, "signature_kinds": ["ssh"], "approvers": []}"#,
+            false,
+        ),
+        (
+            r#"{"required": false, "signature_kinds": [], "approvers": ["a"]}"#,
+            false,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": ["ssh", "ssh"], "approvers": []}"#,
+            false,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": ["pgp"], "approvers": []}"#,
+            false,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": ["ssh"], "approvers": [""]}"#,
+            false,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": ["ssh"], "approvers": ["a", "a"]}"#,
+            false,
+        ),
+        (
+            r#"{"required": true, "signature_kinds": ["ssh"], "approvers": [], "allowed_signers": "f"}"#,
+            false,
+        ),
+    ] {
+        let record = record_with_policy(policy);
+        assert_eq!(
+            validator.is_valid(&as_instance(&record)),
+            accepted,
+            "the schema on {policy}"
+        );
+        assert_eq!(
+            prepare_change_record(&record).is_ok(),
+            accepted,
+            "the reader on {policy}"
+        );
+    }
+    let mut without = as_instance(&common::json(&common::record_text()));
+    without["review_workflow"]
+        .as_object_mut()
+        .unwrap()
+        .remove("signed_approval");
+    assert!(!validator.is_valid(&without));
+    let mut digestful = as_instance(&common::json(&common::record_text()));
+    digestful["digest"] = serde_json::Value::String("sha256:00".to_owned());
+    assert!(!validator.is_valid(&digestful));
+
+    let schema: serde_json::Value = serde_json::from_str(asset(ASSET_NAMES[0]).unwrap()).unwrap();
+    let mut names = Vec::new();
+    collect_property_names(&schema, &mut names);
+    for trust_input in [
+        "allowed_signers",
+        "certificate_identity",
+        "certificate_oidc_issuer",
+        "principal",
+        "key",
+        "issuer",
+        "ref",
+        "digest",
+    ] {
+        assert!(
+            !names.iter().any(|name| name == trust_input),
+            "the record schema names {trust_input}"
+        );
+    }
+}
+
+fn collect_property_names(value: &serde_json::Value, into: &mut Vec<String>) {
+    match value {
+        serde_json::Value::Object(members) => {
+            if let Some(serde_json::Value::Object(properties)) = members.get("properties") {
+                into.extend(properties.keys().cloned());
+            }
+            for member in members.values() {
+                collect_property_names(member, into);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                collect_property_names(item, into);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// The receipt carries `claimed_approval` as null or as exactly the declared
+/// shape: the schema and the reader accept a real claim and refuse a forged
+/// shape, an absent member and a version 1 receipt.
+#[trace("FR-065-AC-1", "FR-065-AC-13", "FR-065-AC-18")]
+#[test]
+fn tc_1511_the_receipt_schema_and_reader_agree_on_the_claimed_approval() {
+    use quoin_change_assurance::VerificationReceipt;
+
+    let validator = validator(ASSET_NAMES[2]);
+    let receipt = verify_change_assurance(&base_input()).unwrap();
+    let base = as_instance(&receipt.to_json().unwrap());
+    let claim = serde_json::json!({
+        "protocol": "engineering-assurance.approval-verify-result/v1",
+        "tag": "approval/change-1/1",
+        "record_digest": "sha256:00",
+        "trust": {"allowed_signers": "/keys/allowed"},
+        "approver": "a@example.test",
+        "meaning": ["reviewed"],
+        "signature_kind": "ssh",
+    });
+    let with = |claim: serde_json::Value| {
+        let mut receipt = base.clone();
+        receipt["decision_event"]["claimed_approval"] = claim;
+        receipt
+    };
+    let reads = |instance: &serde_json::Value| {
+        let bytes = serde_json::to_vec(instance).unwrap();
+        VerificationReceipt::from_json(&quoin_store::parse_strict_json(&bytes).unwrap()).is_ok()
+    };
+
+    for accepted in [with(serde_json::Value::Null), with(claim.clone())] {
+        assert!(validator.is_valid(&accepted));
+        assert!(reads(&accepted));
+    }
+    let mut forged = vec![
+        with(serde_json::json!({"approver": "a"})),
+        with(serde_json::json!("approved")),
+    ];
+    for (member, value) in [
+        ("extra", serde_json::json!(1)),
+        ("protocol", serde_json::json!("other/v1")),
+        ("signature_kind", serde_json::json!("pgp")),
+        ("meaning", serde_json::json!([])),
+        ("trust", serde_json::json!({})),
+        ("tag", serde_json::json!("")),
+    ] {
+        let mut changed = claim.clone();
+        changed[member] = value;
+        forged.push(with(changed));
+    }
+    let mut missing = claim.clone();
+    missing.as_object_mut().unwrap().remove("approver");
+    forged.push(with(missing));
+    let mut absent = base.clone();
+    absent["decision_event"]
+        .as_object_mut()
+        .unwrap()
+        .remove("claimed_approval");
+    forged.push(absent);
+    let mut version_one = base.clone();
+    version_one["schema_version"] = serde_json::json!(1);
+    forged.push(version_one);
+    for instance in &forged {
+        assert!(!validator.is_valid(instance), "schema accepted {instance}");
+        assert!(!reads(instance), "reader accepted {instance}");
+    }
 }

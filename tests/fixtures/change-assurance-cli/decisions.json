@@ -10,7 +10,7 @@
    },
    "kind": "change_assurance.review_decided",
    "payload": {
-    "schema_version": 1,
+    "schema_version": 2,
     "record_id": "change-1",
     "revision": 1,
     "decision": "approved"

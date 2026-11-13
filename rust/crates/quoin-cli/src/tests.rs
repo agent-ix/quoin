@@ -31,6 +31,7 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin change-assurance intake",
     "quoin change-assurance prepare-attestation",
     "quoin change-assurance receipt",
+    "quoin change-assurance record-digest",
     "quoin change-assurance recover",
     "quoin change-assurance schema",
     "quoin change-assurance verify-receipt",

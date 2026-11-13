@@ -1,8 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://agent-ix.github.io/quoin/schemas/verification-receipt-v1.schema.json",
-  "title": "VerificationReceiptV1",
-    "type": "object",
+  "$id": "https://agent-ix.github.io/quoin/schemas/verification-receipt-v2.schema.json",
+  "title": "VerificationReceiptV2",
+  "$comment": "governing_plan_id and diff_paths_supplied (PLAT-1015, FR-111) and claimed_approval are required on every receipt. Version 1 receipts are not read.",
+  "type": "object",
   "required": [
     "schema_version",
     "record_type",
@@ -19,7 +20,7 @@
     "diff_paths_supplied"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "record_type": { "const": "verification_receipt" },
     "record_id": { "$ref": "#/$defs/identity" },
     "record_revision": { "type": "integer", "minimum": 1 },
@@ -92,6 +93,12 @@
         "event_chain_missing",
         "event_chain_invalid",
         "decision_mismatch",
+        "approval_record_mismatch",
+        "approval_signer_untrusted",
+        "approval_signature_bad",
+        "approval_unverified",
+        "approval_meaning_missing",
+        "approval_missing",
         "review_rejected",
         "review_revision_requested",
         "attestation_missing",
@@ -137,7 +144,8 @@
         "event_id",
         "sequence",
         "recorded_actor",
-        "decision"
+        "decision",
+        "claimed_approval"
       ],
       "properties": {
         "run_id": { "$ref": "#/$defs/identity" },
@@ -147,7 +155,59 @@
         "decision": {
           "type": "string",
           "enum": ["approved", "rejected", "revise"]
+        },
+        "claimed_approval": {
+          "anyOf": [{ "$ref": "#/$defs/claimed_approval" }, { "type": "null" }]
         }
+      },
+      "additionalProperties": false
+    },
+    "claimed_approval": {
+      "type": "object",
+      "required": [
+        "protocol",
+        "tag",
+        "record_digest",
+        "trust",
+        "approver",
+        "meaning",
+        "signature_kind"
+      ],
+      "properties": {
+        "protocol": {
+          "const": "engineering-assurance.approval-verify-result/v1"
+        },
+        "tag": { "type": "string", "minLength": 1 },
+        "trust": {
+          "type": "object",
+          "required": ["allowed_signers"],
+          "properties": {
+            "allowed_signers": { "type": "string", "minLength": 1 },
+            "gitsign": {
+              "type": "object",
+              "required": [
+                "certificate_identity",
+                "certificate_oidc_issuer",
+                "principal"
+              ],
+              "properties": {
+                "certificate_identity": { "type": "string", "minLength": 1 },
+                "certificate_oidc_issuer": { "type": "string", "minLength": 1 },
+                "principal": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "record_digest": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "approver": { "type": "string", "minLength": 1 },
+        "meaning": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "signature_kind": { "type": "string", "enum": ["ssh", "gitsign"] }
       },
       "additionalProperties": false
     },

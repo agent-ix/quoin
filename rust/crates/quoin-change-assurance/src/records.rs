@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 //! Preparing, reading and chaining change-assurance records (FR-063).
 //!
-//! A record is addressed by `(record_id, revision)`; nothing here hashes it.
+//! A record is addressed by `(record_id, revision)` and carries no digest;
+//! [`record_digest`] hashes the stored bytes for the reader that needs it.
 //! Preparing normalizes the input's collections into identity order, validates
 //! the result against the v1 schema, and returns the typed record - the bytes
 //! written are those of [`record_bytes`], so two runs over the same input write
@@ -15,12 +16,13 @@ use crate::model::decision::{DecisionHistory, ReviewDecision, read_review_event}
 use crate::model::outcome::{Outcome, Reason};
 use crate::model::receipt::ReceiptDecisionEvent;
 use crate::model::record::{ChangeAssuranceRecord, DECISION_EVENT_KIND, normalize_record};
+use crate::verify::approval::judge_approval;
 
 /// Normalize a record body's collections and validate it.
 ///
 /// # Errors
 ///
-/// Every refusal of the v1 schema, including an undeclared member such as a
+/// Every refusal of the v2 schema, including an undeclared member such as a
 /// `digest`.
 pub fn prepare_change_record(
     input: &JsonValue,
@@ -32,7 +34,7 @@ pub fn prepare_change_record(
 ///
 /// # Errors
 ///
-/// Every refusal of the v1 schema.
+/// Every refusal of the v2 schema.
 pub fn read_change_record_json(
     value: &JsonValue,
 ) -> Result<ChangeAssuranceRecord, ChangeAssuranceError> {
@@ -46,6 +48,20 @@ pub fn read_change_record_json(
 /// As [`quoin_store::canonical_bytes`].
 pub fn record_bytes(record: &ChangeAssuranceRecord) -> Result<Vec<u8>, ChangeAssuranceError> {
     Ok(canonical_bytes(&record.to_json()?)?)
+}
+
+/// The record digest of a stored revision: `sha256:` and the lowercase
+/// hexadecimal SHA-256 of its exact stored bytes (FR-063).
+///
+/// A local computation over the bytes as read, with no newline, end-of-line or
+/// encoding normalization. It is computed at verification time and never stored
+/// in the record.
+#[must_use]
+pub fn record_digest(stored_bytes: &[u8]) -> String {
+    format!(
+        "sha256:{}",
+        quoin_store::attachment::sha256_hex(stored_bytes)
+    )
 }
 
 /// Check a record's parent chain.
@@ -150,6 +166,7 @@ impl DecisionCheck {
 #[must_use]
 pub fn validate_decision(
     record: &ChangeAssuranceRecord,
+    record_digest: &str,
     history: Option<&JsonValue>,
 ) -> DecisionCheck {
     let Some(history) = history else {
@@ -200,6 +217,7 @@ pub fn validate_decision(
         sequence: review.sequence,
         recorded_actor: review.recorded_actor.clone(),
         decision: review.payload.decision,
+        claimed_approval: None,
     };
     match review.payload.decision {
         ReviewDecision::Rejected => DecisionCheck {
@@ -212,10 +230,20 @@ pub fn validate_decision(
             reasons: vec![Reason::ReviewRevisionRequested],
             event: Some(event),
         },
-        ReviewDecision::Approved => DecisionCheck {
-            outcome: Outcome::Valid,
-            reasons: Vec::new(),
-            event: Some(event),
-        },
+        ReviewDecision::Approved => {
+            let judged = judge_approval(
+                record,
+                record_digest,
+                review.payload.verified_approval.as_ref(),
+            );
+            DecisionCheck {
+                outcome: judged.outcome,
+                reasons: judged.reasons,
+                event: Some(ReceiptDecisionEvent {
+                    claimed_approval: judged.claimed,
+                    ..event
+                }),
+            }
+        }
     }
 }

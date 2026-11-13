@@ -26,16 +26,16 @@
 //! a validator, and `tests/tc_455_boundary.rs` censuses this crate's own
 //! sources for exactly that kind of dependency.
 
-/// `change-assurance-record-v1`, the FR-063 record.
-pub const CHANGE_ASSURANCE_RECORD_V1: &str =
-    include_str!("../schemas/change-assurance-record-v1.schema.json");
+/// `change-assurance-record-v2`, the FR-063 record.
+pub const CHANGE_ASSURANCE_RECORD_V2: &str =
+    include_str!("../schemas/change-assurance-record-v2.schema.json");
 
 /// `proof-attestation-v1`, the FR-064 producer attestation.
 pub const PROOF_ATTESTATION_V1: &str = include_str!("../schemas/proof-attestation-v1.schema.json");
 
-/// `verification-receipt-v1`, the FR-065 receipt.
-pub const VERIFICATION_RECEIPT_V1: &str =
-    include_str!("../schemas/verification-receipt-v1.schema.json");
+/// `verification-receipt-v2`, the FR-065 receipt.
+pub const VERIFICATION_RECEIPT_V2: &str =
+    include_str!("../schemas/verification-receipt-v2.schema.json");
 
 /// Every asset, by the file name a consumer asks for.
 ///
@@ -44,9 +44,9 @@ pub const VERIFICATION_RECEIPT_V1: &str =
 /// shorter spelling here would make this list a second vocabulary to keep in
 /// step with the published one.
 pub const ASSET_NAMES: [&str; 3] = [
-    "change-assurance-record-v1.schema.json",
+    "change-assurance-record-v2.schema.json",
     "proof-attestation-v1.schema.json",
-    "verification-receipt-v1.schema.json",
+    "verification-receipt-v2.schema.json",
 ];
 
 /// One asset's exact bytes, or `None` for a name that is not an asset.
@@ -57,9 +57,9 @@ pub const ASSET_NAMES: [&str; 3] = [
 #[must_use]
 pub fn asset(name: &str) -> Option<&'static str> {
     match name {
-        "change-assurance-record-v1.schema.json" => Some(CHANGE_ASSURANCE_RECORD_V1),
+        "change-assurance-record-v2.schema.json" => Some(CHANGE_ASSURANCE_RECORD_V2),
         "proof-attestation-v1.schema.json" => Some(PROOF_ATTESTATION_V1),
-        "verification-receipt-v1.schema.json" => Some(VERIFICATION_RECEIPT_V1),
+        "verification-receipt-v2.schema.json" => Some(VERIFICATION_RECEIPT_V2),
         _ => None,
     }
 }

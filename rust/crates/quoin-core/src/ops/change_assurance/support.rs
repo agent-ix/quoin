@@ -22,7 +22,7 @@ use quoin_change_assurance::verify::{
     AuditReport, ReportFinding, ReportUnevaluated, RetainedAudit,
 };
 use quoin_change_assurance::{
-    AttestationId, EvidenceStore, RecordId, Revision, Subject, read_change_record,
+    AttestationId, EvidenceStore, RecordId, Revision, Subject, read_change_record_with_digest,
 };
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::DiskMeasurement;
@@ -73,18 +73,19 @@ pub(super) fn governing_plan(
     })
 }
 
-/// Read the record retained at `(record_id, revision)`, refusing an unknown
-/// identity rather than skipping it.
+/// Read the record retained at `(record_id, revision)` with its record digest,
+/// computed from the exact stored bytes, refusing an unknown identity rather
+/// than skipping it.
 pub(super) fn stored_record(
     store: &dyn EvidenceStore,
     record_id: &RecordId,
     revision: Revision,
     op: &'static str,
-) -> Result<JsonValue, CoreError> {
-    let record = read_change_record(store, record_id, revision)
+) -> Result<(JsonValue, String), CoreError> {
+    let (record, digest) = read_change_record_with_digest(store, record_id, revision)
         .map_err(|e| map_error(&e, op))?
         .ok_or_else(|| missing(op, "record_id", &format!("{record_id}/{revision}"), ""))?;
-    record.to_json().map_err(|e| map_error(&e, op))
+    Ok((record.to_json().map_err(|e| map_error(&e, op))?, digest))
 }
 
 /// Every retained predecessor of `revision`, in revision order, as stored.

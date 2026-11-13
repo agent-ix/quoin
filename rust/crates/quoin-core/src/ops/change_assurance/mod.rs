@@ -66,11 +66,12 @@ use self::support::{
 use self::taxonomy::map_error;
 pub use self::wire::{
     IntakePayload, IntakeRequest, MAX_DIFF_PATHS, MAX_INTAKE_BYTES, MAX_PREPARE_ATTESTATION_BYTES,
-    MAX_RECEIPT_BYTES, MAX_RECOVER_BYTES, MAX_SCALAR_BYTES, MAX_SCHEMA_BYTES,
-    MAX_VERIFY_RECEIPT_BYTES, MAX_WRITE_RECORD_BYTES, PrepareAttestationPayload,
-    PrepareAttestationRequest, ReceiptPayload, ReceiptRequest, RecoverPayload, RecoverRequest,
-    SchemaAssetPayload, SchemaAssetRequest, SelectionRequest, VerifyReceiptPayload,
-    VerifyReceiptRequest, WriteRecordPayload, WriteRecordRequest,
+    MAX_RECEIPT_BYTES, MAX_RECORD_DIGEST_BYTES, MAX_RECOVER_BYTES, MAX_SCALAR_BYTES,
+    MAX_SCHEMA_BYTES, MAX_VERIFY_RECEIPT_BYTES, MAX_WRITE_RECORD_BYTES, PrepareAttestationPayload,
+    PrepareAttestationRequest, ReceiptPayload, ReceiptRequest, RecordDigestPayload,
+    RecordDigestRequest, RecoverPayload, RecoverRequest, SchemaAssetPayload, SchemaAssetRequest,
+    SelectionRequest, VerifyReceiptPayload, VerifyReceiptRequest, WriteRecordPayload,
+    WriteRecordRequest,
 };
 
 /// Answer a `change_assurance.write_record`.
@@ -100,6 +101,7 @@ pub fn write_record(
 
     let body = strict_document(&request.record_hex, OP, "record_hex")?;
     let record = records::prepare_change_record(&body).map_err(|e| map_error(&e, OP))?;
+    let record_bytes = records::record_bytes(&record).map_err(|e| map_error(&e, OP))?;
 
     let host = host(capabilities, OP)?;
     let mut store = host.store(Path::new(&request.repo));
@@ -115,6 +117,45 @@ pub fn write_record(
         .display()
         .to_string(),
         retained: published == Published::Retained,
+        record_digest: records::record_digest(&record_bytes),
+    })
+}
+
+/// Answer a `change_assurance.record_digest`.
+///
+/// Hashes the stored file's bytes unchanged and writes nothing, so an approver
+/// can name the digest in an approval tag. The digest is a local computation:
+/// no Git, network or identity-provider operation.
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::BadRequest`] when stdin is not a [`RecordDigestRequest`]
+///   or the stored file is not a valid record of the identity it is filed under.
+/// - [`CoreErrorCode::Refused`] when the request or a field exceeds its
+///   ceiling, or no record is retained at that identity.
+pub fn record_digest(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    const OP: &str = "change_assurance.record_digest";
+    let size = request_size(request)?;
+    if size > MAX_RECORD_DIGEST_BYTES {
+        return Err(refusal(OP, MAX_RECORD_DIGEST_BYTES, size));
+    }
+    let request: RecordDigestRequest = parse(request, OP)?;
+    check_bound(OP, "repo", &request.repo, MAX_SCALAR_BYTES)?;
+    check_bound(OP, "record_id", &request.record_id, MAX_SCALAR_BYTES)?;
+
+    let record_id = record_id_of(&request.record_id, OP)?;
+    let revision = Revision::new(request.revision, Subject::Record, "revision")
+        .map_err(|e| map_error(&e, OP))?;
+    let host = host(capabilities, OP)?;
+    let store = host.store(Path::new(&request.repo));
+    let (_, digest) = stored_record(store.as_ref(), &record_id, revision, OP)?;
+    ok(&RecordDigestPayload {
+        record_id: request.record_id,
+        revision: request.revision,
+        record_digest: digest,
     })
 }
 
@@ -299,7 +340,7 @@ fn receipt_input(
     let record_id = record_id_of(&request.record_id, op)?;
     let revision = Revision::new(request.revision, Subject::Record, "revision")
         .map_err(|e| map_error(&e, op))?;
-    let record = stored_record(store.as_ref(), &record_id, revision, op)?;
+    let (record, record_digest) = stored_record(store.as_ref(), &record_id, revision, op)?;
     let parents = stored_predecessors(store.as_ref(), &record_id, revision, op)?;
 
     let mut selections = Vec::with_capacity(request.selections.len());
@@ -343,6 +384,7 @@ fn receipt_input(
         record_id,
         record_revision: revision,
         record,
+        record_digest,
         parents,
         candidate_revision: request.candidate_revision.clone(),
         selections,

@@ -108,6 +108,11 @@ pub struct VerificationInput {
     pub record_revision: Revision,
     /// The record under verification, as retained.
     pub record: JsonValue,
+    /// The record digest of the revision under verification: `sha256:` and the
+    /// SHA-256 of its stored bytes, as [`crate::records::record_digest`]
+    /// computes it from the bytes the caller read. A claimed approval is
+    /// compared with this string.
+    pub record_digest: String,
     /// Its parent chain, as retained.
     pub parents: Vec<JsonValue>,
     /// The candidate revision the verification is about.

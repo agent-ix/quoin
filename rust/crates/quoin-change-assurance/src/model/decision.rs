@@ -14,7 +14,11 @@ use quoin_store::{JsonObject, JsonValue};
 
 use crate::error::{ChangeAssuranceError, Subject};
 use crate::ids::{EventId, Identity, NonEmptyText, RunId};
+use crate::model::approval::VerifiedApproval;
 use crate::model::json::{Fields, number};
+
+/// The payload `schema_version` a review event carries.
+pub const PAYLOAD_SCHEMA_VERSION: u64 = 2;
 
 const SUBJECT: Subject = Subject::DecisionHistory;
 
@@ -229,6 +233,9 @@ pub struct DecisionPayload {
     pub decision: ReviewDecision,
     /// An optional note.
     pub note: Option<NonEmptyText>,
+    /// The writer's claimed approval, on an `approved` decision only. A claim
+    /// that nothing here has verified.
+    pub verified_approval: Option<VerifiedApproval>,
 }
 
 /// A review event that passed the full candidate check.
@@ -274,18 +281,15 @@ pub fn read_review_event(event: &RetainedDecisionEvent) -> Option<ReviewEvent> {
 
     let payload = Fields::read(event.payload()?, SUBJECT, "decision payload").ok()?;
     let carries_note = payload.optional("note").is_some();
-    let allowed: &[&str] = if carries_note {
-        &[
-            "schema_version",
-            "record_id",
-            "revision",
-            "decision",
-            "note",
-        ]
-    } else {
-        &["schema_version", "record_id", "revision", "decision"]
-    };
-    payload.exact(allowed).ok()?;
+    let carries_approval = payload.optional("verified_approval").is_some();
+    let mut allowed = vec!["schema_version", "record_id", "revision", "decision"];
+    if carries_note {
+        allowed.push("note");
+    }
+    if carries_approval {
+        allowed.push("verified_approval");
+    }
+    payload.exact(&allowed).ok()?;
     let note = if carries_note {
         Some(NonEmptyText::parse(payload.text("note").ok()?, SUBJECT, "decision note").ok()?)
     } else {
@@ -293,17 +297,30 @@ pub fn read_review_event(event: &RetainedDecisionEvent) -> Option<ReviewEvent> {
     };
 
     // The five equalities the oracle's filter returns, all of which must hold
-    // for the candidate to count. `schema_version` must be exactly 1, the
-    // actor must be a person, and the decision must be one of the three.
+    // for the candidate to count. `schema_version` must be exactly 2 (version 1
+    // payloads are not read), the actor must be a person, and the decision
+    // must be one of the three.
     // Compared as a JSON value rather than as a double: `JsonNumber`'s
     // equality is equality of the canonical serialization, which is the
     // comparison the oracle's `=== 1` actually performs on a parsed number.
-    if payload.value("schema_version").ok()? != &number(1).ok()? || kind != ActorKind::Human {
+    if payload.value("schema_version").ok()? != &number(PAYLOAD_SCHEMA_VERSION).ok()?
+        || kind != ActorKind::Human
+    {
         return None;
     }
     let record_id = Identity::parse(payload.text("record_id").ok()?, SUBJECT, "record_id").ok()?;
     let revision = payload.whole_number("revision").ok()?;
     let decision = ReviewDecision::parse(payload.text("decision").ok()?)?;
+    // A claim rides on an approval and nothing else; on any other decision, or
+    // when malformed, the event is a refused candidate rather than an approval.
+    let verified_approval = if carries_approval {
+        if decision != ReviewDecision::Approved {
+            return None;
+        }
+        Some(VerifiedApproval::from_json(payload.value("verified_approval").ok()?, SUBJECT).ok()?)
+    } else {
+        None
+    };
 
     Some(ReviewEvent {
         event_id,
@@ -314,6 +331,7 @@ pub fn read_review_event(event: &RetainedDecisionEvent) -> Option<ReviewEvent> {
             revision,
             decision,
             note,
+            verified_approval,
         },
     })
 }
