@@ -31,8 +31,9 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 
 - When a user runs `quoin soup report --repo <repo> --binding <clause-binding-v1 report> --as-of <instant>`, the command SHALL render one row for each `soup_record` in the repository.
 - Each row SHALL state the component's purl, version, the requirements it serves, its known anomalies, support status, end-of-support date, its attached advisories (from cargo-audit, cargo-deny and grype, each naming its tool) and the disposition of each advisory.
-- If a record's advisories are `unsupported` under FR-142, then its row SHALL state `advisories not assessed: unsupported purl type`.
-- If a record's advisories are `unsupported` under FR-142, its row SHALL NOT state the record free of advisories.
+- Each row SHALL state its advisory status as `free of advisories` (as FR-142 defines it), `advisories not assessed: unsupported purl type`, or the attached advisories and the state of each blocking scan.
+- If a record is `unsupported` under FR-142, its row SHALL NOT state `free of advisories`.
+- The command SHALL place an `unsupported` record in the group of rows that are neither unresolved nor past end of support, ordered by purl.
 - If a `soup_record` has an absent `serves` or `known_anomalies`, then its row SHALL state `not stated` for that field.
 - If a `soup_record` has an empty `serves` or `known_anomalies`, then its row SHALL state `none` for that field.
 - If a field is absent or `unknown`, then its row SHALL state `unknown` or `not stated` as the record does.
@@ -69,9 +70,8 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 | FR-144-AC-13 | `--records` naming a directory that does not exist exits non-zero with an error naming the path and prints no report. | Test |
 | FR-144-AC-14 | A `soup_record` file with no purl exits non-zero with an error naming the file and prints no report. | Test |
 | FR-144-AC-15 | A record whose `version` is a number, or whose anomaly `source_ref` is a number, exits non-zero naming the field and prints no report. | Test |
-
 | FR-144-AC-16 | A fixture with an npm record carrying a grype advisory, resolved by an attested disposition, and a PyPI record carrying another, unresolved, renders both advisories on their own rows with tool `grype`, the resolved one carrying decision and attester and the unresolved one its reason. | Test |
-| FR-144-AC-17 | A `lake` record renders `advisories not assessed: unsupported purl type` and is in no clean group; grype not run renders after the rows. | Test |
+| FR-144-AC-17 | A `lake` record states `advisories not assessed: unsupported purl type` in the third ordering group, never `free of advisories`; grype not run renders after the rows. | Test |
 
 ## Dependencies
 

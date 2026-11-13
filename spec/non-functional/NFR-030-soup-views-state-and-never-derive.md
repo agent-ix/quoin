@@ -12,6 +12,8 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-144"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-149"
+    type: "constrains"
 ---
 
 # NFR-030: SOUP promotion and report never invent a fact or a score
@@ -22,7 +24,7 @@ The SOUP promotion, advisory join and report SHALL write or print only values th
 
 ## Scope
 
-- Applies to: `quoin soup promote` and `quoin soup report`.
+- Applies to: `quoin soup promote`, `quoin soup report` and the FR-149 adapter that feeds the advisory join.
 - Out of scope: the content of the `soup_record` schema, which `agent-ix/spec-objects-security` NFR-001 governs.
 
 ## Rationale
@@ -44,6 +46,7 @@ discharges a risk nobody reviewed. Each printed value must have a named author.
 |----|----------|--------------|
 | NFR-030-AC-1 | Over a fixture with every optional input absent, every value in the promoted records and the report is `unknown`, `not stated`, absent, or copied from a named input. | Test |
 | NFR-030-AC-2 | Over fixtures with a failed cargo-deny run, a zero-rule scan and a missing scan, no record is shown as free of advisories. | Test |
+| NFR-030-AC-4 | Over a failed grype report, a grype report with ignored matches and a grype report with a match lacking an id, no record is shown as free of advisories. | Test |
 | NFR-030-AC-3 | The report JSON schema for a fixture run contains no score, rank, class or percentage key. | Test |
 
 ## Verification
