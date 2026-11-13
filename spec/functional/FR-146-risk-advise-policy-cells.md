@@ -93,6 +93,6 @@ Every key is present, `null` or `[]` when empty.
 
 ## Dependencies
 
-- **Upstream**: [FR-145](./FR-145-risk-advise-command.md); `agent-ix/spec-objects-safety` FR-101, FR-102, FR-103, FR-203, FR-204.
-- **Context only**: `agent-ix/spec-objects-safety` FR-305.
+- **Upstream**: [FR-145](./FR-145-risk-advise-command.md); [FR-101](ix://agent-ix/spec-objects-safety/FR-101), [FR-102](ix://agent-ix/spec-objects-safety/FR-102), [FR-103](ix://agent-ix/spec-objects-safety/FR-103), [FR-203](ix://agent-ix/spec-objects-safety/FR-203), [FR-204](ix://agent-ix/spec-objects-safety/FR-204).
+- **Context only**: [FR-305](ix://agent-ix/spec-objects-safety/FR-305).
 - **Downstream**: [FR-148](./FR-148-risk-advise-decision-queue.md).

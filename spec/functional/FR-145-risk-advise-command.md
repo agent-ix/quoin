@@ -63,6 +63,6 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 
 ## Dependencies
 
-- **Upstream**: `agent-ix/spec-objects-safety` FR-102, FR-104; [FR-136](./FR-136-anomaly-record-mapping.md).
-- **Context only**: [FR-144](./FR-144-soup-report.md), whose report conventions this follows; `agent-ix/spec-objects-safety` FR-305.
+- **Upstream**: [FR-102](ix://agent-ix/spec-objects-safety/FR-102), [FR-104](ix://agent-ix/spec-objects-safety/FR-104); [FR-136](./FR-136-anomaly-record-mapping.md).
+- **Context only**: [FR-144](./FR-144-soup-report.md), whose report conventions this follows; [FR-305](ix://agent-ix/spec-objects-safety/FR-305).
 - **Downstream**: [FR-146](./FR-146-risk-advise-policy-cells.md), [FR-147](./FR-147-risk-advise-evidence-gaps.md), [FR-148](./FR-148-risk-advise-decision-queue.md), [NFR-031](../non-functional/NFR-031-risk-advice-states-and-never-decides.md).

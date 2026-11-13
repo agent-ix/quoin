@@ -82,5 +82,5 @@ An element of `no_record` has exactly the keys `estimate` and `findings`.
 
 ## Dependencies
 
-- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-146](./FR-146-risk-advise-policy-cells.md); `agent-ix/spec-objects-safety` FR-102, FR-103, FR-106, FR-107, FR-303.
+- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-146](./FR-146-risk-advise-policy-cells.md); [FR-102](ix://agent-ix/spec-objects-safety/FR-102), [FR-103](ix://agent-ix/spec-objects-safety/FR-103), [FR-106](ix://agent-ix/spec-objects-safety/FR-106), [FR-107](ix://agent-ix/spec-objects-safety/FR-107), [FR-303](ix://agent-ix/spec-objects-safety/FR-303).
 - **Downstream**: none.
