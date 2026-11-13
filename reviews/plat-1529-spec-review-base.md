@@ -121,3 +121,15 @@ Round 1, verified at 75df2882.
 | FND-005 | fixed | - |
 | FND-006 | fixed | - |
 | FND-007 | fixed | - |
+
+Round 2, verified at 5bfd0925.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-008 | fixed | - |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-009 | medium | The list that replaced FND-008 gets `quire.coverage`'s actual mapping wrong, and AC-19 inherits the error. (a) It leaves out `map_error`'s `Refused` (2) class, the engine refusals (`ModuleLoad`, `ArchetypeUnknown`, `TraceabilityModelUndeclared` and others) that carry `quire_code`. "Every other failure" then reads as exit 3 or 4 for them. (b) An oversized request is not a `map_error` case: `read()` returns `refusal(op, MAX_REQUEST_BYTES, ..)` and `check_bound` returns `Refused` for an oversized path, both exit 2 (`ops/quire/mod.rs:263-264,298-300`). Only the engine's output `PayloadTooLarge` maps to Internal. (c) A missing quire host comes from `host()`, not `map_error`, and carries no `quire_code`. AC-19's "an oversized payload ... not `Refused`" therefore contradicts what `quire.coverage` does for an oversized request. Fix: say "the same codes `quire.coverage` gives for the same cause (its request and path ceilings, `host()`, and `map_error`)" without restating the list, and in AC-19 replace "not `Refused`" with "not `design-matrix-failed`". | spec/functional/FR-165-matrix-design-column.md:53-57 |

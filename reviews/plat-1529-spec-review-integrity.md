@@ -65,3 +65,9 @@ Round 1, verified at 75df2882.
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | - |
+
+Round 2, verified at 5bfd0925.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-002 | fixed | - |
