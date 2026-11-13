@@ -36,6 +36,15 @@ fn module() -> PathBuf {
         },
         PathBuf::from,
     );
+    // Canonicalised: `quire` rejects `..` in `--module`.
+    let root = std::fs::canonicalize(&root).unwrap_or_else(|error| {
+        panic!(
+            "the spec-objects-security module is not at {}: {error}. Check out \
+             agent-ix/spec-objects-security next to this repository, or set \
+             SPEC_OBJECTS_SECURITY_DIR to its spec_objects_security directory",
+            root.display()
+        )
+    });
     assert!(
         root.join("skeletons/soup_record.md").is_file(),
         "the spec-objects-security soup_record skeleton is not at {}. These tests use the \

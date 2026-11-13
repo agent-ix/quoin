@@ -38,11 +38,21 @@ const INSTALLED: Context = Context {
     hazard_installed: true,
 };
 
+/// The resolved checkout, canonicalised: `quire` rejects `..` in `--module`.
 fn process_root() -> PathBuf {
-    std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
+    let root = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
         || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-artifacts-process"),
         PathBuf::from,
-    )
+    );
+    std::fs::canonicalize(&root).unwrap_or_else(|error| {
+        panic!(
+            "the spec-artifacts-process checkout is not at {}: {error}. These tests read \
+             the documents that repository ships in place and keep no copy: check out \
+             agent-ix/spec-artifacts-process next to this repository, or set \
+             SPEC_ARTIFACTS_PROCESS_DIR to its checkout",
+            root.display()
+        )
+    })
 }
 
 fn fixtures() -> PathBuf {
