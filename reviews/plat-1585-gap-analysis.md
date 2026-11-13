@@ -69,3 +69,18 @@ change.
 | NFR-035-AC-4 | examined | FND-003 |
 | FR-136-AC-13, AC-14, AC-16 | examined | Asserted |
 | FR-136-AC-15 | examined | FND-008 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Round 1 (head 82010493): `similar_files_committed_separately_each_keep_their_own_history` commits three near-identical anomalies one commit each. It asserts that each one's `rationaleChange` and `fixingChange` is its own commit, that there are no diagnostics, and one `statusHistory` entry each. The snapshots are regenerated with the true commits. It does not cover the move-plus-add commit (code-review FND-007). |
+| FND-002 | fixed | Round 1: the FR-164-AC-5 test now commits `closed-not-a-defect` with `safety_impact: impacting` and still expects only AN-006 to fail. |
+| FND-003 | fixed | Round 1: the new `with_every_optional_value_absent_each_printed_value_reads_as_absent_or_is_copied` uses `identified`. It asserts null/`[]`/absent for every optional JSON value and checks every Markdown cell outside the copied ID/Title/Path/Status/Safety-impact columns against `not stated`/`none`/`absent`/`unassessed`. |
+| FND-004 | fixed | Round 1: `a_missing_title_or_a_malformed_rationale_table_is_a_mapping_error` asserts the `unreadable` code and an `anomaly.no-record` for a missing title, `rationale-bad-headers` (columns), `rationale-no-rows`, `rationale-bare-heading` and `rationale-no-delimiter` (min-rows). |
+| FND-005 | fixed | Round 1: an in-crate unit test `every_signature_letter_maps_in_the_rationale_change_as_in_the_status_history` runs `Change::of_commit` over G/U/X/Y/N/B/R/E. The FR-163-AC-9 tag moved to it. |
+| FND-006 | fixed | Round 1: `assert_accept_only_in_copied_values` checks cell by cell, allowing the stem only in the title, assessment, affected and rationale cells. It runs over eight fixtures, with and without the gate. |
+| FND-007 | fixed | Round 1: `assert_all_null` runs over absent, pending and both not-applicable values. |
+| FND-008 | fixed | Round 1: `pending_absent_and_not_applicable_rationale_changes_yield_no_diagnostic` is new, `fixing()` now returns the diagnostic codes and asserts them empty, and the CLI snapshot test asserts an empty stderr. |
+| FND-009 | fixed | Round 1: the second failure's path (`spec/anomalies/AN-002.md`) and the unreadable path are asserted, in the struct and in the JSON. |
+| FND-010 | fixed | Round 1: `assert_eq!(out.status.code(), Some(3), "a parser refusal, not a gate failure")`. |

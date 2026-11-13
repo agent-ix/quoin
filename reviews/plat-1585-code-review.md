@@ -136,3 +136,20 @@ Rulings on the coder's flagged ambiguities, against the merged spec text:
 | snapshots | examined | Ruling 12; encode FND-001 |
 | MP-250/MP-251 population lines, NATIVE_OWNED_ROUTES | examined | Required by tc_3003 and tc_1650 |
 | `quoin anomaly refs`, `check.rs` diagnostics (unchanged) | context_only | Read for the shared reader |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | medium | The fix stops the walk at an `A` or `C` entry but still follows every `R`. git's `--follow` runs rename detection limited to the followed path, so in one commit that moves anomaly X and adds a similar new anomaly Y, git pairs X's old path with Y (`R055 AN-001.md AN-002.md`), while X's own log shows `R100 AN-001.md old/AN-001.md`. Both files then claim X's history. Reproduced with the built binary (probe p8): `closed-fixed` AN-001 was committed, then one commit ran `git mv` of AN-001 to `old/` and added `rationale-assessed-with` AN-002. `quoin anomaly check` reports `AN-002.md:5: error anomaly.illegal-transition ... closed (8e7ad88d) to assessed`. Squash-merged PRs that reorganise anomalies and add one are the realistic path. Fix: follow an `R` only when the document `id` in the frontmatter at the older commit equals the id in the newer text (an anomaly keeps its id across a rename). Or confirm the pair with the commit's full, pathspec-free `git diff --name-status -M <c>^ <c>`. Add a test for the move-plus-add commit. | rust/crates/quoin-anomaly/src/history.rs:215-230,296-310 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Round 1 (head 82010493): `locate` uses `--name-status` and breaks at the commit whose entry starts `A` or `C` (`created: status.starts_with(['A', 'C'])`). Reproduced with the built binary. AN-004/005/006/011 in separate commits each report their own commit (00:01, 00:03 rationale, 00:04). The AN-002 illegal-transition scenario now has no diagnostic. A `C100` exact copy in a later commit stops at its own add. Two near-identical files in the same commit show `A` and keep their own histories. A `git mv` rename still carries the earlier `resolved` entry (FR-136-AC-1). The regenerated snapshots give AN-006 rationaleChange `00:07` and AN-011 fixingChange `00:12`, the true commits. The rename-pairing remainder is FND-007. |
+| FND-002 | fixed | Round 1: the Clap help and the retained page say "a carried impacting anomaly (not closed, or closed as wont-fix)". The anomaly page's Subcommands and COMMANDS columns align at one gap and the continuation indents to the column. tc_retained_help_capture passes. |
+| FND-003 | fixed | Round 1: the FR-136 CR note reads "reads the eight record keys (`status`, `resolution`, `closed_by`, `safety_impact`, the assessment table, and, widened by FR-162, `title`, `severity` and the release rationale table)". |
+| FND-004 | fixed | Round 1: `row_of` calls `locate` once and derives both values from it (`history_of(located.as_ref())`, `rationale_in(located.as_ref(), ...)`). `Located` holds the texts, so each commit is `git show`n once. |
+| FND-005 | fixed | Round 1: `table()` returns `MinRows` unless the line after the header is a delimiter row. The test `a_missing_title_or_a_malformed_rationale_table_is_a_mapping_error` asserts `rationale-no-delimiter` gives `min-rows`. The rule also applies to the assessment table, which matches the module, and tc_136 still passes 15/15. |
+| FND-006 | still-open | Round 1: `GateMode::ALL` and `GateMode::parse` were added, and the clap value list is built from `ALL.map(as_str)`. But `run_report` still maps the strings by hand (`"unassessed" => Ok(GateMode::Unassessed)`, `"unjustified-impacting" => ...`, with an unreachable error arm), so the spelling is still held twice, and the new public `GateMode::parse` has no caller. Fix: `.map(\|m\| GateMode::parse(m).ok_or_else(...))`. |

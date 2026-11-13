@@ -12,7 +12,7 @@ use std::process::{Command, Output};
 use serde::Serialize;
 
 use crate::error::AnomalyError;
-use crate::record::{assessment_text, status_word};
+use crate::record::{assessment_text, frontmatter, status_word};
 use crate::status::Status;
 
 /// What git reported about a commit's signature, reduced to three answers.
@@ -156,6 +156,8 @@ pub(crate) struct Commit {
     /// Whether the commit created the file (`A`, or a copy `C`): the history
     /// of the document starts here.
     pub(crate) created: bool,
+    /// The path the file had before this commit, when git reports a rename.
+    pub(crate) renamed_from: Option<String>,
 }
 
 /// The first-parent history of a file on the default branch, read once: the
@@ -221,7 +223,15 @@ pub(crate) fn locate(file: &Path) -> Result<Option<Located>, AnomalyError> {
         .filter(|block| !block.trim().is_empty())
         .filter_map(parse_block)
     {
-        let created = commit.created;
+        // `--follow` pairs files by similarity within the path-limited diff, so a
+        // commit that moves one anomaly and adds a similar one can report the
+        // moved file's old path as renamed into the new one. A rename is the
+        // same document only when its `id` is the same on both sides.
+        let created = commit.created
+            || match &commit.renamed_from {
+                Some(old) => !same_document(&top, &commit, old)?,
+                None => false,
+            };
         commits.push(commit);
         if created {
             break;
@@ -237,6 +247,18 @@ pub(crate) fn locate(file: &Path) -> Result<Option<Located>, AnomalyError> {
         )?);
     }
     Ok(Some(Located { commits, texts }))
+}
+
+/// Whether the file at `commit` and `old` in its first parent carry one `id`.
+fn same_document(top: &Path, commit: &Commit, old: &str) -> Result<bool, AnomalyError> {
+    let id_of = |spec: String| -> Result<Option<String>, AnomalyError> {
+        Ok(probe(top, &["show", &spec])?
+            .and_then(|text| frontmatter(&text))
+            .and_then(|front| front.get("id").and_then(|v| v.as_str().map(str::to_owned))))
+    };
+    let after = id_of(format!("{}:{}", commit.hash, commit.path))?;
+    let before = id_of(format!("{}^1:{old}", commit.hash))?;
+    Ok(after.is_some() && after == before)
 }
 
 /// Derive `statusHistory` for `file`.
@@ -300,6 +322,11 @@ fn parse_block(block: &str) -> Option<Commit> {
     let mut columns = entry.split('\t');
     let status = columns.next()?;
     let path = columns.next_back()?.to_owned();
+    let renamed_from = if status.starts_with('R') {
+        columns.next().map(str::to_owned)
+    } else {
+        None
+    };
     Some(Commit {
         hash,
         author,
@@ -307,5 +334,6 @@ fn parse_block(block: &str) -> Option<Commit> {
         signature_code,
         path,
         created: status.starts_with(['A', 'C']),
+        renamed_from,
     })
 }

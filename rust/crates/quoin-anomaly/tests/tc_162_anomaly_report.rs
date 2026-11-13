@@ -883,6 +883,38 @@ fn similar_files_committed_separately_each_keep_their_own_history() {
     }
 }
 
+#[trace("FR-136-AC-1", "FR-136-AC-3")]
+#[test]
+fn a_commit_that_moves_one_anomaly_and_adds_a_similar_one_keeps_both_histories() {
+    let mut repo = corpus();
+    let added = repo.commit(
+        &anomaly_path("AN-001"),
+        &fx("valid", "closed-fixed", "AN-001"),
+    );
+    std::fs::create_dir_all(repo.path("spec/anomalies/old")).unwrap();
+    repo.git(&[
+        "mv",
+        &anomaly_path("AN-001"),
+        "spec/anomalies/old/AN-001.md",
+    ]);
+    repo.commit(
+        &anomaly_path("AN-002"),
+        &fx("valid", "rationale-assessed-with", "AN-002"),
+    );
+    let new = repo.path(&anomaly_path("AN-002"));
+    let text = std::fs::read_to_string(&new).unwrap();
+    let checked = check_document(&new, &text, CONTEXT).unwrap();
+    assert!(checked.diagnostics.is_empty(), "{:?}", checked.diagnostics);
+    let entries = |path: &Path| match quoin_anomaly::read_history(path).unwrap() {
+        quoin_anomaly::History::Entries { entries, .. } => entries,
+        quoin_anomaly::History::NotApplicable => panic!("under git"),
+    };
+    assert_eq!(entries(&new).len(), 1, "AN-002 has only its own commit");
+    let moved = entries(&repo.path("spec/anomalies/old/AN-001.md"));
+    assert_eq!(moved.len(), 1);
+    assert_eq!(moved[0].commit.as_deref(), Some(added.as_str()));
+}
+
 #[trace("FR-162-AC-9")]
 #[test]
 fn a_missing_title_or_a_malformed_rationale_table_is_a_mapping_error() {

@@ -195,12 +195,9 @@ fn run_report(arguments: &ArgMatches) -> Result<Response, String> {
         .get_many::<String>("fail-on")
         .into_iter()
         .flatten()
-        .map(|mode| match mode.as_str() {
-            "unassessed" => Ok(GateMode::Unassessed),
-            "unjustified-impacting" => Ok(GateMode::UnjustifiedImpacting),
-            other => Err(format!(
-                "an unknown --fail-on mode {other} reached dispatch"
-            )),
+        .map(|mode| {
+            GateMode::parse(mode)
+                .ok_or_else(|| format!("an unknown --fail-on mode {mode} reached dispatch"))
         })
         .collect::<Result<Vec<_>, _>>()?;
     let report = build_report(&scope, &modes).map_err(|error| error.to_string())?;

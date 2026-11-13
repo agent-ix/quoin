@@ -238,6 +238,7 @@ mod tests {
                 signature_code: letter,
                 path: "AN-001.md".to_owned(),
                 created: false,
+                renamed_from: None,
             };
             let change = Change::of_commit(&commit);
             assert_eq!(change.signature, expected, "{letter}");
