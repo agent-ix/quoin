@@ -318,3 +318,6 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 > `matrix.build`, which renders `reason`. AC-11's "absent or carries no
 > criteria" is unchanged: `matrix.build` renders `reason` whenever the
 > flattened criterion population is empty, which the absent form always is.
+
+> **CR-004 (PLAT-1529):** [FR-162](./FR-162-matrix-design-column.md) adds the design column. With entries that
+> have no criteria, `reason` and a non-empty `requirements` can coexist, as FR-162 states.
