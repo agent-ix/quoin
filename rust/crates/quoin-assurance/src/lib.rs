@@ -44,7 +44,7 @@ pub mod render;
 pub use argument::{
     ArgumentError, ArgumentKind, ArgumentStatus, Assumption, AssumptionStatus, AssuranceArgument,
     Challenge, ChallengeStatus, Participant, Reasoning, Relationship, RelationshipType, TopClaim,
-    instant_epoch_millis, parse_assurance_argument,
+    parse_assurance_argument,
 };
 pub use authored::{
     ArgumentSummary, AssumptionView, AuthoredArgumentView, BuildAuthoredArgumentRequest,

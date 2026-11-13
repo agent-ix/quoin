@@ -51,7 +51,7 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 | FR-144-AC-2 | A record with `serves` absent, one with `serves: []` and one with ids render `not stated`, `none` and the ids respectively, and `known_anomalies` renders `not stated` and `none` for absent and empty. | Test |
 | FR-144-AC-3 | A record with an unresolved advisory sorts before a record past end of support, which sorts before a clean record; ties sort by purl. | Test |
 | FR-144-AC-4 | A record with both an unresolved advisory and a past end-of-support date appears once, in the first group, and shows both flags. | Test |
-| FR-144-AC-5 | Unmatched advisories, a not-run scan, a refused scan and a vacuous scan each appear after the rows with their reason. | Test |
+| FR-144-AC-5 | Unmatched advisories, a not-run scan (including one whose log was refused at recording, FR-142), and a vacuous scan each appear after the rows with their reason. | Test |
 | FR-144-AC-6 | Two records with one purl refuse the report naming both files. | Test |
 | FR-144-AC-7 | Running the command twice with the same inputs and `--as-of` yields byte-identical Markdown and byte-identical JSON. | Test |
 | FR-144-AC-8 | The command run in a repository with the SBOM document removed yields the same output. | Test |
