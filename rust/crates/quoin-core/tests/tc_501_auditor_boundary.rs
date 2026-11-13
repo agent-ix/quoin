@@ -84,6 +84,50 @@ fn input() -> Value {
     })
 }
 
+fn profile_source_request(with_class_policy: bool) -> Value {
+    let obligation = "FR-160-AC-10";
+    let mut request = json!({
+        "input": {
+            "obligations": [{
+                "id": obligation,
+                "statement": "The requirement has a profile-selected independence assessment.",
+            }],
+            "independence": [{
+                "profile": "AP-1",
+                "requirement": "IND-1",
+                "obligation": obligation,
+                "status": "insufficient",
+                "dimensions": [{ "dimension": "actor", "values": ["ann"], "missingSuites": [] }],
+                "summary": "The evidence lines share an actor.",
+            }],
+            "independencePolicy": {
+                "schemaVersion": 1,
+                "profile": "AP-1",
+                "requirements": [{
+                    "id": "IND-1",
+                    "obligation": obligation,
+                    "dimensions": ["actor"],
+                    "rationale": "The profile requires a distinct evidence actor.",
+                }],
+            },
+            "classPolicy": {
+                "class_field": "software_safety_class",
+                "classes": { "class-1": { "rationale": "Human-assigned class policy." } },
+            },
+            "carriedVocabulary": { "software_safety_class": ["class-1"] },
+            "coverageMatrix": [{
+                "document": "spec/FR-160-AC-10.md",
+                "carried": { "software_safety_class": "class-1" },
+                "criteria": [{ "id": obligation, "binders": [], "status": "tagged" }],
+            }],
+        }
+    });
+    if !with_class_policy {
+        request["input"].as_object_mut().unwrap().remove("classPolicy");
+    }
+    request
+}
+
 /// `auditor.audit` reports the unbound obligation.
 ///
 /// Provenance: agent-ix/quoin#501
@@ -96,6 +140,26 @@ fn tc_501_600_audit_reports_an_unbound_obligation_through_the_binary() {
     assert_eq!(findings.len(), 1, "{payload}");
     assert_eq!(findings[0]["kind"], "undischarged");
     assert_eq!(findings[0]["obligation"], "FR-001-AC-1");
+}
+
+/// The profile source survives the typed response boundary only when needed.
+#[trace("FR-160-AC-10")]
+#[test]
+fn tc_501_601_profile_assessment_source_survives_audit_boundary() {
+    let with_class = payload(&run(
+        "auditor.audit",
+        &profile_source_request(true).to_string(),
+    ));
+    assert_eq!(with_class["independence"][0]["source"], "profile", "{with_class}");
+
+    let without_class = payload(&run(
+        "auditor.audit",
+        &profile_source_request(false).to_string(),
+    ));
+    assert!(
+        without_class["independence"][0].get("source").is_none(),
+        "{without_class}"
+    );
 }
 
 /// `auditor.advise` answers one row per obligation, in the order they arrived.

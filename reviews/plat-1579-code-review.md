@@ -81,3 +81,86 @@ move. FND-002 and FND-003 are optional.
 | quoin-assurance matrix class column / unclassified count / markdown | examined | Switch is `classReport`'s presence |
 | quoin-cli `--class-policy`, `add_class_inputs`, JSON/text rendering | examined | YAML via no-alias reader; refusal left to the auditor |
 | `requirement_of` move to quoin-quire-types | examined | Moved, not copied; re-exported |
+
+
+## Disposition Round 1 Evidence
+
+Replacement reviewer: `gpt-6-astra`; run `9118bc4b-9e8a-4c1f-9f5b-4d09820fcc63`; Codex session
+`01a1d6e9-d820-7821-83d5-1b05bd42a929`. Sole reviewer for this disposition.
+Ticket: PLAT-1579; PR: agent-ix/quoin#880. Reviewed pushed head
+`fb4c9ab7ab65bdbcc5bcf0b97150b99d600d0a1b` and fixes `f2f627dd` and `fb4c9ab7`.
+Final diff: `git diff origin/main...HEAD`, merge base `63acd34f8a571f4f51541433df86757360670b30`;
+verified origin/main `2975c419cfefdf38745386e3b72c3bb63c3c0613` against the remote.
+All 27 changed files and the three committed review artifacts were inspected.
+
+Current outcome: **3 fixed; no open findings in this artifact.** No new findings. Original findings and prior review text above
+are retained verbatim; the following rows are this round's current dispositions.
+
+Verification: source, test-assertion, spec and pushed-commit inspection; `git diff --check
+origin/main...HEAD` passed. No Cargo build/test, mutation run, computed matrix rerun or aggregate
+gate ran in this pass. Earlier test/mutation claims above remain historical, not results for
+this head. The aggregate gate belongs to the code lead. Tools: quoin `0.30.1`, quire `0.44.0`
+(engine `0.59.1`), spec-artifacts-process `v0.31.0`. Validation uses this artifact's explicit
+scratch path with `quire validate --scope .`.
+
+## Assurance Context
+
+AP-201 (`spec/assurance/AP-201-finding-quality.md`) applies to the changed deterministic audit
+and matrix report views. Inspected population preservation, source provenance, class/profile
+separation, and optional-output compatibility in the changed auditor, assurance and CLI paths
+and the core boundary. The remaining source-provenance loss is dispositioned once in
+SR-20261113203415 FND-007. AP-202 concerns live Jev lens evaluation and does not apply.
+No new measurement, impact, exception, structural-gap or producer-reliance decision is supplied
+for this disposition; no green measurement/gate or human acceptance is inferred. This is the
+requested disposition of existing artifacts, not a new enforced spec-review run.
+
+## Dispositions
+
+### Round 1
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | f2f627dd restores the unrelated semantic-schema revision and transitive Windows/hashbrown resolutions. The final origin/main...HEAD lock diff changes only quire-code-extraction, quire-fixtures and quire-rs; both manifests agree on 5a45ec9 / quire-rs 0.60.0. |
+| FND-002 | fixed | f2f627dd removes the unconditional obligation-vector clone and the per-obligation Binding deep clones. fb4c9ab7 factors lazy class-report assembly into this helper. class.rs:302 passes borrowed bindings to assess_lines; independence.rs:179-183 accepts &[&Binding] and sorts only references. |
+| FND-003 | fixed | f2f627dd removes the extra blank line; exactly one separates schemars from [features]. |
+
+```yaml
+dispositions:
+- fnd: FND-001
+  outcome: fixed
+  reason: f2f627dd restores the unrelated semantic-schema revision and transitive Windows/hashbrown resolutions.
+    The final origin/main...HEAD lock diff changes only quire-code-extraction, quire-fixtures and quire-rs; both
+    manifests agree on 5a45ec9 / quire-rs 0.60.0.
+  after_path: rust/Cargo.lock
+  after_lines: 20-22
+  after_excerpt: |-
+    name = "agent-ix-semantic-schema"
+    version = "0.3.0"
+    source = "git+https://github.com/agent-ix/filament-core-data?branch=main#ce72bc519945ca4676f1b8f1e19f44f44303513d"
+- fnd: FND-002
+  outcome: fixed
+  reason: f2f627dd removes the unconditional obligation-vector clone and the per-obligation Binding deep clones.
+    fb4c9ab7 factors lazy class-report assembly into this helper. class.rs:302 passes borrowed bindings to assess_lines;
+    independence.rs:179-183 accepts &[&Binding] and sorts only references.
+  after_path: rust/crates/quoin-auditor/src/audit/mod.rs
+  after_lines: 294-303
+  after_excerpt: |
+    fn class_report(
+        indexed: &Indexed<'_>,
+        obligations: &[&quoin_quire_types::Obligation],
+    ) -> Option<serde_json::Value> {
+        indexed
+            .class
+            .as_ref()
+            .map(|class| class.report(obligations))
+    }
+- fnd: FND-003
+  outcome: fixed
+  reason: f2f627dd removes the extra blank line; exactly one separates schemars from [features].
+  after_path: rust/crates/quoin-quire-types/Cargo.toml
+  after_lines: 29-31
+  after_excerpt: |-
+    schemars = { workspace = true, optional = true }
+
+    [features]
+```

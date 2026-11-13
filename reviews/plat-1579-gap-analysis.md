@@ -69,3 +69,147 @@ a dimension that is not shared. The rest is low.
 | `ClassContext` (class.rs) | examined | FND-001, FND-002, FND-003, FND-005 |
 | ladder `independence_failed` | examined | Early-return mutant caught; FND-006, FND-007 |
 | `floor_for` | examined | FND-004 |
+
+
+## Disposition Round 1 Evidence
+
+Replacement reviewer: `gpt-6-astra`; run `9118bc4b-9e8a-4c1f-9f5b-4d09820fcc63`; Codex session
+`01a1d6e9-d820-7821-83d5-1b05bd42a929`. Sole reviewer for this disposition.
+Ticket: PLAT-1579; PR: agent-ix/quoin#880. Reviewed pushed head
+`fb4c9ab7ab65bdbcc5bcf0b97150b99d600d0a1b` and fixes `f2f627dd` and `fb4c9ab7`.
+Final diff: `git diff origin/main...HEAD`, merge base `63acd34f8a571f4f51541433df86757360670b30`;
+verified origin/main `2975c419cfefdf38745386e3b72c3bb63c3c0613` against the remote.
+All 27 changed files and the three committed review artifacts were inspected.
+
+Current outcome: **6 fixed; FND-007 still-open. PR not mergeable.** No new findings. Original findings and prior review text above
+are retained verbatim; the following rows are this round's current dispositions.
+
+Verification: source, test-assertion, spec and pushed-commit inspection; `git diff --check
+origin/main...HEAD` passed. No Cargo build/test, mutation run, computed matrix rerun or aggregate
+gate ran in this pass. Earlier test/mutation claims above remain historical, not results for
+this head. The aggregate gate belongs to the code lead. Tools: quoin `0.30.1`, quire `0.44.0`
+(engine `0.59.1`), spec-artifacts-process `v0.31.0`. Validation uses this artifact's explicit
+scratch path with `quire validate --scope .`.
+
+## Dispositions
+
+### Round 1
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | f2f627dd adds a_bound_scan_record_of_the_kind_satisfies_a_required_method: its only binding names scanner, runs is empty, and only scans supplies evidence. Matching mutation-run clears the finding; test-run restores it. |
+| FND-002 | fixed | f2f627dd checks the exact shortfall suffix and rejects technique (shared) for two lines whose techniques differ. The previously surviving < to <= change would fail these assertions. |
+| FND-003 | fixed | f2f627dd asserts the exact one-line shortfall. Removing or inverting the lines < 2 return would now fail this test. |
+| FND-004 | fixed | f2f627dd adds equal 0.7 class and criticality floors and asserts criticality high. FR-160 mutation wording and AC-5 now state the same tie rule. |
+| FND-005 | fixed | f2f627dd adds both absent and empty evidence_kind catalog entries (lines 133-137) and exercises them in the refusal table (lines 570-583), checking ClassPolicyRefused and the method name. This separate deserialization test rejects mutation_flor; the production core read fails before invoking audit and producing an audit payload. |
+| FND-006 | fixed | f2f627dd computes the class assessment before ladder::run and appends it to class_independence after the call, independent of the ladder early-return path. The new undischarged-obligation test checks one insufficient record with the correct obligation. Stale and vacuous-scan early returns share this same enclosing path. |
+| FND-007 | still-open | f2f627dd adds source: profile to the library report at rust/crates/quoin-auditor/src/audit/mod.rs:264-270, but rust/crates/quoin-core/src/ops/auditor/mod.rs:74-89 removes independence and deserializes it as Vec<IndependenceAssessment>. That type (rust/crates/quoin-evidence/src/types/independence.rs:120-139) has neither a source field nor a flattened remainder, so serde discards source. CLI JSON uses that reserialized boundary member at rust/crates/quoin-cli/src/evidence/audit.rs:175. The new test at tc_160_class_floors.rs:394 calls only the library and misses this loss. Preserve the source through the typed core/CLI payload and add a boundary assertion with and without a class policy, or make the explicitly permitted spec correction. The documented profile record source is still absent from user-visible audit output. |
+
+```yaml
+dispositions:
+- fnd: FND-001
+  outcome: fixed
+  reason: 'f2f627dd adds a_bound_scan_record_of_the_kind_satisfies_a_required_method: its only binding names scanner,
+    runs is empty, and only scans supplies evidence. Matching mutation-run clears the finding; test-run restores
+    it.'
+  after_path: rust/crates/quoin-auditor/tests/tc_160_class_floors.rs
+  after_lines: 788-791
+  after_excerpt: |2-
+        input.scans = Some(vec![scan("mutation-run")]);
+        assert!(of_kind(&report(&input), "class-method-missing").is_empty());
+        input.scans = Some(vec![scan("test-run")]);
+        assert_eq!(of_kind(&report(&input), "class-method-missing").len(), 1);
+- fnd: FND-002
+  outcome: fixed
+  reason: f2f627dd checks the exact shortfall suffix and rejects technique (shared) for two lines whose techniques
+    differ. The previously surviving < to <= change would fail these assertions.
+  after_path: rust/crates/quoin-auditor/tests/tc_160_class_floors.rs
+  after_lines: 336-344
+  after_excerpt: |2-
+        // Only the dimension the two lines truly share is named.
+        assert!(
+            found[0]
+                .summary
+                .ends_with("Still shared or missing: actor (shared)."),
+            "{}",
+            found[0].summary
+        );
+        assert!(!found[0].summary.contains("technique (shared)"));
+- fnd: FND-003
+  outcome: fixed
+  reason: f2f627dd asserts the exact one-line shortfall. Removing or inverting the lines < 2 return would now fail
+    this test.
+  after_path: rust/crates/quoin-auditor/tests/tc_160_class_floors.rs
+  after_lines: 363-371
+  after_excerpt: |2-
+        let found = of_kind(&alone, "insufficient-independence");
+        assert_eq!(found.len(), 1);
+        assert!(
+            found[0]
+                .summary
+                .ends_with("Fewer than two evidence lines are bound."),
+            "{}",
+            found[0].summary
+        );
+- fnd: FND-004
+  outcome: fixed
+  reason: f2f627dd adds equal 0.7 class and criticality floors and asserts criticality high. FR-160 mutation wording
+    and AC-5 now state the same tie rule.
+  after_path: rust/crates/quoin-auditor/tests/tc_160_class_floors.rs
+  after_lines: 473-480
+  after_excerpt: |2-
+        let tie = crit_and_class(Some("high"), Some("class-2"), 0.7, 0.7);
+        let found = of_kind(&tie, "insufficient-mutation-score");
+        assert_eq!(found.len(), 1);
+        assert!(
+            found[0].summary.contains("criticality high"),
+            "a tie names criticality: {}",
+            found[0].summary
+        );
+- fnd: FND-005
+  outcome: fixed
+  reason: f2f627dd adds both absent and empty evidence_kind catalog entries (lines 133-137) and exercises them in
+    the refusal table (lines 570-583), checking ClassPolicyRefused and the method name. This separate deserialization
+    test rejects mutation_flor; the production core read fails before invoking audit and producing an audit payload.
+  after_path: rust/crates/quoin-auditor/tests/tc_160_class_floors.rs
+  after_lines: 746-754
+  after_excerpt: |-
+    fn an_unknown_policy_key_is_refused() {
+        let misspelt = json!({
+            "class_field": "class",
+            "classes": { "class-2": { "mutation_flor": 0.8, "rationale": RATIONALE } }
+        });
+        let error = serde_json::from_value::<quoin_auditor::audit::ClassPolicy>(misspelt)
+            .expect_err("an unknown key is refused");
+        assert!(error.to_string().contains("mutation_flor"), "{error}");
+    }
+- fnd: FND-006
+  outcome: fixed
+  reason: f2f627dd computes the class assessment before ladder::run and appends it to class_independence after the
+    call, independent of the ladder early-return path. The new undischarged-obligation test checks one insufficient
+    record with the correct obligation. Stale and vacuous-scan early returns share this same enclosing path.
+  after_path: rust/crates/quoin-auditor/src/audit/mod.rs
+  after_lines: 184-194
+  after_excerpt: |2-
+            let class_assessment = indexed
+                .class
+                .as_ref()
+                .and_then(|class| class.independence(obligation, &bindings));
+            let mut pass = ladder::run(
+                input,
+                &indexed,
+                obligation,
+                &bindings,
+                class_assessment.as_ref(),
+            )?;
+- fnd: FND-007
+  outcome: still-open
+  reason: 'f2f627dd adds source: profile to the library report at rust/crates/quoin-auditor/src/audit/mod.rs:264-270,
+    but rust/crates/quoin-core/src/ops/auditor/mod.rs:74-89 removes independence and deserializes it as Vec<IndependenceAssessment>.
+    That type (rust/crates/quoin-evidence/src/types/independence.rs:120-139) has neither a source field nor a flattened
+    remainder, so serde discards source. CLI JSON uses that reserialized boundary member at rust/crates/quoin-cli/src/evidence/audit.rs:175.
+    The new test at tc_160_class_floors.rs:394 calls only the library and misses this loss. Preserve the source
+    through the typed core/CLI payload and add a boundary assertion with and without a class policy, or make the
+    explicitly permitted spec correction. The documented profile record source is still absent from user-visible
+    audit output.'
+```

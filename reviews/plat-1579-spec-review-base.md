@@ -47,3 +47,54 @@ is not stated.
 | FR-160 Mutation floor bullet | examined | FND-002 |
 | FR-160-AC-1..AC-13, CON-1, CON-2 | context_only | Unchanged; read for the amendment's consistency |
 | FR-161 policy `obligations` entries, FR-161-AC-8 | context_only | Read for FND-001 |
+
+
+## Disposition Round 1 Evidence
+
+Replacement reviewer: `gpt-6-astra`; run `9118bc4b-9e8a-4c1f-9f5b-4d09820fcc63`; Codex session
+`01a1d6e9-d820-7821-83d5-1b05bd42a929`. Sole reviewer for this disposition.
+Ticket: PLAT-1579; PR: agent-ix/quoin#880. Reviewed pushed head
+`fb4c9ab7ab65bdbcc5bcf0b97150b99d600d0a1b` and fixes `f2f627dd` and `fb4c9ab7`.
+Final diff: `git diff origin/main...HEAD`, merge base `63acd34f8a571f4f51541433df86757360670b30`;
+verified origin/main `2975c419cfefdf38745386e3b72c3bb63c3c0613` against the remote.
+All 27 changed files and the three committed review artifacts were inspected.
+
+Current outcome: **2 fixed; no open findings in this artifact.** No new findings. Original findings and prior review text above
+are retained verbatim; the following rows are this round's current dispositions.
+
+Verification: source, test-assertion, spec and pushed-commit inspection; `git diff --check
+origin/main...HEAD` passed. No Cargo build/test, mutation run, computed matrix rerun or aggregate
+gate ran in this pass. Earlier test/mutation claims above remain historical, not results for
+this head. The aggregate gate belongs to the code lead. Tools: quoin `0.30.1`, quire `0.44.0`
+(engine `0.59.1`), spec-artifacts-process `v0.31.0`. Validation uses this artifact's explicit
+scratch path with `quire validate --scope .`.
+
+## Dispositions
+
+### Round 1
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | f2f627dd narrows the unknown-key statement to exclude obligations entries and assigns their validation to FR-161. This matches ClassFloors.obligations and FR-161-AC-8. |
+| FND-002 | fixed | f2f627dd states criticality on a tie in both the mutation-floor description and AC-5; the new 0.7/0.7 test asserts the same source. No ratio or floor behavior was weakened. |
+
+```yaml
+dispositions:
+- fnd: FND-001
+  outcome: fixed
+  reason: f2f627dd narrows the unknown-key statement to exclude obligations entries and assigns their validation
+    to FR-161. This matches ClassFloors.obligations and FR-161-AC-8.
+  after_path: spec/functional/FR-160-per-class-evidence-floors.md
+  after_lines: 56-57
+  after_excerpt: |-
+    An unknown key anywhere in the file outside a class's `obligations` entries is refused; those entries
+    belong to FR-161, which validates them.
+- fnd: FND-002
+  outcome: fixed
+  reason: f2f627dd states criticality on a tie in both the mutation-floor description and AC-5; the new 0.7/0.7
+    test asserts the same source. No ratio or floor behavior was weakened.
+  after_path: spec/functional/FR-160-per-class-evidence-floors.md
+  after_lines: 114-114
+  after_excerpt: |-
+    An obligation whose FR-053 criticality column is `high` and whose requirement carries no class gets only criticality floors; one whose requirement carries a class and whose column is empty gets only class floors; with both, the higher mutation ratio is evaluated and the finding names its source, and criticality when the two ratios are equal.
+```
