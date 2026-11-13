@@ -182,5 +182,5 @@ no `traceIds` and binds nothing by itself.
 - **Upstream enablement**: the `quire-analyze` library builds on every quoin release target, including
   `x86_64-pc-windows-msvc` (VER-73 removes the unguarded `std::os::unix` import from its runner); VER-80 checks the
   Windows target builds before the dependency lands.
-- **Downstream**: retained-evidence counting over these entries is specified separately and is not part of this
-  requirement.
+- **Downstream**: retained-evidence counting over these entries is [FR-152](./FR-152-analysis-run-entry-link-to-obligation.md) and
+  [FR-153](./FR-153-analysis-result-counting-by-disposition.md), and is not part of this requirement.

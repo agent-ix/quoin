@@ -139,4 +139,6 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-148: Risk advice decision queue: undecided residual-risk, benefit-risk and overall decisions, ordered by id](./FR-148-risk-advise-decision-queue.md)
 - [FR-149: Grype advisory report adapter](./FR-149-grype-advisory-report-adapter.md)
 - [FR-151: Differential report v2 adapter](./FR-151-differential-report-v2-adapter.md)
+- [FR-152: An analysis run entry binds to an obligation only through the obligation ids the recorder states](./FR-152-analysis-run-entry-link-to-obligation.md)
+- [FR-153: An analysis result counts toward an obligation only as a qualified passing record](./FR-153-analysis-result-counting-by-disposition.md)
 - [FR-150: Licence and ban policy findings from the ingested SBOM](./FR-150-licence-and-ban-policy-findings.md)

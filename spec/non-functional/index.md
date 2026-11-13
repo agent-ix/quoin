@@ -34,3 +34,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-030: SOUP promotion and report never invent a fact or a score](./NFR-030-soup-views-state-and-never-derive.md)
 - [NFR-031: Risk advice states what people wrote and never decides](./NFR-031-risk-advice-states-and-never-decides.md)
 - [NFR-032: Differential report intake is bounded and deterministic](./NFR-032-differential-report-intake-is-bounded-and-deterministic.md)
+- [NFR-033: Counting an analysis result never infers a binding and is order-independent](./NFR-033-analysis-counting-never-infers-a-binding.md)
