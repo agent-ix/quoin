@@ -31,3 +31,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-025: Evidence and accepted-corpus bytes are immutable across the port](./NFR-025-immutable-evidence-and-corpus-bytes.md)
 - [NFR-027: Rust implementation idioms and the gates that enforce them](./NFR-027-rust-implementation-idioms-and-gates.md)
 - [NFR-029: A result artifact is interpretable without its source tree](./NFR-029-self-contained-result-evidence.md)
+- [NFR-030: SOUP promotion and report never invent a fact or a score](./NFR-030-soup-views-state-and-never-derive.md)
