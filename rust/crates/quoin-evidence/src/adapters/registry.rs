@@ -10,7 +10,7 @@
 
 use super::{
     AdapterResult, FindingResult, agent_eval, audit_script, cargo_deny, cargo_mutants,
-    contract_conformance, differential_report, entries, junit, sarif, sbom,
+    contract_conformance, differential_report, entries, junit, licence_policy, sarif, sbom,
 };
 use crate::error::EvidenceError;
 
@@ -49,7 +49,47 @@ pub struct FindingAdapter {
     /// Tool identifiers this adapter claims.
     pub tools: &'static [&'static str],
     /// The parser.
-    pub parse: fn(&str) -> Result<FindingResult, EvidenceError>,
+    pub parse: FindingParser,
+}
+
+/// What a finding adapter reads: the results document alone, or the results
+/// and a person-authored policy file (`licence-policy`, FR-150).
+#[derive(Clone, Copy, Debug)]
+pub enum FindingParser {
+    /// One input, the tool's own output.
+    Results(fn(&str) -> Result<FindingResult, EvidenceError>),
+    /// The results and the policy they are evaluated against.
+    ResultsAndPolicy(fn(&str, &str) -> Result<FindingResult, EvidenceError>),
+}
+
+impl FindingAdapter {
+    /// Run the adapter over its inputs.
+    ///
+    /// # Errors
+    ///
+    /// Refuses a policy given to an adapter that takes none, and a missing
+    /// policy for one that needs it, each naming the adapter; and whatever the
+    /// parser refuses.
+    pub fn run(&self, results: &str, policy: Option<&str>) -> Result<FindingResult, EvidenceError> {
+        match (self.parse, policy) {
+            (FindingParser::Results(parse), None) => parse(results),
+            (FindingParser::ResultsAndPolicy(parse), Some(policy)) => parse(results, policy),
+            (FindingParser::Results(_), Some(_)) => Err(refuse_policy(self.name)),
+            (FindingParser::ResultsAndPolicy(_), None) => Err(EvidenceError::adapter(
+                self.name,
+                "usage: --policy <file> is required (a person-authored licence-policy-v1 file)",
+            )),
+        }
+    }
+}
+
+/// `--policy` given to an adapter that takes none (FR-150-AC-13).
+#[must_use]
+pub fn refuse_policy(adapter: &str) -> EvidenceError {
+    EvidenceError::adapter(
+        adapter,
+        "--policy applies only to the licence-policy adapter; nothing was recorded",
+    )
 }
 
 /// Every run-shaped adapter quoin ships, in the order `--help` lists them.
@@ -100,8 +140,8 @@ pub static ADAPTERS: &[RunAdapter] = &[
     },
     RunAdapter {
         name: "differential-report",
-        summary: "Domain differential summary (<domain>.differential-summary/v1) — engine versus external reference, case by case.",
-        tools: &["differential-report", "tl-mltl", "r2u2", "c2po"],
+        summary: "quire-analyze differential report (quire.differential-report/v2) — one analysis request judged by two SMT engines.",
+        tools: &["differential-report", "quire-analyze"],
         parse: differential_report::parse_differential_report,
     },
 ];
@@ -112,7 +152,7 @@ pub static FINDING_ADAPTERS: &[FindingAdapter] = &[
         name: "sarif",
         summary: "SARIF 2.1.0 — semgrep --sarif, CodeQL, ESLint, ZAP via converter.",
         tools: &["sarif", "semgrep", "codeql"],
-        parse: sarif::parse_sarif,
+        parse: FindingParser::Results(sarif::parse_sarif),
     },
     FindingAdapter {
         name: "audit-script",
@@ -124,19 +164,25 @@ pub static FINDING_ADAPTERS: &[FindingAdapter] = &[
             "import-linter",
             "dependency-cruiser",
         ],
-        parse: audit_script::parse_audit_script,
+        parse: FindingParser::Results(audit_script::parse_audit_script),
     },
     FindingAdapter {
         name: "cargo-audit",
         summary: "cargo audit --json — RUSTSEC advisories and warning kinds.",
         tools: &["cargo-audit", "cargo audit"],
-        parse: sarif::parse_cargo_audit,
+        parse: FindingParser::Results(sarif::parse_cargo_audit),
     },
     FindingAdapter {
         name: "cargo-deny",
         summary: "cargo deny --format json check — advisory, ban, licence and source diagnostics.",
         tools: &["cargo-deny", "cargo deny"],
-        parse: cargo_deny::parse_cargo_deny,
+        parse: FindingParser::Results(cargo_deny::parse_cargo_deny),
+    },
+    FindingAdapter {
+        name: "licence-policy",
+        summary: "An SBOM's declared licences against a person-authored licence-policy-v1 file (--policy) — denied, not-allowed, unknown and banned components.",
+        tools: &["licence-policy"],
+        parse: FindingParser::ResultsAndPolicy(licence_policy::parse_licence_policy),
     },
 ];
 
@@ -253,6 +299,7 @@ mod tests {
                 "audit-script",
                 "cargo-audit",
                 "cargo-deny",
+                "licence-policy",
             ]
         );
         let distinct: BTreeSet<&str> = adapter_names().into_iter().collect();

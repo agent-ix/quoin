@@ -71,9 +71,7 @@ verbatim with the reason no outcome holds it, and `quoin evidence record`
 prints each one:
 
 ```
-  not transcribed — <analysisKind>::<requestDigest> reported disagreement: <engine> <status>/<outcome>,
-  <engine> <status>/<outcome>; that is neither a pass nor a fail nor an error,
-  and no run-entry outcome carries it
+  not transcribed — <analysisKind>::<requestDigest> reported disagreement: the two engines both ran and concluded opposite results (<engine> status <status> outcome <outcome>; <engine> status <status> outcome <outcome>); that is neither a pass nor a fail nor an error, and no run-entry outcome carries it
 ```
 
 That is an adapter-layer field. It adds no record family, changes no stored

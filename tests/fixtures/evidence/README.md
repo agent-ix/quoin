@@ -44,3 +44,15 @@ scratch crate, with missed and caught mutants, unedited except that the absolute
 config over a scratch crate whose `Cargo.lock` lists the fictional `fictional-widget`
 (the root package, which Syft emits with no purl) and three fictional registry
 dependencies. It holds four components: three carry a purl, one is identified by name and version.
+
+`differential-report-v2/` holds `quire.differential-report/v2` documents for the
+`differential-report` adapter (FR-151, TC-001). Every file except one is a byte-exact
+capture of a report written by `quire-analyze run-package` (`agent-ix/quire-analyze`),
+driven over a stub `producer-execute` because Z3 and cvc5 are not installed where they were
+captured: `agreement-satisfied`, `agreement-refuted`, `disagreement`,
+`inconclusive-unknown`, `inconclusive-timeout` and `unavailable-missing-executable`.
+`unavailable-unsupported-platform` is `unavailable-missing-executable` with engine 0's
+`outcome` set to `unsupported-platform` and its `status` to `unsupported`, re-emitted
+canonically: a Linux runner reports a containment failure as `cleanup-failed`, so it cannot
+produce this outcome. `quire-analyze`'s own validator accepts it. The refusal fixtures are
+derived in `rust/crates/quoin-evidence/tests/tc_differential_report_v2.rs`, one change each.

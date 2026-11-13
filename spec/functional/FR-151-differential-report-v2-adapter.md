@@ -46,8 +46,11 @@ an edit here.
 Upstream enablement dependency: the `quire-analyze` library SHALL build on every quoin release target, and quoin
 releases `x86_64-pc-windows-msvc`. The library's runner imports `std::os::unix` unguarded today; that is being
 fixed in `quire-analyze` under VER-73. The change that implements this requirement (VER-80) checks that the
-dependency builds for the Windows target before it lands. The dependency also brings in `jsonschema =0.17.1`
-alongside quoin's own `=0.56.0`; both versions coexist in the lockfile.
+dependency builds for the Windows target before it lands. The dependency also brings in `jsonschema` 0.17.1 (quire-analyze) and 0.55.1
+(its `quire-verification-contracts`) alongside quoin's own 0.56.0, and `schemars` 0.8.22 beside quoin's 1.x. These
+duplicates are not accepted by default: `rust/deny.toml` carries one ruled skip group of exact versions for them,
+with its removal condition (the owners converging on `jsonschema` 0.56 and `schemars` 1.x, or the validator moving
+into its own small crate).
 
 ### This adapter replaces the `<domain>.differential-summary/v1` adapter
 
@@ -106,8 +109,10 @@ result.
 
 The entry symbol is `<analysisKind>::<requestDigest>`, both taken from the report. `requestDigest` is the
 analysis request's own identity as the producer assigned it; the adapter computes no digest and verifies none.
-The same request analysed again yields the same symbol, so a later run supersedes an earlier one in the store
-and a different request cannot overwrite it. The report names no obligation or criterion, so the entry carries
+The same request analysed again yields the same symbol. Each report is recorded as its own run, and the store's
+current view of a suite is its newest run, so a later run recorded into the same suite supersedes the earlier one
+whatever its request. Recording each request into its own suite, so that no request supersedes another, is the
+caller's choice; the adapter does not make it. The report names no obligation or criterion, so the entry carries
 no `traceIds` and binds nothing by itself.
 
 ## Behavior

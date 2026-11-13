@@ -11,6 +11,7 @@
 
 mod advisory;
 mod plan;
+mod policy;
 mod report;
 mod support;
 

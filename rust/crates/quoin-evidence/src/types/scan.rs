@@ -81,6 +81,11 @@ pub struct FindingRecord {
     pub rules_evaluated: Option<u64>,
     /// One entry per finding the scanner reported.
     pub findings: Vec<Finding>,
+    /// The symbols of the components the scan evaluated (FR-034-AC-27). Present
+    /// only where the adapter's tool evaluates a stated inventory; absent claims
+    /// nothing about coverage.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evaluated: Option<Vec<String>>,
 }
 
 #[cfg(test)]

@@ -28,8 +28,10 @@ workspace = true
 
 [dependencies]
 ix-trace-rs = { workspace = true }
+quire-analyze = { workspace = true }
 quoin-quire-types = { workspace = true }
 quoin-store = { workspace = true }
+quoin-yaml = { workspace = true }
 regex = "=1.13.1"
 serde = { workspace = true }
 serde_json = { workspace = true }

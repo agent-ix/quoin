@@ -84,12 +84,34 @@ read the working tree and git together, so they get their own topic.
   signature is present; trust and expiry are not judged here), `unsigned` for `N`, and `unknown` for
   `B`, `R` and `E` (a bad, revoked-key or uncheckable signature is not treated as signed).
 - Quoin SHALL NOT derive `status` from `statusHistory`.
-- Quoin SHALL NOT take any author or date from a field typed into the document.
 - If the file is not under git, then Quoin SHALL report `statusHistory` not applicable.
 - If the file is not under git, then Quoin SHALL emit no transition diagnostic.
 - If the working-tree `status` differs from the last entry's `status`, then Quoin SHALL append a
   pending final entry with that `status`, `commit` absent and `pending` true, and SHALL judge the
   move from the last entry to it like any other.
+- Quoin SHALL NOT take any author or date from a field typed into the document.
+- Quoin SHALL NOT read a hash of the fix from the document.
+
+### Fixing change
+
+The fixing change is a value Quoin derives from the git history of the file and reports next to
+`statusHistory`. It is not a record key and is not stored in the document or in the `Anomaly` record
+(spec-artifacts-process FR-015 forbids the record from carrying it).
+
+- Where the working-tree `resolution` is `fixed`, Quoin SHALL derive the fixing change as the first
+  `statusHistory` entry, after the most recent entry whose `status` is `assessed` (or from the first
+  entry when none has that `status`), whose `status` is `resolved` or `closed`.
+- Quoin SHALL report the fixing change as the entry's `commit`, `author`, `authoredAt`, `signature`
+  and `signatureCode`.
+- Quoin SHALL report the fixing change on the `quoin anomaly check` output, one line per document
+  after the document's diagnostics, naming the path, the word `fixingChange` and those values; a
+  reader of that output, including the later unresolved-anomaly report, takes the value from there.
+- If the working-tree `resolution` is `not-a-defect`, `duplicate`, `wont-fix` or absent, then Quoin
+  SHALL report `fixingChange` absent for the document.
+- If the entry that qualifies is the pending final entry, then Quoin SHALL report `fixingChange`
+  absent with the reason `pending`.
+- If the file is not under git, then Quoin SHALL report `fixingChange` not applicable.
+- Quoin SHALL emit no diagnostic for an absent or not-applicable `fixingChange`.
 
 ### Legality over squashed history
 
@@ -150,6 +172,10 @@ commit or commits involved.
 | FR-136-AC-10 | With `spec-objects-safety` not installed, an anomaly with two `Hazard` rows yields exactly one `anomaly.missing-module`, and `quire validate` still reports its own per-row diagnostics. | Test |
 | FR-136-AC-11 | Every diagnostic in AC-2, AC-3, AC-5 and AC-10 carries its code, severity `error`, its reason, and the line of the document's `status` field. | Test |
 | FR-136-AC-12 | Signature codes `G`, `U`, `X`, `Y` map to `signed`, `N` to `unsigned`, and `B`, `R`, `E` to `unknown`, with `signatureCode` equal to the git letter in each case. | Test |
+| FR-136-AC-13 | With `resolution` `fixed`, `quoin anomaly check` prints a `fixingChange` line holding the commit, author, authored date, `signature` and `signatureCode` of: the `resolved` entry for a history `identified`, `assessed`, `resolved`, `closed`; the second `resolved` entry for `resolved`, `assessed`, `resolved`; the `resolved` entry for a first entry `resolved`; the `resolved` entry for squashed `identified`, `resolved`. | Test |
+| FR-136-AC-14 | With `resolution` `fixed`, the `closed` entry is the fixing change for squashed `assessed`, `closed` and for squashed `identified`, `closed`. | Test |
+| FR-136-AC-15 | `fixingChange` is reported absent for `resolution` `wont-fix`, `duplicate`, `not-a-defect` and no `resolution`; absent with reason `pending` when the qualifying status exists only in the working tree; not applicable for a file outside git; and none of these yields a diagnostic. | Test |
+| FR-136-AC-16 | A document carrying a typed commit hash, author or date in its body or frontmatter yields a `fixingChange` that contains none of them, and the `Anomaly` record built from it has no `fixingChange` key. | Test |
 
 ## Dependencies
 

@@ -603,3 +603,126 @@ fn tc_1488_101_a_pack_that_fails_to_load_after_the_pack_check_is_refused_whole()
     assert!(message.contains("alpha"), "{message}");
     assert!(!message.contains("SENTINEL"), "{message}");
 }
+
+const SYFT_LICENCES: &str =
+    include_str!("../../../../quoin-evidence/tests/fixtures/licence-npm.syft.cdx.json");
+const LICENCE_POLICY: &str = "format: licence-policy-v1\nallow: [MIT]\ndeny: [GPL-3.0-only]\nban:\n  - purl: pkg:npm/fx-vale\n";
+
+fn licence_request(policy: Option<&str>, adapter: &str) -> serde_json::Value {
+    let mut request = json!({
+        "repo": "/somewhere",
+        "suite": "SUITE-LIC",
+        "tool": "licence-policy",
+        "timestamp": "2026-01-01T00:00:00Z",
+        "adapter": adapter,
+        "results": SYFT_LICENCES,
+    });
+    if let Some(policy) = policy {
+        request["policy"] = json!(policy);
+    }
+    request
+}
+
+fn stored_paths(host: &TestHost) -> Vec<String> {
+    host.store
+        .borrow()
+        .paths()
+        .into_iter()
+        .map(str::to_owned)
+        .collect()
+}
+
+/// The licence-policy adapter writes one scan under `scans/` and nothing under
+/// `runs/`, and the stored scan lists every component it evaluated and the
+/// policy's entries.
+#[trace("FR-150-AC-1", "FR-150-AC-15")]
+#[test]
+fn tc_1671_030_licence_policy_records_one_scan_and_no_run() {
+    let host = TestHost::empty();
+    let capabilities = Capabilities::with_evidence(&host);
+    let response = record(
+        &licence_request(Some(LICENCE_POLICY), "licence-policy"),
+        &capabilities,
+    )
+    .unwrap();
+    assert_eq!(response.payload["kind"], "scan");
+    assert_eq!(response.payload["rules_evaluated"], 5);
+    let rules: Vec<&str> = response.payload["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["ruleId"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        rules,
+        [
+            "licence-denied",
+            "licence-unknown",
+            "licence-not-allowed",
+            "licence-unknown",
+            "package-banned"
+        ]
+    );
+    let paths = stored_paths(&host);
+    assert!(paths.iter().any(|p| p.contains("scans/")), "{paths:?}");
+    assert!(!paths.iter().any(|p| p.contains("runs/")), "{paths:?}");
+    let scan_path = paths.iter().find(|p| p.contains("scans/")).unwrap();
+    let stored = host.store.borrow().read(scan_path).unwrap().unwrap();
+    let stored: serde_json::Value = serde_json::from_str(&stored).unwrap();
+    assert_eq!(stored["evaluated"].as_array().unwrap().len(), 5);
+    assert_eq!(stored["evaluated"][0], "pkg:npm/fx-ember@0.4.1");
+    assert!(stored["ruleset"].as_str().unwrap().contains("GPL-3.0-only"));
+}
+
+/// A missing policy, an invalid one and an unreadable SBOM each refuse, name the
+/// reason and write nothing.
+#[trace("FR-150-AC-6", "FR-150-AC-7", "FR-150-AC-8")]
+#[test]
+fn tc_1671_031_a_refused_input_writes_no_record() {
+    let host = TestHost::empty();
+    let capabilities = Capabilities::with_evidence(&host);
+    let missing = record(&licence_request(None, "licence-policy"), &capabilities).unwrap_err();
+    assert!(missing.message.contains("--policy"), "{}", missing.message);
+    let invalid = record(
+        &licence_request(
+            Some("format: licence-policy-v1\nallow: []\n"),
+            "licence-policy",
+        ),
+        &capabilities,
+    )
+    .unwrap_err();
+    assert!(
+        invalid.message.contains("`allow` is required"),
+        "{}",
+        invalid.message
+    );
+    let mut not_an_sbom = licence_request(Some(LICENCE_POLICY), "licence-policy");
+    not_an_sbom["results"] = json!(r#"{"hello":"world"}"#);
+    let refused = record(&not_an_sbom, &capabilities).unwrap_err();
+    assert!(
+        refused.message.contains("neither a CycloneDX"),
+        "{}",
+        refused.message
+    );
+    assert!(stored_paths(&host).is_empty());
+}
+
+/// `--policy` on the sbom, a finding-shaped scanner or any other run adapter is
+/// refused with an error naming the adapter, and nothing is recorded.
+#[trace("FR-150-AC-13")]
+#[test]
+fn tc_1671_032_policy_on_any_other_adapter_is_refused() {
+    let host = TestHost::empty();
+    let capabilities = Capabilities::with_evidence(&host);
+    for adapter in ["sbom", "cargo-deny", "cargo-audit", "junit", "sarif"] {
+        let mut request = licence_request(Some(LICENCE_POLICY), adapter);
+        request["tool"] = json!(adapter);
+        let error = record(&request, &capabilities).unwrap_err();
+        assert!(
+            error.message.contains(adapter) && error.message.contains("--policy"),
+            "{adapter}: {}",
+            error.message
+        );
+    }
+    assert!(stored_paths(&host).is_empty());
+}

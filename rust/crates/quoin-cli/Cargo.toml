@@ -58,6 +58,7 @@ quoin-assurance = { workspace = true, features = ["schema"] }
 quoin-jsonschema = { workspace = true }
 schemars = { workspace = true }
 quire-fixtures = { workspace = true }
+quire-analyze = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }

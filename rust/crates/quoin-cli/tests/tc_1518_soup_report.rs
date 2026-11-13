@@ -73,7 +73,7 @@ fn scan_record(tool: &str, suite: &str, raw: &str, vacuous: bool) -> FindingReco
         tool: Some(tool),
     })
     .unwrap();
-    let parsed = (adapter.parse)(raw).unwrap();
+    let parsed = adapter.run(raw, None).unwrap();
     FindingRecord {
         schema_version: STORE_SCHEMA_VERSION,
         suite: SuiteId::new(suite),
@@ -87,6 +87,7 @@ fn scan_record(tool: &str, suite: &str, raw: &str, vacuous: bool) -> FindingReco
             parsed.rules_evaluated
         },
         findings: parsed.findings,
+        evaluated: parsed.evaluated,
     }
 }
 
@@ -815,7 +816,7 @@ fn a_cargo_deny_log_refused_at_recording_leaves_the_scan_not_run_and_no_record_f
     })
     .unwrap();
     assert!(
-        (adapter.parse)(&refused).is_err(),
+        adapter.run(&refused, None).is_err(),
         "the log must be refused"
     );
 
@@ -865,7 +866,15 @@ fn with_every_optional_input_absent_every_value_is_unknown_not_stated_or_an_inpu
     for leaf in leaves {
         match leaf {
             Value::String(word) => assert!(
-                ["unknown", "not stated", "none"].contains(&word.as_str())
+                [
+                    "unknown",
+                    "not stated",
+                    "none",
+                    // No licence-policy scan is retained: the one status a row
+                    // states, rather than an invented verdict.
+                    "policy findings not assessed: licence-policy not run",
+                ]
+                .contains(&word.as_str())
                     || inputs.contains(&word.as_str()),
                 "{word} in {row}"
             ),
@@ -944,4 +953,269 @@ fn a_version_or_source_ref_of_the_wrong_type_refuses_instead_of_reading_as_not_s
         );
         assert!(output.stdout.is_empty());
     }
+}
+
+/// A minimal `CycloneDX` inventory written by hand for the report fixtures; the
+/// real Syft capture is exercised by the join tests.
+fn hand_written_sbom(components: &[(&str, &str, Option<&str>)]) -> String {
+    let components: Vec<Value> = components
+        .iter()
+        .map(|(name, version, licence)| {
+            let mut component = json!({
+                "name": name, "version": version,
+                "purl": format!("pkg:{name}@{version}"),
+            });
+            if let Some(licence) = licence {
+                component["licenses"] = json!([{ "license": { "id": licence } }]);
+            }
+            component
+        })
+        .collect();
+    json!({ "bomFormat": "CycloneDX", "components": components }).to_string()
+}
+
+const LICENCE_POLICY: &str = "format: licence-policy-v1\nallow: [MIT]\ndeny: [GPL-3.0-only]\nban:\n  - purl: pkg:npm/banned-pkg\n    reason: abandoned\n";
+
+impl Repo {
+    /// Store a `licence-policy` scan made the way recording makes one.
+    fn licence(&self, suite: &str, timestamp: &str, sbom: &str) {
+        let parsed = quoin_evidence::adapters::parse_licence_policy(sbom, LICENCE_POLICY).unwrap();
+        self.store(&FindingRecord {
+            schema_version: STORE_SCHEMA_VERSION,
+            suite: SuiteId::new(suite),
+            tool: "licence-policy".to_owned(),
+            evidence_kind: None,
+            timestamp: timestamp.to_owned(),
+            ruleset: parsed.ruleset,
+            rules_evaluated: parsed.rules_evaluated,
+            findings: parsed.findings,
+            evaluated: parsed.evaluated,
+        });
+    }
+}
+
+/// An npm record with a denied licence resolved by an attested disposition, a
+/// `PyPI` record with an unknown licence unresolved, and an npm record banned:
+/// each on its own row with tool, rule id and severity word, apart from the
+/// advisories, the unresolved ones in the first group.
+#[trace("FR-144-AC-18")]
+#[test]
+fn policy_findings_render_on_their_rows_apart_from_advisories() {
+    let repo = Repo::new();
+    repo.record(
+        "denied",
+        "pkg:npm/denied-pkg@1.0.0",
+        &["disposition_clause: \"C-DISP\""],
+    );
+    repo.record("unknown", "pkg:pypi/unknown-pkg@2.0.0", &[]);
+    repo.record("banned", "pkg:npm/banned-pkg@3.0.0", &[]);
+    repo.licence(
+        "lic",
+        SCANNED,
+        &hand_written_sbom(&[
+            ("npm/denied-pkg", "1.0.0", Some("GPL-3.0-only")),
+            ("pypi/unknown-pkg", "2.0.0", None),
+            ("npm/banned-pkg", "3.0.0", Some("MIT")),
+        ]),
+    );
+    let binding = repo.binding(&["C-DISP"]);
+    let report = report_json(&repo, &binding, &[]);
+
+    let purls: Vec<&str> = report["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| row["purl"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        purls,
+        [
+            "pkg:npm/banned-pkg@3.0.0",
+            "pkg:pypi/unknown-pkg@2.0.0",
+            "pkg:npm/denied-pkg@1.0.0",
+        ]
+    );
+    let denied = row(&report, "pkg:npm/denied-pkg@1.0.0");
+    assert_eq!(denied["advisories"], json!([]));
+    let finding = &denied["policy_findings"][0];
+    assert_eq!(finding["tool"], "licence-policy");
+    assert_eq!(finding["rule_id"], "licence-denied");
+    assert_eq!(finding["severity"], "denied");
+    assert_eq!(finding["resolution"]["state"], "resolved");
+    assert_eq!(finding["resolution"]["attested_by"], "reviewer-1");
+    let unknown = &row(&report, "pkg:pypi/unknown-pkg@2.0.0")["policy_findings"][0];
+    assert_eq!(unknown["rule_id"], "licence-unknown");
+    assert_eq!(unknown["message"], "no licence declared");
+    assert_eq!(unknown["resolution"]["state"], "unresolved");
+    assert_eq!(unknown["resolution"]["reason"], "no disposition clause");
+    let banned = row(&report, "pkg:npm/banned-pkg@3.0.0");
+    assert_eq!(banned["policy_findings"][0]["rule_id"], "package-banned");
+    assert_eq!(banned["policy_findings"][0]["severity"], "banned");
+    assert_eq!(banned["unresolved_policy_finding"], true);
+    assert_eq!(banned["unresolved_advisory"], false);
+
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert!(
+        markdown
+            .contains("licence-policy package-banned pkg:npm/banned-pkg@3.0.0 (severity: banned;"),
+        "{markdown}"
+    );
+    assert!(markdown.contains("unresolved policy finding"), "{markdown}");
+}
+
+/// Not run, vacuous, unordered, and a record absent from `evaluated` each state
+/// their own status; none states `no policy findings`; a finding for a purl with
+/// no record is appended as unmatched.
+#[trace("FR-144-AC-19", "NFR-030-AC-5")]
+#[test]
+fn a_row_states_why_it_has_no_policy_verdict_and_never_allowed() {
+    let repo = Repo::new();
+    repo.record("clean", "pkg:npm/clean-pkg@1.0.0", &[]);
+    repo.record("later", "pkg:npm/later-pkg@1.0.0", &[]);
+    let binding = repo.binding(&["C-DISP"]);
+    let statuses = |report: &Value| -> Vec<String> {
+        report["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row["policy_status"]["state"].as_str().unwrap().to_owned())
+            .collect()
+    };
+
+    let not_run = report_json(&repo, &binding, &[]);
+    assert_eq!(
+        statuses(&not_run),
+        ["policy findings not assessed: licence-policy not run"; 2]
+    );
+    assert!(text(&repo.report(&binding, &[]).stdout).contains("- licence-policy: not run"));
+
+    let vacuous_sbom = r#"{"bomFormat":"CycloneDX","components":[]}"#;
+    repo.licence("vacuous", SCANNED, vacuous_sbom);
+    assert_eq!(
+        statuses(&report_json(&repo, &binding, &[])),
+        ["policy findings not assessed: licence-policy scan vacuous"; 2]
+    );
+
+    let sbom = hand_written_sbom(&[
+        ("npm/clean-pkg", "1.0.0", Some("MIT")),
+        ("npm/ghost-pkg", "9.9.9", Some("GPL-3.0-only")),
+    ]);
+    repo.licence("vacuous", "2026-08-03T00:00:00.000Z", &sbom);
+    let read = report_json(&repo, &binding, &[]);
+    let clean = row(&read, "pkg:npm/clean-pkg@1.0.0");
+    assert_eq!(
+        clean["policy_status"]["state"],
+        "no policy findings in the scan read"
+    );
+    assert_eq!(
+        clean["policy_status"]["scan_timestamp"],
+        "2026-08-03T00:00:00.000Z"
+    );
+    assert!(
+        clean["policy_status"]["ruleset"]
+            .as_str()
+            .unwrap()
+            .contains("GPL-3.0-only")
+    );
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert!(
+        markdown.contains("no policy findings in the scan read (licence-policy, 2026-08-03T00:00:00.000Z, ruleset: "),
+        "{markdown}"
+    );
+    // No record is ever stated allowed: no word `allowed` stands alone in either rendering.
+    let json_text = serde_json::to_string(&read).unwrap();
+    for rendering in [&markdown, &json_text] {
+        assert!(
+            !rendering
+                .split(|c: char| !(c.is_alphanumeric() || c == '-'))
+                .any(|word| word == "allowed"),
+            "{rendering}"
+        );
+    }
+    assert_eq!(
+        row(&read, "pkg:npm/later-pkg@1.0.0")["policy_status"]["state"],
+        "not evaluated by the licence-policy scan read"
+    );
+    assert_eq!(
+        read["unmatched_policy_findings"][0]["package"],
+        "pkg:npm/ghost-pkg@9.9.9"
+    );
+    assert_eq!(read["unmatched_policy_findings"][0]["reason"], "no record");
+    assert!(text(&repo.report(&binding, &[]).stdout).contains("## Unmatched policy findings"));
+
+    repo.licence("garbled", "not an instant", &sbom);
+    assert_eq!(
+        statuses(&report_json(&repo, &binding, &[])),
+        ["policy findings not assessed: licence-policy scan unordered"; 2]
+    );
+}
+
+/// One disposition attested between an advisory scan and a later
+/// `licence-policy` scan leaves the advisory resolved and the ban finding
+/// unresolved, and the row states the scope.
+#[trace("FR-144-AC-20")]
+#[test]
+fn a_disposition_does_not_cover_a_later_policy_scan() {
+    let repo = Repo::new();
+    repo.record(
+        "anyhow",
+        "pkg:cargo/anyhow@1.0.102",
+        &["disposition_clause: \"C-DISP\""],
+    );
+    repo.audit(&[("RUSTSEC-2026-0190", "anyhow", "1.0.102")]);
+    let ban = "format: licence-policy-v1\nallow: [MIT]\nban:\n  - purl: pkg:cargo/anyhow\n";
+    let sbom = hand_written_sbom(&[("cargo/anyhow", "1.0.102", Some("MIT"))]);
+    let parsed = quoin_evidence::adapters::parse_licence_policy(&sbom, ban).unwrap();
+    repo.store(&FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new("lic"),
+        tool: "licence-policy".to_owned(),
+        evidence_kind: None,
+        timestamp: "2026-08-02T00:00:00.000Z".to_owned(),
+        ruleset: parsed.ruleset,
+        rules_evaluated: parsed.rules_evaluated,
+        findings: parsed.findings,
+        evaluated: parsed.evaluated,
+    });
+    let binding = repo.binding(&["C-DISP"]);
+    let report = report_json(&repo, &binding, &[]);
+    let anyhow = row(&report, "pkg:cargo/anyhow@1.0.102");
+    assert_eq!(anyhow["advisories"][0]["resolution"]["state"], "resolved");
+    assert_eq!(anyhow["policy_findings"][0]["rule_id"], "package-banned");
+    assert_eq!(
+        anyhow["policy_findings"][0]["resolution"]["state"],
+        "unresolved"
+    );
+    assert_eq!(
+        anyhow["policy_findings"][0]["resolution"]["reason"],
+        "scan newer than attestation"
+    );
+    assert!(
+        anyhow["disposition_scope"]
+            .as_str()
+            .unwrap()
+            .contains("at or before its attestation")
+    );
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert!(markdown.contains("- Disposition scope: "), "{markdown}");
+}
+
+/// An unmatched no-purl finding could belong to an evaluated record, so the row
+/// states why it cannot be called clean (FR-144's closed status list names it).
+#[trace("FR-144-AC-19", "NFR-030-AC-5")]
+#[test]
+fn an_unmatched_finding_that_could_belong_blocks_a_clean_statement() {
+    let repo = Repo::new();
+    repo.record("clean", "pkg:npm/clean-pkg@1.0.0", &[]);
+    let binding = repo.binding(&["C-DISP"]);
+    let sbom = r#"{"bomFormat":"CycloneDX","components":[
+        {"name":"clean-pkg","version":"1.0.0","purl":"pkg:npm/clean-pkg@1.0.0","licenses":[{"license":{"id":"MIT"}}]},
+        {"name":"mystery","version":"2"}]}"#;
+    repo.licence("lic", SCANNED, sbom);
+    let report = report_json(&repo, &binding, &[]);
+    assert_eq!(
+        row(&report, "pkg:npm/clean-pkg@1.0.0")["policy_status"]["state"],
+        "policy findings not assessed: an unmatched licence-policy finding could belong to this record"
+    );
+    assert_eq!(report["unmatched_policy_findings"][0]["reason"], "no purl");
 }

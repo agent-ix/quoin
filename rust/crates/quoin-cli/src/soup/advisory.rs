@@ -28,10 +28,14 @@ use quoin_evidence::store::scan_is_vacuous;
 use quoin_evidence::types::{Finding, FindingRecord};
 use quoin_store::instant::{Instant, InstantGrammar};
 
-use super::plan::{Existing, parse_purl};
+use super::plan::Existing;
+mod index;
+use super::policy::is_policy;
+pub(super) use index::{Hit, RecordIndex, RecordRef};
 
-/// The rule-id prefixes of a `cargo-deny` diagnostic that is an advisory. Any
-/// other `cargo-deny` diagnostic (ban, licence, source, `unclassified`) is not.
+/// The rule-id prefixes of a `cargo-deny` diagnostic that is an advisory. A
+/// ban or licence diagnostic is a policy finding (`policy`, FR-142); source,
+/// `unclassified` and every other code are set aside.
 const DENY_ADVISORY_PREFIXES: [&str; 3] = ["RUSTSEC-", "GHSA-", "CVE-"];
 
 /// A scanner the join reads, in the order the join lists them.
@@ -56,7 +60,7 @@ impl Tool {
 
     /// The tool a retained scan belongs to, chosen the way recording chooses its
     /// adapter. `None` for a scan of any other tool.
-    fn of(scan: &FindingRecord) -> Option<Self> {
+    pub(super) fn of(scan: &FindingRecord) -> Option<Self> {
         let adapter = select_finding_adapter(AdapterSelection {
             adapter: None,
             tool: Some(&scan.tool),
@@ -118,8 +122,9 @@ pub(super) enum ScanOutcome {
         /// Distinct advisories read: attached plus unmatched. A repeated
         /// finding with one rule id and path counts once.
         advisories: usize,
-        /// Distinct diagnostics that are not advisories, which the join does
-        /// not read (`cargo-deny` ban, licence, source and `unclassified`).
+        /// Distinct diagnostics that are neither advisories nor policy
+        /// findings, which the join does not read (`cargo-deny` source,
+        /// `unclassified`, `duplicate`, `wildcard` and the other codes).
         set_aside: usize,
     },
 }
@@ -233,6 +238,9 @@ pub(super) enum UnmatchedReason {
     /// More than one record has the finding's purl.
     #[error("ambiguous")]
     Ambiguous,
+    /// The finding names no purl, so no record can be selected (FR-142).
+    #[error("no purl")]
+    NoPurl,
 }
 
 /// An advisory finding that attached to no record.
@@ -286,7 +294,7 @@ pub(super) fn join(
     let mut states = Vec::new();
 
     for tool in Tool::ALL {
-        let (chosen, unread) = match newest(scans, tool) {
+        let (chosen, unread) = match newest(scans, |scan| Tool::of(scan) == Some(tool)) {
             Newest::None => (None, Vec::new()),
             Newest::Unordered(suites) => {
                 states.push(ScanState {
@@ -447,12 +455,8 @@ struct Pending {
     scan_millis: i64,
 }
 
-/// A position in the `records` slice.
-#[derive(Clone, Copy)]
-struct RecordRef(usize);
-
 /// What the retained scans of one tool come to.
-enum Newest<'a> {
+pub(super) enum Newest<'a> {
     /// None is retained.
     None,
     /// A scan has a timestamp that is not an instant: the suites of those.
@@ -467,11 +471,11 @@ enum Newest<'a> {
     },
 }
 
-fn newest(scans: &[FindingRecord], tool: Tool) -> Newest<'_> {
-    let of_tool: Vec<&FindingRecord> = scans
-        .iter()
-        .filter(|scan| Tool::of(scan) == Some(tool))
-        .collect();
+pub(super) fn newest(
+    scans: &[FindingRecord],
+    is_tool: impl Fn(&FindingRecord) -> bool,
+) -> Newest<'_> {
+    let of_tool: Vec<&FindingRecord> = scans.iter().filter(|scan| is_tool(scan)).collect();
     let mut unordered: Vec<String> = of_tool
         .iter()
         .filter(|scan| instant_epoch_millis(&scan.timestamp).is_none())
@@ -503,7 +507,7 @@ fn newest(scans: &[FindingRecord], tool: Tool) -> Newest<'_> {
 
 /// Milliseconds since the epoch of an instant in the grammar the discharge gate
 /// reads `attestedAt` in, so a scan and an attestation are ordered by one rule.
-fn instant_epoch_millis(value: &str) -> Option<i64> {
+pub(super) fn instant_epoch_millis(value: &str) -> Option<i64> {
     Instant::parse(value, InstantGrammar::CalendarInstant)?.epoch_millis()
 }
 
@@ -512,14 +516,6 @@ struct Read {
     advisories: Vec<(Finding, Hit)>,
     distinct: usize,
     set_aside: usize,
-}
-
-/// Where one advisory finding went.
-enum Hit {
-    /// To exactly one record.
-    One(RecordRef),
-    /// To none; the candidates are the records the finding could belong to.
-    Not(UnmatchedReason, Vec<usize>),
 }
 
 /// Each distinct finding once, split into advisories (each matched) and the
@@ -535,7 +531,7 @@ fn read_scan(tool: Tool, scan: &FindingRecord, index: &RecordIndex) -> Read {
         if tool.is_advisory(finding) {
             let hit = index.find(finding.path.as_deref());
             advisories.push((finding.clone(), hit));
-        } else {
+        } else if !is_policy(tool, finding) {
             set_aside = set_aside.saturating_add(1);
         }
     }
@@ -546,81 +542,12 @@ fn read_scan(tool: Tool, scan: &FindingRecord, index: &RecordIndex) -> Read {
     }
 }
 
-/// Records by the identity a finding's path names: the purl without qualifiers
-/// and subpath, and its version.
-struct RecordIndex {
-    by_identity: BTreeMap<(String, String), Vec<usize>>,
-    /// Every record by its purl base, with or without a version.
-    by_base: BTreeMap<String, Vec<usize>>,
-    count: usize,
-}
-
-impl RecordIndex {
-    fn new(records: &[Existing]) -> Self {
-        let mut by_identity: BTreeMap<(String, String), Vec<usize>> = BTreeMap::new();
-        let mut by_base: BTreeMap<String, Vec<usize>> = BTreeMap::new();
-        for (position, record) in records.iter().enumerate() {
-            if let Some(purl) = parse_purl(&record.purl) {
-                by_base.entry(purl.base.clone()).or_default().push(position);
-                if let Some(version) = purl.version {
-                    by_identity
-                        .entry((purl.base, version))
-                        .or_default()
-                        .push(position);
-                }
-            }
-        }
-        Self {
-            by_identity,
-            by_base,
-            count: records.len(),
-        }
-    }
-
-    /// The record a finding path selects: `<name>@<version>` as the cargo crate
-    /// it names, or a purl compared as it is. A finding that names no version,
-    /// or no path, is unmatched and could belong to every record of its crate,
-    /// or to every record.
-    fn find(&self, path: Option<&str>) -> Hit {
-        let Some(path) = path else {
-            return Hit::Not(UnmatchedReason::NoVersion, (0..self.count).collect());
-        };
-        let Some(identity) = identity_of(path) else {
-            let base = base_of(path);
-            let candidates = self.by_base.get(&base).cloned().unwrap_or_default();
-            return Hit::Not(UnmatchedReason::NoVersion, candidates);
-        };
-        match self.by_identity.get(&identity).map(Vec::as_slice) {
-            None | Some([]) => Hit::Not(UnmatchedReason::NoRecord, Vec::new()),
-            Some([only]) => Hit::One(RecordRef(*only)),
-            Some(many) => Hit::Not(UnmatchedReason::Ambiguous, many.to_vec()),
-        }
-    }
-}
-
-/// The `(purl base, version)` a finding path names. `None` when it names no
-/// version.
-fn identity_of(path: &str) -> Option<(String, String)> {
-    if path.starts_with("pkg:") {
-        let purl = parse_purl(path)?;
-        return Some((purl.base, purl.version?));
-    }
-    let (name, version) = path.rsplit_once('@')?;
-    (!name.is_empty() && !version.is_empty())
-        .then(|| (format!("pkg:cargo/{name}"), version.to_owned()))
-}
-
-/// The purl base a path names, version or not.
-fn base_of(path: &str) -> String {
-    if path.starts_with("pkg:") {
-        return parse_purl(path).map_or_else(|| path.to_owned(), |purl| purl.base);
-    }
-    let name = path.rsplit_once('@').map_or(path, |(name, _)| name);
-    format!("pkg:cargo/{name}")
-}
-
 /// Decide one attached advisory against the fact under its record's clause.
-fn resolve(clause: Option<&str>, discharge: &DischargeReport, scan_millis: i64) -> Resolution {
+pub(super) fn resolve(
+    clause: Option<&str>,
+    discharge: &DischargeReport,
+    scan_millis: i64,
+) -> Resolution {
     let Some(clause) = clause else {
         return Resolution::Unresolved(Unresolved::NoDispositionClause);
     };
@@ -679,4 +606,4 @@ fn find_clause<'a>(discharge: &'a DischargeReport, clause: &str) -> Option<&'a C
 }
 
 #[cfg(test)]
-mod tests;
+pub(in crate::soup) mod tests;
