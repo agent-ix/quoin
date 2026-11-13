@@ -17,10 +17,16 @@
 //! under `tests/fixtures/security-analysis` is committed and checked here: it
 //! validates with `quire validate`, every mapping resolves to a clause of an
 //! installed clause set, and the review records the gaps as findings. The owning
-//! modules are read in place from `SPEC_OBJECTS_SECURITY_DIR` (its
-//! `spec_objects_security` directory) and `SPEC_ARTIFACTS_PROCESS_DIR` (the
-//! repository root) or the checkouts next to this repository; nothing of them is
-//! copied here. Validation needs `quire` on `PATH`.
+//! modules are read in place or from the checkouts next to this repository;
+//! nothing of them is copied here. Each variable follows the convention of the
+//! existing tests that read the same module: `SPEC_OBJECTS_SECURITY_DIR` names the
+//! `spec_objects_security` module directory (as in `tc_1515_soup_promote`) and
+//! `SPEC_ARTIFACTS_PROCESS_DIR` names the repository root (as in
+//! `tc_136_anomaly_command`). Validation needs `quire` on `PATH`.
+//!
+//! FR-172-AC-3 and FR-172-AC-4 need a live skill run over a synthetic licensed
+//! pack; they are demonstration scenarios (`TC-EV-061`, `TC-EV-062` in
+//! `spec/evals.md`) and no test here is tagged with them.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -51,7 +57,7 @@ fn skill() -> String {
     read(&skill_dir().join("SKILL.md"))
 }
 
-fn module(var: &str, sibling: &str, subdir: &str, probe: &str) -> PathBuf {
+fn module(var: &str, sibling: &str, probe: &str) -> PathBuf {
     let root = std::env::var_os(var).map_or_else(
         || {
             Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -60,7 +66,6 @@ fn module(var: &str, sibling: &str, subdir: &str, probe: &str) -> PathBuf {
         },
         PathBuf::from,
     );
-    let root = root.join(subdir);
     // Canonicalised: `quire` rejects `..` in `--module`.
     let root = std::fs::canonicalize(&root).unwrap_or_else(|error| {
         panic!(
@@ -82,7 +87,6 @@ fn security_module() -> PathBuf {
     module(
         "SPEC_OBJECTS_SECURITY_DIR",
         "spec-objects-security/spec_objects_security",
-        "",
         "skeletons/scope_exclusion.md",
     )
 }
@@ -129,18 +133,17 @@ fn md_files(dir: &Path) -> Vec<PathBuf> {
 /// Every clause id of every clause set the module declares, by set key.
 fn installed_clause_sets() -> BTreeMap<String, BTreeSet<String>> {
     let module = security_module();
-    let manifest = read(&module.join("manifest.yaml"));
-    let files: Vec<&str> = manifest
-        .lines()
-        .skip_while(|l| *l != "clause_sets:")
-        .skip(1)
-        .take_while(|l| l.starts_with("- "))
-        .map(|l| l.trim_start_matches("- ").trim())
+    let manifest = quoin_yaml::from_str(&read(&module.join("manifest.yaml"))).unwrap();
+    let files: Vec<String> = manifest["clause_sets"]
+        .as_array()
+        .expect("the module declares clause sets")
+        .iter()
+        .map(|f| f.as_str().unwrap().to_owned())
         .collect();
     assert!(!files.is_empty(), "the module declares clause sets");
     let mut sets = BTreeMap::new();
     for file in files {
-        let doc: Value = serde_json::from_str(&read(&module.join(file))).unwrap();
+        let doc: Value = serde_json::from_str(&read(&module.join(&file))).unwrap();
         let key = format!(
             "{}/{}@{}",
             doc["authority"].as_str().unwrap(),
@@ -220,12 +223,58 @@ fn is_nist_id(w: &str) -> bool {
     family.len() == 2 && family.bytes().all(|b| b.is_ascii_uppercase()) && digits(number)
 }
 
+fn dotted_triple(w: &str) -> bool {
+    let parts: Vec<&str> = w.split('.').collect();
+    parts.len() == 3 && parts.iter().all(|p| digits(p))
+}
+
 /// `V8.2.1`: a `V` and three dotted numbers.
 fn is_asvs_id(w: &str) -> bool {
-    w.strip_prefix('V').is_some_and(|rest| {
-        let parts: Vec<&str> = rest.split('.').collect();
-        parts.len() == 3 && parts.iter().all(|p| digits(p))
-    })
+    w.strip_prefix('V').is_some_and(dotted_triple)
+}
+
+/// The ASVS requirement ids a file cites, each as `V<chapter>.<section>.<item>`.
+/// Prose cites them with the `V`; a chapter pack's table names them bare
+/// (`6.1.1`) in its first column, which is read only in those packs because a
+/// bare dotted triple elsewhere is a version string.
+fn asvs_ids_cited(file: &Path, text: &str) -> BTreeSet<String> {
+    let mut ids: BTreeSet<String> = words(text).into_iter().filter(|w| is_asvs_id(w)).collect();
+    let in_chapter_pack = file
+        .parent()
+        .is_some_and(|d| d.file_name().is_some_and(|n| n == "owasp-asvs"))
+        && file
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|n| n.starts_with('V'));
+    if in_chapter_pack {
+        for line in text.lines().filter(|l| l.starts_with('|')) {
+            let first = line
+                .trim_start_matches('|')
+                .split('|')
+                .next()
+                .unwrap()
+                .trim();
+            if dotted_triple(first) {
+                ids.insert(format!("V{first}"));
+            }
+        }
+    }
+    ids
+}
+
+/// The frontmatter `id` of an authored artifact.
+fn artifact_id(path: &Path) -> String {
+    let text = read(path);
+    let front = text
+        .strip_prefix("---\n")
+        .unwrap()
+        .split_once("\n---")
+        .unwrap()
+        .0;
+    quoin_yaml::from_str(front).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned()
 }
 
 /// Each `Rev` token with the version that follows it, such as `Rev 5.2.0`.
@@ -277,6 +326,7 @@ fn skill_text_instructs_the_defaults_the_reply_and_the_set_check() {
         "quoin module list",
         "not mapped, set not installed",
         "Never supply the text, title or summary",
+        "Licensed standards are used for id lookup only",
         "nist/sp800-53@5.2.0",
         "owasp/asvs@5.0.0",
     ] {
@@ -315,7 +365,7 @@ fn every_cited_nist_and_asvs_id_is_a_clause_of_the_cited_release() {
                 file.display()
             );
         }
-        for id in words(&text).into_iter().filter(|w| is_asvs_id(w)) {
+        for id in asvs_ids_cited(&file, &text) {
             assert!(
                 asvs.contains(&id),
                 "{}: {id} is not an ASVS 5.0.0 requirement",
@@ -326,7 +376,7 @@ fn every_cited_nist_and_asvs_id_is_a_clause_of_the_cited_release() {
 }
 
 /// The expected output of the skill for the synthetic fixture repository.
-#[trace("FR-171-AC-2", "FR-172-AC-3")]
+#[trace("FR-171-AC-2")]
 #[test]
 fn expected_fixture_output_validates_and_every_mapping_resolves() {
     let expected = fixture().join("expected");
@@ -345,7 +395,7 @@ fn expected_fixture_output_validates_and_every_mapping_resolves() {
 
     let requirement_ids: BTreeSet<String> = md_files(&fixture().join("repo/spec/functional"))
         .iter()
-        .map(|p| p.file_name().unwrap().to_str().unwrap()[..6].to_owned())
+        .map(|p| artifact_id(p))
         .collect();
     let mut mapped = 0;
     for file in controls.iter().filter(|p| {
@@ -403,7 +453,7 @@ fn the_exclusion_names_a_bundle_artifact_and_a_clause_that_resolves() {
     assert!(!responsible.contains("ix://"), "a bare bundle id");
     let component_ids: BTreeSet<String> = md_files(&fixture().join("repo/spec/components"))
         .iter()
-        .map(|p| p.file_name().unwrap().to_str().unwrap()[..8].to_owned())
+        .map(|p| artifact_id(p))
         .collect();
     assert!(
         component_ids.contains(&responsible),
@@ -411,7 +461,6 @@ fn the_exclusion_names_a_bundle_artifact_and_a_clause_that_resolves() {
     );
 }
 
-#[trace("FR-172-AC-3")]
 #[test]
 fn a_mapping_to_a_clause_no_installed_set_holds_does_not_resolve() {
     let rows = vec![
@@ -422,7 +471,6 @@ fn a_mapping_to_a_clause_no_installed_set_holds_does_not_resolve() {
     assert_eq!(unresolved(&rows), rows[1..].to_vec());
 }
 
-#[trace("FR-171-AC-5")]
 #[test]
 fn the_review_records_each_gap_as_a_finding() {
     let review = fixture().join("expected/reviews");
@@ -436,9 +484,8 @@ fn the_review_records_each_gap_as_a_finding() {
     assert!(findings.contains("no responsible party is known"));
 }
 
-#[trace("FR-172-AC-4")]
 #[test]
-fn no_expected_artifact_carries_clause_text() {
+fn no_expected_mapping_row_carries_clause_text() {
     // A mapping row is exactly Set and Clause; the fixture adds no clause title.
     let sets = installed_clause_sets();
     assert!(sets.contains_key("nist/sp800-53@5.2.0"));

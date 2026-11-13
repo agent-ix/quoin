@@ -11,7 +11,7 @@ review_set: subset
 
 ## Summary
 
-The gateway answers eight NIST SP 800-53 Rev 5.2.0 and OWASP ASVS 5.0.0 clauses through three controls and excludes one clause to its platform. Two applicable clauses have no covering requirement or no responsible party. SOC 2 and ISO/IEC 27001 are not mapped, set not installed.
+The gateway answers nine NIST SP 800-53 Rev 5.2.0 and OWASP ASVS 5.0.0 clauses through three controls and excludes one clause to its platform. Two applicable clauses have no covering requirement or no responsible party. SOC 2 and ISO/IEC 27001 are not mapped, set not installed.
 
 ## Findings
 

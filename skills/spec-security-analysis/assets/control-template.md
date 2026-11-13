@@ -38,10 +38,10 @@ relationships:
 
 ## Invariants
 
-### EveryRequestIsAuthorized
+### EffectivenessIsStated
 
 ```ocl
 context AccessEnforcement
-inv EveryRequestIsAuthorized:
+inv EffectivenessIsStated:
   self.effectiveness->notEmpty()
 ```

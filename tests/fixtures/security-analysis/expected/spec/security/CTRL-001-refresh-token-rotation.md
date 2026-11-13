@@ -30,10 +30,10 @@ relationships:
 
 ## Invariants
 
-### ExchangeInvalidatesThePresentedToken
+### EffectivenessIsStated
 
 ```ocl
 context RefreshTokenRotation
-inv ExchangeInvalidatesThePresentedToken:
+inv EffectivenessIsStated:
   self.effectiveness->notEmpty()
 ```

@@ -30,10 +30,10 @@ relationships:
 
 ## Invariants
 
-### EveryDecisionIsRecorded
+### EffectivenessIsStated
 
 ```ocl
 context AccessDecisionAudit
-inv EveryDecisionIsRecorded:
+inv EffectivenessIsStated:
   self.effectiveness->notEmpty()
 ```

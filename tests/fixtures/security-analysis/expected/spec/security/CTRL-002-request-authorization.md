@@ -30,10 +30,10 @@ relationships:
 
 ## Invariants
 
-### NoRoleNoForward
+### EffectivenessIsStated
 
 ```ocl
 context RequestAuthorization
-inv NoRoleNoForward:
+inv EffectivenessIsStated:
   self.effectiveness->notEmpty()
 ```

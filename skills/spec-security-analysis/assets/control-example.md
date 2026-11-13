@@ -41,10 +41,10 @@ relationships:
 
 ## Invariants
 
-### FailSafeOnMissingGrant
+### EffectivenessIsStated
 
 ```ocl
 context PermissionEnforcement
-inv FailSafeOnMissingGrant:
+inv EffectivenessIsStated:
   self.effectiveness->notEmpty()
 ```

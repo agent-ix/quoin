@@ -45,6 +45,7 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
      - SOC 2 TSC: https://en.wikipedia.org/wiki/SOC_2 (reference summary - no login)
      - ISO 27001: https://en.wikipedia.org/wiki/ISO/IEC_27001 (control list - no login)
    - Local references are summaries; use web search for specific control details
+   - **Licensed standards are used for id lookup only.** The `soc2/` and `iso27001/` references name controls and describe them briefly, and the two web sources above list them. Use them only to decide which clause ids to look up in an installed pack. Copy no name, title, description or paraphrase of a SOC 2 or ISO/IEC 27001 control into any artifact or reply; the id and the set key are the whole reference
    - **Read the installed clause sets** before writing any mapping. Run `quoin module list`, then read each installed module's manifest `clause_sets` files. A clause set is keyed `authority/id@version`; this skill's free sets are `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` (both in the `spec-objects-security` module). SOC 2, ISO/IEC 27001 and every other licence-restricted source are served only from a locally installed pack, by clause id. A set is installed only if it appears there.
 
 3. **Map Controls to Requirements**
