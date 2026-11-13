@@ -67,3 +67,40 @@ The PR is **not mergeable**:
 | `help.rs`, `main.rs`, `tests.rs` route census | examined | FND-001, FND-002 |
 | unit and integration tests | examined | They assert real outputs through the binary; coverage gaps are in the gap-analysis SR |
 | `quoin-core` `catalog.load` (first-wins module names, semantic read) | context_only | Read to judge the coder's module-root note |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-008 | low | The new integration test `an_alias_bomb_or_an_oversized_selection_file_is_refused_cheaply` has no `#[trace(...)]` marker. quoin rust-style says test functions carry a `#[trace]` naming the criteria they assert. It asserts FR-180's refusal of a malformed selection file (FR-180-AC-6's class) and the new bound. It runs and passes, but the computed matrix cannot see it. Fix: tag it, for example `#[trace("FR-180-AC-6")]`. This does not block merge. | rust/crates/quoin-cli/tests/tc_1536_profile_evaluate.rs:441-471 |
+
+## Dispositions
+
+Round 1 is checked against fix commits `c0079da7` and `5244020b` (head `5244020b`, rebased on
+`ff8bc422`). Gates were run at this head with fresh origin/main sibling checkouts
+(spec-objects-safety `bf44b49`, spec-objects-security `ee4514b`; `SPEC_OBJECTS_SECURITY_DIR`
+pointed at its `spec_objects_security` subdirectory):
+
+- `cargo test -p quoin-cli -p quoin-yaml`: all 39 suites green. tc_retained_help_capture 6/6,
+  tc_3003 13 passed + 1 ignored, tc_1536 24/24, tc_145 4/4, tc_1515 16/16, tc_154, tc_169, tc_136,
+  tc_162.
+- clippy `-D warnings` (quoin-cli, quoin-yaml, quoin-quire, all targets and features), fmt and
+  `cargo deny check` are clean.
+
+`saphyr-parser =0.0.12` is already in the graph as saphyr's own dependency, a single lockfile
+entry, so it adds no new crate or licence.
+
+I probed the alias scanner with the built binary. It refuses aliases in a merge key (`<<: *b`), in
+flow style, as a mapping key, in a later document, and in the profile and user files, all with the
+"YAML aliases are not accepted" reason. It accepts anchors without aliases, `*` inside a comment,
+and a quoted `"*a"`.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |

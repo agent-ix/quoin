@@ -438,6 +438,9 @@ fn a_profile_file_in_the_repository_is_never_read() {
     }
 }
 
+/// Provenance: the selection file is repository-controlled input; an invalid
+/// one is refused before it can cost unbounded time or memory.
+#[trace("FR-180-AC-6")]
 #[test]
 fn an_alias_bomb_or_an_oversized_selection_file_is_refused_cheaply() {
     let env = env();

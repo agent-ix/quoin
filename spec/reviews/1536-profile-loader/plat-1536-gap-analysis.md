@@ -64,3 +64,24 @@ spec owner.
 | FR-182-AC-1..8 | examined | Tagged; AC-7 through the binary with a synthetic restricted pack; AC-5 asserts the sentinel and no text/title |
 | NFR-037-AC-1, AC-3 | examined | Byte-identical stdout and out-dir; key-name scan and closed shape |
 | NFR-037-AC-2 | examined | FND-003 |
+
+## Dispositions
+
+Round 1 is checked against fix commits `c0079da7` and `5244020b` (head `5244020b`). I re-ran
+`quire trace --id`:
+
+- FR-181-AC-10 now has 1 claim.
+- FR-180-AC-10 has 3.
+- NFR-037-AC-2 has 2, including `a_run_with_no_network_namespace_gives_the_same_output`, which ran
+  rather than skipped on this host.
+- FR-181-AC-11 has 1.
+
+tc_1536 passed 24/24 at this head.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
