@@ -212,14 +212,15 @@ fn record_entries(
     // states goes onto every entry as a trace id, which is the one join
     // `record_run` already makes, so only a passing entry binds. An id no
     // obligation states is reported `unmatched` here, so an inventory with no
-    // entries cannot swallow it. Only the sbom adapter takes `--discharges`: on
-    // a test run it would let a red suite discharge a stated obligation.
+    // entries cannot swallow it. Only the sbom and differential-report adapters
+    // (FR-152) take `--discharges`: on a test run it would let a red suite
+    // discharge a stated obligation.
     let stated = stated_obligations(&request.discharges);
-    if !stated.is_empty() && adapter.name != "sbom" {
+    if !stated.is_empty() && !matches!(adapter.name, "sbom" | "differential-report") {
         return Err(CoreError::new(
             CoreErrorCode::BadRequest,
             format!(
-                "--discharges applies to finding-shaped recordings and the sbom adapter; the {} adapter derives what it discharges from the trace ids its entries carry",
+                "--discharges applies to finding-shaped recordings and the sbom and differential-report adapters; the {} adapter derives what it discharges from the trace ids its entries carry",
                 adapter.name
             ),
         )
