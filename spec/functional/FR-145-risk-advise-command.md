@@ -13,8 +13,6 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/quoin/FR-136"
     type: "depends_on"
-  - target: "ix://agent-ix/quoin/FR-030"
-    type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-144"
     type: "references"
 ---
@@ -42,8 +40,8 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 ## Behavior
 
 - When a user runs `quoin risk advise <scope> [--format markdown|json]`, the command SHALL print the three sections `policy_cells`, `evidence_gaps` and `decision_queue`, in that order.
-- The command SHALL read only the safety-module records below `<scope>` (hazards, hazardous situations, risk estimates, controls, residual risks, benefit-risk records, overall evaluations), the `acceptability_policy` documents they reference, the requirement and test documents that link to a control, the retained evidence records of the evidence store (FR-030), and the anomaly documents of FR-136.
-- The command SHALL NOT write any file, any evidence-store entry or any record.
+- The command SHALL read only the safety-module records below `<scope>` (hazards, hazardous situations, risk estimates, controls, residual risks, benefit-risk records, overall evaluations), the `acceptability_policy` documents they reference, the requirement and test documents that link to a control, and the anomaly documents of FR-136.
+- The command SHALL NOT write any file or any record.
 - The command SHALL store no score, region, finding or verdict.
 - The command SHALL render Markdown by default and one JSON object with `--format json`.
 - The JSON object SHALL have exactly the keys `attribution`, `policy_cells`, `evidence_gaps` and `decision_queue`.
@@ -62,10 +60,9 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 | FR-145-AC-4 | Over an empty scope the command exits zero and prints the three sections empty with the attribution. | Test |
 | FR-145-AC-5 | The attribution string names the policy as the source of regions and the named person as the source of decisions. | Test |
 | FR-145-AC-6 | The JSON holds no `hazard`/`situation` row-per-pairing structure and no `harms` key; the only chain ids are those named by the key tables of FR-146 to FR-148. | Test |
-| FR-145-AC-7 | A fixture with an evidence-store record naming a criterion is read, and the same fixture with the store removed gives the gap of FR-147-AC-2, showing the store is on the read list. | Test |
 
 ## Dependencies
 
-- **Upstream**: `agent-ix/spec-objects-safety` FR-102, FR-104; [FR-136](./FR-136-anomaly-record-mapping.md); [FR-030](./FR-030-evidence-store.md).
+- **Upstream**: `agent-ix/spec-objects-safety` FR-102, FR-104; [FR-136](./FR-136-anomaly-record-mapping.md).
 - **Context only**: [FR-144](./FR-144-soup-report.md), whose report conventions this follows; `agent-ix/spec-objects-safety` FR-305.
 - **Downstream**: [FR-146](./FR-146-risk-advise-policy-cells.md), [FR-147](./FR-147-risk-advise-evidence-gaps.md), [FR-148](./FR-148-risk-advise-decision-queue.md), [NFR-031](../non-functional/NFR-031-risk-advice-states-and-never-decides.md).

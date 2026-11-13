@@ -34,3 +34,14 @@ FR-301..305 on origin/main, quoin FR-136, FR-144, StR-007, StR-009.
 
 Not mergeable: FND-001 is a direct contradiction between FR-145-AC-7 and FR-147 that no
 implementation can satisfy.
+
+## Dispositions
+
+Round 1, against commit 9a653e9d.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

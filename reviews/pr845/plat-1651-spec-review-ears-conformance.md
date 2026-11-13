@@ -37,3 +37,15 @@ FR-301..305 on origin/main, quoin FR-136, FR-144, StR-007, StR-009.
 ## Verdict
 
 Mergeable on EARS grounds after low wording fixes.
+
+## Dispositions
+
+Round 1, against commit 9a653e9d.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |

@@ -61,3 +61,27 @@ FR-301..305 on origin/main, quoin FR-136, FR-144, StR-007, StR-009.
 Not mergeable as written: no high finding here, but seven medium findings, two of which
 (FND-001, FND-002) are duplication with safety FR-302 and FR-305 that the PR body says it avoids.
 All are spec-text fixes inside this PR.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-011 | medium | Runs `quoin risk-summary`, which does not exist in quoin (no source, PLAT-1576 in Backlog), and FR-305 is only a `references` edge; the AC cannot run when FR-146 is built. Either depend on FR-305 and block on PLAT-1576, or assert the region against the FR-102 lookup of the fixture directly. | FR-146-AC-10 |
+| FND-012 | medium | Same defect as FND-011: compares against `quoin risk-summary`, which is not built (PLAT-1576 Backlog), so the AC cannot run when FR-147 is built; assert the tokens against FR-302's rule over the fixture instead (see FND-001). | FR-147-AC-4 |
+
+## Dispositions
+
+Round 1, against commit 9a653e9d.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | still-open | Tokens are now FR-302/FR-204/FR-203/FR-301's own, but the verified rule still adds the FR-205 route (a retained record bound to a criterion of the implementing FR) that FR-302's rule lacks (FR-302: an incoming verifies edge from any document). The Description now claims "the same rule" and FR-147-AC-4 asserts token equality with risk-summary, so a control verified only through that route gets no token here and control-without-verification under FR-302: AC-2 and AC-4 cannot both pass. Either use FR-302's rule exactly, or say the route is FR-205's, exempt it from AC-4, and raise the FR-302 gap with spec-objects-safety. |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |
+| FND-008 | fixed | - |
+| FND-009 | fixed | - |
+| FND-010 | fixed | - |

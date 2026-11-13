@@ -9,6 +9,8 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-202"
     type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-safety/FR-203"
+    type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-204"
     type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-205"
@@ -34,7 +36,7 @@ FR-205).
 ### The same tokens and the same rule as the safety module
 
 This section coins no finding token and no second rule. It reuses the tokens of `agent-ix/spec-objects-safety`
-and their rules, so it cannot disagree with `quoin risk-summary` (FR-305) about the same control:
+and their rules, so it states the same facts as `quoin risk-summary` (FR-305) about the same control:
 
 | Token | Source | Meaning here |
 |---|---|---|
@@ -44,10 +46,8 @@ and their rules, so it cannot disagree with `quoin risk-summary` (FR-305) about 
 | `estimate-without-situation` | FR-203 | the estimate has no situation |
 | `situation-without-hazard` | FR-301 | the situation arises from no hazard |
 
-A control is **verified** when it has an incoming `verifies` edge, or when a retained evidence record of the
-evidence store (FR-030) is bound to an acceptance criterion of an `FR` or `NFR` that `satisfies` the control. A
-record is **bound** to a criterion when it names that criterion, whatever its outcome. The report tests that the
-link or record exists and never reads whether it passed.
+A control is **verified** exactly as `agent-ix/spec-objects-safety` FR-302 defines it: it has an incoming
+`verifies` edge from any document. The report tests that the edge exists and never reads whether the verification passed.
 
 A control "of an estimate" is a control the post-control estimate `assumes`. The "hazard of an estimate" is the
 hazard its situation `arises_from` (`agent-ix/spec-objects-safety` FR-202). An anomaly is "open" when the
@@ -81,7 +81,7 @@ Every key is present, `null` or `[]` when empty.
 | `estimate` | the post-control estimate id |
 | `situation` | the estimate's situation id, or `null` |
 | `hazards` | ids of the hazards of the estimate |
-| `controls` | each control of the estimate: `control`, `requirements` (ids), `verifications` (ids of verifying documents and of bound evidence records), `findings` |
+| `controls` | each control of the estimate: `control`, `requirements` (ids), `verifications` (ids of verifying documents), `findings` |
 | `anomalies` | each open anomaly listed above, as `{ anomaly, kind, impact, names }` |
 | `findings` | the estimate-level tokens above that name this entry |
 
@@ -90,9 +90,9 @@ Every key is present, `null` or `[]` when empty.
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-147-AC-1 | A post-control estimate assuming one control with no `satisfies` edge yields `control-without-requirement` on that control; adding the edge removes it. | Test |
-| FR-147-AC-2 | A control with no `verifies` edge and no evidence record bound to a criterion of its implementing requirement yields `control-without-verification`; adding a `verifies` edge removes it, and adding a bound evidence record removes it. | Test |
-| FR-147-AC-3 | A control whose only bound evidence record is a failing run is not flagged `control-without-verification`, and the entry carries no key or wording about the outcome. | Test |
-| FR-147-AC-4 | For each fixture control, the tokens in the entry equal the tokens `quoin risk-summary` shows for that control. | Test |
+| FR-147-AC-2 | A control with no incoming `verifies` edge yields `control-without-verification`; adding a `verifies` edge from a test document removes it. | Test |
+| FR-147-AC-3 | A control whose only verifying test document is recorded as failing is not flagged `control-without-verification`, and the entry carries no key or wording about the outcome. | Test |
+| FR-147-AC-4 | Over a fixture, the tokens of each control and estimate equal those that the FR-302, FR-204, FR-203 and FR-301 rules yield over the same fixture records. | Test |
 | FR-147-AC-5 | A hazard named by one open and one `closed` anomaly lists only the open one, as `{ anomaly, kind, impact, names }` with `names` the hazard id. | Test |
 | FR-147-AC-6 | An open anomaly naming the `FR` that satisfies a control of the estimate, and one naming an acceptance criterion of that `FR`, are both listed with `names` the id they name; a closed one is not. | Test |
 | FR-147-AC-7 | A post-control estimate assuming no control yields `post-control-without-control`, one with no situation yields `estimate-without-situation`, and one whose situation has no hazard yields `situation-without-hazard`. | Test |
@@ -103,6 +103,6 @@ Every key is present, `null` or `[]` when empty.
 
 ## Dependencies
 
-- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-136](./FR-136-anomaly-record-mapping.md); `agent-ix/spec-objects-safety` FR-202, FR-204, FR-205, FR-301, FR-302.
+- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-136](./FR-136-anomaly-record-mapping.md); `agent-ix/spec-objects-safety` FR-202, FR-203, FR-204, FR-205, FR-301, FR-302.
 - **Context only**: `agent-ix/spec-objects-safety` FR-305.
 - **Downstream**: none.

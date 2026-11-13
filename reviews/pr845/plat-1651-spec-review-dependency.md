@@ -33,3 +33,18 @@ FR-301..305 on origin/main, quoin FR-136, FR-144, StR-007, StR-009.
 ## Verdict
 
 Mergeable on dependency grounds after two low edge additions.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | low | FR-147 now reuses FR-203's `estimate-without-situation` token, but neither the frontmatter nor the Upstream line names spec-objects-safety FR-203; add the depends_on edge. | FR-147 |
+
+## Dispositions
+
+Round 1, against commit 9a653e9d.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |

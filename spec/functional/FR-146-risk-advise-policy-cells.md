@@ -58,7 +58,7 @@ FR-101 defines them: the regions whose `outside_acceptable` flag is `false`, and
 - The command SHALL NOT substitute a level for a marker.
 - The command SHALL NOT combine, rank, weight or average levels.
 - The command SHALL NOT compare a post-control entry with a pre-control entry of the same situation.
-- Where the same estimate has a `policy_region` in `quoin risk-summary`, the entry's region SHALL equal it.
+- The region SHALL be the one the policy lists for the pair, as `agent-ix/spec-objects-safety` FR-102 looks it up.
 
 ### Entry keys
 
@@ -89,7 +89,7 @@ Every key is present, `null` or `[]` when empty.
 | FR-146-AC-7 | A pre-control estimate takes the policy of the residual risk on a post-control estimate of its situation, and shows the same policy id. | Test |
 | FR-146-AC-8 | The keys of every entry equal the entry key table, with no numeric, rank or verdict key. | Test |
 | FR-146-AC-9 | A pre-control and a post-control estimate of one situation each show their own cell and no key relates them. | Test |
-| FR-146-AC-10 | For each fixture estimate, the region equals the `policy_region` that `quoin risk-summary` shows for it. | Test |
+| FR-146-AC-10 | For each fixture estimate, the region equals the region named by the fixture policy's cell for the estimate's levels, looked up directly in the policy document. | Test |
 
 ## Dependencies
 
