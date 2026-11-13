@@ -85,3 +85,11 @@ Round 1, against commit 9a653e9d.
 | FND-008 | fixed | - |
 | FND-009 | fixed | - |
 | FND-010 | fixed | - |
+
+Round 2, against commit 329ec3ac.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-011 | fixed | - |
+| FND-012 | fixed | - |
