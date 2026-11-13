@@ -45,7 +45,7 @@ source and restates no vocabulary.
 `group` is not a member of FR-144's JSON; it is the row's FR-144 ordering group, and `unassessed` is the FR-162 row flag
 (true exactly when `safety_impact` is `unassessed`). `group` is one of `unresolved_advisory`, `past_end_of_support`, `other`, the three ordering groups of FR-144.
 `kind` of a `not_assessed` item is one of `unmatched_advisory`, `unmatched_policy_finding`, `scan_not_run`,
-`scan_vacuous`, `scan_unordered`; `tool` names the scanner (`grype`, `cargo-audit`, `cargo-deny`,
+`scan_vacuous`, `scan_unordered`; `tool` names the scanner (`osv-scanner`, `cargo-audit`, `cargo-deny`,
 `licence-policy`); `detail` is defined per `kind`: for `unmatched_advisory`, the advisory id as the scan reports it, a `|`, and the purl the
 advisory names (empty when it names none); for `unmatched_policy_finding`, the rule id, a `|`, and the purl the
 finding names (empty when it names none); for the three `scan_` kinds, the state word `not run`, `vacuous`

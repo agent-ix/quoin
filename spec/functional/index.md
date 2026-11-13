@@ -137,7 +137,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-146: Risk advice policy cells: the cell each risk estimate lands in under the authored policy](./FR-146-risk-advise-policy-cells.md)
 - [FR-147: Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard or the implementing requirement](./FR-147-risk-advise-evidence-gaps.md)
 - [FR-148: Risk advice decision queue: undecided residual-risk, benefit-risk and overall decisions, ordered by id](./FR-148-risk-advise-decision-queue.md)
-- [FR-149: Grype advisory report adapter](./FR-149-grype-advisory-report-adapter.md)
+- [FR-149: OSV-Scanner advisory report adapter](./FR-149-osv-scanner-advisory-report-adapter.md)
 - [FR-151: Differential report v2 adapter](./FR-151-differential-report-v2-adapter.md)
 - [FR-152: An analysis run entry binds to an obligation only through the obligation ids the recorder states](./FR-152-analysis-run-entry-link-to-obligation.md)
 - [FR-153: An analysis result counts toward an obligation only as a qualified passing record](./FR-153-analysis-result-counting-by-disposition.md)

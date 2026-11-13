@@ -48,7 +48,7 @@ discharges a risk nobody reviewed. Each printed value must have a named author.
 |----|----------|--------------|
 | NFR-030-AC-1 | Over a fixture with every optional input absent, every value in the promoted records and the report is `unknown`, `not stated`, absent, or copied from a named input. | Test |
 | NFR-030-AC-2 | Over fixtures with a failed cargo-deny run, a zero-rule scan and a missing scan, no record is shown as free of advisories. | Test |
-| NFR-030-AC-4 | Over a failed grype report, a grype report with ignored matches and a grype report with a match lacking an id, no record is shown as free of advisories. | Test |
+| NFR-030-AC-4 | Over a failed osv-scanner report, an osv-scanner report with an empty `results` array and an osv-scanner report with a vulnerability lacking an id, no record is shown as free of advisories. | Test |
 | NFR-030-AC-3 | The report JSON schema for a fixture run contains no score, rank, class or percentage key. | Test |
 | NFR-030-AC-5 | Over a refused licence policy, a refused SBOM, a vacuous licence-policy scan, an unordered one and a record absent from the scan's `evaluated` list, no record is shown as having no policy findings, and no record is shown as allowed. | Test |
 
