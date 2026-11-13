@@ -6,13 +6,17 @@
 //!
 //! `quoin anomaly check` reports what no module mapping can express; it never
 //! repeats `quire validate`'s dangling-reference or kind diagnostics.
+//! `quoin anomaly report` lists the anomalies a release still carries
+//! (FR-162, FR-163).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
-use quoin_anomaly::{Context, Severity, anomaly_documents, check_document, references_to};
+use quoin_anomaly::{
+    Context, Severity, anomaly_documents, build_report, check_document, references_to,
+};
 use quoin_core::protocol::{Diagnostic, Response};
 
 use crate::core_runtime::invoke;
@@ -54,6 +58,22 @@ pub(crate) fn command() -> Command {
                         .help("Emit one top-level JSON array"),
                 ),
         )
+        .subcommand(
+            Command::new("report")
+                .about("Report the anomalies a release still carries, grouped by hazard and requirement")
+                .arg(
+                    Arg::new("scope")
+                        .value_name("SCOPE")
+                        .default_value(".")
+                        .help("Directory searched for Anomaly documents"),
+                )
+                .arg(
+                    Arg::new("json")
+                        .long("json")
+                        .action(ArgAction::SetTrue)
+                        .help("Emit one JSON object instead of Markdown"),
+                )
+        )
 }
 
 fn module_arg() -> Arg {
@@ -68,6 +88,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     match arguments.subcommand() {
         Some(("check", check)) => run_check(check),
         Some(("refs", refs)) => run_refs(refs),
+        Some(("report", report)) => run_report(report),
         _ => Err("an unknown anomaly command reached dispatch".to_owned()),
     }
 }
@@ -119,7 +140,7 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
                 path.display()
             ));
         }
-        for diagnostic in checked.diagnostics {
+        for diagnostic in &checked.diagnostics {
             errors |= diagnostic.severity == Severity::Error;
             let commits = if diagnostic.commits.is_empty() {
                 String::new()
@@ -136,6 +157,13 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
                 diagnostic.message,
             ));
         }
+        if let Some(fixing) = &checked.fixing_change {
+            lines.push(format!(
+                "{}: fixingChange {}",
+                path.display(),
+                fixing.markdown()
+            ));
+        }
     }
     let outcome = if errors {
         Outcome::Partial
@@ -144,6 +172,29 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
     };
     Ok(Response {
         payload: serde_json::json!({ "rendered": lines.join("\n") }),
+        diagnostics: Vec::new(),
+        outcome,
+    })
+}
+
+fn run_report(arguments: &ArgMatches) -> Result<Response, String> {
+    let scope = scope_of(arguments);
+    if !scope.is_dir() {
+        return Ok(refuse_missing("scope", &scope));
+    }
+    let report = build_report(&scope).map_err(|error| error.to_string())?;
+    let rendered = if arguments.get_flag("json") {
+        report.to_json().map_err(|error| error.to_string())?
+    } else {
+        report.to_markdown()
+    };
+    let outcome = if report.failed() {
+        Outcome::Partial
+    } else {
+        Outcome::Ok
+    };
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered }),
         diagnostics: Vec::new(),
         outcome,
     })

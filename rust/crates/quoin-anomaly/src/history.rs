@@ -61,6 +61,19 @@ pub struct StatusEntry {
     pub pending: bool,
 }
 
+/// The entry for a working-tree `status` that no commit has set yet.
+pub(crate) fn pending_entry(status: Status) -> StatusEntry {
+    StatusEntry {
+        status,
+        commit: None,
+        author: None,
+        authored_at: None,
+        signature: None,
+        signature_code: None,
+        pending: true,
+    }
+}
+
 /// The derived history of one document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum History {
@@ -132,17 +145,39 @@ fn default_branch(top: &Path) -> Result<String, AnomalyError> {
     Ok("HEAD".to_owned())
 }
 
-/// Derive `statusHistory` for `file`.
-///
-/// Returns [`History::NotApplicable`] when the file is not inside a git
-/// repository. The working-tree pending entry is added by the caller, which
-/// holds the working-tree record.
-///
-/// # Errors
-///
-/// Returns an error when `git` cannot be run, or when it fails to answer a
-/// history query for a file that is inside a repository.
-pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
+/// One first-parent commit that touched the file, with the path the file had
+/// in it.
+pub(crate) struct Commit {
+    pub(crate) hash: String,
+    pub(crate) author: String,
+    pub(crate) authored_at: String,
+    pub(crate) signature_code: char,
+    pub(crate) path: String,
+}
+
+/// The commits of a file's first-parent history on the default branch.
+pub(crate) struct Located {
+    /// The repository's top level, from which every query runs so that each
+    /// commit's `path` (relative to it) is what git resolves the pathspec
+    /// against.
+    pub(crate) top: PathBuf,
+    /// Oldest first; empty while the repository has no commit.
+    pub(crate) commits: Vec<Commit>,
+}
+
+impl Located {
+    /// The text of the file at `commit`, or `None` when that commit deleted it.
+    pub(crate) fn content(&self, commit: &Commit) -> Result<Option<String>, AnomalyError> {
+        probe(
+            &self.top,
+            &["show", &format!("{}:{}", commit.hash, commit.path)],
+        )
+    }
+}
+
+/// Find the first-parent history of `file`, following renames. `None` when the
+/// file is not inside a git repository.
+pub(crate) fn locate(file: &Path) -> Result<Option<Located>, AnomalyError> {
     let dir = file.parent().unwrap_or_else(|| Path::new("."));
     let dir = if dir.as_os_str().is_empty() {
         Path::new(".")
@@ -150,22 +185,20 @@ pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
         dir
     };
     let Some(top) = probe(dir, &["rev-parse", "--show-toplevel"])? else {
-        return Ok(History::NotApplicable);
+        return Ok(None);
     };
     let top = PathBuf::from(top.trim());
     let canonical = file.canonicalize().unwrap_or_else(|_| file.to_path_buf());
     let top_canonical = top.canonicalize().unwrap_or_else(|_| top.clone());
     let Ok(relative) = canonical.strip_prefix(&top_canonical) else {
-        return Ok(History::NotApplicable);
+        return Ok(None);
     };
     let relative = relative.to_string_lossy().replace('\\', "/");
-    // Every query runs from the top level so that `relative`, which is relative
-    // to it, is also what git resolves the pathspec against.
     if probe(&top, &["rev-parse", "--verify", "--quiet", "HEAD"])?.is_none() {
-        return Ok(History::Entries {
-            entries: Vec::new(),
-            assessments: Vec::new(),
-        });
+        return Ok(Some(Located {
+            top,
+            commits: Vec::new(),
+        }));
     }
     let branch = default_branch(&top)?;
     let log = require(
@@ -187,13 +220,29 @@ pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
         .filter_map(parse_block)
         .collect::<Vec<_>>();
     commits.reverse();
+    Ok(Some(Located { top, commits }))
+}
+
+/// Derive `statusHistory` for `file`.
+///
+/// Returns [`History::NotApplicable`] when the file is not inside a git
+/// repository. The working-tree pending entry is added by the caller, which
+/// holds the working-tree record.
+///
+/// # Errors
+///
+/// Returns an error when `git` cannot be run, or when it fails to answer a
+/// history query for a file that is inside a repository.
+pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
+    let Some(located) = locate(file)? else {
+        return Ok(History::NotApplicable);
+    };
     let mut entries = Vec::new();
     let mut assessments = Vec::new();
     let mut previous: Option<Status> = None;
-    for commit in commits {
-        let spec = format!("{}:{}", commit.hash, commit.path);
+    for commit in &located.commits {
         // A commit that deleted the file has no content to read.
-        let Some(content) = probe(&top, &["show", &spec])? else {
+        let Some(content) = located.content(commit)? else {
             continue;
         };
         let Some(status) = status_word(&content).as_deref().and_then(Status::parse) else {
@@ -206,9 +255,9 @@ pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
         let code = commit.signature_code;
         entries.push(StatusEntry {
             status,
-            commit: Some(commit.hash),
-            author: Some(commit.author),
-            authored_at: Some(commit.authored_at),
+            commit: Some(commit.hash.clone()),
+            author: Some(commit.author.clone()),
+            authored_at: Some(commit.authored_at.clone()),
             signature: Some(Signature::from_code(code)),
             signature_code: Some(code),
             pending: false,
@@ -219,14 +268,6 @@ pub fn read_history(file: &Path) -> Result<History, AnomalyError> {
         entries,
         assessments,
     })
-}
-
-struct Commit {
-    hash: String,
-    author: String,
-    authored_at: String,
-    signature_code: char,
-    path: String,
 }
 
 fn parse_block(block: &str) -> Option<Commit> {

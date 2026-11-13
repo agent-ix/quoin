@@ -8,8 +8,9 @@ use std::path::Path;
 
 use serde::Serialize;
 
+use crate::derived::{Derived, fixing_change};
 use crate::error::AnomalyError;
-use crate::history::{History, StatusEntry, read_history};
+use crate::history::{History, StatusEntry, pending_entry, read_history};
 use crate::record::{assessment_text, parse_record, status_line, status_word};
 use crate::status::Status;
 
@@ -121,18 +122,6 @@ fn short(commit: &str) -> &str {
     commit.get(..8).unwrap_or(commit)
 }
 
-fn pending_entry(status: Status) -> StatusEntry {
-    StatusEntry {
-        status,
-        commit: None,
-        author: None,
-        authored_at: None,
-        signature: None,
-        signature_code: None,
-        pending: true,
-    }
-}
-
 fn describe(entry: &StatusEntry) -> String {
     entry
         .commit
@@ -199,6 +188,8 @@ pub struct Checked {
     /// False when the file is not under git: `statusHistory` does not apply
     /// and no transition was judged.
     pub history_applicable: bool,
+    /// The fixing change (FR-136); `None` while the document has no record.
+    pub fixing_change: Option<Derived>,
 }
 
 /// Check one `Anomaly` document, whose working-tree text is `text` and which
@@ -228,6 +219,10 @@ pub fn check_document(path: &Path, text: &str, context: Context) -> Result<Check
     }
     let history = read_history(path)?;
     let history_applicable = !matches!(history, History::NotApplicable);
+    let fixing = record
+        .as_ref()
+        .ok()
+        .map(|record| fixing_change(&history, record));
     if let History::Entries {
         mut entries,
         mut assessments,
@@ -265,5 +260,6 @@ pub fn check_document(path: &Path, text: &str, context: Context) -> Result<Check
     Ok(Checked {
         diagnostics: out,
         history_applicable,
+        fixing_change: fixing,
     })
 }

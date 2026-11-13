@@ -7,27 +7,33 @@
 //! extractor does not exist yet, so this reader repeats the part of
 //! spec-artifacts-process's `mappings.yaml` that the checks here need. Remove
 //! this module's table and frontmatter reading, and read the extractor's
-//! `status`, `resolution`, `closedBy`, `safetyImpact` and `assessment` keys
-//! instead, when #393 lands. The exception is recorded in FR-136.
+//! `title`, `status`, `resolution`, `closedBy`, `severity`, `safetyImpact`,
+//! `assessment` and `releaseRationale` keys instead, when #393 lands. The exception is recorded in FR-136.
 //!
 //! Vocabulary checks (an unknown `Kind` or `Impact`, an unknown `status`) are
 //! `quire validate`'s under spec-artifacts-process FR-014/FR-015 and are not
 //! made here: such a document still yields its record.
 //!
-//! The parts of an `Anomaly` document this crate reads: `status`, `resolution`,
-//! `closed_by`, `safety_impact` and the `## Safety Impact Assessment` table.
+//! The parts of an `Anomaly` document this crate reads: `title`, `status`,
+//! `resolution`, `closed_by`, `safety_impact`, `severity`, the
+//! `## Safety Impact Assessment` table and the `## Release Rationale` table
+//! (the report of FR-162 and FR-163 widens the reader to `severity`, `title`
+//! and `releaseRationale`).
 //!
 //! Field vocabularies and the legality of a field combination are the module's
 //! (spec-artifacts-process FR-014/FR-015) and `quire validate`'s. A document
 //! that fails only those checks still yields its record; only a document the
 //! mapping cannot read (no status, a table with the wrong columns) yields none.
 
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::status::Status;
 
 const COLUMNS: [&str; 4] = ["Kind", "Target", "Impact", "Rationale"];
 const SECTION: &str = "## Safety Impact Assessment";
+const RATIONALE_COLUMNS: [&str; 2] = ["Author", "Rationale"];
+const RATIONALE_SECTION: &str = "## Release Rationale";
 
 /// One assessment row, as authored.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -44,11 +50,22 @@ pub struct Row {
     pub line: usize,
 }
 
+/// One `## Release Rationale` row, as authored.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct RationaleEntry {
+    /// The person the rationale names, verbatim.
+    pub author: String,
+    /// The written reason, verbatim.
+    pub rationale: String,
+}
+
 /// The record of one `Anomaly` document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Record {
     /// The document id.
     pub id: String,
+    /// The authored `title`.
+    pub title: String,
     /// The authored `status` word, verbatim; see [`Record::status`].
     pub status_word: String,
     /// 1-based document line of the frontmatter `status` field.
@@ -59,10 +76,17 @@ pub struct Record {
     pub closed_by: Option<String>,
     /// The authored `safety_impact`.
     pub safety_impact: String,
+    /// The authored `severity`, when present; never defaulted or derived.
+    pub severity: Option<String>,
     /// The assessment rows; `None` while the section is absent.
     pub assessment: Option<Vec<Row>>,
     /// The text of the assessment section, trimmed; `None` while it is absent.
     pub assessment_text: Option<String>,
+    /// The release-rationale rows; `None` while the section is absent.
+    pub release_rationale: Option<Vec<RationaleEntry>>,
+    /// The text of the release-rationale section, trimmed; `None` while it is
+    /// absent.
+    pub release_rationale_text: Option<String>,
 }
 
 impl Record {
@@ -173,19 +197,25 @@ fn is_separator(row: &[String]) -> bool {
             .all(|cell| !cell.is_empty() && cell.chars().all(|ch| matches!(ch, '-' | ':' | ' ')))
 }
 
-/// The assessment section: its trimmed text, and the 1-based line of its
-/// heading and the lines that follow it up to the next level-2 heading.
-fn section(text: &str) -> Option<(usize, Vec<(usize, &str)>)> {
+/// The section under `heading`: the 1-based line of its heading and the lines
+/// that follow it up to the next level-2 heading.
+fn section<'a>(text: &'a str, heading: &str) -> Option<(usize, Vec<(usize, &'a str)>)> {
     let mut lines = text.lines().enumerate();
-    let heading = lines.find(|(_, line)| line.trim_end() == SECTION)?.0 + 1;
+    let line = lines.find(|(_, line)| line.trim_end() == heading)?.0 + 1;
     let body = lines
         .take_while(|(_, line)| !line.starts_with("## "))
         .map(|(index, line)| (index + 1, line))
         .collect();
-    Some((heading, body))
+    Some((line, body))
 }
 
-fn rows(heading: usize, body: &[(usize, &str)]) -> Result<Vec<Row>, MappingError> {
+/// The table under a section heading: each non-separator row as its `N` cells
+/// and its 1-based line.
+fn table<const N: usize>(
+    heading: usize,
+    body: &[(usize, &str)],
+    columns: [&str; N],
+) -> Result<Vec<(usize, [String; N])>, MappingError> {
     let mut table = body
         .iter()
         .skip_while(|(_, line)| !line.trim_start().starts_with('|'))
@@ -193,7 +223,7 @@ fn rows(heading: usize, body: &[(usize, &str)]) -> Result<Vec<Row>, MappingError
     let Some(&(header_line, header)) = table.next() else {
         return Err(error(MappingErrorCode::MinRows, heading));
     };
-    if cells(header) != COLUMNS {
+    if cells(header) != columns {
         return Err(error(MappingErrorCode::Columns, header_line));
     }
     let mut out = Vec::new();
@@ -202,15 +232,9 @@ fn rows(heading: usize, body: &[(usize, &str)]) -> Result<Vec<Row>, MappingError
         if is_separator(&row) {
             continue;
         }
-        let [kind, target, impact, rationale] =
-            <[String; 4]>::try_from(row).map_err(|_| error(MappingErrorCode::RowArity, line))?;
-        out.push(Row {
-            kind,
-            target: (!target.is_empty() && target != "-").then_some(target),
-            impact,
-            rationale,
-            line,
-        });
+        let row =
+            <[String; N]>::try_from(row).map_err(|_| error(MappingErrorCode::RowArity, line))?;
+        out.push((line, row));
     }
     if out.is_empty() {
         return Err(error(MappingErrorCode::MinRows, header_line));
@@ -218,16 +242,51 @@ fn rows(heading: usize, body: &[(usize, &str)]) -> Result<Vec<Row>, MappingError
     Ok(out)
 }
 
-/// The assessment-section text of a document, trimmed, when it has the section.
-#[must_use]
-pub fn assessment_text(text: &str) -> Option<String> {
-    let (_, body) = section(text)?;
+fn rows(heading: usize, body: &[(usize, &str)]) -> Result<Vec<Row>, MappingError> {
+    Ok(table(heading, body, COLUMNS)?
+        .into_iter()
+        .map(|(line, [kind, target, impact, rationale])| Row {
+            kind,
+            target: (!target.is_empty() && target != "-").then_some(target),
+            impact,
+            rationale,
+            line,
+        })
+        .collect())
+}
+
+fn rationale_entries(
+    heading: usize,
+    body: &[(usize, &str)],
+) -> Result<Vec<RationaleEntry>, MappingError> {
+    Ok(table(heading, body, RATIONALE_COLUMNS)?
+        .into_iter()
+        .map(|(_, [author, rationale])| RationaleEntry { author, rationale })
+        .collect())
+}
+
+/// The trimmed text of the section under `heading`, when the document has it.
+fn section_text(text: &str, heading: &str) -> Option<String> {
+    let (_, body) = section(text, heading)?;
     let joined = body
         .iter()
         .map(|&(_, line)| line)
         .collect::<Vec<_>>()
         .join("\n");
     Some(joined.trim().to_owned())
+}
+
+/// The assessment-section text of a document, trimmed, when it has the section.
+#[must_use]
+pub fn assessment_text(text: &str) -> Option<String> {
+    section_text(text, SECTION)
+}
+
+/// The release-rationale-section text of a document, trimmed, when it has the
+/// section.
+#[must_use]
+pub fn release_rationale_text(text: &str) -> Option<String> {
+    section_text(text, RATIONALE_SECTION)
 }
 
 /// The 1-based line of the frontmatter `status` field, or 1 when there is none.
@@ -261,18 +320,30 @@ pub fn parse_record(text: &str) -> Result<Record, MappingError> {
     let safety_impact = scalar(&front, "safety_impact")
         .ok_or_else(|| error(MappingErrorCode::Missing, status_line))?;
     let id = scalar(&front, "id").ok_or_else(|| error(MappingErrorCode::Missing, 1))?;
-    let (assessment, assessment_text) = match section(text) {
+    let title = scalar(&front, "title").ok_or_else(|| error(MappingErrorCode::Missing, 1))?;
+    let (assessment, assessment_text) = match section(text, SECTION) {
         None => (None, None),
         Some((heading, body)) => (Some(rows(heading, &body)?), assessment_text(text)),
     };
+    let (release_rationale, release_rationale_text) = match section(text, RATIONALE_SECTION) {
+        None => (None, None),
+        Some((heading, body)) => (
+            Some(rationale_entries(heading, &body)?),
+            release_rationale_text(text),
+        ),
+    };
     Ok(Record {
         id,
+        title,
         status_word: status,
         status_line,
         resolution: scalar(&front, "resolution"),
         closed_by: scalar(&front, "closed_by"),
         safety_impact,
+        severity: scalar(&front, "severity"),
         assessment,
         assessment_text,
+        release_rationale,
+        release_rationale_text,
     })
 }
