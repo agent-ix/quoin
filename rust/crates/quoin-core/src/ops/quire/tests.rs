@@ -51,6 +51,7 @@ struct FakeEngine {
     obligations: Vec<quoin_quire::model::Obligation>,
     diagnostics: Vec<quoin_quire::model::CoverageDiagnostic>,
     matrix: Vec<quoin_quire::model::CoverageMatrixRequirement>,
+    carried_vocabulary: BTreeMap<String, Vec<String>>,
     documents: Vec<Document>,
     unresolved: Vec<Unresolved>,
     failure: Option<quoin_quire::ErrorCode>,
@@ -95,6 +96,9 @@ impl QuireHost for FakeEngine {
         report.obligations.clone_from(&self.obligations);
         report.diagnostics.clone_from(&self.diagnostics);
         report.coverage_matrix.clone_from(&self.matrix);
+        report
+            .carried_vocabulary
+            .clone_from(&self.carried_vocabulary);
         Ok(quoin_quire::coverage::Outcome {
             report,
             // Notices are produced and deliberately not carried; see the
@@ -267,6 +271,7 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
     vec![CoverageMatrixRequirement {
         document: "spec/FR-001.md".to_owned(),
         criticality: None,
+        carried: None,
         criteria: vec![
             criterion(
                 "FR-001-AC-0",
@@ -344,6 +349,37 @@ fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
     assert!(
         payload(&response).get("coverage_matrix").is_none(),
         "an empty matrix is omitted, as quire omits it"
+    );
+}
+
+/// `quire.coverage` carries what a document states under each declared carried
+/// name, and the ordered vocabulary of each, exactly as the engine reports
+/// them: the class floors (FR-160) read both and hold neither.
+#[trace("FR-160-AC-8", "FR-160-AC-9")]
+#[test]
+fn coverage_carries_the_stated_values_and_the_vocabulary_as_written() {
+    let mut matrix = engine_matrix();
+    matrix[0].carried = json!({ "class": "class-2" }).as_object().cloned();
+    let engine = FakeEngine {
+        matrix,
+        carried_vocabulary: BTreeMap::from([(
+            "class".to_owned(),
+            vec!["class-1".to_owned(), "class-2".to_owned()],
+        )]),
+        ..FakeEngine::default()
+    };
+    let response = coverage(
+        &json!({ "scope": "/repo" }),
+        &Capabilities::with_quire(&engine),
+    )
+    .unwrap();
+    assert_eq!(
+        payload(&response)["coverage_matrix"][0]["carried"],
+        json!({ "class": "class-2" })
+    );
+    assert_eq!(
+        payload(&response)["carried_vocabulary"],
+        json!({ "class": ["class-1", "class-2"] })
     );
 }
 

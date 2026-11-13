@@ -64,7 +64,29 @@ pub struct AuditPayload {
     /// same list encoded twice, the shape the schema-source rule forbids, and left in place it
     /// would reach TypeScript as an undeclared key no generated type carries.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub independence: Option<Vec<IndependenceAssessment>>,
+    pub independence: Option<Vec<ProfileIndependenceAssessment>>,
+}
+
+/// Source marker on a profile assessment when the report has multiple sources.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub enum IndependenceSource {
+    /// The assessment came from the selected assurance profile.
+    Profile,
+}
+
+/// A profile assessment as returned by `auditor.audit`.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ProfileIndependenceAssessment {
+    /// The assessment fields shared with evidence-store profile records.
+    #[serde(flatten)]
+    pub assessment: IndependenceAssessment,
+    /// Present when a class policy adds a second independence source.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<IndependenceSource>,
 }
 
 /// What `quoin advise` sends: one request for every obligation, not one each.

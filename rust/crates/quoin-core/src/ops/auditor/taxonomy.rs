@@ -60,9 +60,9 @@ pub(super) fn map_error(error: &AuditorError, op: &'static str) -> CoreError {
 /// indistinguishable from a considered decision.
 const fn core_code(code: AuditorErrorCode) -> Option<CoreErrorCode> {
     Some(match code {
-        AuditorErrorCode::DemandTooLarge | AuditorErrorCode::ManifestUnreadable => {
-            CoreErrorCode::Refused
-        }
+        AuditorErrorCode::DemandTooLarge
+        | AuditorErrorCode::ManifestUnreadable
+        | AuditorErrorCode::ClassPolicyRefused => CoreErrorCode::Refused,
         AuditorErrorCode::ReportNotSerialisable => CoreErrorCode::Io,
         // Required by `#[non_exhaustive]`. A code this build has never seen is
         // reported as unmapped and exits Internal — the safest answer, since an
@@ -99,6 +99,10 @@ mod tests {
         assert_eq!(
             core_code(AuditorErrorCode::ReportNotSerialisable),
             Some(CoreErrorCode::Io)
+        );
+        assert_eq!(
+            core_code(AuditorErrorCode::ClassPolicyRefused),
+            Some(CoreErrorCode::Refused)
         );
     }
 

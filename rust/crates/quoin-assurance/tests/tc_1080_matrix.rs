@@ -448,3 +448,57 @@ fn tc_1080_010_the_matrix_module_holds_no_host_capability() {
         .collect();
     assert_eq!(capabilities, Vec::<String>::new());
 }
+
+// ── FR-160: the class column ──────────────────────────────────────────────
+
+/// An audit that ran under a class policy: `classReport` is the switch.
+fn classed_audit(classes: &Value, unassigned: &[&str]) -> Value {
+    let mut audit = audit(&[], &[], &[]);
+    audit["classReport"] = json!({ "classes": classes, "unassigned": unassigned });
+    audit
+}
+
+/// Without a class policy the matrix has no class column, key or count.
+#[trace("FR-160-AC-1")]
+#[test]
+fn tc_160_matrix_001_no_policy_means_no_class_column_key_or_count() {
+    let output = build(&input(
+        &["FR-001-AC-1"],
+        &[binding("FR-001-AC-1", "unit")],
+        &audit(&[], &[], &[]),
+    ))
+    .unwrap();
+    let payload = serde_json::to_value(&output).unwrap();
+    assert!(payload.get("unclassified").is_none(), "{payload}");
+    assert!(
+        payload["requirements"][0]["criteria"][0]
+            .get("class")
+            .is_none()
+    );
+    let rendered = render_markdown(&output);
+    assert!(!rendered.contains("Class"), "{rendered}");
+}
+
+/// Under a policy the class is shown as written, `unassigned` in markdown and
+/// absent in JSON for a criterion whose requirement states none.
+#[trace("FR-160-AC-6", "FR-160-AC-11")]
+#[test]
+fn tc_160_matrix_002_the_class_column_shows_the_value_and_unassigned() {
+    let output = build(&input(
+        &["FR-001-AC-1", "FR-001-AC-2"],
+        &[binding("FR-001-AC-1", "unit")],
+        &classed_audit(&json!({ "FR-001-AC-1": "class-2" }), &["FR-001-AC-2"]),
+    ))
+    .unwrap();
+    let payload = serde_json::to_value(&output).unwrap();
+    let criteria = &payload["requirements"][0]["criteria"];
+    assert_eq!(criteria[0]["class"], "class-2");
+    assert!(criteria[1].get("class").is_none(), "{criteria}");
+    assert_eq!(payload["unclassified"], 1);
+
+    let rendered = render_markdown(&output);
+    assert!(rendered.contains("| Class |"), "{rendered}");
+    assert!(rendered.contains("| class-2 |"), "{rendered}");
+    assert!(rendered.contains("| unassigned |"), "{rendered}");
+    assert!(rendered.contains("1 criterion(s) state no software safety class."));
+}

@@ -12,9 +12,10 @@ use std::collections::BTreeMap;
 use quoin_evidence::types::{
     Binding, FindingRecord, IndependenceAssessment, IndependencePolicy, MockInjection, RunRecord,
 };
-use quoin_quire_types::Obligation;
+use quoin_quire_types::{CoverageMatrixRequirement, Obligation};
 use serde::Deserialize;
 
+use super::class::ClassPolicy;
 use crate::catalog::MethodCatalog;
 
 /// Everything one audit reads.
@@ -79,4 +80,18 @@ pub struct AuditInput {
     /// Exact obligations and separation axes selected by an `AssuranceProfile`.
     #[serde(default)]
     pub independence_policy: Option<IndependencePolicy>,
+    /// What each software safety class demands (FR-160), a person's data.
+    ///
+    /// **Unset by default**, and no class has a built-in floor: with no policy
+    /// the audit reads no class and adds nothing to its report.
+    #[serde(default)]
+    pub class_policy: Option<ClassPolicy>,
+    /// The ordered legal values of each carried field, from the coverage
+    /// report. A class policy is refused without the entry for its class field.
+    #[serde(default)]
+    pub carried_vocabulary: Option<BTreeMap<String, Vec<String>>>,
+    /// quire's `coverage_matrix`: where each requirement's stated class is read
+    /// from (`carried`), joined to its obligations by criterion id.
+    #[serde(default)]
+    pub coverage_matrix: Option<Vec<CoverageMatrixRequirement>>,
 }

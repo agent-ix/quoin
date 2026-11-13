@@ -137,7 +137,7 @@ impl Finding {
     }
 }
 
-/// The eleven kinds the auditor mints, as a reader's note.
+/// The kinds the auditor mints, as a reader's note.
 ///
 /// Not a type [`Finding::kind`] is constrained to — see the doc there. This is
 /// a list, and its only job is to let the producer spell each kind once.
@@ -170,8 +170,16 @@ impl FindingKind {
     /// Every test discharging the obligation injects what it verifies.
     pub const MOCKED_CONFIRMATION: &'static str = "mocked-confirmation";
 
-    /// All twelve, in the order `src/auditor/audit.ts:38-50` declares them.
-    pub const ALL: [&'static str; 12] = [
+    /// A software safety class's required method has no bound evidence of its
+    /// catalog evidence kind (FR-160).
+    pub const CLASS_METHOD_MISSING: &'static str = "class-method-missing";
+    /// An obligation's software safety class has no entry in the class policy
+    /// (FR-160).
+    pub const CLASS_UNCONFIGURED: &'static str = "class-unconfigured";
+
+    /// All fourteen: the twelve `src/auditor/audit.ts:38-50` declares, in its
+    /// order, then the two class kinds (FR-160).
+    pub const ALL: [&'static str; 14] = [
         Self::STALE_EVIDENCE,
         Self::VACUOUS_EVIDENCE,
         Self::COMBINATORIAL_GAP,
@@ -184,6 +192,8 @@ impl FindingKind {
         Self::UNMEASURED_MUTATION_SCORE,
         Self::SURVIVING_MUTANT,
         Self::MOCKED_CONFIRMATION,
+        Self::CLASS_METHOD_MISSING,
+        Self::CLASS_UNCONFIGURED,
     ];
 }
 

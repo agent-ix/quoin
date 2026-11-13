@@ -147,12 +147,12 @@ pub fn mutation_finding(
     bindings: &[&Binding],
     runs: &[&RunRecord],
     input: &AuditInput,
+    class_floor: Option<(&str, f64)>,
 ) -> Option<Finding> {
-    let criticality = obligation
-        .criticality
-        .as_deref()
-        .filter(|value| !value.is_empty())?;
-    let floor = *input.mutation_floor.as_ref()?.get(criticality)?;
+    let Floor {
+        ratio: floor,
+        source,
+    } = floor_for(obligation, input, class_floor)?;
 
     let scores = scores_for(bindings, runs);
     if scores.is_empty() {
@@ -164,7 +164,7 @@ pub fn mutation_finding(
             &obligation.id,
             Severity::medium(),
             format!(
-                "{id} is criticality {criticality}, which demands a mutation score of at \
+                "{id} is {source}, which demands a mutation score of at \
                  least {floor}, and no run bound to it records one.",
                 id = obligation.id,
                 floor = number_text(floor)
@@ -184,7 +184,7 @@ pub fn mutation_finding(
         &obligation.id,
         Severity::medium(),
         format!(
-            "{id} is criticality {criticality}, which demands a mutation score of at least \
+            "{id} is {source}, which demands a mutation score of at least \
              {floor}; its weakest bound symbol scores {worst}.",
             id = obligation.id,
             floor = number_text(floor),
@@ -193,18 +193,70 @@ pub fn mutation_finding(
     ))
 }
 
-/// Most `surviving-mutant` findings one obligation reports.
-const MAX_SURVIVOR_FINDINGS: usize = 25;
+/// Who set a mutation ratio: the obligation's criticality or its software
+/// safety class (FR-160). Displays as the sentence fragment a finding uses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FloorSource<'a> {
+    /// The obligation's FR-053 criticality value.
+    Criticality(&'a str),
+    /// The software safety class its requirement states.
+    Class(&'a str),
+}
 
-/// The mutation floor an obligation's criticality demands, if one is declared.
+impl std::fmt::Display for FloorSource<'_> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Criticality(value) => write!(formatter, "criticality {value}"),
+            Self::Class(value) => write!(formatter, "class {value}"),
+        }
+    }
+}
+
+/// The mutation ratio an obligation must reach, and what set it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Floor<'a> {
+    /// The ratio, in `[0, 1]`.
+    pub ratio: f64,
+    /// Who set it.
+    pub source: FloorSource<'a>,
+}
+
+/// The mutation floor an obligation's criticality or class demands, if either
+/// declares one.
+///
+/// The two axes are separate and each selects its own floor. When both apply
+/// the higher ratio is evaluated and the finding names the source that set it;
+/// a tie goes to criticality, which is the floor that was there first.
 #[must_use]
-pub fn floor_for(obligation: &Obligation, input: &AuditInput) -> Option<f64> {
-    let criticality = obligation
+pub fn floor_for<'a>(
+    obligation: &'a Obligation,
+    input: &'a AuditInput,
+    class_floor: Option<(&'a str, f64)>,
+) -> Option<Floor<'a>> {
+    let by_criticality = obligation
         .criticality
         .as_deref()
-        .filter(|value| !value.is_empty())?;
-    input.mutation_floor.as_ref()?.get(criticality).copied()
+        .filter(|value| !value.is_empty())
+        .and_then(|criticality| {
+            let ratio = *input.mutation_floor.as_ref()?.get(criticality)?;
+            Some(Floor {
+                ratio,
+                source: FloorSource::Criticality(criticality),
+            })
+        });
+    let by_class = class_floor.map(|(class, ratio)| Floor {
+        ratio,
+        source: FloorSource::Class(class),
+    });
+    match (by_criticality, by_class) {
+        (Some(criticality), Some(class)) if class.ratio > criticality.ratio => Some(class),
+        (Some(criticality), _) => Some(criticality),
+        (None, class) => class,
+    }
 }
+
+/// Most `surviving-mutant` findings one obligation reports.
+const MAX_SURVIVOR_FINDINGS: usize = 25;
 
 /// One `surviving-mutant` finding per recorded survivor of each mutation-scored
 /// symbol, in a suite bound to this obligation, whose score is below `floor`.

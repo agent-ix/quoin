@@ -76,7 +76,7 @@ publish = false
 # lists every path. This was re-measured after quoin-quire, quoin-semantic and
 # quoin-store merged, not inherited from when the branch was cut.)
 [workspace.dependencies]
-quire-fixtures = { git = "https://github.com/agent-ix/quire-rs", rev = "51f81dda8a1939db59efb70a347a55ae8c9e8d35" }
+quire-fixtures = { git = "https://github.com/agent-ix/quire-rs", rev = "5a45ec949737a41c69a90f6ac5eefcafb2e10716" }
 ix-trace-rs = { git = "https://github.com/agent-ix/ix-trace-rs", branch = "main" }
 quire-analyze = { git = "https://github.com/agent-ix/quire-analyze", rev = "d57468a9b28a787664a4c59e4d98a1075c9d1d2e" }
 quire-canonical = { git = "https://github.com/agent-ix/quire-canonical", branch = "main", features = ["serde_json"] }

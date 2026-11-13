@@ -17,6 +17,7 @@
 //! finding disappear by re-running it. [`crate::inert`] is where that
 //! invariant stops being a comment and becomes something rustc checks.
 
+pub mod class;
 pub mod input;
 pub mod method;
 pub mod mocks;
@@ -33,13 +34,16 @@ use quoin_evidence::types::{
 };
 use quoin_finding_types::{AuditReport, Finding, UnevaluatedCheck};
 
+pub use class::{ClassFloors, ClassIndependenceAssessment, ClassPolicy};
 pub use input::AuditInput;
 pub use method::{catalog_methods_matching, method_conformance, unknown_method_finding};
 pub use mocks::{MOCK_SUBJECT_FLOOR, mocked_bindings, same_test_symbol, words};
 pub use scores::{
-    floor_for, multiplicity_finding, mutation_finding, scores_for, surviving_mutant_findings,
+    Floor, FloorSource, floor_for, multiplicity_finding, mutation_finding, scores_for,
+    surviving_mutant_findings,
 };
 
+use self::class::{ClassContext, SOURCE_PROFILE};
 use crate::error::AuditorError;
 
 /// What the loop reads, indexed once rather than per obligation.
@@ -52,10 +56,13 @@ struct Indexed<'a> {
     assessed_requirements: BTreeMap<&'a str, &'a IndependenceAssessment>,
     vacuous_suites: Vec<String>,
     independence_by_obligation: BTreeMap<&'a str, &'a str>,
+    /// The validated class policy joined to the payload's classes, when one
+    /// was supplied (FR-160).
+    class: Option<ClassContext<'a>>,
 }
 
 impl<'a> Indexed<'a> {
-    fn of(input: &'a AuditInput) -> Self {
+    fn of(input: &'a AuditInput, class: Option<ClassContext<'a>>) -> Self {
         // An obligation can be discharged by more than one suite — a unit suite
         // and a mutation suite, say — so the graph is grouped, not indexed.
         // Keying on the obligation alone was what let the second suite's
@@ -111,6 +118,7 @@ impl<'a> Indexed<'a> {
             // evaluated no rules.
             vacuous_suites: input.vacuous_scan_suites.clone().unwrap_or_default(),
             independence_by_obligation,
+            class,
         }
     }
 }
@@ -146,7 +154,10 @@ struct Pass {
 /// at the same point; refusing is what keeps a mistyped statement from
 /// allocating the machine.
 pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
-    let indexed = Indexed::of(input);
+    // Refused before anything is audited: a class floor that silently does not
+    // apply reads as a passing gate (FR-160).
+    let class = ClassContext::prepare(input)?;
+    let indexed = Indexed::of(input, class);
 
     let mut obligations: Vec<&quoin_quire_types::Obligation> = input.obligations.iter().collect();
     obligations.sort_by(|left, right| js::compare(&left.id, &right.id));
@@ -155,6 +166,9 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
     let mut healthy: Vec<String> = Vec::new();
     let mut unevaluated: Vec<UnevaluatedCheck> = Vec::new();
     let mut independence: Vec<IndependenceAssessment> = Vec::new();
+    let mut class_independence: Vec<ClassIndependenceAssessment> = Vec::new();
+    // Built before the loop consumes the obligations, and only under a policy.
+    let class_report = class_report(&indexed, &obligations);
 
     for obligation in obligations {
         let mut bindings: Vec<&Binding> = indexed
@@ -164,7 +178,27 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
             .unwrap_or_default();
         bindings.sort_by(|left, right| js::compare(left.suite.as_str(), right.suite.as_str()));
 
-        let pass = ladder::run(input, &indexed, obligation, &bindings)?;
+        // The class independence record exists for every obligation of a class
+        // that lists dimensions (FR-160), whether or not the ladder reaches the
+        // check that turns it into a finding.
+        let class_assessment = indexed
+            .class
+            .as_ref()
+            .and_then(|class| class.independence(obligation, &bindings));
+        let mut pass = ladder::run(
+            input,
+            &indexed,
+            obligation,
+            &bindings,
+            class_assessment.as_ref(),
+        )?;
+        // Class evidence floors are facts about the bound evidence, so they are
+        // reported beside whatever the ladder stopped on, not instead of it.
+        if let Some(class) = &indexed.class {
+            pass.findings
+                .extend(class.evidence_findings(&indexed, obligation, &bindings));
+        }
+        class_independence.extend(class_assessment);
         // Healthy means NOTHING was found for this obligation — including the
         // pre-guard unknown-method check, which does not stop the ladder.
         let clean = pass.completed && pass.findings.is_empty() && pass.unevaluated.is_empty();
@@ -222,9 +256,28 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
     // side that knows what it wrote.
     let mut other = quoin_finding_types::OtherMembers::new();
     if let Some(independence) = independence {
+        let mut records = serde_json::to_value(independence)
+            .map_err(|error| AuditorError::report_not_serialisable(&error))?;
+        // Under a class policy two sources assess independence, so each profile
+        // record says which it is (FR-160).
+        if indexed.class.is_some() {
+            for record in records.as_array_mut().into_iter().flatten() {
+                if let Some(object) = record.as_object_mut() {
+                    object.insert("source".to_owned(), serde_json::json!(SOURCE_PROFILE));
+                }
+            }
+        }
+        other.insert("independence".to_owned(), records);
+    }
+
+    if let Some(report) = class_report {
+        class_independence.sort_by(|left, right| {
+            js::compare(left.obligation.as_str(), right.obligation.as_str())
+        });
+        other.insert("classReport".to_owned(), report);
         other.insert(
-            "independence".to_owned(),
-            serde_json::to_value(independence)
+            "classIndependence".to_owned(),
+            serde_json::to_value(class_independence)
                 .map_err(|error| AuditorError::report_not_serialisable(&error))?,
         );
     }
@@ -235,6 +288,17 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
         unevaluated,
         other,
     })
+}
+
+/// Build the class report only when the caller supplied a class policy.
+fn class_report(
+    indexed: &Indexed<'_>,
+    obligations: &[&quoin_quire_types::Obligation],
+) -> Option<serde_json::Value> {
+    indexed
+        .class
+        .as_ref()
+        .map(|class| class.report(obligations))
 }
 
 /// `assessment.status === "insufficient"`.

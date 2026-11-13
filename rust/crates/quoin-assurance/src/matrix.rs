@@ -46,6 +46,11 @@ pub struct MatrixOutput {
     /// empty, so a consumer can tell "nothing to show" from "all clear".
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// How many criteria state no software safety class (FR-160). Present
+    /// exactly when the audit ran under a class policy, which is also when each
+    /// criterion carries its class column; absent otherwise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unclassified: Option<usize>,
 }
 
 /// One requirement's criteria.
@@ -72,6 +77,11 @@ pub struct MatrixCriterion {
     pub static_status: String,
     /// quire's binders, verbatim.
     pub binders: Vec<CoverageMatrixBinder>,
+    /// The software safety class the criterion's requirement states, as
+    /// written (FR-160). Omitted when it states none, and when no class policy
+    /// was given.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub class: Option<String>,
     /// What the evidence says.
     pub evidence_status: EvidenceStatus,
     /// Everything the evidence status was read from. Total: present on every
@@ -177,6 +187,10 @@ impl std::fmt::Display for ContradictoryAudit {
 
 impl std::error::Error for ContradictoryAudit {}
 
+/// What the human class column shows for a criterion whose requirement states
+/// no class (FR-160-AC-6). JSON omits the key instead.
+pub const UNASSIGNED: &str = "unassigned";
+
 /// The reason an empty population renders.
 pub const EMPTY_REASON: &str = "no coverage_matrix criteria: the module declares no `obligations:` source, so there is no criterion to report evidence for";
 
@@ -254,6 +268,10 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
             });
     }
     let store_is_empty = input.bindings.bindings.is_empty();
+    // `classReport` is written by the auditor only under a class policy, so its
+    // presence is the whole switch for the class column (FR-160-AC-1).
+    let class_report = input.audit.other.get("classReport");
+    let classes = class_report.and_then(|report| report.get("classes"));
 
     let mut grouped: BTreeMap<String, Vec<MatrixCriterion>> = BTreeMap::new();
     for criterion in input
@@ -281,18 +299,30 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
                 method: criterion.method.clone(),
                 static_status: criterion.status.clone(),
                 binders: criterion.binders.clone(),
+                class: classes
+                    .and_then(|classes| classes.get(id))
+                    .and_then(serde_json::Value::as_str)
+                    .map(ToOwned::to_owned),
                 evidence_status,
                 evidence_detail: detail,
             });
     }
 
     let reason = grouped.is_empty().then(|| EMPTY_REASON.to_owned());
+    let unclassified = class_report.map(|_| {
+        grouped
+            .values()
+            .flatten()
+            .filter(|criterion| criterion.class.is_none())
+            .count()
+    });
     Ok(MatrixOutput {
         requirements: grouped
             .into_iter()
             .map(|(id, criteria)| MatrixRequirement { id, criteria })
             .collect(),
         reason,
+        unclassified,
     })
 }
 
@@ -362,24 +392,42 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
         let _ = write!(out, "\n{reason}\n");
         return out;
     }
+    let classed = matrix.unclassified.is_some();
     for requirement in &matrix.requirements {
         let _ = write!(
             out,
-            "\n## {}\n\n| Requirement | Criterion | Method | Static Status | Evidence Status | Detail |\n|---|---|---|---|---|---|\n",
-            cell(&requirement.id)
+            "\n## {}\n\n| Requirement | Criterion | Method | Static Status | {}Evidence Status | Detail |\n|---|---|---|---|{}---|---|\n",
+            cell(&requirement.id),
+            if classed { "Class | " } else { "" },
+            if classed { "---|" } else { "" },
         );
         for criterion in &requirement.criteria {
+            let class = if classed {
+                format!(
+                    "{} | ",
+                    cell(criterion.class.as_deref().unwrap_or(UNASSIGNED))
+                )
+            } else {
+                String::new()
+            };
             let _ = writeln!(
                 out,
-                "| {} | {} | {} | {} | {} | {} |",
+                "| {} | {} | {} | {} | {}{} | {} |",
                 cell(&requirement.id),
                 cell(&criterion.id),
                 cell(criterion.method.as_deref().unwrap_or("—")),
                 cell(&criterion.static_status),
+                class,
                 criterion.evidence_status.as_str(),
                 cell(&detail_text(&criterion.evidence_detail)),
             );
         }
+    }
+    if let Some(count) = matrix.unclassified {
+        let _ = write!(
+            out,
+            "\n{count} criterion(s) state no software safety class.\n"
+        );
     }
     out
 }

@@ -130,6 +130,23 @@ where
     })
 }
 
+/// What the FR-094 pairwise rule found over one set of bindings.
+///
+/// The profile assessment and the class assessment (FR-160) are the same
+/// comparison under different headers, so the comparison is made once here and
+/// each caller wraps it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LinesAssessment {
+    /// Whether a pair differing on every dimension exists.
+    pub status: IndependenceStatus,
+    /// One entry per requested dimension, in the requested order.
+    pub dimensions: Vec<IndependenceDimensionAssessment>,
+    /// The two suites that satisfied it, when one pair did.
+    pub satisfied_by: Option<(SuiteId, SuiteId)>,
+    /// A sentence naming what was found or what was missing.
+    pub summary: String,
+}
+
 /// Find two distinct evidence relationships separated on every selected axis.
 ///
 /// The bindings are ordered by suite first, so the pair reported for a given
@@ -140,11 +157,31 @@ pub fn assess_independence(
     requirement: &IndependenceRequirement,
     bindings: &[Binding],
 ) -> IndependenceAssessment {
+    let borrowed: Vec<&Binding> = bindings.iter().collect();
+    let lines = assess_lines(&requirement.id, &requirement.dimensions, &borrowed);
+    IndependenceAssessment {
+        profile: profile.clone(),
+        requirement: requirement.id.clone(),
+        obligation: requirement.obligation.clone(),
+        status: lines.status,
+        dimensions: lines.dimensions,
+        satisfied_by: lines.satisfied_by,
+        summary: lines.summary,
+    }
+}
+
+/// The FR-094 pairwise comparison over `bindings`, named by `label` in the
+/// summary.
+#[must_use]
+pub fn assess_lines(
+    label: &str,
+    requested: &[IndependenceDimension],
+    bindings: &[&Binding],
+) -> LinesAssessment {
     let mut ordered = bindings.to_vec();
     ordered.sort_by(|a, b| a.suite.as_str().cmp(b.suite.as_str()));
 
-    let dimensions: Vec<IndependenceDimensionAssessment> = requirement
-        .dimensions
+    let dimensions: Vec<IndependenceDimensionAssessment> = requested
         .iter()
         .map(|dimension| {
             let mut values: BTreeSet<String> = BTreeSet::new();
@@ -165,8 +202,7 @@ pub fn assess_independence(
         })
         .collect();
 
-    let selected = requirement
-        .dimensions
+    let selected = requested
         .iter()
         .map(|dimension| dimension.as_str())
         .collect::<Vec<_>>()
@@ -177,7 +213,7 @@ pub fn assess_independence(
             if a.suite == b.suite {
                 continue;
             }
-            let separated = requirement.dimensions.iter().all(|dimension| {
+            let separated = requested.iter().all(|dimension| {
                 match (
                     value_for(a.lineage.as_ref(), *dimension),
                     value_for(b.lineage.as_ref(), *dimension),
@@ -189,16 +225,13 @@ pub fn assess_independence(
             if !separated {
                 continue;
             }
-            return IndependenceAssessment {
-                profile: profile.clone(),
-                requirement: requirement.id.clone(),
-                obligation: requirement.obligation.clone(),
+            return LinesAssessment {
                 status: IndependenceStatus::Satisfied,
                 dimensions,
                 satisfied_by: Some((a.suite.clone(), b.suite.clone())),
                 summary: format!(
-                    "{} is satisfied by {} and {}; they differ on {selected}.",
-                    requirement.id, a.suite, b.suite
+                    "{label} is satisfied by {} and {}; they differ on {selected}.",
+                    a.suite, b.suite
                 ),
             };
         }
@@ -228,16 +261,12 @@ pub fn assess_independence(
         .collect::<Vec<_>>()
         .join("; ");
 
-    IndependenceAssessment {
-        profile: profile.clone(),
-        requirement: requirement.id.clone(),
-        obligation: requirement.obligation.clone(),
+    LinesAssessment {
         status: IndependenceStatus::Insufficient,
         dimensions,
         satisfied_by: None,
         summary: format!(
-            "{} requires two evidence lines differing on every selected dimension ({selected}); {detail}.",
-            requirement.id
+            "{label} requires two evidence lines differing on every selected dimension ({selected}); {detail}."
         ),
     }
 }

@@ -71,6 +71,11 @@ pub struct CoveragePayload {
     /// `matrix.build` forwards the absence too.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub coverage_matrix: Vec<CoverageMatrixRequirement>,
+    /// The ordered permitted values of each declared carried field, keyed by
+    /// the carried name (quire-rs FR-090), omitted when empty as quire omits
+    /// it. The class floors (FR-160) read the legal classes from here.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub carried_vocabulary: BTreeMap<String, Vec<String>>,
 }
 
 /// The request accepted by `quire.properties`.

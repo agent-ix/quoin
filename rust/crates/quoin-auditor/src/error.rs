@@ -9,9 +9,10 @@ use quoin_combinatorial::CombinatorialError;
 
 /// Stable codes for everything this crate can refuse.
 ///
-/// Two, and both are refusals the retained TypeScript does not make: it either
+/// The first two are refusals the retained TypeScript does not make: it either
 /// exhausts the heap ([`Self::DemandTooLarge`]) or reports the failure as data
-/// ([`Self::ManifestUnreadable`]). See `DIVERGENCE.md`.
+/// ([`Self::ManifestUnreadable`]). See `DIVERGENCE.md`. [`Self::ClassPolicyRefused`]
+/// is newer (FR-160) and has no retained counterpart.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[non_exhaustive]
 pub enum AuditorErrorCode {
@@ -30,14 +31,20 @@ pub enum AuditorErrorCode {
     /// `audit/mod.rs` holds the reachability question open with a fully
     /// populated assessment.
     ReportNotSerialisable,
+    /// The class policy (FR-160) cannot be applied as written: it names a class
+    /// the report's vocabulary lacks, an undeclared method, a ratio outside
+    /// `[0, 1]`, an unknown dimension or no rationale. Refused whole, because a
+    /// floor that silently does not apply reads as a passing gate.
+    ClassPolicyRefused,
 }
 
 impl AuditorErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 3] = [
+    pub const ALL: [Self; 4] = [
         Self::DemandTooLarge,
         Self::ManifestUnreadable,
         Self::ReportNotSerialisable,
+        Self::ClassPolicyRefused,
     ];
 
     /// The stable spelling.
@@ -47,6 +54,7 @@ impl AuditorErrorCode {
             Self::DemandTooLarge => "QAU-DEMAND-TOO-LARGE",
             Self::ManifestUnreadable => "QAU-MANIFEST-UNREADABLE",
             Self::ReportNotSerialisable => "QAU-REPORT-NOT-SERIALISABLE",
+            Self::ClassPolicyRefused => "QAU-CLASS-POLICY-REFUSED",
         }
     }
 

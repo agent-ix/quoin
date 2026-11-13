@@ -39,13 +39,27 @@ policy declares as `class_field`. Quoin holds no field name. The ordered legal v
 
 ### The class policy is data, and no class has a built-in floor
 
-The policy file (YAML or JSON) holds `class_field` and, per class value, any of `required_methods`, `mutation_floor`,
-`independence`, `obligations` ([FR-161](./FR-161-per-class-obligations-report.md)) and a mandatory `rationale`. Quoin holds no class
+The policy file (YAML or JSON) holds `class_field` and a `classes` mapping from class value to that class's entry. An entry holds any of
+`required_methods` (catalog method ids), `mutation_floor`, `independence` (FR-094 dimension names),
+`obligations` ([FR-161](./FR-161-per-class-obligations-report.md)) and a mandatory `rationale`:
+
+```yaml
+class_field: <carried name>
+classes:
+  <class value>:
+    required_methods: [<method id>]
+    mutation_floor: <ratio>
+    independence: [<dimension>]
+    rationale: <why>
+```
+
+An unknown key anywhere in the file outside a class's `obligations` entries is refused; those entries
+belong to FR-161, which validates them. Quoin holds no class
 value, no default policy and no floor. A policy is a person's recorded decision; quoin never writes it. With no `--class-policy`
 the audit and the matrix add nothing: no class column, no unclassified count, no class finding.
 
 A policy is refused with the cause named, and no output is produced, when it names a class absent from the
-report's `carried_vocabulary`, a method the catalog does not declare, a mutation floor outside `[0, 1]` (as FR-039 refuses `80`), an
+report's `carried_vocabulary`, a method the catalog does not declare or declares without an `evidence_kind`, a mutation floor outside `[0, 1]` (as FR-039 refuses `80`), an
 unknown independence dimension, or an empty `rationale`; and when the report carries no `carried_vocabulary` for `class_field`, because
 nothing then says which classes exist. A floor that silently does not apply reads as a passing gate.
 
@@ -55,14 +69,15 @@ This requirement reuses one existing rule, the FR-039 mutation rule. The other t
 borrow nothing else from FR-032 or FR-094, which are keyed on criticality and on exact obligation ids under a profile.
 
 - **Required methods.** An obligation of a class with `required_methods` needs, for each listed method, at least one bound evidence
-  relationship whose run `evidence_kind` equals the `evidence_kind` the catalog declares for that method. A binding records no
+  relationship whose run or finding-shaped scan record has an `evidence_kind` equal to the `evidence_kind` the catalog declares for that
+  method. A binding records no
   method id, so the kind is the join. Methods that share an `evidence_kind` are therefore **interchangeable** for this floor:
   evidence of one satisfies a requirement for another of the same kind, and the policy author chooses methods knowing it. Each method
   whose kind has no bound evidence yields **`class-method-missing`** at `medium`, naming the class, the method, its kind and the
   obligation. No store change is made.
 - **Mutation floor.** The class's ratio is evaluated by the FR-039 rule for that obligation, with its `metric: mutation-score`
   filter, worst-symbol reading and tokens (`insufficient-mutation-score`, `unmeasured-mutation-score`); the finding also names the
-  class. When a criticality floor applies as well, the higher ratio is evaluated and the finding names the source that set it.
+  class. When a criticality floor applies as well, the higher ratio is evaluated and the finding names the source that set it; when both set the same ratio, the finding names criticality.
 - **Independence.** The class's `independence` lists FR-094 dimensions. For each obligation of the class, two distinct
   obligation-to-suite relationships must state different non-empty values on every listed dimension, by the same pairwise rule
   FR-094 states for a profile requirement. The profile `IndependenceAssessment` cannot carry a class (its profile is an
@@ -96,7 +111,7 @@ reports the same class findings and class column as the audit for the same input
 | FR-160-AC-2 | A policy giving `class-2` the method `mutation-testing` leaves a `class-2` obligation with no bound evidence of that method's catalog `evidence_kind` with one `class-method-missing` finding naming the class, method, kind and obligation; binding evidence of that kind, even from another method of the same kind, clears it. | Test |
 | FR-160-AC-3 | A policy giving `class-2` a `mutation_floor` of `0.8` yields `insufficient-mutation-score` for a `class-2` obligation scoring `0.6` and `unmeasured-mutation-score` for one with no mutation-score entry; each names the class and the ratio; a `class-1` obligation is unaffected. | Test |
 | FR-160-AC-4 | A policy giving `class-3` the dimensions `actor` and `technique` yields `insufficient-independence` for a `class-3` obligation whose two suites share an actor, naming the class and the shared dimension; two suites that differ on both clear it; one suite alone yields it. | Test |
-| FR-160-AC-5 | An obligation whose FR-053 criticality column is `high` and whose requirement carries no class gets only criticality floors; one whose requirement carries a class and whose column is empty gets only class floors; with both, the higher mutation ratio is evaluated and the finding names its source. | Test |
+| FR-160-AC-5 | An obligation whose FR-053 criticality column is `high` and whose requirement carries no class gets only criticality floors; one whose requirement carries a class and whose column is empty gets only class floors; with both, the higher mutation ratio is evaluated and the finding names its source, and criticality when the two ratios are equal. | Test |
 | FR-160-AC-6 | An obligation whose requirement carries no class gets no class floor, appears in the summary count of unclassified obligations, shows `unassigned` in the human class column, has no class key in JSON, and does not change the exit status. | Test |
 | FR-160-AC-7 | An obligation whose class has no policy entry yields one `class-unconfigured` finding naming the class and no other class finding. | Test |
 | FR-160-AC-8 | A policy naming a class absent from the report's `carried_vocabulary`, an undeclared method, a ratio of `80`, an unknown dimension or an empty rationale is refused naming the cause, and no audit output is produced; so is a policy over a report with no `carried_vocabulary` for `class_field`. | Test |
