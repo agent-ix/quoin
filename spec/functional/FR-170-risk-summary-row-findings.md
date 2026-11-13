@@ -7,6 +7,8 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-155"
     type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-145"
+    type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-147"
     type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-105"
@@ -16,6 +18,8 @@ relationships:
   - target: "ix://agent-ix/spec-objects-safety/FR-302"
     type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-303"
+    type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-safety/FR-204"
     type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-305"
     type: "references"
@@ -45,23 +49,25 @@ risk is acceptable, and the absence of findings in a row is not a decision.
 
 | Token | Rule from | Placed on | `names` |
 |---|---|---|---|
-| `hazard-without-situation` | FR-301 | the row with `situation: null` of the hazard | the hazard id |
-| `situation-without-hazard` | FR-301 | the row with `hazard: null` of the situation | the situation id |
-| `situation-without-harm` | FR-301 | every row of the situation | the situation id |
-| `control-without-requirement` | FR-302 | every row holding the control | the control id |
-| `control-without-verification` | FR-302 | every row holding the control | the control id |
-| `post-control-estimate-without-decision` | FR-303 | every row of the situation the estimate estimates | the estimate id |
-| `residual-risk-undecided` | FR-105 | every row holding the residual risk | the residual-risk id |
-| `decision-without-region` | FR-105 | every row holding the residual risk | the residual-risk id |
-| `accepted-outside-acceptable-region` | FR-105 | every row holding the residual risk | the residual-risk id, then the covering benefit-risk ids |
-| `benefit-risk-undecided` | FR-105 | every row holding the residual risk | the residual-risk id, then the covering benefit-risk ids |
-| `benefit-risk-not-accepted` | FR-105 | every row holding the residual risk | the residual-risk id, then the covering benefit-risk ids |
-| `not-accepted-inside-acceptable-region` | FR-105 | every row holding the residual risk | the residual-risk id |
+| `hazard-without-situation` | [FR-301](ix://agent-ix/spec-objects-safety/FR-301) | the row with `situation: null` of the hazard | the hazard id |
+| `situation-without-hazard` | [FR-301](ix://agent-ix/spec-objects-safety/FR-301) | the row with `hazard: null` of the situation | the situation id |
+| `situation-without-harm` | [FR-301](ix://agent-ix/spec-objects-safety/FR-301) | every row of the situation | the situation id |
+| `control-without-requirement` | [FR-302](ix://agent-ix/spec-objects-safety/FR-302) | every row holding the control | the control id |
+| `control-without-verification` | [FR-302](ix://agent-ix/spec-objects-safety/FR-302) | every row holding the control | the control id |
+| `post-control-without-control` | [FR-204](ix://agent-ix/spec-objects-safety/FR-204) | every row of the situation the estimate estimates | the estimate id |
+| `post-control-estimate-without-decision` | [FR-303](ix://agent-ix/spec-objects-safety/FR-303) | every row of the situation the estimate estimates | the estimate id |
+| `residual-risk-undecided` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id |
+| `decision-without-region` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id |
+| `accepted-outside-acceptable-region` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id, then the covering benefit-risk ids |
+| `benefit-risk-undecided` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id, then the covering benefit-risk ids |
+| `benefit-risk-not-accepted` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id, then the covering benefit-risk ids |
+| `not-accepted-inside-acceptable-region` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id |
 
-- A control is verified, and implemented, exactly as FR-147 defines: an incoming `verifies` edge from any document, and an incoming `satisfies` edge from an `FR` or `NFR`. The command tests that the edge exists and never reads whether a verification passed.
+- A control is verified, and implemented, exactly as FR-147 defines: an incoming `verifies` edge from any document, and an incoming `satisfies` edge from an `FR` or `NFR`. The command SHALL test that the edge exists and SHALL NOT read whether a verification passed.
 - The residual-risk findings SHALL follow the rules of FR-155, with the region resolved from the residual risk's own `policy` reference as FR-155 does.
 - A finding SHALL appear on a row only where the gap exists; a row whose link or record is present carries no such token.
-- A `post_control` estimate that `assumes` no control SHALL show `controls: []` and no further finding.
+- The command SHALL place `post-control-without-control` on every row of the situation of each post-control estimate that `assumes` no control, naming that estimate, whether or not another estimate of the situation assumes a control.
+- The command SHALL emit no `estimate-without-situation` finding: an estimate with no situation, and the records that depend on it, are in no row and `quoin risk advise` lists them (FR-147).
 - The command SHALL order the findings of a row by token in the order of the table above, then by the first element of `names`.
 - A finding SHALL NOT carry a proposed remedy, a severity of the finding, a priority or a count.
 - The command SHALL emit no finding for a hazard or a situation that has the link or record the rule asks for.
@@ -80,12 +86,15 @@ risk is acceptable, and the absence of findings in a row is not a decision.
 | FR-170-AC-8 | A `not_accepted` residual risk in a region with `outside_acceptable: false` carries `not-accepted-inside-acceptable-region`; an `accepted` one in that region carries no finding. | Test |
 | FR-170-AC-9 | A decided residual risk whose estimate has `probability: not_assessed` carries `decision-without-region` and the entry for that estimate has `policy_region: null`. | Test |
 | FR-170-AC-10 | For every fixture, the residual-risk findings of a row equal the `finding` tokens of `quoin risk discrepancies` for the same residual risks, and the control findings equal the control findings of `quoin risk advise` for the same controls. | Test |
-| FR-170-AC-11 | A situation arising from two hazards carries its situation-level and control-level findings on both rows, and a hazard-level finding on neither. | Test |
+| FR-170-AC-11 | A situation arising from two hazards carries its situation-level and control-level findings on both rows, and `hazard-without-situation` on neither, and a third fixture hazard with no situation carries it on its `situation: null` row alone. | Test |
 | FR-170-AC-12 | Findings of a row are ordered by token in the table order, then by the first name; a complete chain has `findings: []` on every row, and the command states no acceptance for it. | Test |
 | FR-170-AC-13 | No finding object holds a remedy, severity, priority or count key. | Test |
+| FR-170-AC-14 | A control whose only verification is a fixture record stating a failed result still has the edge counted: the control carries no `control-without-verification`, and the output states no pass or fail. | Test |
+| FR-170-AC-15 | A situation with two post-control estimates, one assuming a control and one assuming none, shows the control in `controls` and `post-control-without-control` naming the second estimate on every row of the situation; a pre-control estimate with no `assumes` edge yields none. | Test |
+| FR-170-AC-16 | An estimate with no `estimates` edge yields no `estimate-without-situation` finding and appears in no row. | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-169](./FR-169-risk-summary-command.md), [FR-147](./FR-147-risk-advise-evidence-gaps.md), [FR-155](./FR-155-risk-discrepancy-findings.md); [FR-105](ix://agent-ix/spec-objects-safety/FR-105), [FR-301](ix://agent-ix/spec-objects-safety/FR-301), [FR-302](ix://agent-ix/spec-objects-safety/FR-302), [FR-303](ix://agent-ix/spec-objects-safety/FR-303).
+- **Upstream**: [FR-169](./FR-169-risk-summary-command.md), [FR-145](./FR-145-risk-advise-command.md), [FR-147](./FR-147-risk-advise-evidence-gaps.md), [FR-155](./FR-155-risk-discrepancy-findings.md); [FR-105](ix://agent-ix/spec-objects-safety/FR-105), [FR-301](ix://agent-ix/spec-objects-safety/FR-301), [FR-302](ix://agent-ix/spec-objects-safety/FR-302), [FR-303](ix://agent-ix/spec-objects-safety/FR-303), [FR-204](ix://agent-ix/spec-objects-safety/FR-204).
 - **Context only**: [FR-305](ix://agent-ix/spec-objects-safety/FR-305).
 - **Downstream**: none.
