@@ -19,13 +19,19 @@
 mod pack_support;
 
 use std::collections::BTreeSet;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use ix_trace_rs::trace;
 use pack_support::{SENTINEL, quoin, scratch, semantic_root, text};
 
 const SKILL: &str = "skills/spec-security-analysis";
 const FIXTURES: &str = "tests/fixtures/security-analysis";
+const SAFE_ASSET_PATHS: &[&str] = &[
+    "assets/control-example.md",
+    "assets/control-template.md",
+    "assets/scope-exclusion-example.md",
+    "assets/scope-exclusion-template.md",
+];
 const SAFE_REFERENCE_PATHS: &[&str] = &[
     "component-type-mapping.md",
     "gdpr",
@@ -138,36 +144,62 @@ fn restricted_ids(text: &str) -> Vec<String> {
         .collect()
 }
 
-fn reference_path(candidate: &str) -> Option<PathBuf> {
-    let candidate = candidate.replace('\\', "/");
-    let (_, path) = candidate.rsplit_once("references/")?;
-    let path = path
+fn resolve_local_target(source: &Path, target: &str) -> Result<Option<PathBuf>, &'static str> {
+    let target = target.trim();
+    if target.starts_with('#') || target.starts_with("mailto:") || target.contains("://") {
+        return Ok(None);
+    }
+    let target = target
+        .strip_prefix('<')
+        .and_then(|value| value.strip_suffix('>'))
+        .unwrap_or(target)
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
         .split(['?', '#'])
         .next()
-        .unwrap_or(path)
-        .trim_end_matches(['.', ',', ';', ':']);
-    Some(PathBuf::from(path))
+        .unwrap_or("")
+        .replace('\\', "/");
+    if target.is_empty() {
+        return Ok(None);
+    }
+    let joined = source.parent().unwrap_or(Path::new("")).join(target);
+    let mut resolved = PathBuf::new();
+    for component in joined.components() {
+        match component {
+            Component::CurDir => {}
+            Component::Normal(value) => resolved.push(value),
+            Component::ParentDir => {
+                if !resolved.pop() {
+                    return Err("relative target escapes the skill root");
+                }
+            }
+            Component::RootDir | Component::Prefix(_) => {
+                return Err("absolute target is outside the skill root");
+            }
+        }
+    }
+    Ok(Some(resolved))
 }
 
-/// Find local reference paths in Markdown links, inline code and path tokens.
-fn reference_paths(text: &str) -> Vec<PathBuf> {
-    let mut paths = Vec::new();
+/// Find Markdown link targets and inline local asset/reference paths.
+fn local_link_targets(text: &str) -> Vec<String> {
+    let mut targets = Vec::new();
     let mut rest = text;
     while let Some(link_start) = rest.find("](") {
         rest = &rest[link_start + 2..];
         let Some(link_end) = rest.find(')') else {
             break;
         };
-        if let Some(path) = reference_path(&rest[..link_end]) {
-            paths.push(path);
-        }
+        targets.push(rest[..link_end].to_owned());
         rest = &rest[link_end + 1..];
     }
-    paths.extend(
+    targets.extend(
         text.split(|c: char| c.is_whitespace() || "`()[]<>\"'".contains(c))
-            .filter_map(reference_path),
+            .filter(|part| part.contains("references/") || part.contains("assets/"))
+            .map(str::to_owned),
     );
-    paths
+    targets
 }
 
 fn safe_reference_paths() -> BTreeSet<PathBuf> {
@@ -194,20 +226,49 @@ fn is_safe_reference_path(path: &Path) -> bool {
         .any(|allowed| Path::new(allowed) == path)
 }
 
+fn is_safe_local_link_path(path: &Path) -> bool {
+    path.strip_prefix("references")
+        .is_ok_and(is_safe_reference_path)
+        || SAFE_ASSET_PATHS
+            .iter()
+            .any(|allowed| Path::new(allowed) == path)
+}
+
 #[test]
 fn safe_reference_paths_are_explicit_and_link_targets_resolve_within_them() {
     let allowed = safe_reference_paths();
     assert_eq!(actual_reference_paths(), allowed);
-    let unlisted = reference_path("../references/not-in-inventory.md").unwrap();
-    assert!(!is_safe_reference_path(&unlisted));
+    let source = Path::new("references/standards-index.md");
+    let unlisted = resolve_local_target(source, "not-in-inventory/index.md")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        unlisted,
+        PathBuf::from("references/not-in-inventory/index.md")
+    );
+    assert!(!is_safe_local_link_path(&unlisted));
+    assert!(resolve_local_target(source, "../../../outside/index.md").is_err());
+    let misleading_prefix = resolve_local_target(source, "../unapproved/references/gdpr/index.md")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        misleading_prefix,
+        PathBuf::from("unapproved/references/gdpr/index.md")
+    );
+    assert!(!is_safe_local_link_path(&misleading_prefix));
     for file in files_under(&repo_root().join(SKILL)) {
-        for path in reference_paths(&read(&file)) {
-            assert!(
-                is_safe_reference_path(&path),
-                "{} names an unapproved reference path {}",
-                file.display(),
-                path.display()
-            );
+        let source = file.strip_prefix(repo_root().join(SKILL)).unwrap();
+        for target in local_link_targets(&read(&file)) {
+            if let Some(path) = resolve_local_target(source, &target)
+                .unwrap_or_else(|message| panic!("{} link {target:?}: {message}", file.display()))
+            {
+                assert!(
+                    is_safe_local_link_path(&path),
+                    "{} links to unapproved path {}",
+                    file.display(),
+                    path.display()
+                );
+            }
         }
     }
 }
@@ -255,13 +316,18 @@ fn tc_172_002_skill_ships_no_file_or_directory_named_for_a_restricted_reference(
 fn tc_172_003_no_skill_file_links_or_names_a_restricted_reference_path() {
     let skill = repo_root().join(SKILL);
     for file in files_under(&skill) {
-        for path in reference_paths(&read(&file)) {
-            assert!(
-                is_safe_reference_path(&path),
-                "{} names an unapproved reference path {}",
-                file.display(),
-                path.display()
-            );
+        let source = file.strip_prefix(&skill).unwrap();
+        for target in local_link_targets(&read(&file)) {
+            if let Some(path) = resolve_local_target(source, &target)
+                .unwrap_or_else(|message| panic!("{} link {target:?}: {message}", file.display()))
+            {
+                assert!(
+                    is_safe_local_link_path(&path),
+                    "{} links to unapproved path {}",
+                    file.display(),
+                    path.display()
+                );
+            }
         }
     }
     let text = read(&skill.join("SKILL.md"));

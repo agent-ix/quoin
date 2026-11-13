@@ -68,6 +68,9 @@ Examined `spec/assurance/AP-201-finding-quality.md` and `spec/assurance/AP-202-j
 | FND-004 | fixed | The consecutive duplicate pack-only bullet is removed; Rules now covers every licence-restricted clause and includes reviews. |
 | FND-005 | still-open | The added matcher and test literals name restricted frameworks in public Rust source. This violates the dispatch standing rule that new public artifacts use generic terms and do not name paywalled standards. Replace the named matcher/test examples with a generic boundary check, for example an allow-list of the existing free-reference paths. Preserve the historical review findings unchanged. |
 | FND-006 | still-open | The fix replaces the original pack_support::scratch() with tempfile::tempdir(). The existing scratch helper deliberately chooses a base outside every ancestor .git; the new test bypasses it. The focused run fails at the install assertion with QM024_PACK_INSIDE_WORK_TREE when the temporary base has a .git marker (as /tmp does in this sandbox). Reuse pack_support::scratch() so the valid-pack test does not exercise the inside-worktree refusal by accident. |
+| FND-005 | fixed | Round 2: named restricted-framework matcher and example literals are removed. The replacement enumerates only existing free-source reference paths. Its path-resolution coverage defect is separately FND-007. |
+| FND-006 | fixed | Round 2: tc_172_004 imports and uses pack_support::scratch(), restoring its existing outside-Git temporary-base selection. |
+| FND-007 | still-open | Round 2: The replacement link check uses only the suffix after a literal references/ instead of resolving the target relative to the containing document. A link such as [x](not-in-inventory/index.md) in references/standards-index.md produces no checked path, and [x](../unapproved/references/gdpr/index.md) is accepted as gdpr/index.md despite naming another location. Resolve local reference targets against their source document and enforce the approved reference root/path, with generic negative cases for relative targets and misleading prefixes. |
 
 ## Disposition scope
 
@@ -133,3 +136,28 @@ quire trace --scope . --id FR-172-AC-3 --format json and the AC-4 equivalent bot
 Explicit FR-171 and FR-172 quire validation exited 0. Each of the three scratchpad SR artifacts validated at its explicit absolute path; --summary reported 1/1 docs grammar-clean and zero grammar findings. Installed tool versions: quoin 0.30.1; quire 0.44.0, engine 0.59.1. Validation emitted semantic.unused-import for spec-artifacts-app importing spec-artifacts-iso, with no validation failure.
 
 No aggregate gate, live model run, source edit, push, or GitHub findings comment was performed. Formatting/Clippy are coder-reported checks and were not repeated in this disposition. The branch remains 74150d5d97028bbbeae6a5dfe08dfc4fc4d28290.
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | low | The replacement link check uses only the suffix after a literal references/ instead of resolving the target relative to the containing document. A link such as [x](not-in-inventory/index.md) in references/standards-index.md produces no checked path, and [x](../unapproved/references/gdpr/index.md) is accepted as gdpr/index.md despite naming another location. Resolve local reference targets against their source document and enforce the approved reference root/path, with generic negative cases for relative targets and misleading prefixes. | rust/crates/quoin-cli/tests/tc_172_licensed_pack_boundary.rs:141-169 |
+
+## Disposition pass 2
+
+Reviewed head `42c9b80e4f036930722b893a9b2b724b87472318`. FND-005 and FND-006 are fixed; FND-007 remains open. Not mergeable.
+
+Prior fixed findings were rechecked without duplicating their disposition rows. Previous review text and prior rows remain unchanged.
+
+Rechecked frozen head 42c9b80e4f036930722b893a9b2b724b87472318 and fix diff against 74150d5d. No skill or spec source changed in this fix round; original code FND-001 through FND-004 and all four spec findings were rechecked and retain their previous fixed dispositions, with the replacement link-check regression separately recorded as code FND-007.
+
+The licensed-pack test source contains no restricted-framework name literals. Its exact free-reference path allow-list checks the shipped references tree; tc_172_004 now calls the existing pack_support::scratch() helper.
+
+Reviewed /tmp/codex-controls-1530-skillrun/evidence/RESULT.md, both recorded replies and content-scan.json. The record is from 74150d5d; the skill is unchanged at this head. It explicitly records failed positive pack installation and zero authored artifacts. The no-pack reply is observed; positive skill-output acceptance remains open.
+
+Signature status: raw commit contains an SSH gpgsig header. ssh-keygen -Y check-novalidate -n git verified the extracted canonical commit payload/signature successfully (exit 0). git show --show-signature cannot check signer trust because gpg.ssh.allowedSignersFile is not configured; its displayed No signature does not mean the raw commit lacks a signature. Signer authorization was not verified. No unsigned-commit finding is justified by this configuration error.
+
+No aggregate gate or live model run was performed in this disposition. Only the three review artifacts are updated in the repository, as explicitly requested by the dispatch. No commit, push or merge.
+
+
+Independent focused Cargo tests and the extracted Rust helper probe waited for an occupied locked-build lane and were canceled before execution at the lead’s explicit request to finalize. No round-2 passing test result is claimed here; focused tests, fmt, Clippy and the expected base-oracle failure remain coder-reported. FND-007 is established by direct inspection: reference_path returns None unless rsplit_once("references/") succeeds and discards every prefix on success.

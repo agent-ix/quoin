@@ -54,6 +54,7 @@ Examined `spec/assurance/AP-201-finding-quality.md` and `spec/assurance/AP-202-j
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | still-open | Partially addressed: a committed synthetic pack fixture and tc_172_004 now cover absent/present installation, pack classification and no sentinel in CLI install/list output. They do not run spec-security-analysis or inspect its artifacts, SpecReview or reply. FR-172-AC-3/4 remain Demonstration; quire trace reports no verifying claims, and no recorded TC-EV-061/062 skill run or named follow-up was supplied. Ticket ACs 1/2 and the skill-output portion of AC3 remain incomplete. Complete and record those demonstrations, or obtain an explicit scoped deferral to a named follow-up; this reviewer does not accept the gap on the team’s behalf. |
+| FND-001 | still-open | Round 2: the live demonstration record at /tmp/codex-controls-1530-skillrun/evidence/RESULT.md proves a no-pack not-mapped reply, but the positive install was refused with QM024_PACK_INSIDE_WORK_TREE. Both recorded module states have no pack; no control, scope_exclusion or SpecReview was authored. The record also reports missing scope_exclusion/default sets. Therefore installed-pack mappings and sentinel absence from real authored outputs remain unobserved; the empty artifact set cannot satisfy the positive criterion. No named follow-up or authorized deferral closes this gap. |
 
 ## Disposition scope
 
@@ -139,3 +140,19 @@ quire trace --scope . --id FR-172-AC-3 --format json and the AC-4 equivalent bot
 Explicit FR-171 and FR-172 quire validation exited 0. Each of the three scratchpad SR artifacts validated at its explicit absolute path; --summary reported 1/1 docs grammar-clean and zero grammar findings. Installed tool versions: quoin 0.30.1; quire 0.44.0, engine 0.59.1. Validation emitted semantic.unused-import for spec-artifacts-app importing spec-artifacts-iso, with no validation failure.
 
 No aggregate gate, live model run, source edit, push, or GitHub findings comment was performed. Formatting/Clippy are coder-reported checks and were not repeated in this disposition. The branch remains 74150d5d97028bbbeae6a5dfe08dfc4fc4d28290.
+
+## Disposition pass 2
+
+Reviewed head `42c9b80e4f036930722b893a9b2b724b87472318`. FND-001 remains open. The no-pack-only demonstration does not complete ticket acceptance. Not mergeable.
+
+Prior fixed findings were rechecked without duplicating their disposition rows. Previous review text and prior rows remain unchanged.
+
+Rechecked frozen head 42c9b80e4f036930722b893a9b2b724b87472318 and fix diff against 74150d5d. No skill or spec source changed in this fix round; original code FND-001 through FND-004 and all four spec findings were rechecked and retain their previous fixed dispositions, with the replacement link-check regression separately recorded as code FND-007.
+
+The licensed-pack test source contains no restricted-framework name literals. Its exact free-reference path allow-list checks the shipped references tree; tc_172_004 now calls the existing pack_support::scratch() helper.
+
+Reviewed /tmp/codex-controls-1530-skillrun/evidence/RESULT.md, both recorded replies and content-scan.json. The record is from 74150d5d; the skill is unchanged at this head. It explicitly records failed positive pack installation and zero authored artifacts. The no-pack reply is observed; positive skill-output acceptance remains open.
+
+Signature status: raw commit contains an SSH gpgsig header. ssh-keygen -Y check-novalidate -n git verified the extracted canonical commit payload/signature successfully (exit 0). git show --show-signature cannot check signer trust because gpg.ssh.allowedSignersFile is not configured; its displayed No signature does not mean the raw commit lacks a signature. Signer authorization was not verified. No unsigned-commit finding is justified by this configuration error.
+
+No aggregate gate or live model run was performed in this disposition. Only the three review artifacts are updated in the repository, as explicitly requested by the dispatch. No commit, push or merge.
