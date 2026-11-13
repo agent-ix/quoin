@@ -60,9 +60,10 @@ disagreed.
 
 The entry's `evidenceKind` is unset (FR-151), and a stated `evidenceKind` establishes nothing as Quoin FR-116 states,
 so neither supplies a qualification premise. Qualification of an analysis entry needs a producer definition that
-Quoin FR-116 requires the owner to have approved for this act. No producer definition for this act is approved today;
-until one is, every analysis-backed obligation is `unevaluated`, naming the producer-definition premise, and none is
-counted.
+Quoin FR-116 requires the owner to have approved for this act. The owner has approved it
+([FR-184](./FR-184-analysis-act-producer-definition.md)). An analysis-backed obligation is `unevaluated`, and none is
+counted, while no FR-093 assessment exists (the bounded-reliance premise) or when the run-package step has no CI
+checkout SHA (the performed-revision premise). The credit is consistency evidence only.
 
 ### What is decided here and what is not
 
@@ -75,13 +76,14 @@ Decided here, from the text of FR-152, FR-116 and FR-078:
 - A `disagreement` is not distinguishable from an absent result after recording, because the `unrepresented` result is
   printed and not stored (FR-151). A store change under FR-030 would be a separate requirement.
 
-Not decided here; these need the owner:
+Ruled by the owner, not yet specified in quire-rs:
 
-- The content of the producer definition for the analysis act: the required acts, the tool and configuration premises
-  the report's `producer` and `engines` members can supply, and the CI or manual association (Quoin FR-116 owner
-  approval).
-- How an owner waiver of an analysis result is represented. quire-rs FR-078 holds waivers for the owner's ruling for
-  all methods.
+- Waivers. The FR-116 owner ruled (relayed by the planner 2026-11-13), option A: a waiver is a named person's
+  decision with an approval reference, signed through the signed-records feature, reported as its own waiver outcome
+  and never as a pass. Strict mode still fails by default; a policy setting must opt in before approved waivers pass.
+  It reuses the person-owned disposition pattern of the advisory join (PLAT-1516) and the anomaly release rationale
+  (PLAT-1584). The quire-rs FR-078 side still needs its own spec change from the IR and quire-rs owners; until it
+  lands nothing is waivable (FR-184 item 9).
 
 ## Behavior
 
@@ -106,8 +108,8 @@ Not decided here; these need the owner:
 - If a later run of the same suite lacks the bound symbol of an earlier pass, then the result SHALL be `absent`.
 - If an obligation has more than one bound symbol, then a failing or erroring bound symbol SHALL leave the
   obligation uncounted (FR-032).
-- If no approved producer definition exists for the act, then the result SHALL be `unevaluated`, naming the
-  producer-definition premise.
+- If no FR-093 assessment exists, or the run-package step has no CI checkout SHA, then the result SHALL be
+  `unevaluated`, naming the bounded-reliance or the performed-revision premise (FR-184).
 - The bridge SHALL NOT count an analysis entry from a binding alone, from `AuditReport.healthy`, or from the
   `unrepresented` result.
 - The bridge SHALL NOT judge whether the analysis request is the right analysis for the obligation.
@@ -128,7 +130,7 @@ Not decided here; these need the owner:
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-153-AC-1 | Given a bound `pass` entry, an approved producer definition and every other FR-116 premise admitted, the obligation is `qualified-record` in `record_binders` with the entry's record, run and entry locators, and leaves `unbacked_rows`. | Test |
-| FR-153-AC-2 | The same bound `pass` entry with no approved producer definition yields `unevaluated` naming the producer-definition premise, the obligation stays in `unbacked_rows`, and the strict decision rejects. | Test |
+| FR-153-AC-2 | The same bound `pass` entry with no FR-093 assessment, or with no CI checkout SHA, yields `unevaluated` naming the bounded-reliance or the performed-revision premise, the obligation stays in `unbacked_rows`, and the strict decision rejects. | Test |
 | FR-153-AC-3 | An `agreement`/`refuted` entry recorded with `--discharges FR-001-AC-1` yields `failed`, an `inconclusive` entry and an `unavailable` entry each yield `errored`; each carries its record locators, adds no `record_binders` claim and rejects strict mode. | Test |
 | FR-153-AC-4 | A `disagreement` report recorded with `--discharges FR-001-AC-1` yields `absent` for that obligation, with no record locator invented and no claim, the same result as an obligation never recorded; the printed `unrepresented` result is the only place the disagreement is visible. | Test |
 | FR-153-AC-5 | A `pass` run followed by a later `fail` or `error` on the same symbol leaves the obligation uncounted with the result `stale` and the later `failed` or `errored` outcome visible; a later run of the suite lacking the symbol gives `absent`; supplying the records in the reverse order, and giving the two runs equal timestamps, gives the same result. | Test |
