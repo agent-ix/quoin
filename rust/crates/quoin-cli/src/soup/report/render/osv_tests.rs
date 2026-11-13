@@ -14,9 +14,9 @@ use ix_trace_rs::trace;
 
 use std::path::PathBuf;
 
-use super::super::{Row, ScanOutcome, ScanState, Tool};
+use super::super::Row;
 use super::{scan_text, tool_lines};
-use crate::soup::advisory::RecordJoin;
+use crate::soup::advisory::{RecordJoin, ScanOutcome, ScanState, Tool};
 use crate::soup::policy::{PolicyStatus, RecordPolicy};
 use crate::soup::report::Listed;
 use crate::soup::support::{Evaluation, Resolved};
