@@ -19,7 +19,7 @@ dependencies = [
 [[package]]
 name = "agent-ix-semantic-schema"
 version = "0.3.0"
-source = "git+https://github.com/agent-ix/filament-core-data?branch=main#ce72bc519945ca4676f1b8f1e19f44f44303513d"
+source = "git+https://github.com/agent-ix/filament-core-data?branch=main#327a49ca9d7ab2c12269a8db65b75f1331e165bd"
 
 [[package]]
 name = "ahash"
@@ -592,7 +592,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1256,7 +1256,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c91d8cffac8849493a82233811bd02b2b183b8cf39bf704de0fa0841b737595"
 dependencies = [
  "bstr",
- "hashbrown 0.17.1",
+ "hashbrown 0.16.1",
 ]
 
 [[package]]
@@ -2934,7 +2934,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2983,7 +2983,7 @@ dependencies = [
 [[package]]
 name = "quire-code-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=51f81dda8a1939db59efb70a347a55ae8c9e8d35#51f81dda8a1939db59efb70a347a55ae8c9e8d35"
+source = "git+https://github.com/agent-ix/quire-rs?rev=5a45ec949737a41c69a90f6ac5eefcafb2e10716#5a45ec949737a41c69a90f6ac5eefcafb2e10716"
 dependencies = [
  "quire-code-parse",
 ]
@@ -3047,15 +3047,15 @@ dependencies = [
 [[package]]
 name = "quire-fixtures"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=51f81dda8a1939db59efb70a347a55ae8c9e8d35#51f81dda8a1939db59efb70a347a55ae8c9e8d35"
+source = "git+https://github.com/agent-ix/quire-rs?rev=5a45ec949737a41c69a90f6ac5eefcafb2e10716#5a45ec949737a41c69a90f6ac5eefcafb2e10716"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "quire-rs"
-version = "0.59.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=51f81dda8a1939db59efb70a347a55ae8c9e8d35#51f81dda8a1939db59efb70a347a55ae8c9e8d35"
+version = "0.60.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=5a45ec949737a41c69a90f6ac5eefcafb2e10716#5a45ec949737a41c69a90f6ac5eefcafb2e10716"
 dependencies = [
  "agent-ix-semantic-schema",
  "globset",
@@ -3877,7 +3877,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3935,7 +3935,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4462,7 +4462,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5219,7 +5219,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

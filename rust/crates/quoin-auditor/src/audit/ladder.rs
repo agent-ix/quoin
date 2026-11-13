@@ -20,10 +20,11 @@ use quoin_combinatorial::js;
 use quoin_combinatorial::{
     Configuration, DimensionName, DimensionValue, parse_space, tway_coverage,
 };
-use quoin_evidence::types::{Binding, Outcome, RunRecord};
+use quoin_evidence::types::{Binding, IndependenceStatus, Outcome, RunRecord};
 use quoin_finding_types::{Finding, FindingKind, Severity, UnevaluatedCheck};
 use quoin_quire_types::Obligation;
 
+use super::class::{SOURCE_PROFILE, independence_finding};
 use super::input::AuditInput;
 use super::method::{method_conformance, unknown_method_finding};
 use super::mocks::{mocked_bindings, mocked_finding};
@@ -55,6 +56,7 @@ pub(super) fn run(
         findings: Vec::new(),
         unevaluated: Vec::new(),
         independence: Vec::new(),
+        class_independence: Vec::new(),
         completed: false,
     };
     let catalog = input.catalog.as_ref();
@@ -101,26 +103,9 @@ pub(super) fn run(
         return Ok(pass);
     }
 
-    // ── Profile-selected independence ──
-    // A property of the obligation→evidence relationships, not a guessed
-    // property of roles, method names, or tool vendors. Asked only for exact
-    // obligations the profile projected into the policy.
-    let assessment = indexed
-        .independence_by_obligation
-        .get(obligation.id.as_str())
-        .and_then(|id| indexed.assessed_requirements.get(*id).copied())
-        .filter(|_| input.independence_policy.is_some());
-    if let Some(assessment) = assessment {
-        pass.independence.push(assessment.clone());
-        if is_insufficient(assessment) {
-            pass.findings.push(Finding::new(
-                FindingKind::INSUFFICIENT_INDEPENDENCE,
-                &obligation.id,
-                Severity::medium(),
-                assessment.summary.clone(),
-            ));
-            return Ok(pass);
-        }
+    // ── Independence: the profile's, then the class's ──
+    if independence_failed(input, indexed, obligation, bindings, &mut pass) {
+        return Ok(pass);
     }
 
     // Every remaining check reasons over run entries, so a binding backed only
@@ -158,21 +143,80 @@ pub(super) fn run(
     }
     let run_bindings: Vec<&Binding> = paired.iter().map(|(binding, _)| *binding).collect();
     let runs: Vec<&RunRecord> = paired.iter().map(|(_, run)| *run).collect();
-    if let Some(finding) = mutation_finding(obligation, &run_bindings, &runs, input) {
+    let class_floor = indexed
+        .class
+        .as_ref()
+        .and_then(|class| class.mutation_floor(&obligation.id));
+    if let Some(finding) = mutation_finding(obligation, &run_bindings, &runs, input, class_floor) {
         let missed_floor = finding.kind == FindingKind::INSUFFICIENT_MUTATION_SCORE;
         pass.findings.push(finding);
-        if missed_floor && let Some(floor) = floor_for(obligation, input) {
+        if missed_floor && let Some(floor) = floor_for(obligation, input, class_floor) {
             pass.findings.extend(surviving_mutant_findings(
                 obligation,
                 &run_bindings,
                 &runs,
-                floor,
+                floor.ratio,
             ));
         }
         return Ok(pass);
     }
     pass.completed = true;
     Ok(pass)
+}
+
+/// Profile-selected independence, then the class's own (FR-094, FR-160).
+///
+/// A property of the obligation→evidence relationships, not a guessed property
+/// of roles, method names, or tool vendors. The profile is asked only for exact
+/// obligations it projected into the policy; the class for obligations whose
+/// requirement states a class that lists dimensions. The two are assessed on
+/// their own dimensions and never united: each failure is its own finding.
+/// True when either failed.
+fn independence_failed(
+    input: &AuditInput,
+    indexed: &Indexed<'_>,
+    obligation: &Obligation,
+    bindings: &[&Binding],
+    pass: &mut Pass,
+) -> bool {
+    let assessment = indexed
+        .independence_by_obligation
+        .get(obligation.id.as_str())
+        .and_then(|id| indexed.assessed_requirements.get(*id).copied())
+        .filter(|_| input.independence_policy.is_some());
+    let mut failed = false;
+    if let Some(assessment) = assessment {
+        pass.independence.push(assessment.clone());
+        if is_insufficient(assessment) {
+            let mut finding = Finding::new(
+                FindingKind::INSUFFICIENT_INDEPENDENCE,
+                &obligation.id,
+                Severity::medium(),
+                assessment.summary.clone(),
+            );
+            // Two sources can now fail one obligation, so each finding says
+            // which (FR-160-AC-10). Without a class policy there is one source
+            // and the finding is what it always was.
+            if indexed.class.is_some() {
+                finding
+                    .other
+                    .insert("source".to_owned(), serde_json::json!(SOURCE_PROFILE));
+            }
+            pass.findings.push(finding);
+            failed = true;
+        }
+    }
+    if let Some(class) = &indexed.class
+        && let Some(assessment) = class.independence(obligation, bindings)
+    {
+        if assessment.status == IndependenceStatus::Insufficient {
+            pass.findings
+                .push(independence_finding(obligation, &assessment));
+            failed = true;
+        }
+        pass.class_independence.push(assessment);
+    }
+    failed
 }
 
 /// Nothing is bound to this obligation.

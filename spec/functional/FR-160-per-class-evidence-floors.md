@@ -39,13 +39,26 @@ policy declares as `class_field`. Quoin holds no field name. The ordered legal v
 
 ### The class policy is data, and no class has a built-in floor
 
-The policy file (YAML or JSON) holds `class_field` and, per class value, any of `required_methods`, `mutation_floor`,
-`independence`, `obligations` ([FR-161](./FR-161-per-class-obligations-report.md)) and a mandatory `rationale`. Quoin holds no class
+The policy file (YAML or JSON) holds `class_field` and a `classes` mapping from class value to that class's entry. An entry holds any of
+`required_methods` (catalog method ids), `mutation_floor`, `independence` (FR-094 dimension names),
+`obligations` ([FR-161](./FR-161-per-class-obligations-report.md)) and a mandatory `rationale`:
+
+```yaml
+class_field: <carried name>
+classes:
+  <class value>:
+    required_methods: [<method id>]
+    mutation_floor: <ratio>
+    independence: [<dimension>]
+    rationale: <why>
+```
+
+An unknown key anywhere in the file is refused. Quoin holds no class
 value, no default policy and no floor. A policy is a person's recorded decision; quoin never writes it. With no `--class-policy`
 the audit and the matrix add nothing: no class column, no unclassified count, no class finding.
 
 A policy is refused with the cause named, and no output is produced, when it names a class absent from the
-report's `carried_vocabulary`, a method the catalog does not declare, a mutation floor outside `[0, 1]` (as FR-039 refuses `80`), an
+report's `carried_vocabulary`, a method the catalog does not declare or declares without an `evidence_kind`, a mutation floor outside `[0, 1]` (as FR-039 refuses `80`), an
 unknown independence dimension, or an empty `rationale`; and when the report carries no `carried_vocabulary` for `class_field`, because
 nothing then says which classes exist. A floor that silently does not apply reads as a passing gate.
 
@@ -55,7 +68,8 @@ This requirement reuses one existing rule, the FR-039 mutation rule. The other t
 borrow nothing else from FR-032 or FR-094, which are keyed on criticality and on exact obligation ids under a profile.
 
 - **Required methods.** An obligation of a class with `required_methods` needs, for each listed method, at least one bound evidence
-  relationship whose run `evidence_kind` equals the `evidence_kind` the catalog declares for that method. A binding records no
+  relationship whose run or finding-shaped scan record has an `evidence_kind` equal to the `evidence_kind` the catalog declares for that
+  method. A binding records no
   method id, so the kind is the join. Methods that share an `evidence_kind` are therefore **interchangeable** for this floor:
   evidence of one satisfies a requirement for another of the same kind, and the policy author chooses methods knowing it. Each method
   whose kind has no bound evidence yields **`class-method-missing`** at `medium`, naming the class, the method, its kind and the

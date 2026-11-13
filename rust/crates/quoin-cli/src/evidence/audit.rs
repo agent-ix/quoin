@@ -27,7 +27,7 @@ pub(crate) fn module_arg() -> Arg {
 
 /// The auditor's policy inputs, shared with `quoin matrix` so both commands
 /// read one flag grammar into one [`assemble`].
-pub(crate) fn policy_args() -> [Arg; 3] {
+pub(crate) fn policy_args() -> [Arg; 4] {
     [
         Arg::new("multiplicity-requires")
             .long("multiplicity-requires")
@@ -36,6 +36,9 @@ pub(crate) fn policy_args() -> [Arg; 3] {
             .long("mutation-floor")
             .action(ArgAction::Append),
         Arg::new("independence-policy").long("independence-policy"),
+        // FR-160: a person's file saying what evidence each software safety
+        // class needs. Absent, the audit and the matrix read no class at all.
+        Arg::new("class-policy").long("class-policy"),
     ]
 }
 
@@ -64,6 +67,7 @@ pub(crate) struct AuditOptions {
     multiplicity_requires: Vec<String>,
     mutation_floor: Vec<String>,
     independence_policy: Option<String>,
+    class_policy: Option<String>,
 }
 
 impl AuditOptions {
@@ -74,6 +78,7 @@ impl AuditOptions {
             multiplicity_requires: values(arguments, "multiplicity-requires"),
             mutation_floor: values(arguments, "mutation-floor"),
             independence_policy: arguments.get_one::<String>("independence-policy").cloned(),
+            class_policy: arguments.get_one::<String>("class-policy").cloned(),
         }
     }
 }
@@ -115,7 +120,7 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
         return Ok(Assembly::Declined(catalog));
     }
     let bindings = field(&store.payload, "bindings")?;
-    let input = serde_json::json!({
+    let mut input = serde_json::json!({
         "obligations": obligations,
         "bindings": bindings,
         "runs": field(&store.payload, "runs")?,
@@ -129,6 +134,9 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
         "mutationFloor": mutation_floor(&options.mutation_floor)?,
         "independencePolicy": policy,
     });
+    if let Some(path) = options.class_policy.as_deref() {
+        add_class_inputs(&mut input, path, &coverage.payload)?;
+    }
     let request = serde_json::json!({ "input": input });
     let audited = invoke("auditor.audit", &request)?;
     if !audited.outcome.carries_payload() {
@@ -160,13 +168,25 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .map_or(0, Vec::len);
     let findings = reported.as_array().map_or(0, Vec::len);
     let rendered = if arguments.get_flag("json") {
-        serde_json::to_string_pretty(&serde_json::json!({
+        let mut output = serde_json::json!({
             "findings": reported,
             "healthy": report.get("healthy"),
             "unevaluated": report.get("unevaluated"),
             "independence": audited.payload.get("independence"),
-        }))
-        .map_err(|error| error.to_string())?
+        });
+        // Present only under `--class-policy` (FR-160-AC-1).
+        if let (Some(object), Some(class)) = (output.as_object_mut(), report.get("classReport")) {
+            object.insert("classReport".to_owned(), class.clone());
+            object.insert(
+                "unclassified".to_owned(),
+                serde_json::json!(unassigned(class)),
+            );
+            object.insert(
+                "classIndependence".to_owned(),
+                report.get("classIndependence").cloned().unwrap_or_default(),
+            );
+        }
+        serde_json::to_string_pretty(&output).map_err(|error| error.to_string())?
     } else {
         render_text(report, reported)?
     };
@@ -204,6 +224,34 @@ fn policy(
         return Err("independence policy was refused".to_owned());
     }
     field(&parsed.payload, "policy")
+}
+
+/// Hand the auditor the class policy and the three coverage facts it joins it
+/// to (FR-160). The file is read as written: validating it against the report's
+/// vocabulary and the catalog is the auditor's refusal to make, not this
+/// adapter's.
+fn add_class_inputs(
+    input: &mut serde_json::Value,
+    path: &str,
+    coverage: &serde_json::Value,
+) -> Result<(), String> {
+    let text =
+        std::fs::read_to_string(path).map_err(|error| format!("cannot read {path}: {error}"))?;
+    let policy = quoin_yaml::from_str_without_aliases(&text)
+        .map_err(|error| format!("{path} is not valid YAML or JSON: {error}"))?;
+    let members = [
+        ("classPolicy", Some(&policy)),
+        ("carriedVocabulary", coverage.get("carried_vocabulary")),
+        ("coverageMatrix", coverage.get("coverage_matrix")),
+    ];
+    if let Some(object) = input.as_object_mut() {
+        for (name, value) in members {
+            if let Some(value) = value {
+                object.insert(name.to_owned(), value.clone());
+            }
+        }
+    }
+    Ok(())
 }
 
 fn mutation_floor(entries: &[String]) -> Result<serde_json::Value, String> {
@@ -304,7 +352,45 @@ fn render_text(report: &serde_json::Value, reported: &serde_json::Value) -> Resu
                 .map_or(0, Vec::len),
         ));
     }
+    if let Some(class) = report.get("classReport") {
+        lines.push(String::new());
+        lines.push("class".to_owned());
+        lines.extend(class_rows(class));
+        lines.push(format!("{} obligation(s) unclassified", unassigned(class)));
+    }
     Ok(lines.join("\n"))
+}
+
+/// The ids whose requirement states no class.
+fn unassigned_ids(class: &serde_json::Value) -> impl Iterator<Item = &str> {
+    class
+        .get("unassigned")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(serde_json::Value::as_str)
+}
+
+/// How many obligations state no class.
+fn unassigned(class: &serde_json::Value) -> usize {
+    unassigned_ids(class).count()
+}
+
+/// The class column, one row per obligation in id order: the value as written,
+/// or `unassigned` (FR-160-AC-6, FR-160-AC-11).
+fn class_rows(class: &serde_json::Value) -> Vec<String> {
+    let mut rows: Vec<(&str, &str)> = class
+        .get("classes")
+        .and_then(serde_json::Value::as_object)
+        .into_iter()
+        .flatten()
+        .filter_map(|(id, value)| Some((id.as_str(), value.as_str()?)))
+        .collect();
+    rows.extend(unassigned_ids(class).map(|id| (id, "unassigned")));
+    rows.sort_unstable();
+    rows.into_iter()
+        .map(|(id, value)| format!("  {id}  {value}"))
+        .collect()
 }
 
 #[cfg(test)]

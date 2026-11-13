@@ -125,6 +125,74 @@ pub struct Obligation {
     pub parameters: Option<std::collections::BTreeMap<String, String>>,
 }
 
+/// The requirement an obligation belongs to.
+///
+/// `FR-001-AC-3` → `FR-001`; `NFR-010-M-2` → `NFR-010`. Derived from the id
+/// rather than from an edge because obligations are minted from a document's
+/// own tables — the ownership is not in question, and an edge for it would be
+/// a second thing to keep in agreement.
+///
+/// # The suffix is deliberately unconstrained
+///
+/// The retained implementation is `/^([A-Za-z]+-\d+)/` and matches a *prefix*:
+/// everything after the requirement id is ignored, whatever it spells. That is
+/// load-bearing. An earlier check in this repository enumerated the suffixes it
+/// expected — `AC|CON|VC|EX|SC` — and silently skipped every `-M-` obligation,
+/// which is the whole `nfr-metric` source. A suffix list is a standing bet that
+/// nobody mints a new kind, and the engine took no such bet.
+///
+/// # Non-matching input is returned unchanged
+///
+/// Not an error, and not empty. An id the pattern does not recognise is still
+/// an id the caller holds, and returning it unchanged keeps the view total —
+/// a projection that drops rows it cannot classify reads as a clean case over
+/// a narrower population, which is the failure the retained module's header
+/// names.
+#[must_use]
+pub fn requirement_of(obligation_id: &str) -> &str {
+    let mut letters = 0usize;
+    let mut digits = 0usize;
+    let mut seen_dash = false;
+    let mut end = 0usize;
+
+    // A byte scan rather than an index walk: the workspace forbids
+    // `indexing_slicing`, and an id off an untrusted stream is exactly the
+    // input that lint exists for. Every branch below reads a byte the iterator
+    // handed over, so there is no position to get wrong.
+    for (offset, byte) in obligation_id.bytes().enumerate() {
+        if seen_dash {
+            // `\d+`
+            if byte.is_ascii_digit() {
+                digits += 1;
+                end = offset + 1;
+                continue;
+            }
+            // The match is a PREFIX: a suffix of any spelling ends the scan
+            // rather than failing it.
+            break;
+        }
+        // `[A-Za-z]+`
+        if byte.is_ascii_alphabetic() {
+            letters += 1;
+            continue;
+        }
+        if byte == b'-' && letters > 0 {
+            seen_dash = true;
+            continue;
+        }
+        return obligation_id;
+    }
+
+    if letters == 0 || !seen_dash || digits == 0 {
+        return obligation_id;
+    }
+    // `get` rather than a slice expression: `end` is an ASCII boundary by
+    // construction, and saying so with a fallible call means a future edit
+    // that breaks the invariant degrades to "unchanged" instead of panicking
+    // inside a view whose whole contract is that it is total.
+    obligation_id.get(..end).unwrap_or(obligation_id)
+}
+
 /// One coverage diagnostic, restricted to the two fields the advisor joins on.
 ///
 /// # Two fields of seven
@@ -165,6 +233,12 @@ pub struct CoverageDiagnostic {
 pub struct CoverageMatrixRequirement {
     /// The obligation group's stating document, scope-relative.
     pub document: String,
+    /// The values the document states for the module's declared
+    /// `carried_fields`, each exactly as written, under its declared name
+    /// (quire-rs FR-090). Absent when the document states none; read, never
+    /// defaulted or inferred.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub carried: Option<serde_json::Map<String, serde_json::Value>>,
     /// The document's criteria, in the engine's derivation order.
     pub criteria: Vec<CoverageMatrixCriterion>,
 }

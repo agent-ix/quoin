@@ -114,6 +114,7 @@ pub fn coverage(
             .iter()
             .map(matrix_requirement)
             .collect(),
+        carried_vocabulary: outcome.report.carried_vocabulary.clone(),
     })
 }
 
@@ -204,6 +205,7 @@ fn matrix_requirement(
 ) -> CoverageMatrixRequirement {
     CoverageMatrixRequirement {
         document: source.document.clone(),
+        carried: source.carried.clone(),
         criteria: source.criteria.iter().map(matrix_criterion).collect(),
     }
 }
