@@ -23,22 +23,27 @@ file of support statements taken from public sources (a project's published supp
 page, or a public end-of-life listing), and the report reads it. Each statement names its public source,
 so a reader can check it. The input is read per invocation, as `--facts` is in FR-046.
 
-The input file is a list of entries `{purl, support_status, end_of_support, source}`. `purl` is a package URL
+The input file is a JSON array of objects `{purl, support_status, end_of_support, source}`. `purl` is a package URL
 or a purl without version for an ecosystem-wide statement; `support_status` is a member of
 `SoupSupportStatus`; `end_of_support` is a calendar date or `unknown`; `source` is a public URL or citation.
 
-An entry matches a record when type, namespace and name of the two purls are equal, qualifiers and subpath are
-ignored, and the entry carries either no version or the record's version. Two entries are duplicates when they
+An entry matches a record when the type, namespace and name segments of the two purls, each percent-decoded, are
+byte-equal (no case folding or type-specific normalisation), qualifiers and subpath are ignored, and the entry carries either no version or the record's version. Two entries are duplicates when they
 are equal in type, namespace, name and version (an absent version equals only an absent version).
 
 ## Behavior
 
 - When a report is generated with `--support <file>`, the command SHALL validate every entry before using any.
-- If an entry lacks `purl`, `support_status` or `source`, or its `source` is empty, or carries a status outside `SoupSupportStatus`, or an `end_of_support` that is neither a calendar date nor `unknown`, then the command SHALL refuse the file naming the entry.
+- If the file is not a JSON array of objects, then the command SHALL refuse the file.
+- If an entry lacks `purl`, `support_status`, `end_of_support` or `source`, or its `source` is empty, or carries a status outside `SoupSupportStatus`, or an `end_of_support` that is neither a calendar date nor `unknown`, then the command SHALL refuse the file naming the entry.
+- If an entry carries a key other than `purl`, `support_status`, `end_of_support` and `source`, then the command SHALL refuse the file naming the entry and the key.
 - If two entries are duplicates, then the command SHALL refuse the file naming both.
 - Where a record's `support_status` or `end_of_support` is stated and not `unknown`, the report SHALL show the record's value as the authoritative value.
 - Where a record's value is `unknown` or absent and an entry matches the record's purl, the report SHALL show the entry's value labelled with its `source`.
 - Where a record's value is `unknown` or absent and an entry matches the record's purl, the report SHALL NOT write it into the record.
+- Where an entry states `unknown` for a field, the report SHALL treat the entry as stating nothing for that field, so that it neither fills a record's `unknown` or absent value nor disagrees with a stated one.
+- If a record's `support_status` or `end_of_support` is outside its `agent-ix/spec-objects-security` FR-010 vocabulary, then the command SHALL refuse naming the record.
+- If a record's `support_status` or `end_of_support` is outside its vocabulary, the command SHALL NOT treat the value as `unknown`.
 - Where a version-less entry and a versioned entry both match, the report SHALL use the versioned entry.
 - If a stated record value and a supplied entry disagree, then the report SHALL show both and flag the disagreement.
 - If neither the record nor an entry states a value, then the report SHALL show `unknown`.
@@ -46,6 +51,7 @@ are equal in type, namespace, name and version (an absent version equals only an
 - If the UTC calendar date of the explicit `asOf` instant is after a component's end-of-support date, then the report SHALL flag the component as past end of support.
 - If the UTC calendar date of `asOf` equals or precedes the end-of-support date, the report SHALL NOT flag the component as past end of support.
 - If a component's end-of-support date is `unknown`, then the report SHALL NOT flag it as past end of support or as within support.
+- The command SHALL take the `--as-of` value, when it is a calendar date, as that UTC date, and when it is an RFC 3339 instant, as its UTC calendar date.
 - The command SHALL NOT read the wall clock; the comparison date is the `--as-of` value (FR-046).
 - The command SHALL make no network request to obtain support data.
 
@@ -60,6 +66,7 @@ are equal in type, namespace, name and version (an absent version equals only an
 | FR-143-AC-5 | With `--as-of 2026-06-01`, a component whose end of support is 2026-05-31 is flagged past end of support and one whose date is 2026-06-01 or later is not. | Test |
 | FR-143-AC-6 | A versioned entry takes precedence over a version-less entry for the same package; a version-less entry matches a record of any version, and an entry for a different version matches nothing; `pkg:cargo/a` and `pkg:cargo/a@1` in one file are not duplicates. | Test |
 | FR-143-AC-9 | With `--as-of 2026-05-31T12:00:00Z` a component ending 2026-05-31 is not flagged, and with `--as-of 2026-06-01T00:00:00Z` it is flagged; an `--as-of` with a non-UTC offset is compared by its UTC date. | Test |
+| FR-143-AC-10 | A record with `support_status: maintained` refuses the report naming the record. Not yet backed: the `quoin soup report` command that tests it is PLAT-1518. | Test |
 | FR-143-AC-7 | The command run with no network available produces the same output as with it. | Test |
 | FR-143-AC-8 | Two runs with different wall-clock times and the same `--as-of` produce identical output. | Test |
 

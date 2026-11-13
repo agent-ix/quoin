@@ -48,7 +48,7 @@ pub(super) fn parse_purl(symbol: &str) -> Option<Purl> {
     })
 }
 
-fn percent_decode(text: &str) -> String {
+pub(super) fn percent_decode(text: &str) -> String {
     let bytes = text.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut index = 0;
