@@ -34,3 +34,12 @@ FR-173 lists needs-disposition under reports emitted on success, but its conditi
 
 - No new dependency relationships were added; existing FR-173/FR-174 relationships remain consistent.
 - Full spec/**/*.md validation exits 3 on an unrelated existing row-width error in spec/functional/FR-113-portfolio-priority-ranking.md:108. The three changed FR files validate and are grammar-clean.
+
+## Dispositions
+
+Round 1, verified at 831d366dbe90bd3ef0ee905d189ead44752295e.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-046 defines decisionExpiresAt and its currentness boundary; FR-133 persists and evaluates it; FR-174-AC-6 checks before, at, and after expiry. |
+| FND-002 | fixed | The needs-disposition success output is removed; FR-173-AC-13 checks required metadata refusal and empty stdout. |

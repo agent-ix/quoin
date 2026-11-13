@@ -34,3 +34,12 @@ The report section says its lines are emitted on success, yet needs-disposition 
 
 - Reviewed the three changed functional requirements and their linked FR-133 and spec-objects-security FR-016 contracts.
 - Full-repository validation is recorded in the integrity review; the changed FRs validate individually.
+
+## Dispositions
+
+Round 1, verified at 831d366dbe90bd3ef0ee905d189ead44752295e.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-046 defines top-level decisionExpiresAt; FR-133 persists and evaluates it; FR-174-AC-6 tests immediately before, at, and after expiry. |
+| FND-002 | fixed | The needs-disposition success line is removed; FR-173-AC-13 verifies missing or invalid required metadata produces non-zero status and empty stdout. |
