@@ -17,7 +17,10 @@ relationships:
 ## Statement
 
 Quoin SHALL create an obligation binding from an analysis run entry only when the recording command was given an
-explicit link naming that obligation.
+`--discharges` id naming that obligation (FR-152).
+
+Quoin SHALL NOT count an obligation backed by an analysis result from a binding or a healthy audit without a positive
+FR-116 decision (FR-153).
 
 Quoin SHALL return the same counting result for the same store and the same supplied observations, whatever order the
 run records are read or supplied in.
@@ -38,10 +41,10 @@ an older pass.
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Bindings created from an analysis entry with no link, including a report whose symbol equals an obligation id | 0 | 0 | Test |
+| Bindings created from an analysis entry with no `--discharges`, including a report whose symbol differs from every obligation id | 0 | 0 | Test |
 | Differing counting results across permutations of the supplied run records | 0 | 0 | Test |
 | Obligations counted from a binding or a healthy audit without a FR-116 positive decision | 0 | 0 | Test |
 
 ## Verification
 
-Covered by FR-152-AC-2, FR-152-AC-3, FR-153-AC-5 and FR-153-AC-8, executed as TC-002.
+Covered by FR-152-AC-2, FR-152-AC-3, FR-153-AC-5, FR-153-AC-8 and FR-153-AC-10, executed as TC-002.

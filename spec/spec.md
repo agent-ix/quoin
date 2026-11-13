@@ -242,7 +242,7 @@ index; the files are authoritative.
 - [FR-148](./functional/FR-148-risk-advise-decision-queue.md) — undecided residual-risk, benefit-risk and overall decisions are queued by id, with no proposed decision.
 - [FR-149](./functional/FR-149-grype-advisory-report-adapter.md) — the Grype JSON report is a finding-shaped adapter: an empty `matches` inside a valid envelope is a clean scan; a missing envelope or a non-empty `ignoredMatches` is refused.
 - [FR-151](./functional/FR-151-differential-report-v2-adapter.md) — the `differential-report` adapter reads `quire.differential-report/v2` directly (replacing the producerless `differential-summary/v1` reader): agreement is one `pass` or `fail`, inconclusive and unavailable are `error`, disagreement is named and not transcribed, and any other schema or non-canonical or malformed report is refused by `quire-analyze`'s own validator.
-- [FR-152](./functional/FR-152-analysis-run-entry-link-to-obligation.md) — an analysis run entry binds to an obligation only through an explicit `--link` stated at recording; nothing is inferred from the symbol or digest.
+- [FR-152](./functional/FR-152-analysis-run-entry-link-to-obligation.md) — an analysis run entry binds to an obligation only through the recorder's `--discharges` ids (FR-041, admitted for `differential-report`); nothing is inferred from the symbol or digest.
 - [FR-153](./functional/FR-153-analysis-result-counting-by-disposition.md) — an analysis result counts only as a FR-078 `qualified-record` claim; fail, error and disagreement are `failed`, `errored` and `absent`.
 - [FR-150](./functional/FR-150-licence-and-ban-policy-findings.md) — a person-authored `licence-policy-v1` file is evaluated over the licences in the ingested Syft SBOM as a finding-shaped adapter (no new producer, no shipped policy); disallowed, banned and unknown-licence components become findings that join onto SOUP records and the SOUP report with person-owned dispositions.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
@@ -319,7 +319,7 @@ index; the files are authoritative.
 ### Integration Tests
 
 - [TC-001](./test/TC-001-differential-report-v2-adapter.md) — the differential report v2 adapter transcribes every disposition and refuses malformed reports.
-- [TC-002](./test/TC-002-analysis-result-counting.md) — an analysis result is linked, bound and counted only as a qualified passing record.
+- [TC-002](./test/TC-002-analysis-result-counting.md) — an analysis result is discharged, bound and counted only as a qualified passing record.
 - [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from git, then serves offline.
 - [IT-002](./integration/IT-002-github-plugin-install.md) — community plugin installs from a GitHub source into the catalog.
 
