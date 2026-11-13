@@ -14,7 +14,7 @@ relationships:
 Quoin SHALL preserve the observable semantics of every ported capability,
 including each refusal and non-success path, and SHALL produce byte-identical
 canonical serializations from the Rust implementation and the implementation
-it replaces, compared byte for byte. No difference is exempt. No digest is computed or compared anywhere in the port.
+it replaces, compared byte for byte. No difference is exempt. No digest is computed or compared anywhere in the port, except the FR-063 record digest that binds a signed approval to the exact record bytes.
 
 ## Inputs
 
