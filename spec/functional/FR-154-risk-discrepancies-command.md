@@ -80,6 +80,7 @@ The absence of findings is not an acceptance.
 | FR-154-AC-8 | For a residual risk whose post-control estimate is referenced only by residual risks on one policy, the region in its finding equals the region `quoin risk advise` shows for that estimate over the same fixture. | Test |
 | FR-154-AC-9 | A nonexistent `<scope>` and a malformed residual-risk record each exit 2 naming the path or the record, with and without `--strict`. | Test |
 | FR-154-AC-10 | Over a fixture in which two residual risks on different policies reference one estimate, `quoin risk advise` shows `policy-ambiguous` and no region for it, and this command reports each residual risk against its own policy and region. | Test |
+| FR-154-AC-11 | Over a fixture that also holds a malformed `overall_residual_risk_evaluation` and a malformed anomaly, the command reports the same findings and exits as it does without them. | Test |
 
 ## Dependencies
 

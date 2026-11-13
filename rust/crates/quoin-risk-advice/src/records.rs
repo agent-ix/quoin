@@ -10,6 +10,14 @@ use quoin_quire::records::{Contract, Document, Table};
 
 use crate::error::AdviceError;
 
+/// The types the discrepancy report reads (FR-154): it checks no other.
+pub(crate) const DISCREPANCY_CHECKED: [&str; 4] = [
+    "risk_estimate",
+    "acceptability_policy",
+    "residual_risk",
+    "benefit_risk",
+];
+
 /// The types whose declared `body_extraction` contract is checked.
 pub(crate) const CHECKED: [&str; 5] = [
     "risk_estimate",
