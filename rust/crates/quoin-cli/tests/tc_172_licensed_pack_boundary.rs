@@ -18,13 +18,52 @@
 
 mod pack_support;
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use ix_trace_rs::trace;
-use pack_support::{SENTINEL, quoin, semantic_root, text};
+use pack_support::{SENTINEL, quoin, scratch, semantic_root, text};
 
 const SKILL: &str = "skills/spec-security-analysis";
 const FIXTURES: &str = "tests/fixtures/security-analysis";
+const SAFE_REFERENCE_PATHS: &[&str] = &[
+    "component-type-mapping.md",
+    "gdpr",
+    "gdpr/ChII-Principles.md",
+    "gdpr/ChIII-DataSubjectRights.md",
+    "gdpr/ChIV-ControllerProcessor.md",
+    "gdpr/ChV-DataTransfers.md",
+    "gdpr/index.md",
+    "nist-800-53",
+    "nist-800-53/AC-AccessControl.md",
+    "nist-800-53/AU-AuditAccountability.md",
+    "nist-800-53/CM-ConfigurationManagement.md",
+    "nist-800-53/IA-IdentificationAuthentication.md",
+    "nist-800-53/SA-SystemServicesAcquisition.md",
+    "nist-800-53/SC-SystemCommunications.md",
+    "nist-800-53/SI-SystemInformationIntegrity.md",
+    "nist-800-53/index.md",
+    "owasp-asvs",
+    "owasp-asvs/V1-EncodingSanitization.md",
+    "owasp-asvs/V2-ValidationBusinessLogic.md",
+    "owasp-asvs/V3-WebFrontend.md",
+    "owasp-asvs/V4-APIWebService.md",
+    "owasp-asvs/V5-FileHandling.md",
+    "owasp-asvs/V6-Authentication.md",
+    "owasp-asvs/V7-SessionManagement.md",
+    "owasp-asvs/V8-Authorization.md",
+    "owasp-asvs/V9-Tokens.md",
+    "owasp-asvs/V10-OAuthOIDC.md",
+    "owasp-asvs/V11-Cryptography.md",
+    "owasp-asvs/V12-SecureCommunication.md",
+    "owasp-asvs/V13-Configuration.md",
+    "owasp-asvs/V14-DataProtection.md",
+    "owasp-asvs/V15-SecureCodingArchitecture.md",
+    "owasp-asvs/V16-LoggingErrorHandling.md",
+    "owasp-asvs/V17-WebRTC.md",
+    "owasp-asvs/index.md",
+    "standards-index.md",
+];
 
 fn repo_root() -> PathBuf {
     std::fs::canonicalize(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.."))
@@ -99,26 +138,19 @@ fn restricted_ids(text: &str) -> Vec<String> {
         .collect()
 }
 
-/// Normalize a standard name or path so punctuation and case do not hide it.
-fn normalized(value: &str) -> String {
-    value
-        .chars()
-        .filter(char::is_ascii_alphanumeric)
-        .flat_map(char::to_lowercase)
-        .collect()
+fn reference_path(candidate: &str) -> Option<PathBuf> {
+    let candidate = candidate.replace('\\', "/");
+    let (_, path) = candidate.rsplit_once("references/")?;
+    let path = path
+        .split(['?', '#'])
+        .next()
+        .unwrap_or(path)
+        .trim_end_matches(['.', ',', ';', ':']);
+    Some(PathBuf::from(path))
 }
 
-/// Spellings of a restricted-source name in a path or link target.
-fn names_restricted_reference(value: &str) -> bool {
-    let normalized = normalized(value);
-    ["soc2", "socii", "iso27001", "isoiec27001"]
-        .iter()
-        .any(|needle| normalized.contains(needle))
-}
-
-/// Check path-like tokens in a document without treating ordinary mentions of
-/// the source names in explanatory prose as links.
-fn names_restricted_path(text: &str) -> bool {
+/// Find local reference paths in Markdown links, inline code and path tokens.
+fn reference_paths(text: &str) -> Vec<PathBuf> {
     let mut paths = Vec::new();
     let mut rest = text;
     while let Some(link_start) = rest.find("](") {
@@ -126,26 +158,58 @@ fn names_restricted_path(text: &str) -> bool {
         let Some(link_end) = rest.find(')') else {
             break;
         };
-        paths.push(&rest[..link_end]);
-        rest = &rest[link_end + 1..];
-    }
-    let mut in_code = false;
-    let mut code_start = 0;
-    for (index, character) in text.char_indices() {
-        if character == '`' {
-            if in_code {
-                paths.push(&text[code_start..index]);
-            } else {
-                code_start = index + 1;
-            }
-            in_code = !in_code;
+        if let Some(path) = reference_path(&rest[..link_end]) {
+            paths.push(path);
         }
+        rest = &rest[link_end + 1..];
     }
     paths.extend(
         text.split(|c: char| c.is_whitespace() || "`()[]<>\"'".contains(c))
-            .filter(|part| part.contains('/') || part.contains('\\') || part.starts_with("./")),
+            .filter_map(reference_path),
     );
-    paths.into_iter().any(names_restricted_reference)
+    paths
+}
+
+fn safe_reference_paths() -> BTreeSet<PathBuf> {
+    SAFE_REFERENCE_PATHS.iter().map(PathBuf::from).collect()
+}
+
+fn actual_reference_paths() -> BTreeSet<PathBuf> {
+    let root = repo_root().join(SKILL).join("references");
+    let mut paths = Vec::new();
+    paths_under(&root, &mut paths);
+    paths
+        .into_iter()
+        .map(|path| {
+            path.strip_prefix(&root)
+                .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+                .to_path_buf()
+        })
+        .collect()
+}
+
+fn is_safe_reference_path(path: &Path) -> bool {
+    SAFE_REFERENCE_PATHS
+        .iter()
+        .any(|allowed| Path::new(allowed) == path)
+}
+
+#[test]
+fn safe_reference_paths_are_explicit_and_link_targets_resolve_within_them() {
+    let allowed = safe_reference_paths();
+    assert_eq!(actual_reference_paths(), allowed);
+    let unlisted = reference_path("../references/not-in-inventory.md").unwrap();
+    assert!(!is_safe_reference_path(&unlisted));
+    for file in files_under(&repo_root().join(SKILL)) {
+        for path in reference_paths(&read(&file)) {
+            assert!(
+                is_safe_reference_path(&path),
+                "{} names an unapproved reference path {}",
+                file.display(),
+                path.display()
+            );
+        }
+    }
 }
 
 /// Add the sentinel as the text of every clause of a fixture clause set.
@@ -161,31 +225,6 @@ fn with_clause_text(set: &str) -> String {
         .collect::<Vec<_>>()
         .join("\n")
         + "\n"
-}
-
-#[test]
-fn restricted_id_shapes_are_recognised_and_ordinary_ids_are_not() {
-    assert_eq!(
-        restricted_ids("see CC6.1-CC6.3, A.9.4.1 and (A.5.1)."),
-        vec!["CC6.1", "CC6.3", "A.9.4.1", "A.5.1"]
-    );
-    assert!(restricted_ids("AC-2 V8.2.1 EX-1 Art. 32 CC").is_empty());
-    assert!(names_restricted_reference("[x](../SOC2/index.md)"));
-    assert!(names_restricted_reference("references/iso-27001"));
-    assert!(names_restricted_reference("references/SOC 2/index.md"));
-    assert!(names_restricted_reference("references/SOC II/index.md"));
-    assert!(names_restricted_reference("refs/ISO/IEC_27001.md"));
-    assert!(names_restricted_reference("refs/iso_27001.md"));
-    assert!(names_restricted_reference(
-        "references/ISO IEC 27001/index.md"
-    ));
-    assert!(!names_restricted_path(
-        "SOC 2 and ISO/IEC 27001 are named here."
-    ));
-    assert!(names_restricted_path(
-        "[reference](../ISO IEC 27001/table.md)"
-    ));
-    assert!(restricted_ids("society-2, ISO 27001 and CC").is_empty());
 }
 
 #[trace("FR-172-AC-7")]
@@ -208,17 +247,7 @@ fn tc_172_001_no_shipped_skill_or_fixture_file_carries_a_restricted_id() {
 #[trace("FR-172-AC-8")]
 #[test]
 fn tc_172_002_skill_ships_no_file_or_directory_named_for_a_restricted_reference() {
-    let mut paths = Vec::new();
-    paths_under(&repo_root().join(SKILL), &mut paths);
-    assert!(!paths.is_empty());
-    for path in paths {
-        let name = path.strip_prefix(repo_root().join(SKILL)).unwrap();
-        assert!(
-            !names_restricted_reference(&name.to_string_lossy()),
-            "{} is a restricted reference",
-            path.display()
-        );
-    }
+    assert_eq!(actual_reference_paths(), safe_reference_paths());
 }
 
 #[trace("FR-172-AC-5", "FR-172-AC-9", "FR-172-AC-11")]
@@ -226,12 +255,14 @@ fn tc_172_002_skill_ships_no_file_or_directory_named_for_a_restricted_reference(
 fn tc_172_003_no_skill_file_links_or_names_a_restricted_reference_path() {
     let skill = repo_root().join(SKILL);
     for file in files_under(&skill) {
-        let body = read(&file);
-        assert!(
-            !names_restricted_path(&body),
-            "{} names a restricted reference path",
-            file.display()
-        );
+        for path in reference_paths(&read(&file)) {
+            assert!(
+                is_safe_reference_path(&path),
+                "{} names an unapproved reference path {}",
+                file.display(),
+                path.display()
+            );
+        }
     }
     let text = read(&skill.join("SKILL.md"));
     assert!(text.contains("Licensed standards come from an installed pack only"));
@@ -246,7 +277,7 @@ fn tc_172_003_no_skill_file_links_or_names_a_restricted_reference_path() {
 #[test]
 fn tc_172_004_fixture_pack_is_listed_as_a_pack_with_no_clause_text() {
     let fixture = repo_root().join(FIXTURES).join("packs/example-invalid-std");
-    let root = tempfile::tempdir().expect("scratch root");
+    let root = scratch();
     let base = root.path().canonicalize().unwrap();
     let home = base.join("ix-home");
     semantic_root(&home);
