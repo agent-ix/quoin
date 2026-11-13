@@ -335,7 +335,10 @@ fn an_unreadable_run_file_leaves_its_suite_without_an_entry_whichever_is_older()
         // be with a readable store.
         let name = broken.file_name().unwrap().to_str().unwrap();
         assert_eq!(count(&report, "unreadable run file skipped"), 1, "{report}");
-        assert!(report.contains(&format!("runs/SUITE-1/{name}")), "{report}");
+        assert!(
+            report.contains(&format!("spec/evidence/runs/SUITE-1/{name}")),
+            "{report}"
+        );
         assert_eq!(baseline, Some(0));
     }
 }
@@ -620,13 +623,47 @@ fn a_module_root_that_cannot_derive_the_obligations_fails_the_check_instead_of_h
         "2026-01-01T00:00:00Z",
         &[(&["TC-001"], Outcome::Fail)],
     );
+    // The hazard type is installed and the process module is real; only the
+    // third root is a module whose manifest cannot be loaded.
+    let broken = tempfile::tempdir().unwrap();
+    std::fs::write(broken.path().join("manifest.yaml"), ": : not yaml [\n").unwrap();
     let out = Command::new(env!("CARGO_BIN_EXE_quoin"))
         .args(["anomaly", "check"])
         .arg(scope.dir.path())
         .arg("--module")
-        .arg(scope.dir.path())
+        .arg(process_root().join("spec_artifacts_process"))
+        .arg("--module")
+        .arg(scope.hazard_module.path())
+        .arg("--module")
+        .arg(broken.path())
         .output()
         .unwrap();
+    let stdout = String::from_utf8(out.stdout).unwrap();
+    let stderr = String::from_utf8(out.stderr).unwrap();
+    assert_ne!(out.status.code(), Some(0), "{stdout}{stderr}");
+    assert!(!stdout.contains("anomaly.missing-module"), "{stdout}");
+    assert!(neither(&stdout), "{stdout}");
+    assert!(stderr.contains("quire.coverage"), "{stderr}");
+}
+
+#[test]
+fn a_run_file_the_store_cannot_read_fails_the_check_instead_of_being_skipped() {
+    use std::os::unix::fs::PermissionsExt;
+    let scope = Scope::of(TEST_ONLY.0, TEST_ONLY.1);
+    scope.run(
+        "SUITE-1",
+        "2026-01-01T00:00:00Z",
+        &[(&["TC-001"], Outcome::Pass)],
+    );
+    let run = walk(&scope.dir.path().join("spec/evidence/runs"))
+        .pop()
+        .unwrap();
+    std::fs::set_permissions(&run, std::fs::Permissions::from_mode(0o000)).unwrap();
+    if std::fs::read(&run).is_ok() {
+        return; // running as a user the mode does not bind
+    }
+    let out = scope.check();
+    std::fs::set_permissions(&run, std::fs::Permissions::from_mode(0o644)).unwrap();
     assert_ne!(out.status.code(), Some(0));
     assert!(neither(&String::from_utf8(out.stdout).unwrap()));
 }

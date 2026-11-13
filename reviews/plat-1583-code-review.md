@@ -60,3 +60,25 @@ SHAs, no compatibility layer.
 | `refs.rs` `test_case_ids`, `CorpusIds` | examined | Correct; widens `refs` resolution as the CR note says |
 | `quoin-cli` `run_check`, `criterion_tests` | examined | FND-001; obligation-id filtering matches FR-030-AC-15 |
 | Cargo.toml / Cargo.lock dependency edge | examined | No cycle, lock consistent |
+
+## New findings (disposition pass 1)
+
+Fix head `e15903da`. Six single-line mutants of the touched code were run against tc_175 and tc_162
+(each restored with a fresh mtime so cargo rebuilt the crate): skipped files not printed (N2) and
+target not rendered (N3) were killed; the restored `obligations_unavailable` fallback (N4), the
+swallowed coverage refusal branch (N5) and a swallowed store I/O error (N6) survived.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | The FND-001 regression test `a_module_root_that_cannot_derive_the_obligations_fails_the_check_instead_of_hiding_the_finding` cannot fail. Restoring the fallback (`criterion_tests(..).unwrap_or(Ok(BTreeMap::new()))`) leaves it passing: the bad root carries no `hazard` type, so the fixture's Hazard row yields `error anomaly.missing-module` and exit 1, which satisfies `assert_ne!(code, Some(0))`, and the lost indirect route yields no finding, which satisfies `neither`. Fix: pass the spec_artifacts_process module and the hazard manifest beside the bad root (so missing-module cannot fire), and assert that stdout carries no `anomaly.missing-module` line and stderr names the `quire.coverage` failure. | rust/crates/quoin-cli/tests/tc_175_fix_verification_command.rs:615-631 |
+| FND-006 | low | The skipped line names the file store-relative (`runs/SUITE-2/2026-01-02T00-00-00Z.json`), while every other line of the check names its file from the scope (`./spec/anomalies/AN-001.md`). The path does not open from where the user ran the command. Prefix the store root (`spec/evidence/`) when printing it. | rust/crates/quoin-cli/src/anomaly.rs:197-200 |
+| FND-007 | low | The new `"skipped"` payload key is never emitted: `anomaly check` prints only `rendered`, so the key is write-only, the same class as FND-003. Drop it, or expose it through a real JSON mode. | rust/crates/quoin-cli/src/anomaly.rs:208 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The fallback is gone and the coverage failure propagates; reproduced: a Criterion-only anomaly with a failing TC-001 and a bad module root exits 1 with `quire.coverage failed: ... manifest.yaml not found` and no finding. tc_162 uses a real module root. The regression test is vacuous, recorded as FND-005. |
+| FND-002 | fixed | Each skipped path is printed once, exit status unchanged; a store I/O error now fails the check (reproduced with a mode-000 run file). Path plus "unreadable run file skipped" satisfies FR-030-AC-13: its "naming the file and the cause" sentence governs a raised diagnostic, the run-file case is "skipped and reported", and quoin-core's evidence op reports the same path-only `skipped` list. No spec wording is needed. |
+| FND-003 | fixed | The line renders `[target: ...]` from `Diagnostic.target`; the message no longer carries it. |
+| FND-004 | fixed | `latest_run` replaces `read_runs` plus `next_back()`. |

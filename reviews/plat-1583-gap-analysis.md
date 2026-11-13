@@ -58,3 +58,15 @@ kind mismatch stays `quire validate`'s (FR-015-AC-15, FR-136). One low spec-text
 | FR-030 newest-by-timestamp, AC-13, AC-15 | examined | Newest and AC-15 correct; AC-13 see code review FND-002 |
 | FR-120 run entry trace ids and outcomes | context_only | Read for the match rule |
 | NFR-035 states, never accepts, read-only, deterministic | examined | Holds (AC-14) |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | low | No test asserts that a store I/O error fails the check: replacing `latest_run(..).map_err(..)?` with `.unwrap_or(None)` leaves tc_175 and tc_162 passing. The behaviour is right (reproduced by hand with a mode-000 run file) but unguarded. Add a test with an unreadable-by-permission run file, or a store path that is a file, asserting a non-zero exit. | rust/crates/quoin-anomaly/src/verification.rs:199-200 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-175 now states FR/NFR document rows as FR-015 allows and hazard rows as the FR-015-AC-15 kind mismatch `quire validate` reports. |

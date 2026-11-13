@@ -196,7 +196,8 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
     // (FR-030-AC-13); the exit status is unchanged.
     for skipped in verification.skipped() {
         lines.push(format!(
-            "{skipped}: unreadable run file skipped; its suite contributes no result"
+            "{}: unreadable run file skipped; its suite contributes no result",
+            scope.join("spec/evidence").join(skipped).display()
         ));
     }
     let outcome = if errors {
@@ -205,7 +206,7 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
         Outcome::Ok
     };
     Ok(Response {
-        payload: serde_json::json!({ "rendered": lines.join("\n"), "skipped": verification.skipped() }),
+        payload: serde_json::json!({ "rendered": lines.join("\n") }),
         diagnostics: Vec::new(),
         outcome,
     })
