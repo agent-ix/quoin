@@ -35,8 +35,8 @@ one.
 
 ## Outputs
 
-- `previous_release` and `change_records` in the snapshot, with `change_records` ordered by `record_id`, then by
-  `revision` ascending, then by `commit`.
+- `previous_release` and `change_records` in the snapshot, with `change_records` ordered by `record_id` bytewise, then by
+  `revision` numerically ascending, then by `commit` bytewise.
 
 ## Behavior
 
