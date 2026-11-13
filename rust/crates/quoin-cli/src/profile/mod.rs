@@ -10,11 +10,13 @@
 mod evaluate;
 mod model;
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgMatches, Command};
+use ix_cli_kit::exit::Outcome;
 use ix_trace_rs::implements;
-use quoin_core::protocol::{Response, canonical_json};
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_modules::IxHome;
 use quoin_quire::ModuleRoot;
 use quoin_quire::clauses::{self, Context};
@@ -88,11 +90,42 @@ fn module_roots() -> Result<Vec<ModuleRef>, String> {
         .collect()
 }
 
-fn read_optional(file: &Path) -> Result<Option<String>, String> {
-    match std::fs::read_to_string(file) {
-        Ok(text) => Ok(Some(text)),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(error) => Err(format!("{}: {error}", file.display())),
+/// Why a run ended without a report.
+enum Stop {
+    /// A coded refusal (exit 2).
+    Refuse(Box<Response>),
+    /// An operational failure (exit 1).
+    Fail(String),
+}
+
+impl From<String> for Stop {
+    fn from(message: String) -> Self {
+        Self::Fail(message)
+    }
+}
+
+/// A refusal: no payload, one diagnostic carrying the stable code.
+fn refusal(code: &str, message: String) -> Stop {
+    Stop::Refuse(Box::new(Response {
+        payload: serde_json::Value::Null,
+        diagnostics: vec![Diagnostic {
+            code: code.to_owned(),
+            message,
+            context: BTreeMap::new(),
+        }],
+        outcome: Outcome::Refused,
+    }))
+}
+
+impl From<model::ProfileError> for Stop {
+    fn from(error: model::ProfileError) -> Self {
+        refusal(error.code(), error.to_string())
+    }
+}
+
+impl From<evaluate::EvaluateError> for Stop {
+    fn from(error: evaluate::EvaluateError) -> Self {
+        refusal(error.code(), error.to_string())
     }
 }
 
@@ -111,8 +144,16 @@ fn user_root() -> PathBuf {
         })
 }
 
-#[implements("FR-180", "FR-181", "FR-182")]
 fn profile_evaluate(out_dir: Option<&Path>) -> Result<Response, String> {
+    match evaluate_selected(out_dir) {
+        Ok(response) => Ok(response),
+        Err(Stop::Refuse(response)) => Ok(*response),
+        Err(Stop::Fail(message)) => Err(message),
+    }
+}
+
+#[implements("FR-180", "FR-181", "FR-182")]
+fn evaluate_selected(out_dir: Option<&Path>) -> Result<Response, Stop> {
     let invocation = invocation::current();
     let selection_file = if invocation.no_project_config() {
         None
@@ -121,8 +162,8 @@ fn profile_evaluate(out_dir: Option<&Path>) -> Result<Response, String> {
         Some(cwd.join(".ix").join(SELECTION_FILE))
     };
     let selection = match &selection_file {
-        Some(file) => match read_optional(file)? {
-            Some(text) => Some(model::parse_selection(file, &text).map_err(|e| e.to_string())?),
+        Some(file) => match model::read_bounded(file)? {
+            Some(text) => Some(model::parse_selection(file, &text)?),
             None => None,
         },
         None => None,
@@ -134,16 +175,15 @@ fn profile_evaluate(out_dir: Option<&Path>) -> Result<Response, String> {
     };
 
     let user_file = user_root().join(SELECTION_FILE);
-    let user_add = match read_optional(&user_file)? {
-        Some(text) => model::parse_user_add(&user_file, &text).map_err(|e| e.to_string())?,
+    let user_add = match model::read_bounded(&user_file)? {
+        Some(text) => model::parse_user_add(&user_file, &text)?,
         None => Vec::new(),
     };
 
     let modules = module_roots()?;
-    let profile = model::load_profile(&selection.profile, &modules).map_err(|e| e.to_string())?;
+    let profile = model::load_profile(&selection.profile, &modules)?;
     let effective = model::effective(&profile, &selection, &user_add);
-    let evaluation =
-        evaluate::evaluate(&effective, &modules, &QuireEngine).map_err(|e| e.to_string())?;
+    let evaluation = evaluate::evaluate(&effective, &modules, &QuireEngine)?;
     if let Some(dir) = out_dir {
         write_reports(dir, &evaluation)?;
     }
@@ -152,7 +192,9 @@ fn profile_evaluate(out_dir: Option<&Path>) -> Result<Response, String> {
     ))
 }
 
-/// One file per evaluated set, named by position so no key text reaches a path.
+/// One file per evaluated set. A name is a position prefix and the set id with
+/// every character outside `[A-Za-z0-9.-]` replaced, so no key text can form a
+/// path separator.
 fn write_reports(dir: &Path, evaluation: &Evaluation) -> Result<(), String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     for (index, entry) in evaluation.sets.iter().enumerate() {

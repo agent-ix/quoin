@@ -215,3 +215,18 @@ fn profiles_are_found_only_in_module_profile_directories() {
     let text = duplicate.to_string();
     assert!(text.contains("mod-a") && text.contains("mod-c"), "{text}");
 }
+
+#[trace("FR-180-AC-10")]
+#[test]
+fn a_name_that_is_not_one_plain_component_is_refused_before_any_path_is_built() {
+    let base = tempfile::tempdir().expect("tmp");
+    let a = module(base.path(), "mod-a", Some(GOOD));
+    for name in ["/abs/evil", "../evil", "a/b", "..", ".hidden", "a\\b", ""] {
+        let error = load_profile(name, std::slice::from_ref(&a)).expect_err(name);
+        assert!(
+            matches!(error, ProfileError::InvalidName { .. }),
+            "{name}: {error}"
+        );
+        assert_eq!(error.code(), "profile.invalid_name");
+    }
+}

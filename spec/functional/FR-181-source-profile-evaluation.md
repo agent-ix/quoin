@@ -45,7 +45,7 @@ own file, so each can be given to `quoin discharge` ([FR-046](./FR-046-clause-di
 
 ## Outputs
 
-- One `source-profile-evaluation-v1` document on stdout.
+- Where a profile is selected, one `source-profile-evaluation-v1` document on stdout. Where none is selected ([FR-180](./FR-180-source-profile-selection.md)), one line saying so and no document.
 - With `--out-dir`, one `clause-binding-v1` file per evaluated set.
 
 ## Behavior

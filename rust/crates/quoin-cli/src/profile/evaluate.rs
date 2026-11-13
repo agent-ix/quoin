@@ -74,6 +74,18 @@ pub(crate) enum EvaluateError {
     },
 }
 
+impl EvaluateError {
+    /// The stable diagnostic code for this refusal.
+    pub(crate) const fn code(&self) -> &'static str {
+        match self {
+            Self::AmbiguousKey { .. } => "profile.ambiguous_key",
+            Self::PackInProject { .. } => "profile.pack_in_project",
+            Self::Engine { .. } => "profile.engine_failed",
+            Self::NotBinding { .. } => "profile.report_invalid",
+        }
+    }
+}
+
 /// Whether a listed set was found and evaluated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

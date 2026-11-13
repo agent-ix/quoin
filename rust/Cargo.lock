@@ -3544,6 +3544,7 @@ version = "0.31.0"
 dependencies = [
  "ix-trace-rs",
  "saphyr",
+ "saphyr-parser",
  "serde_json",
  "thiserror",
 ]

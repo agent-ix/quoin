@@ -15,6 +15,10 @@ use quoin_quire_types::ClauseSetKey;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// Largest profile or selection file read, in bytes. A real one is a few
+/// hundred bytes; the selection file is controlled by the repository.
+const MAX_FILE_BYTES: u64 = 64 * 1024;
+
 /// The one accepted `schemaVersion` of a profile file.
 const PROFILE_SCHEMA: &str = "source-profile-v1";
 
@@ -70,6 +74,33 @@ pub(crate) enum ProfileError {
         /// The I/O failure.
         reason: String,
     },
+    /// A file is larger than the ceiling for a profile or selection file.
+    #[error("{}: larger than {MAX_FILE_BYTES} bytes", file.display())]
+    TooLarge {
+        /// The file.
+        file: PathBuf,
+    },
+    /// The selected name is not a single plain file stem.
+    #[error("profile name `{name}` is not a plain name: no separators, `..` or leading `.`")]
+    InvalidName {
+        /// The refused name.
+        name: String,
+    },
+}
+
+impl ProfileError {
+    /// The stable diagnostic code for this refusal.
+    pub(crate) const fn code(&self) -> &'static str {
+        match self {
+            Self::NotFound { .. } => "profile.not_found",
+            Self::Duplicate { .. } => "profile.duplicate",
+            Self::BadProfile { .. } => "profile.invalid_profile",
+            Self::BadSelection { .. } => "profile.invalid_selection",
+            Self::Unreadable { .. } => "profile.unreadable",
+            Self::TooLarge { .. } => "profile.file_too_large",
+            Self::InvalidName { .. } => "profile.invalid_name",
+        }
+    }
 }
 
 /// Which file contributed a clause set to the effective profile.
@@ -153,7 +184,8 @@ pub(crate) fn parse_profile(file: &Path, stem: &str, text: &str) -> Result<Profi
         file: file.to_path_buf(),
         rule,
     };
-    let value = quoin_yaml::from_str(text).map_err(|e| bad(format!("not valid YAML: {e}")))?;
+    let value = quoin_yaml::from_str_without_aliases(text)
+        .map_err(|e| bad(format!("not valid YAML: {e}")))?;
     let profile: Profile =
         serde_json::from_value(value).map_err(|e| bad(format!("not a source profile: {e}")))?;
     if profile.schema_version != PROFILE_SCHEMA {
@@ -180,38 +212,81 @@ pub(crate) fn parse_profile(file: &Path, stem: &str, text: &str) -> Result<Profi
     Ok(profile)
 }
 
+/// Read `file` under the size ceiling; `None` when it does not exist.
+pub(crate) fn read_bounded(file: &Path) -> Result<Option<String>, ProfileError> {
+    use std::io::Read as _;
+    let unreadable = |e: std::io::Error| ProfileError::Unreadable {
+        file: file.to_path_buf(),
+        reason: e.to_string(),
+    };
+    let handle = match std::fs::File::open(file) {
+        Ok(handle) => handle,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(unreadable(e)),
+    };
+    let mut bytes = Vec::new();
+    handle
+        .take(MAX_FILE_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(unreadable)?;
+    if u64::try_from(bytes.len()).map_or(true, |len| len > MAX_FILE_BYTES) {
+        return Err(ProfileError::TooLarge {
+            file: file.to_path_buf(),
+        });
+    }
+    String::from_utf8(bytes)
+        .map(Some)
+        .map_err(|e| unreadable(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))
+}
+
+/// Whether `name` is one plain path component, so `profiles/{name}.yaml`
+/// cannot leave the `profiles/` directory.
+fn is_plain_name(name: &str) -> bool {
+    let mut components = Path::new(name).components();
+    matches!(
+        (components.next(), components.next()),
+        (Some(std::path::Component::Normal(only)), None) if only == name
+    ) && !name.contains('\\')
+        && !name.starts_with('.')
+}
+
 /// Find and read the profile `name` among the `profiles/` directories of
 /// `modules`, and nowhere else.
 pub(crate) fn load_profile(name: &str, modules: &[ModuleRef]) -> Result<Profile, ProfileError> {
-    let mut found: Vec<(&ModuleRef, PathBuf)> = Vec::new();
-    for module in modules {
-        let file = module.root.join("profiles").join(format!("{name}.yaml"));
-        if file.is_file() {
-            found.push((module, file));
-        }
+    if !is_plain_name(name) {
+        return Err(ProfileError::InvalidName {
+            name: name.to_owned(),
+        });
     }
-    let mut shipped = found.into_iter();
-    let (Some((_, file)), second) = (shipped.next(), shipped.next()) else {
+    let mut shipped = modules
+        .iter()
+        .map(|module| {
+            (
+                module,
+                module.root.join("profiles").join(format!("{name}.yaml")),
+            )
+        })
+        .filter(|(_, file)| file.is_file());
+    let Some((first, file)) = shipped.next() else {
         return Err(ProfileError::NotFound {
             name: name.to_owned(),
         });
     };
-    if let Some((other, _)) = second {
-        let first = modules
-            .iter()
-            .find(|m| file.starts_with(&m.root))
-            .map_or_else(String::new, |m| m.name.clone());
+    if let Some((second, _)) = shipped.next() {
         return Err(ProfileError::Duplicate {
             name: name.to_owned(),
-            first,
-            second: other.name.clone(),
+            first: first.name.clone(),
+            second: second.name.clone(),
         });
     }
-    let text = std::fs::read_to_string(&file).map_err(|e| ProfileError::Unreadable {
-        file: file.clone(),
-        reason: e.to_string(),
+    let stem = file
+        .file_stem()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or_default();
+    let text = read_bounded(&file)?.ok_or_else(|| ProfileError::NotFound {
+        name: name.to_owned(),
     })?;
-    parse_profile(&file, name, &text)
+    parse_profile(&file, stem, &text)
 }
 
 fn selection_value(
@@ -222,7 +297,9 @@ fn selection_value(
         file: file.to_path_buf(),
         rule,
     };
-    match quoin_yaml::from_str(text).map_err(|e| bad(format!("not valid YAML: {e}")))? {
+    match quoin_yaml::from_str_without_aliases(text)
+        .map_err(|e| bad(format!("not valid YAML: {e}")))?
+    {
         Value::Object(map) => Ok(map),
         _ => Err(bad("must be a mapping".to_owned())),
     }

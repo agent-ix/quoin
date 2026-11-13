@@ -208,6 +208,29 @@ fn a_selected_profile_is_evaluated_with_the_effective_context() {
     assert!(report["summary"]["clauses"]["unresolved"].as_u64().unwrap() >= 1);
 }
 
+#[trace("FR-181-AC-10")]
+#[test]
+fn a_value_one_set_admits_and_another_does_not_is_not_rewritten() {
+    let env = env();
+    env.select("profile: p\n");
+    let report = env.report();
+    // `region: us` comes from the profile. alpha admits it, beta (eu, uk) does not.
+    assert_eq!(report["context"]["region"], "us");
+    let sets = report["sets"].as_array().unwrap();
+    assert_eq!(sets[0]["report"]["context"]["region"], "us");
+    assert_eq!(sets[1]["report"]["context"]["region"], "us");
+    let alpha = outcomes(&sets[0]);
+    assert!(
+        alpha.contains(&("alpha-3".to_owned(), "not_binding".to_owned())),
+        "{alpha:?}"
+    );
+    let beta = outcomes(&sets[1]);
+    assert!(
+        beta.contains(&("beta-3".to_owned(), "unresolved".to_owned())),
+        "{beta:?}"
+    );
+}
+
 #[trace("FR-181-AC-2")]
 #[test]
 fn a_context_lacking_a_needed_dimension_leaves_the_clause_unresolved() {
@@ -272,7 +295,13 @@ fn a_profile_no_module_ships_is_refused_naming_it() {
     let env = env();
     env.select("profile: nothing-ships-this\n");
     let output = env.evaluate(&[]);
-    assert!(!output.status.success());
+    // A refusal is exit 2 with a stable code, not the generic failure status.
+    assert_eq!(output.status.code(), Some(2), "{}", text(&output));
+    assert!(
+        text(&output).contains("profile.not_found"),
+        "{}",
+        text(&output)
+    );
     assert!(
         text(&output).contains("nothing-ships-this"),
         "{}",
@@ -383,6 +412,62 @@ fn a_profile_file_in_the_repository_is_never_read() {
     let output = env.evaluate(&[]);
     assert!(!output.status.success());
     assert!(text(&output).contains("only-here"));
+
+    // A name that reaches the repository file by an absolute path or by `..`
+    // is refused as a name, and the file is not read.
+    let evil = env.cwd.join("evil");
+    std::fs::write(
+        env.cwd.join("evil.yaml"),
+        profile_yaml(evil.to_str().unwrap(), &[("alpha", "1")], ""),
+    )
+    .unwrap();
+    for name in [
+        evil.to_str().unwrap().to_owned(),
+        "../../../../../../../../tmp/x".to_owned(),
+        "sub/evil".to_owned(),
+        ".hidden".to_owned(),
+    ] {
+        env.select(&format!("profile: \"{name}\"\n"));
+        let output = env.evaluate(&[]);
+        assert_eq!(output.status.code(), Some(2), "{name}: {}", text(&output));
+        assert!(
+            text(&output).contains("profile.invalid_name"),
+            "{name}: {}",
+            text(&output)
+        );
+    }
+}
+
+#[test]
+fn an_alias_bomb_or_an_oversized_selection_file_is_refused_cheaply() {
+    let env = env();
+    let mut bomb = String::from("profile: p\nx0: &a0 [y, y, y, y, y, y, y, y, y]\n");
+    for level in 1..12 {
+        let refs = vec![format!("*a{}", level - 1); 9].join(", ");
+        bomb.push_str(&format!("x{level}: &a{level} [{refs}]\n"));
+    }
+    env.select(&bomb);
+    let started = std::time::Instant::now();
+    let output = env.evaluate(&[]);
+    assert_eq!(output.status.code(), Some(2), "{}", text(&output));
+    assert!(
+        text(&output).contains("profile.invalid_selection"),
+        "{}",
+        text(&output)
+    );
+    assert!(
+        started.elapsed().as_secs() < 20,
+        "an alias must not be expanded"
+    );
+
+    env.select(&format!("profile: p\n# {}\n", "x".repeat(70 * 1024)));
+    let output = env.evaluate(&[]);
+    assert_eq!(output.status.code(), Some(2), "{}", text(&output));
+    assert!(
+        text(&output).contains("profile.file_too_large"),
+        "{}",
+        text(&output)
+    );
 }
 
 #[trace("FR-181-AC-7")]
@@ -432,11 +517,13 @@ fn out_dir_files_equal_the_engine_report_and_discharge_accepts_them() {
 fn a_run_is_byte_identical_offline_and_changes_nothing() {
     let env = env();
     env.select("profile: p\n");
+    env.user_file("add:\n  - {authority: example.invalid, id: extra, version: \"1\"}\n");
     std::fs::create_dir_all(env.cwd.join("spec")).unwrap();
     std::fs::write(env.cwd.join("spec/FR-1.md"), "requirement\n").unwrap();
+    // The whole home holds the module roots and the user selection file.
     let watched = |env: &Env| {
         (
-            snapshot(&env.home.join("filament")),
+            snapshot(&env.home),
             snapshot(&env.cwd.join(".ix")),
             snapshot(&env.cwd.join("spec")),
         )
@@ -445,14 +532,15 @@ fn a_run_is_byte_identical_offline_and_changes_nothing() {
     let out_a = env.base.join("out-a");
     let out_b = env.base.join("out-b");
     let first = env.evaluate(&["--out-dir", out_a.to_str().unwrap()]);
+    let proxy = Path::new("http://127.0.0.1:9");
     let offline = quoin(
         &env.home,
         &env.cwd,
         &["profile", "evaluate", "--out-dir", out_b.to_str().unwrap()],
         &[
-            ("HTTP_PROXY", Path::new("http://127.0.0.1:9")),
-            ("HTTPS_PROXY", Path::new("http://127.0.0.1:9")),
-            ("ALL_PROXY", Path::new("http://127.0.0.1:9")),
+            ("HTTP_PROXY", proxy),
+            ("HTTPS_PROXY", proxy),
+            ("ALL_PROXY", proxy),
         ],
     );
     assert!(first.status.success() && offline.status.success());
@@ -460,6 +548,33 @@ fn a_run_is_byte_identical_offline_and_changes_nothing() {
     let files = |dir: &Path| snapshot(dir).into_values().collect::<Vec<_>>();
     assert_eq!(files(&out_a), files(&out_b));
     assert_eq!(before, watched(&env));
+}
+
+/// The run inside an empty network namespace, where no socket can leave the
+/// process. Skipped, loudly, where user namespaces are not permitted.
+#[trace("NFR-037-AC-2")]
+#[test]
+fn a_run_with_no_network_namespace_gives_the_same_output() {
+    let env = env();
+    env.select("profile: p\n");
+    let probe = std::process::Command::new("unshare")
+        .args(["-rn", "true"])
+        .status();
+    if !probe.is_ok_and(|status| status.success()) {
+        eprintln!("skipped: `unshare -rn` is not permitted on this host");
+        return;
+    }
+    let with_network = env.evaluate(&[]);
+    let semantic = pack_support::semantic_root(&env.home);
+    let isolated = std::process::Command::new("unshare")
+        .args(["-rn", env!("CARGO_BIN_EXE_quoin"), "profile", "evaluate"])
+        .current_dir(&env.cwd)
+        .env("IX_HOME", &env.home)
+        .env("QUOIN_SEMANTIC_ROOT", semantic)
+        .output()
+        .unwrap();
+    assert!(isolated.status.success(), "{}", text(&isolated));
+    assert_eq!(with_network.stdout, isolated.stdout);
 }
 
 fn install_pack(env: &Env) {
