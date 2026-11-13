@@ -51,7 +51,10 @@ command.
 
 Quoin reads retained records, workflow events, attestations, outputs, and audit
 findings. It executes no proof command. Nothing it reads establishes identity,
-authorization, or non-repudiation; git history is the tamper evidence.
+authorization, or non-repudiation of its own; git history is the tamper evidence. The
+one exception is a retained verification of a named person's signed approval tag,
+produced by Engineering Assurance and reported as received; Quoin never verifies a
+signature itself.
 
 ## Dependencies (Contextual)
 

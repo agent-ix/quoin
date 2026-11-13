@@ -86,7 +86,7 @@ The table declares the record's top-level fields and their cardinality. Which ke
     "diff_paths_supplied"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "record_type": { "const": "verification_receipt" },
     "record_id": { "$ref": "#/$defs/identity" },
     "record_revision": { "type": "integer", "minimum": 1 },
@@ -159,6 +159,11 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "event_chain_missing",
         "event_chain_invalid",
         "decision_mismatch",
+        "approval_record_mismatch",
+        "approval_signer_untrusted",
+        "approval_signature_bad",
+        "approval_unverified",
+        "approval_meaning_missing",
         "review_rejected",
         "review_revision_requested",
         "attestation_missing",
@@ -199,7 +204,14 @@ The table declares the record's top-level fields and their cardinality. Which ke
     },
     "decision_event": {
       "type": "object",
-      "required": ["run_id", "event_id", "sequence", "recorded_actor", "decision"],
+      "required": [
+        "run_id",
+        "event_id",
+        "sequence",
+        "recorded_actor",
+        "decision",
+        "approval"
+      ],
       "properties": {
         "run_id": { "$ref": "#/$defs/identity" },
         "event_id": { "$ref": "#/$defs/identity" },
@@ -208,7 +220,32 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "decision": {
           "type": "string",
           "enum": ["approved", "rejected", "revise"]
+        },
+        "approval": {
+          "anyOf": [{ "$ref": "#/$defs/approval" }, { "type": "null" }]
         }
+      },
+      "additionalProperties": false
+    },
+    "approval": {
+      "type": "object",
+      "required": [
+        "tag",
+        "record_digest",
+        "approver",
+        "meaning",
+        "signature_kind"
+      ],
+      "properties": {
+        "tag": { "type": "string", "minLength": 1 },
+        "record_digest": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "approver": { "type": "string", "minLength": 1 },
+        "meaning": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "signature_kind": { "type": "string", "enum": ["ssh", "gitsign"] }
       },
       "additionalProperties": false
     },
@@ -297,6 +334,29 @@ valid review check; `rejected` and `revise` are invalid. Zero matching events or
 missing history is incomplete; more than one matching event is invalid with
 `decision_mismatch`; and a gap or repeat in the sequence, or a mismatched event, is invalid.
 
+### Signed approval
+
+A matching `approved` event whose payload carries no `verified_approval` is judged as
+above, and the receipt's `approval` is `null`. When it carries one (FR-063), the
+review check SHALL additionally apply the first rule below that holds, and the
+receipt's `approval` is the object of the `approved` case and `null` otherwise:
+
+1. status `wrong_record`, or a `record_id` other than the record's, or a
+   `record_digest` other than the digest of the reviewed revision's stored bytes
+   (FR-063), is `invalid` with `approval_record_mismatch`;
+2. status `untrusted_signer` is `invalid` with `approval_signer_untrusted`;
+3. status `signed_bad` is `invalid` with `approval_signature_bad`;
+4. status `unsigned` or `unverifiable` is `incomplete` with `approval_unverified`;
+5. status `meaning_missing` is `incomplete` with `approval_meaning_missing`;
+6. status `approved` with an equal record id and digest leaves the review check as above
+   and fills `approval` with `tag`, `record_digest`, `approver`, `meaning` and
+   `signature_kind` from the retained result.
+
+Duplicate decisions stay `invalid` with `decision_mismatch` under the exactly-one
+rule: when two matching events carry approvals, none is selected. Quoin recomputes the
+digest from the stored record and compares strings; it starts no Git, network or
+identity-provider operation and does not repeat the signature verification.
+
 An incomplete or truncated impact snapshot or any unknown whose disposition is
 not `resolved` SHALL make the receipt incomplete. It SHALL remain visible so an
 advisory workflow may proceed without misreporting complete verification.
@@ -311,7 +371,13 @@ Identical retained inputs and selections SHALL produce byte-identical receipt
 JSON.
 
 The receipt's `recorded_actor` is copied from the ix-flow event. It does not establish identity, authorization,
-authenticity, signature, or non-repudiation.
+authenticity, signature, or non-repudiation. The receipt's `approval` member, when
+non-null, reports the retained Engineering Assurance verification as received: that
+result, and not the receipt, is the evidence that the named approver signed.
+
+The receipt schema is revised to version 2 by the `approval` member and the five
+`approval_*` reasons; version 1 receipts are not read (prerelease, no compatibility
+reader).
 
 ## Constraints
 
@@ -319,7 +385,7 @@ authenticity, signature, or non-repudiation.
 | --- | --- | --- | --- |
 | FR-065-CON-1 | Verification SHALL execute no proof, suite, tool, ix-flow command, Git command, network request, or evidence write. | Architecture | Inspection |
 | FR-065-CON-2 | Verification SHALL consume FR-032 findings without replacing or suppressing their auditor verdict. | Responsibility | Test |
-| FR-065-CON-3 | A receipt SHALL make no identity, authorization, authenticity, signature, or non-repudiation claim. | Responsibility | Inspection |
+| FR-065-CON-3 | A receipt SHALL make no identity, authorization, authenticity, signature, or non-repudiation claim of its own; `approval` reports a retained verification as received. | Responsibility | Inspection |
 | FR-065-CON-4 | Existing evidence-audit and assurance reports SHALL remain readable and unchanged when change assurance is not selected. | Compatibility | Test |
 
 ## Acceptance Criteria
@@ -337,7 +403,13 @@ authenticity, signature, or non-repudiation.
 | FR-065-AC-9 | The receipt retains each FR-032 finding kind and obligation id byte-for-byte beside its mapped reason without changing the source auditor result (CON-2). | Integration |
 | FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts, compared byte for byte. | Property |
 | FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration |
-| FR-065-AC-12 | Golden terminology describes actor labels only as recorded attribution, never identity, authority, authenticity, signature, or non-repudiation (CON-3). | Analysis |
+| FR-065-AC-12 | Golden terminology describes actor labels only as recorded attribution, never identity, authority, authenticity, signature, or non-repudiation, and `approval` only as a retained verification (CON-3). | Analysis |
+| FR-065-AC-13 | A matching `approved` event whose `verified_approval` is `approved` with the record's id and the digest of the stored revision keeps the review check valid, and the receipt's `approval` carries the tag, digest, approver, every meaning value in order and the signature kind. | Integration |
+| FR-065-AC-14 | A `verified_approval` with status `wrong_record`, or `approved` with a digest that is not the digest of the stored revision (the record changed after the tag), makes the receipt `invalid` with `approval_record_mismatch` and `approval` null. | Integration |
+| FR-065-AC-15 | A `verified_approval` with status `untrusted_signer` (an unmapped signer) makes the receipt `invalid` with `approval_signer_untrusted`; `signed_bad` makes it `invalid` with `approval_signature_bad`. | Integration |
+| FR-065-AC-16 | A `verified_approval` with status `meaning_missing` makes the receipt `incomplete` with `approval_meaning_missing`; `unsigned` or `unverifiable` makes it `incomplete` with `approval_unverified`; none of them is `valid`, and `invalid` still dominates when another check is invalid. | Integration |
+| FR-065-AC-17 | Two matching `approved` events that each carry a `verified_approval` make the receipt `invalid` with `decision_mismatch`, and `approval` is null. | Integration |
+| FR-065-AC-18 | An approved event with no `verified_approval` yields `approval` null and the same review check as before; a version 1 payload or receipt is not accepted; static boundaries prove the approval check starts no process and performs no Git, network or identity-provider operation (CON-1). | Test |
 
 ## Dependencies
 

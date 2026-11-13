@@ -25,7 +25,11 @@ versioned JSON Schema below.
 
 Approval is not a field added after the record is written. An ix-flow decision
 event names the record by `record_id` and `revision`, so the record and the
-decision are joined by identity and no hash is involved. A record revision is
+decision are joined by identity. A record carries no digest and no hash is
+stored in it. A decision may additionally carry a verified approval: the retained
+result of Engineering Assurance's verification (its FR-041) that a named person's
+signed git tag approved this exact record digest. Quoin consumes that result as
+data and never verifies a signature itself. A record revision is
 immutable once written (a new revision is a new file, never an edit), and git
 history is the tamper evidence. A record qualifies as approved only when
 FR-065 finds a matching `approved` event.
@@ -322,8 +326,34 @@ file and SHALL NOT replace or mutate its predecessor.
 
 The matching ix-flow event SHALL have kind
 `change_assurance.review_decided`, `actor.kind: human`, and a payload containing
-exactly `schema_version: 1`, `record_id`, `revision`,
-`decision`, and optional `note`.
+exactly `schema_version: 2`, `record_id`, `revision`,
+`decision`, optional `note`, and optional `verified_approval`. The payload schema
+is revised from version 1, which carried no `verified_approval`; the event set
+stays closed and version 1 payloads are not read (the system is prerelease and
+keeps no compatibility reader).
+
+`verified_approval`, when present, SHALL be an object carrying the retained result
+of Engineering Assurance's `approval-verify` and nothing else:
+
+| Member | Type | Presence |
+| --- | --- | --- |
+| status | `approved`, `wrong_record`, `untrusted_signer`, `meaning_missing`, `signed_bad`, `unsigned`, `unverifiable` | always |
+| tag | non-empty string, the signed annotated tag name | always |
+| record_id | identity | always |
+| record_digest | non-empty string of at most 256 bytes | always |
+| approver | non-empty string, the principal the signer maps to | exactly when status is `approved` |
+| meaning | non-empty array of strings, the `Signed-off-meaning` values in order | exactly when status is `approved` |
+| signature_kind | `ssh` or `gitsign` | exactly when status is `approved` |
+
+The object is closed; an undeclared member, a member present outside its row, or a
+`verified_approval` on a decision other than `approved` makes the event a refused
+candidate, not an approval. Quoin does not interpret `meaning`, compare `approver`
+to the event's actor, or decide who may approve.
+
+The record digest is `sha256:` followed by the lowercase hexadecimal SHA-256 of the
+exact stored bytes of `records/<record_id>/<revision>.json`. It is computed by the
+reader from those bytes (a local computation, not a Git, network or identity
+operation) and is never stored in the record, so the record body stays digest-free.
 
 The event's `decision` SHALL be `approved`, `rejected`, or `revise`.
 
@@ -332,7 +362,9 @@ The event's run id SHALL equal `review_workflow.run_id`.
 The event's record id and revision SHALL equal the record's id and revision.
 
 The event's actor label is recorded attribution only and does not prove a
-person's identity, authority, possession of a key, or non-repudiation.
+person's identity, authority, possession of a key, or non-repudiation. Only a
+`verified_approval` whose status is `approved` carries a signer claim, and that claim
+is Engineering Assurance's verified result retained as data, not an inference Quoin makes.
 
 ## Constraints
 
@@ -340,7 +372,7 @@ person's identity, authority, possession of a key, or non-repudiation.
 | --- | --- | --- | --- |
 | FR-063-CON-1 | Writing and verification SHALL perform no Git, workflow, proof, network, or identity-provider operation. | Architecture | Inspection |
 | FR-063-CON-2 | The store SHALL preserve every earlier revision and every rejected or revise-requested revision by `(record_id, revision)`. | Integrity | Test |
-| FR-063-CON-3 | Documentation and output SHALL make no identity, authorization, signature, authenticity, or non-repudiation claim. | Responsibility | Inspection |
+| FR-063-CON-3 | Documentation and output SHALL make no identity, authorization, signature, authenticity, or non-repudiation claim of Quoin's own; the only signer claim is a retained `verified_approval` reported as received. | Responsibility | Inspection |
 
 ## Acceptance Criteria
 
@@ -355,10 +387,12 @@ person's identity, authority, possession of a key, or non-repudiation.
 | FR-063-AC-7 | Withdrawn: there is no digest form to refuse; duplicate names, lone surrogates, non-I-JSON numbers and a byte-order mark are refused under AC-1 and AC-2 (id not reused). | Withdrawn |
 | FR-063-AC-8 | Revision 1 has no predecessor; a successor requires retained revision N-1 of the same record id; a missing, skipped, or cross-record predecessor fails lineage verification. | Property |
 | FR-063-AC-9 | Writing a successor leaves the predecessor's path and bytes unchanged, and rejected or revise-requested records remain addressable by `(record_id, revision)` (CON-2). | Integration |
-| FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, or revision cannot approve it. | Integration |
-| FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Analysis |
+| FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, revision, or a payload `schema_version` other than 2 cannot approve it. | Integration |
+| FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation, and that a signer claim appears only as a retained `verified_approval` (CON-1, CON-3). | Analysis |
 | FR-063-AC-12 | Every source connection requires a `path`, and the gate refuses an absolute path, a `..` or `.` segment, an empty segment, a backslash, a NUL, a trailing slash, the bare `.`, and a path shared by two connections; a valid path survives a write and re-read unchanged, and the published schema refuses the same malformed paths. | Test |
 | FR-063-AC-13 | Only the record body is evidence: a `purpose`, `derived_fields` or lookup-map member placed inside the record body, at the top level or inside a source connection, is refused as undeclared. | Test |
+| FR-063-AC-14 | A v2 payload with a well-formed `verified_approval` on an `approved` decision is a candidate; each of an undeclared member, `approver`, `meaning` or `signature_kind` on a non-`approved` status, a missing one on `approved`, an empty `meaning`, and a `verified_approval` on `rejected` or `revise` is refused as a candidate. | Test |
+| FR-063-AC-15 | The record digest of a stored revision equals `sha256:` plus the lowercase SHA-256 hex of its stored bytes, is identical across two writes of the same body, differs for a one-byte change, and the record body, schema and stored file contain no digest member. | Test |
 
 ## Dependencies
 
