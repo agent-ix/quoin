@@ -29,3 +29,13 @@ id that collides there with PR #49.
 The edges are sound apart from the cross-repo id collision (FND-001) and two edge-type nits.
 
 Examined (role examined): the frontmatter relationships and Dependencies of FR-180, FR-181, FR-182 and NFR-037.
+
+## Dispositions
+
+Round 1, against fix commit 6f68e3ed (quoin#870), with quoin#871 20e50a4a, spo#48 a69f437e and spo#49 d3658e0e as companion heads.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | spo#49 renumbered to FR-014..FR-018, so spo FR-020 is only the source profile format. |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

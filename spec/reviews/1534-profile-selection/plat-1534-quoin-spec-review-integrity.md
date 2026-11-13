@@ -43,3 +43,13 @@ tickets, and it shares a root cause with FND-001.
 Examined (role examined): FR-181 Description and Behavior; FR-180 context merge; FR-182-AC-5. Context
 only: spec-objects-security PR #48 FR-020, FR-021; quoin PR #871 FR-181; PLAT-1521; PLAT-1522;
 quire-rs src/clauses.rs evaluate and schemas/output/clause-binding-v1.schema.json.
+
+## Dispositions
+
+Round 1, against fix commit 6f68e3ed (quoin#870), with quoin#871 20e50a4a, spo#48 a69f437e and spo#49 d3658e0e as companion heads.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Decided: a shared dimension name is one fact; a value a set does not admit is unresolved for that set, tested by AC-10. |
+| FND-002 | fixed | Decided in both repos: baseline and level are repo facts; spo#48 FR-021 forbids the profile binding them (AC-7). |
+| FND-003 | fixed | - |

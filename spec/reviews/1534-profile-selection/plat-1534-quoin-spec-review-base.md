@@ -47,3 +47,18 @@ through `source-profile.yaml`. Every set is evaluated through the engine and a m
 Examined (role examined): every Behavior statement and AC of FR-180, FR-181, FR-182 and NFR-037; the
 index and spec.md entries. Context only: quoin FR-004, FR-006, FR-046, FR-137, FR-138; quire-rs
 `clause-binding-v1` schema and `ClauseSet::evaluate`; quoin PR #871 file list.
+
+## Dispositions
+
+Round 1, against fix commit 6f68e3ed (quoin#870), with quoin#871 20e50a4a, spo#48 a69f437e and spo#49 d3658e0e as companion heads.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | quoin#871 now adds FR-171..FR-174 and NFR-038; spec-objects-security#49 now adds FR-014..FR-018 and NFR-003. FR-180..FR-182, NFR-037, spo FR-020/FR-021 and NFR-002 are unique across the four heads. |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |
+| FND-008 | fixed | - |

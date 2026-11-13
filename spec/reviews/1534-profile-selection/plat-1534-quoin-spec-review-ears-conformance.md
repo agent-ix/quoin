@@ -27,3 +27,12 @@ One unreadable statement (FND-001) must be fixed. The rest are singular, use an 
 
 Examined (role examined): all Behavior lines of FR-180 (7), FR-181 (7), FR-182 (5) and both NFR-037 Statement
 sentences.
+
+## Dispositions
+
+Round 1, against fix commit 6f68e3ed (quoin#870), with quoin#871 20e50a4a, spo#48 a69f437e and spo#49 d3658e0e as companion heads.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
