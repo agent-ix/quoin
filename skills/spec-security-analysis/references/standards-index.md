@@ -31,7 +31,7 @@ General Data Protection Regulation for EU data protection and privacy.
 
 ## Licence-restricted sources
 
-SOC 2, ISO/IEC 27001 and every other licence-restricted source have no reference table here. They are mapped only from a locally installed pack, by clause id; with no pack installed the source is reported "not mapped, set not installed".
+Licence-restricted sources have no reference table here. They are mapped only from a locally installed pack, by clause id; with no pack installed the source is reported "not mapped, set not installed".
 
 ## Quick Reference
 

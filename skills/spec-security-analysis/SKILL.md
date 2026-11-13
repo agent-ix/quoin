@@ -15,8 +15,7 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
 
 | Standard | Version | Scope |
 |----------|---------|-------|
-| AICPA SOC 2 | 2017 TSC | Trust Services Criteria |
-| ISO/IEC 27001 | 2022 | Annex A Controls |
+| Licence-restricted sources in the effective profile | Exact clause-set key | Controls declared by an installed pack |
 | NIST SP 800-53 | Rev 5.2.0 | Security & Privacy Controls |
 | OWASP ASVS | 5.0.0 | Application Security Verification |
 | EU GDPR | 2016/679 | Data Protection Articles |
@@ -41,8 +40,9 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
      - OWASP ASVS: https://github.com/OWASP/ASVS (CC BY-SA 4.0 - fully open)
      - GDPR: https://eur-lex.europa.eu/eli/reg/2016/679/oj (EU Law - fully open)
    - Local references for the free sources are summaries; use the free sources above for specific control details
-   - **Licensed standards come from an installed pack only.** The skill ships no reference table, summary or web source for SOC 2, ISO/IEC 27001 or any other licence-restricted source. Their clause ids are read from the clause set of a locally installed pack (`quoin module list` shows `pack=true`) and nowhere else; when no pack is installed the skill does not recall ids, titles or descriptions from memory, prose or the web. Copy no name, title, description or paraphrase of such a clause into any artifact or reply; the id and the set key are the whole reference
-   - **Read the installed clause sets** before writing any mapping. Run `quoin module list`, then read each installed module's manifest `clause_sets` files. A clause set is keyed `authority/id@version`; this skill's free sets are `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` (both in the `spec-objects-security` module). SOC 2, ISO/IEC 27001 and every other licence-restricted source are served only from a locally installed pack, by clause id. A set is installed only if it appears there.
+   - **Licensed standards come from an installed pack only.** The skill ships no reference table, summary or web source for a licence-restricted source. Its clause ids are read from the clause set of a locally installed pack (`quoin module list` shows `pack=true`) and nowhere else; when no pack is installed the skill does not recall ids, titles or descriptions from memory, prose or the web
+   - **A pack is the source's set only by its key.** A pack counts as a source's set only when its set key is the one the user's `source-profile.yaml` lists in `add`; never choose a set by the similarity of its name to the source's. The skill may read an installed pack's clause text locally to judge which clause applies, and never writes any title, text or paraphrase of it into an artifact, review or reply; the id and the set key are the whole reference
+   - **Read the installed clause sets** before writing any mapping. Run `quoin module list`, then read each installed module's manifest `clause_sets` files. A clause set is keyed `authority/id@version`; this skill's free sets are `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` (both in the `spec-objects-security` module). A set is installed only if it appears there
 
 3. **Map Controls to Requirements**
    - Link each applicable clause to the FR/NFR/StR that covers it
@@ -84,7 +84,7 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
 
 - Apply ALL standards - comprehensive coverage trumps minimal compliance, subject to the installed sets below
 - When a source's clause set is not installed, write no mapping for it and state in the reply "not mapped, set not installed" with the source name
-- Never supply the text, title or summary of a licence-restricted clause (SOC 2, ISO/IEC 27001) in any artifact or reply; reference such a clause by id only, and only from an installed pack
+- Never supply the text, title or summary of a licence-restricted clause in any artifact, review or reply; reference such a clause by id only, and only from an installed pack
 - Every control links to the FR/NFR/StR it implements through frontmatter `relationships`
 - Overlapping clauses from multiple standards reinforce coverage
 - Out-of-scope clauses MUST identify the responsible component; with none known, write no exclusion

@@ -1,0 +1,13 @@
+schemaVersion: clause-set-v1
+authority: example.invalid
+id: std
+title: Synthetic licensed set
+version: "1"
+rights:
+  structure: original
+  text: licensed
+clauses:
+  - id: EX-1
+    force: mandatory
+  - id: EX-2
+    force: mandatory

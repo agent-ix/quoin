@@ -1,0 +1,4 @@
+name: example-invalid-std
+version: 0.1.0
+clause_sets:
+  - std.yaml
