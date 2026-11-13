@@ -63,7 +63,8 @@ risk is acceptable, and the absence of findings in a row is not a decision.
 | `benefit-risk-not-accepted` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id, then the covering benefit-risk ids |
 | `not-accepted-inside-acceptable-region` | [FR-105](ix://agent-ix/spec-objects-safety/FR-105) | every row holding the residual risk | the residual-risk id |
 
-- A control is verified, and implemented, exactly as FR-147 defines: an incoming `verifies` edge from any document, and an incoming `satisfies` edge from an `FR` or `NFR`. The command SHALL test that the edge exists and SHALL NOT read whether a verification passed.
+- A control is verified, and implemented, exactly as FR-147 defines: an incoming `verifies` edge from any document, and an incoming `satisfies` edge from an `FR` or `NFR`. The command SHALL test that the edge exists.
+- The command SHALL NOT read whether a verification passed.
 - The residual-risk findings SHALL follow the rules of FR-155, with the region resolved from the residual risk's own `policy` reference as FR-155 does.
 - A finding SHALL appear on a row only where the gap exists; a row whose link or record is present carries no such token.
 - The command SHALL place `post-control-without-control` on every row of the situation of each post-control estimate that `assumes` no control, naming that estimate, whether or not another estimate of the situation assumes a control.
