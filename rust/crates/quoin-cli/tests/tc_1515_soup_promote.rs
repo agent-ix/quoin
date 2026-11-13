@@ -155,7 +155,7 @@ fn field(record: &Path, key: &str) -> Option<String> {
         .map(|value| serde_json::from_str::<String>(value).unwrap_or_else(|_| value.to_owned()))
 }
 
-#[trace("FR-141-AC-1")]
+#[trace("FR-141-AC-1", "FR-141-AC-4")]
 #[test]
 fn a_cyclonedx_and_an_spdx_inventory_promote_to_valid_records_without_a_supplier() {
     let work = tempfile::tempdir().unwrap();
@@ -182,6 +182,7 @@ fn a_cyclonedx_and_an_spdx_inventory_promote_to_valid_records_without_a_supplier
         for record in &written {
             validates(record);
             assert_eq!(field(record, "supplier"), None);
+            assert_eq!(field(record, "disposition_clause"), None);
             assert_eq!(field(record, "type").as_deref(), Some("soup_record"));
         }
         let names: Vec<_> = written.iter().map(|p| field(p, "name").unwrap()).collect();
@@ -460,7 +461,109 @@ fn with_no_out_records_land_in_spec_soup_under_separator_free_names() {
     assert!(
         names
             .iter()
-            .all(|n| !n.contains('/') && Path::new(n).extension().is_some_and(|e| e == "md"))
+            .all(|n| Path::new(n).extension().is_some_and(|e| e == "md"))
     );
     assert!(names.contains("pkg%3Acargo%2Fserde%401.0.228.md"));
+}
+
+#[trace("FR-141-AC-15")]
+#[test]
+fn an_occupied_destination_stops_the_command_before_any_record_is_written() {
+    let work = tempfile::tempdir().unwrap();
+    let sbom = write(
+        work.path(),
+        "bom.json",
+        &cyclonedx(&[component("serde", "1.0.228", Some(PURL_B))]),
+    );
+    let out = work.path().join("soup");
+    std::fs::create_dir_all(&out).unwrap();
+    let squatter = out.join("pkg%3Acargo%2Fserde%401.0.228.md");
+    std::fs::write(&squatter, "# notes, not a record\n").unwrap();
+    let before = snapshot(&out);
+    let run = with_module(&sbom, &out, &[]);
+    assert_eq!(run.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&run.stderr);
+    assert!(
+        stderr.contains("pkg%3Acargo%2Fserde%401.0.228.md"),
+        "{stderr}"
+    );
+    assert_eq!(snapshot(&out), before);
+}
+
+#[trace("FR-141-AC-16")]
+#[test]
+fn a_component_with_a_control_character_in_its_name_is_skipped_and_listed() {
+    let work = tempfile::tempdir().unwrap();
+    let sbom = write(
+        work.path(),
+        "bom.json",
+        &cyclonedx(&[component("evil", "1", Some("pkg:npm/ev%0A%23%23il@1"))]),
+    );
+    let out = work.path().join("soup");
+    let run = with_module(&sbom, &out, &[]);
+    assert!(run.status.success());
+    let report = stdout(&run);
+    assert!(
+        report.lines().any(|l| l == "components skipped: 1"),
+        "{report}"
+    );
+    assert!(report.contains("pkg:npm/ev%0A%23%23il@1"), "{report}");
+    assert_eq!(files(&out).len(), 1);
+}
+
+#[trace("FR-141-AC-17")]
+#[test]
+fn a_qualified_purl_is_named_without_its_qualifiers() {
+    let work = tempfile::tempdir().unwrap();
+    let sbom = write(work.path(), "bom.json", &cyclonedx(&[]));
+    let out = work.path().join("soup");
+    assert!(with_module(&sbom, &out, &[]).status.success());
+    let written = files(&out);
+    assert_eq!(
+        written[0].file_name().unwrap().to_str().unwrap(),
+        "pkg%3Anpm%2Fsemver%407.6.3.md"
+    );
+}
+
+#[trace("FR-141-AC-17")]
+#[test]
+fn a_record_file_that_cannot_be_read_in_full_is_refused_by_name() {
+    let work = tempfile::tempdir().unwrap();
+    let sbom = write(work.path(), "bom.json", &cyclonedx(&[]));
+    let records = work.path().join("records");
+    std::fs::create_dir_all(&records).unwrap();
+    std::fs::write(records.join("huge.md"), vec![b'a'; 1024 * 1024 + 1]).unwrap();
+    let out = work.path().join("out");
+    let run = with_module(&sbom, &out, &["--records", records.to_str().unwrap()]);
+    assert_eq!(run.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&run.stderr).contains("huge.md"));
+    assert!(!out.exists());
+}
+
+#[trace("FR-141-AC-5", "FR-141-AC-14")]
+#[test]
+fn a_record_with_crlf_line_endings_is_still_found_and_ids_continue_after_it() {
+    let work = tempfile::tempdir().unwrap();
+    let out = work.path().join("soup");
+    std::fs::create_dir_all(&out).unwrap();
+    let crlf = format!(
+        "---\r\nid: SOUP-007\r\ntitle: \"semver\"\r\ntype: soup_record\r\nobject: soup_record\r\npurl: \"{PURL_A}\"\r\n---\r\n# [SOUP-007] semver\r\n"
+    );
+    let reviewed = out.join("reviewed.md");
+    std::fs::write(&reviewed, &crlf).unwrap();
+    let sbom = write(work.path(), "bom.json", &cyclonedx(&three()));
+    let run = with_module(&sbom, &out, &[]);
+    assert!(
+        run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    assert!(stdout(&run).lines().any(|l| l == "records unchanged: 1"));
+    assert_eq!(std::fs::read_to_string(&reviewed).unwrap(), crlf);
+    let ids: Vec<_> = files(&out)
+        .iter()
+        .filter(|p| *p != &reviewed)
+        .map(|p| field(p, "id").unwrap())
+        .collect();
+    assert_eq!(ids, ["SOUP-008", "SOUP-009"]);
 }

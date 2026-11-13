@@ -69,12 +69,13 @@ fn percent_decode(text: &str) -> String {
     String::from_utf8(out).unwrap_or_else(|_| text.to_owned())
 }
 
-/// The record file name of a purl: every byte outside `A-Za-z0-9._-` becomes
-/// `%` and its two uppercase hex digits, then `.md`. The map is injective
-/// because `%` is itself encoded.
+/// The record file name of a purl: its identity without qualifiers and subpath,
+/// every byte outside `A-Za-z0-9._-` as `%` and its two uppercase hex digits,
+/// then `.md`. Qualifiers such as `download_url` would push a name past the
+/// filesystem limit.
 pub(super) fn file_name(purl: &str) -> String {
     let mut name = String::with_capacity(purl.len() + 3);
-    for byte in purl.bytes() {
+    for byte in purl.split(['?', '#']).next().unwrap_or_default().bytes() {
         if byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-') {
             name.push(char::from(byte));
         } else {
@@ -90,6 +91,8 @@ pub(super) fn file_name(purl: &str) -> String {
 pub(super) struct Existing {
     pub(super) path: PathBuf,
     pub(super) purl: String,
+    /// The record's `id`, when it states one.
+    pub(super) id: Option<String>,
 }
 
 /// The first two records that carry one purl.
@@ -140,7 +143,7 @@ pub(super) struct Unchanged {
 
 /// Classify every component symbol. Each one lands in exactly one of
 /// `created`, `unchanged`, `merged` or `skipped`, so the four counts sum to
-/// `read` (FR-141-AC-2). Every list is sorted, so the report is deterministic.
+/// `read`. Every list is sorted, so the report is deterministic.
 pub(super) fn plan(symbols: &[String], existing: &[Existing]) -> Plan {
     let by_purl: BTreeMap<&str, &Existing> = existing
         .iter()
@@ -156,7 +159,14 @@ pub(super) fn plan(symbols: &[String], existing: &[Existing]) -> Plan {
             result.skipped.push(symbol.clone());
             continue;
         };
-        if !seen.insert(symbol.as_str()) {
+        if purl
+            .name
+            .chars()
+            .chain(purl.version.iter().flat_map(|v| v.chars()))
+            .any(char::is_control)
+        {
+            result.skipped.push(symbol.clone());
+        } else if !seen.insert(symbol.as_str()) {
             result.merged.push(symbol.clone());
         } else if let Some(record) = by_purl.get(symbol.as_str()) {
             result.unchanged.push(Unchanged {
@@ -204,7 +214,7 @@ pub(super) fn next_id_number<'a>(ids: impl IntoIterator<Item = &'a str>) -> u32 
 
 /// Render one record from the module's own skeleton: the frontmatter states
 /// only what the SBOM states, and the body is the skeleton's with its
-/// authoring comment and the rows of fields the record leaves out removed.
+/// authoring comment removed and its heading naming the record.
 pub(super) fn render(
     skeleton: &str,
     id: &str,
@@ -241,7 +251,7 @@ pub(super) fn render(
         }
         if line.starts_with("# [") {
             let _ = writeln!(text, "# [{id}] {title}");
-        } else if !line.trim_start().starts_with("| supplier ") {
+        } else {
             text.push_str(line);
             text.push('\n');
         }
@@ -281,11 +291,12 @@ mod tests {
         assert!(parse_purl("pkg:serde").is_none());
     }
 
-    #[trace("FR-141-AC-13")]
+    #[trace("FR-141-AC-13", "FR-141-AC-17")]
     #[test]
     fn tc_1515_002_file_names_hold_no_separator_and_stay_distinct() {
         assert_eq!(file_name("pkg:npm/a@1"), "pkg%3Anpm%2Fa%401.md",);
         assert_ne!(file_name("pkg:npm/a%2Fb"), file_name("pkg:npm/a/b"));
+        assert_eq!(file_name("pkg:npm/a@1?x=y#z"), "pkg%3Anpm%2Fa%401.md");
     }
 
     #[trace("FR-141-AC-2", "FR-141-AC-6")]
@@ -295,10 +306,12 @@ mod tests {
             Existing {
                 path: PathBuf::from("a.md"),
                 purl: "pkg:npm/a@1".to_owned(),
+                id: None,
             },
             Existing {
                 path: PathBuf::from("b.md"),
                 purl: "pkg:npm/b@1".to_owned(),
+                id: None,
             },
         ];
         let symbols: Vec<String> = ["pkg:npm/a@1", "pkg:npm/b@2", "pkg:npm/b@2", "c@3"]
@@ -314,6 +327,7 @@ mod tests {
         assert_eq!(planned.superseded[0].purl, "pkg:npm/b@1");
     }
 
+    #[trace("FR-141-AC-14")]
     #[test]
     fn tc_1515_004_ids_continue_after_the_highest_existing() {
         assert_eq!(next_id_number(["SOUP-001", "SOUP-007", "other"]), 8);
