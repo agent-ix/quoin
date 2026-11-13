@@ -20,3 +20,9 @@ so they are out of scope.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | No findings (placeholder) | - |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-002 | low | New Behavior bullet 'record-digest SHALL hash the stored file bytes unchanged and SHALL write nothing' has two shalls (quire ears:non-singular, FR-068 line 97). Split. | spec/functional/FR-068-change-assurance-cli-surface.md:97 | wrong-requirement |

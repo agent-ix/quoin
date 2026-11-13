@@ -43,3 +43,20 @@ is correctly narrowed to "no digest is stored in the record".
 
 Not mergeable: the high finding in the failure-domain review (SR-203 FND-001) and the
 medium findings here need fixing in this PR.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-007 | medium | FR-068-CON-4 still says 'existing retained records SHALL remain readable', which contradicts FR-063's record schema v2 ('version 1 records are not read'). Fix: amend CON-4 to drop the readability clause (prerelease, no compatibility reader). | spec/functional/FR-068-change-assurance-cli-surface.md:122 | wrong-requirement |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | ac9b1237: projection stated, protocol kept |
+| FND-002 | fixed | ac9b1237: FR-098 excepts the FR-063 record digest |
+| FND-003 | fixed | ac9b1237: $id/title v2; compat clause removed |
+| FND-004 | fixed | ac9b1237: order aligned with FR-041; AC-20 |
+| FND-005 | fixed | ac9b1237: no trailing newline, no normalization, records/** -text |
+| FND-006 | fixed | ac9b1237: record-digest command and write-record digest; AC-12 |
