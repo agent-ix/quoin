@@ -50,3 +50,14 @@ snapshot corpus required by FR-169-AC-19. Both are test-only fixes.
   FR-169-AC-13 (findings above).
 - Plan completion: not assessed
 - Semantic review: skipped as a separate pass. The bindings were read by hand.
+
+## Dispositions
+
+Round 1, against head 9396ff81.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

@@ -85,3 +85,12 @@ Not mergeable as is: one medium finding and one low. The command implements the 
 contract, and reuse of the reader, the lookup and the discrepancy rules is real. The exit-code
 branch is narrow and tested. The MP and root-text edits are minimal. The Markdown pipe defect is
 the one behaviour fix needed.
+
+## Dispositions
+
+Round 1, against head 9396ff81.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
