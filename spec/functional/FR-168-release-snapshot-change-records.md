@@ -18,7 +18,7 @@ relationships:
 ## Description
 
 The version history of a release is the set of change-assurance records
-([FR-063](./FR-063-change-assurance-record.md)) merged between the previous release and this one. Only git can say
+([FR-063](./FR-063-change-assurance-record-integrity.md)) merged between the previous release and this one. Only git can say
 which records those are, so Engineering Assurance computes the list and writes it as the release-history file
 (`ix://agent-ix/engineering-assurance/FR-052`). `quoin release snapshot` ([FR-166](./FR-166-release-snapshot-command.md))
 takes that file as data and copies its entries into the snapshot's `change_records` and `previous_release`
@@ -31,7 +31,7 @@ one.
 ## Inputs
 
 - The release-history file, protocol `engineering-assurance.release-history/v1`, read for these members only:
-  `previous_release` (`{ tag, commit }` or `null`) and `records`, a list of `{ record_id, revision, path, commit }`.
+  `baseline_commit` (a string), `previous_release` (`{ tag, commit }` or `null`) and `records`, a list of `{ record_id, revision, path, commit }`.
 
 ## Outputs
 
@@ -42,12 +42,15 @@ one.
 
 - The command SHALL copy each `records` entry's `record_id`, `revision`, `path` and `commit` into `change_records` as given.
 - The command SHALL copy `previous_release` as given.
-- The command SHALL NOT add, drop or reorder-by-judgement an entry other than by the ordering above.
+- The command SHALL write exactly the supplied entries, ordered as Outputs states.
 - The command SHALL NOT read a record file to confirm an entry.
 - The command SHALL NOT fetch a commit.
+- If the history file's `baseline_commit` differs from `--baseline-commit` by any byte, then the command SHALL refuse with
+  `release_snapshot_history_baseline_mismatch` naming both values.
+- The command SHALL compare the two values as strings and resolve neither.
 - If the history file's protocol is not `engineering-assurance.release-history/v1`, then the command SHALL refuse with
   `release_snapshot_history_invalid` naming the protocol.
-- If the history file lacks `previous_release` or `records`, or an entry lacks one of its four members, then the
+- If the history file lacks `baseline_commit`, `previous_release` or `records`, or an entry lacks one of its four members, then the
   command SHALL refuse with `release_snapshot_history_invalid` naming the member.
 - If two entries carry the same `record_id` and `revision`, then the command SHALL refuse with
   `release_snapshot_history_invalid` naming both.
@@ -63,9 +66,10 @@ one.
 | FR-168-AC-3 | A file of another protocol, a file without `records`, an entry without `commit`, and two entries with one id and revision are each refused with `release_snapshot_history_invalid` naming the protocol, member or pair, and no snapshot file exists. | Test |
 | FR-168-AC-4 | The command run with the record files of the history absent from the working tree and with `git` absent from `PATH` yields the same `change_records`. | Test |
 | FR-168-AC-5 | An empty `records` list yields `change_records` `[]` and a snapshot, not a refusal. | Test |
+| FR-168-AC-6 | A history file whose `baseline_commit` differs from `--baseline-commit` is refused with `release_snapshot_history_baseline_mismatch` naming both values, with no snapshot file, in a directory with `git` absent from `PATH`. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-166](./FR-166-release-snapshot-command.md), [FR-167](./FR-167-release-snapshot-format.md),
-  [FR-063](./FR-063-change-assurance-record.md); `ix://agent-ix/engineering-assurance/FR-052` for the history file.
+  [FR-063](./FR-063-change-assurance-record-integrity.md); `ix://agent-ix/engineering-assurance/FR-052` for the history file.
 - **Downstream**: the dossier documents.

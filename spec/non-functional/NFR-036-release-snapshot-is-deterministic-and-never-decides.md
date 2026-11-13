@@ -16,8 +16,10 @@ relationships:
 
 ## Statement
 
-`quoin release snapshot` SHALL write the same bytes for the same inputs and `--as-of`, and the file it writes states
-only values that other Quoin views and the supplied history file state, with no verdict that a release is acceptable.
+`quoin release snapshot` SHALL write the same bytes for the same inputs and `--as-of`.
+
+The file `quoin release snapshot` writes SHALL state only values that other Quoin views and the supplied history file
+state, with no verdict that a release is acceptable.
 
 ## Scope
 
@@ -36,7 +38,7 @@ releasable would put a judgement in front of the person who is to make it.
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
 | Byte differences between two runs over identical inputs and `--as-of` | 0 | 0 | Test |
-| Clock, environment, locale or path values in the output | 0 | 0 | Test |
+| Clock, environment, locale, absolute-path or host-dependent values in the output (the repository-relative `path` members FR-167 names are not counted) | 0 | 0 | Test |
 | Verdict, score, rank, digest or hash members in the output | 0 | 0 | Test |
 | Files changed or created other than `--out` | 0 | 0 | Test |
 
