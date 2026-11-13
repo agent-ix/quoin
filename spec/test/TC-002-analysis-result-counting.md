@@ -24,7 +24,7 @@ and that each disposition is counted, or not counted, as FR-153 states, through 
    empty store and a registered suite, record each captured report of TC-001 (agreement satisfied, agreement
    refuted, disagreement, inconclusive, unavailable) with `--discharges FR-001-AC-1`, each into a fresh store. Read the
    run record, the binding graph and the command's human and JSON output.
-2. Record the agreement-satisfied report with no `--discharges`; with `--discharges FR-001-AC-1 --discharges FR-001-AC-2`; with an id
+2. Record the agreement-satisfied report with no `--discharges`; with `--discharges FR-001-AC-1,FR-001-AC-2`; with an id
    naming no obligation beside a valid one; and with `--adapter junit --discharges FR-001-AC-1`. Then record the
    unedited satisfied report with no `--discharges` into a repository where an obligation id differs from the symbol,
    the `analysisKind` and the `requestDigest`.

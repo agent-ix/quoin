@@ -153,3 +153,201 @@ fn tc_001_a_retired_tool_name_does_not_select_the_adapter() {
     assert!(response.is_err());
     assert!(!dir.path().join("spec/evidence/runs").exists());
 }
+
+const INCONCLUSIVE: &str = TIMEOUT;
+const UNAVAILABLE: &str = UNSUPPORTED;
+
+fn obligation(id: &str) -> Value {
+    json!({"id": id, "statement": "s"})
+}
+
+/// Record with stated obligations over a store whose obligations are `known`.
+fn discharge(
+    dir: &Path,
+    tool: &str,
+    results: &str,
+    stated: &[&str],
+    known: &[&str],
+) -> Result<Value, quoin_core::error::CoreError> {
+    let mut body = request(dir, tool, results);
+    body["discharges"] = json!(stated);
+    body["obligations"] = known.iter().map(|id| obligation(id)).collect();
+    dispatch("evidence.record", &body, &RuntimeSettings::default()).map(|r| r.payload)
+}
+
+/// The bindings the store holds, empty when none were written.
+fn bindings(dir: &Path) -> Vec<Value> {
+    let path = dir.join("spec/evidence/bindings.json");
+    let Ok(text) = fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    let document: Value = serde_json::from_str(&text).unwrap();
+    document["bindings"].as_array().cloned().unwrap_or_default()
+}
+
+fn symbol_of(run: &Value) -> String {
+    run["entries"][0]["symbol"].as_str().unwrap().to_owned()
+}
+
+/// `<analysisKind>::<requestDigest>`, built from the report's own fields.
+fn expected_symbol(report: &str) -> String {
+    let report: Value = serde_json::from_str(report).unwrap();
+    format!(
+        "{}::{}",
+        report["analysisKind"].as_str().unwrap(),
+        report["requestDigest"].as_str().unwrap()
+    )
+}
+
+#[trace("FR-152-AC-1")]
+#[test]
+fn tc_002_a_stated_obligation_binds_a_satisfied_report() {
+    let dir = repo();
+    let payload = discharge(
+        dir.path(),
+        "quire-analyze 0.1.0",
+        SATISFIED,
+        &["FR-001-AC-1"],
+        &["FR-001-AC-1"],
+    )
+    .unwrap();
+    assert_eq!(payload["bound"], json!(["FR-001-AC-1"]), "{payload}");
+    let run = the_run(dir.path());
+    assert_eq!(run["entries"].as_array().unwrap().len(), 1, "{run}");
+    assert_eq!(run["entries"][0]["traceIds"], json!(["FR-001-AC-1"]));
+    let held = bindings(dir.path());
+    assert_eq!(held.len(), 1, "{held:?}");
+    assert_eq!(held[0]["obligation"], "FR-001-AC-1");
+    let expected = expected_symbol(SATISFIED);
+    assert_eq!(symbol_of(&run), expected);
+    assert_eq!(held[0]["symbols"], json!([expected]));
+}
+
+#[trace("FR-152-AC-2", "FR-152-AC-3")]
+#[test]
+fn tc_002_no_stated_obligation_leaves_the_entry_unbound() {
+    // AC-3: ids unrelated to the symbol, analysisKind and requestDigest.
+    // NFR-033: an id equal to the analysisKind still binds nothing.
+    for ids in [
+        ["FR-001-AC-1", "FR-002-AC-1"],
+        ["FR-001-AC-1", "consistency"],
+    ] {
+        let dir = repo();
+        let mut body = request(dir.path(), "quire-analyze 0.1.0", SATISFIED);
+        body["obligations"] = ids.iter().map(|id| obligation(id)).collect();
+        let payload = dispatch("evidence.record", &body, &RuntimeSettings::default())
+            .unwrap()
+            .payload;
+        assert_eq!(payload["bound"], json!([]), "{payload}");
+        assert!(the_run(dir.path())["entries"][0].get("traceIds").is_none());
+        assert!(bindings(dir.path()).is_empty());
+    }
+}
+
+#[trace("FR-152-AC-4")]
+#[test]
+fn tc_002_only_a_passing_entry_binds() {
+    for report in [REFUTED, INCONCLUSIVE, UNAVAILABLE] {
+        let dir = repo();
+        let payload = discharge(
+            dir.path(),
+            "quire-analyze 0.1.0",
+            report,
+            &["FR-001-AC-1"],
+            &["FR-001-AC-1"],
+        )
+        .unwrap();
+        assert_eq!(payload["bound"], json!([]), "{payload}");
+        let run = the_run(dir.path());
+        assert_eq!(run["entries"][0]["traceIds"], json!(["FR-001-AC-1"]));
+        assert!(bindings(dir.path()).is_empty());
+    }
+}
+
+#[trace("FR-152-AC-5")]
+#[test]
+fn tc_002_a_disagreement_stores_no_entry_and_binds_nothing() {
+    let dir = repo();
+    let payload = discharge(
+        dir.path(),
+        "differential-report",
+        DISAGREEMENT,
+        &["FR-001-AC-1"],
+        &["FR-001-AC-1"],
+    )
+    .unwrap();
+    assert_eq!(payload["bound"], json!([]), "{payload}");
+    assert_eq!(payload["unrepresented"][0]["state"], "disagreement");
+    assert_eq!(the_run(dir.path())["entries"], json!([]));
+    assert!(bindings(dir.path()).is_empty());
+}
+
+#[trace("FR-152-AC-6")]
+#[test]
+fn tc_002_stated_ids_are_sorted_deduplicated_and_unknown_ids_are_unmatched() {
+    let dir = repo();
+    let payload = discharge(
+        dir.path(),
+        "quire-analyze 0.1.0",
+        SATISFIED,
+        &["FR-002-AC-1", " FR-001-AC-1", "FR-002-AC-1", "NO-SUCH-1"],
+        &["FR-001-AC-1", "FR-002-AC-1"],
+    )
+    .unwrap();
+    assert_eq!(payload["bound"], json!(["FR-001-AC-1", "FR-002-AC-1"]));
+    assert_eq!(payload["unmatched"], json!(["NO-SUCH-1"]));
+    let run = the_run(dir.path());
+    assert_eq!(
+        run["entries"][0]["traceIds"],
+        json!(["FR-001-AC-1", "FR-002-AC-1"])
+    );
+    let held = bindings(dir.path());
+    assert_eq!(held.len(), 2, "{held:?}");
+    for binding in &held {
+        assert_eq!(binding["symbols"], json!([symbol_of(&run)]));
+    }
+}
+
+#[trace("FR-152-AC-7")]
+#[test]
+fn tc_002_a_refused_report_with_stated_ids_writes_nothing() {
+    for results in [
+        "",
+        &SATISFIED.replace("differential-report/v2", "differential-report/v1"),
+        &serde_json::to_string_pretty(&serde_json::from_str::<Value>(SATISFIED).unwrap()).unwrap(),
+    ] {
+        let dir = repo();
+        let response = discharge(
+            dir.path(),
+            "quire-analyze 0.1.0",
+            results,
+            &["FR-001-AC-1"],
+            &["FR-001-AC-1"],
+        );
+        assert!(response.is_err(), "{results}");
+        assert!(!dir.path().join("spec/evidence/runs").exists());
+        assert!(bindings(dir.path()).is_empty());
+    }
+}
+
+#[trace("FR-152-AC-8")]
+#[test]
+fn tc_002_discharges_is_still_refused_on_the_junit_adapter() {
+    let dir = repo();
+    let mut body = request(
+        dir.path(),
+        "vitest 1.0.0",
+        r#"<testsuite name="unit"><testcase name="t"/></testsuite>"#,
+    );
+    body["adapter"] = json!("junit");
+    body["discharges"] = json!(["FR-001-AC-1"]);
+    body["obligations"] = json!([obligation("FR-001-AC-1")]);
+    let error = dispatch("evidence.record", &body, &RuntimeSettings::default())
+        .unwrap_err()
+        .to_string();
+    assert!(
+        error.contains("--discharges") && error.contains("junit"),
+        "{error}"
+    );
+    assert!(!dir.path().join("spec/evidence/runs").exists());
+}

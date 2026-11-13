@@ -109,7 +109,7 @@ emits are unchanged, and the reader judges no licence (FR-041-CON-3).
 | FR-041-AC-6 | The adapter is selected by `--adapter sbom` and by the tools that emit these formats. | Test |
 | FR-041-AC-7 | `--discharges` on an SBOM recording binds the stated obligation to the components it listed; without `--discharges` the SBOM binds nothing. | Test |
 | FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing, including when the inventory lists no component. | Test |
-| FR-041-AC-9 | `--discharges` on a run adapter other than sbom is refused with an error naming the adapter, and records nothing. | Test |
+| FR-041-AC-9 | `--discharges` on a run adapter other than sbom and differential-report is refused with an error naming the adapter, and records nothing. | Test |
 | FR-041-AC-10 | For a CycloneDX component with a `license.id`, one with a `license.name`, one with an `expression` and one with no `licenses`, the reader exposes the declared text as written for the first three and nothing for the last; an SPDX package declaring `MIT`, one declaring `MIT OR Apache-2.0` and one declaring `NOASSERTION` expose an `id`, an `expression` and nothing respectively; the run entries emitted for the same documents are byte-identical to those emitted before the licences were exposed. | Test |
 
 ## Constraints
