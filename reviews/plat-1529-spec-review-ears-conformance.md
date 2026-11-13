@@ -93,3 +93,13 @@ scope:
 ## Verdict
 
 Changes requested: 0 high, 3 low. Wording only.
+
+## Dispositions
+
+Round 1, verified at 75df2882.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

@@ -51,3 +51,17 @@ scope:
 ## Verdict
 
 Changes requested: 0 high, 1 medium. CR-004 records only one of the FR-115 statements FR-165 supersedes.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | low | Merged quire-rs FR-092 also puts `criticality` and, when `carried_fields` is declared, `carried` (FR-090) on design entries (key order `document, repo, id, criticality, carried, criteria, design`). CR-004 (1) and FR-165 Inputs list only `id`, `repo`, `design` and `design_elements`. Today `CoverageMatrixRequirement` has no `deny_unknown_fields`, so nothing breaks. But an implementer who follows (1) literally and adds the listed keys to a closed entry type would refuse `carried`. List the full key set, or say the entry type ignores keys it does not read. | spec/functional/FR-115-evidence-backed-test-matrix.md:322-327 |
+
+## Dispositions
+
+Round 1, verified at 75df2882.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |

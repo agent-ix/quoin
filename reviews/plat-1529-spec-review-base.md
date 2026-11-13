@@ -101,3 +101,23 @@ scope:
 ## Verdict
 
 Changes requested: 0 high, 4 medium, 3 low. The pass-through principle, independence of the two axes, determinism (AC-6) and no-`--strict` stance are sound. The rendering rules need the cases quire-cli FR-043 already settled (mixed blocks, dangling-only covered blocks, empty-cell meaning), the requirement grouping needs a rule for a requirement fed by more than one document, and the `design_matrix` failure path needs stating.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-008 | medium | "or for any other reason ... SHALL return `CoreErrorCode::Refused`" collapses the exit taxonomy every quire op uses. `ops/quire/taxonomy.rs` `map_error` maps a malformed payload or path escape to `BadRequest` (3), I/O, an oversized payload or an unmapped code to `Io`/Internal (4), and a missing quire host to Internal (4). It always attaches `quire_code`. Under this sentence, `quire.design_matrix` must report all of these as `Refused` (2) with `reason: design-matrix-failed`, unlike `quire.coverage` with the same request. Scope the `Refused` + `design-matrix-failed` rule to the FR-086 undeclared-relation error, and route every other failure through the existing `map_error` taxonomy. | spec/functional/FR-165-matrix-design-column.md:48-54 |
+
+## Dispositions
+
+Round 1, verified at 75df2882.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |

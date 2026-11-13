@@ -36,7 +36,7 @@ never changes a design block. `matrix.build` adds no freshness comparison of its
 ## Inputs
 
 `coverage` is the quire-rs `design_matrix` payload (FR-092), the FR-115 shape plus, on entries a design
-relation obliges, `id`, `repo`, a `design` array, per-criterion `design_elements`, and entries with
+relation obliges, `id`, `repo`, `criticality` and, when declared, `carried` (quire-rs FR-090) as for any entry, a `design` array, per-criterion `design_elements`, and entries with
 `criteria: []`. An entry with no `design` key means no design relation obliges that document.
 `quoin-core` SHALL provide a `quire.design_matrix` operation, registered beside `quire.coverage` with its
 own exhaustive `dispatch()` arm, taking `quire.coverage`'s request and its byte ceiling, over the working
@@ -47,11 +47,14 @@ the output, is FR-115's. Cross-repository design elements are outside this comma
 
 ### Failure
 
-When `quire.design_matrix` fails, because a `design_relations` entry names no declared relation
-(FR-092-AC-10) or for any other reason, the operation SHALL return `CoreErrorCode::Refused` with
-`context.reason` `design-matrix-failed` and the quire-rs error text naming the entry, and `quoin matrix`
-SHALL exit 2 with a diagnostic naming that cause. `quoin matrix` SHALL NOT fall back to the plain
-`quire.coverage` matrix.
+When `quire.design_matrix` fails because a `design_relations` entry names no declared relation
+(FR-092-AC-10), the operation SHALL return `CoreErrorCode::Refused` with `context.reason`
+`design-matrix-failed` and the quire-rs error text naming the entry, and `quoin matrix` SHALL exit 2 with a
+diagnostic naming that cause. Every other failure SHALL go through the quire-op error mapping
+(`map_error`, `rust/crates/quoin-core/src/ops/quire/taxonomy.rs`) exactly as `quire.coverage`'s do:
+`BadRequest` (exit 3) for a malformed payload or path escape, and `Internal` (exit 4, with `quire_code`
+attached) for I/O, an oversized payload, an unmapped code or a missing quire host. `quoin matrix` SHALL NOT
+fall back to the plain `quire.coverage` matrix.
 
 ## Outputs
 
@@ -117,6 +120,7 @@ SHALL show it as a gap in markdown by the rendering below, and a gap SHALL NOT c
 | FR-165-AC-16 | Two documents whose criteria group under one requirement id, and a `criteria: []` entry whose document `id` equals it, give that requirement the blocks of all three, ordered by `repo` then `document`. | Test |
 | FR-165-AC-17 | A `design_relations` entry naming no declared relation makes `quire.design_matrix` return `Refused` with `context.reason` `design-matrix-failed`, and `quoin matrix` exits 2 naming the entry and prints no matrix. | Test |
 | FR-165-AC-18 | `quire.design_matrix` is in `quoin-core`'s `OPERATIONS` list and dispatched by an exhaustive arm, and `quire.coverage` output is unchanged. | Test |
+| FR-165-AC-19 | A `quire.design_matrix` failure other than an undeclared design relation, such as an oversized payload or a missing quire host, keeps the exit code and error code `map_error` gives `quire.coverage` for the same cause, not `Refused`, and `quoin matrix` prints no matrix. | Test |
 
 ## Constraints
 
