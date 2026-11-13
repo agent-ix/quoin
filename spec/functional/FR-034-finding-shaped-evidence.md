@@ -123,6 +123,13 @@ The cargo-audit adapter is verified against output captured with `cargo audit --
 | FR-034-AC-24 | `quoin evidence record --tool cargo-deny` selects the cargo-deny adapter and writes a `FindingRecord` under `scans/`; `--tool cargo-audit` still selects the cargo-audit adapter. | Test |
 | FR-034-AC-25 | A cargo-deny summary counting more errors and warnings than the diagnostics read is refused, so a failed run printed under `--log-level off` is not a clean scan. | Test |
 | FR-034-AC-26 | A cargo-deny summary must name at least one check, appear once and last, and the checks it names are recorded as the ruleset; a diagnostic with no id is kept as `unclassified`. | Test |
+| FR-034-AC-27 | A `FindingRecord` written with an `evaluated` list keeps it on read and gc, and one written without it reads back without the field and with no claim of coverage. | Test |
+
+### An optional list of what the scan evaluated
+
+A `FindingRecord` MAY carry an `evaluated` list of the component symbols a scan evaluated, set by an adapter whose
+tool evaluates a stated inventory (`licence-policy`, FR-150). Where it is present, a consumer may say a component
+was evaluated only if it is listed; where it is absent, nothing is claimed. It adds no state to the table above.
 
 ### Reachability is part of the contract
 

@@ -90,10 +90,12 @@ The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produc
 
 ### The reader exposes declared licences, and judges none
 
-The reader also exposes, for each component it returns, the licences the document declares: each a CycloneDX
-`license.id`, `license.name` or `expression` (SPDX: the declared licence field), kept as written, or nothing where none
-is declared. This is data for callers ([FR-150](./FR-150-licence-and-ban-policy-findings.md)); the run entries it emits are unchanged, and
-FR-041-CON-3 stands: the reader decides whether no licence passes.
+The reader also exposes, for each component it returns, the licences the document declares, each kept as written with
+a kind: `id` (a CycloneDX `license.id`, or an SPDX declared-licence value that is a single identifier with no
+whitespace, parenthesis or operator), `name` (a CycloneDX `license.name`) or `expression` (a CycloneDX `expression`, or
+any other SPDX value). An SPDX value of `NOASSERTION` or `NONE` is exposed as no declared licence. Nothing is exposed where
+none is declared. This is data for callers ([FR-150](./FR-150-licence-and-ban-policy-findings.md)); the run entries it
+emits are unchanged, and the reader judges no licence (FR-041-CON-3).
 
 ## Acceptance Criteria
 
@@ -108,7 +110,7 @@ FR-041-CON-3 stands: the reader decides whether no licence passes.
 | FR-041-AC-7 | `--discharges` on an SBOM recording binds the stated obligation to the components it listed; without `--discharges` the SBOM binds nothing. | Test |
 | FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing, including when the inventory lists no component. | Test |
 | FR-041-AC-9 | `--discharges` on a run adapter other than sbom is refused with an error naming the adapter, and records nothing. | Test |
-| FR-041-AC-10 | For a CycloneDX component with a `license.id`, one with a `license.name`, one with an `expression` and one with no `licenses`, the reader exposes the declared text as written for the first three and nothing for the last; the run entries emitted for the same document are byte-identical to those emitted before the licences were exposed. | Test |
+| FR-041-AC-10 | For a CycloneDX component with a `license.id`, one with a `license.name`, one with an `expression` and one with no `licenses`, the reader exposes the declared text as written for the first three and nothing for the last; an SPDX package declaring `MIT`, one declaring `MIT OR Apache-2.0` and one declaring `NOASSERTION` expose an `id`, an `expression` and nothing respectively; the run entries emitted for the same documents are byte-identical to those emitted before the licences were exposed. | Test |
 
 ## Constraints
 
@@ -116,7 +118,7 @@ FR-041-CON-3 stands: the reader decides whether no licence passes.
 |----|-----------|------|------------|
 | FR-041-CON-1 | quoin SHALL NOT generate an SBOM. The consumer's CI produces it (ADR-0011 invariant 1). | Design | Inspection |
 | FR-041-CON-2 | quoin SHALL NOT introduce a record type for inventories. An SBOM is a run record; advisory findings are FR-034's. | Design | Inspection |
-| FR-041-CON-3 | quoin SHALL NOT judge the inventory's contents. Whether a component's version or licence passes is the auditor's and the consumer's gate policy. | Design | Inspection |
+| FR-041-CON-3 | The SBOM reader SHALL NOT judge the inventory's contents. Whether a component's version or licence passes is the auditor's and the consumer's gate policy; the only evaluation of a licence is FR-150's application of a policy a person authored, which reports and does not decide. | Design | Inspection |
 | FR-041-CON-4 | The adapter SHALL NOT declare an `evidenceKind`. The catalog and the suite registry already carry that vocabulary. | Design | Test |
 
 ## Dependencies

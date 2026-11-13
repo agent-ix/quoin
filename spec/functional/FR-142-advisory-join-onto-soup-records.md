@@ -51,19 +51,34 @@ the report states how many it set aside.
 ### Policy findings
 
 A policy finding is a licence or ban finding: a finding of the `licence-policy` tool ([FR-150](./FR-150-licence-and-ban-policy-findings.md), over
-any purl type of the SBOM) or a `cargo-deny` finding whose code belongs to its `bans` or `licenses` check (the code
-assignment is fixed by the FR-034 captured fixtures; a code assigned to neither check is set aside and counted). Policy
-findings use this requirement's rules unchanged: the newest retained scan per tool, the match rule, the
-`unmatched` and `unordered` rules, the refused-at-recording rule, vacuity, and the resolution rule below. They are
-attached and counted apart from advisories, and a policy finding is never counted as an advisory. The tools'
-coverage: `licence-policy` assesses every purl-bearing component of the SBOM it was run over, whatever its purl type
-(so a `lake` or `generic` record is assessed here though `unsupported` for advisories); `cargo-deny` assesses `cargo`.
-A record whose newest `licence-policy` scan was read and is not vacuous, with no policy finding attached and no
-unmatched `licence-policy` finding that could belong to it (a finding with no purl), is stated **no policy findings in
-the scan read**, with the scan's timestamp and ruleset; it is never stated *allowed*. With no `licence-policy` scan
-retained (including when the policy or SBOM was refused at recording), the output states the tool not run, and no
-record is stated free of policy findings. A `licence-unknown` finding is a finding: it is unresolved until a person's
-disposition resolves it.
+any purl type of the SBOM) or a `cargo-deny` finding whose code is one of the following. From the `licenses` check:
+`rejected` and `unlicensed`. From the `bans` check: `banned` and `not-allowed`. Every other `cargo-deny` code (for
+example `duplicate`, `wildcard`, `skipped`, `unmatched-skip`, `license-not-encountered`, or any code not named here) is
+set aside and counted, as source and `unclassified` findings are. The set is a claim about cargo-deny 0.19.8 output;
+the implementation SHALL capture, unedited, a licence diagnostic of each of `rejected` and `unlicensed` beside the
+existing `banned` fixture, and a code that capture shows differently amends this list here before the join ships.
+Policy findings use this requirement's rules unchanged: the newest retained scan per tool, the match rule, the
+`unmatched` and `unordered` rules, vacuity, and the resolution rule below. A refused recording is treated as a refused grype report is: it retains nothing, so with no earlier scan the tool is not run and with an earlier scan
+that scan is read, with its timestamp and ruleset stated. Policy findings are attached and counted apart from
+advisories, and a policy finding is never counted as an advisory.
+
+`licence-policy` assesses exactly the components in the `evaluated` list of its newest retained scan (FR-150), whatever
+their purl type (so a `lake` or `generic` record is assessed here though `unsupported` for advisories); `cargo-deny`
+assesses `cargo`. A record is stated **no policy findings in the scan read**, with the scan's timestamp and ruleset, only
+when the newest `licence-policy` scan was read, is not vacuous or unordered, lists the record's purl in `evaluated`,
+attached no policy finding to the record, and left no unmatched `licence-policy` finding that could belong to it (a
+finding with no purl). A record not listed in `evaluated` is stated **not evaluated by the licence-policy scan read**,
+never *no policy findings*. A record is never stated *allowed*. With no `licence-policy` scan retained, the output
+states the tool not run. A `licence-unknown` finding is a finding: it is unresolved until a person's disposition resolves
+it.
+
+Resolution of a policy finding follows the resolution rule above, applied to that finding's own scan: a record's single
+`disposition_clause` fact resolves a finding of the record, advisory or policy, only when it is current, approved and
+attested at or after the `timestamp` of the newest scan reporting that finding. One fact therefore covers every
+finding of the record that was reported by a scan at or before its attestation, and no finding reported by a later
+scan. The report states this scope on the row (FR-144). The merged test tagged FR-142-AC-13 (`tc_1516_009`) asserts that
+`rejected` and `banned` findings are set aside; the implementation slice rewrites that test and the `set_aside` count
+together with the join, in the same change.
 
 ### Coverage of the scanners
 
@@ -143,14 +158,17 @@ advisory therefore leaves that advisory unresolved until a person attests again.
 - The join SHALL carry the fact's `decision`, `rationale`, `approvalRef` and `attestedBy` unchanged.
 - The join SHALL NOT compute a score, class or ranking of an advisory.
 - The join SHALL read, for `licence-policy`, the retained `FindingRecord` with the newest `timestamp`.
-- The join SHALL read a `cargo-deny` ban or licence finding as a policy finding.
+- The join SHALL read a `cargo-deny` finding with code `rejected`, `unlicensed`, `banned` or `not-allowed` as a policy finding.
+- The join SHALL set aside and count every other `cargo-deny` code.
 - If no `FindingRecord` of `licence-policy` is retained, then the join SHALL report that tool's scan as not run.
 - If no `FindingRecord` of `licence-policy` is retained, the join SHALL NOT report any record free of policy findings.
-- If a `licence-policy` policy or SBOM was refused at recording, then the join SHALL report the tool as not run.
+- If a `licence-policy` recording was refused and an earlier scan is retained, then the join SHALL read the earlier scan and state its timestamp and ruleset.
+- If the newest `licence-policy` scan is vacuous or unordered, then the join SHALL NOT report any record free of policy findings.
+- If a record's purl is not in the `evaluated` list of the `licence-policy` scan read, then the join SHALL state the record not evaluated.
 - The join SHALL attach a policy finding to the `soup_record` selected by the match rule.
 - The join SHALL list a policy finding that matches none, more than one, or has no purl or version as unmatched with the same reasons as an advisory.
 - The join SHALL NOT drop a policy finding for lack of a matching record.
-- The join SHALL resolve a policy finding by the same disposition rule as an advisory, including `scan newer than attestation`.
+- The join SHALL resolve a policy finding by the disposition rule of an advisory, against the `timestamp` of the scan that reported that finding.
 - The join SHALL carry the rule id, the tool's severity word and the message of a policy finding unchanged.
 - The join SHALL NOT state any record `allowed`.
 
@@ -185,13 +203,15 @@ advisory therefore leaves that advisory unresolved until a person attests again.
 | FR-142-AC-25 | An npm record is shown free of grype advisories only from a read, non-vacuous grype scan, and is not shown free of `cargo-audit` advisories, which do not assess its purl type. | Test |
 | FR-142-AC-26 | A grype finding with no purl is listed unmatched with the reason `no purl` and attaches to no record, including a `pkg:cargo/` record of the same name and version, and no npm, PyPI, Go module or OS-package record is shown free of grype advisories while it is read. | Test |
 | FR-142-AC-27 | An npm record with a clean grype scan and a PyPI record whose purl type is also assessed are each free of advisories; a `lake` record is `unsupported` and a cargo record with no read cargo scan is not free of advisories. | Test |
-| FR-142-AC-28 | A retained cargo-deny licence finding and ban finding on a `pkg:cargo/` record attach to it as policy findings, are not counted as advisories, and are resolved by the same disposition rule. | Test |
+| FR-142-AC-28 | A retained cargo-deny diagnostic of each of `rejected`, `unlicensed`, `banned` and `not-allowed` attaches to its `pkg:cargo/` record as a policy finding, is not counted as an advisory, and is resolved by the disposition rule; a `duplicate`, `wildcard`, `license-not-encountered` and `unmatched-skip` diagnostic are set aside and counted. The `rejected` and `unlicensed` fixtures are captured from cargo-deny unedited. | Test |
 | FR-142-AC-29 | Given a retained `licence-policy` scan over a fixture SBOM holding an allowed, a denied, a not-listed, an unlicensed and a banned npm or PyPI component, each finding attaches to the record with its own purl and to no other, carrying its rule id, severity word and message unchanged, and the allowed component's record has none. | Test |
-| FR-142-AC-30 | With no retained `licence-policy` scan the output states it not run and shows no record free of policy findings; with a retained clean scan it states `no policy findings in the scan read` with the timestamp and ruleset, and the two outputs differ. A policy or SBOM refused at recording (FR-150-AC-7) leaves it not run. | Test |
+| FR-142-AC-30 | With no retained `licence-policy` scan the output states it not run and shows no record free of policy findings; with a retained clean scan listing the record it states `no policy findings in the scan read` with the timestamp and ruleset, and the two outputs differ. A policy or SBOM refused at recording (FR-150-AC-7) with no earlier scan leaves it not run, and with an earlier scan retained the earlier scan is read with its timestamp and ruleset stated. | Test |
 | FR-142-AC-31 | A `licence-unknown` finding attaches to its record, is unresolved with no matching disposition, and is never stated allowed; with an approved disposition attested at or after the scan it shows resolved with the fact copied unchanged, attested earlier it shows `scan newer than attestation`. | Test |
 | FR-142-AC-32 | A `licence-policy` finding whose purl matches no record, and one with no purl, each appear once in the unmatched list with rule id and package (the latter with reason `no purl`), and attached + unmatched equals the distinct findings read; a `lake` record is assessed by `licence-policy` yet reported `unsupported` for advisories. | Test |
-| FR-142-AC-33 | A `licence-policy` scan that is vacuous (an SBOM that listed nothing) shows no record free of policy findings. | Test |
+| FR-142-AC-33 | A vacuous `licence-policy` scan (an SBOM that listed nothing) and an unordered one each show no record free of policy findings, each with its own stated reason. | Test |
 | FR-142-AC-34 | The joined output carries a policy finding in a list separate from advisories, and no counter or field merges the two. | Test |
+| FR-142-AC-35 | A record promoted after the `licence-policy` scan, or from another SBOM, is absent from `evaluated` and is stated not evaluated, never `no policy findings`. | Test |
+| FR-142-AC-36 | A record with a disposition attested after an advisory scan but before a later `licence-policy` scan that reports a ban finding on it shows the advisory resolved and the ban finding unresolved with `scan newer than attestation`; attesting again after the later scan resolves both. | Test |
 
 ## Constraints
 
