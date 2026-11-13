@@ -38,7 +38,7 @@ and every absent value must read as absent.
 | Authored files changed or created by a run | 0 | 0 | Test |
 | Output sentences stating a risk, anomaly or release accepted or acceptable | 0 | 0 | Test |
 | Score, rank, verdict, count-as-grade or priority keys emitted | 0 | 0 | Test |
-| Differing output bytes across two runs on identical inputs | 0 | 0 | Test |
+| Differing output bytes across two runs on identical inputs and signature-verification configuration | 0 | 0 | Test |
 
 ## Acceptance Criteria
 
@@ -48,7 +48,7 @@ and every absent value must read as absent.
 | NFR-035-AC-2 | In the Markdown over every fixture, the stem "accept" appears only in values copied from a record. | Test |
 | NFR-035-AC-3 | The JSON over every fixture holds no key named or typed as a score, rank, verdict, grade, recommendation or priority. | Test |
 | NFR-035-AC-4 | Over a fixture with every optional value absent, each printed value is `not stated`, `null`, `none`, an absent marker or copied from a named record. | Test |
-| NFR-035-AC-5 | Two runs over the same working tree and history give byte-identical output in both formats, with and without `--fail-on`. | Test |
+| NFR-035-AC-5 | Two runs over the same working tree, history and git signature-verification configuration give byte-identical output in both formats, with and without `--fail-on`. | Test |
 
 ## Verification
 
