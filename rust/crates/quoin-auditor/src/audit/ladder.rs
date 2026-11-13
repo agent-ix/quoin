@@ -30,7 +30,7 @@ use super::method::{method_conformance, unknown_method_finding};
 use super::mocks::{mocked_bindings, mocked_finding};
 use super::scores::{floor_for, multiplicity_finding, mutation_finding, surviving_mutant_findings};
 use super::stale::{failed_run, unrecorded_evidence};
-use super::{Indexed, Pass, is_insufficient};
+use super::{ClassIndependenceAssessment, Indexed, Pass, is_insufficient};
 use crate::error::AuditorError;
 
 /// One binding and the run that records its suite.
@@ -51,12 +51,12 @@ pub(super) fn run(
     indexed: &Indexed<'_>,
     obligation: &Obligation,
     bindings: &[&Binding],
+    class_assessment: Option<&ClassIndependenceAssessment>,
 ) -> Result<Pass, AuditorError> {
     let mut pass = Pass {
         findings: Vec::new(),
         unevaluated: Vec::new(),
         independence: Vec::new(),
-        class_independence: Vec::new(),
         completed: false,
     };
     let catalog = input.catalog.as_ref();
@@ -104,7 +104,7 @@ pub(super) fn run(
     }
 
     // ── Independence: the profile's, then the class's ──
-    if independence_failed(input, indexed, obligation, bindings, &mut pass) {
+    if independence_failed(input, indexed, obligation, class_assessment, &mut pass) {
         return Ok(pass);
     }
 
@@ -176,7 +176,7 @@ fn independence_failed(
     input: &AuditInput,
     indexed: &Indexed<'_>,
     obligation: &Obligation,
-    bindings: &[&Binding],
+    class_assessment: Option<&ClassIndependenceAssessment>,
     pass: &mut Pass,
 ) -> bool {
     let assessment = indexed
@@ -206,15 +206,12 @@ fn independence_failed(
             failed = true;
         }
     }
-    if let Some(class) = &indexed.class
-        && let Some(assessment) = class.independence(obligation, bindings)
+    if let Some(assessment) = class_assessment
+        && assessment.status == IndependenceStatus::Insufficient
     {
-        if assessment.status == IndependenceStatus::Insufficient {
-            pass.findings
-                .push(independence_finding(obligation, &assessment));
-            failed = true;
-        }
-        pass.class_independence.push(assessment);
+        pass.findings
+            .push(independence_finding(obligation, assessment));
+        failed = true;
     }
     failed
 }

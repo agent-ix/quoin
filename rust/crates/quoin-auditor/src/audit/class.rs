@@ -298,9 +298,8 @@ impl<'a> ClassContext<'a> {
     ) -> Option<ClassIndependenceAssessment> {
         let class = self.class_of(&obligation.id)?;
         let dimensions = self.dimensions.get(class).filter(|list| !list.is_empty())?;
-        let owned: Vec<Binding> = bindings.iter().map(|binding| (*binding).clone()).collect();
         let requirement = requirement_of(&obligation.id);
-        let lines = assess_lines(requirement, dimensions, &owned);
+        let lines = assess_lines(requirement, dimensions, bindings);
         Some(ClassIndependenceAssessment {
             source: SOURCE_CLASS,
             class: class.to_owned(),
@@ -311,7 +310,7 @@ impl<'a> ClassContext<'a> {
                 "{id} is class {class}: {summary}{shortfall}",
                 id = obligation.id,
                 summary = lines.summary,
-                shortfall = shortfall(&lines.dimensions, owned.len(), lines.status),
+                shortfall = shortfall(&lines.dimensions, bindings.len(), lines.status),
             ),
             dimensions: lines.dimensions,
             satisfied_by: lines.satisfied_by,

@@ -28,7 +28,6 @@ serde_json = { workspace = true }
 # not carry the generator's dependency tree.
 schemars = { workspace = true, optional = true }
 
-
 [features]
 # `quoin-schemas` turns this on to read the wire shapes off the types
 # that actually deserialise them. No `default`: a feature that is on by default

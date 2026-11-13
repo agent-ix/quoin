@@ -157,7 +157,8 @@ pub fn assess_independence(
     requirement: &IndependenceRequirement,
     bindings: &[Binding],
 ) -> IndependenceAssessment {
-    let lines = assess_lines(&requirement.id, &requirement.dimensions, bindings);
+    let borrowed: Vec<&Binding> = bindings.iter().collect();
+    let lines = assess_lines(&requirement.id, &requirement.dimensions, &borrowed);
     IndependenceAssessment {
         profile: profile.clone(),
         requirement: requirement.id.clone(),
@@ -175,7 +176,7 @@ pub fn assess_independence(
 pub fn assess_lines(
     label: &str,
     requested: &[IndependenceDimension],
-    bindings: &[Binding],
+    bindings: &[&Binding],
 ) -> LinesAssessment {
     let mut ordered = bindings.to_vec();
     ordered.sort_by(|a, b| a.suite.as_str().cmp(b.suite.as_str()));

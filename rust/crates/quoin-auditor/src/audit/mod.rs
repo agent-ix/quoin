@@ -43,7 +43,7 @@ pub use scores::{
     surviving_mutant_findings,
 };
 
-use self::class::ClassContext;
+use self::class::{ClassContext, SOURCE_PROFILE};
 use crate::error::AuditorError;
 
 /// What the loop reads, indexed once rather than per obligation.
@@ -128,9 +128,6 @@ struct Pass {
     findings: Vec<Finding>,
     unevaluated: Vec<UnevaluatedCheck>,
     independence: Vec<IndependenceAssessment>,
-    /// The class independence assessments (FR-160), one per obligation whose
-    /// class lists dimensions and that the ladder reached.
-    class_independence: Vec<ClassIndependenceAssessment>,
     /// True only when the ladder ran all the way to the bottom.
     ///
     /// The retained source pushes `healthy` as the LAST statement of the loop
@@ -170,7 +167,11 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
     let mut unevaluated: Vec<UnevaluatedCheck> = Vec::new();
     let mut independence: Vec<IndependenceAssessment> = Vec::new();
     let mut class_independence: Vec<ClassIndependenceAssessment> = Vec::new();
-    let classified: Vec<&quoin_quire_types::Obligation> = obligations.clone();
+    // Built before the loop consumes the obligations, and only under a policy.
+    let class_report = indexed
+        .class
+        .as_ref()
+        .map(|class| class.report(&obligations));
 
     for obligation in obligations {
         let mut bindings: Vec<&Binding> = indexed
@@ -180,20 +181,33 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
             .unwrap_or_default();
         bindings.sort_by(|left, right| js::compare(left.suite.as_str(), right.suite.as_str()));
 
-        let mut pass = ladder::run(input, &indexed, obligation, &bindings)?;
+        // The class independence record exists for every obligation of a class
+        // that lists dimensions (FR-160), whether or not the ladder reaches the
+        // check that turns it into a finding.
+        let class_assessment = indexed
+            .class
+            .as_ref()
+            .and_then(|class| class.independence(obligation, &bindings));
+        let mut pass = ladder::run(
+            input,
+            &indexed,
+            obligation,
+            &bindings,
+            class_assessment.as_ref(),
+        )?;
         // Class evidence floors are facts about the bound evidence, so they are
         // reported beside whatever the ladder stopped on, not instead of it.
         if let Some(class) = &indexed.class {
             pass.findings
                 .extend(class.evidence_findings(&indexed, obligation, &bindings));
         }
+        class_independence.extend(class_assessment);
         // Healthy means NOTHING was found for this obligation — including the
         // pre-guard unknown-method check, which does not stop the ladder.
         let clean = pass.completed && pass.findings.is_empty() && pass.unevaluated.is_empty();
         findings.extend(pass.findings);
         unevaluated.extend(pass.unevaluated);
         independence.extend(pass.independence);
-        class_independence.extend(pass.class_independence);
         if clean {
             healthy.push(obligation.id.clone());
         }
@@ -245,18 +259,25 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {
     // side that knows what it wrote.
     let mut other = quoin_finding_types::OtherMembers::new();
     if let Some(independence) = independence {
-        other.insert(
-            "independence".to_owned(),
-            serde_json::to_value(independence)
-                .map_err(|error| AuditorError::report_not_serialisable(&error))?,
-        );
+        let mut records = serde_json::to_value(independence)
+            .map_err(|error| AuditorError::report_not_serialisable(&error))?;
+        // Under a class policy two sources assess independence, so each profile
+        // record says which it is (FR-160).
+        if indexed.class.is_some() {
+            for record in records.as_array_mut().into_iter().flatten() {
+                if let Some(object) = record.as_object_mut() {
+                    object.insert("source".to_owned(), serde_json::json!(SOURCE_PROFILE));
+                }
+            }
+        }
+        other.insert("independence".to_owned(), records);
     }
 
-    if let Some(class) = &indexed.class {
+    if let Some(report) = class_report {
         class_independence.sort_by(|left, right| {
             js::compare(left.obligation.as_str(), right.obligation.as_str())
         });
-        other.insert("classReport".to_owned(), class.report(&classified));
+        other.insert("classReport".to_owned(), report);
         other.insert(
             "classIndependence".to_owned(),
             serde_json::to_value(class_independence)

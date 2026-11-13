@@ -22,8 +22,9 @@ use quoin_auditor::{AuditorError, AuditorErrorCode};
 use quoin_evidence::ids::{ObligationId, ProfileId, SuiteId, SymbolId};
 use quoin_evidence::independence::assess_independence;
 use quoin_evidence::types::{
-    Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy, IndependenceRequirement,
-    MUTATION_SCORE_METRIC, Outcome, RunEntry, RunRecord, STORE_SCHEMA_VERSION,
+    Binding, EvidenceLineage, FindingRecord, IndependenceDimension, IndependencePolicy,
+    IndependenceRequirement, MUTATION_SCORE_METRIC, Outcome, RunEntry, RunRecord,
+    STORE_SCHEMA_VERSION,
 };
 use quoin_finding_types::{AuditReport, Finding};
 use quoin_quire_types::{CoverageMatrixCriterion, CoverageMatrixRequirement, Obligation};
@@ -125,6 +126,11 @@ fn scene(
                 method("mutation-testing", "mutation-run"),
                 method("fuzzing", "mutation-run"),
                 method("unit-testing", "test-run"),
+                method("blank-kind", ""),
+                VerificationMethod {
+                    evidence_kind: None,
+                    ..method("no-kind", "")
+                },
             ],
             duplicates: Vec::new(),
             unreadable: Vec::new(),
@@ -327,11 +333,15 @@ fn class_independence_needs_two_lines_differing_on_every_listed_dimension() {
     let found = of_kind(&shared, "insufficient-independence");
     assert_eq!(found.len(), 1, "{:?}", shared.findings);
     assert!(found[0].summary.contains("class-3"), "{}", found[0].summary);
+    // Only the dimension the two lines truly share is named.
     assert!(
-        found[0].summary.contains("actor (shared)"),
+        found[0]
+            .summary
+            .ends_with("Still shared or missing: actor (shared)."),
         "{}",
         found[0].summary
     );
+    assert!(!found[0].summary.contains("technique (shared)"));
     assert_eq!(found[0].other.get("source"), Some(&json!("class")));
 
     let apart = report(&two_suites(
@@ -350,7 +360,41 @@ fn class_independence_needs_two_lines_differing_on_every_listed_dimension() {
         vec![bind(OBLIGATION, "a", Some(lineage("ann", "fuzz")))],
         vec![run("a", "test-run", None)],
     ));
-    assert_eq!(of_kind(&alone, "insufficient-independence").len(), 1);
+    let found = of_kind(&alone, "insufficient-independence");
+    assert_eq!(found.len(), 1);
+    assert!(
+        found[0]
+            .summary
+            .ends_with("Fewer than two evidence lines are bound."),
+        "{}",
+        found[0].summary
+    );
+}
+
+/// A class independence record exists for each obligation of the class, even
+/// one the ladder stops before the independence check (here: nothing bound).
+#[trace("FR-160-AC-4")]
+#[test]
+fn an_undischarged_obligation_of_the_class_still_has_its_assessment_record() {
+    let out = report(&scene(Some("class-3"), class_3(), vec![], vec![]));
+    let records = &out.other["classIndependence"];
+    assert_eq!(records.as_array().map(Vec::len), Some(1), "{records}");
+    assert_eq!(records[0]["status"], "insufficient");
+    assert_eq!(records[0]["obligation"], OBLIGATION);
+}
+
+/// Under a class policy the profile records say `source: profile`; without
+/// one the report's `independence` member is what it always was.
+#[trace("FR-160-AC-10")]
+#[test]
+fn profile_assessment_records_carry_their_source_only_under_a_class_policy() {
+    let under = profile_selecting_actor(lineage("ann", "fuzz"), lineage("bob", "fuzz"));
+    let out = report(&under);
+    assert_eq!(out.other["independence"][0]["source"], "profile");
+    let mut without = under;
+    without.class_policy = None;
+    let out = report(&without);
+    assert!(out.other["independence"][0].get("source").is_none());
 }
 
 /// The assessment record states its source, class, requirement and dimensions.
@@ -425,6 +469,15 @@ fn criticality_and_class_floors_are_separate_axes_and_the_higher_ratio_wins() {
         found[0].summary
     );
     assert!(found[0].summary.contains("0.9"), "{}", found[0].summary);
+
+    let tie = crit_and_class(Some("high"), Some("class-2"), 0.7, 0.7);
+    let found = of_kind(&tie, "insufficient-mutation-score");
+    assert_eq!(found.len(), 1);
+    assert!(
+        found[0].summary.contains("criticality high"),
+        "a tie names criticality: {}",
+        found[0].summary
+    );
 
     let crit_higher = crit_and_class(Some("high"), Some("class-2"), 0.6, 0.7);
     let found = of_kind(&crit_higher, "insufficient-mutation-score");
@@ -514,6 +567,14 @@ fn a_policy_that_cannot_be_applied_is_refused_naming_the_cause() {
             "vibes",
         ),
         (json!({ "class-2": { "rationale": "  " } }), "rationale"),
+        (
+            json!({ "class-2": { "required_methods": ["no-kind"], "rationale": RATIONALE } }),
+            "no-kind",
+        ),
+        (
+            json!({ "class-2": { "required_methods": ["blank-kind"], "rationale": RATIONALE } }),
+            "blank-kind",
+        ),
     ];
     for (classes, cause) in cases {
         let message = refusal_of(&classes);
@@ -677,4 +738,55 @@ fn two_audits_of_the_same_input_are_identical() {
     let second = serde_json::to_string(&report(&input)).unwrap();
     assert_eq!(first, second);
     assert!(first.contains("class-method-missing"));
+}
+
+/// A misspelt key is refused at the file boundary, not silently ignored.
+#[trace("FR-160-AC-8")]
+#[test]
+fn an_unknown_policy_key_is_refused() {
+    let misspelt = json!({
+        "class_field": "class",
+        "classes": { "class-2": { "mutation_flor": 0.8, "rationale": RATIONALE } }
+    });
+    let error = serde_json::from_value::<quoin_auditor::audit::ClassPolicy>(misspelt)
+        .expect_err("an unknown key is refused");
+    assert!(error.to_string().contains("mutation_flor"), "{error}");
+}
+
+/// The obligations key belongs to FR-161: its entries are not validated here.
+#[trace("FR-160-AC-8")]
+#[test]
+fn obligations_entries_are_accepted_unread() {
+    let classes = json!({ "class-2": { "obligations": [{ "id": "x", "kind": "design-trace" }], "rationale": RATIONALE } });
+    let out = report(&scene(Some("class-2"), policy(&classes), vec![], vec![]));
+    assert!(of_kind(&out, "class-unconfigured").is_empty());
+}
+
+/// A scanner-only suite satisfies a required method of its evidence kind.
+#[trace("FR-160-AC-2")]
+#[test]
+fn a_bound_scan_record_of_the_kind_satisfies_a_required_method() {
+    let classes =
+        json!({ "class-2": { "required_methods": ["mutation-testing"], "rationale": RATIONALE } });
+    let mut input = scene(
+        Some("class-2"),
+        policy(&classes),
+        vec![bind(OBLIGATION, "scanner", None)],
+        vec![],
+    );
+    let scan = |kind: &str| FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new("scanner"),
+        tool: "some-scanner".to_owned(),
+        evidence_kind: Some(kind.to_owned()),
+        timestamp: "2026-11-13T00:00:00Z".to_owned(),
+        ruleset: None,
+        rules_evaluated: Some(3),
+        findings: Vec::new(),
+        evaluated: None,
+    };
+    input.scans = Some(vec![scan("mutation-run")]);
+    assert!(of_kind(&report(&input), "class-method-missing").is_empty());
+    input.scans = Some(vec![scan("test-run")]);
+    assert_eq!(of_kind(&report(&input), "class-method-missing").len(), 1);
 }
