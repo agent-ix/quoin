@@ -165,3 +165,78 @@ scope:
   role: context_only
   excerpt: Explicit clause discharge accounting
 ```
+
+## Dispositions
+
+### Round 1
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The new FR-174-AC-4 test installs a synthetic pack under temporary IX_HOME, derives the binding from its installed clause set, removes ambient module overrides, and runs the chain. |
+| FND-002 | still-open | Sentinel checks and intermediate-output checks were added, but the count oracle accepts any compliant line starting with a table bar. The exact helper accepts a summary table containing / Compliant / 1 /, so a prohibited compliant-row count still passes. Check allowed clause rows or otherwise reject count summaries in table form as well. |
+
+### Round 1 evidence
+
+Candidate: ba003bbed8000adb44f47e7539a844f27dea2b80. Current method verdict: CONDITIONAL. The PR remains blocked by open findings. The original Findings section is unchanged.
+
+Owner scope ruling: this code PR remains within existing FR-173; the broader disposition contract is handled by separate specification work. No behavior from that expansion is required in this disposition pass.
+
+Independent execution: the shared JSON-reader ceiling test passed (1/1) at this head with SPEC_OBJECTS_SECURITY_DIR and IX_FILAMENT_MODULES_PATH unset. The mapping suite, valid-master runtime probe, quoin-quire tests, formatting, targeted Clippy and standalone count-helper probe could not start because all six mandatory locked-build lanes were occupied. The code lead directed static completion; all three queued wrapper sessions were cancelled (exit 130). No aggregate gate ran. Coder-reported passes were not substituted for independent execution.
+
+Static confirmation of FND-004: the installed master-requirements-frontmatter.schema.json requires only type, name, org and component_type; no id is required. records.rs:137-147 marks any document missing id malformed regardless of archetype. mapping_facts.rs:181-186 refuses the first malformed path. Consequently a valid id-less spec.md is rejected; no runtime result is claimed. Quoin's own spec/spec.md is an example of this permitted document shape.
+
+Static confirmation of the remaining gap FND-002: the assertion at tc_173_facts_from_mappings.rs:409-420 accepts all lines without the sentinel or percent sign whose compliant-bearing lines begin with |. The concrete input | Metric | Value | followed by | Compliant | 1 | satisfies every condition, while reporting a prohibited count. This is the unresolved count portion of the original separate gap finding, not a duplicate new finding.
+
+Trace queries for FR-173, FR-174 and NFR-038 recognize all 18 criteria; every verification claim is structural. FR-174-AC-4 now has the installed-pack test. Citations were not treated as evidence; quoin matrix was not used. Plan completion: not assessed. Spec-review sub-analyses and other language lanes remain inapplicable; optional semantic gap-analysis was not requested.
+
+GitHub reports head ba003bbed8000adb44f47e7539a844f27dea2b80, OPEN, MERGEABLE (no git conflict), and mergeStateStatus BLOCKED. Review disposition remains not mergeable because code FND-004 and gap FND-002 are still open.
+
+```yaml
+dispositions:
+- fnd: FND-001
+  outcome: fixed
+  after_excerpt: "#[trace(\"FR-174-AC-4\")]\n#[test]\nfn tc_174_the_chain_uses_a_synthetic_pack_installed_in_the_temporary_ix_home()\
+    \ {\n    let world = three_clauses();\n    world.install_synthetic_clause_set();\n\
+    \n    let facts = world.facts_with_installed_modules(&[\"--approval-ref\", \"\
+    APPR-7\"]);\n    assert!(facts.status.success(), \"{facts:?}\");\n    let recorded\
+    \ = world.record_installed(&out(&facts));\n    assert!(recorded.status.success(),\
+    \ \"{recorded:?}\");\n    let report = world.rmm_installed(AS_OF);"
+- fnd: FND-002
+  outcome: still-open
+  reason: Sentinel checks and intermediate-output checks were added, but the count
+    oracle accepts any compliant line starting with a table bar. The exact helper
+    accepts a summary table containing | Compliant | 1 |, so a prohibited compliant-row
+    count still passes. Check allowed clause rows or otherwise reject count summaries
+    in table form as well.
+```
+
+### Round 2
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-002 | fixed | The oracle now accepts only the explicit C1/C3 result shapes and explicitly rejects the reported Compliant / 1 summary row. Sentinel and intermediate-output checks remain in place. |
+
+### Round 2 evidence
+
+Candidate: 2e72eb4639bd56627ba73ec5c2d1db18f09c8dfc. Current method verdict: PASS. All original implementation and gap findings are now fixed. The separately reported signature discrepancy remains open.
+
+Source disposition: code FND-004 is fixed by invalid_identity_paths: id-less documents are rejected only when their checked archetype contract rejects them. Valid id-less master-requirements documents remain outside that control-only identity check, while missing control id/type cases still reach refusal. The new FR-173-AC-1 test explicitly asserts that the valid master document leaves one C1 direct fact. Original code FND-001/002/003 were rechecked and remain fixed: malformed-control refusal, one bounded shared JSON reader, and generated local test modules with no external security checkout.
+
+Gap FND-002 is fixed: is_expected_rmm_compliance_row recognizes the exact C1/C3 result shapes and rejects the reported summary-row counterexample explicitly. The sentinel and intermediate-file checks remain. Gap FND-001's installed-pack test still installs and reads the synthetic pack through temporary IX_HOME.
+
+Independent quire trace lookups for FR-173-AC-1, FR-173-AC-5, FR-174-AC-3 and FR-174-AC-4 resolve the relevant tests with structural confidence. Citations are not counted as verification; quoin matrix was not used. No spec or plan requirement changed, so spec-review sub-analyses remain inapplicable. Optional semantic gap-analysis was not requested. Plan completion: not assessed.
+
+Runtime verification is unavailable for this round: the focused mapping/reader/quoin-quire tests, formatting and targeted Clippy batch remained queued behind all six occupied locked-build lanes. The code lead directed completion without indefinite waiting; the queued wrapper was cancelled with exit 130 before any check started. Coder-reported passes are not presented as independent results. No aggregate gate ran. The attempted batch used the mandatory wrapper, the worktree target, debug=0, at most four jobs, and unset both external security-module environment variables.
+
+Signature evidence was independently checked: a second raw-object audit with git --no-replace-objects finds only tree, parent, author and committer headers, with neither gpgsig nor gpgsig-sha256. GitHub also reports signature_present:false. There are no signature bytes for cryptographic verification; this is distinct from missing trusted-signer configuration. Additional corroboration: git log reports signature status N; git cat-file shows no signature header; GitHub's commit API reports verified:false, reason:unsigned. GitHub reports this exact head OPEN, MERGEABLE (no git conflict), and mergeStateStatus BLOCKED. The implementation and gap findings are resolved, but the signature finding and outstanding lead gate prevent an unqualified merge-ready claim. The frozen branch was not edited; these updated SRs are staged in the reviewer scratchpad for the lead's artifact commit.
+
+```yaml
+dispositions:
+- fnd: FND-002
+  outcome: fixed
+  after_excerpt: "    matches!(\n        cells.as_slice(),\n        [\"C1\", \"Applicable\"\
+    , \"Compliant\", \"ix://CTRL-A\", _, _]\n            | [\n                \"C3\"\
+    ,\n                \"Applicable\",\n                \"Not compliant - undischarged:\
+    \ no discharge fact\",\n                _,\n                _,\n             \
+    \   _\n            ]\n    )\n}"
+```

@@ -414,10 +414,30 @@ fn assert_no_compliant_count_or_clause_text(text: &str) {
         .filter(|line| line.to_ascii_lowercase().contains("compliant"))
     {
         assert!(
-            line.trim_start().starts_with('|'),
-            "unexpected compliance summary: {line}"
+            is_expected_rmm_compliance_row(line),
+            "compliance text is not an actual mapped result row: {line}"
         );
     }
+}
+
+fn is_expected_rmm_compliance_row(line: &str) -> bool {
+    let Some(line) = line.trim().strip_prefix('|') else {
+        return false;
+    };
+    let line = line.strip_suffix('|').unwrap_or(line);
+    let cells: Vec<_> = line.split('|').map(str::trim).collect();
+    matches!(
+        cells.as_slice(),
+        ["C1", "Applicable", "Compliant", "ix://CTRL-A", _, _]
+            | [
+                "C3",
+                "Applicable",
+                "Not compliant - undischarged: no discharge fact",
+                _,
+                _,
+                _
+            ]
+    )
 }
 
 #[trace("FR-173-AC-1", "NFR-038-AC-1", "NFR-038-AC-3")]
@@ -677,6 +697,25 @@ fn tc_173_a_control_missing_its_id_or_type_is_rejected_as_an_invalid_corpus() {
     }
 }
 
+#[trace("FR-173-AC-1")]
+#[test]
+fn tc_173_a_valid_idless_master_requirements_document_does_not_invalidate_control_facts() {
+    let world = World::new(
+        &two_clauses(),
+        &[("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")]))],
+    );
+    std::fs::write(
+        world.spec().join("spec.md"),
+        "---\ntype: master-requirements\nname: Synthetic requirements\n\
+         org: example.invalid\ncomponent_type: cli\n---\n# Synthetic requirements\n",
+    )
+    .unwrap();
+
+    let facts = parsed(&world.facts());
+    assert_eq!(facts.len(), 1);
+    assert_eq!(facts[0]["clauseId"], "C1");
+}
+
 #[trace("FR-173-AC-9")]
 #[test]
 fn tc_173_a_stored_direct_fact_whose_control_is_no_longer_effective_is_named_stale() {
@@ -720,6 +759,7 @@ fn chain(world: &World) {
 #[trace("FR-174-AC-1", "FR-174-AC-3")]
 #[test]
 fn tc_174_the_chain_renders_compliant_tailored_and_undischarged_rows_without_a_score() {
+    assert!(!is_expected_rmm_compliance_row("| Compliant | 1 |"));
     let world = three_clauses();
     world.install_synthetic_clause_set();
     let facts = world.facts_with_installed_modules(&["--approval-ref", "APPR-7"]);

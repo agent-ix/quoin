@@ -186,3 +186,112 @@ scope:
     \ set SPEC_OBJECTS_SECURITY_DIR\",\n            root.display()\n        )\n  \
     \  });\n    assert!(root.join(\"skeletons/scope_exclusion.md\").is_file());"
 ```
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | high | The missing-id fix rejects valid non-control documents. records::read marks every document without id as malformed regardless of checked_types or its declared archetype. master-requirements allows no id; adding a valid spec.md to a healthy control corpus makes facts-from-mappings refuse it. Preserve the missing-control-id refusal while validating each document against its actual contract. | rust/crates/quoin-quire/src/records.rs:137 |
+
+## Dispositions
+
+### Round 1
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Missing id/type controls now enter Corpus::malformed and are refused; a new integration test checks both omissions. The separate overly broad application is FND-004. |
+| FND-002 | fixed | The duplicate reader is gone; mapping proposals and discharge use discharge::json_input. File and stdin reads stop at 8 MiB plus one byte and refuse over-limit input. |
+| FND-003 | fixed | The tests generate a local synthetic module and install a synthetic pack under their temporary IX_HOME. No external security checkout is read. |
+| FND-004 | still-open | New regression: the missing-id rule applies to every loaded document, including valid master-requirements documents whose schema does not require id. A valid spec.md therefore makes facts-from-mappings refuse a healthy control corpus. Scope identity validation to the declared archetype contract and retain malformed-control refusals. |
+
+### Round 1 evidence
+
+Candidate: ba003bbed8000adb44f47e7539a844f27dea2b80. Current method verdict: FAIL. The PR remains blocked by open findings. The original Findings section is unchanged.
+
+Owner scope ruling: this code PR remains within existing FR-173; the broader disposition contract is handled by separate specification work. No behavior from that expansion is required in this disposition pass.
+
+Independent execution: the shared JSON-reader ceiling test passed (1/1) at this head with SPEC_OBJECTS_SECURITY_DIR and IX_FILAMENT_MODULES_PATH unset. The mapping suite, valid-master runtime probe, quoin-quire tests, formatting, targeted Clippy and standalone count-helper probe could not start because all six mandatory locked-build lanes were occupied. The code lead directed static completion; all three queued wrapper sessions were cancelled (exit 130). No aggregate gate ran. Coder-reported passes were not substituted for independent execution.
+
+Static confirmation of FND-004: the installed master-requirements-frontmatter.schema.json requires only type, name, org and component_type; no id is required. records.rs:137-147 marks any document missing id malformed regardless of archetype. mapping_facts.rs:181-186 refuses the first malformed path. Consequently a valid id-less spec.md is rejected; no runtime result is claimed. Quoin's own spec/spec.md is an example of this permitted document shape.
+
+Static confirmation of the remaining gap FND-002: the assertion at tc_173_facts_from_mappings.rs:409-420 accepts all lines without the sentinel or percent sign whose compliant-bearing lines begin with |. The concrete input | Metric | Value | followed by | Compliant | 1 | satisfies every condition, while reporting a prohibited count. This is the unresolved count portion of the original separate gap finding, not a duplicate new finding.
+
+Trace queries for FR-173, FR-174 and NFR-038 recognize all 18 criteria; every verification claim is structural. FR-174-AC-4 now has the installed-pack test. Citations were not treated as evidence; quoin matrix was not used. Plan completion: not assessed. Spec-review sub-analyses and other language lanes remain inapplicable; optional semantic gap-analysis was not requested.
+
+GitHub reports head ba003bbed8000adb44f47e7539a844f27dea2b80, OPEN, MERGEABLE (no git conflict), and mergeStateStatus BLOCKED. Review disposition remains not mergeable because code FND-004 and gap FND-002 are still open.
+
+```yaml
+dispositions:
+- fnd: FND-001
+  outcome: fixed
+  after_excerpt: "        let has_id = frontmatter\n            .get(\"id\")\n   \
+    \         .and_then(Value::as_str)\n            .is_some_and(|id| !id.trim().is_empty());\n\
+    \        let has_type = frontmatter\n            .get(\"type\")\n            .and_then(Value::as_str)\n\
+    \            .is_some_and(|kind| !kind.trim().is_empty());\n        (!has_id ||\
+    \ !has_type).then(|| document.path.clone())"
+- fnd: FND-002
+  outcome: fixed
+  after_excerpt: "        std::fs::File::open(source)\n            .and_then(|file|\
+    \ file.take(limit).read_to_end(&mut bytes))\n            .map_err(|error| format!(\"\
+    cannot read {label} {source}: {error}\"))?;\n    }\n    if bytes.len() > MAX_JSON_INPUT_BYTES\
+    \ {\n        return Err(format!(\n            \"{label} exceeds the {MAX_JSON_INPUT_BYTES}-byte\
+    \ input limit\"\n        ));\n    }\n    serde_json::from_slice(&bytes).map_err(|error|\
+    \ format!(\"{label} is not JSON: {error}\"))"
+- fnd: FND-003
+  outcome: fixed
+  after_excerpt: "fn synthetic_types_module(parent: &Path) -> PathBuf {\n    let module\
+    \ = parent.join(\"synthetic-security-types\");\n    std::fs::create_dir_all(&module).unwrap();\n\
+    \    std::fs::write(\n        module.join(\"manifest.yaml\"),\n        format!(\n\
+    \            \"manifest_version: 1.0.0\\nname: synthetic-security-types\\n\\\n\
+    \             version: 0.1.0\\n{}\",\n            synthetic_object_types()\n \
+    \       ),\n    )\n    .unwrap();\n    module\n}"
+- fnd: FND-004
+  outcome: still-open
+  reason: 'New regression: the missing-id rule applies to every loaded document, including
+    valid master-requirements documents whose schema does not require id. A valid
+    spec.md therefore makes facts-from-mappings refuse a healthy control corpus. Scope
+    identity validation to the declared archetype contract and retain malformed-control
+    refusals.'
+```
+
+### Round 2
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-004 | fixed | Missing-id validation now checks the declared contract only for checked record types. The new valid-idless-master test asserts the effective control still produces C1; malformed control id/type cases remain checked. |
+| FND-005 | still-open | The handoff identifies this as a signed head, but the commit has no signature header: git reports N and GitHub reports verified:false with reason unsigned. The code lead must supply the intended signed candidate before the signature discrepancy can close. |
+
+### Round 2 evidence
+
+Candidate: 2e72eb4639bd56627ba73ec5c2d1db18f09c8dfc. Current method verdict: CONDITIONAL. All original implementation and gap findings are now fixed. The separately reported signature discrepancy remains open.
+
+Source disposition: code FND-004 is fixed by invalid_identity_paths: id-less documents are rejected only when their checked archetype contract rejects them. Valid id-less master-requirements documents remain outside that control-only identity check, while missing control id/type cases still reach refusal. The new FR-173-AC-1 test explicitly asserts that the valid master document leaves one C1 direct fact. Original code FND-001/002/003 were rechecked and remain fixed: malformed-control refusal, one bounded shared JSON reader, and generated local test modules with no external security checkout.
+
+Gap FND-002 is fixed: is_expected_rmm_compliance_row recognizes the exact C1/C3 result shapes and rejects the reported summary-row counterexample explicitly. The sentinel and intermediate-file checks remain. Gap FND-001's installed-pack test still installs and reads the synthetic pack through temporary IX_HOME.
+
+Independent quire trace lookups for FR-173-AC-1, FR-173-AC-5, FR-174-AC-3 and FR-174-AC-4 resolve the relevant tests with structural confidence. Citations are not counted as verification; quoin matrix was not used. No spec or plan requirement changed, so spec-review sub-analyses remain inapplicable. Optional semantic gap-analysis was not requested. Plan completion: not assessed.
+
+Runtime verification is unavailable for this round: the focused mapping/reader/quoin-quire tests, formatting and targeted Clippy batch remained queued behind all six occupied locked-build lanes. The code lead directed completion without indefinite waiting; the queued wrapper was cancelled with exit 130 before any check started. Coder-reported passes are not presented as independent results. No aggregate gate ran. The attempted batch used the mandatory wrapper, the worktree target, debug=0, at most four jobs, and unset both external security-module environment variables.
+
+Signature evidence was independently checked: a second raw-object audit with git --no-replace-objects finds only tree, parent, author and committer headers, with neither gpgsig nor gpgsig-sha256. GitHub also reports signature_present:false. There are no signature bytes for cryptographic verification; this is distinct from missing trusted-signer configuration. Additional corroboration: git log reports signature status N; git cat-file shows no signature header; GitHub's commit API reports verified:false, reason:unsigned. GitHub reports this exact head OPEN, MERGEABLE (no git conflict), and mergeStateStatus BLOCKED. The implementation and gap findings are resolved, but the signature finding and outstanding lead gate prevent an unqualified merge-ready claim. The frozen branch was not edited; these updated SRs are staged in the reviewer scratchpad for the lead's artifact commit.
+
+```yaml
+dispositions:
+- fnd: FND-004
+  outcome: fixed
+  after_excerpt: "        if !has_id\n            && checked_types.contains(&kind)\n\
+    \            && matches!(check(registry, document, kind)?, Contract::Violated(_))\n\
+    \        {\n            malformed.push(document.path.clone());\n        }"
+- fnd: FND-005
+  outcome: still-open
+  reason: 'The handoff identifies this as a signed head, but the commit has no signature
+    header: git reports N and GitHub reports verified:false with reason unsigned.
+    The code lead must supply the intended signed candidate before the signature discrepancy
+    can close.'
+```
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | The candidate does not carry the signature claimed by the signed-head handoff. Commit 2e72eb4639bd56627ba73ec5c2d1db18f09c8dfc has no signature header; git reports signature status N, and GitHub commit verification is false with reason unsigned. This provenance discrepancy remains a merge blocker until the intended signed candidate is provided. | git:2e72eb4639bd56627ba73ec5c2d1db18f09c8dfc |
