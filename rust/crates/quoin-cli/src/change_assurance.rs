@@ -518,9 +518,25 @@ fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Result<String, S
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or("")
         };
+        let meaning = claim
+            .get("meaning")
+            .and_then(serde_json::Value::as_array)
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(serde_json::Value::as_str)
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            })
+            .unwrap_or_default();
+        lines.push(
+            "  claimed approval, the event writer's claim and not verified by Quoin:".to_owned(),
+        );
+        lines.push(format!("    approver: {}", text("approver")));
+        lines.push(format!("    {}", claimed_time_line(claim)));
+        lines.push(format!("    meaning: {meaning}"));
         lines.push(format!(
-            "  claimed approval, the event writer's claim and not verified by Quoin: {} via {} ({}), tag {}",
-            text("approver"),
+            "    via {} ({}), tag {}",
             text("signature_kind"),
             text("record_digest"),
             text("tag"),
@@ -535,6 +551,22 @@ fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Result<String, S
         );
     }
     Ok(lines.join("\n"))
+}
+
+/// The line that shows a claimed approval's time: the instant with its source
+/// as the signer's claim, or `time missing`. A missing time is never replaced
+/// by another instant.
+fn claimed_time_line(claim: &serde_json::Value) -> String {
+    let member = |name: &str| claim.get(name).and_then(serde_json::Value::as_str);
+    match (member("signed_at"), member("signed_at_source")) {
+        (Some(instant), Some(source)) => {
+            format!("signing time claimed by the signer: {instant} (source: {source})")
+        }
+        _ => match member("signed_at_missing") {
+            Some(reason) => format!("signing time claimed by the signer: time missing ({reason})"),
+            None => "signing time claimed by the signer: time missing".to_owned(),
+        },
+    }
 }
 
 fn render(

@@ -50,15 +50,16 @@ fn sources() -> Vec<(String, String)> {
 
 /// The wire identifiers that name a member and are not a claim of their own.
 /// Everything else in prose stays subject to the census.
-const WIRE_IDENTIFIERS: [&str; 4] = [
+const WIRE_IDENTIFIERS: [&str; 5] = [
     "signed_approval",
+    "signed_at",
     "signature_kinds",
     "signature_kind",
     "signed_bad",
 ];
 
 /// The lowercase words of one line, hyphenated compounds kept whole, with the
-/// four [`WIRE_IDENTIFIERS`] removed first.
+/// [`WIRE_IDENTIFIERS`] removed first.
 fn words(line: &str) -> Vec<String> {
     let mut line = line.to_owned();
     for identifier in WIRE_IDENTIFIERS {

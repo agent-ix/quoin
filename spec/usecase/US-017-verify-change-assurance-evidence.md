@@ -54,7 +54,9 @@ findings. It executes no proof command. Nothing it reads establishes identity,
 authorization, or non-repudiation of its own; git history is the tamper evidence. A
 decision may carry a claim that a named person's signed approval tag approved the
 record; Quoin retains it as the event writer's claim, with the standing of the actor
-label, and never verifies a signature. Whoever relies on the approver re-runs
+label, and never verifies a signature. The claim shows the approver, the time the
+signer claims and the meaning together; a missing time is shown as missing and never
+replaced by another time. Whoever relies on the approver re-runs
 Engineering Assurance's `approval-verify` on the retained inputs with trust the
 relying party controls; the record, which its author writes, cannot establish trust.
 

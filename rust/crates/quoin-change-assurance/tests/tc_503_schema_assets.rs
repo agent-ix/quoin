@@ -345,7 +345,7 @@ fn collect_property_names(value: &serde_json::Value, into: &mut Vec<String>) {
 /// The receipt carries `claimed_approval` as null or as exactly the declared
 /// shape: the schema and the reader accept a real claim and refuse a forged
 /// shape, an absent member and a version 1 receipt.
-#[trace("FR-065-AC-1", "FR-065-AC-13", "FR-065-AC-18")]
+#[trace("FR-065-AC-1", "FR-065-AC-13", "FR-065-AC-18", "FR-065-AC-21")]
 #[test]
 fn tc_1511_the_receipt_schema_and_reader_agree_on_the_claimed_approval() {
     use quoin_change_assurance::VerificationReceipt;
@@ -361,6 +361,8 @@ fn tc_1511_the_receipt_schema_and_reader_agree_on_the_claimed_approval() {
         "approver": "a@example.test",
         "meaning": ["reviewed"],
         "signature_kind": "ssh",
+        "signed_at": "2026-08-31T10:20:30Z",
+        "signed_at_source": "tagger_date",
     });
     let with = |claim: serde_json::Value| {
         let mut receipt = base.clone();
@@ -372,7 +374,18 @@ fn tc_1511_the_receipt_schema_and_reader_agree_on_the_claimed_approval() {
         VerificationReceipt::from_json(&quoin_store::parse_strict_json(&bytes).unwrap()).is_ok()
     };
 
-    for accepted in [with(serde_json::Value::Null), with(claim.clone())] {
+    let mut missing_time = claim.clone();
+    missing_time.as_object_mut().unwrap().remove("signed_at");
+    missing_time
+        .as_object_mut()
+        .unwrap()
+        .remove("signed_at_source");
+    missing_time["signed_at_missing"] = serde_json::json!("tagger_date_unreadable");
+    for accepted in [
+        with(serde_json::Value::Null),
+        with(claim.clone()),
+        with(missing_time),
+    ] {
         assert!(validator.is_valid(&accepted));
         assert!(reads(&accepted));
     }
@@ -395,6 +408,32 @@ fn tc_1511_the_receipt_schema_and_reader_agree_on_the_claimed_approval() {
     let mut missing = claim.clone();
     missing.as_object_mut().unwrap().remove("approver");
     forged.push(with(missing));
+    // Exactly one time form: both, neither, half, a malformed instant, an
+    // unknown source or reason.
+    let mut both = claim.clone();
+    both["signed_at_missing"] = serde_json::json!("tagger_date_unreadable");
+    forged.push(with(both));
+    for member in ["signed_at", "signed_at_source"] {
+        let mut half = claim.clone();
+        half.as_object_mut().unwrap().remove(member);
+        forged.push(with(half));
+    }
+    let mut neither = claim.clone();
+    neither.as_object_mut().unwrap().remove("signed_at");
+    neither.as_object_mut().unwrap().remove("signed_at_source");
+    forged.push(with(neither.clone()));
+    for (member, value) in [
+        ("signed_at", serde_json::json!("2026-08-31T10:20:30+00:00")),
+        ("signed_at", serde_json::json!("2026-13-31T10:20:30Z")),
+        ("signed_at_source", serde_json::json!("clock")),
+    ] {
+        let mut changed = claim.clone();
+        changed[member] = value;
+        forged.push(with(changed));
+    }
+    let mut unknown_reason = neither.clone();
+    unknown_reason["signed_at_missing"] = serde_json::json!("unknown");
+    forged.push(with(unknown_reason));
     let mut absent = base.clone();
     absent["decision_event"]
         .as_object_mut()

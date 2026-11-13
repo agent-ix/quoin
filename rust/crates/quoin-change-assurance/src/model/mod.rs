@@ -8,6 +8,7 @@
 //! are retained is [`crate::intake`]'s question.
 
 pub mod approval;
+pub mod approval_time;
 pub mod attestation;
 pub mod attestation_shape;
 pub mod decision;
@@ -20,6 +21,7 @@ pub use approval::{
     APPROVAL_PROTOCOL, ApprovalStatus, ApprovedFacts, ClaimTrust, ClaimedApproval, GitsignTrust,
     SignatureKind, VerifiedApproval,
 };
+pub use approval_time::{ClaimedTime, TimeMissing, TimeSource};
 pub use attestation::{
     EnvironmentValue, ProducerResult, ProofAttestation, RetainedOutput, ToolBinding,
 };

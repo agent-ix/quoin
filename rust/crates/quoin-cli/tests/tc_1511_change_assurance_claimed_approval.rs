@@ -170,6 +170,8 @@ fn tc_1511_a_receipt_labels_the_claimed_approval_as_an_unverified_claim() {
         "approver": "reviewer@example.test",
         "meaning": ["reviewed"],
         "signature_kind": "ssh",
+        "signed_at": "2026-08-31T10:20:30Z",
+        "signed_at_source": "tagger_date",
     });
     let decisions = root.path().join("claiming-decisions.json");
     std::fs::write(
@@ -331,5 +333,109 @@ fn tc_1511_the_surface_runs_nothing_and_claims_nothing() {
                 "a claim word is used without a denial: {line}"
             );
         }
+    }
+}
+
+/// Run `receipt` over the fixture record with `claim` merged into an approving
+/// event, and return the plain output.
+fn plain_receipt_with(claim_time: &serde_json::Value) -> String {
+    let root = tempfile::tempdir().expect("a temporary directory");
+    let repo = root.path().to_str().expect("UTF-8");
+    let digest = written(repo);
+    let mut history: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(fixtures().join("decisions.json")).expect("decisions fixture"),
+    )
+    .expect("JSON");
+    let mut claim = serde_json::json!({
+        "protocol": "engineering-assurance.approval-verify-result/v1",
+        "status": "approved",
+        "tag": "approval/change-1/1",
+        "record_id": "change-1",
+        "record_digest": digest,
+        "trust": {"allowed_signers": "/keys/allowed_signers"},
+        "approver": "reviewer@example.test",
+        "meaning": ["reviewed", "tested"],
+        "signature_kind": "ssh",
+    });
+    for (name, value) in claim_time.as_object().expect("time members") {
+        claim[name] = value.clone();
+    }
+    history["events"][0]["payload"]["verified_approval"] = claim;
+    let decisions = root.path().join("timed-decisions.json");
+    std::fs::write(
+        &decisions,
+        serde_json::to_vec(&history).expect("serialises"),
+    )
+    .expect("written");
+    let output = quoin(&[
+        "receipt",
+        "--repo",
+        repo,
+        "--record",
+        "change-1",
+        "--revision",
+        "1",
+        "--candidate-revision",
+        "candidate-1",
+        "--decisions",
+        decisions.to_str().expect("UTF-8"),
+    ]);
+    text(&output.stdout)
+}
+
+/// The plain receipt shows the approver, the time as the signer's claim with
+/// its source, and the meaning together; a claim with no time shows `time
+/// missing` and its reason, and no other instant stands in for it.
+#[trace("FR-068-AC-14", "FR-065-AC-22")]
+#[test]
+fn tc_1592_the_receipt_shows_person_time_and_meaning_together() {
+    let timed = plain_receipt_with(&serde_json::json!({
+        "signed_at": "2026-08-31T10:20:30Z",
+        "signed_at_source": "tagger_date",
+    }));
+    assert!(timed.contains("approver: reviewer@example.test"), "{timed}");
+    assert!(
+        timed.contains(
+            "signing time claimed by the signer: 2026-08-31T10:20:30Z (source: tagger_date)"
+        ),
+        "{timed}"
+    );
+    assert!(timed.contains("meaning: reviewed; tested"), "{timed}");
+    assert!(!timed.contains("time missing"), "{timed}");
+
+    let missing = plain_receipt_with(&serde_json::json!({
+        "signed_at_missing": "tagger_date_unreadable",
+    }));
+    assert!(
+        missing
+            .contains("signing time claimed by the signer: time missing (tagger_date_unreadable)"),
+        "{missing}"
+    );
+    assert!(
+        missing.contains("approver: reviewer@example.test"),
+        "{missing}"
+    );
+    assert!(missing.contains("meaning: reviewed; tested"), "{missing}");
+    assert!(!missing.contains("2026-"), "{missing}");
+}
+
+/// The help names the time as the signer's own claim, not attested and never
+/// replaced by another time.
+#[trace("FR-068-AC-14")]
+#[test]
+fn tc_1592_the_receipt_help_describes_the_claimed_time() {
+    let output = quoin(&["receipt", "--help"]);
+    let help = text(&output.stdout).replace("\n  ", " ");
+    for literal in [
+        "signed_at_source",
+        "signed_at_missing",
+        "the signer's own claim",
+        "time missing",
+        "never replaced by another time",
+    ] {
+        assert!(
+            help.contains(literal),
+            "receipt help must contain {literal}: {help}"
+        );
     }
 }

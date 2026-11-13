@@ -22,6 +22,7 @@ use quoin_store::JsonValue;
 
 use crate::error::{ChangeAssuranceError, FieldFailure, Subject};
 use crate::ids::{Identity, NonEmptyText};
+use crate::model::approval_time::ClaimedTime;
 use crate::model::json::{Fields, object, string_values};
 
 /// The one `protocol` a claimed approval carries.
@@ -142,6 +143,8 @@ pub struct ApprovedFacts {
     pub meaning: Vec<String>,
     /// The kind of key behind the claim.
     pub signature_kind: SignatureKind,
+    /// The time the result reported, or why it reported none.
+    pub time: ClaimedTime,
 }
 
 /// The status the result reported, with the members only `approved` carries.
@@ -214,6 +217,7 @@ impl VerifiedApproval {
         if status == "approved" {
             let mut allowed = base.to_vec();
             allowed.extend(["approver", "meaning", "signature_kind"]);
+            allowed.extend(ClaimedTime::members_for(fields));
             fields.exact(&allowed)?;
         } else {
             fields.exact(&base)?;
@@ -295,6 +299,7 @@ fn read_approved(
         approver: fields.non_empty("approver")?,
         meaning: read_meaning(fields, subject)?,
         signature_kind: read_kind(fields, subject)?,
+        time: ClaimedTime::read(fields, subject)?,
     })
 }
 
@@ -315,6 +320,8 @@ pub struct ClaimedApproval {
     pub meaning: Vec<String>,
     /// The kind of key behind the claim.
     pub signature_kind: SignatureKind,
+    /// The time the claim reported, or why it reported none.
+    pub time: ClaimedTime,
 }
 
 impl ClaimedApproval {
@@ -329,6 +336,7 @@ impl ClaimedApproval {
             approver: facts.approver.clone(),
             meaning: facts.meaning.clone(),
             signature_kind: facts.signature_kind,
+            time: facts.time.clone(),
         })
     }
 
@@ -339,7 +347,7 @@ impl ClaimedApproval {
     /// [`ChangeAssuranceError::Shape`] for an undeclared or absent member and a
     /// malformed one.
     pub fn from_json(fields: Fields<'_>, subject: Subject) -> Result<Self, ChangeAssuranceError> {
-        fields.exact(&[
+        let mut allowed = vec![
             "protocol",
             "tag",
             "record_digest",
@@ -347,7 +355,9 @@ impl ClaimedApproval {
             "approver",
             "meaning",
             "signature_kind",
-        ])?;
+        ];
+        allowed.extend(ClaimedTime::members_for(fields));
+        fields.exact(&allowed)?;
         fields.equals("protocol", &JsonValue::string(APPROVAL_PROTOCOL))?;
         Ok(Self {
             tag: fields.non_empty("tag")?,
@@ -356,13 +366,14 @@ impl ClaimedApproval {
             approver: fields.non_empty("approver")?,
             meaning: read_meaning(fields, subject)?,
             signature_kind: read_kind(fields, subject)?,
+            time: ClaimedTime::read(fields, subject)?,
         })
     }
 
     /// The JSON form.
     #[must_use]
     pub fn to_json(&self) -> JsonValue {
-        object(vec![
+        let mut members = vec![
             ("protocol", JsonValue::string(APPROVAL_PROTOCOL)),
             ("tag", JsonValue::string(self.tag.as_str())),
             (
@@ -376,6 +387,8 @@ impl ClaimedApproval {
                 "signature_kind",
                 JsonValue::string(self.signature_kind.as_str()),
             ),
-        ])
+        ];
+        members.extend(self.time.members());
+        object(members)
     }
 }

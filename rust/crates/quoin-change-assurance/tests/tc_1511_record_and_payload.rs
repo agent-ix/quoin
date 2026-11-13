@@ -60,8 +60,13 @@ fn decided(decision: &str, tail: &str) -> quoin_change_assurance::VerificationIn
 
 fn approved_claim(digest: &str) -> String {
     format!(
-        r#"{{"protocol": "engineering-assurance.approval-verify-result/v1", "status": "approved", "tag": "t-1", "record_id": "change-1", "record_digest": "{digest}", "trust": {{"allowed_signers": "/keys/allowed"}}, "approver": "a@example.test", "meaning": ["reviewed"], "signature_kind": "ssh"}}"#
+        r#"{{"protocol": "engineering-assurance.approval-verify-result/v1", "status": "approved", "tag": "t-1", "record_id": "change-1", "record_digest": "{digest}", "trust": {{"allowed_signers": "/keys/allowed"}}, "approver": "a@example.test", "meaning": ["reviewed"], "signature_kind": "ssh", "signed_at": "2026-08-31T10:20:30Z", "signed_at_source": "tagger_date"}}"#
     )
+}
+
+/// The time members of the fixture claim, with their leading separator.
+fn time_text() -> String {
+    r#", "signed_at": "2026-08-31T10:20:30Z", "signed_at_source": "tagger_date""#.to_owned()
 }
 
 /// Whether verification found exactly one matching, intact decision event.
@@ -114,7 +119,8 @@ fn tc_1511_only_a_closed_well_formed_claim_on_an_approval_is_a_candidate() {
             .replace(r#""status": "approved""#, r#""status": "signed_bad""#)
             .replace(r#", "approver": "a@example.test""#, "")
             .replace(r#", "meaning": ["reviewed"]"#, "")
-            .replace(r#", "signature_kind": "ssh""#, ""),
+            .replace(r#", "signature_kind": "ssh""#, "")
+            .replace(&time_text(), ""),
         // A member outside its row: `approver` on a status that is not approved.
         good.replace(r#""status": "approved""#, r#""status": "signed_bad""#),
     ];
@@ -135,7 +141,8 @@ fn tc_1511_only_a_closed_well_formed_claim_on_an_approval_is_a_candidate() {
         .replace(r#""status": "approved""#, r#""status": "signed_bad""#)
         .replace(r#", "approver": "a@example.test""#, "")
         .replace(r#", "meaning": ["reviewed"]"#, "")
-        .replace(r#", "signature_kind": "ssh""#, "");
+        .replace(r#", "signature_kind": "ssh""#, "")
+        .replace(&time_text(), "");
     assert!(is_candidate(&decided("approved", &tail(&bad_signature))));
     let at_limit = good.replace(&digest, &"d".repeat(256));
     assert!(is_candidate(&decided("approved", &tail(&at_limit))));
@@ -353,4 +360,74 @@ fn tc_1511_a_v2_record_requires_its_signed_approval_policy() {
     );
     let digestful = replacing(&json(&record_text()), "digest", JsonValue::string("x"));
     assert!(prepare_change_record(&digestful).is_err());
+}
+
+/// An `approved` claim carries exactly one time form. Each form is a candidate
+/// and is reported unchanged in the receipt; both forms, neither, one half of
+/// the first form, a malformed instant, an unknown source or reason, an unknown
+/// time member, and a time on a status other than `approved` are refused.
+#[trace("FR-063-AC-17", "FR-063-AC-14")]
+#[test]
+fn tc_1592_an_approved_claim_carries_exactly_one_time_form() {
+    let digest = digest_of(&json(&record_text()));
+    let good = approved_claim(&digest);
+    let tail = |claim: &str| format!(r#", "verified_approval": {claim}"#);
+    let missing_form = good.replace(
+        &time_text(),
+        r#", "signed_at_missing": "tagger_date_unreadable""#,
+    );
+    let log_form = good.replace("\"tagger_date\"", "\"transparency_log\"");
+    for accepted in [&good, &missing_form, &log_form] {
+        assert!(
+            is_candidate(&decided("approved", &tail(accepted))),
+            "{accepted}"
+        );
+    }
+
+    let refused = [
+        // Both forms.
+        good.replace(
+            &time_text(),
+            &format!(
+                r#"{}, "signed_at_missing": "tagger_date_unreadable""#,
+                time_text()
+            ),
+        ),
+        // Neither.
+        good.replace(&time_text(), ""),
+        // One half of the instant form.
+        good.replace(r#", "signed_at_source": "tagger_date""#, ""),
+        good.replace(r#", "signed_at": "2026-08-31T10:20:30Z""#, ""),
+        // The missing form beside half of the instant form.
+        missing_form.replace(
+            r#""tagger_date_unreadable""#,
+            r#""tagger_date_unreadable", "signed_at": "2026-08-31T10:20:30Z""#,
+        ),
+        // Malformed instants: offset, no seconds, date only, impossible month, impossible hour, lowercase.
+        good.replace("2026-08-31T10:20:30Z", "2026-08-31T10:20:30+00:00"),
+        good.replace("2026-08-31T10:20:30Z", "2026-08-31T10:20Z"),
+        good.replace("2026-08-31T10:20:30Z", "2026-08-31"),
+        good.replace("2026-08-31T10:20:30Z", "2026-13-31T10:20:30Z"),
+        good.replace("2026-08-31T10:20:30Z", "2026-08-31T24:20:30Z"),
+        good.replace("2026-08-31T10:20:30Z", "2026-08-31t10:20:30z"),
+        good.replace("2026-08-31T10:20:30Z", ""),
+        // An unknown source, reason or time member.
+        good.replace("\"tagger_date\"", "\"clock\""),
+        missing_form.replace("tagger_date_unreadable", "unknown"),
+        good.replace(
+            &time_text(),
+            &format!(r#"{}, "signed_at_zone": "UTC""#, time_text()),
+        ),
+        // A time on a status other than approved.
+        good.replace(r#""status": "approved""#, r#""status": "signed_bad""#)
+            .replace(r#", "approver": "a@example.test""#, "")
+            .replace(r#", "meaning": ["reviewed"]"#, "")
+            .replace(r#", "signature_kind": "ssh""#, ""),
+    ];
+    for claim in &refused {
+        assert!(
+            !is_candidate(&decided("approved", &tail(claim))),
+            "{claim} must be refused as a candidate"
+        );
+    }
 }
