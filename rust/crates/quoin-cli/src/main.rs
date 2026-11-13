@@ -29,6 +29,7 @@ mod module;
 mod plugin;
 mod report;
 mod semantic;
+mod soup;
 mod update;
 mod validate;
 mod write;
@@ -253,6 +254,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
     }
+    if let Some(("soup", soup)) = matches.subcommand() {
+        return soup::run(soup);
+    }
     if let Some(("validate", validate)) = matches.subcommand() {
         return validate::run(validate);
     }
@@ -371,6 +375,7 @@ fn command() -> Command {
         .subcommand(plugin::command())
         .subcommand(report::command())
         .subcommand(semantic::command())
+        .subcommand(soup::command())
         .subcommand(validate::command())
         .subcommand(write::command())
         .subcommand(update::command())
