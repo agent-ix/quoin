@@ -183,7 +183,7 @@ fn flags(row: &Row) -> String {
 }
 
 /// The row's standing for one tool: its advisories, or why it has none to show.
-fn tool_lines(row: &Row, tool: Tool) -> Vec<String> {
+fn tool_lines(row: &Row, tool: Tool, osv_database: Option<&str>) -> Vec<String> {
     let found: Vec<String> = row
         .join
         .advisories
@@ -194,7 +194,15 @@ fn tool_lines(row: &Row, tool: Tool) -> Vec<String> {
     if !found.is_empty() {
         found
     } else if row.join.free_of.contains(&tool) {
-        vec![format!("{}: no advisory reported (scan read)", tool.name())]
+        let database_note = if tool == Tool::OsvScanner && osv_database.is_none() {
+            "; database not recorded"
+        } else {
+            ""
+        };
+        vec![format!(
+            "{}: no advisory reported (scan read{database_note})",
+            tool.name()
+        )]
     } else if tool == Tool::OsvScanner && !tool.assesses(&row.join.purl) {
         vec!["advisories not assessed: unsupported purl type".to_owned()]
     } else {
@@ -240,8 +248,13 @@ pub(super) fn markdown(report: &Report) -> String {
         );
         let _ = writeln!(text, "- Flags: {}", flags(row));
         let _ = writeln!(text, "- Advisories:");
+        let osv_database = report
+            .scans
+            .iter()
+            .find(|state| state.tool == Tool::OsvScanner)
+            .and_then(|state| state.ruleset.as_deref());
         for tool in Tool::ALL {
-            for line in tool_lines(row, tool) {
+            for line in tool_lines(row, tool, osv_database) {
                 let _ = writeln!(text, "  - {line}");
             }
         }
@@ -288,6 +301,9 @@ pub(super) fn markdown(report: &Report) -> String {
     }
     text
 }
+
+#[cfg(test)]
+mod osv_tests;
 
 fn unmatched_text(unmatched: &Unmatched) -> String {
     format!(
