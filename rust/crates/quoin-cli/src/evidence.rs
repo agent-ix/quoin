@@ -116,8 +116,11 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
     if !coverage.outcome.carries_payload() {
         return Ok(coverage);
     }
-    let results = String::from_utf8(input(&required(arguments, "results")?)?)
-        .map_err(|error| format!("results are not UTF-8: {error}"))?;
+    let results = String::from_utf8(bounded_input(
+        &required(arguments, "results")?,
+        MAX_RECORD_RESULTS_BYTES,
+    )?)
+    .map_err(|error| format!("results are not UTF-8: {error}"))?;
     let lineage = arguments
         .get_one::<String>("lineage")
         .map(|source| json_input(source))
@@ -164,14 +167,34 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or("")
             )),
-            Some("run") => Ok(format!(
-                "recorded {} → {}",
-                required(arguments, "suite")?,
-                payload
-                    .get("run_path")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("")
-            )),
+            Some("run") => {
+                let recorded = format!(
+                    "recorded {} → {}",
+                    required(arguments, "suite")?,
+                    payload
+                        .get("run_path")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("")
+                );
+                let named = payload
+                    .get("unrepresented")
+                    .and_then(serde_json::Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .map(|item| {
+                        let field = |name| item.get(name).and_then(serde_json::Value::as_str);
+                        format!(
+                            "  not transcribed — {} reported {}: {}",
+                            field("symbol").unwrap_or(""),
+                            field("state").unwrap_or(""),
+                            field("reason").unwrap_or("")
+                        )
+                    });
+                Ok(std::iter::once(recorded)
+                    .chain(named)
+                    .collect::<Vec<_>>()
+                    .join("\n"))
+            }
             _ => Err("evidence.record returned an unknown payload kind".to_owned()),
         }
     })
@@ -347,6 +370,28 @@ pub(crate) fn required(arguments: &ArgMatches, name: &str) -> Result<String, Str
 }
 fn json_input(source: &str) -> Result<serde_json::Value, String> {
     serde_json::from_slice(&input(source)?).map_err(|error| format!("input is not JSON: {error}"))
+}
+/// The largest `--results` document `evidence record` reads, in bytes: the
+/// core's own bound on the whole request, since the results are the bulk of it.
+const MAX_RECORD_RESULTS_BYTES: u64 = quoin_core::ops::evidence::MAX_RECORD_BYTES as u64;
+
+/// Read `source` (a path, or `-` for stdin) up to `limit` bytes, refusing a
+/// longer document without reading the rest of it.
+fn bounded_input(source: &str, limit: u64) -> Result<Vec<u8>, String> {
+    let mut bytes = Vec::new();
+    let read = if source == "-" {
+        std::io::stdin().take(limit + 1).read_to_end(&mut bytes)
+    } else {
+        std::fs::File::open(source)
+            .map_err(|error| format!("cannot read {source}: {error}"))?
+            .take(limit + 1)
+            .read_to_end(&mut bytes)
+    };
+    read.map_err(|error| format!("cannot read {source}: {error}"))?;
+    if bytes.len() as u64 > limit {
+        return Err(format!("{source} is larger than {limit} bytes"));
+    }
+    Ok(bytes)
 }
 fn input(source: &str) -> Result<Vec<u8>, String> {
     if source != "-" {

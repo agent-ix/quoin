@@ -1,232 +1,134 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Domain differential reports — a domain engine compared against an external
-//! reference implementation, case by case.
+//! `quire.differential-report/v2` — one analysis request judged by two SMT
+//! engines (FR-151).
 //!
-//! Produced by `agent-ix/tl-mltl` against R2U2/C2PO, and shaped for any domain
-//! that runs the same comparison. The report states agreement, mismatch,
-//! unsupported and tool-error counts; it reaches no verdict about whether the
-//! comparison was sufficient, and neither does this.
+//! The report contract belongs to `agent-ix/quire-analyze`. This reader does
+//! not restate it: `quire_analyze::validate_report_document` decides whether a
+//! document is well formed, and this module adds only the mapping of an
+//! accepted report to a run entry or an unrepresented result. It derives no
+//! digest, decodes no hex and parses no solver output.
 //!
-//! No existing adapter reads it. `junit` has no state for "the external tool
-//! cannot express this case", `cargo-mutants` is mutation-shaped, `agent-eval`
-//! is measurement-shaped, and the finding-shaped adapters would record a
-//! disagreement as a rule violation — which is a different claim from "two
-//! implementations disagree", and one the report does not make.
+//! One report is one comparison, so it is one entry. A `disagreement` is the
+//! one disposition no run-entry outcome carries, so it is named, not rounded.
 
-use std::sync::LazyLock;
-
-use regex::Regex;
+use ix_trace_rs::implements;
+use quire_analyze::{MAX_REPORT_BYTES, validate_report_document};
 use serde_json::Value;
 
 use super::{AdapterResult, UnrepresentedResult};
 use crate::error::EvidenceError;
 use crate::types::{Outcome, RunEntry};
 
-/// The declared schema family this adapter reads.
-///
-/// A domain declares its own prefix — `tl-mltl.differential-summary/v1` — so
-/// two domains can use the same shape without either claiming the other's
-/// identity. The version is pinned: a v2 with different semantics must not be
-/// read by a v1 reader that happens to find the fields it knows.
-#[allow(
-    clippy::expect_used,
-    reason = "the pattern is a module literal covered by this module's tests; a failure here is a typo caught by the suite, not a runtime condition"
-)]
-static SCHEMA: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^[a-z0-9][a-z0-9\-]*\.differential-summary/v1$")
-        .expect("adapter pattern literal must compile")
-});
-
-/// Case states this adapter transcribes into run entries.
-///
-/// `unsupported` is deliberately absent — see [`UnrepresentedResult`]. A slice
-/// and not an object literal for the reason the retained source gives: an
-/// object literal resolves through the prototype chain, so `"valueOf"` was
-/// accepted as a declared status and transcribed with a function as its
-/// outcome. CI's property test found it with exactly that counterexample.
-const STATUS: &[(&str, Outcome)] = &[
-    ("agreement", Outcome::Pass),
-    ("mismatch", Outcome::Fail),
-    ("tool-error", Outcome::Error),
-];
-
-/// Why `unsupported` carries no run-entry outcome. Stated once; the store holds
-/// these bytes.
-const UNSUPPORTED_REASON: &str = "the external reference does not support this case; that is neither a skip nor an error, and no run-entry outcome carries it";
+/// The schema this reader accepts. Used only to word a refusal; acceptance is
+/// the owner's validator's.
+const SCHEMA: &str = "quire.differential-report/v2";
 
 fn refuse(message: impl Into<String>) -> EvidenceError {
     EvidenceError::adapter("differential-report", message)
 }
 
-/// `JSON.stringify(value)`, with an absent member rendering as `undefined`.
-fn stringify(value: Option<&Value>) -> String {
-    value.map_or_else(
-        || "undefined".to_owned(),
-        |value| serde_json::to_string(value).unwrap_or_else(|_| "undefined".to_owned()),
-    )
+/// Why a document the validator refused was refused, naming a wrong `schema`
+/// value when that is the cause so a v1, v3 or retired-schema document says so.
+fn refusal(raw: &str, validator_error: &str) -> EvidenceError {
+    let found = serde_json::from_str::<Value>(raw).ok().and_then(|value| {
+        let object = value.as_object()?;
+        match object.get("schema") {
+            Some(Value::String(schema)) if schema == SCHEMA => None,
+            Some(other) => Some(other.to_string()),
+            None => Some("absent".to_owned()),
+        }
+    });
+    match found {
+        Some(found) => refuse(format!("schema {found} is not {SCHEMA}: {validator_error}")),
+        None => refuse(validator_error.to_owned()),
+    }
 }
 
-/// Parse a `<domain>.differential-summary/v1` report.
+/// The text of a member the validator has already proved is a string.
+fn text<'a>(value: &'a Value, member: &str) -> Result<&'a str, EvidenceError> {
+    value
+        .get(member)
+        .and_then(Value::as_str)
+        .ok_or_else(|| refuse(format!("validated report lacks string member {member}")))
+}
+
+/// `<engine> status <status> outcome <outcome>`, each verbatim from the report.
+fn describe_engine(engine: &Value) -> Result<String, EvidenceError> {
+    Ok(format!(
+        "{} status {} outcome {}",
+        text(engine, "engine")?,
+        text(engine, "status")?,
+        text(engine, "outcome")?,
+    ))
+}
+
+/// Transcribe a `quire.differential-report/v2` document.
 ///
 /// # Errors
 ///
-/// Refuses input that is not JSON, a report whose `schemaVersion` is not the
-/// declared family, a report with no `cases` array, an empty `cases` array, a
-/// case with no id or no status, and a case with an unknown status.
+/// Refuses input larger than [`MAX_REPORT_BYTES`] without parsing it, and any
+/// document `quire_analyze::validate_report_document` refuses (wrong or absent
+/// schema, a missing, undeclared or mistyped member, a self-contradicting
+/// disposition, non-canonical bytes).
+#[implements("FR-151")]
 pub fn parse_differential_report(raw: &str) -> Result<AdapterResult, EvidenceError> {
-    let report: Value =
-        serde_json::from_str(raw).map_err(|error| refuse(format!("input is not JSON: {error}")))?;
-    let schema_version = report.get("schemaVersion").and_then(Value::as_str);
-    if !schema_version.is_some_and(|version| SCHEMA.is_match(version)) {
+    if raw.len() > MAX_REPORT_BYTES {
         return Err(refuse(format!(
-            "unknown schemaVersion {}; expected <domain>.differential-summary/v1",
-            stringify(report.get("schemaVersion"))
+            "report is {} bytes, over the {MAX_REPORT_BYTES}-byte limit",
+            raw.len()
         )));
     }
-    let cases = report
-        .get("cases")
-        .and_then(Value::as_array)
-        .ok_or_else(|| refuse("report has no cases array"))?;
-    if cases.is_empty() {
-        // A comparison that examined nothing agrees with nothing. Recording it
-        // as a clean run is how a vacuous differential becomes evidence.
-        return Err(refuse(
-            "report contains no cases; a comparison that examined nothing is not an agreement",
-        ));
-    }
+    validate_report_document(raw.as_bytes()).map_err(|error| refusal(raw, &error))?;
+    let report: Value = serde_json::from_str(raw)
+        .map_err(|error| refuse(format!("validated report is not JSON: {error}")))?;
 
-    let mut entries: Vec<RunEntry> = Vec::new();
-    let mut unrepresented: Vec<UnrepresentedResult> = Vec::new();
-    for (index, case) in cases.iter().enumerate() {
-        let id = case
-            .get("id")
-            .and_then(Value::as_str)
-            .filter(|id| !id.is_empty())
-            .ok_or_else(|| refuse(format!("case {index} has no id")))?;
-        let status = case
-            .get("status")
-            .and_then(Value::as_str)
-            .filter(|status| !status.is_empty())
-            .ok_or_else(|| refuse(format!("case {id} has no status")))?;
-        if status == "unsupported" {
-            unrepresented.push(UnrepresentedResult {
-                symbol: id.to_owned(),
-                state: "unsupported".to_owned(),
-                reason: UNSUPPORTED_REASON.to_owned(),
+    let symbol = format!(
+        "{}::{}",
+        text(&report, "analysisKind")?,
+        text(&report, "requestDigest")?
+    );
+    let differential = report
+        .get("differential")
+        .ok_or_else(|| refuse("validated report lacks differential"))?;
+    let agreed = differential.get("agreedStatus").and_then(Value::as_str);
+    let outcome = match (text(differential, "disposition")?, agreed) {
+        ("agreement", Some("satisfied")) => Outcome::Pass,
+        ("agreement", Some("refuted")) => Outcome::Fail,
+        ("inconclusive" | "unavailable", None) => Outcome::Error,
+        ("disagreement", None) => {
+            let engines = report
+                .get("engines")
+                .and_then(Value::as_array)
+                .ok_or_else(|| refuse("validated report lacks engines"))?;
+            let described = engines
+                .iter()
+                .map(describe_engine)
+                .collect::<Result<Vec<_>, _>>()?;
+            return Ok(AdapterResult {
+                entries: Vec::new(),
+                unrepresented: Some(vec![UnrepresentedResult {
+                    symbol,
+                    state: "disagreement".to_owned(),
+                    reason: format!(
+                        "the two engines both ran and concluded opposite results ({}); that is neither a pass nor a fail nor an error, and no run-entry outcome carries it",
+                        described.join("; ")
+                    ),
+                }]),
+                evidence_kind: None,
             });
-            continue;
         }
-        let Some(outcome) = STATUS
-            .iter()
-            .find(|(name, _)| *name == status)
-            .map(|(_, outcome)| *outcome)
-        else {
+        (disposition, status) => {
             return Err(refuse(format!(
-                "case {id} has unknown status {}",
-                stringify(case.get("status"))
+                "validated report has disposition {disposition} with agreedStatus {status:?}"
             )));
-        };
-        entries.push(RunEntry::new(id, outcome));
-    }
+        }
+    };
 
     Ok(AdapterResult {
-        entries,
-        // Never `Some(vec![])`: an adapter with nothing to report omits the
-        // field rather than asserting an empty list.
-        unrepresented: (!unrepresented.is_empty()).then_some(unrepresented),
+        entries: vec![RunEntry::new(symbol, outcome)],
+        unrepresented: None,
         evidence_kind: None,
     })
-}
-
-#[cfg(test)]
-#[allow(
-    clippy::unwrap_used,
-    clippy::indexing_slicing,
-    reason = "in a test, a panic IS the failure report; the production lints stand"
-)]
-mod tests {
-    use super::parse_differential_report;
-    use crate::types::Outcome;
-
-    const REPORT: &str = r#"{"schemaVersion":"tl-mltl.differential-summary/v1","cases":[
-        {"id":"c1","status":"agreement"},
-        {"id":"c2","status":"mismatch"},
-        {"id":"c3","status":"tool-error"},
-        {"id":"c4","status":"unsupported"}
-    ]}"#;
-
-    #[test]
-    fn unsupported_is_named_rather_than_mapped_onto_the_nearest_outcome() {
-        let result = parse_differential_report(REPORT).unwrap();
-        let outcomes: Vec<Outcome> = result.entries.iter().map(|e| e.outcome).collect();
-        assert_eq!(outcomes, [Outcome::Pass, Outcome::Fail, Outcome::Error]);
-        let unrepresented = result.unrepresented.unwrap();
-        assert_eq!(unrepresented.len(), 1);
-        assert_eq!(unrepresented[0].symbol, "c4");
-        assert_eq!(unrepresented[0].state, "unsupported");
-    }
-
-    #[test]
-    fn a_report_with_nothing_unrepresented_omits_the_field() {
-        let result = parse_differential_report(
-            r#"{"schemaVersion":"a.differential-summary/v1","cases":[{"id":"c","status":"agreement"}]}"#,
-        )
-        .unwrap();
-        assert!(result.unrepresented.is_none());
-    }
-
-    #[test]
-    fn refuses_an_inherited_property_name_as_a_status() {
-        let error = parse_differential_report(
-            r#"{"schemaVersion":"a.differential-summary/v1","cases":[{"id":"c","status":"valueOf"}]}"#,
-        )
-        .unwrap_err();
-        assert_eq!(
-            error.to_string(),
-            "differential-report: case c has unknown status \"valueOf\""
-        );
-    }
-
-    #[test]
-    fn refuses_a_schema_version_outside_the_declared_family() {
-        for version in [
-            r#""tl-mltl.differential-summary/v2""#,
-            r#""TL.differential-summary/v1""#,
-            r#""-x.differential-summary/v1""#,
-            "1",
-        ] {
-            let input = format!(
-                r#"{{"schemaVersion":{version},"cases":[{{"id":"c","status":"agreement"}}]}}"#
-            );
-            assert!(
-                parse_differential_report(&input)
-                    .unwrap_err()
-                    .to_string()
-                    .starts_with("differential-report: unknown schemaVersion "),
-                "{version}"
-            );
-        }
-    }
-
-    #[test]
-    fn refuses_an_empty_case_list_and_a_case_with_no_id() {
-        assert_eq!(
-            parse_differential_report(
-                r#"{"schemaVersion":"a.differential-summary/v1","cases":[]}"#
-            )
-            .unwrap_err()
-            .to_string(),
-            "differential-report: report contains no cases; a comparison that examined nothing is not an agreement"
-        );
-        assert_eq!(
-            parse_differential_report(
-                r#"{"schemaVersion":"a.differential-summary/v1","cases":[{"status":"agreement"}]}"#
-            )
-            .unwrap_err()
-            .to_string(),
-            "differential-report: case 0 has no id"
-        );
-    }
 }
