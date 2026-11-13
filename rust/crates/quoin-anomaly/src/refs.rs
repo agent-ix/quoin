@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 use crate::error::AnomalyError;
-use crate::record::{frontmatter, parse_record};
+use crate::record::{cells, frontmatter, parse_record};
 
 /// One anomaly that names the queried id.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -96,12 +96,57 @@ pub fn acceptance_criteria(text: &str, id: &str) -> Vec<String> {
         .collect()
 }
 
-/// The ids a `Target` can resolve to in the corpus under `scope`: requirement
-/// documents, their acceptance criteria, and hazard documents.
-fn resolvable_ids(scope: &Path) -> Result<BTreeSet<String>, AnomalyError> {
+/// The test case ids a `TestMatrix` document declares: the first cell of each
+/// row under a table whose first column is `Test ID`.
+#[must_use]
+pub fn test_case_ids(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut in_table = false;
+    for line in text.lines() {
+        if !line.trim_start().starts_with('|') {
+            in_table = false;
+            continue;
+        }
+        let row = cells(line);
+        let first = row.first().map_or("", String::as_str);
+        if first == "Test ID" {
+            in_table = true;
+        } else if in_table && !first.is_empty() && !first.chars().all(|c| matches!(c, '-' | ':')) {
+            out.push(first.to_owned());
+        }
+    }
+    out
+}
+
+/// The ids a `Target` can resolve to in the corpus under `scope`.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct CorpusIds {
+    /// Requirement documents (`FR`, `NFR`) and hazard documents.
+    pub documents: BTreeSet<String>,
+    /// The acceptance criteria of the requirement documents.
+    pub criteria: BTreeSet<String>,
+    /// The test case ids of the `TestMatrix` documents.
+    pub tests: BTreeSet<String>,
+}
+
+impl CorpusIds {
+    /// Whether `id` resolves to anything in the corpus.
+    #[must_use]
+    pub fn contains(&self, id: &str) -> bool {
+        self.documents.contains(id) || self.criteria.contains(id) || self.tests.contains(id)
+    }
+}
+
+/// Read the resolvable ids of the corpus under `scope`: requirement documents,
+/// their acceptance criteria, hazard documents and test case ids.
+///
+/// # Errors
+///
+/// Returns an error when `scope` cannot be read.
+pub fn corpus_ids(scope: &Path) -> Result<CorpusIds, AnomalyError> {
     let mut files = Vec::new();
     markdown_files(scope, &mut files)?;
-    let mut ids = BTreeSet::new();
+    let mut ids = CorpusIds::default();
     for path in files {
         let Ok(text) = std::fs::read_to_string(&path) else {
             continue;
@@ -113,15 +158,18 @@ fn resolvable_ids(scope: &Path) -> Result<BTreeSet<String>, AnomalyError> {
             .get("type")
             .and_then(|v| v.as_str())
             .unwrap_or_default();
+        if kind == "TestMatrix" {
+            ids.tests.extend(test_case_ids(&text));
+        }
         let Some(id) = front.get("id").and_then(|v| v.as_str()) else {
             continue;
         };
         let requirement = matches!(kind, "FR" | "NFR");
         if requirement || front.as_object().is_some_and(is_hazard) {
-            ids.insert(id.to_owned());
+            ids.documents.insert(id.to_owned());
         }
         if requirement {
-            ids.extend(acceptance_criteria(&text, id));
+            ids.criteria.extend(acceptance_criteria(&text, id));
         }
     }
     Ok(ids)
@@ -135,7 +183,7 @@ fn resolvable_ids(scope: &Path) -> Result<BTreeSet<String>, AnomalyError> {
 ///
 /// Returns an error when `scope` cannot be read.
 pub fn references_to(scope: &Path, id: &str) -> Result<Vec<RefEntry>, AnomalyError> {
-    if !resolvable_ids(scope)?.contains(id) {
+    if !corpus_ids(scope)?.contains(id) {
         return Ok(Vec::new());
     }
     let mut out = Vec::new();
