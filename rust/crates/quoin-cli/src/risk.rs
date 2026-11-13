@@ -69,8 +69,7 @@ pub(crate) fn command() -> Command {
 }
 
 /// The one-line summary of `quoin risk-summary`.
-pub(crate) const SUMMARY_ABOUT: &str =
-    "Print the hazard-to-decision chain, one row per situation.";
+pub(crate) const SUMMARY_ABOUT: &str = "Print the hazard-to-decision chain, one row per situation.";
 
 pub(crate) fn summary_command() -> Command {
     Command::new("risk-summary")
