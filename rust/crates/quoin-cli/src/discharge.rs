@@ -11,6 +11,9 @@ use quoin_core::protocol::Response;
 use crate::core_runtime::{invoke, invoke_refusable};
 use crate::evidence::{json_arg, repo_arg};
 
+/// Maximum size of one JSON file or stdin input accepted by discharge adapters.
+const MAX_JSON_INPUT_BYTES: usize = 8 * 1024 * 1024;
+
 pub(crate) fn command() -> Command {
     Command::new("discharge")
         .about("Partition binding clauses into direct evidence, dispositions, and open work")
@@ -299,23 +302,55 @@ fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
         .ok_or_else(|| format!("--{name} is required"))
 }
 
-fn json_input(source: &str, label: &str) -> Result<serde_json::Value, String> {
-    let bytes = if source == "-" {
-        let mut bytes = Vec::new();
+pub(crate) fn json_input(source: &str, label: &str) -> Result<serde_json::Value, String> {
+    let mut bytes = Vec::new();
+    let limit = u64::try_from(MAX_JSON_INPUT_BYTES + 1)
+        .map_err(|error| format!("invalid JSON input limit: {error}"))?;
+    if source == "-" {
         std::io::stdin()
+            .take(limit)
             .read_to_end(&mut bytes)
             .map_err(|error| format!("cannot read {label}: {error}"))?;
-        bytes
     } else {
-        std::fs::read(source).map_err(|error| format!("cannot read {source}: {error}"))?
-    };
+        std::fs::File::open(source)
+            .and_then(|file| file.take(limit).read_to_end(&mut bytes))
+            .map_err(|error| format!("cannot read {label} {source}: {error}"))?;
+    }
+    if bytes.len() > MAX_JSON_INPUT_BYTES {
+        return Err(format!(
+            "{label} exceeds the {MAX_JSON_INPUT_BYTES}-byte input limit"
+        ));
+    }
     serde_json::from_slice(&bytes).map_err(|error| format!("{label} is not JSON: {error}"))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::command;
+    use super::{MAX_JSON_INPUT_BYTES, command, json_input};
     use ix_trace_rs::trace;
+
+    #[allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        clippy::panic,
+        reason = "in a test, a panic IS the failure report; the production lints stand"
+    )]
+    mod bounded_json_input {
+        use super::{MAX_JSON_INPUT_BYTES, json_input};
+        use ix_trace_rs::trace;
+
+        #[trace("FR-173-AC-5")]
+        #[test]
+        fn tc_173_json_input_refuses_a_file_above_the_byte_ceiling() {
+            let scratch = tempfile::tempdir().unwrap();
+            let path = scratch.path().join("too-large.json");
+            std::fs::write(&path, vec![b' '; MAX_JSON_INPUT_BYTES + 1]).unwrap();
+
+            let error = json_input(path.to_str().unwrap(), "test JSON").unwrap_err();
+            assert!(error.contains("byte input limit"), "{error}");
+        }
+    }
 
     #[trace("FR-046")]
     #[test]

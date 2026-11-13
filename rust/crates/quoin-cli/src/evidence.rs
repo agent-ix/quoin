@@ -13,8 +13,10 @@ use time::format_description::well_known::Rfc3339;
 use crate::core_runtime::invoke;
 
 pub(crate) mod audit;
+mod mapping_facts;
 
-const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> evidence\n  runs/<SUITE-N>/<timestamp>.json  one file = one run of one suite\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n  discharge/<authority>/<set>/<version>/<clause>.json  attested discharge facts\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence record-discharge  store attested clause-discharge facts\n  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records superseded by a newer one";
+const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> evidence\n  runs/<SUITE-N>/<timestamp>.json  one file = one run of one suite\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n  discharge/<authority>/<set>/<version>/<clause>.json  attested discharge facts\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence record-discharge  store attested clause-discharge facts\n  quoin evidence facts-from-mappings  propose discharge facts from effective controls
+  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records superseded by a newer one";
 
 /// The evidence commands whose inputs need no Quire-derived obligation set.
 pub(crate) fn command() -> Command {
@@ -76,6 +78,7 @@ pub(crate) fn command() -> Command {
                 .arg(json_arg()),
         )
         .subcommand(crate::discharge::record_command())
+        .subcommand(mapping_facts::command())
         .subcommand(audit::command())
 }
 
@@ -100,6 +103,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "inspect-mocks" => inspect_mocks(arguments),
         "record" => record_run(arguments),
         "record-discharge" => crate::discharge::record(arguments),
+        "facts-from-mappings" => mapping_facts::run(arguments),
         "audit" => audit::run(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
     }

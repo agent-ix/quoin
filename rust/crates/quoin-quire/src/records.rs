@@ -62,6 +62,9 @@ pub struct Document {
     pub edges: Vec<(String, String)>,
     /// The first table of each level-2 section, by section heading.
     pub tables: BTreeMap<String, Table>,
+    /// The text of each level-2 section, by section heading, as the engine's
+    /// parser reads it.
+    pub sections: BTreeMap<String, String>,
     /// The verbatim file text.
     pub raw: String,
     /// The result of the declared-contract check.
@@ -85,14 +88,16 @@ pub struct Corpus {
     /// The files the walker could not load, ordered by path.
     pub unreadable: Vec<Unreadable>,
     /// The files that open a frontmatter fence (`---`) yet yield no parseable
-    /// frontmatter: a complete fence that is not a mapping, or one never
-    /// closed. A file with no fence at all is not listed. They contribute no
-    /// document, ordered by path.
+    /// frontmatter, omit a non-empty `type`, or fail the identity fields of a
+    /// checked type's declared contract. A file with no fence at all is not
+    /// listed. They contribute no document, ordered by path.
     pub malformed: Vec<PathBuf>,
 }
 
 /// Every document below `scope` that carries an `id` and a `type`, ordered by
-/// path. Documents whose `type` is in `checked_types` are also checked against
+/// path. Documents missing `type` are listed in [`Corpus::malformed`]; a
+/// missing `id` is malformed when the declared contract for a checked type
+/// rejects it. Documents whose `type` is in `checked_types` are checked against
 /// validation for their type.
 ///
 /// # Errors
@@ -126,7 +131,13 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
             _ => None,
         })
         .collect();
+    malformed.extend(invalid_identity_paths(
+        &loaded.documents,
+        &registry,
+        checked_types,
+    )?);
     malformed.sort();
+    malformed.dedup();
     let mut documents = Vec::new();
     for found in &loaded.documents {
         let Some(frontmatter) = found.frontmatter() else {
@@ -144,7 +155,12 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
             Contract::NotChecked
         };
         let body = found.body();
-        let tables = sections(body, Some(2))
+        let parsed = sections(body, Some(2));
+        let section_text = parsed
+            .iter()
+            .map(|section| (section.heading.clone(), section.content.clone()))
+            .collect();
+        let tables = parsed
             .into_iter()
             .filter_map(|section| {
                 let table = parse_table(&section.content)?;
@@ -164,6 +180,7 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
             frontmatter: frontmatter.clone(),
             edges: relationships(frontmatter),
             tables,
+            sections: section_text,
             raw: found.raw().to_owned(),
             contract,
         });
@@ -174,6 +191,40 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
         unreadable,
         malformed,
     })
+}
+
+/// Find parsed records with no usable type, or whose checked type's contract
+/// rejects a missing `id`. Some valid record types do not use an `id`.
+fn invalid_identity_paths(
+    documents: &[quire_rs::LoadedDocument],
+    registry: &Registry,
+    checked_types: &[&str],
+) -> Result<Vec<PathBuf>> {
+    let mut malformed = Vec::new();
+    for document in documents {
+        let Some(frontmatter) = document.frontmatter() else {
+            continue;
+        };
+        let kind = frontmatter
+            .get("type")
+            .and_then(Value::as_str)
+            .filter(|kind| !kind.trim().is_empty());
+        let Some(kind) = kind else {
+            malformed.push(document.path.clone());
+            continue;
+        };
+        let has_id = frontmatter
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| !id.trim().is_empty());
+        if !has_id
+            && checked_types.contains(&kind)
+            && matches!(check(registry, document, kind)?, Contract::Violated(_))
+        {
+            malformed.push(document.path.clone());
+        }
+    }
+    Ok(malformed)
 }
 
 /// Whether the file's text opens with a frontmatter fence line.
