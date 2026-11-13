@@ -42,7 +42,7 @@ its own.
 
 - Quoin SHALL derive `rationaleChange` for each row (FR-162 states its encoding and place), from the first-parent history of the repository's default branch for the file, following renames: the most recent commit that changed the text of the `## Release Rationale` section.
 - Quoin SHALL report `rationaleChange` as that commit's `commit`, `author`, `authoredAt`, `signature` and `signatureCode`, with `signature` and `signatureCode` derived as FR-136 derives them.
-- If the working-tree section text differs from the section text at the tip of the default branch, or the section is absent at that tip, then Quoin SHALL report `rationaleChange` as `pending`.
+- If the working tree has the section and its text differs from the section text at the tip of the default branch, or the section is absent at that tip, then Quoin SHALL report `rationaleChange` as `pending`.
 - If the anomaly has no section in the working tree, then Quoin SHALL report `rationaleChange` as `absent`.
 - If the file is not under git, then Quoin SHALL report `rationaleChange` as `not-applicable`.
 - Quoin SHALL NOT take an author or date from a field typed into the document.

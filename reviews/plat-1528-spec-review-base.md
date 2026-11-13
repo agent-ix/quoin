@@ -34,3 +34,20 @@ Checked and clean: the tool never writes, suggests or defaults a rationale or ve
 
 Examined (role examined): FR-162-AC-1, FR-162-AC-2, FR-162-AC-3, FR-162-AC-4, FR-162-AC-5, FR-162-AC-6, FR-162-AC-7, FR-162-AC-8, FR-162-AC-9, FR-162-AC-10, FR-162-AC-11, FR-162-AC-12, FR-162-AC-13, FR-163-AC-1, FR-163-AC-2, FR-163-AC-3, FR-163-AC-4, FR-163-AC-5, FR-163-AC-6, FR-163-AC-7, FR-163-AC-8, FR-163-AC-9, FR-164-AC-1, FR-164-AC-2, FR-164-AC-3, FR-164-AC-4, FR-164-AC-5, FR-164-AC-6, FR-164-AC-7, FR-164-AC-8, FR-164-AC-9, FR-164-AC-10, FR-164-AC-11, FR-164-AC-12, NFR-035-AC-1, NFR-035-AC-2, NFR-035-AC-3, NFR-035-AC-4, NFR-035-AC-5, and every Behavior statement of FR-162, FR-163, FR-164 and NFR-035.
 Context only: FR-136, FR-147, spec-artifacts-process/FR-014, spec-artifacts-process/FR-016.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | low | Since closed wont-fix anomalies are now listed, AC-5's unqualified 'closed' anomaly is ambiguous: with a wont-fix fixture the group must list both, contradicting 'the open one only'. Say 'closed as fixed' (or any resolution other than wont-fix). | spec/functional/FR-162-anomaly-report.md:107 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fixed in 27093372 / 1fa38d53 on origin/plat-1528-spec-quoin; after-text: The command SHALL list every anomaly whose working-tree `status` is `closed` and whose `resolution` is `wont-fix`. |
+| FND-002 | fixed | Fixed in 27093372 / 1fa38d53 on origin/plat-1528-spec-quoin; after-text: Under `--fail-on unjustified-impacting`, the command SHALL fail for each anomaly whose `status` is not `closed`, or is `closed` with `resolution` `wont-fix`, whose `safety_impact` is `impacting` and w |
+| FND-003 | fixed | Fixed in 27093372 / 1fa38d53 on origin/plat-1528-spec-quoin; after-text: / FR-163-AC-4 / A `closed` `wont-fix` anomaly (a fixture the module ships under FR-016) whose `closed_by` and commit author differ from the rationale `author` yields an `author` equal to the typed val |
+| FND-004 | fixed | Fixed in 27093372 / 1fa38d53 on origin/plat-1528-spec-quoin; after-text: / FR-163-AC-1 / An open anomaly with a two-row `## Release Rationale` yields `releaseRationale` with both entries in document order, `author` and `rationale` byte-equal to the record's extracted value |
+| FND-005 | fixed | Fixed in 27093372 / 1fa38d53 on origin/plat-1528-spec-quoin; after-text: title: "quoin anomaly report: the anomalies a release still carries, grouped by affected hazard and requirement" |
+| FND-006 | fixed | Fixed in 27093372 / 1fa38d53 on origin/plat-1528-spec-quoin; after-text: An anomaly has a release rationale when its `releaseRationale` holds at least one entry whose `author` and `rationale` each satisfy the value rule of `agent-ix/spec-artifacts-process` FR-016: non-empt |

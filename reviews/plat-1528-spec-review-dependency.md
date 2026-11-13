@@ -29,3 +29,9 @@ Checked and clean: every relationships edge resolves (FR-136, FR-144, FR-147, sp
 
 Examined (role examined): FR-162-AC-1, FR-162-AC-2, FR-162-AC-3, FR-162-AC-4, FR-162-AC-5, FR-162-AC-6, FR-162-AC-7, FR-162-AC-8, FR-162-AC-9, FR-162-AC-10, FR-162-AC-11, FR-162-AC-12, FR-162-AC-13, FR-163-AC-1, FR-163-AC-2, FR-163-AC-3, FR-163-AC-4, FR-163-AC-5, FR-163-AC-6, FR-163-AC-7, FR-163-AC-8, FR-163-AC-9, FR-164-AC-1, FR-164-AC-2, FR-164-AC-3, FR-164-AC-4, FR-164-AC-5, FR-164-AC-6, FR-164-AC-7, FR-164-AC-8, FR-164-AC-9, FR-164-AC-10, FR-164-AC-11, FR-164-AC-12, NFR-035-AC-1, NFR-035-AC-2, NFR-035-AC-3, NFR-035-AC-4, NFR-035-AC-5, and every Behavior statement of FR-162, FR-163, FR-164 and NFR-035.
 Context only: FR-136, FR-147, spec-artifacts-process/FR-014, spec-artifacts-process/FR-016.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fixed in 27093372 / 1fa38d53 on origin/plat-1528-spec-quoin; after-text: **Record reader**: the `Anomaly` record on main is read by the temporary reader of FR-136's CR note (PLAT-1415 exception, `rust/crates/quoin-anomaly/src/record.rs`), which reads only `status`, `resolu |
