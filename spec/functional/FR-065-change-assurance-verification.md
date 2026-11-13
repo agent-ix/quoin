@@ -416,9 +416,10 @@ JSON.
 
 The receipt's `recorded_actor` is copied from the ix-flow event. It does not establish identity, authorization,
 authenticity, signature, or non-repudiation. The receipt's `claimed_approval` member,
-when non-null, is the event writer's claim, retained with what re-verification needs;
+when non-null, is the event writer's claim, retained with the tag, record id and digest
+that re-verification needs and the writer's own trust input as information only;
 it is evidence that the named approver signed only after Engineering Assurance's
-`approval-verify` is re-run on it with the same result.
+`approval-verify` is re-run with trust the relying party supplies and gives the same result.
 
 The receipt schema is revised to version 2 by the `claimed_approval` member and the
 six `approval_*` reasons; version 1 receipts are not read (prerelease, no

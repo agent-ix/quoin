@@ -38,3 +38,4 @@ so they are out of scope.
 | ID | Severity | Summary | Refs | Escape Cause |
 | --- | --- | --- | --- | --- |
 | FND-003 | low | New bullet 'The re-run SHALL be compared with the claim' is agentless passive (quire quality:agentless-passive, FR-068 line 109): it names no one who compares. Fix: 'The relying party SHALL compare the re-run with the claim'. Non-blocking. | spec/functional/FR-068-change-assurance-cli-surface.md:109-110 | wrong-requirement |
+| FND-003 | fixed | 21189dd3: names the relying party as the agent; quire no longer warns |

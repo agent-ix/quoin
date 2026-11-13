@@ -31,7 +31,7 @@ event's writer, that a named person's signed git tag approved this exact record
 digest, shaped as a projection of Engineering Assurance's `approval-verify` result
 (its FR-041). Quoin retains the claim as data and never verifies a signature, so
 the claim has the same standing as the actor label until someone re-runs
-`approval-verify` from the retained members. A record revision is
+`approval-verify` with trust the relying party supplies (FR-068). A record revision is
 immutable once written (a new revision is a new file, never an edit), and git
 history is the tamper evidence. A record qualifies as approved only when
 FR-065 finds a matching `approved` event.
@@ -366,8 +366,8 @@ keeps no compatibility reader).
 
 `verified_approval`, when present, SHALL be an object that projects the
 `engineering-assurance.approval-verify-result/v1` result (Engineering Assurance
-FR-041): it keeps `protocol`, the fields the verification rules need and the trust
-input needed to re-run `approval-verify`, and omits the result's `signature`,
+FR-041): it keeps `protocol`, the fields the verification rules need and `trust`, the trust input the writer used, kept as information only,
+and omits the result's `signature`,
 `binding` and `reason` members. It is closed:
 
 | Member | Type | Presence |
@@ -391,7 +391,7 @@ compare `approver` to the event's actor, or decide who may approve.
 `approval-verify`: the event's writer supplies it, and Quoin cannot re-verify a
 signature. `verified_approval` is therefore the writer's claim, with the same
 standing as the actor label, until `approval-verify` is re-run against the retained
-`tag`, `record_id`, `record_digest` and `trust` (FR-068). The name `verified_approval`
+`tag`, `record_id` and `record_digest` with trust the relying party supplies (FR-068). The name `verified_approval`
 describes the shape of the claim, not a check Quoin made.
 
 **Policy.** `review_workflow.signed_approval` is part of the reviewed record, so the
