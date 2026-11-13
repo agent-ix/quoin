@@ -56,6 +56,13 @@ carries the FR-090-AC-4 / FR-082-AC-7 contradiction from quire-rs#669 into FR-16
 | --- | --- | --- | --- |
 | FND-008 | medium | FR-161 sets the boundary between `not-available` and `unmet` for `design-trace` at "no FR-086 join in the payload". FR-086 on main never leaves the join absent. A corpus with no `design_relations` yields `{"relations": []}` (FR-086-AC-9), and a requirement that no design relation obliges, such as an NFR when only an FR relation is declared, simply has no row. FR-161 does not say whether an empty join, or a requirement with no join row, is `not-available` or `unmet`. Two implementers would split there, and FR-161-AC-4's precondition cannot be built from FR-086 output. State that an empty `relations` list, and a requirement with no row in any design relation, are `not-available` (or `unmet`), and pin both cases in AC-4. | FR-161-AC-4; quire-rs spec/functional/FR-086-design-element-join.md (No design relations, AC-9) |
 
+
+## New findings (disposition pass 3)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-009 | low | FR-161 status for `design-trace` is stated per join row ("a join row with `state: covered` is `met`; a join row with `state: uncovered` is `unmet`"), but FR-086 emits one row per requirement per design relation, so a requirement obliged by two design relations of its archetype has two rows and can be both. The round-2 precedence rule (unmet over not-available over met) was dropped with the per-item rewrite. The shipped architecture module declares one relation per archetype (FR-010-AC-3), so this is unreachable with shipped modules. Fix-forward: restore the precedence across a requirement's rows. | FR-161-AC-4; spec/functional/FR-161-per-class-obligations-report.md:46, :55-60; quire-rs spec/functional/FR-086-design-element-join.md (The join) |
+| FND-010 | low | The FR-161 body cites spec-artifacts-iso FR-009 (the class's named person and rationale) and quire-rs FR-091 (the only reader of a part class), but its frontmatter has no relationship to either; round 3 removed the FR-012 edge and added none for these. Fix-forward: add `references` edges for both. | spec/functional/FR-161-per-class-obligations-report.md:1-14, :28-30 |
 ## Dispositions
 
 Round 1, checked against head fa1fa4ce.
@@ -69,3 +76,11 @@ Round 1, checked against head fa1fa4ce.
 | FND-005 | fixed | Items, allocation and item class come from the policy's `item_relation` (FR-084 rows) and `carried` on the row `document` (quire-rs FR-090-AC-9). The system part case is pinned (FR-161-AC-10). |
 | FND-006 | fixed | `design-trace` reads the FR-086 join row `state: covered`, which matches FR-086 as merged. The `realized_criteria` description matches FR-086 (per resolved `linked` entry). The remaining boundary case is FND-008. |
 | FND-007 | fixed | The examples use `unit-testing` (FR-161-AC-1). |
+
+Round 2, checked against head 34e5b050.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-008 | fixed | FR-161 pins `design-trace`. An `uncovered` row is `unmet`. An absent or `{"relations": []}` join, or a requirement with no row, is `not-available`. Precedence is unmet > not-available > met (FR-161 design-trace, Status, AC-4). This is consistent with FR-086-AC-9 on main. |
+
+Round 3, checked against head 1a57940b. Nothing was open before this round: every finding's latest row was `fixed`. The rewrite to per-requirement removes the item, allocation and part surface that FND-005 addressed and reintroduces none of FND-001 to FND-008. FND-009 and FND-010 are new this round.

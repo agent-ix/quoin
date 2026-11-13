@@ -51,3 +51,9 @@ Round 1, checked against head fa1fa4ce.
 | FND-004 | fixed | `quoin matrix` accepts `--class-policy` and reports the same class output (FR-160 quoin matrix, AC-1, AC-11). |
 | FND-005 | fixed | The quire-rs links use `ix://agent-ix/quire-rs/FR-NNN`. No `spec/functional` form remains in the changed files. |
 | FND-006 | fixed | NFR-034 Verification now cites FR-160-AC-12 (determinism, no write) and FR-161-AC-9. |
+
+Round 2, checked against head 34e5b050.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-007 | fixed | The class floor is now a separate class independence assessment record: the requirement id, class value, dimensions, per-dimension values and `source: class`. The auditor consumes it alongside the profile assessments (`source: profile`), and findings name `source` (FR-160 Independence, AC-10). It no longer depends on `ProfileId`. |

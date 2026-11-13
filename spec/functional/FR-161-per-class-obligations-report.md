@@ -11,6 +11,10 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quire-rs/FR-086"
     type: "depends_on"
+  - target: "ix://agent-ix/spec-artifacts-iso/FR-009"
+    type: "references"
+  - target: "ix://agent-ix/quire-rs/FR-091"
+    type: "references"
 ---
 
 # FR-161: Per-class obligations report: the activities and evidence a requirement's software safety class demands
@@ -43,7 +47,9 @@ item-level report, holds no allocation and no part rows.
 
 The policy's per-class `obligations` list holds entries with an `id` and one of two kinds quoin knows:
 
-- `design-trace`: the requirement has an FR-086 join row with `state: covered`.
+- `design-trace`: the requirement has an FR-086 join row with `state: covered`. FR-086 emits one row per requirement per design
+  relation, so a requirement can have several rows; the precedence across them is `unmet` if any row is `uncovered`, else
+  `not-available` if the join is absent or empty or the requirement has no row, else `met`.
 - `evidence` with a catalog `method`: every obligation derived from the requirement has bound evidence whose run `evidence_kind`
   equals the method's catalog `evidence_kind` (FR-160 join; methods of one kind are interchangeable).
 
@@ -66,7 +72,7 @@ rows is not an approval of the requirement.
 | FR-161-AC-1 | With a policy giving `class-3` the obligations `design-trace` and `evidence` (method `unit-testing`), a `class-3` requirement with a `covered` join row and unit-testing-kind evidence on all its obligations reports both rows `met`. | Test |
 | FR-161-AC-2 | The same requirement with a join row `uncovered` reports `design-trace` `unmet`; with one obligation lacking evidence of the method's kind it reports `evidence` `unmet` listing that obligation. | Test |
 | FR-161-AC-3 | A `class-1` requirement with a policy giving `class-1` no obligations has no rows; a requirement of a class the policy does not name has no rows and is listed under `unconfigured`. | Test |
-| FR-161-AC-4 | With an absent FR-086 join or `{"relations": []}`, every `design-trace` row is `not-available` naming the missing join; a requirement with no row in any design relation while the join is non-empty is `not-available`; a requirement whose row is `uncovered` is `unmet`; `evidence` rows are unaffected. | Test |
+| FR-161-AC-4 | With an absent FR-086 join or `{"relations": []}`, every `design-trace` row is `not-available` naming the missing join; a requirement with no row in any design relation while the join is non-empty is `not-available`; a requirement whose row is `uncovered` is `unmet`; `evidence` rows are unaffected.  A requirement with one `covered` row and one `uncovered` row in two design relations is `unmet`. | Test |
 | FR-161-AC-5 | A requirement whose `requirements[]` entry carries no class is listed as unassigned with no rows. | Test |
 | FR-161-AC-6 | `--format json` emits one object whose facts equal the Markdown rows, with no class key for an unassigned requirement, and the two formats agree row for row. | Test |
 | FR-161-AC-7 | A requirement's rows come from its own carried class only: the same requirement allocated to parts of other classes reports the same rows. | Test |
