@@ -82,6 +82,8 @@ and any digest, hash, manifest or pin of the snapshot or of what it covers.
   refuse with `release_snapshot_baseline_commit_invalid`.
 - If an input named under Inputs is missing or unreadable, then the command SHALL refuse with
   `release_snapshot_input_unreadable` naming the input.
+- If a retained scan file in the `--repo` evidence store cannot be read, then the command SHALL refuse with
+  `release_snapshot_input_unreadable` naming `--repo` and the file, because an older scan of the same tool must not stand in for it.
 - If an input named under Inputs other than `--history` fails its own format, then the command SHALL refuse with
   `release_snapshot_input_invalid` naming the input.
 - If `--history` fails its format, then the command SHALL refuse with `release_snapshot_history_invalid`, as
@@ -113,6 +115,7 @@ and any digest, hash, manifest or pin of the snapshot or of what it covers.
 | FR-166-AC-9 | An `Anomaly` document with a mapping error yields `release_snapshot_anomaly_unreadable` naming its path and the mapping code, exit status 2 and no file, while a fixture without one writes the snapshot; a malformed `--history` yields `release_snapshot_history_invalid`, not `release_snapshot_input_invalid`. | Test |
 | FR-166-AC-7 | Static inspection finds no git process, git library or hashing code in the command (CON-1, CON-2). | Inspection |
 | FR-166-AC-8 | A `soup_record` with `end_of_support` `unknown` and a `--support` file stating a past date places the record in the `past_end_of_support` group, and the same run without `--support` places it in `other`; a `--records` directory other than the default is read. | Test |
+| FR-166-AC-10 | A retained scan file in the evidence store that cannot be decoded yields `release_snapshot_input_unreadable` naming `--repo` and the file, exit status 2 and no file, although an older readable scan of the same tool exists. | Test |
 
 ## Dependencies
 

@@ -10,6 +10,7 @@
 //! is `unknown` or `not stated`; nothing is scored or defaulted (NFR-030).
 
 mod render;
+pub(crate) mod snapshot;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -27,8 +28,9 @@ use super::policy::{self, LicenceState, PolicyUnmatched, RecordPolicy};
 use super::support::{
     Evaluation, RecordSupport, SupportError, SupportFile, as_of_date, parse_support, record_support,
 };
-use super::{Stop, arg, read_all_records, refuse};
-use crate::core_runtime::invoke;
+use super::{Existing, Stop, arg, read_all_records, refuse};
+use crate::core_runtime::invoke_typed;
+use quoin_core::error::CoreErrorCode;
 
 /// A support file larger than this is not read.
 const MAX_SUPPORT_BYTES: u64 = 4 * 1024 * 1024;
@@ -129,8 +131,21 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
         Some(path) => read_support(Path::new(path))?,
         None => SupportFile::default(),
     };
+    let existing = read_distinct_records(&records_dir)?;
+    let binding = read_binding(binding_path)?;
+    let discharge = discharge_report(&repo, &binding, as_of)?;
+    let report = build(&repo, existing, as_of, as_of_day, &support, &discharge)?;
+    let rendered = if arguments.get_flag("json") {
+        render::json(&report)?
+    } else {
+        render::markdown(&report)
+    };
+    Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
+}
 
-    let existing = read_all_records(&records_dir)?;
+/// The `soup_record` files below `records_dir`, refused when two carry one purl.
+fn read_distinct_records(records_dir: &Path) -> Result<Vec<Existing>, Stop> {
+    let existing = read_all_records(records_dir)?;
     if let Some((first, second)) = plan::duplicate_records(&existing) {
         return Err(refuse(
             "soup.duplicate_records",
@@ -146,13 +161,24 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
             ],
         ));
     }
+    Ok(existing)
+}
 
-    let discharge = discharge_report(&repo, binding_path, as_of)?;
+/// Join the records, the retained scans and the supplied inputs into the report
+/// both renderings and the release snapshot print.
+fn build(
+    repo: &Path,
+    existing: Vec<Existing>,
+    as_of: &str,
+    as_of_day: time::Date,
+    support: &SupportFile,
+    discharge: &DischargeReport,
+) -> Result<Report, Stop> {
     let mut unreadable_scans = Vec::new();
-    let scans = latest_scans(&DiskEvidence::new(&repo), &mut unreadable_scans)
+    let scans = latest_scans(&DiskEvidence::new(repo), &mut unreadable_scans)
         .map_err(|error| format!("cannot read the retained scans: {error}"))?;
-    let joined = advisory::join(&existing, &scans, &discharge);
-    let mut policy = policy::join(&existing, &scans, &discharge);
+    let joined = advisory::join(&existing, &scans, discharge);
+    let mut policy = policy::join(&existing, &scans, discharge);
     let mut fronts: BTreeMap<PathBuf, Map<String, Value>> = existing
         .into_iter()
         .map(|record| (record.path, record.front))
@@ -165,13 +191,13 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
             .records
             .remove(&record.path)
             .ok_or_else(|| Stop::Fail(format!("no policy join for {}", record.path.display())))?;
-        rows.push(row(record, &front, &support, as_of_day, own_policy)?);
+        rows.push(row(record, &front, support, as_of_day, own_policy)?);
     }
     rows.sort_by(|a, b| {
         (a.group(), &a.join.purl, &a.join.path).cmp(&(b.group(), &b.join.purl, &b.join.path))
     });
     unreadable_scans.sort();
-    let report = Report {
+    Ok(Report {
         as_of: as_of.to_owned(),
         rows,
         scans: joined.scans,
@@ -180,21 +206,43 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
         deny_policy_read: policy.deny_read,
         unmatched_policy: policy.unmatched,
         unreadable_scans,
-    };
-    let rendered = if arguments.get_flag("json") {
-        render::json(&report)?
-    } else {
-        render::markdown(&report)
-    };
-    Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
+    })
+}
+
+/// The `--binding` file, parsed.
+fn read_binding(path: &str) -> Result<Value, Stop> {
+    let bytes = std::fs::read(path).map_err(|error| format!("cannot read {path}: {error}"))?;
+    serde_json::from_slice(&bytes)
+        .map_err(|error| Stop::Fail(format!("clause binding is not JSON: {error}")))
+}
+
+/// Why the discharge report could not be built.
+pub(super) enum DischargeFailure {
+    /// The core rejected the `--binding` document as a request.
+    BadBinding(String),
+    /// The core refused with a response of its own.
+    Refused(Box<Response>),
+    /// The host failed.
+    Failed(String),
+}
+
+impl From<DischargeFailure> for Stop {
+    fn from(failure: DischargeFailure) -> Self {
+        match failure {
+            DischargeFailure::BadBinding(message) | DischargeFailure::Failed(message) => {
+                Self::Fail(message)
+            }
+            DischargeFailure::Refused(response) => Self::Refuse(response),
+        }
+    }
 }
 
 /// The discharge report of the `--binding` clause set over the stored facts.
-fn discharge_report(repo: &Path, binding: &str, as_of: &str) -> Result<DischargeReport, Stop> {
-    let bytes =
-        std::fs::read(binding).map_err(|error| format!("cannot read {binding}: {error}"))?;
-    let binding: Value = serde_json::from_slice(&bytes)
-        .map_err(|error| format!("clause binding is not JSON: {error}"))?;
+fn discharge_report(
+    repo: &Path,
+    binding: &Value,
+    as_of: &str,
+) -> Result<DischargeReport, DischargeFailure> {
     // The discharge report is evaluated at an instant; a `--as-of` date is
     // the start of that UTC day.
     let instant = if as_of.contains('T') {
@@ -202,15 +250,25 @@ fn discharge_report(repo: &Path, binding: &str, as_of: &str) -> Result<Discharge
     } else {
         format!("{as_of}T00:00:00Z")
     };
-    let response = invoke(
-        "evidence.discharge_report",
+    let operation = "evidence.discharge_report";
+    let response = invoke_typed(
+        operation,
         &serde_json::json!({ "repo": repo, "binding": binding, "asOf": instant }),
-    )?;
+    )
+    .map_err(|error| {
+        let message = format!("native runtime {operation} failed: {error}");
+        if error.code == CoreErrorCode::BadRequest {
+            DischargeFailure::BadBinding(message)
+        } else {
+            DischargeFailure::Failed(message)
+        }
+    })?;
     if !response.outcome.carries_payload() {
-        return Err(Stop::Refuse(Box::new(response)));
+        return Err(DischargeFailure::Refused(Box::new(response)));
     }
-    serde_json::from_value(response.payload)
-        .map_err(|error| Stop::Fail(format!("evidence.discharge_report returned {error}")))
+    serde_json::from_value(response.payload).map_err(|error| {
+        DischargeFailure::Failed(format!("evidence.discharge_report returned {error}"))
+    })
 }
 
 fn read_support(path: &Path) -> Result<SupportFile, Stop> {

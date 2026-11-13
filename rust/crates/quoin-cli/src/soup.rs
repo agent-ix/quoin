@@ -15,6 +15,8 @@ mod policy;
 mod report;
 mod support;
 
+pub(crate) use report::snapshot::{SoupFailure, SoupInputs, SoupSection, soup_section};
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::io::Write as _;

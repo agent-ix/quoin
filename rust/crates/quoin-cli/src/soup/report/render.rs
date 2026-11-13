@@ -19,7 +19,7 @@ use crate::soup::policy::{
 };
 use crate::soup::support::Resolved;
 
-const NOT_STATED: &str = "not stated";
+pub(super) const NOT_STATED: &str = "not stated";
 
 /// Text on one line, so a multi-line message cannot break the layout.
 fn one_line(text: &str) -> String {
@@ -464,7 +464,7 @@ fn resolution_json(resolution: &Resolution) -> Value {
     }
 }
 
-fn row_json(row: &Row) -> Value {
+pub(super) fn row_json(row: &Row) -> Value {
     let free_of: Vec<&str> = row.join.free_of.iter().map(|tool| tool.name()).collect();
     json!({
         "purl": row.join.purl,
