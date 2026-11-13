@@ -29,8 +29,8 @@ and that each disposition is counted, or not counted, as FR-153 states, through 
    unedited satisfied report with no `--discharges` into a repository where an obligation id differs from the symbol,
    the `analysisKind` and the `requestDigest`.
 3. Over the store of step 1 for the satisfied report, run the qualifier and bridge with an approved producer
-   definition and every other premise admitted, then again with no approved producer definition, then run
-   `quoin evidence audit`. Read the FR-078 report, trace (forward and inverse) and strict decision.
+   definition and every other premise admitted, then again with no FR-093 assessment, then again with no CI checkout
+   SHA for the run-package step, then run `quoin evidence audit`. Read the FR-078 report, trace (forward and inverse) and strict decision.
 4. Over the other four stores of step 1, run the bridge with the same admitted premises and read the report.
 5. Into one suite record the satisfied report and then the refuted report with a later `--timestamp`; then a second
    request's report; then the same sequence into two suites; then the two with equal timestamps. The satisfied and
@@ -52,8 +52,8 @@ obligations with `traceIds` sorted; the unmatched id is listed, not stored on th
 nothing.
 
 Step 3: with every premise admitted the obligation is `qualified-record` with record, run and entry locators and
-leaves `unbacked_rows`; without an approved producer definition it is `unevaluated` naming that premise and strict
-mode rejects; a healthy audit with no qualifier decision is not counted; forward and inverse trace return the same
+leaves `unbacked_rows`; with no FR-093 assessment it is `unevaluated` naming the bounded-reliance premise, and with no CI checkout SHA it is
+`unevaluated` naming the performed-revision premise; each stays in `unbacked_rows` and strict mode rejects; a healthy audit with no qualifier decision is not counted; forward and inverse trace return the same
 record claim and a source-symbol query for the symbol returns none.
 
 Step 4: the refuted store reports `failed`, inconclusive and unavailable report `errored`, disagreement reports
