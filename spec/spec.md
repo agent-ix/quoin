@@ -237,9 +237,9 @@ index; the files are authoritative.
 - [FR-143](./functional/FR-143-support-status-and-end-of-support-input.md) — support status and end-of-support dates come from a supplied file of public-source entries; unknown stays unknown.
 - [FR-144](./functional/FR-144-soup-report.md) — `quoin soup report` renders one row per SOUP record, unresolved advisories and past-end-of-support components first.
 - [FR-145](./functional/FR-145-risk-advise-command.md) — `quoin risk advise` is a read-only report that guides a residual-risk decision and writes and stores nothing.
-- [FR-146](./functional/FR-146-risk-advise-policy-cells.md) — each risk estimate shows the policy cell it lands in, worded as the policy's own region.
-- [FR-147](./functional/FR-147-risk-advise-evidence-gaps.md) — controls with no linked requirement or verification, and open anomalies on the hazard, show where an estimate rests on weak evidence.
-- [FR-148](./functional/FR-148-risk-advise-decision-queue.md) — undecided residual risks are queued in the policy's region order, with no proposed decision.
+- [FR-146](./functional/FR-146-risk-advise-policy-cells.md) — each risk estimate shows the policy cell it lands in, read from the residual risk's own policy and worded as the policy's own region.
+- [FR-147](./functional/FR-147-risk-advise-evidence-gaps.md) — controls with no linked requirement or verification, and open anomalies on the hazard or the implementing requirement, show where an estimate rests on weak evidence.
+- [FR-148](./functional/FR-148-risk-advise-decision-queue.md) — undecided residual-risk, benefit-risk and overall decisions are queued by id, with no proposed decision.
 - [FR-125](./functional/FR-125-content-addressed-measurement-attachments.md) — a measurement collection references immutable SHA-256 content-addressed binary attachments, verified on read.
 - [FR-131](./functional/FR-131-percentage-metrics-over-enumerated-population.md) — a percentage metric is taken over a plan-enumerated population its observations must state exactly.
 - [FR-132](./functional/FR-132-paired-run-metrics.md) — a metric that states two runs agree is computed from a paired comparison of two collections under the plan's `paired_run` relation, inconclusive below `minimum_pairs`.

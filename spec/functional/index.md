@@ -135,5 +135,5 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-144: SOUP report: one row per record, unresolved and past-end-of-support first](./FR-144-soup-report.md)
 - [FR-145: quoin risk advise: a read-only advisory report that guides a risk decision without making it](./FR-145-risk-advise-command.md)
 - [FR-146: Risk advice policy cells: the cell each risk estimate lands in under the authored policy](./FR-146-risk-advise-policy-cells.md)
-- [FR-147: Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard](./FR-147-risk-advise-evidence-gaps.md)
-- [FR-148: Risk advice decision queue: residual risks with no named decider, ordered by policy region](./FR-148-risk-advise-decision-queue.md)
+- [FR-147: Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard or the implementing requirement](./FR-147-risk-advise-evidence-gaps.md)
+- [FR-148: Risk advice decision queue: undecided residual-risk, benefit-risk and overall decisions, ordered by id](./FR-148-risk-advise-decision-queue.md)

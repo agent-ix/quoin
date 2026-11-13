@@ -1,6 +1,6 @@
 ---
 id: FR-147
-title: "Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard"
+title: "Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard or the implementing requirement"
 type: FR
 relationships:
   - target: "ix://agent-ix/quoin/FR-145"
@@ -13,55 +13,96 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-205"
     type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-safety/FR-301"
+    type: "depends_on"
   - target: "ix://agent-ix/spec-objects-safety/FR-302"
     type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-safety/FR-305"
+    type: "references"
 ---
 
-# FR-147: Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard
+# FR-147: Risk advice evidence gaps: controls not implemented or verified, and open anomalies on the hazard or the implementing requirement
 
 ## Description
 
 Tracked by Linear PLAT-1651 and PLAT-1653. The `evidence_gaps` section of `quoin risk advise` (FR-145) shows,
-for each post-control risk estimate, which of the things its estimate rests on are weakly evidenced, so a person
-can see how much weight the estimate bears. It reports where evidence is missing; it does not say whether a
-control works, because no record carries that (`agent-ix/spec-objects-safety` FR-205).
+for each post-control risk estimate, where the things its estimate rests on are weakly evidenced, so a person can
+see how much weight the estimate bears. It reports where a link or a record is missing. It does not say whether
+a control works or whether a verification passed, because no record carries that (`agent-ix/spec-objects-safety`
+FR-205).
+
+### The same tokens and the same rule as the safety module
+
+This section coins no finding token and no second rule. It reuses the tokens of `agent-ix/spec-objects-safety`
+and their rules, so it cannot disagree with `quoin risk-summary` (FR-305) about the same control:
+
+| Token | Source | Meaning here |
+|---|---|---|
+| `post-control-without-control` | FR-204 | the post-control estimate assumes no control |
+| `control-without-requirement` | FR-302 | no `FR` or `NFR` has a `satisfies` edge to the control |
+| `control-without-verification` | FR-302 | the control is not verified |
+| `estimate-without-situation` | FR-203 | the estimate has no situation |
+| `situation-without-hazard` | FR-301 | the situation arises from no hazard |
+
+A control is **verified** when it has an incoming `verifies` edge, or when a retained evidence record of the
+evidence store (FR-030) is bound to an acceptance criterion of an `FR` or `NFR` that `satisfies` the control. A
+record is **bound** to a criterion when it names that criterion, whatever its outcome. The report tests that the
+link or record exists and never reads whether it passed.
 
 A control "of an estimate" is a control the post-control estimate `assumes`. The "hazard of an estimate" is the
-hazard its situation `arises_from` (`agent-ix/spec-objects-safety` FR-202). An anomaly is "open" when its
-`status` is not `closed`.
+hazard its situation `arises_from` (`agent-ix/spec-objects-safety` FR-202). An anomaly is "open" when the
+`status` in its record is not `closed`.
 
 ## Behavior
 
 - The command SHALL list one entry for every post-control `risk_estimate` in scope, ordered by estimate id.
-- Each entry SHALL carry the estimate id, the ids of its situation and hazards, its controls, and its open anomalies, each possibly empty.
-- For each control of the estimate, the entry SHALL carry `control-not-implemented` when no `FR` or `NFR` has a `satisfies` edge to the control.
-- For each control of the estimate, the entry SHALL carry `control-not-verified` when no document has a `verifies` edge to the control and no `FR` or `NFR` implementing the control has an acceptance criterion bound by retained evidence.
-- The entry SHALL list, for each hazard of the estimate, the open anomalies whose assessment names that hazard, as `{ anomaly, impact, status }` as `quoin anomaly refs` reports them.
-- If a post-control estimate assumes no control, then the entry SHALL carry `no-control-assumed`.
-- If a post-control estimate has no situation or no hazard, then the entry SHALL carry `no-hazard-found`.
-- The command SHALL test that a link exists.
+- For each control of the estimate, the entry SHALL carry `control-without-requirement` under the rule above.
+- For each control of the estimate, the entry SHALL carry `control-without-verification` under the rule above.
+- If the estimate assumes no control, then the entry SHALL carry `post-control-without-control`.
+- If the estimate has no situation, then the entry SHALL carry `estimate-without-situation`.
+- If the estimate's situation arises from no hazard, then the entry SHALL carry `situation-without-hazard`.
+- The entry SHALL list each open anomaly whose assessment names a hazard of the estimate.
+- The entry SHALL list each open anomaly whose assessment names an `FR` or `NFR` that `satisfies` a control of the estimate, or an acceptance criterion of that requirement.
+- Each listed anomaly SHALL carry `anomaly`, `kind` and `impact` as `quoin anomaly refs` reports them, and `names`, the id the assessment names.
 - The command SHALL NOT read, set or infer an `effective`, `verified`, `passed` or `status`-derived value of a control.
-- The Markdown rendering SHALL word a missing verification as "no verification is linked", never as "ineffective" or "unsafe".
-- An entry with no gap SHALL list its controls and anomalies and carry no gap token.
+- The command SHALL NOT read a test or evidence outcome.
+- The Markdown rendering SHALL word a missing verification as "no verification is linked".
+- The Markdown rendering SHALL NOT use the words "ineffective" or "unsafe".
 - The report SHALL NOT state that an estimate with no gap is sound.
 - The command SHALL NOT rank estimates by number of gaps.
 - The command SHALL emit no count-based score.
+
+### Entry keys
+
+Every key is present, `null` or `[]` when empty.
+
+| Key | Content |
+|---|---|
+| `estimate` | the post-control estimate id |
+| `situation` | the estimate's situation id, or `null` |
+| `hazards` | ids of the hazards of the estimate |
+| `controls` | each control of the estimate: `control`, `requirements` (ids), `verifications` (ids of verifying documents and of bound evidence records), `findings` |
+| `anomalies` | each open anomaly listed above, as `{ anomaly, kind, impact, names }` |
+| `findings` | the estimate-level tokens above that name this entry |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-147-AC-1 | A post-control estimate assuming one control with no `satisfies` edge yields `control-not-implemented` naming the control; adding the edge removes it. | Test |
-| FR-147-AC-2 | A control with no `verifies` edge and no retained evidence yields `control-not-verified`; adding a `verifies` edge, or retained evidence on its implementing requirement, removes it. | Test |
-| FR-147-AC-3 | A hazard named by one open and one `closed` anomaly lists only the open one, with its impact and status. | Test |
-| FR-147-AC-4 | A post-control estimate assuming no control yields `no-control-assumed`, and one whose situation has no hazard yields `no-hazard-found`. | Test |
-| FR-147-AC-5 | A pre-control estimate yields no entry. | Test |
-| FR-147-AC-6 | Over a control whose verifying test is recorded as failing, the entry carries no gap token for verification and no key or wording about effectiveness, because only link existence is tested. | Test |
-| FR-147-AC-7 | The Markdown line for a missing verification reads "no verification is linked" and the output holds neither "ineffective" nor "unsafe". | Test |
-| FR-147-AC-8 | The JSON of an entry holds no count, score or rank key, and two entries with different gap numbers are ordered by estimate id. | Test |
-| FR-147-AC-9 | A fixture with no gap lists its control and carries no gap token and no statement of soundness. | Test |
+| FR-147-AC-1 | A post-control estimate assuming one control with no `satisfies` edge yields `control-without-requirement` on that control; adding the edge removes it. | Test |
+| FR-147-AC-2 | A control with no `verifies` edge and no evidence record bound to a criterion of its implementing requirement yields `control-without-verification`; adding a `verifies` edge removes it, and adding a bound evidence record removes it. | Test |
+| FR-147-AC-3 | A control whose only bound evidence record is a failing run is not flagged `control-without-verification`, and the entry carries no key or wording about the outcome. | Test |
+| FR-147-AC-4 | For each fixture control, the tokens in the entry equal the tokens `quoin risk-summary` shows for that control. | Test |
+| FR-147-AC-5 | A hazard named by one open and one `closed` anomaly lists only the open one, as `{ anomaly, kind, impact, names }` with `names` the hazard id. | Test |
+| FR-147-AC-6 | An open anomaly naming the `FR` that satisfies a control of the estimate, and one naming an acceptance criterion of that `FR`, are both listed with `names` the id they name; a closed one is not. | Test |
+| FR-147-AC-7 | A post-control estimate assuming no control yields `post-control-without-control`, one with no situation yields `estimate-without-situation`, and one whose situation has no hazard yields `situation-without-hazard`. | Test |
+| FR-147-AC-8 | A pre-control estimate yields no entry. | Test |
+| FR-147-AC-9 | The Markdown line for a missing verification reads "no verification is linked" and the output holds neither "ineffective" nor "unsafe". | Test |
+| FR-147-AC-10 | The keys of every entry and of each `controls` and `anomalies` element equal the entry key table, with no count, score or rank key, and two entries with different gap numbers are ordered by estimate id. | Test |
+| FR-147-AC-11 | A fixture with no gap lists its control, carries no finding token and no statement of soundness. | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-136](./FR-136-anomaly-record-mapping.md); `agent-ix/spec-objects-safety` FR-202, FR-204, FR-205, FR-302.
+- **Upstream**: [FR-145](./FR-145-risk-advise-command.md), [FR-136](./FR-136-anomaly-record-mapping.md); `agent-ix/spec-objects-safety` FR-202, FR-204, FR-205, FR-301, FR-302.
+- **Context only**: `agent-ix/spec-objects-safety` FR-305.
 - **Downstream**: none.
