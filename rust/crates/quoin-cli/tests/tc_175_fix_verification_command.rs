@@ -327,9 +327,16 @@ fn an_unreadable_run_file_leaves_its_suite_without_an_entry_whichever_is_older()
             &SuiteId::new("SUITE-1"),
             broken_at,
         ));
-        std::fs::write(broken, "{ not json").unwrap();
+        std::fs::write(&broken, "{ not json").unwrap();
+        let baseline = scope.check().status.code();
         let report = scope.report();
         assert_eq!(count(&report, MISSING), 1, "{report}");
+        // The skipped file is named, and the exit status is the one it would
+        // be with a readable store.
+        let name = broken.file_name().unwrap().to_str().unwrap();
+        assert_eq!(count(&report, "unreadable run file skipped"), 1, "{report}");
+        assert!(report.contains(&format!("runs/SUITE-1/{name}")), "{report}");
+        assert_eq!(baseline, Some(0));
     }
 }
 
@@ -418,7 +425,10 @@ fn a_criterion_row_and_a_test_row_are_judged_independently() {
     );
     let report = failing_criterion.report();
     assert_eq!(count(&report, FAILING), 1, "{report}");
-    assert!(report.contains("Criterion row `FR-001-AC-1`"), "{report}");
+    assert!(
+        report.contains("Criterion row") && report.contains("[target: `FR-001-AC-1`]"),
+        "{report}"
+    );
     assert!(
         !report.contains("anomaly.fix-test-missing-result"),
         "{report}"
@@ -432,7 +442,10 @@ fn a_criterion_row_and_a_test_row_are_judged_independently() {
     );
     let report = missing_test.report();
     assert_eq!(count(&report, MISSING), 1, "{report}");
-    assert!(report.contains("Test row `TC-001`"), "{report}");
+    assert!(
+        report.contains("Test row") && report.contains("[target: `TC-001`]"),
+        "{report}"
+    );
     assert_eq!(count(&report, FAILING), 0, "{report}");
 }
 
@@ -596,4 +609,24 @@ fn the_scope_is_built_from_the_sibling_checkout_at_a_state_with_the_test_cell() 
             .join("spec/functional/FR-001-verify-checksums.md")
             .is_file()
     );
+}
+
+#[test]
+fn a_module_root_that_cannot_derive_the_obligations_fails_the_check_instead_of_hiding_the_finding()
+{
+    let scope = Scope::of(CRITERION_ONLY.0, CRITERION_ONLY.1);
+    scope.run(
+        "SUITE-1",
+        "2026-01-01T00:00:00Z",
+        &[(&["TC-001"], Outcome::Fail)],
+    );
+    let out = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["anomaly", "check"])
+        .arg(scope.dir.path())
+        .arg("--module")
+        .arg(scope.dir.path())
+        .output()
+        .unwrap();
+    assert_ne!(out.status.code(), Some(0));
+    assert!(neither(&String::from_utf8(out.stdout).unwrap()));
 }

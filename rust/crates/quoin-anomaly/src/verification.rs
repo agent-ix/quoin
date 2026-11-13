@@ -12,7 +12,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use quoin_evidence::store::{list_recorded_suites, read_runs};
+use quoin_evidence::store::{latest_run, list_recorded_suites};
 use quoin_evidence::{DiskEvidence, Outcome};
 
 use crate::check::{Diagnostic, DiagnosticCode, diagnostic};
@@ -44,6 +44,7 @@ struct Reported {
 #[derive(Debug, Clone)]
 pub struct Verification {
     results: Vec<Reported>,
+    skipped: Vec<String>,
     corpus: CorpusIds,
     criterion_tests: BTreeMap<String, Vec<String>>,
 }
@@ -64,11 +65,21 @@ impl Verification {
         scope: &Path,
         criterion_tests: BTreeMap<String, Vec<String>>,
     ) -> Result<Self, AnomalyError> {
+        let (results, skipped) = read_results(scope)?;
         Ok(Self {
-            results: read_results(scope)?,
+            results,
+            skipped,
             corpus: corpus_ids(scope)?,
             criterion_tests,
         })
+    }
+
+    /// The store-relative paths of the run files that could not be read and
+    /// were skipped (FR-030-AC-13), sorted. Each leaves its suite without an
+    /// entry.
+    #[must_use]
+    pub fn skipped(&self) -> &[String] {
+        &self.skipped
     }
 
     /// The result for the trace ids `ids`.
@@ -145,7 +156,7 @@ impl Verification {
             code,
             record.status_line,
             Vec::new(),
-            format!("{kind} row `{target}` {what}"),
+            format!("{kind} row {what}"),
         );
         finding.target = Some(target.to_owned());
         Some(finding)
@@ -173,30 +184,34 @@ pub fn evaluates_criteria(text: &str) -> bool {
     })
 }
 
-/// The entries of the newest run of each suite. A suite with an unreadable run
-/// file contributes none: the file has no timestamp, so it cannot be ruled out
-/// as the newest and an older run must not stand in for it.
-fn read_results(scope: &Path) -> Result<Vec<Reported>, AnomalyError> {
+/// The entries of the newest run of each suite, and the run files skipped as
+/// unreadable. A suite with an unreadable run file contributes no entry: the
+/// file has no timestamp, so it cannot be ruled out as the newest and an older
+/// run must not stand in for it. As in `quoin evidence`, an unreadable file is
+/// skipped and reported, while a failure to read the store is an error.
+fn read_results(scope: &Path) -> Result<(Vec<Reported>, Vec<String>), AnomalyError> {
     let store = DiskEvidence::new(scope);
     let suites = list_recorded_suites(&store).map_err(|error| evidence_error(&error))?;
     let mut out = Vec::new();
+    let mut skipped = Vec::new();
     for suite in suites {
         let mut unreadable = Vec::new();
-        let Ok(runs) = read_runs(&store, &suite, &mut unreadable) else {
-            continue;
-        };
+        let newest =
+            latest_run(&store, &suite, &mut unreadable).map_err(|error| evidence_error(&error))?;
         if !unreadable.is_empty() {
+            skipped.append(&mut unreadable);
             continue;
         }
-        let Some(newest) = runs.into_iter().next_back() else {
-            continue;
-        };
-        out.extend(newest.entries.into_iter().map(|entry| Reported {
-            trace_ids: entry.trace_ids.unwrap_or_default(),
-            outcome: entry.outcome,
-        }));
+        if let Some(newest) = newest {
+            out.extend(newest.entries.into_iter().map(|entry| Reported {
+                trace_ids: entry.trace_ids.unwrap_or_default(),
+                outcome: entry.outcome,
+            }));
+        }
     }
-    Ok(out)
+    skipped.sort();
+    skipped.dedup();
+    Ok((out, skipped))
 }
 
 fn evidence_error(error: &quoin_evidence::EvidenceError) -> AnomalyError {

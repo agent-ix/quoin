@@ -52,7 +52,8 @@ fix (NFR-035).
 - An anomaly whose only rows are skipped rows SHALL yield no finding from this check.
 - The check SHALL evaluate every `Test` row.
 - The check SHALL evaluate a `Criterion` row whose `Target` is an acceptance-criterion id.
-- The check SHALL NOT evaluate a `Criterion` row whose `Target` names an `FR`, `NFR` or hazard document, which FR-015 allows, because no run entry carries a document id as a result.
+- The check SHALL NOT evaluate a `Criterion` row whose `Target` names an `FR` or `NFR` document, which FR-015 allows, because no run entry carries a document id as a result.
+- The check SHALL NOT evaluate a `Criterion` row whose `Target` names a hazard document, which FR-015-AC-15 makes a kind mismatch that `quire validate` reports.
 - The check SHALL read the evidence store under `spec/evidence/` of the scope.
 - The check SHALL write nothing to the store or to any document.
 

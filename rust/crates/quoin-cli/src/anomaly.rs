@@ -141,19 +141,11 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
         hazard_installed: hazard_installed(roots.as_deref())?,
     };
     let documents = anomaly_documents(&scope).map_err(|error| error.to_string())?;
-    let mut notes = Vec::new();
     let criterion_tests = if documents.iter().any(|(_, text)| evaluates_criteria(text)) {
-        criterion_tests(&scope, roots.as_deref()).unwrap_or_else(|reason| {
-            // Without the obligations a `Criterion` row still matches its own
-            // trace id; only the test cases its Verification cell names are
-            // lost, and the output says so.
-            notes.push(Diagnostic {
-                code: "anomaly.obligations_unavailable".to_owned(),
-                message: format!("Criterion rows matched on their own id only: {reason}"),
-                context: BTreeMap::new(),
-            });
-            BTreeMap::new()
-        })
+        match criterion_tests(&scope, roots.as_deref())? {
+            Ok(tests) => tests,
+            Err(refused) => return Ok(refused),
+        }
     } else {
         BTreeMap::new()
     };
@@ -178,8 +170,12 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
             } else {
                 format!(" [commits: {}]", diagnostic.commits.join(", "))
             };
+            let target = diagnostic
+                .target
+                .as_ref()
+                .map_or_else(String::new, |target| format!(" [target: `{target}`]"));
             lines.push(format!(
-                "{}:{}: {} {} ({}) {}{commits}",
+                "{}:{}: {} {} ({}) {}{target}{commits}",
                 path.display(),
                 diagnostic.line,
                 diagnostic.severity.as_str(),
@@ -196,14 +192,21 @@ fn run_check(arguments: &ArgMatches) -> Result<Response, String> {
             ));
         }
     }
+    // An unreadable run file is skipped and named, as `quoin evidence` does
+    // (FR-030-AC-13); the exit status is unchanged.
+    for skipped in verification.skipped() {
+        lines.push(format!(
+            "{skipped}: unreadable run file skipped; its suite contributes no result"
+        ));
+    }
     let outcome = if errors {
         Outcome::Partial
     } else {
         Outcome::Ok
     };
     Ok(Response {
-        payload: serde_json::json!({ "rendered": lines.join("\n") }),
-        diagnostics: notes,
+        payload: serde_json::json!({ "rendered": lines.join("\n"), "skipped": verification.skipped() }),
+        diagnostics: Vec::new(),
         outcome,
     })
 }
@@ -268,13 +271,13 @@ fn run_refs(arguments: &ArgMatches) -> Result<Response, String> {
 fn criterion_tests(
     scope: &std::path::Path,
     roots: Option<&[PathBuf]>,
-) -> Result<BTreeMap<String, Vec<String>>, String> {
+) -> Result<Result<BTreeMap<String, Vec<String>>, Response>, String> {
     let response = invoke(
         "quire.coverage",
         &serde_json::json!({ "scope": scope, "modules": roots.unwrap_or_default() }),
     )?;
     if !response.outcome.carries_payload() {
-        return Err("the obligations of the corpus could not be derived".to_owned());
+        return Ok(Err(response));
     }
     let obligations = response
         .payload
@@ -286,7 +289,7 @@ fn criterion_tests(
         .iter()
         .filter_map(|obligation| obligation.get("id")?.as_str())
         .collect::<std::collections::BTreeSet<_>>();
-    Ok(obligations
+    Ok(Ok(obligations
         .iter()
         .filter_map(|obligation| {
             let id = obligation.get("id")?.as_str()?;
@@ -300,7 +303,7 @@ fn criterion_tests(
                 .collect();
             Some((id.to_owned(), tests))
         })
-        .collect())
+        .collect()))
 }
 
 /// Whether the `hazard` object type is installed, asked of the core's module
