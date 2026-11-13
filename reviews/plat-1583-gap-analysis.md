@@ -70,3 +70,4 @@ kind mismatch stays `quire validate`'s (FR-015-AC-15, FR-136). One low spec-text
 | FND | Outcome | Reason |
 | --- | --- | --- |
 | FND-001 | fixed | FR-175 now states FR/NFR document rows as FR-015 allows and hazard rows as the FR-015-AC-15 kind mismatch `quire validate` reports. |
+| FND-002 | fixed | Round 2 (`d8fd09c7`): `a_run_file_the_store_cannot_read_fails_the_check_instead_of_being_skipped` makes a run file mode 000 and asserts a non-zero exit and neither code; the swallowed-I/O mutant (N6) now fails it. It returns early where the mode does not bind (root), the repo's existing pattern for permission tests. |

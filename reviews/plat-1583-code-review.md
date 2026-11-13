@@ -82,3 +82,6 @@ swallowed coverage refusal branch (N5) and a swallowed store I/O error (N6) surv
 | FND-002 | fixed | Each skipped path is printed once, exit status unchanged; a store I/O error now fails the check (reproduced with a mode-000 run file). Path plus "unreadable run file skipped" satisfies FR-030-AC-13: its "naming the file and the cause" sentence governs a raised diagnostic, the run-file case is "skipped and reported", and quoin-core's evidence op reports the same path-only `skipped` list. No spec wording is needed. |
 | FND-003 | fixed | The line renders `[target: ...]` from `Diagnostic.target`; the message no longer carries it. |
 | FND-004 | fixed | `latest_run` replaces `read_runs` plus `next_back()`. |
+| FND-005 | fixed | Round 2 (`d8fd09c7`): the test passes the spec_artifacts_process module, the hazard manifest and a third root with an unparsable manifest, and asserts a non-zero exit, no `anomaly.missing-module`, neither code, and `quire.coverage` on stderr. The restored-fallback mutant (N4) now fails it. |
+| FND-006 | fixed | Round 2: the skipped line prints `scope/spec/evidence/<path>`; the AC-6 test asserts `spec/evidence/runs/SUITE-1/<name>`, and the unprefixed mutant (N7) fails it. |
+| FND-007 | fixed | Round 2: the `"skipped"` payload key is removed; the payload is `{ "rendered": ... }` only. |
