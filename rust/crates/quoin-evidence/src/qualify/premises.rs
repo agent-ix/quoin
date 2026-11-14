@@ -396,8 +396,8 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
     let disposition = text(report, "disposition");
     let agreed = report.get("agreed_status");
     match (disposition, agreed.and_then(Value::as_str), agreed) {
-        (Some("agreement"), Some("satisfied" | "refuted"), _) => {}
-        (Some("inconclusive" | "unavailable" | "disagreement"), None, Some(Value::Null)) => {}
+        (Some("agreement"), Some("satisfied" | "refuted"), _)
+        | (Some("inconclusive" | "unavailable" | "disagreement"), None, Some(Value::Null)) => {}
         _ => return false,
     }
     let Some(engines) = report.get("engines").and_then(Value::as_array) else {
@@ -435,18 +435,18 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
     }
     match disposition {
         Some("disagreement") => run.entries.is_empty(),
-        Some("agreement") => {
+        Some("agreement") => run.entries.first().is_some_and(|entry| {
             run.entries.len() == 1
-                && run.entries[0].outcome
+                && entry.outcome
                     == match agreed.and_then(Value::as_str) {
                         Some("satisfied") => crate::types::Outcome::Pass,
                         Some("refuted") => crate::types::Outcome::Fail,
                         _ => return false,
                     }
-        }
-        Some("inconclusive" | "unavailable") => {
-            run.entries.len() == 1 && run.entries[0].outcome == crate::types::Outcome::Error
-        }
+        }),
+        Some("inconclusive" | "unavailable") => run.entries.first().is_some_and(|entry| {
+            run.entries.len() == 1 && entry.outcome == crate::types::Outcome::Error
+        }),
         _ => false,
     }
 }

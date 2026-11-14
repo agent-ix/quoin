@@ -57,6 +57,12 @@ fn by_suite(runs: &[RetainedRun]) -> BTreeMap<&SuiteId, Vec<&RetainedRun>> {
     suites
 }
 
+/// Whether more than one supplied observation claims the same canonical key.
+fn duplicate_record_path(runs: &[&RetainedRun]) -> bool {
+    let mut paths = std::collections::BTreeSet::new();
+    runs.iter().any(|run| !paths.insert(run.file.as_str()))
+}
+
 /// The newest run of every suite, by the store's order. The one place the
 /// latest run is chosen: the FR-032 audit is given these runs and the
 /// supersession rules below read the same ones.
@@ -75,11 +81,7 @@ pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Dis
     let mut stated_anywhere = false;
     for (suite, suite_runs) in by_suite(runs) {
         let suite_runs = ordered(suite_runs);
-        let mut paths = std::collections::BTreeSet::new();
-        if suite_runs
-            .iter()
-            .any(|run| !paths.insert(run.file.as_str()))
-        {
+        if duplicate_record_path(&suite_runs) {
             stated_anywhere |= suite_runs
                 .iter()
                 .flat_map(|run| &run.record.entries)

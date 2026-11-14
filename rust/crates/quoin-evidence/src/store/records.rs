@@ -141,8 +141,9 @@ pub(crate) fn write_analysis_pair<S: EvidenceSource + ?Sized>(
         {
             return Ok(run_path);
         }
-        (Some(_), Some(_)) => return Err(pair_conflict(&run_path)),
-        (Some(_), None) | (None, Some(_)) => return Err(pair_conflict(&run_path)),
+        (Some(_), Some(_)) | (Some(_), None) | (None, Some(_)) => {
+            return Err(pair_conflict(&run_path));
+        }
         (None, None) => {}
     }
     let published_run = source.publish(&run_path, &run_bytes)?;

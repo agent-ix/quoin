@@ -74,6 +74,12 @@ pub fn record_run<S: EvidenceSource + ?Sized>(
 }
 
 /// Record a differential-report run and its immutable allowlisted projection.
+///
+/// # Errors
+///
+/// Returns [`EvidenceError::RecordIntegrity`] when the paired key is occupied
+/// by different bytes or only one member, or a store/canonicalization error
+/// when either member cannot be written.
 pub fn record_run_with_analysis_projection<S: EvidenceSource + ?Sized>(
     source: &mut S,
     request: &RecordRequest,

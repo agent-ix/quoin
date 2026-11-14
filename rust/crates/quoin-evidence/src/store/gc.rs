@@ -36,7 +36,7 @@ pub fn gc<S: EvidenceSource + ?Sized>(
     for suite in list_recorded_suites(source)? {
         let before_runs = deleted.len();
         collect::<S, RunRecord>(source, &suite, &mut skipped, &mut deleted)?;
-        let removed_runs = deleted[before_runs..].to_vec();
+        let removed_runs = deleted.get(before_runs..).unwrap_or_default().to_vec();
         for run in &removed_runs {
             if let Some(suffix) = run.strip_prefix("runs/") {
                 let projection = format!("{ANALYSIS_REPORTS_DIR}/{suffix}");
