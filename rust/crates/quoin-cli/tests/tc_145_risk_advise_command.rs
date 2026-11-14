@@ -132,7 +132,12 @@ fn a_missing_scope_and_a_malformed_record_each_exit_2_naming_what_is_wrong() {
     let out = advise(dir.path(), module.as_path(), &[]);
     assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty());
-    assert!(String::from_utf8_lossy(&out.stderr).contains("RR-1"));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("RR-1"), "{stderr}");
+    assert!(
+        stderr.contains("Decision") && stderr.contains("maybe"),
+        "{stderr}"
+    );
 }
 
 #[trace("FR-145-AC-7")]
