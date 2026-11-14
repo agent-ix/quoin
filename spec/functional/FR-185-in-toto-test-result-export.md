@@ -58,6 +58,18 @@ which this requirement adopts unchanged. The predicate fields conform to the
   the selected run for that suite. Entries SHALL be sorted by suite id.
 - For each obligation id in `bindings.json`, Quoin SHALL inspect the latest
   run of every bound suite and the symbols named by that binding.
+- For each bound symbol that has one or more entries in its selected run,
+  Quoin SHALL require at least one entry with that symbol whose `traceIds`
+  contains the binding's obligation id before the symbol's outcomes can
+  support that obligation. An entry for the symbol with absent, empty, or
+  non-matching `traceIds` SHALL NOT by itself satisfy the binding. If the
+  symbol is present but no entry relates it to the obligation, Quoin SHALL
+  classify the obligation as stale and put it in `failedTests`. A missing
+  symbol entry remains incomplete evidence and Quoin SHALL classify it in
+  `warnedTests` under the existing rule. Run records without `traceIds` remain
+  readable, but an existing bound symbol in such a record cannot satisfy this
+  relation. This rule does not change the existing missing-run, failed-symbol,
+  skipped-symbol, or duplicate-outcome rules.
 - Quoin SHALL reuse the stale-evidence conditions of
   `quoin-auditor::audit::stale::FindingKind::STALE_EVIDENCE`. A bound suite
   without a recorded run, or a latest bound-symbol outcome of `fail` or
@@ -69,6 +81,12 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - If an obligation is stale under the
   `quoin-auditor::audit::stale::FindingKind::STALE_EVIDENCE` conditions, then
   Quoin SHALL put it in `failedTests`.
+- If a bound symbol is present in its selected run but no entry for that symbol
+  names the binding's obligation in `traceIds`, Quoin SHALL treat that missing
+  evidence relation as stale and put the obligation in `failedTests`; it SHALL
+  not classify that obligation as passed or warned. This relation failure is
+  represented in the Test Result and does not make an otherwise readable run
+  record an invalid evidence store.
 - When an obligation is not stale and any bound symbol has outcome `skip` or
   is absent from its run, Quoin SHALL put it in `warnedTests`. If a run contains
   more than one entry for a bound symbol, any `skip` entry warns the obligation
@@ -102,14 +120,15 @@ which this requirement adopts unchanged. The predicate fields conform to the
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-185-AC-1 | A fixture with a passing obligation, a failing symbol obligation and an obligation bound to a suite without a run exports `result: FAILED`; only the passing obligation is in `passedTests`, and the other two are in `failedTests`. | Test |
-| FR-185-AC-2 | A fixture whose only non-pass outcome is `skip` exports `WARNED` with that obligation in `warnedTests`, including when a passing duplicate entry precedes the skip; an all-pass fixture exports `PASSED` with empty `warnedTests` and `failedTests`. | Test |
+| FR-185-AC-1 | A fixture with correctly traced passing evidence, a correctly traced failing symbol, and an obligation bound to a suite without a run exports `result: FAILED`; only the passing obligation is in `passedTests`, and the other two are in `failedTests`. | Test |
+| FR-185-AC-2 | A fixture whose only non-pass outcome is a correctly traced `skip` exports `WARNED` with that obligation in `warnedTests`, including when a correctly traced passing duplicate entry precedes the skip; correctly traced all-pass evidence exports `PASSED` with empty `warnedTests` and `failedTests`. | Test |
 | FR-185-AC-3 | The output subject equals the supplied array after canonicalization; a non-hex digest, missing `sha256`, empty array or non-array subject exits 2 and writes no output file. | Test |
 | FR-185-AC-4 | Repeating an export over the same store and subject yields byte-identical output, and reordering the stored runs or bindings does not change the bytes. | Test |
 | FR-185-AC-5 | The predicate has exactly the five specified members, deserializes through its closed type, and rejects a predicate with an additional member. | Test |
 | FR-185-AC-6 | An unparsable run record, unreadable runs directory or missing `bindings.json` exits 3 with `evidence_store_invalid` and the relevant path, and leaves no output file. | Test |
 | FR-185-AC-7 | A static boundary check establishes that the export path calls no Git, network or process-spawning API. | Inspection |
-| FR-185-AC-8 | The consumer-side negative check from Engineering Assurance FR-069-AC-2 is reproducible from Quoin: an export cannot produce `result: PASSED` with a non-empty `failedTests`, including when a passing duplicate entry precedes a failing entry for the same bound symbol. | Test |
+| FR-185-AC-8 | The consumer-side negative check from Engineering Assurance FR-069-AC-2 is reproducible from Quoin: an export cannot produce `result: PASSED` with a non-empty `failedTests`, including when a correctly traced passing duplicate entry precedes a failing entry for the same bound symbol. | Test |
+| FR-185-AC-9 | When a bound symbol has a passing run entry but that entry omits `traceIds` or lists only another obligation, the exporter places the bound obligation in `failedTests`, never `passedTests` or `warnedTests`, and sets `result: FAILED`; the same result applies to a legacy run record with no `traceIds`. A matching `traceIds` entry permits the existing outcome rules to classify the obligation. | Test |
 
 ## Dependencies
 
