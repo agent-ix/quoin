@@ -60,7 +60,7 @@ fn control(id: &str, effectiveness: Option<&str>, mappings: &[(&str, &str)]) -> 
 
 fn exclusion(id: &str, set: &str, clause: &str) -> String {
     format!(
-        "---\nid: {id}\ntitle: \"Exclusion{id}\"\ntype: scope_exclusion\nobject: scope_exclusion\n---\n# [{id}] Exclusion{id}\n\n## Set\n\n`{set}`\n\n## Clause\n\n`{clause}`\n\n## Responsible\n\n`COMP-001`\n\n## Rationale\n\n`The platform owns this clause.`\n\n## Decision\n\n`delegated`\n\n## Decision owner\n\n`SEC-OWNER-001`\n\n## Approval ref\n\n`APPR-7`\n"
+        "---\nid: {id}\ntitle: \"Exclusion{id}\"\ntype: scope_exclusion\nobject: scope_exclusion\n---\n# [{id}] Exclusion{id}\n\n## Set\n\n`{set}`\n\n## Clause\n\n`{clause}`\n\n## Responsible\n\n`COMP-001`\n\n## Rationale\n\n`The platform owns this clause.`\n"
     )
 }
 
@@ -514,18 +514,23 @@ fn tc_173_mappings_to_non_binding_clauses_and_other_sets_are_unused() {
 
 #[trace("FR-173-AC-4")]
 #[test]
-fn tc_173_a_scope_exclusion_yields_its_authored_disposition() {
+fn tc_173_a_scope_exclusion_becomes_a_delegated_disposition_only_with_an_approval() {
     let world = World::new(
         &two_clauses(),
         &[("X.md", exclusion("SCOPEX-001", SET, "C2"))],
     );
-    let facts = parsed(&world.facts());
+    let facts = parsed(&world.facts_with(&["--approval-ref", "APPR-7"]));
     assert_eq!(facts.len(), 1);
     assert_eq!(facts[0]["kind"], "disposition");
     assert_eq!(facts[0]["decision"], "delegated");
-    assert_eq!(facts[0]["owner"], "SEC-OWNER-001");
     assert_eq!(facts[0]["approvalRef"], "APPR-7");
-    assert_eq!(facts[0]["rationale"], "The platform owns this clause.");
+    assert_eq!(
+        facts[0]["rationale"],
+        "The platform owns this clause. (responsible: COMP-001)"
+    );
+    let without = world.facts();
+    assert!(parsed(&without).is_empty());
+    assert!(err(&without).contains("needs-approval C2 SCOPEX-001"));
 }
 
 #[trace("FR-173-AC-5", "NFR-038-AC-1")]
@@ -635,7 +640,7 @@ fn tc_173_the_output_is_accepted_by_record_discharge() {
             ("X.md", exclusion("SCOPEX-001", SET, "C2")),
         ],
     );
-    let facts = world.facts();
+    let facts = world.facts_with(&["--approval-ref", "APPR-7"]);
     let recorded = world.record(&out(&facts));
     assert!(recorded.status.success(), "{recorded:?}");
     assert_eq!(out(&recorded).lines().count(), 2);
@@ -745,7 +750,7 @@ fn three_clauses() -> World {
 }
 
 fn chain(world: &World) {
-    let facts = world.facts();
+    let facts = world.facts_with(&["--approval-ref", "APPR-7"]);
     assert!(facts.status.success(), "{facts:?}");
     let recorded = world.record(&out(&facts));
     assert!(recorded.status.success(), "{recorded:?}");
@@ -757,7 +762,7 @@ fn tc_174_the_chain_renders_compliant_tailored_and_undischarged_rows_without_a_s
     assert!(!is_expected_rmm_compliance_row("| Compliant | 1 |"));
     let world = three_clauses();
     world.install_synthetic_clause_set();
-    let facts = world.facts_with_installed_modules(&[]);
+    let facts = world.facts_with_installed_modules(&["--approval-ref", "APPR-7"]);
     assert!(facts.status.success(), "{facts:?}");
     assert_no_compliant_count_or_clause_text(&out(&facts));
     assert_no_compliant_count_or_clause_text(
@@ -804,7 +809,12 @@ fn tc_174_a_stored_fact_stays_compliant_until_its_file_is_removed() {
         control("CTRL-A", Some("ineffective"), &[(SET, "C1")]),
     )
     .unwrap();
-    let rerun = world.facts_with(&["--repo", world.dir.path().to_str().unwrap()]);
+    let rerun = world.facts_with(&[
+        "--approval-ref",
+        "APPR-7",
+        "--repo",
+        world.dir.path().to_str().unwrap(),
+    ]);
     assert!(err(&rerun).contains("stale C1"), "{}", err(&rerun));
     assert!(world.rmm(AS_OF).contains("| C1 | Applicable | Compliant |"));
     let stored = listing(world.dir.path())
@@ -831,7 +841,7 @@ fn tc_174_the_chain_uses_a_synthetic_pack_installed_in_the_temporary_ix_home() {
     let world = three_clauses();
     world.install_synthetic_clause_set();
 
-    let facts = world.facts_with_installed_modules(&[]);
+    let facts = world.facts_with_installed_modules(&["--approval-ref", "APPR-7"]);
     assert!(facts.status.success(), "{facts:?}");
     let recorded = world.record_installed(&out(&facts));
     assert!(recorded.status.success(), "{recorded:?}");
