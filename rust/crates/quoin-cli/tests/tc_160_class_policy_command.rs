@@ -90,6 +90,12 @@ const POLICY: &str = "class_field: class
 classes:
   class-2:
     required_methods: [unit-testing]
+    obligations:
+      - id: design
+        kind: design-trace
+      - id: unit-evidence
+        kind: evidence
+        method: unit-testing
     rationale: recorded by the fixture's author
 ";
 
@@ -329,4 +335,82 @@ fn tc_160_304_two_runs_are_identical_and_write_no_file() {
     ]);
     assert_eq!(first, second);
     assert_eq!(fixture.files(), before);
+}
+
+/// The unchanged FR-160 policy file drives both commands, and FR-161 preserves
+/// its class rows and activity facts across formats and repeated runs.
+#[trace(
+    "FR-161-AC-1",
+    "FR-161-AC-4",
+    "FR-161-AC-5",
+    "FR-161-AC-6",
+    "FR-161-AC-9",
+    "FR-161-CON-1"
+)]
+#[test]
+fn tc_161_001_class_obligations_reuses_the_audit_policy_without_writing() {
+    let fixture = repository();
+    let policy_before = std::fs::read(fixture.repo().join("policy.yaml")).unwrap();
+    let files_before = fixture.files();
+    let audit = audit_json(&fixture, &["--class-policy", "policy.yaml"]);
+    assert_eq!(audit["classReport"]["classes"]["FR-001-AC-1"], "class-2");
+
+    let json = fixture.ok(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        "policy.yaml",
+        "--format",
+        "json",
+    ]);
+    let report: Value = serde_json::from_str(&json).unwrap();
+    let requirement = report["requirements"].as_array().unwrap().first().unwrap();
+    assert_eq!(requirement["class"], "class-2");
+    let activities = requirement["activities"].as_array().unwrap();
+    assert_eq!(activities[0]["status"], "not-available");
+    assert_eq!(activities[1]["status"], "unmet");
+    assert_eq!(
+        activities[1]["missing"],
+        serde_json::json!(["FR-001-AC-1", "FR-001-AC-2"])
+    );
+    assert_eq!(
+        report["unassigned"],
+        serde_json::json!(["spec/FR-002-unclassed.md"])
+    );
+    for key in ["score", "rank", "verdict", "approval", "recommendation"] {
+        assert!(report.get(key).is_none(), "{report}");
+    }
+    let markdown = fixture.ok(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        "policy.yaml",
+    ]);
+    assert!(
+        markdown.contains("| unit-evidence | unmet | FR-001-AC-1, FR-001-AC-2 |"),
+        "{markdown}"
+    );
+    let repeat = fixture.ok(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        "policy.yaml",
+        "--format",
+        "json",
+    ]);
+    assert_eq!(json, repeat);
+    assert_eq!(
+        std::fs::read(fixture.repo().join("policy.yaml")).unwrap(),
+        policy_before
+    );
+    assert_eq!(fixture.files(), files_before);
 }

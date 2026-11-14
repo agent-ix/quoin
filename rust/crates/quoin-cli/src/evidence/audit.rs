@@ -51,6 +51,9 @@ pub(crate) struct Audited {
     /// The stored runs and scans used by the FR-032 evidence join.
     pub(crate) runs: serde_json::Value,
     pub(crate) scans: serde_json::Value,
+    /// The exact auditor input, used when a consumer projects another method
+    /// through the FR-160 class evidence join.
+    pub(crate) audit_input: serde_json::Value,
     /// The `auditor.audit` response, whose payload carries `report`.
     pub(crate) response: Response,
 }
@@ -146,6 +149,7 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
     if let Some(path) = options.class_policy.as_deref() {
         add_class_inputs(&mut input, path, &coverage.payload)?;
     }
+    let audit_input = input.clone();
     let request = serde_json::json!({ "input": input });
     let audited = invoke("auditor.audit", &request)?;
     if !audited.outcome.carries_payload() {
@@ -156,6 +160,7 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
         bindings,
         runs,
         scans,
+        audit_input,
         response: audited,
     }))
 }
@@ -246,10 +251,7 @@ fn add_class_inputs(
     path: &str,
     coverage: &serde_json::Value,
 ) -> Result<(), String> {
-    let text =
-        std::fs::read_to_string(path).map_err(|error| format!("cannot read {path}: {error}"))?;
-    let policy = quoin_yaml::from_str_without_aliases(&text)
-        .map_err(|error| format!("{path} is not valid YAML or JSON: {error}"))?;
+    let policy = load_class_policy(path)?;
     let members = [
         ("classPolicy", Some(&policy)),
         ("carriedVocabulary", coverage.get("carried_vocabulary")),
@@ -263,6 +265,14 @@ fn add_class_inputs(
         }
     }
     Ok(())
+}
+
+/// Read the same strict YAML/JSON class policy used by the auditor adapter.
+pub(crate) fn load_class_policy(path: &str) -> Result<serde_json::Value, String> {
+    let text =
+        std::fs::read_to_string(path).map_err(|error| format!("cannot read {path}: {error}"))?;
+    quoin_yaml::from_str_without_aliases(&text)
+        .map_err(|error| format!("{path} is not valid YAML or JSON: {error}"))
 }
 
 fn mutation_floor(entries: &[String]) -> Result<serde_json::Value, String> {

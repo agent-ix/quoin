@@ -5,8 +5,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use clap::{Arg, ArgMatches, Command, ValueEnum};
-use quoin_auditor::audit::class::{ClassFloors, ClassPolicy};
+use clap::{Arg, ArgMatches, Command};
+use quoin_auditor::audit::{ClassFloors, ClassPolicy};
 use quoin_core::protocol::{Response, canonical_json};
 use serde::Deserialize;
 use serde_json::Value;
@@ -16,13 +16,6 @@ use crate::evidence::audit::{
     Assembly, AuditOptions, assemble_with, load_class_policy, module_arg,
 };
 use crate::evidence::required;
-
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum Format {
-    #[default]
-    Markdown,
-    Json,
-}
 
 pub(crate) fn command() -> Command {
     Command::new("class")
@@ -37,7 +30,7 @@ pub(crate) fn command() -> Command {
                 .arg(
                     Arg::new("format")
                         .long("format")
-                        .value_parser(clap::value_parser!(Format))
+                        .value_parser(["markdown", "json"])
                         .default_value("markdown"),
                 ),
         )
@@ -87,6 +80,7 @@ fn obligations(arguments: &ArgMatches) -> Result<Response, String> {
         return Ok(catalog);
     }
     let methods = catalog_methods(&catalog.payload)?;
+    let missing_methods = evidence_gaps(&audited.audit_input, &policy, &methods)?;
     let requirements = audited
         .coverage
         .get("coverage_matrix")
@@ -97,18 +91,17 @@ fn obligations(arguments: &ArgMatches) -> Result<Response, String> {
         &design.payload,
         &policy,
         &methods,
-        &audited.bindings,
-        &audited.runs,
-        &audited.scans,
+        &missing_methods,
     )?;
     let output = serde_json::json!({"requirements": rows.requirements, "unassigned": rows.unassigned, "unconfigured": rows.unconfigured});
     let format = arguments
-        .get_one::<Format>("format")
-        .copied()
-        .unwrap_or_default();
-    let rendered = match format {
-        Format::Json => canonical_json(&output).map_err(|error| error.to_string())?,
-        Format::Markdown => render_markdown(&rows),
+        .get_one::<String>("format")
+        .map(String::as_str)
+        .unwrap_or("markdown");
+    let rendered = if format == "json" {
+        canonical_json(&output).map_err(|error| error.to_string())?
+    } else {
+        render_markdown(&rows)
     };
     Ok(Response {
         payload: serde_json::json!({"rendered": rendered}),
@@ -128,9 +121,7 @@ fn build_rows(
     design: &Value,
     policy: &ClassPolicy,
     methods: &BTreeMap<String, String>,
-    bindings: &Value,
-    runs: &Value,
-    scans: &Value,
+    missing_methods: &BTreeMap<(String, String), BTreeSet<String>>,
 ) -> Result<Rows, String> {
     let mut requirements = Vec::new();
     let mut unassigned = Vec::new();
@@ -165,7 +156,7 @@ fn build_rows(
         let activity_rows = activities.iter().map(|activity| {
             let status = match activity.kind.as_str() {
                 "design-trace" => design_status(relations, &relation_rows),
-                "evidence" => evidence_status(activity, methods, &obligation_ids, bindings, runs, scans),
+                "evidence" => evidence_status(activity, &class_text, &obligation_ids, missing_methods),
                 _ => Status { status: "not-available", missing: vec![], reason: Some("unknown activity kind".to_owned()) },
             };
             let mut row = serde_json::json!({"id": activity.id, "kind": activity.kind, "status": status.status});
@@ -296,31 +287,30 @@ fn design_rows<'a>(relations: Option<&'a Vec<Value>>, document: &str) -> Vec<&'a
             row.get("document")
                 .and_then(|doc| doc.get("path"))
                 .and_then(Value::as_str)
-                == Some(document).or_else(|| {
-                    row.get("document")
-                        .and_then(|doc| doc.get("id"))
-                        .and_then(Value::as_str)
-                        == Some(document)
-                })
+                == Some(document)
+                || row
+                    .get("document")
+                    .and_then(|doc| doc.get("id"))
+                    .and_then(Value::as_str)
+                    == Some(document)
         })
         .collect()
 }
 
 fn evidence_status(
     activity: &Activity,
-    methods: &BTreeMap<String, String>,
+    class: &str,
     obligations: &[&str],
-    bindings: &Value,
-    runs: &Value,
-    scans: &Value,
+    missing_methods: &BTreeMap<(String, String), BTreeSet<String>>,
 ) -> Status {
-    let kind = activity
+    let key = activity
         .method
         .as_ref()
-        .and_then(|method| methods.get(method));
+        .map(|method| (class.to_owned(), method.clone()));
+    let missing_set = key.as_ref().and_then(|key| missing_methods.get(key));
     let mut missing = obligations
         .iter()
-        .filter(|id| !has_evidence(id, kind.map(String::as_str), bindings, runs, scans))
+        .filter(|id| missing_set.is_some_and(|set| set.contains(**id)))
         .map(|id| (*id).to_owned())
         .collect::<Vec<_>>();
     missing.sort();
@@ -331,39 +321,75 @@ fn evidence_status(
     }
 }
 
-fn has_evidence(
-    id: &str,
-    kind: Option<&str>,
-    bindings: &Value,
-    runs: &Value,
-    scans: &Value,
-) -> bool {
-    let Some(kind) = kind else {
-        return false;
-    };
-    bindings
-        .get("bindings")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .any(|binding| {
-            if binding.get("obligation").and_then(Value::as_str) != Some(id) {
-                return false;
+fn evidence_gaps(
+    audit_input: &Value,
+    policy: &ClassPolicy,
+    methods: &BTreeMap<String, String>,
+) -> Result<BTreeMap<(String, String), BTreeSet<String>>, String> {
+    let mut gaps = BTreeMap::new();
+    for (class, floors) in &policy.classes {
+        for activity in parse_activities(class, floors, methods)? {
+            let Some(method) = activity.method else {
+                continue;
+            };
+            let key = (class.clone(), method.clone());
+            if gaps.contains_key(&key) {
+                continue;
             }
-            binding
-                .get("suite")
-                .and_then(Value::as_str)
-                .is_some_and(|suite| {
-                    contains_kind(runs, suite, kind) || contains_kind(scans, suite, kind)
-                })
-        })
+            gaps.insert(key.clone(), audit_method_gaps(audit_input, class, &method)?);
+        }
+    }
+    Ok(gaps)
 }
 
-fn contains_kind(records: &Value, suite: &str, kind: &str) -> bool {
-    records.as_array().into_iter().flatten().any(|record| {
-        record.get("suite").and_then(Value::as_str) == Some(suite)
-            && record.get("evidence_kind").and_then(Value::as_str) == Some(kind)
-    })
+/// Ask the FR-160 auditor to evaluate one declared method through its shared
+/// class evidence join. Only the projected `required_methods` changes; the
+/// caller's policy file and all evidence inputs remain unchanged.
+fn audit_method_gaps(
+    audit_input: &Value,
+    class: &str,
+    method: &str,
+) -> Result<BTreeSet<String>, String> {
+    let mut input = audit_input.clone();
+    let classes = input
+        .get_mut("classPolicy")
+        .and_then(|policy| policy.get_mut("classes"))
+        .and_then(Value::as_object_mut)
+        .ok_or_else(|| "auditor input has no classPolicy.classes".to_owned())?;
+    for (name, floor) in classes {
+        if let Some(object) = floor.as_object_mut() {
+            object.insert(
+                "required_methods".to_owned(),
+                if name == class {
+                    serde_json::json!([method])
+                } else {
+                    serde_json::json!([])
+                },
+            );
+        }
+    }
+    let response = invoke("auditor.audit", &serde_json::json!({ "input": input }))?;
+    if !response.outcome.carries_payload() {
+        return Err("FR-160 evidence join declined a declared class policy".to_owned());
+    }
+    let findings = response
+        .payload
+        .get("report")
+        .and_then(|report| report.get("findings"))
+        .and_then(Value::as_array)
+        .ok_or_else(|| "auditor.audit did not return report.findings".to_owned())?;
+    Ok(findings
+        .iter()
+        .filter(|finding| {
+            finding.get("kind").and_then(Value::as_str) == Some("class-method-missing")
+        })
+        .filter_map(|finding| {
+            finding
+                .get("obligation")
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+        })
+        .collect())
 }
 
 fn catalog_methods(payload: &Value) -> Result<BTreeMap<String, String>, String> {
@@ -425,4 +451,155 @@ fn render_markdown(rows: &Rows) -> String {
 
 fn value_string<'a>(value: &'a Value, key: &str) -> &'a str {
     value.get(key).and_then(Value::as_str).unwrap_or_default()
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "test assertions report mismatches as panics"
+)]
+mod tests {
+    use ix_trace_rs::trace;
+    use serde_json::json;
+
+    use super::{
+        Activity, ClassFloors, ClassPolicy, build_rows, design_status, parse_activities,
+        render_markdown,
+    };
+    use std::collections::BTreeMap;
+
+    fn floors(activities: Vec<serde_json::Value>) -> ClassFloors {
+        ClassFloors {
+            required_methods: Vec::new(),
+            mutation_floor: None,
+            independence: Vec::new(),
+            obligations: activities,
+            rationale: "recorded decision".to_owned(),
+        }
+    }
+
+    #[trace("FR-161-AC-4")]
+    #[test]
+    fn design_trace_combines_every_relation_with_uncovered_precedence() {
+        let covered = json!({"document":{"path":"spec/FR-1.md"},"state":"covered"});
+        let uncovered = json!({"document":{"path":"spec/FR-1.md"},"state":"uncovered"});
+        let covered_only = design_status(Some(&vec![json!({})]), &[&covered]);
+        let mixed = design_status(Some(&vec![json!({})]), &[&covered, &uncovered]);
+        let no_row = design_status(Some(&vec![json!({})]), &[]);
+        let empty = design_status(Some(&Vec::new()), &[&uncovered]);
+        let absent = design_status(None, &[&uncovered]);
+        assert_eq!(covered_only.status, "met");
+        assert_eq!(mixed.status, "unmet");
+        assert_eq!(no_row.status, "not-available");
+        assert_eq!(empty.status, "not-available");
+        assert_eq!(absent.status, "not-available");
+    }
+
+    #[trace("FR-161-AC-1", "FR-161-AC-2", "FR-161-AC-6", "FR-161-AC-7")]
+    #[test]
+    fn rows_read_only_carried_class_and_share_method_evidence_by_kind() {
+        let activity_data = vec![
+            json!({"id":"design","kind":"design-trace"}),
+            json!({"id":"unit","kind":"evidence","method":"unit-testing"}),
+        ];
+        let policy = ClassPolicy {
+            class_field: "class".to_owned(),
+            classes: BTreeMap::from([("class-3".to_owned(), floors(activity_data))]),
+        };
+        let matrix = vec![
+            json!({"document":"spec/FR-1.md","carried":{"class":"class-3"},"criteria":[{"id":"FR-1-AC-1"},{"id":"FR-1-AC-2"}]}),
+            json!({"document":"spec/FR-2.md","criteria":[{"id":"FR-2-AC-1"}]}),
+        ];
+        let design = json!({"relations":[{"rows":[
+            {"document":{"path":"spec/FR-1.md"},"state":"covered","allocated_class":"class-1"},
+            {"document":{"path":"spec/FR-2.md"},"state":"uncovered"}
+        ]}]});
+        let methods = BTreeMap::from([("unit-testing".to_owned(), "test-run".to_owned())]);
+        let rows = build_rows(&matrix, &design, &policy, &methods, &BTreeMap::new()).unwrap();
+        assert_eq!(rows.requirements.len(), 1);
+        assert_eq!(rows.requirements[0]["class"], "class-3");
+        assert_eq!(rows.requirements[0]["activities"][0]["status"], "met");
+        assert_eq!(rows.requirements[0]["activities"][1]["status"], "met");
+        assert_eq!(rows.unassigned, ["spec/FR-2.md"]);
+        let first = render_markdown(&rows);
+        assert_eq!(first, render_markdown(&rows));
+        assert!(first.contains("| unit | met |"), "{first}");
+    }
+
+    #[trace("FR-161-AC-8")]
+    #[test]
+    fn policy_activity_kinds_and_method_declarations_are_closed() {
+        let methods = BTreeMap::from([("unit-testing".to_owned(), "test-run".to_owned())]);
+        let parse = |activity| parse_activities("class-3", &floors(vec![activity]), &methods);
+        assert!(
+            parse(json!({"id":"x","kind":"other"}))
+                .unwrap_err()
+                .contains("unknown kind")
+        );
+        assert!(
+            parse(json!({"id":"x","kind":"evidence"}))
+                .unwrap_err()
+                .contains("missing method")
+        );
+        assert!(
+            parse(json!({"id":"x","kind":"evidence","method":"missing"}))
+                .unwrap_err()
+                .contains("undeclared method")
+        );
+        assert!(
+            parse_activities(
+                "class-3",
+                &floors(vec![
+                    json!({"id":"duplicate","kind":"design-trace"}),
+                    json!({"id":"duplicate","kind":"design-trace"}),
+                ]),
+                &methods
+            )
+            .unwrap_err()
+            .contains("duplicate")
+        );
+        let malformed: Result<Activity, _> = serde_json::from_value(
+            json!({"id":"x","kind":"evidence","method":"unit-testing","extra":true}),
+        );
+        assert!(malformed.is_err());
+    }
+
+    #[trace("FR-161-AC-3", "FR-161-AC-5", "FR-161-CON-1")]
+    #[test]
+    fn empty_policy_class_has_no_rows_and_unassigned_has_no_class_key() {
+        let policy = ClassPolicy {
+            class_field: "class".to_owned(),
+            classes: BTreeMap::from([
+                ("class-1".to_owned(), floors(Vec::new())),
+                (
+                    "class-3".to_owned(),
+                    floors(vec![json!({"id":"design","kind":"design-trace"})]),
+                ),
+            ]),
+        };
+        let matrix = vec![
+            json!({"document":"spec/FR-1.md","carried":{"class":"class-1"},"criteria":[]}),
+            json!({"document":"spec/FR-2.md","carried":{"class":"class-9"},"criteria":[]}),
+            json!({"document":"spec/FR-3.md","criteria":[]}),
+        ];
+        let rows = build_rows(
+            &matrix,
+            &json!({"relations":[]}),
+            &policy,
+            &BTreeMap::new(),
+            &BTreeMap::new(),
+        )
+        .unwrap();
+        assert_eq!(rows.requirements.len(), 1);
+        assert_eq!(rows.requirements[0]["activities"], json!([]));
+        assert_eq!(rows.unconfigured, ["spec/FR-2.md"]);
+        assert_eq!(rows.unassigned, ["spec/FR-3.md"]);
+        let serialized = serde_json::to_string(&json!({"requirements":rows.requirements,"unassigned":rows.unassigned,"unconfigured":rows.unconfigured})).unwrap();
+        for forbidden in ["score", "rank", "verdict", "approval", "recommendation"] {
+            assert!(!serialized.contains(forbidden), "{serialized}");
+        }
+        assert!(!serialized.contains("\"class\":null"), "{serialized}");
+    }
 }
