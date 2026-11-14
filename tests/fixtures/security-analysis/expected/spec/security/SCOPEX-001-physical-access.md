@@ -28,7 +28,7 @@ object: scope_exclusion
 
 ## Decision owner
 
-`ix://agent-ix/security-owner-001`
+`SEC-OWNER-001`
 
 ## Approval ref
 

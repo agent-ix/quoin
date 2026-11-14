@@ -22,3 +22,15 @@ object: scope_exclusion
 ## Rationale
 
 `The library authorizes in-process calls; remote access is terminated by the network layer.`
+
+## Decision
+
+`accepted_risk`
+
+## Decision owner
+
+`SEC-OWNER-002`
+
+## Approval ref
+
+`APPROVAL-002`

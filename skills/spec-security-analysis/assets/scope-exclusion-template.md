@@ -13,7 +13,14 @@ object: scope_exclusion
        responsible party is known, write NO exclusion; list the clause in the
        reply instead.
      - Rationale: why the clause is outside this component, in your own words.
-     An exclusion is a boundary statement; approval is recorded elsewhere. -->
+     - Decision: delegated, accepted_risk or temporary_exception.
+     - Decision owner: the bare id of the artifact that owns the disposition.
+     - Approval ref: an opaque reference to the approval record; this field
+       does not itself prove authorization.
+     - Expires at: required only for temporary_exception, as an RFC 3339
+       instant with an explicit time zone. Remove it for other decisions.
+     Replace every placeholder with the authored decision. An exclusion is a
+     boundary statement; it is not approval evidence. -->
 # [SCOPEX-001] RemoteAccessOutsideComponent
 
 ## Set
@@ -31,3 +38,15 @@ object: scope_exclusion
 ## Rationale
 
 `Remote access is terminated at the network layer before a request reaches this component.`
+
+## Decision
+
+`delegated`
+
+## Decision owner
+
+`SEC-OWNER-001`
+
+## Approval ref
+
+`APPROVAL-001`
