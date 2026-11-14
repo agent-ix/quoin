@@ -52,8 +52,11 @@ struct Exclusion {
     id: String,
     set: String,
     clause: String,
-    responsible: String,
+    decision: String,
+    decision_owner: String,
+    approval_ref: String,
     rationale: String,
+    expires_at: Option<String>,
 }
 
 /// What the command reads from the corpus.
@@ -90,11 +93,6 @@ pub(super) fn command() -> Command {
                 .long("spec")
                 .default_value("spec")
                 .help("Directory of spec artifacts to read."),
-        )
-        .arg(
-            Arg::new("approval-ref")
-                .long("approval-ref")
-                .help("Reference of the approval behind scope exclusions. Without it no disposition is emitted."),
         )
         .arg(
             Arg::new("repo")
@@ -141,15 +139,7 @@ fn propose_from(arguments: &ArgMatches) -> Result<Proposal, String> {
         .map_or_else(|| PathBuf::from("spec"), PathBuf::from);
     let corpus = read_corpus(&spec)?;
     let stored = arguments.get_one::<String>("repo").map(DiskEvidence::new);
-    propose(
-        &binding,
-        &attestation,
-        &corpus,
-        arguments
-            .get_one::<String>("approval-ref")
-            .map(String::as_str),
-        stored.as_ref(),
-    )
+    propose(&binding, &attestation, &corpus, stored.as_ref())
 }
 
 /// A refusal: exit status 2, one diagnostic and nothing on stdout.
@@ -259,12 +249,25 @@ fn exclusion(document: &Document) -> Result<Exclusion, String> {
             .filter(|text| !text.is_empty())
             .ok_or_else(|| format!("scope_exclusion {} has no {heading} value", document.id))
     };
+    let set = value("Set")?;
+    let clause = value("Clause")?;
+    let _ = value("Responsible")?;
+    let decision = value("Decision")?;
+    let decision_owner = value("Decision owner")?;
+    let approval_ref = value("Approval ref")?;
+    let rationale = value("Rationale")?;
     Ok(Exclusion {
         id: document.id.clone(),
-        set: value("Set")?,
-        clause: value("Clause")?,
-        responsible: value("Responsible")?,
-        rationale: value("Rationale")?,
+        set,
+        clause,
+        decision,
+        decision_owner,
+        approval_ref,
+        rationale,
+        expires_at: document
+            .sections
+            .get("Expires at")
+            .map(|text| inline_value(text).to_owned()),
     })
 }
 
@@ -368,7 +371,6 @@ fn propose(
     binding: &ClauseBindingReport,
     attestation: &Value,
     corpus: &Corpus,
-    approval_ref: Option<&str>,
     store: Option<&DiskEvidence>,
 ) -> Result<Proposal, String> {
     serde_json::from_value::<DischargeAttestation>(attestation.clone())
@@ -407,23 +409,18 @@ fn propose(
         if exclusion.set != clauses.set || !clauses.binding.contains(exclusion.clause.as_str()) {
             continue;
         }
-        match approval_ref {
-            Some(approval) => {
-                facts.insert(
-                    exclusion.clause.as_str(),
-                    json!({
-                        "kind": "disposition", "clauseId": exclusion.clause,
-                        "decision": "delegated",
-                        "rationale": format!("{} (responsible: {})", exclusion.rationale, exclusion.responsible),
-                        "approvalRef": approval, "attestation": attestation,
-                    }),
-                );
-            }
-            None => report.push(format!(
-                "needs-approval {} {}",
-                exclusion.clause, exclusion.id
-            )),
+        let mut fact = json!({
+            "kind": "disposition", "clauseId": exclusion.clause,
+            "decision": exclusion.decision,
+            "owner": exclusion.decision_owner,
+            "rationale": exclusion.rationale,
+            "approvalRef": exclusion.approval_ref,
+            "attestation": attestation,
+        });
+        if let Some(expires_at) = &exclusion.expires_at {
+            fact["decisionExpiresAt"] = json!(expires_at);
         }
+        facts.insert(exclusion.clause.as_str(), fact);
     }
 
     let facts: Vec<Value> = facts.into_values().collect();
