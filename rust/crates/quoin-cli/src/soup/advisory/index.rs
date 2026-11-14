@@ -6,6 +6,7 @@
 
 use std::collections::BTreeMap;
 
+use ix_trace_rs::implements;
 use quoin_evidence::purl::PurlIdentity;
 
 use super::UnmatchedReason;
@@ -102,4 +103,51 @@ impl RecordIndex {
             Some(identity) => Hit::Not(UnmatchedReason::NoVersion, self.same_package(&identity)),
         }
     }
+
+    /// The record an OSV finding's purl selects. Its name/version fallback is
+    /// intentionally unmatched because it does not identify an ecosystem.
+    #[implements("FR-142")]
+    pub(in crate::soup) fn find_osv(&self, path: Option<&str>) -> Hit {
+        let applicable: Vec<usize> = self
+            .identities
+            .iter()
+            .filter(|(_, identity)| assessed_by_osv(&identity.kind))
+            .map(|(position, _)| *position)
+            .collect();
+        let Some(path) = path.filter(|path| path.starts_with("pkg:")) else {
+            return Hit::Not(UnmatchedReason::NoPurl, applicable);
+        };
+        let Some(identity) = PurlIdentity::parse(path) else {
+            return Hit::Not(UnmatchedReason::NoPurl, applicable);
+        };
+        if !assessed_by_osv(&identity.kind) {
+            return Hit::Not(UnmatchedReason::NoRecord, Vec::new());
+        }
+        match identity.version {
+            Some(_) => self.lookup(&identity),
+            None => Hit::Not(UnmatchedReason::NoVersion, self.same_package(&identity)),
+        }
+    }
+}
+
+#[implements("FR-142")]
+pub(in crate::soup) fn purl_type(purl: &str) -> Option<&str> {
+    let kind = purl.strip_prefix("pkg:")?.split_once('/')?.0;
+    Some(if kind.eq_ignore_ascii_case("cargo") {
+        "cargo"
+    } else if kind.eq_ignore_ascii_case("npm") {
+        "npm"
+    } else if kind.eq_ignore_ascii_case("pypi") {
+        "pypi"
+    } else if kind.eq_ignore_ascii_case("golang") {
+        "golang"
+    } else if kind.eq_ignore_ascii_case("deb") {
+        "deb"
+    } else {
+        return None;
+    })
+}
+
+fn assessed_by_osv(kind: &str) -> bool {
+    matches!(kind, "npm" | "pypi" | "golang" | "deb")
 }

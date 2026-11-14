@@ -938,7 +938,7 @@ fn bound_stale_and_undischarged_criteria_are_counted_and_their_findings_listed()
     assert!(obligations.windows(2).all(|pair| pair[0] <= pair[1]));
 }
 
-#[trace("FR-167-AC-4")]
+#[trace("FR-167-AC-4", "FR-142-AC-21")]
 #[test]
 fn soup_rows_follow_the_group_order_and_unassessed_items_are_listed_after_them() {
     let repo = full();
@@ -958,23 +958,31 @@ fn soup_rows_follow_the_group_order_and_unassessed_items_are_listed_after_them()
             ("pkg:cargo/zed@1.0.0", "other"),
         ]
     );
-    let items: Vec<(&str, &str)> = snapshot["soup"]["not_assessed"]
+    let items: Vec<(&str, &str, &str)> = snapshot["soup"]["not_assessed"]
         .as_array()
         .unwrap()
         .iter()
-        .map(|i| (i["kind"].as_str().unwrap(), i["tool"].as_str().unwrap()))
+        .map(|i| {
+            (
+                i["kind"].as_str().unwrap(),
+                i["tool"].as_str().unwrap(),
+                i["detail"].as_str().unwrap(),
+            )
+        })
         .collect();
     assert_eq!(
         items,
         [
-            ("scan_not_run", "cargo-deny"),
-            ("scan_not_run", "licence-policy"),
-            ("unmatched_advisory", "cargo-audit"),
+            ("scan_not_run", "cargo-deny", "not run"),
+            ("scan_not_run", "licence-policy", "not run"),
+            ("scan_not_run", "osv-scanner", "not run"),
+            (
+                "unmatched_advisory",
+                "cargo-audit",
+                "RUSTSEC-2026-0002|pkg:cargo/ghost@9.9.9"
+            ),
         ]
     );
-    let unmatched = &snapshot["soup"]["not_assessed"][2]["detail"];
-    assert_eq!(unmatched, "RUSTSEC-2026-0002|pkg:cargo/ghost@9.9.9");
-    assert_eq!(snapshot["soup"]["not_assessed"][0]["detail"], "not run");
 }
 
 #[trace("FR-167-AC-5")]
