@@ -291,27 +291,63 @@ fn actor_observation(
     if authority.actor.is_empty() || authority.admission_ref.is_empty() {
         return (None, None);
     }
-    if signature.get("status").and_then(serde_json::Value::as_str) != Some("signed_valid") {
+    let Some(status) = signature.get("status").and_then(serde_json::Value::as_str) else {
+        return (None, None);
+    };
+    match status {
+        "signed_valid" => {}
+        "signed_untrusted" | "signed_bad" | "unsigned" => {
+            return (
+                None,
+                Some(format!(
+                    "the introducing commit signature status is {status}"
+                )),
+            );
+        }
+        "unverifiable" => return (None, None),
+        _ => return (None, None),
+    }
+    let Some(signer) = signature
+        .get("signer")
+        .and_then(serde_json::Value::as_object)
+    else {
+        return (None, None);
+    };
+    let Some(mapping) = signer.get("mapping").and_then(serde_json::Value::as_str) else {
+        return (None, None);
+    };
+    match mapping {
+        "mapped" => {}
+        "unmapped" => {
+            return (
+                None,
+                Some("the introducing commit signature has no mapped signer principal".to_owned()),
+            );
+        }
+        _ => return (None, None),
+    }
+    let Some(principal_value) = signer.get("principal") else {
         return (
             None,
-            Some("the introducing commit signature is not signed_valid".to_owned()),
+            Some("the introducing commit signature has no signer principal".to_owned()),
         );
-    }
-    let signer = signature.get("signer");
-    let mapping = signer
-        .and_then(|signer| signer.get("mapping"))
-        .and_then(serde_json::Value::as_str);
-    let principal = signer
-        .and_then(|signer| signer.get("principal"))
-        .and_then(serde_json::Value::as_str)
-        .filter(|principal| !principal.is_empty());
-    if mapping != Some("mapped") || principal.is_none() {
+    };
+    let Some(principal) = principal_value.as_str() else {
+        return if principal_value.is_null() {
+            (
+                None,
+                Some("the introducing commit signature has no signer principal".to_owned()),
+            )
+        } else {
+            (None, None)
+        };
+    };
+    if principal.is_empty() {
         return (
             None,
-            Some("the introducing commit signature has no mapped signer principal".to_owned()),
+            Some("the introducing commit signature has no signer principal".to_owned()),
         );
     }
-    let principal = principal.unwrap_or_default();
     if authority.actor != principal {
         return (
             None,
@@ -506,6 +542,22 @@ mod tests {
             "alice@example.invalid"
         );
         assert_eq!(rejection, None);
+
+        let untrusted = serde_json::json!({
+            "protocol": "engineering-assurance.signature-verify-result/v1",
+            "status": "signed_untrusted",
+            "kind": "commit",
+            "verified_commit_id": commit,
+            "signer": {"mapping": "unmapped"},
+        });
+        let (actor, rejection) = actor_observation(
+            repo.path().to_str().expect("repo path"),
+            &observation(&untrusted),
+            RUN,
+            PROJECTION,
+        );
+        assert!(actor.is_none());
+        assert!(rejection.is_some());
 
         git(
             repo.path(),
