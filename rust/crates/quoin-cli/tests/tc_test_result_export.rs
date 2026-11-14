@@ -117,6 +117,46 @@ fn tc_185_cli_exports_pass_fail_and_missing_run_classifications() {
     );
 }
 
+#[trace("FR-185-AC-1", "FR-185-AC-8")]
+#[test]
+fn tc_185_a_later_duplicate_failure_cannot_be_hidden_by_a_pass() {
+    let (root, subject, evidence) = fixture();
+    fs::write(
+        evidence.join("runs/suite-pass/2026-11-13T12~3A00~3A00Z.json"),
+        json!({
+            "schemaVersion": 1,
+            "suite": "suite-pass",
+            "tool": "cargo test",
+            "evidenceKind": "test",
+            "timestamp": "2026-11-13T12:00:00Z",
+            "entries": [
+                {"symbol": "pass", "outcome": "pass"},
+                {"symbol": "pass", "outcome": "fail"}
+            ]
+        })
+        .to_string(),
+    )
+    .expect("duplicate entries written");
+
+    let output = root.path().join("statement.json");
+    let result = invoke(&subject, &output, &evidence);
+    assert_eq!(result.status.code(), Some(0));
+    let statement: Value = serde_json::from_slice(&fs::read(output).expect("statement exists"))
+        .expect("statement is JSON");
+    assert_eq!(
+        statement.pointer("/predicate/result"),
+        Some(&json!("FAILED"))
+    );
+    assert_eq!(
+        statement.pointer("/predicate/passedTests"),
+        Some(&json!([]))
+    );
+    assert_eq!(
+        statement.pointer("/predicate/failedTests"),
+        Some(&json!(["FR-1-AC-1", "FR-1-AC-2", "FR-1-AC-3"]))
+    );
+}
+
 #[trace("FR-185-AC-3")]
 #[test]
 fn tc_185_invalid_subject_exits_two_without_output() {
@@ -153,6 +193,26 @@ fn tc_185_invalid_store_names_path_and_leaves_no_output() {
     let stderr = String::from_utf8_lossy(&missing.stderr);
     assert!(stderr.contains("evidence_store_invalid"), "{stderr}");
     assert!(stderr.contains("bindings.json"), "{stderr}");
+    assert!(!output.exists());
+}
+
+#[cfg(unix)]
+#[trace("FR-185-AC-6")]
+#[test]
+fn tc_185_an_unreadable_runs_directory_is_invalid_and_leaves_no_output() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let (root, subject, evidence) = fixture();
+    let runs = evidence.join("runs");
+    fs::set_permissions(&runs, fs::Permissions::from_mode(0o000)).expect("runs are unreadable");
+    let output = root.path().join("statement.json");
+    let result = invoke(&subject, &output, &evidence);
+    fs::set_permissions(&runs, fs::Permissions::from_mode(0o700)).expect("runs restored");
+
+    assert_eq!(result.status.code(), Some(3));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("evidence_store_invalid"), "{stderr}");
+    assert!(stderr.contains("runs"), "{stderr}");
     assert!(!output.exists());
 }
 

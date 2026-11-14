@@ -14,10 +14,10 @@ pub fn failed_bound_symbols<'a>(binding: &Binding, run: &'a RunRecord) -> Vec<&'
     binding
         .symbols
         .iter()
-        .filter_map(|symbol| {
+        .flat_map(|symbol| {
             run.entries
                 .iter()
-                .find(|entry| entry.symbol.as_str() == symbol.as_str())
+                .filter(|entry| entry.symbol.as_str() == symbol.as_str())
         })
         .filter(|entry| matches!(entry.outcome, Outcome::Fail | Outcome::Error))
         .collect()

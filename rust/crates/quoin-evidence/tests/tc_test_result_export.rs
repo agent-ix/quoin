@@ -71,6 +71,27 @@ fn tc_185_failures_and_missing_runs_never_pass() {
     assert!(statement.predicate.warned_tests.is_empty());
 }
 
+#[trace("FR-185-AC-1", "FR-185-AC-8")]
+#[test]
+fn tc_185_a_later_duplicate_failure_cannot_be_hidden_by_a_pass() {
+    let statement = build_statement(
+        subject(),
+        &[binding("FR-1-AC-1", "suite", &["test"])],
+        &[run(
+            "suite",
+            vec![
+                RunEntry::new("test", Outcome::Pass),
+                RunEntry::new("test", Outcome::Fail),
+            ],
+        )],
+    )
+    .expect("valid subject");
+
+    assert_eq!(statement.predicate.result, TestResult::Failed);
+    assert!(statement.predicate.passed_tests.is_empty());
+    assert_eq!(statement.predicate.failed_tests, ["FR-1-AC-1"]);
+}
+
 #[trace("FR-185-AC-2")]
 #[test]
 fn tc_185_skip_warns_and_all_pass_passes() {

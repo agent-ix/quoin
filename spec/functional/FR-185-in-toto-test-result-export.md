@@ -61,7 +61,9 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - Quoin SHALL reuse the stale-evidence conditions of
   `quoin-auditor::audit::stale::FindingKind::STALE_EVIDENCE`. A bound suite
   without a recorded run, or a latest bound-symbol outcome of `fail` or
-  `error`, makes the obligation stale. This export is run-specific: a scan
+  `error`, makes the obligation stale. If a run contains more than one entry
+  for a bound symbol, any `fail` or `error` entry makes the obligation stale;
+  a passing duplicate SHALL NOT mask it. This export is run-specific: a scan
   record for the suite does not satisfy the run requirement, so a missing run
   makes the obligation stale even when a scan exists.
 - If an obligation is stale under the
@@ -103,9 +105,9 @@ which this requirement adopts unchanged. The predicate fields conform to the
 | FR-185-AC-3 | The output subject equals the supplied array after canonicalization; a non-hex digest, missing `sha256`, empty array or non-array subject exits 2 and writes no output file. | Test |
 | FR-185-AC-4 | Repeating an export over the same store and subject yields byte-identical output, and reordering the stored runs or bindings does not change the bytes. | Test |
 | FR-185-AC-5 | The predicate has exactly the five specified members, deserializes through its closed type, and rejects a predicate with an additional member. | Test |
-| FR-185-AC-6 | An unparsable run record or missing `bindings.json` exits 3 with `evidence_store_invalid` and the relevant path, and leaves no output file. | Test |
+| FR-185-AC-6 | An unparsable run record, unreadable runs directory or missing `bindings.json` exits 3 with `evidence_store_invalid` and the relevant path, and leaves no output file. | Test |
 | FR-185-AC-7 | A static boundary check establishes that the export path calls no Git, network or process-spawning API. | Inspection |
-| FR-185-AC-8 | The consumer-side negative check from Engineering Assurance FR-069-AC-2 is reproducible from Quoin: an export cannot produce `result: PASSED` with a non-empty `failedTests`. | Test |
+| FR-185-AC-8 | The consumer-side negative check from Engineering Assurance FR-069-AC-2 is reproducible from Quoin: an export cannot produce `result: PASSED` with a non-empty `failedTests`, including when a passing duplicate entry precedes a failing entry for the same bound symbol. | Test |
 
 ## Dependencies
 

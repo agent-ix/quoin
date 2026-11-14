@@ -184,14 +184,10 @@ impl DiskEvidence {
 
     fn entries(&self, directory: &str, want_directory: bool) -> Result<Vec<String>, EvidenceError> {
         let resolved = self.resolve(directory);
-        let Ok(read) = std::fs::read_dir(&resolved) else {
-            // An absent directory is an empty one. A directory that exists but
-            // cannot be listed is indistinguishable here from an absent one,
-            // exactly as `existsSync(dir) ? readdirSync(dir) : []` was: the
-            // retained behaviour is reproduced rather than tightened, because
-            // tightening it would make a store with a permission quirk refuse
-            // where it used to report.
-            return Ok(Vec::new());
+        let read = match std::fs::read_dir(&resolved) {
+            Ok(read) => read,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(io("list", directory)(error)),
         };
         let mut names = Vec::new();
         for entry in read {
