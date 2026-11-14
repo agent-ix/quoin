@@ -15,8 +15,8 @@ use quoin_evidence::source::DiskEvidence;
 use quoin_evidence::store::{list_recorded_suites, read_runs, read_trust_decisions};
 use quoin_evidence::types::{Binding, MockInjection};
 use quoin_quire::coverage::Request as ScopeRequest;
-use quoin_quire::ids::ScopeRoot;
-use quoin_quire::modules::{ModuleRoot, ModuleSelection};
+use quoin_quire::ids::{ModuleRoot, ScopeRoot};
+use quoin_quire::modules::ModuleSelection;
 use quoin_quire_types::Obligation;
 
 use crate::run_observation::RunObservationFile;
@@ -54,9 +54,9 @@ pub(crate) fn attach_unique_target_identities(
             }
         }
     }
-    let mut obligation_counts = std::collections::BTreeMap::<&str, usize>::new();
+    let mut obligation_counts = std::collections::BTreeMap::<String, usize>::new();
     for obligation in obligations.iter() {
-        *obligation_counts.entry(&obligation.id).or_default() += 1;
+        *obligation_counts.entry(obligation.id.clone()).or_default() += 1;
     }
     for obligation in obligations {
         if obligation_counts.get(obligation.id.as_str()) != Some(&1) {
@@ -135,7 +135,7 @@ fn retained_runs(
     repo: &str,
     observations: &[RunObservationFile],
 ) -> Result<(Vec<RetainedRun>, Vec<Binding>), String> {
-    let mut source = DiskEvidence::new(repo);
+    let source = DiskEvidence::new(repo);
     let mut skipped = Vec::new();
     let bindings_text = source
         .read("bindings.json")
@@ -218,7 +218,7 @@ fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObs
             .filter(|candidate| valid_object_id(candidate))
             .all(|candidate| candidate == head)
     });
-    let mut store = DiskEvidence::new(repo);
+    let store = DiskEvidence::new(repo);
     let mut skipped = Vec::new();
     let reliance = read_trust_decisions(&store, &mut skipped)
         .ok()

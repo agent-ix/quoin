@@ -144,7 +144,7 @@ pub(super) fn matrix_sections(options: &AuditOptions, repo: &Path) -> Result<Mat
     let repo_text = repo
         .to_str()
         .ok_or_else(|| Stop::Failed("--repo is not valid UTF-8".to_owned()))?;
-    let response = match build(options, repo_text)? {
+    let response = match build(options, repo_text, &[])? {
         Built::Matrix(built) if built.response.outcome.carries_payload() => built.response,
         Built::Matrix(built) => return Err(declined("--repo", &built.response)),
         Built::Declined(response) => return Err(declined("--repo", &response)),
