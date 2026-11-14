@@ -149,6 +149,19 @@ fn differential_report_pair_replays_identically_and_refuses_changed_replay() {
             .paths()
             .contains(&"analysis-reports/ANALYSIS-1/2026-08-17T00~3A00~3A00Z.json")
     );
+    let mut newer = request.clone();
+    newer.timestamp = "2026-08-18T00:00:00Z".to_owned();
+    record_run_with_analysis_projection(&mut source, &newer, &[], &projection).unwrap();
+    let collected = gc(&mut source, false).unwrap();
+    assert!(collected.contains(&"runs/ANALYSIS-1/2026-08-17T00~3A00~3A00Z.json".to_owned()));
+    assert!(
+        collected.contains(&"analysis-reports/ANALYSIS-1/2026-08-17T00~3A00~3A00Z.json".to_owned())
+    );
+    assert!(
+        !source
+            .paths()
+            .contains(&"analysis-reports/ANALYSIS-1/2026-08-17T00~3A00~3A00Z.json")
+    );
 }
 
 fn binding(obligation_id: &str, suite_name: &str) -> Binding {
