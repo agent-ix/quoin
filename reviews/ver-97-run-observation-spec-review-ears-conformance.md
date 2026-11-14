@@ -11,7 +11,7 @@ review_set: subset
 
 ## Summary
 
-The changed FR-153 document contains 55 SHALL statements. `quire validate --scope . spec/functional/FR-153-analysis-result-counting-by-disposition.md --summary` reports 1/1 documents grammar-clean with zero grammar findings; semantic inspection found no mismatch between conditional triggers and the stated responses.
+The changed FR-153 document contains 62 SHALL statements. The final affected-scope command, `quire validate --scope . spec/functional/FR-153-analysis-result-counting-by-disposition.md reviews/ver-97-run-observation-spec-review-base.md reviews/ver-97-run-observation-spec-review-integrity.md reviews/ver-97-run-observation-spec-review-failure-domain.md reviews/ver-97-run-observation-spec-review-ears-conformance.md reviews/ver-97-run-observation-spec-review-evidence.md reviews/ver-97-run-observation-spec-review-scope-boundary.md --summary`, reports 7/7 documents grammar-clean with zero grammar findings; semantic inspection found no mismatch between conditional triggers and the stated responses.
 
 The full-spec EARS run reports existing findings outside FR-153 and one unrelated structural row-width error in FR-113-AC-6. No FR-153 EARS warning remains.
 
