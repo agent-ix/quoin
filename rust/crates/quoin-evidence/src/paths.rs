@@ -19,6 +19,9 @@ use crate::ids::{SuiteId, TrustDecisionId};
 /// Where a suite's run records live, relative to the store root.
 pub const RUNS_DIR: &str = "runs";
 
+/// Where allowlisted differential analysis projections live.
+pub const ANALYSIS_REPORTS_DIR: &str = "analysis-reports";
+
 /// Where a suite's finding-shaped scan records live, relative to the store root.
 ///
 /// Separate from [`RUNS_DIR`] because the two answer different questions and a

@@ -24,7 +24,7 @@ use quoin_evidence::independence::{
 };
 use quoin_evidence::mock_inspection::{inspect_mock_injections, mock_inspection_input};
 use quoin_evidence::paths::{bindings_path, record_path, trust_decision_path};
-use quoin_evidence::record::{RecordRequest, record_run};
+use quoin_evidence::record::{RecordRequest, record_run, record_run_with_analysis_projection};
 use quoin_evidence::store::{
     gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions, write_bindings,
     write_mock_inspection, write_run, write_trust_decision,
@@ -93,6 +93,62 @@ fn request(suite_name: &str, entries: Vec<RunEntry>) -> RecordRequest {
         timestamp: "2026-08-17T00:00:00Z".to_owned(),
         entries,
     }
+}
+
+#[trace("FR-030-AC-19", "FR-151-AC-15")]
+#[test]
+fn differential_report_pair_replays_identically_and_refuses_changed_replay() {
+    let mut source = MemoryEvidence::new();
+    let request = request(
+        "ANALYSIS-1",
+        vec![entry("consistency::opaque", Outcome::Pass, &[])],
+    );
+    let projection = json!({
+        "protocol": "quoin.analysis-report-projection/v1",
+        "disposition": "agreement",
+        "agreed_status": "satisfied",
+        "producer": {"name": "quire-analyze", "version": "0.1.0"},
+        "engines": []
+    });
+    let first =
+        record_run_with_analysis_projection(&mut source, &request, &[], &projection).unwrap();
+    let before = source
+        .paths()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    let second =
+        record_run_with_analysis_projection(&mut source, &request, &[], &projection).unwrap();
+    assert_eq!(first, second);
+    assert_eq!(
+        source
+            .paths()
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        before
+    );
+    let changed = json!({
+        "protocol": "quoin.analysis-report-projection/v1",
+        "disposition": "agreement",
+        "agreed_status": "refuted",
+        "producer": {"name": "quire-analyze", "version": "0.1.0"},
+        "engines": []
+    });
+    assert!(record_run_with_analysis_projection(&mut source, &request, &[], &changed).is_err());
+    assert_eq!(
+        source
+            .paths()
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        before
+    );
+    assert!(
+        source
+            .paths()
+            .contains(&"analysis-reports/ANALYSIS-1/2026-08-17T00~3A00~3A00Z.json")
+    );
 }
 
 fn binding(obligation_id: &str, suite_name: &str) -> Binding {

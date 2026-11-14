@@ -16,7 +16,7 @@ use quoin_quire_types::Obligation;
 use crate::error::EvidenceError;
 use crate::ids::{ObligationId, SuiteId, SymbolId};
 use crate::source::EvidenceSource;
-use crate::store::{bind, read_bindings, write_bindings, write_run};
+use crate::store::{bind, read_bindings, write_analysis_pair, write_bindings, write_run};
 use crate::types::{Binding, EvidenceLineage, Outcome, RunEntry, RunRecord, STORE_SCHEMA_VERSION};
 
 /// What a caller supplies to record one run.
@@ -70,17 +70,37 @@ pub fn record_run<S: EvidenceSource + ?Sized>(
     request: &RecordRequest,
     obligations: &[Obligation],
 ) -> Result<RecordOutcome, EvidenceError> {
-    let run_path = write_run(
-        source,
-        &RunRecord {
-            schema_version: STORE_SCHEMA_VERSION,
-            suite: request.suite.clone(),
-            tool: request.tool.clone(),
-            evidence_kind: request.evidence_kind.clone(),
-            timestamp: request.timestamp.clone(),
-            entries: request.entries.clone(),
-        },
-    )?;
+    record_run_inner(source, request, obligations, None)
+}
+
+/// Record a differential-report run and its immutable allowlisted projection.
+pub fn record_run_with_analysis_projection<S: EvidenceSource + ?Sized>(
+    source: &mut S,
+    request: &RecordRequest,
+    obligations: &[Obligation],
+    projection: &serde_json::Value,
+) -> Result<RecordOutcome, EvidenceError> {
+    record_run_inner(source, request, obligations, Some(projection))
+}
+
+fn record_run_inner<S: EvidenceSource + ?Sized>(
+    source: &mut S,
+    request: &RecordRequest,
+    obligations: &[Obligation],
+    projection: Option<&serde_json::Value>,
+) -> Result<RecordOutcome, EvidenceError> {
+    let run = RunRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: request.suite.clone(),
+        tool: request.tool.clone(),
+        evidence_kind: request.evidence_kind.clone(),
+        timestamp: request.timestamp.clone(),
+        entries: request.entries.clone(),
+    };
+    let run_path = match projection {
+        Some(projection) => write_analysis_pair(source, &run, projection)?,
+        None => write_run(source, &run)?,
+    };
 
     let by_id: BTreeMap<&str, &Obligation> = obligations
         .iter()

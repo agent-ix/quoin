@@ -114,6 +114,7 @@ pub fn parse_differential_report(raw: &str) -> Result<AdapterResult, EvidenceErr
         .get("differential")
         .ok_or_else(|| refuse("validated report lacks differential"))?;
     let agreed = differential.get("agreedStatus").and_then(Value::as_str);
+    let projection = analysis_projection(&report, differential)?;
     let outcome = match (text(differential, "disposition")?, agreed) {
         ("agreement", Some("satisfied")) => Outcome::Pass,
         ("agreement", Some("refuted")) => Outcome::Fail,
@@ -138,6 +139,7 @@ pub fn parse_differential_report(raw: &str) -> Result<AdapterResult, EvidenceErr
                     ),
                 }]),
                 evidence_kind: None,
+                analysis_projection: Some(projection),
             });
         }
         (disposition, status) => {
@@ -151,5 +153,59 @@ pub fn parse_differential_report(raw: &str) -> Result<AdapterResult, EvidenceErr
         entries: vec![RunEntry::new(symbol, outcome)],
         unrepresented: None,
         evidence_kind: None,
+        analysis_projection: Some(projection),
     })
+}
+
+/// Copy only the FR-151 projection allowlist from an already validated report.
+fn analysis_projection(report: &Value, differential: &Value) -> Result<Value, EvidenceError> {
+    let producer = report
+        .get("producer")
+        .and_then(Value::as_object)
+        .ok_or_else(|| refuse("validated report lacks producer"))?;
+    let mut engines = Vec::with_capacity(2);
+    for engine in report
+        .get("engines")
+        .and_then(Value::as_array)
+        .ok_or_else(|| refuse("validated report lacks engines"))?
+    {
+        let source = engine
+            .as_object()
+            .ok_or_else(|| refuse("validated engine is not an object"))?;
+        let identity = source.get("identity").and_then(Value::as_object);
+        let mut projected = serde_json::Map::new();
+        for (from, to) in [
+            ("engine", "engine"),
+            ("configuredExecutable", "configured_executable"),
+            ("status", "status"),
+            ("outcome", "outcome"),
+        ] {
+            if let Some(value) = source.get(from) {
+                projected.insert(to.to_owned(), value.clone());
+            }
+        }
+        if let Some(identity) = identity {
+            if let Some(value) = identity.get("path") {
+                projected.insert("identity_path".to_owned(), value.clone());
+            }
+            if let Some(value) = identity.get("version") {
+                projected.insert("identity_version".to_owned(), value.clone());
+            }
+        }
+        engines.push(Value::Object(projected));
+    }
+    let agreed_status = differential
+        .get("agreedStatus")
+        .cloned()
+        .unwrap_or(Value::Null);
+    Ok(serde_json::json!({
+        "protocol": "quoin.analysis-report-projection/v1",
+        "disposition": differential.get("disposition").cloned().unwrap_or(Value::Null),
+        "agreed_status": agreed_status,
+        "producer": {
+            "name": producer.get("name").cloned().unwrap_or(Value::Null),
+            "version": producer.get("version").cloned().unwrap_or(Value::Null),
+        },
+        "engines": engines,
+    }))
 }

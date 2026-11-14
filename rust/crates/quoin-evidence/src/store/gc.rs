@@ -4,7 +4,7 @@
 //! Retention: keep the latest record per suite.
 
 use crate::error::EvidenceError;
-use crate::paths::{RUNS_DIR, SCANS_DIR, suite_dir};
+use crate::paths::{ANALYSIS_REPORTS_DIR, RUNS_DIR, SCANS_DIR, suite_dir};
 use crate::source::EvidenceSource;
 use crate::store::codec::decode;
 use crate::store::records::{StoredRecord, list, list_recorded_suites};
@@ -34,7 +34,17 @@ pub fn gc<S: EvidenceSource + ?Sized>(
     let mut deleted = Vec::new();
     let mut skipped = Vec::new();
     for suite in list_recorded_suites(source)? {
+        let before_runs = deleted.len();
         collect::<S, RunRecord>(source, &suite, &mut skipped, &mut deleted)?;
+        let removed_runs = deleted[before_runs..].to_vec();
+        for run in &removed_runs {
+            if let Some(suffix) = run.strip_prefix("runs/") {
+                let projection = format!("{ANALYSIS_REPORTS_DIR}/{suffix}");
+                if source.read(&projection)?.is_some() {
+                    deleted.push(projection);
+                }
+            }
+        }
         collect::<S, FindingRecord>(source, &suite, &mut skipped, &mut deleted)?;
     }
     if !dry_run {

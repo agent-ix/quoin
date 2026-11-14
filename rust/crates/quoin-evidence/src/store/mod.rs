@@ -18,6 +18,7 @@ pub(crate) mod codec;
 mod gc;
 mod graph;
 mod records;
+pub(crate) use records::write_analysis_pair;
 mod trust_store;
 
 pub use gc::{COLLECTED_FAMILIES, gc};

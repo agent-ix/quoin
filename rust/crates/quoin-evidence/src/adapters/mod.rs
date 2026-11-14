@@ -83,6 +83,8 @@ pub struct AdapterResult {
     /// (agent-ix/quoin#114). The field exists for an external adapter for a
     /// single-purpose tool that legitimately knows.
     pub evidence_kind: Option<String>,
+    /// A closed allowlisted projection retained beside a differential report run.
+    pub analysis_projection: Option<serde_json::Value>,
 }
 
 impl AdapterResult {
@@ -97,6 +99,7 @@ impl AdapterResult {
             entries,
             unrepresented: None,
             evidence_kind: None,
+            analysis_projection: None,
         }
     }
 }
