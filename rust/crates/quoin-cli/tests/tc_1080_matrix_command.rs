@@ -352,7 +352,7 @@ fn tc_1080_207_json_forwards_unbacked_claims() {
                 "reason": "tagged-without-citing-matrix-row",
                 "id": "FR-001-AC-2",
                 "path": "tests/matrix_claims.rs",
-                "line": 3,
+                "line": 5,
                 "symbol": "tests::tc001_first_behavior"
             },
             {
