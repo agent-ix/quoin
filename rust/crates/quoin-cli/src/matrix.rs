@@ -9,7 +9,7 @@
 //! static axis is gated by `quire matrix --strict` and the evidence axis by
 //! `quoin evidence audit --strict`.
 
-use clap::{ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Response, canonical_json};
 
 use crate::core_runtime::invoke;
@@ -25,13 +25,25 @@ pub(crate) fn command() -> Command {
         .arg(repo_arg())
         .arg(module_arg())
         .arg(json_arg())
+        .arg(
+            Arg::new("run-observation")
+                .long("run-observation")
+                .action(ArgAction::Append)
+                .num_args(1)
+                .value_name("FILE"),
+        )
         .args(policy_args())
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    let run_observation_paths = arguments
+        .get_many::<String>("run-observation")
+        .map(|paths| paths.cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    let run_observations = crate::run_observation::read_run_observations(&run_observation_paths)?;
     let repo = required(arguments, "repo")?;
     let options = AuditOptions::from_arguments(arguments);
-    let built = match build(&options, &repo)? {
+    let built = match build(&options, &repo, &run_observations)? {
         Built::Matrix(built) => built,
         Built::Declined(response) => return Ok(response),
     };
@@ -77,7 +89,11 @@ pub(crate) enum Built {
 /// Assemble the audit over `repo` and join it into the evidence-backed matrix.
 ///
 /// The one path `quoin matrix` and `quoin release snapshot` share (FR-115).
-pub(crate) fn build(options: &AuditOptions, repo: &str) -> Result<Built, String> {
+pub(crate) fn build(
+    options: &AuditOptions,
+    repo: &str,
+    run_observations: &[crate::run_observation::RunObservationFile],
+) -> Result<Built, String> {
     let audited = match assemble_with(options, repo)? {
         Assembly::Audited(audited) => audited,
         Assembly::Declined(response) => return Ok(Built::Declined(response)),
@@ -88,6 +104,23 @@ pub(crate) fn build(options: &AuditOptions, repo: &str) -> Result<Built, String>
         .get("report")
         .cloned()
         .ok_or_else(|| "auditor.audit did not return report".to_owned())?;
+    let obligations: Vec<quoin_quire_types::Obligation> = serde_json::from_value(
+        audited
+            .coverage
+            .get("obligations")
+            .cloned()
+            .ok_or_else(|| "quire.coverage did not return obligations".to_owned())?,
+    )
+    .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
+    let analysis = crate::analysis_evidence::compute(
+        repo,
+        options.module_paths(),
+        &audited.store_inputs,
+        &obligations,
+        run_observations,
+    )?;
+    let evidence_report = serde_json::to_value(&analysis.report)
+        .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
     let mut request = serde_json::Map::new();
     request.insert(
         "bindings".to_owned(),
@@ -97,11 +130,16 @@ pub(crate) fn build(options: &AuditOptions, repo: &str) -> Result<Built, String>
         }),
     );
     request.insert("audit".to_owned(), report);
-    // Absent stays absent: `quire.coverage` omits an empty matrix, and that
-    // omission is what `matrix.build` renders its reason for.
-    if let Some(coverage) = audited.coverage.get("coverage_matrix") {
+    if let Some(coverage) = evidence_report.get("coverage_matrix") {
         request.insert("coverage".to_owned(), coverage.clone());
     }
+    request.insert(
+        "analysis_evidence".to_owned(),
+        serde_json::json!({
+            "record_binders": evidence_report.get("record_binders").cloned().unwrap_or_else(|| serde_json::json!([])),
+            "evidence_results": evidence_report.get("evidence_results").cloned().unwrap_or_else(|| serde_json::json!([])),
+        }),
+    );
     let request = serde_json::Value::Object(request);
     let response = invoke("matrix.build", &request)?;
     Ok(Built::Matrix(MatrixBuilt {

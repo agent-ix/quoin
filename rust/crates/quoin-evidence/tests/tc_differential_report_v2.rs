@@ -125,6 +125,35 @@ fn tc_001_agreement_satisfied_is_one_pass_entry_keyed_on_kind_and_request_digest
     assert!(result.evidence_kind.is_none());
 }
 
+#[trace("FR-151-AC-15")]
+#[test]
+fn tc_001_projection_contains_only_the_qualified_allowlist() {
+    let projection = accepted(SATISFIED).analysis_projection.unwrap();
+    assert_eq!(
+        projection["protocol"],
+        "quoin.analysis-report-projection/v1"
+    );
+    assert_eq!(projection["disposition"], "agreement");
+    assert_eq!(projection["agreed_status"], "satisfied");
+    assert_eq!(
+        projection["producer"],
+        json!({"name":"quire-analyze","version":"0.1.0"})
+    );
+    assert_eq!(projection["engines"][0]["engine"], "z3");
+    assert!(projection["engines"][0].get("identity_path").is_some());
+    for forbidden in [
+        "requestDigest",
+        "query",
+        "modelHex",
+        "stdoutHex",
+        "stderrHex",
+        "proof",
+    ] {
+        assert!(projection.get(forbidden).is_none());
+    }
+    assert_eq!(projection.as_object().unwrap().len(), 5);
+}
+
 #[trace("FR-151-AC-2")]
 #[test]
 fn tc_001_agreement_refuted_is_one_fail_entry() {

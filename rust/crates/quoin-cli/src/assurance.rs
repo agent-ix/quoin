@@ -24,6 +24,13 @@ pub(crate) fn command() -> Command {
         .arg(Arg::new("decisions").long("decisions"))
         .arg(Arg::new("discharge").long("discharge"))
         .arg(Arg::new("evidence").long("evidence"))
+        .arg(
+            Arg::new("run-observation")
+                .long("run-observation")
+                .action(ArgAction::Append)
+                .num_args(1)
+                .value_name("FILE"),
+        )
         .arg(Arg::new("as-of").long("as-of"))
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
 }
@@ -36,6 +43,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 }
 
 fn authored(arguments: &ArgMatches) -> Result<Response, String> {
+    if arguments.get_many::<String>("run-observation").is_some() {
+        return Err("--run-observation applies only to derived assurance".to_owned());
+    }
     if arguments.get_many::<String>("claim-type").is_some() {
         return Err("--argument cannot be combined with --claim-type".to_owned());
     }
@@ -111,6 +121,7 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
+    let run_observations = read_run_observations(arguments)?;
     let modules = values(arguments, "module");
     let coverage = invoke(
         "quire.coverage",
@@ -139,18 +150,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     if !catalog.outcome.carries_payload() {
         return Ok(catalog);
     }
-    let audit = invoke(
-        "auditor.audit",
-        &serde_json::json!({ "input": {
-            "obligations": obligations,
-            "bindings": field(&store.payload, "bindings")?, "runs": field(&store.payload, "runs")?,
-            "scans": field(&store.payload, "scans")?, "injections": field(&store.payload, "injections")?,
-            "mockInspectionSuites": field(&store.payload, "mock_inspection_suites")?,
-            "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
-            "independence": field(&store.payload, "independence")?, "catalog": catalog.payload,
-            "independencePolicy": policy
-        }}),
-    )?;
+    let audit = run_audit(&obligations, &store.payload, &catalog.payload, &policy)?;
     if !audit.outcome.carries_payload() {
         return Ok(audit);
     }
@@ -181,15 +181,26 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             }))
         })
         .collect();
+    let (case_obligations, analysis_evidence) = analysis_case_inputs(
+        &repo,
+        &modules,
+        &store.payload,
+        field(&coverage.payload, "obligations")?,
+        &run_observations,
+    )?;
     let mut case_request = serde_json::json!({
         "bindings": field(&store.payload, "bindings")?, "observations": observations,
         "healthy": field(&audit.payload, "report")?.get("healthy"),
         "unevaluated": field(&audit.payload, "report")?.get("unevaluated"),
-            "documents": field(&frontmatter.payload, "documents")?, "obligations": field(&coverage.payload, "obligations")?,
+            "documents": field(&frontmatter.payload, "documents")?, "obligations": case_obligations,
         "findings": field(&field(&audit.payload, "report")?, "findings")?,
         "unreadable": unreadable, "producer_trust": field(&trust.payload, "assessments")?,
         "evidence_independence": audit.payload.get("independence")
     });
+    case_request
+        .as_object_mut()
+        .ok_or_else(|| "assurance case request must be an object".to_owned())?
+        .insert("analysis_evidence".to_owned(), analysis_evidence);
     if let Some(claim_types) = arguments.get_many::<String>("claim-type") {
         case_request
             .as_object_mut()
@@ -208,6 +219,65 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         &case.payload,
         arguments.get_flag("json"),
     )
+}
+
+fn read_run_observations(
+    arguments: &ArgMatches,
+) -> Result<Vec<crate::run_observation::RunObservationFile>, String> {
+    let paths = arguments
+        .get_many::<String>("run-observation")
+        .map(|paths| paths.cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    crate::run_observation::read_run_observations(&paths)
+}
+
+fn run_audit(
+    obligations: &serde_json::Value,
+    store: &serde_json::Value,
+    catalog: &serde_json::Value,
+    policy: &serde_json::Value,
+) -> Result<Response, String> {
+    invoke(
+        "auditor.audit",
+        &serde_json::json!({ "input": {
+            "obligations": obligations,
+            "bindings": field(store, "bindings")?, "runs": field(store, "runs")?,
+            "scans": field(store, "scans")?, "injections": field(store, "injections")?,
+            "mockInspectionSuites": field(store, "mock_inspection_suites")?,
+            "vacuousScanSuites": field(store, "vacuous_scan_suites")?,
+            "independence": field(store, "independence")?, "catalog": catalog,
+            "independencePolicy": policy
+        }}),
+    )
+}
+
+fn analysis_case_inputs(
+    repo: &str,
+    modules: &[String],
+    store_inputs: &serde_json::Value,
+    obligation_value: serde_json::Value,
+    observations: &[crate::run_observation::RunObservationFile],
+) -> Result<(Vec<quoin_quire_types::Obligation>, serde_json::Value), String> {
+    let mut obligations: Vec<quoin_quire_types::Obligation> =
+        serde_json::from_value(obligation_value)
+            .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
+    let analysis =
+        crate::analysis_evidence::compute(repo, modules, store_inputs, &obligations, observations)?;
+    let report = serde_json::to_value(&analysis.report)
+        .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
+    crate::analysis_evidence::attach_unique_target_identities(
+        &mut obligations,
+        report
+            .get("coverage_matrix")
+            .and_then(serde_json::Value::as_array)
+            .map(Vec::as_slice)
+            .unwrap_or_default(),
+    )?;
+    let items = serde_json::json!({
+        "record_binders": report.get("record_binders").cloned().unwrap_or_else(|| serde_json::json!([])),
+        "evidence_results": report.get("evidence_results").cloned().unwrap_or_else(|| serde_json::json!([])),
+    });
+    Ok((obligations, items))
 }
 
 fn present(operation: &str, value: &serde_json::Value, json: bool) -> Result<Response, String> {
@@ -280,7 +350,7 @@ mod tests {
     use super::command;
     use ix_trace_rs::trace;
 
-    #[trace("FR-040", "FR-062")]
+    #[trace("FR-040", "FR-062", "FR-153-AC-12")]
     #[test]
     fn tc_447_742_preserves_the_retained_assurance_grammar() {
         let matches = command()
@@ -296,6 +366,10 @@ mod tests {
                 "hazard",
                 "--independence-policy",
                 "policy.json",
+                "--run-observation",
+                "one.json",
+                "--run-observation",
+                "two.json",
                 "--json",
             ])
             .expect("the retained derived-view grammar parses");
@@ -313,6 +387,13 @@ mod tests {
             ["StR", "hazard"]
         );
         assert!(matches.get_flag("json"));
+        assert_eq!(
+            matches
+                .get_many::<String>("run-observation")
+                .expect("run observations")
+                .count(),
+            2
+        );
     }
 
     #[trace("FR-047", "FR-062")]

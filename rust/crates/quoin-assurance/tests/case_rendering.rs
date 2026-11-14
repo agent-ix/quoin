@@ -450,3 +450,92 @@ fn tc_363_006_newest_compares_instants_not_strings() {
     assert_eq!(at("scan"), Some("2026-11-09T10:00:00Z"));
     assert_eq!(evidence.newest.as_deref(), Some("2026-11-09T10:00:00Z"));
 }
+
+/// Analysis results attach to the full native target and remain an additive
+/// display field; they do not alter the legacy audit status.
+#[trace("FR-040-AC-20", "FR-153-AC-12")]
+#[test]
+fn analysis_solution_shows_exact_target_results_in_json_and_text() {
+    let target = serde_json::json!({
+        "source": "requirements",
+        "document": "spec/FR-001.md",
+        "id": "FR-001-AC-1",
+        "origin": "authored",
+        "row": 1,
+        "line": 12,
+    });
+    let wrong_target = serde_json::json!({
+        "source": "requirements",
+        "document": "spec/FR-002.md",
+        "id": "FR-001-AC-1",
+        "origin": "authored",
+        "row": 1,
+        "line": 12,
+    });
+    let mut input = leaf_request(&serde_json::json!({ "healthy": [] }));
+    input.obligations[0].method = Some("Analysis".to_owned());
+    input.obligations[0].identity = Some(serde_json::from_value(target.clone()).expect("target"));
+    input.obligations[1].identity = Some(
+        serde_json::from_value(serde_json::json!({
+            "source": "requirements",
+            "document": "spec/FR-001.md",
+            "id": "FR-001-AC-2",
+            "origin": "authored",
+            "row": 2,
+            "line": 13,
+        }))
+        .expect("other target"),
+    );
+    input.analysis_evidence = Some(
+        serde_json::from_value(serde_json::json!({
+            "record_binders": [{
+                "target": target,
+                "locator": {"record": "runs/unit/2026-11-13.json", "run": "r1", "entry": "e1"},
+                "method": "Analysis",
+                "actor": "ci",
+                "provenance": ["signed-host"],
+            }],
+            "evidence_results": [{
+                "target": wrong_target,
+                "requested_target": "FR-001-AC-1",
+                "cause": "stale",
+                "detail": "belongs to a different document",
+            }],
+        }))
+        .expect("analysis evidence"),
+    );
+    let case = build_case(&input);
+    let leaves = leaves(&case);
+    assert_eq!(
+        leaves[0]
+            .analysis_evidence
+            .as_ref()
+            .expect("Analysis field")
+            .len(),
+        1
+    );
+    assert_eq!(leaves[0].status, NodeStatus::Open);
+    assert!(leaves[1].analysis_evidence.is_none());
+
+    let json = serde_json::to_value(&case).expect("serialises case");
+    assert_eq!(
+        json["claims"][0]["children"][0]["children"][0]["children"][0]["analysis_evidence"][0]["status"],
+        "qualified-record"
+    );
+    let markdown = render(&case);
+    let analysis_evidence_json = markdown
+        .lines()
+        .find_map(|line| {
+            line.split_once("analysis evidence:")
+                .map(|(_, json)| json.trim())
+        })
+        .expect("analysis evidence is rendered");
+    let rendered_analysis_evidence: serde_json::Value =
+        serde_json::from_str(analysis_evidence_json).expect("analysis evidence is JSON");
+    assert!(rendered_analysis_evidence.get("record_binder").is_some());
+    assert_eq!(
+        rendered_analysis_evidence["record_binder"]["target"]["id"],
+        "FR-001-AC-1"
+    );
+    assert!(!markdown.contains("belongs to a different document"));
+}

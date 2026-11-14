@@ -218,6 +218,7 @@ fn record_entries(
     }
     let result = (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?;
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
+    let analysis_projection = result.analysis_projection;
     // An inventory (SBOM) names no obligation, so the recorder states which
     // one it was produced to discharge (FR-041). A stated id an obligation
     // states goes onto every entry as a trace id, which is the one join
@@ -254,18 +255,24 @@ fn record_entries(
     }
     let root = host.store_root(Path::new(&request.repo));
     host.with_store(Path::new(&request.repo), &mut |source| {
-        let outcome = record_run(
-            source,
-            &StoreRecordRequest {
-                suite: SuiteId::new(&request.suite),
-                tool: request.tool.clone(),
-                evidence_kind: request.kind.clone(),
-                lineage: request.lineage.clone(),
-                timestamp: request.timestamp.clone(),
-                entries: entries.clone(),
-            },
-            &request.obligations,
-        )
+        let store_request = StoreRecordRequest {
+            suite: SuiteId::new(&request.suite),
+            tool: request.tool.clone(),
+            evidence_kind: request.kind.clone(),
+            lineage: request.lineage.clone(),
+            timestamp: request.timestamp.clone(),
+            entries: entries.clone(),
+        };
+        let outcome = if let Some(projection) = analysis_projection.as_ref() {
+            quoin_evidence::record::record_run_with_analysis_projection(
+                source,
+                &store_request,
+                &request.obligations,
+                projection,
+            )
+        } else {
+            record_run(source, &store_request, &request.obligations)
+        }
         .map_err(|e| map_error(&e, op))?;
         value(&RecordPayload::Run {
             run_path: absolute(&root, &outcome.run_path),

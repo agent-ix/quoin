@@ -388,6 +388,7 @@ fn architectural_claims_mint_layering_or_module_boundary() {
 fn obligation(id: &str, statement: &str, method: Option<&str>) -> Obligation {
     Obligation {
         id: id.to_owned(),
+        identity: None,
         statement: statement.to_owned(),
         target_ids: None,
         method: method.map(ToOwned::to_owned),

@@ -15,7 +15,9 @@ use serde::de::DeserializeOwned;
 
 use crate::error::EvidenceError;
 use crate::ids::SuiteId;
-use crate::paths::{MOCK_INSPECTIONS_DIR, RUNS_DIR, SCANS_DIR, record_path, suite_dir};
+use crate::paths::{
+    ANALYSIS_REPORTS_DIR, MOCK_INSPECTIONS_DIR, RUNS_DIR, SCANS_DIR, record_path, suite_dir,
+};
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
 use crate::types::{FindingRecord, MockInspectionRecord, RunRecord, STORE_SCHEMA_VERSION};
@@ -107,6 +109,66 @@ where
     let bytes = canonical_bytes_of(T::LABEL, &value)?;
     source.write(&path, &bytes)?;
     Ok(path)
+}
+
+/// Atomically retain a differential-report run with its immutable projection.
+/// Existing half-pairs and changed replays are refused without modifying either file.
+pub(crate) fn write_analysis_pair<S: EvidenceSource + ?Sized>(
+    source: &mut S,
+    record: &RunRecord,
+    projection: &serde_json::Value,
+) -> Result<String, EvidenceError> {
+    let run_path = path_of(record);
+    let projection_path = record_path(ANALYSIS_REPORTS_DIR, &record.suite, &record.timestamp);
+    let mut run_value =
+        serde_json::to_value(record).map_err(|error| EvidenceError::Canonicalization {
+            what: "run record",
+            detail: error.to_string(),
+        })?;
+    if let Some(object) = run_value.as_object_mut() {
+        object.insert(
+            "schemaVersion".to_owned(),
+            serde_json::Value::from(STORE_SCHEMA_VERSION),
+        );
+    }
+    let run_bytes = canonical_bytes_of("run record", &run_value)?;
+    let projection_bytes = canonical_bytes_of("analysis report projection", projection)?;
+    let existing_run = source.read(&run_path)?;
+    let existing_projection = source.read(&projection_path)?;
+    match (existing_run.as_deref(), existing_projection.as_deref()) {
+        (Some(run), Some(projected))
+            if run.as_bytes() == run_bytes && projected.as_bytes() == projection_bytes =>
+        {
+            return Ok(run_path);
+        }
+        (Some(_) | None, Some(_)) | (Some(_), None) => {
+            return Err(pair_conflict(&run_path));
+        }
+        (None, None) => {}
+    }
+    let published_run = source.publish(&run_path, &run_bytes)?;
+    if !published_run {
+        return Err(pair_conflict(&run_path));
+    }
+    match source.publish(&projection_path, &projection_bytes) {
+        Ok(true) => Ok(run_path),
+        Ok(false) => {
+            source.remove(&run_path)?;
+            Err(pair_conflict(&run_path))
+        }
+        Err(error) => {
+            source.remove(&run_path)?;
+            Err(error)
+        }
+    }
+}
+
+fn pair_conflict(path: &str) -> EvidenceError {
+    EvidenceError::RecordIntegrity {
+        what: "analysis report pair",
+        path: path.to_owned(),
+        note: "; existing bytes were not overwritten",
+    }
 }
 
 /// Every record file recorded for a suite, in **file-name** order.

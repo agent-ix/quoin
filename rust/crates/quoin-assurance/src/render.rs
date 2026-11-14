@@ -224,6 +224,11 @@ fn render_node(node: &CaseNode, depth: usize) -> Vec<String> {
     if let Some(evidence) = &node.evidence {
         out.push(format!("{indent}  - evidence: {}", evidence_line(evidence)));
     }
+    if let Some(analysis_evidence) = &node.analysis_evidence {
+        for item in analysis_evidence {
+            out.push(format!("{indent}  - analysis evidence: {item}"));
+        }
+    }
     for child in &node.children {
         out.extend(render_node(child, depth + 1));
     }

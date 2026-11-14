@@ -96,6 +96,9 @@ pub struct CaseNode {
     /// only when the obligation has a binding.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub evidence: Option<LeafEvidence>,
+    /// FR-153/FR-078 items for an Analysis solution's exact target.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub analysis_evidence: Option<Vec<serde_json::Value>>,
     /// Sub-claims first, then evidence.
     pub children: Vec<CaseNode>,
 }
@@ -228,6 +231,9 @@ pub struct CaseInput {
     /// Independence assessments, carried through verbatim.
     #[serde(default)]
     pub evidence_independence: Option<Vec<serde_json::Value>>,
+    /// FR-153/FR-078 claims and causes, already selected for this read.
+    #[serde(default)]
+    pub analysis_evidence: Option<crate::matrix::AnalysisEvidenceInput>,
 }
 
 /// The edge verbs that mean "this document elaborates that one".
@@ -342,6 +348,7 @@ pub fn build_case(input: &CaseInput) -> AssuranceCase {
             &obligations_for,
             &finding_for,
             &store,
+            input.analysis_evidence.as_ref(),
             &mut reached,
             &BTreeSet::new(),
         ));
@@ -422,6 +429,7 @@ fn node_for(
     obligations_for: &BTreeMap<&str, Vec<&Obligation>>,
     finding_for: &FindingsFor,
     store: &Store,
+    analysis_evidence: Option<&crate::matrix::AnalysisEvidenceInput>,
     reached: &mut BTreeSet<String>,
     ancestors: &BTreeSet<String>,
 ) -> CaseNode {
@@ -463,6 +471,7 @@ fn node_for(
                 obligations_for,
                 finding_for,
                 store,
+                analysis_evidence,
                 reached,
                 &ancestors,
             )
@@ -476,11 +485,19 @@ fn node_for(
 
     let mut evidence: Vec<&Obligation> = obligations_for.get(id).cloned().unwrap_or_default();
     evidence.sort_by(|a, b| a.id.cmp(&b.id));
-    parts.extend(
-        evidence
-            .into_iter()
-            .map(|obligation| solution_for(obligation, finding_for, store)),
-    );
+    let all_obligations = obligations_for
+        .values()
+        .flat_map(|obligations| obligations.iter().copied())
+        .collect::<Vec<_>>();
+    parts.extend(evidence.into_iter().map(|obligation| {
+        solution_for(
+            obligation,
+            finding_for,
+            store,
+            analysis_evidence,
+            &all_obligations,
+        )
+    }));
 
     // A goal with no sub-goals and no evidence is open, which a reader must
     // see. Rendering it as supported would assure a claim on the strength of
@@ -503,6 +520,7 @@ fn node_for(
         status,
         because,
         evidence: None,
+        analysis_evidence: None,
         children: parts,
     }
 }

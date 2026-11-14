@@ -119,8 +119,8 @@ pub struct RetainedRun {
     pub file: String,
     /// The record as the store holds it.
     pub record: RunRecord,
-    /// The `quire.differential-report/v2` document the record was transcribed
-    /// from. Absent when the host did not supply it.
+    /// The exact `quoin.analysis-report-projection/v1` companion read for this
+    /// run. The source report bytes are deliberately not retained.
     pub report: Option<Value>,
     /// What the host observed of the act that produced this record. It belongs
     /// to this record alone (FR-116 exact correlation): another record's
@@ -137,6 +137,8 @@ pub struct RunObservation {
     pub execution: Option<ExecutionAssociation>,
     /// The signer admitted as the asserting actor for the record.
     pub actor: Option<ActorAdmission>,
+    /// A verified signature result that failed actor admission.
+    pub actor_rejection: Option<String>,
 }
 
 /// An actor and the host's admission of it.
@@ -190,6 +192,8 @@ pub struct HostObservations {
     pub reliance: Option<TrustDecision>,
     /// The source HEAD selected for this qualification.
     pub selected_head: Option<String>,
+    /// Supplied selected-head observations disagreed for this read.
+    pub selected_head_conflict: bool,
 }
 
 /// One reason the FR-032 audit does not establish the obligation as healthy:
@@ -336,7 +340,6 @@ pub fn qualify(request: &Request<'_>) -> Qualification {
                 obligation: request.obligation,
                 host: request.host,
                 run: candidate.run,
-                entry: candidate.entry,
                 locator: &candidate.locator,
             },
             &mut provenance,

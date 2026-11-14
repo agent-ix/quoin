@@ -69,11 +69,13 @@ fn the_run(dir: &Path) -> Value {
 }
 
 #[trace(
+    "FR-030-AC-19",
     "FR-151-AC-1",
     "FR-151-AC-2",
     "FR-151-AC-4",
     "FR-151-AC-5",
-    "FR-069-AC-2"
+    "FR-069-AC-2",
+    "FR-151-AC-15"
 )]
 #[test]
 fn tc_001_a_decided_report_records_one_run_with_one_entry() {
@@ -92,6 +94,26 @@ fn tc_001_a_decided_report_records_one_run_with_one_entry() {
         assert_eq!(entries.len(), 1, "{run}");
         assert_eq!(entries[0]["outcome"], outcome, "{run}");
         assert!(entries[0].get("traceIds").is_none(), "{run}");
+        let projection_path = dir
+            .path()
+            .join("spec/evidence/analysis-reports/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json");
+        let projection: Value =
+            serde_json::from_slice(&fs::read(projection_path).unwrap()).unwrap();
+        assert_eq!(
+            projection["protocol"],
+            "quoin.analysis-report-projection/v1"
+        );
+        assert_eq!(projection["engines"].as_array().unwrap().len(), 2);
+        assert_eq!(projection.as_object().unwrap().len(), 5);
+        for forbidden in [
+            "requestDigest",
+            "query",
+            "modelHex",
+            "stdoutHex",
+            "stderrHex",
+        ] {
+            assert!(projection.get(forbidden).is_none());
+        }
     }
 }
 

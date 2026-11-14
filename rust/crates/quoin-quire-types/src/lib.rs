@@ -82,6 +82,10 @@ use serde::{Deserialize, Serialize};
 pub struct Obligation {
     /// The obligation id, e.g. `FR-001-AC-1` or `NFR-010-M-2`.
     pub id: String,
+    /// Exact native target when the obligation came from the FR-078 selected
+    /// inventory. Ordinary coverage and auditor inputs leave it absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<TargetLocus>,
     /// The criterion's statement, in the spec's own words.
     pub statement: String,
     /// Test-case ids the criterion's method cell names, when it names any.
@@ -257,6 +261,10 @@ pub struct CoverageMatrixCriterion {
     pub method: Option<String>,
     /// Every binding test symbol, empty (never absent) when there is none.
     pub binders: Vec<CoverageMatrixBinder>,
+    /// The exact native selected identity when this coverage came from an
+    /// evidence-mode `CoverageReport` (FR-153/FR-115).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<TargetLocus>,
     /// The computed static status (`tagged`, `untagged`,
     /// `tagged-by-ignored-test`, `method-without-symbol`).
     ///
@@ -264,6 +272,27 @@ pub struct CoverageMatrixCriterion {
     /// [`CoverageDiagnostic::reason`]: quire owns the vocabulary, and a value
     /// it adds must be carried verbatim rather than refused.
     pub status: String,
+}
+
+/// FR-078 target identity carried through the quire bridge without reduction.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct TargetLocus {
+    /// Native source declaration name.
+    pub source: String,
+    /// Native selected document path.
+    pub document: String,
+    /// Native authored or rendered id.
+    pub id: String,
+    /// Native origin label.
+    pub origin: String,
+    /// Rendered-row ordinal when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub row: Option<usize>,
+    /// Original document line when supplied.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line: Option<usize>,
 }
 
 /// One binding test symbol of a [`CoverageMatrixCriterion`], field for field

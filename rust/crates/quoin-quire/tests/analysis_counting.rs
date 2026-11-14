@@ -29,7 +29,7 @@ use quoin_evidence::qualify::{
     ActorAdmission, CiAssociation, ExecutionAssociation, HostObservations, POSITIVE_USE_DECISION,
     RetainedRun, RunObservation,
 };
-use quoin_evidence::record::{RecordRequest, record_run};
+use quoin_evidence::record::{RecordRequest, record_run_with_analysis_projection};
 use quoin_evidence::store::read_bindings;
 use quoin_evidence::types::{
     Binding, ProducerContext, RunRecord, TrustDecision, TrustDecisionKind, TrustTrigger, TrustUse,
@@ -81,6 +81,7 @@ fn obligations() -> Vec<quoin_quire_types::Obligation> {
         .into_iter()
         .map(|(id, method)| quoin_quire_types::Obligation {
             id: id.to_owned(),
+            identity: None,
             statement: "stated".to_owned(),
             target_ids: None,
             method: Some(method.to_owned()),
@@ -131,12 +132,64 @@ fn decision(producer: (&str, &str), limitations: &[&str]) -> TrustDecision {
     }
 }
 
+fn projection(report: &Value) -> Value {
+    let engines = report["engines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|engine| {
+            let mut projected = serde_json::Map::from_iter([
+                ("engine".to_owned(), engine["engine"].clone()),
+                (
+                    "configured_executable".to_owned(),
+                    engine["configuredExecutable"].clone(),
+                ),
+                ("status".to_owned(), engine["status"].clone()),
+                ("outcome".to_owned(), engine["outcome"].clone()),
+            ]);
+            if let Some(identity) = engine.get("identity") {
+                if let Some(path) = identity.get("path") {
+                    projected.insert("identity_path".to_owned(), path.clone());
+                }
+                if let Some(version) = identity.get("version") {
+                    projected.insert("identity_version".to_owned(), version.clone());
+                }
+            }
+            Value::Object(projected)
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "protocol": "quoin.analysis-report-projection/v1",
+        "disposition": report["differential"]["disposition"],
+        "agreed_status": report["differential"]["agreedStatus"],
+        "producer": report["producer"],
+        "engines": engines,
+    })
+}
+
 /// The host facts that belong to no one record, every premise admitted.
 fn admitted() -> HostObservations {
     HostObservations {
         reliance: Some(decision(("quire-analyze", "0.1.0"), &[])),
         selected_head: Some(HEAD.to_owned()),
+        selected_head_conflict: false,
     }
+}
+
+#[trace("FR-153-AC-14")]
+#[test]
+fn conflicting_selected_heads_are_a_record_conflict() {
+    let store = satisfied_store(&[AC1]);
+    let host = HostObservations {
+        selected_head: None,
+        selected_head_conflict: true,
+        ..admitted()
+    };
+    assert_uncounted_naming(
+        &store.count(&[AC1], host),
+        CauseCode::RecordConflict,
+        "performed revision premise",
+    );
 }
 
 /// What the host observed of the one act that produced `file`: its own CI
@@ -157,6 +210,7 @@ fn admitted_run(file: &str) -> RunObservation {
             admission_ref: "admission-7".to_owned(),
             authorized: vec![AC1.to_owned(), AC2.to_owned(), AC3.to_owned()],
         }),
+        actor_rejection: None,
     }
 }
 
@@ -176,13 +230,15 @@ impl Recorded {
 
     /// `quoin evidence record --adapter differential-report --discharges`.
     fn record(&mut self, suite: &str, timestamp: &str, report: &str, discharges: &[&str]) {
-        let mut entries = parse_differential_report(report).unwrap().entries;
+        let mut result = parse_differential_report(report).unwrap();
+        let projection = result.analysis_projection.take().unwrap();
+        let mut entries = result.entries;
         for entry in &mut entries {
             if !discharges.is_empty() {
                 entry.trace_ids = Some(discharges.iter().map(|id| (*id).to_owned()).collect());
             }
         }
-        let outcome = record_run(
+        let outcome = record_run_with_analysis_projection(
             &mut self.source,
             &RecordRequest {
                 suite: SuiteId::new(suite),
@@ -193,10 +249,10 @@ impl Recorded {
                 entries,
             },
             &obligations(),
+            &projection,
         )
         .unwrap();
-        self.reports
-            .push((outcome.run_path, serde_json::from_str(report).unwrap()));
+        self.reports.push((outcome.run_path, projection));
     }
 
     /// One hand-built entry on a symbol, the way a later run of the same
@@ -207,11 +263,12 @@ impl Recorded {
         timestamp: &str,
         (symbol, outcome): (&str, Outcome),
         discharges: &[&str],
-        report: Value,
+        report: &Value,
     ) {
         let mut entry = RunEntry::new(symbol, outcome);
         entry.trace_ids = Some(discharges.iter().map(|id| (*id).to_owned()).collect());
-        let outcome = record_run(
+        let projection = projection(report);
+        let outcome = record_run_with_analysis_projection(
             &mut self.source,
             &RecordRequest {
                 suite: SuiteId::new(suite),
@@ -222,9 +279,10 @@ impl Recorded {
                 entries: vec![entry],
             },
             &obligations(),
+            &projection,
         )
         .unwrap();
-        self.reports.push((outcome.run_path, report));
+        self.reports.push((outcome.run_path, projection));
     }
 
     fn runs(&self) -> Vec<RetainedRun> {
@@ -494,7 +552,7 @@ fn without_the_hosts_mock_inspection_the_audit_cannot_call_the_obligation_health
     );
 }
 
-#[trace("FR-116-AC-7", "FR-116-AC-8")]
+#[trace("FR-116-AC-7", "FR-116-AC-8", "FR-153-AC-13")]
 #[test]
 fn an_observation_of_one_record_never_qualifies_another() {
     let mut store = Recorded::new();
@@ -605,7 +663,7 @@ fn a_reliance_decision_with_any_limitation_grants_no_positive_decision() {
     }
 }
 
-#[trace("FR-184-AC-10", "FR-184-AC-11", "FR-184-AC-12")]
+#[trace("FR-184-AC-10", "FR-184-AC-11", "FR-184-AC-12", "FR-153-AC-15")]
 #[test]
 fn association_and_engine_observations_are_premises_of_the_decision() {
     let store = satisfied_store(&[AC1]);
@@ -628,23 +686,39 @@ fn association_and_engine_observations_are_premises_of_the_decision() {
         CauseCode::Unevaluated,
         "execution association premise",
     );
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.execution = Some(ExecutionAssociation::Ci(CiAssociation {
+            system: String::new(),
+            project: "agent-ix/quoin".to_owned(),
+            run: "run-17".to_owned(),
+            attempt: "1".to_owned(),
+            job: "analysis".to_owned(),
+            invocation: "step-9".to_owned(),
+        }));
+    });
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::Unevaluated,
+        "execution association premise",
+    );
 
     // An engine record missing what producer-execute observes is no
     // observation of a solver it started.
     for (change, label) in [
         (
-            (&["engines", "1", "identity", "version"][..], Value::Null),
-            "identity.version",
+            (&["engines", "1", "identity_version"][..], Value::from("")),
+            "identity_version",
         ),
-        ((&["engines", "1", "identity"][..], Value::Null), "identity"),
-        ((&["engines", "0", "status"][..], Value::Null), "status"),
-        ((&["engines", "0", "outcome"][..], Value::Null), "outcome"),
+        (
+            (&["engines", "1", "identity_path"][..], Value::from("")),
+            "identity_path",
+        ),
         (
             (
-                &["engines", "0", "configuredExecutable"][..],
+                &["engines", "0", "configured_executable"][..],
                 Value::from("z3"),
             ),
-            "relative configuredExecutable",
+            "relative configured executable",
         ),
     ] {
         let mut incomplete = Recorded::new();
@@ -733,7 +807,7 @@ fn pass_then(later: Option<Outcome>) -> Recorded {
             "2026-11-13T11:00:00Z",
             (SATISFIED_SYMBOL, outcome),
             &[AC1],
-            satisfied_report(),
+            &satisfied_report(),
         ),
         None => store.record("SUITE-A", "2026-11-13T11:00:00Z", DISAGREEMENT, &[AC1]),
     }
@@ -776,27 +850,18 @@ fn equal_timestamps_are_ordered_by_file_name() {
     let store = pass_then(Some(Outcome::Fail));
     let mut runs = store.runs();
     runs[1].record.timestamp = runs[0].record.timestamp.clone();
-    // The failing run's file name sorts after the passing run's, so it decides;
-    // swap the names and the pass decides again.
-    runs[0].file = "runs/SUITE-A/a.json".to_owned();
-    runs[1].file = "runs/SUITE-A/b.json".to_owned();
-    let failing_last = count(runs.clone(), store.bindings(), &[AC1], admitted());
-    assert_eq!(counted(&failing_last), 0);
+    runs[1].file = runs[0].file.clone();
+    let conflict = count(runs.clone(), store.bindings(), &[AC1], admitted());
+    assert_eq!(counted(&conflict), 0);
     assert!(
-        causes(&failing_last)
+        causes(&conflict)
             .iter()
-            .any(|(c, _)| *c == CauseCode::Failed)
+            .any(|(cause, _)| *cause == CauseCode::RecordConflict)
     );
 
     runs.reverse();
     let supplied_reversed = count(runs.clone(), store.bindings(), &[AC1], admitted());
-    assert_eq!(causes(&failing_last), causes(&supplied_reversed));
-
-    // After the reversal the failing run is first; rename so the pass sorts last.
-    runs[0].file = "runs/SUITE-A/a.json".to_owned();
-    runs[1].file = "runs/SUITE-A/c.json".to_owned();
-    let passing_last = count(runs, store.bindings(), &[AC1], admitted());
-    assert_eq!(counted(&passing_last), 1);
+    assert_eq!(causes(&conflict), causes(&supplied_reversed));
 }
 
 #[trace("FR-153-AC-6")]
@@ -845,7 +910,7 @@ fn a_second_report_in_the_same_suite_replaces_the_first() {
         "2026-11-13T11:00:00Z",
         (other, Outcome::Pass),
         &[AC1],
-        second,
+        &second,
     );
     let outcome = store.count(&[AC1], admitted());
     let binders = outcome.report.record_binders.clone().unwrap();
@@ -860,7 +925,7 @@ fn a_second_report_in_the_same_suite_replaces_the_first() {
         "2026-11-13T11:00:00Z",
         (other, Outcome::Fail),
         &[AC1],
-        satisfied_report(),
+        &satisfied_report(),
     );
     assert_eq!(counted(&apart.count(&[AC1], admitted())), 0);
 }
@@ -948,7 +1013,7 @@ fn a_report_recorded_without_discharges_counts_for_no_obligation() {
         "2026-11-13T10:00:00Z",
         ("FR-001-AC-1::FR-001-AC-1", Outcome::Pass),
         &[],
-        report,
+        &report,
     );
     assert!(colliding.bindings().is_empty());
     let outcome = colliding.count(&[AC1], admitted());

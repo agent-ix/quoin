@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_finding_types::{Finding, UnevaluatedCheck};
-use quoin_quire_types::Obligation;
+use quoin_quire_types::{Obligation, TargetLocus};
 use quoin_store::instant::{Instant, InstantGrammar};
 use serde::{Deserialize, Serialize};
 
@@ -144,6 +144,7 @@ pub(super) fn strategy_for(
         status,
         because: None,
         evidence: None,
+        analysis_evidence: None,
         children: sub_nodes,
     }
 }
@@ -152,6 +153,8 @@ pub(super) fn solution_for(
     obligation: &Obligation,
     finding_for: &FindingsFor,
     store: &Store,
+    analysis_evidence: Option<&super::super::matrix::AnalysisEvidenceInput>,
+    all_obligations: &[&Obligation],
 ) -> CaseNode {
     let findings = finding_for
         .get(obligation.id.as_str())
@@ -179,6 +182,11 @@ pub(super) fn solution_for(
     } else {
         None
     };
+    let analysis_evidence = if obligation.method.as_deref() == Some("Analysis") {
+        analysis_evidence.map(|evidence| analysis_items(obligation, all_obligations, evidence))
+    } else {
+        None
+    };
     CaseNode {
         id: obligation.id.clone(),
         kind: NodeKind::Solution,
@@ -190,8 +198,49 @@ pub(super) fn solution_for(
         },
         because,
         evidence: evidence_for(id, findings, healthy, store),
+        analysis_evidence,
         children: Vec::new(),
     }
+}
+
+fn analysis_items(
+    obligation: &Obligation,
+    all_obligations: &[&Obligation],
+    evidence: &super::super::matrix::AnalysisEvidenceInput,
+) -> Vec<serde_json::Value> {
+    let Some(identity) = obligation.identity.as_ref() else {
+        return Vec::new();
+    };
+    if all_obligations
+        .iter()
+        .filter(|candidate| candidate.identity.as_ref() == Some(identity))
+        .count()
+        != 1
+    {
+        return Vec::new();
+    }
+    let mut items = Vec::new();
+    for binder in &evidence.record_binders {
+        if binder.get("target").and_then(target_locus) == Some(identity.clone()) {
+            items.push(serde_json::json!({
+                "status": "qualified-record",
+                "record_binder": binder,
+            }));
+        }
+    }
+    for result in &evidence.evidence_results {
+        if result.get("target").and_then(target_locus) == Some(identity.clone())
+            && let Some(cause) = result.get("cause")
+        {
+            items.push(serde_json::json!({ "status": cause, "result": result }));
+        }
+    }
+    items.sort_by_key(serde_json::Value::to_string);
+    items
+}
+
+fn target_locus(value: &serde_json::Value) -> Option<TargetLocus> {
+    serde_json::from_value(value.clone()).ok()
 }
 
 /// The leaf's bound suites and the auditor's verdict, when anything is bound.
