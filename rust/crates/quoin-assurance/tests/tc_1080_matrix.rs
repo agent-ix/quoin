@@ -63,6 +63,7 @@ fn design_input(entries: &[Value]) -> MatrixInput {
 
 fn design_criterion(id: &str, elements: Option<Value>) -> Value {
     let mut criterion = criterion(id);
+    criterion.as_object_mut().unwrap().remove("statement");
     if let Some(elements) = elements {
         criterion
             .as_object_mut()
@@ -764,8 +765,8 @@ fn tc_1080_018_design_blocks_group_and_sort_by_repo_then_document() {
             Some(json!([uncovered_block("z")])),
         ),
         json!({ "document": "spec/orphan.md", "repo": "a", "id": "FR-001", "criteria": [], "design": [uncovered_block("orphan")] }),
-        json!({ "document": "spec/a.md", "repo": "a", "id": "FR-001", "criteria": [{ "id": "FR-001-AC-1", "statement": "s", "method": "Test", "binders": [], "status": "untagged", "design_elements": [] }], "design": [uncovered_block("a")] }),
-        json!({ "document": "spec/no-repo.md", "id": "FR-001", "criteria": [{ "id": "FR-001-AC-3", "statement": "s", "method": "Test", "binders": [], "status": "untagged", "design_elements": [] }], "design": [uncovered_block("no-repo")] }),
+        json!({ "document": "spec/a.md", "repo": "a", "id": "FR-001", "criteria": [{ "id": "FR-001-AC-1", "method": "Test", "binders": [], "status": "untagged", "design_elements": [] }], "design": [uncovered_block("a")] }),
+        json!({ "document": "spec/no-repo.md", "id": "FR-001", "criteria": [{ "id": "FR-001-AC-3", "method": "Test", "binders": [], "status": "untagged", "design_elements": [] }], "design": [uncovered_block("no-repo")] }),
     ];
     let output = build(&design_input(&entries)).unwrap();
     let blocks = output.requirements[0].design.as_ref().unwrap();

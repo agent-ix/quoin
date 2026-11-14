@@ -406,7 +406,8 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
         }
     }
 
-    let reason = grouped.is_empty().then(|| EMPTY_REASON.to_owned());
+    let has_criteria = grouped.values().any(|criteria| !criteria.is_empty());
+    let reason = (!has_criteria).then(|| EMPTY_REASON.to_owned());
     let unclassified = class_report.map(|_| {
         grouped
             .values()
