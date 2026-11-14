@@ -26,7 +26,13 @@ pub(crate) fn command() -> Command {
                 .about("Report class activities and their evidence")
                 .arg(Arg::new("repo").value_name("SCOPE").required(true))
                 .arg(module_arg())
-                .arg(Arg::new("class-policy").long("class-policy").required(true))
+                .args(crate::evidence::audit::policy_args().map(|argument| {
+                    if argument.get_id() == "class-policy" {
+                        argument.required(true)
+                    } else {
+                        argument
+                    }
+                }))
                 .arg(
                     Arg::new("format")
                         .long("format")
@@ -70,16 +76,7 @@ fn obligations(arguments: &ArgMatches) -> Result<Response, String> {
     if !design.outcome.carries_payload() {
         return Ok(design);
     }
-    let catalog_request = if options.modules().is_empty() {
-        serde_json::json!({})
-    } else {
-        serde_json::json!({ "roots": options.modules() })
-    };
-    let catalog = invoke("catalog.methods", &catalog_request)?;
-    if !catalog.outcome.carries_payload() {
-        return Ok(catalog);
-    }
-    let methods = catalog_methods(&catalog.payload)?;
+    let methods = catalog_methods(&audited.audit_input)?;
     let missing_methods = evidence_gaps(&audited.audit_input, &policy, &methods)?;
     let requirements = audited
         .coverage
@@ -394,7 +391,10 @@ fn audit_method_gaps(
         .collect())
 }
 
-fn catalog_methods(payload: &Value) -> Result<BTreeMap<String, String>, String> {
+fn catalog_methods(input: &Value) -> Result<BTreeMap<String, String>, String> {
+    let payload = input
+        .get("catalog")
+        .ok_or_else(|| "auditor input did not include catalog methods".to_owned())?;
     payload
         .get("methods")
         .and_then(Value::as_array)
@@ -402,7 +402,7 @@ fn catalog_methods(payload: &Value) -> Result<BTreeMap<String, String>, String> 
         .flatten()
         .try_fold(BTreeMap::new(), |mut methods, row| {
             let id = string(row, "id")?.to_owned();
-            if let Some(kind) = row.get("evidence_kind").and_then(Value::as_str) {
+            if let Some(kind) = row.get("evidenceKind").and_then(Value::as_str) {
                 methods.insert(id, kind.to_owned());
             }
             Ok(methods)
