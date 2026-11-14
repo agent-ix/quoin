@@ -96,8 +96,7 @@ fn obligations(arguments: &ArgMatches) -> Result<Response, String> {
     let output = serde_json::json!({"requirements": rows.requirements, "unassigned": rows.unassigned, "unconfigured": rows.unconfigured});
     let format = arguments
         .get_one::<String>("format")
-        .map(String::as_str)
-        .unwrap_or("markdown");
+        .map_or("markdown", String::as_str);
     let rendered = if format == "json" {
         canonical_json(&output).map_err(|error| error.to_string())?
     } else {
@@ -157,11 +156,11 @@ fn build_rows(
             let status = match activity.kind.as_str() {
                 "design-trace" => design_status(relations, &relation_rows),
                 "evidence" => evidence_status(activity, &class_text, &obligation_ids, missing_methods),
-                _ => Status { status: "not-available", missing: vec![], reason: Some("unknown activity kind".to_owned()) },
+                _ => Status { value: "not-available", missing: vec![], reason: Some("unknown activity kind".to_owned()) },
             };
-            let mut row = serde_json::json!({"id": activity.id, "kind": activity.kind, "status": status.status});
+            let mut row = serde_json::json!({"id": activity.id, "kind": activity.kind, "status": status.value});
             if let (Some(object), Some(method)) = (row.as_object_mut(), &activity.method) { object.insert("method".to_owned(), Value::String(method.clone())); }
-            if !status.missing.is_empty() { if let Some(object) = row.as_object_mut() { object.insert("missing".to_owned(), serde_json::json!(status.missing)); } }
+            if !status.missing.is_empty() && let Some(object) = row.as_object_mut() { object.insert("missing".to_owned(), serde_json::json!(status.missing)); }
             if let (Some(object), Some(reason)) = (row.as_object_mut(), status.reason) { object.insert("reason".to_owned(), Value::String(reason)); }
             row
         }).collect::<Vec<_>>();
@@ -225,22 +224,22 @@ fn parse_activities(
 }
 
 struct Status {
-    status: &'static str,
+    value: &'static str,
     missing: Vec<String>,
     reason: Option<String>,
 }
 
 fn design_status(relations: Option<&Vec<Value>>, rows: &[&Value]) -> Status {
-    if relations.map_or(true, Vec::is_empty) {
+    if relations.is_none_or(Vec::is_empty) {
         return Status {
-            status: "not-available",
+            value: "not-available",
             missing: vec![],
             reason: Some("design join has no relations".to_owned()),
         };
     }
     if rows.is_empty() {
         return Status {
-            status: "not-available",
+            value: "not-available",
             missing: vec![],
             reason: Some("requirement has no design relation row".to_owned()),
         };
@@ -250,7 +249,7 @@ fn design_status(relations: Option<&Vec<Value>>, rows: &[&Value]) -> Status {
         .any(|row| row.get("state").and_then(Value::as_str) == Some("uncovered"))
     {
         Status {
-            status: "unmet",
+            value: "unmet",
             missing: vec![],
             reason: None,
         }
@@ -259,13 +258,13 @@ fn design_status(relations: Option<&Vec<Value>>, rows: &[&Value]) -> Status {
         .any(|row| row.get("state").and_then(Value::as_str) == Some("covered"))
     {
         Status {
-            status: "met",
+            value: "met",
             missing: vec![],
             reason: None,
         }
     } else {
         Status {
-            status: "not-available",
+            value: "not-available",
             missing: vec![],
             reason: Some("requirement has no design relation row".to_owned()),
         }
@@ -315,7 +314,7 @@ fn evidence_status(
         .collect::<Vec<_>>();
     missing.sort();
     Status {
-        status: if missing.is_empty() { "met" } else { "unmet" },
+        value: if missing.is_empty() { "met" } else { "unmet" },
         missing,
         reason: None,
     }
@@ -490,11 +489,11 @@ mod tests {
         let no_row = design_status(Some(&vec![json!({})]), &[]);
         let empty = design_status(Some(&Vec::new()), &[&uncovered]);
         let absent = design_status(None, &[&uncovered]);
-        assert_eq!(covered_only.status, "met");
-        assert_eq!(mixed.status, "unmet");
-        assert_eq!(no_row.status, "not-available");
-        assert_eq!(empty.status, "not-available");
-        assert_eq!(absent.status, "not-available");
+        assert_eq!(covered_only.value, "met");
+        assert_eq!(mixed.value, "unmet");
+        assert_eq!(no_row.value, "not-available");
+        assert_eq!(empty.value, "not-available");
+        assert_eq!(absent.value, "not-available");
     }
 
     #[trace("FR-161-AC-1", "FR-161-AC-2", "FR-161-AC-6", "FR-161-AC-7")]

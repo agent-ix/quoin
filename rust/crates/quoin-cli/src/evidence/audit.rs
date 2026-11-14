@@ -132,8 +132,8 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
     let mut input = serde_json::json!({
         "obligations": obligations,
         "bindings": bindings,
-        "runs": field(&store.payload, "runs")?,
-        "scans": field(&store.payload, "scans")?,
+        "runs": runs,
+        "scans": scans,
         "injections": field(&store.payload, "injections")?,
         "mockInspectionSuites": field(&store.payload, "mock_inspection_suites")?,
         "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
