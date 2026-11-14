@@ -306,8 +306,8 @@ mod tests {
                 "audit-script",
                 "cargo-audit",
                 "cargo-deny",
-                "licence-policy",
                 "osv-scanner",
+                "licence-policy",
             ]
         );
         let distinct: BTreeSet<&str> = adapter_names().into_iter().collect();
