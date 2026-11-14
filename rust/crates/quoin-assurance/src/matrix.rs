@@ -522,6 +522,8 @@ fn analysis_item_key(item: &serde_json::Value) -> (String, String, String, Strin
             .unwrap_or_default()
             .to_owned(),
     )
+}
+
 #[allow(
     clippy::too_many_arguments,
     reason = "one criterion's evidence and optional design fields are projected together"
