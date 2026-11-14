@@ -244,11 +244,11 @@ impl Recorded {
         timestamp: &str,
         (symbol, outcome): (&str, Outcome),
         discharges: &[&str],
-        report: Value,
+        report: &Value,
     ) {
         let mut entry = RunEntry::new(symbol, outcome);
         entry.trace_ids = Some(discharges.iter().map(|id| (*id).to_owned()).collect());
-        let projection = projection(&report);
+        let projection = projection(report);
         let outcome = record_run_with_analysis_projection(
             &mut self.source,
             &RecordRequest {
@@ -773,7 +773,7 @@ fn pass_then(later: Option<Outcome>) -> Recorded {
             "2026-11-13T11:00:00Z",
             (SATISFIED_SYMBOL, outcome),
             &[AC1],
-            satisfied_report(),
+            &satisfied_report(),
         ),
         None => store.record("SUITE-A", "2026-11-13T11:00:00Z", DISAGREEMENT, &[AC1]),
     }
@@ -876,7 +876,7 @@ fn a_second_report_in_the_same_suite_replaces_the_first() {
         "2026-11-13T11:00:00Z",
         (other, Outcome::Pass),
         &[AC1],
-        second,
+        &second,
     );
     let outcome = store.count(&[AC1], admitted());
     let binders = outcome.report.record_binders.clone().unwrap();
@@ -891,7 +891,7 @@ fn a_second_report_in_the_same_suite_replaces_the_first() {
         "2026-11-13T11:00:00Z",
         (other, Outcome::Fail),
         &[AC1],
-        satisfied_report(),
+        &satisfied_report(),
     );
     assert_eq!(counted(&apart.count(&[AC1], admitted())), 0);
 }
@@ -979,7 +979,7 @@ fn a_report_recorded_without_discharges_counts_for_no_obligation() {
         "2026-11-13T10:00:00Z",
         ("FR-001-AC-1::FR-001-AC-1", Outcome::Pass),
         &[],
-        report,
+        &report,
     );
     assert!(colliding.bindings().is_empty());
     let outcome = colliding.count(&[AC1], admitted());
