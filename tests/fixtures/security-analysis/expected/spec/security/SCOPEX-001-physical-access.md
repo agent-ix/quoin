@@ -21,3 +21,15 @@ object: scope_exclusion
 ## Rationale
 
 `The gateway runs on a platform that controls the premises; physical access is the platform's concern.`
+
+## Decision
+
+`delegated`
+
+## Decision owner
+
+`SEC-OWNER-001`
+
+## Approval ref
+
+`APPROVAL-001`

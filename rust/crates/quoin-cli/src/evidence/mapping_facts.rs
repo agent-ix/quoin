@@ -16,14 +16,15 @@ use std::path::{Path, PathBuf};
 use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_assurance::{
-    DischargeAttestation, DischargeFact, RecordDischargeRequest, read_discharge_facts,
-    record_discharge_facts,
+    DischargeAttestation, DischargeFact, DispositionDecision, RecordDischargeRequest,
+    read_discharge_facts, record_discharge_facts,
 };
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_evidence::{DiskEvidence, EvidenceError, EvidenceSource};
 use quoin_quire::ModuleSelection;
 use quoin_quire::records::{Contract, Document, read};
 use quoin_quire_types::{ClauseBindingOutcome, ClauseBindingReport};
+use quoin_store::instant::{Instant, InstantGrammar};
 use serde_json::{Value, json};
 
 use super::{json_arg, required};
@@ -52,8 +53,11 @@ struct Exclusion {
     id: String,
     set: String,
     clause: String,
-    responsible: String,
+    decision: DispositionDecision,
+    decision_owner: String,
     rationale: String,
+    approval_ref: String,
+    expires_at: Option<String>,
 }
 
 /// What the command reads from the corpus.
@@ -90,11 +94,6 @@ pub(super) fn command() -> Command {
                 .long("spec")
                 .default_value("spec")
                 .help("Directory of spec artifacts to read."),
-        )
-        .arg(
-            Arg::new("approval-ref")
-                .long("approval-ref")
-                .help("Reference of the approval behind scope exclusions. Without it no disposition is emitted."),
         )
         .arg(
             Arg::new("repo")
@@ -141,15 +140,7 @@ fn propose_from(arguments: &ArgMatches) -> Result<Proposal, String> {
         .map_or_else(|| PathBuf::from("spec"), PathBuf::from);
     let corpus = read_corpus(&spec)?;
     let stored = arguments.get_one::<String>("repo").map(DiskEvidence::new);
-    propose(
-        &binding,
-        &attestation,
-        &corpus,
-        arguments
-            .get_one::<String>("approval-ref")
-            .map(String::as_str),
-        stored.as_ref(),
-    )
+    propose(&binding, &attestation, &corpus, stored.as_ref())
 }
 
 /// A refusal: exit status 2, one diagnostic and nothing on stdout.
@@ -189,13 +180,20 @@ fn read_corpus(spec: &Path) -> Result<Corpus, String> {
         if !CHECKED.contains(&document.kind.as_str()) {
             continue;
         }
-        if let Contract::Violated(reason) = &document.contract {
-            return Err(format!("{} fails validation: {reason}", document.id));
-        }
         if document.kind == "control" {
+            if let Contract::Violated(reason) = &document.contract {
+                return Err(format!("{} fails validation: {reason}", document.id));
+            }
             found.controls.push(control(document)?);
         } else {
-            found.exclusions.push(exclusion(document)?);
+            let exclusion = exclusion(document)?;
+            if let Contract::Violated(reason) = &document.contract {
+                return Err(format!(
+                    "scope_exclusion {} for {} {} fails validation: {reason}",
+                    exclusion.id, exclusion.set, exclusion.clause
+                ));
+            }
+            found.exclusions.push(exclusion);
         }
     }
     found.controls.sort_by(|a, b| a.id.cmp(&b.id));
@@ -259,13 +257,57 @@ fn exclusion(document: &Document) -> Result<Exclusion, String> {
             .filter(|text| !text.is_empty())
             .ok_or_else(|| format!("scope_exclusion {} has no {heading} value", document.id))
     };
+    let set = value("Set")?;
+    let clause = value("Clause")?;
+    let subject = || format!("scope_exclusion {} for {set} {clause}", document.id);
+    let decision_text = value("Decision").map_err(|error| format!("{}: {error}", subject()))?;
+    let decision = DispositionDecision::all()
+        .iter()
+        .copied()
+        .find(|candidate| candidate.as_str() == decision_text)
+        .ok_or_else(|| format!("{} has invalid decision {decision_text:?}", subject()))?;
+    let decision_owner =
+        value("Decision owner").map_err(|error| format!("{}: {error}", subject()))?;
+    let approval_ref = value("Approval ref").map_err(|error| format!("{}: {error}", subject()))?;
+    let rationale = value("Rationale").map_err(|error| format!("{}: {error}", subject()))?;
+    let expires_at = document
+        .sections
+        .get("Expires at")
+        .map(|text| inline_value(text).to_owned());
+    let expires_at = match (decision, expires_at) {
+        (DispositionDecision::TemporaryException, Some(expiry)) => {
+            parse_instant("Expires at", &expiry)
+                .map_err(|error| format!("{}: {error}", subject()))?;
+            Some(expiry)
+        }
+        (DispositionDecision::TemporaryException, None) => {
+            return Err(format!("{} has no Expires at value", subject()));
+        }
+        (_, Some(_)) => {
+            return Err(format!(
+                "{} has Expires at for decision {}",
+                subject(),
+                decision.as_str()
+            ));
+        }
+        (_, None) => None,
+    };
     Ok(Exclusion {
         id: document.id.clone(),
-        set: value("Set")?,
-        clause: value("Clause")?,
-        responsible: value("Responsible")?,
-        rationale: value("Rationale")?,
+        set,
+        clause,
+        decision,
+        decision_owner,
+        rationale,
+        approval_ref,
+        expires_at,
     })
+}
+
+fn parse_instant(name: &str, value: &str) -> Result<i64, String> {
+    Instant::parse(value, InstantGrammar::CalendarInstant)
+        .and_then(|instant| instant.epoch_millis())
+        .ok_or_else(|| format!("{name} must be a calendar instant"))
 }
 
 fn set_key(binding: &ClauseBindingReport) -> String {
@@ -368,11 +410,19 @@ fn propose(
     binding: &ClauseBindingReport,
     attestation: &Value,
     corpus: &Corpus,
-    approval_ref: Option<&str>,
     store: Option<&DiskEvidence>,
 ) -> Result<Proposal, String> {
-    serde_json::from_value::<DischargeAttestation>(attestation.clone())
+    let attestation_contract = serde_json::from_value::<DischargeAttestation>(attestation.clone())
         .map_err(|error| format!("attestation is refused: {error}"))?;
+    let attestation_attested_at =
+        parse_instant("attestation attestedAt", &attestation_contract.attested_at)
+            .map_err(|error| format!("attestation is refused: {error}"))?;
+    let attestation_expiry =
+        parse_instant("attestation expiresAt", &attestation_contract.expires_at)
+            .map_err(|error| format!("attestation is refused: {error}"))?;
+    if attestation_expiry <= attestation_attested_at {
+        return Err("attestation is refused: expiry is not after attestation".to_owned());
+    }
     let clauses = Clauses::of(binding);
     let mut report = Vec::new();
     let answers = answers(&clauses, &corpus.controls, &mut report)?;
@@ -407,23 +457,36 @@ fn propose(
         if exclusion.set != clauses.set || !clauses.binding.contains(exclusion.clause.as_str()) {
             continue;
         }
-        match approval_ref {
-            Some(approval) => {
-                facts.insert(
-                    exclusion.clause.as_str(),
-                    json!({
-                        "kind": "disposition", "clauseId": exclusion.clause,
-                        "decision": "delegated",
-                        "rationale": format!("{} (responsible: {})", exclusion.rationale, exclusion.responsible),
-                        "approvalRef": approval, "attestation": attestation,
-                    }),
-                );
+        let mut fact = json!({
+            "kind": "disposition", "clauseId": exclusion.clause,
+            "decision": exclusion.decision.as_str(),
+            "owner": exclusion.decision_owner,
+            "rationale": exclusion.rationale,
+            "approvalRef": exclusion.approval_ref,
+            "attestation": attestation,
+        });
+        if let Some(expiry) = &exclusion.expires_at {
+            let decision_expiry = parse_instant("Expires at", expiry).map_err(|error| {
+                format!(
+                    "scope_exclusion {} for {} {}: {error}",
+                    exclusion.id, exclusion.set, exclusion.clause
+                )
+            })?;
+            if decision_expiry > attestation_expiry {
+                return Err(format!(
+                    "scope_exclusion {} for {} {} expires after the attestation",
+                    exclusion.id, exclusion.set, exclusion.clause
+                ));
             }
-            None => report.push(format!(
-                "needs-approval {} {}",
-                exclusion.clause, exclusion.id
-            )),
+            let Some(fields) = fact.as_object_mut() else {
+                return Err("internal disposition fact is not an object".to_owned());
+            };
+            fields.insert(
+                "decisionExpiresAt".to_owned(),
+                Value::String(expiry.clone()),
+            );
         }
+        facts.insert(exclusion.clause.as_str(), fact);
     }
 
     let facts: Vec<Value> = facts.into_values().collect();
