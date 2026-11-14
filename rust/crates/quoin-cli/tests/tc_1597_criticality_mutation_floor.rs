@@ -161,7 +161,7 @@ fn tc_1597_001_real_manifest_rating_derives_floor_finding() {
     );
 }
 
-#[trace("FR-039-AC-2")]
+#[trace("FR-039-AC-7")]
 #[test]
 fn tc_1597_002_absent_rating_does_not_apply_high_floor() {
     let fixture = Fixture::new("");
