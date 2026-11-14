@@ -276,6 +276,7 @@ pub struct CoverageMatrixCriterion {
 
 /// FR-078 target identity carried through the quire bridge without reduction.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct TargetLocus {
     /// Native source declaration name.
