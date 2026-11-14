@@ -58,6 +58,9 @@ pub struct AnalysisEvidenceInput {
 pub struct MatrixCoverageRequirement {
     /// Scope-relative source document.
     pub document: String,
+    /// Quire's optional FR-082 document criticality, preserved as authored.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub criticality: Option<serde_json::Value>,
     /// Values declared under carried names, absent when none are stated.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub carried: Option<serde_json::Map<String, serde_json::Value>>,

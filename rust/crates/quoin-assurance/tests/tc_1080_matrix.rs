@@ -234,6 +234,30 @@ fn tc_1080_015_unbacked_claims_are_preserved_and_unknown_fields_refused() {
     assert!(serde_json::from_value::<MatrixOutput>(invalid_output).is_err());
 }
 
+/// `matrix.build` accepts Quire's optional FR-082 criticality value without
+/// widening its unknown-field policy.
+#[trace("FR-115-AC-1", "FR-115-AC-2")]
+#[test]
+fn tc_1080_016_criticality_bearing_coverage_is_accepted() {
+    let criticality = json!({ "level": "high", "source": "spec/FR-001.md" });
+    let request: MatrixInput = serde_json::from_value(json!({
+        "coverage": [{
+            "document": "spec/FR-001.md",
+            "criticality": criticality,
+            "criteria": [criterion("FR-001-AC-1")],
+        }],
+        "bindings": { "schemaVersion": 1, "bindings": [] },
+        "audit": { "findings": [], "healthy": [], "unevaluated": [] },
+    }))
+    .unwrap();
+
+    let output = build(&request).unwrap();
+    let criterion = &output.requirements[0].criteria[0];
+    assert_eq!(criterion.id, "FR-001-AC-1");
+    assert_eq!(criterion.static_status, "untagged");
+    assert!(criterion.binders.is_empty());
+}
+
 /// Each finding kind lands in the bucket the requirement assigns it, alone.
 ///
 #[trace("FR-115-AC-4")]
