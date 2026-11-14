@@ -52,6 +52,50 @@ fn input(ids: &[&str], bindings: &[Value], audit: &Value) -> MatrixInput {
     .unwrap()
 }
 
+fn design_input(entries: &[Value]) -> MatrixInput {
+    serde_json::from_value(json!({
+        "design_coverage": entries,
+        "bindings": { "schemaVersion": 1, "bindings": [] },
+        "audit": audit(&[], &[], &[]),
+    }))
+    .unwrap()
+}
+
+fn design_criterion(id: &str, elements: Option<Value>) -> Value {
+    let mut criterion = criterion(id);
+    if let Some(elements) = elements {
+        criterion
+            .as_object_mut()
+            .unwrap()
+            .insert("design_elements".to_owned(), elements);
+    }
+    criterion
+}
+
+fn design_entry(
+    document: &str,
+    id: Option<&str>,
+    criteria: Vec<Value>,
+    design: Option<Value>,
+) -> Value {
+    let mut entry = json!({ "document": document, "criteria": criteria });
+    if let Some(id) = id {
+        entry["id"] = json!(id);
+    }
+    if let Some(design) = design {
+        entry["design"] = design;
+    }
+    entry
+}
+
+fn covered_block(elements: Value) -> Value {
+    json!({ "relation": "realized-by", "check": "implemented", "state": "covered", "elements": elements, "dangling": [], "kind_mismatch": [] })
+}
+
+fn uncovered_block(check: &str) -> Value {
+    json!({ "relation": "realized-by", "check": check, "state": "uncovered", "elements": [], "dangling": [], "kind_mismatch": [] })
+}
+
 fn audit(findings: &[Value], healthy: &[&str], checks: &[Value]) -> Value {
     json!({ "findings": findings, "healthy": healthy, "unevaluated": checks })
 }
@@ -495,6 +539,271 @@ fn tc_1080_009_markdown_renders_one_table_per_requirement() {
          | FR-001 | FR-001-AC-1 | Test | untagged | stale | stale-evidence: a\\|b; bound by unit |\n\
          | FR-001 | FR-001-AC-2 | Test | untagged | undischarged | — |\n"
     );
+}
+
+/// Design blocks and per-criterion references survive the matrix join unchanged.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-1", "FR-165-AC-2")]
+#[test]
+fn tc_1080_011_design_data_is_carried_verbatim() {
+    let blocks = json!([
+        uncovered_block("implemented"),
+        covered_block(json!([
+            { "id": "IMPL-1", "kind": "Component", "path": "src/lib.rs", "verb": "implements", "realized_criteria": [] }
+        ]))
+    ]);
+    let references = json!([{ "id": "IMPL-1" }]);
+    let output = build(&design_input(&[design_entry(
+        "spec/FR-001.md",
+        Some("FR-001"),
+        vec![design_criterion("FR-001-AC-1", Some(references.clone()))],
+        Some(blocks.clone()),
+    )]))
+    .unwrap();
+    assert_eq!(
+        serde_json::to_value(&output).unwrap()["requirements"][0]["design"],
+        blocks
+    );
+    assert_eq!(
+        serde_json::to_value(&output).unwrap()["requirements"][0]["criteria"][0]["design_elements"],
+        references
+    );
+}
+
+/// An uncovered block appears in both the design cell and the requirement section.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-3", "FR-165-AC-13")]
+#[test]
+fn tc_1080_012_gaps_render_with_the_check_token() {
+    let output = build(&design_input(&[design_entry(
+        "spec/FR-001.md",
+        Some("FR-001"),
+        vec![design_criterion("FR-001-AC-1", Some(json!([{ "id": "IMPL-1" }])) )],
+        Some(json!([
+            covered_block(json!([{ "id": "IMPL-1", "kind": "Component", "path": "src/lib.rs", "verb": "implements", "realized_criteria": [] }])),
+            uncovered_block("implemented")
+        ])),
+    )]))
+    .unwrap();
+    let rendered = render_markdown(&output);
+    assert!(
+        rendered.contains(
+            "| FR-001 | FR-001-AC-1 | IMPL-1 (Component), no design element (implemented) |"
+        ),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("## FR-001\n\nDesign gap: no design element (implemented)"),
+        "{rendered}"
+    );
+}
+
+/// Missing design stays absent in JSON and renders n/a; an empty reference list is none.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-4")]
+#[test]
+fn tc_1080_013_absent_and_empty_design_are_distinct() {
+    let output = build(&design_input(&[
+        design_entry(
+            "spec/FR-001.md",
+            Some("FR-001"),
+            vec![design_criterion("FR-001-AC-1", None)],
+            None,
+        ),
+        design_entry(
+            "spec/FR-002.md",
+            Some("FR-002"),
+            vec![design_criterion("FR-002-AC-1", Some(json!([])))],
+            Some(json!([covered_block(json!([]))])),
+        ),
+    ]))
+    .unwrap();
+    let value = serde_json::to_value(&output).unwrap();
+    assert!(value["requirements"][0].get("design").is_none());
+    assert!(
+        value["requirements"][0]["criteria"][0]
+            .get("design_elements")
+            .is_none()
+    );
+    assert!(render_markdown(&output).contains("| FR-001 | FR-001-AC-1 | n/a |"));
+    assert!(render_markdown(&output).contains("| FR-002 | FR-002-AC-1 | (none) |"));
+}
+
+/// Criteria-less design entries remain requirements and keep the empty reason semantics.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-5")]
+#[test]
+fn tc_1080_014_criteria_less_design_entry_is_rendered_without_a_table() {
+    let output = build(&design_input(&[design_entry(
+        "spec/FR-009.md",
+        Some("FR-009"),
+        vec![],
+        Some(json!([uncovered_block("specified")])),
+    )]))
+    .unwrap();
+    assert_eq!(output.reason, Some(EMPTY_REASON.to_owned()));
+    assert_eq!(output.requirements.len(), 1);
+    assert!(output.requirements[0].criteria.is_empty());
+    let rendered = render_markdown(&output);
+    assert!(
+        rendered.contains("## FR-009\n\nDesign gap: no design element (specified)"),
+        "{rendered}"
+    );
+    assert!(
+        !rendered.contains("| Requirement |"),
+        "criteria-less entries have no table"
+    );
+}
+
+/// Design data does not alter evidence status, and absent design equals the FR-115 input.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-6", "FR-165-AC-8")]
+#[test]
+fn tc_1080_015_design_axis_is_independent_from_evidence() {
+    let id = "FR-001-AC-1";
+    let ordinary = build(&input(
+        &[id],
+        &[binding(id, "unit")],
+        &audit(&[finding(id, "stale-evidence")], &[], &[]),
+    ))
+    .unwrap();
+    let designed = build(&design_input(&[design_entry(
+        "spec/FR-001.md",
+        Some("FR-001"),
+        vec![design_criterion(id, Some(json!([])))],
+        Some(json!([uncovered_block("implemented")])),
+    )]))
+    .unwrap();
+    assert_eq!(statuses(&ordinary), statuses(&designed));
+    assert_eq!(
+        designed.requirements[0].criteria[0].evidence_status,
+        EvidenceStatus::NoRunEvidence
+    );
+
+    let no_design = build(&design_input(&[design_entry(
+        "spec/FR-001.md",
+        Some("FR-001"),
+        vec![design_criterion(id, None)],
+        None,
+    )]))
+    .unwrap();
+    let legacy = build(&input(&[id], &[], &audit(&[], &[], &[]))).unwrap();
+    assert_eq!(
+        serde_json::to_value(no_design).unwrap(),
+        serde_json::to_value(legacy).unwrap()
+    );
+}
+
+/// Rendering places design between criterion and method and retains element kind.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-7", "FR-165-AC-14")]
+#[test]
+fn tc_1080_016_design_column_renders_kind_and_untyped_id() {
+    let output = build(&design_input(&[design_entry(
+        "spec/FR-001.md", Some("FR-001"),
+        vec![design_criterion("FR-001-AC-1", Some(json!([{ "id": "TYPED" }, { "id": "PLAIN" }])) )],
+        Some(json!([covered_block(json!([
+            { "id": "TYPED", "kind": "Component", "path": "src/lib.rs", "verb": "implements", "realized_criteria": [] },
+            { "id": "PLAIN", "path": "src/main.rs", "verb": "implements", "realized_criteria": [] }
+        ]))])),
+    )])).unwrap();
+    let rendered = render_markdown(&output);
+    assert!(
+        rendered.contains("| Requirement | Criterion | Design | Method |"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("TYPED (Component), PLAIN | Test"),
+        "{rendered}"
+    );
+    let json = serde_json::to_value(&output).unwrap();
+    assert_eq!(
+        json["requirements"][0]["criteria"][0]["design_elements"][0],
+        json!({ "id": "TYPED" })
+    );
+}
+
+/// Dangling links and kind mismatches render their engine-provided markers.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-15")]
+#[test]
+fn tc_1080_017_dangling_and_kind_mismatch_render() {
+    let output = build(&design_input(&[design_entry(
+        "spec/FR-001.md", Some("FR-001"),
+        vec![design_criterion("FR-001-AC-1", Some(json!([])))],
+        Some(json!([
+            { "relation": "r", "check": "c", "state": "covered", "elements": [], "dangling": [{ "reference": "IMPL-X", "verb": "implements" }], "kind_mismatch": [{ "id": "DOC-X", "archetype": "Plan", "verb": "implements", "accepted": ["Component"] }] }
+        ])),
+    )])).unwrap();
+    let rendered = render_markdown(&output);
+    assert!(rendered.contains("-> IMPL-X (dangling)"), "{rendered}");
+    assert!(
+        rendered.contains("kind mismatch: DOC-X (Plan)"),
+        "{rendered}"
+    );
+}
+
+/// Design blocks concatenate in repo and document order, including orphaned entries.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-16")]
+#[test]
+fn tc_1080_018_design_blocks_group_and_sort_by_repo_then_document() {
+    let entries = [
+        design_entry(
+            "spec/z.md",
+            Some("FR-001"),
+            vec![design_criterion("FR-001-AC-2", None)],
+            Some(json!([uncovered_block("z")])),
+        ),
+        json!({ "document": "spec/orphan.md", "repo": "a", "id": "FR-001", "criteria": [], "design": [uncovered_block("orphan")] }),
+        json!({ "document": "spec/a.md", "repo": "a", "id": "FR-001", "criteria": [{ "id": "FR-001-AC-1", "statement": "s", "method": "Test", "binders": [], "status": "untagged", "design_elements": [] }], "design": [uncovered_block("a")] }),
+        json!({ "document": "spec/no-repo.md", "id": "FR-001", "criteria": [{ "id": "FR-001-AC-3", "statement": "s", "method": "Test", "binders": [], "status": "untagged", "design_elements": [] }], "design": [uncovered_block("no-repo")] }),
+    ];
+    let output = build(&design_input(&entries)).unwrap();
+    let blocks = output.requirements[0].design.as_ref().unwrap();
+    let checks: Vec<&str> = blocks
+        .iter()
+        .map(|block| block["check"].as_str().unwrap())
+        .collect();
+    assert_eq!(checks, ["no-repo", "a", "orphan", "z"]);
+    assert_eq!(output.requirements[0].criteria.len(), 3);
+}
+
+/// Design output is deterministic and the build path only copies engine fields.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-9", "FR-165-AC-11", "FR-165-CON-1")]
+#[test]
+fn tc_1080_019_build_is_deterministic_and_does_not_derive_design_facts() {
+    let request = design_input(&[design_entry(
+        "spec/FR-001.md",
+        Some("FR-001"),
+        vec![design_criterion("FR-001-AC-1", Some(json!([])))],
+        Some(json!([uncovered_block("implemented")])),
+    )]);
+    let first = serde_json::to_vec(&build(&request).unwrap()).unwrap();
+    let second = serde_json::to_vec(&build(&request).unwrap()).unwrap();
+    assert_eq!(first, second);
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/matrix.rs")).unwrap();
+    let build_source = source
+        .split("pub fn build(")
+        .nth(1)
+        .unwrap()
+        .split("fn add_criterion")
+        .next()
+        .unwrap();
+    assert!(!build_source.contains("realized_criteria"));
+    assert!(!build_source.contains("archetype"));
+    assert!(!build_source.contains("design_join"));
 }
 
 /// `matrix` performs no file, network or subprocess I/O: the shared source

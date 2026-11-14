@@ -450,6 +450,13 @@ pub enum Error {
         /// The engine's reason.
         reason: String,
     },
+
+    /// A `design_relations` entry names no required relation.
+    #[error("design_relations entry '{name}' names no declared relation")]
+    DesignMatrixUnknownRelation {
+        /// The entry as declared.
+        name: String,
+    },
 }
 
 impl Error {
@@ -481,6 +488,7 @@ impl Error {
             Self::EngineRevisionMismatch { .. } => ErrorCode::EngineRevisionMismatch,
             Self::AuditFailed { .. } => ErrorCode::AuditFailed,
             Self::DesignJoin { .. } => ErrorCode::DesignJoin,
+            Self::DesignMatrixUnknownRelation { .. } => ErrorCode::DesignJoin,
         }
     }
 }

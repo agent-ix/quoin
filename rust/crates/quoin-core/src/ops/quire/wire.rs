@@ -90,6 +90,20 @@ pub struct CoveragePayload {
     pub carried_vocabulary: BTreeMap<String, Vec<String>>,
 }
 
+/// The `quire.design_matrix` payload, retaining the engine's matrix entries.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DesignMatrixPayload {
+    /// The obligations the run derived, in the engine's order.
+    pub obligations: Vec<Obligation>,
+    /// The run's diagnostics, in the engine's order.
+    pub diagnostics: Vec<CoverageDiagnostic>,
+    /// The design-bearing matrix entries, exactly as the engine emitted them.
+    pub coverage_matrix: Vec<serde_json::Value>,
+    /// The ordered permitted values of each declared carried field.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub carried_vocabulary: BTreeMap<String, Vec<String>>,
+}
+
 /// The request accepted by `quire.properties`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]

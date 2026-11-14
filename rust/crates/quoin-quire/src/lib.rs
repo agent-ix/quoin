@@ -53,6 +53,7 @@ pub mod assurance;
 pub mod clauses;
 pub mod coverage;
 pub mod design_join;
+pub mod design_matrix;
 pub mod engine;
 pub mod error;
 pub mod evidence;
@@ -96,6 +97,9 @@ pub mod model {
         AssuranceObligation, AssuranceRelation, AssuranceRelationKind,
         AssuranceRelationObservation, AssuranceResolution, AssuranceSchemaPremise, AssuranceSymbol,
         RelationAvailability, RelationKindAvailability, RelationKindSource,
+    };
+    pub use quire_rs::corpus::{
+        DesignBlock, DesignElement, DesignElementRef, DesignMatrixCriterion, DesignMatrixEntry,
     };
     pub use quire_rs::coverage::{
         CoverageDiagnostic, CoverageMatrixBinder, CoverageMatrixCriterion,

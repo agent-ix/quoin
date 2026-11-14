@@ -73,8 +73,8 @@ use crate::protocol::Response;
 
 use self::taxonomy::map_error;
 pub use self::wire::{
-    CoveragePayload, CoverageRequest, DesignJoinRequest, MAX_REQUEST_BYTES, MAX_SCALAR_BYTES,
-    PropertiesPayload, PropertiesRequest,
+    CoveragePayload, CoverageRequest, DesignJoinRequest, DesignMatrixPayload, MAX_REQUEST_BYTES,
+    MAX_SCALAR_BYTES, PropertiesPayload, PropertiesRequest,
 };
 
 /// Answer a `quire.coverage`.
@@ -115,6 +115,50 @@ pub fn coverage(
             .map(matrix_requirement)
             .collect(),
         carried_vocabulary: outcome.report.carried_vocabulary.clone(),
+    })
+}
+
+/// Answer a `quire.design_matrix` over the same request as `quire.coverage`.
+///
+/// # Errors
+/// The same request and host errors as [`coverage`], plus an undeclared design
+/// relation, which is identified by the `design-matrix-failed` reason.
+pub fn design_matrix(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    const OP: &str = "quire.design_matrix";
+    let request: CoverageRequest = read(request, OP)?;
+    check_bound(OP, "scope", &request.scope)?;
+    for module in &request.modules {
+        check_bound(OP, "modules", module)?;
+    }
+
+    let outcome = host(capabilities, OP)?
+        .design_matrix(Path::new(&request.scope), &paths(&request.modules))
+        .map_err(|error| {
+            if matches!(
+                &error,
+                quoin_quire::Error::DesignMatrixUnknownRelation { .. }
+            ) {
+                CoreError::new(CoreErrorCode::Refused, error.to_string())
+                    .with_context("op", OP)
+                    .with_context("reason", "design-matrix-failed")
+            } else {
+                map_error(&error, OP)
+            }
+        })?;
+    let coverage_matrix = outcome
+        .design_matrix
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| CoreError::new(CoreErrorCode::Io, error.to_string()))?;
+    ok(&DesignMatrixPayload {
+        obligations: outcome.report.obligations.iter().map(obligation).collect(),
+        diagnostics: outcome.report.diagnostics.iter().map(diagnostic).collect(),
+        coverage_matrix,
+        carried_vocabulary: outcome.report.carried_vocabulary,
     })
 }
 

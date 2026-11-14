@@ -13,7 +13,9 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Response, canonical_json};
 
 use crate::core_runtime::invoke;
-use crate::evidence::audit::{Assembly, AuditOptions, assemble_with, module_arg, policy_args};
+use crate::evidence::audit::{
+    Assembly, AuditOptions, assemble_for_matrix_with, module_arg, policy_args,
+};
 use crate::evidence::{json_arg, repo_arg, required};
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
@@ -94,7 +96,7 @@ pub(crate) fn build(
     repo: &str,
     run_observations: &[crate::run_observation::RunObservationFile],
 ) -> Result<Built, String> {
-    let audited = match assemble_with(options, repo)? {
+    let audited = match assemble_for_matrix_with(options, repo)? {
         Assembly::Audited(audited) => audited,
         Assembly::Declined(response) => return Ok(Built::Declined(response)),
     };
@@ -132,6 +134,11 @@ pub(crate) fn build(
     request.insert("audit".to_owned(), report);
     if let Some(coverage) = evidence_report.get("coverage_matrix") {
         request.insert("coverage".to_owned(), coverage.clone());
+    }
+    // Preserve the design-bearing entries quire-rs emitted, including an
+    // absent matrix when the engine found no entries.
+    if let Some(coverage) = audited.coverage.get("coverage_matrix") {
+        request.insert("design_coverage".to_owned(), coverage.clone());
     }
     request.insert(
         "analysis_evidence".to_owned(),
