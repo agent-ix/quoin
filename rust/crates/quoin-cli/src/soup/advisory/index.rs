@@ -130,6 +130,7 @@ impl RecordIndex {
     }
 }
 
+#[implements("FR-142")]
 pub(in crate::soup) fn purl_type(purl: &str) -> Option<&str> {
     let kind = purl.strip_prefix("pkg:")?.split_once('/')?.0;
     Some(if kind.eq_ignore_ascii_case("cargo") {
