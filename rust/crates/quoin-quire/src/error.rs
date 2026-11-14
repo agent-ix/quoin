@@ -487,8 +487,9 @@ impl Error {
             Self::EnginePremise { .. } => ErrorCode::EnginePremise,
             Self::EngineRevisionMismatch { .. } => ErrorCode::EngineRevisionMismatch,
             Self::AuditFailed { .. } => ErrorCode::AuditFailed,
-            Self::DesignJoin { .. } => ErrorCode::DesignJoin,
-            Self::DesignMatrixUnknownRelation { .. } => ErrorCode::DesignJoin,
+            Self::DesignJoin { .. } | Self::DesignMatrixUnknownRelation { .. } => {
+                ErrorCode::DesignJoin
+            }
         }
     }
 }
