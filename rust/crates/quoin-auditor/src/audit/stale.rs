@@ -10,7 +10,8 @@
 //! review FND-007).
 
 use quoin_combinatorial::js;
-use quoin_evidence::types::{Binding, Outcome};
+use quoin_evidence::stale::failed_bound_symbols;
+use quoin_evidence::types::Binding;
 use quoin_finding_types::{Finding, FindingKind, Severity};
 use quoin_quire_types::Obligation;
 
@@ -68,21 +69,11 @@ pub(super) fn failed_run(
         let Some(run) = indexed.runs_by_suite.get(binding.suite.as_str()) else {
             continue;
         };
-        for symbol in &binding.symbols {
-            let Some(entry) = run
-                .entries
-                .iter()
-                .find(|entry| entry.symbol.as_str() == symbol.as_str())
-            else {
-                continue;
-            };
-            if !matches!(entry.outcome, Outcome::Fail | Outcome::Error) {
-                continue;
-            }
+        for entry in failed_bound_symbols(binding, run) {
             failed.push(format!(
                 "{suite}:{symbol} {outcome} in the recorded run",
                 suite = binding.suite,
-                symbol = symbol.as_str(),
+                symbol = entry.symbol.as_str(),
                 outcome = entry.outcome.as_str(),
             ));
         }

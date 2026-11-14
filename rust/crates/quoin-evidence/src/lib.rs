@@ -37,6 +37,7 @@
 pub mod adapters;
 pub mod assurance_records;
 pub mod error;
+pub mod export;
 pub mod ids;
 pub mod independence;
 pub mod mock_inspection;
@@ -46,6 +47,7 @@ pub mod qualify;
 pub mod record;
 pub mod scenario;
 pub mod source;
+pub mod stale;
 pub mod store;
 pub mod trust;
 pub mod types;

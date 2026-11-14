@@ -150,6 +150,18 @@ impl DiskEvidence {
         Self { repo, root }
     }
 
+    /// Open an evidence store at an explicitly selected directory.
+    #[must_use]
+    pub fn at_path(root: impl Into<PathBuf>) -> Self {
+        let root = root.into();
+        let repo = root
+            .parent()
+            .and_then(Path::parent)
+            .unwrap_or_else(|| Path::new("."))
+            .to_path_buf();
+        Self { repo, root }
+    }
+
     /// The repository this store belongs to.
     #[must_use]
     pub fn repo(&self) -> &Path {
