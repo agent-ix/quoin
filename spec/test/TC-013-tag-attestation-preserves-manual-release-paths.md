@@ -29,9 +29,10 @@ and native release paths retain their input and publish gates.
 1. `release.yml` is triggered only by `workflow_dispatch`; its `publish` input is a
    boolean defaulting to `false`; the npm publish action receives
    `${{ inputs.publish }}`; and the post-publish smoke step runs only when
-   `inputs.publish` is true.
+   `inputs.publish` is true. Its publish job also retains the guard requiring
+   `github.ref == 'refs/heads/main'`.
 2. `native-release.yml` remains triggered only by `workflow_dispatch`.
 3. `tag-attestation.yml` is triggered by pushes of `v*` tags, has no job
-   dependency on either manually dispatched release workflow, and calls the
-   shared Engineering Assurance `.github/workflows/release-attestation.yml`
-   reusable workflow.
+   dependency on either manually dispatched release workflow, references only
+   jobs defined in its own workflow, and calls the shared Engineering
+   Assurance `.github/workflows/release-attestation.yml` reusable workflow.

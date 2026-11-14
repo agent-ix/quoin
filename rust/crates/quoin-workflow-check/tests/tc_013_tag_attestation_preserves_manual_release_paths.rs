@@ -41,6 +41,10 @@ fn tc_013_tag_attestation_preserves_manual_release_paths() {
     let manual = only_event(&release, "workflow_dispatch");
     let publish = &manual["inputs"]["publish"];
     assert_eq!(publish["default"].as_bool(), Some(false));
+    assert_eq!(
+        release["jobs"]["publish-npm"]["if"].as_str(),
+        Some("github.ref == 'refs/heads/main'")
+    );
 
     let publish_step = release["jobs"]["publish-npm"]["steps"]
         .as_sequence()
@@ -67,6 +71,22 @@ fn tc_013_tag_attestation_preserves_manual_release_paths() {
     let tag_attestation = workflow("tag-attestation.yml");
     let push = only_event(&tag_attestation, "push");
     assert_eq!(push["tags"][0].as_str(), Some("v*"));
+    let jobs = tag_attestation["jobs"]
+        .as_mapping()
+        .expect("workflow has jobs");
+    for job in jobs.values() {
+        if let Some(needs) = job.get("needs") {
+            let dependencies = needs.as_sequence().expect("job dependencies are a list");
+            for dependency in dependencies {
+                let dependency = dependency.as_str().expect("dependency is a job name");
+                assert!(
+                    jobs.contains_key(&Value::String(dependency.to_owned())),
+                    "tag workflow dependency {dependency} must name a local job"
+                );
+                assert!(!matches!(dependency, "publish" | "publish-npm"));
+            }
+        }
+    }
     let attest = &tag_attestation["jobs"]["attest"];
     assert!(
         attest["uses"]
