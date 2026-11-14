@@ -840,7 +840,7 @@ fn tc_173_each_authored_disposition_records_and_renders_as_tailored() {
             !report.contains("| C2 | Applicable | Compliant"),
             "{report}"
         );
-        assert!(report.contains(decision), "{report}");
+        assert!(report.contains(&decision.replace('_', "\\_")), "{report}");
     }
 }
 
