@@ -83,7 +83,11 @@ fn design_entry(
     criteria: Vec<Value>,
     design: Option<Value>,
 ) -> Value {
-    let mut entry = json!({ "document": document, "criteria": criteria });
+    let mut entry = json!({ "document": document });
+    entry
+        .as_object_mut()
+        .unwrap()
+        .insert("criteria".to_owned(), Value::Array(criteria));
     if let Some(id) = id {
         entry["id"] = json!(id);
     }
@@ -94,7 +98,12 @@ fn design_entry(
 }
 
 fn covered_block(elements: Value) -> Value {
-    json!({ "relation": "realized-by", "check": "implemented", "state": "covered", "elements": elements, "dangling": [], "kind_mismatch": [] })
+    let mut block = json!({ "relation": "realized-by", "check": "implemented", "state": "covered", "dangling": [], "kind_mismatch": [] });
+    block
+        .as_object_mut()
+        .unwrap()
+        .insert("elements".to_owned(), elements);
+    block
 }
 
 fn uncovered_block(check: &str) -> Value {
