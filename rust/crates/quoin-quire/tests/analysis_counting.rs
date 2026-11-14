@@ -29,7 +29,7 @@ use quoin_evidence::qualify::{
     ActorAdmission, CiAssociation, ExecutionAssociation, HostObservations, POSITIVE_USE_DECISION,
     RetainedRun, RunObservation,
 };
-use quoin_evidence::record::{RecordRequest, record_run};
+use quoin_evidence::record::{RecordRequest, record_run_with_analysis_projection};
 use quoin_evidence::store::read_bindings;
 use quoin_evidence::types::{
     Binding, ProducerContext, RunRecord, TrustDecision, TrustDecisionKind, TrustTrigger, TrustUse,
@@ -176,13 +176,15 @@ impl Recorded {
 
     /// `quoin evidence record --adapter differential-report --discharges`.
     fn record(&mut self, suite: &str, timestamp: &str, report: &str, discharges: &[&str]) {
-        let mut entries = parse_differential_report(report).unwrap().entries;
+        let mut result = parse_differential_report(report).unwrap();
+        let projection = result.analysis_projection.take().unwrap();
+        let mut entries = result.entries;
         for entry in &mut entries {
             if !discharges.is_empty() {
                 entry.trace_ids = Some(discharges.iter().map(|id| (*id).to_owned()).collect());
             }
         }
-        let outcome = record_run(
+        let outcome = record_run_with_analysis_projection(
             &mut self.source,
             &RecordRequest {
                 suite: SuiteId::new(suite),
@@ -193,10 +195,10 @@ impl Recorded {
                 entries,
             },
             &obligations(),
+            &projection,
         )
         .unwrap();
-        self.reports
-            .push((outcome.run_path, serde_json::from_str(report).unwrap()));
+        self.reports.push((outcome.run_path, projection));
     }
 
     /// One hand-built entry on a symbol, the way a later run of the same
@@ -211,7 +213,12 @@ impl Recorded {
     ) {
         let mut entry = RunEntry::new(symbol, outcome);
         entry.trace_ids = Some(discharges.iter().map(|id| (*id).to_owned()).collect());
-        let outcome = record_run(
+        let report_text = serde_json::to_string(&report).unwrap();
+        let projection = parse_differential_report(&report_text)
+            .unwrap()
+            .analysis_projection
+            .unwrap();
+        let outcome = record_run_with_analysis_projection(
             &mut self.source,
             &RecordRequest {
                 suite: SuiteId::new(suite),
@@ -222,9 +229,10 @@ impl Recorded {
                 entries: vec![entry],
             },
             &obligations(),
+            &projection,
         )
         .unwrap();
-        self.reports.push((outcome.run_path, report));
+        self.reports.push((outcome.run_path, projection));
     }
 
     fn runs(&self) -> Vec<RetainedRun> {

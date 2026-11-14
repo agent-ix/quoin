@@ -13,6 +13,7 @@ use super::{
     Cause, ExecutionAssociation, HostObservations, POSITIVE_USE_DECISION, Premise, Refusal,
     RetainedRun, RunLocator,
 };
+use crate::paths::{RUNS_DIR, record_path};
 use crate::trust::assess_trust;
 use crate::types::{RunEntry, TrustStatus};
 
@@ -287,12 +288,11 @@ fn engine_fact(report: &Value, engine: &str) -> Result<String, String> {
         .flatten()
         .find(|record| text(record, "engine") == Some(engine))
         .ok_or_else(|| format!("no {engine} engine record"))?;
-    let executable = text(record, "configuredExecutable")
+    let executable = text(record, "configured_executable")
         .filter(|path| Path::new(path).is_absolute())
-        .ok_or_else(|| format!("{engine} has no absolute configuredExecutable"))?;
-    let identity = record.get("identity");
-    let path = identity.and_then(|identity| text(identity, "path"));
-    let version = identity.and_then(|identity| text(identity, "version"));
+        .ok_or_else(|| format!("{engine} has no absolute configured executable"))?;
+    let path = text(record, "identity_path");
+    let version = text(record, "identity_version");
     let (Some(_path), Some(version)) = (path, version) else {
         return Err(format!(
             "{engine} has no observed identity path and version"
@@ -311,7 +311,7 @@ fn report_premises<'a>(
     provenance: &mut Vec<String>,
     refusals: &mut Vec<Refusal>,
 ) -> Option<(&'a str, &'a str)> {
-    let (entry, locator) = (probe.entry, probe.locator);
+    let locator = probe.locator;
     let tool = Premise::ToolAndConfiguration;
     let run: &'a RetainedRun = probe.run;
     let Some(report) = run.report.as_ref() else {
@@ -323,24 +323,19 @@ fn report_premises<'a>(
         ));
         return None;
     };
-    let symbol = match (text(report, "analysisKind"), text(report, "requestDigest")) {
-        (Some(kind), Some(digest)) => format!("{kind}::{digest}"),
-        _ => String::new(),
-    };
-    if symbol != entry.symbol.as_str() {
+    if run.file != record_path(RUNS_DIR, &run.record.suite, &run.record.timestamp)
+        || !valid_projection(report, &run.record)
+    {
         refusals.push(refusal(
-            Cause::Unevaluated,
+            Cause::RecordConflict,
             tool,
             locator,
-            "the supplied report does not correspond to the entry",
+            "the supplied projection does not match the retained run",
         ));
         return None;
     }
-    let differential = report.get("differential");
-    let agreed = differential.and_then(|differential| text(differential, "disposition"))
-        == Some("agreement")
-        && differential.and_then(|differential| text(differential, "agreedStatus"))
-            == Some("satisfied");
+    let agreed = text(report, "disposition") == Some("agreement")
+        && text(report, "agreed_status") == Some("satisfied");
     if !agreed {
         refusals.push(Refusal {
             cause: Cause::RecordConflict,
@@ -374,4 +369,85 @@ fn report_premises<'a>(
         provenance.extend(facts);
     }
     Some((name, version))
+}
+
+/// Validate the exact allowlisted projection and its one-to-one run mapping.
+fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
+    let Some(root) = report.as_object() else {
+        return false;
+    };
+    if root.len() != 5
+        || text(report, "protocol") != Some("quoin.analysis-report-projection/v1")
+        || !matches!(
+            text(report, "disposition"),
+            Some("agreement" | "inconclusive" | "unavailable" | "disagreement")
+        )
+    {
+        return false;
+    }
+    let Some(producer) = root.get("producer").and_then(Value::as_object) else {
+        return false;
+    };
+    if producer.len() != 2
+        || text(&Value::Object(producer.clone()), "name").is_none()
+        || text(&Value::Object(producer.clone()), "version").is_none()
+    {
+        return false;
+    }
+    let disposition = text(report, "disposition");
+    let agreed = report.get("agreed_status");
+    match (disposition, agreed.and_then(Value::as_str), agreed) {
+        (Some("agreement"), Some("satisfied" | "refuted"), _) => {}
+        (Some("inconclusive" | "unavailable" | "disagreement"), None, Some(Value::Null)) => {}
+        _ => return false,
+    }
+    let Some(engines) = report.get("engines").and_then(Value::as_array) else {
+        return false;
+    };
+    if engines.len() != 2 {
+        return false;
+    }
+    for (index, engine) in engines.iter().enumerate() {
+        let Some(object) = engine.as_object() else {
+            return false;
+        };
+        let expected_name = if index == 0 { "z3" } else { "cvc5" };
+        if text(engine, "engine") != Some(expected_name)
+            || text(engine, "configured_executable").is_none()
+            || text(engine, "status").is_none()
+            || text(engine, "outcome").is_none()
+            || object.keys().any(|key| {
+                !matches!(
+                    key.as_str(),
+                    "engine"
+                        | "configured_executable"
+                        | "identity_path"
+                        | "identity_version"
+                        | "status"
+                        | "outcome"
+                )
+            })
+            || ["identity_path", "identity_version"]
+                .iter()
+                .any(|key| object.get(*key).is_some_and(|value| !value.is_string()))
+        {
+            return false;
+        }
+    }
+    match disposition {
+        Some("disagreement") => run.entries.is_empty(),
+        Some("agreement") => {
+            run.entries.len() == 1
+                && run.entries[0].outcome
+                    == match agreed.and_then(Value::as_str) {
+                        Some("satisfied") => crate::types::Outcome::Pass,
+                        Some("refuted") => crate::types::Outcome::Fail,
+                        _ => return false,
+                    }
+        }
+        Some("inconclusive" | "unavailable") => {
+            run.entries.len() == 1 && run.entries[0].outcome == crate::types::Outcome::Error
+        }
+        _ => false,
+    }
 }
