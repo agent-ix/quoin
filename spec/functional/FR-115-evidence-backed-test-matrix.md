@@ -151,9 +151,11 @@ section keyed by the document that happens to hold them.
 ### The op is pure, like `assurance.build_case`
 
 `matrix.build` runs nothing and reads nothing from disk or network. Its three
-inputs — the coverage matrix, the bindings, the audit report — are supplied
-whole on stdin by the caller, which already had to assemble them (run `quire
-coverage`, read the store, run the auditor) to produce this call's arguments.
+required inputs — the coverage matrix, the bindings, and the audit report —
+are supplied whole on stdin by the caller, which already had to assemble them
+(run `quire coverage`, read the store, run the auditor) to produce this call's
+arguments. The caller may also supply the optional FR-153 analysis-evidence
+projection described below.
 `matrix.build` adds no second freshness comparison of its own: whether a binding
 holds was already decided by the auditor, before
 `matrix.build` ever sees the result (see "Assembling the auditor's inputs",

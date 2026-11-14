@@ -119,7 +119,6 @@ not the source report and is not a second reader for that report schema:
 | Projection member | Content |
 | --- | --- |
 | `protocol` | Exact string `quoin.analysis-report-projection/v1`. |
-| `symbol` | For a report that produces a run entry, the exact `<analysisKind>::<requestDigest>` value already written to that entry. It is omitted for disagreement, which produces no entry. No second digest is computed or retained. |
 | `disposition` | The validated differential disposition from the source report. |
 | `agreed_status` | The source `agreedStatus`, or JSON `null` when the disposition is not `agreement`. |
 | `producer` | Exactly `name` and `version` from the source `producer` object. |
@@ -127,7 +126,13 @@ not the source report and is not a second reader for that report schema:
 
 The projection has no other members. It contains no query bytes, contract
 package, model, stdout, stderr, proof/solver output or unrelated report member.
-Missing optional engine identity values remain absent so the qualifier leaves
+The projection has no analysis symbol, request digest, or other run-entry
+identity. The exact suite/timestamp companion key pairs it with its run. The
+reader validates its disposition against the run's entry cardinality and
+outcome: `agreement` and `inconclusive`/`unavailable` require exactly one
+entry with the mapped outcome; `disagreement` requires zero entries. This
+one-report/one-entry rule prevents a projected result from selecting among
+multiple run entries. Missing optional engine identity values remain absent so the qualifier leaves
 the tool/configuration premise unevaluated. Projection JSON is canonical and
 the companion is immutable at its paired run key (FR-030).
 
@@ -205,7 +210,7 @@ no `traceIds` and binds nothing by itself.
 | FR-151-AC-12 | `--adapter differential-report`, `--tool differential-report` and `--tool quire-analyze` each select the adapter, `--tool tl-mltl`, `--tool r2u2` and `--tool c2po` do not, and the adapter appears in the adapter listing naming `quire.differential-report/v2` and not `differential-summary`. | Test |
 | FR-151-AC-13 | The adapter source opens no file other than its input, spawns no process and opens no network connection, and contains no `differential-summary` reader and no schema copy; `rust/Cargo.toml` names `agent-ix/quire-analyze` as a git dependency with a `rev`. Runtime projection and retention are performed by the record command under FR-030, not by the adapter. | Inspection |
 | FR-151-AC-14 | The adapter's accepted fixtures are reports captured unedited from `quire-analyze run-package` (one per disposition that the runner can produce; the `unsupported-platform` fixture is AC-5's). Each refusal fixture is derived from one capture by one stated change, stays canonical unless the change is the non-canonical form itself, and the refusal tests are table-driven with one row per refusal class: schema `quire.differential-report/v1`, `tl-mltl.differential-summary/v1`, `quire.differential-report/v3`, schema absent, schema not a string, a required member removed, an undeclared top-level member, an undeclared engine member, a wrongly typed member, an unknown `disposition`, an unknown engine `status`, an unknown engine `outcome`, empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar, non-JSON text, `agreement` with a `null` `agreedStatus`, `disagreement` with a non-null `agreedStatus`, `agreement` with an engine `status` differing from `agreedStatus`, the same engine twice, members reordered, a pretty-printed copy, and an input of `MAX_REPORT_BYTES` + 1 bytes (synthetic padding, the only fixture that is neither a capture nor a one-change derivation). | Inspection |
-| FR-151-AC-15 | For each accepted disposition, the retained projection has exactly the FR-151 allowlist, its `symbol` matches the adapter-derived run-entry symbol when one exists, and it omits `symbol` for a disagreement's zero-entry run. Its producer/engine identity and disposition fields equal the validated source report. Query, model, stdout, stderr, proof/solver output and every undeclared source member are absent from the projection. | Test |
+| FR-151-AC-15 | For each accepted disposition, the retained projection has exactly the FR-151 allowlist and has no symbol, request digest or other analysis identity. The exact suite/timestamp key pairs it with a run containing exactly one entry with the mapped outcome for `agreement`, `inconclusive` or `unavailable`, or zero entries for `disagreement`; the reader refuses positive qualification for any other cardinality/outcome. Its producer/engine identity and disposition fields equal the validated source report. Query, model, stdout, stderr, proof/solver output and every undeclared source member are absent from the projection. | Test |
 
 ## Dependencies
 

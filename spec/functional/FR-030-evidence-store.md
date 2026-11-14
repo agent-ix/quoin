@@ -112,8 +112,11 @@ people to click through it.
   change either member, the operation SHALL refuse without changing either
   file. A reader SHALL refuse positive qualification if exactly one member
   exists, the projection is invalid, or it does not match the stored run's
-  suite, timestamp, entry symbols and outcomes (including the zero-entry
-  requirement and absent projection symbol for disagreement). Existing run records without
+  suite, timestamp, disposition, entry cardinality and mapped outcome
+  (including the zero-entry requirement for disagreement). A report-backed
+  run contains exactly one entry for agreement, inconclusive or unavailable;
+  the projection has no entry identity and cannot select among run entries.
+  Existing run records without
   a companion projection remain readable by legacy audit views but cannot qualify
   as analysis results.
 - `gc` SHALL delete a differential-report companion only with its exact paired
@@ -168,7 +171,7 @@ undischarged with the evidence sitting right there.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-030-AC-1 | The store root is `spec/evidence/`, and a run path is `runs/<SUITE-N>/<timestamp>.json`, the timestamp reduced to ASCII letters, digits and `-`. No run record carries a commit. A differential-report projection, when retained, is at `analysis-reports/<SUITE-N>/<timestamp>.json` under the same key; its `symbol` mirrors an existing run-entry symbol and is absent for disagreement, and neither file adds a commit, derived content digest, CI association, signer principal or report field to `RunRecord`. | Test |
+| FR-030-AC-1 | The store root is `spec/evidence/`, and a run path is `runs/<SUITE-N>/<timestamp>.json`, the timestamp reduced to ASCII letters, digits and `-`. No run record carries a commit. A differential-report projection, when retained, is at `analysis-reports/<SUITE-N>/<timestamp>.json` under the same key; it contains no run-entry symbol or request digest, and the run's entry cardinality and outcome must match its disposition. Neither file adds a commit, derived content digest, CI association, signer principal or report field to `RunRecord`. | Test |
 | FR-030-AC-2 | Writes are canonical and byte-identical across repeated serialization of the same record. | Test |
 | FR-030-AC-3 | Two suites at one timestamp produce separate records. A re-run at the same timestamp is last-write-wins for ordinary runs. For a differential-report projection/run pair, identical replay is idempotent and any changed projection or run at the occupied key is refused with both files unchanged. | Test |
 | FR-030-AC-4 | A passing symbol binds its obligation; a failing or skipped symbol binds nothing while its run is still recorded. | Test |

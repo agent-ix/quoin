@@ -84,14 +84,22 @@ read from the exact FR-030 companion path
 path `runs/<SUITE-N>/<timestamp>.json`. The projection and run form one
 immutable retained pair. The writer validates the source report through FR-151
 before constructing the projection; the reader validates the projection
-protocol and its members. When the projection has a `symbol`, the reader
-verifies that it equals the selected run's entry symbol and that the outcome
-matches the disposition. When `symbol` is absent, the reader requires a
-`disagreement` disposition and a zero-entry run. The host's
-FR-036 signature-verification result MUST identify a verified signed commit
-whose tree contains these exact projection and run files as the paired evidence;
-the host also verifies that the bytes read for both files are the bytes in that
-commit. A missing, unpaired, invalid, changed or run-mismatched projection
+protocol and its members. The projection has no symbol, request digest or
+other run-entry identity. For `agreement`, `inconclusive` and `unavailable`,
+the reader requires exactly one run entry and verifies that its outcome is the
+one mapped from the disposition and agreed status; for `disagreement`, it
+requires a zero-entry run. This one-entry rule prevents a result from matching
+one entry among several. The host's FR-036 signature-verification result MUST
+identify the verified signed commit C for the exact pair. The host verifies
+that the signature-verification result was produced for C's exact commit
+object identity; matching tree contents or an unrelated later result is not
+enough. The host verifies that C contains both selected files byte-for-byte
+and that, relative to C's
+first parent (or the empty tree for a root commit), neither canonical path
+existed and C adds both paths in that commit. A commit adding only one member,
+or a later commit whose tree merely retains the pair, does not establish the
+pair's actor authority. The host verifies that the bytes read for both files
+are the bytes in C. A missing, unpaired, invalid, changed or run-mismatched projection
 cannot support positive qualification and is reported as `unevaluated` or
 `record-conflict` under the applicable FR-116 premise. No commit id or content
 digest is written into either file.
@@ -164,14 +172,23 @@ Ruled by the owner, not yet specified in quire-rs:
   path; the observation file SHALL NOT supply, replace or redirect the projection.
 - The read commands SHALL validate the projection's `quoin.analysis-report-projection/v1` protocol and closed
   member set before using its contents.
-- When the projection has a `symbol`, the read commands SHALL verify that it equals the paired run's entry symbol
-  and that the entry outcome matches the disposition before using projection members as qualification evidence.
-- When the projection omits `symbol`, the read commands SHALL require `disagreement` disposition and a zero-entry
-  run; that projection SHALL NOT produce an analysis record claim.
-- The host SHALL supply an FR-036 signature-verification result for a signed commit whose tree contains the exact
-  paired projection and run files.
+- The projection SHALL contain no symbol, request digest or other run-entry identity.
+- For `agreement`, `inconclusive` and `unavailable`, the read commands SHALL require exactly one run entry and
+  verify its outcome against the disposition and agreed status before using projection members as qualification
+  evidence.
+- For `disagreement`, the read commands SHALL require a zero-entry run.
+- A `disagreement` projection with a zero-entry run SHALL NOT produce an analysis record claim.
+- The host SHALL supply an FR-036 signature-verification result for the exact signed commit C that introduces the
+  selected pair.
+- The host SHALL verify that the signature-verification result is for C's exact commit object identity; matching
+  tree contents or a result for another commit SHALL NOT be treated as a result for C.
+- The host SHALL verify that both canonical paths were absent from C's first-parent tree (or the empty tree for a
+  root commit) and that C adds both files together.
+- The host SHALL reject a signature result for a later commit that merely contains the pair unchanged, or for a
+  commit that adds only one member.
 - The host SHALL verify that both selected store files are byte-identical to those in the verified commit.
-- A signature result for a commit that contains only one member or different bytes SHALL NOT satisfy actor authority.
+- A signature result for a commit that contains only one member, different bytes, or does not introduce both files
+  together relative to its first parent SHALL NOT satisfy actor authority.
 - If the run or projection has no valid paired file, the projection fails validation or does not match the run, or either file
   differs from the pair in the verified commit, then the read command SHALL leave the affected result non-qualified
   and report the applicable `record-conflict` or `unevaluated` cause with the missing or mismatched premise.
@@ -293,7 +310,7 @@ Ruled by the owner, not yet specified in quire-rs:
 | FR-153-AC-13 | An observation for another record cannot qualify the selected analysis result; the selected entry, obligation and declared method come from the canonical record and catalog; absent observations remain `unevaluated`; and no observation is reused by suite, symbol or request digest. | Test |
 | FR-153-AC-14 | Missing or malformed `selected_head` or `checkout_sha` remains `unevaluated` for performed revision; differing valid values yield `wrong-revision`; conflicting supplied `selected_head` values yield `record-conflict`; none produces `qualified-record`. | Test |
 | FR-153-AC-15 | An absent CI association or one with an empty member remains `unevaluated` for execution association; a manual association yields `qualification-rejected`; none produces `qualified-record`. | Test |
-| FR-153-AC-16 | Only an FR-116 `ActorAdmission` with string `actor` and `admission_ref` and string-array `authorized`, whose actor equals the complete FR-036 signature result's non-empty `signer.principal` for the commit that added both the selected run and its companion projection, with `status` `signed_valid` and `signer.mapping` `mapped`, and whose authorization includes the selected obligation, satisfies actor authority; empty actor/reference or missing, malformed or unverifiable signature evidence remains `unevaluated`; empty or out-of-scope authorization, actor/principal mismatch, invalid, untrusted, unmapped or principal-less signatures are `qualification-rejected` naming actor authority. | Test |
+| FR-153-AC-16 | Only an FR-116 `ActorAdmission` with string `actor` and `admission_ref` and string-array `authorized`, whose actor equals the complete FR-036 signature result's non-empty `signer.principal` for exact commit C with `status` `signed_valid` and `signer.mapping` `mapped`, and whose authorization includes the selected obligation, satisfies actor authority; the host verifies the result targets C's exact commit object identity. C's first-parent tree (or empty tree for a root commit) has neither selected canonical path and C adds both selected files with bytes matching the read pair. A later commit merely containing the pair, a commit adding only one member, a result for another commit with matching tree contents, or a byte mismatch does not satisfy actor authority. Empty actor/reference or missing, malformed or unverifiable signature evidence remains `unevaluated`; empty or out-of-scope authorization, actor/principal mismatch, invalid, untrusted, unmapped or principal-less signatures are `qualification-rejected` naming actor authority. | Test |
 | FR-153-AC-17 | Invalid observation-file JSON/protocol, empty required `protocol` or `record`, wrongly typed or incomplete members, unknown members, empty/duplicate obligation ids, duplicate record selectors or selectors outside the selected canonical store are refused without a report that claims positive qualification; a missing or invalid retained projection/run pair also cannot qualify; omitted observation files leave each affected result `unevaluated`. | Test |
 
 ## Dependencies

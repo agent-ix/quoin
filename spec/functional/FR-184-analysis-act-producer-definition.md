@@ -80,9 +80,11 @@ act, and a report from a solver started any other way is not an observation of i
 - The source report is validated against the closed `quire.differential-report/v2` schema. The FR-151 projection
   retains only `producer.name`, `producer.version`, each engine's `configuredExecutable`, observed `identity.path`
   and `identity.version` when present, each engine's `status` and `outcome`, the `disposition`, and the `agreedStatus`.
-  Its `symbol`, when present, is copied from the paired run entry; it is absent for a disagreement, which has no
-  run entry. The projection does not retain the source report's `requestDigest` separately, query, model, stdout,
-  stderr or raw solver output. These projected values are the transcribed observations the performed-act premise reads.
+  The projection contains no symbol, request digest or other run-entry identity. The exact suite/timestamp key
+  pairs it with one run; qualification requires the run cardinality and outcome mapped from the disposition and
+  agreed status (one entry for agreement, inconclusive or unavailable; zero entries for disagreement). It does not
+  retain query, model, stdout, stderr or raw solver output. These projected values are the transcribed observations
+  the performed-act premise reads.
 - The report supplies no CI system, run, attempt or job, no actor, no performed-at time and no source revision. The
   adapter's entry carries no `evidenceKind` and no `traceIds` (FR-151). Those premises come from the host (FR-116) or
   are open points below.
@@ -111,12 +113,11 @@ allowed version set (FR-184-CON-4 below).
 
 The qualifier SHALL take the asserting actor to be the signer of the record, mapped to a person through the
 signed-records feature ([PLAT-1433](https://linear.app/agent-ix/issue/PLAT-1433)). `--discharges` together with that authority is sufficient
-to bind the obligation only when the same verified signed commit contains the
-exact selected run and its exact companion projection, and both selected files
-match their bytes in that commit. A signature result for the run alone, a
-projection-only commit, a later replaced projection, or a run/projection
-mismatch does not admit actor authority. No commit id is persisted in the
-store.
+to bind the obligation only when the complete signature result targets commit C's exact object identity, C contains
+the exact selected run and companion projection bytes, and both canonical paths were absent from C's first-parent
+tree (or the empty tree for a root commit) before C adds them together. A signature result for a later commit whose
+tree merely retains the pair, for a commit adding only one member, for another commit with matching tree contents,
+or for mismatching bytes does not admit actor authority. No commit id is persisted in the store.
 
 ### What a positive qualifier decision means
 
@@ -212,7 +213,7 @@ Item 6 is unresolved: nothing counts as covered until the FR-093 assessment exis
 | FR-184-CON-1 | The definition SHALL add no field to the closed v2 report schema, `RunRecord` or `RunEntry` (FR-116-CON-2). | Compatibility | Inspection |
 | FR-184-CON-2 | Qualification SHALL run no solver and read only supplied observations (FR-116-CON-1; FR-153-CON-2). | Architecture | Inspection |
 | FR-184-CON-3 | The store SHALL retain only the FR-151 allowlisted projection, never the source report or its query/model/solver output, and never copy it into the run record; an older run with no companion remains unevaluated and is not migrated. | Compatibility | Inspection |
-| FR-184-CON-4 | The definition SHALL persist no checkout SHA, CI association, signer principal, commit id, content digest, ledger or version pin (FR-116-CON-2). A producer-authored request digest appears only inside an existing run-entry symbol when one exists; it is not separately retained in the projection, and quoin computes no digest. | Architecture | Inspection |
+| FR-184-CON-4 | The definition SHALL persist no checkout SHA, CI association, signer principal, commit id, content digest, ledger or version pin (FR-116-CON-2). A producer-authored request digest appears only inside an existing run-entry symbol when one exists; it is not copied to the projection, and quoin computes no digest. | Architecture | Inspection |
 
 ## Acceptance Criteria
 
