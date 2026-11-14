@@ -34,7 +34,7 @@ fn module_fixture(object_types: &str) -> tempfile::TempDir {
 
 fn risk_module() -> tempfile::TempDir {
     module_fixture(
-        r#"- name: residual_risk
+        r"- name: residual_risk
   body_extraction:
     yield_pattern:
       match:
@@ -42,7 +42,7 @@ fn risk_module() -> tempfile::TempDir {
           from: frontmatter_field
           path: [fixture_contract_field]
           required: true
-"#,
+",
     )
 }
 
