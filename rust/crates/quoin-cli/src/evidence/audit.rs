@@ -58,7 +58,7 @@ pub(crate) struct Audited {
 /// What [`assemble`] produced.
 pub(crate) enum Assembly {
     /// Every step answered.
-    Audited(Audited),
+    Audited(Box<Audited>),
     /// A step declined; its response is the command's answer.
     Declined(Response),
 }
@@ -152,12 +152,12 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
     if !audited.outcome.carries_payload() {
         return Ok(Assembly::Declined(audited));
     }
-    Ok(Assembly::Audited(Audited {
+    Ok(Assembly::Audited(Box::new(Audited {
         coverage: coverage.payload,
         bindings,
         audit_input,
         response: audited,
-    }))
+    })))
 }
 
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
