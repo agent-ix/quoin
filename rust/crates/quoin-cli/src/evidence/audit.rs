@@ -48,6 +48,9 @@ pub(crate) struct Audited {
     pub(crate) coverage: serde_json::Value,
     /// The binding graph the audit read, as `evidence.audit_inputs` served it.
     pub(crate) bindings: serde_json::Value,
+    /// The stored runs and scans used by the FR-032 evidence join.
+    pub(crate) runs: serde_json::Value,
+    pub(crate) scans: serde_json::Value,
     /// The `auditor.audit` response, whose payload carries `report`.
     pub(crate) response: Response,
 }
@@ -80,6 +83,10 @@ impl AuditOptions {
             independence_policy: arguments.get_one::<String>("independence-policy").cloned(),
             class_policy: arguments.get_one::<String>("class-policy").cloned(),
         }
+    }
+
+    pub(crate) fn modules(&self) -> &[String] {
+        &self.modules
     }
 }
 
@@ -120,6 +127,8 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
         return Ok(Assembly::Declined(catalog));
     }
     let bindings = field(&store.payload, "bindings")?;
+    let runs = field(&store.payload, "runs")?;
+    let scans = field(&store.payload, "scans")?;
     let mut input = serde_json::json!({
         "obligations": obligations,
         "bindings": bindings,
@@ -145,6 +154,8 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
     Ok(Assembly::Audited(Audited {
         coverage: coverage.payload,
         bindings,
+        runs,
+        scans,
         response: audited,
     }))
 }

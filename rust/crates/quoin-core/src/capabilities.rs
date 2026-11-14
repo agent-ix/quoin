@@ -322,6 +322,13 @@ pub trait QuireHost {
         modules: &[PathBuf],
     ) -> Result<quoin_quire::coverage::Outcome, quoin_quire::Error>;
 
+    /// The FR-086 design relation join for the same scope and module set.
+    fn design_join(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+    ) -> Result<quoin_quire::model::RelationReport, quoin_quire::Error>;
+
     /// Classify every document `documents` names, relative to the scope.
     ///
     /// # Errors

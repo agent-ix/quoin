@@ -78,6 +78,8 @@ pub enum ErrorCode {
     EngineRevisionMismatch,
     /// The FR-032 audit of the retained runs could not be built.
     AuditFailed,
+    /// The declared design relations could not be joined.
+    DesignJoin,
 }
 
 impl ErrorCode {
@@ -108,6 +110,7 @@ impl ErrorCode {
             Self::EnginePremise => "QQ-1080",
             Self::EngineRevisionMismatch => "QQ-1081",
             Self::AuditFailed => "QQ-1090",
+            Self::DesignJoin => "QQ-1110",
         }
     }
 
@@ -142,6 +145,7 @@ impl ErrorCode {
             Self::EnginePremise,
             Self::EngineRevisionMismatch,
             Self::AuditFailed,
+            Self::DesignJoin,
         ]
     }
 
@@ -439,6 +443,13 @@ pub enum Error {
         /// The auditor's reason.
         reason: String,
     },
+
+    /// The declared design relations could not be joined.
+    #[error("design relation join failed: {reason}")]
+    DesignJoin {
+        /// The engine's reason.
+        reason: String,
+    },
 }
 
 impl Error {
@@ -469,6 +480,7 @@ impl Error {
             Self::EnginePremise { .. } => ErrorCode::EnginePremise,
             Self::EngineRevisionMismatch { .. } => ErrorCode::EngineRevisionMismatch,
             Self::AuditFailed { .. } => ErrorCode::AuditFailed,
+            Self::DesignJoin { .. } => ErrorCode::DesignJoin,
         }
     }
 }

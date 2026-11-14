@@ -585,6 +585,17 @@ impl QuireHost for HostQuire {
         })
     }
 
+    fn design_join(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+    ) -> Result<quoin_quire::model::RelationReport, quoin_quire::Error> {
+        quoin_quire::design_join::compute(&quoin_quire::coverage::Request {
+            scope: ScopeRoot::open(scope)?,
+            modules: Self::selection(modules)?,
+        })
+    }
+
     fn properties(
         &self,
         scope: &Path,
