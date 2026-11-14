@@ -73,6 +73,7 @@ statistical_design:
       - "evidence audit --module:missing-path"
       - "evidence audit --repo:missing-path"
       - "evidence audit:unknown-flag"
+      - "evidence export-test-result:unknown-flag"
       - "evidence gc --repo:missing-path"
       - "evidence gc:unknown-flag"
       - "evidence inspect-mocks:missing-argument"

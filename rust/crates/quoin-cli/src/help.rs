@@ -35,7 +35,7 @@ const TOPICS: &[(&str, &str)] = &[
     ),
     (
         "evidence",
-        "The evidence store — what actually ran, and against which\n                    statement (record, gc).",
+        "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",
     ),
     ("graph", "Read-only evidence-graph analysis views."),
     (
@@ -84,7 +84,7 @@ const COMMANDS: &[(&str, &str)] = &[
     ),
     (
         "evidence",
-        "The evidence store — what actually ran, and against which\n                    statement.",
+        "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",
     ),
     ("graph", "Read-only evidence-graph analysis views."),
     ("matrix", crate::matrix::ABOUT),
