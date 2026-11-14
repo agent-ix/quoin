@@ -55,6 +55,7 @@ Examined `spec/assurance/AP-201-finding-quality.md` and `spec/assurance/AP-202-j
 | --- | --- | --- |
 | FND-001 | still-open | Partially addressed: a committed synthetic pack fixture and tc_172_004 now cover absent/present installation, pack classification and no sentinel in CLI install/list output. They do not run spec-security-analysis or inspect its artifacts, SpecReview or reply. FR-172-AC-3/4 remain Demonstration; quire trace reports no verifying claims, and no recorded TC-EV-061/062 skill run or named follow-up was supplied. Ticket ACs 1/2 and the skill-output portion of AC3 remain incomplete. Complete and record those demonstrations, or obtain an explicit scoped deferral to a named follow-up; this reviewer does not accept the gap on the team’s behalf. |
 | FND-001 | still-open | Round 2: the live demonstration record at /tmp/codex-controls-1530-skillrun/evidence/RESULT.md proves a no-pack not-mapped reply, but the positive install was refused with QM024_PACK_INSIDE_WORK_TREE. Both recorded module states have no pack; no control, scope_exclusion or SpecReview was authored. The record also reports missing scope_exclusion/default sets. Therefore installed-pack mappings and sentinel absence from real authored outputs remain unobserved; the empty artifact set cannot satisfy the positive criterion. No named follow-up or authorized deferral closes this gap. |
+| FND-001 | still-open | Round 3: reviews/plat-1530-positive-skill-demo.md and /var/tmp/codex-controls-1530-live-demo prove successful pack=true installation, exact-key profile evaluation, and one validated EX-1 control mapping plus an ID-only reply. This addresses the missing positive mapping example. However, the actual pack-src/std.yaml contains only clause IDs and force values, with no clause text or sentinel; the scratch repo contains no SpecReview. Therefore this run does not exercise FR-172-AC-4 / ticket AC3’s sentinel-bearing artifact, review and reply boundary. The earlier no-pack record supplies the absence case but cannot fill this remaining gap. Run and record the sentinel-bearing scenario, or obtain an explicit scoped deferral; no such deferral is recorded. |
 
 ## Disposition scope
 
@@ -156,3 +157,23 @@ Reviewed /tmp/codex-controls-1530-skillrun/evidence/RESULT.md, both recorded rep
 Signature status: raw commit contains an SSH gpgsig header. ssh-keygen -Y check-novalidate -n git verified the extracted canonical commit payload/signature successfully (exit 0). git show --show-signature cannot check signer trust because gpg.ssh.allowedSignersFile is not configured; its displayed No signature does not mean the raw commit lacks a signature. Signer authorization was not verified. No unsigned-commit finding is justified by this configuration error.
 
 No aggregate gate or live model run was performed in this disposition. Only the three review artifacts are updated in the repository, as explicitly requested by the dispatch. No commit, push or merge.
+
+## Disposition pass 3
+
+Reviewed head `14e6a21b421f72bf7208d7661595312eb61b50fc`. FND-001 remains open. The positive exact-set mapping is demonstrated, but the sentinel-bearing output scenario is not. Not mergeable.
+
+Prior fixed findings were rechecked without duplicating their disposition rows. Previous review text and prior rows remain unchanged.
+
+Reviewed frozen head 14e6a21b421f72bf7208d7661595312eb61b50fc and code-fix commit 76d944f97d267fd14ffb802942c7dbe64c259cbd. git diff confirms the latest commit adds only reviews/plat-1530-positive-skill-demo.md. The preceding fix changes the boundary test and review records; skill/spec source remains unchanged.
+
+FND-007 is independently verified by reading resolve_local_target, local_link_targets, is_safe_local_link_path and safe_reference_paths_are_explicit_and_link_targets_resolve_within_them. Relative links are now resolved from each source document; the original unlisted-relative and misleading-prefix examples are explicitly rejected, as is ../../../outside/index.md.
+
+Confirmed FND-005/006 remain fixed: free-source/asset allow-lists contain no named restricted-framework literals, and the pack-install test still imports and calls pack_support::scratch(). Other prior code/spec dispositions were rechecked; no new defect found in this pass.
+
+Read the committed positive-demo record and actual /var/tmp/codex-controls-1530-live-demo inputs/outputs: pack-src/std.yaml, pack-install.txt, module-list.txt, profile-evaluation.txt, repo/spec/security/CTRL-001-synthetic-authorization.md, positive-mapping-reply.txt and quire-validate.txt. module-list reports pack=true, evaluation reports EX-1/EX-2 binding in example.invalid/std@1, and the only written control maps EX-1. The reply contains only that mapped set/clause. No reviews directory/output exists in the scratch repo.
+
+The demo source pack has no clause-level text or sentinel. Its positive result establishes one synthetic exact-set mapping; it does not establish no-copy behavior when licensed clause text is actually available, does not prove a SpecReview output boundary, and is not generalized to other packs or agent runs. The recorded binary version is 0.31.0-46-g42c9b80e-dirty; this is reported as recorded, not relabeled as a clean build of the evidence commit.
+
+Existing exact code-fix run is cited from the coder report supplied in this dispatch: tc_171 plus tc_172 15/15, focused Clippy/fmt pass, and expected base-oracle failure at 76d944f9. These are coder-reported results, not a new independent execution. No build/test was rerun, consistent with the dispatch allowing citation of the existing run. No aggregate gate was run.
+
+Installed review tools: quoin 0.30.1, quire 0.44.0 (engine 0.59.1). FR-172 validation exits 0 with 1/1 docs grammar-clean, no grammar findings; semantic.unused-import for spec-artifacts-app is non-fatal. All three updated SR artifacts are validated at their explicit repository paths before handoff.

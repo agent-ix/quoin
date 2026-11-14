@@ -71,6 +71,7 @@ Examined `spec/assurance/AP-201-finding-quality.md` and `spec/assurance/AP-202-j
 | FND-005 | fixed | Round 2: named restricted-framework matcher and example literals are removed. The replacement enumerates only existing free-source reference paths. Its path-resolution coverage defect is separately FND-007. |
 | FND-006 | fixed | Round 2: tc_172_004 imports and uses pack_support::scratch(), restoring its existing outside-Git temporary-base selection. |
 | FND-007 | still-open | Round 2: The replacement link check uses only the suffix after a literal references/ instead of resolving the target relative to the containing document. A link such as [x](not-in-inventory/index.md) in references/standards-index.md produces no checked path, and [x](../unapproved/references/gdpr/index.md) is accepted as gdpr/index.md despite naming another location. Resolve local reference targets against their source document and enforce the approved reference root/path, with generic negative cases for relative targets and misleading prefixes. |
+| FND-007 | fixed | Round 3: resolve_local_target resolves each local target from its containing document, normalizes components and rejects absolute/root-escaping paths. is_safe_local_link_path checks the resolved reference root or explicit asset paths. The focused test asserts rejection of both original generic counterexamples and an above-root traversal. |
 
 ## Disposition scope
 
@@ -161,3 +162,23 @@ No aggregate gate or live model run was performed in this disposition. Only the 
 
 
 Independent focused Cargo tests and the extracted Rust helper probe waited for an occupied locked-build lane and were canceled before execution at the lead’s explicit request to finalize. No round-2 passing test result is claimed here; focused tests, fmt, Clippy and the expected base-oracle failure remain coder-reported. FND-007 is established by direct inspection: reference_path returns None unless rsplit_once("references/") succeeds and discards every prefix on success.
+
+## Disposition pass 3
+
+Reviewed head `14e6a21b421f72bf7208d7661595312eb61b50fc`. FND-007 fixed; all seven code findings now have fixed latest dispositions. No new code finding. Merge remains blocked by the separate gap finding.
+
+Prior fixed findings were rechecked without duplicating their disposition rows. Previous review text and prior rows remain unchanged.
+
+Reviewed frozen head 14e6a21b421f72bf7208d7661595312eb61b50fc and code-fix commit 76d944f97d267fd14ffb802942c7dbe64c259cbd. git diff confirms the latest commit adds only reviews/plat-1530-positive-skill-demo.md. The preceding fix changes the boundary test and review records; skill/spec source remains unchanged.
+
+FND-007 is independently verified by reading resolve_local_target, local_link_targets, is_safe_local_link_path and safe_reference_paths_are_explicit_and_link_targets_resolve_within_them. Relative links are now resolved from each source document; the original unlisted-relative and misleading-prefix examples are explicitly rejected, as is ../../../outside/index.md.
+
+Confirmed FND-005/006 remain fixed: free-source/asset allow-lists contain no named restricted-framework literals, and the pack-install test still imports and calls pack_support::scratch(). Other prior code/spec dispositions were rechecked; no new defect found in this pass.
+
+Read the committed positive-demo record and actual /var/tmp/codex-controls-1530-live-demo inputs/outputs: pack-src/std.yaml, pack-install.txt, module-list.txt, profile-evaluation.txt, repo/spec/security/CTRL-001-synthetic-authorization.md, positive-mapping-reply.txt and quire-validate.txt. module-list reports pack=true, evaluation reports EX-1/EX-2 binding in example.invalid/std@1, and the only written control maps EX-1. The reply contains only that mapped set/clause. No reviews directory/output exists in the scratch repo.
+
+The demo source pack has no clause-level text or sentinel. Its positive result establishes one synthetic exact-set mapping; it does not establish no-copy behavior when licensed clause text is actually available, does not prove a SpecReview output boundary, and is not generalized to other packs or agent runs. The recorded binary version is 0.31.0-46-g42c9b80e-dirty; this is reported as recorded, not relabeled as a clean build of the evidence commit.
+
+Existing exact code-fix run is cited from the coder report supplied in this dispatch: tc_171 plus tc_172 15/15, focused Clippy/fmt pass, and expected base-oracle failure at 76d944f9. These are coder-reported results, not a new independent execution. No build/test was rerun, consistent with the dispatch allowing citation of the existing run. No aggregate gate was run.
+
+Installed review tools: quoin 0.30.1, quire 0.44.0 (engine 0.59.1). FR-172 validation exits 0 with 1/1 docs grammar-clean, no grammar findings; semantic.unused-import for spec-artifacts-app is non-fatal. All three updated SR artifacts are validated at their explicit repository paths before handoff.

@@ -148,3 +148,23 @@ Reviewed /tmp/codex-controls-1530-skillrun/evidence/RESULT.md, both recorded rep
 Signature status: raw commit contains an SSH gpgsig header. ssh-keygen -Y check-novalidate -n git verified the extracted canonical commit payload/signature successfully (exit 0). git show --show-signature cannot check signer trust because gpg.ssh.allowedSignersFile is not configured; its displayed No signature does not mean the raw commit lacks a signature. Signer authorization was not verified. No unsigned-commit finding is justified by this configuration error.
 
 No aggregate gate or live model run was performed in this disposition. Only the three review artifacts are updated in the repository, as explicitly requested by the dispatch. No commit, push or merge.
+
+## Disposition pass 3
+
+Reviewed head `14e6a21b421f72bf7208d7661595312eb61b50fc`. All four original spec findings remain fixed. No new spec finding. The separate gap finding still prevents merge.
+
+Prior fixed findings were rechecked without duplicating their disposition rows. Previous review text and prior rows remain unchanged.
+
+Reviewed frozen head 14e6a21b421f72bf7208d7661595312eb61b50fc and code-fix commit 76d944f97d267fd14ffb802942c7dbe64c259cbd. git diff confirms the latest commit adds only reviews/plat-1530-positive-skill-demo.md. The preceding fix changes the boundary test and review records; skill/spec source remains unchanged.
+
+FND-007 is independently verified by reading resolve_local_target, local_link_targets, is_safe_local_link_path and safe_reference_paths_are_explicit_and_link_targets_resolve_within_them. Relative links are now resolved from each source document; the original unlisted-relative and misleading-prefix examples are explicitly rejected, as is ../../../outside/index.md.
+
+Confirmed FND-005/006 remain fixed: free-source/asset allow-lists contain no named restricted-framework literals, and the pack-install test still imports and calls pack_support::scratch(). Other prior code/spec dispositions were rechecked; no new defect found in this pass.
+
+Read the committed positive-demo record and actual /var/tmp/codex-controls-1530-live-demo inputs/outputs: pack-src/std.yaml, pack-install.txt, module-list.txt, profile-evaluation.txt, repo/spec/security/CTRL-001-synthetic-authorization.md, positive-mapping-reply.txt and quire-validate.txt. module-list reports pack=true, evaluation reports EX-1/EX-2 binding in example.invalid/std@1, and the only written control maps EX-1. The reply contains only that mapped set/clause. No reviews directory/output exists in the scratch repo.
+
+The demo source pack has no clause-level text or sentinel. Its positive result establishes one synthetic exact-set mapping; it does not establish no-copy behavior when licensed clause text is actually available, does not prove a SpecReview output boundary, and is not generalized to other packs or agent runs. The recorded binary version is 0.31.0-46-g42c9b80e-dirty; this is reported as recorded, not relabeled as a clean build of the evidence commit.
+
+Existing exact code-fix run is cited from the coder report supplied in this dispatch: tc_171 plus tc_172 15/15, focused Clippy/fmt pass, and expected base-oracle failure at 76d944f9. These are coder-reported results, not a new independent execution. No build/test was rerun, consistent with the dispatch allowing citation of the existing run. No aggregate gate was run.
+
+Installed review tools: quoin 0.30.1, quire 0.44.0 (engine 0.59.1). FR-172 validation exits 0 with 1/1 docs grammar-clean, no grammar findings; semantic.unused-import for spec-artifacts-app is non-fatal. All three updated SR artifacts are validated at their explicit repository paths before handoff.
