@@ -682,13 +682,6 @@ fn tc_173_invalid_or_inconsistent_exclusion_dispositions_are_refused() {
             "temporary_exception",
             "ix://example.invalid/security-owner-001",
             "APPROVAL-001",
-            Some("2026-08-31T23:59:60Z"),
-            None,
-        ),
-        (
-            "temporary_exception",
-            "ix://example.invalid/security-owner-001",
-            "APPROVAL-001",
             Some("2026-10-01T00:00:00Z"),
             None,
         ),
@@ -762,6 +755,29 @@ fn tc_173_invalid_or_inconsistent_exclusion_dispositions_are_refused() {
         assert!(message.contains("SCOPEX-001"), "{message}");
         assert!(message.contains(SET), "{message}");
         assert!(message.contains("C2"), "{message}");
+    }
+}
+
+#[trace("FR-173-AC-10", "FR-173-AC-13")]
+#[test]
+fn tc_173_leap_second_temporary_expiry_is_refused() {
+    let artifact = exclusion_with(
+        "SCOPEX-001",
+        SET,
+        "C2",
+        &Disposition {
+            decision: "temporary_exception",
+            owner: "ix://example.invalid/security-owner-001",
+            approval_ref: "APPROVAL-001",
+            expires_at: Some("2026-08-31T23:59:60Z"),
+        },
+    );
+    let world = World::new(&two_clauses(), &[("X.md", artifact)]);
+    let output = world.facts();
+    assert!(!output.status.success(), "{output:?}");
+    assert!(out(&output).is_empty(), "{output:?}");
+    for expected in ["SCOPEX-001", SET, "C2", "calendar instant"] {
+        assert!(err(&output).contains(expected), "{expected}: {output:?}");
     }
 }
 
