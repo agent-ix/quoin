@@ -113,20 +113,22 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
                     ));
                     continue;
                 };
-                if let Some(current) = current_attestation(fact.attestation(), as_of)? {
-                    open.push(entry(
-                        clause,
-                        DischargeState::Open,
-                        Some(current),
-                        Some(fact),
-                    ));
-                    continue;
-                }
+                // A temporary exception's decision expiry is the more specific
+                // state when it coincides with (or precedes) attestation expiry.
                 if let Some(expired) = current_decision_expiry(fact, as_of)? {
                     open.push(entry(
                         clause,
                         DischargeState::Open,
                         Some(expired),
+                        Some(fact),
+                    ));
+                    continue;
+                }
+                if let Some(current) = current_attestation(fact.attestation(), as_of)? {
+                    open.push(entry(
+                        clause,
+                        DischargeState::Open,
+                        Some(current),
                         Some(fact),
                     ));
                     continue;

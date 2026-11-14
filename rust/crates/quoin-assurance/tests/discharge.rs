@@ -539,6 +539,37 @@ fn temporary_exception_is_current_before_its_expiry_and_open_at_and_after_it() {
     }
 }
 
+/// Provenance: quoin#892
+#[trace("FR-046-AC-8", "FR-133-AC-2", "FR-174-AC-6")]
+#[test]
+fn temporary_exception_shared_attestation_expiry_is_classified_as_expired() {
+    let binding = every_state_binding();
+    let mut fact = disposition_of("SYN-002", "temporary_exception");
+    fact["decisionExpiresAt"] = serde_json::json!("2026-09-01T00:00:00.000Z");
+    fact["attestation"]["expiresAt"] = serde_json::json!("2026-09-01T00:00:00.000Z");
+
+    let report = build_discharge_report(&BuildDischargeRequest {
+        binding: binding.clone(),
+        facts: vec![fact],
+        as_of: "2026-09-01T00:00:00.000Z".to_owned(),
+    })
+    .expect("a decision may expire at the same instant as its attestation");
+    let open = report
+        .binding
+        .open
+        .iter()
+        .find(|entry| entry.clause_id == "SYN-002")
+        .expect("the exception is open at its expiry boundary");
+    assert_eq!(open.reason.as_deref(), Some("temporary exception expired"));
+
+    let mapping = build_requirements_mapping(&binding, &report)
+        .expect("one row per binding clause");
+    assert_eq!(
+        mapping.rows[1].compliance,
+        RmmCompliance::TemporaryExceptionExpired
+    );
+}
+
 /// Provenance: quoin#882
 #[trace("FR-046-AC-7")]
 #[test]

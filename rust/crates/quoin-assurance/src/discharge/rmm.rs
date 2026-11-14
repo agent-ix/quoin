@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use quoin_quire_types::{ClauseBinding, ClauseBindingReport, ClauseForce, ClauseSetKey};
 use serde::{Deserialize, Serialize};
 
-use super::parse::{current_attestation, instant, temporary_exception_expired};
+use super::parse::{instant, temporary_exception_expired};
 use super::report::{
     ClauseDischarge, DischargeError, DischargeFact, DischargeReport, DischargeState,
     UnusedDischargeFact,
@@ -184,10 +184,8 @@ fn row(
 ) -> Result<RmmRow, DischargeError> {
     let expired_temporary_exception = if entry.state == DischargeState::Open {
         match &entry.fact {
-            Some(fact) if current_attestation(fact.attestation(), as_of)?.is_none() => {
-                temporary_exception_expired(fact, as_of)?
-            }
-            Some(_) | None => false,
+            Some(fact) => temporary_exception_expired(fact, as_of)?,
+            None => false,
         }
     } else {
         false
