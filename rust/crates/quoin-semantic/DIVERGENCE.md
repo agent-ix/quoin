@@ -36,10 +36,10 @@ documents and comparing. Nothing here is inferred from documentation.
 | Repository               | Pin                                                                                 | File                                       |
 | ------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
 | `quire-rs`               | `~0.18` (resolves 0.18.3), `default-features = false`, `features = ["draft202012"]` | `Cargo.toml:43`                            |
-| `quire-contract-ir`      | `=0.17.1`, `default-features = false`                                               | `Cargo.toml:17`                            |
-| `quire-spec-language`    | `=0.17.1`, `features = ["draft202012"]`                                             | `Cargo.toml:28`                            |
-| `quire-contract-codegen` | `=0.17.1`, `features = ["draft202012"]`                                             | `Cargo.toml:24`                            |
-| `quire-analyze`          | `=0.17.1`                                                                           | `Cargo.toml:17`                            |
+| `filament-contract-ir`      | `=0.17.1`, `default-features = false`                                               | `Cargo.toml:17`                            |
+| `filament-spec-language`    | `=0.17.1`, `features = ["draft202012"]`                                             | `Cargo.toml:28`                            |
+| `filament-contract-codegen` | `=0.17.1`, `features = ["draft202012"]`                                             | `Cargo.toml:24`                            |
+| `filament-analyze`          | `=0.17.1`                                                                           | `Cargo.toml:17`                            |
 | `filament-core-data`     | none — declares explicitly that it pins no `jsonschema`                             | `crates/extraction-frontend/Cargo.toml:11` |
 
 So the split is not two-way. It is **0.18.3 in one repository and 0.17.1 in four**,
@@ -67,7 +67,7 @@ with the current release at 0.56.0.
    integer-valued floats (`10.0` satisfies `type: integer`), and the
    `oneOf` + `not` + `required` combination `ObjectTypeEntry.data_schema` uses.
 
-2. **Nothing links quoin's crates to quire-rs or quire-contract-ir.** EPIC #373
+2. **Nothing in quoin depends on quire-rs or filament-contract-ir types directly** (Cargo.lock carries `quire-contract-model` from filament-contract-ir only transitively, through quire-analyze). EPIC #373
    fixes the boundary as _"subprocess + JSON over stdin/stdout to a single
    `quoin-core` binary. Not napi-rs, not WASM."_ There is therefore no Cargo
    feature-unification or type-compatibility constraint pulling quoin onto 0.17

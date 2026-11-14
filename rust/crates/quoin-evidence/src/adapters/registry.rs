@@ -129,13 +129,13 @@ pub static ADAPTERS: &[RunAdapter] = &[
         name: "contract-conformance",
         summary: concat!(
             "Contract conformance JSONL (",
-            "quire.contract.conformance-jsonl/v1",
+            "filament.contract.conformance-jsonl/v1",
             ") — one replayed fixture per line."
         ),
         tools: &[
-            "quire-contract-conformance",
+            "filament-contract-conformance",
             "contract-conformance",
-            "quire-contract-ir",
+            "filament-contract-ir",
         ],
         parse: contract_conformance::parse_contract_conformance,
     },

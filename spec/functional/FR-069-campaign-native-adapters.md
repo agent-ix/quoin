@@ -24,7 +24,7 @@ SHALL decide no question of assurance sufficiency.
 ## Inputs
 
 - Contract conformance JSONL under the declared protocol
-  `quire.contract.conformance-jsonl/v1`, one replayed corpus fixture per line.
+  `filament.contract.conformance-jsonl/v1`, one replayed corpus fixture per line.
 - A `quire.differential-report/v2` document, read by the `differential-report` adapter of
   [FR-151](./FR-151-differential-report-v2-adapter.md), which replaces the earlier
   `<domain>.differential-summary/v1` reader (no producer wrote that schema).

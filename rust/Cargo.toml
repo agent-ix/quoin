@@ -78,7 +78,7 @@ publish = false
 [workspace.dependencies]
 quire-fixtures = { git = "https://github.com/agent-ix/quire-rs", rev = "5a45ec949737a41c69a90f6ac5eefcafb2e10716" }
 ix-trace-rs = { git = "https://github.com/agent-ix/ix-trace-rs", branch = "main" }
-quire-analyze = { git = "https://github.com/agent-ix/quire-analyze", rev = "d57468a9b28a787664a4c59e4d98a1075c9d1d2e" }
+quire-analyze = { git = "https://github.com/agent-ix/filament-analyze", rev = "d57468a9b28a787664a4c59e4d98a1075c9d1d2e" }
 quire-canonical = { git = "https://github.com/agent-ix/quire-canonical", branch = "main", features = ["serde_json"] }
 ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", branch = "main" }
 quoin-anomaly = { path = "crates/quoin-anomaly" }

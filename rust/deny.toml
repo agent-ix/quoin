@@ -326,7 +326,7 @@ unknown-git = "deny"
 allow-git = [
     # VER-80: the report validator quoin-evidence links, and its transitive
     # agent-ix git crates.
-    "https://github.com/agent-ix/quire-analyze",
+    "https://github.com/agent-ix/filament-analyze",
     "https://github.com/agent-ix/quire-contract-ir",
     "https://github.com/agent-ix/quire-verification-contracts",
     "https://github.com/agent-ix/quire-exact",

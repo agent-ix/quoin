@@ -2940,7 +2940,7 @@ dependencies = [
 [[package]]
 name = "quire-analyze"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
+source = "git+https://github.com/agent-ix/filament-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
 dependencies = [
  "ix-cli-kit",
  "jsonschema 0.17.1",
@@ -2955,7 +2955,7 @@ dependencies = [
 [[package]]
 name = "quire-analyze-method-contract"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
+source = "git+https://github.com/agent-ix/filament-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
 
 [[package]]
 name = "quire-canonical"
