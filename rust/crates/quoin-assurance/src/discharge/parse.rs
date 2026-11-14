@@ -137,16 +137,24 @@ pub(super) fn current_attestation(
 /// Whether an admitted temporary exception is still within its authored
 /// decision window.
 pub(super) fn current_decision_expiry(fact: &DischargeFact, as_of: i64) -> Checked<Option<String>> {
-    let DischargeFact::Disposition(disposition) = fact else {
-        return Ok(None);
-    };
-    let Some(expiry) = &disposition.decision_expires_at else {
-        return Ok(None);
-    };
-    if instant("decisionExpiresAt", expiry)? <= as_of {
+    if temporary_exception_expired(fact, as_of)? {
         return Ok(Some("temporary exception expired".to_owned()));
     }
     Ok(None)
+}
+
+/// Whether an admitted temporary exception's decision window has ended.
+pub(super) fn temporary_exception_expired(fact: &DischargeFact, as_of: i64) -> Checked<bool> {
+    let DischargeFact::Disposition(disposition) = fact else {
+        return Ok(false);
+    };
+    if disposition.decision != DispositionDecision::TemporaryException {
+        return Ok(false);
+    }
+    let Some(expiry) = &disposition.decision_expires_at else {
+        return Ok(false);
+    };
+    Ok(instant("decisionExpiresAt", expiry)? <= as_of)
 }
 
 /// `instant(name, value)`: the shape and calendar gate, then the number.

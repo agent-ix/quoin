@@ -521,8 +521,16 @@ fn temporary_exception_is_current_before_its_expiry_and_open_at_and_after_it() {
             .expect("the expired exception is in open work");
         assert_eq!(open.clause_id, "SYN-002");
         assert_eq!(open.reason.as_deref(), Some("temporary exception expired"));
+        let mut changed_reason_report = report.clone();
+        let changed_reason = changed_reason_report
+            .binding
+            .open
+            .iter_mut()
+            .find(|entry| entry.clause_id == "SYN-002")
+            .expect("the expired exception is in open work");
+        changed_reason.reason = Some("diagnostic wording changed".to_owned());
         assert_eq!(
-            build_requirements_mapping(&binding, &report)
+            build_requirements_mapping(&binding, &changed_reason_report)
                 .expect("one row per binding clause")
                 .rows[1]
                 .compliance,
