@@ -157,7 +157,7 @@ fn projection(report: &Value) -> Value {
             Value::Object(projected)
         })
         .collect::<Vec<_>>();
-    json!({
+    serde_json::json!({
         "protocol": "quoin.analysis-report-projection/v1",
         "disposition": report["differential"]["disposition"],
         "agreed_status": report["differential"]["agreedStatus"],
