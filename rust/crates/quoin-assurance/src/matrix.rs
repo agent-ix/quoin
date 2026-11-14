@@ -396,7 +396,7 @@ fn requirement((id, criteria): (String, Vec<MatrixCriterion>)) -> MatrixRequirem
 fn analysis_evidence_for(
     identity: Option<&quoin_quire_types::TargetLocus>,
     evidence: Option<&AnalysisEvidenceInput>,
-    coverage: &[CoverageMatrixRequirement],
+    coverage: &[MatrixCoverageRequirement],
 ) -> Option<Vec<serde_json::Value>> {
     evidence.map(|evidence| analysis_items(identity, evidence, coverage))
 }
@@ -404,7 +404,7 @@ fn analysis_evidence_for(
 fn analysis_items(
     identity: Option<&quoin_quire_types::TargetLocus>,
     evidence: &AnalysisEvidenceInput,
-    coverage: &[CoverageMatrixRequirement],
+    coverage: &[MatrixCoverageRequirement],
 ) -> Vec<serde_json::Value> {
     let Some(identity) = identity else {
         return Vec::new();
