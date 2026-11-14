@@ -2,11 +2,13 @@
 
 Index of security standards for compliance analysis. Each standard has its own directory with chapter-level detail.
 
-## When to Apply
+## Selection
 
-**ALL standards apply to ALL components.** Apply comprehensive coverage, then scope based on component function.
+This index is secondary guidance for interpreting selected sources. The repository's source profile and its
+`source-profile-evaluation-v1` document determine which clause sets are in scope and which clauses are binding.
+Do not select a source or override an evaluation outcome based on this index.
 
-| Standard | Primary Application | Key Indicator |
+| Standard | Context when selected | Key Indicator |
 |----------|---------------------|---------------|
 | [NIST 800-53](nist-800-53/index.md) | Federal information systems | US government, federal contractors |
 | [OWASP ASVS](owasp-asvs/index.md) | Application security verification | Web applications, APIs, mobile |
@@ -17,17 +19,17 @@ Index of security standards for compliance analysis. Each standard has its own d
 ### NIST SP 800-53 Rev 5.2.0
 Comprehensive security and privacy controls for federal information systems. 20 control families covering all aspects of security.
 
-**Apply when**: US federal systems, government contractors, or as comprehensive baseline.
+**Context**: US federal systems, government contractors, or a broad security baseline.
 
 ### OWASP ASVS 5.0.0
 Application Security Verification Standard. 17 verification chapters for testing application security.
 
-**Apply when**: Web applications, APIs, any user-facing software.
+**Context**: Web applications, APIs, and other user-facing software.
 
 ### EU GDPR 2016/679
 General Data Protection Regulation for EU data protection and privacy.
 
-**Apply when**: Processing personal data of EU residents.
+**Context**: Processing personal data of EU residents.
 
 ## Licence-restricted sources
 

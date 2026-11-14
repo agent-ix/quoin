@@ -3,7 +3,8 @@
 Use this reference to identify which security controls are most relevant based on component type.
 
 > [!IMPORTANT]
-> ALL standards apply to ALL components. This guide identifies PRIMARY focus areas - you must still evaluate every standard for comprehensive coverage.
+> The selected source profile and its evaluation determine the clause sets and binding clauses. This guide only suggests
+> focus areas within selected sets; it does not select sources or recompute applicability.
 
 ---
 

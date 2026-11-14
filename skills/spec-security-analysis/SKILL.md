@@ -7,18 +7,18 @@ description: Analyze specifications and implementations to identify applicable s
 
 If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
 
-Analyze a component's specification and implementation to generate comprehensive security compliance traceability. Apply ALL security standards for maximum coverage - overlapping controls strengthen rather than conflict.
+Analyze a component's specification and implementation to generate security compliance traceability for the selected source profile. Map only clauses the profile evaluation reports as binding.
 
-## Mandatory Standards
+## Sources
 
-Apply ALL of these standards to EVERY analysis (scope varies by component function):
+Apply the clause sets named by the selected source profile whose evaluation is available; applicability comes only from that evaluation.
 
 | Standard | Version | Scope |
 |----------|---------|-------|
+| NIST SP 800-53 | Rev 5.2.0 | Only when its clause set is in the selected profile |
+| OWASP ASVS | 5.0.0 | Only when its clause set is in the selected profile |
+| EU GDPR | 2016/679 | Only when its clause set is in the selected profile |
 | Licence-restricted sources in the effective profile | Exact clause-set key | Controls declared by an installed pack |
-| NIST SP 800-53 | Rev 5.2.0 | Security & Privacy Controls |
-| OWASP ASVS | 5.0.0 | Application Security Verification |
-| EU GDPR | 2016/679 | Data Protection Articles |
 
 ## Process
 
@@ -28,26 +28,31 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
    - Identify component type and function
 
 2. **Identify Applicable Controls**
-   - Read [references/standards-index.md](references/standards-index.md) for standard selection
-   - Select relevant chapters from each standard's index:
+   - Use [references/standards-index.md](references/standards-index.md) as secondary context for interpreting selected sources; it does not select sources
+   - Select relevant chapters from the indexes for sets in the effective profile:
      - [nist-800-53/index.md](references/nist-800-53/index.md) → Control families
      - [owasp-asvs/index.md](references/owasp-asvs/index.md) → V1-V17 chapters
      - [gdpr/index.md](references/gdpr/index.md) → Chapters II-V
    - Use index decision guides to choose specific chapters to investigate
    - Reference [component-type-mapping.md](references/component-type-mapping.md) for scope guidance
-   - **[REQUIRED]** Verify identified controls against official FREE sources:
+   - Verify identified controls against official FREE sources when the selected profile includes those sets:
      - NIST 800-53: https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final (US Gov - fully open)
      - OWASP ASVS: https://github.com/OWASP/ASVS (CC BY-SA 4.0 - fully open)
      - GDPR: https://eur-lex.europa.eu/eli/reg/2016/679/oj (EU Law - fully open)
    - Local references for the free sources are summaries; use the free sources above for specific control details
    - **Licensed standards come from an installed pack only.** The skill ships no reference table, summary or web source for a licence-restricted source. Its clause ids are read from the clause set of a locally installed pack (`quoin module list` shows `pack=true`) and nowhere else; when no pack is installed the skill does not recall ids, titles or descriptions from memory, prose or the web
-   - **A pack is the source's set only by its key.** A pack counts as a source's set only when its set key is the one the user's `source-profile.yaml` lists in `add`; never choose a set by the similarity of its name to the source's. The skill may read an installed pack's clause text locally to judge which clause applies, and never writes any title, text or paraphrase of it into an artifact, review or reply; the id and the set key are the whole reference
-   - **Read the installed clause sets** before writing any mapping. Run `quoin module list`, then read each installed module's manifest `clause_sets` files. A clause set is keyed `authority/id@version`; this skill's free sets are `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` (both in the `spec-objects-security` module). A set is installed only if it appears there
+   - **A pack is the source's set only by its key.** A pack counts as a source's set only when its exact key appears in the evaluation document; never choose a set by the similarity of its name to the source's. The skill may read an installed pack's clause text locally to understand a binding clause while grouping controls and linking requirements, but it must not change the evaluation's outcome. It never writes any title, text or paraphrase of the clause into an artifact, review or reply; the id and the set key are the whole reference
+   - **Evaluate the selected profile before mapping.** Run `quoin profile evaluate --out-dir <tmp>` and use only the resulting `source-profile-evaluation-v1` document to decide applicability. Do not independently recompute applicability. If there is no `.ix/source-profile.yaml`, stop before mapping and ask the user to create it. Name the defaults `web-app-baseline`, `data-platform-baseline`, and `minimal`; do not imply they are currently shipped or selectable unless their profile artifacts are present, and never default to all sources.
+   - Do not write or change `.ix/source-profile.yaml` or any `context` value; the repository supplies profile selection and product facts.
+   - If evaluation exits nonzero, emits no document, or emits a document that fails schema validation, report the failure and stop without mapping or authoring controls/exclusions.
+   - Use only clause sets present in the evaluation document. A clause reported `binding` may be mapped according to the component boundary. For `unresolved`, name the missing context dimension in a SpecReview item and author no control/exclusion for that clause. Do not map `not_binding` clauses or clauses from sets absent from the selected profile.
+   - If a selected set is `unavailable`, report `not mapped, set not installed` for that set and continue mapping other evaluated sets.
+   - Run `quoin module list` and read installed module manifest `clause_sets` files only to verify clause references; a clause set is keyed `authority/id@version`. The free keys are `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0` when selected and installed.
 
 3. **Map Controls to Requirements**
    - Link each applicable clause to the FR/NFR/StR that covers it
    - Group clauses by the capability that answers them; each group is one control
-   - A clause that applies and has no covering requirement is a gap
+   - A binding clause that has no covering requirement is a gap
    - A clause is mapped only when its set is installed and the set holds the clause id exactly
 
 4. **Define Scope Boundaries**
@@ -82,7 +87,7 @@ Apply ALL of these standards to EVERY analysis (scope varies by component functi
 
 ## Rules
 
-- Apply ALL standards - comprehensive coverage trumps minimal compliance, subject to the installed sets below
+- Apply only the sets selected in the source profile and the clauses the profile evaluation reports as `binding`
 - When a source's clause set is not installed, write no mapping for it and state in the reply "not mapped, set not installed" with the source name
 - Never supply the text, title or summary of a licence-restricted clause in any artifact, review or reply; reference such a clause by id only, and only from an installed pack
 - Every control links to the FR/NFR/StR it implements through frontmatter `relationships`
