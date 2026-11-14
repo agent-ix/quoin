@@ -105,7 +105,7 @@ pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Dis
     let mut stated_anywhere = false;
     for (suite, suite_runs) in by_suite(runs) {
         let suite_runs = ordered(suite_runs);
-        if let Some((stated, refusal)) = duplicate_path_refusal(&suite, &suite_runs, obligation) {
+        if let Some((stated, refusal)) = duplicate_path_refusal(suite, &suite_runs, obligation) {
             stated_anywhere |= stated;
             refusals.push(refusal);
             continue;
