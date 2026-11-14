@@ -101,22 +101,6 @@ fn validate(observation: &RunObservationFile, path: &str) -> Result<(), String> 
             "run observation {path} signature_result must be an object"
         ));
     }
-    if let Some(ci) = &observation.ci_association {
-        for (member, value) in [
-            ("system", &ci.system),
-            ("project", &ci.project),
-            ("run", &ci.run),
-            ("attempt", &ci.attempt),
-            ("job", &ci.job),
-            ("invocation", &ci.invocation),
-        ] {
-            if value.is_empty() {
-                return Err(format!(
-                    "run observation {path} ci_association.{member} is empty"
-                ));
-            }
-        }
-    }
     if let Some(actor) = &observation.actor_authority {
         let mut authorized = BTreeSet::new();
         if actor
@@ -260,5 +244,37 @@ mod tests {
         let inputs = read_run_observations(&[first, second]).expect("typed host facts");
         assert_eq!(inputs.len(), 2);
         drop((directory_one, directory_two));
+    }
+
+    /// FR-153-AC-15: empty but well-typed CI members remain available to the
+    /// qualifier, which classifies the execution premise as unevaluated.
+    #[trace("FR-153-AC-15")]
+    #[test]
+    fn empty_ci_association_member_is_a_valid_wire_observation() {
+        let value = serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": "runs/unit/2026-11-13.json",
+            "ci_association": {
+                "system": "",
+                "project": "agent-ix/quoin",
+                "run": "run-17",
+                "attempt": "1",
+                "job": "analysis",
+                "invocation": "step-9",
+            }
+        });
+        let (directory, path) = file(&value);
+        let observations = read_run_observations(&[path]).expect("typed empty member is accepted");
+        assert_eq!(
+            observations
+                .first()
+                .expect("one observation")
+                .ci_association
+                .as_ref()
+                .expect("CI observation")
+                .system,
+            ""
+        );
+        drop(directory);
     }
 }

@@ -552,7 +552,7 @@ fn without_the_hosts_mock_inspection_the_audit_cannot_call_the_obligation_health
     );
 }
 
-#[trace("FR-116-AC-7", "FR-116-AC-8")]
+#[trace("FR-116-AC-7", "FR-116-AC-8", "FR-153-AC-13")]
 #[test]
 fn an_observation_of_one_record_never_qualifies_another() {
     let mut store = Recorded::new();
@@ -663,7 +663,7 @@ fn a_reliance_decision_with_any_limitation_grants_no_positive_decision() {
     }
 }
 
-#[trace("FR-184-AC-10", "FR-184-AC-11", "FR-184-AC-12")]
+#[trace("FR-184-AC-10", "FR-184-AC-11", "FR-184-AC-12", "FR-153-AC-15")]
 #[test]
 fn association_and_engine_observations_are_premises_of_the_decision() {
     let store = satisfied_store(&[AC1]);
@@ -680,6 +680,21 @@ fn association_and_engine_observations_are_premises_of_the_decision() {
     );
     let outcome = store.count_with(&[AC1], admitted(), |observation| {
         observation.execution = None;
+    });
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::Unevaluated,
+        "execution association premise",
+    );
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.execution = Some(ExecutionAssociation::Ci(CiAssociation {
+            system: String::new(),
+            project: "agent-ix/quoin".to_owned(),
+            run: "run-17".to_owned(),
+            attempt: "1".to_owned(),
+            job: "analysis".to_owned(),
+            invocation: "step-9".to_owned(),
+        }));
     });
     assert_uncounted_naming(
         &outcome,
