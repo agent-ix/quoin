@@ -133,6 +133,88 @@ fn synthetic_row(purl: &str, advisory: Attached) -> Row {
     }
 }
 
+fn empty_npm_row(free_of_osv: bool) -> Row {
+    Row {
+        join: RecordJoin {
+            path: PathBuf::from("SOUP.md"),
+            id: None,
+            purl: "pkg:npm/example@1.0.0".to_owned(),
+            clause: None,
+            advisories: Vec::new(),
+            free_of: if free_of_osv {
+                vec![Tool::OsvScanner]
+            } else {
+                Vec::new()
+            },
+        },
+        version: None,
+        serves: Listed::Absent,
+        anomalies: Listed::Absent,
+        support: Evaluation {
+            support_status: Resolved::Unknown,
+            end_of_support: Resolved::Unknown,
+            past_end_of_support: false,
+        },
+        policy: RecordPolicy {
+            findings: Vec::new(),
+            status: PolicyStatus::NotRun,
+        },
+    }
+}
+
+fn report_with_osv(row: Row, outcome: ScanOutcome) -> Report {
+    Report {
+        as_of: "2026-08-01".to_owned(),
+        rows: vec![row],
+        scans: vec![ScanState {
+            tool: Tool::OsvScanner,
+            ruleset: None,
+            outcome,
+            unread: Vec::new(),
+        }],
+        unmatched: Vec::new(),
+        licence: LicenceState {
+            outcome: LicenceOutcome::NotRun,
+            unread: Vec::new(),
+        },
+        deny_policy_read: None,
+        unmatched_policy: Vec::new(),
+        unreadable_scans: Vec::new(),
+    }
+}
+
+#[trace("FR-142-AC-21")]
+#[test]
+fn osv_report_distinguishes_no_scan_from_a_clean_scan_for_npm() {
+    let not_run = markdown(&report_with_osv(empty_npm_row(false), ScanOutcome::NotRun));
+    let clean = markdown(&report_with_osv(
+        empty_npm_row(true),
+        ScanOutcome::Read {
+            suite: "synthetic-suite".to_owned(),
+            timestamp: "2026-08-01T00:00:00.000Z".to_owned(),
+            advisories: 0,
+            set_aside: 0,
+        },
+    ));
+
+    assert!(not_run.contains("osv-scanner: not run"), "{not_run}");
+    assert!(
+        not_run.contains("osv-scanner: not assessed (see Scans)"),
+        "{not_run}"
+    );
+    assert!(!not_run.contains("no advisory reported"), "{not_run}");
+
+    assert!(
+        clean.contains("osv-scanner: no advisory reported (scan read; database not recorded)"),
+        "{clean}"
+    );
+    assert!(
+        clean.contains("0 advisories, 0 other diagnostics not read; clean; database: not recorded"),
+        "{clean}"
+    );
+    assert_ne!(not_run, clean);
+}
+
 #[trace("FR-142-AC-22")]
 #[test]
 fn osv_scan_without_database_identity_states_that_the_database_was_not_recorded() {
