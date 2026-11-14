@@ -194,6 +194,34 @@ impl World {
         self.run_with_installed_modules(&arguments, None, true)
     }
 
+    fn facts_with_external_module(&self, module: &Path) -> Output {
+        let modules = self.path("external-modules");
+        std::fs::create_dir_all(&modules).unwrap();
+        std::os::unix::fs::symlink(module, modules.join("spec-objects-security")).unwrap();
+        let binding = self.path("binding.json");
+        let attestation = self.path("attestation.json");
+        let spec = self.spec();
+        Command::new(env!("CARGO_BIN_EXE_quoin"))
+            .args([
+                "evidence",
+                "facts-from-mappings",
+                "--binding",
+                binding.to_str().unwrap(),
+                "--attestation",
+                attestation.to_str().unwrap(),
+                "--spec",
+                spec.to_str().unwrap(),
+            ])
+            .env("IX_HOME", self.home.path())
+            .env("IX_FILAMENT_MODULES_PATH", modules)
+            .current_dir(self.dir.path())
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .unwrap()
+    }
+
     fn record(&self, facts: &str) -> Output {
         let binding = self.path("binding.json");
         self.run(
@@ -320,6 +348,24 @@ impl World {
         }
         contents
     }
+}
+
+fn spec_objects_security_module() -> PathBuf {
+    let module = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map_or_else(
+        || {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../../spec-objects-security/spec_objects_security")
+        },
+        PathBuf::from,
+    );
+    let module = std::fs::canonicalize(&module).unwrap_or_else(|error| {
+        panic!(
+            "spec-objects-security module is not available at {}: {error}; set SPEC_OBJECTS_SECURITY_DIR",
+            module.display()
+        )
+    });
+    assert!(module.join("manifest.yaml").is_file());
+    module
 }
 
 fn synthetic_pack_source_dir() -> tempfile::TempDir {
@@ -636,6 +682,13 @@ fn tc_173_invalid_or_inconsistent_exclusion_dispositions_are_refused() {
             "temporary_exception",
             "ix://example.invalid/security-owner-001",
             "APPROVAL-001",
+            Some("2026-08-31T23:59:60Z"),
+            None,
+        ),
+        (
+            "temporary_exception",
+            "ix://example.invalid/security-owner-001",
+            "APPROVAL-001",
             Some("2026-10-01T00:00:00Z"),
             None,
         ),
@@ -709,6 +762,60 @@ fn tc_173_invalid_or_inconsistent_exclusion_dispositions_are_refused() {
         assert!(message.contains("SCOPEX-001"), "{message}");
         assert!(message.contains(SET), "{message}");
         assert!(message.contains("C2"), "{message}");
+    }
+}
+
+#[trace("FR-173-AC-11")]
+#[test]
+fn tc_173_invalid_attestation_actor_authority_instants_and_interval_are_refused() {
+    let world = World::new(
+        &two_clauses(),
+        &[("X.md", exclusion("SCOPEX-001", SET, "C2"))],
+    );
+    let cases = [
+        ("attestedBy", json!("")),
+        ("authority", json!("")),
+        ("attestedAt", json!("tomorrow")),
+        ("expiresAt", json!("2026-08-01T00:00:00Z")),
+    ];
+    for (field, value) in cases {
+        let mut supplied = attestation();
+        supplied[field] = value;
+        std::fs::write(world.path("attestation.json"), supplied.to_string()).unwrap();
+        let output = world.facts();
+        assert!(!output.status.success(), "{field}: {output:?}");
+        assert!(out(&output).is_empty(), "{field}: {output:?}");
+        assert!(err(&output).contains("attestation"), "{field}: {output:?}");
+    }
+}
+
+#[trace("FR-173-AC-13")]
+#[test]
+fn tc_173_real_scope_exclusion_schema_violation_is_refused_by_validation_and_facts() {
+    let module = spec_objects_security_module();
+    let world = World::new(
+        &two_clauses(),
+        &[(
+            "SCOPEX-001.md",
+            exclusion("SCOPEX-001", "example.invalid/std@1", "C2")
+                .replace("`delegated`", "`delegated-ish`"),
+        )],
+    );
+    let artifact = world.spec().join("SCOPEX-001.md");
+    let validation = Command::new("quire")
+        .args(["validate", "--module"])
+        .arg(&module)
+        .arg(&artifact)
+        .output()
+        .expect("quire validate on PATH");
+    assert!(!validation.status.success(), "{validation:?}");
+
+    let output = world.facts_with_external_module(&module);
+    assert!(!output.status.success(), "{output:?}");
+    assert!(out(&output).is_empty(), "{output:?}");
+    let message = err(&output);
+    for expected in ["SCOPEX-001", "example.invalid/std@1", "C2"] {
+        assert!(message.contains(expected), "{expected}: {message}");
     }
 }
 

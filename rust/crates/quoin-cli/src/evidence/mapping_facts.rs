@@ -24,8 +24,8 @@ use quoin_evidence::{DiskEvidence, EvidenceError, EvidenceSource};
 use quoin_quire::ModuleSelection;
 use quoin_quire::records::{Contract, Document, read};
 use quoin_quire_types::{ClauseBindingOutcome, ClauseBindingReport};
+use quoin_store::instant::{Instant, InstantGrammar};
 use serde_json::{Value, json};
-use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 
 use super::{json_arg, required};
 
@@ -304,9 +304,10 @@ fn exclusion(document: &Document) -> Result<Exclusion, String> {
     })
 }
 
-fn parse_instant(name: &str, value: &str) -> Result<OffsetDateTime, String> {
-    OffsetDateTime::parse(value, &Rfc3339)
-        .map_err(|_| format!("{name} must be an RFC 3339 instant"))
+fn parse_instant(name: &str, value: &str) -> Result<i64, String> {
+    Instant::parse(value, InstantGrammar::CalendarInstant)
+        .and_then(|instant| instant.epoch_millis())
+        .ok_or_else(|| format!("{name} must be a calendar instant"))
 }
 
 fn set_key(binding: &ClauseBindingReport) -> String {
@@ -413,9 +414,15 @@ fn propose(
 ) -> Result<Proposal, String> {
     let attestation_contract = serde_json::from_value::<DischargeAttestation>(attestation.clone())
         .map_err(|error| format!("attestation is refused: {error}"))?;
+    let attestation_attested_at =
+        parse_instant("attestation attestedAt", &attestation_contract.attested_at)
+            .map_err(|error| format!("attestation is refused: {error}"))?;
     let attestation_expiry =
         parse_instant("attestation expiresAt", &attestation_contract.expires_at)
             .map_err(|error| format!("attestation is refused: {error}"))?;
+    if attestation_expiry <= attestation_attested_at {
+        return Err("attestation is refused: expiry is not after attestation".to_owned());
+    }
     let clauses = Clauses::of(binding);
     let mut report = Vec::new();
     let answers = answers(&clauses, &corpus.controls, &mut report)?;
