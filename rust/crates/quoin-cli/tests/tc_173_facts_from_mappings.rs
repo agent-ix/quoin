@@ -63,7 +63,7 @@ fn exclusion(id: &str, set: &str, clause: &str) -> String {
         id,
         set,
         clause,
-        Disposition {
+        &Disposition {
             decision: "delegated",
             owner: "ix://example.invalid/security-owner-001",
             approval_ref: "APPROVAL-001",
@@ -72,6 +72,7 @@ fn exclusion(id: &str, set: &str, clause: &str) -> String {
     )
 }
 
+#[derive(Clone, Copy)]
 struct Disposition<'a> {
     decision: &'a str,
     owner: &'a str,
@@ -79,7 +80,7 @@ struct Disposition<'a> {
     expires_at: Option<&'a str>,
 }
 
-fn exclusion_with(id: &str, set: &str, clause: &str, disposition: Disposition<'_>) -> String {
+fn exclusion_with(id: &str, set: &str, clause: &str, disposition: &Disposition<'_>) -> String {
     let Disposition {
         decision,
         owner: decision_owner,
@@ -575,7 +576,7 @@ fn tc_173_authored_accepted_risk_and_temporary_exception_are_preserved() {
                     "SCOPEX-001",
                     SET,
                     "C2",
-                    Disposition {
+                    &Disposition {
                         decision,
                         owner: "ix://example.invalid/security-owner-002",
                         approval_ref: "APPROVAL-002",
@@ -599,6 +600,7 @@ fn tc_173_authored_accepted_risk_and_temporary_exception_are_preserved() {
 
 #[trace("FR-173-AC-10", "FR-173-AC-13")]
 #[test]
+#[allow(clippy::too_many_lines)]
 fn tc_173_invalid_or_inconsistent_exclusion_dispositions_are_refused() {
     let cases = [
         ("delegated", "", "APPROVAL-001", None, None),
@@ -685,7 +687,7 @@ fn tc_173_invalid_or_inconsistent_exclusion_dispositions_are_refused() {
             "SCOPEX-001",
             SET,
             "C2",
-            Disposition {
+            &Disposition {
                 decision,
                 owner,
                 approval_ref: approval,
@@ -839,7 +841,7 @@ fn tc_173_each_authored_disposition_records_and_renders_as_tailored() {
                     "SCOPEX-001",
                     SET,
                     "C2",
-                    Disposition {
+                    &Disposition {
                         decision,
                         owner: "ix://example.invalid/security-owner-001",
                         approval_ref: "APPROVAL-001",
