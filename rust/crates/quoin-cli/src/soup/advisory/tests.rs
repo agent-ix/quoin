@@ -137,6 +137,7 @@ pub(in crate::soup) fn attestation(at: &str, until: &str) -> Value {
 pub(in crate::soup) fn disposition(clause: &str, at: &str, until: &str) -> Value {
     json!({
         "kind": "disposition", "clauseId": clause, "decision": "accepted_risk",
+        "owner": "risk-owner-1",
         "rationale": "no reachable path", "approvalRef": "approval://CAB-7",
         "attestation": attestation(at, until)
     })
