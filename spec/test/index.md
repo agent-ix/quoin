@@ -20,3 +20,4 @@ description: "Index of test cases (TC) for quoin."
 - [TC-010: Unavailable selected set is reported while evaluated sets continue](./TC-010-unavailable-selected-set-is-reported-while-evaluated-sets-continue.md)
 - [TC-011: Missing profile stops analysis before mapping](./TC-011-missing-profile-stops-analysis-before-mapping.md)
 - [TC-012: Invalid profile evaluation stops analysis before mapping](./TC-012-invalid-profile-evaluation-stops-analysis-before-mapping.md)
+- [TC-013: Tag attestation preserves Quoin's manual release paths](./TC-013-tag-attestation-preserves-manual-release-paths.md)

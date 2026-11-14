@@ -50,6 +50,7 @@ and a second version to track.
 | FR-112-AC-2 | The npm packages published for tag `v<v>` are built from that tag's GitHub Release assets from the assets `quoin-update-manifest.json` names; a manifest naming no asset, or an asset file absent from the release, fails the workflow before anything is published, and no artifact is rebuilt from source for npm. | Test |
 | FR-112-AC-3 | Under an npm install, `quoin update` given as the first argument makes no change to the installation, exits non-zero, and its stderr names the npm command that manages it (`npm install -g @agent-ix/quoin@latest`) and states that quoin was installed with npm. | Test |
 | FR-112-AC-4 | Every Linux platform package (`@agent-ix/quoin-linux-x64`, `@agent-ix/quoin-linux-arm64`) declares `libc: ["glibc"]` in `package.json`, matching the glibc floor the archived binary was built against. | Test |
+| FR-112-AC-5 | A YAML-parsing test confirms that `release.yml` remains manually dispatched with `publish` defaulting to `false`, passes `inputs.publish` to the npm publish action, and gates post-publish smoke on `inputs.publish`; `native-release.yml` remains manually dispatched; and the additive `tag-attestation.yml` runs on `v*` tag pushes without depending on either manual workflow. | Test (TC-013) |
 
 ## Constraints
 
