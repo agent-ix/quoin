@@ -67,11 +67,12 @@ which this requirement adopts unchanged. The predicate fields conform to the
   classify the obligation as stale and put it in `failedTests`, not
   `passedTests` or `warnedTests`. This failure is represented in the Test
   Result and does not make an otherwise readable run record an invalid
-  evidence store. A missing symbol entry remains incomplete evidence and Quoin
-  SHALL classify it in `warnedTests` under the existing rule. Run records
-  without `traceIds` remain readable, but an existing bound symbol in such a
-  record cannot satisfy this relation. This rule does not change the existing
-  missing-run, failed-symbol, skipped-symbol, or duplicate-outcome rules.
+  evidence store. Run records without `traceIds` remain readable, but an
+  existing bound symbol in such a record cannot satisfy this relation. This
+  rule does not change the existing missing-run, failed-symbol, skipped-symbol,
+  or duplicate-outcome rules.
+- When a bound symbol has no entry in the selected run, Quoin SHALL classify
+  the obligation in `warnedTests` under the existing rule.
 - Quoin SHALL reuse the stale-evidence conditions of
   `quoin-auditor::audit::stale::FindingKind::STALE_EVIDENCE`. A bound suite
   without a recorded run, or a latest bound-symbol outcome of `fail` or
