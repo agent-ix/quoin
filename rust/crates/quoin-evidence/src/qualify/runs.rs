@@ -75,6 +75,25 @@ pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Dis
     let mut stated_anywhere = false;
     for (suite, suite_runs) in by_suite(runs) {
         let suite_runs = ordered(suite_runs);
+        let mut paths = std::collections::BTreeSet::new();
+        if suite_runs
+            .iter()
+            .any(|run| !paths.insert(run.file.as_str()))
+        {
+            stated_anywhere |= suite_runs
+                .iter()
+                .flat_map(|run| &run.record.entries)
+                .any(|entry| states(entry, obligation));
+            refusals.push(Refusal {
+                cause: Cause::RecordConflict,
+                premise: None,
+                locator: None,
+                detail: format!(
+                    "multiple retained observations name the same canonical record path for suite {suite}"
+                ),
+            });
+            continue;
+        }
         let Some((latest, earlier)) = suite_runs.split_last() else {
             continue;
         };
