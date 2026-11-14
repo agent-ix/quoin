@@ -117,16 +117,23 @@ fn analysis_evidence_joins_only_the_exact_target_and_renders_every_item() {
         "cause":"unevaluated",
         "detail":"actor authority premise: no admission"
     });
-    let mut request_value = serde_json::to_value(input(
-        &["FR-001-AC-1"],
-        &[binding("FR-001-AC-1", "unit")],
-        &audit(&[], &[], &[]),
-    ))
-    .unwrap();
-    request_value["coverage"][0]["criteria"][0]["identity"] = target;
-    request_value["analysis_evidence"] = json!({
-        "record_binders": [record_binder, wrong_target_binder],
-        "evidence_results": [result]
+    let request_value = json!({
+        "coverage": [{
+            "document": "spec/FR-001.md",
+            "criteria": [{
+                "id": "FR-001-AC-1",
+                "method": "Analysis",
+                "binders": [],
+                "status": "tagged",
+                "identity": target
+            }]
+        }],
+        "bindings": {"schemaVersion": 1, "bindings": [binding("FR-001-AC-1", "unit")]},
+        "audit": audit(&[], &[], &[]),
+        "analysis_evidence": {
+            "record_binders": [record_binder, wrong_target_binder],
+            "evidence_results": [result]
+        }
     });
     let request = serde_json::from_value(request_value).unwrap();
 
