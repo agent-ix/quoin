@@ -22,7 +22,7 @@ const REQUIREMENT: &str = "---\nid: FR-1597\ntitle: Rated obligation fixture\nty
 ## Acceptance Criteria\n\n\
 | ID | Criteria | Verification |\n\
 |----|----------|--------------|\n\
-| FR-1597-AC-1 | The audited obligation keeps its declared rating. | Mutation Test |\n";
+| FR-1597-AC-1 | The audited obligation keeps its declared rating. | mutation-testing |\n";
 
 fn process_module() -> PathBuf {
     let checkout = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
@@ -112,6 +112,23 @@ impl Fixture {
             output.status.code(),
             Some(0),
             "recording the score: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let output = self.invoke(&[
+            "evidence",
+            "inspect-mocks",
+            "--repo",
+            ".",
+            "--suite",
+            "SUITE-1597",
+            "--timestamp",
+            "2026-01-01T00:00:00Z",
+        ]);
+        assert_eq!(
+            output.status.code(),
+            Some(0),
+            "recording the empty mock inspection: {}",
             String::from_utf8_lossy(&output.stderr)
         );
     }
