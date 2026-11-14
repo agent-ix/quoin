@@ -9,21 +9,79 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build release artifact and collect retained evidence
-    runs-on: ubuntu-22.04
+  validate:
+    name: Validate protected release paths
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
+    outputs:
+      record_path: ${{ steps.paths.outputs.record_path }}
+      allowed_signers_path: ${{ steps.paths.outputs.allowed_signers_path }}
+    steps:
+      - name: Validate protected repository variables
+        id: paths
+        shell: bash
+        env:
+          RELEASE_RECORD_PATH: ${{ vars.RELEASE_RECORD_PATH }}
+          ALLOWED_SIGNERS_PATH: ${{ vars.ALLOWED_SIGNERS_PATH }}
+        run: |
+          set -euo pipefail
+
+          valid_repo_path() {
+            local value="$1"
+            [[ -n "$value" && "$value" =~ ^[A-Za-z0-9._/-]+$ ]] || return 1
+            [[ "$value" != */ && "$value" != *//* ]] || return 1
+            local segment
+            IFS='/' read -r -a segments <<< "$value"
+            for segment in "${segments[@]}"; do
+              [[ -n "$segment" && "$segment" != . && "$segment" != .. ]] || return 1
+            done
+          }
+
+          valid_repo_path "$RELEASE_RECORD_PATH" || {
+            echo "::error::RELEASE_RECORD_PATH is unset or not a safe repository-relative file path" >&2
+            exit 1
+          }
+          valid_repo_path "$ALLOWED_SIGNERS_PATH" || {
+            echo "::error::ALLOWED_SIGNERS_PATH is unset or not a safe repository-relative file path" >&2
+            exit 1
+          }
+
+          printf 'record_path=%s\n' "$RELEASE_RECORD_PATH" >> "$GITHUB_OUTPUT"
+          printf 'allowed_signers_path=%s\n' "$ALLOWED_SIGNERS_PATH" >> "$GITHUB_OUTPUT"
+
+  build-platform:
+    name: Build ${{ matrix.target }} release asset
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            extension: tar.gz
+            binary: quoin
+          - runner: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+            extension: tar.gz
+            binary: quoin
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            extension: tar.gz
+            binary: quoin
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            extension: zip
+            binary: quoin.exe
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
           persist-credentials: false
-
-      - name: Install Rust toolchain
-        shell: bash
-        working-directory: rust
-        run: rustup show active-toolchain || rustup toolchain install
 
       - uses: pnpm/action-setup@v6
         with:
@@ -33,16 +91,22 @@ jobs:
           node-version: 22.15.0
           cache: pnpm
 
-      - name: Install frozen dependency graph
+      - name: Install the Rust toolchain
+        shell: bash
+        working-directory: rust
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Install the frozen dependency graph
         shell: bash
         run: pnpm install --frozen-lockfile
 
-      - name: Authenticate private Cargo build inputs
+      - name: Fetch private Cargo inputs
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        shell: bash
         run: |
           set -euo pipefail
-          test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust build dependencies"; exit 1; }
+          test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust build dependencies" >&2; exit 1; }
           cleanup() {
             git config --global --unset-all "url.https://x-access-token:${REGISTRY_TOKEN}@github.com/.insteadOf" || true
           }
@@ -51,21 +115,138 @@ jobs:
           cd rust
           cargo fetch --locked
 
-      - name: Build the native release artifact
+      - name: Build the native Quoin artifact
         shell: bash
         working-directory: rust
         run: cargo build --offline --locked --release -p quoin-cli --bin quoin
 
-      - name: Package the linux-x64 release artifact
+      - name: Package the release asset
         shell: bash
         env:
           TAG: ${{ github.ref_name }}
+          TARGET: ${{ matrix.target }}
+          EXTENSION: ${{ matrix.extension }}
+          BINARY: ${{ matrix.binary }}
         run: |
           set -euo pipefail
           version="${TAG#v}"
-          name="quoin-v${version}-x86_64-unknown-linux-gnu.tar.gz"
-          mkdir release-artifacts
-          tar -C rust/target/release -czf "release-artifacts/$name" quoin
+          name="quoin-v${version}-${TARGET}.${EXTENSION}"
+          mkdir release
+          if [ "$EXTENSION" = tar.gz ]; then
+            tar -C rust/target/release -czf "release/$name" "$BINARY"
+          else
+            (cd rust/target/release && 7z a -tzip -bso0 "../../../release/$name" "$BINARY")
+          fi
+          test -f "release/$name"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: quoin-${{ matrix.target }}
+          path: release/
+          if-no-files-found: error
+
+  build:
+    name: Assemble the native release artifact set
+    needs: build-platform
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Confirm the checkout is the tagged commit
+        shell: bash
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_COMMIT"
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.20.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.15.0
+
+      - name: Install the Rust toolchain and nextest
+        shell: bash
+        working-directory: rust
+        run: |
+          set -euo pipefail
+          rustup show active-toolchain || rustup toolchain install
+          cargo install cargo-nextest --locked
+
+      - name: Fetch private Cargo inputs for the evidence producer
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust build dependencies" >&2; exit 1; }
+          cleanup() {
+            git config --global --unset-all "url.https://x-access-token:${REGISTRY_TOKEN}@github.com/.insteadOf" || true
+          }
+          trap cleanup EXIT
+          git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
+          cd rust
+          cargo fetch --locked
+
+      - name: Run and validate retained release evidence
+        env:
+          npm_config_registry: https://registry.npmjs.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          started_at=$(date +%s)
+          if ! make evidence; then
+            echo "::error::no_retained_evidence_store: make evidence did not produce run records and bindings for the tagged commit" >&2
+            exit 1
+          fi
+
+          bindings=spec/evidence/bindings.json
+          jq -e '.schemaVersion == 1 and any(.bindings[]; .suite == "SUITE-001" and (.symbols | length > 0))' "$bindings" >/dev/null || {
+            echo "::error::no_retained_evidence_store: evidence bindings are empty or invalid" >&2
+            exit 1
+          }
+
+          mapfile -t records < <(find spec/evidence/runs/SUITE-001 -type f -name '*.json' -newermt "@$started_at" -print 2>/dev/null)
+          if [ "${#records[@]}" -eq 0 ]; then
+            echo "::error::no_retained_evidence_store: no SUITE-001 run record was created during this tagged-commit job" >&2
+            exit 1
+          fi
+          for record in "${records[@]}"; do
+            jq -e '.schemaVersion == 1 and .suite == "SUITE-001" and .evidenceKind == "Unit" and (.entries | type == "array" and length > 0)' "$record" >/dev/null || {
+              echo "::error::no_retained_evidence_store: a current-job SUITE-001 run record is invalid" >&2
+              exit 1
+            }
+          done
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: quoin-*
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Build the stable release manifest
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          asset() {
+            target="$1"; suffix="$2"; format="$3"
+            name="quoin-v${version}-${target}.${suffix}"
+            size=$(wc -c < "release-artifacts/$name" | tr -d ' ')
+            jq -n --arg target "$target" --arg asset "$name" --arg archive "$format" --argjson size "$size" --arg url "https://github.com/${REPOSITORY}/releases/download/${TAG}/${name}" '{target:$target,asset:$asset,archive:$archive,size:$size,url:$url}'
+          }
+          jq -n --arg version "$version" --slurpfile artifacts <(asset x86_64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-apple-darwin tar.gz tar-gz; asset x86_64-pc-windows-msvc zip zip) '{schema_version:2,version:$version,artifacts:$artifacts}' > release-artifacts/quoin-update-manifest.json
+          jq -e '.schema_version == 2 and (.artifacts | length == 4)' release-artifacts/quoin-update-manifest.json
 
       - uses: actions/upload-artifact@v7
         with:
@@ -73,15 +254,9 @@ jobs:
           path: release-artifacts/
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: release-evidence
-          path: spec/evidence/
-          if-no-files-found: error
-
   attest:
     name: Verify and attest release
-    needs: build
+    needs: [build, validate]
     permissions:
       contents: read
       id-token: write
@@ -90,7 +265,7 @@ jobs:
     with:
       tag: ${{ github.ref_name }}
       ea_tooling_tag: v0.9.0
-      record_path: .engineering-assurance/release.md
-      allowed_signers_path: .engineering-assurance/allowed-signers
+      quoin_tooling_tag: '0.30.1'
+      record_path: ${{ needs.validate.outputs.record_path }}
+      allowed_signers_path: ${{ needs.validate.outputs.allowed_signers_path }}
       artifact_name: release-artifacts
-      evidence_artifact: release-evidence
