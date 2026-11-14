@@ -63,17 +63,26 @@ OSV-Scanner report bytes and offline database archives are not checked into this
 repository. The ignored `tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined`
 test reads `QUOIN_TEST_OSV_REPORT` in place and requires an authentic, unedited report
 from OSV-Scanner 2.7.1 over one CycloneDX SBOM containing npm, PyPI, Go and Debian OS
-packages. It checks exact purl/advisory identity, including the Debian distro-qualified
-purl, through the adapter and join. It is an adapter/join behavior check; it does not
-establish compliance or discharge obligations.
+packages, a scoped npm package, and same-name npm/PyPI packages. It checks exact
+purl/advisory identity, including the Debian distro-qualified purl, scoped npm purl,
+and the two distinct `redis` package identities, through the adapter and join. It is
+an adapter/join behavior check; it does not establish compliance or discharge
+obligations.
+
+The local replay input adds `pkg:npm/%40hapi/hoek@8.3.2`, `pkg:npm/redis@3.0.0`,
+and `pkg:pypi/redis@4.4.1` to the four-ecosystem SBOM. The authentic report includes
+`GHSA-22h7-7wwg-qmgg` for the scoped npm package, `GHSA-35q2-47q7-3pc3` for npm redis,
+and `GHSA-24wv-mv5m-xv4h` for PyPI redis. Only the report bytes are passed to this
+test; no report or database archive is checked in.
 
 With OSV-Scanner 2.7.1 installed and its user-local database already available, produce
 an external JSON report from a CycloneDX SBOM such as `probe.cdx.json`:
 
 ```sh
 OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY=/absolute/path/to/local-osv-db \
-  osv-scanner --offline scan source -L /absolute/path/to/probe.cdx.json \
-  --format json > /absolute/path/to/report.json
+  osv-scanner scan source --offline --all-packages \
+  -S /absolute/path/to/probe.cdx.json --format json \
+  --output-file /absolute/path/to/report.json
 ```
 
 From the repository root, replay that file through the Rust adapter and SOUP join:

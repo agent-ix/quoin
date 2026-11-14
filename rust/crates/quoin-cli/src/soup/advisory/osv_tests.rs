@@ -111,6 +111,9 @@ fn tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined() {
             "pkg:deb/debian/libwebp@0.6.1-2.1%2Bdeb11u1?arch=amd64&distro=debian-11",
             "DSA-5497-2",
         ),
+        ("pkg:npm/%40hapi/hoek@8.3.2", "GHSA-22h7-7wwg-qmgg"),
+        ("pkg:npm/redis@3.0.0", "GHSA-35q2-47q7-3pc3"),
+        ("pkg:pypi/redis@4.4.1", "GHSA-24wv-mv5m-xv4h"),
     ];
     for (purl, id) in expected {
         assert!(
@@ -138,6 +141,23 @@ fn tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined() {
         assert_eq!(attached[0].package, purl);
         assert_eq!(attached[0].tool, Tool::OsvScanner);
     }
+
+    let npm_redis = joined
+        .records
+        .iter()
+        .find(|record| record.purl == "pkg:npm/redis@3.0.0")
+        .expect("npm redis record");
+    assert!(npm_redis.advisories.iter().all(|advisory| {
+        advisory.rule_id != "GHSA-24wv-mv5m-xv4h"
+    }));
+    let pypi_redis = joined
+        .records
+        .iter()
+        .find(|record| record.purl == "pkg:pypi/redis@4.4.1")
+        .expect("PyPI redis record");
+    assert!(pypi_redis.advisories.iter().all(|advisory| {
+        advisory.rule_id != "GHSA-35q2-47q7-3pc3"
+    }));
 }
 
 #[trace("FR-142-AC-20")]
