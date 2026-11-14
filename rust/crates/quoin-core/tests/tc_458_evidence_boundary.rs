@@ -600,10 +600,10 @@ fn scenario_document() -> Value {
         "integration": "IT-002",
         "scenario": "IT-002-SC-07a",
         "resolution": {"kind": "full", "entries": [
-            {"owner": "qobs", "contractVersion": "v1", "revision": "r1"}
+            {"owner": "fobs", "contractVersion": "v1", "revision": "r1"}
         ]},
         "valueOwners": [
-            {"value": "obs-1", "owner": "qobs", "contractVersion": "v1", "revision": "r1"}
+            {"value": "obs-1", "owner": "fobs", "contractVersion": "v1", "revision": "r1"}
         ],
         "outcome": {"operation": "assessed", "claims": [{"kind": "row", "identity": "c1"}]},
         "budget": [{"dimension": "node", "granted": 10, "consumed": 3}],

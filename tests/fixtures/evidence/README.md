@@ -1,17 +1,19 @@
 # Evidence adapter fixtures
 
-`contract-conformance-traces-real.jsonl` is one byte-exact row, selected by
-`fixture_id: package-invalid-namespace`, from the output of the
-`filament-contract-conformance` runner over the `agent-ix/filament-contract-ir`
-contract corpus.
-The row carries `trace_ids`; the older `contract-conformance-real.jsonl`
-remains the compatibility fixture for producers omitting that optional field.
+The three `contract-conformance-*.jsonl` fixtures are unedited rows from the output of
+`filament-contract-conformance run --corpus corpus/contract-v0.1 --schemas schemas`
+(`cargo run --features conformance-cli`, as `make corpus` does) in
+`agent-ix/filament-contract-ir` at `ce1970fb`, selected by `fixture_id` and `operation`.
+`contract-conformance-real.jsonl` holds five rows (`package-constructs`,
+`package-invalid-namespace`, `expression-boolean-literal`, `expression-invalid-wire`,
+`coverage-shallow`); `contract-conformance-traces-real.jsonl` is the `package-constructs`
+row with its seven ordered `trace_ids`; `contract-conformance-criteria-real.jsonl` is the
+`package-invalid-namespace` namespace-diagnostic row.
 The source is a reviewed candidate, not a claim of accepted producer bindings.
 Negative/mismatch and custom-order variants are constructed explicitly in tests.
+`rust/crates/quoin-evidence/tests/tc_contract_conformance_fixtures.rs` parses all three.
 
-`contract-conformance-criteria-real.jsonl` is the unedited namespace-diagnostic
-row from the native IR runner.
-This candidate validates coverage-token-to-criterion ownership before execution;
+The criteria row validates coverage-token-to-criterion ownership before execution;
 the sample names FR-011-AC-3 and FR-018-AC-1, not operation-wide Test Case aliases.
 The requirement documents it names (`FR-011-AC-3`, `FR-018-AC-1`) are owned by
 `agent-ix/filament-contract-ir`; quoin keeps no copy of them. TC-1587 is unbacked until
@@ -47,7 +49,7 @@ dependencies. It holds four components: three carry a purl, one is identified by
 
 `differential-report-v2/` holds `quire.differential-report/v2` documents for the
 `differential-report` adapter (FR-151, TC-001). Every file except one is a byte-exact
-capture of a report written by `quire-analyze run-package` (`agent-ix/quire-analyze`),
+capture of a report written by `quire-analyze run-package` (`agent-ix/filament-analyze`),
 driven over a stub `producer-execute` because Z3 and cvc5 are not installed where they were
 captured: `agreement-satisfied`, `agreement-refuted`, `disagreement`,
 `inconclusive-unknown`, `inconclusive-timeout` and `unavailable-missing-executable`.
