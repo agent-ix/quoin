@@ -3,9 +3,9 @@ id: TC-004
 title: "A stored temporary exception expires at its decision boundary"
 type: TC
 relationships:
-  - target: "ix://agent-ix/quoin/FR-133"
+  - target: "ix://agent-ix/quoin/FR-133-AC-2"
     type: "verifies"
-  - target: "ix://agent-ix/quoin/FR-174"
+  - target: "ix://agent-ix/quoin/FR-174-AC-6"
     type: "verifies"
 ---
 

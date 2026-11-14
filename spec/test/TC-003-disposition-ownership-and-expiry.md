@@ -3,7 +3,9 @@ id: TC-003
 title: "Disposition ownership and temporary-exception expiry are enforced"
 type: TC
 relationships:
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-046-AC-7"
+    type: "verifies"
+  - target: "ix://agent-ix/quoin/FR-046-AC-8"
     type: "verifies"
 ---
 
