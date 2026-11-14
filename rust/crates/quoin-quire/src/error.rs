@@ -633,6 +633,9 @@ mod tests {
                 code: quoin_auditor::AuditorErrorCode::DemandTooLarge,
                 reason: "demand too large".into(),
             },
+            Error::DesignJoin {
+                reason: "relation catalog is incomplete".into(),
+            },
         ];
         let seen: BTreeSet<ErrorCode> = samples.iter().map(Error::code).collect();
         assert_eq!(
