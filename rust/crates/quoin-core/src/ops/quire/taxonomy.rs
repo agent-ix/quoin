@@ -131,6 +131,7 @@ const fn core_code(
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use quoin_auditor::AuditorErrorCode;
     use quoin_quire::ErrorCode;
 
@@ -142,6 +143,7 @@ mod tests {
     ///
     /// When this fails: a code was added to `quoin-quire`. Decide which group
     /// it belongs to, or delegate it to the wrapped auditor code.
+    #[trace("FR-096-AC-10")]
     #[test]
     fn the_error_mapping_covers_every_quire_code() {
         let refused = [
@@ -230,6 +232,7 @@ mod tests {
         assert_eq!(envelope.outcome().code(), 2);
     }
 
+    #[trace("FR-096-AC-10")]
     #[test]
     fn a_retained_audit_failure_uses_the_wrapped_auditor_code() {
         let refused = map_error(
