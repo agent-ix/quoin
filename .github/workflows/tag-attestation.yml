@@ -1,0 +1,96 @@
+name: Tag attestation
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build release artifact and collect retained evidence
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        shell: bash
+        working-directory: rust
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.20.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.15.0
+          cache: pnpm
+
+      - name: Install frozen dependency graph
+        shell: bash
+        run: pnpm install --frozen-lockfile
+
+      - name: Authenticate private Cargo build inputs
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust build dependencies"; exit 1; }
+          cleanup() {
+            git config --global --unset-all "url.https://x-access-token:${REGISTRY_TOKEN}@github.com/.insteadOf" || true
+          }
+          trap cleanup EXIT
+          git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
+          cd rust
+          cargo fetch --locked
+
+      - name: Build the native release artifact
+        shell: bash
+        working-directory: rust
+        run: cargo build --offline --locked --release -p quoin-cli --bin quoin
+
+      - name: Package the linux-x64 release artifact
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          name="quoin-v${version}-x86_64-unknown-linux-gnu.tar.gz"
+          mkdir release-artifacts
+          tar -C rust/target/release -czf "release-artifacts/$name" quoin
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-artifacts
+          path: release-artifacts/
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-evidence
+          path: spec/evidence/
+          if-no-files-found: error
+
+  attest:
+    name: Verify and attest release
+    needs: build
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    uses: agent-ix/engineering-assurance/.github/workflows/release-attestation.yml@v0.9.0
+    with:
+      tag: ${{ github.ref_name }}
+      ea_tooling_tag: v0.9.0
+      record_path: .engineering-assurance/release.md
+      allowed_signers_path: .engineering-assurance/allowed-signers
+      artifact_name: release-artifacts
+      evidence_artifact: release-evidence
