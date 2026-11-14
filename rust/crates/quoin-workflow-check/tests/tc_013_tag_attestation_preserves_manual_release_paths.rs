@@ -80,7 +80,7 @@ fn tc_013_tag_attestation_preserves_manual_release_paths() {
             for dependency in dependencies {
                 let dependency = dependency.as_str().expect("dependency is a job name");
                 assert!(
-                    jobs.contains_key(&Value::String(dependency.to_owned())),
+                    jobs.contains_key(Value::String(dependency.to_owned())),
                     "tag workflow dependency {dependency} must name a local job"
                 );
                 assert!(!matches!(dependency, "publish" | "publish-npm"));
