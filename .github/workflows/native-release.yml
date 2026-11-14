@@ -9,151 +9,30 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  package:
-    name: Package ${{ matrix.target }}
-    # A hung step otherwise blocks for GitHub's 6-hour default.
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        # The platform set quire-cli ships. Linux builds on 22.04 so the
-        # binary links glibc 2.35 and runs on Ubuntu 22.04+ and default WSL;
-        # a 24.04 build needs glibc 2.39 and fails to start there.
-        include:
-          - runner: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            extension: tar.gz
-            binary: quoin
-          - runner: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-            extension: tar.gz
-            binary: quoin
-          - runner: macos-15
-            target: aarch64-apple-darwin
-            extension: tar.gz
-            binary: quoin
-          - runner: windows-2025
-            target: x86_64-pc-windows-msvc
-            extension: zip
-            binary: quoin.exe
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.tag }}
-          persist-credentials: false
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 11.20.0
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22.15.0
-          cache: pnpm
-      - name: Install Rust toolchain
-        shell: bash
-        working-directory: rust
-        run: rustup show active-toolchain || rustup toolchain install
-      # rust/crates/quoin-semantic/build.rs embeds the semantic contract out of
-      # node_modules/@agent-ix/* (PLAT-887's de-vendoring), so every platform
-      # in this matrix -- including Windows, where pnpm/action-setup and
-      # actions/setup-node both run natively -- needs it before `cargo build`.
-      - name: Install frozen dependency graph
-        shell: bash
-        run: pnpm install --frozen-lockfile
-      - name: Authenticate private Cargo build inputs
-        shell: bash
-        env:
-          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-        run: |
-          test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust build dependencies"; exit 1; }
-          git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
-      - name: Build the native quoin artifact
-        shell: bash
-        run: cd rust && cargo build --locked --release -p quoin-cli --bin quoin
-      - name: Package the one permitted archive member
-        shell: bash
-        env:
-          TARGET: ${{ matrix.target }}
-          EXTENSION: ${{ matrix.extension }}
-          BINARY: ${{ matrix.binary }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          VERSION="${TAG#v}"
-          NAME="quoin-v${VERSION}-${TARGET}.${EXTENSION}"
-          mkdir release
-          if [ "$EXTENSION" = tar.gz ]; then
-            tar -C rust/target/release -czf "release/$NAME" "$BINARY"
-          else
-            # Git Bash on the Windows runner has no `zip`; 7-Zip is preinstalled.
-            (cd rust/target/release && 7z a -tzip -bso0 "../../../release/$NAME" "$BINARY")
-          fi
-          test -f "release/$NAME"
-      - name: Smoke the packaged native executable
-        shell: bash
-        env:
-          TARGET: ${{ matrix.target }}
-          EXTENSION: ${{ matrix.extension }}
-          BINARY: ${{ matrix.binary }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          VERSION="${TAG#v}"
-          NAME="quoin-v${VERSION}-${TARGET}.${EXTENSION}"
-          mkdir release-smoke
-          if [ "$EXTENSION" = tar.gz ]; then
-            tar -C release-smoke -xzf "release/$NAME"
-          else
-            7z x -bso0 -orelease-smoke "release/$NAME"
-          fi
-          test "$(find release-smoke -type f | wc -l | tr -d ' ')" = 1
-          test -f "release-smoke/$BINARY"
-          "./release-smoke/$BINARY" --version
-          # A released quoin must install and load its own default module set on a
-          # machine that has never seen it. v0.29.4 shipped refusing every fresh
-          # install (module manifests dropped semantic_core after it was cut).
-          CLEAN_HOME="$(mktemp -d)"
-          HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" module ensure-defaults > /dev/null
-          HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" catalog validate
-          npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
-          (cd rust && cargo build --locked --target-dir target -p quoin-workflow-check)
-          CHECKER="rust/target/debug/quoin-workflow-check"
-          if [ "$BINARY" = quoin.exe ]; then CHECKER="${CHECKER}.exe"; fi
-          "$CHECKER" smoke "release-smoke/$BINARY" "$RUNNER_TEMP/quoin-workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: quoin-${{ matrix.target }}
-          path: release/
-          if-no-files-found: error
+  build:
+    name: Build native release artifacts
+    permissions:
+      contents: read
+    uses: ./.github/workflows/native-release-build.yml
+    with:
+      tag: ${{ inputs.tag }}
+    secrets: inherit
 
   publish:
     name: Publish GitHub Release assets
-    needs: package
+    needs: build
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v8
         with:
+          name: release-artifacts
           path: release
           merge-multiple: true
-      - name: Build the stable release manifest
-        shell: bash
-        env:
-          TAG: ${{ inputs.tag }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          VERSION="${TAG#v}"
-          asset() {
-            target="$1"; suffix="$2"; format="$3"
-            name="quoin-v${VERSION}-${target}.${suffix}"
-            size=$(wc -c < "release/$name" | tr -d ' ')
-            jq -n --arg target "$target" --arg asset "$name" --arg archive "$format" --argjson size "$size" --arg url "https://github.com/${REPOSITORY}/releases/download/${TAG}/${name}" '{target:$target,asset:$asset,archive:$archive,size:$size,url:$url}'
-          }
-          jq -n --arg version "$VERSION" --slurpfile artifacts <(asset x86_64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-apple-darwin tar.gz tar-gz; asset x86_64-pc-windows-msvc zip zip) '{schema_version:2,version:$version,artifacts:$artifacts}' > release/quoin-update-manifest.json
-          jq -e '.schema_version == 2 and (.artifacts | length == 4)' release/quoin-update-manifest.json
       - name: Create and upload the manual GitHub Release
         shell: bash
         env:
