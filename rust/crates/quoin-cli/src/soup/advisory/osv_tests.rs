@@ -104,9 +104,13 @@ fn tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined() {
         raw,
     );
     let expected = [
-        ("pkg:npm/lodash@4.17.20", "GHSA-29mw-wpgm-hmr9"),
+        ("pkg:npm/lodash@4.17.20", "GHSA-35jh-r3h4-6jhm"),
         ("pkg:pypi/django@2.2.24", "PYSEC-2021-439"),
         ("pkg:golang/github.com/gin-gonic/gin@v1.7.0", "GO-2021-0052"),
+        (
+            "pkg:deb/debian/libwebp@0.6.1-2.1%2Bdeb11u1?arch=amd64&distro=debian-11",
+            "DSA-5497-2",
+        ),
     ];
     for (purl, id) in expected {
         assert!(

@@ -62,9 +62,10 @@ derived in `rust/crates/quoin-evidence/tests/tc_differential_report_v2.rs`, one 
 OSV-Scanner report bytes and offline database archives are not checked into this
 repository. The ignored `tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined`
 test reads `QUOIN_TEST_OSV_REPORT` in place and requires an authentic, unedited report
-from OSV-Scanner 2.7.1 over the npm, PyPI and Go SBOM input used for the local mirror
-probe. It is an adapter/join behavior check; it does not establish compliance or
-discharge obligations.
+from OSV-Scanner 2.7.1 over one CycloneDX SBOM containing npm, PyPI, Go and Debian OS
+packages. It checks exact purl/advisory identity, including the Debian distro-qualified
+purl, through the adapter and join. It is an adapter/join behavior check; it does not
+establish compliance or discharge obligations.
 
 With OSV-Scanner 2.7.1 installed and its user-local database already available, produce
 an external JSON report from a CycloneDX SBOM such as `probe.cdx.json`:
