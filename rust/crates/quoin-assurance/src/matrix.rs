@@ -341,13 +341,14 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
             .count()
     });
     Ok(MatrixOutput {
-        requirements: grouped
-            .into_iter()
-            .map(|(id, criteria)| MatrixRequirement { id, criteria })
-            .collect(),
+        requirements: grouped.into_iter().map(requirement).collect(),
         reason,
         unclassified,
     })
+}
+
+fn requirement((id, criteria): (String, Vec<MatrixCriterion>)) -> MatrixRequirement {
+    MatrixRequirement { id, criteria }
 }
 
 fn analysis_evidence_for(
