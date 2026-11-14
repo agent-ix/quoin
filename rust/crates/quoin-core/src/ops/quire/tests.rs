@@ -230,14 +230,14 @@ fn design_matrix_uses_coverage_request_and_host_taxonomy() {
     assert_eq!(oversized.code, CoreErrorCode::Refused);
     assert_eq!(oversized.outcome().code(), 2);
     assert_eq!(oversized.context["op"], "quire.design_matrix");
-    let coverage = coverage(
+    let coverage_error = coverage(
         &json!({ "scope": "/repo", "modules": ["/".repeat(MAX_SCALAR_BYTES + 1)] }),
         &Capabilities::with_quire(&engine),
     )
     .unwrap_err();
     assert_eq!(
         (oversized.code, oversized.outcome().code()),
-        (coverage.code, coverage.outcome().code())
+        (coverage_error.code, coverage_error.outcome().code())
     );
 
     let missing_host =
