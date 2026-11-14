@@ -5,6 +5,8 @@ type: TC
 relationships:
   - target: "ix://agent-ix/quoin/FR-112"
     type: "verifies"
+  - target: "ix://agent-ix/quoin/FR-112-AC-5"
+    type: "verifies"
 ---
 
 # TC-013: Tag attestation preserves Quoin's manual release paths
