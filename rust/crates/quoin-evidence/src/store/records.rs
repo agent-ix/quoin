@@ -141,7 +141,7 @@ pub(crate) fn write_analysis_pair<S: EvidenceSource + ?Sized>(
         {
             return Ok(run_path);
         }
-        (Some(_), Some(_)) | (Some(_), None) | (None, Some(_)) => {
+        (Some(_) | None, Some(_)) | (Some(_), None) => {
             return Err(pair_conflict(&run_path));
         }
         (None, None) => {}
