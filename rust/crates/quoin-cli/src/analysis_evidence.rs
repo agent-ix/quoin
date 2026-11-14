@@ -14,8 +14,9 @@ use quoin_evidence::qualify::{
 use quoin_evidence::source::DiskEvidence;
 use quoin_evidence::store::{list_recorded_suites, read_runs, read_trust_decisions};
 use quoin_evidence::types::{Binding, MockInjection};
-use quoin_quire::coverage::{ModuleSelection, Request as ScopeRequest};
-use quoin_quire::ids::{ModuleRoot, ScopeRoot};
+use quoin_quire::coverage::Request as ScopeRequest;
+use quoin_quire::ids::ScopeRoot;
+use quoin_quire::modules::{ModuleRoot, ModuleSelection};
 use quoin_quire_types::Obligation;
 
 use crate::run_observation::RunObservationFile;
