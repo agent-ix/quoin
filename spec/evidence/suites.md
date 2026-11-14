@@ -24,6 +24,12 @@ FR-006).
 | SUITE-002 | Spec validation gate | `make validate` | quire-cli | Static |
 | SUITE-003 | Agent evals | `make evals` | cli-agent-evals | Eval |
 
+For the Quoin tag-attestation release-verification result, `SUITE-001` is the
+declared suite. `SUITE-002` and `SUITE-003` remain separate evidence suites and
+are not claimed by the release Test Result. The tag-attestation build uploads
+the committed suite and binding registries plus the fresh run record as the
+`release-evidence` artifact. It does not commit tag-run records.
+
 ## What the store discharges
 
 A JUnit report names tests, and quoin's trace ids live in source tags
