@@ -44,7 +44,7 @@ stored, and FR-173 names the stale fact so a person can withdraw it.
 | FR-174-AC-3 | The rendered matrix and the chain's intermediate files contain none of the set's clause-text sentinel and no percentage or count of compliant rows. | Test |
 | FR-174-AC-4 | The same chain against a synthetic pack installed in a temp `IX_HOME` renders the same states by clause id. | Test |
 | FR-174-AC-5 | After the control of a recorded `Compliant` clause is changed to `ineffective` and the chain is re-run, the clause still renders `Compliant` and FR-173 reports `stale` for it; after its fact file is removed it renders `Not compliant - undischarged`. | Test |
-| FR-174-AC-6 | For a stored `temporary_exception` with `decisionExpiresAt` earlier than `attestation.expiresAt`, `--as-of` immediately before `decisionExpiresAt` renders that disposition; at `decisionExpiresAt` and after it renders `Not compliant - temporary exception expired`. | Test |
+| FR-174-AC-6 | For a stored `temporary_exception` with `decisionExpiresAt` earlier than `attestation.expiresAt`, `--as-of` immediately before `decisionExpiresAt` renders that disposition; at `decisionExpiresAt` and after it renders `Not compliant - temporary exception expired`. | Test (TC-004) |
 
 ## Dependencies
 

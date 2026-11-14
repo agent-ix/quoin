@@ -12,7 +12,7 @@
 )]
 
 use ix_trace_rs::trace;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 const BINDING: &str = r#"{
@@ -31,6 +31,14 @@ const FACTS: &str = r#"[{
     "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
 }]"#;
 
+const TEMPORARY_EXCEPTION_FACTS: &str = r#"[{
+  "kind": "disposition", "clauseId": "C-1", "decision": "temporary_exception",
+  "owner": "risk-owner-1", "rationale": "bounded synthetic exception",
+  "approvalRef": "approval://test/one", "decisionExpiresAt": "2026-08-20T00:00:00Z",
+  "attestation": {"attestedBy": "reviewer-1", "authority": "quality-lead",
+    "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
+}]"#;
+
 fn quoin(home: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .args(arguments)
@@ -41,6 +49,22 @@ fn quoin(home: &Path, arguments: &[&str]) -> Output {
 
 fn text(output: &Output) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+fn files_under(root: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(directory) = pending.pop() {
+        for entry in std::fs::read_dir(directory).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                pending.push(path);
+            } else {
+                files.push(path);
+            }
+        }
+    }
+    files
 }
 
 #[trace("FR-133-AC-7")]
@@ -137,4 +161,77 @@ fn tc_2604_a_doubled_binding_clause_is_refused_not_counted_twice() {
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("duplicate clause C-1"), "{stderr}");
+}
+
+#[trace("FR-133-AC-2", "FR-174-AC-6", "TC-004")]
+#[test]
+fn tc_2606_a_stored_temporary_exception_expires_at_its_decision_boundary() {
+    let dir = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
+    let binding = dir.path().join("binding.json");
+    let facts = dir.path().join("facts.json");
+    std::fs::write(&binding, BINDING).unwrap();
+    std::fs::write(&facts, TEMPORARY_EXCEPTION_FACTS).unwrap();
+    let (binding, facts, repo) = (
+        binding.to_str().unwrap(),
+        facts.to_str().unwrap(),
+        dir.path().to_str().unwrap(),
+    );
+
+    let recorded = quoin(
+        home.path(),
+        &[
+            "evidence",
+            "record-discharge",
+            "--repo",
+            repo,
+            "--binding",
+            binding,
+            "--facts",
+            facts,
+        ],
+    );
+    assert!(recorded.status.success(), "{recorded:?}");
+    let stored = files_under(dir.path())
+        .into_iter()
+        .find(|path| path.ends_with("c-1.json"))
+        .expect("the temporary exception is persisted for C-1");
+    let stored_fact = std::fs::read_to_string(stored).unwrap();
+    assert!(
+        stored_fact.contains("2026-08-20T00:00:00Z"),
+        "{stored_fact}"
+    );
+
+    let render = |as_of: &str| {
+        quoin(
+            home.path(),
+            &[
+                "discharge",
+                "--binding",
+                binding,
+                "--repo",
+                repo,
+                "--as-of",
+                as_of,
+                "--rmm",
+            ],
+        )
+    };
+    let before = render("2026-08-19T23:59:59.999Z");
+    assert!(before.status.success(), "{before:?}");
+    let before = text(&before);
+    assert!(
+        before.contains("| C-1 | Applicable | Tailored |"),
+        "{before}"
+    );
+
+    for as_of in ["2026-08-20T00:00:00Z", "2026-08-20T00:00:00.001Z"] {
+        let expired = render(as_of);
+        assert!(expired.status.success(), "{expired:?}");
+        let report = text(&expired);
+        assert!(
+            report.contains("| C-1 | Applicable | Not compliant - temporary exception expired"),
+            "{report}"
+        );
+    }
 }

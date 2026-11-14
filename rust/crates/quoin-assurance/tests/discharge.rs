@@ -492,7 +492,7 @@ fn tc_447_452_the_wire_spelling_of_every_closed_vocabulary_has_one_source() {
 }
 
 /// Provenance: quoin#882
-#[trace("FR-046-AC-7", "FR-046-AC-8", "FR-133-AC-2", "FR-174-AC-6")]
+#[trace("FR-046-AC-8", "TC-003")]
 #[test]
 fn temporary_exception_is_current_before_its_expiry_and_open_at_and_after_it() {
     let evaluate = |as_of: &str| {
@@ -540,7 +540,7 @@ fn temporary_exception_is_current_before_its_expiry_and_open_at_and_after_it() {
 }
 
 /// Provenance: quoin#892
-#[trace("FR-046-AC-8", "FR-133-AC-2", "FR-174-AC-6")]
+#[trace("FR-046-AC-8", "TC-003")]
 #[test]
 fn temporary_exception_shared_attestation_expiry_is_classified_as_expired() {
     let binding = every_state_binding();
@@ -571,7 +571,7 @@ fn temporary_exception_shared_attestation_expiry_is_classified_as_expired() {
 }
 
 /// Provenance: quoin#882
-#[trace("FR-046-AC-7")]
+#[trace("FR-046-AC-7", "TC-003")]
 #[test]
 fn disposition_wire_fields_require_an_owner_and_decision_specific_expiry() {
     let evaluate = |fact| {
@@ -589,6 +589,10 @@ fn disposition_wire_fields_require_an_owner_and_decision_specific_expiry() {
             emitted["binding"]["dispositions"][0]["fact"]["owner"],
             "risk-owner-1"
         );
+        assert_eq!(
+            emitted["binding"]["dispositions"][0]["fact"]["approvalRef"],
+            "approval://CAB-7"
+        );
         assert!(
             emitted["binding"]["dispositions"][0]["fact"]
                 .get("decisionExpiresAt")
@@ -603,6 +607,13 @@ fn disposition_wire_fields_require_an_owner_and_decision_specific_expiry() {
     let mut without_owner = disposition_of("SYN-002", "accepted_risk");
     without_owner.as_object_mut().unwrap().remove("owner");
     assert!(evaluate(without_owner).is_err());
+
+    let mut without_approval = disposition_of("SYN-002", "accepted_risk");
+    without_approval
+        .as_object_mut()
+        .unwrap()
+        .remove("approvalRef");
+    assert!(evaluate(without_approval).is_err());
 
     let mut without_expiry = disposition_of("SYN-002", "temporary_exception");
     without_expiry
