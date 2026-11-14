@@ -176,6 +176,34 @@ mod tests {
         })
     }
 
+    /// FR-153-AC-12: both read views accept repeatable observation files.
+    #[trace("FR-153-AC-12")]
+    #[test]
+    fn matrix_and_derived_assurance_accept_repeatable_observations() {
+        let args = [
+            "view",
+            "--run-observation",
+            "one.json",
+            "--run-observation",
+            "two.json",
+        ];
+        for (name, command) in [
+            ("matrix", crate::matrix::command()),
+            ("assurance", crate::assurance::command()),
+        ] {
+            let matches = command
+                .try_get_matches_from(args.map(|argument| argument.to_owned()))
+                .unwrap_or_else(|error| panic!("{name} accepts repeated observations: {error}"));
+            assert_eq!(
+                matches
+                    .get_many::<String>("run-observation")
+                    .expect("repeatable option")
+                    .count(),
+                2
+            );
+        }
+    }
+
     /// FR-153-AC-17: observation files reject malformed selectors, unknown
     /// members, duplicate record selectors and malformed authority arrays.
     #[trace("FR-153-AC-17")]

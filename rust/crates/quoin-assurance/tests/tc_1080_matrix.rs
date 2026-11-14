@@ -81,7 +81,7 @@ fn status_with(findings: &[&str], healthy: bool, checks: &[&str]) -> EvidenceSta
     statuses(&output)[0].1
 }
 
-#[trace("FR-115-AC-16")]
+#[trace("FR-115-AC-16", "FR-153-AC-12")]
 #[test]
 fn analysis_evidence_joins_only_the_exact_target_and_renders_every_item() {
     let target = json!({

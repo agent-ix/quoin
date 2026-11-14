@@ -453,7 +453,7 @@ fn tc_363_006_newest_compares_instants_not_strings() {
 
 /// Analysis results attach to the full native target and remain an additive
 /// display field; they do not alter the legacy audit status.
-#[trace("FR-040-AC-20")]
+#[trace("FR-040-AC-20", "FR-153-AC-12")]
 #[test]
 fn analysis_solution_shows_exact_target_results_in_json_and_text() {
     let target = serde_json::json!({

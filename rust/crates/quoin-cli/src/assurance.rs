@@ -350,7 +350,7 @@ mod tests {
     use super::command;
     use ix_trace_rs::trace;
 
-    #[trace("FR-040", "FR-062")]
+    #[trace("FR-040", "FR-062", "FR-153-AC-12")]
     #[test]
     fn tc_447_742_preserves_the_retained_assurance_grammar() {
         let matches = command()
@@ -366,6 +366,10 @@ mod tests {
                 "hazard",
                 "--independence-policy",
                 "policy.json",
+                "--run-observation",
+                "one.json",
+                "--run-observation",
+                "two.json",
                 "--json",
             ])
             .expect("the retained derived-view grammar parses");
@@ -383,6 +387,13 @@ mod tests {
             ["StR", "hazard"]
         );
         assert!(matches.get_flag("json"));
+        assert_eq!(
+            matches
+                .get_many::<String>("run-observation")
+                .expect("run observations")
+                .count(),
+            2
+        );
     }
 
     #[trace("FR-047", "FR-062")]
