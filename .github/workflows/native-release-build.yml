@@ -219,6 +219,44 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          validate_binding_traces() {
+            local bindings_file="$1"
+            local runs_file="$2"
+            jq -e --slurpfile runs "$runs_file" '
+              any(.bindings[]; .suite == "SUITE-001")
+              and all(.bindings[] | select(.suite == "SUITE-001");
+                . as $binding |
+                any($runs[0][];
+                  .suite == "SUITE-001"
+                  and any(.entries[];
+                    . as $entry |
+                    $entry.outcome == "pass"
+                    and (($binding.symbols | index($entry.symbol)) != null)
+                    and ((($entry.traceIds // []) | index($binding.obligation)) != null)
+                  )
+                )
+              )
+            ' "$bindings_file" >/dev/null
+          }
+
+          test_dir="$RUNNER_TEMP/quoin-evidence-binding-test"
+          mkdir -p "$test_dir"
+          jq -n '{schemaVersion:1,bindings:[{obligation:"FR-AC-1",suite:"SUITE-001",symbols:["tests::bound"]}]}' > "$test_dir/bindings.json"
+          jq -n '{schemaVersion:1,suite:"SUITE-001",evidenceKind:"Unit",entries:[{symbol:"tests::bound",outcome:"pass",traceIds:["FR-OTHER"]},{symbol:"tests::unrelated",outcome:"pass",traceIds:["FR-AC-1"]}]}' > "$test_dir/unrelated-run.json"
+          jq -s . "$test_dir/unrelated-run.json" > "$test_dir/unrelated-runs.json"
+          if validate_binding_traces "$test_dir/bindings.json" "$test_dir/unrelated-runs.json"; then
+            echo "::error::evidence validator accepted a passing test without the bound obligation trace" >&2
+            exit 1
+          fi
+
+          jq -n '{schemaVersion:1,suite:"SUITE-001",evidenceKind:"Unit",entries:[{symbol:"tests::bound",outcome:"pass",traceIds:["FR-AC-1"]},{symbol:"tests::unrelated",outcome:"pass",traceIds:["FR-AC-1"]}]}' > "$test_dir/matching-run.json"
+          jq -s . "$test_dir/matching-run.json" > "$test_dir/matching-runs.json"
+          validate_binding_traces "$test_dir/bindings.json" "$test_dir/matching-runs.json" || {
+            echo "::error::evidence validator rejected a passing bound symbol with its obligation trace" >&2
+            exit 1
+          }
+
           started_at=$(date +%s)
           if ! make evidence; then
             echo "::error::no_retained_evidence_store: make evidence did not produce run records and bindings for the tagged commit" >&2
@@ -236,18 +274,16 @@ jobs:
             echo "::error::no_retained_evidence_store: no SUITE-001 run record was created during this tagged-commit job" >&2
             exit 1
           fi
-          has_current_binding=false
           for record in "${records[@]}"; do
             jq -e '.schemaVersion == 1 and .suite == "SUITE-001" and .evidenceKind == "Unit" and (.entries | type == "array" and length > 0)' "$record" >/dev/null || {
               echo "::error::no_retained_evidence_store: a current-job SUITE-001 run record is invalid" >&2
               exit 1
             }
-            if jq -e --argfile bindings "$bindings" --argfile run "$record" 'any($bindings.bindings[]; .suite == "SUITE-001" and any(.symbols[]; . as $symbol | any($run.entries[]; .symbol == $symbol and .outcome == "pass")))' >/dev/null; then
-              has_current_binding=true
-            fi
           done
-          if [ "$has_current_binding" != true ]; then
-            echo "::error::no_retained_evidence_store: current tagged-commit run records have no passing symbol in the bindings" >&2
+          current_runs="$RUNNER_TEMP/quoin-evidence-current-runs.json"
+          jq -s . "${records[@]}" > "$current_runs"
+          if ! validate_binding_traces "$bindings" "$current_runs"; then
+            echo "::error::no_retained_evidence_store: a bound obligation lacks a passing symbol with that trace in the current run records" >&2
             exit 1
           fi
       - uses: actions/upload-artifact@v7
