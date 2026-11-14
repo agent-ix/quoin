@@ -4,6 +4,7 @@
 #![allow(
     clippy::expect_used,
     clippy::unwrap_used,
+    clippy::panic,
     clippy::indexing_slicing,
     reason = "in a test, a panic IS the failure report"
 )]
