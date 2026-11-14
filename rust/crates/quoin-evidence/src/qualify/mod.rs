@@ -336,7 +336,6 @@ pub fn qualify(request: &Request<'_>) -> Qualification {
                 obligation: request.obligation,
                 host: request.host,
                 run: candidate.run,
-                entry: candidate.entry,
                 locator: &candidate.locator,
             },
             &mut provenance,

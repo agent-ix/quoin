@@ -131,6 +131,41 @@ fn decision(producer: (&str, &str), limitations: &[&str]) -> TrustDecision {
     }
 }
 
+fn projection(report: &Value) -> Value {
+    let engines = report["engines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|engine| {
+            let mut projected = serde_json::Map::from_iter([
+                ("engine".to_owned(), engine["engine"].clone()),
+                (
+                    "configured_executable".to_owned(),
+                    engine["configuredExecutable"].clone(),
+                ),
+                ("status".to_owned(), engine["status"].clone()),
+                ("outcome".to_owned(), engine["outcome"].clone()),
+            ]);
+            if let Some(identity) = engine.get("identity") {
+                if let Some(path) = identity.get("path") {
+                    projected.insert("identity_path".to_owned(), path.clone());
+                }
+                if let Some(version) = identity.get("version") {
+                    projected.insert("identity_version".to_owned(), version.clone());
+                }
+            }
+            Value::Object(projected)
+        })
+        .collect::<Vec<_>>();
+    json!({
+        "protocol": "quoin.analysis-report-projection/v1",
+        "disposition": report["differential"]["disposition"],
+        "agreed_status": report["differential"]["agreedStatus"],
+        "producer": report["producer"],
+        "engines": engines,
+    })
+}
+
 /// The host facts that belong to no one record, every premise admitted.
 fn admitted() -> HostObservations {
     HostObservations {
@@ -213,11 +248,7 @@ impl Recorded {
     ) {
         let mut entry = RunEntry::new(symbol, outcome);
         entry.trace_ids = Some(discharges.iter().map(|id| (*id).to_owned()).collect());
-        let report_text = serde_json::to_string(&report).unwrap();
-        let projection = parse_differential_report(&report_text)
-            .unwrap()
-            .analysis_projection
-            .unwrap();
+        let projection = projection(&report);
         let outcome = record_run_with_analysis_projection(
             &mut self.source,
             &RecordRequest {
@@ -641,18 +672,19 @@ fn association_and_engine_observations_are_premises_of_the_decision() {
     // observation of a solver it started.
     for (change, label) in [
         (
-            (&["engines", "1", "identity", "version"][..], Value::Null),
-            "identity.version",
+            (&["engines", "1", "identity_version"][..], Value::Null),
+            "identity_version",
         ),
-        ((&["engines", "1", "identity"][..], Value::Null), "identity"),
-        ((&["engines", "0", "status"][..], Value::Null), "status"),
-        ((&["engines", "0", "outcome"][..], Value::Null), "outcome"),
+        (
+            (&["engines", "1", "identity_path"][..], Value::Null),
+            "identity_path",
+        ),
         (
             (
-                &["engines", "0", "configuredExecutable"][..],
+                &["engines", "0", "configured_executable"][..],
                 Value::from("z3"),
             ),
-            "relative configuredExecutable",
+            "relative configured executable",
         ),
     ] {
         let mut incomplete = Recorded::new();

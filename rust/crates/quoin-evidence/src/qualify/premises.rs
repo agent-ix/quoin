@@ -15,7 +15,7 @@ use super::{
 };
 use crate::paths::{RUNS_DIR, record_path};
 use crate::trust::assess_trust;
-use crate::types::{RunEntry, TrustStatus};
+use crate::types::TrustStatus;
 
 /// The two engines a `quire.differential-report/v2` agreement names.
 const ENGINES: [&str; 2] = ["z3", "cvc5"];
@@ -26,7 +26,6 @@ pub(super) struct Probe<'a> {
     pub(super) obligation: &'a str,
     pub(super) host: &'a HostObservations,
     pub(super) run: &'a RetainedRun,
-    pub(super) entry: &'a RunEntry,
     pub(super) locator: &'a RunLocator,
 }
 
