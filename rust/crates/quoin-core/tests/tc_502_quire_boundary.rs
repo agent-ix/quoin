@@ -119,6 +119,47 @@ fn tc_502_010_coverage_derives_the_obligations_the_repository_states() {
     );
 }
 
+/// `quire.design_matrix` reaches its shared-runtime handler and preserves the
+/// coverage payload when this module declares no design relations.
+#[trace("FR-165-AC-18")]
+#[test]
+fn tc_502_014_design_matrix_returns_coverage_entries_without_design_relations() {
+    let request = request();
+    let coverage = payload(&run("quire.coverage", &request.to_string()));
+    let design = payload(&run("quire.design_matrix", &request.to_string()));
+
+    assert_eq!(design["obligations"], coverage["obligations"]);
+    assert_eq!(design["diagnostics"], coverage["diagnostics"]);
+    assert_eq!(design["carried_vocabulary"], coverage["carried_vocabulary"]);
+
+    let entries = design["coverage_matrix"].as_array().unwrap();
+    assert_eq!(entries.len(), 1, "the fixture has one requirement document");
+    assert_eq!(entries[0]["document"], "spec/FR-001-example.md");
+    assert_eq!(
+        entries[0]["criteria"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|criterion| criterion["id"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        ["FR-001-AC-1", "FR-001-AC-2"]
+    );
+    assert_eq!(
+        entries[0]["criteria"][0]["statement"],
+        "Every stored payload shall round-trip through the reader unchanged."
+    );
+    assert!(
+        entries[0].get("design").is_none(),
+        "the fixture declares no design relations"
+    );
+    assert!(
+        coverage["coverage_matrix"][0]["criteria"][0]
+            .get("statement")
+            .is_none(),
+        "quire.coverage keeps its existing projected payload"
+    );
+}
+
 /// `quire.design_join` preserves Quire's empty design-relations answer through
 /// the production host and dispatch path.
 #[trace("FR-161-AC-4")]
