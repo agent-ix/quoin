@@ -4,13 +4,15 @@ title: "The security analysis skill writes control and scope_exclusion artifacts
 type: FR
 relationships:
   - target: "ix://agent-ix/spec-objects-security/FR-014"
-    type: "references"
+    type: "depends_on"
   - target: "ix://agent-ix/spec-objects-security/FR-016"
-    type: "references"
+    type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-180"
-    type: "references"
+    type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-181"
-    type: "references"
+    type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-security/FR-021"
+    type: "depends_on"
 ---
 
 # FR-171: The security analysis skill writes control and scope_exclusion artifacts, not a prose section
@@ -53,9 +55,13 @@ Nothing is written into `spec/spec.md` because the artifacts are the record.
 - When a selected profile includes a set reported `unavailable`, the skill SHALL report `not mapped, set not installed` for that set.
 - When a selected profile includes a set reported `unavailable`, the skill SHALL continue mapping the other evaluated sets.
 - When no source profile is selected, the skill SHALL stop before mapping and ask the user to create `.ix/source-profile.yaml`.
-- When no source profile is selected, the skill SHALL name only `web-app-baseline`, `us-device-cybersecurity-hipaa` and `eu-device-gdpr-ai-act` as the three available defaults.
+- When no source profile is selected, the skill SHALL name the three default profile names defined by [spec-objects-security FR-021](ix://agent-ix/spec-objects-security/FR-021).
+- When no source profile is selected, the skill SHALL NOT imply that a named profile is currently shipped or selectable unless its profile artifact is present.
 - When no source profile is selected, the skill SHALL NOT default to all sources.
 - The skill SHALL NOT write or change `.ix/source-profile.yaml` or any `context` value; the repository supplies profile selection and product facts.
+- If `quoin profile evaluate` exits nonzero, the skill SHALL report the evaluation failure and stop before mapping.
+- If `quoin profile evaluate` emits no document or a document that fails `source-profile-evaluation-v1` validation, the skill SHALL report the evaluation output failure and stop before mapping.
+- If profile evaluation exits nonzero or emits no valid evaluation document, the skill SHALL NOT author any control or scope_exclusion.
 
 ## Acceptance Criteria
 
@@ -71,12 +77,13 @@ Nothing is written into `spec/spec.md` because the artifacts are the record.
 | FR-171-AC-8 | Given a selected profile, the skill runs `quoin profile evaluate --out-dir <tmp>` and maps only clauses reported `binding`; a `not_binding` clause and a clause from a set absent from the evaluation document produce no artifact. | Test |
 | FR-171-AC-9 | An `unresolved` clause appears in the SpecReview with its missing dimension named and produces no `control` or `scope_exclusion`. | Test |
 | FR-171-AC-10 | An `unavailable` selected set is reported `not mapped, set not installed`, while binding clauses from evaluated sets are still mapped. | Test |
-| FR-171-AC-11 | With no `.ix/source-profile.yaml`, the skill stops before mapping, emits no control or exclusion, asks for the selection file, and names exactly the three defaults `web-app-baseline`, `us-device-cybersecurity-hipaa` and `eu-device-gdpr-ai-act`. | Test |
-| FR-171-AC-12 | Fixture A selects `web-app-baseline` with `baseline=low` and `level=1`; every mapping references only a NIST or OWASP clause reported `binding` by the evaluation document, and a mapping to a `not_binding` clause fails the test. | Test |
-| FR-171-AC-13 | Fixture B selects a profile containing only `owasp/asvs@5.0.0`; its output has no NIST mapping, and its mapped source coverage is disjoint from Fixture A where their profile sets differ. | Test |
+| FR-171-AC-11 | With no `.ix/source-profile.yaml`, the skill stops before mapping, emits no control or exclusion, asks for the selection file, and names only the three profile names defined by spec-objects-security FR-021 without claiming each is currently shipped or selectable. | Test |
+| FR-171-AC-12 | Fixture A's `source-profile.yaml` selects `web-app-baseline`, whose evaluation contains exactly `nist/sp800-53@5.2.0` and `owasp/asvs@5.0.0`, with `baseline=low` and `level=1`; every emitted mapping uses one of those keys and names a clause reported `binding` by that set's evaluation, and a mapping to a `not_binding` clause fails the test. | Test |
+| FR-171-AC-13 | Fixture B's `source-profile.yaml` selects a profile containing only the OWASP set shared with Fixture A, `owasp/asvs@5.0.0`; every B mapping uses that key and a `binding` clause, B emits no NIST mapping, and the source-key sets are exactly the profile coverage: A uses only NIST and shared OWASP keys, while B uses only the shared OWASP key. | Test |
 | FR-171-AC-14 | Before and after a skill run, `.ix/source-profile.yaml` and the evaluated profile context are unchanged; the skill authors neither selection nor product facts. | Test |
+| FR-171-AC-15 | If profile evaluation exits nonzero, emits no document, or emits an invalid `source-profile-evaluation-v1` document, the skill reports the failure, emits no control or exclusion, and does not map any clause. | Test |
 
 ## Dependencies
 
-- **Upstream**: spec-objects-security FR-014, FR-016; [FR-180](./FR-180-source-profile-selection.md), [FR-181](./FR-181-source-profile-evaluation.md), [FR-021](./FR-021-default-source-profiles.md)
+- **Upstream**: spec-objects-security [FR-014](ix://agent-ix/spec-objects-security/FR-014), [FR-016](ix://agent-ix/spec-objects-security/FR-016), [FR-021](ix://agent-ix/spec-objects-security/FR-021); [FR-180](./FR-180-source-profile-selection.md), [FR-181](./FR-181-source-profile-evaluation.md)
 - **Downstream**: [FR-172](./FR-172-clause-set-sources-and-licence-boundary.md), [FR-173](./FR-173-facts-from-mappings.md)
