@@ -18,6 +18,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
+use ix_trace_rs::implements;
 use quoin_assurance::{
     ClauseDischarge, DischargeFact, DischargeReport, DischargeState, DispositionDecision,
 };
@@ -82,6 +83,7 @@ impl Tool {
     }
 
     /// Whether this scanner assesses the record's package-url type.
+    #[implements("FR-142")]
     pub(super) fn assesses(self, purl: &str) -> bool {
         match self {
             Self::CargoAudit | Self::CargoDeny => index::purl_type(purl) == Some("cargo"),
@@ -298,6 +300,7 @@ pub(super) struct Join {
 /// one purl make a finding of that crate `ambiguous`.
 ///
 /// `finding_refs` and the `vulnerability` object are not inputs.
+#[implements("FR-142")]
 pub(super) fn join(
     records: &[Existing],
     scans: &[FindingRecord],

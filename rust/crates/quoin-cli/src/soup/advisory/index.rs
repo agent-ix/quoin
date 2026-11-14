@@ -6,6 +6,7 @@
 
 use std::collections::BTreeMap;
 
+use ix_trace_rs::implements;
 use quoin_evidence::purl::PurlIdentity;
 
 use super::UnmatchedReason;
@@ -105,6 +106,7 @@ impl RecordIndex {
 
     /// The record an OSV finding's purl selects. Its name/version fallback is
     /// intentionally unmatched because it does not identify an ecosystem.
+    #[implements("FR-142")]
     pub(in crate::soup) fn find_osv(&self, path: Option<&str>) -> Hit {
         let applicable: Vec<usize> = self
             .identities

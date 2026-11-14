@@ -5,6 +5,7 @@
 
 use std::collections::BTreeMap;
 
+use ix_trace_rs::implements;
 use serde_json::Value;
 
 use super::FindingResult;
@@ -23,6 +24,7 @@ use crate::types::Finding;
 /// Refuses malformed JSON, missing or empty result/package collections,
 /// vulnerabilities without ids, and vulnerable packages without an unambiguous
 /// syntactically valid identity.
+#[implements("FR-149")]
 pub fn parse_osv_scanner(raw: &str) -> Result<FindingResult, EvidenceError> {
     let report: Value =
         serde_json::from_str(raw).map_err(|error| refuse(format!("input is not JSON: {error}")))?;
