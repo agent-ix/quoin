@@ -633,7 +633,9 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
     let mut out = String::from("# Test Matrix\n");
     if let Some(reason) = &matrix.reason {
         let _ = write!(out, "\n{reason}\n");
-        return out;
+        if matrix.requirements.is_empty() {
+            return out;
+        }
     }
     let classed = matrix.unclassified.is_some();
     let designed = matrix

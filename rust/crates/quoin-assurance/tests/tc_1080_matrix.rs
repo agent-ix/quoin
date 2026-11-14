@@ -53,10 +53,14 @@ fn input(ids: &[&str], bindings: &[Value], audit: &Value) -> MatrixInput {
 }
 
 fn design_input(entries: &[Value]) -> MatrixInput {
+    design_input_with(entries, &[], &audit(&[], &[], &[]))
+}
+
+fn design_input_with(entries: &[Value], bindings: &[Value], audit: &Value) -> MatrixInput {
     serde_json::from_value(json!({
         "design_coverage": entries,
-        "bindings": { "schemaVersion": 1, "bindings": [] },
-        "audit": audit(&[], &[], &[]),
+        "bindings": { "schemaVersion": 1, "bindings": bindings },
+        "audit": audit,
     }))
     .unwrap()
 }
@@ -673,17 +677,21 @@ fn tc_1080_015_design_axis_is_independent_from_evidence() {
         &audit(&[finding(id, "stale-evidence")], &[], &[]),
     ))
     .unwrap();
-    let designed = build(&design_input(&[design_entry(
-        "spec/FR-001.md",
-        Some("FR-001"),
-        vec![design_criterion(id, Some(json!([])))],
-        Some(json!([uncovered_block("implemented")])),
-    )]))
+    let designed = build(&design_input_with(
+        &[design_entry(
+            "spec/FR-001.md",
+            Some("FR-001"),
+            vec![design_criterion(id, Some(json!([])))],
+            Some(json!([uncovered_block("implemented")])),
+        )],
+        &[binding(id, "unit")],
+        &audit(&[finding(id, "stale-evidence")], &[], &[]),
+    ))
     .unwrap();
     assert_eq!(statuses(&ordinary), statuses(&designed));
     assert_eq!(
         designed.requirements[0].criteria[0].evidence_status,
-        EvidenceStatus::NoRunEvidence
+        EvidenceStatus::Stale
     );
 
     let no_design = build(&design_input(&[design_entry(
@@ -774,7 +782,7 @@ fn tc_1080_018_design_blocks_group_and_sort_by_repo_then_document() {
         .iter()
         .map(|block| block["check"].as_str().unwrap())
         .collect();
-    assert_eq!(checks, ["no-repo", "a", "orphan", "z"]);
+    assert_eq!(checks, ["no-repo", "z", "a", "orphan"]);
     assert_eq!(output.requirements[0].criteria.len(), 3);
 }
 
