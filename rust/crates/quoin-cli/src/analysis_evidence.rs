@@ -291,63 +291,11 @@ fn actor_observation(
     if authority.actor.is_empty() || authority.admission_ref.is_empty() {
         return (None, None);
     }
-    let Some(status) = signature.get("status").and_then(serde_json::Value::as_str) else {
-        return (None, None);
+    let principal = match signature_signer(signature) {
+        SignatureSigner::Admitted(principal) => principal,
+        SignatureSigner::Rejected(reason) => return (None, Some(reason)),
+        SignatureSigner::Unavailable => return (None, None),
     };
-    match status {
-        "signed_valid" => {}
-        "signed_untrusted" | "signed_bad" | "unsigned" => {
-            return (
-                None,
-                Some(format!(
-                    "the introducing commit signature status is {status}"
-                )),
-            );
-        }
-        "unverifiable" => return (None, None),
-        _ => return (None, None),
-    }
-    let Some(signer) = signature
-        .get("signer")
-        .and_then(serde_json::Value::as_object)
-    else {
-        return (None, None);
-    };
-    let Some(mapping) = signer.get("mapping").and_then(serde_json::Value::as_str) else {
-        return (None, None);
-    };
-    match mapping {
-        "mapped" => {}
-        "unmapped" => {
-            return (
-                None,
-                Some("the introducing commit signature has no mapped signer principal".to_owned()),
-            );
-        }
-        _ => return (None, None),
-    }
-    let Some(principal_value) = signer.get("principal") else {
-        return (
-            None,
-            Some("the introducing commit signature has no signer principal".to_owned()),
-        );
-    };
-    let Some(principal) = principal_value.as_str() else {
-        return if principal_value.is_null() {
-            (
-                None,
-                Some("the introducing commit signature has no signer principal".to_owned()),
-            )
-        } else {
-            (None, None)
-        };
-    };
-    if principal.is_empty() {
-        return (
-            None,
-            Some("the introducing commit signature has no signer principal".to_owned()),
-        );
-    }
     if authority.actor != principal {
         return (
             None,
@@ -356,12 +304,71 @@ fn actor_observation(
     }
     (
         Some(ActorAdmission {
-            actor: principal.to_owned(),
+            actor: principal,
             admission_ref: authority.admission_ref.clone(),
             authorized: authority.authorized.clone(),
         }),
         None,
     )
+}
+
+enum SignatureSigner {
+    Admitted(String),
+    Rejected(String),
+    Unavailable,
+}
+
+fn signature_signer(signature: &serde_json::Value) -> SignatureSigner {
+    let Some(status) = signature.get("status").and_then(serde_json::Value::as_str) else {
+        return SignatureSigner::Unavailable;
+    };
+    match status {
+        "signed_valid" => {}
+        "signed_untrusted" | "signed_bad" | "unsigned" => {
+            return SignatureSigner::Rejected(format!(
+                "the introducing commit signature status is {status}"
+            ));
+        }
+        _ => return SignatureSigner::Unavailable,
+    }
+    let Some(signer) = signature
+        .get("signer")
+        .and_then(serde_json::Value::as_object)
+    else {
+        return SignatureSigner::Unavailable;
+    };
+    let Some(mapping) = signer.get("mapping").and_then(serde_json::Value::as_str) else {
+        return SignatureSigner::Unavailable;
+    };
+    match mapping {
+        "mapped" => {}
+        "unmapped" => {
+            return SignatureSigner::Rejected(
+                "the introducing commit signature has no mapped signer principal".to_owned(),
+            );
+        }
+        _ => return SignatureSigner::Unavailable,
+    }
+    let Some(principal_value) = signer.get("principal") else {
+        return SignatureSigner::Rejected(
+            "the introducing commit signature has no signer principal".to_owned(),
+        );
+    };
+    let Some(principal) = principal_value.as_str() else {
+        return if principal_value.is_null() {
+            SignatureSigner::Rejected(
+                "the introducing commit signature has no signer principal".to_owned(),
+            )
+        } else {
+            SignatureSigner::Unavailable
+        };
+    };
+    if principal.is_empty() {
+        return SignatureSigner::Rejected(
+            "the introducing commit signature has no signer principal".to_owned(),
+        );
+    }
+    SignatureSigner::Admitted(principal.to_owned())
 }
 
 fn first_pair_introduction(repo: &str, run_file: &str, projection_file: &str) -> Option<String> {
