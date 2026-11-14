@@ -37,8 +37,8 @@
 
 use ix_trace_rs::trace;
 use quoin_assurance::discharge::{
-    BuildDischargeRequest, DischargeState, DispositionDecision, FactKind, UnusedFactReason,
-    build_discharge_report, render_discharge_report,
+    BuildDischargeRequest, DischargeState, DispositionDecision, FactKind, RmmCompliance,
+    UnusedFactReason, build_discharge_report, build_requirements_mapping, render_discharge_report,
 };
 use quoin_quire_types::ClauseBindingReport;
 
@@ -46,7 +46,7 @@ use quoin_quire_types::ClauseBindingReport;
 ///
 /// Written out rather than re-derived: a test that serialises the report a
 /// second time agrees with itself no matter what the wire spellings say.
-const EVERY_STATE_DOCUMENT: &str = r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"example.invalid","id":"synthetic-widget-rules","version":"1.0.0"},"context":{"deployment":"test","product":"widget"},"asOf":"2026-08-15T00:00:00.000Z","binding":{"direct":[{"clauseId":"SYN-001","force":"mandatory","state":"direct","expectedOutputs":["test-result"],"fact":{"kind":"direct","clauseId":"SYN-001","evidenceRefs":["evidence://run/one"],"attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"dispositions":[{"clauseId":"SYN-002","force":"recommended","state":"disposition","expectedOutputs":["review-record"],"fact":{"kind":"disposition","clauseId":"SYN-002","decision":"temporary_exception","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/temporary_exception","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-003","force":"mandatory","state":"disposition","expectedOutputs":["decision-record"],"fact":{"kind":"disposition","clauseId":"SYN-003","decision":"accepted_risk","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/accepted_risk","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-006","force":"permitted","state":"disposition","expectedOutputs":["delegation-record"],"fact":{"kind":"disposition","clauseId":"SYN-006","decision":"delegated","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/delegated","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"open":[{"clauseId":"SYN-007","force":"mandatory","state":"open","expectedOutputs":["open-record"],"reason":"no discharge fact"}]},"unresolved":[{"clauseId":"SYN-004","force":"mandatory","state":"unresolved","expectedOutputs":["environment-record"],"reason":"environment is not known"}],"notBinding":[{"clauseId":"SYN-005","force":"permitted","state":"not_binding","expectedOutputs":[]}],"unusedFacts":[{"clauseId":"SYN-004","kind":"direct","reason":"unresolved"},{"clauseId":"SYN-005","kind":"direct","reason":"not_binding"},{"clauseId":"SYN-999","kind":"direct","reason":"unknown_clause"}]}"#;
+const EVERY_STATE_DOCUMENT: &str = r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"example.invalid","id":"synthetic-widget-rules","version":"1.0.0"},"context":{"deployment":"test","product":"widget"},"asOf":"2026-08-15T00:00:00.000Z","binding":{"direct":[{"clauseId":"SYN-001","force":"mandatory","state":"direct","expectedOutputs":["test-result"],"fact":{"kind":"direct","clauseId":"SYN-001","evidenceRefs":["evidence://run/one"],"attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"dispositions":[{"clauseId":"SYN-002","force":"recommended","state":"disposition","expectedOutputs":["review-record"],"fact":{"kind":"disposition","clauseId":"SYN-002","decision":"temporary_exception","owner":"risk-owner-1","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/temporary_exception","decisionExpiresAt":"2026-08-20T00:00:00.000Z","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-003","force":"mandatory","state":"disposition","expectedOutputs":["decision-record"],"fact":{"kind":"disposition","clauseId":"SYN-003","decision":"accepted_risk","owner":"risk-owner-1","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/accepted_risk","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-006","force":"permitted","state":"disposition","expectedOutputs":["delegation-record"],"fact":{"kind":"disposition","clauseId":"SYN-006","decision":"delegated","owner":"risk-owner-1","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/delegated","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"open":[{"clauseId":"SYN-007","force":"mandatory","state":"open","expectedOutputs":["open-record"],"reason":"no discharge fact"}]},"unresolved":[{"clauseId":"SYN-004","force":"mandatory","state":"unresolved","expectedOutputs":["environment-record"],"reason":"environment is not known"}],"notBinding":[{"clauseId":"SYN-005","force":"permitted","state":"not_binding","expectedOutputs":[]}],"unusedFacts":[{"clauseId":"SYN-004","kind":"direct","reason":"unresolved"},{"clauseId":"SYN-005","kind":"direct","reason":"not_binding"},{"clauseId":"SYN-999","kind":"direct","reason":"unknown_clause"}]}"#;
 
 fn binding() -> ClauseBindingReport {
     serde_json::from_value(serde_json::json!({
@@ -98,8 +98,10 @@ fn disposition() -> serde_json::Value {
         "kind": "disposition",
         "clauseId": "SYN-002",
         "decision": "temporary_exception",
+        "owner": "risk-owner-1",
         "rationale": "Synthetic exception for the bounded test window.",
         "approvalRef": "decision://synthetic/one",
+        "decisionExpiresAt": "2026-08-20T00:00:00.000Z",
         "attestation": attestation()
     })
 }
@@ -489,6 +491,96 @@ fn tc_447_452_the_wire_spelling_of_every_closed_vocabulary_has_one_source() {
     );
 }
 
+/// Provenance: quoin#882
+#[trace("FR-046-AC-7", "FR-046-AC-8", "FR-133-AC-2", "FR-174-AC-6")]
+#[test]
+fn temporary_exception_is_current_before_its_expiry_and_open_at_and_after_it() {
+    let evaluate = |as_of: &str| {
+        let binding = every_state_binding();
+        let request = BuildDischargeRequest {
+            binding: binding.clone(),
+            facts: vec![disposition_of("SYN-002", "temporary_exception")],
+            as_of: as_of.to_owned(),
+        };
+        (
+            binding,
+            build_discharge_report(&request).expect("well-formed temporary exception"),
+        )
+    };
+    let (_, before) = evaluate("2026-08-19T23:59:59.999Z");
+    assert_eq!(before.binding.dispositions[0].clause_id, "SYN-002");
+
+    for as_of in ["2026-08-20T00:00:00.000Z", "2026-08-20T00:00:00.001Z"] {
+        let (binding, report) = evaluate(as_of);
+        assert!(report.binding.dispositions.is_empty());
+        let open = report
+            .binding
+            .open
+            .iter()
+            .find(|entry| entry.clause_id == "SYN-002")
+            .expect("the expired exception is in open work");
+        assert_eq!(open.clause_id, "SYN-002");
+        assert_eq!(open.reason.as_deref(), Some("temporary exception expired"));
+        assert_eq!(
+            build_requirements_mapping(&binding, &report)
+                .expect("one row per binding clause")
+                .rows[1]
+                .compliance,
+            RmmCompliance::TemporaryExceptionExpired
+        );
+    }
+}
+
+/// Provenance: quoin#882
+#[trace("FR-046-AC-7")]
+#[test]
+fn disposition_wire_fields_require_an_owner_and_decision_specific_expiry() {
+    let evaluate = |fact| {
+        build_discharge_report(&BuildDischargeRequest {
+            binding: every_state_binding(),
+            facts: vec![fact],
+            as_of: "2026-08-15T00:00:00.000Z".to_owned(),
+        })
+    };
+    for decision in ["delegated", "accepted_risk"] {
+        let fact = disposition_of("SYN-002", decision);
+        let parsed = evaluate(fact.clone()).expect("valid fact");
+        let emitted = serde_json::to_value(&parsed).expect("report serialises");
+        assert_eq!(
+            emitted["binding"]["dispositions"][0]["fact"]["owner"],
+            "risk-owner-1"
+        );
+        assert!(
+            emitted["binding"]["dispositions"][0]["fact"]
+                .get("decisionExpiresAt")
+                .is_none()
+        );
+
+        let mut with_expiry = fact;
+        with_expiry["decisionExpiresAt"] = serde_json::json!("2026-08-20T00:00:00.000Z");
+        assert!(evaluate(with_expiry).is_err());
+    }
+
+    let mut without_owner = disposition_of("SYN-002", "accepted_risk");
+    without_owner.as_object_mut().unwrap().remove("owner");
+    assert!(evaluate(without_owner).is_err());
+
+    let mut without_expiry = disposition_of("SYN-002", "temporary_exception");
+    without_expiry
+        .as_object_mut()
+        .unwrap()
+        .remove("decisionExpiresAt");
+    assert!(evaluate(without_expiry).is_err());
+
+    let mut beyond_attestation = disposition_of("SYN-002", "temporary_exception");
+    beyond_attestation["decisionExpiresAt"] = serde_json::json!("2026-10-01T00:00:00.000Z");
+    let error = evaluate(beyond_attestation).expect_err("decision cannot outlive its attestation");
+    assert_eq!(
+        error.0,
+        "decisionExpiresAt must not be after attestation expiresAt"
+    );
+}
+
 /// A clause set that reaches every state, every decision and every unused
 /// reason — including `accepted_risk` and `delegated`, which no other fixture
 /// in this crate constructs.
@@ -525,14 +617,19 @@ fn every_state_binding() -> ClauseBindingReport {
 
 /// One disposition fact, for a named decision.
 fn disposition_of(clause_id: &str, decision: &str) -> serde_json::Value {
-    serde_json::json!({
+    let mut fact = serde_json::json!({
         "kind": "disposition",
         "clauseId": clause_id,
         "decision": decision,
+        "owner": "risk-owner-1",
         "rationale": "Synthetic decision for the bounded test window.",
         "approvalRef": format!("decision://synthetic/{decision}"),
         "attestation": attestation()
-    })
+    });
+    if decision == "temporary_exception" {
+        fact["decisionExpiresAt"] = serde_json::json!("2026-08-20T00:00:00.000Z");
+    }
+    fact
 }
 
 /// The report every state, decision and unused reason appears in.

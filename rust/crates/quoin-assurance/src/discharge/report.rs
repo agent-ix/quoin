@@ -176,6 +176,8 @@ pub struct DirectDischargeFact {
 /// FR-046's constraint, restated where the type is: a disposition is evidence
 /// of an authorised decision, **not** evidence that the clause's expected
 /// output exists. That is why it never joins the `direct` population.
+/// `owner` and `approval_ref` are authored decision metadata; only a
+/// `temporary_exception` carries `decision_expires_at`.
 ///
 /// `Serialize` only, for the reason [`DirectDischargeFact`] states.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -186,10 +188,15 @@ pub struct DispositionFact {
     pub clause_id: String,
     /// What was decided.
     pub decision: DispositionDecision,
+    /// Person who owns the decision.
+    pub owner: String,
     /// Why.
     pub rationale: String,
     /// A reference to the approval itself.
     pub approval_ref: String,
+    /// When a temporary exception stops discharging the clause.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decision_expires_at: Option<String>,
     /// Who attested, and for how long.
     pub attestation: DischargeAttestation,
 }

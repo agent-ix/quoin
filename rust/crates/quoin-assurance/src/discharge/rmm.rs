@@ -63,6 +63,8 @@ pub enum RmmCompliance {
     Undischarged,
     /// Binding, with a fact whose attestation is expired or not yet valid.
     AttestationNotCurrent,
+    /// Binding, with a temporary exception whose decision window has ended.
+    TemporaryExceptionExpired,
     /// Applicability is unresolved.
     Undetermined,
     /// The clause does not bind.
@@ -76,6 +78,7 @@ impl RmmCompliance {
             Self::Tailored => "Tailored",
             Self::Undischarged => "Not compliant - undischarged",
             Self::AttestationNotCurrent => "Not compliant - attestation not current",
+            Self::TemporaryExceptionExpired => "Not compliant - temporary exception expired",
             Self::Undetermined => "Undetermined",
             Self::NotApplicable => "Not applicable",
         }
@@ -175,6 +178,10 @@ fn row(entry: &ClauseDischarge, clause: &ClauseBinding) -> RmmRow {
     let (applicability, compliance) = match entry.state {
         DischargeState::Direct => (RmmApplicability::Applicable, RmmCompliance::Compliant),
         DischargeState::Disposition => (RmmApplicability::Applicable, RmmCompliance::Tailored),
+        DischargeState::Open if entry.reason.as_deref() == Some("temporary exception expired") => (
+            RmmApplicability::Applicable,
+            RmmCompliance::TemporaryExceptionExpired,
+        ),
         DischargeState::Open if entry.fact.is_some() => (
             RmmApplicability::Applicable,
             RmmCompliance::AttestationNotCurrent,
@@ -279,7 +286,12 @@ pub fn render_requirements_mapping(matrix: &RequirementsMapping) -> String {
 
 fn table_row(row: &RmmRow) -> String {
     let compliance = match &row.reason {
-        Some(reason) if row.compliance != RmmCompliance::Compliant => {
+        Some(reason)
+            if !matches!(
+                row.compliance,
+                RmmCompliance::Compliant | RmmCompliance::TemporaryExceptionExpired
+            ) =>
+        {
             format!("{}: {reason}", row.compliance.label())
         }
         _ => row.compliance.label().to_owned(),
@@ -345,6 +357,7 @@ mod tests {
             "kind": "disposition",
             "clauseId": clause,
             "decision": "accepted_risk",
+            "owner": "risk-owner-1",
             "rationale": "carried | for now\nsecond line",
             "approvalRef": "approval://1",
             "attestation": attestation()
