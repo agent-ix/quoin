@@ -50,6 +50,8 @@ pub(crate) struct Audited {
     pub(crate) bindings: serde_json::Value,
     /// The `auditor.audit` response, whose payload carries `report`.
     pub(crate) response: Response,
+    /// The store's whole host input, used by the FR-153 evidence bridge.
+    pub(crate) store_inputs: serde_json::Value,
 }
 
 /// What [`assemble`] produced.
@@ -80,6 +82,11 @@ impl AuditOptions {
             independence_policy: arguments.get_one::<String>("independence-policy").cloned(),
             class_policy: arguments.get_one::<String>("class-policy").cloned(),
         }
+    }
+
+    /// The closed module roots supplied to the coverage walk.
+    pub(crate) fn module_paths(&self) -> &[String] {
+        &self.modules
     }
 }
 
@@ -146,6 +153,7 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
         coverage: coverage.payload,
         bindings,
         response: audited,
+        store_inputs: store.payload,
     }))
 }
 

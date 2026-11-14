@@ -89,6 +89,7 @@ fn tc_447_400_argues_from_the_claim_down_to_its_evidence() {
             status: NodeStatus::Supported,
             because: None,
             evidence: None,
+            analysis_evidence: None,
             children: Vec::new(),
         }]
     );
@@ -172,6 +173,7 @@ fn tc_447_403_a_claim_nothing_traces_to_is_undeveloped_and_never_supported() {
             status: NodeStatus::Open,
             because: Some("no sub-claim and no obligation traces to this claim".to_owned()),
             evidence: None,
+            analysis_evidence: None,
             children: Vec::new(),
         }]
     );

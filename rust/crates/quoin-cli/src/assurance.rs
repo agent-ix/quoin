@@ -24,6 +24,13 @@ pub(crate) fn command() -> Command {
         .arg(Arg::new("decisions").long("decisions"))
         .arg(Arg::new("discharge").long("discharge"))
         .arg(Arg::new("evidence").long("evidence"))
+        .arg(
+            Arg::new("run-observation")
+                .long("run-observation")
+                .action(ArgAction::Append)
+                .num_args(1)
+                .value_name("FILE"),
+        )
         .arg(Arg::new("as-of").long("as-of"))
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
 }
@@ -36,6 +43,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 }
 
 fn authored(arguments: &ArgMatches) -> Result<Response, String> {
+    if arguments.get_many::<String>("run-observation").is_some() {
+        return Err("--run-observation applies only to derived assurance".to_owned());
+    }
     if arguments.get_many::<String>("claim-type").is_some() {
         return Err("--argument cannot be combined with --claim-type".to_owned());
     }
@@ -111,6 +121,11 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
+    let run_observation_paths = arguments
+        .get_many::<String>("run-observation")
+        .map(|paths| paths.cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    let run_observations = crate::run_observation::read_run_observations(&run_observation_paths)?;
     let modules = values(arguments, "module");
     let coverage = invoke(
         "quire.coverage",
@@ -181,15 +196,43 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             }))
         })
         .collect();
+    let mut case_obligations: Vec<quoin_quire_types::Obligation> =
+        serde_json::from_value(field(&coverage.payload, "obligations")?)
+            .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
+    let analysis = crate::analysis_evidence::compute(
+        &repo,
+        &modules,
+        &store.payload,
+        &case_obligations,
+        &run_observations,
+    )?;
+    let evidence_report = serde_json::to_value(&analysis.report)
+        .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
+    crate::analysis_evidence::attach_unique_target_identities(
+        &mut case_obligations,
+        evidence_report
+            .get("coverage_matrix")
+            .and_then(serde_json::Value::as_array)
+            .map(Vec::as_slice)
+            .unwrap_or_default(),
+    )?;
+    let analysis_evidence = serde_json::json!({
+        "record_binders": evidence_report.get("record_binders").cloned().unwrap_or_else(|| serde_json::json!([])),
+        "evidence_results": evidence_report.get("evidence_results").cloned().unwrap_or_else(|| serde_json::json!([])),
+    });
     let mut case_request = serde_json::json!({
         "bindings": field(&store.payload, "bindings")?, "observations": observations,
         "healthy": field(&audit.payload, "report")?.get("healthy"),
         "unevaluated": field(&audit.payload, "report")?.get("unevaluated"),
-            "documents": field(&frontmatter.payload, "documents")?, "obligations": field(&coverage.payload, "obligations")?,
+            "documents": field(&frontmatter.payload, "documents")?, "obligations": case_obligations,
         "findings": field(&field(&audit.payload, "report")?, "findings")?,
         "unreadable": unreadable, "producer_trust": field(&trust.payload, "assessments")?,
         "evidence_independence": audit.payload.get("independence")
     });
+    case_request
+        .as_object_mut()
+        .ok_or_else(|| "assurance case request must be an object".to_owned())?
+        .insert("analysis_evidence".to_owned(), analysis_evidence);
     if let Some(claim_types) = arguments.get_many::<String>("claim-type") {
         case_request
             .as_object_mut()

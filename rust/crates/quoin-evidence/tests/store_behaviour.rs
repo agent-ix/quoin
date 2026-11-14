@@ -50,6 +50,7 @@ fn suite(name: &str) -> SuiteId {
 fn obligation(id: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
+        identity: None,
         statement: format!("the system shall {id}"),
         target_ids: None,
         // The three fields quoin#383 added for the auditor. Absent here, which

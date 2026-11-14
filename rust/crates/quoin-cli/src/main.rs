@@ -10,6 +10,7 @@
 //! oclif shell remains published during the staged cutover.
 
 mod advise;
+mod analysis_evidence;
 mod anomaly;
 mod assurance;
 mod catalog;
@@ -31,6 +32,7 @@ mod profile;
 mod release;
 mod report;
 mod risk;
+mod run_observation;
 mod semantic;
 mod soup;
 mod update;

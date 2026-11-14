@@ -35,6 +35,7 @@ const OBLIGATION: &str = "FR-9-AC-1";
 fn obligation(id: &str, criticality: Option<&str>) -> Obligation {
     Obligation {
         id: id.to_owned(),
+        identity: None,
         statement: "the system SHALL do the thing".to_owned(),
         target_ids: None,
         method: None,

@@ -32,6 +32,7 @@ use quoin_quire_types::Obligation;
 fn ob(id: &str, statement: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
+        identity: None,
         statement: statement.to_owned(),
         target_ids: None,
         method: None,

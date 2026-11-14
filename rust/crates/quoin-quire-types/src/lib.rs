@@ -82,6 +82,10 @@ use serde::{Deserialize, Serialize};
 pub struct Obligation {
     /// The obligation id, e.g. `FR-001-AC-1` or `NFR-010-M-2`.
     pub id: String,
+    /// Exact native target when the obligation came from the FR-078 selected
+    /// inventory. Ordinary coverage and auditor inputs leave it absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<TargetLocus>,
     /// The criterion's statement, in the spec's own words.
     pub statement: String,
     /// Test-case ids the criterion's method cell names, when it names any.

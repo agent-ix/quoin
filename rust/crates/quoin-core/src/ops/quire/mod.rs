@@ -183,6 +183,7 @@ pub fn properties(
 fn obligation(source: &quoin_quire::model::Obligation) -> Obligation {
     Obligation {
         id: source.id.clone(),
+        identity: None,
         statement: source.statement.clone(),
         target_ids: some_unless_empty(source.target_ids.clone(), Vec::is_empty),
         method: source.method.clone(),
