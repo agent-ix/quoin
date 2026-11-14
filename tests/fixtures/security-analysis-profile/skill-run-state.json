@@ -1,0 +1,28 @@
+{
+  "fixtures": {
+    "a": {
+      "context_after": {
+        "baseline": "low",
+        "level": "1"
+      },
+      "context_before": {
+        "baseline": "low",
+        "level": "1"
+      },
+      "runner": "codex exec",
+      "selection_after": "profile: web-app-baseline\ncontext:\n  baseline: low\n  level: \"1\"\n",
+      "selection_before": "profile: web-app-baseline\ncontext:\n  baseline: low\n  level: \"1\"\n"
+    },
+    "b": {
+      "context_after": {
+        "level": "1"
+      },
+      "context_before": {
+        "level": "1"
+      },
+      "runner": "codex exec",
+      "selection_after": "profile: owasp-only\ncontext:\n  level: \"1\"\n",
+      "selection_before": "profile: owasp-only\ncontext:\n  level: \"1\"\n"
+    }
+  }
+}

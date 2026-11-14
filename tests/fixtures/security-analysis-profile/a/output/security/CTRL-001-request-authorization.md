@@ -1,18 +1,19 @@
 ---
 id: CTRL-001
-title: "RefreshTokenRotation"
+title: "RequestAuthorization"
 type: control
 object: control
 relationships:
-  - target: FR-001
+  - target: FR-002
     type: implements
 ---
-# [CTRL-001] RefreshTokenRotation
+# [CTRL-001] RequestAuthorization
 
 ## Mappings
 
 | Set | Clause |
 |---|---|
+| nist/sp800-53@5.2.0 | AC-2 |
 | owasp/asvs@5.0.0 | V1.1.1 |
 
 ## Effectiveness
@@ -31,7 +32,7 @@ relationships:
 ### EffectivenessIsStated
 
 ```ocl
-context RefreshTokenRotation
+context RequestAuthorization
 inv EffectivenessIsStated:
   self.effectiveness->notEmpty()
 ```

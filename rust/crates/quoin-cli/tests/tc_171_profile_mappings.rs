@@ -51,13 +51,13 @@ fn fixture(profile_name: &str, selected: &[(&str, &str, &str)], context: &str) -
             "owasp.yaml",
             "owasp",
             "asvs",
-            "  - id: V1.1.1\n    force: mandatory\n  - id: V1.1.2\n    force: mandatory\n    applicability: {op: eq, dimension: baseline, value: high}\n  - id: V1.1.3\n    force: mandatory\n    applicability: {op: eq, dimension: data_class, value: restricted}\n",
+            "  - id: V1.1.1\n    force: mandatory\n  - id: V1.1.2\n    force: mandatory\n    applicability: {op: eq, dimension: baseline, value: high}\n  - id: V1.1.3\n    force: mandatory\n    applicability: {op: eq, dimension: chapter, value: V2}\n",
         ),
     ] {
         std::fs::write(
             module.join(file),
             format!(
-                "schemaVersion: clause-set-v1\nauthority: {authority}\nid: {id}\ntitle: Synthetic {id}\nversion: \"{}\"\nrights:\n  structure: original\n  text: none\nclassificationDimensions:\n  baseline:\n    values: [low, high]\n  level:\n    values: [\"1\", \"2\"]\n  data_class:\n    values: [public, restricted]\nclauses:\n{clauses}",
+                "schemaVersion: clause-set-v1\nauthority: {authority}\nid: {id}\ntitle: Synthetic {id}\nversion: \"{}\"\nrights:\n  structure: original\n  text: none\nclassificationDimensions:\n  baseline:\n    values: [low, high]\n  level:\n    values: [\"1\", \"2\"]\n  chapter:\n    values: [V1, V2]\n  data_class:\n    values: [public, restricted]\nclauses:\n{clauses}",
                 if authority == "nist" { "5.2.0" } else { "5.0.0" }
             ),
         )
@@ -204,15 +204,23 @@ fn emitted_mapping_rows(profile: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-fn emitted_text(profile: &str, relative: &str) -> String {
-    std::fs::read_to_string(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../tests/fixtures/security-analysis-profile")
-            .join(profile)
-            .join("output")
-            .join(relative),
-    )
-    .unwrap()
+fn emitted_reviews(profile: &str) -> String {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/security-analysis-profile")
+        .join(profile)
+        .join("output/reviews");
+    let mut files: Vec<_> = std::fs::read_dir(&root)
+        .unwrap_or_else(|error| panic!("{}: {error}", root.display()))
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|extension| extension == "md"))
+        .collect();
+    files.sort();
+    files
+        .iter()
+        .map(|path| std::fs::read_to_string(path).unwrap())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn source_profile_fixture(profile: &str) -> String {
@@ -281,6 +289,30 @@ fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_contex
     assert_eq!(report["context"]["baseline"], "low");
     assert_eq!(report["context"]["level"], "1");
     assert_eq!(keys(&report), ["nist/sp800-53@5.2.0", "owasp/asvs@5.0.0"]);
+    let sets = report["sets"].as_array().unwrap();
+    for (authority, clause, dimension) in [
+        ("nist", "CP-9", "data_class"),
+        ("owasp", "V1.1.3", "chapter"),
+    ] {
+        let set = sets
+            .iter()
+            .find(|set| set["key"]["authority"] == authority)
+            .unwrap();
+        let record = set["report"]["clauses"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|record| record["clauseId"] == clause)
+            .unwrap();
+        assert_eq!(record["outcome"], "unresolved");
+        assert!(
+            record["reasons"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|reason| reason["dimension"] == dimension)
+        );
+    }
 
     let mappings = emitted_mapping_rows("a");
     assert_emitted_mappings_are_binding(&report, "a");
@@ -290,10 +322,7 @@ fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_contex
             "{clause} was mapped"
         );
     }
-    let review = emitted_text(
-        "a",
-        "reviews/2026-11-13-security-control-mapping-gap-analysis.md",
-    );
+    let review = emitted_reviews("a");
     assert!(review.contains("CP-9") && review.contains("`data_class`"));
     assert!(review.contains("V1.1.3") && review.contains("`chapter`"));
     assert_eq!(
