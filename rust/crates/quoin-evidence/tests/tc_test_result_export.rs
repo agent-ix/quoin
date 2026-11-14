@@ -115,6 +115,28 @@ fn tc_185_skip_warns_and_all_pass_passes() {
     assert!(pass.predicate.failed_tests.is_empty());
 }
 
+#[trace("FR-185-AC-2")]
+#[test]
+fn tc_185_a_later_duplicate_skip_is_not_hidden_by_a_pass() {
+    let statement = build_statement(
+        subject(),
+        &[binding("FR-2-AC-1", "suite", &["test"])],
+        &[run(
+            "suite",
+            vec![
+                RunEntry::new("test", Outcome::Pass),
+                RunEntry::new("test", Outcome::Skip),
+            ],
+        )],
+    )
+    .expect("valid subject");
+
+    assert_eq!(statement.predicate.result, TestResult::Warned);
+    assert!(statement.predicate.passed_tests.is_empty());
+    assert_eq!(statement.predicate.warned_tests, ["FR-2-AC-1"]);
+    assert!(statement.predicate.failed_tests.is_empty());
+}
+
 #[trace("FR-185-AC-3")]
 #[test]
 fn tc_185_subject_is_preserved_and_bad_subjects_are_refused() {

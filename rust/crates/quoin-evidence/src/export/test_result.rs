@@ -160,14 +160,15 @@ pub fn build_statement(
                 break;
             }
             for symbol in &binding.symbols {
-                match run
-                    .entries
-                    .iter()
-                    .find(|entry| entry.symbol == *symbol)
-                    .map(|entry| entry.outcome)
-                {
-                    Some(Outcome::Skip) | None => is_warned = true,
-                    Some(Outcome::Pass | Outcome::Fail | Outcome::Error) => {}
+                let mut found = false;
+                for entry in run.entries.iter().filter(|entry| entry.symbol == *symbol) {
+                    found = true;
+                    if entry.outcome == Outcome::Skip {
+                        is_warned = true;
+                    }
+                }
+                if !found {
+                    is_warned = true;
                 }
             }
         }

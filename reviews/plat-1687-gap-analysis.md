@@ -33,3 +33,12 @@ The separate installed `quoin matrix --repo /home/peter/dev/quoin/.worktrees/pla
 Reverse-gap review found one attributable omission: `quoin-cli/src/evidence/test_result.rs::run` has no `#[implements]` annotation. `quoin-evidence::export::test_result::build_statement` carries `#[implements("FR-185")]`. The route test suite covers CLI behavior, the evidence test suite covers the pure mapping, and neither changes code outside FR-185's scope. No stubs or coverage inflation were found in the reviewed path.
 
 Plan completion: not assessed.
+
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+
+- FND-001 after_excerpt (`rust/crates/quoin-cli/src/evidence/test_result.rs:35-36`): `#[implements("FR-185")]` is on the CLI `run` adapter.

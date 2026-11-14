@@ -157,6 +157,61 @@ fn tc_185_a_later_duplicate_failure_cannot_be_hidden_by_a_pass() {
     );
 }
 
+#[trace("FR-185-AC-2")]
+#[test]
+fn tc_185_a_later_duplicate_skip_is_not_hidden_by_a_pass() {
+    let (root, subject, evidence) = fixture();
+    fs::write(
+        evidence.join("bindings.json"),
+        json!({
+            "schemaVersion": 1,
+            "bindings": [
+                {"obligation":"FR-1-AC-1","suite":"suite-pass","symbols":["pass"]}
+            ]
+        })
+        .to_string(),
+    )
+    .expect("single binding written");
+    fs::write(
+        evidence.join("runs/suite-pass/2026-11-13T12~3A00~3A00Z.json"),
+        json!({
+            "schemaVersion": 1,
+            "suite": "suite-pass",
+            "tool": "cargo test",
+            "evidenceKind": "test",
+            "timestamp": "2026-11-13T12:00:00Z",
+            "entries": [
+                {"symbol": "pass", "outcome": "pass"},
+                {"symbol": "pass", "outcome": "skip"}
+            ]
+        })
+        .to_string(),
+    )
+    .expect("duplicate entries written");
+
+    let output = root.path().join("statement.json");
+    let result = invoke(&subject, &output, &evidence);
+    assert_eq!(result.status.code(), Some(0));
+    let statement: Value = serde_json::from_slice(&fs::read(output).expect("statement exists"))
+        .expect("statement is JSON");
+    assert_eq!(
+        statement.pointer("/predicate/result"),
+        Some(&json!("WARNED"))
+    );
+    assert_eq!(
+        statement.pointer("/predicate/passedTests"),
+        Some(&json!([]))
+    );
+    assert_eq!(
+        statement.pointer("/predicate/warnedTests"),
+        Some(&json!(["FR-1-AC-1"]))
+    );
+    assert_eq!(
+        statement.pointer("/predicate/failedTests"),
+        Some(&json!([]))
+    );
+}
+
 #[trace("FR-185-AC-3")]
 #[test]
 fn tc_185_invalid_subject_exits_two_without_output() {

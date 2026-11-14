@@ -70,7 +70,9 @@ which this requirement adopts unchanged. The predicate fields conform to the
   `quoin-auditor::audit::stale::FindingKind::STALE_EVIDENCE` conditions, then
   Quoin SHALL put it in `failedTests`.
 - When an obligation is not stale and any bound symbol has outcome `skip` or
-  is absent from its run, Quoin SHALL put it in `warnedTests`.
+  is absent from its run, Quoin SHALL put it in `warnedTests`. If a run contains
+  more than one entry for a bound symbol, any `skip` entry warns the obligation
+  unless a `fail` or `error` entry makes it stale.
 - When an obligation is not stale and every bound symbol has outcome `pass`,
   Quoin SHALL put it in `passedTests`.
 - This export SHALL NOT define a second staleness rule.
@@ -101,7 +103,7 @@ which this requirement adopts unchanged. The predicate fields conform to the
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-185-AC-1 | A fixture with a passing obligation, a failing symbol obligation and an obligation bound to a suite without a run exports `result: FAILED`; only the passing obligation is in `passedTests`, and the other two are in `failedTests`. | Test |
-| FR-185-AC-2 | A fixture whose only non-pass outcome is `skip` exports `WARNED` with that obligation in `warnedTests`; an all-pass fixture exports `PASSED` with empty `warnedTests` and `failedTests`. | Test |
+| FR-185-AC-2 | A fixture whose only non-pass outcome is `skip` exports `WARNED` with that obligation in `warnedTests`, including when a passing duplicate entry precedes the skip; an all-pass fixture exports `PASSED` with empty `warnedTests` and `failedTests`. | Test |
 | FR-185-AC-3 | The output subject equals the supplied array after canonicalization; a non-hex digest, missing `sha256`, empty array or non-array subject exits 2 and writes no output file. | Test |
 | FR-185-AC-4 | Repeating an export over the same store and subject yields byte-identical output, and reordering the stored runs or bindings does not change the bytes. | Test |
 | FR-185-AC-5 | The predicate has exactly the five specified members, deserializes through its closed type, and rejects a predicate with an additional member. | Test |

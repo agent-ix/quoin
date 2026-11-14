@@ -31,3 +31,12 @@ CONDITIONAL — the new FR must be added to `spec/functional/index.md`.
 - The `quire matrix` output identifies tags for AC-1 through AC-6 and AC-8, and a tagged static check for AC-7. The Quoin matrix discrepancy is recorded in the separate gap-analysis artifact.
 - No duplicated upstream schema or protobuf files were introduced. The spec references the in-toto predicate URL.
 - The caller-supplied digest requirement is the approved subject identity binding: Quoin validates and preserves it but computes no digest and records no additional digest.
+
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+
+- FND-001 after_excerpt (`spec/functional/index.md:167`): `- [FR-185: Quoin exports retained evidence as an in-toto Test Result statement](./FR-185-in-toto-test-result-export.md)`

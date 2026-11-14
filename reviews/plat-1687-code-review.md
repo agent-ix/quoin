@@ -44,3 +44,25 @@ FAIL — one high-severity incorrect Test Result and two medium-severity contrac
 - FR-185-AC-1 through FR-185-AC-8, plus FR-185-CON-1 and FR-185-CON-2.
 - All Rust source and test files listed in the frontmatter scope, including the CLI route inventory and the two measurement population edits.
 - No CI workflow files changed. The diff does not modify a build or test gate.
+
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-004 | medium | A passing first entry hides a later `skip` for the same bound symbol, so the exporter emits PASSED instead of WARNED. | rust/crates/quoin-evidence/src/export/test_result.rs:162-170 | implementation-bug-despite-evidence |
+
+Reproduction: a single latest run with entries `test: pass`, then `test: skip`, for one binding exits 0 and emits `result: PASSED`, `passedTests: [FR-X-AC-1]`, and empty `warnedTests`. FR-185 requires an obligation to be warned when a bound symbol has a `skip` outcome.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | still-open | `run.entries.iter().find(...)` classifies only the first matching entry for warning outcomes; the reproduced pass-then-skip run still exports PASSED. |
+
+- FND-001 after_excerpt (`rust/crates/quoin-evidence/src/stale.rs:17-23`): `flat_map` visits every entry for each bound symbol, then filters all matching entries for `Fail` or `Error`.
+- FND-002 after_excerpt (`rust/crates/quoin-evidence/src/source.rs:187-190`): `NotFound` remains an empty listing; every other `read_dir` error is returned as `StoreIo`.
+- FND-003 after_excerpt (`rust/crates/quoin-cli/src/evidence/test_result.rs:140-145`): a publish error invokes `rollback_output` before returning the write error; the rollback restores a prior output or removes a newly published one.

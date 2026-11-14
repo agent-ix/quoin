@@ -23,3 +23,12 @@ CONDITIONAL — update the functional-requirements index.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | FR-185 is absent from the functional-requirements index, so the index does not enumerate all authored FRs. | spec/functional/index.md:166 |
+
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+
+- FND-001 after_excerpt (`spec/functional/index.md:167`): `- [FR-185: Quoin exports retained evidence as an in-toto Test Result statement](./FR-185-in-toto-test-result-export.md)`
