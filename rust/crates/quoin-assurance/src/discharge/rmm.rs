@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use quoin_quire_types::{ClauseBinding, ClauseBindingReport, ClauseForce, ClauseSetKey};
 use serde::{Deserialize, Serialize};
 
+use super::parse::{instant, temporary_exception_expired};
 use super::report::{
     ClauseDischarge, DischargeError, DischargeFact, DischargeReport, DischargeState,
     UnusedDischargeFact,
@@ -63,6 +64,8 @@ pub enum RmmCompliance {
     Undischarged,
     /// Binding, with a fact whose attestation is expired or not yet valid.
     AttestationNotCurrent,
+    /// Binding, with a temporary exception whose decision window has ended.
+    TemporaryExceptionExpired,
     /// Applicability is unresolved.
     Undetermined,
     /// The clause does not bind.
@@ -76,6 +79,7 @@ impl RmmCompliance {
             Self::Tailored => "Tailored",
             Self::Undischarged => "Not compliant - undischarged",
             Self::AttestationNotCurrent => "Not compliant - attestation not current",
+            Self::TemporaryExceptionExpired => "Not compliant - temporary exception expired",
             Self::Undetermined => "Undetermined",
             Self::NotApplicable => "Not applicable",
         }
@@ -137,6 +141,7 @@ pub fn build_requirements_mapping(
     binding: &ClauseBindingReport,
     report: &DischargeReport,
 ) -> Result<RequirementsMapping, DischargeError> {
+    let as_of = instant("asOf", &report.as_of)?;
     let entries: HashMap<&str, &ClauseDischarge> = report
         .binding
         .direct
@@ -151,15 +156,16 @@ pub fn build_requirements_mapping(
         .clauses
         .iter()
         .map(|clause| {
-            entries
+            let entry = entries
                 .get(clause.clause_id.as_str())
-                .map(|entry| row(entry, clause))
+                .copied()
                 .ok_or_else(|| {
                     DischargeError(format!(
                         "the discharge report holds no entry for clause {}",
                         clause.clause_id
                     ))
-                })
+                })?;
+            row(entry, clause, as_of)
         })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(RequirementsMapping {
@@ -171,10 +177,26 @@ pub fn build_requirements_mapping(
     })
 }
 
-fn row(entry: &ClauseDischarge, clause: &ClauseBinding) -> RmmRow {
+fn row(
+    entry: &ClauseDischarge,
+    clause: &ClauseBinding,
+    as_of: i64,
+) -> Result<RmmRow, DischargeError> {
+    let expired_temporary_exception = if entry.state == DischargeState::Open {
+        match &entry.fact {
+            Some(fact) => temporary_exception_expired(fact, as_of)?,
+            None => false,
+        }
+    } else {
+        false
+    };
     let (applicability, compliance) = match entry.state {
         DischargeState::Direct => (RmmApplicability::Applicable, RmmCompliance::Compliant),
         DischargeState::Disposition => (RmmApplicability::Applicable, RmmCompliance::Tailored),
+        DischargeState::Open if expired_temporary_exception => (
+            RmmApplicability::Applicable,
+            RmmCompliance::TemporaryExceptionExpired,
+        ),
         DischargeState::Open if entry.fact.is_some() => (
             RmmApplicability::Applicable,
             RmmCompliance::AttestationNotCurrent,
@@ -220,7 +242,7 @@ fn row(entry: &ClauseDischarge, clause: &ClauseBinding) -> RmmRow {
                 .join("; ")
         });
     }
-    RmmRow {
+    Ok(RmmRow {
         clause_id: entry.clause_id.clone(),
         force: entry.force,
         applicability,
@@ -229,7 +251,7 @@ fn row(entry: &ClauseDischarge, clause: &ClauseBinding) -> RmmRow {
         evidence_refs,
         tailoring_description,
         tailoring_rationale,
-    }
+    })
 }
 
 /// Render the matrix as deterministic Markdown.
@@ -279,7 +301,12 @@ pub fn render_requirements_mapping(matrix: &RequirementsMapping) -> String {
 
 fn table_row(row: &RmmRow) -> String {
     let compliance = match &row.reason {
-        Some(reason) if row.compliance != RmmCompliance::Compliant => {
+        Some(reason)
+            if !matches!(
+                row.compliance,
+                RmmCompliance::Compliant | RmmCompliance::TemporaryExceptionExpired
+            ) =>
+        {
             format!("{}: {reason}", row.compliance.label())
         }
         _ => row.compliance.label().to_owned(),
@@ -345,6 +372,7 @@ mod tests {
             "kind": "disposition",
             "clauseId": clause,
             "decision": "accepted_risk",
+            "owner": "risk-owner-1",
             "rationale": "carried | for now\nsecond line",
             "approvalRef": "approval://1",
             "attestation": attestation()

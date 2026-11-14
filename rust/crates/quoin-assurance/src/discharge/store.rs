@@ -6,8 +6,9 @@
 //! # Facts are persisted, obligations are not
 //!
 //! A discharge fact is a statement a person made at a point in time: this
-//! clause is discharged by that evidence, or disposed of by this decision, and
-//! the attestation carries an expiry. Nothing can re-derive it, so it is
+//! clause is discharged by that evidence, or disposed of by this decision. The
+//! attestation and, for temporary exceptions, the decision each carry an
+//! expiry. Nothing can re-derive it, so it is
 //! stored. Which clauses bind is the opposite: Quire decides it from the clause
 //! set and the declared context every time (`clause-binding-v1`), so the store
 //! holds no clause list, no force, no expected output and no applicability.

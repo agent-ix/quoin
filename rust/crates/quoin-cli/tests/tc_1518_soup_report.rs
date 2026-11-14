@@ -165,6 +165,7 @@ impl Repo {
             "facts.json",
             &json!([{
                 "kind": "disposition", "clauseId": "C-DISP", "decision": "accepted_risk",
+                "owner": "risk-owner-1",
                 "rationale": "no reachable path", "approvalRef": "approval://CAB-7",
                 "attestation": {"attestedBy": "reviewer-1", "authority": "quality-lead",
                     "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}

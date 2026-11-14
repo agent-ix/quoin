@@ -895,6 +895,7 @@ fn tc_3205_a_stored_disposition_with_a_blank_rationale_refuses_the_matrix() {
                 "kind": "disposition",
                 "clauseId": "C-1",
                 "decision": "accepted_risk",
+                "owner": "risk-owner-1",
                 "rationale": " ",
                 "approvalRef": "approval://1",
                 "attestation": {

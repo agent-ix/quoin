@@ -39,28 +39,43 @@ pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
             }))
         }
         FactKind::Disposition => {
-            exact(
-                fact,
-                "disposition discharge fact",
-                &[
-                    "kind",
-                    "clauseId",
-                    "decision",
-                    "rationale",
-                    "approvalRef",
-                    "attestation",
-                ],
+            let decision = one_of_wire(
+                fact.get("decision"),
+                "decision",
+                DispositionDecision::all(),
+                DispositionDecision::as_str,
             )?;
+            let mut fields = vec![
+                "kind",
+                "clauseId",
+                "decision",
+                "owner",
+                "rationale",
+                "approvalRef",
+                "attestation",
+            ];
+            if decision == DispositionDecision::TemporaryException {
+                fields.push("decisionExpiresAt");
+            }
+            exact(fact, "disposition discharge fact", &fields)?;
+            let decision_expires_at = if decision == DispositionDecision::TemporaryException {
+                let value = string_value("decisionExpiresAt", fact.get("decisionExpiresAt"))?;
+                let decision_expiry = instant("decisionExpiresAt", &value)?;
+                let attestation_expiry = instant("expiresAt", &attestation.expires_at)?;
+                if decision_expiry > attestation_expiry {
+                    return reject("decisionExpiresAt must not be after attestation expiresAt");
+                }
+                Some(value)
+            } else {
+                None
+            };
             Ok(DischargeFact::Disposition(DispositionFact {
                 clause_id,
-                decision: one_of_wire(
-                    fact.get("decision"),
-                    "decision",
-                    DispositionDecision::all(),
-                    DispositionDecision::as_str,
-                )?,
+                decision,
+                owner: string_value("owner", fact.get("owner"))?,
                 rationale: string_value("rationale", fact.get("rationale"))?,
                 approval_ref: string_value("approvalRef", fact.get("approvalRef"))?,
+                decision_expires_at,
                 attestation,
             }))
         }
@@ -117,6 +132,29 @@ pub(super) fn current_attestation(
         return Ok(Some("discharge fact is expired".to_owned()));
     }
     Ok(None)
+}
+
+/// Whether an admitted temporary exception is still within its authored
+/// decision window.
+pub(super) fn current_decision_expiry(fact: &DischargeFact, as_of: i64) -> Checked<Option<String>> {
+    if temporary_exception_expired(fact, as_of)? {
+        return Ok(Some("temporary exception expired".to_owned()));
+    }
+    Ok(None)
+}
+
+/// Whether an admitted temporary exception's decision window has ended.
+pub(super) fn temporary_exception_expired(fact: &DischargeFact, as_of: i64) -> Checked<bool> {
+    let DischargeFact::Disposition(disposition) = fact else {
+        return Ok(false);
+    };
+    if disposition.decision != DispositionDecision::TemporaryException {
+        return Ok(false);
+    }
+    let Some(expiry) = &disposition.decision_expires_at else {
+        return Ok(false);
+    };
+    Ok(instant("decisionExpiresAt", expiry)? <= as_of)
 }
 
 /// `instant(name, value)`: the shape and calendar gate, then the number.

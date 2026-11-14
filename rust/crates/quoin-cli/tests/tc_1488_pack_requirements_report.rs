@@ -774,7 +774,7 @@ fn tc_1488_014_a_blank_stored_rationale_refuses_the_whole_report_as_fr_135_does(
     // have written it.
     let disposition = serde_json::json!({
         "kind": "disposition", "clauseId": "A-1", "decision": "accepted_risk",
-        "rationale": "carried", "approvalRef": "approval://1",
+        "owner": "risk-owner-1", "rationale": "carried", "approvalRef": "approval://1",
         "attestation": direct("A-1")["attestation"].clone()
     });
     let recorded = record(&env, &env.repo, "alpha", "2", &[disposition]);

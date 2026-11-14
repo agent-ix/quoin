@@ -38,8 +38,8 @@ limits the decision and the latter limits the attestation.
 | FR-046-AC-4 | Expired, future-dated, or incoherent attestations leave a binding clause open with the reason visible. | Test |
 | FR-046-AC-5 | Duplicate facts and incomplete attestations are rejected rather than resolved by ordering or defaults. | Test |
 | FR-046-AC-6 | `quoin discharge` renders every population as deterministic Markdown or JSON and accepts both binding and fact inputs as files. | Test |
-| FR-046-AC-7 | A disposition fact uses exactly one decision from `delegated`, `accepted_risk` or `temporary_exception`, names its owner and approval reference, and carries a valid human-supplied actor, authority and validity interval; a `temporary_exception` also carries `decisionExpiresAt` while other decisions omit it. | Test |
-| FR-046-AC-8 | A `temporary_exception` fact discharges its binding clause only while `asOf` is earlier than `decisionExpiresAt` and its attestation is current; when `asOf` equals or exceeds `decisionExpiresAt`, the clause is open with reason `temporary exception expired`. | Test |
+| FR-046-AC-7 | A disposition fact uses exactly one decision from `delegated`, `accepted_risk` or `temporary_exception`, names its owner and approval reference, and carries a valid human-supplied actor, authority and validity interval; a `temporary_exception` also carries `decisionExpiresAt` while other decisions omit it. | Test (TC-003) |
+| FR-046-AC-8 | A `temporary_exception` fact discharges its binding clause only while `asOf` is earlier than `decisionExpiresAt` and its attestation is current; when `asOf` equals or exceeds `decisionExpiresAt`, the clause is open with reason `temporary exception expired`. | Test (TC-003) |
 
 ## Constraints
 

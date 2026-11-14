@@ -193,6 +193,7 @@ mod tests {
             "kind": "disposition",
             "clauseId": "SYN-002",
             "decision": "accepted_risk",
+            "owner": "risk-owner-1",
             "rationale": "carried",
             "approvalRef": "approval://1",
             "attestation": attestation()

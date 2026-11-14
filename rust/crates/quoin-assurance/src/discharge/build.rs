@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 
 use quoin_quire_types::{ClauseBinding, ClauseBindingOutcome};
 
-use super::parse::{current_attestation, instant, parse_fact};
+use super::parse::{current_attestation, current_decision_expiry, instant, parse_fact};
 use super::report::{
     BuildDischargeRequest, Checked, ClauseDischarge, DischargeBinding, DischargeFact,
     DischargeReport, DischargeSchemaVersion, DischargeState, UnusedDischargeFact, UnusedFactReason,
@@ -113,6 +113,17 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
                     ));
                     continue;
                 };
+                // A temporary exception's decision expiry is the more specific
+                // state when it coincides with (or precedes) attestation expiry.
+                if let Some(expired) = current_decision_expiry(fact, as_of)? {
+                    open.push(entry(
+                        clause,
+                        DischargeState::Open,
+                        Some(expired),
+                        Some(fact),
+                    ));
+                    continue;
+                }
                 if let Some(current) = current_attestation(fact.attestation(), as_of)? {
                     open.push(entry(
                         clause,
