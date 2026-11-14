@@ -225,6 +225,15 @@ fn source_profile_fixture(profile: &str) -> String {
     .unwrap()
 }
 
+fn skill_run_state_fixture() -> Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/security-analysis-profile/skill-run-state.json");
+    serde_json::from_slice(
+        &std::fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display())),
+    )
+    .unwrap()
+}
+
 fn assert_emitted_mappings_are_binding(report: &Value, profile: &str) {
     for (key, clause_id) in emitted_mapping_rows(profile) {
         let set = report["sets"]
@@ -253,9 +262,7 @@ fn assert_emitted_mappings_are_binding(report: &Value, profile: &str) {
     "FR-171-AC-9",
     "TC-004",
     "FR-171-AC-12",
-    "TC-005",
-    "FR-171-AC-14",
-    "TC-006"
+    "TC-005"
 )]
 #[test]
 fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_context() {
@@ -315,6 +322,35 @@ fn fixture_b_owasp_only_profile_has_no_nist_mapping() {
     assert!(!mappings.is_empty());
     assert!(mappings.iter().all(|(key, _)| key == "owasp/asvs@5.0.0"));
     assert!(!mappings.iter().any(|(key, _)| key.starts_with("nist/")));
+}
+
+#[trace("FR-171-AC-14", "TC-006")]
+#[test]
+fn live_fixture_skill_runs_preserve_selection_and_evaluated_context() {
+    let state = skill_run_state_fixture();
+    for profile in ["a", "b"] {
+        let run = &state["fixtures"][profile];
+        let selection_before = run["selection_before"].as_str().unwrap();
+        let selection_after = run["selection_after"].as_str().unwrap();
+        let context_before = &run["context_before"];
+        let context_after = &run["context_after"];
+        assert_eq!(selection_before, source_profile_fixture(profile));
+        assert_eq!(
+            selection_after, selection_before,
+            "fixture {profile} selection changed during skill run"
+        );
+        assert_eq!(
+            context_after, context_before,
+            "fixture {profile} evaluated context changed during skill run"
+        );
+        assert_eq!(run["runner"], "codex exec");
+        if profile == "a" {
+            assert_eq!(context_before["baseline"], "low");
+            assert_eq!(context_before["level"], "1");
+        } else {
+            assert_eq!(context_before["level"], "1");
+        }
+    }
 }
 
 #[trace("FR-171-AC-10", "TC-008")]

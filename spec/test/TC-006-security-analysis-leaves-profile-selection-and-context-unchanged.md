@@ -11,12 +11,13 @@ relationships:
 
 ## Description
 
-Verify the profile-driven security-analysis behavior required by FR-171 using the named focused integration test and its synthetic profile fixtures.
+Verify profile selection and context are unchanged across the live security-analysis skill runs that generate the checked-in Fixture A and B artifacts.
 
 ## Test Procedure
 
-1. Run `tc_171_profile_mappings::fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_context` and compare `.ix/source-profile.yaml` bytes before and after evaluation.
+1. Run `tests/scripts/run_security_profile_skill_fixtures.sh` with the installed synthetic profile and authoring modules configured. The script evaluates each profile, snapshots `.ix/source-profile.yaml` and the evaluated context immediately before the live `codex exec`, then snapshots both immediately after it; it stores the snapshots alongside the emitted artifacts.
+2. Run `tc_171_profile_mappings::live_fixture_skill_runs_preserve_selection_and_evaluated_context`.
 
 ## Expected Results
 
-The source profile and its context are unchanged by evaluation; the skill does not author profile selection or product facts.
+For each live fixture run, before/after selection bytes and evaluated context are identical. The snapshots describe the same Codex runs whose controls, exclusions and SpecReviews are checked by TC-003 through TC-005 and TC-007.
