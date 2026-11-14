@@ -19,6 +19,10 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/spec-objects-security/FR-009"
     type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-security/FR-022"
+    type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-156"
+    type: "references"
 ---
 
 # FR-144: SOUP report: one row per record, unresolved and past-end-of-support first
@@ -42,6 +46,12 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 - The command SHALL NOT state a record `allowed`.
 - The command SHALL render an `unknown` licence as a policy finding with its disposition, never as absent.
 - Each row SHALL state its advisory status as `free of advisories` (as FR-142 defines it), `advisories not assessed: unsupported purl type`, or the attached advisories and the state of each blocking scan.
+- For each attached advisory, the row SHALL show the matching person-authored VEX statement's status, justification when present, impact statement, action statement when present, assessor, assessment date and evidence references.
+- When no VEX statement matches an attached advisory, the row SHALL state `no statement`.
+- A VEX statement SHALL remain distinct from the advisory disposition.
+- A VEX statement SHALL NOT resolve, suppress or replace the advisory or its person-owned disposition.
+- When the current read of every applicable advisory scan reports no matching advisory for a record, the row SHALL retain the corresponding VEX statement as `stale statement`.
+- An unavailable, unordered or vacuous applicable scan SHALL NOT be treated as evidence that a statement is stale.
 - If a record is `unsupported` under FR-142, its row SHALL NOT state `free of advisories`.
 - The command SHALL place an `unsupported` record in the group of rows that are neither unresolved nor past end of support, ordered by purl.
 - If a `soup_record` has an absent `serves` or `known_anomalies`, then its row SHALL state `not stated` for that field.
@@ -85,6 +95,9 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 | FR-144-AC-18 | A fixture with an npm record carrying a `licence-denied` finding resolved by an attested disposition, a PyPI record carrying a `licence-unknown` finding unresolved, and an npm record carrying `package-banned`, renders each on its own row with tool, rule id and severity word, in a list apart from advisories, the unresolved ones sorting in the first group. | Test |
 | FR-144-AC-19 | With no retained `licence-policy` scan, every row states `policy findings not assessed: licence-policy not run` and none states `no policy findings in the scan read`; with a vacuous scan, with an unordered scan, for a record absent from `evaluated`, and for an evaluated record while an unmatched no-purl finding is read, the row states the matching status of the list above; a finding for a purl with no record appears after the rows as unmatched. | Test |
 | FR-144-AC-20 | A record with an advisory attested before a later `licence-policy` ban finding renders the advisory resolved, the ban finding unresolved with `scan newer than attestation`, and the stated disposition scope. | Test |
+| FR-144-AC-21 | A fixture with a joined advisory and a matching VEX statement renders the stored status, justification, impact statement, assessor, assessment date and evidence references on that advisory; an advisory without a statement renders `no statement`, and neither rendering changes the advisory's disposition state. | Test |
+| FR-144-AC-22 | A record with a statement whose advisory is absent from every current applicable scan renders `stale statement`; when an applicable scan is missing, unordered or vacuous, the statement is not labelled stale on that basis. | Test |
+| FR-144-AC-23 | An advisory with an `affected` VEX statement and an unresolved advisory disposition renders both facts independently, and no VEX status is rendered as an advisory disposition. | Test |
 
 ## Dependencies
 
