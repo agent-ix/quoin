@@ -3539,8 +3539,10 @@ dependencies = [
 name = "quoin-workflow-check"
 version = "0.31.0"
 dependencies = [
+ "ix-trace-rs",
  "serde_json",
  "tempfile",
+ "yaml_serde",
 ]
 
 [[package]]
