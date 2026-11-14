@@ -56,3 +56,34 @@ captured: `agreement-satisfied`, `agreement-refuted`, `disagreement`,
 canonically: a Linux runner reports a containment failure as `cleanup-failed`, so it cannot
 produce this outcome. `quire-analyze`'s own validator accepts it. The refusal fixtures are
 derived in `rust/crates/quoin-evidence/tests/tc_differential_report_v2.rs`, one change each.
+
+## OSV-Scanner external report replay
+
+OSV-Scanner report bytes and offline database archives are not checked into this
+repository. The ignored `tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined`
+test reads `QUOIN_TEST_OSV_REPORT` in place and requires an authentic, unedited report
+from OSV-Scanner 2.7.1 over the npm, PyPI and Go SBOM input used for the local mirror
+probe. It is an adapter/join behavior check; it does not establish compliance or
+discharge obligations.
+
+With OSV-Scanner 2.7.1 installed and its user-local database already available, produce
+an external JSON report from a CycloneDX SBOM such as `probe.cdx.json`:
+
+```sh
+OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY=/absolute/path/to/local-osv-db \
+  osv-scanner --offline scan source -L /absolute/path/to/probe.cdx.json \
+  --format json > /absolute/path/to/report.json
+```
+
+From the repository root, replay that file through the Rust adapter and SOUP join:
+
+```sh
+cd rust
+QUOIN_TEST_OSV_REPORT=/absolute/path/to/report.json \
+  env -u CARGO_TARGET_DIR /home/peter/dev/worktrees/locked-build.sh "$PWD/target" \
+  cargo test -p quoin-cli --bin quoin -- --ignored \
+  tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined
+```
+
+The path must be absolute. This test reads the supplied report without rewriting it;
+the scanner binary and database remain external to the repository.

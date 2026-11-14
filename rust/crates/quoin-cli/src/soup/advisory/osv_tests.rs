@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Synthetic join behavior for OSV findings; these are not scanner captures.
+//! Synthetic join cases and an opt-in replay of an external authentic report.
 
 #![allow(
     clippy::unwrap_used,
+    clippy::expect_used,
     clippy::indexing_slicing,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
 use ix_trace_rs::trace;
+use std::path::PathBuf;
 
 use super::tests::{discharge, record, scan};
 use super::{ScanOutcome, Tool, UnmatchedReason, join};
@@ -55,7 +57,7 @@ fn debian_os_package_purl_matches_while_a_spelling_mismatch_is_unmatched() {
 #[trace("FR-142-AC-23", "FR-149-AC-1")]
 #[test]
 fn minimal_debian_contract_fixture_keeps_reported_purl_and_id_through_the_join() {
-    // The purl and vulnerability identifiers come from the TC-9007 OSV-Scanner
+    // The purl and vulnerability identifiers come from the TC-9005 OSV-Scanner
     // 2.7.1 output. This hand-authored envelope is a minimal synthetic contract
     // fixture, not a captured report.
     let purl = "pkg:deb/debian/libc6@2.36-9%2Bdeb12u4?arch=amd64&distro=debian-12";
@@ -77,6 +79,61 @@ fn minimal_debian_contract_fixture_keeps_reported_purl_and_id_through_the_join()
     assert_eq!(joined.records[0].advisories[0].package, purl);
     assert_eq!(joined.records[0].advisories[0].rule_id, "DSA-5497-2");
     assert_eq!(joined.records[0].advisories[0].tool, Tool::OsvScanner);
+}
+
+/// Replay one caller-supplied authentic report without copying or normalizing
+/// its bytes into this repository. See `tests/fixtures/evidence/README.md`.
+#[trace("FR-142-AC-19", "FR-149-AC-10")]
+#[ignore = "requires an external authentic report at QUOIN_TEST_OSV_REPORT"]
+#[test]
+fn tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined() {
+    let path = std::env::var_os("QUOIN_TEST_OSV_REPORT")
+        .map(PathBuf::from)
+        .expect("set QUOIN_TEST_OSV_REPORT to an absolute OSV-Scanner report path");
+    assert!(
+        path.is_absolute(),
+        "report path must be absolute: {}",
+        path.display()
+    );
+    let bytes = std::fs::read(&path).expect("caller-supplied report must be readable");
+    let raw = std::str::from_utf8(&bytes).expect("OSV-Scanner report must be UTF-8");
+    let scan = scan(
+        "osv-scanner 2.7.1",
+        "osv-authentic-report",
+        "2026-11-13T00:00:00.000Z",
+        raw,
+    );
+    let expected = [
+        ("pkg:npm/lodash@4.17.20", "GHSA-29mw-wpgm-hmr9"),
+        ("pkg:pypi/django@2.2.24", "PYSEC-2021-439"),
+        ("pkg:golang/github.com/gin-gonic/gin@v1.7.0", "GO-2021-0052"),
+    ];
+    for (purl, id) in expected {
+        assert!(
+            scan.findings
+                .iter()
+                .any(|finding| finding.path.as_deref() == Some(purl) && finding.rule_id == id),
+            "authentic report did not yield {id} at {purl}"
+        );
+    }
+
+    let records: Vec<_> = expected
+        .iter()
+        .map(|(purl, _)| record(purl, None))
+        .collect();
+    let joined = join(&records, &[scan], &discharge());
+    assert!(joined.unmatched.is_empty(), "{:?}", joined.unmatched);
+    for (purl, id) in expected {
+        let attached: Vec<_> = joined
+            .records
+            .iter()
+            .flat_map(|record| &record.advisories)
+            .filter(|advisory| advisory.rule_id == id)
+            .collect();
+        assert_eq!(attached.len(), 1, "{id}");
+        assert_eq!(attached[0].package, purl);
+        assert_eq!(attached[0].tool, Tool::OsvScanner);
+    }
 }
 
 #[trace("FR-142-AC-20")]
