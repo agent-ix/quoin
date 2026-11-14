@@ -80,6 +80,10 @@ pub struct MatrixCoverageCriterion {
     /// The exact native selected identity when the upstream payload carries it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<TargetLocus>,
+    /// Quire's separate retained record binders, which the evidence axis
+    /// receives through `analysis_evidence`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub record_binders: Option<Vec<serde_json::Value>>,
     /// Diagnostic-only source claims that name this criterion without
     /// providing matrix backing.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
