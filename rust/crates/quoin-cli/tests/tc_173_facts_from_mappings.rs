@@ -28,6 +28,20 @@ mod pack_support;
 const SET: &str = "example.invalid/std@1";
 const AS_OF: &str = "2026-08-15T00:00:00Z";
 
+fn copy_tree(source: &Path, destination: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(destination)?;
+    for entry in std::fs::read_dir(source)? {
+        let entry = entry?;
+        let target = destination.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_tree(&entry.path(), &target)?;
+        } else {
+            std::fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
+}
+
 fn attestation() -> Value {
     json!({"attestedBy": "reviewer-1", "authority": "security lead",
         "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"})
@@ -196,8 +210,8 @@ impl World {
 
     fn facts_with_external_module(&self, module: &Path) -> Output {
         let modules = self.path("external-modules");
-        std::fs::create_dir_all(&modules).unwrap();
-        std::os::unix::fs::symlink(module, modules.join("spec-objects-security")).unwrap();
+        copy_tree(module, &modules.join("spec-objects-security"))
+            .expect("the external security module is copied");
         let binding = self.path("binding.json");
         let attestation = self.path("attestation.json");
         let spec = self.spec();
