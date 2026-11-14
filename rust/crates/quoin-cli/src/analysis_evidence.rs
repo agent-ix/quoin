@@ -107,7 +107,11 @@ pub(crate) fn compute(
 
 fn module_selection(paths: &[String]) -> Result<ModuleSelection, String> {
     if paths.is_empty() {
-        return Ok(ModuleSelection::Ambient);
+        // Match `quire.coverage`: an inline module at the repository root is
+        // the selected model before ambient discovery. The matrix and release
+        // snapshot pass no module flags by default, and their analysis join
+        // must use the same model as the coverage walk.
+        return Ok(ModuleSelection::ScopeOrAmbient);
     }
     let roots = paths
         .iter()
