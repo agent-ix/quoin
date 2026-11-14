@@ -523,9 +523,19 @@ fn analysis_solution_shows_exact_target_results_in_json_and_text() {
         "qualified-record"
     );
     let markdown = render(&case);
-    assert!(
-        markdown.contains("analysis evidence: {\"record_binder\":"),
-        "{markdown}"
+    let analysis_evidence_json = markdown
+        .lines()
+        .find_map(|line| {
+            line.split_once("analysis evidence:")
+                .map(|(_, json)| json.trim())
+        })
+        .expect("analysis evidence is rendered");
+    let rendered_analysis_evidence: serde_json::Value =
+        serde_json::from_str(analysis_evidence_json).expect("analysis evidence is JSON");
+    assert!(rendered_analysis_evidence.get("record_binder").is_some());
+    assert_eq!(
+        rendered_analysis_evidence["record_binder"]["target"]["id"],
+        "FR-001-AC-1"
     );
     assert!(!markdown.contains("belongs to a different document"));
 }
