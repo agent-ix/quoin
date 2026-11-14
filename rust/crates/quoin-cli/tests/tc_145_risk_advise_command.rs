@@ -14,7 +14,7 @@
 //! A temporary module declares only the type contract needed to exercise the
 //! command's record-validation path; it carries no copied spec content.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use ix_trace_rs::trace;
@@ -44,6 +44,21 @@ fn risk_module() -> tempfile::TempDir {
           required: true
 ",
     )
+}
+
+fn safety_module_root() -> PathBuf {
+    let checkout = std::env::var_os("SPEC_OBJECTS_SAFETY_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-safety"),
+        PathBuf::from,
+    );
+    let root = checkout.join("spec_objects_safety");
+    assert!(
+        root.join("manifest.yaml").is_file(),
+        "the spec-objects-safety module is not at {}. Check out agent-ix/spec-objects-safety \
+         next to this repository, or set SPEC_OBJECTS_SAFETY_DIR to its checkout",
+        root.display()
+    );
+    root
 }
 
 fn advise(scope: &Path, module: &Path, extra: &[&str]) -> Output {
@@ -101,9 +116,9 @@ fn markdown_is_the_default() {
 #[test]
 fn a_missing_scope_and_a_malformed_record_each_exit_2_naming_what_is_wrong() {
     let dir = tempfile::tempdir().unwrap();
-    let module = risk_module();
+    let module = safety_module_root();
     let missing = dir.path().join("absent");
-    let out = advise(&missing, module.path(), &[]);
+    let out = advise(&missing, module.as_path(), &[]);
     assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("absent"));
 
@@ -114,7 +129,7 @@ fn a_missing_scope_and_a_malformed_record_each_exit_2_naming_what_is_wrong() {
          ## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| id | UUID | 1..1 | identity |\n",
     )
     .unwrap();
-    let out = advise(dir.path(), module.path(), &[]);
+    let out = advise(dir.path(), module.as_path(), &[]);
     assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty());
     assert!(String::from_utf8_lossy(&out.stderr).contains("RR-1"));
