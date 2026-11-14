@@ -9,6 +9,8 @@ relationships:
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-030"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-153"
+    type: "references"
 ---
 
 # FR-040: Assurance case as a read-only view over the store
@@ -51,6 +53,17 @@ open, with the unevaluated check's reason, or a statement that the audit reached
 reason. `suspect` and `stale` come from the findings by the matrix's precedence. "Newest" is the later
 instant, compared as RFC 3339 instants rather than as strings. The verdict is read from what `audit()`
 produced, never recomputed from timestamps. The `--json` payload carries the same fields.
+
+For a solution whose declared method is Analysis, the derived case also carries
+`analysis_evidence`: the FR-153/FR-078 qualified claims and non-qualified act
+results for that exact obligation. It shows `qualified-record` with its record
+locators for a positive result; every failed, errored, stale, absent or
+unevaluated result remains separate and carries its FR-078 category, locator
+when available, and detail naming any unmet premise. This field is present on
+Analysis solution nodes even when no binding exists, so a missing observation
+does not disappear with an absent `LeafEvidence`; it is absent on non-Analysis
+nodes. JSON and text render the same result items. It does not change the
+legacy audit verdict or make the assurance claim supported on its own.
 
 ### Gaps are nodes, not omissions
 
@@ -147,6 +160,7 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-17 | A bound leaf lists its suites, the newest run or scan timestamp for each and overall, and the auditor's `bound`, `stale`, `suspect` or `undischarged` verdict, in markdown and `--json`; a bound suite with no run or scan says so. | Test |
 | FR-040-AC-18 | A leaf the audit does not list healthy is open even with no finding, and shows the unevaluated check's reason or that the audit reached no verdict. | Test |
 | FR-040-AC-19 | "Newest" run or scan is the later instant: fractional seconds and zone offsets order by the instant they name, not by string. | Test |
+| FR-040-AC-20 | A derived Analysis solution node carries the FR-153/FR-078 result items for its exact target, including `qualified-record` claims and every non-qualified cause with its category, locator and unmet-premise detail. The field is present even without a binding; JSON and text show identical items; non-Analysis nodes omit it, and these results do not override the auditor's verdict or alone support a claim. | Test |
 
 ## Constraints
 

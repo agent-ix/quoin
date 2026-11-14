@@ -16,6 +16,8 @@ relationships:
   - target: "ix://agent-ix/quire-rs/FR-050"
     type: "requires"
     cardinality: "1:1"
+  - target: "ix://agent-ix/quoin/FR-153"
+    type: "references"
 ---
 
 # FR-115: Evidence-backed test matrix (`matrix.build`)
@@ -149,13 +151,22 @@ section keyed by the document that happens to hold them.
 ### The op is pure, like `assurance.build_case`
 
 `matrix.build` runs nothing and reads nothing from disk or network. Its three
-inputs — the coverage matrix, the bindings, the audit report — are supplied
-whole on stdin by the caller, which already had to assemble them (run `quire
-coverage`, read the store, run the auditor) to produce this call's arguments.
+required inputs — the coverage matrix, the bindings, and the audit report —
+are supplied whole on stdin by the caller, which already had to assemble them
+(run `quire coverage`, read the store, run the auditor) to produce this call's
+arguments. The caller may also supply the optional FR-153 analysis-evidence
+projection described below.
 `matrix.build` adds no second freshness comparison of its own: whether a binding
 holds was already decided by the auditor, before
 `matrix.build` ever sees the result (see "Assembling the auditor's inputs",
 above, and CR-002 for the failed/errored-run check that decision now includes).
+
+When the caller also supplies the FR-153 analysis-evidence projection,
+`matrix.build` joins each selected analysis result to the exact criterion target
+and preserves it beside the legacy evidence axis. Analysis results do not alter
+the auditor's verdict or the existing `evidence_status`; they are a separate,
+qualified-evidence view. This additive output is owned by quoin-assurance and
+does not change quire-rs FR-078 or its `CoverageReport` schema.
 
 ## Inputs
 
@@ -171,6 +182,11 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 - `audit`: the `quoin-auditor` `AuditReport` (`findings`, `healthy`,
   `unevaluated`, [FR-032](./FR-032-evidence-auditor.md)) computed over the
   same `bindings` and the same obligations.
+- `analysis_evidence`: optional FR-153 projection containing FR-078
+  `record_binders` and `evidence_results` from the same selected inventory. It
+  is absent on the legacy path. Each member retains the exact FR-078 target,
+  locators, cause/status and provenance used by quire-rs; `matrix.build` does
+  not reconstruct or reinterpret those values.
 
 ## Outputs
 
@@ -196,6 +212,15 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
     example a criterion the caller's `bindings` never mentions — carries all
     three lists empty; this is the well-defined "reported nowhere" case, not
     an error.
+- When `analysis_evidence` is supplied, each criterion carries a total
+  `analysis_evidence` list, empty when no analysis result targets that criterion.
+  Each item is a tagged union: a qualified item has `status: "qualified-record"`
+  and the exact FR-078 `RecordBinder` under `record_binder`; a non-qualified
+  item has its exact FR-078 cause category under `status` and the complete
+  matching FR-078 `EvidenceResult` under `result`. Multiple causes remain
+  separate items. Items are sorted by status, record/run/entry locator, then
+  detail in ASCII byte order. No result is matched by suite, symbol or digest
+  alone.
 - `reason`: present, and `requirements` empty, when the supplied `coverage`
   is absent or carries no criteria at all (mirrors `AssuranceCase.reason`,
   [FR-040](./FR-040-assurance-case-view.md)).
@@ -224,6 +249,14 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
   every field of the payload, not only its exit class.
 - `quoin matrix` SHALL render `MatrixOutput` as markdown (default) or JSON
   (`--json`) to stdout, and SHALL write nothing under `spec/`.
+- When analysis evidence is supplied, the JSON row SHALL expose every matching
+  qualified record and every non-qualified result, including its record
+  locators and unmet premise.
+- When analysis evidence is supplied, the text table SHALL show
+  `qualified-record` for a qualified item and each non-qualified FR-078 cause
+  with its detail.
+- The text table SHALL NOT collapse multiple analysis causes into one unnamed
+  status.
 - `quoin matrix` SHALL assemble its `AuditReport` input through the same
   assembly path `quoin evidence audit` uses (mock-inspection,
   catalog, and independence inputs identical for the same working tree).
@@ -251,7 +284,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-115-AC-1 | `matrix.build` is registered in `quoin-core`'s `OPERATIONS` list and dispatched by an exhaustive `match` arm identically in shape to `assurance.build_case`'s (no capabilities), covered by the existing `the_operations_const_is_every_operation_dispatch_routes` drift test. | Test |
-| FR-115-AC-2 | The request is a `#[serde(deny_unknown_fields)]` struct carrying an optional `coverage`, and required `bindings` (the persisted `BindingsFile` shape) and `audit`; a request missing `bindings` or `audit`, or carrying an unrecognized field, is refused with `CoreErrorCode::BadRequest` naming `op`; a request over `MAX_MATRIX_BUILD_BYTES` is refused with `CoreErrorCode::Refused` naming `op`, `limit_bytes`, `observed_bytes`. | Test |
+| FR-115-AC-2 | The request is a `#[serde(deny_unknown_fields)]` struct carrying optional `coverage` and optional FR-153 `analysis_evidence`, and required `bindings` (the persisted `BindingsFile` shape) and `audit`; a request missing `bindings` or `audit`, or carrying an unrecognized field, is refused with `CoreErrorCode::BadRequest` naming `op`; a request over `MAX_MATRIX_BUILD_BYTES` is refused with `CoreErrorCode::Refused` naming `op`, `limit_bytes`, `observed_bytes`. | Test |
 | FR-115-AC-3 | When `bindings.bindings` is empty, every criterion's `evidence_status` is `no run evidence`, regardless of what `audit` contains; `evidence_detail` is still computed per AC-9 and is not suppressed by this override. | Test |
 | FR-115-AC-4 | When `bindings.bindings` is non-empty: a criterion whose id is in `audit.healthy` is `bound`; else a criterion with a `mocked-confirmation`, `insufficient-independence`, or `vacuous-evidence` finding is `suspect`; else a criterion with a `stale-evidence` finding is `stale`; else (any other finding kind, an `unevaluated` entry, or absence from `healthy`/`findings`/`unevaluated`) is `undischarged`. | Test |
 | FR-115-AC-5 | An `audit` naming one obligation id in both `healthy` and a `Finding` or `UnevaluatedCheck` refuses the whole `matrix.build` call with `CoreErrorCode::Refused` (exit 2), `context` carrying `reason: "contradictory-audit"` and the offending id; no partial `MatrixOutput` is emitted. | Test |
@@ -265,6 +298,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 | FR-115-AC-13 | `quoin-cli`'s `flow::FLOWS` no longer maps `"matrix"`; the CLI's flow-dispatch match routes only `"review"` and `"to-plan"` through `flow::run`; invoking `quoin matrix` never spawns `ix-flow`. | Test |
 | FR-115-AC-14 | `quoin matrix` resolves the mock-inspection/catalog/independence inputs through the identical assembly path `quoin evidence audit` uses for the same working tree. Withdrawn: refusal when HEAD cannot be resolved; no commit is resolved or supplied. | Test |
 | FR-115-AC-15 | `quoin matrix --help` (and the retained CLI help surface, `help.rs`) describes the deterministic evidence-backed render, not the retired "Build or update a requirements test matrix" agent-workflow summary. | Test |
+| FR-115-AC-16 | With FR-153 analysis evidence supplied, each Analysis criterion receives only result items whose exact FR-078 target matches its identity; qualified claims appear as `qualified-record`, and every non-qualified cause retains its exact category, locator and unmet-premise detail. JSON and text show the same complete item set; no item is joined by suite, symbol or digest alone, and the legacy auditor-derived `evidence_status` is unchanged. | Test |
 
 ## Dependencies
 

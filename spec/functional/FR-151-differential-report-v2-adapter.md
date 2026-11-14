@@ -13,6 +13,8 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/quire-analyze/FR-009"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-030"
+    type: "requires"
 ---
 
 # FR-151: Differential report v2 adapter
@@ -100,10 +102,39 @@ the state `disagreement`, and a reason that lists, for each of the two engines, 
 
 What `quoin evidence record` writes for a `disagreement` report: `record_run` writes the run unconditionally, so one
 `RunRecord` with the suite, tool and timestamp of the command and **zero entries** is written. It discharges and
-binds nothing. The `unrepresented` result is an output of the command (printed in human and JSON output,
-FR-069-AC-6) and is not stored. FR-069's refusal of an empty result set does not fire: it guards an input that
+binds nothing. An allowlisted projection of the accepted report is retained
+beside the run under the same suite/timestamp key (FR-030). The `unrepresented`
+result is an output of the command (printed in human and JSON output,
+FR-069-AC-6) and is derived from the validated source report rather than copied
+into the run record or projection. FR-069's refusal of an empty result set does not fire: it guards an input that
 reported no result at all, and a v2 report always reports exactly one comparison, which here is the `unrepresented`
 result.
+
+When `quoin evidence record` retains a report-backed run, it SHALL first
+validate the original report and then write only a
+`quoin.analysis-report-projection/v1` companion beside the run (FR-030). The
+projection is a closed allowlist of data the FR-116 qualifier consumes; it is
+not the source report and is not a second reader for that report schema:
+
+| Projection member | Content |
+| --- | --- |
+| `protocol` | Exact string `quoin.analysis-report-projection/v1`. |
+| `disposition` | The validated differential disposition from the source report. |
+| `agreed_status` | The source `agreedStatus`, or JSON `null` when the disposition is not `agreement`. |
+| `producer` | Exactly `name` and `version` from the source `producer` object. |
+| `engines` | Exactly two objects, ordered `z3`, then `cvc5`; each contains `engine`, `configured_executable`, optional `identity_path`, optional `identity_version`, `status` and `outcome`, copied from the validated source report. |
+
+The projection has no other members. It contains no query bytes, contract
+package, model, stdout, stderr, proof/solver output or unrelated report member.
+The projection has no analysis symbol, request digest, or other run-entry
+identity. The exact suite/timestamp companion key pairs it with its run. The
+reader validates its disposition against the run's entry cardinality and
+outcome: `agreement` and `inconclusive`/`unavailable` require exactly one
+entry with the mapped outcome; `disagreement` requires zero entries. This
+one-report/one-entry rule prevents a projected result from selecting among
+multiple run entries. Missing optional engine identity values remain absent so the qualifier leaves
+the tool/configuration premise unevaluated. Projection JSON is canonical and
+the companion is immutable at its paired run key (FR-030).
 
 ### Entry identity and what the entry binds
 
@@ -156,8 +187,8 @@ no `traceIds` and binds nothing by itself.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-151-CON-1 | quoin SHALL contain no copy of the v2 schema, its enums or its text, and no copy of a report except a byte-exact capture used as a test input (or a document derived from one by the changes AC-14 states). | Integrity | Inspection |
-| FR-151-CON-2 | The adapter SHALL introduce no record family and change no stored schema (FR-069-CON-2). | Compatibility | Test |
+| FR-151-CON-1 | quoin source SHALL contain no copy of the v2 schema, its enums or its text, and no report fixture except a byte-exact capture used as a test input (or a document derived from one by the changes AC-14 states). Runtime storage contains only the allowlisted FR-030 projection, never a source-report copy. | Integrity | Inspection |
+| FR-151-CON-2 | The adapter SHALL add no field to `RunRecord`; `evidence record` retains only the allowlisted projection in the separate FR-030 companion family, with the same suite/timestamp key and immutable pair semantics. | Compatibility | Test |
 | FR-151-CON-3 | quoin SHALL reach the validator and `MAX_REPORT_BYTES` only through a Cargo git dependency on `agent-ix/quire-analyze` pinned by `rev`. | Architecture | Inspection |
 | FR-151-CON-4 | The `quire-analyze` dependency SHALL build on every quoin release target, including `x86_64-pc-windows-msvc`. | Compatibility | Test |
 
@@ -165,11 +196,11 @@ no `traceIds` and binds nothing by itself.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-151-AC-1 | A report produced by `quire-analyze run-package` with `disposition` `agreement` and `agreedStatus` `satisfied` is recorded as one entry with outcome `pass` and symbol `<analysisKind>::<requestDigest>`. | Test |
-| FR-151-AC-2 | A report with `disposition` `agreement` and `agreedStatus` `refuted` is recorded as one entry with outcome `fail`. | Test |
-| FR-151-AC-3 | A report with `disposition` `disagreement` (one engine `satisfied`, the other `refuted`) is recorded as no entry and one `unrepresented` result with symbol `<analysisKind>::<requestDigest>` and state `disagreement`, whose reason names both engines with their `status` and `outcome` verbatim; the run written has zero entries; `quoin evidence record` prints the result in human and JSON output. It is not recorded as `pass`, `fail`, `skip` or `error`. | Test |
-| FR-151-AC-4 | A report with `disposition` `inconclusive` (for example an engine `timeout` or `unknown`) is recorded as one entry with outcome `error`. | Test |
-| FR-151-AC-5 | A report with `disposition` `unavailable` (an engine `missing-executable`, and separately an engine `unsupported-platform`) is recorded as one entry with outcome `error` and symbol `<analysisKind>::<requestDigest>`. The `unsupported-platform` input is a captured or hand-constructed v2 document that the owner's validator accepts, not a runner capture: a Linux runner reports a containment failure as `cleanup-failed`, which is `inconclusive`. | Test |
+| FR-151-AC-1 | A report produced by `quire-analyze run-package` with `disposition` `agreement` and `agreedStatus` `satisfied` is validated, projected to the allowlisted companion beside its paired run, and recorded as one entry with outcome `pass` and symbol `<analysisKind>::<requestDigest>`. | Test |
+| FR-151-AC-2 | A report with `disposition` `agreement` and `agreedStatus` `refuted` is validated, projected to the allowlisted companion beside its paired run, and recorded as one entry with outcome `fail`. | Test |
+| FR-151-AC-3 | A report with `disposition` `disagreement` (one engine `satisfied`, the other `refuted`) is validated, projected beside its zero-entry run, and yields one `unrepresented` result with symbol `<analysisKind>::<requestDigest>` and state `disagreement`, whose reason names both engines with their `status` and `outcome` verbatim; `quoin evidence record` prints the result in human and JSON output. It is not recorded as `pass`, `fail`, `skip` or `error`. | Test |
+| FR-151-AC-4 | A report with `disposition` `inconclusive` (for example an engine `timeout` or `unknown`) is validated, projected to the allowlisted companion beside its paired run, and recorded as one entry with outcome `error`. | Test |
+| FR-151-AC-5 | A report with `disposition` `unavailable` (an engine `missing-executable`, and separately an engine `unsupported-platform`) is validated, projected to the allowlisted companion beside its paired run, and recorded as one entry with outcome `error` and symbol `<analysisKind>::<requestDigest>`. The `unsupported-platform` input is a captured or hand-constructed v2 document that the owner's validator accepts, not a runner capture: a Linux runner reports a containment failure as `cleanup-failed`, which is `inconclusive`. | Test |
 | FR-151-AC-6 | A document whose `schema` is `quire.differential-report/v1`, `tl-mltl.differential-summary/v1`, `quire.differential-report/v3`, absent, or not a string is refused naming the value, and no run is written. | Test |
 | FR-151-AC-7 | A v2 document with a missing required member, an undeclared extra member (at the top level and inside an engine), a wrongly typed member, and each of an unknown `disposition`, engine `status` and engine `outcome` is refused naming the member, and no run is written. | Test |
 | FR-151-AC-8 | Empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar and non-JSON text are each refused, and no run is written. | Test |
@@ -177,8 +208,9 @@ no `traceIds` and binds nothing by itself.
 | FR-151-AC-10 | An input of `quire_analyze::MAX_REPORT_BYTES` + 1 bytes is refused with an error naming the size limit before any JSON parsing; an input of exactly `MAX_REPORT_BYTES` bytes is not refused for size (it may be refused for another reason). | Test |
 | FR-151-AC-11 | Two runs over the same bytes, from different paths, working directories and environments, return identical results. A copy of a valid report whose members are reordered, or that is pretty-printed, is refused, with the same error on every run. | Test |
 | FR-151-AC-12 | `--adapter differential-report`, `--tool differential-report` and `--tool quire-analyze` each select the adapter, `--tool tl-mltl`, `--tool r2u2` and `--tool c2po` do not, and the adapter appears in the adapter listing naming `quire.differential-report/v2` and not `differential-summary`. | Test |
-| FR-151-AC-13 | The adapter source opens no file other than its input, spawns no process and opens no network connection, and contains no `differential-summary` reader and no schema copy; `rust/Cargo.toml` names `agent-ix/quire-analyze` as a git dependency with a `rev`. | Inspection |
+| FR-151-AC-13 | The adapter source opens no file other than its input, spawns no process and opens no network connection, and contains no `differential-summary` reader and no schema copy; `rust/Cargo.toml` names `agent-ix/quire-analyze` as a git dependency with a `rev`. Runtime projection and retention are performed by the record command under FR-030, not by the adapter. | Inspection |
 | FR-151-AC-14 | The adapter's accepted fixtures are reports captured unedited from `quire-analyze run-package` (one per disposition that the runner can produce; the `unsupported-platform` fixture is AC-5's). Each refusal fixture is derived from one capture by one stated change, stays canonical unless the change is the non-canonical form itself, and the refusal tests are table-driven with one row per refusal class: schema `quire.differential-report/v1`, `tl-mltl.differential-summary/v1`, `quire.differential-report/v3`, schema absent, schema not a string, a required member removed, an undeclared top-level member, an undeclared engine member, a wrongly typed member, an unknown `disposition`, an unknown engine `status`, an unknown engine `outcome`, empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar, non-JSON text, `agreement` with a `null` `agreedStatus`, `disagreement` with a non-null `agreedStatus`, `agreement` with an engine `status` differing from `agreedStatus`, the same engine twice, members reordered, a pretty-printed copy, and an input of `MAX_REPORT_BYTES` + 1 bytes (synthetic padding, the only fixture that is neither a capture nor a one-change derivation). | Inspection |
+| FR-151-AC-15 | For each accepted disposition, the retained projection has exactly the FR-151 allowlist and has no symbol, request digest or other analysis identity. The exact suite/timestamp key pairs it with a run containing exactly one entry with the mapped outcome for `agreement`, `inconclusive` or `unavailable`, or zero entries for `disagreement`; the reader refuses positive qualification for any other cardinality/outcome. Its producer/engine identity and disposition fields equal the validated source report. Query, model, stdout, stderr, proof/solver output and every undeclared source member are absent from the projection. | Test |
 
 ## Dependencies
 

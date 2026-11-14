@@ -9,6 +9,8 @@ relationships:
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-153"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-030"
+    type: "requires"
   - target: "ix://agent-ix/quoin/FR-152"
     type: "references"
   - target: "ix://agent-ix/quoin/FR-151"
@@ -68,11 +70,21 @@ act, and a report from a solver started any other way is not an observation of i
   [quire-analyze FR-009](ix://agent-ix/quire-analyze/FR-009). The report is read by
   the `differential-report` adapter, which accepts it only when `quire_analyze::validate_report_document` does
   (FR-151).
-- The report supplies to the FR-116 tool and configuration context what the closed `quire.differential-report/v2`
-  schema retains (quire-analyze FR-005; FR-005-AC-6 names `producer.name`, `producer.version`, each engine's
-  `configuredExecutable`, observed `identity.path` and `identity.version` when available, `requestDigest` and the raw
-  solver output). The per-engine `status` and `outcome`, the `disposition` and the `agreedStatus` are read from the same
-  document (FR-151). These are the transcribed observations the performed-act premise reads.
+- When recorded, the source report is validated and reduced to the FR-151
+  allowlisted projection in the FR-030
+  `analysis-reports/<suite>/<timestamp>.json` companion file. It is linked to
+  exactly one run by the shared canonical suite/timestamp key and is covered
+  together with that run by the host's signature-verification of the commit
+  that adds the pair. The projection adds no member to the source report schema,
+  `RunRecord`, `RunEntry` or `--run-observation` object.
+- The source report is validated against the closed `quire.differential-report/v2` schema. The FR-151 projection
+  retains only `producer.name`, `producer.version`, each engine's `configuredExecutable`, observed `identity.path`
+  and `identity.version` when present, each engine's `status` and `outcome`, the `disposition`, and the `agreedStatus`.
+  The projection contains no symbol, request digest or other run-entry identity. The exact suite/timestamp key
+  pairs it with one run; qualification requires the run cardinality and outcome mapped from the disposition and
+  agreed status (one entry for agreement, inconclusive or unavailable; zero entries for disagreement). It does not
+  retain query, model, stdout, stderr or raw solver output. These projected values are the transcribed observations
+  the performed-act premise reads.
 - The report supplies no CI system, run, attempt or job, no actor, no performed-at time and no source revision. The
   adapter's entry carries no `evidenceKind` and no `traceIds` (FR-151). Those premises come from the host (FR-116) or
   are open points below.
@@ -94,14 +106,18 @@ naming the performed-revision premise.
 ### Tool and configuration
 
 No named version set and no pin is required. The qualifier reads the observed solver `identity.version` and the
-`producer.version` the report retains, and requires no particular value of either; the definition records neither
-(FR-184-CON-1 below).
+`producer.version` in the FR-151 projection, and requires no particular value of either; the definition records no
+allowed version set (FR-184-CON-4 below).
 
 ### Actor authority
 
 The qualifier SHALL take the asserting actor to be the signer of the record, mapped to a person through the
 signed-records feature ([PLAT-1433](https://linear.app/agent-ix/issue/PLAT-1433)). `--discharges` together with that authority is sufficient
-to bind the obligation; no further link is required and FR-152 is unchanged.
+to bind the obligation only when the complete signature result targets commit C's exact object identity, C contains
+the exact selected run and companion projection bytes, and both canonical paths were absent from C's first-parent
+tree (or the empty tree for a root commit) before C adds them together. A signature result for a later commit whose
+tree merely retains the pair, for a commit adding only one member, for another commit with matching tree contents,
+or for mismatching bytes does not admit actor authority. No commit id is persisted in the store.
 
 ### What a positive qualifier decision means
 
@@ -138,12 +154,13 @@ nothing about the obligation's meaning. The requirement-to-formalization link
 ### Producer-execute evidence
 
 A report is an observation of the act only when its solvers were started through `producer-execute`
-(quire-analyze FR-009 starts them no other way). The qualifier SHALL read only the report's own fields to decide
+(quire-analyze FR-009 starts them no other way). The qualifier SHALL read only the FR-151 projection's fields to decide
 this, as FR-184-CON-2 requires: `producer.name` and `producer.version` of the runner, and for each of the Z3 and cvc5
 engines a `configuredExecutable` that is an absolute path, an observed `identity.path` and `identity.version` (the
 version invocation that `producer-execute` ran first, FR-009), and a `status` and `outcome` from the closed set
-(FR-005-AC-6; FR-009 result-state table). If any of these is absent for either engine, the report is not an observation
-of the act, the result is `unevaluated` naming the tool and configuration premise, and no positive decision is made.
+(FR-005-AC-6; FR-009 result-state table). If any required value is absent for either engine, the projection does not
+establish an observation of the act; the result is `unevaluated` naming the tool and configuration premise, and no
+positive decision is made.
 
 A `refuted` agreement is `failed`; an `inconclusive` or `unavailable` report is `errored`; neither can qualify.
 
@@ -193,8 +210,10 @@ Item 6 is unresolved: nothing counts as covered until the FR-093 assessment exis
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-184-CON-1 | The definition SHALL add no field to the report, the run entry or the store, no compatibility reader and no digest, ledger or pin of a file or version (FR-116-CON-2). | Architecture | Inspection |
+| FR-184-CON-1 | The definition SHALL add no field to the closed v2 report schema, `RunRecord` or `RunEntry` (FR-116-CON-2). | Compatibility | Inspection |
 | FR-184-CON-2 | Qualification SHALL run no solver and read only supplied observations (FR-116-CON-1; FR-153-CON-2). | Architecture | Inspection |
+| FR-184-CON-3 | The store SHALL retain only the FR-151 allowlisted projection, never the source report or its query/model/solver output, and never copy it into the run record; an older run with no companion remains unevaluated and is not migrated. | Compatibility | Inspection |
+| FR-184-CON-4 | The definition SHALL persist no checkout SHA, CI association, signer principal, commit id, content digest, ledger or version pin (FR-116-CON-2). A producer-authored request digest appears only inside an existing run-entry symbol when one exists; it is not copied to the projection, and quoin computes no digest. | Architecture | Inspection |
 
 ## Acceptance Criteria
 
