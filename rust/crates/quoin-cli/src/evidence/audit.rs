@@ -48,9 +48,6 @@ pub(crate) struct Audited {
     pub(crate) coverage: serde_json::Value,
     /// The binding graph the audit read, as `evidence.audit_inputs` served it.
     pub(crate) bindings: serde_json::Value,
-    /// The stored runs and scans used by the FR-032 evidence join.
-    pub(crate) runs: serde_json::Value,
-    pub(crate) scans: serde_json::Value,
     /// The exact auditor input, used when a consumer projects another method
     /// through the FR-160 class evidence join.
     pub(crate) audit_input: serde_json::Value,
@@ -158,8 +155,6 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
     Ok(Assembly::Audited(Audited {
         coverage: coverage.payload,
         bindings,
-        runs,
-        scans,
         audit_input,
         response: audited,
     }))
