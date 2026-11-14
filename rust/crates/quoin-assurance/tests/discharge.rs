@@ -591,7 +591,7 @@ fn disposition_wire_fields_require_an_owner_and_decision_specific_expiry() {
         );
         assert_eq!(
             emitted["binding"]["dispositions"][0]["fact"]["approvalRef"],
-            "approval://CAB-7"
+            fact["approvalRef"]
         );
         assert!(
             emitted["binding"]["dispositions"][0]["fact"]
