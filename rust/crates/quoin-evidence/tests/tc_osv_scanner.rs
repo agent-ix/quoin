@@ -20,6 +20,11 @@ use quoin_evidence::types::Finding;
 const CLEAN: &str = r#"{"results":[{"source":{"path":"synthetic.cdx.json"},"packages":[{"package":{"name":"left-pad","version":"1.3.0","ecosystem":"npm","purl":"pkg:npm/left-pad@1.3.0"},"vulnerabilities":[],"groups":[]}]}]}"#;
 const VULNERABLE: &str = r#"{"results":[{"source":{"path":"synthetic.cdx.json"},"packages":[{"package":{"name":"left-pad","version":"1.3.0","ecosystem":"npm","purl":"pkg:npm/left-pad@1.3.0"},"vulnerabilities":[{"id":"GHSA-synthetic","summary":"Synthetic finding"}],"groups":[{"ids":["GHSA-synthetic"],"max_severity":"HIGH"}]}]}]}"#;
 
+// TC-9007 reported this purl and advisory identity in OSV-Scanner 2.7.1 output
+// against the official Debian mirror. This minimal synthetic contract fixture
+// includes only those reported fields, not the captured scanner report.
+const DEBIAN_CONTRACT: &str = r#"{"results":[{"source":{"path":"synthetic-contract-fixture"},"packages":[{"package":{"purl":"pkg:deb/debian/libc6@2.36-9%2Bdeb12u4?arch=amd64&distro=debian-12"},"vulnerabilities":[{"id":"DSA-5497-2","upstream":["CVE-2023-4863","DEBIAN-CVE-2023-4863"]}],"groups":[]}]}]}"#;
+
 fn adapter(tool: &str) -> &'static str {
     select_finding_adapter(AdapterSelection {
         adapter: None,
@@ -56,6 +61,18 @@ fn synthetic_vulnerability_is_transcribed_and_tool_selection_is_registered() {
             line: None,
             trace_ids: None,
         }]
+    );
+}
+
+#[trace("FR-149-AC-1")]
+#[test]
+fn minimal_debian_contract_fixture_preserves_reported_purl_and_advisory_id() {
+    let result = parse_osv_scanner(DEBIAN_CONTRACT).unwrap();
+    assert_eq!(result.findings.len(), 1);
+    assert_eq!(result.findings[0].rule_id, "DSA-5497-2");
+    assert_eq!(
+        result.findings[0].path.as_deref(),
+        Some("pkg:deb/debian/libc6@2.36-9%2Bdeb12u4?arch=amd64&distro=debian-12")
     );
 }
 

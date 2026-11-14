@@ -52,6 +52,33 @@ fn debian_os_package_purl_matches_while_a_spelling_mismatch_is_unmatched() {
     assert_eq!(unmatched.unmatched[0].rule_id, "GHSA-spelling");
 }
 
+#[trace("FR-142-AC-23", "FR-149-AC-1")]
+#[test]
+fn minimal_debian_contract_fixture_keeps_reported_purl_and_id_through_the_join() {
+    // The purl and vulnerability identifiers come from the TC-9007 OSV-Scanner
+    // 2.7.1 output. This hand-authored envelope is a minimal synthetic contract
+    // fixture, not a captured report.
+    let purl = "pkg:deb/debian/libc6@2.36-9%2Bdeb12u4?arch=amd64&distro=debian-12";
+    let raw = r#"{"results":[{"source":{"path":"synthetic-contract-fixture"},"packages":[{"package":{"purl":"pkg:deb/debian/libc6@2.36-9%2Bdeb12u4?arch=amd64&distro=debian-12"},"vulnerabilities":[{"id":"DSA-5497-2","upstream":["CVE-2023-4863","DEBIAN-CVE-2023-4863"]}],"groups":[]}]}]}"#;
+    let scan = scan(
+        "osv-scanner 2.7.1",
+        "osv-suite",
+        "2026-08-01T00:00:00.000Z",
+        raw,
+    );
+
+    assert_eq!(scan.findings.len(), 1);
+    assert_eq!(scan.findings[0].path.as_deref(), Some(purl));
+    assert_eq!(scan.findings[0].rule_id, "DSA-5497-2");
+
+    let joined = join(&[record(purl, None)], &[scan], &discharge());
+    assert_eq!(joined.records[0].purl, purl);
+    assert_eq!(joined.records[0].advisories.len(), 1);
+    assert_eq!(joined.records[0].advisories[0].package, purl);
+    assert_eq!(joined.records[0].advisories[0].rule_id, "DSA-5497-2");
+    assert_eq!(joined.records[0].advisories[0].tool, Tool::OsvScanner);
+}
+
 #[trace("FR-142-AC-20")]
 #[test]
 fn osv_assesses_deb_and_supported_ecosystems_but_not_lean_or_other_types() {
