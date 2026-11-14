@@ -130,11 +130,9 @@ pub(crate) fn build(
         }),
     );
     request.insert("audit".to_owned(), report);
-    let coverage = evidence_report
-        .get("coverage_matrix")
-        .cloned()
-        .ok_or_else(|| "analysis evidence report omitted coverage_matrix".to_owned())?;
-    request.insert("coverage".to_owned(), coverage);
+    if let Some(coverage) = evidence_report.get("coverage_matrix") {
+        request.insert("coverage".to_owned(), coverage.clone());
+    }
     request.insert(
         "analysis_evidence".to_owned(),
         serde_json::json!({
