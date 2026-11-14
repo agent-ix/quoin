@@ -25,10 +25,15 @@ FR-006).
 | SUITE-003 | Agent evals | `make evals` | cli-agent-evals | Eval |
 
 For the Quoin tag-attestation release-verification result, `SUITE-001` is the
-declared suite. `SUITE-002` and `SUITE-003` remain separate evidence suites and
-are not claimed by the release Test Result. The tag-attestation build uploads
-the committed suite and binding registries plus the fresh run record as the
-`release-evidence` artifact. It does not commit tag-run records.
+declared suite. Its required release bindings are `FR-186-AC-1` through
+`FR-186-AC-6`; each criterion must have at least one passing tagged case in the
+fresh run. The maintained suite
+declaration and binding registry are committed. `make evidence` generates
+run-specific bindings and a run record for the tag; the workflow uploads those
+generated facts with the maintained declarations and tag/run provenance as the
+`release-evidence` artifact. It does not commit run-specific bindings or
+tag-run records. `SUITE-002` and `SUITE-003` remain separate evidence suites
+and are not claimed by the release Test Result.
 
 ## What the store discharges
 
