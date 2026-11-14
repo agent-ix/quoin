@@ -182,3 +182,25 @@ The demo source pack has no clause-level text or sentinel. Its positive result e
 Existing exact code-fix run is cited from the coder report supplied in this dispatch: tc_171 plus tc_172 15/15, focused Clippy/fmt pass, and expected base-oracle failure at 76d944f9. These are coder-reported results, not a new independent execution. No build/test was rerun, consistent with the dispatch allowing citation of the existing run. No aggregate gate was run.
 
 Installed review tools: quoin 0.30.1, quire 0.44.0 (engine 0.59.1). FR-172 validation exits 0 with 1/1 docs grammar-clean, no grammar findings; semantic.unused-import for spec-artifacts-app is non-fatal. All three updated SR artifacts are validated at their explicit repository paths before handoff.
+
+## Disposition pass 4
+
+Reviewed head `68c8a1ac0e48bbf03d37c0a75366c0a26f0b5b1d`. All seven code findings remain fixed. No new findings. No open reviewer finding remains; merge is clear from disposition, subject to the lead’s final gate and committing the updated review artifacts.
+
+Prior findings and disposition rows remain unchanged.
+
+Reviewed frozen head 68c8a1ac0e48bbf03d37c0a75366c0a26f0b5b1d. git diff confirms no rust/, skills/ or spec/ changes since code-fix head 76d944f97d267fd14ffb802942c7dbe64c259cbd. Later commits record demonstrations and review dispositions only.
+
+Reconfirmed all seven code findings and all four spec findings remain fixed. The FND-007 test still covers not-in-inventory/index.md, ../../../outside/index.md and ../unapproved/references/gdpr/index.md; the resolver normalizes from the source document and checks the approved root/path. Named restricted-framework literals remain absent from the boundary test, and pack_support::scratch() remains in use.
+
+Read reviews/plat-1530-sentinel-skill-demo.md and retained evidence under /var/tmp/codex-controls-1530-sentinel-demo/. Parsed pack-src/std.yaml and the installed target’s std.yaml and confirmed equality: both clauses have unique synthetic title/text sentinels. module-list.txt reports example-invalid-std as pack=true; source-profile.yaml adds the exact example.invalid/std@1 key; profile-evaluation.txt evaluates that set with EX-1 and EX-2 binding.
+
+Independent literal checks found both clause sentinel strings absent in all seven requested outputs: repo/spec/security/CTRL-001-synthetic-authorization.md, repo/reviews/SR-001-gap-analysis.md, repo/demo-reply.md, profile-evaluation.txt, module-list.txt, write-pack.json and quire-validate-sentinel.txt. The control maps example.invalid/std@1 / EX-1 to FR-002; the review and reply identify the EX-2 gap by reference. No sentinel value is copied into this review record.
+
+Independently ran IX_HOME=/var/tmp/codex-controls-1530-sentinel-demo/ix-home quire validate --scope /var/tmp/codex-controls-1530-sentinel-demo/repo "spec/security/*.md" "reviews/SR-001-gap-analysis.md" --summary. Exit 0; 2/2 docs grammar-clean, zero grammar findings. Advisory diagnostics: semantic.unused-import, semantic.source-identity-defaulted and semantic.clause-language-unchecked. This confirms the retained artifacts validate; it is not a fresh live skill run.
+
+The earlier no-pack reply remains evidence for the unavailable-source scenario. The new sentinel-bearing positive example supplies the missing output-boundary demonstration. Conclusions are limited to these recorded synthetic scenarios, not arbitrary sources, paraphrase-detection completeness or statistical model reliability.
+
+Existing exact code-fix run is cited from the coder report supplied by the lead: tc_171 plus tc_172 15/15, focused Clippy/fmt pass, expected base-oracle failure at the 76d944f9 source. No build/test or aggregate gate was repeated in this evidence-only disposition. Installed review tools: quoin 0.30.1; quire 0.44.0, engine 0.59.1.
+
+Reviewer disposition is clear for merge after the lead’s final gate and commit of the updated SR artifacts. This pass changes only those three review files; it does not commit, push or merge.
