@@ -62,7 +62,7 @@ use std::path::{Path, PathBuf};
 use quoin_auditor::advise::PropertyShape;
 use quoin_quire_types::{
     CoverageDiagnostic, CoverageMatrixBinder, CoverageMatrixCriterion, CoverageMatrixRequirement,
-    Obligation,
+    CoverageMatrixUnbackedClaim, Obligation,
 };
 use serde::{Deserialize, Serialize};
 
@@ -249,7 +249,31 @@ fn matrix_criterion(
                 row: identity.row,
                 line: identity.line,
             }),
+        unbacked_claims: source
+            .unbacked_claims
+            .iter()
+            .map(matrix_unbacked_claim)
+            .collect(),
         status: matrix_status(source.status).to_owned(),
+    }
+}
+
+fn matrix_unbacked_claim(
+    source: &quoin_quire::model::CoverageMatrixUnbackedClaim,
+) -> CoverageMatrixUnbackedClaim {
+    use quoin_quire::model::CoverageMatrixClaimReason;
+
+    CoverageMatrixUnbackedClaim {
+        reason: match source.reason {
+            CoverageMatrixClaimReason::TaggedWithoutCitingMatrixRow => {
+                "tagged-without-citing-matrix-row".to_owned()
+            }
+            CoverageMatrixClaimReason::UnmarkedTraceId => "unmarked-trace-id".to_owned(),
+        },
+        id: source.id.clone(),
+        path: source.path.clone(),
+        line: u64::try_from(source.line).unwrap_or(u64::MAX),
+        symbol: source.symbol.clone(),
     }
 }
 

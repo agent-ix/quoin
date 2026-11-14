@@ -68,6 +68,60 @@ title: Three criteria
 | FR-001-AC-3 | The reader shall name the refused field. |  |
 ";
 
+const ROW_AWARE_MODULE: &str = r##"name: quoin-cli-matrix-claims
+version: 0.1.0
+description: Fixture module for unbacked matrix claims
+artifact_types:
+  - name: FR
+  - name: TestMatrix
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+    - name: test-case
+      archetype: TestMatrix
+      section: Test Cases
+      id_column: ID
+  document_references:
+    - name: verification
+      archetype: FR
+      section: Acceptance Criteria
+      row_id_column: ID
+      column: Verification
+      pattern: '\b(TC-\d+)\b'
+      targets: [test-case]
+    - name: traces-to
+      archetype: TestMatrix
+      section: Test Cases
+      row_id_column: ID
+      column: Traces To
+      pattern: '\b((?:FR|TC)-\d+(?:-AC-\d+)?)\b'
+      targets: [acceptance-criterion, test-case]
+  status:
+    column: Status
+    complete: ["✅"]
+    pending: ["🚧"]
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  trace_tags:
+    markers:
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: '#[trace({ids})]'
+"##;
+
+const ROW_AWARE_SPEC: &str = "---\nid: FR-001\ntype: FR\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|---|---|---|\n| FR-001-AC-1 | The first behavior shall work. | Test (TC-001) |\n| FR-001-AC-2 | The second behavior shall work. | Test (TC-002) |\n";
+
+const ROW_AWARE_TEST_MATRIX: &str = "---\nid: TM-001\ntype: TestMatrix\n---\n\n## Test Cases\n\n| ID | Traces To |\n|---|---|\n| TC-001 | FR-001-AC-1 |\n| TC-002 | FR-001-AC-2 |\n";
+
+const ROW_AWARE_SOURCE: &str = "#[cfg(test)]\nmod tests {\n    #[trace(\"TC-001\", \"FR-001-AC-1\", \"FR-001-AC-2\")]\n    #[test]\n    fn tc001_first_behavior() {}\n\n    /// FR-001-AC-2\n    #[test]\n    fn tc002_comment_only_claim() {}\n}\n";
+
 struct Fixture {
     dir: tempfile::TempDir,
     home: tempfile::TempDir,
@@ -272,6 +326,43 @@ fn tc_1080_201_renders_markdown_and_canonical_json_deterministically() {
         json,
         format!("{}\n", serde_json::to_string(&parsed).unwrap()),
         "--json is one line of canonical JSON"
+    );
+}
+
+/// The CLI JSON render forwards Quire's unbacked claim diagnostics without
+/// changing their static status or binding list.
+#[trace("FR-115-AC-1", "FR-115-AC-10")]
+#[test]
+fn tc_1080_207_json_forwards_unbacked_claims() {
+    let fixture = repository(ROW_AWARE_MODULE);
+    fixture.write("spec/FR-001-example.md", ROW_AWARE_SPEC);
+    fixture.write("spec/TestMatrix.md", ROW_AWARE_TEST_MATRIX);
+    fixture.write("tests/matrix_claims.rs", ROW_AWARE_SOURCE);
+
+    let matrix: Value =
+        serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    let criterion = &matrix["requirements"][0]["criteria"][1];
+    assert_eq!(criterion["id"], "FR-001-AC-2");
+    assert_eq!(criterion["static_status"], "untagged");
+    assert_eq!(criterion["binders"], serde_json::json!([]));
+    assert_eq!(
+        criterion["unbacked_claims"],
+        serde_json::json!([
+            {
+                "reason": "tagged-without-citing-matrix-row",
+                "id": "FR-001-AC-2",
+                "path": "tests/matrix_claims.rs",
+                "line": 3,
+                "symbol": "tests::tc001_first_behavior"
+            },
+            {
+                "reason": "unmarked-trace-id",
+                "id": "FR-001-AC-2",
+                "path": "tests/matrix_claims.rs",
+                "line": 7,
+                "symbol": "tests::tc002_comment_only_claim"
+            }
+        ])
     );
 }
 

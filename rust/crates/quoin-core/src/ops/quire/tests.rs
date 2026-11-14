@@ -257,8 +257,8 @@ fn coverage_projects_the_obligations_the_engine_derived() {
 /// and a non-ignored binder.
 fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
     use quoin_quire::model::{
-        CoverageMatrixBinder, CoverageMatrixCriterion, CoverageMatrixRequirement,
-        CoverageMatrixStatus,
+        CoverageMatrixBinder, CoverageMatrixClaimReason, CoverageMatrixCriterion,
+        CoverageMatrixRequirement, CoverageMatrixStatus, CoverageMatrixUnbackedClaim,
     };
     let binder = |ignored| CoverageMatrixBinder {
         path: "tests/a.rs".to_owned(),
@@ -273,6 +273,17 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
         statement: "The command reports coverage.".to_owned(),
         method: method.map(str::to_owned),
         binders,
+        unbacked_claims: if id == "FR-001-AC-2" {
+            vec![CoverageMatrixUnbackedClaim {
+                reason: CoverageMatrixClaimReason::TaggedWithoutCitingMatrixRow,
+                id: "FR-001-AC-2".to_owned(),
+                path: "tests/a.rs".to_owned(),
+                line: 12,
+                symbol: "tests::tc_1_a".to_owned(),
+            }]
+        } else {
+            Vec::new()
+        },
         record_binders: None,
         identity: None,
         status,

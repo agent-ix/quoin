@@ -22,7 +22,7 @@ use quoin_assurance::matrix::{
 use serde_json::{Value, json};
 
 fn criterion(id: &str) -> Value {
-    json!({ "id": id, "statement": "s", "method": "Test", "binders": [], "status": "untagged" })
+    json!({ "id": id, "method": "Test", "binders": [], "status": "untagged" })
 }
 
 fn binding(obligation: &str, suite: &str) -> Value {
@@ -191,6 +191,49 @@ fn tc_1080_001_an_empty_store_is_no_run_evidence_and_still_carries_detail() {
     );
 }
 
+/// The diagnostic field crosses the strict input and output types verbatim,
+/// while unknown nested claim fields remain refused.
+#[trace("FR-115-AC-1", "FR-115-AC-2")]
+#[test]
+fn tc_1080_015_unbacked_claims_are_preserved_and_unknown_fields_refused() {
+    let claim = json!({
+        "reason": "tagged-without-citing-matrix-row",
+        "id": "FR-001-AC-1",
+        "path": "tests/test_security.py",
+        "line": 8,
+        "symbol": "test_security",
+    });
+    let mut request = json!({
+        "coverage": [{
+            "document": "spec/FR-001.md",
+            "criteria": [{
+                "id": "FR-001-AC-1",
+                "method": "Test",
+                "binders": [],
+                "unbacked_claims": [claim],
+                "status": "untagged",
+            }],
+        }],
+        "bindings": { "schemaVersion": 1, "bindings": [] },
+        "audit": { "findings": [], "healthy": [], "unevaluated": [] },
+    });
+    let input: MatrixInput = serde_json::from_value(request.clone()).unwrap();
+    let output = build(&input).unwrap();
+    let serialized = serde_json::to_value(&output).unwrap();
+    assert_eq!(
+        serialized["requirements"][0]["criteria"][0]["unbacked_claims"][0],
+        claim
+    );
+
+    request["coverage"][0]["criteria"][0]["unbacked_claims"][0]["unexpected"] = json!(true);
+    assert!(serde_json::from_value::<MatrixInput>(request).is_err());
+
+    let mut invalid_output = serialized;
+    invalid_output["requirements"][0]["criteria"][0]["unbacked_claims"][0]["unexpected"] =
+        json!(true);
+    assert!(serde_json::from_value::<MatrixOutput>(invalid_output).is_err());
+}
+
 /// Each finding kind lands in the bucket the requirement assigns it, alone.
 ///
 #[trace("FR-115-AC-4")]
@@ -319,7 +362,7 @@ fn tc_1080_005_the_static_axis_is_verbatim_and_method_is_omitted_not_null() {
     });
     let request: MatrixInput = serde_json::from_value(json!({
         "coverage": [{ "document": "spec/FR-001.md", "criteria": [
-            { "id": "FR-001-AC-1", "statement": "s", "binders": [binder], "status": "tagged-by-ignored-test" },
+            { "id": "FR-001-AC-1", "binders": [binder], "status": "tagged-by-ignored-test" },
         ]}],
         "bindings": { "schemaVersion": 1, "bindings": [binding("FR-001-AC-1", "unit")] },
         "audit": audit(&[], &["FR-001-AC-1"], &[]),

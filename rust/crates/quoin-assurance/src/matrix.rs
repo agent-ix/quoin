@@ -19,7 +19,7 @@ use std::fmt::Write as _;
 
 use quoin_evidence::types::BindingsFile;
 use quoin_finding_types::{AuditReport, Finding, FindingKind};
-use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixRequirement};
+use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixUnbackedClaim, TargetLocus};
 use serde::{Deserialize, Serialize};
 
 /// The `matrix.build` request: the three inputs, supplied whole.
@@ -29,7 +29,7 @@ pub struct MatrixInput {
     /// quire's `coverage_matrix`, exactly as `quire coverage` emits it: a bare
     /// array, absent when the module declares no `obligations:` source.
     #[serde(default)]
-    pub coverage: Option<Vec<CoverageMatrixRequirement>>,
+    pub coverage: Option<Vec<MatrixCoverageRequirement>>,
     /// The evidence store's binding graph, exactly as persisted.
     pub bindings: BindingsFile,
     /// The auditor's report over the same bindings and obligations.
@@ -49,6 +49,43 @@ pub struct AnalysisEvidenceInput {
     /// Every non-qualified result, including its exact cause and detail.
     #[serde(default)]
     pub evidence_results: Vec<serde_json::Value>,
+}
+
+/// One projected Quire requirement accepted by the strict `matrix.build`
+/// boundary.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MatrixCoverageRequirement {
+    /// Scope-relative source document.
+    pub document: String,
+    /// Values declared under carried names, absent when none are stated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub carried: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Projected criteria.
+    pub criteria: Vec<MatrixCoverageCriterion>,
+}
+
+/// One projected Quire criterion accepted by the strict `matrix.build`
+/// boundary.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MatrixCoverageCriterion {
+    /// The criterion identifier.
+    pub id: String,
+    /// The declared verification method, omitted when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    /// Quire's binding test symbols.
+    pub binders: Vec<CoverageMatrixBinder>,
+    /// The exact native selected identity when the upstream payload carries it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<TargetLocus>,
+    /// Diagnostic-only source claims that name this criterion without
+    /// providing matrix backing.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unbacked_claims: Vec<CoverageMatrixUnbackedClaim>,
+    /// The engine's computed static status.
+    pub status: String,
 }
 
 /// The evidence-backed matrix.
@@ -92,6 +129,10 @@ pub struct MatrixCriterion {
     pub static_status: String,
     /// quire's binders, verbatim.
     pub binders: Vec<CoverageMatrixBinder>,
+    /// Quire's diagnostic-only source claims with no matrix backing, verbatim.
+    /// Omitted when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unbacked_claims: Vec<CoverageMatrixUnbackedClaim>,
     /// The software safety class the criterion's requirement states, as
     /// written (FR-160). Omitted when it states none, and when no class policy
     /// was given.
@@ -318,6 +359,7 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
                 method: criterion.method.clone(),
                 static_status: criterion.status.clone(),
                 binders: criterion.binders.clone(),
+                unbacked_claims: criterion.unbacked_claims.clone(),
                 class: classes
                     .and_then(|classes| classes.get(id))
                     .and_then(serde_json::Value::as_str)
