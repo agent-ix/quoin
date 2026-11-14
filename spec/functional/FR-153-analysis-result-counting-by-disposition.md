@@ -9,6 +9,8 @@ relationships:
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-151"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-115"
+    type: "references"
   - target: "ix://agent-ix/quoin/FR-116"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-032"
@@ -17,6 +19,8 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/quire-rs/FR-078"
     type: "requires"
+  - target: "ix://agent-ix/engineering-assurance/FR-036"
+    type: "references"
 ---
 
 # FR-153: An analysis result counts toward an obligation only as a qualified passing record
@@ -28,6 +32,46 @@ counts as coverage and trace for the obligation, per disposition of the report (
 themselves are quire-rs [FR-078](ix://agent-ix/quire-rs/FR-078) and the owner qualification
 contract [Quoin FR-116](./FR-116-owner-qualified-quire-evidence.md); they are cited here and not restated. This
 requirement adds only what is specific to an analysis entry.
+
+## Inputs
+
+`quoin matrix` and the derived retained-evidence view of `quoin assurance` use
+the same optional, repeatable `--run-observation FILE` input. Each `FILE` is a
+single UTF-8 JSON object with protocol `quoin.analysis-run-observation/v1`; it
+selects exactly one canonical run record by its exact store-relative path and
+may carry host observations for that record. JSON member types and empty-value
+handling are:
+
+| Member | Contract |
+| --- | --- |
+| `protocol` | Required non-empty string. Exactly `quoin.analysis-run-observation/v1`. |
+| `record` | Required non-empty string. The exact canonical run-record path selected by FR-030, such as `runs/<suite>/<timestamp>.json`; it MUST be a relative canonical store path with no `.` or `..` path component and match one record in the selected store. It is a read-time locator, not a store field or pin. |
+| `selected_head` | Optional string. The full Git object id of the source HEAD selected by the host for this qualification call: exactly 40 or 64 ASCII hexadecimal characters. Empty or malformed values leave FR-116's `HostObservations.selected_head` unavailable and the performed-revision premise `unevaluated`. |
+| `checkout_sha` | Optional string. The full Git object id observed for the `run-package` checkout: exactly 40 or 64 ASCII hexadecimal characters. Empty or malformed values leave FR-116's `performed_revision` unavailable and that premise `unevaluated`. |
+| `ci_association` | Optional object with exactly the required string members `system`, `project`, `run`, `attempt`, `job` and `invocation`. If any member is empty, execution association is `unevaluated`; otherwise the object supplies FR-116's CI `ExecutionAssociation`. |
+| `signature_result` | Optional object containing one complete `engineering-assurance.signature-verify-result/v1` result for the commit that added the selected record, as defined by engineering-assurance FR-036 and FR-037. The outer host observation does not redefine that result schema; a missing, malformed or unverifiable result leaves actor authority `unevaluated`. |
+| `actor_authority` | Optional object with exactly the FR-116 `ActorAdmission` members: `actor` and `admission_ref` are strings; `authorized` is an array of strings containing obligation ids. Empty `actor` or `admission_ref`, or an absent `signature_result`, leaves actor authority `unevaluated`; an empty `authorized` array or one that omits the selected obligation is evaluated as `qualification-rejected`. `actor` MUST equal the accepted signature result's mapped signer principal; the input string does not establish identity. A key fingerprint is never an actor. |
+
+The object and each nested input object have no other members. `record` and
+`protocol` are the only required root members so absent host observations
+remain qualification input gaps rather than invented defaults. Present
+`ci_association` and `actor_authority` objects have exactly the members above;
+`authorized` may be empty but may not contain empty or duplicate obligation
+ids. A non-string where a string is required, a non-array `authorized`, a
+non-string array item, a missing required nested member, or an unknown member
+is malformed input and is refused; an empty required `protocol` or `record` is
+also refused. Repeated option values refer to distinct
+canonical record paths and carry the same valid `selected_head` when that
+value is supplied. Empty `selected_head` or `checkout_sha` values are validly
+typed but unavailable observations, not malformed JSON.
+
+An item applies only to the canonical record named by `record`. The entry,
+obligation and declared method are taken from that selected record, its stored
+`traceIds` and the selected catalog; the observation file cannot choose or
+rewrite them. The host supplies the actual selected source HEAD as
+`selected_head`; this value is a read-time input, not persisted provenance. An
+observation file is a one-shot input for one read invocation, not a retained
+run history or a second evidence store.
 
 ### What counts
 
@@ -89,6 +133,72 @@ Ruled by the owner, not yet specified in quire-rs:
 
 - The bridge SHALL ask the FR-116 qualifier about an analysis entry with the obligation's declared method and the
   producer definition the owner has approved for this act.
+- `quoin matrix` and the derived retained-evidence view of `quoin assurance` SHALL read each repeated
+  `--run-observation FILE` into an FR-116 `RunObservation` value and pass it to the same analysis qualification path.
+- The read commands SHALL match each run observation only to the exact canonical run-record path in the selected
+  FR-030 store.
+- The read commands SHALL correlate an observation through the selected record's exact entry, stored obligation
+  `traceIds`, selected obligation and declared method.
+- The read commands SHALL NOT substitute a suite name, entry symbol, digest or another record's observation for that
+  correlation.
+- The read commands SHALL use the supplied `selected_head` as FR-116's current selected source HEAD for analysis
+  qualification.
+- The host SHALL supply the actual selected source HEAD as `selected_head`.
+- The read commands SHALL NOT resolve `selected_head` from Git.
+- If `selected_head` is absent or is not a full 40- or 64-digit hexadecimal Git object id, then the qualifier SHALL
+  report `unevaluated` for the performed-revision premise.
+- If supplied `selected_head` values disagree across observation files, then the qualifier SHALL report
+  `record-conflict` for affected analysis entries.
+- The selected-HEAD observation SHALL apply only to the FR-116 analysis qualification path.
+- The selected-HEAD observation SHALL NOT change the legacy audit input assembly or add a commit field to the
+  evidence store.
+- If `checkout_sha` is absent or is not a full 40- or 64-digit hexadecimal Git object id, then the qualifier SHALL
+  report `unevaluated` for the performed-revision premise.
+- When a valid `checkout_sha` is supplied, the qualifier SHALL compare it with the selected source HEAD under FR-116.
+- If the supplied checkout SHA differs from the selected source HEAD, then the qualifier SHALL report
+  `wrong-revision`.
+- The bridge SHALL NOT produce `qualified-record` for a wrong-revision result.
+- If `ci_association` is absent, then the qualifier SHALL report `unevaluated` for the execution-association premise.
+- If `ci_association` names a manual execution, then the qualifier SHALL report `qualification-rejected` for the
+  execution-association premise because this act requires CI.
+- If a supplied CI association has an empty member, then the qualifier SHALL report `unevaluated` for the
+  execution-association premise.
+- The read commands SHALL validate the structure and exact record correlation of CI association input only.
+- The read commands SHALL NOT contact a CI service or treat matching association strings as external authentication.
+- The host SHALL associate each `signature_result` with the commit that added the same selected canonical run record.
+- The read commands SHALL admit actor authority only when the signature result has status `signed_valid`, a mapped
+  signer with a non-empty principal, and the corresponding `actor_authority` admits that principal for the selected
+  obligation.
+- The read commands SHALL use the mapped signer principal as FR-116's actor identity.
+- The read commands SHALL NOT use a key fingerprint as the actor identity.
+- If the signature result is missing or unverifiable, then the qualifier SHALL report `unevaluated` for actor
+  authority.
+- If the signature result is verified but invalid, untrusted or unmapped, then the qualifier SHALL report
+  `qualification-rejected` for actor authority.
+- If host authority excludes the selected obligation, then the qualifier SHALL report `qualification-rejected` for
+  actor authority.
+- The bridge SHALL NOT produce `qualified-record` when actor authority is `unevaluated` or `qualification-rejected`.
+- If no `--run-observation` file selects a selected run record, then the qualifier SHALL retain its
+  missing FR-116 premises as `unevaluated`.
+- The read commands SHALL NOT borrow observations from another record when no file selects a selected run record.
+- If an observation file has malformed JSON or an unsupported protocol, then the read commands SHALL refuse that
+  input without a report claiming positive qualification.
+- If an observation file has an unknown root, record, association or authority member, then the read commands SHALL refuse that input without a report
+  claiming positive qualification.
+- If multiple observation files select the same record or a file selects no canonical record in the selected store,
+  then the read commands SHALL refuse the inputs without a report claiming positive qualification.
+- If an embedded signature result is malformed or non-admitting, then the qualifier SHALL leave actor authority
+  unmet under the preceding rules.
+- The read commands SHALL validate each JSON member against the types and exact member sets in Inputs before
+  constructing FR-116 typed observations; a wrongly typed or structurally incomplete input SHALL cause the read
+  commands to refuse that input.
+- The read commands SHALL treat an empty `selected_head` or `checkout_sha` as an unavailable performed-revision
+  observation, an empty CI-association member as unavailable execution association, and empty `actor` or
+  `admission_ref` as unavailable actor authority.
+- The read commands SHALL compare `actor_authority.actor` with the mapped signer principal in the accepted signature
+  result; a mismatch SHALL be `qualification-rejected` for actor authority.
+- An empty `authorized` list or a list omitting the selected obligation SHALL be `qualification-rejected` for actor
+  authority; empty or duplicate obligation-id strings SHALL make the input malformed and refused.
 - The bridge SHALL count an analysis-backed obligation as covered only by a positive FR-116 decision, reconciled by
   FR-078 as a `record_binders` claim and status `qualified-record`.
 - The bridge SHALL correlate a requested target to analysis entries by the `traceIds` stored on the run entries of
@@ -140,12 +250,20 @@ Ruled by the owner, not yet specified in quire-rs:
 | FR-153-AC-9 | Forward trace on the counted obligation returns the record claim with its locators and provenance; inverse trace by the record or run locator returns the same claim; a source-symbol query for `<analysisKind>::<requestDigest>` returns no claim, and the id appearing in prose stays a citation. | Test |
 | FR-153-AC-10 | A `pass` report recorded without `--discharges` produces no claim for any obligation, even where its symbol or digest text equals an obligation id. | Test |
 | FR-153-AC-11 | A passing report stated with `--discharges` for an obligation whose declared method is Test yields `qualification-rejected` naming the method and act pairing premise, with an approved producer definition and every other premise admitted, and is not counted. | Test |
+| FR-153-AC-12 | `quoin matrix` and derived `quoin assurance` accept repeatable `--run-observation FILE` inputs using one `quoin.analysis-run-observation/v1` object per canonical run-record path; the inputs supply CI association, performed checkout SHA and actor-authority evidence without changing FR-030 records or output schema. | Test |
+| FR-153-AC-13 | An observation for another record cannot qualify the selected analysis result; the selected entry, obligation and declared method come from the canonical record and catalog; absent observations remain `unevaluated`; and no observation is reused by suite, symbol or request digest. | Test |
+| FR-153-AC-14 | Missing or malformed `selected_head` or `checkout_sha` remains `unevaluated` for performed revision; differing valid values yield `wrong-revision`; conflicting supplied `selected_head` values yield `record-conflict`; none produces `qualified-record`. | Test |
+| FR-153-AC-15 | An absent CI association or one with an empty member remains `unevaluated` for execution association; a manual association yields `qualification-rejected`; none produces `qualified-record`. | Test |
+| FR-153-AC-16 | Only an FR-116 `ActorAdmission` with string `actor` and `admission_ref` and string-array `authorized`, whose actor equals the complete FR-036 signature result's non-empty `signer.principal` for the commit that added the selected record, with `status` `signed_valid` and `signer.mapping` `mapped`, and whose authorization includes the selected obligation, satisfies actor authority; empty actor/reference or missing, malformed or unverifiable signature evidence remains `unevaluated`; empty or out-of-scope authorization, actor/principal mismatch, invalid, untrusted, unmapped or principal-less signatures are `qualification-rejected` naming actor authority. | Test |
+| FR-153-AC-17 | Invalid observation-file JSON/protocol, empty required `protocol` or `record`, wrongly typed or incomplete members, unknown members, empty/duplicate obligation ids, duplicate record selectors or selectors outside the selected canonical store are refused without a report that claims positive qualification; omitted observation files leave each affected result `unevaluated`. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-152](./FR-152-analysis-run-entry-link-to-obligation.md) (the stated obligation and binding),
   [FR-151](./FR-151-differential-report-v2-adapter.md), [FR-032](./FR-032-evidence-auditor.md),
+  [FR-115](./FR-115-evidence-backed-test-matrix.md) (matrix read path),
   [FR-116](./FR-116-owner-qualified-quire-evidence.md) (qualifier, planned) and
   [FR-093](./FR-093-evidence-producer-trust.md).
 - **Cross-repository**: quire-rs [FR-078](ix://agent-ix/quire-rs/FR-078), whose engine side is built
-  and unchanged here.
+  and unchanged here; engineering-assurance [FR-036](ix://agent-ix/engineering-assurance/FR-036) and FR-037
+  define the signature-result schema and mapped signer identity.
