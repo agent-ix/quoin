@@ -49,11 +49,11 @@ fn run(op: &str, stdin: &str) -> Run {
 fn request() -> Value {
     json!({
         "coverage": [{ "document": "spec/FR.md", "criteria": [
-            { "id": "FR-002-AC-1", "statement": "s", "method": "Test", "binders": [], "status": "untagged" },
-            { "id": "FR-001-AC-1", "statement": "s", "method": "Test", "binders": [
+            { "id": "FR-002-AC-1", "method": "Test", "binders": [], "status": "untagged" },
+            { "id": "FR-001-AC-1", "method": "Test", "binders": [
                 { "path": "t.rs", "line": 1, "column": 1, "qualified_name": "tc_1", "kind": "function" }
             ], "status": "tagged" },
-            { "id": "FR-001-AC-2", "statement": "s", "binders": [], "status": "untagged" },
+            { "id": "FR-001-AC-2", "binders": [], "unbacked_claims": [{ "reason": "unmarked-trace-id", "id": "FR-001-AC-2", "path": "tests/test_security.py", "line": 4, "symbol": "test_security_docstring_only" }], "status": "untagged" },
         ]}],
         "bindings": { "schemaVersion": 1, "bindings": [
             { "obligation": "FR-001-AC-1", "suite": "unit", "symbols": ["tc_1"] },
@@ -85,7 +85,7 @@ fn tc_1080_100_two_runs_over_one_input_emit_identical_canonical_bytes() {
             r#""evidence_detail":{"bindings":[{"suite":"unit"}],"findings":[],"unevaluated":[]},"#,
             r#""evidence_status":"bound","id":"FR-001-AC-1","method":"Test","static_status":"tagged"},"#,
             r#"{"binders":[],"evidence_detail":{"bindings":[],"findings":[],"unevaluated":[]},"#,
-            r#""evidence_status":"undischarged","id":"FR-001-AC-2","static_status":"untagged"}],"id":"FR-001"},"#,
+            r#""evidence_status":"undischarged","id":"FR-001-AC-2","static_status":"untagged","unbacked_claims":[{"id":"FR-001-AC-2","line":4,"path":"tests/test_security.py","reason":"unmarked-trace-id","symbol":"test_security_docstring_only"}]}],"id":"FR-001"},"#,
             r#"{"criteria":[{"binders":[],"evidence_detail":{"bindings":[{"suite":"unit"}],"#,
             r#""findings":[{"kind":"stale-evidence","summary":"behind HEAD"}],"unevaluated":[]},"#,
             r#""evidence_status":"stale","id":"FR-002-AC-1","method":"Test","static_status":"untagged"}],"id":"FR-002"}]}"#,
@@ -112,6 +112,11 @@ fn tc_1080_101_the_request_shape_is_enforced() {
         {
             let mut request = request();
             request["extra"] = json!(true);
+            request
+        },
+        {
+            let mut request = request();
+            request["coverage"][0]["criteria"][2]["unbacked_claims"][0]["unexpected"] = json!(true);
             request
         },
     ] {
