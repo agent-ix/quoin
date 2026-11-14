@@ -44,7 +44,7 @@ fn fixture(profile_name: &str, selected: &[(&str, &str, &str)], context: &str) -
             "nist.yaml",
             "nist",
             "sp800-53",
-            "  - id: AC-1\n    force: mandatory\n  - id: AC-2\n    force: mandatory\n    applicability: {op: eq, dimension: baseline, value: high}\n  - id: AC-3\n    force: mandatory\n    applicability: {op: eq, dimension: data_class, value: restricted}\n",
+            "  - id: AC-1\n    force: mandatory\n  - id: AC-2\n    force: mandatory\n  - id: AC-3\n    force: mandatory\n    applicability: {op: eq, dimension: baseline, value: high}\n  - id: PE-3\n    force: mandatory\n  - id: CP-9\n    force: mandatory\n    applicability: {op: eq, dimension: data_class, value: restricted}\n",
         ),
         (
             "owasp.yaml",
@@ -138,27 +138,54 @@ fn keys(report: &Value) -> Vec<String> {
         .collect()
 }
 
-#[trace("FR-171-AC-8", "FR-171-AC-9", "FR-171-AC-12")]
-#[test]
-fn fixture_a_evaluation_limits_mappings_to_binding_profile_clauses() {
-    let fixture = fixture(
-        "web-app-baseline",
-        &[("nist", "sp800-53", "5.2.0"), ("owasp", "asvs", "5.0.0")],
-        "  baseline: low\n  level: \"1\"\n",
-    );
-    let selection_before = std::fs::read(fixture.repo.join(".ix/source-profile.yaml")).unwrap();
-    let report = evaluate(&fixture);
-    assert_eq!(report["context"]["baseline"], "low");
-    assert_eq!(report["context"]["level"], "1");
-    assert_eq!(keys(&report), ["nist/sp800-53@5.2.0", "owasp/asvs@5.0.0"]);
+fn emitted_mapping_rows(profile: &str) -> Vec<(String, String)> {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/security-analysis-profile")
+        .join(profile)
+        .join("output/security");
+    let mut files: Vec<_> = std::fs::read_dir(&root)
+        .unwrap_or_else(|error| panic!("{}: {error}", root.display()))
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|extension| extension == "md"))
+        .collect();
+    files.sort();
+    files
+        .iter()
+        .flat_map(|path| {
+            let text = std::fs::read_to_string(path).unwrap();
+            let mut rows = mapping_rows(&text);
+            if text.contains("\n## Set\n") {
+                let set = text.split("\n## Set\n").nth(1).unwrap().lines().next().unwrap();
+                let clause = text
+                    .split("\n## Clause\n")
+                    .nth(1)
+                    .unwrap()
+                    .lines()
+                    .next()
+                    .unwrap()
+                    .trim_matches('`')
+                    .to_owned();
+                rows.push((set.trim_matches('`').to_owned(), clause));
+            }
+            rows
+        })
+        .collect()
+}
 
-    // These synthetic rows stand for the skill's mapping output. Each is
-    // checked against the evaluator's per-set oracle, including negative cases.
-    let mappings = [
-        ("nist/sp800-53@5.2.0", "AC-1"),
-        ("owasp/asvs@5.0.0", "V1.1.1"),
-    ];
-    for (key, clause) in mappings {
+fn emitted_text(profile: &str, relative: &str) -> String {
+    std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../tests/fixtures/security-analysis-profile")
+            .join(profile)
+            .join("output")
+            .join(relative),
+    )
+    .unwrap()
+}
+
+fn assert_emitted_mappings_are_binding(report: &Value, profile: &str) {
+    for (key, clause_id) in emitted_mapping_rows(profile) {
         let set = report["sets"]
             .as_array()
             .unwrap()
@@ -171,27 +198,43 @@ fn fixture_a_evaluation_limits_mappings_to_binding_profile_clauses() {
                     set["key"]["version"].as_str().unwrap()
                 ) == key
             })
-            .unwrap();
-        assert!(binding_ids(set).iter().any(|id| id == clause));
+            .unwrap_or_else(|| panic!("emitted mapping uses absent set {key}"));
+        assert!(
+            binding_ids(set).contains(&clause_id),
+            "emitted mapping {key} {clause_id} is not binding in evaluation"
+        );
     }
-    assert!(
-        !mappings
-            .iter()
-            .any(|(_, clause)| *clause == "AC-2" || *clause == "V1.1.2")
+}
+
+#[trace("FR-171-AC-8", "TC-003", "FR-171-AC-9", "TC-004", "FR-171-AC-12", "TC-005", "FR-171-AC-14", "TC-006")]
+#[test]
+fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_context() {
+    let fixture = fixture(
+        "web-app-baseline",
+        &[("nist", "sp800-53", "5.2.0"), ("owasp", "asvs", "5.0.0")],
+        "  baseline: low\n  level: \"1\"\n",
     );
-    let unresolved = report["sets"][0]["report"]["clauses"].as_array().unwrap();
-    assert!(
-        unresolved
-            .iter()
-            .any(|c| c["clauseId"] == "AC-3" && c["outcome"] == "unresolved")
-    );
+    let selection_before = std::fs::read(fixture.repo.join(".ix/source-profile.yaml")).unwrap();
+    let report = evaluate(&fixture);
+    assert_eq!(report["context"]["baseline"], "low");
+    assert_eq!(report["context"]["level"], "1");
+    assert_eq!(keys(&report), ["nist/sp800-53@5.2.0", "owasp/asvs@5.0.0"]);
+
+    let mappings = emitted_mapping_rows("a");
+    assert_emitted_mappings_are_binding(&report, "a");
+    for clause in ["AC-3", "CP-9", "V1.1.2", "V1.1.3"] {
+        assert!(!mappings.iter().any(|(_, id)| id == clause), "{clause} was mapped");
+    }
+    let review = emitted_text("a", "reviews/2026-11-13-security-control-mapping-gap-analysis.md");
+    assert!(review.contains("CP-9") && review.contains("`data_class`"));
+    assert!(review.contains("V1.1.3") && review.contains("`chapter`"));
     assert_eq!(
         std::fs::read(fixture.repo.join(".ix/source-profile.yaml")).unwrap(),
         selection_before
     );
 }
 
-#[trace("FR-171-AC-8", "FR-171-AC-13")]
+#[trace("FR-171-AC-8", "TC-003", "FR-171-AC-13", "TC-007")]
 #[test]
 fn fixture_b_owasp_only_profile_has_no_nist_mapping() {
     let fixture = fixture(
@@ -201,17 +244,14 @@ fn fixture_b_owasp_only_profile_has_no_nist_mapping() {
     );
     let report = evaluate(&fixture);
     assert_eq!(keys(&report), ["owasp/asvs@5.0.0"]);
-    let mappings = [("owasp/asvs@5.0.0", "V1.1.1")];
-    assert!(
-        mappings
-            .iter()
-            .all(|(key, clause)| key.starts_with("owasp/")
-                && binding_ids(&report["sets"][0]).contains(&clause.to_string()))
-    );
+    let mappings = emitted_mapping_rows("b");
+    assert_emitted_mappings_are_binding(&report, "b");
+    assert!(!mappings.is_empty());
+    assert!(mappings.iter().all(|(key, _)| key == "owasp/asvs@5.0.0"));
     assert!(!mappings.iter().any(|(key, _)| key.starts_with("nist/")));
 }
 
-#[trace("FR-171-AC-10")]
+#[trace("FR-171-AC-10", "TC-008")]
 #[test]
 fn unavailable_selected_set_does_not_stop_an_evaluated_binding_set() {
     let fixture = fixture(
@@ -238,7 +278,7 @@ fn unavailable_selected_set_does_not_stop_an_evaluated_binding_set() {
     assert!(skill.contains("continue mapping other evaluated sets"));
 }
 
-#[trace("FR-171-AC-11")]
+#[trace("FR-171-AC-11", "TC-009")]
 #[test]
 fn no_profile_instruction_stops_before_mapping_and_does_not_claim_defaults_are_installed() {
     let fixture = fixture("web-app-baseline", &[("nist", "sp800-53", "5.2.0")], "");
@@ -285,7 +325,7 @@ fn no_profile_instruction_stops_before_mapping_and_does_not_claim_defaults_are_i
     }
 }
 
-#[trace("FR-171-AC-9", "FR-171-AC-10", "FR-171-AC-14", "FR-171-AC-15")]
+#[trace("FR-171-AC-15", "TC-010")]
 #[test]
 fn skill_specifies_unresolved_unavailable_immutability_and_fail_closed_behavior() {
     let skill = std::fs::read_to_string(concat!(

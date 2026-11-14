@@ -28,7 +28,7 @@ Apply the clause sets named by the selected source profile whose evaluation is a
    - Identify component type and function
 
 2. **Identify Applicable Controls**
-   - Read [references/standards-index.md](references/standards-index.md) for standard selection
+   - Use [references/standards-index.md](references/standards-index.md) as secondary context for interpreting selected sources; it does not select sources
    - Select relevant chapters from the indexes for sets in the effective profile:
      - [nist-800-53/index.md](references/nist-800-53/index.md) → Control families
      - [owasp-asvs/index.md](references/owasp-asvs/index.md) → V1-V17 chapters
