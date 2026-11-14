@@ -331,7 +331,7 @@ fn tc_1080_201_renders_markdown_and_canonical_json_deterministically() {
 
 /// The CLI JSON render forwards Quire's unbacked claim diagnostics without
 /// changing their static status or binding list.
-#[trace("FR-115-AC-1", "FR-115-AC-10")]
+#[trace("FR-115-AC-1", "FR-115-AC-11")]
 #[test]
 fn tc_1080_207_json_forwards_unbacked_claims() {
     let fixture = repository(ROW_AWARE_MODULE);
