@@ -151,6 +151,7 @@ fn canonical_run_path(path: &str) -> bool {
 #[allow(
     clippy::expect_used,
     clippy::unwrap_used,
+    clippy::panic,
     reason = "test fixtures may panic"
 )]
 mod tests {
@@ -192,7 +193,7 @@ mod tests {
             ("assurance", crate::assurance::command()),
         ] {
             let matches = command
-                .try_get_matches_from(args.map(|argument| argument.to_owned()))
+                .try_get_matches_from(args.map(String::from))
                 .unwrap_or_else(|error| panic!("{name} accepts repeated observations: {error}"));
             assert_eq!(
                 matches
