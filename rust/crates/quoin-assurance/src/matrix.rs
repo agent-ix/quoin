@@ -15,7 +15,6 @@
 //! nothing here reads a disk, a clock or a repository (FR-115-CON-1).
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::fmt::Write as _;
 
 use quoin_evidence::types::BindingsFile;
 use quoin_finding_types::{AuditReport, Finding, FindingKind};
