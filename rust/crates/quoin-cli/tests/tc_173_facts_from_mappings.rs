@@ -63,22 +63,29 @@ fn exclusion(id: &str, set: &str, clause: &str) -> String {
         id,
         set,
         clause,
-        "delegated",
-        "ix://example.invalid/security-owner-001",
-        "APPROVAL-001",
-        None,
+        Disposition {
+            decision: "delegated",
+            owner: "ix://example.invalid/security-owner-001",
+            approval_ref: "APPROVAL-001",
+            expires_at: None,
+        },
     )
 }
 
-fn exclusion_with(
-    id: &str,
-    set: &str,
-    clause: &str,
-    decision: &str,
-    decision_owner: &str,
-    approval_ref: &str,
-    expires_at: Option<&str>,
-) -> String {
+struct Disposition<'a> {
+    decision: &'a str,
+    owner: &'a str,
+    approval_ref: &'a str,
+    expires_at: Option<&'a str>,
+}
+
+fn exclusion_with(id: &str, set: &str, clause: &str, disposition: Disposition<'_>) -> String {
+    let Disposition {
+        decision,
+        owner: decision_owner,
+        approval_ref,
+        expires_at,
+    } = disposition;
     let expiry = expires_at.map_or_else(String::new, |value| {
         format!("\n## Expires at\n\n`{value}`\n")
     });
@@ -568,10 +575,12 @@ fn tc_173_authored_accepted_risk_and_temporary_exception_are_preserved() {
                     "SCOPEX-001",
                     SET,
                     "C2",
-                    decision,
-                    "ix://example.invalid/security-owner-002",
-                    "APPROVAL-002",
-                    expiry,
+                    Disposition {
+                        decision,
+                        owner: "ix://example.invalid/security-owner-002",
+                        approval_ref: "APPROVAL-002",
+                        expires_at: expiry,
+                    },
                 ),
             )],
         );
@@ -672,8 +681,17 @@ fn tc_173_invalid_or_inconsistent_exclusion_dispositions_are_refused() {
         ),
     ];
     for (decision, owner, approval, expiry, missing_heading) in cases {
-        let mut artifact =
-            exclusion_with("SCOPEX-001", SET, "C2", decision, owner, approval, expiry);
+        let mut artifact = exclusion_with(
+            "SCOPEX-001",
+            SET,
+            "C2",
+            Disposition {
+                decision,
+                owner,
+                approval_ref: approval,
+                expires_at: expiry,
+            },
+        );
         if let Some(heading) = missing_heading {
             let start = artifact.find(&format!("## {heading}\n")).unwrap();
             let end = artifact[start..]
@@ -821,10 +839,12 @@ fn tc_173_each_authored_disposition_records_and_renders_as_tailored() {
                     "SCOPEX-001",
                     SET,
                     "C2",
-                    decision,
-                    "ix://example.invalid/security-owner-001",
-                    "APPROVAL-001",
-                    expiry,
+                    Disposition {
+                        decision,
+                        owner: "ix://example.invalid/security-owner-001",
+                        approval_ref: "APPROVAL-001",
+                        expires_at: expiry,
+                    },
                 ),
             )],
         );
