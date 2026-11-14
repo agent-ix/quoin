@@ -562,8 +562,8 @@ fn temporary_exception_shared_attestation_expiry_is_classified_as_expired() {
         .expect("the exception is open at its expiry boundary");
     assert_eq!(open.reason.as_deref(), Some("temporary exception expired"));
 
-    let mapping = build_requirements_mapping(&binding, &report)
-        .expect("one row per binding clause");
+    let mapping =
+        build_requirements_mapping(&binding, &report).expect("one row per binding clause");
     assert_eq!(
         mapping.rows[1].compliance,
         RmmCompliance::TemporaryExceptionExpired
