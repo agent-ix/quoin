@@ -1,5 +1,5 @@
 ---
-id: TC-010
+id: TC-012
 title: "Invalid profile evaluation stops analysis before mapping"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-010: Invalid profile evaluation stops analysis before mapping
+# TC-012: Invalid profile evaluation stops analysis before mapping
 
 ## Description
 

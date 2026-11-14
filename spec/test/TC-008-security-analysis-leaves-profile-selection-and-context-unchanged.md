@@ -1,5 +1,5 @@
 ---
-id: TC-006
+id: TC-008
 title: "Security analysis leaves profile selection and context unchanged"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-006: Security analysis leaves profile selection and context unchanged
+# TC-008: Security analysis leaves profile selection and context unchanged
 
 ## Description
 
@@ -20,4 +20,4 @@ Verify profile selection and context are unchanged across the live security-anal
 
 ## Expected Results
 
-For each live fixture run, before/after selection bytes and evaluated context are identical. The snapshots describe the same Codex runs whose controls, exclusions and SpecReviews are checked by TC-003 through TC-005 and TC-007.
+For each live fixture run, before/after selection bytes and evaluated context are identical. The snapshots describe the same Codex runs whose controls, exclusions and SpecReviews are checked by TC-005 through TC-007 and TC-009.

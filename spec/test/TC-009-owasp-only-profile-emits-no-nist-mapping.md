@@ -1,5 +1,5 @@
 ---
-id: TC-007
+id: TC-009
 title: "OWASP-only profile emits no NIST mapping"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-007: OWASP-only profile emits no NIST mapping
+# TC-009: OWASP-only profile emits no NIST mapping
 
 ## Description
 

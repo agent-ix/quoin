@@ -266,11 +266,11 @@ fn assert_emitted_mappings_are_binding(report: &Value, profile: &str) {
 
 #[trace(
     "FR-171-AC-8",
-    "TC-003",
+    "TC-005",
     "FR-171-AC-9",
-    "TC-004",
+    "TC-006",
     "FR-171-AC-12",
-    "TC-005"
+    "TC-007"
 )]
 #[test]
 fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_context() {
@@ -331,7 +331,7 @@ fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_contex
     );
 }
 
-#[trace("FR-171-AC-8", "TC-003", "FR-171-AC-13", "TC-007")]
+#[trace("FR-171-AC-8", "TC-005", "FR-171-AC-13", "TC-009")]
 #[test]
 fn fixture_b_owasp_only_profile_has_no_nist_mapping() {
     let fixture = fixture(
@@ -353,7 +353,7 @@ fn fixture_b_owasp_only_profile_has_no_nist_mapping() {
     assert!(!mappings.iter().any(|(key, _)| key.starts_with("nist/")));
 }
 
-#[trace("FR-171-AC-14", "TC-006")]
+#[trace("FR-171-AC-14", "TC-008")]
 #[test]
 fn live_fixture_skill_runs_preserve_selection_and_evaluated_context() {
     let state = skill_run_state_fixture();
@@ -382,7 +382,7 @@ fn live_fixture_skill_runs_preserve_selection_and_evaluated_context() {
     }
 }
 
-#[trace("FR-171-AC-10", "TC-008")]
+#[trace("FR-171-AC-10", "TC-010")]
 #[test]
 fn unavailable_selected_set_does_not_stop_an_evaluated_binding_set() {
     let fixture = fixture(
@@ -420,7 +420,7 @@ fn unavailable_selected_set_does_not_stop_an_evaluated_binding_set() {
     assert!(skill.contains("continue mapping other evaluated sets"));
 }
 
-#[trace("FR-171-AC-11", "TC-009")]
+#[trace("FR-171-AC-11", "TC-011")]
 #[test]
 fn no_profile_instruction_stops_before_mapping_and_does_not_claim_defaults_are_installed() {
     let fixture = fixture("web-app-baseline", &[("nist", "sp800-53", "5.2.0")], "");
@@ -467,7 +467,7 @@ fn no_profile_instruction_stops_before_mapping_and_does_not_claim_defaults_are_i
     }
 }
 
-#[trace("FR-171-AC-15", "TC-010")]
+#[trace("FR-171-AC-15", "TC-012")]
 #[test]
 fn skill_specifies_unresolved_unavailable_immutability_and_fail_closed_behavior() {
     let skill = std::fs::read_to_string(concat!(

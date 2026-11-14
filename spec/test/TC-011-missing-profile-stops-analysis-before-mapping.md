@@ -1,5 +1,5 @@
 ---
-id: TC-009
+id: TC-011
 title: "Missing profile stops analysis before mapping"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-009: Missing profile stops analysis before mapping
+# TC-011: Missing profile stops analysis before mapping
 
 ## Description
 

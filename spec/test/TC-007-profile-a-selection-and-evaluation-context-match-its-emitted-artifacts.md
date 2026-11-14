@@ -1,5 +1,5 @@
 ---
-id: TC-005
+id: TC-007
 title: "Profile A selection and evaluation context match its emitted artifacts"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-005: Profile A selection and evaluation context match its emitted artifacts
+# TC-007: Profile A selection and evaluation context match its emitted artifacts
 
 ## Description
 

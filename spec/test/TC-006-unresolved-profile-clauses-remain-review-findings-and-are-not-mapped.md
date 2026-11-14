@@ -1,5 +1,5 @@
 ---
-id: TC-004
+id: TC-006
 title: "Unresolved profile clauses remain review findings and are not mapped"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-004: Unresolved profile clauses remain review findings and are not mapped
+# TC-006: Unresolved profile clauses remain review findings and are not mapped
 
 ## Description
 

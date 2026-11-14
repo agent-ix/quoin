@@ -1,5 +1,5 @@
 ---
-id: TC-003
+id: TC-005
 title: "Profile A emitted mappings are binding clauses from selected sets"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-003: Profile A emitted mappings are binding clauses from selected sets
+# TC-005: Profile A emitted mappings are binding clauses from selected sets
 
 ## Description
 

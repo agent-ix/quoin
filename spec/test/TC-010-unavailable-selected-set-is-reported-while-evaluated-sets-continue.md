@@ -1,5 +1,5 @@
 ---
-id: TC-008
+id: TC-010
 title: "Unavailable selected set is reported while evaluated sets continue"
 type: TC
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: verifies
 ---
 
-# TC-008: Unavailable selected set is reported while evaluated sets continue
+# TC-010: Unavailable selected set is reported while evaluated sets continue
 
 ## Description
 
