@@ -183,6 +183,9 @@ fn parse_activities(
     for value in &floors.obligations {
         let activity: Activity = serde_json::from_value(value.clone())
             .map_err(|error| format!("class `{class}` obligation entry is invalid: {error}"))?;
+        if activity.id.trim().is_empty() {
+            return Err(format!("class `{class}` obligation id must not be empty"));
+        }
         if !ids.insert(activity.id.clone()) {
             return Err(format!(
                 "class `{class}` has duplicate obligation id `{}`",
@@ -422,6 +425,9 @@ fn render_markdown(rows: &Rows) -> String {
         let id = value_string(requirement, "requirement");
         let class = value_string(requirement, "class");
         if let Some(activities) = requirement.get("activities").and_then(Value::as_array) {
+            if activities.is_empty() {
+                lines.push(format!("| {id} | {class} |  |  |  |"));
+            }
             for activity in activities {
                 let missing = activity
                     .get("missing")
@@ -548,6 +554,11 @@ mod tests {
                 .contains("undeclared method")
         );
         assert!(
+            parse(json!({"id":"","kind":"design-trace"}))
+                .unwrap_err()
+                .contains("must not be empty")
+        );
+        assert!(
             parse_activities(
                 "class-3",
                 &floors(vec![
@@ -595,6 +606,7 @@ mod tests {
         assert_eq!(rows.requirements[0]["activities"], json!([]));
         assert_eq!(rows.unconfigured, ["spec/FR-2.md"]);
         assert_eq!(rows.unassigned, ["spec/FR-3.md"]);
+        assert!(render_markdown(&rows).contains("| spec/FR-1.md | class-1 |  |  |  |"));
         let serialized = serde_json::to_string(&json!({"requirements":rows.requirements,"unassigned":rows.unassigned,"unconfigured":rows.unconfigured})).unwrap();
         for forbidden in ["score", "rank", "verdict", "approval", "recommendation"] {
             assert!(!serialized.contains(forbidden), "{serialized}");
