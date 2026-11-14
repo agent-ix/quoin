@@ -72,6 +72,9 @@ pub struct MatrixCoverageRequirement {
 pub struct MatrixCoverageCriterion {
     /// The criterion identifier.
     pub id: String,
+    /// Quire's source statement, retained in the reader shape but not rendered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub statement: Option<String>,
     /// The declared verification method, omitted when absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
