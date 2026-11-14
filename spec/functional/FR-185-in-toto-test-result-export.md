@@ -64,12 +64,14 @@ which this requirement adopts unchanged. The predicate fields conform to the
   support that obligation. An entry for the symbol with absent, empty, or
   non-matching `traceIds` SHALL NOT by itself satisfy the binding. If the
   symbol is present but no entry relates it to the obligation, Quoin SHALL
-  classify the obligation as stale and put it in `failedTests`. A missing
-  symbol entry remains incomplete evidence and Quoin SHALL classify it in
-  `warnedTests` under the existing rule. Run records without `traceIds` remain
-  readable, but an existing bound symbol in such a record cannot satisfy this
-  relation. This rule does not change the existing missing-run, failed-symbol,
-  skipped-symbol, or duplicate-outcome rules.
+  classify the obligation as stale and put it in `failedTests`, not
+  `passedTests` or `warnedTests`. This failure is represented in the Test
+  Result and does not make an otherwise readable run record an invalid
+  evidence store. A missing symbol entry remains incomplete evidence and Quoin
+  SHALL classify it in `warnedTests` under the existing rule. Run records
+  without `traceIds` remain readable, but an existing bound symbol in such a
+  record cannot satisfy this relation. This rule does not change the existing
+  missing-run, failed-symbol, skipped-symbol, or duplicate-outcome rules.
 - Quoin SHALL reuse the stale-evidence conditions of
   `quoin-auditor::audit::stale::FindingKind::STALE_EVIDENCE`. A bound suite
   without a recorded run, or a latest bound-symbol outcome of `fail` or
@@ -81,12 +83,6 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - If an obligation is stale under the
   `quoin-auditor::audit::stale::FindingKind::STALE_EVIDENCE` conditions, then
   Quoin SHALL put it in `failedTests`.
-- If a bound symbol is present in its selected run but no entry for that symbol
-  names the binding's obligation in `traceIds`, Quoin SHALL treat that missing
-  evidence relation as stale and put the obligation in `failedTests`; it SHALL
-  not classify that obligation as passed or warned. This relation failure is
-  represented in the Test Result and does not make an otherwise readable run
-  record an invalid evidence store.
 - When an obligation is not stale and any bound symbol has outcome `skip` or
   is absent from its run, Quoin SHALL put it in `warnedTests`. If a run contains
   more than one entry for a bound symbol, any `skip` entry warns the obligation
