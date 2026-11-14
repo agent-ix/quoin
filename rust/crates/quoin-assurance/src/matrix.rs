@@ -258,6 +258,9 @@ const SUSPECT_KINDS: [&str; 3] = [
     FindingKind::VACUOUS_EVIDENCE,
 ];
 
+type DesignSource = (Option<String>, String, Vec<serde_json::Value>);
+type DesignSources = BTreeMap<String, Vec<DesignSource>>;
+
 /// A finding kind's precedence bucket: 0 suspect, 1 stale, 2 everything else.
 ///
 /// Everything else includes a kind the auditor adds later: `Finding::kind` is
@@ -279,6 +282,10 @@ pub(crate) fn bucket(kind: &str) -> u8 {
 ///
 /// [`ContradictoryAudit`] when `audit` names one id in `healthy` and in a
 /// finding or unevaluated check. No partial matrix is produced.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one pure projection joins the audit and evidence fields with the optional design axis"
+)]
 pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
     let healthy: BTreeSet<&str> = input.audit.healthy.iter().map(String::as_str).collect();
     if let Some(obligation) = input
@@ -331,8 +338,7 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
     let classes = class_report.and_then(|report| report.get("classes"));
 
     let mut grouped: BTreeMap<String, Vec<MatrixCriterion>> = BTreeMap::new();
-    let mut designs: BTreeMap<String, Vec<(Option<String>, String, Vec<serde_json::Value>)>> =
-        BTreeMap::new();
+    let mut designs: DesignSources = BTreeMap::new();
     if input.design_coverage.is_none() {
         for criterion in input
             .coverage
@@ -379,12 +385,12 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
                     ));
                 }
             }
-            if entry.criteria.is_empty() {
-                if let Some(id) = &entry.id {
-                    grouped
-                        .entry(crate::requirement_of(id).to_owned())
-                        .or_default();
-                }
+            if entry.criteria.is_empty()
+                && let Some(id) = &entry.id
+            {
+                grouped
+                    .entry(crate::requirement_of(id).to_owned())
+                    .or_default();
             }
             for criterion in &entry.criteria {
                 add_criterion(
@@ -426,8 +432,8 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
             });
             MatrixRequirement {
                 id,
-                criteria,
                 design,
+                criteria,
             }
         })
         .collect();
@@ -641,8 +647,8 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
         .iter()
         .any(|requirement| requirement.design.is_some());
     for requirement in &matrix.requirements {
-        let _ = write!(out, "\n## {}\n", cell(&requirement.id),);
-        for block in blocks_with_state(&requirement.design, "uncovered") {
+        let _ = write!(out, "\n## {}\n", cell(&requirement.id));
+        for block in blocks_with_state(requirement.design.as_ref(), "uncovered") {
             if let Some(check) = block.get("check").and_then(serde_json::Value::as_str) {
                 let _ = writeln!(out, "\nDesign gap: no design element ({check})");
             }
@@ -710,11 +716,11 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
 }
 
 fn blocks_with_state<'a>(
-    design: &'a Option<Vec<serde_json::Value>>,
+    design: Option<&'a Vec<serde_json::Value>>,
     state: &str,
 ) -> impl Iterator<Item = &'a serde_json::Value> {
     design
-        .iter()
+        .into_iter()
         .flatten()
         .filter(move |block| block.get("state").and_then(serde_json::Value::as_str) == Some(state))
 }
