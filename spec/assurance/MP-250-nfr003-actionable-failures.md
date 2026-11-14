@@ -36,6 +36,7 @@ statistical_design:
       - "catalog validate:duplicate-type"
       - "catalog validate:unknown-flag"
       - "catalog:unknown-flag"
+      - "class:unknown-flag"
       - "catalog:unknown-subcommand"
       - "change-assurance intake:missing-argument"
       - "change-assurance intake:unknown-flag"
