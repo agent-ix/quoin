@@ -672,11 +672,11 @@ fn association_and_engine_observations_are_premises_of_the_decision() {
     // observation of a solver it started.
     for (change, label) in [
         (
-            (&["engines", "1", "identity_version"][..], Value::Null),
+            (&["engines", "1", "identity_version"][..], Value::from("")),
             "identity_version",
         ),
         (
-            (&["engines", "1", "identity_path"][..], Value::Null),
+            (&["engines", "1", "identity_path"][..], Value::from("")),
             "identity_path",
         ),
         (
@@ -815,11 +815,20 @@ fn a_later_run_supersedes_a_pass_whatever_the_supply_order() {
 fn equal_timestamps_are_ordered_by_file_name() {
     let store = pass_then(Some(Outcome::Fail));
     let mut runs = store.runs();
-    runs[1].record.timestamp = runs[0].record.timestamp.clone();
-    // The failing run's file name sorts after the passing run's, so it decides;
-    // swap the names and the pass decides again.
-    runs[0].file = "runs/SUITE-A/a.json".to_owned();
-    runs[1].file = "runs/SUITE-A/b.json".to_owned();
+    // Two RFC-3339 spellings name the same instant but derive different
+    // canonical record paths. The encoded `+00:00` key sorts after the `Z` key.
+    runs[0].record.timestamp = "2026-11-13T10:00:00Z".to_owned();
+    runs[0].file = quoin_evidence::paths::record_path(
+        "runs",
+        &SuiteId::new("SUITE-A"),
+        &runs[0].record.timestamp,
+    );
+    runs[1].record.timestamp = "2026-11-13T10:00:00+00:00".to_owned();
+    runs[1].file = quoin_evidence::paths::record_path(
+        "runs",
+        &SuiteId::new("SUITE-A"),
+        &runs[1].record.timestamp,
+    );
     let failing_last = count(runs.clone(), store.bindings(), &[AC1], admitted());
     assert_eq!(counted(&failing_last), 0);
     assert!(
@@ -832,9 +841,20 @@ fn equal_timestamps_are_ordered_by_file_name() {
     let supplied_reversed = count(runs.clone(), store.bindings(), &[AC1], admitted());
     assert_eq!(causes(&failing_last), causes(&supplied_reversed));
 
-    // After the reversal the failing run is first; rename so the pass sorts last.
-    runs[0].file = "runs/SUITE-A/a.json".to_owned();
-    runs[1].file = "runs/SUITE-A/c.json".to_owned();
+    // Reverse the timestamp spellings so the passing record's canonical path
+    // sorts last.
+    runs[0].record.timestamp = "2026-11-13T10:00:00+00:00".to_owned();
+    runs[0].file = quoin_evidence::paths::record_path(
+        "runs",
+        &SuiteId::new("SUITE-A"),
+        &runs[0].record.timestamp,
+    );
+    runs[1].record.timestamp = "2026-11-13T10:00:00Z".to_owned();
+    runs[1].file = quoin_evidence::paths::record_path(
+        "runs",
+        &SuiteId::new("SUITE-A"),
+        &runs[1].record.timestamp,
+    );
     let passing_last = count(runs, store.bindings(), &[AC1], admitted());
     assert_eq!(counted(&passing_last), 1);
 }
