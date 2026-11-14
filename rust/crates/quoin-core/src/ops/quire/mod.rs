@@ -119,6 +119,9 @@ pub fn coverage(
 }
 
 /// Answer a `quire.design_join` over the same scope and modules as coverage.
+///
+/// # Errors
+/// Returns the normal request, host-grant, path-bound, or engine error.
 pub fn design_join(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,

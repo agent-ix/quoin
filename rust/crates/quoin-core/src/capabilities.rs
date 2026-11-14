@@ -323,6 +323,9 @@ pub trait QuireHost {
     ) -> Result<quoin_quire::coverage::Outcome, quoin_quire::Error>;
 
     /// The FR-086 design relation join for the same scope and module set.
+    ///
+    /// # Errors
+    /// Whatever the linked engine returns for the scope, modules, or relations.
     fn design_join(
         &self,
         scope: &Path,
