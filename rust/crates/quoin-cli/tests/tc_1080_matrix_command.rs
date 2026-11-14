@@ -304,7 +304,7 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
 
 /// Markdown by default, canonical JSON under `--json`, both byte-identical
 /// across two runs.
-#[trace("FR-115-AC-10", "FR-115-AC-11")]
+#[trace("FR-115-AC-11")]
 #[test]
 fn tc_1080_201_renders_markdown_and_canonical_json_deterministically() {
     let fixture = populated();
