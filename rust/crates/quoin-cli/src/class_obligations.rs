@@ -418,15 +418,15 @@ fn string<'a>(value: &'a Value, key: &str) -> Result<&'a str, String> {
 
 fn render_markdown(rows: &Rows) -> String {
     let mut lines = vec![
-        "| Requirement | Class | Activity | Status | Missing obligations |".to_owned(),
-        "|---|---|---|---|---|".to_owned(),
+        "| Requirement | Class | Activity | Kind | Method | Status | Reason | Missing obligations |".to_owned(),
+        "|---|---|---|---|---|---|---|---|".to_owned(),
     ];
     for requirement in &rows.requirements {
         let id = value_string(requirement, "requirement");
         let class = value_string(requirement, "class");
         if let Some(activities) = requirement.get("activities").and_then(Value::as_array) {
             if activities.is_empty() {
-                lines.push(format!("| {id} | {class} |  |  |  |"));
+                lines.push(format!("| {id} | {class} |  |  |  |  |  |  |"));
             }
             for activity in activities {
                 let missing = activity
@@ -437,8 +437,11 @@ fn render_markdown(rows: &Rows) -> String {
                     .filter_map(Value::as_str)
                     .collect::<Vec<_>>()
                     .join(", ");
+                let kind = value_string(activity, "kind");
+                let method = value_string(activity, "method");
+                let reason = value_string(activity, "reason");
                 lines.push(format!(
-                    "| {id} | {class} | {} | {} | {missing} |",
+                    "| {id} | {class} | {} | {kind} | {method} | {} | {reason} | {missing} |",
                     value_string(activity, "id"),
                     value_string(activity, "status")
                 ));
@@ -446,10 +449,10 @@ fn render_markdown(rows: &Rows) -> String {
         }
     }
     for id in &rows.unassigned {
-        lines.push(format!("| {id} | unassigned |  |  |  |"));
+        lines.push(format!("| {id} | unassigned |  |  |  |  |  |  |"));
     }
     for id in &rows.unconfigured {
-        lines.push(format!("| {id} | unconfigured |  |  |  |"));
+        lines.push(format!("| {id} | unconfigured |  |  |  |  |  |  |"));
     }
     lines.join("\n")
 }
@@ -530,7 +533,10 @@ mod tests {
         assert_eq!(rows.unassigned, ["spec/FR-2.md"]);
         let first = render_markdown(&rows);
         assert_eq!(first, render_markdown(&rows));
-        assert!(first.contains("| unit | met |"), "{first}");
+        assert!(
+            first.contains("| unit | evidence | unit-testing | met |  |  |"),
+            "{first}"
+        );
     }
 
     #[trace("FR-161-AC-8")]
@@ -606,7 +612,7 @@ mod tests {
         assert_eq!(rows.requirements[0]["activities"], json!([]));
         assert_eq!(rows.unconfigured, ["spec/FR-2.md"]);
         assert_eq!(rows.unassigned, ["spec/FR-3.md"]);
-        assert!(render_markdown(&rows).contains("| spec/FR-1.md | class-1 |  |  |  |"));
+        assert!(render_markdown(&rows).contains("| spec/FR-1.md | class-1 |  |  |  |  |  |  |"));
         let serialized = serde_json::to_string(&json!({"requirements":rows.requirements,"unassigned":rows.unassigned,"unconfigured":rows.unconfigured})).unwrap();
         for forbidden in ["score", "rank", "verdict", "approval", "recommendation"] {
             assert!(!serialized.contains(forbidden), "{serialized}");

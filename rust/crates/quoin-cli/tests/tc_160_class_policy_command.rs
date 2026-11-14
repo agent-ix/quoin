@@ -73,6 +73,33 @@ safety_class: class-2
 | FR-001-AC-2 | The reader shall refuse a payload over its ceiling. |  |
 ";
 
+const CLASSED_WITH_DESIGN: &str = "---
+id: FR-001
+type: FR
+title: Classed
+safety_class: class-2
+relationships:
+  - target: DESIGN-001
+    type: designs
+---
+
+## Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| FR-001-AC-1 | Every stored payload shall round-trip through the reader unchanged. |  |
+| FR-001-AC-2 | The reader shall refuse a payload over its ceiling. |  |
+";
+
+const DESIGN: &str = "---
+id: DESIGN-001
+type: Design
+title: Design for FR-001
+---
+
+# Design
+";
+
 const UNCLASSED: &str = "---
 id: FR-002
 type: FR
@@ -166,6 +193,19 @@ fn repository() -> Fixture {
     fixture.write("spec/FR-002-unclassed.md", UNCLASSED);
     fixture.write("policy.yaml", POLICY);
     fixture
+}
+
+fn enable_design_relation(fixture: &Fixture) {
+    let module = MODULE
+        .replace(
+            "      id_pattern: FR-{next:03d}\ntraceability:\n",
+            "      id_pattern: FR-{next:03d}\n  - name: Design\n    defaults:\n      id_pattern: DESIGN-{next:03d}\nedge_types:\n  designs: { description: requirement is realized by design, category: traceability, inverse: designed_by }\ntraceability:\n",
+        )
+        .replace(
+            "  carried_fields:\n",
+            "  required_relations:\n    - name: fr-has-design\n      from: FR\n      edges: [designs]\n      to: [Design]\n      direction: outgoing\n      check: fr-needs-design\n  design_relations: [fr-has-design]\n  carried_fields:\n",
+        );
+    fixture.write("manifest.yaml", &module);
 }
 
 fn audit_json(fixture: &Fixture, extra: &[&str]) -> Value {
@@ -345,7 +385,10 @@ fn tc_160_304_two_runs_are_identical_and_write_no_file() {
     "FR-161-AC-5",
     "FR-161-AC-6",
     "FR-161-AC-9",
-    "FR-161-CON-1"
+    "FR-161-CON-1",
+    "NFR-034-M-1",
+    "NFR-034-M-2",
+    "NFR-034-M-3"
 )]
 #[test]
 fn tc_161_001_class_obligations_reuses_the_audit_policy_without_writing() {
@@ -370,7 +413,14 @@ fn tc_161_001_class_obligations_reuses_the_audit_policy_without_writing() {
     let requirement = report["requirements"].as_array().unwrap().first().unwrap();
     assert_eq!(requirement["class"], "class-2");
     let activities = requirement["activities"].as_array().unwrap();
+    assert_eq!(activities[0]["kind"], "design-trace", "{report}");
+    assert_eq!(
+        activities[0]["reason"], "design join has no relations",
+        "{report}"
+    );
     assert_eq!(activities[0]["status"], "not-available");
+    assert_eq!(activities[1]["kind"], "evidence", "{report}");
+    assert_eq!(activities[1]["method"], "unit-testing", "{report}");
     assert_eq!(activities[1]["status"], "unmet");
     assert_eq!(
         activities[1]["missing"],
@@ -393,7 +443,15 @@ fn tc_161_001_class_obligations_reuses_the_audit_policy_without_writing() {
         "policy.yaml",
     ]);
     assert!(
-        markdown.contains("| unit-evidence | unmet | FR-001-AC-1, FR-001-AC-2 |"),
+        markdown.contains(
+            "| unit-evidence | evidence | unit-testing | unmet |  | FR-001-AC-1, FR-001-AC-2 |"
+        ),
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains(
+            "| design | design-trace |  | not-available | design join has no relations |  |"
+        ),
         "{markdown}"
     );
     let repeat = fixture.ok(&[
@@ -413,4 +471,60 @@ fn tc_161_001_class_obligations_reuses_the_audit_policy_without_writing() {
         policy_before
     );
     assert_eq!(fixture.files(), files_before);
+}
+
+/// The shipped command assembles the real FR-086 design join and FR-160 evidence audit.
+#[trace("FR-161-AC-1")]
+#[test]
+fn tc_161_002_command_joins_covered_design_and_present_evidence() {
+    let fixture = repository();
+    enable_design_relation(&fixture);
+    fixture.write("spec/FR-001-classed.md", CLASSED_WITH_DESIGN);
+    fixture.write("spec/DESIGN-001.md", DESIGN);
+    fixture.write(
+        "spec/evidence/bindings.json",
+        r#"{"schemaVersion":1,"bindings":[{"obligation":"FR-001-AC-1","suite":"SUITE-1","symbols":["tests::classed"]},{"obligation":"FR-001-AC-2","suite":"SUITE-1","symbols":["tests::classed"]}]}"#,
+    );
+    fixture.write(
+        "spec/evidence/runs/SUITE-1/run.json",
+        r#"{"schemaVersion":1,"suite":"SUITE-1","tool":"fixture","evidenceKind":"test-run","timestamp":"2026-11-13T00:00:00Z","entries":[{"symbol":"tests::classed","outcome":"pass","traceIds":["FR-001-AC-1","FR-001-AC-2"]}]}"#,
+    );
+
+    let json = fixture.ok(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        "policy.yaml",
+        "--format",
+        "json",
+    ]);
+    let report: Value = serde_json::from_str(&json).unwrap();
+    let requirement = report["requirements"].as_array().unwrap().first().unwrap();
+    let activities = requirement["activities"].as_array().unwrap();
+    assert_eq!(activities[0]["kind"], "design-trace", "{report}");
+    assert_eq!(activities[0]["status"], "met", "{report}");
+    assert_eq!(activities[1]["kind"], "evidence", "{report}");
+    assert_eq!(activities[1]["method"], "unit-testing", "{report}");
+    assert_eq!(activities[1]["status"], "met", "{report}");
+
+    let markdown = fixture.ok(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        "policy.yaml",
+    ]);
+    assert!(
+        markdown.contains("| design | design-trace |  | met |  |  |"),
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains("| unit-evidence | evidence | unit-testing | met |  |  |"),
+        "{markdown}"
+    );
 }
