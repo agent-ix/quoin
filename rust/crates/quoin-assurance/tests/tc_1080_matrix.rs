@@ -129,7 +129,7 @@ fn analysis_evidence_joins_only_the_exact_target_and_renders_every_item() {
             }]
         }],
         "bindings": {"schemaVersion": 1, "bindings": [binding("FR-001-AC-1", "unit")]},
-        "audit": audit(&[], &[], &[]),
+        "audit": audit(&[], &["FR-001-AC-1"], &[]),
         "analysis_evidence": {
             "record_binders": [record_binder, wrong_target_binder],
             "evidence_results": [result]
