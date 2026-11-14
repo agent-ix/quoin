@@ -423,7 +423,7 @@ fn tc_1080_207_undeclared_design_relation_does_not_fall_back() {
 fn tc_1080_208_matrix_has_no_strict_flag() {
     let fixture = repository(MODULE);
     let output = fixture.quoin(&["matrix", "--module", ".", "--strict"]);
-    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(output.status.code(), Some(3));
     assert!(String::from_utf8_lossy(&output.stderr).contains("unexpected argument"));
 }
 

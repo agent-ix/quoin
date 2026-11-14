@@ -119,7 +119,6 @@ pub struct MatrixCriterion {
 
 /// One quire-rs `design_matrix` entry at the `matrix.build` boundary.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct MatrixCoverageEntry {
     /// Scope-relative source document.
     pub document: String,
@@ -138,7 +137,6 @@ pub struct MatrixCoverageEntry {
 
 /// A coverage criterion with its optional design-element references.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct MatrixCoverageCriterion {
     /// Coverage criterion fields emitted by quire-rs.
     #[serde(flatten)]

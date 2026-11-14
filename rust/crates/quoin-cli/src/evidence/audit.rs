@@ -124,10 +124,12 @@ fn assemble_with_coverage_operation(
     coverage_operation: &str,
 ) -> Result<Assembly, String> {
     let modules = options.modules.clone();
-    let coverage = invoke(
-        coverage_operation,
-        &serde_json::json!({ "scope": repo, "modules": modules }),
-    )?;
+    let coverage_request = &serde_json::json!({ "scope": repo, "modules": modules });
+    let coverage = if coverage_operation == "quire.design_matrix" {
+        crate::core_runtime::invoke_declining(coverage_operation, coverage_request)?
+    } else {
+        invoke(coverage_operation, coverage_request)?
+    };
     if !coverage.outcome.carries_payload() {
         return Ok(Assembly::Declined(coverage));
     }
