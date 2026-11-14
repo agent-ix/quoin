@@ -2,7 +2,7 @@
 
 `contract-conformance-traces-real.jsonl` is one byte-exact row, selected by
 `fixture_id: package-invalid-namespace`, from the output of the
-`quire-contract-conformance` runner over the `agent-ix/quire-contract-ir`
+`filament-contract-conformance` runner over the `agent-ix/filament-contract-ir`
 contract corpus.
 The row carries `trace_ids`; the older `contract-conformance-real.jsonl`
 remains the compatibility fixture for producers omitting that optional field.
@@ -14,7 +14,7 @@ row from the native IR runner.
 This candidate validates coverage-token-to-criterion ownership before execution;
 the sample names FR-011-AC-3 and FR-018-AC-1, not operation-wide Test Case aliases.
 The requirement documents it names (`FR-011-AC-3`, `FR-018-AC-1`) are owned by
-`agent-ix/quire-contract-ir`; quoin keeps no copy of them. TC-1587 is unbacked until
+`agent-ix/filament-contract-ir`; quoin keeps no copy of them. TC-1587 is unbacked until
 a native test reads them from that repository.
 Candidate integration is demonstrated; final producer acceptance and release
 qualification remain open.

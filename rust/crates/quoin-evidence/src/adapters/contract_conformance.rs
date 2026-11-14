@@ -3,8 +3,8 @@
 
 //! Contract conformance JSONL — one replayed corpus fixture per line.
 //!
-//! Produced by `quire-contract-conformance run --manifest <corpus>` in
-//! `agent-ix/quire-contract-ir`. The runner replays a pinned corpus and reports
+//! Produced by `filament-contract-conformance run --manifest <corpus>` in
+//! `agent-ix/filament-contract-ir`. The runner replays a pinned corpus and reports
 //! whether each fixture's canonicalization matched; it decides nothing about
 //! sufficiency, and neither does this.
 //!
@@ -25,7 +25,7 @@ use crate::types::{Outcome, RunEntry};
 /// different protocol would parse just as cleanly and mean something else, and
 /// a conformance run is exactly the place where a silently-misread row becomes
 /// a passing fixture that was never checked.
-pub const PROTOCOL: &str = "quire.contract.conformance-jsonl/v1";
+pub const PROTOCOL: &str = "filament.contract.conformance-jsonl/v1";
 
 /// Every status the protocol declares. An unknown one is refused, not skipped.
 ///

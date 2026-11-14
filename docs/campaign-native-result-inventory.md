@@ -11,7 +11,7 @@ verdict the producer never made.
 
 ## Repositories surveyed
 
-`quire-contract-ir`, `quire-contract-runtime`, `quire-contract-codegen`,
+`filament-contract-ir`, `filament-contract-runtime`, `filament-contract-codegen`,
 `quire-analyze`, `tl-syntax`, `tl-parse`, `tl-mltl`, `tl-rewrite`, each read at
 its `origin/main`.
 
@@ -22,13 +22,13 @@ its `origin/main`.
 | JUnit-compatible test reports     | every repository's `cargo test`, via a JUnit emitter                                                                            | **Covered** by `junit`                                                                            |
 | SARIF                             | not currently emitted by any of the eight                                                                                       | **Covered** by `sarif` when one does                                                              |
 | cargo-mutants                     | mutation runs in the Rust repositories                                                                                          | **Covered** by `cargo-mutants`                                                                    |
-| Audit-script / normalized entries | `scripts/check_unsafe_comments.sh`, `check_panic_surface.sh`, `check_linked_footprint.sh` in `quire-contract-runtime` and peers | **Covered** by `audit-script`                                                                     |
+| Audit-script / normalized entries | `scripts/check_unsafe_comments.sh`, `check_panic_surface.sh`, `check_linked_footprint.sh` in `filament-contract-runtime` and peers | **Covered** by `audit-script`                                                                     |
 | Advisory scans                    | `cargo audit`, `cargo deny`                                                                                                     | **Covered** by `cargo-audit` and `cargo-deny`                                                                   |
-| Measurements                      | `scripts/measure_rlib_size.sh` in `quire-contract-runtime`                                                                      | **Covered** by `quoin measurement record`; not an adapter concern                                 |
-| Contract conformance JSONL        | `quire-contract-conformance run --manifest` in `quire-contract-ir`                                                              | **Adapter added** — `contract-conformance`                                                        |
+| Measurements                      | `scripts/measure_rlib_size.sh` in `filament-contract-runtime`                                                                      | **Covered** by `quoin measurement record`; not an adapter concern                                 |
+| Contract conformance JSONL        | `filament-contract-conformance run --manifest` in `filament-contract-ir`                                                              | **Adapter added** — `contract-conformance`                                                        |
 | Differential reports              | `quire-analyze run-package` (`quire.differential-report/v2`)                                                                   | **Adapter added** — `differential-report`                                                         |
 | tl-mltl live differential outputs | `tl-mltl.r2u2-past-differential/v1`, `tl-mltl.r2u2-future-differential/v1` (`src/r2u2_live.rs`), `tl-mltl.campaign-run/v1` (`src/campaign.rs`) in `tl-mltl` | **Not covered** — `differential-report` does not read them; a reader needs its own ticket and a captured sample |
-| Corpus reports                    | `corpus/*/manifest.json` in `quire-contract-ir` and `tl-mltl`                                                                   | **Out of scope** — a corpus manifest is a verification _definition_, owned by Quire, not a result |
+| Corpus reports                    | `corpus/*/manifest.json` in `filament-contract-ir` and `tl-mltl`                                                                   | **Out of scope** — a corpus manifest is a verification _definition_, owned by Quire, not a result |
 | Kani outputs                      | none of the eight runs Kani today                                                                                               | **No adapter** — nothing to pin                                                                   |
 | Solver analysis reports           | `quire-analyze run-package`                                                                                                     | **Covered** by `differential-report` (FR-151)                                                     |
 | Counterexamples                   | retained inside the v2 report as engine model bytes                                                                              | **Not transcribed** — the adapter decodes no raw solver output (FR-151)                           |
@@ -44,7 +44,7 @@ that is the ticket to reopen.
 
 ### `contract-conformance`
 
-- **Producer** — `quire-contract-conformance run --manifest corpus/contract-v0.1/manifest.json`, `agent-ix/quire-contract-ir`.
+- **Producer** — `filament-contract-conformance run --manifest corpus/contract-v0.1/manifest.json`, `agent-ix/filament-contract-ir`.
 - **Sample** — `tests/fixtures/evidence/contract-conformance-real.jsonl`: seven rows of a real 99-row run, each line unedited, spanning all four operations (`package`, `expression`, `coverage`, `migration`) and both valid and invalid fixtures.
 - **Governed target record** — `RunRecord` entries, one per replayed fixture.
 - **Why nothing existing represents it** — it is JSONL, one object per line. `entries` requires a single object with an `entries` array; `junit` requires XML. The finding-shaped adapters would write it into `findings/`, which loses the clean-versus-unrun distinction FR-034 exists to make.

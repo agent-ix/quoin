@@ -25,10 +25,10 @@ fn full() -> Value {
         "contract": INTAKE_CONTRACT,
         "integration": "IT-002",
         "scenario": "IT-002-SC-07a",
-        "resolution": {"kind": "full", "entries": [entry("qobs"), entry("qsl")]},
+        "resolution": {"kind": "full", "entries": [entry("fobs"), entry("fsl")]},
         "valueOwners": [{
-            "value": "obs-1", "owner": "qobs",
-            "contractVersion": "v1", "revision": "qobs-rev"
+            "value": "obs-1", "owner": "fobs",
+            "contractVersion": "v1", "revision": "fobs-rev"
         }],
         "outcome": {
             "operation": "assessed",
@@ -68,8 +68,8 @@ fn partial_and_legacy_shapes_are_admitted_without_a_full_manifest() {
     let mut partial = full();
     partial["resolution"] = json!({
         "kind": "partial",
-        "reached": [entry("qobs")],
-        "causingEntry": {"owner": "qsl", "contractVersion": "v1", "reason": "unresolved"}
+        "reached": [entry("fobs")],
+        "causingEntry": {"owner": "fsl", "contractVersion": "v1", "reason": "unresolved"}
     });
     let mut store = MemoryEvidence::default();
     write_scenario_evidence(&mut store, &partial).unwrap();
@@ -77,7 +77,7 @@ fn partial_and_legacy_shapes_are_admitted_without_a_full_manifest() {
     let mut legacy = full();
     legacy["integration"] = json!("IT-001");
     legacy["scenario"] = json!("IT-001-SC-06a");
-    legacy["resolution"] = json!({"kind": "legacy-compatibility", "selection": entry("qobs")});
+    legacy["resolution"] = json!({"kind": "legacy-compatibility", "selection": entry("fobs")});
     write_scenario_evidence(&mut store, &legacy).unwrap();
 }
 
@@ -150,8 +150,8 @@ fn a_cross_wired_attribution_is_refused() {
     let mut causing = full();
     causing["resolution"] = json!({
         "kind": "partial",
-        "reached": [entry("qobs")],
-        "causingEntry": {"owner": "qobs", "contractVersion": "v1", "reason": "x"}
+        "reached": [entry("fobs")],
+        "causingEntry": {"owner": "fobs", "contractVersion": "v1", "reason": "x"}
     });
     assert_eq!(refusal(&causing), ScenarioRefusal::CrossWired);
 }
@@ -160,7 +160,7 @@ fn a_cross_wired_attribution_is_refused() {
 #[trace("FR-130-AC-6")]
 fn duplicate_entries_values_and_dimensions_are_refused() {
     let mut entries = full();
-    entries["resolution"]["entries"] = json!([entry("qobs"), entry("qobs")]);
+    entries["resolution"]["entries"] = json!([entry("fobs"), entry("fobs")]);
     assert_eq!(refusal(&entries), ScenarioRefusal::DuplicateComponent);
 
     let mut values = full();

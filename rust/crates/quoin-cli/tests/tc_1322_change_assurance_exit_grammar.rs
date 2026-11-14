@@ -9,7 +9,7 @@
 //! reproducing them here. With no test left holding the grammar, every
 //! refusal collapsed onto the shell's generic exit 1 and a consumer could no
 //! longer tell a REFUSED document from a receipt that verified `invalid`
-//! (quoin#543; agent-ix/tl-mltl and agent-ix/quire-contract-runtime#32 both
+//! (quoin#543; agent-ix/tl-mltl and agent-ix/filament-contract-runtime#32 both
 //! assert the difference).
 
 #![allow(

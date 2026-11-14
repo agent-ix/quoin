@@ -25,7 +25,7 @@ SysML v2 textual subset is the alternate representation of the same field
 declarations. The subset is deliberately limited to constructs that have a
 table equivalent, so the two forms are interchangeable. Quire recognises the
 subset at line level (a lexical grammar) and never parses expressions; clause
-and expression semantics stay with `agent-ix/quire-contract-ir#52`.
+and expression semantics stay with `agent-ix/filament-contract-ir#52`.
 
 ## Behavior
 

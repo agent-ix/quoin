@@ -62,4 +62,4 @@ Duplicating a clause inline and externally creates two authorities.
 ## Dependencies
 
 - **Upstream**: [FR-071](./FR-071-typed-properties-mapping.md), semantic-core `ClauseRef`/`OperationDecl`/`SourceLocus`
-- **Downstream**: `agent-ix/quire-rs#388`, `agent-ix/quire-rs#432`, `agent-ix/quire-contract-ir#52`
+- **Downstream**: `agent-ix/quire-rs#388`, `agent-ix/quire-rs#432`, `agent-ix/filament-contract-ir#52`
