@@ -68,7 +68,7 @@ title: Three criteria
 | FR-001-AC-3 | The reader shall name the refused field. |  |
 ";
 
-const ROW_AWARE_MODULE: &str = r##"name: quoin-cli-matrix-claims
+const ROW_AWARE_MODULE: &str = r#"name: quoin-cli-matrix-claims
 version: 0.1.0
 description: Fixture module for unbacked matrix claims
 artifact_types:
@@ -114,7 +114,7 @@ traceability:
         language: rust
         pattern: '#\[trace\(([^)]*)\)\]'
         template: '#[trace({ids})]'
-"##;
+"#;
 
 const ROW_AWARE_SPEC: &str = "---\nid: FR-001\ntype: FR\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|---|---|---|\n| FR-001-AC-1 | The first behavior shall work. | Test (TC-001) |\n| FR-001-AC-2 | The second behavior shall work. | Test (TC-002) |\n";
 
