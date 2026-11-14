@@ -229,13 +229,13 @@ fn analysis_items(
         }
     }
     for result in &evidence.evidence_results {
-        if result.get("target").and_then(target_locus) == Some(identity.clone()) {
-            if let Some(cause) = result.get("cause") {
-                items.push(serde_json::json!({ "status": cause, "result": result }));
-            }
+        if result.get("target").and_then(target_locus) == Some(identity.clone())
+            && let Some(cause) = result.get("cause")
+        {
+            items.push(serde_json::json!({ "status": cause, "result": result }));
         }
     }
-    items.sort_by(|left, right| left.to_string().cmp(&right.to_string()));
+    items.sort_by_key(serde_json::Value::to_string);
     items
 }
 

@@ -324,13 +324,11 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
                     .map(ToOwned::to_owned),
                 evidence_status,
                 evidence_detail: detail,
-                analysis_evidence: input.analysis_evidence.as_ref().map(|evidence| {
-                    analysis_items(
-                        criterion.identity.as_ref(),
-                        evidence,
-                        input.coverage.as_deref().unwrap_or_default(),
-                    )
-                }),
+                analysis_evidence: analysis_evidence_for(
+                    criterion.identity.as_ref(),
+                    input.analysis_evidence.as_ref(),
+                    input.coverage.as_deref().unwrap_or_default(),
+                ),
             });
     }
 
@@ -350,6 +348,14 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
         reason,
         unclassified,
     })
+}
+
+fn analysis_evidence_for(
+    identity: Option<&quoin_quire_types::TargetLocus>,
+    evidence: Option<&AnalysisEvidenceInput>,
+    coverage: &[CoverageMatrixRequirement],
+) -> Option<Vec<serde_json::Value>> {
+    evidence.map(|evidence| analysis_items(identity, evidence, coverage))
 }
 
 fn analysis_items(
@@ -384,10 +390,9 @@ fn analysis_items(
         if result.get("target").and_then(|target| {
             serde_json::from_value::<quoin_quire_types::TargetLocus>(target.clone()).ok()
         }) == Some(identity.clone())
+            && let Some(status) = result.get("cause")
         {
-            if let Some(status) = result.get("cause") {
-                items.push(serde_json::json!({ "status": status, "result": result }));
-            }
+            items.push(serde_json::json!({ "status": status, "result": result }));
         }
     }
     items.sort_by_key(analysis_item_key);
