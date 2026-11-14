@@ -36,7 +36,10 @@ The `quoin soup vex export` command SHALL serialize each person-authored entry i
 - The command SHALL read `vex_statements` from each record and emit one `vulnerabilities[]` entry for each statement.
 - The command SHALL use the Syft SBOM path only to choose the default output location.
 - The command SHALL NOT read or modify the Syft SBOM.
-- The command SHALL emit a component with a stable `bom-ref` and that record's purl for each component referenced by an exported statement.
+- For each SOUP record referenced by an exported statement, the command SHALL emit a CycloneDX component with `type=library`, `purl` and `bom-ref` equal to the record's canonical PURL, and `name` and optional `group` derived from the decoded PURL components.
+- The command SHALL derive the component `name` from the PURL's decoded name and, when the PURL has a namespace, its `group` from the decoded namespace.
+- The command SHALL preserve the PURL type's case and normalization rules when deriving `name` and `group`.
+- The command SHALL NOT apply additional case folding or normalization to `name` or `group`.
 - Each vulnerability entry's `affects[].ref` SHALL reference its component.
 - The command SHALL copy the statement's advisory identifier to the CycloneDX vulnerability `id`.
 - The command SHALL map each stored status and the affected component version status as specified in the table below.
@@ -53,12 +56,12 @@ The `quoin soup vex export` command SHALL serialize each person-authored entry i
 
 ### CycloneDX 1.7 mapping
 
-The JSON document SHALL use the published [CycloneDX 1.7 JSON schema](https://cyclonedx.org/schema/bom-1.7.schema.json) and the [CycloneDX 1.7 JSON reference](https://cyclonedx.org/docs/1.7/json/). CI SHALL retrieve the schema as a validation input. The repository SHALL NOT contain a downloaded schema copy.
+The JSON document SHALL use the published [CycloneDX 1.7 JSON schema](https://cyclonedx.org/schema/bom-1.7.schema.json) and the [CycloneDX 1.7 JSON reference](https://cyclonedx.org/docs/1.7/json/). The component purl parser SHALL use Package-URL's [PURL syntax](https://github.com/package-url/purl-spec) and its [type-specific definition](https://github.com/package-url/purl-spec/tree/main/docs/types/definitions) when decoding and normalizing PURL components. The selected CycloneDX `library` type identifies these records as package dependencies. CI SHALL retrieve the schema as a validation input. The repository SHALL NOT contain a downloaded schema copy.
 
 | SOUP statement field | CycloneDX 1.7 output | Mapping |
 |---|---|---|
 | `advisory` | `vulnerabilities[].id` | Copy the identifier unchanged. |
-| Record purl | `components[].purl`; referenced by `vulnerabilities[].affects[].ref` | Use the purl as the component's `bom-ref`; emit the record version under `affects[].versions[].version`. |
+| Record purl | `components[].type`, `components[].name`, optional `components[].group`, `components[].purl` and `components[].bom-ref`; referenced by `vulnerabilities[].affects[].ref` | Set `type=library` because each SOUP record identifies a package dependency. Set `name` to the PURL's percent-decoded `name`; when a `namespace` exists, set `group` to its percent-decoded value. Apply PURL type-specific case and normalization rules only. Preserve the canonical source PURL unchanged as both `purl` and `bom-ref`; emit the record version under `affects[].versions[].version`. |
 | `status=affected` | `vulnerabilities[].analysis.state=exploitable`; `affects[].versions[].status=affected` | Direct VEX meaning to CycloneDX analysis and affected-version vocabularies. |
 | `status=not_affected` | `analysis.state=not_affected`; `affects[].versions[].status=unaffected` | Direct mapping. |
 | `status=under_investigation` | `analysis.state=in_triage`; `affects[].versions[].status=unknown` | Direct mapping to CycloneDX investigation and unspecified version state. |
@@ -76,6 +79,13 @@ The JSON document SHALL use the published [CycloneDX 1.7 JSON schema](https://cy
 | Each `evidence_refs[]` item | `vulnerabilities[].properties[]` with `name=quoin:vex:evidence-ref` and `value` equal to that reference | Emit one property per reference, preserving the reference value. |
 | A stale statement | `vulnerabilities[].properties[]` with `name=quoin:vex:stale`, `value="true"` | Emit only when the stale condition above is established. |
 
+| Source PURL | Decoded namespace | Decoded PURL name | CycloneDX `type` | CycloneDX `group` | CycloneDX `name` |
+|---|---|---|---|---|---|
+| `pkg:npm/%40babel/core@12.3.1` | `@babel` | `core` | `library` | `@babel` | `core` |
+| `pkg:pypi/requests@2.31.0` | none | `requests` | `library` | omitted | `requests` |
+
+The [PURL specification](https://github.com/package-url/purl-spec) defines the `namespace` and `name` components, percent-decoding and type-specific normalization. The [npm type definition](https://github.com/package-url/purl-spec/blob/main/docs/types/definitions/npm-definition.md) defines its scope as the namespace, treats its namespace and name as case-sensitive, and percent-encodes the scope's `@` prefix; the exporter decodes that prefix for `name` while preserving the canonical source PURL in `purl` and `bom-ref`.
+
 ## Constraints
 
 | ID | Constraint | Type | Validation |
@@ -88,13 +98,15 @@ The JSON document SHALL use the published [CycloneDX 1.7 JSON schema](https://cy
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-156-AC-1 | A fixture containing one statement for each of the four statuses exports exactly four vulnerability entries, each carrying the expected CycloneDX 1.7 `analysis.state`, affected-version status, source status property and component purl reference. | Test |
-| FR-156-AC-2 | For every exported entry, `advisory`, assessor, assessment date, impact statement, optional action statement and each evidence reference equal the source statement; each statement in a record produces exactly one entry, and the same advisory id on two records produces two entries. | Test |
-| FR-156-AC-3 | Statements with all five allowed justifications export the exact source value; `vulnerable_code_not_present`, `vulnerable_code_not_in_execute_path` and `inline_mitigations_already_exist` map to their equivalent CycloneDX justifications, while `component_not_present` and `vulnerable_code_cannot_be_controlled_by_adversary` preserve the source value and omit `analysis.justification`. | Test |
-| FR-156-AC-4 | The output validates against the published CycloneDX 1.7 JSON schema fetched as a CI input; the schema is absent from the repository. | Test |
-| FR-156-AC-5 | With no `vex_statement`, the output contains no `vulnerabilities[]` entry, including when the scan reports advisories; every output entry with an advisory has exactly one matching stored person-authored statement. | Test |
-| FR-156-AC-6 | A statement absent from all current applicable scans is exported with `quoin:vex:stale=true`; an unavailable, unordered or vacuous applicable scan does not produce that property. | Test |
-| FR-156-AC-7 | Repeating export with identical records, SBOM and scan inputs yields byte-identical JSON at the same output path. | Test |
+| FR-156-AC-1 | A fixture with `pkg:npm/%40babel/core@12.3.1` exports a component with `type=library`, `group=@babel`, and `name=core`; a fixture with `pkg:pypi/requests@2.31.0` exports a component with `type=library`, no `group`, and `name=requests`. Each component has its exact canonical PURL in both `purl` and `bom-ref`, and each vulnerability entry references that component. | Test |
+| FR-156-AC-2 | A fixture containing one statement for each of the four statuses exports exactly four vulnerability entries, each carrying the expected CycloneDX 1.7 `analysis.state`, affected-version status and source status property. | Test |
+| FR-156-AC-3 | For every exported entry, `advisory`, assessor, assessment date, impact statement, optional action statement and each evidence reference equal the source statement; each statement in a record produces exactly one entry, and the same advisory id on two records produces two entries. | Test |
+| FR-156-AC-4 | Statements with all five allowed justifications export the exact source value; `vulnerable_code_not_present`, `vulnerable_code_not_in_execute_path` and `inline_mitigations_already_exist` map to their equivalent CycloneDX justifications, while `component_not_present` and `vulnerable_code_cannot_be_controlled_by_adversary` preserve the source value and omit `analysis.justification`. | Test |
+| FR-156-AC-5 | The output validates against the published CycloneDX 1.7 JSON schema fetched as a CI input; the schema is absent from the repository. | Test |
+| FR-156-AC-6 | With no `vex_statement`, the output contains no `vulnerabilities[]` entry, including when the scan reports advisories; every output entry with an advisory has exactly one matching stored person-authored statement. | Test |
+| FR-156-AC-7 | A statement absent from all current applicable scans is exported with `quoin:vex:stale=true`; an unavailable, unordered or vacuous applicable scan does not produce that property. | Test |
+| FR-156-AC-8 | For a case-sensitive PURL type, `components[].group` (when namespace exists) and `components[].name` preserve the decoded namespace and name case; for a PURL type that normalizes either component, those fields carry the PURL-defined normalized values without additional case folding or normalization. | Test |
+| FR-156-AC-9 | Repeating export with identical records, SBOM and scan inputs yields byte-identical JSON at the same output path. | Test |
 
 ## Dependencies
 
