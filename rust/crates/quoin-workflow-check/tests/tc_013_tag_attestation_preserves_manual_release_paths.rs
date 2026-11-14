@@ -26,7 +26,7 @@ fn workflow(name: &str) -> Value {
         .unwrap_or_else(|error| panic!("parse workflow {}: {error}", path.display()))
 }
 
-fn only_event(workflow: &Value, name: &str) -> &Value {
+fn only_event<'a>(workflow: &'a Value, name: &str) -> &'a Value {
     let events = workflow["on"]
         .as_mapping()
         .expect("workflow has event mapping");
