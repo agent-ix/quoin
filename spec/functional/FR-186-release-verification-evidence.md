@@ -19,16 +19,20 @@ relationships:
 
 ## Description
 
-Quoin SHALL run its declared release-verification suite at the signed tag and
-carry the resulting evidence store to the shared release-attestation workflow
-as the `release-evidence` artifact. The suite declaration and binding registry
-are maintained in source control. The tag build produces fresh run-specific
-bindings and a run record, which are retained only in that tag's evidence
-artifact. [FR-030](./FR-030-evidence-store.md) keeps run facts separate from
-authored suite declarations and does not add a commit field to a run record.
-The artifact provenance identifies the signed tag, its resolved source commit,
-and the workflow run that produced the evidence. The shared consumer uses the
-retained store under [Engineering Assurance FR-069](ix://agent-ix/engineering-assurance/FR-069)
+FR-186 specifies the Quoin repository's release-CI workflow and evidence
+handoff only. It does not change Quoin product behavior: the Quoin library and
+engine do not create, sign, or retain attestations or run records. For a pushed
+signed `v*` tag, repository CI runs the declared suite, produces fresh
+run-specific bindings and a run record as ephemeral workflow output, uploads
+them only in that tag's `release-evidence` artifact, and passes the artifact to
+the shared Engineering Assurance attestation workflow. The suite declaration
+and binding registry remain maintained in source control; per-tag run records
+and generated bindings are never committed. [FR-030](./FR-030-evidence-store.md)
+keeps run facts separate from authored suite declarations and does not add a
+commit field to a run record. The artifact provenance identifies the signed
+tag, its resolved source commit, and the workflow run that produced the
+evidence. The shared consumer uses the retained store under
+[Engineering Assurance FR-069](ix://agent-ix/engineering-assurance/FR-069)
 and refuses to write a Test Result when the evidence is absent, invalid,
 failing, or stale.
 
