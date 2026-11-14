@@ -172,7 +172,24 @@ fn admitted() -> HostObservations {
     HostObservations {
         reliance: Some(decision(("quire-analyze", "0.1.0"), &[])),
         selected_head: Some(HEAD.to_owned()),
+        selected_head_conflict: false,
     }
+}
+
+#[trace("FR-153-AC-14")]
+#[test]
+fn conflicting_selected_heads_are_a_record_conflict() {
+    let store = satisfied_store(&[AC1]);
+    let host = HostObservations {
+        selected_head: None,
+        selected_head_conflict: true,
+        ..admitted()
+    };
+    assert_uncounted_naming(
+        &store.count(&[AC1], host),
+        CauseCode::RecordConflict,
+        "performed revision premise",
+    );
 }
 
 /// What the host observed of the one act that produced `file`: its own CI
@@ -193,6 +210,7 @@ fn admitted_run(file: &str) -> RunObservation {
             admission_ref: "admission-7".to_owned(),
             authorized: vec![AC1.to_owned(), AC2.to_owned(), AC3.to_owned()],
         }),
+        actor_rejection: None,
     }
 }
 

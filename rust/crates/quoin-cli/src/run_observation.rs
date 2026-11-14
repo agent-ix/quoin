@@ -77,21 +77,6 @@ pub(crate) fn read_run_observations(paths: &[String]) -> Result<Vec<RunObservati
         }
         observations.push(observation);
     }
-    if let Some(selected_head) = observations
-        .iter()
-        .filter_map(|observation| observation.selected_head.as_deref())
-        .filter(|head| is_object_id(head))
-        .find(|head| is_object_id(head))
-    {
-        if observations
-            .iter()
-            .filter_map(|observation| observation.selected_head.as_deref())
-            .filter(|head| is_object_id(head))
-            .any(|head| head != selected_head)
-        {
-            return Err("run observations supply different valid selected_head values".to_owned());
-        }
-    }
     Ok(observations)
 }
 
@@ -133,11 +118,6 @@ fn validate(observation: &RunObservationFile, path: &str) -> Result<(), String> 
         }
     }
     if let Some(actor) = &observation.actor_authority {
-        if actor.actor.is_empty() || actor.admission_ref.is_empty() {
-            return Err(format!(
-                "run observation {path} actor_authority actor and admission_ref must be non-empty"
-            ));
-        }
         let mut authorized = BTreeSet::new();
         if actor
             .authorized
@@ -165,6 +145,83 @@ fn canonical_run_path(path: &str) -> bool {
         && !path.contains('\\')
 }
 
-fn is_object_id(value: &str) -> bool {
-    matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    reason = "test fixtures may panic"
+)]
+mod tests {
+    use super::read_run_observations;
+    use ix_trace_rs::trace;
+    use std::fs;
+
+    fn file(value: serde_json::Value) -> (tempfile::TempDir, String) {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let path = directory.path().join("observation.json");
+        fs::write(&path, serde_json::to_vec(&value).expect("JSON encoding"))
+            .expect("observation file");
+        (
+            directory,
+            path.to_str().expect("UTF-8 temp path").to_owned(),
+        )
+    }
+
+    fn observation(record: &str) -> serde_json::Value {
+        serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": record,
+        })
+    }
+
+    /// FR-153-AC-17: observation files reject malformed selectors, unknown
+    /// members, duplicate record selectors and malformed authority arrays.
+    #[trace("FR-153-AC-17")]
+    #[test]
+    fn malformed_and_duplicate_observation_inputs_are_refused() {
+        let (directory, path) = file(serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": "runs/unit/2026-11-13.json",
+            "unknown": true,
+        }));
+        assert!(read_run_observations(std::slice::from_ref(&path)).is_err());
+        drop(directory);
+
+        let (directory, path) = file(serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": "runs/unit/2026-11-13.json",
+            "actor_authority": {
+                "actor": "alice",
+                "admission_ref": "policy-1",
+                "authorized": ["FR-001-AC-1", "FR-001-AC-1"],
+            }
+        }));
+        assert!(read_run_observations(std::slice::from_ref(&path)).is_err());
+        drop(directory);
+
+        let (directory, path) = file(observation("runs/unit/../2026-11-13.json"));
+        assert!(read_run_observations(std::slice::from_ref(&path)).is_err());
+        drop(directory);
+
+        let (directory, first) = file(observation("runs/unit/2026-11-13.json"));
+        let (directory_two, second) = file(observation("runs/unit/2026-11-13.json"));
+        assert!(read_run_observations(&[first, second]).is_err());
+        drop((directory, directory_two));
+    }
+
+    /// FR-153-AC-14: individually valid but conflicting selected HEADs are
+    /// accepted as observations so the qualifier can report record-conflict.
+    #[trace("FR-153-AC-14")]
+    #[test]
+    fn conflicting_valid_heads_are_retained_for_qualification() {
+        let mut first = observation("runs/unit/2026-11-13.json");
+        first["selected_head"] = serde_json::json!("a".repeat(40));
+        let mut second = observation("runs/scan/2026-11-13.json");
+        second["selected_head"] = serde_json::json!("b".repeat(40));
+        let (directory_one, first) = file(first);
+        let (directory_two, second) = file(second);
+        let inputs = read_run_observations(&[first, second]).expect("typed host facts");
+        assert_eq!(inputs.len(), 2);
+        drop((directory_one, directory_two));
+    }
 }

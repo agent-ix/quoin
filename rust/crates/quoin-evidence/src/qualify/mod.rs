@@ -137,6 +137,8 @@ pub struct RunObservation {
     pub execution: Option<ExecutionAssociation>,
     /// The signer admitted as the asserting actor for the record.
     pub actor: Option<ActorAdmission>,
+    /// A verified signature result that failed actor admission.
+    pub actor_rejection: Option<String>,
 }
 
 /// An actor and the host's admission of it.
@@ -190,6 +192,8 @@ pub struct HostObservations {
     pub reliance: Option<TrustDecision>,
     /// The source HEAD selected for this qualification.
     pub selected_head: Option<String>,
+    /// Supplied selected-head observations disagreed for this read.
+    pub selected_head_conflict: bool,
 }
 
 /// One reason the FR-032 audit does not establish the obligation as healthy:

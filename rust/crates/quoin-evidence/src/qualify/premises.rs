@@ -165,7 +165,11 @@ fn actor(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Ref
         refusals.push(refusal(cause, Premise::ActorAuthority, locator, reason));
     };
     let Some(admission) = &probe.run.observation.actor else {
-        refuse(Cause::Unevaluated, "no signer admitted for the record");
+        if let Some(reason) = &probe.run.observation.actor_rejection {
+            refuse(Cause::QualificationRejected, reason);
+        } else {
+            refuse(Cause::Unevaluated, "no signer admitted for the record");
+        }
         return;
     };
     if admission.actor.is_empty() || admission.admission_ref.is_empty() {
@@ -192,6 +196,15 @@ fn actor(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Ref
 
 fn revision(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Refusal>) {
     let locator = probe.locator;
+    if probe.host.selected_head_conflict {
+        refusals.push(refusal(
+            Cause::RecordConflict,
+            Premise::PerformedRevision,
+            locator,
+            "run observations supply conflicting selected source HEAD values",
+        ));
+        return;
+    }
     let performed = probe
         .run
         .observation
