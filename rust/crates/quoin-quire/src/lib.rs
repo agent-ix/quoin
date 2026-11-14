@@ -52,6 +52,7 @@
 pub mod assurance;
 pub mod clauses;
 pub mod coverage;
+pub mod design_join;
 pub mod engine;
 pub mod error;
 pub mod evidence;
@@ -109,6 +110,6 @@ pub mod model {
     pub use quire_rs::{
         AcceptedAssurancePremises, AssuranceError, AssuranceExport, ClauseBinding,
         ClauseBindingReport, ClauseForce, ClauseSet, ClauseSetDiff, ClauseSetKey, CoverageReport,
-        RestrictedClauseSet,
+        RelationReport, RestrictedClauseSet,
     };
 }

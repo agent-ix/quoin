@@ -10,7 +10,8 @@
 
 use super::{
     AdapterResult, FindingResult, agent_eval, audit_script, cargo_deny, cargo_mutants,
-    contract_conformance, differential_report, entries, junit, licence_policy, sarif, sbom,
+    contract_conformance, differential_report, entries, junit, licence_policy, osv_scanner, sarif,
+    sbom,
 };
 use crate::error::EvidenceError;
 
@@ -179,6 +180,12 @@ pub static FINDING_ADAPTERS: &[FindingAdapter] = &[
         parse: FindingParser::Results(cargo_deny::parse_cargo_deny),
     },
     FindingAdapter {
+        name: "osv-scanner",
+        summary: "OSV-Scanner JSON report — one finding per vulnerability and package.",
+        tools: &["osv-scanner"],
+        parse: FindingParser::Results(osv_scanner::parse_osv_scanner),
+    },
+    FindingAdapter {
         name: "licence-policy",
         summary: "An SBOM's declared licences against a person-authored licence-policy-v1 file (--policy) — denied, not-allowed, unknown and banned components.",
         tools: &["licence-policy"],
@@ -299,6 +306,7 @@ mod tests {
                 "audit-script",
                 "cargo-audit",
                 "cargo-deny",
+                "osv-scanner",
                 "licence-policy",
             ]
         );

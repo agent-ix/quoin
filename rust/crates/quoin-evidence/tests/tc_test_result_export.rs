@@ -197,14 +197,16 @@ fn tc_185_lists_and_configuration_are_deterministic() {
 fn tc_185_predicate_type_is_closed_and_has_exact_members() {
     let statement = build_statement(subject(), &[], &[]).expect("valid");
     let value = serde_json::to_value(&statement).expect("serializes");
+    let mut members = value
+        .get("predicate")
+        .and_then(Value::as_object)
+        .expect("predicate object")
+        .keys()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    members.sort_unstable();
     assert_eq!(
-        value
-            .get("predicate")
-            .and_then(Value::as_object)
-            .expect("predicate object")
-            .keys()
-            .map(String::as_str)
-            .collect::<Vec<_>>(),
+        members,
         [
             "configuration",
             "failedTests",

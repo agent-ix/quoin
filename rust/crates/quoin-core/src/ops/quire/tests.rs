@@ -112,6 +112,15 @@ impl QuireHost for FakeEngine {
         })
     }
 
+    fn design_join(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+    ) -> Result<quoin_quire::model::RelationReport, quoin_quire::Error> {
+        self.record(scope, modules);
+        Ok(quoin_quire::model::RelationReport { relations: vec![] })
+    }
+
     fn properties(
         &self,
         scope: &Path,

@@ -37,6 +37,8 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin change-assurance schema",
     "quoin change-assurance verify-receipt",
     "quoin change-assurance write-record",
+    "quoin class",
+    "quoin class obligations",
     "quoin completeness",
     "quoin config",
     "quoin config doctor",
@@ -216,6 +218,7 @@ fn tc_1650_root_help_uses_the_native_command_inventory() {
         OsString::from("--help"),
     ]));
     help::assert_catalogue_matches(&command());
+    assert!(root_usage().contains("class             Report activities required by a requirement's stated software safety class."));
     assert!(root_usage().contains("USAGE\n  $ quoin [COMMAND]"));
 }
 
@@ -293,6 +296,7 @@ fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
             "assurance",
             "catalog",
             "change-assurance",
+            "class",
             "completeness",
             "config",
             "discharge",
@@ -335,7 +339,7 @@ fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
     assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
     assert_eq!(
         error.message,
-        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     );
 }
 

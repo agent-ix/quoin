@@ -48,6 +48,9 @@ pub(crate) struct Audited {
     pub(crate) coverage: serde_json::Value,
     /// The binding graph the audit read, as `evidence.audit_inputs` served it.
     pub(crate) bindings: serde_json::Value,
+    /// The exact auditor input, used when a consumer projects another method
+    /// through the FR-160 class evidence join.
+    pub(crate) audit_input: serde_json::Value,
     /// The `auditor.audit` response, whose payload carries `report`.
     pub(crate) response: Response,
     /// The store's whole host input, used by the FR-153 evidence bridge.
@@ -86,6 +89,10 @@ impl AuditOptions {
 
     /// The closed module roots supplied to the coverage walk.
     pub(crate) fn module_paths(&self) -> &[String] {
+        &self.modules
+    }
+
+    pub(crate) fn modules(&self) -> &[String] {
         &self.modules
     }
 }
@@ -127,11 +134,13 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
         return Ok(Assembly::Declined(catalog));
     }
     let bindings = field(&store.payload, "bindings")?;
+    let runs = field(&store.payload, "runs")?;
+    let scans = field(&store.payload, "scans")?;
     let mut input = serde_json::json!({
         "obligations": obligations,
         "bindings": bindings,
-        "runs": field(&store.payload, "runs")?,
-        "scans": field(&store.payload, "scans")?,
+        "runs": runs,
+        "scans": scans,
         "injections": field(&store.payload, "injections")?,
         "mockInspectionSuites": field(&store.payload, "mock_inspection_suites")?,
         "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
@@ -144,6 +153,7 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
     if let Some(path) = options.class_policy.as_deref() {
         add_class_inputs(&mut input, path, &coverage.payload)?;
     }
+    let audit_input = input.clone();
     let request = serde_json::json!({ "input": input });
     let audited = invoke("auditor.audit", &request)?;
     if !audited.outcome.carries_payload() {
@@ -152,6 +162,7 @@ pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assemb
     Ok(Assembly::Audited(Box::new(Audited {
         coverage: coverage.payload,
         bindings,
+        audit_input,
         response: audited,
         store_inputs: store.payload,
     })))
@@ -243,10 +254,7 @@ fn add_class_inputs(
     path: &str,
     coverage: &serde_json::Value,
 ) -> Result<(), String> {
-    let text =
-        std::fs::read_to_string(path).map_err(|error| format!("cannot read {path}: {error}"))?;
-    let policy = quoin_yaml::from_str_without_aliases(&text)
-        .map_err(|error| format!("{path} is not valid YAML or JSON: {error}"))?;
+    let policy = load_class_policy(path)?;
     let members = [
         ("classPolicy", Some(&policy)),
         ("carriedVocabulary", coverage.get("carried_vocabulary")),
@@ -260,6 +268,14 @@ fn add_class_inputs(
         }
     }
     Ok(())
+}
+
+/// Read the same strict YAML/JSON class policy used by the auditor adapter.
+pub(crate) fn load_class_policy(path: &str) -> Result<serde_json::Value, String> {
+    let text =
+        std::fs::read_to_string(path).map_err(|error| format!("cannot read {path}: {error}"))?;
+    quoin_yaml::from_str_without_aliases(&text)
+        .map_err(|error| format!("{path} is not valid YAML or JSON: {error}"))
 }
 
 fn mutation_floor(entries: &[String]) -> Result<serde_json::Value, String> {

@@ -73,8 +73,8 @@ use crate::protocol::Response;
 
 use self::taxonomy::map_error;
 pub use self::wire::{
-    CoveragePayload, CoverageRequest, MAX_REQUEST_BYTES, MAX_SCALAR_BYTES, PropertiesPayload,
-    PropertiesRequest,
+    CoveragePayload, CoverageRequest, DesignJoinRequest, MAX_REQUEST_BYTES, MAX_SCALAR_BYTES,
+    PropertiesPayload, PropertiesRequest,
 };
 
 /// Answer a `quire.coverage`.
@@ -116,6 +116,26 @@ pub fn coverage(
             .collect(),
         carried_vocabulary: outcome.report.carried_vocabulary.clone(),
     })
+}
+
+/// Answer a `quire.design_join` over the same scope and modules as coverage.
+///
+/// # Errors
+/// Returns the normal request, host-grant, path-bound, or engine error.
+pub fn design_join(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    const OP: &str = "quire.design_join";
+    let request: DesignJoinRequest = read(request, OP)?;
+    check_bound(OP, "scope", &request.scope)?;
+    for module in &request.modules {
+        check_bound(OP, "modules", module)?;
+    }
+    let joined = host(capabilities, OP)?
+        .design_join(Path::new(&request.scope), &paths(&request.modules))
+        .map_err(|error| map_error(&error, OP))?;
+    ok(&joined)
 }
 
 /// Answer a `quire.properties`.

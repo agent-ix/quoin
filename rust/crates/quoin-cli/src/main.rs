@@ -15,6 +15,7 @@ mod anomaly;
 mod assurance;
 mod catalog;
 mod change_assurance;
+mod class_obligations;
 mod completeness;
 mod config;
 mod core_runtime;
@@ -241,6 +242,9 @@ fn root_usage() -> String {
 }
 
 fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
+    if let Some(("class", class)) = matches.subcommand() {
+        return class_obligations::run(class);
+    }
     if let Some(("catalog", catalog)) = matches.subcommand() {
         return catalog::run(catalog);
     }
@@ -382,6 +386,7 @@ fn command() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
+        .subcommand(class_obligations::command())
         .subcommand(advise::command())
         .subcommand(anomaly::command())
         .subcommand(assurance::command())

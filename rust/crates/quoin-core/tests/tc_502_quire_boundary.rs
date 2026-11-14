@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The two `quire.*` routes, each driven through the production runtime.
+//! The `quire.*` routes, each driven through the production runtime.
 //!
 //! # Why by name, through the runtime
 //!
@@ -117,6 +117,17 @@ fn tc_502_010_coverage_derives_the_obligations_the_repository_states() {
         payload.get("shapes").is_none(),
         "this name must not reach the properties handler"
     );
+}
+
+/// `quire.design_join` preserves Quire's empty design-relations answer through
+/// the production host and dispatch path.
+#[trace("FR-161-AC-4")]
+#[test]
+fn tc_502_013_design_join_reports_no_declared_relations_as_empty() {
+    let result = run("quire.design_join", &request().to_string());
+    let payload = payload(&result);
+    assert_eq!(payload["relations"], json!([]));
+    assert!(payload.get("coverage_matrix").is_none());
 }
 
 /// `quire.properties` classifies the same criteria and answers with the shape
