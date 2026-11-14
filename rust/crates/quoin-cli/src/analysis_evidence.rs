@@ -83,8 +83,8 @@ pub(crate) fn compute(
 ) -> Result<quoin_quire::evidence::Outcome, String> {
     let modules = module_selection(module_paths)?;
     let scope = ScopeRoot::open(repo).map_err(|error| error.to_string())?;
-    let host = host_observations(repo, &observations);
-    let (runs, bindings) = retained_runs(repo, &observations)?;
+    let host = host_observations(repo, observations);
+    let (runs, bindings) = retained_runs(repo, observations)?;
     let injections = decode_field::<Vec<MockInjection>>(audit_inputs, "injections")?;
     let mock_inspection_suites =
         decode_field::<Vec<String>>(audit_inputs, "mock_inspection_suites")?;
@@ -237,7 +237,7 @@ fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObs
     let mut skipped = Vec::new();
     let reliance = read_trust_decisions(&store, &mut skipped)
         .ok()
-        .map(|decisions| {
+        .and_then(|decisions| {
             let matches = decisions
                 .into_iter()
                 .filter(|decision| {
@@ -247,8 +247,7 @@ fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObs
             (matches.len() == 1)
                 .then(|| matches.into_iter().next())
                 .flatten()
-        })
-        .flatten();
+        });
     HostObservations {
         reliance,
         selected_head,
@@ -462,7 +461,7 @@ mod tests {
         (repo, commit)
     }
 
-    fn observation(signature_result: serde_json::Value) -> RunObservationFile {
+    fn observation(signature_result: &serde_json::Value) -> RunObservationFile {
         serde_json::from_value(serde_json::json!({
             "protocol": "quoin.analysis-run-observation/v1",
             "record": RUN,
@@ -498,7 +497,7 @@ mod tests {
         );
         let (actor, rejection) = actor_observation(
             repo.path().to_str().expect("repo path"),
-            &observation(signature(&commit)),
+            &observation(&signature(&commit)),
             RUN,
             PROJECTION,
         );
@@ -516,7 +515,7 @@ mod tests {
         assert_ne!(later, commit);
         let (actor, _) = actor_observation(
             repo.path().to_str().expect("repo path"),
-            &observation(signature(&later)),
+            &observation(&signature(&later)),
             RUN,
             PROJECTION,
         );
@@ -531,20 +530,19 @@ mod tests {
     #[trace("FR-153-AC-18")]
     #[test]
     fn absent_null_malformed_mismatched_tag_and_unresolved_ids_fail_closed() {
-        let (repo, commit) = pair_repo();
-        let mut cases = vec![
+        let (repo, _) = pair_repo();
+        let cases = vec![
             serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"commit", "status":"signed_valid"}),
             serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"commit", "status":"signed_valid", "verified_commit_id":null}),
             serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"commit", "status":"signed_valid", "verified_commit_id":"not-an-object-id"}),
             signature("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
-            signature(&commit),
+            serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"tag", "status":"signed_valid", "verified_commit_id":null}),
             serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"commit", "status":"unverifiable", "reason":"revision_unresolved", "verified_commit_id":null}),
         ];
-        cases[4]["kind"] = serde_json::json!("tag");
         for signature_result in cases {
             let (actor, rejection) = actor_observation(
                 repo.path().to_str().expect("repo path"),
-                &observation(signature_result),
+                &observation(&signature_result),
                 RUN,
                 PROJECTION,
             );
@@ -576,7 +574,7 @@ mod tests {
         .expect("uncommitted projection bytes");
         let (actor, rejection) = actor_observation(
             repo.path().to_str().expect("repo path"),
-            &observation(signature("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")),
+            &observation(&signature("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")),
             RUN,
             PROJECTION,
         );

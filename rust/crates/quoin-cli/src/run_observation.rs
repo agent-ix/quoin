@@ -64,11 +64,11 @@ pub(crate) fn read_run_observations(paths: &[String]) -> Result<Vec<RunObservati
     let mut observations = Vec::new();
     let mut records = BTreeSet::new();
     for path in paths {
-        let text = std::fs::read_to_string(&path)
+        let text = std::fs::read_to_string(path)
             .map_err(|error| format!("cannot read run observation {path}: {error}"))?;
         let observation: RunObservationFile = serde_json::from_str(&text)
             .map_err(|error| format!("cannot parse run observation {path}: {error}"))?;
-        validate(&observation, &path)?;
+        validate(&observation, path)?;
         if !records.insert(observation.record.clone()) {
             return Err(format!(
                 "run observation {path} repeats record {}; each record needs one distinct observation",
@@ -139,7 +139,9 @@ fn canonical_run_path(path: &str) -> bool {
             .next()
             .is_some_and(|suite| !suite.is_empty() && suite != "." && suite != "..")
         && components.next().is_some_and(|file| {
-            file.ends_with(".json") && file.len() > 5 && !matches!(file, "." | "..")
+            file.strip_suffix(".json")
+                .is_some_and(|stem| !stem.is_empty())
+                && !matches!(file, "." | "..")
         })
         && components.next().is_none()
         && !path.contains('\\')
@@ -156,10 +158,10 @@ mod tests {
     use ix_trace_rs::trace;
     use std::fs;
 
-    fn file(value: serde_json::Value) -> (tempfile::TempDir, String) {
+    fn file(value: &serde_json::Value) -> (tempfile::TempDir, String) {
         let directory = tempfile::tempdir().expect("temporary directory");
         let path = directory.path().join("observation.json");
-        fs::write(&path, serde_json::to_vec(&value).expect("JSON encoding"))
+        fs::write(&path, serde_json::to_vec(value).expect("JSON encoding"))
             .expect("observation file");
         (
             directory,
@@ -179,7 +181,7 @@ mod tests {
     #[trace("FR-153-AC-17")]
     #[test]
     fn malformed_and_duplicate_observation_inputs_are_refused() {
-        let (directory, path) = file(serde_json::json!({
+        let (directory, path) = file(&serde_json::json!({
             "protocol": "quoin.analysis-run-observation/v1",
             "record": "runs/unit/2026-11-13.json",
             "unknown": true,
@@ -187,7 +189,7 @@ mod tests {
         assert!(read_run_observations(std::slice::from_ref(&path)).is_err());
         drop(directory);
 
-        let (directory, path) = file(serde_json::json!({
+        let (directory, path) = file(&serde_json::json!({
             "protocol": "quoin.analysis-run-observation/v1",
             "record": "runs/unit/2026-11-13.json",
             "actor_authority": {
@@ -199,12 +201,12 @@ mod tests {
         assert!(read_run_observations(std::slice::from_ref(&path)).is_err());
         drop(directory);
 
-        let (directory, path) = file(observation("runs/unit/../2026-11-13.json"));
+        let (directory, path) = file(&observation("runs/unit/../2026-11-13.json"));
         assert!(read_run_observations(std::slice::from_ref(&path)).is_err());
         drop(directory);
 
-        let (directory, first) = file(observation("runs/unit/2026-11-13.json"));
-        let (directory_two, second) = file(observation("runs/unit/2026-11-13.json"));
+        let (directory, first) = file(&observation("runs/unit/2026-11-13.json"));
+        let (directory_two, second) = file(&observation("runs/unit/2026-11-13.json"));
         assert!(read_run_observations(&[first, second]).is_err());
         drop((directory, directory_two));
     }
@@ -214,12 +216,18 @@ mod tests {
     #[trace("FR-153-AC-14")]
     #[test]
     fn conflicting_valid_heads_are_retained_for_qualification() {
-        let mut first = observation("runs/unit/2026-11-13.json");
-        first["selected_head"] = serde_json::json!("a".repeat(40));
-        let mut second = observation("runs/scan/2026-11-13.json");
-        second["selected_head"] = serde_json::json!("b".repeat(40));
-        let (directory_one, first) = file(first);
-        let (directory_two, second) = file(second);
+        let first = serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": "runs/unit/2026-11-13.json",
+            "selected_head": "a".repeat(40),
+        });
+        let second = serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": "runs/scan/2026-11-13.json",
+            "selected_head": "b".repeat(40),
+        });
+        let (directory_one, first) = file(&first);
+        let (directory_two, second) = file(&second);
         let inputs = read_run_observations(&[first, second]).expect("typed host facts");
         assert_eq!(inputs.len(), 2);
         drop((directory_one, directory_two));

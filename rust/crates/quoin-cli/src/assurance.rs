@@ -154,18 +154,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     if !catalog.outcome.carries_payload() {
         return Ok(catalog);
     }
-    let audit = invoke(
-        "auditor.audit",
-        &serde_json::json!({ "input": {
-            "obligations": obligations,
-            "bindings": field(&store.payload, "bindings")?, "runs": field(&store.payload, "runs")?,
-            "scans": field(&store.payload, "scans")?, "injections": field(&store.payload, "injections")?,
-            "mockInspectionSuites": field(&store.payload, "mock_inspection_suites")?,
-            "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
-            "independence": field(&store.payload, "independence")?, "catalog": catalog.payload,
-            "independencePolicy": policy
-        }}),
-    )?;
+    let audit = run_audit(&obligations, &store.payload, catalog.payload, &policy)?;
     if !audit.outcome.carries_payload() {
         return Ok(audit);
     }
@@ -196,30 +185,13 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             }))
         })
         .collect();
-    let mut case_obligations: Vec<quoin_quire_types::Obligation> =
-        serde_json::from_value(field(&coverage.payload, "obligations")?)
-            .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
-    let analysis = crate::analysis_evidence::compute(
+    let (case_obligations, analysis_evidence) = analysis_case_inputs(
         &repo,
         &modules,
         &store.payload,
-        &case_obligations,
+        field(&coverage.payload, "obligations")?,
         &run_observations,
     )?;
-    let evidence_report = serde_json::to_value(&analysis.report)
-        .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
-    crate::analysis_evidence::attach_unique_target_identities(
-        &mut case_obligations,
-        evidence_report
-            .get("coverage_matrix")
-            .and_then(serde_json::Value::as_array)
-            .map(Vec::as_slice)
-            .unwrap_or_default(),
-    )?;
-    let analysis_evidence = serde_json::json!({
-        "record_binders": evidence_report.get("record_binders").cloned().unwrap_or_else(|| serde_json::json!([])),
-        "evidence_results": evidence_report.get("evidence_results").cloned().unwrap_or_else(|| serde_json::json!([])),
-    });
     let mut case_request = serde_json::json!({
         "bindings": field(&store.payload, "bindings")?, "observations": observations,
         "healthy": field(&audit.payload, "report")?.get("healthy"),
@@ -251,6 +223,55 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         &case.payload,
         arguments.get_flag("json"),
     )
+}
+
+fn run_audit(
+    obligations: &serde_json::Value,
+    store: &serde_json::Value,
+    catalog: serde_json::Value,
+    policy: &serde_json::Value,
+) -> Result<Response, String> {
+    invoke(
+        "auditor.audit",
+        &serde_json::json!({ "input": {
+            "obligations": obligations,
+            "bindings": field(store, "bindings")?, "runs": field(store, "runs")?,
+            "scans": field(store, "scans")?, "injections": field(store, "injections")?,
+            "mockInspectionSuites": field(store, "mock_inspection_suites")?,
+            "vacuousScanSuites": field(store, "vacuous_scan_suites")?,
+            "independence": field(store, "independence")?, "catalog": catalog,
+            "independencePolicy": policy
+        }}),
+    )
+}
+
+fn analysis_case_inputs(
+    repo: &str,
+    modules: &[String],
+    store_inputs: &serde_json::Value,
+    obligation_value: serde_json::Value,
+    observations: &[crate::run_observation::RunObservationFile],
+) -> Result<(Vec<quoin_quire_types::Obligation>, serde_json::Value), String> {
+    let mut obligations: Vec<quoin_quire_types::Obligation> =
+        serde_json::from_value(obligation_value)
+            .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
+    let analysis =
+        crate::analysis_evidence::compute(repo, modules, store_inputs, &obligations, observations)?;
+    let report = serde_json::to_value(&analysis.report)
+        .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
+    crate::analysis_evidence::attach_unique_target_identities(
+        &mut obligations,
+        report
+            .get("coverage_matrix")
+            .and_then(serde_json::Value::as_array)
+            .map(Vec::as_slice)
+            .unwrap_or_default(),
+    )?;
+    let items = serde_json::json!({
+        "record_binders": report.get("record_binders").cloned().unwrap_or_else(|| serde_json::json!([])),
+        "evidence_results": report.get("evidence_results").cloned().unwrap_or_else(|| serde_json::json!([])),
+    });
+    Ok((obligations, items))
 }
 
 fn present(operation: &str, value: &serde_json::Value, json: bool) -> Result<Response, String> {
