@@ -119,8 +119,8 @@ pub struct RetainedRun {
     pub file: String,
     /// The record as the store holds it.
     pub record: RunRecord,
-    /// The `quire.differential-report/v2` document the record was transcribed
-    /// from. Absent when the host did not supply it.
+    /// The exact `quoin.analysis-report-projection/v1` companion read for this
+    /// run. The source report bytes are deliberately not retained.
     pub report: Option<Value>,
     /// What the host observed of the act that produced this record. It belongs
     /// to this record alone (FR-116 exact correlation): another record's
