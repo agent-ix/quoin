@@ -138,6 +138,30 @@ fn keys(report: &Value) -> Vec<String> {
         .collect()
 }
 
+fn mapping_rows(text: &str) -> Vec<(String, String)> {
+    let section = text.split("\n## Mappings\n").nth(1).unwrap_or("");
+    let section = section.split("\n## ").next().unwrap_or("");
+    section
+        .lines()
+        .filter(|line| line.starts_with('|'))
+        .skip(2)
+        .map(|line| {
+            let cells: Vec<_> = line
+                .trim()
+                .trim_matches('|')
+                .split('|')
+                .map(str::trim)
+                .collect();
+            assert_eq!(
+                cells.len(),
+                2,
+                "mapping row has Set and Clause cells: {line}"
+            );
+            (cells[0].to_owned(), cells[1].to_owned())
+        })
+        .collect()
+}
+
 fn emitted_mapping_rows(profile: &str) -> Vec<(String, String)> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../../tests/fixtures/security-analysis-profile")
@@ -156,7 +180,13 @@ fn emitted_mapping_rows(profile: &str) -> Vec<(String, String)> {
             let text = std::fs::read_to_string(path).unwrap();
             let mut rows = mapping_rows(&text);
             if text.contains("\n## Set\n") {
-                let set = text.split("\n## Set\n").nth(1).unwrap().lines().next().unwrap();
+                let set = text
+                    .split("\n## Set\n")
+                    .nth(1)
+                    .unwrap()
+                    .lines()
+                    .next()
+                    .unwrap();
                 let clause = text
                     .split("\n## Clause\n")
                     .nth(1)
@@ -184,6 +214,16 @@ fn emitted_text(profile: &str, relative: &str) -> String {
     .unwrap()
 }
 
+fn source_profile_fixture(profile: &str) -> String {
+    std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../tests/fixtures/security-analysis-profile")
+            .join(profile)
+            .join("repo/.ix/source-profile.yaml"),
+    )
+    .unwrap()
+}
+
 fn assert_emitted_mappings_are_binding(report: &Value, profile: &str) {
     for (key, clause_id) in emitted_mapping_rows(profile) {
         let set = report["sets"]
@@ -206,7 +246,16 @@ fn assert_emitted_mappings_are_binding(report: &Value, profile: &str) {
     }
 }
 
-#[trace("FR-171-AC-8", "TC-003", "FR-171-AC-9", "TC-004", "FR-171-AC-12", "TC-005", "FR-171-AC-14", "TC-006")]
+#[trace(
+    "FR-171-AC-8",
+    "TC-003",
+    "FR-171-AC-9",
+    "TC-004",
+    "FR-171-AC-12",
+    "TC-005",
+    "FR-171-AC-14",
+    "TC-006"
+)]
 #[test]
 fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_context() {
     let fixture = fixture(
@@ -215,6 +264,11 @@ fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_contex
         "  baseline: low\n  level: \"1\"\n",
     );
     let selection_before = std::fs::read(fixture.repo.join(".ix/source-profile.yaml")).unwrap();
+    assert_eq!(
+        selection_before,
+        source_profile_fixture("a").as_bytes(),
+        "evaluation input matches the profile used for the skill-emitted Fixture A artifacts"
+    );
     let report = evaluate(&fixture);
     assert_eq!(report["context"]["baseline"], "low");
     assert_eq!(report["context"]["level"], "1");
@@ -223,9 +277,15 @@ fn fixture_a_skill_output_maps_only_binding_profile_clauses_and_preserves_contex
     let mappings = emitted_mapping_rows("a");
     assert_emitted_mappings_are_binding(&report, "a");
     for clause in ["AC-3", "CP-9", "V1.1.2", "V1.1.3"] {
-        assert!(!mappings.iter().any(|(_, id)| id == clause), "{clause} was mapped");
+        assert!(
+            !mappings.iter().any(|(_, id)| id == clause),
+            "{clause} was mapped"
+        );
     }
-    let review = emitted_text("a", "reviews/2026-11-13-security-control-mapping-gap-analysis.md");
+    let review = emitted_text(
+        "a",
+        "reviews/2026-11-13-security-control-mapping-gap-analysis.md",
+    );
     assert!(review.contains("CP-9") && review.contains("`data_class`"));
     assert!(review.contains("V1.1.3") && review.contains("`chapter`"));
     assert_eq!(
@@ -240,7 +300,12 @@ fn fixture_b_owasp_only_profile_has_no_nist_mapping() {
     let fixture = fixture(
         "owasp-only",
         &[("owasp", "asvs", "5.0.0")],
-        "  baseline: low\n",
+        "  level: \"1\"\n",
+    );
+    assert_eq!(
+        std::fs::read(fixture.repo.join(".ix/source-profile.yaml")).unwrap(),
+        source_profile_fixture("b").as_bytes(),
+        "evaluation input matches the profile used for the skill-emitted Fixture B artifacts"
     );
     let report = evaluate(&fixture);
     assert_eq!(keys(&report), ["owasp/asvs@5.0.0"]);
@@ -269,6 +334,17 @@ fn unavailable_selected_set_does_not_stop_an_evaluated_binding_set() {
     assert!(binding_ids(&sets[0]).contains(&"AC-1".to_owned()));
     assert_eq!(sets[1]["status"], "unavailable");
     assert!(sets[1]["report"].is_null());
+    let mappings: Vec<_> = emitted_mapping_rows("a")
+        .into_iter()
+        .filter(|(key, _)| key == "nist/sp800-53@5.2.0")
+        .collect();
+    assert!(!mappings.is_empty(), "evaluated set mappings continue");
+    for (_, clause) in mappings {
+        assert!(
+            binding_ids(&sets[0]).contains(&clause),
+            "an emitted mapping from the evaluated set is binding"
+        );
+    }
     let skill = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../../skills/spec-security-analysis/SKILL.md"
