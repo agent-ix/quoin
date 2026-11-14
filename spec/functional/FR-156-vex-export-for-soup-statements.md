@@ -67,7 +67,7 @@ The JSON document SHALL use the published [CycloneDX 1.7 JSON schema](https://cy
 | `justification=vulnerable_code_not_present` | `analysis.justification=code_not_present` | Equivalent native justification. |
 | `justification=vulnerable_code_not_in_execute_path` | `analysis.justification=code_not_reachable` | Equivalent native justification. |
 | `justification=inline_mitigations_already_exist` | `analysis.justification=protected_by_mitigating_control` | Equivalent native justification. |
-| `justification=component_not_present` | `analysis.justification=requires_dependency` | Map to the CycloneDX enum for a missing required dependency; also preserve the exact source value in `quoin:vex:justification`. |
+| `justification=component_not_present` | `vulnerabilities[].properties[]` with `name=quoin:vex:justification` and `value` equal to the source value | CycloneDX 1.7 has no equivalent justification enum; preserve the source value without mapping it to a different assertion. |
 | `justification=vulnerable_code_cannot_be_controlled_by_adversary` | `vulnerabilities[].properties[]` with `name=quoin:vex:justification` and `value` equal to the source value | No equivalent value in the CycloneDX 1.7 justification enum; preserve the source value without substituting a different assertion. |
 | `impact_statement` | `analysis.detail` | Copy unchanged. |
 | `action_statement` | `vulnerabilities[].recommendation` | Copy unchanged when present. |
@@ -90,7 +90,7 @@ The JSON document SHALL use the published [CycloneDX 1.7 JSON schema](https://cy
 |----|----------|--------------|
 | FR-156-AC-1 | A fixture containing one statement for each of the four statuses exports exactly four vulnerability entries, each carrying the expected CycloneDX 1.7 `analysis.state`, affected-version status, source status property and component purl reference. | Test |
 | FR-156-AC-2 | For every exported entry, `advisory`, assessor, assessment date, impact statement, optional action statement and each evidence reference equal the source statement; each statement in a record produces exactly one entry, and the same advisory id on two records produces two entries. | Test |
-| FR-156-AC-3 | Statements with each of the five allowed justifications export the exact source value; the three equivalent values also map to the table's CycloneDX justification, and the two without an equivalent omit `analysis.justification` rather than substitute a different assertion. | Test |
+| FR-156-AC-3 | Statements with all five allowed justifications export the exact source value; `vulnerable_code_not_present`, `vulnerable_code_not_in_execute_path` and `inline_mitigations_already_exist` map to their equivalent CycloneDX justifications, while `component_not_present` and `vulnerable_code_cannot_be_controlled_by_adversary` preserve the source value and omit `analysis.justification`. | Test |
 | FR-156-AC-4 | The output validates against the published CycloneDX 1.7 JSON schema fetched as a CI input; the schema is absent from the repository. | Test |
 | FR-156-AC-5 | With no `vex_statement`, the output contains no `vulnerabilities[]` entry, including when the scan reports advisories; every output entry with an advisory has exactly one matching stored person-authored statement. | Test |
 | FR-156-AC-6 | A statement absent from all current applicable scans is exported with `quoin:vex:stale=true`; an unavailable, unordered or vacuous applicable scan does not produce that property. | Test |
