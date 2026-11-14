@@ -17,13 +17,14 @@
 //! and the sentence was discarded on the way through. Here the condition is a
 //! variant with a stable code, and the code rides on the envelope.
 
+use quoin_auditor::AuditorErrorCode;
 use quoin_quire::ErrorCode;
 
 use crate::error::{CoreError, CoreErrorCode};
 
 /// Map a `quoin-quire` failure onto the boundary's exit taxonomy.
 ///
-/// Three groups, and the split is "who can act on it":
+/// The split is "who can act on it":
 ///
 /// - **`Refused` (2)** — the request was understood and the world declined it.
 ///   A scope that is not a directory, a repository with no `spec/`, a module
@@ -35,7 +36,11 @@ use crate::error::{CoreError, CoreErrorCode};
 ///   shape.
 /// - **`Io` → Internal (4)** — a filesystem call failed under us, a payload
 ///   outgrew its ceiling, or quoin's own vendored `assurance-v1` schema will
-///   not compile. No caller can act on any of these.
+///   not compile. A retained-run audit's unreachable serialization failure is
+///   also internal. No caller can act on any of these.
+/// - **Retained-run audit failures** — the wrapped auditor code decides who can
+///   act: malformed or uncountable input is `Refused`; serialization failure
+///   is `Io`.
 ///
 /// `ErrorCode` is `#[non_exhaustive]`, so this match needs a `_` arm and the
 /// compiler will NOT flag a code added upstream.
@@ -44,7 +49,12 @@ use crate::error::{CoreError, CoreErrorCode};
 /// and agrees with itself (the quoin#443 failure mode).
 pub(super) fn map_error(error: &quoin_quire::Error, op: &'static str) -> CoreError {
     let code = error.code();
-    let mapped = core_code(code);
+    let mapped = match error {
+        quoin_quire::Error::AuditFailed {
+            code: auditor_code, ..
+        } => core_code(code, Some(*auditor_code)),
+        _ => core_code(code, None),
+    };
     let envelope = CoreError::new(mapped.unwrap_or(CoreErrorCode::Io), error.to_string())
         .with_context("op", op)
         .with_context("quire_code", code.as_str());
@@ -63,7 +73,10 @@ pub(super) fn map_error(error: &quoin_quire::Error, op: &'static str) -> CoreErr
 /// `#[non_exhaustive]`: "unknown upstream code" and "deliberately Internal" are
 /// different facts, and collapsing them would make the wildcard arm
 /// indistinguishable from a considered decision.
-const fn core_code(code: ErrorCode) -> Option<CoreErrorCode> {
+const fn core_code(
+    code: ErrorCode,
+    auditor_code: Option<AuditorErrorCode>,
+) -> Option<CoreErrorCode> {
     Some(match code {
         ErrorCode::ScopeNotADirectory
         | ErrorCode::DocumentRootMissing
@@ -90,6 +103,18 @@ const fn core_code(code: ErrorCode) -> Option<CoreErrorCode> {
         | ErrorCode::Assurance
         | ErrorCode::VendoredSchemaInvalid => CoreErrorCode::Io,
 
+        ErrorCode::AuditFailed => match auditor_code {
+            Some(
+                AuditorErrorCode::DemandTooLarge
+                | AuditorErrorCode::ManifestUnreadable
+                | AuditorErrorCode::ClassPolicyRefused,
+            ) => CoreErrorCode::Refused,
+            Some(AuditorErrorCode::ReportNotSerialisable) => CoreErrorCode::Io,
+            // The wrapped code is also non-exhaustive. An unknown inner code
+            // stays unmapped instead of inheriting a known refusal category.
+            _ => return None,
+        },
+
         // Required by `#[non_exhaustive]`. A code this build has never seen is
         // reported as unmapped and exits Internal — the safest answer, since an
         // unknown rule is not one the caller can act on. The count pin below is
@@ -106,6 +131,7 @@ const fn core_code(code: ErrorCode) -> Option<CoreErrorCode> {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use quoin_auditor::AuditorErrorCode;
     use quoin_quire::ErrorCode;
 
     use super::{CoreErrorCode, core_code, map_error};
@@ -114,8 +140,8 @@ mod tests {
     /// compiler cannot catch a code added upstream. This lists every group by
     /// name and requires each code in `all()` to be in exactly one.
     ///
-    /// When this fails: a code was added to `quoin-quire`. Decide which of the
-    /// three groups it belongs to and add it to that arm.
+    /// When this fails: a code was added to `quoin-quire`. Decide which group
+    /// it belongs to, or delegate it to the wrapped auditor code.
     #[test]
     fn the_error_mapping_covers_every_quire_code() {
         let refused = [
@@ -146,20 +172,47 @@ mod tests {
             ErrorCode::Assurance,
             ErrorCode::VendoredSchemaInvalid,
         ];
+        let delegated = [ErrorCode::AuditFailed];
         assert_eq!(
-            refused.len() + bad_request.len() + internal.len(),
+            refused.len() + bad_request.len() + internal.len() + delegated.len(),
             ErrorCode::all().len(),
-            "a code is in `all()` but in none of the three groups"
+            "a code is in `all()` but in none of the mapping groups"
         );
 
         for code in refused {
-            assert_eq!(core_code(code), Some(CoreErrorCode::Refused), "{code:?}");
+            assert_eq!(
+                core_code(code, None),
+                Some(CoreErrorCode::Refused),
+                "{code:?}"
+            );
         }
         for code in bad_request {
-            assert_eq!(core_code(code), Some(CoreErrorCode::BadRequest), "{code:?}");
+            assert_eq!(
+                core_code(code, None),
+                Some(CoreErrorCode::BadRequest),
+                "{code:?}"
+            );
         }
         for code in internal {
-            assert_eq!(core_code(code), Some(CoreErrorCode::Io), "{code:?}");
+            assert_eq!(core_code(code, None), Some(CoreErrorCode::Io), "{code:?}");
+        }
+        for code in delegated {
+            for auditor_code in [
+                AuditorErrorCode::DemandTooLarge,
+                AuditorErrorCode::ManifestUnreadable,
+                AuditorErrorCode::ClassPolicyRefused,
+            ] {
+                assert_eq!(
+                    core_code(code, Some(auditor_code)),
+                    Some(CoreErrorCode::Refused),
+                    "{auditor_code:?}"
+                );
+            }
+            assert_eq!(
+                core_code(code, Some(AuditorErrorCode::ReportNotSerialisable)),
+                Some(CoreErrorCode::Io)
+            );
+            assert_eq!(core_code(code, None), None);
         }
     }
 
@@ -175,5 +228,30 @@ mod tests {
         assert_eq!(envelope.context["quire_code"], "QQ-1020");
         assert_eq!(envelope.code, CoreErrorCode::Refused);
         assert_eq!(envelope.outcome().code(), 2);
+    }
+
+    #[test]
+    fn a_retained_audit_failure_uses_the_wrapped_auditor_code() {
+        let refused = map_error(
+            &quoin_quire::Error::AuditFailed {
+                code: AuditorErrorCode::ClassPolicyRefused,
+                reason: "policy names an unknown class".to_owned(),
+            },
+            "quire.coverage",
+        );
+        assert_eq!(refused.code, CoreErrorCode::Refused);
+        assert_eq!(refused.outcome().code(), 2);
+        assert_eq!(refused.context["quire_code"], "QQ-1090");
+
+        let internal = map_error(
+            &quoin_quire::Error::AuditFailed {
+                code: AuditorErrorCode::ReportNotSerialisable,
+                reason: "audit report could not be serialised".to_owned(),
+            },
+            "quire.coverage",
+        );
+        assert_eq!(internal.code, CoreErrorCode::Io);
+        assert_eq!(internal.outcome().code(), 4);
+        assert_eq!(internal.context["quire_code"], "QQ-1090");
     }
 }
