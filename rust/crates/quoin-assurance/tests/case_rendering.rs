@@ -472,36 +472,38 @@ fn analysis_solution_shows_exact_target_results_in_json_and_text() {
         "row": 1,
         "line": 12,
     });
-    let mut request = serde_json::to_value(leaf_request(&serde_json::json!({
-        "healthy": [],
-    })))
-    .expect("serialises request");
-    request["obligations"][0]["method"] = serde_json::json!("Analysis");
-    request["obligations"][0]["identity"] = target.clone();
-    request["obligations"][1]["identity"] = serde_json::json!({
-        "source": "requirements",
-        "document": "spec/FR-001.md",
-        "id": "FR-001-AC-2",
-        "origin": "authored",
-        "row": 2,
-        "line": 13,
-    });
-    request["analysis_evidence"] = serde_json::json!({
-        "record_binders": [{
-            "target": target,
-            "locator": {"record": "runs/unit/2026-11-13.json", "run": "r1", "entry": "e1"},
-            "method": "Analysis",
-            "actor": "ci",
-            "provenance": ["signed-host"],
-        }],
-        "evidence_results": [{
-            "target": wrong_target,
-            "requested_target": "FR-001-AC-1",
-            "cause": "stale",
-            "detail": "belongs to a different document",
-        }],
-    });
-    let input = serde_json::from_value::<CaseInput>(request).expect("reads exact evidence inputs");
+    let mut input = leaf_request(&serde_json::json!({ "healthy": [] }));
+    input.obligations[0].method = Some("Analysis".to_owned());
+    input.obligations[0].identity = Some(serde_json::from_value(target.clone()).expect("target"));
+    input.obligations[1].identity = Some(
+        serde_json::from_value(serde_json::json!({
+            "source": "requirements",
+            "document": "spec/FR-001.md",
+            "id": "FR-001-AC-2",
+            "origin": "authored",
+            "row": 2,
+            "line": 13,
+        }))
+        .expect("other target"),
+    );
+    input.analysis_evidence = Some(
+        serde_json::from_value(serde_json::json!({
+            "record_binders": [{
+                "target": target,
+                "locator": {"record": "runs/unit/2026-11-13.json", "run": "r1", "entry": "e1"},
+                "method": "Analysis",
+                "actor": "ci",
+                "provenance": ["signed-host"],
+            }],
+            "evidence_results": [{
+                "target": wrong_target,
+                "requested_target": "FR-001-AC-1",
+                "cause": "stale",
+                "detail": "belongs to a different document",
+            }],
+        }))
+        .expect("analysis evidence"),
+    );
     let case = build_case(&input);
     let leaves = leaves(&case);
     assert_eq!(
