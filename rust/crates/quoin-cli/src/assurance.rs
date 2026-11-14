@@ -121,11 +121,7 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
-    let run_observation_paths = arguments
-        .get_many::<String>("run-observation")
-        .map(|paths| paths.cloned().collect::<Vec<_>>())
-        .unwrap_or_default();
-    let run_observations = crate::run_observation::read_run_observations(&run_observation_paths)?;
+    let run_observations = read_run_observations(arguments)?;
     let modules = values(arguments, "module");
     let coverage = invoke(
         "quire.coverage",
@@ -154,7 +150,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     if !catalog.outcome.carries_payload() {
         return Ok(catalog);
     }
-    let audit = run_audit(&obligations, &store.payload, catalog.payload, &policy)?;
+    let audit = run_audit(&obligations, &store.payload, &catalog.payload, &policy)?;
     if !audit.outcome.carries_payload() {
         return Ok(audit);
     }
@@ -225,10 +221,20 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     )
 }
 
+fn read_run_observations(
+    arguments: &ArgMatches,
+) -> Result<Vec<crate::run_observation::RunObservationFile>, String> {
+    let paths = arguments
+        .get_many::<String>("run-observation")
+        .map(|paths| paths.cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    crate::run_observation::read_run_observations(&paths)
+}
+
 fn run_audit(
     obligations: &serde_json::Value,
     store: &serde_json::Value,
-    catalog: serde_json::Value,
+    catalog: &serde_json::Value,
     policy: &serde_json::Value,
 ) -> Result<Response, String> {
     invoke(
