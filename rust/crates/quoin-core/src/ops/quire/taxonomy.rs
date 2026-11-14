@@ -90,7 +90,8 @@ const fn core_code(
         | ErrorCode::ClauseSetNotComparable
         | ErrorCode::AssuranceContract
         | ErrorCode::EnginePremise
-        | ErrorCode::EngineRevisionMismatch => CoreErrorCode::Refused,
+        | ErrorCode::EngineRevisionMismatch
+        | ErrorCode::DesignJoin => CoreErrorCode::Refused,
 
         ErrorCode::PathEscapesRoot
         | ErrorCode::ContextEntryMalformed
@@ -160,6 +161,7 @@ mod tests {
             ErrorCode::AssuranceContract,
             ErrorCode::EnginePremise,
             ErrorCode::EngineRevisionMismatch,
+            ErrorCode::DesignJoin,
         ];
         let bad_request = [
             ErrorCode::PathEscapesRoot,

@@ -31,6 +31,11 @@ use std::path::PathBuf;
 fn tc_3003_the_nfr003_populations_are_stated_by_class() {
     let (actionable, silent) = nfr003::populations(&context::Context::new());
     assert!(actionable.examined.len() > 100, "{:?}", actionable.examined);
+    let class_route = "class obligations:unknown-flag";
+    assert!(actionable.examined.contains(class_route), "{class_route}");
+    assert!(actionable.matched.contains(class_route), "{class_route}");
+    assert!(silent.examined.contains(class_route), "{class_route}");
+    assert!(!silent.matched.contains(class_route), "{class_route}");
     for (plan, probed) in [("MP-250", &actionable), ("MP-251", &silent)] {
         assert_population_stated(plan, probed);
     }

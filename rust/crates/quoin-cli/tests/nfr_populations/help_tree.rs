@@ -156,9 +156,17 @@ fn parse(path: Vec<String>, help: &str) -> CommandHelp {
         arguments: Vec::new(),
     };
     let mut section = "";
+    let mut commands_list_basename = false;
     for line in help.lines() {
         if !line.starts_with(' ') {
-            section = line.trim();
+            let heading = line.trim().trim_end_matches(':');
+            commands_list_basename =
+                heading.eq_ignore_ascii_case("COMMANDS") && heading != "COMMANDS";
+            section = if heading.eq_ignore_ascii_case("COMMANDS") {
+                "COMMANDS"
+            } else {
+                heading
+            };
             continue;
         }
         let entry = line.starts_with("  ") && !line.starts_with("   ");
@@ -171,9 +179,11 @@ fn parse(path: Vec<String>, help: &str) -> CommandHelp {
                     .unwrap_or_default()
                     .split_whitespace()
                     .collect();
-                if words.len() == command.path.len() + 1
-                    && words.iter().zip(&command.path).all(|(a, b)| a == b)
-                {
+                let full_path = words.len() == command.path.len() + 1
+                    && words.iter().zip(&command.path).all(|(a, b)| a == b);
+                let basename =
+                    commands_list_basename && !command.path.is_empty() && words.len() == 1;
+                if full_path || basename {
                     command
                         .subcommands
                         .extend(words.last().map(|word| (*word).to_owned()));
@@ -223,4 +233,18 @@ fn split_entry(line: &str) -> (&str, String) {
         .map_or((line, String::new()), |(token, rest)| {
             (token, rest.trim().to_owned())
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse;
+
+    #[test]
+    fn tc_3003_title_case_clap_commands_section_keeps_nested_routes() {
+        let parent = parse(
+            vec!["class".to_owned()],
+            "Report activities\n\nUsage: quoin class <COMMAND>\n\nCommands:\n  obligations  Report activities and evidence\n\nOptions:\n  -h, --help  Print help\n",
+        );
+        assert_eq!(parent.subcommands, ["obligations"]);
+    }
 }

@@ -52,6 +52,18 @@ pub struct CoverageRequest {
     pub modules: Vec<String>,
 }
 
+/// The request accepted by `quire.design_join`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DesignJoinRequest {
+    /// The repository root to join design relations for.
+    pub scope: String,
+    /// Module roots supplying the relation declarations, in order.
+    #[serde(default)]
+    pub modules: Vec<String>,
+}
+
 /// The payload `quire.coverage` writes to stdout.
 ///
 /// Three fields of the engine's report. Six retained commands touched
