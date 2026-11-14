@@ -34,6 +34,21 @@ pub struct MatrixInput {
     pub bindings: BindingsFile,
     /// The auditor's report over the same bindings and obligations.
     pub audit: AuditReport,
+    /// The exact FR-078 claims and causes emitted for this selected inventory.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub analysis_evidence: Option<AnalysisEvidenceInput>,
+}
+
+/// FR-078 values supplied by the analysis bridge, preserved without reduction.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AnalysisEvidenceInput {
+    /// Qualified record claims, each with its exact target locus.
+    #[serde(default)]
+    pub record_binders: Vec<serde_json::Value>,
+    /// Every non-qualified result, including its exact cause and detail.
+    #[serde(default)]
+    pub evidence_results: Vec<serde_json::Value>,
 }
 
 /// The evidence-backed matrix.
@@ -87,6 +102,10 @@ pub struct MatrixCriterion {
     /// Everything the evidence status was read from. Total: present on every
     /// criterion, each list empty rather than absent when nothing applies.
     pub evidence_detail: EvidenceDetail,
+    /// FR-078 analysis items matching this criterion's exact native identity.
+    /// Present on every criterion when the analysis bridge input is supplied.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub analysis_evidence: Option<Vec<serde_json::Value>>,
 }
 
 /// The closed, total evidence-status vocabulary.
@@ -305,6 +324,13 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
                     .map(ToOwned::to_owned),
                 evidence_status,
                 evidence_detail: detail,
+                analysis_evidence: input.analysis_evidence.as_ref().map(|evidence| {
+                    analysis_items(
+                        criterion.identity.as_ref(),
+                        evidence,
+                        input.coverage.as_deref().unwrap_or_default(),
+                    )
+                }),
             });
     }
 
@@ -324,6 +350,79 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
         reason,
         unclassified,
     })
+}
+
+fn analysis_items(
+    identity: Option<&quoin_quire_types::TargetLocus>,
+    evidence: &AnalysisEvidenceInput,
+    coverage: &[CoverageMatrixRequirement],
+) -> Vec<serde_json::Value> {
+    let Some(identity) = identity else {
+        return Vec::new();
+    };
+    let identity_count = coverage
+        .iter()
+        .flat_map(|requirement| &requirement.criteria)
+        .filter(|criterion| criterion.identity.as_ref() == Some(identity))
+        .count();
+    if identity_count != 1 {
+        return Vec::new();
+    }
+    let mut items = Vec::new();
+    for binder in &evidence.record_binders {
+        if binder.get("target").and_then(|target| {
+            serde_json::from_value::<quoin_quire_types::TargetLocus>(target.clone()).ok()
+        }) == Some(identity.clone())
+        {
+            items.push(serde_json::json!({
+                "status": "qualified-record",
+                "record_binder": binder,
+            }));
+        }
+    }
+    for result in &evidence.evidence_results {
+        if result.get("target").and_then(|target| {
+            serde_json::from_value::<quoin_quire_types::TargetLocus>(target.clone()).ok()
+        }) == Some(identity.clone())
+        {
+            if let Some(status) = result.get("cause") {
+                items.push(serde_json::json!({ "status": status, "result": result }));
+            }
+        }
+    }
+    items.sort_by_key(analysis_item_key);
+    items
+}
+
+fn analysis_item_key(item: &serde_json::Value) -> (String, String, String, String, String) {
+    let locator = item
+        .get("record_binder")
+        .or_else(|| item.get("result"))
+        .and_then(|value| value.get("locator"));
+    (
+        item.get("status")
+            .map_or_else(String::new, serde_json::Value::to_string),
+        locator
+            .and_then(|value| value.get("record"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned(),
+        locator
+            .and_then(|value| value.get("run"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned(),
+        locator
+            .and_then(|value| value.get("entry"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned(),
+        item.get("result")
+            .and_then(|value| value.get("detail"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned(),
+    )
 }
 
 /// One criterion's total evidence detail, in the orders FR-115-AC-9 states.
@@ -410,6 +509,20 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
             } else {
                 String::new()
             };
+            let detail = detail_text(&criterion.evidence_detail);
+            let analysis = criterion
+                .analysis_evidence
+                .as_ref()
+                .into_iter()
+                .flatten()
+                .map(|item| format!("analysis {item}"))
+                .collect::<Vec<_>>()
+                .join("; ");
+            let detail = if analysis.is_empty() {
+                detail
+            } else {
+                format!("{detail}; {analysis}")
+            };
             let _ = writeln!(
                 out,
                 "| {} | {} | {} | {} | {}{} | {} |",
@@ -419,7 +532,7 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
                 cell(&criterion.static_status),
                 class,
                 criterion.evidence_status.as_str(),
-                cell(&detail_text(&criterion.evidence_detail)),
+                cell(&detail),
             );
         }
     }

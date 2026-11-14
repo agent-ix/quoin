@@ -81,6 +81,72 @@ fn status_with(findings: &[&str], healthy: bool, checks: &[&str]) -> EvidenceSta
     statuses(&output)[0].1
 }
 
+#[trace("FR-115-AC-16")]
+#[test]
+fn analysis_evidence_joins_only_the_exact_target_and_renders_every_item() {
+    let target = json!({
+        "source": "obligations",
+        "document": "spec/FR-001.md",
+        "id": "FR-001-AC-1",
+        "origin": "authored-row"
+    });
+    let other_target = json!({
+        "source": "obligations",
+        "document": "spec/FR-002.md",
+        "id": "FR-001-AC-1",
+        "origin": "authored-row"
+    });
+    let record_binder = json!({
+        "target": target.clone(),
+        "locator": {"record":"runs/SUITE-A/a.json", "run":"SUITE-A@a", "entry":"consistency::x"},
+        "method":"Analysis",
+        "actor":"test-signer",
+        "provenance":["test-provenance"]
+    });
+    let wrong_target_binder = json!({
+        "target": other_target,
+        "locator": {"record":"runs/SUITE-B/b.json", "run":"SUITE-B@b", "entry":"consistency::y"},
+        "method":"Analysis",
+        "actor":"other-signer",
+        "provenance":["other-provenance"]
+    });
+    let result = json!({
+        "target": target.clone(),
+        "requested_target":"FR-001-AC-1",
+        "locator":{"record":"runs/SUITE-C/c.json", "run":"SUITE-C@c", "entry":"consistency::z"},
+        "cause":"unevaluated",
+        "detail":"actor authority premise: no admission"
+    });
+    let mut request_value = serde_json::to_value(input(
+        &["FR-001-AC-1"],
+        &[binding("FR-001-AC-1", "unit")],
+        &audit(&[], &[], &[]),
+    ))
+    .unwrap();
+    request_value["coverage"][0]["criteria"][0]["identity"] = target;
+    request_value["analysis_evidence"] = json!({
+        "record_binders": [record_binder, wrong_target_binder],
+        "evidence_results": [result]
+    });
+    let request = serde_json::from_value(request_value).unwrap();
+
+    let output = build(&request).unwrap();
+    let criterion = &output.requirements[0].criteria[0];
+    let items = criterion.analysis_evidence.as_ref().unwrap();
+    assert_eq!(items.len(), 2);
+    assert_eq!(items[0]["status"], "qualified-record");
+    assert_eq!(items[0]["record_binder"]["actor"], "test-signer");
+    assert_eq!(items[1]["status"], "unevaluated");
+    assert_eq!(
+        items[1]["result"]["detail"],
+        "actor authority premise: no admission"
+    );
+    assert_eq!(criterion.evidence_status, EvidenceStatus::Bound);
+    let rendered = render_markdown(&output);
+    assert!(rendered.contains("test-signer"));
+    assert!(rendered.contains("actor authority premise: no admission"));
+}
+
 /// An empty binding graph reads `no run evidence` for every criterion,
 /// whatever the audit says — and the detail is still computed.
 ///

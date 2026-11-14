@@ -217,6 +217,17 @@ fn matrix_criterion(
         id: source.id.clone(),
         method: source.method.clone(),
         binders: source.binders.iter().map(matrix_binder).collect(),
+        identity: source
+            .identity
+            .as_ref()
+            .map(|identity| quoin_quire_types::TargetLocus {
+                source: identity.source.clone(),
+                document: identity.document.clone(),
+                id: identity.id.clone(),
+                origin: identity.origin.clone(),
+                row: identity.row,
+                line: identity.line,
+            }),
         status: matrix_status(source.status).to_owned(),
     }
 }
