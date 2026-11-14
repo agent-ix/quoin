@@ -185,14 +185,14 @@ fn emitted_mapping_rows(profile: &str) -> Vec<(String, String)> {
                     .nth(1)
                     .unwrap()
                     .lines()
-                    .next()
+                    .find(|line| !line.trim().is_empty())
                     .unwrap();
                 let clause = text
                     .split("\n## Clause\n")
                     .nth(1)
                     .unwrap()
                     .lines()
-                    .next()
+                    .find(|line| !line.trim().is_empty())
                     .unwrap()
                     .trim_matches('`')
                     .to_owned();
