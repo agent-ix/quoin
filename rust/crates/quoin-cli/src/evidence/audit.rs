@@ -107,11 +107,29 @@ pub(crate) fn assemble(arguments: &ArgMatches, repo: &str) -> Result<Assembly, S
 
 /// [`assemble`] over options already read from the flags.
 pub(crate) fn assemble_with(options: &AuditOptions, repo: &str) -> Result<Assembly, String> {
+    assemble_with_coverage_operation(options, repo, "quire.coverage")
+}
+
+/// Assemble a matrix audit using quire-rs `design_matrix` for its coverage input.
+pub(crate) fn assemble_for_matrix_with(
+    options: &AuditOptions,
+    repo: &str,
+) -> Result<Assembly, String> {
+    assemble_with_coverage_operation(options, repo, "quire.design_matrix")
+}
+
+fn assemble_with_coverage_operation(
+    options: &AuditOptions,
+    repo: &str,
+    coverage_operation: &str,
+) -> Result<Assembly, String> {
     let modules = options.modules.clone();
-    let coverage = invoke(
-        "quire.coverage",
-        &serde_json::json!({ "scope": repo, "modules": modules }),
-    )?;
+    let coverage_request = &serde_json::json!({ "scope": repo, "modules": modules });
+    let coverage = if coverage_operation == "quire.design_matrix" {
+        crate::core_runtime::invoke_declining(coverage_operation, coverage_request)?
+    } else {
+        invoke(coverage_operation, coverage_request)?
+    };
     if !coverage.outcome.carries_payload() {
         return Ok(Assembly::Declined(coverage));
     }

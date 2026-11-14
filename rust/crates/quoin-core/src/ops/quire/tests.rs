@@ -39,7 +39,7 @@ use crate::capabilities::{Capabilities, QuireHost};
 use crate::error::CoreErrorCode;
 use crate::protocol::Response;
 
-use super::{MAX_SCALAR_BYTES, coverage, properties};
+use super::{MAX_SCALAR_BYTES, coverage, design_matrix, properties};
 
 /// What the fake engine was asked, and what it will answer.
 ///
@@ -55,6 +55,7 @@ struct FakeEngine {
     documents: Vec<Document>,
     unresolved: Vec<Unresolved>,
     failure: Option<quoin_quire::ErrorCode>,
+    design_matrix_failure: bool,
     seen: std::cell::RefCell<Vec<Call>>,
 }
 
@@ -121,6 +122,34 @@ impl QuireHost for FakeEngine {
         Ok(quoin_quire::model::RelationReport { relations: vec![] })
     }
 
+    fn design_matrix(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+    ) -> Result<quoin_quire::design_matrix::Outcome, quoin_quire::Error> {
+        self.record(scope, modules);
+        if self.design_matrix_failure {
+            return Err(quoin_quire::Error::DesignMatrixUnknownRelation {
+                name: "unlisted".to_owned(),
+            });
+        }
+        if let Some(error) = self.declined() {
+            return Err(error);
+        }
+        let mut report = quire_report();
+        report.obligations.clone_from(&self.obligations);
+        report.diagnostics.clone_from(&self.diagnostics);
+        report.coverage_matrix.clone_from(&self.matrix);
+        report
+            .carried_vocabulary
+            .clone_from(&self.carried_vocabulary);
+        Ok(quoin_quire::design_matrix::Outcome {
+            report,
+            design_matrix: Vec::new(),
+            notices: Vec::new(),
+        })
+    }
+
     fn properties(
         &self,
         scope: &Path,
@@ -140,6 +169,83 @@ impl QuireHost for FakeEngine {
             notices: Vec::new(),
         })
     }
+}
+
+/// `quire.design_matrix` carries the design payload and is a registered operation.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-18")]
+#[test]
+fn design_matrix_is_registered_and_keeps_coverage_available() {
+    let engine = FakeEngine::default();
+    assert!(crate::dispatch::OPERATIONS.contains(&"quire.design_matrix"));
+    let grant = Capabilities::with_quire(&engine);
+    let design =
+        crate::dispatch::dispatch("quire.design_matrix", &json!({ "scope": "/repo" }), &grant)
+            .unwrap();
+    let coverage =
+        crate::dispatch::dispatch("quire.coverage", &json!({ "scope": "/repo" }), &grant).unwrap();
+    assert_eq!(design.outcome.code(), coverage.outcome.code());
+    assert_eq!(design.payload["coverage_matrix"], json!([]));
+    assert_eq!(
+        coverage.payload.get("design_matrix"),
+        None,
+        "quire.coverage keeps its existing shape"
+    );
+}
+
+/// An undeclared relation is refused with its named cause and no matrix payload.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-17")]
+#[test]
+fn design_matrix_undeclared_relation_is_a_named_refusal() {
+    let engine = FakeEngine {
+        design_matrix_failure: true,
+        ..FakeEngine::default()
+    };
+    let error = design_matrix(
+        &json!({ "scope": "/repo" }),
+        &Capabilities::with_quire(&engine),
+    )
+    .unwrap_err();
+    assert_eq!(error.code, CoreErrorCode::Refused);
+    assert_eq!(error.outcome().code(), 2);
+    assert_eq!(error.context["reason"], "design-matrix-failed");
+    assert!(error.message.contains("unlisted"));
+}
+
+/// Other operation failures retain coverage's request, host, and error mappings.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-19")]
+#[test]
+fn design_matrix_uses_coverage_request_and_host_taxonomy() {
+    let engine = FakeEngine::default();
+    let oversized = design_matrix(
+        &json!({ "scope": "/repo", "modules": ["/".repeat(MAX_SCALAR_BYTES + 1)] }),
+        &Capabilities::with_quire(&engine),
+    )
+    .unwrap_err();
+    assert_eq!(oversized.code, CoreErrorCode::Refused);
+    assert_eq!(oversized.outcome().code(), 2);
+    assert_eq!(oversized.context["op"], "quire.design_matrix");
+    let coverage_error = coverage(
+        &json!({ "scope": "/repo", "modules": ["/".repeat(MAX_SCALAR_BYTES + 1)] }),
+        &Capabilities::with_quire(&engine),
+    )
+    .unwrap_err();
+    assert_eq!(
+        (oversized.code, oversized.outcome().code()),
+        (coverage_error.code, coverage_error.outcome().code())
+    );
+
+    let missing_host =
+        design_matrix(&json!({ "scope": "/repo" }), &Capabilities::none()).unwrap_err();
+    let coverage_missing_host =
+        coverage(&json!({ "scope": "/repo" }), &Capabilities::none()).unwrap_err();
+    assert_eq!(missing_host.code, coverage_missing_host.code);
+    assert_eq!(missing_host.outcome().code(), 4);
 }
 
 /// An empty engine report. `CoverageReport` is `Default`, and every field this

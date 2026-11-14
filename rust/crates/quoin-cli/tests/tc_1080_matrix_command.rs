@@ -51,6 +51,46 @@ traceability:
         template: "#[trace({ids})]"
 "##;
 
+const DESIGN_MODULE: &str = r##"name: quoin-cli-design-matrix-fixture
+version: 0.1.0
+description: Fixture module for the quoin design matrix command tests
+artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+  - name: Component
+    defaults:
+      id_pattern: CMP-{next:03d}
+edge_types:
+  implements: { description: a component implements an FR, category: traceability }
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  required_relations:
+    - name: fr-has-component
+      from: FR
+      edges: [implements]
+      to: [Component]
+      direction: outgoing
+      check: implementation
+  design_relations: [fr-has-component]
+  trace_tags:
+    markers:
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: "#[trace({ids})]"
+"##;
+
 /// Three criteria and no declared method, so the catalog cannot add an
 /// `unknown-method` finding that would blur the three statuses under test.
 const SPEC: &str = "---
@@ -335,6 +375,56 @@ fn tc_1080_203_writes_nothing_under_spec() {
     fixture.ok(&["matrix", "--module", "."]);
     fixture.ok(&["matrix", "--module", ".", "--json"]);
     assert_eq!(snapshot(fixture.repo()), before);
+}
+
+/// A declared design relation is computed without modifying any spec bytes.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-10")]
+#[test]
+fn tc_1080_206_design_matrix_leaves_spec_byte_identical() {
+    let fixture = repository(DESIGN_MODULE);
+    let before = snapshot(fixture.repo());
+    let markdown = fixture.ok(&["matrix", "--module", "."]);
+    assert!(
+        markdown.contains("| Requirement | Criterion | Design | Method |"),
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains("Design gap: no design element (implementation)"),
+        "{markdown}"
+    );
+    assert_eq!(snapshot(fixture.repo()), before);
+}
+
+/// An undeclared design relation exits 2 with its name and emits no matrix.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-17")]
+#[test]
+fn tc_1080_207_undeclared_design_relation_does_not_fall_back() {
+    let invalid = DESIGN_MODULE.replace(
+        "design_relations: [fr-has-component]",
+        "design_relations: [unlisted]",
+    );
+    let fixture = repository(&invalid);
+    let output = fixture.quoin(&["matrix", "--module", "."]);
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("unlisted"), "{stderr}");
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("# Test Matrix"));
+}
+
+/// Quoin matrix has no strict gate of its own.
+///
+/// Provenance: PLAT-1590
+#[trace("FR-165-AC-12")]
+#[test]
+fn tc_1080_208_matrix_has_no_strict_flag() {
+    let fixture = repository(MODULE);
+    let output = fixture.quoin(&["matrix", "--module", ".", "--strict"]);
+    assert_eq!(output.status.code(), Some(3));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unexpected argument"));
 }
 
 /// `quoin matrix` never launches `ix-flow`: an `ix-flow` on PATH that would

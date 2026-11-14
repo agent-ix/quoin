@@ -322,6 +322,17 @@ pub trait QuireHost {
         modules: &[PathBuf],
     ) -> Result<quoin_quire::coverage::Outcome, quoin_quire::Error>;
 
+    /// The design-bearing coverage matrix for one scope and module set.
+    ///
+    /// # Errors
+    /// The same scope and module failures as [`QuireHost::coverage`], or an
+    /// undeclared design relation.
+    fn design_matrix(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+    ) -> Result<quoin_quire::design_matrix::Outcome, quoin_quire::Error>;
+
     /// The FR-086 design relation join for the same scope and module set.
     ///
     /// # Errors

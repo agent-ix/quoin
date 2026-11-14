@@ -19,7 +19,7 @@ use std::fmt::Write as _;
 
 use quoin_evidence::types::BindingsFile;
 use quoin_finding_types::{AuditReport, Finding, FindingKind};
-use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixRequirement};
+use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixCriterion, CoverageMatrixRequirement};
 use serde::{Deserialize, Serialize};
 
 /// The `matrix.build` request: the three inputs, supplied whole.
@@ -30,6 +30,9 @@ pub struct MatrixInput {
     /// array, absent when the module declares no `obligations:` source.
     #[serde(default)]
     pub coverage: Option<Vec<CoverageMatrixRequirement>>,
+    /// quire-rs `design_matrix` entries, when supplied by `quoin matrix`.
+    #[serde(default)]
+    pub design_coverage: Option<Vec<MatrixCoverageEntry>>,
     /// The evidence store's binding graph, exactly as persisted.
     pub bindings: BindingsFile,
     /// The auditor's report over the same bindings and obligations.
@@ -74,6 +77,9 @@ pub struct MatrixOutput {
 pub struct MatrixRequirement {
     /// The requirement id, as [`crate::requirement_of`] derives it.
     pub id: String,
+    /// The source documents' design blocks, in repository and document order.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub design: Option<Vec<serde_json::Value>>,
     /// The requirement's criteria, in `coverage_matrix`'s own relative order.
     pub criteria: Vec<MatrixCriterion>,
 }
@@ -84,6 +90,9 @@ pub struct MatrixRequirement {
 pub struct MatrixCriterion {
     /// The obligation id.
     pub id: String,
+    /// The engine's design-element references for this criterion.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub design_elements: Option<Vec<serde_json::Value>>,
     /// The declared verification method; omitted, never `null`, when the
     /// upstream criterion states none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -106,6 +115,35 @@ pub struct MatrixCriterion {
     /// Present on every criterion when the analysis bridge input is supplied.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub analysis_evidence: Option<Vec<serde_json::Value>>,
+}
+
+/// One quire-rs `design_matrix` entry at the `matrix.build` boundary.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct MatrixCoverageEntry {
+    /// Scope-relative source document.
+    pub document: String,
+    /// Member identity, absent for an unlabelled single member.
+    #[serde(default)]
+    pub repo: Option<String>,
+    /// Document identity, present for design-obliged entries.
+    #[serde(default)]
+    pub id: Option<String>,
+    /// Criteria with their original coverage fields and design references.
+    pub criteria: Vec<MatrixCoverageCriterion>,
+    /// Design blocks emitted for this document.
+    #[serde(default)]
+    pub design: Option<Vec<serde_json::Value>>,
+}
+
+/// A coverage criterion with its optional design-element references.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct MatrixCoverageCriterion {
+    /// Coverage criterion fields emitted by quire-rs.
+    #[serde(flatten)]
+    pub criterion: quoin_quire_types::CoverageMatrixCriterion,
+    /// Element references attached by quire-rs when the entry has design.
+    #[serde(default)]
+    pub design_elements: Option<Vec<serde_json::Value>>,
 }
 
 /// The closed, total evidence-status vocabulary.
@@ -220,6 +258,9 @@ const SUSPECT_KINDS: [&str; 3] = [
     FindingKind::VACUOUS_EVIDENCE,
 ];
 
+type DesignSource = (Option<String>, String, Vec<serde_json::Value>);
+type DesignSources = BTreeMap<String, Vec<DesignSource>>;
+
 /// A finding kind's precedence bucket: 0 suspect, 1 stale, 2 everything else.
 ///
 /// Everything else includes a kind the auditor adds later: `Finding::kind` is
@@ -241,6 +282,10 @@ pub(crate) fn bucket(kind: &str) -> u8 {
 ///
 /// [`ContradictoryAudit`] when `audit` names one id in `healthy` and in a
 /// finding or unevaluated check. No partial matrix is produced.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one pure projection joins the audit and evidence fields with the optional design axis"
+)]
 pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
     let healthy: BTreeSet<&str> = input.audit.healthy.iter().map(String::as_str).collect();
     if let Some(obligation) = input
@@ -293,46 +338,80 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
     let classes = class_report.and_then(|report| report.get("classes"));
 
     let mut grouped: BTreeMap<String, Vec<MatrixCriterion>> = BTreeMap::new();
-    for criterion in input
-        .coverage
-        .iter()
-        .flatten()
-        .flat_map(|requirement| &requirement.criteria)
-    {
-        let id = criterion.id.as_str();
-        let detail = detail(
-            findings.get(id).map_or(&[][..], Vec::as_slice),
-            bindings.get(id).map_or(&[][..], Vec::as_slice),
-            unevaluated.get(id).map_or(&[][..], Vec::as_slice),
-        );
-        let evidence_status = if store_is_empty {
-            EvidenceStatus::NoRunEvidence
-        } else {
-            status(healthy.contains(id), &detail)
-        };
-        grouped
-            .entry(crate::requirement_of(id).to_owned())
-            .or_default()
-            .push(MatrixCriterion {
-                id: criterion.id.clone(),
-                method: criterion.method.clone(),
-                static_status: criterion.status.clone(),
-                binders: criterion.binders.clone(),
-                class: classes
-                    .and_then(|classes| classes.get(id))
-                    .and_then(serde_json::Value::as_str)
-                    .map(ToOwned::to_owned),
-                evidence_status,
-                evidence_detail: detail,
-                analysis_evidence: analysis_evidence_for(
-                    criterion.identity.as_ref(),
+    let mut designs: DesignSources = BTreeMap::new();
+    if input.design_coverage.is_none() {
+        for criterion in input
+            .coverage
+            .iter()
+            .flatten()
+            .flat_map(|requirement| &requirement.criteria)
+        {
+            add_criterion(
+                &mut grouped,
+                criterion,
+                None,
+                &healthy,
+                store_is_empty,
+                &findings,
+                &bindings,
+                &unevaluated,
+                classes,
+                input.analysis_evidence.as_ref(),
+                input.coverage.as_deref().unwrap_or_default(),
+            );
+        }
+    }
+    if let Some(entries) = &input.design_coverage {
+        for entry in entries {
+            let requirement_ids: BTreeSet<String> = if entry.criteria.is_empty() {
+                entry
+                    .id
+                    .iter()
+                    .map(|id| crate::requirement_of(id).to_owned())
+                    .collect()
+            } else {
+                entry
+                    .criteria
+                    .iter()
+                    .map(|criterion| crate::requirement_of(&criterion.criterion.id).to_owned())
+                    .collect()
+            };
+            if let Some(blocks) = &entry.design {
+                for requirement_id in &requirement_ids {
+                    designs.entry(requirement_id.clone()).or_default().push((
+                        entry.repo.clone(),
+                        entry.document.clone(),
+                        blocks.clone(),
+                    ));
+                }
+            }
+            if entry.criteria.is_empty()
+                && let Some(id) = &entry.id
+            {
+                grouped
+                    .entry(crate::requirement_of(id).to_owned())
+                    .or_default();
+            }
+            for criterion in &entry.criteria {
+                add_criterion(
+                    &mut grouped,
+                    &criterion.criterion,
+                    criterion.design_elements.clone(),
+                    &healthy,
+                    store_is_empty,
+                    &findings,
+                    &bindings,
+                    &unevaluated,
+                    classes,
                     input.analysis_evidence.as_ref(),
                     input.coverage.as_deref().unwrap_or_default(),
-                ),
-            });
+                );
+            }
+        }
     }
 
-    let reason = grouped.is_empty().then(|| EMPTY_REASON.to_owned());
+    let has_criteria = grouped.values().any(|criteria| !criteria.is_empty());
+    let reason = (!has_criteria).then(|| EMPTY_REASON.to_owned());
     let unclassified = class_report.map(|_| {
         grouped
             .values()
@@ -340,15 +419,29 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
             .filter(|criterion| criterion.class.is_none())
             .count()
     });
+    let requirements = grouped
+        .into_iter()
+        .map(|(id, criteria)| {
+            let design = designs.get_mut(&id).and_then(|documents| {
+                documents.sort_by(|left, right| (&left.0, &left.1).cmp(&(&right.0, &right.1)));
+                let blocks: Vec<serde_json::Value> = documents
+                    .iter()
+                    .flat_map(|(_, _, blocks)| blocks.iter().cloned())
+                    .collect();
+                (!documents.is_empty()).then_some(blocks)
+            });
+            MatrixRequirement {
+                id,
+                design,
+                criteria,
+            }
+        })
+        .collect();
     Ok(MatrixOutput {
-        requirements: grouped.into_iter().map(requirement).collect(),
+        requirements,
         reason,
         unclassified,
     })
-}
-
-fn requirement((id, criteria): (String, Vec<MatrixCriterion>)) -> MatrixRequirement {
-    MatrixRequirement { id, criteria }
 }
 
 fn analysis_evidence_for(
@@ -431,6 +524,57 @@ fn analysis_item_key(item: &serde_json::Value) -> (String, String, String, Strin
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "one criterion's evidence and optional design fields are projected together"
+)]
+fn add_criterion(
+    grouped: &mut BTreeMap<String, Vec<MatrixCriterion>>,
+    criterion: &CoverageMatrixCriterion,
+    design_elements: Option<Vec<serde_json::Value>>,
+    healthy: &BTreeSet<&str>,
+    store_is_empty: bool,
+    findings: &BTreeMap<&str, Vec<&Finding>>,
+    bindings: &BTreeMap<&str, Vec<BindingDetail>>,
+    unevaluated: &BTreeMap<&str, Vec<String>>,
+    classes: Option<&serde_json::Value>,
+    analysis_evidence: Option<&AnalysisEvidenceInput>,
+    coverage: &[CoverageMatrixRequirement],
+) {
+    let id = criterion.id.as_str();
+    let detail = detail(
+        findings.get(id).map_or(&[][..], Vec::as_slice),
+        bindings.get(id).map_or(&[][..], Vec::as_slice),
+        unevaluated.get(id).map_or(&[][..], Vec::as_slice),
+    );
+    let evidence_status = if store_is_empty {
+        EvidenceStatus::NoRunEvidence
+    } else {
+        status(healthy.contains(id), &detail)
+    };
+    grouped
+        .entry(crate::requirement_of(id).to_owned())
+        .or_default()
+        .push(MatrixCriterion {
+            id: criterion.id.clone(),
+            design_elements,
+            method: criterion.method.clone(),
+            static_status: criterion.status.clone(),
+            binders: criterion.binders.clone(),
+            class: classes
+                .and_then(|classes| classes.get(id))
+                .and_then(serde_json::Value::as_str)
+                .map(ToOwned::to_owned),
+            evidence_status,
+            evidence_detail: detail,
+            analysis_evidence: analysis_evidence_for(
+                criterion.identity.as_ref(),
+                analysis_evidence,
+                coverage,
+            ),
+        });
+}
+
 /// One criterion's total evidence detail, in the orders FR-115-AC-9 states.
 fn detail(findings: &[&Finding], bindings: &[BindingDetail], checks: &[String]) -> EvidenceDetail {
     let mut findings: Vec<FindingDetail> = findings
@@ -495,15 +639,31 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
     let mut out = String::from("# Test Matrix\n");
     if let Some(reason) = &matrix.reason {
         let _ = write!(out, "\n{reason}\n");
-        return out;
+        if matrix.requirements.is_empty() {
+            return out;
+        }
     }
     let classed = matrix.unclassified.is_some();
+    let designed = matrix
+        .requirements
+        .iter()
+        .any(|requirement| requirement.design.is_some());
     for requirement in &matrix.requirements {
+        let _ = write!(out, "\n## {}\n", cell(&requirement.id));
+        for block in blocks_with_state(requirement.design.as_ref(), "uncovered") {
+            if let Some(check) = block.get("check").and_then(serde_json::Value::as_str) {
+                let _ = writeln!(out, "\nDesign gap: no design element ({check})");
+            }
+        }
+        if requirement.criteria.is_empty() {
+            continue;
+        }
         let _ = write!(
             out,
-            "\n## {}\n\n| Requirement | Criterion | Method | Static Status | {}Evidence Status | Detail |\n|---|---|---|---|{}---|---|\n",
-            cell(&requirement.id),
+            "\n| Requirement | Criterion | {}Method | Static Status | {}Evidence Status | Detail |\n|---|---|{}---|---|{}---|---|\n",
+            if designed { "Design | " } else { "" },
             if classed { "Class | " } else { "" },
+            if designed { "---|" } else { "" },
             if classed { "---|" } else { "" },
         );
         for criterion in &requirement.criteria {
@@ -529,11 +689,17 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
             } else {
                 format!("{detail}; {analysis}")
             };
+            let design = if designed {
+                format!("{} | ", design_cell(requirement, criterion))
+            } else {
+                String::new()
+            };
             let _ = writeln!(
                 out,
-                "| {} | {} | {} | {} | {}{} | {} |",
+                "| {} | {} | {}{} | {} | {}{} | {} |",
                 cell(&requirement.id),
                 cell(&criterion.id),
+                design,
                 cell(criterion.method.as_deref().unwrap_or("—")),
                 cell(&criterion.static_status),
                 class,
@@ -549,6 +715,108 @@ pub fn render_markdown(matrix: &MatrixOutput) -> String {
         );
     }
     out
+}
+
+fn blocks_with_state<'a>(
+    design: Option<&'a Vec<serde_json::Value>>,
+    state: &str,
+) -> impl Iterator<Item = &'a serde_json::Value> {
+    design
+        .into_iter()
+        .flatten()
+        .filter(move |block| block.get("state").and_then(serde_json::Value::as_str) == Some(state))
+}
+
+fn design_cell(requirement: &MatrixRequirement, criterion: &MatrixCriterion) -> String {
+    let Some(blocks) = &requirement.design else {
+        return "n/a".to_owned();
+    };
+    let mut parts = Vec::new();
+    for reference in criterion.design_elements.iter().flatten() {
+        let id = reference
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        let repo = reference.get("repo").and_then(serde_json::Value::as_str);
+        let element = blocks
+            .iter()
+            .flat_map(|block| {
+                block
+                    .get("elements")
+                    .and_then(serde_json::Value::as_array)
+                    .into_iter()
+                    .flatten()
+            })
+            .find(|element| {
+                element.get("id").and_then(serde_json::Value::as_str) == Some(id)
+                    && element.get("repo").and_then(serde_json::Value::as_str) == repo
+            });
+        let kind = element
+            .and_then(|element| element.get("kind"))
+            .and_then(serde_json::Value::as_str);
+        let qualified_id = repo.map_or_else(|| id.to_owned(), |repo| format!("{repo}/{id}"));
+        let label = kind.map_or_else(
+            || qualified_id.clone(),
+            |kind| format!("{qualified_id} ({kind})"),
+        );
+        parts.push(label);
+    }
+    for block in blocks
+        .iter()
+        .filter(|block| block.get("state").and_then(serde_json::Value::as_str) == Some("uncovered"))
+    {
+        if let Some(check) = block.get("check").and_then(serde_json::Value::as_str) {
+            parts.push(format!("no design element ({check})"));
+        }
+    }
+    for block in blocks.iter().filter(|block| {
+        block.get("state").and_then(serde_json::Value::as_str) == Some("covered")
+            && block
+                .get("elements")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(Vec::is_empty)
+    }) {
+        for dangling in block
+            .get("dangling")
+            .and_then(serde_json::Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(reference) = dangling
+                .get("reference")
+                .and_then(serde_json::Value::as_str)
+            {
+                parts.push(format!("-> {reference} (dangling)"));
+            }
+        }
+    }
+    for block in blocks {
+        for mismatch in block
+            .get("kind_mismatch")
+            .and_then(serde_json::Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            let id = mismatch
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            let repo = mismatch.get("repo").and_then(serde_json::Value::as_str);
+            let id = repo.map_or_else(|| id.to_owned(), |repo| format!("{repo}/{id}"));
+            let archetype = mismatch
+                .get("archetype")
+                .and_then(serde_json::Value::as_str);
+            parts.push(archetype.map_or_else(
+                || format!("kind mismatch: {id}"),
+                |kind| format!("kind mismatch: {id} ({kind})"),
+            ));
+        }
+    }
+    if parts.is_empty() {
+        "(none)".to_owned()
+    } else {
+        parts.join(", ")
+    }
 }
 
 /// The detail column: findings, then bindings, then unevaluated checks.

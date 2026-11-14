@@ -64,6 +64,22 @@ pub(crate) fn invoke_refusable(
     }
 }
 
+/// Invoke an operation whose repository refusal is the command's own status.
+pub(crate) fn invoke_declining(
+    operation: &str,
+    request: &serde_json::Value,
+) -> Result<Response, String> {
+    match dispatch(operation, request, &settings()) {
+        Err(error) if error.code == CoreErrorCode::Refused => Ok(Response {
+            payload: serde_json::Value::Null,
+            diagnostics: vec![Diagnostic::from(&error)],
+            outcome: error.outcome(),
+        }),
+        Err(error) => Err(failed(operation, &error)),
+        Ok(response) => Ok(response),
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test assertions report failures")]
 mod tests {
