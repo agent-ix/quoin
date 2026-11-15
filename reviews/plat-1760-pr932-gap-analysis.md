@@ -3,7 +3,7 @@ id: SR-20261115210123
 title: "Gap analysis — PLAT-1760 PR #932 typed stale-evidence cause"
 type: SpecReview
 analysis: gap-analysis
-scope: "agent-ix/quoin; spec/functional/FR-032-evidence-auditor.md, spec/functional/FR-115-evidence-backed-test-matrix.md, spec/functional/FR-167-release-snapshot-format.md, rust/crates/quoin-auditor, rust/crates/quoin-assurance, rust/crates/quoin-core/src/ops/matrix.rs, rust/crates/quoin-cli/src/release/snapshot.rs; PLAT-1760; PR #932 head 2c7d90d3"
+scope: "agent-ix/quoin; spec/functional/FR-032-evidence-auditor.md, spec/functional/FR-115-evidence-backed-test-matrix.md, spec/functional/FR-167-release-snapshot-format.md, rust/crates/quoin-auditor, rust/crates/quoin-assurance, rust/crates/quoin-core/src/ops/matrix.rs, rust/crates/quoin-cli/src/release/snapshot.rs; PLAT-1760; PR #932 head 451b0c99"
 review_set: subset
 relationships:
   - target: "ix://agent-ix/quoin/FR-032"
@@ -79,7 +79,7 @@ The round-2 Opus disposition at head `467c317c` added FND-008; the final permitt
 
 ## Dispositions
 
-Latest outcomes at PR #932 head `104078c6`, after fix round 3. Focused tests and Clippy passed for quoin-graph-analysis, quoin-auditor, quoin-assurance and quoin-finding-types. The final aggregate gate remains pending.
+Latest outcomes at PR #932 head `451b0c99`, after fix round 3 and the aggregate-gate import correction. Focused tests and Clippy passed for quoin-graph-analysis, quoin-auditor, quoin-assurance and quoin-finding-types. The full `make rust-gate` passed formatting, workspace Clippy, cargo deny (with the existing yanked `yoke-derive 0.8.3` warning), and tests through `tc_154_risk_discrepancies_command`; that suite has one existing assertion failure. It reproduces on clean `origin/main` at `50643ccc` using `cargo test --manifest-path rust/Cargo.toml --locked -p quoin-cli --test tc_154_risk_discrepancies_command strict_exits_1_only_with_findings_and_changes_neither_the_report_nor_a_file -- --exact`: actual `decision-without-region`, expected `accepted-outside-acceptable-region`. The test file is unchanged from `origin/main`, and the failing test is outside this PR's diff. Treat this as a verified current-main baseline red.
 
 | FND | outcome | reason |
 | --- | --- | --- |

@@ -3,7 +3,7 @@ id: SR-20261115210122
 title: "Code review (Rust lane) — PLAT-1760 PR #932 typed stale-evidence cause"
 type: SpecReview
 analysis: code-review
-scope: "agent-ix/quoin; rust/crates/quoin-finding-types/src/finding.rs, rust/crates/quoin-finding-types/src/lib.rs, rust/crates/quoin-auditor/src/audit/stale.rs, rust/crates/quoin-assurance/src/matrix.rs, rust/crates/quoin-core/src/ops/matrix.rs, rust/crates/quoin-cli/src/release/snapshot.rs, rust/crates/quoin-auditor/tests/tc_1760_stale_cause.rs, rust/crates/quoin-assurance/tests/tc_1760_matrix_cause.rs; PLAT-1760; PR #932 head 2c7d90d3"
+scope: "agent-ix/quoin; rust/crates/quoin-finding-types/src/finding.rs, rust/crates/quoin-finding-types/src/lib.rs, rust/crates/quoin-auditor/src/audit/stale.rs, rust/crates/quoin-assurance/src/matrix.rs, rust/crates/quoin-core/src/ops/matrix.rs, rust/crates/quoin-cli/src/release/snapshot.rs, rust/crates/quoin-auditor/tests/tc_1760_stale_cause.rs, rust/crates/quoin-assurance/tests/tc_1760_matrix_cause.rs; PLAT-1760; PR #932 head 451b0c99"
 review_set: subset
 relationships:
   - target: "ix://agent-ix/quoin/FR-032"
@@ -94,7 +94,7 @@ The final gate first found a compile failure in the quoin-cli target: snapshot.r
 
 ## Dispositions
 
-Latest outcomes at PR #932 head `104078c6`, after fix round 3. Focused tests and Clippy passed for quoin-graph-analysis, quoin-auditor, quoin-assurance and quoin-finding-types. The final aggregate gate remains pending.
+Latest outcomes at PR #932 head `451b0c99`, after fix round 3 and the aggregate-gate import correction. Focused tests and Clippy passed for quoin-graph-analysis, quoin-auditor, quoin-assurance and quoin-finding-types. The full `make rust-gate` passed formatting, workspace Clippy, cargo deny (with the existing yanked `yoke-derive 0.8.3` warning), and tests through `tc_154_risk_discrepancies_command`; that suite has one existing assertion failure. It reproduces on clean `origin/main` at `50643ccc` using `cargo test --manifest-path rust/Cargo.toml --locked -p quoin-cli --test tc_154_risk_discrepancies_command strict_exits_1_only_with_findings_and_changes_neither_the_report_nor_a_file -- --exact`: actual `decision-without-region`, expected `accepted-outside-acceptable-region`. The test file is unchanged from `origin/main`, and the failing test is outside this PR's diff. Treat this as a verified current-main baseline red.
 
 | FND | outcome | reason |
 | --- | --- | --- |
@@ -112,4 +112,4 @@ Latest outcomes at PR #932 head `104078c6`, after fix round 3. Focused tests and
 | FND-012 | fixed | Matrix cause ordering puts `Invalid`/absent last while valid causes use the required order. |
 | FND-013 | fixed | Graph audit parsing rejects unknown cause strings with a member-specific error; the auditor's invalid-sentinel arm now emits a stale finding instead of dropping the suite. Two tagged graph-parse tests cover the boundary. |
 | FND-014 | fixed | The matrix ordering comment now states that absent cause sorts after `failed-run` and `missing-run`. |
-| FND-015 | fixed | `StaleCause` is publicly re-exported through `quoin_assurance::matrix`; snapshot.rs imports it through that existing direct dependency, avoiding a new crate dependency. Final aggregate gate is pending. |
+| FND-015 | fixed | `StaleCause` is publicly re-exported through `quoin_assurance::matrix`; snapshot.rs imports it through that existing direct dependency, avoiding a new crate dependency. Workspace Clippy passed and the full gate reached the verified current-main baseline red recorded above. |
