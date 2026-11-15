@@ -12,21 +12,26 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
-
-use tempfile::Builder;
 
 use crate::error::{ModulesError, RollbackOutcome};
+
+mod npm;
+mod support;
+
 use crate::git::{GitResolver, Revision};
 use crate::ids::ModuleName;
 use crate::manifest::MarketplaceEntry;
 use crate::module_name::{locate_manifest, read_module_name};
-use crate::npm::{HttpNpmTransport, NpmTransport};
-use crate::pack::{PackProbe, RestrictedSet, enclosing_work_tree};
+use crate::pack::{PackProbe, enclosing_work_tree};
 use crate::paths::InstallPaths;
 use crate::registry::{InstalledModule, ModuleRegistry};
 use crate::semantic::SemanticGate;
 use crate::source::Source;
+#[cfg(test)]
+use support::civil_from_days;
+use support::{
+    ResolvedSource, join_checked, materialize, remove_dir_if_present, render_sets, rfc3339_now,
+};
 
 /// What an install did.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,7 +53,7 @@ pub struct InstallOutcome {
 pub struct ModuleInstaller<'a> {
     paths: InstallPaths,
     resolver: &'a dyn GitResolver,
-    npm_transport: &'a dyn NpmTransport,
+    npm_transport: &'a dyn npm::NpmTransport,
     gate: &'a dyn SemanticGate,
     packs: &'a dyn PackProbe,
 }
@@ -62,8 +67,6 @@ enum Origin {
     AdHoc,
 }
 
-static HTTP_NPM_TRANSPORT: HttpNpmTransport = HttpNpmTransport;
-
 impl<'a> ModuleInstaller<'a> {
     /// Build an installer.
     #[must_use]
@@ -73,13 +76,13 @@ impl<'a> ModuleInstaller<'a> {
         gate: &'a dyn SemanticGate,
         packs: &'a dyn PackProbe,
     ) -> Self {
-        Self::with_npm_transport(paths, resolver, &HTTP_NPM_TRANSPORT, gate, packs)
+        Self::with_npm_transport(paths, resolver, &npm::HTTP_NPM_TRANSPORT, gate, packs)
     }
 
     fn with_npm_transport(
         paths: InstallPaths,
         resolver: &'a dyn GitResolver,
-        npm_transport: &'a dyn NpmTransport,
+        npm_transport: &'a dyn npm::NpmTransport,
         gate: &'a dyn SemanticGate,
         packs: &'a dyn PackProbe,
     ) -> Self {
@@ -280,19 +283,9 @@ impl<'a> ModuleInstaller<'a> {
                     source: source.clone(),
                 })
             }
-            Source::Npm { package, .. } => Ok(ResolvedSource {
-                dir: crate::npm::resolve_package(
-                    &self.paths.cache_root,
-                    source,
-                    self.npm_transport,
-                )?,
-                requested_ref: None,
-                source: Source::Npm {
-                    package: package.clone(),
-                    version: None,
-                    registry: None,
-                },
-            }),
+            Source::Npm { .. } => {
+                npm::resolve_source(&self.paths.cache_root, source, self.npm_transport)
+            }
             Source::Url { .. } => Err(ModulesError::UnsupportedSource { source_type: "url" }),
             Source::Github { .. } | Source::GitSubdir { .. } | Source::Git { .. } => {
                 let url = source.git_url().ok_or(ModulesError::UnsupportedSource {
@@ -325,7 +318,7 @@ impl<'a> ModuleInstaller<'a> {
             // holds the rejected content.
             let resolved = match previous.source {
                 Source::Npm { .. } => ResolvedSource {
-                    dir: self.cached_npm_source(previous)?,
+                    dir: npm::cached_source(&self.paths.cache_root, previous)?,
                     requested_ref: None,
                     source: previous.source.clone(),
                 },
@@ -342,189 +335,6 @@ impl<'a> ModuleInstaller<'a> {
             detail: err.to_string(),
         })
     }
-
-    fn cached_npm_source(&self, previous: &InstalledModule) -> Result<PathBuf, ModulesError> {
-        let cache_root = self.paths.cache_root.join("npm");
-        let cache_root = cache_root
-            .canonicalize()
-            .map_err(|error| ModulesError::NpmMetadata {
-                detail: format!("previous package cache is unavailable: {error}"),
-            })?;
-        let resolved = PathBuf::from(&previous.resolved_path)
-            .canonicalize()
-            .map_err(|error| ModulesError::NpmMetadata {
-                detail: format!("previous package cache is unavailable: {error}"),
-            })?;
-        if !resolved.starts_with(&cache_root) {
-            return Err(ModulesError::NpmMetadata {
-                detail: "previous package cache path is outside the npm cache".to_owned(),
-            });
-        }
-        if read_module_name(&resolved)? != previous.name {
-            return Err(ModulesError::NpmMetadata {
-                detail: "previous package cache no longer names the installed module".to_owned(),
-            });
-        }
-        Ok(resolved)
-    }
-}
-
-/// The sets as `authority/id@version`, comma separated.
-fn render_sets(sets: &[RestrictedSet]) -> String {
-    sets.iter()
-        .map(ToString::to_string)
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-/// A source resolved to a directory, whatever its type.
-struct ResolvedSource {
-    dir: PathBuf,
-    requested_ref: Option<String>,
-    source: Source,
-}
-
-/// Join `sub` onto `base`, refusing anything that escapes it.
-fn join_checked(base: &Path, sub: &str) -> Result<PathBuf, ModulesError> {
-    if sub.starts_with('/') || sub.split(['/', '\\']).any(|s| s == ".." || s.is_empty()) {
-        return Err(ModulesError::UnsafeTreePath {
-            entry: sub.to_owned(),
-        });
-    }
-    Ok(base.join(sub))
-}
-
-/// Replace `target` with a copy of `content_root`.
-fn materialize(content_root: &Path, target: &Path) -> Result<(), ModulesError> {
-    let parent = target
-        .parent()
-        .ok_or_else(|| ModulesError::MaterializeFailed {
-            target: target.to_path_buf(),
-            source: std::io::Error::new(std::io::ErrorKind::InvalidInput, "target has no parent"),
-        })?;
-    fs::create_dir_all(parent).map_err(|source| ModulesError::MaterializeFailed {
-        target: parent.to_path_buf(),
-        source,
-    })?;
-    let staging = Builder::new()
-        .prefix("module-install-")
-        .tempdir_in(parent)
-        .map_err(|source| ModulesError::MaterializeFailed {
-            target: parent.to_path_buf(),
-            source,
-        })?;
-    let staged = staging.path().join("new");
-    copy_dir(content_root, &staged)?;
-
-    let previous = staging.path().join("previous");
-    let had_previous = match fs::rename(target, &previous) {
-        Ok(()) => true,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
-        Err(source) => {
-            return Err(ModulesError::MaterializeFailed {
-                target: target.to_path_buf(),
-                source,
-            });
-        }
-    };
-    if let Err(source) = fs::rename(&staged, target) {
-        if had_previous && let Err(restore_error) = fs::rename(&previous, target) {
-            let retained_backup = staging.keep();
-            return Err(ModulesError::MaterializeFailed {
-                target: target.to_path_buf(),
-                source: std::io::Error::new(
-                    restore_error.kind(),
-                    format!(
-                        "install failed ({source}); restoring prior module failed ({restore_error}); previous module retained at {}",
-                        retained_backup.join("previous").display()
-                    ),
-                ),
-            });
-        }
-        return Err(ModulesError::MaterializeFailed {
-            target: target.to_path_buf(),
-            source,
-        });
-    }
-    Ok(())
-}
-
-fn remove_dir_if_present(path: &Path) -> Result<(), ModulesError> {
-    match fs::remove_dir_all(path) {
-        Ok(()) => Ok(()),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(source) => Err(ModulesError::MaterializeFailed {
-            target: path.to_path_buf(),
-            source,
-        }),
-    }
-}
-
-/// Recursively copy a directory, skipping symlinks.
-///
-/// A symlink in a source tree can point outside the module, so it is not
-/// followed and not recreated — the same rule the git tree extraction applies.
-fn copy_dir(from: &Path, to: &Path) -> Result<(), ModulesError> {
-    let fail = |target: &Path, source: std::io::Error| ModulesError::MaterializeFailed {
-        target: target.to_path_buf(),
-        source,
-    };
-    fs::create_dir_all(to).map_err(|e| fail(to, e))?;
-    let entries = fs::read_dir(from).map_err(|e| fail(from, e))?;
-    for entry in entries {
-        let entry = entry.map_err(|e| fail(from, e))?;
-        let file_type = entry.file_type().map_err(|e| fail(from, e))?;
-        let target = to.join(entry.file_name());
-        if file_type.is_symlink() {
-            continue;
-        }
-        if file_type.is_dir() {
-            copy_dir(&entry.path(), &target)?;
-        } else {
-            fs::copy(entry.path(), &target).map_err(|e| fail(&target, e))?;
-        }
-    }
-    Ok(())
-}
-
-/// An RFC 3339 timestamp for the install record.
-///
-/// Hand-rolled rather than pulling in a date crate: the registry only needs a
-/// sortable instant, and the civil-date arithmetic is the whole of it.
-///
-/// Millisecond precision is not cosmetic. The TypeScript `writeRegistry` writes
-/// `Date.prototype.toISOString()`, which always carries exactly three fractional
-/// digits, and both implementations write this same registry file during
-/// coexistence. A second-precision stamp here is a different string shape in a
-/// field the oracle's goldens pin.
-fn rfc3339_now() -> String {
-    let millis = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map_or(0, |d| d.as_millis());
-    let secs = u64::try_from(millis / 1000).unwrap_or(0);
-    let milli = u64::try_from(millis % 1000).unwrap_or(0);
-    let (days, rem) = (secs / 86_400, secs % 86_400);
-    let (hour, minute, second) = (rem / 3600, (rem % 3600) / 60, rem % 60);
-    let (year, month, day) = civil_from_days(i64::try_from(days).unwrap_or(0));
-    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}.{milli:03}Z")
-}
-
-/// Howard Hinnant's `civil_from_days`, for days since 1970-01-01.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    (
-        if m <= 2 { y + 1 } else { y },
-        u32::try_from(m).unwrap_or(1),
-        u32::try_from(d).unwrap_or(1),
-    )
 }
 
 #[cfg(test)]
