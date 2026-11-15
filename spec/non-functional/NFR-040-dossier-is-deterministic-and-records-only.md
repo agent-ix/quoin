@@ -14,6 +14,18 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-195"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-196"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-197"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-198"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-199"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-200"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-201"
+    type: "constrains"
 ---
 
 # NFR-040: Dossier generation is deterministic and writes only what the records state
@@ -53,7 +65,7 @@ A reviewer relies on the documents matching the commit. A value the generator su
 | NFR-040-AC-2 | Inspection of the dossier code path finds no wall-clock call, and analysis of its dependency graph finds no network crate | Inspection |
 | NFR-040-AC-3 | For a fixture whose records state no criticality, risk, compliance or acceptability, none of those values appears in any generated file | Test |
 | NFR-040-AC-4 | Fixture documents created in a different order on disk give the same bytes, and swapping two `--clause-binding` options changes only the order of the two RMM tables | Test |
-| NFR-040-AC-5 | A `generate` run that selects only non-RMM documents (`srs`, `architecture`, `trace-matrix`) with no `--as-of` writes no time into any file | Test |
+| NFR-040-AC-5 | A `generate` run that selects only `srs`, `architecture` and `trace-matrix` with no `--as-of` writes no time into any file | Test |
 
 ## Verification
 
