@@ -595,7 +595,11 @@ mod tests {
     }
 
     fn package_archive(marker: &str) -> Vec<u8> {
-        let content = format!("name: demo\nmarker: {marker}\n");
+        package_archive_for("demo", marker)
+    }
+
+    fn package_archive_for(module_name: &str, marker: &str) -> Vec<u8> {
+        let content = format!("name: {module_name}\nmarker: {marker}\n");
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
         let mut archive = tar::Builder::new(&mut encoder);
         let mut header = tar::Header::new_gnu();
@@ -631,6 +635,27 @@ mod tests {
                 body: package_archive(marker),
             },
         ]
+    }
+
+    struct RecordingNpmTransport {
+        responses: Mutex<VecDeque<NpmResponse>>,
+        requests: Mutex<Vec<url::Url>>,
+    }
+
+    impl NpmTransport for RecordingNpmTransport {
+        fn get(&self, url: &url::Url, _limit: u64) -> Result<NpmResponse, ModulesError> {
+            self.requests
+                .lock()
+                .expect("request lock")
+                .push(url.clone());
+            self.responses
+                .lock()
+                .expect("response lock")
+                .pop_front()
+                .ok_or_else(|| ModulesError::NpmTransport {
+                    detail: "fixture exhausted".to_owned(),
+                })
+        }
     }
 
     #[trace("FR-187-AC-1", "FR-187-AC-12", "FR-187-AC-13")]
@@ -704,6 +729,81 @@ mod tests {
             fs::read_to_string(paths.target_root.join("demo/manifest.yaml"))
                 .expect("module after timeout"),
             "name: demo\nmarker: good\n"
+        );
+    }
+
+    #[trace("FR-187-AC-3")]
+    #[test]
+    fn tc_1755_002_scoped_package_source_installs_with_scoped_name_and_unset_version() {
+        let temp = tempfile::tempdir().expect("home tempdir");
+        let paths = InstallPaths::for_home(&crate::paths::IxHome::new(temp.path().join("ixhome")));
+        let metadata_url = "https://registry.npmjs.org/@scope%2Fname/1.2.3";
+        let tarball_url = "https://registry.npmjs.org/@scope/name/-/name-1.2.3.tgz";
+        let metadata = serde_json::to_vec(&serde_json::json!({
+            "version": "1.2.3",
+            "dist": { "tarball": tarball_url }
+        }))
+        .expect("scoped package metadata");
+        let transport = RecordingNpmTransport {
+            responses: Mutex::new(VecDeque::from([
+                NpmResponse {
+                    final_url: url::Url::parse(metadata_url).expect("metadata response URL"),
+                    body: metadata,
+                },
+                NpmResponse {
+                    final_url: url::Url::parse(tarball_url).expect("tarball response URL"),
+                    body: package_archive_for("spec-objects-security", "scoped"),
+                },
+            ])),
+            requests: Mutex::new(Vec::new()),
+        };
+        let installer = ModuleInstaller::with_npm_transport(
+            paths.clone(),
+            &NoGit,
+            &transport,
+            &crate::semantic::PermissiveGate,
+            &crate::pack::NoPacks,
+        );
+        let source = Source::Npm {
+            package: "@scope/name".to_owned(),
+            version: Some("1.2.3".to_owned()),
+            registry: None,
+        };
+
+        let result = installer
+            .install_ad_hoc(&source)
+            .expect("scoped package install");
+        assert_eq!(
+            transport
+                .requests
+                .lock()
+                .expect("request lock")
+                .as_slice()
+                .iter()
+                .map(url::Url::as_str)
+                .collect::<Vec<_>>(),
+            [metadata_url, tarball_url]
+        );
+        assert_eq!(
+            result.module.source,
+            Source::Npm {
+                package: "@scope/name".to_owned(),
+                version: None,
+                registry: None,
+            }
+        );
+        assert_eq!(
+            installer.list().expect("installed registry")[0].source,
+            result.module.source
+        );
+        assert_eq!(
+            fs::read_to_string(
+                paths
+                    .target_root
+                    .join("spec-objects-security/manifest.yaml")
+            )
+            .expect("installed manifest"),
+            "name: spec-objects-security\nmarker: scoped\n"
         );
     }
 
