@@ -265,6 +265,10 @@ pub struct CoverageMatrixCriterion {
     /// evidence-mode `CoverageReport` (FR-153/FR-115).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<TargetLocus>,
+    /// Diagnostic-only source claims that name this criterion without
+    /// providing matrix backing (quire-rs FR-050-AC-68). Omitted when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unbacked_claims: Vec<CoverageMatrixUnbackedClaim>,
     /// The computed static status (`tagged`, `untagged`,
     /// `tagged-by-ignored-test`, `method-without-symbol`).
     ///
@@ -295,10 +299,29 @@ pub struct TargetLocus {
     pub line: Option<usize>,
 }
 
+/// One Quire source occurrence naming a criterion without backing it
+/// (FR-050-AC-68).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct CoverageMatrixUnbackedClaim {
+    /// The engine-owned reason, preserved verbatim.
+    pub reason: String,
+    /// The criterion id exactly as the source occurrence states it.
+    pub id: String,
+    /// Repo-relative, `/`-separated source path.
+    pub path: String,
+    /// 1-based line of the occurrence.
+    pub line: u64,
+    /// Qualified source symbol, or file path for a module-header occurrence.
+    pub symbol: String,
+}
+
 /// One binding test symbol of a [`CoverageMatrixCriterion`], field for field
 /// as quire emits it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
 pub struct CoverageMatrixBinder {
     /// Repo-relative, `/`-separated.
     pub path: String,

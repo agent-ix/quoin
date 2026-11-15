@@ -18,7 +18,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_evidence::types::BindingsFile;
 use quoin_finding_types::{AuditReport, Finding, FindingKind};
-use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixCriterion, CoverageMatrixRequirement};
+use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixUnbackedClaim, TargetLocus};
 use serde::{Deserialize, Serialize};
 
 mod render;
@@ -31,7 +31,7 @@ pub struct MatrixInput {
     /// quire's `coverage_matrix`, exactly as `quire coverage` emits it: a bare
     /// array, absent when the module declares no `obligations:` source.
     #[serde(default)]
-    pub coverage: Option<Vec<CoverageMatrixRequirement>>,
+    pub coverage: Option<Vec<MatrixCoverageRequirement>>,
     /// quire-rs `design_matrix` entries, when supplied by `quoin matrix`.
     #[serde(default)]
     pub design_coverage: Option<Vec<MatrixCoverageEntry>>,
@@ -54,6 +54,53 @@ pub struct AnalysisEvidenceInput {
     /// Every non-qualified result, including its exact cause and detail.
     #[serde(default)]
     pub evidence_results: Vec<serde_json::Value>,
+}
+
+/// One projected Quire requirement accepted by the strict `matrix.build`
+/// boundary.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MatrixCoverageRequirement {
+    /// Scope-relative source document.
+    pub document: String,
+    /// Quire's optional FR-082 document criticality, preserved as authored.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub criticality: Option<serde_json::Value>,
+    /// Values declared under carried names, absent when none are stated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub carried: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Projected criteria.
+    pub criteria: Vec<MatrixCoverageCriterion>,
+}
+
+/// One projected Quire criterion accepted by the strict `matrix.build`
+/// boundary.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MatrixCoverageCriterion {
+    /// The criterion identifier.
+    pub id: String,
+    /// Quire's source statement, retained in the reader shape but not rendered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub statement: Option<String>,
+    /// The declared verification method, omitted when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    /// Quire's binding test symbols.
+    pub binders: Vec<CoverageMatrixBinder>,
+    /// The exact native selected identity when the upstream payload carries it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<TargetLocus>,
+    /// Quire's separate retained record binders, which the evidence axis
+    /// receives through `analysis_evidence`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub record_binders: Option<Vec<serde_json::Value>>,
+    /// Diagnostic-only source claims that name this criterion without
+    /// providing matrix backing.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unbacked_claims: Vec<CoverageMatrixUnbackedClaim>,
+    /// The engine's computed static status.
+    pub status: String,
 }
 
 /// The evidence-backed matrix.
@@ -103,6 +150,10 @@ pub struct MatrixCriterion {
     pub static_status: String,
     /// quire's binders, verbatim.
     pub binders: Vec<CoverageMatrixBinder>,
+    /// Quire's diagnostic-only source claims with no matrix backing, verbatim.
+    /// Omitted when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unbacked_claims: Vec<CoverageMatrixUnbackedClaim>,
     /// The software safety class the criterion's requirement states, as
     /// written (FR-160). Omitted when it states none, and when no class policy
     /// was given.
@@ -131,7 +182,7 @@ pub struct MatrixCoverageEntry {
     #[serde(default)]
     pub id: Option<String>,
     /// Criteria with their original coverage fields and design references.
-    pub criteria: Vec<MatrixCoverageCriterion>,
+    pub criteria: Vec<MatrixDesignCoverageCriterion>,
     /// Design blocks emitted for this document.
     #[serde(default)]
     pub design: Option<Vec<serde_json::Value>>,
@@ -139,10 +190,10 @@ pub struct MatrixCoverageEntry {
 
 /// A coverage criterion with its optional design-element references.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct MatrixCoverageCriterion {
+pub struct MatrixDesignCoverageCriterion {
     /// Coverage criterion fields emitted by quire-rs.
     #[serde(flatten)]
-    pub criterion: quoin_quire_types::CoverageMatrixCriterion,
+    pub criterion: MatrixCoverageCriterion,
     /// Element references attached by quire-rs when the entry has design.
     #[serde(default)]
     pub design_elements: Option<Vec<serde_json::Value>>,
@@ -449,7 +500,7 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
 fn analysis_evidence_for(
     identity: Option<&quoin_quire_types::TargetLocus>,
     evidence: Option<&AnalysisEvidenceInput>,
-    coverage: &[CoverageMatrixRequirement],
+    coverage: &[MatrixCoverageRequirement],
 ) -> Option<Vec<serde_json::Value>> {
     evidence.map(|evidence| analysis_items(identity, evidence, coverage))
 }
@@ -457,7 +508,7 @@ fn analysis_evidence_for(
 fn analysis_items(
     identity: Option<&quoin_quire_types::TargetLocus>,
     evidence: &AnalysisEvidenceInput,
-    coverage: &[CoverageMatrixRequirement],
+    coverage: &[MatrixCoverageRequirement],
 ) -> Vec<serde_json::Value> {
     let Some(identity) = identity else {
         return Vec::new();
@@ -532,7 +583,7 @@ fn analysis_item_key(item: &serde_json::Value) -> (String, String, String, Strin
 )]
 fn add_criterion(
     grouped: &mut BTreeMap<String, Vec<MatrixCriterion>>,
-    criterion: &CoverageMatrixCriterion,
+    criterion: &MatrixCoverageCriterion,
     design_elements: Option<Vec<serde_json::Value>>,
     healthy: &BTreeSet<&str>,
     store_is_empty: bool,
@@ -541,7 +592,7 @@ fn add_criterion(
     unevaluated: &BTreeMap<&str, Vec<String>>,
     classes: Option<&serde_json::Value>,
     analysis_evidence: Option<&AnalysisEvidenceInput>,
-    coverage: &[CoverageMatrixRequirement],
+    coverage: &[MatrixCoverageRequirement],
 ) {
     let id = criterion.id.as_str();
     let detail = detail(
@@ -563,6 +614,7 @@ fn add_criterion(
             method: criterion.method.clone(),
             static_status: criterion.status.clone(),
             binders: criterion.binders.clone(),
+            unbacked_claims: criterion.unbacked_claims.clone(),
             class: classes
                 .and_then(|classes| classes.get(id))
                 .and_then(serde_json::Value::as_str)
