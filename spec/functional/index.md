@@ -182,3 +182,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-199: The dossier risk management document renders the recorded hazard-to-decision chain](./FR-199-dossier-risk-management-content.md)
 - [FR-200: The dossier risk management plan renders the authored policy and states the missing plan record](./FR-200-dossier-risk-management-plan-content.md)
 - [FR-201: The dossier release record renders the committed snapshot and EA release verdict](./FR-201-dossier-release-record-content.md)
+- [FR-202: The dossier threat-model document renders each threat model's covered crossings, sinks, treatments and open findings](./FR-202-dossier-threat-model-content.md)
