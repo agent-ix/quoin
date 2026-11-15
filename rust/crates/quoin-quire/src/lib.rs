@@ -111,10 +111,6 @@ pub mod model {
     };
     pub use quire_rs::metric::{Metric, MetricShape};
     pub use quire_rs::obligation::{CriterionObligation, Obligation};
-    pub use quire_rs::semantic::systems::{
-        AllocationRecord, ConnectionDirection, ConnectionRecord, PartRecord, PortDirection,
-        PortRecord,
-    };
     pub use quire_rs::symbols::trace::{BindingCensus, UnmatchedTag};
     pub use quire_rs::{
         AcceptedAssurancePremises, AssuranceError, AssuranceExport, ClauseBinding,

@@ -24,6 +24,7 @@ test-stubs = []
 [dependencies]
 ix-cli-kit = { workspace = true }
 quoin-quire = { workspace = true }
+quoin-quire-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }

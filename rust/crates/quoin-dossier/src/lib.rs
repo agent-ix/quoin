@@ -15,6 +15,7 @@ mod engine;
 mod error;
 mod export;
 mod gap;
+mod markdown;
 mod order;
 mod registry;
 mod report;

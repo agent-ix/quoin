@@ -2,19 +2,27 @@
 // Copyright (C) 2026 Agent-IX
 
 //! Architecture document generator (FR-193, PLAT-1437).
+//!
+//! The requirement-to-element mapping comes only from the quire-rs design
+//! matrix (the design join per requirement) and the authored allocation rows;
+//! nothing is matched by name.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
 
 use quoin_quire::coverage::Request;
-use quoin_quire::model::DesignElement;
+use quoin_quire::records::Document;
+use quoin_quire::systems::Systems;
+use serde_json::Value;
 
 use crate::error::SourceFailure;
 use crate::gap::{Gap, GapKind};
+use crate::markdown::{cell, unusable_input};
 use crate::order::dossier_cmp;
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
 
 /// The Architecture generator.
-pub struct ArchitectureGenerator;
+pub(crate) struct ArchitectureGenerator;
 
 impl Generator for ArchitectureGenerator {
     fn spec(&self) -> DocumentSpec {
@@ -27,186 +35,368 @@ impl Generator for ArchitectureGenerator {
     }
 
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
-        let mut gaps = Vec::new();
-        let mut body = String::from("# Architecture\n\n");
-
-        // Load modules
         let modules = inputs
             .modules
             .iter()
-            .map(|path| quoin_quire::ids::ModuleRoot::open(path))
-            .collect::<std::result::Result<Vec<_>, _>>()
+            .map(quoin_quire::ids::ModuleRoot::open)
+            .collect::<Result<Vec<_>, _>>()
             .map_err(|error| SourceFailure {
                 source: "modules".to_owned(),
                 detail: format!("failed to open module: {error}"),
             })?;
+        let selection = quoin_quire::ModuleSelection::Closed(modules);
 
-        let module_selection = quoin_quire::ModuleSelection::Closed(modules);
-
-        // Create request for design matrix
         let scope =
             quoin_quire::ids::ScopeRoot::open(&inputs.scope).map_err(|error| SourceFailure {
                 source: "scope".to_owned(),
                 detail: format!("failed to open scope: {error}"),
             })?;
-
         let request = Request {
-            scope: scope.clone(),
-            modules: module_selection.clone(),
+            scope,
+            modules: selection.clone(),
         };
 
-        // Load design matrix which contains both coverage and design elements
-        let design_outcome =
+        let outcome =
             quoin_quire::design_matrix::compute(&request).map_err(|error| SourceFailure {
                 source: "design_matrix".to_owned(),
                 detail: format!("failed to compute design matrix: {error}"),
             })?;
+        let entries = match serde_json::to_value(&outcome.design_matrix) {
+            Ok(Value::Array(entries)) => entries,
+            Ok(_) | Err(_) => {
+                return Err(SourceFailure {
+                    source: "design_matrix".to_owned(),
+                    detail: "the design matrix did not serialize to a list".to_owned(),
+                });
+            }
+        };
 
-        // Load ADR documents
-        let corpus = quoin_quire::records::read(&inputs.scope, &module_selection, &["ADR"])
-            .map_err(|error| SourceFailure {
-                source: "adrs".to_owned(),
-                detail: format!("failed to read ADR documents: {error}"),
+        let systems = quoin_quire::systems::load(&request).map_err(|error| SourceFailure {
+            source: "systems".to_owned(),
+            detail: format!("failed to read systems records: {error}"),
+        })?;
+
+        let corpus =
+            quoin_quire::records::read(&inputs.scope, &selection, &["ADR"]).map_err(|error| {
+                SourceFailure {
+                    source: "adrs".to_owned(),
+                    detail: format!("failed to read ADR documents: {error}"),
+                }
             })?;
-
-        let mut adrs: Vec<_> = corpus
+        if let Some(failure) = unusable_input("adrs", &corpus) {
+            return Err(failure);
+        }
+        let adrs: Vec<&Document> = corpus
             .documents
             .iter()
             .filter(|doc| doc.kind == "ADR")
             .collect();
-        adrs.sort_by(|a, b| dossier_cmp(&a.id, &b.id));
 
-        // Collect all design elements and group requirements by element
-        let mut element_requirements: BTreeMap<String, Vec<String>> = BTreeMap::new();
-        let mut all_elements: BTreeMap<String, DesignElement> = BTreeMap::new();
-
-        for entry in &design_outcome.design_matrix {
-            if let Some(blocks) = &entry.design {
-                for block in blocks {
-                    for element in &block.elements {
-                        all_elements
-                            .entry(element.id.clone())
-                            .or_insert_with(|| element.clone());
-
-                        // Map requirements to this element
-                        if let Some(req_id) = &entry.id {
-                            element_requirements
-                                .entry(element.id.clone())
-                                .or_default()
-                                .push(req_id.clone());
-                        }
-                    }
-                }
-            }
-        }
-
-        // Render Parts section (design elements)
-        body.push_str("## Parts\n\n");
-        if all_elements.is_empty() {
-            body.push_str("None.\n\n");
-        } else {
-            body.push_str("| Part | Ports | Allocated or realized requirements |\n");
-            body.push_str("|------|-------|-------------------------------------|\n");
-
-            let mut sorted_elements: Vec<_> = all_elements.values().collect();
-            sorted_elements.sort_by(|a, b| dossier_cmp(&a.id, &b.id));
-
-            for element in sorted_elements {
-                let requirements = element_requirements
-                    .get(&element.id)
-                    .map(|reqs| {
-                        let mut sorted = reqs.clone();
-                        sorted.sort_by(|a, b| dossier_cmp(a, b));
-                        sorted.dedup();
-                        sorted.join(", ")
-                    })
-                    .unwrap_or_default();
-
-                body.push_str(&format!(
-                    "| {} | | {} |\n",
-                    markdown_escape(&element.id),
-                    markdown_escape(&requirements)
-                ));
-            }
-            body.push_str("\n");
-        }
-
-        // Render Connections section (empty for now)
-        body.push_str("## Connections\n\nNone.\n\n");
-
-        // Render Decisions section
-        body.push_str("## Decisions\n\n");
-        if adrs.is_empty() {
-            body.push_str("None.\n\n");
-        } else {
-            body.push_str("| ID | Title | Status |\n");
-            body.push_str("|----|-------|--------|\n");
-            for adr in &adrs {
-                let title = adr
-                    .frontmatter
-                    .get("title")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                let status = adr
-                    .frontmatter
-                    .get("status")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                body.push_str(&format!(
-                    "| {} | {} | {} |\n",
-                    markdown_escape(&adr.id),
-                    markdown_escape(title),
-                    markdown_escape(status)
-                ));
-            }
-            body.push_str("\n");
-        }
-
-        // Find requirements without design elements
-        let mut requirements_with_design: HashSet<String> = HashSet::new();
-        let mut all_requirements: HashSet<String> = HashSet::new();
-
-        for entry in &design_outcome.design_matrix {
-            if let Some(req_id) = &entry.id {
-                all_requirements.insert(req_id.clone());
-                if entry.design.is_some() {
-                    requirements_with_design.insert(req_id.clone());
-                }
-            }
-        }
-
-        let mut requirements_without_design: Vec<String> = all_requirements
-            .difference(&requirements_with_design)
-            .cloned()
-            .collect();
-        requirements_without_design.sort_by(|a, b| dossier_cmp(a, b));
-
-        // Render Requirements without a design element section
-        body.push_str("## Requirements without a design element\n\n");
-        if requirements_without_design.is_empty() {
-            body.push_str("None.\n\n");
-        } else {
-            for req_id in &requirements_without_design {
-                body.push_str(&format!("- {}\n", markdown_escape(req_id)));
-                gaps.push(
-                    Gap::new(
-                        GapKind::NoDesignElement,
-                        req_id,
-                        "has no realizing design element",
-                    )
-                    .for_requirement(req_id),
-                );
-            }
-            body.push_str("\n");
-        }
-
-        Ok(Generated { body, gaps })
+        Ok(render(&entries, &systems, &adrs))
     }
 }
 
-/// Escape Markdown table cell content so it cannot break table syntax.
-fn markdown_escape(text: &str) -> String {
-    text.replace('|', "\\|").replace('\n', " ")
+/// What the document knows of one part.
+#[derive(Default)]
+struct Part {
+    requirements: BTreeSet<String>,
+    ports: BTreeSet<String>,
+}
+
+/// The architecture document over the design-matrix `entries` (as JSON), the
+/// systems records and the ADRs.
+fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated {
+    let mut gaps = Vec::new();
+    let mut parts: BTreeMap<String, Part> = BTreeMap::new();
+    let mut without_design: BTreeSet<String> = BTreeSet::new();
+    // (requirement, reference) and (requirement, element id, archetype).
+    let mut dangling: BTreeSet<(String, String)> = BTreeSet::new();
+    let mut mismatched: BTreeSet<(String, String, String)> = BTreeSet::new();
+
+    let relations_declared = entries
+        .iter()
+        .any(|entry| entry.get("design").is_some_and(Value::is_array));
+    if !relations_declared {
+        gaps.push(Gap::new(
+            GapKind::DesignRelationsUnavailable,
+            "design_relations",
+            "the loaded modules declare no design_relations, so no requirement can be joined to a design element",
+        ));
+    }
+
+    for entry in entries {
+        let Some(blocks) = entry.get("design").and_then(Value::as_array) else {
+            continue;
+        };
+        let requirements = requirement_ids(entry);
+        for block in blocks {
+            let state = block.get("state").and_then(Value::as_str);
+            if state == Some("uncovered") {
+                without_design.extend(requirements.iter().cloned());
+            }
+            for element in array(block, "elements") {
+                let id = qualified(element);
+                parts
+                    .entry(id)
+                    .or_default()
+                    .requirements
+                    .extend(requirements.iter().cloned());
+            }
+            for reference in array(block, "dangling") {
+                let name = text(reference, "reference");
+                for requirement in &requirements {
+                    dangling.insert((requirement.clone(), name.clone()));
+                }
+            }
+            for mismatch in array(block, "kind_mismatch") {
+                let id = qualified(mismatch);
+                let archetype = text(mismatch, "archetype");
+                for requirement in &requirements {
+                    mismatched.insert((requirement.clone(), id.clone(), archetype.clone()));
+                }
+            }
+        }
+    }
+
+    for part in &systems.parts {
+        parts.entry(part.owner.clone()).or_default();
+    }
+    for port in &systems.ports {
+        parts
+            .entry(port.owner.clone())
+            .or_default()
+            .ports
+            .insert(format!("{} ({})", port.interface, port.direction));
+    }
+    // An allocation names a requirement at one end and a part at the other.
+    for allocation in &systems.allocations {
+        if let Some(part) = parts.get_mut(&allocation.target) {
+            part.requirements.insert(allocation.source.clone());
+        } else if let Some(part) = parts.get_mut(&allocation.source) {
+            part.requirements.insert(allocation.target.clone());
+        }
+    }
+
+    let mut body = String::from("# Architecture\n\n## Parts\n\n");
+    if parts.is_empty() {
+        body.push_str("None.\n\n");
+    } else {
+        body.push_str("| Part | Ports | Allocated or realized requirements |\n");
+        body.push_str("|------|-------|-------------------------------------|\n");
+        let mut ids: Vec<&String> = parts.keys().collect();
+        ids.sort_by(|a, b| dossier_cmp(a, b));
+        for id in ids {
+            let Some(part) = parts.get(id) else {
+                continue;
+            };
+            let _ = writeln!(
+                body,
+                "| {} | {} | {} |",
+                cell(id),
+                cell(&part.ports.iter().cloned().collect::<Vec<_>>().join(", ")),
+                cell(&sorted(&part.requirements).join(", ")),
+            );
+            if part.requirements.is_empty() {
+                gaps.push(
+                    Gap::new(GapKind::NoAllocation, id, "has no allocated requirement")
+                        .for_element(id),
+                );
+            }
+        }
+        body.push('\n');
+    }
+
+    body.push_str("## Connections\n\n");
+    if systems.connections.is_empty() {
+        body.push_str("None.\n\n");
+    } else {
+        body.push_str("| Connection | From | To | Direction |\n");
+        body.push_str("|------------|------|----|-----------|\n");
+        let mut connections: Vec<_> = systems.connections.iter().collect();
+        connections.sort_by(|a, b| {
+            dossier_cmp(&a.source, &b.source).then_with(|| dossier_cmp(&a.target, &b.target))
+        });
+        for connection in connections {
+            let _ = writeln!(
+                body,
+                "| {} | {} | {} | {} |",
+                cell(&format!("{} -> {}", connection.source, connection.target)),
+                cell(&end(&connection.source, &connection.source_multiplicity)),
+                cell(&end(&connection.target, &connection.target_multiplicity)),
+                cell(&connection.direction),
+            );
+        }
+        body.push('\n');
+    }
+
+    body.push_str("## Allocations\n\n");
+    if systems.allocations.is_empty() {
+        body.push_str("None.\n\n");
+    } else {
+        body.push_str("| Source | Target |\n|--------|--------|\n");
+        let mut allocations: Vec<_> = systems.allocations.iter().collect();
+        allocations.sort_by(|a, b| {
+            dossier_cmp(&a.source, &b.source).then_with(|| dossier_cmp(&a.target, &b.target))
+        });
+        for allocation in allocations {
+            let _ = writeln!(
+                body,
+                "| {} | {} |",
+                cell(&allocation.source),
+                cell(&allocation.target)
+            );
+        }
+        body.push('\n');
+    }
+
+    body.push_str("## Decisions\n\n");
+    if adrs.is_empty() {
+        body.push_str("None.\n\n");
+    } else {
+        body.push_str("| ID | Title | Status |\n|----|-------|--------|\n");
+        let mut sorted_adrs = adrs.to_vec();
+        sorted_adrs.sort_by(|a, b| dossier_cmp(&a.id, &b.id));
+        for adr in sorted_adrs {
+            let field = |key: &str| {
+                adr.frontmatter
+                    .get(key)
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+            };
+            let _ = writeln!(
+                body,
+                "| {} | {} | {} |",
+                cell(&adr.id),
+                cell(field("title")),
+                cell(field("status")),
+            );
+        }
+        body.push('\n');
+    }
+
+    body.push_str("## Requirements without a design element\n\n");
+    if without_design.is_empty() {
+        body.push_str("None.\n\n");
+    } else {
+        for requirement in sorted(&without_design) {
+            let _ = writeln!(body, "- {}", cell(&requirement));
+            gaps.push(
+                Gap::new(
+                    GapKind::NoDesignElement,
+                    &requirement,
+                    "has no realizing design element",
+                )
+                .for_requirement(&requirement),
+            );
+        }
+        body.push('\n');
+    }
+
+    body.push_str("## Unresolved design references\n\n");
+    if dangling.is_empty() {
+        body.push_str("None.\n\n");
+    } else {
+        for (requirement, reference) in sorted_pairs(&dangling) {
+            let _ = writeln!(body, "- {} -> {}", cell(&requirement), cell(&reference));
+            gaps.push(
+                Gap::new(
+                    GapKind::DanglingDesignReference,
+                    &reference,
+                    format!("{requirement} names a design reference that resolves to no element"),
+                )
+                .for_requirement(&requirement),
+            );
+        }
+        body.push('\n');
+    }
+
+    body.push_str("## Design elements of the wrong kind\n\n");
+    if mismatched.is_empty() {
+        body.push_str("None.\n\n");
+    } else {
+        let mut rows: Vec<_> = mismatched.iter().collect();
+        rows.sort_by(|a, b| dossier_cmp(&a.0, &b.0).then_with(|| dossier_cmp(&a.1, &b.1)));
+        for (requirement, element, archetype) in rows {
+            let _ = writeln!(
+                body,
+                "- {} -> {} ({})",
+                cell(requirement),
+                cell(element),
+                cell(archetype)
+            );
+            gaps.push(
+                Gap::new(
+                    GapKind::DesignKindMismatch,
+                    element,
+                    format!("{requirement} lists {element}, an element of a kind the relation does not accept"),
+                )
+                .for_requirement(requirement)
+                .for_element(element),
+            );
+        }
+        body.push('\n');
+    }
+
+    Generated { body, gaps }
+}
+
+/// The requirements a design-matrix entry stands for: its `id` when it has one,
+/// otherwise the requirement of each of its criteria. An entry carries no `id`
+/// when its document is not design-obliged, so the criteria are the only name.
+fn requirement_ids(entry: &Value) -> BTreeSet<String> {
+    if let Some(id) = entry.get("id").and_then(Value::as_str) {
+        return BTreeSet::from([id.to_owned()]);
+    }
+    array(entry, "criteria")
+        .filter_map(|criterion| criterion.get("id").and_then(Value::as_str))
+        .map(|id| quoin_quire_types::requirement_of(id).to_owned())
+        .collect()
+}
+
+fn array<'a>(value: &'a Value, key: &str) -> impl Iterator<Item = &'a Value> {
+    value
+        .get(key)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+}
+
+fn text(value: &Value, key: &str) -> String {
+    value
+        .get(key)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned()
+}
+
+/// An element id, prefixed by its repo when the join names one.
+fn qualified(element: &Value) -> String {
+    let id = text(element, "id");
+    match element.get("repo").and_then(Value::as_str) {
+        Some(repo) => format!("{repo}/{id}"),
+        None => id,
+    }
+}
+
+/// A connection end with its multiplicity, when it states one.
+fn end(name: &str, multiplicity: &str) -> String {
+    if multiplicity.is_empty() {
+        name.to_owned()
+    } else {
+        format!("{name} [{multiplicity}]")
+    }
+}
+
+fn sorted(ids: &BTreeSet<String>) -> Vec<String> {
+    let mut ids: Vec<String> = ids.iter().cloned().collect();
+    ids.sort_by(|a, b| dossier_cmp(a, b));
+    ids
+}
+
+fn sorted_pairs(pairs: &BTreeSet<(String, String)>) -> Vec<(String, String)> {
+    let mut pairs: Vec<_> = pairs.iter().cloned().collect();
+    pairs.sort_by(|a, b| dossier_cmp(&a.0, &b.0).then_with(|| dossier_cmp(&a.1, &b.1)));
+    pairs
 }
 
 #[cfg(test)]
@@ -218,17 +408,237 @@ fn markdown_escape(text: &str) -> String {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    use quoin_quire::records::Contract;
+    use quoin_quire::systems::{Allocation, Connection, Part as PartRow, Port};
+    use serde_json::{Map, json};
+
     use super::*;
     use ix_trace_rs::trace;
 
-    #[trace("FR-193")]
+    fn covered(id: &str, elements: &[&str]) -> Value {
+        json!({
+            "document": format!("{id}.md"),
+            "id": id,
+            "criteria": [],
+            "design": [{
+                "relation": "realized-by", "check": "c", "state": "covered",
+                "elements": elements.iter().map(|e| json!({"id": e, "kind": "Component", "verb": "implements"})).collect::<Vec<_>>(),
+                "dangling": [], "kind_mismatch": []
+            }]
+        })
+    }
+
+    fn uncovered(id: &str) -> Value {
+        json!({
+            "document": format!("{id}.md"), "id": id, "criteria": [],
+            "design": [{"relation": "realized-by", "check": "fr-needs-design", "state": "uncovered",
+                        "elements": [], "dangling": [], "kind_mismatch": []}]
+        })
+    }
+
+    fn adr(id: &str, title: &str, status: &str) -> Document {
+        let mut frontmatter = Map::new();
+        frontmatter.insert("title".to_owned(), json!(title));
+        frontmatter.insert("status".to_owned(), json!(status));
+        Document {
+            path: PathBuf::from(format!("{id}.md")),
+            id: id.to_owned(),
+            kind: "ADR".to_owned(),
+            frontmatter,
+            edges: Vec::new(),
+            tables: BTreeMap::new(),
+            sections: BTreeMap::new(),
+            raw: String::new(),
+            contract: Contract::Satisfied,
+        }
+    }
+
+    fn kinds(generated: &Generated) -> Vec<(&'static str, String)> {
+        generated
+            .gaps
+            .iter()
+            .map(|gap| (gap.gap_kind.as_str(), gap.subject.clone()))
+            .collect()
+    }
+
+    #[trace("FR-193-AC-1")]
     #[test]
-    fn architecture_generator_has_correct_spec() {
-        let generator = ArchitectureGenerator;
-        let spec = generator.spec();
-        assert_eq!(spec.kind, "architecture");
-        assert_eq!(spec.id, "DOS-ARCH");
-        assert_eq!(spec.title, "Architecture");
-        assert!(!spec.needs_as_of);
+    fn parts_connections_adr_are_listed_and_an_uncovered_requirement_is_a_gap() {
+        let entries = vec![covered("FR-1", &["PART-A", "PART-B"]), uncovered("FR-2")];
+        let systems = Systems {
+            connections: vec![Connection {
+                document: "COMP.md".to_owned(),
+                source: "PART-A".to_owned(),
+                source_multiplicity: String::new(),
+                target: "PART-B".to_owned(),
+                target_multiplicity: String::new(),
+                direction: "forward".to_owned(),
+            }],
+            ..Systems::default()
+        };
+        let record = adr("ADR-1", "Use a queue", "accepted");
+        let generated = render(&entries, &systems, &[&record]);
+
+        assert!(generated.body.contains("| PART-A |  | FR-1 |"));
+        assert!(generated.body.contains("| PART-B |  | FR-1 |"));
+        assert!(
+            generated
+                .body
+                .contains("| PART-A -> PART-B | PART-A | PART-B | forward |")
+        );
+        assert!(
+            generated
+                .body
+                .contains("| ADR-1 | Use a queue | accepted |")
+        );
+        assert!(
+            generated
+                .body
+                .contains("## Requirements without a design element\n\n- FR-2\n")
+        );
+        assert_eq!(
+            kinds(&generated),
+            vec![("no_design_element", "FR-2".to_owned())]
+        );
+    }
+
+    #[trace("FR-193-AC-2")]
+    #[test]
+    fn a_dangling_design_reference_is_listed_and_a_gap() {
+        let entries = vec![json!({
+            "document": "FR-1.md", "id": "FR-1", "criteria": [],
+            "design": [{"relation": "r", "check": "c", "state": "covered", "elements": [],
+                        "dangling": [{"reference": "IMPL-X", "verb": "implements"}],
+                        "kind_mismatch": []}]
+        })];
+        let generated = render(&entries, &Systems::default(), &[]);
+        assert!(generated.body.contains("- FR-1 -> IMPL-X"));
+        assert_eq!(
+            kinds(&generated),
+            vec![("dangling_design_reference", "IMPL-X".to_owned())]
+        );
+    }
+
+    #[trace("FR-193-AC-3")]
+    #[test]
+    fn no_design_relations_is_one_cause_not_a_gap_per_requirement() {
+        let entries = vec![
+            json!({"document": "FR-1.md", "criteria": [{"id": "FR-1-AC-1"}]}),
+            json!({"document": "FR-2.md", "criteria": [{"id": "FR-2-AC-1"}]}),
+        ];
+        let generated = render(&entries, &Systems::default(), &[]);
+        assert_eq!(
+            kinds(&generated),
+            vec![(
+                "design_relations_unavailable",
+                "design_relations".to_owned()
+            )]
+        );
+        assert!(generated.gaps[0].detail.contains("no design_relations"));
+    }
+
+    #[trace("FR-193-AC-4")]
+    #[test]
+    fn a_part_with_no_allocated_requirement_is_a_gap_and_an_allocation_counts() {
+        let systems = Systems {
+            parts: vec![
+                PartRow {
+                    document: "C.md".to_owned(),
+                    owner: "PART-FREE".to_owned(),
+                    declared_type: "T".to_owned(),
+                    multiplicity: "1".to_owned(),
+                },
+                PartRow {
+                    document: "C.md".to_owned(),
+                    owner: "PART-ALLOCATED".to_owned(),
+                    declared_type: "T".to_owned(),
+                    multiplicity: "1".to_owned(),
+                },
+            ],
+            allocations: vec![Allocation {
+                document: "C.md".to_owned(),
+                source: "FR-7".to_owned(),
+                target: "PART-ALLOCATED".to_owned(),
+            }],
+            ..Systems::default()
+        };
+        let generated = render(&[covered("FR-1", &["PART-A"])], &systems, &[]);
+        assert_eq!(
+            kinds(&generated),
+            vec![("no_allocation", "PART-FREE".to_owned())]
+        );
+        assert!(generated.body.contains("| PART-ALLOCATED |  | FR-7 |"));
+        assert!(generated.body.contains("| FR-7 | PART-ALLOCATED |"));
+    }
+
+    #[trace("FR-193-AC-5")]
+    #[test]
+    fn a_connection_shows_both_ends_with_multiplicity_and_its_direction() {
+        let systems = Systems {
+            ports: vec![Port {
+                document: "C.md".to_owned(),
+                owner: "PART-A".to_owned(),
+                direction: "out".to_owned(),
+                interface: "Telemetry".to_owned(),
+                multiplicity: "1".to_owned(),
+            }],
+            connections: vec![Connection {
+                document: "C.md".to_owned(),
+                source: "PART-A.out".to_owned(),
+                source_multiplicity: "1".to_owned(),
+                target: "PART-B.in".to_owned(),
+                target_multiplicity: "0..*".to_owned(),
+                direction: "bidirectional".to_owned(),
+            }],
+            ..Systems::default()
+        };
+        let generated = render(&[], &systems, &[]);
+        assert!(generated.body.contains(
+            "| PART-A.out -> PART-B.in | PART-A.out [1] | PART-B.in [0..*] | bidirectional |"
+        ));
+        assert!(generated.body.contains("| PART-A | Telemetry (out) |"));
+    }
+
+    #[trace("FR-193-AC-6")]
+    #[test]
+    fn a_wrong_kind_element_is_listed_and_names_requirement_and_element() {
+        let entries = vec![json!({
+            "document": "FR-1.md", "id": "FR-1", "criteria": [],
+            "design": [{"relation": "r", "check": "c", "state": "covered", "elements": [],
+                        "dangling": [],
+                        "kind_mismatch": [{"id": "PLAN-X", "archetype": "Plan", "verb": "implements", "accepted": ["Component"]}]}]
+        })];
+        let generated = render(&entries, &Systems::default(), &[]);
+        assert!(generated.body.contains("- FR-1 -> PLAN-X (Plan)"));
+        assert_eq!(
+            kinds(&generated),
+            vec![("design_kind_mismatch", "PLAN-X".to_owned())]
+        );
+        let detail = &generated.gaps[0].detail;
+        assert!(detail.contains("FR-1") && detail.contains("PLAN-X"));
+    }
+
+    #[test]
+    fn an_entry_without_an_id_is_named_by_its_criteria() {
+        let entries = vec![json!({
+            "document": "FR-3.md", "criteria": [{"id": "FR-3-AC-1"}, {"id": "FR-3-AC-2"}],
+            "design": [{"relation": "r", "check": "c", "state": "uncovered", "elements": [],
+                        "dangling": [], "kind_mismatch": []}]
+        })];
+        let generated = render(&entries, &Systems::default(), &[]);
+        assert_eq!(
+            kinds(&generated),
+            vec![("no_design_element", "FR-3".to_owned())]
+        );
+    }
+
+    #[test]
+    fn a_part_title_with_a_pipe_and_a_newline_is_one_table_row() {
+        let generated = render(&[covered("FR-1", &["A|B\nC"])], &Systems::default(), &[]);
+        assert!(generated.body.contains("| A\\|B C |  | FR-1 |\n"));
+        assert_eq!(generated.body.matches("\n| A").count(), 1);
     }
 }
