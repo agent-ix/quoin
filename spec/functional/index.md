@@ -170,3 +170,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-187: Install modules from npm packages](./FR-187-install-modules-from-npm-packages.md)
 - [FR-188: Formal-rule approval state derived from signed commits](./FR-188-formal-rule-approval-state-from-signed-commits.md)
 - [FR-189: Formalize-requirement workflow](./FR-189-formalize-requirement-workflow.md)
+- [FR-190: Formal-rule analysis claim selection excludes drafts](./FR-190-formal-rule-analysis-claim-selection.md)

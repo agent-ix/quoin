@@ -3,11 +3,13 @@ id: FR-189
 title: "Formalize-requirement workflow"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/StR-007"
+  - target: "ix://agent-ix/quoin/StR-004"
     type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-188"
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-021"
+    type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-190"
     type: "depends_on"
 ---
 
@@ -37,26 +39,34 @@ nothing of it.
   `analysed`, `awaiting_approval`, `approved`, `rejected` and `stopped`.
 - The transitions SHALL be:
   - `drafting` → `checked` (auto), guarded by invariant `qsl_check_passes`.
-  - `checked` → `analysed` (auto), guarded by invariant
+  - `checked` → `analysed` (auto).
+  - `analysed` → `awaiting_approval` (auto), guarded by invariant
     `analysis_consistent_with_approved`.
-  - `analysed` → `awaiting_approval` (auto).
   - `awaiting_approval` → `approved` (`hitl`), guarded by invariant
     `formal_rule_approved`.
   - `awaiting_approval` → `rejected` (`hitl`).
-  - A failure in `checked` or `analysed` → `drafting`, incrementing a retry
-    counter and carrying the diagnostics.
-  - `drafting` → `stopped` (terminal) after 3 failed attempts; the 4th
-    consecutive failure ends in `stopped`.
+  - `checked` → `drafting` and `analysed` → `drafting`, taken when the guard of
+    the phase's outgoing transition fails; each carries the diagnostics.
+  - `drafting` → `stopped` (terminal), taken on the third consecutive failure.
+- The `formalize-requirement` skill procedure SHALL own the retry counter: it
+  counts consecutive failed attempts for the run, resets the count when a draft
+  reaches `awaiting_approval`, and takes `drafting` → `stopped` rather than
+  re-drafting when the count reaches 3.
+- The drafted set of a run SHALL be the symbol ids of the formalized
+  declarations in the draft file the run last passed to `qsl_check_passes`,
+  recorded by the skill procedure when `drafting` → `checked` is taken.
 - Invariant `qsl_check_passes` SHALL pass when QSL `check` on the draft file
   exits clean (quire-driver `quire-cli`, `Operation::Check`).
-- The workflow SHALL guard `checked` → `analysed` with invariant `analysis_consistent_with_approved`, defined by VER-100, which
-  passes only when the draft does not contradict the approved rules.
-- Invariant `formal_rule_approved` SHALL pass only when
-  `quoin formal-rules status` reports `approved` for every symbol the run
-  drafted.
+- Invariant `analysis_consistent_with_approved` SHALL pass when a
+  `quire-analyze run-package` over a package holding the draft and the approved
+  rules, selecting the drafted set plus the spans that
+  [FR-190](./FR-190-formal-rule-analysis-claim-selection.md) lists for the
+  approved rules, reports no failing claim; it SHALL fail on any failing claim.
+- Invariant `formal_rule_approved` SHALL pass only when the drafted set is
+  non-empty and `quoin formal-rules status` reports `approved` for every symbol
+  in it; an empty drafted set SHALL fail it.
 - The workflow and the agent SHALL NOT create the approval. The ix-flow gate
-  acknowledgement is never an approval, and an agent identity never satisfies
-  it (precedent: engineering-assurance FR-062, FR-048). The `hitl` gate pauses
+  acknowledgement is never an approval. The `hitl` gate pauses
   for the person; the invariant passes only after the person's signed commit
   exists.
 - The workflow definition SHALL define no transition into `approved` other than
@@ -68,16 +78,19 @@ nothing of it.
 |----|----------|--------------|
 | FR-189-AC-1 | Given a scripted drafting step that yields a rule that passes QSL check, the run reaches `awaiting_approval` | Test |
 | FR-189-AC-2 | Given a draft that fails QSL check, the run returns to `drafting` with the diagnostics and an incremented retry counter | Test |
-| FR-189-AC-3 | Given a drafting step that fails check on four consecutive attempts, the run ends in `stopped` | Test |
+| FR-189-AC-3 | Given a drafting step that fails check on three consecutive attempts, the run ends in `stopped` | Test |
 | FR-189-AC-4 | Given a run at `awaiting_approval` whose gate is acknowledged and no signed approval commit exists, advancing to `approved` fails invariant `formal_rule_approved` | Test |
 | FR-189-AC-5 | Given the same run after a person's signed approval commit lands, advancing to `approved` passes | Test |
 | FR-189-AC-6 | The `def.yaml` holds no transition into `approved` other than the one with the `hitl` gate | Inspection |
 | FR-189-AC-7 | The phase names and transitions in `def.yaml` equal the set fixed above | Inspection |
-| FR-189-AC-8 | Given a commit signed by an agent identity not in the allowed-signers file, invariant `formal_rule_approved` fails | Test |
+| FR-189-AC-8 | Given a commit signed by a key not in the allowed-signers file, invariant `formal_rule_approved` fails | Test |
+| FR-189-AC-10 | Given a run with an empty drafted set at `awaiting_approval`, invariant `formal_rule_approved` fails | Test |
+| FR-189-AC-11 | Given a draft whose analysis reports a failing claim, the run returns from `analysed` to `drafting` with the diagnostics and an incremented retry counter | Test |
+| FR-189-AC-12 | Given two consecutive failures followed by a passing draft, the run reaches `awaiting_approval` and the next failure count starts at 1 | Test |
 | FR-189-AC-9 | `def.yaml` names `quoin workflow-invariants` as the `ix-flow-invariant-provider` and the provider answers each of the three invariants | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-188](./FR-188-formal-rule-approval-state-from-signed-commits.md),
-  [FR-021](./FR-021-launch-ix-flow-runs.md), VER-100 (the analysis invariant),
+  [FR-021](./FR-021-launch-ix-flow-runs.md), [FR-190](./FR-190-formal-rule-analysis-claim-selection.md),
   QSL-1900 (precondition for analysing real QSL drafts).
