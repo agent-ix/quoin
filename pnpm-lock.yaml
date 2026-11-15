@@ -9,16 +9,16 @@ importers:
   .:
     dependencies:
       '@agent-ix/semantic-core':
-        specifier: 0.4.3
-        version: 0.4.3(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))
+        specifier: 0.4.4
+        version: 0.4.4(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))
       '@agent-ix/semantic-schema':
         specifier: 0.5.0
         version: 0.5.0
 
 packages:
 
-  '@agent-ix/semantic-core@0.4.3':
-    resolution: {integrity: sha512-YMHzcyNhT622V0NA5pxE/m3gbMEVujtSutB9ndd7ExxwDSWoVAEtbCDD7qU19hLewvhc0PAdqAVQPRfwQkuLhQ==}
+  '@agent-ix/semantic-core@0.4.4':
+    resolution: {integrity: sha512-gM5CSbaVUhGf16MAf/P/VY8nqpyc9HQ+NtVozug2AkoItuNnL9bNvD+byla9mb/bKx4VugH9bXjlmQgF5s0HLg==}
     peerDependencies:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0
@@ -379,7 +379,7 @@ packages:
 
 snapshots:
 
-  '@agent-ix/semantic-core@0.4.3(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))':
+  '@agent-ix/semantic-core@0.4.4(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))':
     dependencies:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0(@typespec/compiler@1.15.0)
