@@ -22,6 +22,9 @@ pub const MAX_MATRIX_BUILD_BYTES: usize = 16 * 1024 * 1024;
 /// The `context.reason` a contradictory audit report is refused with.
 pub const CONTRADICTORY_AUDIT: &str = "contradictory-audit";
 
+/// The `context.reason` an invalid stale-evidence cause is refused with.
+pub const INVALID_STALE_CAUSE: &str = "invalid-stale-cause";
+
 /// Answer a `matrix.build`.
 ///
 /// # Errors
@@ -31,7 +34,8 @@ pub const CONTRADICTORY_AUDIT: &str = "contradictory-audit";
 /// - [`CoreErrorCode::Refused`] when the request exceeds
 ///   [`MAX_MATRIX_BUILD_BYTES`], or when the audit report names one
 ///   obligation both healthy and not (`context.reason` is
-///   [`CONTRADICTORY_AUDIT`]).
+///   [`CONTRADICTORY_AUDIT`]), or when a finding carries an invalid
+///   stale-evidence cause (`context.reason` is [`INVALID_STALE_CAUSE`]).
 pub fn build(request: &serde_json::Value) -> Result<Response, CoreError> {
     let op = "matrix.build";
     let size = request_size(request)?;
@@ -44,11 +48,19 @@ pub fn build(request: &serde_json::Value) -> Result<Response, CoreError> {
             CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
         })?;
 
-    let matrix = quoin_assurance::matrix::build(&input).map_err(|contradiction| {
-        CoreError::new(CoreErrorCode::Refused, contradiction.to_string())
-            .with_context("op", op)
-            .with_context("reason", CONTRADICTORY_AUDIT)
-            .with_context("obligation", contradiction.obligation)
+    let matrix = quoin_assurance::matrix::build(&input).map_err(|refusal| match refusal {
+        quoin_assurance::matrix::MatrixRefusal::ContradictoryAudit(contradiction) => {
+            CoreError::new(CoreErrorCode::Refused, contradiction.to_string())
+                .with_context("op", op)
+                .with_context("reason", CONTRADICTORY_AUDIT)
+                .with_context("obligation", contradiction.obligation)
+        }
+        quoin_assurance::matrix::MatrixRefusal::InvalidStaleCause(invalid) => {
+            CoreError::new(CoreErrorCode::Refused, invalid.to_string())
+                .with_context("op", op)
+                .with_context("reason", INVALID_STALE_CAUSE)
+                .with_context("obligation", invalid.obligation)
+        }
     })?;
 
     let payload = serde_json::to_value(matrix)

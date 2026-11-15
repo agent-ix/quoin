@@ -1434,3 +1434,80 @@ fn soup_report_with_a_missing_records_dir_and_a_bad_binding_refuses_the_records_
     let diagnostics: Value = serde_json::from_slice(&output.stderr).unwrap();
     assert_eq!(diagnostics[0]["code"], "soup.path_missing");
 }
+
+/// Snapshot `open_findings` carries `missing-run` and `failed-run` causes
+/// byte-for-byte, and at least one of each appears (FR-167-AC-10).
+#[trace("FR-167-AC-10")]
+#[test]
+fn tc_1760_snapshot_carries_stale_causes_byte_for_byte() {
+    let repo = full();
+    let snapshot = repo.snapshot(&repo.run());
+
+    let findings = snapshot["open_findings"].as_array().expect("open_findings is array");
+
+    let mut found_missing_run = false;
+    let mut found_failed_run = false;
+
+    for finding in findings {
+        if finding["kind"] == "stale-evidence" {
+            if let Some(cause) = finding.get("cause") {
+                let cause_str = cause.as_str().expect("cause is string");
+                match cause_str {
+                    "missing-run" => found_missing_run = true,
+                    "failed-run" => found_failed_run = true,
+                    other => panic!("cause must be 'missing-run' or 'failed-run', saw: {other}"),
+                }
+            }
+        }
+    }
+
+    assert!(
+        found_missing_run,
+        "snapshot must contain at least one missing-run stale finding"
+    );
+    assert!(
+        found_failed_run,
+        "snapshot must contain at least one failed-run stale finding"
+    );
+}
+
+/// A non-stale `open_findings` item has no `cause` key in JSON (FR-167-AC-11).
+#[trace("FR-167-AC-11")]
+#[test]
+fn tc_1760_snapshot_non_stale_has_no_cause_key() {
+    let repo = full();
+    let snapshot = repo.snapshot(&repo.run());
+
+    let findings = snapshot["open_findings"].as_array().expect("open_findings is array");
+
+    for finding in findings {
+        if finding["kind"] != "stale-evidence" {
+            assert!(
+                finding.get("cause").is_none(),
+                "non-stale finding must have no cause key: {finding}"
+            );
+        }
+    }
+}
+
+/// A stale finding without `cause` serializes with no `cause` key, not `null`
+/// (FR-167-AC-12).
+#[trace("FR-167-AC-12")]
+#[test]
+fn tc_1760_snapshot_missing_cause_omitted_not_null() {
+    let repo = full();
+    let snapshot = repo.snapshot(&repo.run());
+
+    let findings = snapshot["open_findings"].as_array().expect("open_findings is array");
+
+    for finding in findings {
+        if finding["kind"] == "stale-evidence" && finding.get("cause").is_none() {
+            // Serialize the finding and verify the cause key is not present
+            let finding_str = serde_json::to_string(finding).expect("serializes");
+            assert!(
+                !finding_str.contains("\"cause\""),
+                "absent cause must not serialize as a key: {finding_str}"
+            );
+        }
+    }
+}

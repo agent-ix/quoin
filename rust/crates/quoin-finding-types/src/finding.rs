@@ -8,6 +8,78 @@ use serde::{Deserialize, Serialize};
 use crate::OtherMembers;
 use crate::severity::Severity;
 
+/// The typed cause of a `stale-evidence` finding (FR-032-AC-18..21, FR-115).
+///
+/// A `stale-evidence` finding folds two conditions: a bound suite with no
+/// recorded run, and a bound run that failed or errored. Consumers must not
+/// tell them apart by parsing `summary`; the auditor sets this optional typed
+/// `cause` instead.
+///
+/// # Internal invalid sentinel
+///
+/// The `Invalid` variant exists only as a deserialization target for unknown
+/// cause values, so that invalid input can be refused at the operation level
+/// rather than failing JSON parse. It is never written by the auditor, never
+/// serialized, and causes `matrix.build` to refuse with `invalid-stale-cause`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub enum StaleCause {
+    /// The suite's newest recorded run reports `fail` or `error` for a bound symbol.
+    FailedRun,
+    /// The bound suite has no recorded run in the store's `latest_runs`.
+    MissingRun,
+    /// An invalid cause value from deserialization. Never written by the auditor.
+    #[cfg_attr(feature = "schema", schemars(skip))]
+    Invalid,
+}
+
+impl StaleCause {
+    /// Whether this is a valid (not `Invalid`) cause.
+    pub fn is_valid(self) -> bool {
+        !matches!(self, Self::Invalid)
+    }
+
+    /// The kebab-case string representation for valid causes.
+    ///
+    /// Returns `None` for `Invalid`, which has no string representation.
+    pub fn as_str(self) -> Option<&'static str> {
+        match self {
+            Self::FailedRun => Some("failed-run"),
+            Self::MissingRun => Some("missing-run"),
+            Self::Invalid => None,
+        }
+    }
+}
+
+impl Serialize for StaleCause {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::FailedRun => serializer.serialize_str("failed-run"),
+            Self::MissingRun => serializer.serialize_str("missing-run"),
+            Self::Invalid => Err(serde::ser::Error::custom(
+                "Invalid cause cannot be serialized",
+            )),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for StaleCause {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "failed-run" => Self::FailedRun,
+            "missing-run" => Self::MissingRun,
+            _ => Self::Invalid,
+        })
+    }
+}
+
 /// One thing wrong with the evidence for one obligation.
 ///
 /// # Three fields are read by the assurance view; twelve are written
@@ -98,11 +170,22 @@ pub struct Finding {
     /// The safe next step, when no fix is known.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub next_diagnostic_step: Option<String>,
+    /// The typed cause of a `stale-evidence` finding: `missing-run` or `failed-run`.
+    ///
+    /// Present only on `stale-evidence` findings; omitted (never `null`) on every
+    /// other kind. The auditor sets this at construction (FR-032-AC-18..21), and
+    /// `matrix.build` copies it verbatim (FR-115-AC-17..18, FR-115-AC-22..23).
+    ///
+    /// Unknown cause values deserialize to [`StaleCause::Invalid`] so that
+    /// `matrix.build` can refuse them with `Refused`/`invalid-stale-cause` rather
+    /// than failing JSON parse with `BadRequest` (FR-115-AC-22).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cause: Option<StaleCause>,
     /// Every member the producer wrote that this type does not declare.
     ///
     /// Empty for every finding the auditor mints today — it writes exactly the
-    /// twelve above. The map is here because `src/graph-analysis/` copies a
-    /// finding it was handed **verbatim** into its own report, so a thirteenth
+    /// thirteen above. The map is here because `src/graph-analysis/` copies a
+    /// finding it was handed **verbatim** into its own report, so a fourteenth
     /// member added upstream must survive the round trip rather than vanish.
     #[serde(flatten)]
     pub other: OtherMembers,
@@ -132,8 +215,15 @@ impl Finding {
             change_target: None,
             remedy: None,
             next_diagnostic_step: None,
+            cause: None,
             other: OtherMembers::new(),
         }
+    }
+
+    /// Set the typed `cause` on a `stale-evidence` finding.
+    pub fn with_cause(mut self, cause: StaleCause) -> Self {
+        self.cause = Some(cause);
+        self
     }
 }
 

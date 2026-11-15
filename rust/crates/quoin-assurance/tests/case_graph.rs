@@ -49,6 +49,7 @@ fn finding(obligation_id: &str, kind: &str) -> Finding {
         change_target: None,
         remedy: None,
         next_diagnostic_step: None,
+        cause: None,
         other: quoin_finding_types::OtherMembers::new(),
     }
 }

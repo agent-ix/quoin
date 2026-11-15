@@ -66,7 +66,7 @@ mod finding;
 mod report;
 mod severity;
 
-pub use finding::{Finding, FindingKind};
+pub use finding::{Finding, FindingKind, StaleCause};
 pub use report::{AuditReport, UnevaluatedCheck};
 pub use severity::Severity;
 
