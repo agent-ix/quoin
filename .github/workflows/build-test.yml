@@ -66,6 +66,8 @@ jobs:
         run: make rust-lint
       - name: Build
         run: make rust-build
+      - name: Install default spec modules for Rust integration tests
+        run: rust/target/debug/quoin module ensure-defaults
       - name: Test
         env:
           SPEC_OBJECTS_SAFETY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-safety
