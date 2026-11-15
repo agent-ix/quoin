@@ -48,16 +48,19 @@ config over a scratch crate whose `Cargo.lock` lists the fictional `fictional-wi
 dependencies. It holds four components: three carry a purl, one is identified by name and version.
 
 `differential-report-v2/` holds `filament.differential-report/v2` documents for the
-`differential-report` adapter (FR-151, TC-001). Every file except one is a byte-exact
-capture of a report written by `filament-analyze run-package` (`agent-ix/filament-analyze`),
-driven over a stub `producer-execute` because Z3 and cvc5 are not installed where they were
-captured: `agreement-satisfied`, `agreement-refuted`, `disagreement`,
-`inconclusive-unknown`, `inconclusive-timeout` and `unavailable-missing-executable`.
-`unavailable-unsupported-platform` is `unavailable-missing-executable` with engine 0's
-`outcome` set to `unsupported-platform` and its `status` to `unsupported`, re-emitted
-canonically: a Linux runner reports a containment failure as `cleanup-failed`, so it cannot
-produce this outcome. `filament-analyze`'s own validator accepts it. The refusal fixtures are
-derived in `rust/crates/quoin-evidence/tests/tc_differential_report_v2.rs`, one change each.
+`differential-report` adapter (FR-151, TC-001). The accepted reports except one are unedited,
+byte-exact captures written by `filament-analyze run-package` at
+`agent-ix/filament-analyze` `e17fbf0f6c593d32ce2555420d615c5dd862e8ef`. The capture used
+`engineering-assurance producer-execute` 0.8.2, the version pinned by this Quoin main, and
+deterministic local shell stubs for the solver executables because Z3 and cvc5 are not
+installed: `agreement-satisfied`, `agreement-refuted`, `disagreement`, `inconclusive-unknown`,
+`inconclusive-timeout` and `unavailable-missing-executable`. They are producer reports driven by
+scripted solver responses, not claims of real solver output. `unavailable-unsupported-platform`
+is the one documented derived case: engine 0's `outcome` is set to `unsupported-platform` and
+its `status` to `unsupported`, then the document is re-emitted as canonical JSON. A Linux runner
+reports a containment failure as `cleanup-failed`, so it cannot produce this outcome.
+`filament-analyze`'s own validator accepts it. The refusal fixtures are derived in
+`rust/crates/quoin-evidence/tests/tc_differential_report_v2.rs`, one change each.
 
 ## OSV-Scanner external report replay
 

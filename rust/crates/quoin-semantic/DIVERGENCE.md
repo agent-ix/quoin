@@ -67,7 +67,7 @@ with the current release at 0.56.0.
    integer-valued floats (`10.0` satisfies `type: integer`), and the
    `oneOf` + `not` + `required` combination `ObjectTypeEntry.data_schema` uses.
 
-2. **Nothing in quoin depends on quire-rs or filament-contract-ir types directly** (Cargo.lock carries `quire-contract-model` from filament-contract-ir only transitively, through quire-analyze). EPIC #373
+2. **Nothing in quoin depends on quire-rs or filament-contract-ir types directly** (Cargo.lock carries `filament-contract-model` from filament-contract-ir only transitively, through filament-analyze). EPIC #373
    fixes the boundary as _"subprocess + JSON over stdin/stdout to a single
    `quoin-core` binary. Not napi-rs, not WASM."_ There is therefore no Cargo
    feature-unification or type-compatibility constraint pulling quoin onto 0.17
