@@ -11,8 +11,7 @@
 use std::path::Path;
 
 use quoin_anomaly::{CarriedRead, read_carried};
-use quoin_assurance::matrix::{EvidenceStatus, MatrixOutput};
-use quoin_finding_types::StaleCause;
+use quoin_assurance::matrix::{EvidenceStatus, MatrixOutput, StaleCause};
 use serde::{Deserialize, Serialize};
 
 use super::history::{ChangeRecord, PreviousRelease};
@@ -121,7 +120,7 @@ impl OpenFinding {
             self.path.as_deref(),
             self.line,
             self.symbol.as_deref(),
-            cause_order(&self.cause),
+            cause_order(self.cause),
             &self.summary,
         )
     }
@@ -129,7 +128,7 @@ impl OpenFinding {
 
 /// Cause ordering for snapshot: absent cause first (0), then failed-run (1),
 /// then missing-run (2) (FR-167).
-fn cause_order(cause: &Option<StaleCause>) -> u8 {
+fn cause_order(cause: Option<StaleCause>) -> u8 {
     match cause {
         None | Some(StaleCause::Invalid) => 0, // absent or invalid: first for snapshots
         Some(StaleCause::FailedRun) => 1,

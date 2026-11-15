@@ -143,6 +143,14 @@ fn check_finding(value: &Value, at: &str) -> std::result::Result<(), String> {
             "{at}.severity: expected one of \"low\", \"medium\", \"high\""
         ));
     }
+    if let Some(cause) = object.get("cause") {
+        let path = format!("{at}.cause");
+        if !matches!(reader::text(cause, &path)?, "failed-run" | "missing-run") {
+            return Err(format!(
+                "{path}: expected one of \"failed-run\", \"missing-run\""
+            ));
+        }
+    }
     Ok(())
 }
 

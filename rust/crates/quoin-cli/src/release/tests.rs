@@ -205,6 +205,33 @@ fn freshness_counts_every_criterion_and_findings_follow_the_total_order() {
     assert_eq!(built.findings[2].path.as_deref(), Some("src/a.rs"));
 }
 
+#[trace("FR-167-AC-12")]
+#[test]
+fn a_stale_finding_without_a_cause_has_no_cause_key_and_one_with_a_cause_keeps_it() {
+    let with_cause = json!({
+        "kind": "stale-evidence", "summary": "no run", "path": null, "line": null,
+        "cause": "missing-run",
+    });
+    let matrix = serde_json::from_value(json!({ "requirements": [
+        { "id": "FR-1", "criteria": [
+            criterion("FR-1-AC-1", "stale", &json!([finding("stale-evidence", "old run", None, None)])),
+            criterion("FR-1-AC-2", "stale", &json!([with_cause])),
+        ]},
+    ]}))
+    .unwrap();
+    let built = sections(matrix);
+    let listed = serde_json::to_value(&built.findings).unwrap();
+
+    let bare = &listed[0];
+    assert_eq!(bare["obligation"], "FR-1-AC-1");
+    assert_eq!(bare["kind"], "stale-evidence");
+    // `get` yields `Some(Null)` for a `null` member, so `None` proves the key
+    // is absent rather than null.
+    assert!(bare.get("cause").is_none(), "{bare}");
+    assert_eq!(listed[1]["obligation"], "FR-1-AC-2");
+    assert_eq!(listed[1]["cause"], "missing-run");
+}
+
 fn sample() -> Value {
     json!({
         "protocol": "quoin.release-snapshot/v1",

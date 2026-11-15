@@ -11,12 +11,14 @@
 
 #![allow(
     clippy::unwrap_used,
+    clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
 use ix_trace_rs::trace;
-use quoin_assurance::matrix::{EvidenceStatus, InvalidStaleCause, MatrixInput, MatrixRefusal, build};
+use quoin_assurance::matrix::{EvidenceStatus, MatrixInput, MatrixRefusal, build};
 use serde_json::{Value, json};
 
 fn criterion(id: &str) -> Value {
@@ -156,14 +158,6 @@ fn tc_1760_uninspected_suite_has_no_cause() {
         criterion.evidence_detail.findings.is_empty(),
         "no stale-evidence finding for uninspected suite"
     );
-    // Verify no finding has a cause
-    for finding in &criterion.evidence_detail.findings {
-        let finding_json = serde_json::to_value(finding).expect("serializes");
-        assert!(
-            finding_json.get("cause").is_none(),
-            "uninspected suite finding must have no cause: {finding_json}"
-        );
-    }
 }
 
 /// An `evidence_detail.findings` item whose `kind` is not `stale-evidence` has
@@ -179,7 +173,7 @@ fn tc_1760_non_stale_has_no_cause_key() {
     });
     let matrix_input = input(
         &["FR-001-AC-4"],
-        &[],
+        &[binding("FR-001-AC-4", "unit")],
         &audit(&[], &[finding], &[]),
     );
 
@@ -216,18 +210,14 @@ fn tc_1760_invalid_cause_on_stale_refused() {
 
     // The input parses successfully (unknown cause deserializes to Invalid)
     // but matrix.build refuses the Invalid sentinel
-    let result = build(&matrix_input);
-    assert!(result.is_err(), "invalid cause value must be refused");
-    let err = result.unwrap_err();
-    match err {
-        MatrixRefusal::InvalidStaleCause(invalid) => {
-            assert_eq!(
-                invalid.obligation, "FR-001-AC-5",
-                "error must name the offending obligation"
-            );
-        }
-        _ => panic!("expected InvalidStaleCause, got {:?}", err),
-    }
+    let err = build(&matrix_input).expect_err("invalid cause value must be refused");
+    let MatrixRefusal::InvalidStaleCause(invalid) = err else {
+        panic!("expected InvalidStaleCause, got {err:?}");
+    };
+    assert_eq!(
+        invalid.obligation, "FR-001-AC-5",
+        "error must name the offending obligation"
+    );
 }
 
 /// An `audit` finding of a kind other than `stale-evidence` that carries a
@@ -245,24 +235,16 @@ fn tc_1760_cause_on_non_stale_refused() {
         "summary": "no evidence",
         "cause": "missing-run",
     });
-    let matrix_input = input(
-        &["FR-001-AC-6"],
-        &[],
-        &audit(&[], &[finding], &[]),
-    );
+    let matrix_input = input(&["FR-001-AC-6"], &[], &audit(&[], &[finding], &[]));
 
-    let result = build(&matrix_input);
-    assert!(result.is_err(), "a cause on a non-stale finding must be refused");
-    let err = result.unwrap_err();
-    match err {
-        MatrixRefusal::InvalidStaleCause(invalid) => {
-            assert_eq!(
-                invalid.obligation, "FR-001-AC-6",
-                "error must name the offending obligation"
-            );
-        }
-        _ => panic!("expected InvalidStaleCause, got {:?}", err),
-    }
+    let err = build(&matrix_input).expect_err("a cause on a non-stale finding must be refused");
+    let MatrixRefusal::InvalidStaleCause(invalid) = err else {
+        panic!("expected InvalidStaleCause, got {err:?}");
+    };
+    assert_eq!(
+        invalid.obligation, "FR-001-AC-6",
+        "error must name the offending obligation"
+    );
 }
 
 /// An obligation with a `missing-run` and a `failed-run` `stale-evidence`
@@ -302,7 +284,8 @@ fn tc_1760_multiple_stale_findings_ordered_by_cause() {
         "both stale findings are listed"
     );
     // Verify failed-run comes first
-    let findings_json = serde_json::to_value(&criterion.evidence_detail.findings).expect("serializes");
+    let findings_json =
+        serde_json::to_value(&criterion.evidence_detail.findings).expect("serializes");
     assert_eq!(
         findings_json[0]["cause"], "failed-run",
         "failed-run must come first: {findings_json}"
@@ -320,76 +303,68 @@ fn tc_1760_multiple_stale_findings_ordered_by_cause() {
 #[trace("FR-115-AC-25")]
 #[test]
 fn tc_1760_cause_does_not_affect_status_or_other_fields() {
-    let finding_with_cause = json!({
-        "kind": "stale-evidence",
-        "obligation": "FR-001-AC-8",
-        "severity": "high",
-        "summary": "no run",
-        "cause": "missing-run",
-    });
-    let finding_without_cause = json!({
-        "kind": "stale-evidence",
-        "obligation": "FR-001-AC-8",
-        "severity": "high",
-        "summary": "no run",
-    });
+    let stale = |summary: &str, cause: Option<&str>| {
+        let mut finding = json!({
+            "kind": "stale-evidence",
+            "obligation": "FR-001-AC-8",
+            "severity": "high",
+            "summary": summary,
+        });
+        if let Some(cause) = cause {
+            finding["cause"] = json!(cause);
+        }
+        finding
+    };
+    let build_json = |missing: Option<&str>, failed: Option<&str>| {
+        let matrix_input = input(
+            &["FR-001-AC-8", "FR-001-AC-9"],
+            &[
+                binding("FR-001-AC-8", "unit"),
+                binding("FR-001-AC-9", "unit"),
+            ],
+            &audit(
+                &["FR-001-AC-9"],
+                &[stale("no run", missing), stale("failing run", failed)],
+                &[],
+            ),
+        );
+        let matrix = build(&matrix_input).expect("valid input succeeds");
+        serde_json::to_value(&matrix).expect("serializes")
+    };
 
-    let input_with = input(
-        &["FR-001-AC-8"],
-        &[binding("FR-001-AC-8", "unit")],
-        &audit(&[], &[finding_with_cause], &[]),
-    );
-    let input_without = input(
-        &["FR-001-AC-8"],
-        &[binding("FR-001-AC-8", "unit")],
-        &audit(&[], &[finding_without_cause], &[]),
-    );
+    let with_cause = build_json(Some("missing-run"), Some("failed-run"));
+    let baseline = build_json(None, None);
 
-    let matrix_with = build(&input_with).expect("valid input succeeds");
-    let matrix_without = build(&input_without).expect("valid input succeeds");
+    // The causes are present, so the comparison below is not vacuous.
+    let findings = &with_cause["requirements"][0]["criteria"][0]["evidence_detail"]["findings"];
+    assert_eq!(findings[0]["cause"], "failed-run", "{findings}");
+    assert_eq!(findings[1]["cause"], "missing-run", "{findings}");
 
-    let criterion_with = &matrix_with.requirements[0].criteria[0];
-    let criterion_without = &matrix_without.requirements[0].criteria[0];
-
-    // Evidence status unchanged
+    // Removing every `cause` member from the with-cause matrix must give the
+    // cause-free baseline exactly: statuses, summaries, severity, order,
+    // bindings, unevaluated checks and the healthy criterion are untouched.
+    // The baseline orders by summary ("failing run" < "no run"), the with-cause
+    // matrix by cause (failed-run first), which agree here by construction.
+    let mut stripped = with_cause.clone();
+    strip_cause(&mut stripped);
+    assert_eq!(stripped, baseline);
     assert_eq!(
-        criterion_with.evidence_status, criterion_without.evidence_status,
-        "evidence_status must be identical"
-    );
-
-    // Finding details unchanged
-    assert_eq!(
-        criterion_with.evidence_detail.findings.len(),
-        criterion_without.evidence_detail.findings.len(),
-        "finding count must be identical"
-    );
-    assert_eq!(
-        criterion_with.evidence_detail.findings[0].summary,
-        criterion_without.evidence_detail.findings[0].summary,
-        "summary must be identical"
-    );
-    assert_eq!(
-        criterion_with.evidence_detail.findings[0].severity,
-        criterion_without.evidence_detail.findings[0].severity,
-        "severity must be identical"
-    );
-
-    // Other evidence detail unchanged
-    assert_eq!(
-        criterion_with.evidence_detail.bindings,
-        criterion_without.evidence_detail.bindings,
-        "bindings must be identical"
+        baseline["requirements"][0]["criteria"][1]["evidence_status"], "bound",
+        "the healthy criterion stays bound: {baseline}"
     );
     assert_eq!(
-        criterion_with.evidence_detail.unevaluated,
-        criterion_without.evidence_detail.unevaluated,
-        "unevaluated must be identical"
+        baseline["requirements"][0]["criteria"][0]["evidence_status"], "stale",
+        "{baseline}"
     );
+}
 
-    // Healthy set unchanged
-    assert_eq!(
-        matrix_with.requirements[0].healthy_count,
-        matrix_without.requirements[0].healthy_count,
-        "healthy count must be identical"
-    );
+fn strip_cause(value: &mut Value) {
+    match value {
+        Value::Object(members) => {
+            members.remove("cause");
+            members.values_mut().for_each(strip_cause);
+        }
+        Value::Array(items) => items.iter_mut().for_each(strip_cause),
+        _ => {}
+    }
 }

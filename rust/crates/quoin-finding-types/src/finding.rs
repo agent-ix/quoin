@@ -35,6 +35,7 @@ pub enum StaleCause {
 
 impl StaleCause {
     /// Whether this is a valid (not `Invalid`) cause.
+    #[must_use]
     pub fn is_valid(self) -> bool {
         !matches!(self, Self::Invalid)
     }
@@ -42,6 +43,7 @@ impl StaleCause {
     /// The kebab-case string representation for valid causes.
     ///
     /// Returns `None` for `Invalid`, which has no string representation.
+    #[must_use]
     pub fn as_str(self) -> Option<&'static str> {
         match self {
             Self::FailedRun => Some("failed-run"),
@@ -221,6 +223,7 @@ impl Finding {
     }
 
     /// Set the typed `cause` on a `stale-evidence` finding.
+    #[must_use]
     pub fn with_cause(mut self, cause: StaleCause) -> Self {
         self.cause = Some(cause);
         self

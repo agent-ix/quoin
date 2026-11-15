@@ -139,6 +139,32 @@ fn tc_1080_101_the_request_shape_is_enforced() {
     assert!(context["observed_bytes"].parse::<usize>().unwrap() > 16 * 1024 * 1024);
 }
 
+/// An unknown cause on a `stale-evidence` finding, and any cause on another
+/// kind, exit 2 as `CORE_REFUSED` with `reason: invalid-stale-cause` naming the
+/// obligation, and emit no partial matrix.
+#[trace("FR-115-AC-22", "FR-115-AC-23")]
+#[test]
+fn tc_1760_an_invalid_stale_cause_is_refused_with_its_reason() {
+    for finding in [
+        json!({ "kind": "stale-evidence", "obligation": "FR-002-AC-1", "severity": "high",
+                "summary": "s", "cause": "not-a-cause" }),
+        json!({ "kind": "undischarged", "obligation": "FR-002-AC-1", "severity": "high",
+                "summary": "s", "cause": "missing-run" }),
+    ] {
+        let mut request = request();
+        request["audit"]["findings"] = json!([finding]);
+        request["audit"]["healthy"] = json!([]);
+        let result = run("matrix.build", &request.to_string());
+        assert_eq!(result.status, 2, "{finding}");
+        assert_eq!(result.stdout, "", "no partial matrix");
+        let diagnostic = &result.diagnostics[0];
+        assert_eq!(diagnostic.code, "CORE_REFUSED");
+        assert_eq!(diagnostic.context["reason"], "invalid-stale-cause");
+        assert_eq!(diagnostic.context["obligation"], "FR-002-AC-1");
+        assert_eq!(diagnostic.context["op"], "matrix.build");
+    }
+}
+
 /// A contradictory audit exits 2 with `reason: contradictory-audit` and the
 /// offending id, and emits no partial matrix.
 #[trace("FR-115-AC-5", "FR-115-CON-4")]

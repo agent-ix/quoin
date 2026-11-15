@@ -51,9 +51,8 @@ pub(super) fn stale_evidence(
         let failed_entries = failed_bound_symbols(binding, run);
         if !failed_entries.is_empty() {
             let mut sorted_entries = failed_entries;
-            sorted_entries.sort_by(|left, right| {
-                js::compare(left.symbol.as_str(), right.symbol.as_str())
-            });
+            sorted_entries
+                .sort_by(|left, right| js::compare(left.symbol.as_str(), right.symbol.as_str()));
             let Some(first_entry) = sorted_entries.first() else {
                 continue;
             };
@@ -92,10 +91,10 @@ pub(super) fn stale_evidence(
         StaleCause::FailedRun => {
             let symbol = first.symbol?;
             let outcome = first.outcome?;
-            let outcome_text = match outcome {
-                Outcome::Fail => "failed",
-                Outcome::Error => "error",
-                _ => "failed",
+            let outcome_text = if matches!(outcome, Outcome::Error) {
+                "error"
+            } else {
+                "failed"
             };
             Finding::new(
                 FindingKind::STALE_EVIDENCE,
@@ -112,24 +111,32 @@ pub(super) fn stale_evidence(
             )
             .with_cause(StaleCause::FailedRun)
         }
-        StaleCause::MissingRun => {
+        StaleCause::MissingRun => Finding::new(
+            FindingKind::STALE_EVIDENCE,
+            &obligation.id,
+            Severity::high(),
+            format!(
+                "{id} is bound to {suite}, which has no recorded run. The binding claims \
+                     evidence that is not in the store.",
+                id = obligation.id,
+                suite = first.suite
+            ),
+        )
+        .with_cause(StaleCause::MissingRun),
+        StaleCause::Invalid => {
+            // Never constructed above, but a stale suite was found and must
+            // not vanish: report it without a cause.
             Finding::new(
                 FindingKind::STALE_EVIDENCE,
                 &obligation.id,
                 Severity::high(),
                 format!(
-                    "{id} is bound to {suite}, which has no recorded run. The binding claims \
-                     evidence that is not in the store.",
+                    "{id} is bound to {suite}, whose stale cause could not be determined. The \
+                     binding claims evidence that does not hold.",
                     id = obligation.id,
                     suite = first.suite
                 ),
             )
-            .with_cause(StaleCause::MissingRun)
-        }
-        StaleCause::Invalid => {
-            // This should never occur: the auditor only constructs FailedRun
-            // or MissingRun causes. Invalid is a deserialization sentinel.
-            return None;
         }
     };
     Some(finding)

@@ -77,7 +77,9 @@ fn stale_findings<'a>(report: &'a AuditReport, obligation: &str) -> Vec<&'a Find
     report
         .findings
         .iter()
-        .filter(|finding| finding.kind == FindingKind::STALE_EVIDENCE && finding.obligation == obligation)
+        .filter(|finding| {
+            finding.kind == FindingKind::STALE_EVIDENCE && finding.obligation == obligation
+        })
         .collect()
 }
 
@@ -111,7 +113,11 @@ fn tc_1760_missing_run_yields_missing_run_cause() {
 fn tc_1760_failed_run_yields_failed_run_cause() {
     let obligation = an_obligation("FR-1760-AC-2");
     let binding = a_binding("FR-1760-AC-2", "unit", "tests::tc_1760");
-    let run = a_run("unit", "2026-11-15T00:00:00Z", vec![("tests::tc_1760", Outcome::Fail)]);
+    let run = a_run(
+        "unit",
+        "2026-11-15T00:00:00Z",
+        vec![("tests::tc_1760", Outcome::Fail)],
+    );
     let input = an_input(vec![obligation], vec![binding], vec![run]);
 
     let report = audit(&input).expect("a well-formed input never refuses");
@@ -135,7 +141,11 @@ fn tc_1760_failed_run_yields_failed_run_cause() {
 fn tc_1760_errored_run_yields_failed_run_cause() {
     let obligation = an_obligation("FR-1760-AC-3");
     let binding = a_binding("FR-1760-AC-3", "unit", "tests::tc_1760");
-    let run = a_run("unit", "2026-11-15T00:00:00Z", vec![("tests::tc_1760", Outcome::Error)]);
+    let run = a_run(
+        "unit",
+        "2026-11-15T00:00:00Z",
+        vec![("tests::tc_1760", Outcome::Error)],
+    );
     let input = an_input(vec![obligation], vec![binding], vec![run]);
 
     let report = audit(&input).expect("a well-formed input never refuses");
@@ -162,7 +172,11 @@ fn tc_1760_deterministic_stale_suite_selection_bytewise() {
     // "integration" comes before "unit" bytewise
     let binding_missing = a_binding("FR-1760-AC-4", "integration", "tests::tc_integration");
     let binding_failed = a_binding("FR-1760-AC-4", "unit", "tests::tc_unit");
-    let run_failed = a_run("unit", "2026-11-15T00:00:00Z", vec![("tests::tc_unit", Outcome::Fail)]);
+    let run_failed = a_run(
+        "unit",
+        "2026-11-15T00:00:00Z",
+        vec![("tests::tc_unit", Outcome::Fail)],
+    );
     let input = an_input(
         vec![obligation],
         vec![binding_missing, binding_failed],
@@ -177,7 +191,10 @@ fn tc_1760_deterministic_stale_suite_selection_bytewise() {
         1,
         "at most one stale-evidence finding per obligation, saw {} ({:?})",
         findings.len(),
-        findings.iter().map(|f| f.summary.as_str()).collect::<Vec<_>>()
+        findings
+            .iter()
+            .map(|f| f.summary.as_str())
+            .collect::<Vec<_>>()
     );
     let finding = findings[0];
     assert_eq!(
@@ -201,7 +218,11 @@ fn tc_1760_deterministic_stale_suite_selection_failed_first() {
     let obligation = an_obligation("FR-1760-AC-5");
     let binding_missing = a_binding("FR-1760-AC-5", "z-suite", "tests::tc_z");
     let binding_failed = a_binding("FR-1760-AC-5", "a-suite", "tests::tc_a");
-    let run_failed = a_run("a-suite", "2026-11-15T00:00:00Z", vec![("tests::tc_a", Outcome::Fail)]);
+    let run_failed = a_run(
+        "a-suite",
+        "2026-11-15T00:00:00Z",
+        vec![("tests::tc_a", Outcome::Fail)],
+    );
     let input = an_input(
         vec![obligation],
         vec![binding_missing, binding_failed],
@@ -240,7 +261,9 @@ fn tc_1760_non_stale_findings_have_no_cause() {
     let undischarged = report
         .findings
         .iter()
-        .find(|finding| finding.kind == FindingKind::UNDISCHARGED && finding.obligation == "FR-1760-AC-6")
+        .find(|finding| {
+            finding.kind == FindingKind::UNDISCHARGED && finding.obligation == "FR-1760-AC-6"
+        })
         .expect("an unbound obligation yields undischarged");
     assert_eq!(
         undischarged.cause, None,
@@ -253,45 +276,97 @@ fn tc_1760_non_stale_findings_have_no_cause() {
         json.get("cause").is_none(),
         "the cause key must not appear in JSON for non-stale findings: {json}"
     );
+}
 
-    // Verify cause doesn't change summary, severity, ordering, or healthy set
-    // by comparing stale findings with and without cause (same underlying condition)
-    let obligation_stale = an_obligation("FR-1760-AC-6b");
-    let binding = a_binding("FR-1760-AC-6b", "unit", "tests::tc");
-    let input_stale = an_input(vec![obligation_stale], vec![binding], vec![]);
-
-    let report_stale = audit(&input_stale).expect("audit succeeds");
-
-    let stale_finding = report_stale
-        .findings
-        .iter()
-        .find(|finding| finding.kind == FindingKind::STALE_EVIDENCE)
-        .expect("missing run yields stale-evidence");
-
-    // The finding has a cause
-    assert!(stale_finding.cause.is_some(), "stale finding should have cause");
-
-    // Summary content is determined by the condition, not affected by cause presence
-    assert!(
-        stale_finding.summary.contains("FR-1760-AC-6b"),
-        "summary names obligation"
-    );
-    assert!(
-        stale_finding.summary.contains("unit"),
-        "summary names suite"
-    );
-
-    // Severity is always high for stale-evidence
-    assert_eq!(stale_finding.severity, Some(Severity::high()));
-
-    // Healthy set: an obligation with stale evidence is never in audit.healthy
-    assert!(
-        !report_stale.healthy.contains(&"FR-1760-AC-6b".to_owned()),
-        "stale obligation is not healthy"
+/// Stripping `cause` from an audit report leaves exactly the report the auditor
+/// produced before the field existed: the same summaries, severities, finding
+/// order and healthy set, written out here as literals (FR-032-AC-21).
+#[trace("FR-032-AC-21")]
+#[test]
+fn tc_1760_cause_leaves_summaries_severity_order_and_healthy_set_unchanged() {
+    let input = an_input(
+        vec![
+            an_obligation("FR-1760-AC-7a"),
+            an_obligation("FR-1760-AC-7b"),
+            an_obligation("FR-1760-AC-7c"),
+        ],
+        vec![
+            a_binding("FR-1760-AC-7a", "gone", "tests::a"),
+            a_binding("FR-1760-AC-7b", "broken", "tests::b"),
+            a_binding("FR-1760-AC-7c", "unit", "tests::c"),
+        ],
+        vec![
+            a_run(
+                "broken",
+                "2026-11-15T00:00:00Z",
+                vec![("tests::b", Outcome::Fail)],
+            ),
+            a_run(
+                "unit",
+                "2026-11-15T00:00:00Z",
+                vec![("tests::c", Outcome::Pass)],
+            ),
+        ],
     );
 
-    // Finding order: stale-evidence findings are sorted deterministically
-    // regardless of cause presence (tested in AC-20 and AC-24)
+    let report = audit(&input).expect("a well-formed input never refuses");
+
+    // The causes are present, so the comparison below is not vacuous.
+    let causes: Vec<Option<StaleCause>> = report.findings.iter().map(|f| f.cause).collect();
+    assert!(causes.contains(&Some(StaleCause::MissingRun)), "{causes:?}");
+    assert!(causes.contains(&Some(StaleCause::FailedRun)), "{causes:?}");
+
+    let mut baseline = report.clone();
+    for finding in &mut baseline.findings {
+        finding.cause = None;
+    }
+    let baseline_json = serde_json::to_value(&baseline).expect("serializes");
+    let with_cause_json = serde_json::to_value(&report).expect("serializes");
+
+    let project = |value: &serde_json::Value| -> Vec<(String, String, String, String)> {
+        value["findings"]
+            .as_array()
+            .expect("findings is an array")
+            .iter()
+            .map(|f| {
+                (
+                    f["obligation"].as_str().unwrap_or_default().to_owned(),
+                    f["kind"].as_str().unwrap_or_default().to_owned(),
+                    f["severity"].as_str().unwrap_or_default().to_owned(),
+                    f["summary"].as_str().unwrap_or_default().to_owned(),
+                )
+            })
+            .collect()
+    };
+    assert_eq!(project(&with_cause_json), project(&baseline_json));
+    assert_eq!(with_cause_json["healthy"], baseline_json["healthy"]);
+
+    // Literals: the summaries and severity, in the order the auditor lists them.
+    assert_eq!(
+        project(&baseline_json),
+        [
+            (
+                "FR-1760-AC-7a".to_owned(),
+                "stale-evidence".to_owned(),
+                "high".to_owned(),
+                "FR-1760-AC-7a is bound to gone, which has no recorded run. The binding claims \
+                 evidence that is not in the store."
+                    .to_owned()
+            ),
+            (
+                "FR-1760-AC-7b".to_owned(),
+                "stale-evidence".to_owned(),
+                "high".to_owned(),
+                "FR-1760-AC-7b is bound to broken:tests::b, which reported failed in the recorded run. \
+                 The binding claims evidence that does not hold."
+                    .to_owned()
+            ),
+        ]
+    );
+    assert_eq!(
+        baseline_json["healthy"],
+        serde_json::json!(["FR-1760-AC-7c"])
+    );
 }
 
 /// Within a failing suite, the first failing symbol in bytewise order determines

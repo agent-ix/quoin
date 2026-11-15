@@ -17,7 +17,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_evidence::types::BindingsFile;
-use quoin_finding_types::{AuditReport, Finding, FindingKind, StaleCause};
+pub use quoin_finding_types::StaleCause;
+use quoin_finding_types::{AuditReport, Finding, FindingKind};
 use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixUnbackedClaim, TargetLocus};
 use serde::{Deserialize, Serialize};
 
@@ -428,19 +429,15 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, MatrixRefusal> {
 
     // Validate cause: only on stale-evidence, and only valid values (FR-115-AC-22..23).
     for finding in &input.audit.findings {
-        if finding.kind == FindingKind::STALE_EVIDENCE {
-            // A stale-evidence finding MAY have a cause (it's optional), but if
-            // present it must be one of the two valid spellings.
-            if let Some(cause) = finding.cause {
-                if !cause.is_valid() {
-                    return Err(InvalidStaleCause {
-                        obligation: finding.obligation.clone(),
-                    }
-                    .into());
-                }
-            }
-        } else if finding.cause.is_some() {
-            // Non-stale findings must not carry a cause.
+        // A stale-evidence finding MAY have a cause (it is optional), but if
+        // present it must be one of the two valid spellings; any other kind
+        // must not carry one.
+        let invalid = if finding.kind == FindingKind::STALE_EVIDENCE {
+            finding.cause.is_some_and(|cause| !cause.is_valid())
+        } else {
+            finding.cause.is_some()
+        };
+        if invalid {
             return Err(InvalidStaleCause {
                 obligation: finding.obligation.clone(),
             }
@@ -730,26 +727,24 @@ fn detail(findings: &[&Finding], bindings: &[BindingDetail], checks: &[String]) 
         })
         .collect();
     // Multiple stale-evidence findings are ordered by cause (failed-run before
-    // missing-run, absent cause first), then path, line, symbol and summary
+    // missing-run, a finding with no cause after both), then path, line, symbol and summary
     // (FR-115-AC-24). Kind decides within a bucket; the remaining fields only
     // break a tie between two findings of one kind, so the order never depends
     // on the order the report happened to list them in.
     findings.sort_by(|left, right| {
-        bucket(&left.kind)
-            .cmp(&bucket(&right.kind))
-            .then_with(|| {
-                // Within stale-evidence, order by cause, path, line, symbol, summary
-                if left.kind == FindingKind::STALE_EVIDENCE {
-                    cause_order(&left.cause)
-                        .cmp(&cause_order(&right.cause))
-                        .then_with(|| left.path.cmp(&right.path))
-                        .then_with(|| left.line.cmp(&right.line))
-                        .then_with(|| left.symbol.cmp(&right.symbol))
-                        .then_with(|| left.summary.cmp(&right.summary))
-                } else {
-                    left.cmp(right)
-                }
-            })
+        bucket(&left.kind).cmp(&bucket(&right.kind)).then_with(|| {
+            // Within stale-evidence, order by cause, path, line, symbol, summary
+            if left.kind == FindingKind::STALE_EVIDENCE {
+                cause_order(left.cause)
+                    .cmp(&cause_order(right.cause))
+                    .then_with(|| left.path.cmp(&right.path))
+                    .then_with(|| left.line.cmp(&right.line))
+                    .then_with(|| left.symbol.cmp(&right.symbol))
+                    .then_with(|| left.summary.cmp(&right.summary))
+            } else {
+                left.cmp(right)
+            }
+        })
     });
     let mut bindings = bindings.to_vec();
     bindings.sort();
@@ -764,7 +759,7 @@ fn detail(findings: &[&Finding], bindings: &[BindingDetail], checks: &[String]) 
 
 /// Cause ordering for matrix stale findings: failed-run (0), missing-run (1),
 /// absent cause last (2) (FR-115-AC-24).
-fn cause_order(cause: &Option<StaleCause>) -> u8 {
+fn cause_order(cause: Option<StaleCause>) -> u8 {
     match cause {
         Some(StaleCause::FailedRun) => 0,
         Some(StaleCause::MissingRun) => 1,
