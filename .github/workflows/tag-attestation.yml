@@ -1,0 +1,75 @@
+name: Tag attestation
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate protected release paths
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      record_path: ${{ steps.paths.outputs.record_path }}
+      allowed_signers_path: ${{ steps.paths.outputs.allowed_signers_path }}
+    steps:
+      - name: Validate protected repository variables
+        id: paths
+        shell: bash
+        env:
+          RELEASE_RECORD_PATH: ${{ vars.RELEASE_RECORD_PATH }}
+          ALLOWED_SIGNERS_PATH: ${{ vars.ALLOWED_SIGNERS_PATH }}
+        run: |
+          set -euo pipefail
+
+          valid_repo_path() {
+            local value="$1"
+            [[ -n "$value" && "$value" =~ ^[A-Za-z0-9._/-]+$ ]] || return 1
+            [[ "$value" != */ && "$value" != *//* ]] || return 1
+            local segment
+            IFS='/' read -r -a segments <<< "$value"
+            for segment in "${segments[@]}"; do
+              [[ -n "$segment" && "$segment" != . && "$segment" != .. ]] || return 1
+            done
+          }
+
+          valid_repo_path "$RELEASE_RECORD_PATH" || {
+            echo "::error::RELEASE_RECORD_PATH is unset or not a safe repository-relative file path" >&2
+            exit 1
+          }
+          valid_repo_path "$ALLOWED_SIGNERS_PATH" || {
+            echo "::error::ALLOWED_SIGNERS_PATH is unset or not a safe repository-relative file path" >&2
+            exit 1
+          }
+
+          printf 'record_path=%s\n' "$RELEASE_RECORD_PATH" >> "$GITHUB_OUTPUT"
+          printf 'allowed_signers_path=%s\n' "$ALLOWED_SIGNERS_PATH" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build native release artifacts and evidence
+    uses: ./.github/workflows/native-release-build.yml
+    with:
+      tag: ${{ github.ref_name }}
+      include_evidence: true
+    secrets: inherit
+
+  attest:
+    name: Verify and attest release
+    needs: [build, validate]
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    uses: agent-ix/engineering-assurance/.github/workflows/release-attestation.yml@v0.9.0
+    with:
+      tag: ${{ github.ref_name }}
+      ea_tooling_tag: v0.9.0
+      quoin_tooling_tag: '0.30.1'
+      record_path: ${{ needs.validate.outputs.record_path }}
+      allowed_signers_path: ${{ needs.validate.outputs.allowed_signers_path }}
+      artifact_name: release-artifacts
