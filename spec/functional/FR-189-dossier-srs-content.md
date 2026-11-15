@@ -31,11 +31,13 @@ recorded.
 
 ## Behavior
 
-- Requirements SHALL appear in id order.
-- Criticality SHALL be shown exactly as recorded. A requirement with no `criticality` SHALL show `unassigned` and produce a `criticality_unassigned` gap.
-- A requirement with zero acceptance criteria SHALL produce an `unbacked_criterion` gap naming it.
-- A scope with no requirement SHALL produce a `no_requirements` gap.
-- Quoin SHALL NOT infer, default or compute a criticality level.
+- The SRS SHALL list requirements in id order.
+- The SRS SHALL show each criticality exactly as recorded.
+- If a requirement has no `criticality`, the SRS SHALL show `unassigned` for it.
+- If a requirement has no `criticality`, the SRS SHALL record a `criticality_unassigned` gap naming it.
+- If a requirement has zero acceptance criteria, the SRS SHALL record an `unbacked_criterion` gap naming it.
+- If the scope holds no requirement, the SRS SHALL record a `no_requirements` gap.
+- The SRS SHALL NOT infer, default or compute a criticality level.
 
 ## Acceptance Criteria
 

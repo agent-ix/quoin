@@ -31,12 +31,18 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 
 ## Behavior
 
-- Each clause set SHALL be one table. Pack clause sets keep the pack's index order; separate bindings keep the command-line order.
-- Each row SHALL carry every member of the source row, and the document SHALL show `As of` and `unusedFacts`.
-- With no `--clause-binding` and no `--pack`, the document SHALL carry a `no_clause_binding` gap and be `incomplete`; this is not an error.
-- A row with no compliance or evidence SHALL produce a `clause_open` gap.
-- A clause whose rights are restricted (the rights metadata of `quire clauses`) SHALL render its id and status only, and its text SHALL NOT be written to any output, gap detail included.
-- `As of` is the `--as-of` value; Quoin SHALL NOT read the clock.
+- The RMM SHALL render each clause set as one table.
+- Where a pack supplies the clause sets, the RMM SHALL order the tables by the pack's index order.
+- Where separate bindings supply the clause sets, the RMM SHALL order the tables by command-line order.
+- The RMM SHALL carry every member of each source row.
+- The RMM SHALL show `As of` and `unusedFacts`.
+- If neither `--clause-binding` nor `--pack` is given, the RMM SHALL record a `no_clause_binding` gap.
+- If neither `--clause-binding` nor `--pack` is given, the RMM SHALL have status `incomplete` and the command SHALL NOT treat the absence as an error.
+- If a row has no compliance or evidence, the RMM SHALL record a `clause_open` gap.
+- If the rights metadata of `quire clauses` marks a clause as restricted, the RMM SHALL render only that clause's id and status.
+- If the rights metadata of `quire clauses` marks a clause as restricted, Quoin SHALL NOT write the clause text to any output, gap detail included.
+- The RMM SHALL take `As of` from the `--as-of` value.
+- Quoin SHALL NOT read the clock for the RMM.
 
 ## Acceptance Criteria
 
