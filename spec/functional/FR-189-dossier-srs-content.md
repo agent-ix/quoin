@@ -15,10 +15,7 @@ relationships:
 
 ## Description
 
-The software requirements specification (`--doc srs`, document id `DOS-SRS`)
-SHALL list every requirement document in scope (StR, FR, NFR) in id order with
-its id, title, statement, acceptance criteria (id and text) and criticality as
-recorded.
+When `quoin dossier generate` selects the SRS (`--doc srs`, document id `DOS-SRS`), the SRS SHALL list every requirement document in scope (StR, FR, NFR) in id order with its id, title, statement, acceptance criteria (id and text) and criticality as recorded.
 
 ## Inputs
 

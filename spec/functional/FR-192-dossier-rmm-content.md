@@ -37,7 +37,8 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 - The RMM SHALL carry every member of each source row.
 - The RMM SHALL show `As of` and `unusedFacts`.
 - If neither `--clause-binding` nor `--pack` is given, the RMM SHALL record a `no_clause_binding` gap.
-- If neither `--clause-binding` nor `--pack` is given, the RMM SHALL have status `incomplete` and the command SHALL NOT treat the absence as an error.
+- If neither `--clause-binding` nor `--pack` is given, the RMM SHALL have status `incomplete`.
+- If neither `--clause-binding` nor `--pack` is given, the command SHALL NOT treat the absence as an error.
 - If a row has no compliance or evidence, the RMM SHALL record a `clause_open` gap.
 - If the rights metadata of `quire clauses` marks a clause as restricted, the RMM SHALL render only that clause's id and status.
 - If the rights metadata of `quire clauses` marks a clause as restricted, Quoin SHALL NOT write the clause text to any output, gap detail included.
