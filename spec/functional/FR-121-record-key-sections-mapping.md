@@ -13,6 +13,8 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-104"
     type: "depends_on"
+  - target: "ix://agent-ix/quire-rs/FR-069"
+    type: "depends_on"
 ---
 
 # FR-121: Record-key sections mapping to a module's own record keys
@@ -38,10 +40,14 @@ shape and each field's scalar type come from the referenced emitted schema
 (FR-073), so a module adds a key by emitting it and naming the token, with no
 change to Quoin, unless another mapping already owns that key.
 
-Lifecycle keys are authored in body sections, not in frontmatter. Frontmatter
-is the artifact identity and graph surface (FR-104 rationale); a body section
-has a source locus, which a safety judgement needs so that who asserted what,
-and when, is attributable to a line. The mapping never completes a record: an
+Lifecycle keys are authored in body sections by default. A body section has a
+source locus, which a safety judgement needs so that who asserted what, and
+when, is attributable to a line. Frontmatter is the artifact identity and graph
+surface (FR-104 rationale) and also the surface a graph query reads a value
+from without parsing the body, so a module MAY instead declare a record key
+frontmatter-owned with a `frontmatter_field` locator (quire-rs FR-069). That
+key takes its value from frontmatter only and has no section locus. The
+declaration names the key, so Quoin holds no key name. The mapping never completes a record: an
 absent section yields an absent key, an empty cell yields an absent field, and
 no score, status or acceptance a document did not state is ever supplied. The
 rule "an accepted status requires a provenance" is a schema rule of the module
@@ -69,12 +75,24 @@ and is checked by record validation (FR-073), not by this extraction.
 - Quire SHALL read record-key sections only when `semantic.mappings` names the token `record-sections`.
 - Quire SHALL compare a section heading with a record property name the way it compares a header cell with a field name: lowercase both and remove spaces, hyphens and underscores, so `## Declared Type` names `declaredType` and `## Associated Types` names `associated_types`. The rule is total over camelCase and snake_case keys.
 - If two properties of one record normalize to the same name, then Quire SHALL emit `semantic.feature-not-extractable` at the heading with `reason` `key-ambiguous` and read neither.
-- Quire SHALL read a section as a record key only when its heading names a property of the object type's record that no other mapping owns, so every key has exactly one authored source. The keys other mappings own are: `fields` (FR-071), `clauses` and `operations` (FR-072), `relations` (FR-104), the typed relation keys quire-rs FR-076 derives from `## Relationships` rows (quire-rs FR-076-CON-4), `featureOrder` and the systems-kind members quire-rs FR-075 lowers, and, for the `queue`, `api_endpoint`, `interface`, `binary_format`, `rate_limit`, `external_contract` and `extension_point` object types of `agent-ix/spec-objects-architecture` only, the keys FR-122 maps by its own form (`associated_types`, `thresholds`, `records`, `endianness`). For any object type, the keys filled by a declared quire-rs FR-075 table locator (`values`, `states`, `transitions`, `steps`, `members`, `vocabulary`; FR-123) are owned too, and so are the keys FR-123 lists as unmapped (`owner`, `ubiquitous_language`, and the `members` of `domain` and `population`), which no section fills. A record of any other module with a property of one of those names is read under this requirement.
-- A section whose heading names no readable record key, including a heading that names an owned key, SHALL be prose to this mapping.
+- Quire SHALL read a section as a record key only when its heading names a property of the object type's record that no other mapping owns, so every key has exactly one authored source. The keys other mappings own are: `fields` (FR-071), `clauses` and `operations` (FR-072), `relations` (FR-104), the typed relation keys quire-rs FR-076 derives from `## Relationships` rows (quire-rs FR-076-CON-4), `featureOrder` and the systems-kind members quire-rs FR-075 lowers, and, for the `queue`, `api_endpoint`, `interface`, `binary_format`, `rate_limit`, `external_contract` and `extension_point` object types of `agent-ix/spec-objects-architecture` only, the keys FR-122 maps by its own form (`associated_types`, `thresholds`, `records`, `endianness`). For any object type, the keys filled by a declared quire-rs FR-075 table locator (`values`, `states`, `transitions`, `steps`, `members`, `vocabulary`; FR-123) are owned too, and so are the keys FR-123 lists as unmapped (`owner`, `ubiquitous_language`, and the `members` of `domain` and `population`), which no section fills. A record of any other module with a property of one of those names is read under this requirement. A key a `frontmatter_field` locator owns is also owned, and is governed by Frontmatter-owned keys.
+- A section whose heading names no readable record key, including a heading that names an owned key other than a `frontmatter_field`-owned key, SHALL be prose to this mapping.
 - When `semantic.mappings` does not name `record-sections`, Quire SHALL treat every section as prose to this mapping, with no diagnostic and no `availability.recordKeys`.
 - If an artifact holds a second section naming the same key, then Quire SHALL emit the error `semantic.duplicate-section` at the second heading with `reason` `second-section`.
-- Quire SHALL NOT read a record key from frontmatter.
-- When the artifact has no section naming a key, Quire SHALL omit the key and report `availability.recordKeys` for it `not_applicable`.
+- Quire SHALL NOT read a record key from frontmatter except through a declared `frontmatter_field` locator (Frontmatter-owned keys).
+- When the artifact has no section naming a key that is not `frontmatter_field`-owned, Quire SHALL omit the key and report `availability.recordKeys` for it `not_applicable`.
+
+### Frontmatter-owned keys
+
+- Quire SHALL treat a record key as frontmatter-owned when the object type declares a `frontmatter_field` locator under that key in `yield_pattern.match` (quire-rs FR-069), whether or not the artifact's frontmatter holds the field, and SHALL NOT read that key from a section.
+- Quire SHALL apply the rules of this subsection only when `semantic.mappings` names the token `record-sections`.
+- If the frontmatter holds no value for a frontmatter-owned key, then Quire SHALL leave the key absent from `record`, whether or not a section names it, and SHALL NOT default it.
+- If the frontmatter holds a value for a frontmatter-owned key and no section names the key, then Quire SHALL keep the frontmatter value in `record`; the absence of a section SHALL NOT erase a value the frontmatter projects.
+- When no section names a frontmatter-owned key, Quire SHALL add no `recordSources` or `availability.recordKeys` entry for the key, because the frontmatter projection is independent of the section mapping; the `frontmatter_field` locator alone supplies the `record` value when the frontmatter holds one.
+- If a section heading names a frontmatter-owned key and the frontmatter holds no value for the field, then Quire SHALL emit the error `semantic.feature-not-extractable` at the heading with `reason` `frontmatter-owned`, extract no value from the section, and add no key to `record`, no `recordSources` entry and no `availability.recordKeys` entry for it.
+- If a section heading names a frontmatter-owned key and the frontmatter also holds a value for the field, then Quire SHALL emit the warning `semantic.feature-not-extractable` at the heading with `reason` `frontmatter-owned`, keep only the frontmatter value in `record`, ignore the section's content, and add no `recordSources` entry and no `availability.recordKeys` entry for it.
+- Quire SHALL NOT treat an ignored section of a frontmatter-owned key as a second source, so a document with both forms yields no `semantic.duplicate-record-key` error.
+- Quire SHALL keep the behavior stated in the other sections for a key owned by another mapping, and for a key read from a body section, including a lifecycle key, that no `frontmatter_field` locator owns.
 
 ### Section shape by key type
 
@@ -102,7 +120,8 @@ and is checked by record validation (FR-073), not by this extraction.
 
 ### Availability
 
-- If any header, row, block, or section of a key carries an error, then Quire SHALL report `availability.recordKeys` for that key `unavailable` with reason `entry-errors: lines <lines>` as FR-104 formats it, with no value for the key and no `recordSources` entry.
+- If any header, row, block, or section of a key that is not frontmatter-owned carries an error, then Quire SHALL report `availability.recordKeys` for that key `unavailable` with reason `entry-errors: lines <lines>` as FR-104 formats it, with no value for the key and no `recordSources` entry.
+- If a section of a frontmatter-owned key carries an error, then Quire SHALL apply the rules of Frontmatter-owned keys instead and SHALL NOT add a `record`, `recordSources` or `availability.recordKeys` entry for the key from the section.
 - When every row of a key maps without error, Quire SHALL report the key `available` and not lossy.
 
 ## Constraints
@@ -124,11 +143,19 @@ and is checked by record validation (FR-073), not by this extraction.
 | FR-121-AC-5 | A `## Evidence` table `Target \| Kind` extracts to `evidence` in row order with each target resolved by the FR-104 `Target` rules; a header-only table extracts to an empty `evidence` and `available`; a frontmatter `status: accepted` yields no `status`. | Test |
 | FR-121-AC-6 | `column-unknown`, `column-duplicate`, `second-row`, `no-row`, `nested-object-cell`, and `cell-type` fixtures each yield `semantic.invalid-model-cell` with that `reason` at the row or header, and a second `## Assessment` section yields `semantic.duplicate-section` `second-section`; each key is `unavailable` with `entry-errors: lines <lines>` and no value. | Test |
 | FR-121-AC-7 | A bullet list under a table-form key, and a list after a valid table, each yield `semantic.feature-not-extractable` with `reason` the key name; a prose-only record-key section yields the warning `semantic.record-key-no-block` and `not_applicable`. | Test |
-| FR-121-AC-8 | Without the token `record-sections`, the AC-1 fixture yields no `record`, no diagnostic, and no `availability.recordKeys`; under the token, a heading that names no record key (`## Notes`) and a heading that names an owned key (`## Thresholds`, `## Requires`, `## Endianness`) are prose and yield no diagnostic. | Test |
+| FR-121-AC-8 | Without the token `record-sections`, the AC-1 fixture yields no `record`, no diagnostic, and no `availability.recordKeys`; under the token, a heading that names no record key (`## Notes`) and a heading that names an owned key other than a `frontmatter_field`-owned key (`## Thresholds`, `## Requires`, `## Endianness`) are prose and yield no diagnostic. | Test |
 | FR-121-AC-9 | A record with a camelCase key (`retryPolicy`) is reached by `## Retry Policy`, and a record with two properties that normalize equal yields `semantic.feature-not-extractable` `key-ambiguous`. | Test |
+| FR-121-AC-10 | A fixture whose module declares a `frontmatter_field` locator for a key and names the token, with a section naming that key and no frontmatter value for the field, yields the error `semantic.feature-not-extractable` with `reason` `frontmatter-owned` at the heading, no value for the key in `record`, and no `recordSources` or `availability.recordKeys` entry for it. | Test |
+| FR-121-AC-11 | A fixture with the frontmatter value and a section naming the same `frontmatter_field`-owned key yields a warning `semantic.feature-not-extractable` with `reason` `frontmatter-owned` at the section heading, no `semantic.duplicate-record-key`, and the record holds the frontmatter value, not the section's content. | Test |
+| FR-121-AC-12 | A fixture with the frontmatter value and no section extracts the frontmatter value with no diagnostic and no `recordSources` or `availability.recordKeys` entry for the key. | Test |
+| FR-121-AC-13 | A fixture with a `frontmatter_field`-owned key, no frontmatter value and no section yields a record without the key, not an empty or default value, no diagnostic, and no `recordSources` or `availability.recordKeys` entry for the key. | Test |
+| FR-121-AC-14 | With a `frontmatter_field` locator declared for one key, a heading that names a key owned by another mapping (`## Thresholds`) is prose with no diagnostic, as in AC-8. | Test |
+| FR-121-AC-15 | With a `frontmatter_field` locator declared for one key, a lifecycle key that has no such locator (`## Status`) is read from its section, as in AC-4. | Test |
+| FR-121-AC-16 | A `frontmatter_field` locator declared in a module that does not name the token `record-sections` yields no diagnostic for a section naming that key. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md) (`semantic.mappings`), [FR-071](./FR-071-typed-properties-mapping.md), [FR-072](./FR-072-invariants-and-operations-mapping.md) (`SourceLocus`, availability), [FR-073](./FR-073-data-schema-by-path.md) (the referenced schema that directs the mapping and validates the record), [FR-104](./FR-104-relationships-mapping.md) (identity cells, diagnostics, `entry-errors` format), quire-rs FR-075 diagnostic shape
+- **Upstream, quire-rs**: [FR-069](ix://agent-ix/quire-rs/FR-069), the `frontmatter_field` locator and its projection of the frontmatter value; its frontmatter-owned key text is pending in quire-rs PR #688
 - **Upstream, quire-rs**: the `semantic-v1.schema.json` change that admits `recordSources` and `availability.recordKeys` (owner: `agent-ix/quire-rs`, lane P-PLAT-101); quire-rs FR-075 and quire-rs FR-076 (the keys they own, excluded above)
-- **Downstream**: [FR-122](./FR-122-architecture-record-keys-mapping.md), the extractor in `agent-ix/quire-rs`, `agent-ix/spec-objects-safety#2`
+- **Downstream**: [FR-122](./FR-122-architecture-record-keys-mapping.md), the extractor in `agent-ix/quire-rs` (quire-rs FR-081, which implements this requirement; its frontmatter-owned text is pending in quire-rs PR #688), `agent-ix/spec-objects-safety#2`
