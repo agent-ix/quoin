@@ -13,6 +13,10 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-104"
     type: "depends_on"
+  - target: "ix://agent-ix/quire-rs/FR-069"
+    type: "depends_on"
+  - target: "ix://agent-ix/quire-rs/FR-081"
+    type: "depends_on"
 ---
 
 # FR-121: Record-key sections mapping to a module's own record keys
@@ -73,8 +77,15 @@ and is checked by record validation (FR-073), not by this extraction.
 - A section whose heading names no readable record key, including a heading that names an owned key, SHALL be prose to this mapping.
 - When `semantic.mappings` does not name `record-sections`, Quire SHALL treat every section as prose to this mapping, with no diagnostic and no `availability.recordKeys`.
 - If an artifact holds a second section naming the same key, then Quire SHALL emit the error `semantic.duplicate-section` at the second heading with `reason` `second-section`.
-- Quire SHALL NOT read a record key from frontmatter.
+- Quire SHALL NOT read a record key from frontmatter except through a declared `frontmatter_field` locator (Frontmatter-owned keys).
 - When the artifact has no section naming a key, Quire SHALL omit the key and report `availability.recordKeys` for it `not_applicable`.
+
+### Frontmatter-owned keys
+
+- A `frontmatter_field` locator declared for a record key SHALL own that key, whether or not the artifact's frontmatter holds the field. An absent frontmatter field leaves the key absent; it does not hand the key to a section.
+- If a section heading names a key owned by a `frontmatter_field` locator and the frontmatter holds no value for the field, then Quire SHALL emit the error `semantic.feature-not-extractable` at the heading with `reason` `frontmatter-owned`, report `availability.recordKeys` for the key `unavailable`, and extract no value for it.
+- If a section heading names a key owned by a `frontmatter_field` locator and the frontmatter also holds a value for the field, then Quire SHALL emit a warning at the heading with `code` `semantic.feature-not-extractable` and `reason` `frontmatter-owned`, extract the key from the frontmatter value only, and ignore the section's content.
+- Keys owned by any other mapping, and every lifecycle key read from a body section, SHALL keep the behavior stated in this requirement.
 
 ### Section shape by key type
 
@@ -126,9 +137,13 @@ and is checked by record validation (FR-073), not by this extraction.
 | FR-121-AC-7 | A bullet list under a table-form key, and a list after a valid table, each yield `semantic.feature-not-extractable` with `reason` the key name; a prose-only record-key section yields the warning `semantic.record-key-no-block` and `not_applicable`. | Test |
 | FR-121-AC-8 | Without the token `record-sections`, the AC-1 fixture yields no `record`, no diagnostic, and no `availability.recordKeys`; under the token, a heading that names no record key (`## Notes`) and a heading that names an owned key (`## Thresholds`, `## Requires`, `## Endianness`) are prose and yield no diagnostic. | Test |
 | FR-121-AC-9 | A record with a camelCase key (`retryPolicy`) is reached by `## Retry Policy`, and a record with two properties that normalize equal yields `semantic.feature-not-extractable` `key-ambiguous`. | Test |
+| FR-121-AC-10 | A fixture whose module declares a `frontmatter_field` locator for a key, with a section naming that key and no frontmatter value for the field, yields the error `semantic.feature-not-extractable` with `reason` `frontmatter-owned` at the heading, no value for the key, and `availability.recordKeys` `unavailable`. | Test |
+| FR-121-AC-11 | A fixture with the frontmatter value and a section naming the same `frontmatter_field`-owned key yields a warning `semantic.feature-not-extractable` with `reason` `frontmatter-owned` at the section heading, and the record holds the frontmatter value, not the section's content. | Test |
+| FR-121-AC-12 | A fixture with the frontmatter value and no section extracts the frontmatter value with no diagnostic, and a key owned by another mapping (`## Thresholds`) and a lifecycle key (`## Status`) behave as in AC-4 and AC-8 when the module declares a `frontmatter_field` locator for a different key. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md) (`semantic.mappings`), [FR-071](./FR-071-typed-properties-mapping.md), [FR-072](./FR-072-invariants-and-operations-mapping.md) (`SourceLocus`, availability), [FR-073](./FR-073-data-schema-by-path.md) (the referenced schema that directs the mapping and validates the record), [FR-104](./FR-104-relationships-mapping.md) (identity cells, diagnostics, `entry-errors` format), quire-rs FR-075 diagnostic shape
+- **Upstream, quire-rs**: [FR-069](ix://agent-ix/quire-rs/FR-069) and [FR-081](ix://agent-ix/quire-rs/FR-081), the `frontmatter_field` locator whose ownership this requirement defines
 - **Upstream, quire-rs**: the `semantic-v1.schema.json` change that admits `recordSources` and `availability.recordKeys` (owner: `agent-ix/quire-rs`, lane P-PLAT-101); quire-rs FR-075 and quire-rs FR-076 (the keys they own, excluded above)
 - **Downstream**: [FR-122](./FR-122-architecture-record-keys-mapping.md), the extractor in `agent-ix/quire-rs`, `agent-ix/spec-objects-safety#2`
