@@ -65,7 +65,8 @@ different from the answer being yes.
 ## Outputs
 
 - Findings, each with a kind, an obligation, a severity and a summary naming
-  what to do
+  what to do; `stale-evidence` findings additionally carry an optional `cause`
+  (`missing-run` or `failed-run`), omitted when not determined
 - The set of obligations whose evidence is healthy
 - Under `--strict`, a non-zero exit when any reported finding remains
 
