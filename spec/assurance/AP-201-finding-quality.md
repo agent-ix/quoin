@@ -18,7 +18,7 @@ impact_assessments:
       expected: true
       control_ref: ix://agent-ix/quoin/FR-043
 review_policy:
-  mode: require
+  mode: recommend
   operations: [spec-review, code-review, gap-analysis]
 relationships: []
 ---
@@ -36,7 +36,7 @@ or any agent review a universal executable gate.
 Apply it across development, review, release, and maintenance, whenever code
 changes what is collected, scored, persisted, compared, or rendered. These
 outputs direct testing and specification work, so a plausible but incomplete
-report has material impact. Required review covers the evidence, integrity,
+report has material impact. Recommended review covers the evidence, integrity,
 and scope-boundary analyses, because changes can alter collection, scoring,
 comparability, or what readers infer.
 

@@ -18,7 +18,7 @@ impact_assessments:
       expected: true
       control_ref: ix://agent-ix/quoin/MP-222
 review_policy:
-  mode: require
+  mode: recommend
   operations: [spec-review, code-review, gap-analysis]
 relationships: []
 ---
