@@ -12,7 +12,7 @@ Do not select a source or override an evaluation outcome based on this index.
 |----------|---------------------|---------------|
 | [NIST 800-53](nist-800-53/index.md) | Federal information systems | US government, federal contractors |
 | [OWASP ASVS](owasp-asvs/index.md) | Application security verification | Web applications, APIs, mobile |
-| [GDPR](gdpr/index.md) | Selected clauses from Articles 25, 30, 32, and 35 in [`eu/gdpr-2016-679@2016-05-04`](https://github.com/agent-ix/spec-clauses-eu-law/blob/main/spec_clauses_eu_law/clauses/eu-gdpr-2016-679-2016-05-04.json) | Only when this exact set is in the source-profile evaluation |
+| [GDPR](gdpr/index.md) | See the [GDPR index](gdpr/index.md) for the selected-set boundary | Only as stated in the GDPR index |
 
 ## Standard Summaries
 
@@ -27,7 +27,7 @@ Application Security Verification Standard. 17 verification chapters for testing
 **Context**: Web applications, APIs, and other user-facing software.
 
 ### EU GDPR 2016/679
-Use only the selected set [`eu/gdpr-2016-679@2016-05-04`](https://github.com/agent-ix/spec-clauses-eu-law/blob/main/spec_clauses_eu_law/clauses/eu-gdpr-2016-679-2016-05-04.json) when its exact key appears in the source-profile evaluation. It covers selected clauses from Articles 25, 30, 32, and 35; other GDPR topics, including retained Chapters II, III, and V summaries, are untyped context and are not evaluated. Applicability uses the set’s person-supplied dimensions.
+See the [GDPR index](gdpr/index.md) for the exact selected set, typed clause boundary, applicability rules, and untyped context boundary.
 
 ## Licence-restricted sources
 

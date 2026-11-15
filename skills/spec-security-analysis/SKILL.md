@@ -17,7 +17,7 @@ Apply the clause sets named by the selected source profile whose evaluation is a
 |----------|---------|-------|
 | NIST SP 800-53 | Rev 5.2.0 | Only when its clause set is in the selected profile |
 | OWASP ASVS | 5.0.0 | Only when its clause set is in the selected profile |
-| EU GDPR | [`eu/gdpr-2016-679@2016-05-04`](https://github.com/agent-ix/spec-clauses-eu-law/blob/main/spec_clauses_eu_law/clauses/eu-gdpr-2016-679-2016-05-04.json) | Only when this exact set is present in the source-profile evaluation; selected clauses from Articles 25, 30, 32, and 35 |
+| EU GDPR | [GDPR clause boundary](references/gdpr/index.md) | Follow the index for the exact set, covered clauses, applicability, and untyped context boundary |
 | Licence-restricted sources in the effective profile | Exact clause-set key | Controls declared by an installed pack |
 
 ## Process
@@ -33,13 +33,13 @@ Apply the clause sets named by the selected source profile whose evaluation is a
      - [nist-800-53/index.md](references/nist-800-53/index.md) → Control families
      - [owasp-asvs/index.md](references/owasp-asvs/index.md) → V1-V17 chapters
      - [gdpr/index.md](references/gdpr/index.md) → the selected clause set and untyped context boundary
-   - Use index decision guides only as context; map GDPR clauses only from the selected set evaluation. The retained Chapter II, III, and V files are untyped context, not evaluated coverage.
+   - Use index decision guides only as context; map GDPR clauses only from the selected set evaluation and follow the [GDPR index](references/gdpr/index.md) for its scope boundary.
    - Reference [component-type-mapping.md](references/component-type-mapping.md) for scope guidance
    - Verify identified controls against official FREE sources when the selected profile includes those sets:
      - NIST 800-53: https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final (US Gov - fully open)
      - OWASP ASVS: https://github.com/OWASP/ASVS (CC BY-SA 4.0 - fully open)
      - GDPR: https://eur-lex.europa.eu/eli/reg/2016/679/2016-05-04/eng (selected set source; use only for the exact evaluated set)
-   - The GDPR set contains only selected clauses from Articles 25, 30, 32, and 35. Its chapter summaries are not a source of additional evaluated clauses; Chapters II, III, and V remain untyped context. Use the exact set key and clause id as the whole reference in generated artifacts.
+   - Use the [GDPR index](references/gdpr/index.md) as the sole authority for the selected clause set's exact boundary. Use the exact set key and clause id as the whole reference in generated artifacts.
    - Local references for the free sources are summaries; use the free sources above for specific control details
    - **Licensed standards come from an installed pack only.** The skill ships no reference table, summary or web source for a licence-restricted source. Its clause ids are read from the clause set of a locally installed pack (`quoin module list` shows `pack=true`) and nowhere else; when no pack is installed the skill does not recall ids, titles or descriptions from memory, prose or the web
    - **A pack is the source's set only by its exact key.** The user's `source-profile.yaml` lists in `add` the exact `authority/id@version` key for a licensed set to be considered. Use only the evaluation document to decide whether that set is available and which clause bindings apply; an installed pack not listed in `add` is not applicable. Never choose a set by the similarity of its name to the source's. The skill may read an installed pack's clause text locally to understand a binding clause while grouping controls and linking requirements, but it must not change the evaluation's outcome. It never writes any title, text or paraphrase of the clause into an artifact, review or reply; the id and the set key are the whole reference

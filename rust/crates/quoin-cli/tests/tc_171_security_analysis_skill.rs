@@ -334,6 +334,65 @@ fn skill_text_instructs_the_defaults_the_reply_and_the_set_check() {
     }
 }
 
+#[trace("FR-171-AC-8")]
+#[test]
+fn gdpr_clause_boundary_has_one_authoritative_skill_reference() {
+    let root = skill_dir();
+    let index = read(&root.join("references/gdpr/index.md"));
+    let skill = skill();
+    let chapter = read(&root.join("references/gdpr/ChIV-ControllerProcessor.md"));
+    let standards = read(&root.join("references/standards-index.md"));
+
+    for boundary in [
+        "`eu/gdpr-2016-679@2016-05-04`",
+        "Article 25(1)-(2)",
+        "Article 30(1)(a)-(g), (2)(a)-(d), and (3)-(4)",
+        "Article 32(1)(a)-(d), (2), and (4)",
+        "Article 35(1), (2), (7)(a)-(d), (9), and (11)",
+        "person-supplied role and high-risk-processing values",
+        "The following retained chapter summaries are untyped context only.",
+    ] {
+        assert!(
+            index.contains(boundary),
+            "GDPR index lacks boundary: {boundary}"
+        );
+    }
+    assert!(index.contains("person-supplied Article 30 records-applicability value"));
+    for chapter in [
+        "ChII-Principles.md",
+        "ChIII-DataSubjectRights.md",
+        "ChV-DataTransfers.md",
+    ] {
+        assert!(
+            index.contains(chapter),
+            "GDPR index omits untyped context reference: {chapter}"
+        );
+    }
+
+    for (name, text, link) in [
+        ("SKILL.md", skill.as_str(), "references/gdpr/index.md"),
+        ("ChIV-ControllerProcessor.md", chapter.as_str(), "index.md"),
+        ("standards-index.md", standards.as_str(), "gdpr/index.md"),
+    ] {
+        assert!(
+            text.contains(link),
+            "{name} must navigate to the GDPR index"
+        );
+        for boundary in [
+            "`eu/gdpr-2016-679@2016-05-04`",
+            "Article 25(1)-(2)",
+            "Article 30(1)(a)-(g), (2)(a)-(d), and (3)-(4)",
+            "Article 32(1)(a)-(d), (2), and (4)",
+            "Article 35(1), (2), (7)(a)-(d), (9), and (11)",
+        ] {
+            assert!(
+                !text.contains(boundary),
+                "{name} duplicates GDPR boundary: {boundary}"
+            );
+        }
+    }
+}
+
 #[trace("FR-171-AC-7")]
 #[test]
 fn skill_names_nist_as_rev_5_2_0_and_no_other_revision() {
