@@ -17,6 +17,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_evidence::types::BindingsFile;
+pub use quoin_finding_types::StaleCause;
 use quoin_finding_types::{AuditReport, Finding, FindingKind};
 use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixUnbackedClaim, TargetLocus};
 use serde::{Deserialize, Serialize};
@@ -263,6 +264,12 @@ pub struct FindingDetail {
     /// The symbol the finding is about, when it names one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub symbol: Option<String>,
+    /// The typed cause of a `stale-evidence` finding: `missing-run` or `failed-run`.
+    ///
+    /// Present only on `stale-evidence` findings; omitted (never `null`) on every
+    /// other kind. Copied verbatim from the auditor (FR-115-AC-17..18).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cause: Option<StaleCause>,
 }
 
 /// One binding, reduced to what the matrix shows.
@@ -296,6 +303,62 @@ impl std::fmt::Display for ContradictoryAudit {
 }
 
 impl std::error::Error for ContradictoryAudit {}
+
+/// A finding carries an invalid `cause`: outside the enum or on a non-stale kind.
+///
+/// The auditor sets `cause` only on `stale-evidence` findings, and only to
+/// `missing-run` or `failed-run` (FR-032-AC-18..21). A `cause` on another kind,
+/// or a `cause` value outside the enum, is a malformed audit report
+/// (FR-115-AC-22..23).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InvalidStaleCause {
+    /// The obligation whose finding carries the invalid cause.
+    pub obligation: String,
+}
+
+impl std::fmt::Display for InvalidStaleCause {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "a finding for {} carries an invalid stale-evidence cause (outside the enum or on a non-stale kind)",
+            self.obligation
+        )
+    }
+}
+
+impl std::error::Error for InvalidStaleCause {}
+
+/// The `matrix.build` refusal: contradictory audit or invalid stale cause.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MatrixRefusal {
+    /// The audit named one obligation both healthy and not.
+    ContradictoryAudit(ContradictoryAudit),
+    /// A finding carries an invalid stale-evidence cause.
+    InvalidStaleCause(InvalidStaleCause),
+}
+
+impl std::fmt::Display for MatrixRefusal {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ContradictoryAudit(error) => write!(formatter, "{error}"),
+            Self::InvalidStaleCause(error) => write!(formatter, "{error}"),
+        }
+    }
+}
+
+impl std::error::Error for MatrixRefusal {}
+
+impl From<ContradictoryAudit> for MatrixRefusal {
+    fn from(error: ContradictoryAudit) -> Self {
+        Self::ContradictoryAudit(error)
+    }
+}
+
+impl From<InvalidStaleCause> for MatrixRefusal {
+    fn from(error: InvalidStaleCause) -> Self {
+        Self::InvalidStaleCause(error)
+    }
+}
 
 /// What the human class column shows for a criterion whose requirement states
 /// no class (FR-160-AC-6). JSON omits the key instead.
@@ -333,13 +396,15 @@ pub(crate) fn bucket(kind: &str) -> u8 {
 ///
 /// # Errors
 ///
-/// [`ContradictoryAudit`] when `audit` names one id in `healthy` and in a
-/// finding or unevaluated check. No partial matrix is produced.
+/// [`MatrixRefusal::ContradictoryAudit`] when `audit` names one id in `healthy`
+/// and in a finding or unevaluated check. [`MatrixRefusal::InvalidStaleCause`]
+/// when a finding carries a `cause` outside the enum or on a non-stale kind.
+/// No partial matrix is produced.
 #[allow(
     clippy::too_many_lines,
     reason = "one pure projection joins the audit and evidence fields with the optional design axis"
 )]
-pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
+pub fn build(input: &MatrixInput) -> Result<MatrixOutput, MatrixRefusal> {
     let healthy: BTreeSet<&str> = input.audit.healthy.iter().map(String::as_str).collect();
     if let Some(obligation) = input
         .audit
@@ -358,7 +423,26 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
     {
         return Err(ContradictoryAudit {
             obligation: obligation.to_owned(),
-        });
+        }
+        .into());
+    }
+
+    // Validate cause: only on stale-evidence, and only valid values (FR-115-AC-22..23).
+    for finding in &input.audit.findings {
+        // A stale-evidence finding MAY have a cause (it is optional), but if
+        // present it must be one of the two valid spellings; any other kind
+        // must not carry one.
+        let invalid = if finding.kind == FindingKind::STALE_EVIDENCE {
+            finding.cause.is_some_and(|cause| !cause.is_valid())
+        } else {
+            finding.cause.is_some()
+        };
+        if invalid {
+            return Err(InvalidStaleCause {
+                obligation: finding.obligation.clone(),
+            }
+            .into());
+        }
     }
 
     let mut findings: BTreeMap<&str, Vec<&Finding>> = BTreeMap::new();
@@ -639,15 +723,28 @@ fn detail(findings: &[&Finding], bindings: &[BindingDetail], checks: &[String]) 
             path: finding.path.clone(),
             line: finding.line,
             symbol: finding.symbol.clone(),
+            cause: finding.cause,
         })
         .collect();
-    // Kind decides within a bucket; the remaining fields only break a tie
-    // between two findings of one kind, so the order never depends on the
-    // order the report happened to list them in.
+    // Multiple stale-evidence findings are ordered by cause (failed-run before
+    // missing-run, a finding with no cause after both), then path, line, symbol and summary
+    // (FR-115-AC-24). Kind decides within a bucket; the remaining fields only
+    // break a tie between two findings of one kind, so the order never depends
+    // on the order the report happened to list them in.
     findings.sort_by(|left, right| {
-        bucket(&left.kind)
-            .cmp(&bucket(&right.kind))
-            .then_with(|| left.cmp(right))
+        bucket(&left.kind).cmp(&bucket(&right.kind)).then_with(|| {
+            // Within stale-evidence, order by cause, path, line, symbol, summary
+            if left.kind == FindingKind::STALE_EVIDENCE {
+                cause_order(left.cause)
+                    .cmp(&cause_order(right.cause))
+                    .then_with(|| left.path.cmp(&right.path))
+                    .then_with(|| left.line.cmp(&right.line))
+                    .then_with(|| left.symbol.cmp(&right.symbol))
+                    .then_with(|| left.summary.cmp(&right.summary))
+            } else {
+                left.cmp(right)
+            }
+        })
     });
     let mut bindings = bindings.to_vec();
     bindings.sort();
@@ -657,6 +754,16 @@ fn detail(findings: &[&Finding], bindings: &[BindingDetail], checks: &[String]) 
         findings,
         bindings,
         unevaluated,
+    }
+}
+
+/// Cause ordering for matrix stale findings: failed-run (0), missing-run (1),
+/// absent cause last (2) (FR-115-AC-24).
+fn cause_order(cause: Option<StaleCause>) -> u8 {
+    match cause {
+        Some(StaleCause::FailedRun) => 0,
+        Some(StaleCause::MissingRun) => 1,
+        Some(StaleCause::Invalid) | None => 2, // absent or invalid: last
     }
 }
 

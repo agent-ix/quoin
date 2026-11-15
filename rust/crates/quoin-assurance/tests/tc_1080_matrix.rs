@@ -12,12 +12,13 @@
 #![allow(
     clippy::unwrap_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
 use ix_trace_rs::trace;
 use quoin_assurance::matrix::{
-    EMPTY_REASON, EvidenceStatus, MatrixInput, MatrixOutput, build, render_markdown,
+    EMPTY_REASON, EvidenceStatus, MatrixInput, MatrixOutput, MatrixRefusal, build, render_markdown,
 };
 use serde_json::{Value, json};
 
@@ -414,6 +415,9 @@ fn tc_1080_004_a_contradictory_audit_is_refused_not_resolved() {
         ),
     ))
     .unwrap_err();
+    let MatrixRefusal::ContradictoryAudit(with_finding) = with_finding else {
+        panic!("expected ContradictoryAudit, got {with_finding:?}");
+    };
     assert_eq!(with_finding.obligation, "FR-001-AC-1");
 
     let with_check = build(&input(
@@ -426,6 +430,9 @@ fn tc_1080_004_a_contradictory_audit_is_refused_not_resolved() {
         ),
     ))
     .unwrap_err();
+    let MatrixRefusal::ContradictoryAudit(with_check) = with_check else {
+        panic!("expected ContradictoryAudit, got {with_check:?}");
+    };
     assert_eq!(
         with_check.obligation, "FR-009-AC-1",
         "an id outside the matrix and an empty store still refuse"

@@ -29,21 +29,12 @@ use super::input::AuditInput;
 use super::method::{method_conformance, unknown_method_finding};
 use super::mocks::{mocked_bindings, mocked_finding};
 use super::scores::{floor_for, multiplicity_finding, mutation_finding, surviving_mutant_findings};
-use super::stale::{failed_run, unrecorded_evidence};
+use super::stale::stale_evidence;
 use super::{ClassIndependenceAssessment, Indexed, Pass, is_insufficient};
 use crate::error::AuditorError;
 
 /// One binding and the run that records its suite.
 pub(super) type Paired<'a> = (&'a Binding, &'a RunRecord);
-
-/// `list.join(", ")` over suite names.
-pub(super) fn join_suites(bindings: &[&&Binding]) -> String {
-    bindings
-        .iter()
-        .map(|binding| binding.suite.as_str())
-        .collect::<Vec<_>>()
-        .join(", ")
-}
 
 /// Run one obligation down the ladder.
 pub(super) fn run(
@@ -74,11 +65,7 @@ pub(super) fn run(
         pass.findings.push(undischarged(obligation));
         return Ok(pass);
     }
-    if let Some(finding) = unrecorded_evidence(indexed, obligation, bindings) {
-        pass.findings.push(finding);
-        return Ok(pass);
-    }
-    if let Some(finding) = failed_run(indexed, obligation, bindings) {
+    if let Some(finding) = stale_evidence(indexed, obligation, bindings) {
         pass.findings.push(finding);
         return Ok(pass);
     }

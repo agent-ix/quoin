@@ -11,7 +11,7 @@
 use std::path::Path;
 
 use quoin_anomaly::{CarriedRead, read_carried};
-use quoin_assurance::matrix::{EvidenceStatus, MatrixOutput};
+use quoin_assurance::matrix::{EvidenceStatus, MatrixOutput, StaleCause};
 use serde::{Deserialize, Serialize};
 
 use super::history::{ChangeRecord, PreviousRelease};
@@ -91,21 +91,48 @@ pub(super) struct OpenFinding {
     pub(super) path: Option<String>,
     pub(super) line: Option<u64>,
     pub(super) symbol: Option<String>,
+    /// The typed cause of a `stale-evidence` finding: `missing-run` or `failed-run`.
+    ///
+    /// Present only on `stale-evidence` findings; omitted (never `null`) on every
+    /// other kind (FR-167, FR-115-AC-17..18).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) cause: Option<StaleCause>,
 }
 
 impl OpenFinding {
-    /// FR-167's order: `obligation`, `kind`, `path`, `line`, `symbol`, then
-    /// `summary`. Strings compare bytewise, `line` numerically, and an absent
-    /// value sorts before a present one.
-    fn order_key(&self) -> (&str, &str, Option<&str>, Option<u64>, Option<&str>, &str) {
+    /// FR-167's order: `obligation`, `kind`, `path`, `line`, `symbol`, `cause`,
+    /// then `summary`. Strings compare bytewise, `line` numerically, and an
+    /// absent value sorts before a present one.
+    fn order_key(
+        &self,
+    ) -> (
+        &str,
+        &str,
+        Option<&str>,
+        Option<u64>,
+        Option<&str>,
+        u8,
+        &str,
+    ) {
         (
             &self.obligation,
             &self.kind,
             self.path.as_deref(),
             self.line,
             self.symbol.as_deref(),
+            cause_order(self.cause),
             &self.summary,
         )
+    }
+}
+
+/// Cause ordering for snapshot: absent cause first (0), then failed-run (1),
+/// then missing-run (2) (FR-167).
+fn cause_order(cause: Option<StaleCause>) -> u8 {
+    match cause {
+        None | Some(StaleCause::Invalid) => 0, // absent or invalid: first for snapshots
+        Some(StaleCause::FailedRun) => 1,
+        Some(StaleCause::MissingRun) => 2,
     }
 }
 
@@ -184,6 +211,7 @@ pub(super) fn sections(matrix: MatrixOutput) -> MatrixSections {
                             path: finding.path,
                             line: finding.line,
                             symbol: finding.symbol,
+                            cause: finding.cause,
                         });
                     }
                     CoverageCriterion {

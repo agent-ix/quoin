@@ -1434,3 +1434,88 @@ fn soup_report_with_a_missing_records_dir_and_a_bad_binding_refuses_the_records_
     let diagnostics: Value = serde_json::from_slice(&output.stderr).unwrap();
     assert_eq!(diagnostics[0]["code"], "soup.path_missing");
 }
+
+/// Snapshot `open_findings` carries `missing-run` and `failed-run` causes
+/// byte-for-byte, and at least one of each appears (FR-167-AC-10).
+#[trace("FR-167-AC-10")]
+#[test]
+fn tc_1760_snapshot_carries_stale_causes_byte_for_byte() {
+    let repo = full();
+    record_failed_run(&repo);
+    let snapshot = repo.snapshot(&repo.run());
+
+    let stale: Vec<(&str, &str)> = snapshot["open_findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|finding| finding["kind"] == "stale-evidence")
+        .map(|finding| {
+            (
+                finding["obligation"].as_str().unwrap(),
+                finding["cause"].as_str().unwrap_or("<absent>"),
+            )
+        })
+        .collect();
+    // AC-2's run is gone; AC-3's run failed. Each carries its own cause.
+    assert_eq!(
+        stale,
+        [
+            ("FR-001-AC-2", "missing-run"),
+            ("FR-001-AC-3", "failed-run"),
+        ]
+    );
+}
+
+/// Record a `broken` suite whose one case, tagged to AC-3, failed.
+fn record_failed_run(repo: &Repo) {
+    let results = repo.aux("broken.xml");
+    std::fs::write(
+        &results,
+        r#"<testsuite name="broken"><testcase name="broken_case"><properties><property name="trace" value="FR-001-AC-3"/></properties><failure/></testcase></testsuite>"#,
+    )
+    .unwrap();
+    repo.ok(&[
+        "evidence",
+        "record",
+        "--repo",
+        repo.path().to_str().unwrap(),
+        "--module",
+        repo.path().to_str().unwrap(),
+        "--suite",
+        "broken",
+        "--tool",
+        "fixture",
+        "--adapter",
+        "junit",
+        "--results",
+        results.to_str().unwrap(),
+        "--timestamp",
+        "2026-01-01T00:00:00Z",
+    ]);
+}
+
+/// A non-stale `open_findings` item has no `cause` key in JSON (FR-167-AC-11).
+#[trace("FR-167-AC-11")]
+#[test]
+fn tc_1760_snapshot_non_stale_has_no_cause_key() {
+    let repo = full();
+    let snapshot = repo.snapshot(&repo.run());
+
+    let non_stale: Vec<&Value> = snapshot["open_findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|finding| finding["kind"] != "stale-evidence")
+        .collect();
+    // AC-3 is undischarged, so the fixture does hold a non-stale finding.
+    assert!(
+        !non_stale.is_empty(),
+        "the fixture must hold a non-stale finding"
+    );
+    for finding in non_stale {
+        assert!(
+            finding.get("cause").is_none(),
+            "non-stale finding must have no cause key: {finding}"
+        );
+    }
+}
