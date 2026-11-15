@@ -81,7 +81,7 @@ Refusals; each exits non-zero with empty stdout and names the control or exclusi
 - If two `scope_exclusion` artifacts name one set and clause, then the command SHALL refuse.
 - If a clause is both mapped by a control and named by a `scope_exclusion`, then the command SHALL refuse.
 - If an identifier of an emitted fact breaks the FR-133 identifier rules, then the command SHALL refuse with the FR-133 status (`invalid-identifier` or `case-collision`).
-- If `--spec` contains a `scope_exclusion` that fails Quire validation because a required disposition field is absent or invalid, then the command SHALL refuse with non-zero status and empty stdout, naming the artifact, set and clause.
+- If `--spec` contains a `scope_exclusion` rejected by its declared `ScopeExclusion` object schema because a required disposition field is absent or invalid, then the command SHALL refuse with non-zero status and empty stdout, naming the artifact, set and clause.
 
 Report (stderr, one line each, sorted, on success):
 
@@ -104,7 +104,7 @@ Determinism:
 | FR-173-AC-10 | A missing or empty `decision_owner`, approval reference, or decision; an unknown decision; or a `temporary_exception` without `expires_at` is refused with empty stdout, while an expiry on `delegated` or `accepted_risk`, or a temporary expiry later than the attestation expiry, is refused. | Test |
 | FR-173-AC-11 | A disposition fact is emitted only with the caller-supplied FR-046 attestation; a missing/invalid actor, authority or validity interval is refused, and the approval reference remains an opaque reference rather than proof of authorization. | Test |
 | FR-173-AC-12 | The successful fact array is accepted by `record-discharge`, persists through the FR-133 store, and `discharge --repo --rmm` renders each of the three decisions as its exact disposition, never as direct compliance. | Test |
-| FR-173-AC-13 | A `scope_exclusion` missing `decision`, `decision_owner`, `approval_ref` or `rationale`, or carrying an invalid `expires_at`, makes `quire validate` fail; `facts-from-mappings` then exits non-zero with empty stdout and identifies the artifact, set and clause. | Test |
+| FR-173-AC-13 | The `scope_exclusion` object schema rejects an artifact missing `decision`, `decision_owner`, `approval_ref` or `rationale`, or carrying an invalid `expires_at`; `facts-from-mappings` exits non-zero with empty stdout and identifies the artifact, set and clause. | Test |
 | FR-173-AC-5 | Each refusal case above, namely a missing attestation, an attestation with an extra field, an invalid corpus, an unknown clause in the binding report's set, a duplicate row in one control, a duplicate exclusion, a mapped-and-excluded clause and an identifier that folds onto another, exits non-zero with empty stdout and a message naming the control or exclusion, set and clause. | Test |
 | FR-173-AC-6 | Two runs over identical inputs, with the corpus files in different directory order, produce byte-identical stdout and stderr. | Test |
 | FR-173-AC-7 | The stdout of a successful run is accepted by `quoin evidence record-discharge --facts -` against the same binding report. | Test |
