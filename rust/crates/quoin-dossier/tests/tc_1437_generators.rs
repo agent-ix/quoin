@@ -15,9 +15,12 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use ix_trace_rs::trace;
-use quoin_dossier::{DossierErrorCode, Inputs, Report, Status, builtin_registry, generate};
+use quoin_dossier::{
+    DossierErrorCode, ExportOptions, Inputs, Report, Status, builtin_registry, export, generate,
+};
 
 /// The module that is also the repository.
 fn fixture() -> PathBuf {
@@ -111,6 +114,96 @@ fn generating_twice_gives_byte_identical_files() {
             "{name} differs between runs"
         );
     }
+}
+
+/// Run `program` in `dir` and return its stdout; a failure panics with both streams.
+fn tool(program: &str, args: &[&str], dir: &Path) -> String {
+    let output = Command::new(program)
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .unwrap_or_else(|error| panic!("{program} does not start: {error}"));
+    assert!(
+        output.status.success(),
+        "{program} {args:?}: {}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+/// Needs `git`, `quire`, `pandoc`, `typst` and `pdftotext`, and the
+/// `spec-artifacts-process` module that defines the `DossierDocument`
+/// archetype, read in place from `SPEC_ARTIFACTS_PROCESS_DIR` (its
+/// `spec_artifacts_process` directory). The SRS and architecture files are
+/// written by `generate` over the real fixture, committed unchanged, validated
+/// by `quire validate`, exported together to PDF by `quire export`, and every
+/// fixture requirement id must be in the PDF text. Nothing of the module is
+/// copied here.
+///
+/// Provenance: PLAT-1437 acceptance 7.
+#[trace("FR-192-AC-5", "FR-193-AC-3")]
+#[test]
+#[ignore = "needs quire, pandoc, typst, pdftotext and SPEC_ARTIFACTS_PROCESS_DIR; run with -- --ignored"]
+fn generated_srs_and_architecture_validate_and_export_to_pdf() {
+    let module = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR")
+        .map(PathBuf::from)
+        .expect("set SPEC_ARTIFACTS_PROCESS_DIR to the spec_artifacts_process module directory");
+    let module = fs::canonicalize(&module)
+        .unwrap_or_else(|error| panic!("the module is not at {}: {error}", module.display()));
+    let repo = tempfile::tempdir().unwrap();
+    let work = repo.path();
+    tool("git", &["init", "-q"], work);
+    tool("git", &["config", "user.email", "t@example.com"], work);
+    tool("git", &["config", "user.name", "t"], work);
+
+    let out = work.join("dossier");
+    let kinds = ["srs".to_owned(), "architecture".to_owned()];
+    let inputs = inputs(&fixture());
+    let registry = builtin_registry().unwrap();
+    generate(&registry, &kinds, &out, &inputs).unwrap();
+    tool("git", &["add", "-A"], work);
+    tool("git", &["commit", "-q", "-m", "generated dossier"], work);
+
+    let module_arg = module.to_str().unwrap();
+    for name in ["DOS-SRS.md", "DOS-ARCH.md"] {
+        let path = out.join(name);
+        tool(
+            "quire",
+            &["validate", "--module", module_arg, path.to_str().unwrap()],
+            work,
+        );
+    }
+
+    // `export` runs `quire` in this process's directory, so it is given
+    // absolute paths and the committed repository is found from them.
+    let pdf = work.join("dossier.pdf");
+    let options = ExportOptions {
+        to: "pdf".to_owned(),
+        output: pdf.clone(),
+        release: None,
+        approvals: Vec::new(),
+        template: None,
+        quire: PathBuf::from("quire"),
+    };
+    let report = export(&registry, &kinds, &out, &inputs, &options).unwrap();
+    assert!(
+        report.quire.is_none(),
+        "quire export failed: {:?}",
+        report.quire
+    );
+    assert!(pdf.exists(), "no PDF written");
+
+    let text = tool("pdftotext", &[pdf.to_str().unwrap(), "-"], work);
+    let mut ids = 0;
+    for entry in fs::read_dir(fixture().join("spec")).unwrap() {
+        let source = fs::read_to_string(entry.unwrap().path()).unwrap();
+        for id in source.lines().filter_map(|line| line.strip_prefix("id: ")) {
+            assert!(text.contains(id.trim()), "{id} is not in the PDF text");
+            ids += 1;
+        }
+    }
+    assert!(ids > 0, "the fixture states no requirement id");
 }
 
 /// A file that opens a frontmatter fence and states no `type` is not silently
