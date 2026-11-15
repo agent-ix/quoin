@@ -108,7 +108,7 @@ people to click through it.
   file may identify a different suite or timestamp.
 - A retained differential-report projection/run pair SHALL be immutable while
   retained. Repeating a record operation for the same key and byte-identical
-  projection and run is idempotent. If either member already exists and the operation would
+  projection and run is idempotent. The projection's optional `selection` member (FR-151) is part of the projection bytes: a changed `selection` at an occupied key is a changed projection. If either member already exists and the operation would
   change either member, the operation SHALL refuse without changing either
   file. A reader SHALL refuse positive qualification if exactly one member
   exists, the projection is invalid, or it does not match the stored run's
@@ -189,7 +189,7 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-16 | A completed source-level mock inspection is recorded at `mock-inspections/<SUITE-N>/<timestamp>.json`, including an empty result. Readers select the newest record of each suite: an empty record means the suite was inspected and no stand-in was observed; no record means the check was not evaluated. Withdrawn: selection by exact full commit. | Test |
 | FR-030-AC-17 | `evidence record` refuses a bare or mutable `--tool` identity and accepts an exact semantic version. Withdrawn: acceptance of a full source revision (a git commit id); tool identity is the exact semantic version, with no sha. First-party Vitest and mock-inspection records include the version they actually ran. | Test |
 | FR-030-AC-18 | A run entry with no `path`, whose qualified name matches symbols in more than one file, is reported ambiguous and joined to none of them, while its trace ids still bind. An entry with a `path` joins only the symbol at that path. | Test |
-| FR-030-AC-19 | Recording a differential report validates the source report before retaining only its allowlisted projection beside the matching run key; query bytes, model, solver/proof output and undeclared fields are absent. A one-sided write, changed replay, wrong projection or invalid source report never yields a qualified pair, and `gc` removes both members together. | Test |
+| FR-030-AC-19 | Recording a differential report validates the source report before retaining only its allowlisted projection beside the matching run key; query bytes, model, solver/proof output and undeclared fields are absent, and the report's closed `selection` member, when present, is preserved unchanged as the projection's `selection`. A one-sided write, changed replay, wrong projection (including a `selection` that differs from the validated source report, or a `selection` retained for a report that had none) or invalid source report never yields a qualified pair, and `gc` removes both members together. | Test |
 
 > **CR note (PLAT-1228, 2026-10-30):** Run, scan, mock-inspection and binding
 > records no longer carry a commit. Filenames derive from the record's

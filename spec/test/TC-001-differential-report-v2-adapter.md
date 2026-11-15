@@ -23,7 +23,8 @@ self-contradictory or oversized, writing no run in any refusal.
    one report captured from `filament-analyze run-package` for each disposition the runner can produce: agreement
    satisfied, agreement refuted, disagreement, inconclusive, and unavailable (missing executable); and over a
    captured or hand-constructed v2 document, accepted by the owner's validator, with an engine `unsupported-platform`
-   (a Linux runner reports `cleanup-failed` instead, so this one is not a runner capture). Read the store and the
+   (a Linux runner reports `cleanup-failed` instead, so this one is not a runner capture). Also run it over an agreement report with a closed `selection` member and one with a malformed `selection`
+   (extra member, missing list). Read the store and the
    command's human and JSON output after each.
 2. Run the same command, each time against a fresh store, over the refusal table of FR-151-AC-14, one row per
    refusal class, each derived from a capture by one stated change: wrong (including the retired
@@ -47,6 +48,8 @@ Step 1: agreement satisfied records one `pass` entry and agreement refuted one `
 `<analysisKind>`; inconclusive and each unavailable report record one `error` entry; disagreement
 records a run with zero entries and prints one `unrepresented` result of state `disagreement` naming both engines
 with status and outcome verbatim. No entry carries `traceIds`.
+
+Step 1 with `selection`: the valid report is recorded as without it, and its projection holds `selection` equal to the source lists (FR-151-AC-16); the malformed `selection` is refused and writes no run and no projection.
 
 Step 2: every input is refused with a non-zero exit and an error naming the schema value or member found (the
 owner's validator error for the rest), and the store holds no run.
