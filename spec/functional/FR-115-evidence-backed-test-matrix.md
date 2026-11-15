@@ -216,16 +216,35 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
 - **Typed cause of `stale-evidence`.** The `stale` status folds two conditions
   together, a bound suite with **no recorded run** and a bound run that
   **failed or errored**, and a consumer must not tell them apart by parsing
-  `summary`. A `stale-evidence` `Finding` therefore carries an optional typed
-  `cause`, set by the auditor's two existing producers: `missing-run` when the
-  bound suite has no recorded run, and `failed-run` when the newest recorded
-  outcome for the bound symbol is `fail` or `error`. `cause` appears in the
-  auditor's JSON `Finding` and, copied verbatim, in each `evidence_detail.findings`
-  item of `quoin matrix --json`. It is **omitted** (never `null`) on every other
-  `FindingKind`, and on a `stale-evidence` finding from no producer that sets it.
-  The cause is additive: it changes no `evidence_status` value, the mapping
-  precedence, any `summary` text, any binding, or any verdict, and
-  `matrix.build` reads it without re-deriving it (FR-115-CON-2).
+  `summary`. The auditor ([FR-032](./FR-032-evidence-auditor.md)) sets an
+  optional typed `cause` on a `stale-evidence` `Finding`, and `matrix.build`
+  copies it verbatim into the matching `evidence_detail.findings` item; it
+  derives nothing from `summary`.
+  - `cause` is a closed enum of exactly `missing-run` (the bound suite has no
+    recorded run) and `failed-run` (the suite's newest recorded run reports
+    `fail` or `error` for a bound symbol), defined per suite by
+    FR-032-AC-17 and FR-032-AC-18..19.
+  - `cause` is **omitted** (never `null`) on every `FindingKind` other than
+    `stale-evidence`. A `stale-evidence` finding the auditor supplies without a
+    `cause` stays without one in the output; the matrix does not infer it.
+  - A `cause` value outside the enum, or a `cause` on a finding whose `kind`
+    is not `stale-evidence`, is a malformed `audit`: `matrix.build` refuses the
+    request as it does a contradictory one (see Behavior), rather than drop or
+    repair the field.
+  - If an obligation carries more than one `stale-evidence` finding, all of
+    them are listed, ordered by `cause` (`failed-run` before `missing-run`, an
+    absent `cause` last), then `path`, `line`, `symbol` and `summary` (bytewise,
+    `line` numerically, an absent value first). The `evidence_status` is `stale`
+    whatever the causes.
+  - The cause is additive: it changes no `evidence_status` value, the mapping
+    precedence, any `summary` text, any binding, or any verdict
+    (FR-115-CON-2).
+  - **Canonical-JSON compatibility change.** The `cause` key is new on the
+    auditor's `Finding` JSON and on `evidence_detail.findings` items, so the
+    canonical bytes of a `stale-evidence` finding differ from those before this
+    change; every other finding's bytes are unchanged. Requests are
+    `deny_unknown_fields`, so a reader of `audit` must accept `cause`. No
+    compatibility reader or fallback is provided.
 - When `analysis_evidence` is supplied, each criterion carries a total
   `analysis_evidence` list, empty when no analysis result targets that criterion.
   Each item is a tagged union: a qualified item has `status: "qualified-record"`
@@ -258,6 +277,13 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
   both `healthy` and a `Finding`/`UnevaluatedCheck`. This is not a new code:
   it is the same `Refused` a caller already gets from
   `MAX_MATRIX_BUILD_BYTES`, distinguished only by `context.reason`.
+- `matrix.build` SHALL copy a `stale-evidence` finding's `cause` verbatim into
+  the matching `evidence_detail.findings` item and SHALL NOT read `summary` to
+  determine it.
+- `matrix.build` SHALL refuse the whole request — `CoreErrorCode::Refused`
+  with `context` naming `reason: "invalid-stale-cause"` and the offending
+  obligation id — when a finding's `cause` is outside the closed enum or is
+  present on a finding whose `kind` is not `stale-evidence`.
 - `matrix.build` SHALL emit canonical JSON (`protocol::canonical_json`): two
   calls over byte-identical input SHALL emit byte-identical output, including
   every field of the payload, not only its exit class.
@@ -313,21 +339,30 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
 | FR-115-AC-14 | `quoin matrix` resolves the mock-inspection/catalog/independence inputs through the identical assembly path `quoin evidence audit` uses for the same working tree. Withdrawn: refusal when HEAD cannot be resolved; no commit is resolved or supplied. | Test |
 | FR-115-AC-15 | `quoin matrix --help` (and the retained CLI help surface, `help.rs`) describes the deterministic evidence-backed render, not the retired "Build or update a requirements test matrix" agent-workflow summary. | Test |
 | FR-115-AC-16 | With FR-153 analysis evidence supplied, each Analysis criterion receives only result items whose exact FR-078 target matches its identity; qualified claims appear as `qualified-record`, and every non-qualified cause retains its exact category, locator and unmet-premise detail. JSON and text show the same complete item set; no item is joined by suite, symbol or digest alone, and the legacy auditor-derived `evidence_status` is unchanged. | Test |
-| FR-115-AC-17 | A bound symbol with no recorded run has `evidence_status` `stale` and a `stale-evidence` finding whose `cause` is `missing-run`, in both the auditor's JSON report and the `evidence_detail.findings` of `quoin matrix --json`. | Test |
-| FR-115-AC-18 | A bound symbol whose newest recorded outcome is `fail` or `error` has `evidence_status` `stale` and a `stale-evidence` finding whose `cause` is `failed-run`, in both outputs. A passing bound symbol remains `bound` with no `stale-evidence` finding. | Test |
-| FR-115-AC-19 | A finding of any kind other than `stale-evidence` serializes with no `cause` key in either output, so it never carries a false `failed-run` or `missing-run`. A consumer distinguishes the two stale conditions from the `cause` field alone; the `summary` text, `evidence_status` values, mapping precedence, bindings, and verdict behavior are identical to the same fixture without `cause`. | Test |
+| FR-115-AC-17 | An `audit` whose `stale-evidence` finding carries `cause` `missing-run` yields an `evidence_detail.findings` item with `cause` `missing-run` and `evidence_status` `stale`. | Test |
+| FR-115-AC-18 | An `audit` whose `stale-evidence` finding carries `cause` `failed-run` yields an `evidence_detail.findings` item with `cause` `failed-run` and `evidence_status` `stale`. | Test |
+| FR-115-AC-19 | A criterion in `audit.healthy`, with its mock inspection recorded, is `bound` and carries no `stale-evidence` finding and no `cause`. | Test |
+| FR-115-AC-20 | A criterion whose bound symbol passed but whose suite has no mock-inspection record is `undischarged` through its `unevaluated` entry (not `bound`), and carries no `stale-evidence` finding and no `cause`. | Test |
+| FR-115-AC-21 | An `evidence_detail.findings` item whose `kind` is not `stale-evidence` has no `cause` key in the JSON output, not `null` and not empty. | Test |
+| FR-115-AC-22 | An `audit` finding of kind `stale-evidence` with `cause` outside `missing-run`/`failed-run` is refused with `Refused` and `context.reason` `invalid-stale-cause` naming the obligation id. | Test |
+| FR-115-AC-23 | An `audit` finding of a kind other than `stale-evidence` that carries a `cause` is refused with `Refused` and `context.reason` `invalid-stale-cause` naming the obligation id. | Test |
+| FR-115-AC-24 | An obligation with a `missing-run` and a `failed-run` `stale-evidence` finding lists both in `evidence_detail.findings`, `failed-run` first, whatever order `audit.findings` supplies them, and is `stale`. | Test |
+| FR-115-AC-25 | Two `matrix.build` calls over one fixture that differ only in whether the `stale-evidence` findings carry `cause` produce identical `evidence_status` values, `summary` text, `bindings` lists and `unevaluated` lists. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) (the binding graph),
   [FR-032](./FR-032-evidence-auditor.md) (the audit report, including the
-  failed/errored latest-run check PLAT-1086/CR-002 added),
+  failed/errored latest-run check PLAT-1086/CR-002 added, and the typed
+  `stale-evidence` `cause` of FR-032-AC-18..21),
   [FR-040](./FR-040-assurance-case-view.md) (`requirement_of`, the grouping
   and `reason`-on-empty conventions this FR reuses), quire-rs
   [FR-050](ix://agent-ix/quire-rs/FR-050)-AC-47..51 (`coverage_matrix`, and
   its own repin into quoin — see CR-001).
 - **Downstream**: [FR-021](./FR-021-launch-ix-flow-runs.md), narrowed by this
-  FR to `review` and `to-plan` only (see its own CR note).
+  FR to `review` and `to-plan` only (see its own CR note);
+  [FR-167](./FR-167-release-snapshot-format.md), which projects
+  `evidence_detail.findings`, `cause` included, into `open_findings`.
 
 > **CR-001 (2026-09-27, PLAT-1080):** quoin depends on quire-rs by git revision in `Cargo.toml`
 > — not a vendored copy — whose
