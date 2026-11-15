@@ -32,8 +32,8 @@ and that each disposition is counted, or not counted, as FR-153 states, through 
    definition and every other premise admitted, then again with no FR-093 assessment, then again with no CI checkout
    SHA for the run-package step, then run `quoin evidence audit`. Read the FR-078 report, trace (forward and inverse) and strict decision.
 4. Over the other four stores of step 1, run the bridge with the same admitted premises and read the report.
-5. Into one suite record the satisfied report and then the refuted report with a later `--timestamp`; then a second
-   request's report; then the same sequence into two suites; then the two with equal timestamps. The satisfied and
+5. Into one suite record the satisfied report and then the refuted report with a later `--timestamp`; then a report
+   for a distinct analysis input; then the same sequence into two suites; then the two with equal timestamps. The satisfied and
    refuted pair is hand-constructed and accepted by the validator, as FR-151-AC-5 does for
    `unsupported-platform`, because a deterministic capture cannot produce both. Supply the run records in both orders.
 6. Record the satisfied report with `--discharges` naming an obligation whose declared method is Test and read the
@@ -61,7 +61,7 @@ Step 4: the refuted store reports `failed`, inconclusive and unavailable report 
 
 Step 5: a later fail or error in the same suite makes the obligation `stale` with the later `failed` or `errored`
 outcome visible, and a later run lacking the symbol makes it `absent`, in either supply order and with equal timestamps;
-a second request in the same suite replaces the first; in two suites both are bound and both must pass.
+a later report for a distinct analysis input replaces the first in the same suite; in two suites both are bound and both must pass.
 
 Step 6: the result is `qualification-rejected` naming the method and act pairing premise; it is not counted.
 
