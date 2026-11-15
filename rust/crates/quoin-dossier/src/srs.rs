@@ -26,9 +26,19 @@ impl Generator for SrsGenerator {
 
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
         // Read requirements from the scope
+        let modules = inputs
+            .modules
+            .iter()
+            .map(|path| quoin_quire::ids::ModuleRoot::open(path))
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(|error| SourceFailure {
+                source: "modules".to_owned(),
+                detail: format!("failed to open module: {error}"),
+            })?;
+
         let corpus = quoin_quire::records::read(
             &inputs.scope,
-            &quoin_quire::ModuleSelection::from_paths(&inputs.modules),
+            &quoin_quire::ModuleSelection::Closed(modules),
             &["FR", "NFR", "StR"],
         )
         .map_err(|error| SourceFailure {
@@ -182,4 +192,36 @@ fn criteria_of(doc: &quoin_quire::records::Document) -> Vec<(String, String)> {
 /// Escape Markdown table cell content so it cannot break table syntax.
 fn markdown_escape(text: &str) -> String {
     text.replace('|', "\\|").replace('\n', " ")
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::*;
+    use ix_trace_rs::trace;
+
+    #[trace("FR-192")]
+    #[test]
+    fn srs_generator_has_correct_spec() {
+        let generator = SrsGenerator;
+        let spec = generator.spec();
+        assert_eq!(spec.kind, "srs");
+        assert_eq!(spec.id, "DOS-SRS");
+        assert_eq!(spec.title, "Software requirements specification");
+        assert!(!spec.needs_as_of);
+    }
+
+    #[trace("FR-192")]
+    #[test]
+    fn markdown_escape_replaces_pipe_and_newline() {
+        assert_eq!(markdown_escape("text|with|pipes"), "text\\|with\\|pipes");
+        assert_eq!(markdown_escape("text\nwith\nnewlines"), "text with newlines");
+        assert_eq!(markdown_escape("text|and\nnewline"), "text\\|and newline");
+    }
 }
