@@ -127,10 +127,11 @@ not the source report and is not a second reader for that report schema:
 | `agreed_status` | The source `agreedStatus`, or JSON `null` when the disposition is not `agreement`. |
 | `producer` | Exactly `name` and `version` from the source `producer` object. |
 | `engines` | Exactly two objects, ordered `z3`, then `cvc5`; each contains `engine`, `configured_executable`, optional `identity_path`, optional `identity_version`, `status` and `outcome`, copied from the validated source report. |
+| `selection` | Present only when the validated source report has a `selection` member; then that member, unchanged. Absent otherwise; never `null` or an empty object. |
 
 The projection has no other members. It contains no query bytes, contract
 package, model, stdout, stderr, proof/solver output or unrelated report member.
-The projection has no analysis symbol or other run-entry identity. The exact suite/timestamp companion key pairs it with its run. The
+The `selection` member is defined and validated by filament-analyze (FR-005, FR-009), not by quoin. The projection has no analysis symbol or other run-entry identity. The exact suite/timestamp companion key pairs it with its run. The
 reader validates its disposition against the run's entry cardinality and
 outcome: `agreement` and `inconclusive`/`unavailable` require exactly one
 entry with the mapped outcome; `disagreement` requires zero entries. This
@@ -152,6 +153,8 @@ no `traceIds` and binds nothing by itself.
 - The adapter SHALL be selected by `--adapter differential-report` and by `--tool differential-report` or
   `--tool filament-analyze`.
 - The adapter SHALL accept a document only when `filament_analyze::validate_report_document` accepts it.
+- If the adapter refuses a document, then it SHALL write no run and no projection.
+- The adapter SHALL project a validated `selection` member unchanged.
 - The adapter SHALL produce exactly one run entry or one `unrepresented` result per accepted report, as the
   table of dispositions states.
 - The adapter SHALL take the entry symbol from `analysisKind` of the report.
@@ -215,6 +218,7 @@ that the dependency builds for that target.
 | FR-151-AC-13 | The adapter source opens no file other than its input, spawns no process and opens no network connection, and contains no `differential-summary` reader and no schema copy; `rust/Cargo.toml` names `agent-ix/filament-analyze` as a Cargo git dependency. Runtime projection and retention are performed by the record command under FR-030, not by the adapter. | Inspection |
 | FR-151-AC-14 | The adapter's accepted fixtures are reports captured unedited from `filament-analyze run-package` (one per disposition that the runner can produce; the `unsupported-platform` fixture is AC-5's). Each refusal fixture is derived from one capture by one stated change, stays canonical unless the change is the non-canonical form itself, and the refusal tests are table-driven with one row per refusal class: schema `filament.differential-report/v1`, retired `quire.differential-report/v2`, `tl-mltl.differential-summary/v1`, `filament.differential-report/v3`, schema absent, schema not a string, a required member removed, an undeclared top-level member, an undeclared engine member, a wrongly typed member, an unknown `disposition`, an unknown engine `status`, an unknown engine `outcome`, empty input, a truncated report, non-UTF-8 bytes, a JSON array, a JSON scalar, non-JSON text, `agreement` with a `null` `agreedStatus`, `disagreement` with a non-null `agreedStatus`, `agreement` with an engine `status` differing from `agreedStatus`, the same engine twice, members reordered, a pretty-printed copy, and an input of `MAX_REPORT_BYTES` + 1 bytes (synthetic padding, the only fixture that is neither a capture nor a one-change derivation). | Test |
 | FR-151-AC-15 | For each accepted disposition, the retained projection has exactly the FR-151 allowlist and has no symbol or other run-entry identity. The exact suite/timestamp key pairs it with a run containing exactly one entry with the mapped outcome for `agreement`, `inconclusive` or `unavailable`, or zero entries for `disagreement`; the reader refuses positive qualification for any other cardinality/outcome. Its producer/engine identity and disposition fields equal the validated source report. Query, model, stdout, stderr, proof/solver output and every undeclared source member are absent from the projection. | Test |
+| FR-151-AC-16 | A report that `filament_analyze::validate_report_document` accepts with a `selection` member is recorded, and its retained projection holds `selection` equal to the source member; a report without `selection` yields a projection with no `selection` member. A report that the validator refuses, including one with an invalid `selection`, writes no run and no projection. | Test |
 
 ## Dependencies
 

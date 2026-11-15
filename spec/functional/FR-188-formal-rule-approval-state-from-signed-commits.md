@@ -22,6 +22,10 @@ names the declaration in a `Formal-rule:` trailer and the declaration's text at
 that commit equals its text at HEAD. Otherwise Quoin SHALL report `draft` with
 exactly one reason from the closed set below.
 
+This FR specifies the capability to verify signed approvals. It enables no
+signing for this repository's commits, tags or releases and configures no
+signer or release signing.
+
 People accept risk. An agent can propose a formal rule and can never approve
 one. The approval is the signed git commit; no state, digest or approval list
 is stored. Origin: VER-98.
@@ -40,10 +44,14 @@ is stored. Origin: VER-98.
 With `--json` it is:
 
 ```json
-{"protocol":"quoin.formal-rule-status/v1","rules":[{"symbol":"qsl:<path>::<label>","path":"…","label":"…","formalizes":["FR-012"],"state":"approved","reason":null,"approval":{"commit":"<sha>","principal":"…"}}]}
+{"protocol":"quoin.formal-rule-status/v1","rules":[{"symbol":"qsl:<path>::<label>","path":"…","label":"…","declaration_range":{"start":120,"end":340},"formalizes":["FR-012"],"state":"approved","reason":null,"approval":{"commit":"<sha>","principal":"…"}}]}
 ```
 
-`reason` is present only for `draft`; `approval` is present only for
+`declaration_range` is the half-open interval `[start, end)` of UTF-8 byte offsets,
+into the file content at HEAD, of the declaration span the `qsl` adapter reports
+for that declaration (the declaration span itself, without the marker comment
+lines), with `start` below `end`. The offsets are computed from the content at HEAD at each run and are
+persisted nowhere. `reason` is present only for `draft`; `approval` is present only for
 `approved`; Exit status: `0` the report was produced; `2` usage error, including an
 allowed-signers file engineering-assurance refuses
 (`signature_verify_allowed_signers_invalid`); `3` engineering-assurance or git is
@@ -137,6 +145,8 @@ stderr.
 | FR-188-AC-18 | Given `--engineering-assurance` naming a missing executable, the command exits `3`; given a missing required flag, it exits `2` | Test |
 | FR-188-AC-19 | Given a commit that only acknowledges a workflow gate and carries no signature, the declaration is not `approved` | Test |
 | FR-188-AC-20 | Given an allowed-signers file engineering-assurance refuses with `signature_verify_allowed_signers_invalid`, the command exits `2` and writes no report; given any other `signature-verify` refusal, it exits `3` and writes no report | Test |
+| FR-188-AC-21 | Given a declaration after a multi-byte character (for example `é`) in its file, `declaration_range` counts UTF-8 bytes, so slicing the file bytes at `[start, end)` yields exactly the declaration span, whether the declaration is `approved` or `draft` | Test |
+| FR-188-AC-22 | Given any fixture, every `declaration_range` in the report has `start` below `end`, for `approved` and `draft` declarations alike | Test |
 
 ## Dependencies
 
