@@ -45,3 +45,11 @@ Round 1, FR-121 at `21db2ff6`. AC-10..AC-16 run contiguously, each AC is `Test`,
 
 - FND-001 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:148`): `FR-121-AC-13 | A fixture with a frontmatter_field-owned key, no frontmatter value and no section yields a record without the key, not an empty or default value, and no diagnostic.`
 - FND-002 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:147-150`): `FR-121-AC-12 | A fixture with the frontmatter value and no section extracts the frontmatter value with no diagnostic.` / `FR-121-AC-14 | With a frontmatter_field locator declared for one key, a heading that names a key owned by another mapping (## Thresholds) is prose with no diagnostic, as in AC-8.` / `FR-121-AC-15 | ... a lifecycle key that has no such locator (## Status) is read from its section, as in AC-4.`
+
+## New findings (disposition pass 2)
+
+Pass 2, FR-121 at `ab5356be`. AC-10..AC-16 are unchanged and stay contiguous. This finding rides with code-review FND-006, and neither blocks the other.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | low | No AC asserts line 91's no-section outcome: no `recordSources` entry and no `availability.recordKeys` entry for a frontmatter-owned key. AC-12 and AC-13 assert only the `record` value and "no diagnostic". So a fixture that follows quire-rs FR-081's absent-section rule and reports `not_applicable` would pass every FR-121 AC while violating line 91. Add "no `recordSources` or `availability.recordKeys` entry for the key" to AC-12 and AC-13, as AC-10 already says. | spec/functional/FR-121-record-key-sections-mapping.md:150-151 |

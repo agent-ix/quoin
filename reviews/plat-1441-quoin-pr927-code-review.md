@@ -64,3 +64,23 @@ Round 1 re-read FR-121 at `21db2ff6` and quire-rs FR-069 and FR-081 at quire-rs#
 - FND-001 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:78-79`): `A key a frontmatter_field locator owns is also owned, and is governed by Frontmatter-owned keys.` / `A section whose heading names no readable record key, including a heading that names an owned key other than a frontmatter_field-owned key, SHALL be prose to this mapping.`
 - FND-002 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:90`): `If a section heading names a frontmatter-owned key and the frontmatter holds no value for the field, then Quire SHALL emit the error semantic.feature-not-extractable at the heading with reason frontmatter-owned, extract no value from the section, and add no key to record, no recordSources entry and no availability.recordKeys entry for it.`
 - FND-003 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:83, 89`): `When the artifact has no section naming a key that is not frontmatter_field-owned, Quire SHALL omit the key and report availability.recordKeys for it not_applicable.` / `the absence of a section SHALL NOT erase a value the frontmatter projects.`
+
+## New findings (disposition pass 2)
+
+Pass 2 re-read FR-121 at `ab5356be` and quire-rs FR-081 at quire-rs#688 head `221478ab`. The lead reports that `quire validate` passes on this exact head, with only the existing unused-import warning. That was not re-run here.
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-006 | medium | Line 91 contradicts itself. It says Quire "SHALL report the section mapping `not_applicable` for the absent section and SHALL add no ... `availability.recordKeys` entry for the key". `availability.recordKeys` is the only availability output this mapping has (Outputs line 67), and "section mapping" appears nowhere else in the spec, so the first clause has no channel and cannot be verified. An implementer reading `not_applicable` as an availability state emits the entry that the second clause forbids. quire-rs FR-081 at #688 `221478ab` does exactly that: it keeps the unqualified rule "omit a key whose section is absent, reporting it `not_applicable`", and its Outputs make `availability.recordKeys` present when a section "fails to name a key". Fix: delete "report the section mapping `not_applicable` for the absent section and". quire-rs#688 should then except frontmatter-owned keys from FR-081's absent-section rule. | spec/functional/FR-121-record-key-sections-mapping.md:91 |
+
+## Dispositions (pass 2)
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-004 | fixed | Line 123 limits the general Availability rule to keys that are not frontmatter-owned. Line 124 sends a frontmatter-owned key's section error to Frontmatter-owned keys and adds no `record`, `recordSources` or `availability.recordKeys` entry from the section. |
+| FND-005 | fixed | Line 91 now states the no-section outcome: no `recordSources` entry, no `availability.recordKeys` entry, and the `record` value comes from the `frontmatter_field` locator alone. Lines 89-90 cover the `record` outcome with and without a frontmatter value. The new wording has a defect of its own, recorded as FND-006. |
+
+- FND-004 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:123-124`): `If any header, row, block, or section of a key that is not frontmatter-owned carries an error, then Quire SHALL report availability.recordKeys for that key unavailable ...` / `If a section of a frontmatter-owned key carries an error, then Quire SHALL apply the rules of Frontmatter-owned keys instead and SHALL NOT add a record, recordSources or availability.recordKeys entry for the key from the section.`
+- FND-005 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:91`): `When no section names a frontmatter-owned key, Quire SHALL report the section mapping not_applicable for the absent section and SHALL add no recordSources or availability.recordKeys entry for the key; the independent frontmatter_field locator alone supplies the record value when the frontmatter holds one.`
+
+Pass-2 verdict: **CHANGES REQUESTED**, on FND-006 only. It is a one-clause deletion. Everything else in the change is closed.

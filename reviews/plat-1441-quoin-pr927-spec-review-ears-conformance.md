@@ -50,3 +50,13 @@ Round 1 re-read the seven Frontmatter-owned keys statements at `21db2ff6`, lines
 
 - FND-001 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:93`): `Quire SHALL keep the behavior stated in the other sections for a key owned by another mapping, and for a key read from a body section, including a lifecycle key, that no frontmatter_field locator owns.`
 - FND-002 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:87`): `Quire SHALL treat a record key as frontmatter-owned when the object type declares a frontmatter_field locator under that key in yield_pattern.match (quire-rs FR-069), whether or not the artifact's frontmatter holds the field, and SHALL NOT read that key from a section.`
+
+## Dispositions (pass 2)
+
+Pass 2, FR-121 at `ab5356be`. Lines 89 and 90 each have one trigger and one response. Lines 123 and 124 are well-formed `If ... then Quire SHALL` statements. No new finding from this method. Line 91's self-contradiction is a soundness defect, not a grammar defect, so it is recorded as code-review FND-006 and not repeated here.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-003 | fixed | Line 89 is now split into two statements. Line 89 covers no frontmatter value: the key is absent from `record` and not defaulted. Line 90 covers a frontmatter value with no section: the value is kept. Each bullet has a single trigger. |
+
+- FND-003 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:89-90`): `If the frontmatter holds no value for a frontmatter-owned key, then Quire SHALL leave the key absent from record, whether or not a section names it, and SHALL NOT default it.` / `If the frontmatter holds a value for a frontmatter-owned key and no section names the key, then Quire SHALL keep the frontmatter value in record; the absence of a section SHALL NOT erase a value the frontmatter projects.`
