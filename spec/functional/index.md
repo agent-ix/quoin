@@ -168,3 +168,8 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-185: Quoin exports retained evidence as an in-toto Test Result statement](./FR-185-in-toto-test-result-export.md)
 - [FR-186: Carry Quoin release verification evidence with the tag attestation](./FR-186-release-verification-evidence.md)
 - [FR-187: Install modules from npm packages](./FR-187-install-modules-from-npm-packages.md)
+- [FR-188: quoin dossier generates, checks and exports the selected dossier documents](./FR-188-dossier-command.md)
+- [FR-189: The dossier SRS lists every requirement in scope with its criteria and recorded criticality](./FR-189-dossier-srs-content.md)
+- [FR-190: The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves](./FR-190-dossier-architecture-content.md)
+- [FR-191: The dossier trace matrix renders the evidence-backed matrix per requirement](./FR-191-dossier-trace-matrix-content.md)
+- [FR-192: The dossier requirements mapping matrix renders one table per clause set](./FR-192-dossier-rmm-content.md)
