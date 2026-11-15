@@ -19,9 +19,9 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/quoin/FR-093"
     type: "references"
-  - target: "ix://agent-ix/quire-analyze/FR-009"
+  - target: "ix://agent-ix/filament-analyze/FR-009"
     type: "references"
-  - target: "ix://agent-ix/quire-analyze/FR-005"
+  - target: "ix://agent-ix/filament-analyze/FR-005"
     type: "references"
   - target: "ix://agent-ix/engineering-assurance/FR-019"
     type: "references"
@@ -46,7 +46,7 @@ cites the owners of the report, the runner and the executor and does not restate
 
 ### What runs
 
-The act is one invocation of `quire-analyze run-package` ([quire-analyze FR-009](ix://agent-ix/quire-analyze/FR-009))
+The act is one invocation of `filament-analyze run-package` ([filament-analyze FR-009](ix://agent-ix/filament-analyze/FR-009))
 with `--package`, `--z3`, `--cvc5`, `--producer-execute` and `--output`, the arguments and their absolute-path rules
 as that requirement states them. The runner builds one consistency request over all analysable clauses of the
 package. It starts the Z3 and cvc5 solvers only through `producer-execute`, which is the
@@ -58,17 +58,17 @@ act, and a report from a solver started any other way is not an observation of i
 
 | Input | Source and meaning |
 |---|---|
-| Contract package | The `quire.contract-package/v1` document given as `--package` (quire-analyze FR-009). It names no analysis request; the runner fixes the request. |
-| Solver executables | `--z3` and `--cvc5`, absolute paths with no symbolic-link component (quire-analyze FR-009). |
+| Contract package | The `filament.contract-package/v1` document given as `--package` (filament-analyze FR-009). It names no analysis request; the runner fixes the request. |
+| Solver executables | `--z3` and `--cvc5`, absolute paths with no symbolic-link component (filament-analyze FR-009). |
 | Executor | `--producer-execute`, the absolute path of the `engineering-assurance` executable, never searched for on `PATH`. |
 | Declared method | The selected obligation's declared method, which must be Analysis (FR-116 method/act pairing; FR-152; FR-153). |
 | Obligation statement | The `--discharges` id the recorder gave to `quoin evidence record` (FR-152). It is the only binding source. |
 
 ## Outputs
 
-- One `quire.differential-report/v2` document and the runner's exit status, whose classes are those of
-  [quire-analyze FR-009](ix://agent-ix/quire-analyze/FR-009). The report is read by
-  the `differential-report` adapter, which accepts it only when `quire_analyze::validate_report_document` does
+- One `filament.differential-report/v2` document and the runner's exit status, whose classes are those of
+  [filament-analyze FR-009](ix://agent-ix/filament-analyze/FR-009). The report is read by
+  the `differential-report` adapter, which accepts it only when `filament_analyze::validate_report_document` does
   (FR-151).
 - When recorded, the source report is validated and reduced to the FR-151
   allowlisted projection in the FR-030
@@ -77,10 +77,10 @@ act, and a report from a solver started any other way is not an observation of i
   together with that run by the host's signature-verification of the commit
   that adds the pair. The projection adds no member to the source report schema,
   `RunRecord`, `RunEntry` or `--run-observation` object.
-- The source report is validated against the closed `quire.differential-report/v2` schema. The FR-151 projection
+- The source report is validated against the closed `filament.differential-report/v2` schema. The FR-151 projection
   retains only `producer.name`, `producer.version`, each engine's `configuredExecutable`, observed `identity.path`
   and `identity.version` when present, each engine's `status` and `outcome`, the `disposition`, and the `agreedStatus`.
-  The projection contains no symbol, request digest or other run-entry identity. The exact suite/timestamp key
+  The projection contains no symbol or other run-entry identity. The exact suite/timestamp key
   pairs it with one run; qualification requires the run cardinality and outcome mapped from the disposition and
   agreed status (one entry for agreement, inconclusive or unavailable; zero entries for disagreement). It does not
   retain query, model, stdout, stderr or raw solver output. These projected values are the transcribed observations
@@ -154,7 +154,7 @@ nothing about the obligation's meaning. The requirement-to-formalization link
 ### Producer-execute evidence
 
 A report is an observation of the act only when its solvers were started through `producer-execute`
-(quire-analyze FR-009 starts them no other way). The qualifier SHALL read only the FR-151 projection's fields to decide
+(filament-analyze FR-009 starts them no other way). The qualifier SHALL read only the FR-151 projection's fields to decide
 this, as FR-184-CON-2 requires: `producer.name` and `producer.version` of the runner, and for each of the Z3 and cvc5
 engines a `configuredExecutable` that is an absolute path, an observed `identity.path` and `identity.version` (the
 version invocation that `producer-execute` ran first, FR-009), and a `status` and `outcome` from the closed set
@@ -168,7 +168,7 @@ A `refuted` agreement is `failed`; an `inconclusive` or `unavailable` report is 
 
 The definition is approved, and two premises keep the result `unevaluated`, each named in the result:
 
-- **Premise: no FR-093 assessment.** Bounded reliance on `quire-analyze` and the solvers for this positive use
+- **Premise: no FR-093 assessment.** Bounded reliance on `filament-analyze` and the solvers for this positive use
   ([FR-093](./FR-093-evidence-producer-trust.md)) is open: no assessment exists. Every analysis-backed obligation
   SHALL stay `unevaluated` and uncounted until an assessment is written.
 - **Premise: no CI checkout SHA.** A result with no CI checkout SHA of the `run-package` step SHALL be `unevaluated`.
@@ -178,7 +178,7 @@ The definition is approved, and two premises keep the result `unevaluated`, each
 - **Report stating several obligations.** Rule stated by the lead from answer 8, owner may amend: a report whose
   `--discharges` states more than one obligation qualifies none of them.
 - **Producer-execute marker.** The report carries no field that names `producer-execute` directly; the qualifier
-  reads the engine fields listed above. A dedicated marker would be a quire-analyze change and is not required here.
+  reads the engine fields listed above. A dedicated marker would be a filament-analyze change and is not required here.
 
 ## Owner approval
 
@@ -213,7 +213,7 @@ Item 6 is unresolved: nothing counts as covered until the FR-093 assessment exis
 | FR-184-CON-1 | The definition SHALL add no field to the closed v2 report schema, `RunRecord` or `RunEntry` (FR-116-CON-2). | Compatibility | Inspection |
 | FR-184-CON-2 | Qualification SHALL run no solver and read only supplied observations (FR-116-CON-1; FR-153-CON-2). | Architecture | Inspection |
 | FR-184-CON-3 | The store SHALL retain only the FR-151 allowlisted projection, never the source report or its query/model/solver output, and never copy it into the run record; an older run with no companion remains unevaluated and is not migrated. | Compatibility | Inspection |
-| FR-184-CON-4 | The definition SHALL persist no checkout SHA, CI association, signer principal, commit id, content digest, ledger or version pin (FR-116-CON-2). A producer-authored request digest appears only inside an existing run-entry symbol when one exists; it is not copied to the projection, and quoin computes no digest. | Architecture | Inspection |
+| FR-184-CON-4 | The definition SHALL persist no checkout SHA, CI association, signer principal, commit id, ledger or version pin (FR-116-CON-2). | Architecture | Inspection |
 
 ## Acceptance Criteria
 
@@ -221,7 +221,7 @@ The criteria describe the approved definition; none claims an implemented qualif
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-184-AC-1 | With no FR-093 assessment of `quire-analyze` and the solvers, every analysis-backed obligation is `unevaluated` naming the bounded-reliance premise and none is counted. | Test |
+| FR-184-AC-1 | With no FR-093 assessment of `filament-analyze` and the solvers, every analysis-backed obligation is `unevaluated` naming the bounded-reliance premise and none is counted. | Test |
 | FR-184-AC-2 | A `satisfied` agreement bound by `--discharges` to an Analysis obligation, latest in its suite, with a CI checkout SHA and every other FR-116 premise admitted, yields a positive decision for that target only. | Test |
 | FR-184-AC-3 | A `refuted` agreement report bound to an Analysis obligation yields `failed` and no positive decision. | Test |
 | FR-184-AC-4 | An `inconclusive` report yields `errored` and no positive decision. | Test |
@@ -243,4 +243,4 @@ The criteria describe the approved definition; none claims an implemented qualif
 - **Upstream**: [FR-116](./FR-116-owner-qualified-quire-evidence.md), [FR-151](./FR-151-differential-report-v2-adapter.md),
   [FR-152](./FR-152-analysis-run-entry-link-to-obligation.md), [FR-153](./FR-153-analysis-result-counting-by-disposition.md),
   [NFR-033](../non-functional/NFR-033-analysis-counting-never-infers-a-binding.md), [FR-093](./FR-093-evidence-producer-trust.md).
-- **Cross-repository**: quire-analyze FR-005 and FR-009; engineering-assurance FR-019 and FR-029; quire-rs FR-078.
+- **Cross-repository**: filament-analyze FR-005 and FR-009; engineering-assurance FR-019 and FR-029; quire-rs FR-078.
