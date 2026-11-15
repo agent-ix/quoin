@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `quire.differential-report/v2` — one analysis request judged by two SMT
+//! `filament.differential-report/v2` — one analysis request judged by two SMT
 //! engines (FR-151).
 //!
-//! The report contract belongs to `agent-ix/quire-analyze`. This reader does
-//! not restate it: `quire_analyze::validate_report_document` decides whether a
+//! The report contract belongs to `agent-ix/filament-analyze`. This reader does
+//! not restate it: `filament_analyze::validate_report_document` decides whether a
 //! document is well formed, and this module adds only the mapping of an
 //! accepted report to a run entry or an unrepresented result. It derives no
-//! digest, decodes no hex and parses no solver output.
+//! report field, decodes no hex and parses no solver output.
 //!
 //! One report is one comparison, so it is one entry. A `disagreement` is the
 //! one disposition no run-entry outcome carries, so it is named, not rounded.
 
+use filament_analyze::{MAX_REPORT_BYTES, validate_report_document};
 use ix_trace_rs::implements;
-use quire_analyze::{MAX_REPORT_BYTES, validate_report_document};
 use quoin_store::{canonical_bytes, parse_strict_json_str};
 use serde_json::Value;
 
@@ -24,7 +24,7 @@ use crate::types::{Outcome, RunEntry};
 
 /// The schema this reader accepts. Used only to word a refusal; acceptance is
 /// the owner's validator's.
-const SCHEMA: &str = "quire.differential-report/v2";
+const SCHEMA: &str = "filament.differential-report/v2";
 
 fn refuse(message: impl Into<String>) -> EvidenceError {
     EvidenceError::adapter("differential-report", message)
@@ -84,12 +84,12 @@ fn describe_engine(engine: &Value) -> Result<String, EvidenceError> {
     ))
 }
 
-/// Transcribe a `quire.differential-report/v2` document.
+/// Transcribe a `filament.differential-report/v2` document.
 ///
 /// # Errors
 ///
 /// Refuses input larger than [`MAX_REPORT_BYTES`] without parsing it, and any
-/// document `quire_analyze::validate_report_document` refuses (wrong or absent
+/// document `filament_analyze::validate_report_document` refuses (wrong or absent
 /// schema, a missing, undeclared or mistyped member, a self-contradicting
 /// disposition, non-canonical bytes).
 #[implements("FR-151")]
@@ -105,11 +105,7 @@ pub fn parse_differential_report(raw: &str) -> Result<AdapterResult, EvidenceErr
     let report: Value = serde_json::from_str(raw)
         .map_err(|error| refuse(format!("validated report is not JSON: {error}")))?;
 
-    let symbol = format!(
-        "{}::{}",
-        text(&report, "analysisKind")?,
-        text(&report, "requestDigest")?
-    );
+    let symbol = text(&report, "analysisKind")?.to_owned();
     let differential = report
         .get("differential")
         .ok_or_else(|| refuse("validated report lacks differential"))?;

@@ -6,7 +6,7 @@
 #
 # quoin#379 added the workspace's first git source — the `rev`-pinned quire-rs
 # engine. Every AGPL admission below is a named per-crate exception (quire-code-parse,
-# quire-verification-contracts, ix-trace-rs); nothing else in the graph gains one.
+# filament-verification-contracts, ix-trace-rs); nothing else in the graph gains one.
 
 [licenses]
 version = 2
@@ -94,15 +94,15 @@ allow = ["MPL-2.0"]
 crate = "quire-code-parse"
 allow = ["AGPL-3.0-or-later"]
 
-# `quire-verification-contracts` (agent-ix/quire-analyze's dependency, reached
-# through quoin-evidence's `quire-analyze` report validator, VER-80) is
+# `filament-verification-contracts` (agent-ix/filament-analyze's dependency, reached
+# through quoin-evidence's `filament-analyze` report validator, VER-80) is
 # AGPL-3.0-or-later, the same licence quoin carries. Named per crate for the
 # same reason as `quire-code-parse`: the `allow` list stays permissive-only.
 [[licenses.exceptions]]
-crate = "quire-verification-contracts"
+crate = "filament-verification-contracts"
 allow = ["AGPL-3.0-or-later"]
 
-# `ar_archive_writer` (reached through psm <- stacker under the quire-analyze
+# `ar_archive_writer` (reached through psm <- stacker under the filament-analyze
 # validator's typify code generation) is Apache-2.0 WITH LLVM-exception. The
 # exception clause only widens Apache-2.0 for object-code distribution, so it
 # is a named exception rather than an allow-list entry, as `uluru` is.
@@ -142,7 +142,7 @@ allow-wildcard-paths = true
 # duplicate in this workspace is resolved by converging a pin, and a duplicate
 # outside these three groups is escalated, not skipped. The VER-80 group at the
 # head of the array is a further ruled group (exact versions, written removal
-# condition) for the quire-analyze report validator, the precedent being the
+# condition) for the filament-analyze report validator, the precedent being the
 # quoin#402 jsonschema concession above.
 #
 # ---------------------------------------------------------------------------
@@ -188,35 +188,35 @@ allow-wildcard-paths = true
 # of the same crate — still fails. This concedes these resolutions, not the
 # check.
 skip = [
-    # --- The quire-analyze validator entries (VER-80). ---
+    # --- The filament-analyze validator entries (VER-80). ---
     #
-    # `quoin-evidence` links quire-analyze's `validate_report_document`, which
-    # pulls three JSON-schema generations: quire-analyze itself on
+    # `quoin-evidence` links filament-analyze's `validate_report_document`, which
+    # pulls three JSON-schema generations: filament-analyze itself on
     # jsonschema 0.17.1, quire-verification-contracts on jsonschema 0.55.1
     # (and typify's schemars 0.8.22), against the workspace's jsonschema 0.56.0
     # and schemars 1.x. None of the three is ours to converge from this
     # repository; the skipped sides are the ones reachable only through
-    # quire-analyze. 0.56.0 and schemars 1.x, which our own crates reach, stay
+    # filament-analyze. 0.56.0 and schemars 1.x, which our own crates reach, stay
     # checked.
     #
-    # REMOVAL CONDITION: this group goes when quire-analyze and
+    # REMOVAL CONDITION: this group goes when filament-analyze and
     # quire-verification-contracts converge on jsonschema 0.56 and schemars 1.x,
     # or when the report validator moves into its own small crate that does not
     # carry the runner's dependency tree. `cargo deny check bans` MUST pass with
     # the group removed -- RUN IT rather than assuming it.
-    { crate = "jsonschema@0.17.1", reason = "VER-80: quire-analyze's validator (quoin-evidence); jsonschema 0.56.0 stays checked" },
-    { crate = "jsonschema@0.55.1", reason = "VER-80: quire-verification-contracts under quire-analyze; jsonschema 0.56.0 stays checked" },
+    { crate = "jsonschema@0.17.1", reason = "VER-80: filament-analyze's validator (quoin-evidence); jsonschema 0.56.0 stays checked" },
+    { crate = "jsonschema@0.55.1", reason = "VER-80: quire-verification-contracts under filament-analyze; jsonschema 0.56.0 stays checked" },
     { crate = "schemars@0.8.22", reason = "VER-80: typify under quire-verification-contracts; schemars 1.x, our root pin, stays checked" },
-    { crate = "base64@0.21.7", reason = "VER-80: reached only through jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "bit-set@0.5.3", reason = "VER-80: reached only through fancy-regex 0.11.0 <- jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "bit-vec@0.6.3", reason = "VER-80: reached only through bit-set 0.5.3 <- jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "fancy-regex@0.11.0", reason = "VER-80: reached only through jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "fraction@0.13.1", reason = "VER-80: reached only through jsonschema 0.17.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "referencing@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "jsonschema-regex@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "jsonschema-value@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "serde_derive_internals@0.29.1", reason = "VER-80: reached only through schemars_derive 0.8.22 <- schemars 0.8.22 <- typify (quire-analyze validator subtree); the other version stays checked" },
-    { crate = "schemars_derive@0.8.22", reason = "VER-80: reached only through schemars 0.8.22 <- typify (quire-analyze validator subtree); the other version stays checked" },
+    { crate = "base64@0.21.7", reason = "VER-80: reached only through jsonschema 0.17.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "bit-set@0.5.3", reason = "VER-80: reached only through fancy-regex 0.11.0 <- jsonschema 0.17.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "bit-vec@0.6.3", reason = "VER-80: reached only through bit-set 0.5.3 <- jsonschema 0.17.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "fancy-regex@0.11.0", reason = "VER-80: reached only through jsonschema 0.17.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "fraction@0.13.1", reason = "VER-80: reached only through jsonschema 0.17.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "referencing@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "jsonschema-regex@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "jsonschema-value@0.55.1", reason = "VER-80: reached only through jsonschema 0.55.1 (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "serde_derive_internals@0.29.1", reason = "VER-80: reached only through schemars_derive 0.8.22 <- schemars 0.8.22 <- typify (filament-analyze validator subtree); the other version stays checked" },
+    { crate = "schemars_derive@0.8.22", reason = "VER-80: reached only through schemars 0.8.22 <- typify (filament-analyze validator subtree); the other version stays checked" },
     { crate = "getrandom@0.2.17", reason = "ring 0.17.14 (rustls 0.23.46 under reqwest 0.12.28 via typesafe-sdk-http, and reqwest 0.13.5 via gix-transport) and jsonschema 0.18.3 via quire-rs; ring 0.17 depends on getrandom 0.2" },
     { crate = "getrandom@0.3.4", reason = "tempfile 3.27.0 (gix, quoin-measurement), ahash 0.8.12 (jsonschema 0.18.3 and 0.56.0) and jsonschema 0.56.0 / referencing (quoin-semantic); 0.4.3 stays checked and is reached by gix-utils and uuid" },
     { crate = "r-efi@5.3.0", reason = "reached only through getrandom 0.3.4 (UEFI target dependency); see the getrandom@0.3.4 entry" },
@@ -305,7 +305,7 @@ unknown-registry = "deny"
 unknown-git = "deny"
 # quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
 # dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
-# consume theirs. Four git sources are admitted, each named by REPOSITORY:
+# consume theirs. Git sources are admitted individually by exact repository URL:
 #
 #   * quire-rs — the engine quoin-quire links (quoin#379).
 #   * engineering-assurance — library containment (quoin#416), the pattern
@@ -315,23 +315,27 @@ unknown-git = "deny"
 #     ports rust.rs symbol extraction onto tree-sitter via this crate.
 #   * filament-core-data — the source of `agent-ix-semantic-schema`, pulled in
 #     transitively by quire-rs at the tag its own manifest names.
+#   * filament-analyze's upstream graph — the report validator's same-branch
+#     dependencies from filament-contract-ir, filament-verification-contracts,
+#     filament-exact, filament-walk and filament-semantic-value.
 #
 # quire-rs and engineering-assurance are each pinned by an exact `rev` in
 # rust/Cargo.toml. quire-code-rs is pinned by an exact `rev` in quire-rs's own
 # manifest, and filament-core-data by the tag quire-rs's manifest names; this
-# repository states neither directly. Allowing a repository here does not
-# weaken any of these pins: `unknown-git = "deny"` still refuses every other
-# git source. A fifth git dependency is listed here in the commit that adds it,
-# or this check refuses it.
+# repository states neither directly. The filament-analyze family follows
+# upstream `main` branches as required by its manifest graph. Listing these
+# repositories does not widen the policy to any other source: `unknown-git =
+# "deny"` still refuses every unlisted Git repository. Every newly required
+# source is listed here in the same commit that adds it, or this check refuses it.
 allow-git = [
     # VER-80: the report validator quoin-evidence links, and its transitive
     # agent-ix git crates.
     "https://github.com/agent-ix/filament-analyze",
-    "https://github.com/agent-ix/quire-contract-ir",
-    "https://github.com/agent-ix/quire-verification-contracts",
-    "https://github.com/agent-ix/quire-exact",
-    "https://github.com/agent-ix/quire-walk",
-    "https://github.com/agent-ix/quire-semantic-value",
+    "https://github.com/agent-ix/filament-contract-ir",
+    "https://github.com/agent-ix/filament-verification-contracts",
+    "https://github.com/agent-ix/filament-exact",
+    "https://github.com/agent-ix/filament-walk",
+    "https://github.com/agent-ix/filament-semantic-value",
     # Compile-checked trace binders: a dev-dependency for `#[trace]` tests, and a
     # normal dependency of the crates that carry `#[implements]` on production items.
     "https://github.com/agent-ix/ix-trace-rs",

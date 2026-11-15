@@ -100,7 +100,7 @@ fn decision(producer: (&str, &str), limitations: &[&str]) -> TrustDecision {
         version: producer.1.to_owned(),
         configuration: "run-package".to_owned(),
         validation_corpus: "tc-001-captures".to_owned(),
-        input_contract: "quire.differential-report/v2".to_owned(),
+        input_contract: "filament.differential-report/v2".to_owned(),
         environment: "ci".to_owned(),
         adapter: None,
     };
@@ -170,7 +170,7 @@ fn projection(report: &Value) -> Value {
 /// The host facts that belong to no one record, every premise admitted.
 fn admitted() -> HostObservations {
     HostObservations {
-        reliance: Some(decision(("quire-analyze", "0.1.0"), &[])),
+        reliance: Some(decision(("filament-analyze", "0.1.0"), &[])),
         selected_head: Some(HEAD.to_owned()),
         selected_head_conflict: false,
     }
@@ -242,7 +242,7 @@ impl Recorded {
             &mut self.source,
             &RecordRequest {
                 suite: SuiteId::new(suite),
-                tool: "quire-analyze 0.1.0".to_owned(),
+                tool: "filament-analyze 0.1.0".to_owned(),
                 evidence_kind: None,
                 lineage: None,
                 timestamp: timestamp.to_owned(),
@@ -272,7 +272,7 @@ impl Recorded {
             &mut self.source,
             &RecordRequest {
                 suite: SuiteId::new(suite),
-                tool: "quire-analyze 0.1.0".to_owned(),
+                tool: "filament-analyze 0.1.0".to_owned(),
                 evidence_kind: None,
                 lineage: None,
                 timestamp: timestamp.to_owned(),
@@ -411,7 +411,7 @@ fn an_admitted_passing_report_is_a_qualified_record_for_its_own_target_only() {
     assert_eq!(binder.actor, "signer-1");
     assert!(binder.locator.record.starts_with("runs/SUITE-A/"));
     assert_eq!(binder.locator.run, "SUITE-A@2026-11-13T10:00:00Z");
-    assert!(binder.locator.entry.starts_with("consistency::"));
+    assert_eq!(binder.locator.entry, "consistency");
     assert!(
         binder
             .provenance
@@ -625,7 +625,7 @@ fn the_actor_needs_an_admission_reference_and_authority_over_the_target() {
 #[test]
 fn the_reliance_decision_must_be_for_the_reports_producer() {
     let store = satisfied_store(&[AC1]);
-    for producer in [("other-tool", "0.1.0"), ("quire-analyze", "9.9.9")] {
+    for producer in [("other-tool", "0.1.0"), ("filament-analyze", "9.9.9")] {
         let host = HostObservations {
             reliance: Some(decision(producer, &[])),
             ..admitted()
@@ -648,7 +648,7 @@ fn a_reliance_decision_with_any_limitation_grants_no_positive_decision() {
     // that cannot be shown not to exclude this use.
     for limitation in ["does not cover FR-001-AC-1", "Linux x86-64 only"] {
         let host = HostObservations {
-            reliance: Some(decision(("quire-analyze", "0.1.0"), &[limitation])),
+            reliance: Some(decision(("filament-analyze", "0.1.0"), &[limitation])),
             ..admitted()
         };
         let outcome = store.count(&[AC1], host);
@@ -790,8 +790,7 @@ fn a_disagreement_is_absent_like_an_obligation_never_recorded() {
 }
 
 /// The satisfied capture's own entry symbol.
-const SATISFIED_SYMBOL: &str =
-    "consistency::3dbffb15f695159ab9331b9708144a86b3845beb04bcc31767445b914065b1ae";
+const SATISFIED_SYMBOL: &str = "consistency";
 
 fn satisfied_report() -> Value {
     serde_json::from_str(SATISFIED).unwrap()
@@ -900,9 +899,9 @@ fn an_obligation_bound_through_two_suites_needs_both_to_pass() {
 #[trace("FR-153-AC-7")]
 #[test]
 fn a_second_report_in_the_same_suite_replaces_the_first() {
-    let other = "consistency::other-request-digest";
+    let other = "contradiction";
     let mut second = satisfied_report();
-    second["requestDigest"] = Value::from("other-request-digest");
+    second["analysisKind"] = Value::from("contradiction");
     let mut store = Recorded::new();
     store.record("SUITE-A", "2026-11-13T10:00:00Z", SATISFIED, &[AC1]);
     store.record_entry(
@@ -1002,16 +1001,15 @@ fn a_report_recorded_without_discharges_counts_for_no_obligation() {
     assert_eq!(counted(&outcome), 0);
     assert!(store.bindings().is_empty());
 
-    // Even where the entry's symbol and the report's digest text equal an
+    // Even where the entry's symbol and the report's analysis kind equal an
     // obligation id: the text is not a binding source.
     let mut colliding = Recorded::new();
     let mut report = satisfied_report();
     report["analysisKind"] = Value::from("FR-001-AC-1");
-    report["requestDigest"] = Value::from("FR-001-AC-1");
     colliding.record_entry(
         "SUITE-A",
         "2026-11-13T10:00:00Z",
-        ("FR-001-AC-1::FR-001-AC-1", Outcome::Pass),
+        ("FR-001-AC-1", Outcome::Pass),
         &[],
         &report,
     );

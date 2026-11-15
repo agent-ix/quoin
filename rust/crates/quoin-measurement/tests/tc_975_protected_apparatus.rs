@@ -554,7 +554,7 @@ fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule(
         collection["observations"] = json!([{
             "metric": "analysis_semantic_fault_differential_and_evidence_conformance",
             "planId": "MP-001",
-            "definitionVersion": "quire-analyze.measurement-v1",
+            "definitionVersion": "filament-analyze.measurement-v1",
             "state": "measured",
             "value": adverse,
             "unit": "count",

@@ -633,6 +633,101 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
+name = "filament-analyze"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e17fbf0f6c593d32ce2555420d615c5dd862e8ef"
+dependencies = [
+ "filament-analyze-method-contract",
+ "filament-contract-model",
+ "ix-cli-kit",
+ "jsonschema 0.17.1",
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "filament-analyze-method-contract"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e17fbf0f6c593d32ce2555420d615c5dd862e8ef"
+
+[[package]]
+name = "filament-contract-model"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-contract-ir?branch=main#ce1970fb108fe2c07a3c463b4a405dee529a4330"
+dependencies = [
+ "filament-exact",
+ "filament-semantic-value",
+ "filament-verification-contracts",
+ "filament-walk",
+ "ix-trace-rs",
+ "jsonschema 0.17.1",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "quire-canonical",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_stacker",
+ "sha2",
+ "stacker",
+ "thiserror",
+ "unicode-ident",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "filament-exact"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-exact?branch=main#f1ef4963d19e343d19fd85f415b509439126f1da"
+dependencies = [
+ "allocator-api2",
+ "arrayvec",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "once_cell",
+ "spin",
+ "thiserror",
+ "triomphe",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "filament-semantic-value"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-semantic-value?branch=main#c943d9560f1c614ad6b8512bfe8b8f2963f8122d"
+dependencies = [
+ "filament-exact",
+ "quire-canonical",
+ "thiserror",
+]
+
+[[package]]
+name = "filament-verification-contracts"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-verification-contracts?branch=main#b79af1b550c91288778ee5df1becc6e7388dd66f"
+dependencies = [
+ "chrono",
+ "jsonschema 0.55.1",
+ "quire-canonical",
+ "regress",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "typify",
+]
+
+[[package]]
+name = "filament-walk"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-walk?branch=main#ab0c37a0a88cf5bf4b45a32fc12a01992abea00d"
+
+[[package]]
 name = "filetime"
 version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2938,26 +3033,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quire-analyze"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
-dependencies = [
- "ix-cli-kit",
- "jsonschema 0.17.1",
- "libc",
- "quire-analyze-method-contract",
- "quire-contract-model",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
-name = "quire-analyze-method-contract"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-analyze?rev=d57468a9b28a787664a4c59e4d98a1075c9d1d2e#d57468a9b28a787664a4c59e4d98a1075c9d1d2e"
-
-[[package]]
 name = "quire-canonical"
 version = "0.3.0"
 source = "git+https://github.com/agent-ix/quire-canonical?branch=main#7d2f8389d01fcbf318e658746015b85a31526cc9"
@@ -3002,49 +3077,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quire-contract-model"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-contract-ir?branch=main#f582c0c428c997a5e3b23b45d32567274c3a8a14"
-dependencies = [
- "ix-trace-rs",
- "jsonschema 0.17.1",
- "num-bigint",
- "num-integer",
- "num-traits",
- "quire-canonical",
- "quire-exact",
- "quire-semantic-value",
- "quire-verification-contracts",
- "quire-walk",
- "serde",
- "serde_json",
- "serde_path_to_error",
- "serde_stacker",
- "sha2",
- "stacker",
- "thiserror",
- "unicode-ident",
- "unicode-normalization",
-]
-
-[[package]]
-name = "quire-exact"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-exact?branch=main#e87ea030302e0abd762a88b4bbe2a6f148c4869d"
-dependencies = [
- "allocator-api2",
- "arrayvec",
- "num-bigint",
- "num-integer",
- "num-traits",
- "once_cell",
- "spin",
- "thiserror",
- "triomphe",
- "unicode-normalization",
-]
-
-[[package]]
 name = "quire-fixtures"
 version = "0.1.0"
 source = "git+https://github.com/agent-ix/quire-rs?rev=5a45ec949737a41c69a90f6ac5eefcafb2e10716#5a45ec949737a41c69a90f6ac5eefcafb2e10716"
@@ -3072,38 +3104,6 @@ dependencies = [
  "uuid",
  "yaml_serde",
 ]
-
-[[package]]
-name = "quire-semantic-value"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-semantic-value?branch=main#3c4616dafd4f739573c86af049661646f24dc293"
-dependencies = [
- "quire-canonical",
- "quire-exact",
- "thiserror",
-]
-
-[[package]]
-name = "quire-verification-contracts"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-verification-contracts?branch=main#1bf72e68d425aa0233235883d0b6ed1139ff6cb1"
-dependencies = [
- "chrono",
- "jsonschema 0.55.1",
- "quire-canonical",
- "regress",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
- "typify",
-]
-
-[[package]]
-name = "quire-walk"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-walk?branch=main#b48d991914a964fcd39c2fe6d67b322f2498e3c9"
 
 [[package]]
 name = "quoin-anomaly"
@@ -3186,9 +3186,9 @@ version = "0.31.0"
 dependencies = [
  "clap",
  "engineering-assurance",
+ "filament-analyze",
  "ix-cli-kit",
  "ix-trace-rs",
- "quire-analyze",
  "quire-fixtures",
  "quoin-anomaly",
  "quoin-assurance",
@@ -3312,8 +3312,8 @@ dependencies = [
 name = "quoin-evidence"
 version = "0.31.0"
 dependencies = [
+ "filament-analyze",
  "ix-trace-rs",
- "quire-analyze",
  "quoin-quire-types",
  "quoin-store",
  "quoin-yaml",

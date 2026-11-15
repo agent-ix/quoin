@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `quoin evidence record` over `quire.differential-report/v2` reports (FR-151,
+//! `quoin evidence record` over `filament.differential-report/v2` reports (FR-151,
 //! TC-001): what the command prints, and what it refuses before it writes a run.
 
 #![allow(
@@ -13,8 +13,8 @@
 use std::path::Path;
 use std::process::{Command, Output};
 
+use filament_analyze::MAX_REPORT_BYTES;
 use ix_trace_rs::trace;
-use quire_analyze::MAX_REPORT_BYTES;
 
 const DISAGREEMENT: &str =
     include_str!("../../../../tests/fixtures/evidence/differential-report-v2/disagreement.json");
@@ -76,7 +76,7 @@ impl Fixture {
     fn record(&self, results: &Path, extra: &[&str]) -> Output {
         Command::new(env!("CARGO_BIN_EXE_quoin"))
             .args(["evidence", "record", "--repo", ".", "--module", "."])
-            .args(["--suite", "SUITE-SMT", "--tool", "quire-analyze 0.1.0"])
+            .args(["--suite", "SUITE-SMT", "--tool", "filament-analyze 0.1.0"])
             .args(["--timestamp", "2026-01-01T00:00:00Z", "--results"])
             .arg(results)
             .args(extra)
@@ -119,7 +119,7 @@ fn tc_001_the_command_prints_the_unrepresented_result_in_human_output() {
     let text = stdout(&output);
     assert!(text.contains("recorded SUITE-SMT"), "{text}");
     assert!(
-        text.contains("not transcribed — consistency::") && text.contains("reported disagreement"),
+        text.contains("not transcribed — consistency") && text.contains("reported disagreement"),
         "{text}"
     );
     assert!(
@@ -253,7 +253,7 @@ fn tc_002_a_stated_disagreement_prints_the_unrepresented_result_in_human_output(
     let output = fixture.record(&results, &["--discharges", "FR-001-AC-1"]);
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert!(
-        stdout(&output).contains("not transcribed — consistency::"),
+        stdout(&output).contains("not transcribed — consistency"),
         "{}",
         stdout(&output)
     );
