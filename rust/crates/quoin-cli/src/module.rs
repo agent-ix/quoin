@@ -394,7 +394,7 @@ fn indent_json(value: &str, indent: usize) -> String {
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::{command, modules_json};
+    use super::{DEFAULT_MODULES, command, modules_json};
     use ix_trace_rs::trace;
 
     #[trace("FR-017")]
@@ -454,5 +454,24 @@ mod tests {
   ]
 }"#
         );
+    }
+
+    #[test]
+    fn default_process_module_tracks_the_release_with_allowed_link_types() {
+        let defaults = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
+            .expect("the shipped default-module manifest is valid");
+        let process = defaults
+            .entries
+            .iter()
+            .find(|entry| entry.name.as_str() == "spec-artifacts-process")
+            .expect("the process module is in the default set");
+        assert!(process.is_enabled(), "the process module stays enabled");
+        assert!(matches!(
+            &process.source,
+            quoin_modules::Source::GitSubdir { url, path, r#ref: Some(r#ref) }
+                if url == "agent-ix/spec-artifacts-process"
+                    && path == "spec_artifacts_process"
+                    && r#ref == "v0.34.0"
+        ));
     }
 }
