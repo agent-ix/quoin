@@ -25,9 +25,9 @@ test-stubs = []
 ix-cli-kit = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tempfile = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
 
 [dev-dependencies]
 ix-trace-rs = { workspace = true }
-tempfile = { workspace = true }

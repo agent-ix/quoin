@@ -707,16 +707,37 @@ fn real_quire_refuses_an_uncommitted_generated_file() {
     assert!(!work.path().join("out.pdf").exists());
 }
 
+/// A generator the test registers itself, so the files validated below are
+/// exactly what `quoin_dossier::generate` writes for the real kinds. It lives
+/// here and not in the `test-stubs` set because the real `srs` and `rmm`
+/// generators must be free to register under `--all-features`.
+struct KindOnly(quoin_dossier::DocumentSpec);
+
+impl quoin_dossier::Generator for KindOnly {
+    fn spec(&self) -> quoin_dossier::DocumentSpec {
+        self.0
+    }
+
+    fn generate(
+        &self,
+        _: &quoin_dossier::Inputs,
+    ) -> Result<quoin_dossier::Generated, quoin_dossier::SourceFailure> {
+        Ok(quoin_dossier::Generated {
+            body: format!("# {}", self.0.title),
+            gaps: Vec::new(),
+        })
+    }
+}
+
 /// Needs the installed `quire` and the `spec-artifacts-process` module that
 /// defines the `DossierDocument` archetype (FR-018), read in place from
-/// `SPEC_ARTIFACTS_PROCESS_DIR` (its `spec_artifacts_process` directory). The
-/// stub kinds are not in the archetype's `document_kind` enum, so the test
-/// rewrites that one value in the generated files to a real kind and leaves the
-/// rest of the frontmatter as quoin wrote it. Nothing of the module is copied
-/// here.
+/// `SPEC_ARTIFACTS_PROCESS_DIR` (its `spec_artifacts_process` directory).
+/// The `srs` and `rmm` files are written by `quoin_dossier::generate` and
+/// validated unchanged; each bad file is a copy of a generated one with a
+/// single change. Nothing of the module is copied here.
 ///
 /// Provenance: PLAT-1614 acceptance 9.
-#[trace("FR-018-AC-1", "FR-018-AC-3")]
+#[trace("FR-018-AC-1", "FR-018-AC-3", "FR-018-AC-8")]
 #[test]
 #[ignore = "needs quire and the spec-artifacts-process DossierDocument archetype"]
 fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
@@ -726,66 +747,72 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
     let module = fs::canonicalize(&module)
         .unwrap_or_else(|error| panic!("the module is not at {}: {error}", module.display()));
     let work = tempfile::tempdir().unwrap();
-    let generated = quoin(
-        work.path(),
-        &[
-            "generate",
-            "--version",
-            "1.0",
-            "--as-of",
-            "2026-11-15T00:00:00Z",
-            "--doc",
-            "stub-a",
-            "--doc",
-            "stub-time",
-        ],
-    );
-    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
-    let validate = |name: &str, text: &str| {
-        let path = work.path().join(name);
-        fs::write(&path, text).unwrap();
-        Command::new("quire")
+    let mut registry = quoin_dossier::Registry::new();
+    for (kind, id, needs_as_of) in [("srs", "DOS-SRS", false), ("rmm", "DOS-RMM", true)] {
+        registry
+            .register(Box::new(KindOnly(quoin_dossier::DocumentSpec {
+                kind,
+                id,
+                title: "Dossier document",
+                needs_as_of,
+            })))
+            .unwrap();
+    }
+    let out = work.path().join("dossier");
+    let inputs = quoin_dossier::Inputs {
+        scope: PathBuf::from("."),
+        modules: Vec::new(),
+        clause_bindings: Vec::new(),
+        pack: None,
+        as_of: Some("2026-11-15T00:00:00Z".to_owned()),
+        version: "1.0".to_owned(),
+    };
+    quoin_dossier::generate(&registry, &[], &out, &inputs).unwrap();
+
+    let validate = |path: &Path| {
+        let output = Command::new("quire")
             .args(["validate", "--module"])
             .arg(&module)
-            .arg(&path)
+            .arg(path)
             .current_dir(work.path())
             .output()
-            .expect("quire starts")
+            .expect("quire starts");
+        let diagnostics = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        (output.status.success(), diagnostics)
     };
-    let plain = read(&work.path().join("dossier/DOS-STUB-A.md"));
-    let timed = read(&work.path().join("dossier/DOS-STUB-TIME.md"));
+    let srs = out.join("DOS-SRS.md");
+    let rmm = out.join("DOS-RMM.md");
+    for generated in [&srs, &rmm] {
+        let (valid, diagnostics) = validate(generated);
+        assert!(valid, "{}: {diagnostics}", generated.display());
+    }
 
-    let srs = validate(
-        "srs.md",
-        &plain.replace("document_kind: \"stub-a\"", "document_kind: \"srs\""),
-    );
-    assert!(
-        srs.status.success(),
-        "{}",
-        String::from_utf8_lossy(&srs.stderr)
-    );
-    let rmm = validate(
-        "rmm.md",
-        &timed.replace("document_kind: \"stub-time\"", "document_kind: \"rmm\""),
-    );
-    assert!(
-        rmm.status.success(),
-        "{}",
-        String::from_utf8_lossy(&rmm.stderr)
-    );
-
-    let bad = validate(
-        "bad.md",
-        &plain.replace(
-            "document_kind: \"stub-a\"",
+    let bad_kind = work.path().join("bad-kind.md");
+    fs::write(
+        &bad_kind,
+        read(&srs).replace(
+            "document_kind: \"srs\"",
             "document_kind: \"verification-report\"",
         ),
-    );
-    assert!(!bad.status.success());
-    let diagnostics = format!(
-        "{}{}",
-        String::from_utf8_lossy(&bad.stdout),
-        String::from_utf8_lossy(&bad.stderr)
-    );
+    )
+    .unwrap();
+    let (valid, diagnostics) = validate(&bad_kind);
+    assert!(!valid, "{diagnostics}");
     assert!(diagnostics.contains("document_kind"), "{diagnostics}");
+
+    let no_as_of = work.path().join("no-as-of.md");
+    let without = read(&rmm)
+        .lines()
+        .filter(|line| !line.starts_with("as_of:"))
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
+    fs::write(&no_as_of, without).unwrap();
+    let (valid, diagnostics) = validate(&no_as_of);
+    assert!(!valid, "{diagnostics}");
+    assert!(diagnostics.contains("as_of"), "{diagnostics}");
 }

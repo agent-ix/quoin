@@ -7,7 +7,10 @@
 //! or compared, so a run that exits 2 or 3 has touched nothing.
 
 use std::fs;
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
+
+use tempfile::TempPath;
 
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
@@ -149,62 +152,139 @@ pub fn generate(
     })
 }
 
+/// A destination this run has replaced or is about to.
+struct Step<'a> {
+    dest: &'a Path,
+    /// The original, moved aside to a path this run owns.
+    backup: Option<TempPath>,
+    /// Whether the new file is in place at `dest`.
+    placed: bool,
+}
+
 /// Replace the files of `rendered` all or nothing, short of outside
 /// interference with the directory.
 ///
-/// FR-191 leaves existing files unmodified on exit 2. An existing destination
-/// that cannot be read back (a directory, say) is refused before anything
-/// changes; every new file is staged beside its destination first; and if a
-/// rename still fails, the files already replaced are put back.
+/// FR-191 leaves existing files unmodified on exit 2 and touches nothing but
+/// the files it was asked for. Every destination is checked first (a
+/// directory, say, is refused before anything changes); every new file is then
+/// staged in the output directory under a unique name this run created, so an
+/// unrelated file with any name is never opened; and each original is moved
+/// to a unique owned backup before its replacement is linked in without
+/// overwriting. If a step fails, the files already replaced are removed and
+/// their originals renamed back. A rename back that fails is reported, and the
+/// backup is kept rather than deleted.
+///
+/// Another process writing into the directory during the run is not guarded
+/// against: a file it creates at a destination makes the link fail and is
+/// preserved, but there is no directory lock.
 fn commit(rendered: &[Rendered]) -> Result<(), DossierError> {
-    let failed = |path: &Path, reason: String| {
+    let failed = |path: &Path, reason: &str| {
         DossierError::new(
             DossierErrorCode::WriteFailed,
             format!("cannot write {}: {reason}", path.display()),
         )
         .with_context("path", path.display().to_string())
     };
-    // The bytes each destination holds now, or `None` where it is absent.
-    let mut before: Vec<Option<Vec<u8>>> = Vec::with_capacity(rendered.len());
     for document in rendered {
-        match fs::read(&document.path) {
-            Ok(bytes) => before.push(Some(bytes)),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => before.push(None),
-            Err(error) => return Err(failed(&document.path, error.to_string())),
-        }
-    }
-    let staged: Vec<PathBuf> = rendered
-        .iter()
-        .map(|document| {
-            document
-                .path
-                .with_file_name(format!(".{}.quoin-tmp", document.spec.id))
-        })
-        .collect();
-    let discard = |paths: &[PathBuf]| {
-        for path in paths {
-            let _ = fs::remove_file(path);
-        }
-    };
-    for (document, stage) in rendered.iter().zip(&staged) {
-        if let Err(error) = fs::write(stage, &document.text) {
-            discard(&staged);
-            return Err(failed(&document.path, error.to_string()));
-        }
-    }
-    for (index, (document, stage)) in rendered.iter().zip(&staged).enumerate() {
-        if let Err(error) = fs::rename(stage, &document.path) {
-            for (done, original) in rendered.iter().zip(&before).take(index) {
-                let _ = match original {
-                    Some(bytes) => fs::write(&done.path, bytes),
-                    None => fs::remove_file(&done.path),
-                };
+        match fs::symlink_metadata(&document.path) {
+            Ok(metadata) if !metadata.is_file() => {
+                return Err(failed(&document.path, "it is not a regular file"));
             }
-            discard(&staged);
-            return Err(failed(&document.path, error.to_string()));
+            Err(error) if error.kind() != std::io::ErrorKind::NotFound => {
+                return Err(failed(&document.path, &error.to_string()));
+            }
+            _ => {}
         }
     }
+    // Dropping an unplaced staged file removes it.
+    let mut staged = Vec::with_capacity(rendered.len());
+    for document in rendered {
+        let mut file = temp_beside(&document.path, document.spec.id, "tmp")
+            .map_err(|error| failed(&document.path, &error.to_string()))?;
+        file.write_all(document.text.as_bytes())
+            .map_err(|error| failed(&document.path, &error.to_string()))?;
+        staged.push(file);
+    }
+    let mut done: Vec<Step<'_>> = Vec::with_capacity(rendered.len());
+    for (document, file) in rendered.iter().zip(staged) {
+        let dest = document.path.as_path();
+        let mut step = Step {
+            dest,
+            backup: None,
+            placed: false,
+        };
+        let moved = if fs::symlink_metadata(dest).is_ok() {
+            temp_beside(dest, document.spec.id, "bak")
+                .map(tempfile::NamedTempFile::into_temp_path)
+                .and_then(|backup| {
+                    // Renaming over the reserved empty backup replaces it.
+                    fs::rename(dest, &backup)?;
+                    step.backup = Some(backup);
+                    Ok(())
+                })
+        } else {
+            Ok(())
+        };
+        let linked = moved.map_err(|error| error.to_string()).and_then(|()| {
+            file.persist_noclobber(dest)
+                .map(drop)
+                .map_err(|error| error.error.to_string())
+        });
+        step.placed = linked.is_ok();
+        done.push(step);
+        if let Err(reason) = linked {
+            let notes = roll_back(done);
+            return Err(failed(
+                &document.path,
+                &std::iter::once(reason)
+                    .chain(notes)
+                    .collect::<Vec<_>>()
+                    .join("; "),
+            ));
+        }
+    }
+    // The new files are in place; a backup that cannot be removed is litter,
+    // not a failure.
+    drop(done);
     Ok(())
+}
+
+/// Undo the placements, newest first, and say what could not be undone.
+fn roll_back(done: Vec<Step<'_>>) -> Vec<String> {
+    let mut notes = Vec::new();
+    for step in done.into_iter().rev() {
+        if step.placed
+            && let Err(error) = fs::remove_file(step.dest)
+        {
+            notes.push(format!("could not remove {}: {error}", step.dest.display()));
+        }
+        if let Some(backup) = step.backup
+            && let Err(error) = fs::rename(&backup, step.dest)
+        {
+            let kept = backup
+                .keep()
+                .unwrap_or_else(|failure| failure.path.to_path_buf());
+            notes.push(format!(
+                "could not restore {}: {error}; the original is at {}",
+                step.dest.display(),
+                kept.display()
+            ));
+        }
+    }
+    notes
+}
+
+/// A new, uniquely named file beside `dest`. `tempfile` opens it exclusively,
+/// so it can never be a file that already existed.
+fn temp_beside(dest: &Path, id: &str, suffix: &str) -> std::io::Result<tempfile::NamedTempFile> {
+    let dir = dest
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    tempfile::Builder::new()
+        .prefix(&format!(".{id}."))
+        .suffix(&format!(".{suffix}"))
+        .tempfile_in(dir)
 }
 
 /// Compare the selected documents with the files on disk; writes nothing.
@@ -415,6 +495,25 @@ mod tests {
             ["DOS-A.md", "DOS-B.md"],
             "a staged file was left"
         );
+    }
+
+    #[trace("FR-191-AC-1")]
+    #[test]
+    fn an_unrelated_dotfile_with_a_staging_style_name_is_never_touched() {
+        let work = tempfile::tempdir().unwrap();
+        let out = work.path().join("dossier");
+        fs::create_dir_all(&out).unwrap();
+        fs::write(out.join(".DOS-A.quoin-tmp"), "sentinel").unwrap();
+        fs::write(out.join("DOS-A.md"), "before").unwrap();
+        let registry = registry(vec![doc("a", "DOS-A", false), doc("b", "DOS-B", false)]);
+        generate(&registry, &[], &out, &inputs()).unwrap();
+        assert_eq!(fs::read(out.join(".DOS-A.quoin-tmp")).unwrap(), b"sentinel");
+        assert_eq!(
+            names(&out),
+            [".DOS-A.quoin-tmp", "DOS-A.md", "DOS-B.md"],
+            "a staging or backup file was left"
+        );
+        assert_ne!(fs::read_to_string(out.join("DOS-A.md")).unwrap(), "before");
     }
 
     #[trace("FR-191-AC-13")]
