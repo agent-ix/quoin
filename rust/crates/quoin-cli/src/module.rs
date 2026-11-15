@@ -456,10 +456,32 @@ mod tests {
         );
     }
 
+    #[trace("FR-016-AC-1", "FR-016-AC-2", "FR-016-AC-4", "FR-016-AC-5", "TC-014")]
     #[test]
     fn default_process_module_tracks_the_release_with_allowed_link_types() {
         let defaults = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
             .expect("the shipped default-module manifest is valid");
+        let names: Vec<&str> = defaults
+            .entries
+            .iter()
+            .map(|entry| entry.name.as_str())
+            .collect();
+        assert_eq!(
+            names,
+            [
+                "engineering-assurance",
+                "spec-artifacts-iso",
+                "spec-artifacts-app",
+                "spec-artifacts-process",
+                "spec-objects-business",
+                "spec-objects-architecture",
+                "spec-objects-enterprise",
+                "spec-objects-operational",
+                "spec-objects-security",
+                "spec-objects-safety",
+            ],
+            "the default set remains the ten public modules"
+        );
         let process = defaults
             .entries
             .iter()
