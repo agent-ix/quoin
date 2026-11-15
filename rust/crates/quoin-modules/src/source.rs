@@ -57,7 +57,7 @@ pub enum Source {
         /// The directory.
         path: String,
     },
-    /// An npm package. Accepted structurally, not resolvable here.
+    /// An npm package resolved through the public npm registry.
     Npm {
         /// The package name.
         package: String,
@@ -132,7 +132,12 @@ impl Source {
                 safe_opt(r#ref.as_ref(), "ref")
             }
             Self::Path { path } => non_empty(path, "path"),
-            Self::Npm { package, .. } => safe(package, "package"),
+            Self::Npm {
+                package, version, ..
+            } => {
+                safe(package, "package")?;
+                safe_opt(version.as_ref(), "version")
+            }
         }
     }
 

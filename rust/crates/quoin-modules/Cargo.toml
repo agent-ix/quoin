@@ -23,6 +23,11 @@ quoin-semantic = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+flate2 = { workspace = true }
+reqwest = { workspace = true }
+tar = { workspace = true }
+tempfile = { workspace = true }
+url = { workspace = true }
 # Not declared at the root: pinned exactly here, for the same reason the root
 # pins exactly — the gate is a claim about these bytes, not about whatever
 # resolved this morning.

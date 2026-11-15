@@ -20,6 +20,7 @@
 //! | [`pack`] | The licensed-pack probe seam and the git work-tree walk |
 //! | [`registry`] | `~/.ix/filament/registry.json`, wire-compatible with ts-plugin-kit |
 //! | [`git`] | `gix`-backed fetch and tree extraction, with bounds |
+//! | [`npm`] | Public npm registry transport and bounded tarball extraction |
 //! | [`install`] | Installing one entry, with rollback |
 //! | [`reconcile`] | Lazy and sync reconciliation of the default set |
 //! | [`semantic`] | The semantic-contract seam and its verdict vocabulary |
@@ -38,6 +39,7 @@ pub mod ids;
 pub mod install;
 pub mod manifest;
 pub mod module_name;
+pub(crate) mod npm;
 pub mod pack;
 pub mod paths;
 pub mod reconcile;

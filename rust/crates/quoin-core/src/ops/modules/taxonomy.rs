@@ -64,7 +64,8 @@ const fn core_code(code: ModulesErrorCode) -> Option<CoreErrorCode> {
         | ModulesErrorCode::UnsupportedSource
         | ModulesErrorCode::UnparsableSourceArg
         | ModulesErrorCode::InvalidManifest
-        | ModulesErrorCode::InvalidModuleName => CoreErrorCode::BadRequest,
+        | ModulesErrorCode::InvalidModuleName
+        | ModulesErrorCode::NpmRegistryUnsupported => CoreErrorCode::BadRequest,
 
         ModulesErrorCode::PathSourceNotFound
         | ModulesErrorCode::ManifestNotFound
@@ -79,7 +80,9 @@ const fn core_code(code: ModulesErrorCode) -> Option<CoreErrorCode> {
         | ModulesErrorCode::InstalledModuleInvalid
         | ModulesErrorCode::PackInsideWorkTree
         | ModulesErrorCode::PackSourceRefused
-        | ModulesErrorCode::PackLoadFailed => CoreErrorCode::Refused,
+        | ModulesErrorCode::PackLoadFailed
+        | ModulesErrorCode::NpmMetadata
+        | ModulesErrorCode::NpmArchive => CoreErrorCode::Refused,
 
         ModulesErrorCode::RegistryUnreadable
         | ModulesErrorCode::RegistryUnwritable
@@ -87,6 +90,8 @@ const fn core_code(code: ModulesErrorCode) -> Option<CoreErrorCode> {
         | ModulesErrorCode::GitObjectStore
         | ModulesErrorCode::GitTimeout
         | ModulesErrorCode::FetchDeadlineUnavailable
+        | ModulesErrorCode::NpmTimeout
+        | ModulesErrorCode::NpmTransport
         | ModulesErrorCode::MaterializeFailed => CoreErrorCode::Io,
 
         // Required by `#[non_exhaustive]`. A code this build has never seen is
@@ -125,6 +130,7 @@ mod tests {
             ModulesErrorCode::UnparsableSourceArg,
             ModulesErrorCode::InvalidManifest,
             ModulesErrorCode::InvalidModuleName,
+            ModulesErrorCode::NpmRegistryUnsupported,
         ];
         let refused = [
             ModulesErrorCode::PathSourceNotFound,
@@ -141,6 +147,8 @@ mod tests {
             ModulesErrorCode::PackInsideWorkTree,
             ModulesErrorCode::PackSourceRefused,
             ModulesErrorCode::PackLoadFailed,
+            ModulesErrorCode::NpmMetadata,
+            ModulesErrorCode::NpmArchive,
         ];
         let internal = [
             ModulesErrorCode::RegistryUnreadable,
@@ -150,6 +158,8 @@ mod tests {
             ModulesErrorCode::GitTimeout,
             ModulesErrorCode::FetchDeadlineUnavailable,
             ModulesErrorCode::MaterializeFailed,
+            ModulesErrorCode::NpmTimeout,
+            ModulesErrorCode::NpmTransport,
         ];
         assert_eq!(
             bad_request.len() + refused.len() + internal.len(),
