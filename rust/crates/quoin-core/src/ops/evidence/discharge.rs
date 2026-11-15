@@ -263,12 +263,12 @@ pub struct PackRequirementsMatrixPayload {
 }
 
 /// Answer an `evidence.pack_requirements_matrix`: one FR-135 matrix for every
-/// clause set of an installed pack, behind an index (FR-140).
+/// clause set of an installed module, behind an index (FR-140).
 ///
 /// # Errors
 ///
 /// - [`CoreErrorCode::Refused`] when the name is not an installed module, the
-///   module is not a pack, or the pack fails to load.
+///   module is not installed, declares no clause sets, or fails to load.
 /// - [`CoreErrorCode::BadRequest`] when a context entry is malformed or a
 ///   stored fact is refused.
 /// - [`CoreErrorCode::Io`] when no module or evidence host was granted.
@@ -303,15 +303,15 @@ pub fn pack_matrix(
         .into_iter()
         .find(|module| module.name.as_str() == request.pack)
         .ok_or_else(|| refused(format!("{} is not an installed module", request.pack)))?;
-    let is_pack = modules
-        .is_pack(&installed)
-        .map_err(|e| refused(format!("module {} failed to load: {e}", request.pack)))?;
-    if !is_pack {
-        return Err(refused(format!("module {} is not a pack", request.pack)));
-    }
     let bindings = modules
         .evaluate_clause_sets(&installed, &context)
-        .map_err(|e| refused(format!("pack {} failed to load: {e}", request.pack)))?;
+        .map_err(|e| refused(format!("module {} failed to load: {e}", request.pack)))?;
+    if bindings.is_empty() {
+        return Err(refused(format!(
+            "module {} declares no clause sets",
+            request.pack
+        )));
+    }
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {

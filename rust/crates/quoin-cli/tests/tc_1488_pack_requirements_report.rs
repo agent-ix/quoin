@@ -467,7 +467,7 @@ fn tc_1488_004_the_index_title_and_json_members_carry_no_score_or_count_per_valu
     assert_eq!(value["schemaVersion"], "requirements-mapping-pack-v1");
 }
 
-#[trace("FR-140-AC-5")]
+#[trace("FR-140-AC-2", "FR-140-AC-3", "FR-140-AC-5", "FR-140-AC-6")]
 #[test]
 fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
     let env = env();
@@ -478,7 +478,7 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
         env.report(&["--context", "region=eu"]),
         env.report_in(&env.repo, "no-such-pack", &[]),
     ];
-    // A non-pack module and a pack that fails to load refuse without the text.
+    // A module with original text and a module that fails to load refuse without the text.
     let open = write_pack(
         &env.base.join("open-src"),
         "open-module",
@@ -491,7 +491,30 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
     .unwrap();
     let installed = env.run(&["module", "install", &format!("path:{}", open.display())]);
     assert!(installed.status.success(), "{}", text(&installed));
-    outputs.push(env.report_in(&env.repo, "open-module", &[]));
+    let original = env.report_in(&env.repo, "open-module", &["--json"]);
+    assert!(original.status.success(), "{}", text(&original));
+    let report: serde_json::Value = serde_json::from_slice(&original.stdout).unwrap();
+    assert_eq!(report["index"].as_array().unwrap().len(), 1);
+    assert_eq!(report["matrices"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        report["index"][0]["clauseSet"]["authority"],
+        "example.invalid"
+    );
+    assert_eq!(report["index"][0]["clauseSet"]["id"], "zeta");
+    assert_eq!(report["index"][0]["clauseSet"]["version"], "1");
+    let listed = env.run(&["module", "list"]);
+    assert!(listed.status.success(), "{}", text(&listed));
+    let modules: serde_json::Value = serde_json::from_slice(&listed.stdout).unwrap();
+    assert_eq!(
+        modules["plugins"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|module| module["name"] == "open-module")
+            .unwrap()["pack"],
+        false
+    );
+    outputs.push(original);
     let broken = std::fs::read_to_string(env.installed_file("zeta.yaml"))
         .unwrap()
         .replace(
@@ -547,7 +570,7 @@ fn tc_1488_006_a_report_run_changes_nothing_and_the_oracle_detects_a_write() {
 
 #[trace("FR-140-AC-7")]
 #[test]
-fn tc_1488_007_an_unknown_name_and_a_non_pack_module_exit_two_with_no_stdout() {
+fn tc_1488_007_an_unknown_name_and_module_without_clause_sets_exit_two() {
     let env = env();
     let unknown = env.report_in(&env.repo, "no-such-pack", &[]);
     assert_eq!(unknown.status.code(), Some(2), "{}", text(&unknown));
@@ -558,24 +581,21 @@ fn tc_1488_007_an_unknown_name_and_a_non_pack_module_exit_two_with_no_stdout() {
         stderr(&unknown)
     );
 
-    let open = write_pack(
-        &env.base.join("open-src"),
-        "open-module",
-        &[pack_sets().remove(0)],
-    );
+    let empty = env.base.join("empty-src");
+    std::fs::create_dir_all(&empty).unwrap();
     std::fs::write(
-        open.join("zeta.yaml"),
-        set_yaml(&pack_sets()[0]).replace("text: licensed", "text: original"),
+        empty.join("manifest.yaml"),
+        "name: empty-module\nversion: 0.1.0\n",
     )
     .unwrap();
-    let installed = env.run(&["module", "install", &format!("path:{}", open.display())]);
+    let installed = env.run(&["module", "install", &format!("path:{}", empty.display())]);
     assert!(installed.status.success(), "{}", text(&installed));
-    let not_pack = env.report_in(&env.repo, "open-module", &[]);
-    assert_eq!(not_pack.status.code(), Some(2), "{}", text(&not_pack));
-    assert!(not_pack.stdout.is_empty());
-    let message = stderr(&not_pack);
-    assert!(message.contains("open-module"), "{message}");
-    assert!(message.contains("is not a pack"), "{message}");
+    let no_sets = env.report_in(&env.repo, "empty-module", &[]);
+    assert_eq!(no_sets.status.code(), Some(2), "{}", text(&no_sets));
+    assert!(no_sets.stdout.is_empty());
+    let message = stderr(&no_sets);
+    assert!(message.contains("empty-module"), "{message}");
+    assert!(message.contains("declares no clause sets"), "{message}");
 }
 
 #[trace("FR-140-AC-8")]
