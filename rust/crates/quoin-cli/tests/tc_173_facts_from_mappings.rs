@@ -821,8 +821,33 @@ fn tc_173_invalid_attestation_actor_authority_instants_and_interval_are_refused(
 
 #[trace("FR-173-AC-13")]
 #[test]
-fn tc_173_real_scope_exclusion_schema_violation_is_refused_by_validation_and_facts() {
+fn tc_173_scope_exclusion_decision_schema_and_facts_are_strict() {
     let module = spec_objects_security_module();
+    let schema_path = module.join("schemas/ScopeExclusion.json");
+    let schema: Value = serde_json::from_str(
+        &std::fs::read_to_string(&schema_path).expect("the module decision schema is readable"),
+    )
+    .expect("the module decision schema is JSON");
+    let decision_schema = schema
+        .get("properties")
+        .and_then(|properties| properties.get("decision"))
+        .expect("ScopeExclusion declares a decision schema");
+    let validator = quoin_jsonschema::validator::SchemaValidator::compile_vendored(
+        &schema_path,
+        decision_schema,
+        &[],
+    )
+    .expect("the module decision subschema compiles");
+    assert!(
+        validator.is_valid(&json!("delegated")),
+        "the declared delegated decision is rejected: {:?}",
+        validator.errors(&json!("delegated"))
+    );
+    assert!(
+        !validator.is_valid(&json!("delegated-ish")),
+        "the module decision schema accepts an undeclared decision"
+    );
+
     let world = World::new(
         &two_clauses(),
         &[(
@@ -831,15 +856,6 @@ fn tc_173_real_scope_exclusion_schema_violation_is_refused_by_validation_and_fac
                 .replace("`delegated`", "`delegated-ish`"),
         )],
     );
-    let artifact = world.spec().join("SCOPEX-001.md");
-    let validation = Command::new("quire")
-        .args(["validate", "--module"])
-        .arg(&module)
-        .arg(&artifact)
-        .output()
-        .expect("quire validate on PATH");
-    assert!(!validation.status.success(), "{validation:?}");
-
     let output = world.facts_with_external_module(&module);
     assert!(!output.status.success(), "{output:?}");
     assert!(out(&output).is_empty(), "{output:?}");
