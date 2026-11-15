@@ -141,8 +141,8 @@ pub static ADAPTERS: &[RunAdapter] = &[
     },
     RunAdapter {
         name: "differential-report",
-        summary: "quire-analyze differential report (quire.differential-report/v2) — one analysis request judged by two SMT engines.",
-        tools: &["differential-report", "quire-analyze"],
+        summary: "filament-analyze differential report (filament.differential-report/v2) — one analysis request judged by two SMT engines.",
+        tools: &["differential-report", "filament-analyze"],
         parse: differential_report::parse_differential_report,
     },
 ];

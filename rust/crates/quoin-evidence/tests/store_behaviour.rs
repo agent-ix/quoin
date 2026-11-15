@@ -108,7 +108,7 @@ fn differential_report_pair_replays_identically_and_refuses_changed_replay() {
         "protocol": "quoin.analysis-report-projection/v1",
         "disposition": "agreement",
         "agreed_status": "satisfied",
-        "producer": {"name": "quire-analyze", "version": "0.1.0"},
+        "producer": {"name": "filament-analyze", "version": "0.1.0"},
         "engines": []
     });
     let first =
@@ -133,7 +133,7 @@ fn differential_report_pair_replays_identically_and_refuses_changed_replay() {
         "protocol": "quoin.analysis-report-projection/v1",
         "disposition": "agreement",
         "agreed_status": "refuted",
-        "producer": {"name": "quire-analyze", "version": "0.1.0"},
+        "producer": {"name": "filament-analyze", "version": "0.1.0"},
         "engines": []
     });
     assert!(record_run_with_analysis_projection(&mut source, &request, &[], &changed).is_err());

@@ -13,8 +13,8 @@
 //! It reads the supplied observations and nothing else: no solver runs, no
 //! report is re-read from outside them, nothing is written (FR-153-CON-2). It
 //! adds no field, status or report member to the engine (FR-153-CON-1), and a
-//! record claim never becomes a source symbol: the retained entry's own
-//! `<analysisKind>::<requestDigest>` identity is a locator, not a symbol
+//! record claim never becomes a source symbol: the retained entry's
+//! `analysisKind` identity is a locator, not a symbol
 //! (FR-153-AC-9).
 
 use ix_trace_rs::implements;

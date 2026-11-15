@@ -2,10 +2,10 @@
 // Copyright (C) 2026 Agent-IX
 
 //! TC-001: the `differential-report` adapter transcribes every
-//! `quire.differential-report/v2` disposition and refuses malformed reports
+//! `filament.differential-report/v2` disposition and refuses malformed reports
 //! (FR-151, NFR-032).
 //!
-//! The accepted inputs are reports `quire-analyze run-package` wrote (see
+//! The accepted inputs are reports `filament-analyze run-package` wrote (see
 //! `tests/fixtures/evidence/README.md`). Each refusal input is one of those
 //! reports with one stated change.
 
@@ -19,7 +19,7 @@
 use std::collections::BTreeMap;
 
 use ix_trace_rs::trace;
-use quire_analyze::MAX_REPORT_BYTES;
+use filament_analyze::MAX_REPORT_BYTES;
 use quoin_evidence::adapters::{
     ADAPTERS, AdapterResult, AdapterSelection, parse_differential_report, select_adapter,
 };
@@ -46,9 +46,6 @@ const MISSING: &str = include_str!(
 const UNSUPPORTED: &str = include_str!(
     "../../../../tests/fixtures/evidence/differential-report-v2/unavailable-unsupported-platform.json"
 );
-
-const SATISFIED_DIGEST: &str = "3dbffb15f695159ab9331b9708144a86b3845beb04bcc31767445b914065b1ae";
-const REFUTED_DIGEST: &str = "dc9233cb2a167e99c80d49b42e09f2de424d0a22989b9f2487acf1262b265da1";
 
 /// Canonical compact JSON with every object's keys sorted, optionally with the
 /// top level in reverse order. The report format is canonical, so a mutated
@@ -112,12 +109,12 @@ fn tc_001_the_canonical_emitter_reproduces_every_capture_byte_for_byte() {
 
 #[trace("FR-151-AC-1")]
 #[test]
-fn tc_001_agreement_satisfied_is_one_pass_entry_keyed_on_kind_and_request_digest() {
+fn tc_001_agreement_satisfied_is_one_pass_entry_keyed_on_analysis_kind() {
     let result = accepted(SATISFIED);
     assert_eq!(result.entries.len(), 1);
     assert_eq!(
         result.entries[0].symbol,
-        SymbolId::new(format!("consistency::{SATISFIED_DIGEST}"))
+        SymbolId::new("consistency")
     );
     assert_eq!(result.entries[0].outcome, Outcome::Pass);
     assert!(result.entries[0].trace_ids.is_none());
@@ -137,7 +134,7 @@ fn tc_001_projection_contains_only_the_qualified_allowlist() {
     assert_eq!(projection["agreed_status"], "satisfied");
     assert_eq!(
         projection["producer"],
-        json!({"name":"quire-analyze","version":"0.1.0"})
+        json!({"name":"filament-analyze","version":"0.1.0"})
     );
     assert_eq!(projection["engines"][0]["engine"], "z3");
     assert!(projection["engines"][0].get("identity_path").is_some());
@@ -161,7 +158,7 @@ fn tc_001_agreement_refuted_is_one_fail_entry() {
     assert_eq!(result.entries.len(), 1);
     assert_eq!(
         result.entries[0].symbol,
-        SymbolId::new(format!("consistency::{REFUTED_DIGEST}"))
+        SymbolId::new("consistency")
     );
     assert_eq!(result.entries[0].outcome, Outcome::Fail);
     assert!(result.unrepresented.is_none());
@@ -176,7 +173,7 @@ fn tc_001_disagreement_is_no_entry_and_one_named_unrepresented_result() {
     assert_eq!(unrepresented.len(), 1);
     assert_eq!(
         unrepresented[0].symbol,
-        format!("consistency::{SATISFIED_DIGEST}")
+        "consistency"
     );
     assert_eq!(unrepresented[0].state, "disagreement");
     assert_eq!(
@@ -193,7 +190,7 @@ fn tc_001_inconclusive_reports_are_one_error_entry() {
         assert_eq!(result.entries.len(), 1);
         assert_eq!(
             result.entries[0].symbol,
-            SymbolId::new(format!("consistency::{SATISFIED_DIGEST}"))
+            SymbolId::new("consistency")
         );
         assert_eq!(result.entries[0].outcome, Outcome::Error);
         assert!(result.unrepresented.is_none());
@@ -208,7 +205,7 @@ fn tc_001_unavailable_reports_are_one_error_entry() {
         assert_eq!(result.entries.len(), 1);
         assert_eq!(
             result.entries[0].symbol,
-            SymbolId::new(format!("consistency::{SATISFIED_DIGEST}"))
+            SymbolId::new("consistency")
         );
         assert_eq!(result.entries[0].outcome, Outcome::Error);
     }
@@ -250,8 +247,13 @@ fn schema_and_member_rows() -> Vec<Row> {
     vec![
         row(
             "schema v1",
-            schema(json!("quire.differential-report/v1")),
-            "\"quire.differential-report/v1\"",
+            schema(json!("filament.differential-report/v1")),
+            "\"filament.differential-report/v1\"",
+        ),
+        row(
+            "retired quire schema",
+            schema(json!("quire.differential-report/v2")),
+            "\"quire.differential-report/v2\"",
         ),
         row(
             "retired differential-summary schema",
@@ -260,8 +262,8 @@ fn schema_and_member_rows() -> Vec<Row> {
         ),
         row(
             "schema v3",
-            schema(json!("quire.differential-report/v3")),
-            "\"quire.differential-report/v3\"",
+            schema(json!("filament.differential-report/v3")),
+            "\"filament.differential-report/v3\"",
         ),
         row(
             "schema absent",
@@ -399,7 +401,7 @@ fn tc_001_every_refusal_class_is_refused_with_a_reason_and_no_panic() {
     let table = refusal_table();
     // 24 classes here; non-UTF-8 bytes cannot reach a `&str` adapter and is tested at
     // the command (tc_ver80_differential_report_command), and MAX+1 bytes has its own test.
-    assert_eq!(table.len(), 24);
+    assert_eq!(table.len(), 25);
     for Row {
         class,
         input,
@@ -455,7 +457,7 @@ fn chosen(adapter: Option<&str>, tool: Option<&str>) -> &'static str {
 
 #[trace("FR-151-AC-12", "FR-069-AC-5")]
 #[test]
-fn tc_001_the_adapter_is_selected_by_name_and_by_quire_analyze_tools_only() {
+fn tc_001_the_adapter_is_selected_by_name_and_by_filament_analyze_tools_only() {
     assert_eq!(
         chosen(Some("differential-report"), None),
         "differential-report"
@@ -465,9 +467,10 @@ fn tc_001_the_adapter_is_selected_by_name_and_by_quire_analyze_tools_only() {
         "differential-report"
     );
     assert_eq!(
-        chosen(None, Some("quire-analyze 0.1.0")),
+        chosen(None, Some("filament-analyze 0.1.0")),
         "differential-report"
     );
+    assert_eq!(chosen(None, Some("quire-analyze 0.1.0")), "entries");
     for retired in ["tl-mltl", "r2u2", "c2po"] {
         assert_eq!(chosen(None, Some(retired)), "entries", "{retired}");
     }
@@ -475,6 +478,6 @@ fn tc_001_the_adapter_is_selected_by_name_and_by_quire_analyze_tools_only() {
         .iter()
         .find(|adapter| adapter.name == "differential-report")
         .unwrap();
-    assert!(listing.summary.contains("quire.differential-report/v2"));
+    assert!(listing.summary.contains("filament.differential-report/v2"));
     assert!(!listing.summary.contains("differential-summary"));
 }

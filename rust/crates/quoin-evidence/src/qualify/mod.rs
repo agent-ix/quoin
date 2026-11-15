@@ -186,7 +186,7 @@ pub enum ExecutionAssociation {
 /// The observations that are not tied to one record (FR-116 Inputs).
 #[derive(Debug, Clone, Default)]
 pub struct HostObservations {
-    /// The FR-093 decision for `quire-analyze` and the solvers for the positive
+    /// The FR-093 decision for `filament-analyze` and the solvers for the positive
     /// use, when one exists. The qualifier assesses it and compares its
     /// accepted context with the report's producer.
     pub reliance: Option<TrustDecision>,

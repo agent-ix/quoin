@@ -17,7 +17,7 @@ use crate::paths::{RUNS_DIR, record_path};
 use crate::trust::assess_trust;
 use crate::types::TrustStatus;
 
-/// The two engines a `quire.differential-report/v2` agreement names.
+/// The two engines a `filament.differential-report/v2` agreement names.
 const ENGINES: [&str; 2] = ["z3", "cvc5"];
 
 /// What one candidate's premises are evaluated over. Every observation read is
@@ -69,7 +69,7 @@ fn reliance(
     let Some(decision) = &probe.host.reliance else {
         refuse(
             Cause::Unevaluated,
-            "no FR-093 assessment of quire-analyze and the solvers exists for this positive use",
+            "no FR-093 assessment of filament-analyze and the solvers exists for this positive use",
         );
         return;
     };

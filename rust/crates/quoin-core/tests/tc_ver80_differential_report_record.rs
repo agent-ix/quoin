@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `evidence.record` over `quire.differential-report/v2` reports (FR-151,
+//! `evidence.record` over `filament.differential-report/v2` reports (FR-151,
 //! TC-001), through the production runtime: what the store holds and what the
 //! command prints for each disposition, and that a refusal writes no run.
 
@@ -86,7 +86,7 @@ fn tc_001_a_decided_report_records_one_run_with_one_entry() {
         (UNSUPPORTED, "error"),
     ] {
         let dir = repo();
-        let payload = record(dir.path(), "quire-analyze 0.1.0", report);
+        let payload = record(dir.path(), "filament-analyze 0.1.0", report);
         assert_eq!(payload["kind"], "run", "{payload}");
         assert!(payload.get("unrepresented").is_none(), "{payload}");
         let run = the_run(dir.path());
@@ -127,13 +127,7 @@ fn tc_001_a_disagreement_writes_a_run_with_no_entries_and_prints_the_named_resul
     let unrepresented = payload["unrepresented"].as_array().unwrap();
     assert_eq!(unrepresented.len(), 1, "{payload}");
     assert_eq!(unrepresented[0]["state"], "disagreement");
-    assert!(
-        unrepresented[0]["symbol"]
-            .as_str()
-            .unwrap()
-            .starts_with("consistency::"),
-        "{payload}"
-    );
+    assert_eq!(unrepresented[0]["symbol"], "consistency", "{payload}");
     assert_eq!(the_run(dir.path())["entries"], json!([]));
 }
 
@@ -155,7 +149,7 @@ fn tc_001_a_refused_report_writes_no_run() {
         let dir = repo();
         let response = dispatch(
             "evidence.record",
-            &request(dir.path(), "quire-analyze 0.1.0", results),
+            &request(dir.path(), "filament-analyze 0.1.0", results),
             &RuntimeSettings::default(),
         );
         assert!(response.is_err(), "{results}");
@@ -211,14 +205,10 @@ fn symbol_of(run: &Value) -> String {
     run["entries"][0]["symbol"].as_str().unwrap().to_owned()
 }
 
-/// `<analysisKind>::<requestDigest>`, built from the report's own fields.
+/// `analysisKind`, taken from the report.
 fn expected_symbol(report: &str) -> String {
     let report: Value = serde_json::from_str(report).unwrap();
-    format!(
-        "{}::{}",
-        report["analysisKind"].as_str().unwrap(),
-        report["requestDigest"].as_str().unwrap()
-    )
+    report["analysisKind"].as_str().unwrap().to_owned()
 }
 
 #[trace("FR-152-AC-1")]
@@ -227,7 +217,7 @@ fn tc_002_a_stated_obligation_binds_a_satisfied_report() {
     let dir = repo();
     let payload = discharge(
         dir.path(),
-        "quire-analyze 0.1.0",
+        "filament-analyze 0.1.0",
         SATISFIED,
         &["FR-001-AC-1"],
         &["FR-001-AC-1"],
@@ -248,14 +238,14 @@ fn tc_002_a_stated_obligation_binds_a_satisfied_report() {
 #[trace("FR-152-AC-2", "FR-152-AC-3")]
 #[test]
 fn tc_002_no_stated_obligation_leaves_the_entry_unbound() {
-    // AC-3: ids unrelated to the symbol, analysisKind and requestDigest.
+    // AC-3: ids unrelated to the symbol or analysisKind.
     // NFR-033: an id equal to the analysisKind still binds nothing.
     for ids in [
         ["FR-001-AC-1", "FR-002-AC-1"],
         ["FR-001-AC-1", "consistency"],
     ] {
         let dir = repo();
-        let mut body = request(dir.path(), "quire-analyze 0.1.0", SATISFIED);
+        let mut body = request(dir.path(), "filament-analyze 0.1.0", SATISFIED);
         body["obligations"] = ids.iter().map(|id| obligation(id)).collect();
         let payload = dispatch("evidence.record", &body, &RuntimeSettings::default())
             .unwrap()
@@ -273,7 +263,7 @@ fn tc_002_only_a_passing_entry_binds() {
         let dir = repo();
         let payload = discharge(
             dir.path(),
-            "quire-analyze 0.1.0",
+            "filament-analyze 0.1.0",
             report,
             &["FR-001-AC-1"],
             &["FR-001-AC-1"],
@@ -310,7 +300,7 @@ fn tc_002_stated_ids_are_sorted_deduplicated_and_unknown_ids_are_unmatched() {
     let dir = repo();
     let payload = discharge(
         dir.path(),
-        "quire-analyze 0.1.0",
+        "filament-analyze 0.1.0",
         SATISFIED,
         &["FR-002-AC-1", " FR-001-AC-1", "FR-002-AC-1", "NO-SUCH-1"],
         &["FR-001-AC-1", "FR-002-AC-1"],
@@ -341,7 +331,7 @@ fn tc_002_a_refused_report_with_stated_ids_writes_nothing() {
         let dir = repo();
         let response = discharge(
             dir.path(),
-            "quire-analyze 0.1.0",
+            "filament-analyze 0.1.0",
             results,
             &["FR-001-AC-1"],
             &["FR-001-AC-1"],
