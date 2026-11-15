@@ -821,8 +821,15 @@ fn tc_173_invalid_attestation_actor_authority_instants_and_interval_are_refused(
 
 #[trace("FR-173-AC-13")]
 #[test]
-fn tc_173_real_scope_exclusion_schema_violation_is_refused_by_validation_and_facts() {
+fn tc_173_scope_exclusion_decision_schema_and_facts_are_strict() {
     let module = spec_objects_security_module();
+    let schema_path = module.join("schemas/ScopeExclusion.json");
+    let schema: Value = serde_json::from_str(
+        &std::fs::read_to_string(&schema_path).expect("the module schema is readable"),
+    )
+    .expect("the module schema is JSON");
+    assert_scope_exclusion_schema_contract(&schema_path, &schema);
+
     let world = World::new(
         &two_clauses(),
         &[(
@@ -831,21 +838,106 @@ fn tc_173_real_scope_exclusion_schema_violation_is_refused_by_validation_and_fac
                 .replace("`delegated`", "`delegated-ish`"),
         )],
     );
-    let artifact = world.spec().join("SCOPEX-001.md");
-    let validation = Command::new("quire")
-        .args(["validate", "--module"])
-        .arg(&module)
-        .arg(&artifact)
-        .output()
-        .expect("quire validate on PATH");
-    assert!(!validation.status.success(), "{validation:?}");
-
     let output = world.facts_with_external_module(&module);
     assert!(!output.status.success(), "{output:?}");
     assert!(out(&output).is_empty(), "{output:?}");
     let message = err(&output);
     for expected in ["SCOPEX-001", "example.invalid/std@1", "C2"] {
         assert!(message.contains(expected), "{expected}: {message}");
+    }
+}
+
+fn assert_scope_exclusion_schema_contract(schema_path: &Path, schema: &Value) {
+    let properties = schema
+        .get("properties")
+        .expect("ScopeExclusion declares properties");
+    let required = schema
+        .get("required")
+        .and_then(Value::as_array)
+        .expect("ScopeExclusion declares required properties");
+    let required_fields = ["decision", "decision_owner", "approval_ref", "rationale"];
+    let actual_required_fields: Vec<&str> = required_fields
+        .iter()
+        .filter(|field| required.iter().any(|required| required == *field))
+        .copied()
+        .collect();
+    assert_eq!(
+        actual_required_fields, required_fields,
+        "ScopeExclusion required list does not include every FR-173-AC-13 field: {required:?}"
+    );
+    assert_scope_exclusion_required_properties(schema_path, &actual_required_fields);
+
+    let decision_schema = properties
+        .get("decision")
+        .expect("ScopeExclusion declares a decision schema");
+    let decision_validator = quoin_jsonschema::validator::SchemaValidator::compile_vendored(
+        schema_path,
+        decision_schema,
+        &[],
+    )
+    .expect("the module decision subschema compiles");
+    assert!(
+        decision_validator.is_valid(&json!("delegated")),
+        "the declared delegated decision is rejected: {:?}",
+        decision_validator.errors(&json!("delegated"))
+    );
+    assert!(
+        !decision_validator.is_valid(&json!("delegated-ish")),
+        "the module decision schema accepts an undeclared decision"
+    );
+
+    let expiry_schema = properties
+        .get("expires_at")
+        .expect("ScopeExclusion declares an expiry schema");
+    let expiry_validator = quoin_jsonschema::validator::SchemaValidator::compile_vendored(
+        schema_path,
+        expiry_schema,
+        &[],
+    )
+    .expect("the module expiry subschema compiles");
+    assert!(
+        expiry_validator.is_valid(&json!("2026-08-31T00:00:00Z")),
+        "a calendar expiry is rejected: {:?}",
+        expiry_validator.errors(&json!("2026-08-31T00:00:00Z"))
+    );
+    assert!(
+        !expiry_validator.is_valid(&json!("not-a-date")),
+        "the module expiry schema accepts an invalid expiry"
+    );
+}
+
+fn assert_scope_exclusion_required_properties(schema_path: &Path, required_fields: &[&str]) {
+    let required_schema = json!({
+        "type": "object",
+        "required": required_fields,
+    });
+    let validator = quoin_jsonschema::validator::SchemaValidator::compile_vendored(
+        schema_path,
+        &required_schema,
+        &[],
+    )
+    .expect("ScopeExclusion's required fields compile");
+    let complete = json!({
+        "decision": "delegated",
+        "decision_owner": "ix://example.invalid/security-owner-001",
+        "approval_ref": "APPROVAL-001",
+        "rationale": "The platform owns this clause."
+    });
+    assert!(
+        validator.is_valid(&complete),
+        "the populated FR-173-AC-13 fields are rejected: {:?}",
+        validator.errors(&complete)
+    );
+    for field in required_fields {
+        let mut missing = complete.clone();
+        missing
+            .as_object_mut()
+            .expect("the test value is an object")
+            .remove(*field);
+        assert!(
+            !validator.is_valid(&missing),
+            "ScopeExclusion accepts the missing required field {field}"
+        );
     }
 }
 
