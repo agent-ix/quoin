@@ -32,7 +32,8 @@ criterion and the evidence status that `quoin matrix --json` gives it.
   documents supply the title and recorded criticality.
 - A typed `failed-run` cause on a source `stale-evidence` finding, supplied by
   the matrix source work in PLAT-1760. `kind: stale-evidence` and a prose
-  summary alone cannot distinguish a failed run from a missing run.
+  summary alone cannot distinguish a failed run from a missing run. The
+  generator cannot register until PLAT-1760 is complete.
 
 ## Outputs
 
@@ -40,7 +41,9 @@ criterion and the evidence status that `quoin matrix --json` gives it.
   by source Evidence Status, one `## <requirement id>: <title>` section per
   requirement in dossier order, and the final `## Gaps` section.
 - Each requirement section has a `Criticality:` line and a table
-  `Criterion | Method | Evidence | Newest result | Evidence status`.
+  `Criterion | Method | Evidence | Source findings | Evidence status`.
+  MatrixCriterion does not carry a newest run outcome or timestamp; the
+  report states only the source findings and bound suite identities.
 
 ## Behavior
 
@@ -53,8 +56,8 @@ criterion and the evidence status that `quoin matrix --json` gives it.
 - The summary SHALL count the rendered rows by the five source Evidence Status
   values; it SHALL NOT compute a percentage.
 - When a source finding has typed cause `failed-run`, the report SHALL produce
-  an `evidence_failed` gap naming the criterion and show the source failure,
-  never a passing result.
+  an `evidence_failed` gap naming the criterion and show that source cause,
+  never a passing result or an invented run outcome.
 - The generator SHALL NOT detect a failed run by parsing a finding summary.
 - A `stale` criterion without a typed failed-run cause SHALL produce an
   `evidence_stale` gap; a `suspect` criterion SHALL produce an
@@ -66,7 +69,8 @@ criterion and the evidence status that `quoin matrix --json` gives it.
 - When a requirement has no criteria, the report SHALL leave it visible and
   produce `no_acceptance_criteria` without inventing a criterion row.
 - An empty matrix population SHALL show the source `reason` verbatim and
-  produce a `no_evidence` gap for the document.
+  produce a document-level `no_requirements` gap, as FR-194 does; each listed
+  requirement without criteria also receives `no_acceptance_criteria`.
 - A missing method or criticality SHALL appear as `not stated` or `unassigned`,
   respectively; the report SHALL NOT choose a method or criticality.
 
@@ -76,12 +80,12 @@ criterion and the evidence status that `quoin matrix --json` gives it.
 |----|----------|--------------|
 | FR-196-AC-1 | A fixture with six matrix criteria gives six report rows with the same ids, methods and Evidence Status values in source order. | Test |
 | FR-196-AC-2 | The summary counts equal counts computed from those six source rows, and the document contains no percentage. | Test |
-| FR-196-AC-3 | A source finding with typed `failed-run` cause yields `evidence_failed`, names the criterion, shows the failed or errored result, and never calls it passing. The test changes only the finding summary and gets identical classification. | Test |
+| FR-196-AC-3 | A source finding with typed `failed-run` cause yields `evidence_failed`, names the criterion, shows that typed cause without inventing a run outcome, and never calls it passing. Changing only the finding summary gives identical classification. | Test |
 | FR-196-AC-4 | A `stale` criterion with a missing-run cause yields `evidence_stale`; a `suspect` criterion yields `evidence_suspect`; neither yields `evidence_failed`. | Test |
 | FR-196-AC-5 | `undischarged` and `no run evidence` each yield `no_evidence`, and a criterion without a binder also yields `unbacked_criterion`. | Test |
 | FR-196-AC-6 | A criterion backed only by retained Inspection evidence shows that record and receives no gap when the matrix says `bound`. | Test |
 | FR-196-AC-7 | A requirement with no criteria remains listed with `no_acceptance_criteria` and no fabricated criterion row. | Test |
-| FR-196-AC-8 | An empty matrix displays the source `reason` and is `incomplete`; two runs over the same inputs give byte-identical Markdown. | Test |
+| FR-196-AC-8 | An empty matrix displays the source `reason`, produces document-level `no_requirements`, and is `incomplete`; two runs over the same inputs give byte-identical Markdown. | Test |
 
 ## Dependencies
 

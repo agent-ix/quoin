@@ -59,9 +59,11 @@ plan, add a new Risk Model object, or imply that the missing plan was approved.
 - The document SHALL always produce one document-level `no_plan_record` gap
   while the Risk Model declares no plan record. The three plan sections SHALL
   show the same missing-source condition, and the document SHALL be
-  `incomplete`.
-- When a policy region lacks `outside_acceptable`, the upstream module
-  validation SHALL reject it.
+  `incomplete`. Once registered, this makes unfiltered `generate` exit 1
+  by FR-191 even if every other selected document is complete.
+- When the policy reader reports an invalid record, including a region with
+  no `outside_acceptable`, the dossier SHALL surface source exit 3 and
+  write no selected document.
 - The dossier SHALL NOT fill in a missing policy flag.
 - The document SHALL render policy vocabulary only as policy data, without
   stating a new decision for any particular risk.
@@ -73,7 +75,7 @@ plan, add a new Risk Model object, or imply that the missing plan was approved.
 | FR-200-AC-1 | A fixture with one policy renders every level, region, `outside_acceptable` flag and cell byte-equal to the record; it also has one `no_plan_record` gap and status `incomplete`. | Test |
 | FR-200-AC-2 | With no policy, the document has `no_acceptability_policy` and `no_plan_record`, remains `incomplete`, and contains no example levels or cells. | Test |
 | FR-200-AC-3 | Two policies appear in id order; neither is labelled the selected or in-force policy. | Test |
-| FR-200-AC-4 | A policy whose region omits `outside_acceptable` is refused by upstream validation, and the dossier emits no default flag. | Test |
+| FR-200-AC-4 | A policy whose region omits `outside_acceptable` causes dossier source exit 3 without a selected output file or default flag. | Test |
 | FR-200-AC-5 | `Scope`, `Responsibilities` and `Verification of risk controls` each state that no authored plan record exists, without a placeholder name or planned activity. | Test |
 | FR-200-AC-6 | Two runs over the same policy records produce byte-identical Markdown, and no line asserts that a particular residual risk is acceptable. | Test |
 

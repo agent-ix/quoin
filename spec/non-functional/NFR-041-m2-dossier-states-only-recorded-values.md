@@ -4,6 +4,8 @@ title: "M2 dossier documents state recorded values without deriving verdicts"
 type: NFR
 quality_attribute: safety
 relationships:
+  - target: "ix://agent-ix/quoin/NFR-040"
+    type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-196"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-197"

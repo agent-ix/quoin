@@ -32,7 +32,7 @@ generators.
 
 ## Inputs
 
-- `generate [--doc <registered-kind>]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--as-of <RFC-3339>] --version <TEXT> [--json]`. M2 generators add their source-specific input flags without changing this command frame.
+- `generate [--doc <registered-kind>]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--soup-binding <PATH>] [--soup-records <DIR>] [--soup-support <PATH>] [--snapshot <PATH>] [--release-verify <PATH>] [--as-of <RFC-3339>] --version <TEXT> [--json]`. The common `--scope` and `--module` select anomaly and risk records; the SOUP and release flags supply their separate sources.
 - `check` takes the same selectors as `generate`.
 - `export --to pdf|docx --output <PATH>` takes the same selectors as `generate`, and also `[--release <TAG>] [--approval <PATH>]... [--template <PATH>] [--quire <PATH>]`.
 
@@ -50,8 +50,9 @@ generators.
 - `generate` SHALL write Markdown into the repository.
 - `generate` SHALL NOT call `quire export`.
 - `export` SHALL run `quire export` as an external process with `--source-rev HEAD`.
-- `export` SHALL pass `--release`, `--approval` and `--template` to `quire export` unchanged.
-- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in registered order: the four M1 ids above, then `DOS-VR`, `DOS-SOUP`, `DOS-ANOM`, `DOS-RISK`, `DOS-RMP`, `DOS-REL` as their generators register, then later registered kinds. It SHALL pass `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.
+- `export` SHALL pass `--release`, each user-supplied `--approval` and `--template` to `quire export` unchanged.
+- When `release-record` is selected and `--release-verify` is supplied, `export` SHALL append that EA result as one more `--approval` after every user-supplied approval, including in a bundle; when `release-record` is not selected, it SHALL NOT append that result.
+- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in this fixed dossier order, independent of generator registration time: the four M1 ids above, then `DOS-VR`, `DOS-SOUP`, `DOS-ANOM`, `DOS-RISK`, `DOS-RMP`, `DOS-REL` for the registered M2 kinds, then later kinds in their specified order. It SHALL pass `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.
 - When `export` selects one document, `export` SHALL run `quire export` once with that file and without `--bundle-title` and `--bundle-id`.
 - The flow is commit-then-export because `quire export` takes identity and content from the blob committed at `--source-rev` and refuses a working file that differs from that commit (quire-cli FR-034 section A), and refuses identity options on JSON input. A bundle requires at least two inputs (quire-cli FR-039-AC-7), which is why one document is exported without bundle arguments.
 - Quoin SHALL NOT export an uncommitted file.
@@ -90,7 +91,7 @@ generators.
 
 ### Document set
 
-- The generated files SHALL carry the frontmatter of the `DossierDocument` archetype that spec-artifacts-process defines for this feature: `id`, `title`, `version`, `type: DossierDocument`, `document_kind`, `generated_by: quoin dossier` and `as_of` where a source requires it (RMM and SOUP).
+- The generated files SHALL carry the frontmatter of the `DossierDocument` archetype that spec-artifacts-process defines for this feature: `id`, `title`, `version`, `type: DossierDocument`, `document_kind`, `generated_by: quoin dossier` and `as_of` for source-backed RMM and SOUP documents.
 - Each file SHALL end with the level-2 `Gaps` section below.
 
 ### Gaps section
@@ -98,8 +99,8 @@ generators.
 - Each missing input SHALL be one bullet under the final level-2 heading `Gaps`, written `` `<gap_kind>` <subject>: <detail> ``.
 - The section SHALL read `Gaps: none` when it holds no gap.
 - Quoin SHALL use only these `gap_kind` values, in this order: `no_requirements`, `no_acceptance_criteria`, `criticality_unassigned`, `design_relations_unavailable`, `no_design_element`, `dangling_design_reference`, `design_kind_mismatch`, `no_allocation`, `unbacked_criterion`, `no_evidence`, `no_clause_binding`, `clause_open`, `evidence_failed`, `evidence_stale`, `evidence_suspect`, `soup_unresolved_advisory`, `soup_past_end_of_support`, `soup_field_not_stated`, `anomaly_unassessed`, `anomaly_no_release_rationale`, `risk_chain_incomplete`, `residual_risk_undecided`, `control_unverified`, `no_acceptability_policy`, `no_plan_record`, `release_not_verified`, `no_release_verify_input`, `no_snapshot`. Later document kinds SHALL extend this list through their own spec before registration.
-- A gap SHALL name one subject: a requirement for `no_requirements`, `no_acceptance_criteria`, `criticality_unassigned` and `no_design_element`; a criterion for `unbacked_criterion` and `no_evidence`; a design reference or element for `dangling_design_reference`, `design_kind_mismatch` and `no_allocation`; a clause for `clause_open`; the document for `design_relations_unavailable` and `no_clause_binding`.
-- An M2 gap SHALL name its source subject: a criterion for the three `evidence_*` kinds; a component and finding or field for the three `soup_*` kinds; an anomaly for the two `anomaly_*` kinds; a risk row, residual risk or control for the three risk-chain kinds; a policy or document for `no_acceptability_policy` and `no_plan_record`; and the release document or its source result for the three release kinds.
+- A gap SHALL name one subject: the document for `no_requirements`, `design_relations_unavailable` and `no_clause_binding`; a requirement for `no_acceptance_criteria`, `criticality_unassigned` and `no_design_element`; a criterion for `unbacked_criterion` and `no_evidence`; a design reference or element for `dangling_design_reference`, `design_kind_mismatch` and `no_allocation`; a clause for `clause_open`.
+- An M2 gap SHALL name its source subject: a criterion for the three `evidence_*` kinds; a component and finding or field for the three `soup_*` kinds; an anomaly for the two `anomaly_*` kinds; a risk row, residual risk or control for the three risk-chain kinds; the document for absent `no_acceptability_policy` and `no_plan_record`; and the release document or its source result for the three release kinds.
 - A document with at least one gap SHALL have status `incomplete`.
 - The `--json` report SHALL hold the same gaps as the Markdown, in the same order.
 - Quoin SHALL report a gap and SHALL NOT drop or default it.
@@ -110,9 +111,15 @@ generators.
 |------|---------|
 | 0 | Every selected document is complete (and, for `check`, matches; for `export`, `quire export` succeeded). |
 | 1 | Documents were generated but at least one is incomplete, or `check` found a difference, or `export` found a missing or stale file. |
-| 2 | Usage error or invalid input, including a missing `--version` and a missing `--as-of` (FR-195). |
+| 2 | Usage error or invalid input, including a missing `--version` and a missing `--as-of` for a supplied RMM or SOUP binding (FR-195, FR-197). |
 | 3 | A source failed; the report names it. |
 | 4 | `quire export` failed or could not start; its exit code and stderr are passed through, and a missing executable names the path. |
+
+Once the risk-management-plan generator is registered, an unfiltered
+`generate` includes `DOS-RMP` and returns 1 because its `no_plan_record` gap
+is permanent under FR-200. It still writes every selected document. Select
+`--doc` kinds explicitly to receive exit 0 for a complete subset; `export`
+continues to allow committed, current incomplete documents.
 
 ## Acceptance Criteria
 
@@ -136,7 +143,10 @@ generators.
 | FR-191-AC-16 | `export` of an `incomplete` document that is committed and current runs `quire export` and does not refuse it | Test |
 | FR-191-AC-17 | `generate --out <path that cannot be created>` exits 2 and writes nothing | Test |
 | FR-191-AC-18 | With all M1 and M2 generators registered, no `--doc` selects ten files and a bundle export orders them M1 first, then the six M2 ids above, regardless of selector order | Test |
-| FR-191-AC-19 | A registered M2 generator's gap appears in both Markdown and JSON with the same kind, subject, detail and global gap order; an unregistered future kind exits 2 without writing | Test |
+| FR-191-AC-19 | A registered M2 generator's gap appears in both Markdown and JSON with the same kind, subject, detail and global gap order | Test |
+| FR-191-AC-20 | An unregistered future document kind exits 2 without writing | Test |
+| FR-191-AC-21 | A bundle selecting `release-record` passes user `--approval` files in their given order and appends the supplied EA `--release-verify` result once after them; a bundle without `release-record` does not append it | Test |
+| FR-191-AC-22 | With all ten generators registered, unfiltered `generate` writes ten files and exits 1 due to `DOS-RMP`'s permanent `no_plan_record` gap; a complete explicit subset exits 0 | Test |
 
 ## Dependencies
 
