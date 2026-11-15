@@ -53,7 +53,7 @@ pub(crate) fn command() -> Command {
              applicability, compliance, evidence and tailoring. Needs --repo.",
         ))
         .arg(Arg::new("pack").long("pack").help(
-            "Report on an installed pack: one requirements mapping matrix per clause \
+            "Report on an installed module with clause sets: one requirements mapping matrix per clause \
              set behind an index. Needs --rmm, --repo and --as-of.",
         ))
         .arg(
