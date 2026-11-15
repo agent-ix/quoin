@@ -45,7 +45,7 @@ With `--json` it is:
 
 `declaration_range` is the half-open interval `[start, end)` of UTF-8 byte offsets,
 into the file content at HEAD, of the declaration span the `qsl` adapter reports
-for that declaration (the span of Behavior item 4, without the marker comment
+for that declaration (the declaration span itself, without the marker comment
 lines). The offsets are computed from the content at HEAD at each run and are
 persisted nowhere. `reason` is present only for `draft`; `approval` is present only for
 `approved`; Exit status: `0` the report was produced; `2` usage error, including an

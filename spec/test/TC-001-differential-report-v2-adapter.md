@@ -23,14 +23,16 @@ self-contradictory or oversized, writing no run in any refusal.
    one report captured from `filament-analyze run-package` for each disposition the runner can produce: agreement
    satisfied, agreement refuted, disagreement, inconclusive, and unavailable (missing executable); and over a
    captured or hand-constructed v2 document, accepted by the owner's validator, with an engine `unsupported-platform`
-   (a Linux runner reports `cleanup-failed` instead, so this one is not a runner capture). Also run it over an agreement report with a closed `selection` member and one with a malformed `selection`
-   (extra member, missing list). Read the store and the
+   (a Linux runner reports `cleanup-failed` instead, so this one is not a runner capture). Also run it over an agreement report with a closed `selection` member, captured unedited from
+   `filament-analyze run-package --select`. Read the store and the
    command's human and JSON output after each.
 2. Run the same command, each time against a fresh store, over the refusal table of FR-151-AC-14, one row per
    refusal class, each derived from a capture by one stated change: wrong (including the retired
    `quire.differential-report/v2` namespace), absent or non-string `schema`; a missing,
    extra (top level and engine), wrongly typed or out-of-set member; empty, truncated, non-UTF-8, array, scalar and
-   non-JSON input; the four self-contradiction reports; a reordered copy and a pretty-printed copy.
+   non-JSON input; the four self-contradiction reports; a reordered copy and a pretty-printed copy; and, from the
+   selection-bearing capture, two further rows: a `selection` with an extra third member, and a `selection` with a
+   missing list (FR-151-AC-16).
 3. Run the command over an input of `filament_analyze::MAX_REPORT_BYTES` + 1 bytes and one of exactly `MAX_REPORT_BYTES`
    bytes, and over one valid report twice from different working directories.
 4. Run `quoin evidence record --tool filament-analyze`, `--tool differential-report`, `--tool quire-analyze`,
@@ -49,9 +51,9 @@ Step 1: agreement satisfied records one `pass` entry and agreement refuted one `
 records a run with zero entries and prints one `unrepresented` result of state `disagreement` naming both engines
 with status and outcome verbatim. No entry carries `traceIds`.
 
-Step 1 with `selection`: the valid report is recorded as without it, and its projection holds `selection` equal to the source lists (FR-151-AC-16); the malformed `selection` is refused and writes no run and no projection.
+Step 1 with `selection`: the valid report is recorded as without it, and its projection holds `selection` equal to the source lists (FR-151-AC-16).
 
-Step 2: every input is refused with a non-zero exit and an error naming the schema value or member found (the
+Step 2: every input, including the two malformed-`selection` rows, is refused with a non-zero exit and an error naming the schema value or member found (the
 owner's validator error for the rest), and the store holds no run.
 
 Step 3: the `MAX_REPORT_BYTES` + 1 input is refused naming the size limit without being parsed, the input of exactly
