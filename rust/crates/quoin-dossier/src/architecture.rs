@@ -61,14 +61,11 @@ impl Generator for ArchitectureGenerator {
                 source: "design_matrix".to_owned(),
                 detail: format!("failed to compute design matrix: {error}"),
             })?;
-        let entries = match serde_json::to_value(&outcome.design_matrix) {
-            Ok(Value::Array(entries)) => entries,
-            Ok(_) | Err(_) => {
-                return Err(SourceFailure {
-                    source: "design_matrix".to_owned(),
-                    detail: "the design matrix did not serialize to a list".to_owned(),
-                });
-            }
+        let Ok(Value::Array(entries)) = serde_json::to_value(&outcome.design_matrix) else {
+            return Err(SourceFailure {
+                source: "design_matrix".to_owned(),
+                detail: "the design matrix did not serialize to a list".to_owned(),
+            });
         };
 
         let systems = quoin_quire::systems::load(&request).map_err(|error| SourceFailure {
@@ -107,12 +104,6 @@ struct Part {
 /// systems records and the ADRs.
 fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated {
     let mut gaps = Vec::new();
-    let mut parts: BTreeMap<String, Part> = BTreeMap::new();
-    let mut without_design: BTreeSet<String> = BTreeSet::new();
-    // (requirement, reference) and (requirement, element id, archetype).
-    let mut dangling: BTreeSet<(String, String)> = BTreeSet::new();
-    let mut mismatched: BTreeSet<(String, String, String)> = BTreeSet::new();
-
     let relations_declared = entries
         .iter()
         .any(|entry| entry.get("design").is_some_and(Value::is_array));
@@ -124,6 +115,31 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
         ));
     }
 
+    let mut join = collect_join(entries);
+    add_systems(&mut join.parts, systems);
+
+    let mut body = String::from("# Architecture\n\n");
+    parts_section(&mut body, &mut gaps, &join.parts);
+    connections_section(&mut body, systems);
+    allocations_section(&mut body, systems);
+    decisions_section(&mut body, adrs);
+    findings_sections(&mut body, &mut gaps, &join);
+    Generated { body, gaps }
+}
+
+/// What the design join says, before the systems records are added.
+#[derive(Default)]
+struct Join {
+    parts: BTreeMap<String, Part>,
+    without_design: BTreeSet<String>,
+    /// `(requirement, reference)`.
+    dangling: BTreeSet<(String, String)>,
+    /// `(requirement, element id, archetype)`.
+    mismatched: BTreeSet<(String, String, String)>,
+}
+
+fn collect_join(entries: &[Value]) -> Join {
+    let mut join = Join::default();
     for entry in entries {
         let Some(blocks) = entry.get("design").and_then(Value::as_array) else {
             continue;
@@ -132,12 +148,11 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
         for block in blocks {
             let state = block.get("state").and_then(Value::as_str);
             if state == Some("uncovered") {
-                without_design.extend(requirements.iter().cloned());
+                join.without_design.extend(requirements.iter().cloned());
             }
             for element in array(block, "elements") {
-                let id = qualified(element);
-                parts
-                    .entry(id)
+                join.parts
+                    .entry(qualified(element))
                     .or_default()
                     .requirements
                     .extend(requirements.iter().cloned());
@@ -145,19 +160,25 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
             for reference in array(block, "dangling") {
                 let name = text(reference, "reference");
                 for requirement in &requirements {
-                    dangling.insert((requirement.clone(), name.clone()));
+                    join.dangling.insert((requirement.clone(), name.clone()));
                 }
             }
             for mismatch in array(block, "kind_mismatch") {
                 let id = qualified(mismatch);
                 let archetype = text(mismatch, "archetype");
                 for requirement in &requirements {
-                    mismatched.insert((requirement.clone(), id.clone(), archetype.clone()));
+                    join.mismatched
+                        .insert((requirement.clone(), id.clone(), archetype.clone()));
                 }
             }
         }
     }
+    join
+}
 
+/// Add the parts the systems records declare and the requirements they
+/// allocate.
+fn add_systems(parts: &mut BTreeMap<String, Part>, systems: &Systems) {
     for part in &systems.parts {
         parts.entry(part.owner.clone()).or_default();
     }
@@ -176,8 +197,10 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
             part.requirements.insert(allocation.target.clone());
         }
     }
+}
 
-    let mut body = String::from("# Architecture\n\n## Parts\n\n");
+fn parts_section(body: &mut String, gaps: &mut Vec<Gap>, parts: &BTreeMap<String, Part>) {
+    body.push_str("## Parts\n\n");
     if parts.is_empty() {
         body.push_str("None.\n\n");
     } else {
@@ -205,7 +228,9 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
         }
         body.push('\n');
     }
+}
 
+fn connections_section(body: &mut String, systems: &Systems) {
     body.push_str("## Connections\n\n");
     if systems.connections.is_empty() {
         body.push_str("None.\n\n");
@@ -228,7 +253,9 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
         }
         body.push('\n');
     }
+}
 
+fn allocations_section(body: &mut String, systems: &Systems) {
     body.push_str("## Allocations\n\n");
     if systems.allocations.is_empty() {
         body.push_str("None.\n\n");
@@ -248,7 +275,9 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
         }
         body.push('\n');
     }
+}
 
+fn decisions_section(body: &mut String, adrs: &[&Document]) {
     body.push_str("## Decisions\n\n");
     if adrs.is_empty() {
         body.push_str("None.\n\n");
@@ -273,12 +302,15 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
         }
         body.push('\n');
     }
+}
 
+/// The sections for what the join could not place, each with its gaps.
+fn findings_sections(body: &mut String, gaps: &mut Vec<Gap>, join: &Join) {
     body.push_str("## Requirements without a design element\n\n");
-    if without_design.is_empty() {
+    if join.without_design.is_empty() {
         body.push_str("None.\n\n");
     } else {
-        for requirement in sorted(&without_design) {
+        for requirement in sorted(&join.without_design) {
             let _ = writeln!(body, "- {}", cell(&requirement));
             gaps.push(
                 Gap::new(
@@ -293,10 +325,10 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
     }
 
     body.push_str("## Unresolved design references\n\n");
-    if dangling.is_empty() {
+    if join.dangling.is_empty() {
         body.push_str("None.\n\n");
     } else {
-        for (requirement, reference) in sorted_pairs(&dangling) {
+        for (requirement, reference) in sorted_pairs(&join.dangling) {
             let _ = writeln!(body, "- {} -> {}", cell(&requirement), cell(&reference));
             gaps.push(
                 Gap::new(
@@ -311,10 +343,10 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
     }
 
     body.push_str("## Design elements of the wrong kind\n\n");
-    if mismatched.is_empty() {
+    if join.mismatched.is_empty() {
         body.push_str("None.\n\n");
     } else {
-        let mut rows: Vec<_> = mismatched.iter().collect();
+        let mut rows: Vec<_> = join.mismatched.iter().collect();
         rows.sort_by(|a, b| dossier_cmp(&a.0, &b.0).then_with(|| dossier_cmp(&a.1, &b.1)));
         for (requirement, element, archetype) in rows {
             let _ = writeln!(
@@ -336,8 +368,6 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
         }
         body.push('\n');
     }
-
-    Generated { body, gaps }
 }
 
 /// The requirements a design-matrix entry stands for: its `id` when it has one,
