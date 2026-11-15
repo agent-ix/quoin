@@ -69,6 +69,16 @@ pub enum ModulesErrorCode {
     PackSourceRefused,
     /// The clause sets of a module being installed did not load.
     PackLoadFailed,
+    /// A public npm registry or tarball request exceeded its deadline.
+    NpmTimeout,
+    /// A public npm registry or tarball request failed.
+    NpmTransport,
+    /// Registry metadata did not contain the requested release or tarball.
+    NpmMetadata,
+    /// An npm package tarball was malformed or contained unsupported entries.
+    NpmArchive,
+    /// An npm source named a registry URL other than the public npm registry.
+    NpmRegistryUnsupported,
 }
 
 impl ModulesErrorCode {
@@ -102,6 +112,11 @@ impl ModulesErrorCode {
             Self::PackInsideWorkTree => "QM024_PACK_INSIDE_WORK_TREE",
             Self::PackSourceRefused => "QM025_PACK_SOURCE_REFUSED",
             Self::PackLoadFailed => "QM026_PACK_LOAD_FAILED",
+            Self::NpmTimeout => "QM027_NPM_TIMEOUT",
+            Self::NpmTransport => "QM028_NPM_TRANSPORT",
+            Self::NpmMetadata => "QM029_NPM_METADATA",
+            Self::NpmArchive => "QM030_NPM_ARCHIVE",
+            Self::NpmRegistryUnsupported => "QM031_NPM_REGISTRY_UNSUPPORTED",
         }
     }
 
@@ -135,6 +150,11 @@ impl ModulesErrorCode {
             Self::PackInsideWorkTree,
             Self::PackSourceRefused,
             Self::PackLoadFailed,
+            Self::NpmTimeout,
+            Self::NpmTransport,
+            Self::NpmMetadata,
+            Self::NpmArchive,
+            Self::NpmRegistryUnsupported,
         ]
     }
 
@@ -426,6 +446,35 @@ pub enum ModulesError {
         /// Whether the previous version was restored, and any failure doing so.
         rollback: RollbackOutcome,
     },
+
+    /// An npm registry or tarball request exceeded its fixed deadline.
+    #[error("{code}: npm request exceeded its 300-second deadline", code = ModulesErrorCode::NpmTimeout)]
+    NpmTimeout,
+
+    /// An npm registry or tarball request could not complete.
+    #[error("{code}: npm request failed: {detail}", code = ModulesErrorCode::NpmTransport)]
+    NpmTransport {
+        /// Why the request failed.
+        detail: String,
+    },
+
+    /// npm metadata could not identify the requested package release.
+    #[error("{code}: npm package metadata is invalid: {detail}", code = ModulesErrorCode::NpmMetadata)]
+    NpmMetadata {
+        /// What was missing or invalid.
+        detail: String,
+    },
+
+    /// An npm tarball was malformed or contained an unsupported member.
+    #[error("{code}: npm package archive is invalid: {detail}", code = ModulesErrorCode::NpmArchive)]
+    NpmArchive {
+        /// What was invalid.
+        detail: String,
+    },
+
+    /// An npm source attempted to select a registry outside public npm.
+    #[error("{code}: npm module installs use only the public https://registry.npmjs.org registry", code = ModulesErrorCode::NpmRegistryUnsupported)]
+    NpmRegistryUnsupported,
 }
 
 /// What happened to the previous version when an install was rejected.
@@ -501,6 +550,11 @@ impl ModulesError {
             Self::PackInsideWorkTree { .. } => ModulesErrorCode::PackInsideWorkTree,
             Self::PackSourceRefused { .. } => ModulesErrorCode::PackSourceRefused,
             Self::PackLoadFailed { .. } => ModulesErrorCode::PackLoadFailed,
+            Self::NpmTimeout => ModulesErrorCode::NpmTimeout,
+            Self::NpmTransport { .. } => ModulesErrorCode::NpmTransport,
+            Self::NpmMetadata { .. } => ModulesErrorCode::NpmMetadata,
+            Self::NpmArchive { .. } => ModulesErrorCode::NpmArchive,
+            Self::NpmRegistryUnsupported => ModulesErrorCode::NpmRegistryUnsupported,
         }
     }
 }

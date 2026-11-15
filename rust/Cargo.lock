@@ -3431,15 +3431,19 @@ dependencies = [
 name = "quoin-modules"
 version = "0.31.0"
 dependencies = [
+ "flate2",
  "gix",
  "ix-trace-rs",
  "quire-fixtures",
  "quoin-semantic",
+ "reqwest 0.13.5",
  "schemars 1.2.2",
  "serde",
  "serde_json",
+ "tar",
  "tempfile",
  "thiserror",
+ "url",
  "yaml_serde",
 ]
 

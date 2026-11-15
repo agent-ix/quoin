@@ -14,11 +14,14 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use tempfile::Builder;
+
 use crate::error::{ModulesError, RollbackOutcome};
 use crate::git::{GitResolver, Revision};
 use crate::ids::ModuleName;
 use crate::manifest::MarketplaceEntry;
 use crate::module_name::{locate_manifest, read_module_name};
+use crate::npm::{HttpNpmTransport, NpmTransport};
 use crate::pack::{PackProbe, RestrictedSet, enclosing_work_tree};
 use crate::paths::InstallPaths;
 use crate::registry::{InstalledModule, ModuleRegistry};
@@ -45,6 +48,7 @@ pub struct InstallOutcome {
 pub struct ModuleInstaller<'a> {
     paths: InstallPaths,
     resolver: &'a dyn GitResolver,
+    npm_transport: &'a dyn NpmTransport,
     gate: &'a dyn SemanticGate,
     packs: &'a dyn PackProbe,
 }
@@ -58,6 +62,8 @@ enum Origin {
     AdHoc,
 }
 
+static HTTP_NPM_TRANSPORT: HttpNpmTransport = HttpNpmTransport;
+
 impl<'a> ModuleInstaller<'a> {
     /// Build an installer.
     #[must_use]
@@ -67,9 +73,20 @@ impl<'a> ModuleInstaller<'a> {
         gate: &'a dyn SemanticGate,
         packs: &'a dyn PackProbe,
     ) -> Self {
+        Self::with_npm_transport(paths, resolver, &HTTP_NPM_TRANSPORT, gate, packs)
+    }
+
+    fn with_npm_transport(
+        paths: InstallPaths,
+        resolver: &'a dyn GitResolver,
+        npm_transport: &'a dyn NpmTransport,
+        gate: &'a dyn SemanticGate,
+        packs: &'a dyn PackProbe,
+    ) -> Self {
         Self {
             paths,
             resolver,
+            npm_transport,
             gate,
             packs,
         }
@@ -163,7 +180,7 @@ impl<'a> ModuleInstaller<'a> {
 
         let record = InstalledModule {
             name: name.clone(),
-            source: source.clone(),
+            source: resolved.source.clone(),
             r#ref: resolved.requested_ref.clone(),
             resolved_path: content_root.to_string_lossy().into_owned(),
             target_path: target.to_string_lossy().into_owned(),
@@ -260,9 +277,22 @@ impl<'a> ModuleInstaller<'a> {
                 Ok(ResolvedSource {
                     dir,
                     requested_ref: None,
+                    source: source.clone(),
                 })
             }
-            Source::Npm { .. } => Err(ModulesError::UnsupportedSource { source_type: "npm" }),
+            Source::Npm { package, .. } => Ok(ResolvedSource {
+                dir: crate::npm::resolve_package(
+                    &self.paths.cache_root,
+                    source,
+                    self.npm_transport,
+                )?,
+                requested_ref: None,
+                source: Source::Npm {
+                    package: package.clone(),
+                    version: None,
+                    registry: None,
+                },
+            }),
             Source::Url { .. } => Err(ModulesError::UnsupportedSource { source_type: "url" }),
             Source::Github { .. } | Source::GitSubdir { .. } | Source::Git { .. } => {
                 let url = source.git_url().ok_or(ModulesError::UnsupportedSource {
@@ -273,6 +303,7 @@ impl<'a> ModuleInstaller<'a> {
                 Ok(ResolvedSource {
                     dir: resolved.dir,
                     requested_ref: resolved.requested_ref,
+                    source: source.clone(),
                 })
             }
         }
@@ -292,7 +323,14 @@ impl<'a> ModuleInstaller<'a> {
             // Re-resolving and re-materializing is what makes the restore real,
             // rather than a registry edit pointing at a directory that still
             // holds the rejected content.
-            let resolved = self.resolve(&previous.source)?;
+            let resolved = match previous.source {
+                Source::Npm { .. } => ResolvedSource {
+                    dir: self.cached_npm_source(previous)?,
+                    requested_ref: None,
+                    source: previous.source.clone(),
+                },
+                _ => self.resolve(&previous.source)?,
+            };
             let target = name.dir_under(&self.paths.target_root);
             materialize(&resolved.dir, &target)?;
             let mut registry = ModuleRegistry::read(&self.paths.registry_path)?;
@@ -303,6 +341,31 @@ impl<'a> ModuleInstaller<'a> {
         attempt().unwrap_or_else(|err| RollbackOutcome::Failed {
             detail: err.to_string(),
         })
+    }
+
+    fn cached_npm_source(&self, previous: &InstalledModule) -> Result<PathBuf, ModulesError> {
+        let cache_root = self.paths.cache_root.join("npm");
+        let cache_root = cache_root
+            .canonicalize()
+            .map_err(|error| ModulesError::NpmMetadata {
+                detail: format!("previous package cache is unavailable: {error}"),
+            })?;
+        let resolved = PathBuf::from(&previous.resolved_path)
+            .canonicalize()
+            .map_err(|error| ModulesError::NpmMetadata {
+                detail: format!("previous package cache is unavailable: {error}"),
+            })?;
+        if !resolved.starts_with(&cache_root) {
+            return Err(ModulesError::NpmMetadata {
+                detail: "previous package cache path is outside the npm cache".to_owned(),
+            });
+        }
+        if read_module_name(&resolved)? != previous.name {
+            return Err(ModulesError::NpmMetadata {
+                detail: "previous package cache no longer names the installed module".to_owned(),
+            });
+        }
+        Ok(resolved)
     }
 }
 
@@ -318,6 +381,7 @@ fn render_sets(sets: &[RestrictedSet]) -> String {
 struct ResolvedSource {
     dir: PathBuf,
     requested_ref: Option<String>,
+    source: Source,
 }
 
 /// Join `sub` onto `base`, refusing anything that escapes it.
@@ -332,8 +396,57 @@ fn join_checked(base: &Path, sub: &str) -> Result<PathBuf, ModulesError> {
 
 /// Replace `target` with a copy of `content_root`.
 fn materialize(content_root: &Path, target: &Path) -> Result<(), ModulesError> {
-    remove_dir_if_present(target)?;
-    copy_dir(content_root, target)
+    let parent = target
+        .parent()
+        .ok_or_else(|| ModulesError::MaterializeFailed {
+            target: target.to_path_buf(),
+            source: std::io::Error::new(std::io::ErrorKind::InvalidInput, "target has no parent"),
+        })?;
+    fs::create_dir_all(parent).map_err(|source| ModulesError::MaterializeFailed {
+        target: parent.to_path_buf(),
+        source,
+    })?;
+    let staging = Builder::new()
+        .prefix("module-install-")
+        .tempdir_in(parent)
+        .map_err(|source| ModulesError::MaterializeFailed {
+            target: parent.to_path_buf(),
+            source,
+        })?;
+    let staged = staging.path().join("new");
+    copy_dir(content_root, &staged)?;
+
+    let previous = staging.path().join("previous");
+    let had_previous = match fs::rename(target, &previous) {
+        Ok(()) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(source) => {
+            return Err(ModulesError::MaterializeFailed {
+                target: target.to_path_buf(),
+                source,
+            });
+        }
+    };
+    if let Err(source) = fs::rename(&staged, target) {
+        if had_previous && let Err(restore_error) = fs::rename(&previous, target) {
+            let retained_backup = staging.keep();
+            return Err(ModulesError::MaterializeFailed {
+                target: target.to_path_buf(),
+                source: std::io::Error::new(
+                    restore_error.kind(),
+                    format!(
+                        "install failed ({source}); restoring prior module failed ({restore_error}); previous module retained at {}",
+                        retained_backup.join("previous").display()
+                    ),
+                ),
+            });
+        }
+        return Err(ModulesError::MaterializeFailed {
+            target: target.to_path_buf(),
+            source,
+        });
+    }
+    Ok(())
 }
 
 fn remove_dir_if_present(path: &Path) -> Result<(), ModulesError> {
@@ -423,9 +536,176 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use std::collections::VecDeque;
+    use std::io::Cursor;
+    use std::sync::Mutex;
+
+    use flate2::Compression;
+    use flate2::write::GzEncoder;
     use ix_trace_rs::trace;
 
     use super::*;
+    use crate::npm::{NpmResponse, NpmTransport};
+    use crate::semantic::{Diagnostic, SemanticVerdict, Severity};
+
+    struct FixtureNpmTransport(Mutex<VecDeque<Result<NpmResponse, ModulesError>>>);
+
+    impl NpmTransport for FixtureNpmTransport {
+        fn get(&self, _url: &url::Url, _limit: u64) -> Result<NpmResponse, ModulesError> {
+            self.0
+                .lock()
+                .expect("response lock")
+                .pop_front()
+                .ok_or_else(|| ModulesError::NpmTransport {
+                    detail: "fixture exhausted".to_owned(),
+                })?
+        }
+    }
+
+    struct NoGit;
+
+    impl GitResolver for NoGit {
+        fn resolve(
+            &self,
+            _url: &str,
+            _revision: Revision<'_>,
+            _subdir: Option<&str>,
+        ) -> Result<crate::git::ResolvedGitSource, ModulesError> {
+            Err(ModulesError::UnsupportedSource {
+                source_type: "git fixture",
+            })
+        }
+    }
+
+    struct RejectBadPackage;
+
+    impl SemanticGate for RejectBadPackage {
+        fn inspect(&self, _name: &ModuleName, root: &Path) -> SemanticVerdict {
+            match fs::read_to_string(root.join("manifest.yaml")) {
+                Ok(manifest) if manifest.contains("marker: bad") => SemanticVerdict {
+                    diagnostics: vec![Diagnostic {
+                        severity: Severity::Error,
+                        rule: "TEST".to_owned(),
+                        message: "fixture rejects bad package".to_owned(),
+                    }],
+                },
+                _ => SemanticVerdict::default(),
+            }
+        }
+    }
+
+    fn package_archive(marker: &str) -> Vec<u8> {
+        let content = format!("name: demo\nmarker: {marker}\n");
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        let mut archive = tar::Builder::new(&mut encoder);
+        let mut header = tar::Header::new_gnu();
+        header.set_size(u64::try_from(content.len()).expect("fixture size"));
+        header.set_mode(0o644);
+        header.set_cksum();
+        archive
+            .append_data(
+                &mut header,
+                "package/manifest.yaml",
+                Cursor::new(content.into_bytes()),
+            )
+            .expect("append manifest");
+        archive.finish().expect("finish tar");
+        drop(archive);
+        encoder.finish().expect("finish gzip")
+    }
+
+    fn npm_responses(version: &str, marker: &str) -> [NpmResponse; 2] {
+        let tarball = format!("https://registry.npmjs.org/demo/-/demo-{version}.tgz");
+        [
+            NpmResponse {
+                final_url: url::Url::parse(&format!("https://registry.npmjs.org/demo/{version}"))
+                    .expect("metadata URL"),
+                body: serde_json::to_vec(&serde_json::json!({
+                    "version": version,
+                    "dist": { "tarball": tarball }
+                }))
+                .expect("metadata JSON"),
+            },
+            NpmResponse {
+                final_url: url::Url::parse(&tarball).expect("tarball URL"),
+                body: package_archive(marker),
+            },
+        ]
+    }
+
+    #[trace("FR-187-AC-1", "FR-187-AC-12", "FR-187-AC-13")]
+    #[test]
+    fn tc_1755_001_npm_source_unsets_version_and_rejected_update_restores_prior_install() {
+        let temp = tempfile::tempdir().expect("home tempdir");
+        let paths = InstallPaths::for_home(&crate::paths::IxHome::new(temp.path().join("ixhome")));
+        let mut responses = VecDeque::new();
+        responses.extend(npm_responses("1.0.0", "good").map(Ok));
+        responses.extend(npm_responses("2.0.0", "bad").map(Ok));
+        responses.push_back(Err(ModulesError::NpmTimeout));
+        let transport = FixtureNpmTransport(Mutex::new(responses));
+        let installer = ModuleInstaller::with_npm_transport(
+            paths.clone(),
+            &NoGit,
+            &transport,
+            &RejectBadPackage,
+            &crate::pack::NoPacks,
+        );
+        let source = |version: &str| Source::Npm {
+            package: "demo".to_owned(),
+            version: Some(version.to_owned()),
+            registry: None,
+        };
+
+        let first = installer
+            .install_ad_hoc(&source("1.0.0"))
+            .expect("first package install");
+        assert_eq!(
+            first.module.source,
+            Source::Npm {
+                package: "demo".to_owned(),
+                version: None,
+                registry: None,
+            }
+        );
+        assert_eq!(
+            fs::read_to_string(paths.target_root.join("demo/manifest.yaml"))
+                .expect("installed package"),
+            "name: demo\nmarker: good\n"
+        );
+
+        let error = installer
+            .install_ad_hoc(&source("2.0.0"))
+            .expect_err("bad package must fail semantic validation");
+        assert!(matches!(
+            error,
+            ModulesError::SemanticContractViolation {
+                rollback: RollbackOutcome::Restored,
+                ..
+            }
+        ));
+        let installed_modules = installer.list().expect("registry after rollback");
+        assert_eq!(installed_modules.len(), 1);
+        assert_eq!(installed_modules[0].source, first.module.source);
+        assert_eq!(
+            fs::read_to_string(paths.target_root.join("demo/manifest.yaml"))
+                .expect("restored package"),
+            "name: demo\nmarker: good\n"
+        );
+
+        let error = installer
+            .install_ad_hoc(&source("3.0.0"))
+            .expect_err("timed out metadata request must fail");
+        assert!(matches!(error, ModulesError::NpmTimeout));
+        assert_eq!(
+            installer.list().expect("registry after timeout"),
+            installed_modules
+        );
+        assert_eq!(
+            fs::read_to_string(paths.target_root.join("demo/manifest.yaml"))
+                .expect("module after timeout"),
+            "name: demo\nmarker: good\n"
+        );
+    }
 
     #[trace("FR-019-AC-2")]
     #[test]
