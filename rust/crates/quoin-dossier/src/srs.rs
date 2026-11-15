@@ -221,7 +221,10 @@ mod tests {
     #[test]
     fn markdown_escape_replaces_pipe_and_newline() {
         assert_eq!(markdown_escape("text|with|pipes"), "text\\|with\\|pipes");
-        assert_eq!(markdown_escape("text\nwith\nnewlines"), "text with newlines");
+        assert_eq!(
+            markdown_escape("text\nwith\nnewlines"),
+            "text with newlines"
+        );
         assert_eq!(markdown_escape("text|and\nnewline"), "text\\|and newline");
     }
 }
