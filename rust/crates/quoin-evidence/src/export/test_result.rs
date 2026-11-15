@@ -161,14 +161,23 @@ pub fn build_statement(
             }
             for symbol in &binding.symbols {
                 let mut found = false;
+                let mut trace_matches = false;
                 for entry in run.entries.iter().filter(|entry| entry.symbol == *symbol) {
                     found = true;
+                    trace_matches |= entry.trace_ids.as_ref().is_some_and(|trace_ids| {
+                        trace_ids
+                            .iter()
+                            .any(|trace_id| trace_id == binding.obligation.as_str())
+                    });
                     if entry.outcome == Outcome::Skip {
                         is_warned = true;
                     }
                 }
                 if !found {
                     is_warned = true;
+                } else if !trace_matches {
+                    is_failed = true;
+                    break;
                 }
             }
         }
