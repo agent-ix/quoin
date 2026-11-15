@@ -86,7 +86,9 @@ and is checked by record validation (FR-073), not by this extraction.
 
 - Quire SHALL treat a record key as frontmatter-owned when the object type declares a `frontmatter_field` locator under that key in `yield_pattern.match` (quire-rs FR-069), whether or not the artifact's frontmatter holds the field, and SHALL NOT read that key from a section.
 - Quire SHALL apply the rules of this subsection only when `semantic.mappings` names the token `record-sections`.
-- If the frontmatter holds no value for a frontmatter-owned key, then Quire SHALL leave the key absent, whether or not a section names it; the absence of a section SHALL NOT erase a value the frontmatter projects.
+- If the frontmatter holds no value for a frontmatter-owned key, then Quire SHALL leave the key absent from `record`, whether or not a section names it, and SHALL NOT default it.
+- If the frontmatter holds a value for a frontmatter-owned key and no section names the key, then Quire SHALL keep the frontmatter value in `record`; the absence of a section SHALL NOT erase a value the frontmatter projects.
+- When no section names a frontmatter-owned key, Quire SHALL report the section mapping `not_applicable` for the absent section and SHALL add no `recordSources` or `availability.recordKeys` entry for the key; the independent `frontmatter_field` locator alone supplies the `record` value when the frontmatter holds one.
 - If a section heading names a frontmatter-owned key and the frontmatter holds no value for the field, then Quire SHALL emit the error `semantic.feature-not-extractable` at the heading with `reason` `frontmatter-owned`, extract no value from the section, and add no key to `record`, no `recordSources` entry and no `availability.recordKeys` entry for it.
 - If a section heading names a frontmatter-owned key and the frontmatter also holds a value for the field, then Quire SHALL emit the warning `semantic.feature-not-extractable` at the heading with `reason` `frontmatter-owned`, keep only the frontmatter value in `record`, ignore the section's content, and add no `recordSources` entry and no `availability.recordKeys` entry for it.
 - Quire SHALL NOT treat an ignored section of a frontmatter-owned key as a second source, so a document with both forms yields no `semantic.duplicate-record-key` error.
@@ -118,7 +120,8 @@ and is checked by record validation (FR-073), not by this extraction.
 
 ### Availability
 
-- If any header, row, block, or section of a key carries an error, then Quire SHALL report `availability.recordKeys` for that key `unavailable` with reason `entry-errors: lines <lines>` as FR-104 formats it, with no value for the key and no `recordSources` entry.
+- If any header, row, block, or section of a key that is not frontmatter-owned carries an error, then Quire SHALL report `availability.recordKeys` for that key `unavailable` with reason `entry-errors: lines <lines>` as FR-104 formats it, with no value for the key and no `recordSources` entry.
+- If a section of a frontmatter-owned key carries an error, then Quire SHALL apply the rules of Frontmatter-owned keys instead and SHALL NOT add a `record`, `recordSources` or `availability.recordKeys` entry for the key from the section.
 - When every row of a key maps without error, Quire SHALL report the key `available` and not lossy.
 
 ## Constraints
