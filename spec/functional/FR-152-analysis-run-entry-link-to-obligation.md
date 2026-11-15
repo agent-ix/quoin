@@ -23,8 +23,8 @@ relationships:
 
 ## Description
 
-The `differential-report` adapter (FR-151) transcribes one `quire.differential-report/v2` report into one run entry
-with the symbol `<analysisKind>::<requestDigest>`, no `traceIds` and no `evidenceKind`. A report names no obligation
+The `differential-report` adapter (FR-151) transcribes one `filament.differential-report/v2` report into one run entry
+with the symbol `<analysisKind>`, no `traceIds` and no `evidenceKind`. A report names no obligation
 or criterion, so the entry binds nothing by itself. FR-151 leaves "retained-evidence counting over these entries" to
 a separate specification; this requirement and FR-153 are that specification.
 
@@ -95,7 +95,7 @@ declared method is Analysis, and FR-078 already counts it by exact selected targ
   were stated.
 - The adapter SHALL continue to leave `traceIds` unset; the stated ids are attached by the command, after the adapter
   has returned.
-- Quoin SHALL NOT derive an obligation id from the symbol, the `analysisKind`, the `requestDigest`, the report's
+- Quoin SHALL NOT derive an obligation id from the symbol, the `analysisKind`, the report's
   content, a title, a path or a statement.
 - Quoin SHALL NOT bind an entry whose outcome is not `pass`.
 - Quoin SHALL NOT create or accept a binding option other than `--discharges` for an analysis entry.
@@ -121,9 +121,9 @@ count it.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-152-AC-1 | An `agreement`/`satisfied` report recorded with `--discharges FR-001-AC-1`, where that obligation exists, stores one entry whose `traceIds` are exactly `["FR-001-AC-1"]`, retains the FR-151 projection beside that run under its exact suite/timestamp key, and writes one binding from that obligation to the suite whose symbols are exactly `<analysisKind>::<requestDigest>`; the outcome reports the obligation as bound. | Test |
+| FR-152-AC-1 | An `agreement`/`satisfied` report recorded with `--discharges FR-001-AC-1`, where that obligation exists, stores one entry whose `traceIds` are exactly `["FR-001-AC-1"]`, retains the FR-151 projection beside that run under its exact suite/timestamp key, and writes one binding from that obligation to the suite whose symbols are exactly `<analysisKind>`; the outcome reports the obligation as bound. | Test |
 | FR-152-AC-2 | The same report recorded without `--discharges` stores one entry with no `traceIds` and adds no binding entry for any obligation; `quoin evidence audit` reports the obligation as undischarged. | Test |
-| FR-152-AC-3 | A valid report recorded without `--discharges`, in a fixture whose obligation ids differ from the symbol, the `analysisKind` and the `requestDigest`, adds no binding. The report is not edited: it is a report the validator accepts. | Test |
+| FR-152-AC-3 | A valid report recorded without `--discharges`, in a fixture whose obligation ids differ from the symbol and the `analysisKind`, adds no binding. The report is not edited: it is a report the validator accepts. | Test |
 | FR-152-AC-4 | An `agreement`/`refuted` report and an `inconclusive` report, each recorded with `--discharges FR-001-AC-1`, store an entry whose `traceIds` are the stated id and add no binding; an `unavailable` report does the same. | Test |
 | FR-152-AC-5 | A `disagreement` report recorded with `--discharges FR-001-AC-1` retains its FR-151 projection beside a zero-entry run under the same suite/timestamp key, adds no binding and prints the `unrepresented` result in human and JSON output. | Test |
 | FR-152-AC-6 | `--discharges FR-001-AC-1,FR-001-AC-2` (one comma-separated value) with two obligation ids stores `traceIds` sorted and deduplicated and binds both obligations to the same symbol; an id naming no obligation is listed among the unmatched ids, is not stored on the entry and binds nothing, while a valid id given beside it still binds. | Test |

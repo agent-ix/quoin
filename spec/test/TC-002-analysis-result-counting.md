@@ -15,7 +15,7 @@ relationships:
 
 ## Description
 
-Verify that a `quire.differential-report/v2` report becomes evidence for an obligation only through the ids the recorder states,
+Verify that a `filament.differential-report/v2` report becomes evidence for an obligation only through the ids the recorder states,
 and that each disposition is counted, or not counted, as FR-153 states, through the FR-078 `qualified-record` path.
 
 ## Test Procedure
@@ -27,14 +27,14 @@ and that each disposition is counted, or not counted, as FR-153 states, through 
 2. Record the agreement-satisfied report with no `--discharges`; with `--discharges FR-001-AC-1,FR-001-AC-2`; with an id
    naming no obligation beside a valid one; and with `--adapter junit --discharges FR-001-AC-1`. Then record the
    unedited satisfied report with no `--discharges` into a repository where an obligation id differs from the symbol,
-   the `analysisKind` and the `requestDigest`.
+   the `analysisKind`.
 3. Over the store of step 1 for the satisfied report, run the qualifier and bridge with an approved producer
    definition and every other premise admitted, then again with no FR-093 assessment, then again with no CI checkout
    SHA for the run-package step, then run `quoin evidence audit`. Read the FR-078 report, trace (forward and inverse) and strict decision.
 4. Over the other four stores of step 1, run the bridge with the same admitted premises and read the report.
 5. Into one suite record the satisfied report and then the refuted report with a later `--timestamp`; then a second
    request's report; then the same sequence into two suites; then the two with equal timestamps. The satisfied and
-   refuted pair with one `requestDigest` is hand-constructed and accepted by the validator, as FR-151-AC-5 does for
+   refuted pair is hand-constructed and accepted by the validator, as FR-151-AC-5 does for
    `unsupported-platform`, because a deterministic capture cannot produce both. Supply the run records in both orders.
 6. Record the satisfied report with `--discharges` naming an obligation whose declared method is Test and read the
    bridge result.
@@ -42,7 +42,7 @@ and that each disposition is counted, or not counted, as FR-153 states, through 
 ## Expected Results
 
 Step 1: the satisfied report stores one entry with `traceIds` `["FR-001-AC-1"]` and one binding to the symbol
-`<analysisKind>::<requestDigest>`; the refuted, inconclusive and unavailable reports store the entry with the stated id
+`<analysisKind>`; the refuted, inconclusive and unavailable reports store the entry with the stated id
 and no binding; the disagreement report stores a run with zero entries, no binding and prints the
 `unrepresented` result.
 
