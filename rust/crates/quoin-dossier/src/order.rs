@@ -12,7 +12,7 @@ use std::cmp::Ordering;
 
 /// Compare two ids in dossier order.
 #[must_use]
-pub fn dossier_cmp(left: &str, right: &str) -> Ordering {
+pub(crate) fn dossier_cmp(left: &str, right: &str) -> Ordering {
     let mut left_segments = left.split('-');
     let mut right_segments = right.split('-');
     loop {
@@ -30,7 +30,7 @@ pub fn dossier_cmp(left: &str, right: &str) -> Ordering {
 
 /// Compare two optional ids; an absent id sorts first.
 #[must_use]
-pub fn optional_cmp(left: Option<&str>, right: Option<&str>) -> Ordering {
+pub(crate) fn optional_cmp(left: Option<&str>, right: Option<&str>) -> Ordering {
     match (left, right) {
         (None, None) => Ordering::Equal,
         (None, Some(_)) => Ordering::Less,

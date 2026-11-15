@@ -23,15 +23,15 @@ use crate::writer::compose;
 
 /// One document, computed in memory.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Rendered {
+pub(crate) struct Rendered {
     /// Which document it is.
-    pub spec: DocumentSpec,
+    pub(crate) spec: DocumentSpec,
     /// Where the file is, or would be written.
-    pub path: PathBuf,
+    pub(crate) path: PathBuf,
     /// The file's bytes.
-    pub text: String,
+    pub(crate) text: String,
     /// The gaps, in file order.
-    pub gaps: Vec<Gap>,
+    pub(crate) gaps: Vec<Gap>,
 }
 
 impl Rendered {
@@ -57,7 +57,7 @@ impl Rendered {
     /// How the file on disk compares with these bytes. A missing or unreadable
     /// file counts as `differs` (FR-191, "Selection and check").
     #[must_use]
-    pub fn compare(&self) -> Comparison {
+    pub(crate) fn compare(&self) -> Comparison {
         match fs::read(&self.path) {
             Ok(on_disk) if on_disk == self.text.as_bytes() => Comparison::Matches,
             _ => Comparison::Differs,
@@ -71,7 +71,7 @@ impl Rendered {
 ///
 /// Exit 2 for a blank version, an invalid or missing `--as-of`, or an unknown
 /// kind; exit 3 for the first generator whose source fails.
-pub fn render(
+pub(crate) fn render(
     registry: &Registry,
     kinds: &[String],
     out: &Path,
@@ -304,7 +304,7 @@ pub fn check(
 
 /// A report whose entries carry the comparison against disk.
 #[must_use]
-pub fn report_with_comparison(rendered: &[Rendered]) -> Report {
+pub(crate) fn report_with_comparison(rendered: &[Rendered]) -> Report {
     Report {
         documents: rendered
             .iter()
@@ -351,76 +351,9 @@ fn ensure_out_dir(out: &Path) -> Result<(), DossierError> {
 )]
 mod tests {
     use super::*;
-    use crate::error::SourceFailure;
     use crate::gap::GapKind;
-    use crate::registry::{Generated, Generator};
+    use crate::testing::{doc, inputs, names, registry};
     use ix_trace_rs::trace;
-
-    struct Doc {
-        spec: DocumentSpec,
-        gaps: fn() -> Vec<Gap>,
-        fail: bool,
-    }
-
-    impl Generator for Doc {
-        fn spec(&self) -> DocumentSpec {
-            self.spec
-        }
-
-        fn generate(&self, _: &Inputs) -> Result<Generated, SourceFailure> {
-            if self.fail {
-                return Err(SourceFailure {
-                    source: "requirements".to_owned(),
-                    detail: "unreadable".to_owned(),
-                });
-            }
-            Ok(Generated {
-                body: format!("# {}", self.spec.id),
-                gaps: (self.gaps)(),
-            })
-        }
-    }
-
-    fn doc(kind: &'static str, id: &'static str, needs_as_of: bool) -> Doc {
-        Doc {
-            spec: DocumentSpec {
-                kind,
-                id,
-                title: "T",
-                needs_as_of,
-            },
-            gaps: Vec::new,
-            fail: false,
-        }
-    }
-
-    fn inputs() -> Inputs {
-        Inputs {
-            scope: PathBuf::from("."),
-            modules: Vec::new(),
-            clause_bindings: Vec::new(),
-            pack: None,
-            as_of: None,
-            version: "1.0".to_owned(),
-        }
-    }
-
-    fn names(dir: &Path) -> Vec<String> {
-        let mut names: Vec<_> = fs::read_dir(dir)
-            .unwrap()
-            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
-            .collect();
-        names.sort();
-        names
-    }
-
-    fn registry(docs: Vec<Doc>) -> Registry {
-        let mut registry = Registry::new();
-        for doc in docs {
-            registry.register(Box::new(doc)).unwrap();
-        }
-        registry
-    }
 
     #[trace("FR-191-AC-1")]
     #[test]
@@ -431,13 +364,52 @@ mod tests {
         fs::write(out.join("other.md"), "keep").unwrap();
         let registry = registry(vec![doc("a", "DOS-A", false), doc("b", "DOS-B", false)]);
         generate(&registry, &["b".to_owned()], &out, &inputs()).unwrap();
-        let mut names: Vec<_> = fs::read_dir(&out)
-            .unwrap()
-            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
-            .collect();
-        names.sort();
-        assert_eq!(names, ["DOS-B.md", "other.md"]);
+        assert_eq!(names(&out), ["DOS-B.md", "other.md"]);
         assert_eq!(fs::read_to_string(out.join("other.md")).unwrap(), "keep");
+    }
+
+    /// FR-191-AC-2 is the four-file case; it completes when the four
+    /// generators register (PLAT-1437, PLAT-1438). This is the generic
+    /// behaviour under it: no selector writes a file for every registered kind.
+    #[trace("FR-191-AC-2")]
+    #[test]
+    fn no_selector_writes_a_file_for_every_registered_kind() {
+        let work = tempfile::tempdir().unwrap();
+        let out = work.path().join("dossier");
+        let registry = registry(vec![
+            doc("a", "DOS-A", false),
+            doc("b", "DOS-B", false),
+            doc("c", "DOS-C", false),
+        ]);
+        let report = generate(&registry, &[], &out, &inputs()).unwrap();
+        assert_eq!(names(&out), ["DOS-A.md", "DOS-B.md", "DOS-C.md"]);
+        let ids: Vec<_> = report.documents.iter().map(|d| d.id.as_str()).collect();
+        assert_eq!(ids, ["DOS-A", "DOS-B", "DOS-C"]);
+        for document in &report.documents {
+            assert!(
+                fs::read_to_string(&document.path)
+                    .unwrap()
+                    .contains(&document.id)
+            );
+        }
+    }
+
+    #[trace("FR-191")]
+    #[test]
+    fn an_empty_registry_is_refused_before_a_directory_is_created() {
+        let work = tempfile::tempdir().unwrap();
+        let out = work.path().join("dossier");
+        for kinds in [&[][..], &["srs".to_owned()][..]] {
+            let error = generate(&Registry::new(), kinds, &out, &inputs()).unwrap_err();
+            assert_eq!(error.code(), DossierErrorCode::NoDocuments);
+            assert_eq!(error.outcome().code(), 2);
+            assert!(
+                error
+                    .message()
+                    .contains("no dossier documents are registered")
+            );
+            assert!(!out.exists(), "an empty selection created the directory");
+        }
     }
 
     #[trace("FR-191-AC-5")]

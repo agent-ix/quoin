@@ -45,7 +45,8 @@ pub enum GapKind {
 
 impl GapKind {
     /// Every kind, in the closed order.
-    pub const ALL: [Self; 12] = [
+    #[cfg(test)]
+    pub(crate) const ALL: [Self; 12] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -81,7 +82,7 @@ impl GapKind {
 
     /// The position of this kind in the closed list.
     #[must_use]
-    pub const fn position(self) -> usize {
+    pub(crate) const fn position(self) -> usize {
         self as usize
     }
 }
@@ -150,7 +151,7 @@ impl Gap {
 
     /// The sort key (requirement, criterion, element, clause, kind position).
     #[must_use]
-    pub fn order(&self, other: &Self) -> Ordering {
+    pub(crate) fn order(&self, other: &Self) -> Ordering {
         optional_cmp(
             self.key.requirement.as_deref(),
             other.key.requirement.as_deref(),
@@ -169,7 +170,7 @@ impl Gap {
     /// The bullet this gap is written as: a backticked kind, then
     /// `<subject>: <detail>`.
     #[must_use]
-    pub fn bullet(&self) -> String {
+    pub(crate) fn bullet(&self) -> String {
         format!(
             "- `{}` {}: {}",
             self.gap_kind.as_str(),
@@ -186,7 +187,7 @@ fn one_line(text: &str) -> String {
 
 /// Sort gaps into the order FR-191 fixes. The sort is stable, so gaps with an
 /// equal key keep the order the generator produced them in.
-pub fn sort_gaps(gaps: &mut [Gap]) {
+pub(crate) fn sort_gaps(gaps: &mut [Gap]) {
     gaps.sort_by(Gap::order);
 }
 

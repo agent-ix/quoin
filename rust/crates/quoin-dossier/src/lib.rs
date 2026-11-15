@@ -10,16 +10,18 @@
 //! later documents) are not here: each registers itself in [`builtin_registry`]
 //! in the ticket that owns its content, in the fixed bundle order.
 
-pub mod engine;
-pub mod error;
-pub mod export;
-pub mod gap;
-pub mod order;
-pub mod registry;
-pub mod report;
+mod engine;
+mod error;
+mod export;
+mod gap;
+mod order;
+mod registry;
+mod report;
 #[cfg(feature = "test-stubs")]
 mod stub;
-pub mod writer;
+#[cfg(test)]
+mod testing;
+mod writer;
 
 pub use engine::{check, generate};
 pub use error::{DossierError, DossierErrorCode, QuireFailure, SourceFailure};
@@ -76,44 +78,45 @@ fn builtin_generators() -> Vec<Box<dyn Generator>> {
 )]
 mod tests {
     use super::*;
+    use crate::testing::doc;
     use ix_trace_rs::trace;
-
-    struct Fixed(DocumentSpec);
-
-    impl Generator for Fixed {
-        fn spec(&self) -> DocumentSpec {
-            self.0
-        }
-
-        fn generate(&self, _: &Inputs) -> Result<Generated, SourceFailure> {
-            Ok(Generated {
-                body: String::new(),
-                gaps: Vec::new(),
-            })
-        }
-    }
-
-    fn fixed(kind: &'static str, id: &'static str) -> Box<dyn Generator> {
-        Box::new(Fixed(DocumentSpec {
-            kind,
-            id,
-            title: "T",
-            needs_as_of: false,
-        }))
-    }
 
     #[trace("FR-191")]
     #[test]
     fn a_colliding_generator_is_an_error_not_a_dropped_document() {
-        let error = registry_of(vec![fixed("srs", "DOS-SRS"), fixed("srs", "DOS-OTHER")])
-            .err()
-            .unwrap();
+        let error = registry_of(vec![
+            Box::new(doc("srs", "DOS-SRS", false)),
+            Box::new(doc("srs", "DOS-OTHER", false)),
+        ])
+        .err()
+        .unwrap();
         assert_eq!(error.code(), DossierErrorCode::RegistryConflict);
-        let ok = registry_of(vec![fixed("srs", "DOS-SRS"), fixed("rmm", "DOS-RMM")]).unwrap();
+        let ok = registry_of(vec![
+            Box::new(doc("srs", "DOS-SRS", false)),
+            Box::new(doc("rmm", "DOS-RMM", false)),
+        ])
+        .unwrap();
         assert_eq!(
             ok.specs().map(|spec| spec.id).collect::<Vec<_>>(),
             ["DOS-SRS", "DOS-RMM"]
         );
+    }
+
+    /// This frame ships no real generator: the shipped registry is empty until
+    /// PLAT-1437 and PLAT-1438 register theirs, and every run says so and exits 2.
+    #[cfg(not(feature = "test-stubs"))]
+    #[trace("FR-191")]
+    #[test]
+    fn the_shipped_registry_is_empty_and_every_run_is_refused_without_writing() {
+        use crate::testing::inputs;
+        let registry = builtin_registry().unwrap();
+        assert_eq!(registry.specs().count(), 0);
+        let work = tempfile::tempdir().unwrap();
+        let out = work.path().join("dossier");
+        let error = generate(&registry, &[], &out, &inputs()).unwrap_err();
+        assert_eq!(error.code(), DossierErrorCode::NoDocuments);
+        assert!(!out.exists());
+        assert!(check(&registry, &[], &out, &inputs()).is_err());
     }
 
     #[cfg(feature = "test-stubs")]

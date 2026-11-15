@@ -104,7 +104,7 @@ impl Registry {
     }
 
     /// Every registered spec, in registry order.
-    pub fn specs(&self) -> impl Iterator<Item = DocumentSpec> + '_ {
+    pub(crate) fn specs(&self) -> impl Iterator<Item = DocumentSpec> + '_ {
         self.generators.iter().map(|generator| generator.spec())
     }
 
@@ -115,7 +115,14 @@ impl Registry {
     ///
     /// Returns [`DossierErrorCode::UnknownKind`] naming every unknown value
     /// and the kinds that exist.
-    pub fn select(&self, kinds: &[String]) -> Result<Vec<&dyn Generator>, DossierError> {
+    pub(crate) fn select(&self, kinds: &[String]) -> Result<Vec<&dyn Generator>, DossierError> {
+        if self.generators.is_empty() {
+            return Err(DossierError::new(
+                DossierErrorCode::NoDocuments,
+                "no dossier documents are registered in this build, so there is nothing to select; \
+                 the srs, architecture, trace-matrix and rmm generators register in PLAT-1437 and PLAT-1438",
+            ));
+        }
         if kinds.is_empty() {
             return Ok(self.generators.iter().map(AsRef::as_ref).collect());
         }
@@ -155,71 +162,49 @@ impl Registry {
 )]
 mod tests {
     use super::*;
+    use crate::testing::{doc, registry};
     use ix_trace_rs::trace;
 
-    struct Fixed(DocumentSpec);
-
-    impl Generator for Fixed {
-        fn spec(&self) -> DocumentSpec {
-            self.0
-        }
-
-        fn generate(&self, _: &Inputs) -> Result<Generated, SourceFailure> {
-            Ok(Generated {
-                body: String::new(),
-                gaps: Vec::new(),
-            })
-        }
+    fn three() -> Registry {
+        registry(vec![
+            doc("srs", "DOS-SRS", false),
+            doc("architecture", "DOS-ARCH", false),
+            doc("rmm", "DOS-RMM", false),
+        ])
     }
 
-    fn spec(kind: &'static str, id: &'static str) -> Box<dyn Generator> {
-        Box::new(Fixed(DocumentSpec {
-            kind,
-            id,
-            title: "T",
-            needs_as_of: false,
-        }))
-    }
-
-    fn registry() -> Registry {
-        let mut registry = Registry::new();
-        registry.register(spec("srs", "DOS-SRS")).unwrap();
-        registry.register(spec("architecture", "DOS-ARCH")).unwrap();
-        registry.register(spec("rmm", "DOS-RMM")).unwrap();
-        registry
-    }
-
-    #[trace("FR-191-AC-2")]
-    #[test]
-    fn no_selector_selects_every_kind_in_registry_order() {
-        let registry = registry();
-        let ids: Vec<_> = registry
-            .select(&[])
-            .unwrap()
+    fn ids(selected: &[&dyn Generator]) -> Vec<&'static str> {
+        selected
             .iter()
             .map(|generator| generator.spec().id)
-            .collect();
-        assert_eq!(ids, ["DOS-SRS", "DOS-ARCH", "DOS-RMM"]);
+            .collect()
+    }
+
+    #[trace("FR-191-AC-8")]
+    #[test]
+    fn no_selector_selects_every_kind_in_registry_order() {
+        let registry = three();
+        assert_eq!(
+            ids(&registry.select(&[]).unwrap()),
+            ["DOS-SRS", "DOS-ARCH", "DOS-RMM"]
+        );
     }
 
     #[trace("FR-191-AC-8")]
     #[test]
     fn selection_is_in_registry_order_whatever_the_flag_order() {
-        let registry = registry();
+        let registry = three();
         let kinds = ["rmm", "srs", "rmm"].map(str::to_owned);
-        let ids: Vec<_> = registry
-            .select(&kinds)
-            .unwrap()
-            .iter()
-            .map(|generator| generator.spec().id)
-            .collect();
-        assert_eq!(ids, ["DOS-SRS", "DOS-RMM"]);
+        assert_eq!(
+            ids(&registry.select(&kinds).unwrap()),
+            ["DOS-SRS", "DOS-RMM"]
+        );
     }
 
     #[trace("FR-191-AC-3")]
     #[test]
     fn an_unknown_kind_is_named_with_the_known_ones() {
-        let registry = registry();
+        let registry = three();
         let error = registry
             .select(&["srs".to_owned(), "nope".to_owned()])
             .err()
@@ -232,11 +217,26 @@ mod tests {
     #[trace("FR-191")]
     #[test]
     fn a_second_generator_for_one_kind_or_id_is_refused() {
-        let mut registry = registry();
-        let kind = registry.register(spec("srs", "DOS-OTHER")).unwrap_err();
-        let id = registry.register(spec("other", "DOS-SRS")).unwrap_err();
+        let mut registry = three();
+        let kind = registry
+            .register(Box::new(doc("srs", "DOS-OTHER", false)))
+            .unwrap_err();
+        let id = registry
+            .register(Box::new(doc("other", "DOS-SRS", false)))
+            .unwrap_err();
         assert_eq!(kind.code(), DossierErrorCode::RegistryConflict);
         assert_eq!(id.code(), DossierErrorCode::RegistryConflict);
         assert_eq!(registry.specs().count(), 3);
+    }
+
+    #[trace("FR-191")]
+    #[test]
+    fn an_empty_registry_refuses_every_selection_with_exit_2() {
+        let registry = Registry::new();
+        for kinds in [&[][..], &["srs".to_owned()][..]] {
+            let error = registry.select(kinds).err().unwrap();
+            assert_eq!(error.code(), DossierErrorCode::NoDocuments);
+            assert_eq!(error.outcome().code(), 2);
+        }
     }
 }

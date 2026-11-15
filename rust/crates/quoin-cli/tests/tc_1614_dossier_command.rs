@@ -96,6 +96,45 @@ fn generate_stubs(work: &Path, docs: &[&str]) {
     assert!(matches!(code(&output), 0 | 1), "{}", stderr(&output));
 }
 
+/// Another command's failure still prints nothing on stdout: the dossier
+/// report is the only one that does at exit 2 to 4.
+#[trace("FR-191")]
+#[test]
+fn a_failure_of_another_command_prints_nothing_on_stdout() {
+    let work = tempfile::tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args([
+            "soup",
+            "promote",
+            "/nonexistent/sbom.json",
+            "--repo",
+            "/nonexistent",
+        ])
+        .current_dir(work.path())
+        .output()
+        .unwrap();
+    assert_ne!(code(&output), 0);
+    assert_eq!(stdout(&output), "");
+}
+
+/// A dossier failure at exit 3 states its report on stdout and exits 3.
+#[trace("FR-191-AC-12")]
+#[test]
+fn a_dossier_source_failure_report_is_on_stdout_and_stderr_holds_the_diagnostic() {
+    let work = tempfile::tempdir().unwrap();
+    let output = quoin(
+        work.path(),
+        &["check", "--version", "1.0", "--json", "--doc", "stub-fail"],
+    );
+    assert_eq!(code(&output), 3);
+    assert_eq!(json(&output)["source_failure"]["source"], "requirements");
+    assert!(
+        stderr(&output).contains("DOSSIER_SOURCE_FAILED"),
+        "{}",
+        stderr(&output)
+    );
+}
+
 /// Provenance: PLAT-1614 acceptance 1.
 #[trace("FR-191-AC-1")]
 #[test]
@@ -730,14 +769,15 @@ impl quoin_dossier::Generator for KindOnly {
 }
 
 /// Needs the installed `quire` and the `spec-artifacts-process` module that
-/// defines the `DossierDocument` archetype (FR-018), read in place from
+/// defines the `DossierDocument` archetype (that repository's FR-018, not a
+/// quoin requirement), read in place from
 /// `SPEC_ARTIFACTS_PROCESS_DIR` (its `spec_artifacts_process` directory).
 /// The `srs` and `rmm` files are written by `quoin_dossier::generate` and
 /// validated unchanged; each bad file is a copy of a generated one with a
 /// single change. Nothing of the module is copied here.
 ///
 /// Provenance: PLAT-1614 acceptance 9.
-#[trace("FR-018-AC-1", "FR-018-AC-3", "FR-018-AC-8")]
+#[trace("FR-191")]
 #[test]
 #[ignore = "needs quire and the spec-artifacts-process DossierDocument archetype"]
 fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {

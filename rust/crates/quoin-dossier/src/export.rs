@@ -9,6 +9,7 @@
 //! process. `quire export` refuses an uncommitted file itself (quire-cli
 //! FR-034); quoin passes that refusal through and runs no git.
 
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -19,10 +20,10 @@ use crate::registry::{Inputs, Registry};
 use crate::report::Report;
 
 /// The title of a bundle of several documents.
-pub const BUNDLE_TITLE: &str = "Submission Dossier";
+pub(crate) const BUNDLE_TITLE: &str = "Submission Dossier";
 
 /// The id of a bundle of several documents.
-pub const BUNDLE_ID: &str = "DOS";
+pub(crate) const BUNDLE_ID: &str = "DOS";
 
 /// What `quoin dossier export` passes through to `quire export`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,7 +69,7 @@ pub fn export(
 
 /// The arguments of the one `quire export` call, in order.
 #[must_use]
-pub fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec<String> {
+pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec<String> {
     let mut args = vec!["export".to_owned()];
     args.extend(
         documents
@@ -107,7 +108,7 @@ pub fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec<String
 
 fn run_quire(documents: &[Rendered], options: &ExportOptions) -> Result<(), QuireFailure> {
     let had_output = fs::symlink_metadata(&options.output).is_ok();
-    let result = Command::new(&options.quire)
+    let mut result = Command::new(&options.quire)
         .args(quire_args(documents, options))
         .stdin(Stdio::null())
         .output()
@@ -125,10 +126,28 @@ fn run_quire(documents: &[Rendered], options: &ExportOptions) -> Result<(), Quir
                 })
             }
         });
-    if result.is_err() && !had_output {
-        // quire writes `--output` only on success; this removes a partial one
-        // a failed run might still have left, so a refusal leaves nothing.
-        let _ = fs::remove_file(&options.output);
+    if let Err(failure) = &mut result
+        && !had_output
+    {
+        // quire writes `--output` only on success; remove a partial one a
+        // failed run might still have left, so a refusal leaves nothing. A
+        // pre-existing output is not ours to remove, and an output that is
+        // already absent needs no cleanup. Any other failure is reported
+        // beside quire's own.
+        match fs::remove_file(&options.output) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => {
+                if !failure.stderr.is_empty() && !failure.stderr.ends_with('\n') {
+                    failure.stderr.push('\n');
+                }
+                let _ = write!(
+                    failure.stderr,
+                    "could not remove the partial output {}: {error}",
+                    options.output.display()
+                );
+            }
+        }
     }
     result
 }
@@ -143,49 +162,11 @@ fn run_quire(documents: &[Rendered], options: &ExportOptions) -> Result<(), Quir
 )]
 mod tests {
     use super::*;
-    use crate::error::SourceFailure;
-    use crate::registry::{DocumentSpec, Generated, Generator};
+    use crate::testing::{doc, inputs, registry};
     use ix_trace_rs::trace;
 
-    struct Doc(DocumentSpec);
-
-    impl Generator for Doc {
-        fn spec(&self) -> DocumentSpec {
-            self.0
-        }
-
-        fn generate(&self, _: &Inputs) -> Result<Generated, SourceFailure> {
-            Ok(Generated {
-                body: String::new(),
-                gaps: Vec::new(),
-            })
-        }
-    }
-
-    fn registry() -> Registry {
-        let mut registry = Registry::new();
-        for (kind, id) in [("a", "DOS-A"), ("b", "DOS-B")] {
-            registry
-                .register(Box::new(Doc(DocumentSpec {
-                    kind,
-                    id,
-                    title: "T",
-                    needs_as_of: false,
-                })))
-                .unwrap();
-        }
-        registry
-    }
-
-    fn inputs() -> Inputs {
-        Inputs {
-            scope: PathBuf::from("."),
-            modules: Vec::new(),
-            clause_bindings: Vec::new(),
-            pack: None,
-            as_of: None,
-            version: "1".to_owned(),
-        }
+    fn two() -> Registry {
+        registry(vec![doc("a", "DOS-A", false), doc("b", "DOS-B", false)])
     }
 
     fn options(quire: &str) -> ExportOptions {
@@ -201,7 +182,33 @@ mod tests {
 
     fn rendered(kinds: &[&str]) -> Vec<Rendered> {
         let kinds: Vec<String> = kinds.iter().map(|kind| (*kind).to_owned()).collect();
-        render(&registry(), &kinds, Path::new("dossier"), &inputs()).unwrap()
+        render(&two(), &kinds, Path::new("dossier"), &inputs()).unwrap()
+    }
+
+    /// A `quire` that runs `body` with `$out` set to its `--output`.
+    #[cfg(unix)]
+    fn script(work: &Path, body: &str) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt as _;
+        let path = work.join("quire");
+        fs::write(
+            &path,
+            format!(
+                "#!/bin/sh\nout=\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = --output ]; then out=$2; fi\n  shift\ndone\n{body}\n"
+            ),
+        )
+        .unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+        path
+    }
+
+    /// Generate into `work/dossier` and export with `quire`, writing `work/out.pdf`.
+    #[cfg(unix)]
+    fn export_with(work: &Path, quire: &Path) -> Report {
+        let out = work.join("dossier");
+        crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
+        let mut options = options(quire.to_str().unwrap());
+        options.output = work.join("out.pdf");
+        export(&two(), &[], &out, &inputs(), &options).unwrap()
     }
 
     #[trace("FR-191-AC-8")]
@@ -250,10 +257,10 @@ mod tests {
     fn a_missing_quire_is_reported_naming_the_path_tried() {
         let work = tempfile::tempdir().unwrap();
         let out = work.path().join("dossier");
-        crate::engine::generate(&registry(), &[], &out, &inputs()).unwrap();
+        crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
         let mut options = options("/nonexistent/quire");
         options.output = work.path().join("out.pdf");
-        let report = export(&registry(), &[], &out, &inputs(), &options).unwrap();
+        let report = export(&two(), &[], &out, &inputs(), &options).unwrap();
         let quire = report.quire.unwrap();
         assert_eq!(quire.exit_code, None);
         assert!(
@@ -268,22 +275,81 @@ mod tests {
     fn a_missing_or_stale_file_stops_before_quire_starts() {
         let work = tempfile::tempdir().unwrap();
         let out = work.path().join("dossier");
-        crate::engine::generate(&registry(), &[], &out, &inputs()).unwrap();
+        crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
         fs::write(out.join("DOS-B.md"), "edited").unwrap();
         fs::remove_file(out.join("DOS-A.md")).unwrap();
         let mut options = options("/nonexistent/quire");
         options.output = work.path().join("out.pdf");
-        let report = export(&registry(), &[], &out, &inputs(), &options).unwrap();
+        let report = export(&two(), &[], &out, &inputs(), &options).unwrap();
         assert_eq!(report.differing(), ["DOS-A", "DOS-B"]);
         assert!(report.quire.is_none(), "quire was started");
-        let elsewhere = export(
-            &registry(),
-            &[],
-            &work.path().join("other"),
-            &inputs(),
-            &options,
-        )
-        .unwrap();
+        let elsewhere =
+            export(&two(), &[], &work.path().join("other"), &inputs(), &options).unwrap();
         assert_eq!(elsewhere.differing(), ["DOS-A", "DOS-B"]);
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-191-AC-7")]
+    #[test]
+    fn a_partial_output_from_a_failed_quire_is_removed() {
+        let work = tempfile::tempdir().unwrap();
+        let quire = script(
+            work.path(),
+            "echo partial > \"$out\"; echo refused >&2; exit 7",
+        );
+        let report = export_with(work.path(), &quire);
+        let failure = report.quire.unwrap();
+        assert_eq!(failure.exit_code, Some(7));
+        assert_eq!(failure.stderr, "refused\n");
+        assert!(!work.path().join("out.pdf").exists());
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-191-AC-7")]
+    #[test]
+    fn a_failed_quire_that_wrote_nothing_is_not_a_cleanup_error() {
+        let work = tempfile::tempdir().unwrap();
+        let quire = script(work.path(), "echo refused >&2; exit 7");
+        let failure = export_with(work.path(), &quire).quire.unwrap();
+        assert_eq!(failure.stderr, "refused\n");
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-191-AC-7")]
+    #[test]
+    fn an_output_that_existed_before_a_failed_quire_is_preserved() {
+        let work = tempfile::tempdir().unwrap();
+        fs::write(work.path().join("out.pdf"), "earlier").unwrap();
+        let quire = script(work.path(), "echo partial > \"$out\"; exit 7");
+        let failure = export_with(work.path(), &quire).quire.unwrap();
+        assert!(!failure.stderr.contains("could not remove"));
+        assert!(work.path().join("out.pdf").exists());
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-191-AC-7")]
+    #[test]
+    fn a_partial_output_that_cannot_be_removed_is_reported_beside_quires_stderr() {
+        let work = tempfile::tempdir().unwrap();
+        // A non-empty directory at --output: remove_file cannot remove it.
+        let quire = script(
+            work.path(),
+            "mkdir -p \"$out/inner\"; echo refused >&2; exit 7",
+        );
+        let failure = export_with(work.path(), &quire).quire.unwrap();
+        assert_eq!(failure.exit_code, Some(7));
+        assert!(
+            failure.stderr.starts_with("refused\n"),
+            "{}",
+            failure.stderr
+        );
+        assert!(
+            failure
+                .stderr
+                .contains("could not remove the partial output"),
+            "{}",
+            failure.stderr
+        );
+        assert!(failure.stderr.contains("out.pdf"));
     }
 }

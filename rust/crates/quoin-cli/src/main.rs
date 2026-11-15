@@ -546,6 +546,15 @@ fn request(arguments: &ArgMatches, view: &str) -> Result<serde_json::Value, Stri
     Ok(serde_json::Value::Object(fields))
 }
 
+/// Whether a response at a status that carries no payload still asks for its
+/// report to be printed.
+fn is_failure_report(payload: &serde_json::Value) -> bool {
+    payload
+        .get(dossier::FAILURE_REPORT)
+        .and_then(serde_json::Value::as_bool)
+        == Some(true)
+}
+
 fn emit(response: &Response) -> std::process::ExitCode {
     if let Some(warning) = response
         .payload
@@ -555,22 +564,10 @@ fn emit(response: &Response) -> std::process::ExitCode {
     {
         return std::process::ExitCode::from(EXIT_INTERNAL);
     }
-    // FR-191: `dossier --json` states its report on stdout even at exit 3 or
-    // 4, where the report names the failed source or the quire failure.
-    let failure_report = (!response.outcome.carries_payload())
-        .then(|| {
-            response
-                .payload
-                .get("rendered")
-                .and_then(serde_json::Value::as_str)
-        })
-        .flatten();
-    if let Some(rendered) = failure_report
-        && writeln!(std::io::stdout(), "{rendered}").is_err()
-    {
-        return std::process::ExitCode::from(EXIT_INTERNAL);
-    }
-    if response.outcome.carries_payload() {
+    // FR-191: `dossier --json` states its report on stdout at exit 3 and 4 too,
+    // where it names the failed source or the quire failure. Only a response
+    // that marks itself does this; another command's refusal prints nothing.
+    if response.outcome.carries_payload() || is_failure_report(&response.payload) {
         let Some(rendered) = response
             .payload
             .get("rendered")

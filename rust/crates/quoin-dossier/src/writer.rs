@@ -13,16 +13,16 @@ use crate::gap::Gap;
 use crate::registry::DocumentSpec;
 
 /// The `generated_by` frontmatter value.
-pub const GENERATED_BY: &str = "quoin dossier";
+const GENERATED_BY: &str = "quoin dossier";
 
 /// The `type` frontmatter value.
-pub const DOCUMENT_TYPE: &str = "DossierDocument";
+const DOCUMENT_TYPE: &str = "DossierDocument";
 
 /// Write one complete document file.
 ///
 /// `as_of` is written only for a document whose spec asks for it.
 #[must_use]
-pub fn compose(
+pub(crate) fn compose(
     spec: &DocumentSpec,
     version: &str,
     as_of: Option<&str>,
