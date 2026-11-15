@@ -86,6 +86,7 @@ const COMMANDS: &[(&str, &str)] = &[
         "discharge",
         "Partition binding clauses into direct evidence,\n                    dispositions, and open work.",
     ),
+    ("dossier", crate::dossier::ABOUT),
     (
         "evidence",
         "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",

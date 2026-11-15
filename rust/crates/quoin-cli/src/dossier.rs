@@ -18,8 +18,7 @@ use quoin_dossier::{
 };
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
-pub(crate) const ABOUT: &str =
-    "Generate, check and export the submission dossier documents from the repository's records.";
+pub(crate) const ABOUT: &str = "Generate, check and export the submission dossier documents.";
 
 /// Where documents are written unless `--out` names another directory.
 const DEFAULT_OUT: &str = "dossier";
@@ -133,6 +132,15 @@ pub(crate) fn command() -> Command {
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    run_with(builtin_registry(), arguments)
+}
+
+/// Run against `registry`; a registry that could not be built is exit 4, so a
+/// generator that collides is reported rather than silently missing.
+fn run_with(
+    registry: Result<Registry, DossierError>,
+    arguments: &ArgMatches,
+) -> Result<Response, String> {
     let (mode, selected) = match arguments.subcommand() {
         Some(("generate", selected)) => (Mode::Generate, selected),
         Some(("check", selected)) => (Mode::Check, selected),
@@ -140,7 +148,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         _ => return Err("an unknown dossier command reached dispatch".to_owned()),
     };
     let json = selected.get_flag("json");
-    let result = execute(&builtin_registry(), mode, selected);
+    let result = registry.and_then(|registry| execute(&registry, mode, selected));
     finish(mode, json, result)
 }
 
@@ -297,4 +305,43 @@ fn render_text(mode: Mode, report: &Report) -> String {
         ));
     }
     lines.join("\n")
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::*;
+    use ix_trace_rs::trace;
+    use quoin_dossier::DossierErrorCode;
+
+    #[trace("FR-191")]
+    #[test]
+    fn a_registry_that_cannot_be_built_is_exit_4_with_a_diagnostic_and_writes_nothing() {
+        let work = tempfile::tempdir().unwrap();
+        let out = work.path().join("dossier");
+        let matches = command()
+            .try_get_matches_from([
+                "dossier",
+                "generate",
+                "--version",
+                "1",
+                "--out",
+                out.to_str().unwrap(),
+            ])
+            .unwrap();
+        let conflict = DossierError::new(
+            DossierErrorCode::RegistryConflict,
+            "document srs (DOS-SRS) conflicts with registered srs (DOS-SRS)",
+        );
+        let response = run_with(Err(conflict), &matches).unwrap();
+        assert_eq!(response.outcome.code(), 4);
+        assert_eq!(response.diagnostics[0].code, "DOSSIER_REGISTRY_CONFLICT");
+        assert!(!out.exists());
+    }
 }

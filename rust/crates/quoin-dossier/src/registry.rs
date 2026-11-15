@@ -229,7 +229,7 @@ mod tests {
         assert!(error.message().contains("architecture"));
     }
 
-    #[trace("FR-191-AC-1")]
+    #[trace("FR-191")]
     #[test]
     fn a_second_generator_for_one_kind_or_id_is_refused() {
         let mut registry = registry();

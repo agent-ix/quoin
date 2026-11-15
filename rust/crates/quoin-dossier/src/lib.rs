@@ -30,20 +30,96 @@ pub use report::{Comparison, DocumentReport, Report, Status};
 
 /// The registry `quoin dossier` runs against.
 ///
-/// Real generators are registered here, in bundle order. Under the
-/// `test-stubs` feature the stub generators follow.
-#[must_use]
-pub fn builtin_registry() -> Registry {
+/// # Errors
+///
+/// Returns [`DossierErrorCode::RegistryConflict`] when two generators claim one
+/// kind or one id, so a generator added later is never dropped silently.
+pub fn builtin_registry() -> Result<Registry, DossierError> {
+    registry_of(builtin_generators())
+}
+
+/// A registry holding `generators` in the order given.
+///
+/// # Errors
+///
+/// Returns [`DossierErrorCode::RegistryConflict`] for the first generator that
+/// collides with one registered before it.
+pub fn registry_of(generators: Vec<Box<dyn Generator>>) -> Result<Registry, DossierError> {
+    let mut registry = Registry::new();
+    for generator in generators {
+        registry.register(generator)?;
+    }
+    Ok(registry)
+}
+
+/// Every generator this build ships, in bundle order. The real generators are
+/// pushed here by the tickets that own their content; under the `test-stubs`
+/// feature the stubs follow.
+fn builtin_generators() -> Vec<Box<dyn Generator>> {
     #[allow(
         unused_mut,
-        reason = "the registry is empty until a generator or a stub registers"
+        reason = "the list is empty until a generator or a stub is added"
     )]
-    let mut registry = Registry::new();
+    let mut generators: Vec<Box<dyn Generator>> = Vec::new();
     #[cfg(feature = "test-stubs")]
-    for generator in stub::stubs() {
-        // The stubs use distinct kinds and ids; a conflict would be a defect
-        // in this file and surfaces as a missing kind in the tests.
-        let _ = registry.register(generator);
+    generators.extend(stub::stubs());
+    generators
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::*;
+    use ix_trace_rs::trace;
+
+    struct Fixed(DocumentSpec);
+
+    impl Generator for Fixed {
+        fn spec(&self) -> DocumentSpec {
+            self.0
+        }
+
+        fn generate(&self, _: &Inputs) -> Result<Generated, SourceFailure> {
+            Ok(Generated {
+                body: String::new(),
+                gaps: Vec::new(),
+            })
+        }
     }
-    registry
+
+    fn fixed(kind: &'static str, id: &'static str) -> Box<dyn Generator> {
+        Box::new(Fixed(DocumentSpec {
+            kind,
+            id,
+            title: "T",
+            needs_as_of: false,
+        }))
+    }
+
+    #[trace("FR-191")]
+    #[test]
+    fn a_colliding_generator_is_an_error_not_a_dropped_document() {
+        let error = registry_of(vec![fixed("srs", "DOS-SRS"), fixed("srs", "DOS-OTHER")])
+            .err()
+            .unwrap();
+        assert_eq!(error.code(), DossierErrorCode::RegistryConflict);
+        let ok = registry_of(vec![fixed("srs", "DOS-SRS"), fixed("rmm", "DOS-RMM")]).unwrap();
+        assert_eq!(
+            ok.specs().map(|spec| spec.id).collect::<Vec<_>>(),
+            ["DOS-SRS", "DOS-RMM"]
+        );
+    }
+
+    #[cfg(feature = "test-stubs")]
+    #[trace("FR-191")]
+    #[test]
+    fn the_shipped_stubs_do_not_collide() {
+        assert_eq!(builtin_registry().unwrap().specs().count(), 5);
+    }
 }

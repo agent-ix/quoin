@@ -111,7 +111,7 @@ mod tests {
         assert!(!text.contains("Gaps: none"));
     }
 
-    #[trace("FR-191-AC-5")]
+    #[trace("FR-191")]
     #[test]
     fn as_of_is_written_only_where_the_document_needs_it() {
         let mut spec = SPEC;
@@ -122,7 +122,7 @@ mod tests {
         assert!(with.contains("as_of: \"2026-11-15T00:00:00Z\"\n---"));
     }
 
-    #[trace("FR-191-AC-5")]
+    #[trace("FR-191")]
     #[test]
     fn a_hostile_version_cannot_add_a_frontmatter_key() {
         let text = compose(&SPEC, "1\"\ntype: Other", None, "", &[]);

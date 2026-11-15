@@ -206,7 +206,7 @@ mod tests {
     use super::*;
     use ix_trace_rs::trace;
 
-    #[trace("FR-191-AC-3")]
+    #[trace("FR-191")]
     #[test]
     fn every_code_round_trips_and_no_two_share_a_spelling() {
         let mut seen = std::collections::BTreeSet::new();

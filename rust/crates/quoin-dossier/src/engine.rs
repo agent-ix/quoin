@@ -139,15 +139,7 @@ pub fn generate(
 ) -> Result<Report, DossierError> {
     let rendered = render(registry, kinds, out, inputs)?;
     ensure_out_dir(out)?;
-    for document in &rendered {
-        fs::write(&document.path, &document.text).map_err(|error| {
-            DossierError::new(
-                DossierErrorCode::WriteFailed,
-                format!("cannot write {}: {error}", document.path.display()),
-            )
-            .with_context("path", document.path.display().to_string())
-        })?;
-    }
+    commit(&rendered)?;
     Ok(Report {
         documents: rendered
             .iter()
@@ -155,6 +147,64 @@ pub fn generate(
             .collect(),
         ..Report::default()
     })
+}
+
+/// Replace the files of `rendered` all or nothing, short of outside
+/// interference with the directory.
+///
+/// FR-191 leaves existing files unmodified on exit 2. An existing destination
+/// that cannot be read back (a directory, say) is refused before anything
+/// changes; every new file is staged beside its destination first; and if a
+/// rename still fails, the files already replaced are put back.
+fn commit(rendered: &[Rendered]) -> Result<(), DossierError> {
+    let failed = |path: &Path, reason: String| {
+        DossierError::new(
+            DossierErrorCode::WriteFailed,
+            format!("cannot write {}: {reason}", path.display()),
+        )
+        .with_context("path", path.display().to_string())
+    };
+    // The bytes each destination holds now, or `None` where it is absent.
+    let mut before: Vec<Option<Vec<u8>>> = Vec::with_capacity(rendered.len());
+    for document in rendered {
+        match fs::read(&document.path) {
+            Ok(bytes) => before.push(Some(bytes)),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => before.push(None),
+            Err(error) => return Err(failed(&document.path, error.to_string())),
+        }
+    }
+    let staged: Vec<PathBuf> = rendered
+        .iter()
+        .map(|document| {
+            document
+                .path
+                .with_file_name(format!(".{}.quoin-tmp", document.spec.id))
+        })
+        .collect();
+    let discard = |paths: &[PathBuf]| {
+        for path in paths {
+            let _ = fs::remove_file(path);
+        }
+    };
+    for (document, stage) in rendered.iter().zip(&staged) {
+        if let Err(error) = fs::write(stage, &document.text) {
+            discard(&staged);
+            return Err(failed(&document.path, error.to_string()));
+        }
+    }
+    for (index, (document, stage)) in rendered.iter().zip(&staged).enumerate() {
+        if let Err(error) = fs::rename(stage, &document.path) {
+            for (done, original) in rendered.iter().zip(&before).take(index) {
+                let _ = match original {
+                    Some(bytes) => fs::write(&done.path, bytes),
+                    None => fs::remove_file(&done.path),
+                };
+            }
+            discard(&staged);
+            return Err(failed(&document.path, error.to_string()));
+        }
+    }
+    Ok(())
 }
 
 /// Compare the selected documents with the files on disk; writes nothing.
@@ -275,6 +325,15 @@ mod tests {
         }
     }
 
+    fn names(dir: &Path) -> Vec<String> {
+        let mut names: Vec<_> = fs::read_dir(dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+            .collect();
+        names.sort();
+        names
+    }
+
     fn registry(docs: Vec<Doc>) -> Registry {
         let mut registry = Registry::new();
         for doc in docs {
@@ -340,6 +399,24 @@ mod tests {
         assert!(!out.join("DOS-B.md").exists());
     }
 
+    #[trace("FR-191")]
+    #[test]
+    fn a_later_destination_that_is_a_directory_leaves_the_first_file_unmodified() {
+        let work = tempfile::tempdir().unwrap();
+        let out = work.path().join("dossier");
+        fs::create_dir_all(out.join("DOS-B.md")).unwrap();
+        fs::write(out.join("DOS-A.md"), "before").unwrap();
+        let registry = registry(vec![doc("a", "DOS-A", false), doc("b", "DOS-B", false)]);
+        let error = generate(&registry, &[], &out, &inputs()).unwrap_err();
+        assert_eq!(error.code(), DossierErrorCode::WriteFailed);
+        assert_eq!(fs::read_to_string(out.join("DOS-A.md")).unwrap(), "before");
+        assert_eq!(
+            names(&out),
+            ["DOS-A.md", "DOS-B.md"],
+            "a staged file was left"
+        );
+    }
+
     #[trace("FR-191-AC-13")]
     #[test]
     fn a_blank_version_is_refused_before_anything_is_computed() {
@@ -352,7 +429,7 @@ mod tests {
         assert!(!work.path().join("d").exists());
     }
 
-    #[trace("FR-191-AC-3")]
+    #[trace("FR-191")]
     #[test]
     fn as_of_is_required_only_for_a_document_that_needs_it_and_must_parse() {
         let registry = registry(vec![doc("a", "DOS-A", false), doc("t", "DOS-T", true)]);
@@ -383,7 +460,7 @@ mod tests {
         assert_eq!(fs::read_to_string(&blocker).unwrap(), "x");
     }
 
-    #[trace("FR-191-AC-14", "FR-191-AC-5")]
+    #[trace("FR-191-AC-14", "NFR-040-AC-1")]
     #[test]
     fn gaps_are_sorted_and_the_same_in_the_report_and_the_file_and_runs_are_identical() {
         let mut gapped = doc("g", "DOS-G", false);

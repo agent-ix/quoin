@@ -231,7 +231,7 @@ fn check_matches_then_differs_after_an_edit_then_differs_when_deleted_and_writes
     assert!(!file.exists(), "check recreated the file");
 }
 
-#[trace("FR-191-AC-5")]
+#[trace("NFR-040-AC-1")]
 #[test]
 fn two_generate_runs_produce_identical_files_and_json() {
     let work = tempfile::tempdir().unwrap();
@@ -304,7 +304,7 @@ fn generate_check_and_export_without_a_version_exit_2_and_write_nothing() {
     }
 }
 
-#[trace("FR-191-AC-3")]
+#[trace("FR-191")]
 #[test]
 fn as_of_is_required_by_a_document_that_records_time_and_must_be_rfc_3339() {
     let work = tempfile::tempdir().unwrap();
@@ -708,51 +708,84 @@ fn real_quire_refuses_an_uncommitted_generated_file() {
 }
 
 /// Needs the installed `quire` and the `spec-artifacts-process` module that
-/// defines the `DossierDocument` archetype, read in place from
-/// `SPEC_ARTIFACTS_PROCESS_DIR` (its `spec_artifacts_process` directory) or
-/// the checkout next to this repository. Nothing of it is copied here.
+/// defines the `DossierDocument` archetype (FR-018), read in place from
+/// `SPEC_ARTIFACTS_PROCESS_DIR` (its `spec_artifacts_process` directory). The
+/// stub kinds are not in the archetype's `document_kind` enum, so the test
+/// rewrites that one value in the generated files to a real kind and leaves the
+/// rest of the frontmatter as quoin wrote it. Nothing of the module is copied
+/// here.
 ///
 /// Provenance: PLAT-1614 acceptance 9.
-#[trace("FR-191-AC-14")]
+#[trace("FR-018-AC-1", "FR-018-AC-3")]
 #[test]
 #[ignore = "needs quire and the spec-artifacts-process DossierDocument archetype"]
 fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
-    let module = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
-        || {
-            Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../../../spec-artifacts-process/spec_artifacts_process")
-        },
-        PathBuf::from,
-    );
-    let module = fs::canonicalize(&module).unwrap_or_else(|error| {
-        panic!(
-            "spec-artifacts-process is not at {}: {error}",
-            module.display()
-        )
-    });
+    let module = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR")
+        .map(PathBuf::from)
+        .expect("set SPEC_ARTIFACTS_PROCESS_DIR to the spec_artifacts_process module directory");
+    let module = fs::canonicalize(&module)
+        .unwrap_or_else(|error| panic!("the module is not at {}: {error}", module.display()));
     let work = tempfile::tempdir().unwrap();
-    generate_stubs(work.path(), &["stub-a"]);
-    let file = work.path().join("dossier/DOS-STUB-A.md");
-    let validate = |path: &Path| {
+    let generated = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--as-of",
+            "2026-11-15T00:00:00Z",
+            "--doc",
+            "stub-a",
+            "--doc",
+            "stub-time",
+        ],
+    );
+    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    let validate = |name: &str, text: &str| {
+        let path = work.path().join(name);
+        fs::write(&path, text).unwrap();
         Command::new("quire")
             .args(["validate", "--module"])
             .arg(&module)
-            .arg(path)
+            .arg(&path)
             .current_dir(work.path())
             .output()
             .expect("quire starts")
     };
-    let valid = validate(&file);
-    assert!(
-        valid.status.success(),
-        "{}",
-        String::from_utf8_lossy(&valid.stderr)
+    let plain = read(&work.path().join("dossier/DOS-STUB-A.md"));
+    let timed = read(&work.path().join("dossier/DOS-STUB-TIME.md"));
+
+    let srs = validate(
+        "srs.md",
+        &plain.replace("document_kind: \"stub-a\"", "document_kind: \"srs\""),
     );
-    let bad = work.path().join("bad.md");
-    fs::write(
-        &bad,
-        read(&file).replace("document_kind: \"stub-a\"", "document_kind: \"nonesuch\""),
-    )
-    .unwrap();
-    assert!(!validate(&bad).status.success());
+    assert!(
+        srs.status.success(),
+        "{}",
+        String::from_utf8_lossy(&srs.stderr)
+    );
+    let rmm = validate(
+        "rmm.md",
+        &timed.replace("document_kind: \"stub-time\"", "document_kind: \"rmm\""),
+    );
+    assert!(
+        rmm.status.success(),
+        "{}",
+        String::from_utf8_lossy(&rmm.stderr)
+    );
+
+    let bad = validate(
+        "bad.md",
+        &plain.replace(
+            "document_kind: \"stub-a\"",
+            "document_kind: \"verification-report\"",
+        ),
+    );
+    assert!(!bad.status.success());
+    let diagnostics = format!(
+        "{}{}",
+        String::from_utf8_lossy(&bad.stdout),
+        String::from_utf8_lossy(&bad.stderr)
+    );
+    assert!(diagnostics.contains("document_kind"), "{diagnostics}");
 }
