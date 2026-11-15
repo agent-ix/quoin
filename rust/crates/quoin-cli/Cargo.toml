@@ -35,6 +35,7 @@ quoin-auditor = { workspace = true }
 quoin-evidence = { workspace = true }
 quoin-config = { workspace = true }
 quoin-delivery = { workspace = true }
+quoin-dossier = { workspace = true }
 quoin-graph-analysis = { workspace = true }
 # `quoin measurement verify` (PLAT-985) reads a plan's document and its
 # protected-apparatus paths to check them against git history — the same
@@ -55,6 +56,9 @@ semver = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
 
 [dev-dependencies]
+# The stub generators the dossier command tests drive (PLAT-1614); the feature
+# reaches the `quoin` binary these tests spawn through feature unification.
+quoin-dossier = { workspace = true, features = ["test-stubs"] }
 # FR-140-AC-11 validates the pack report against the schema derived from its
 # own type, which only exists under the `schema` feature.
 quoin-assurance = { workspace = true, features = ["schema"] }
