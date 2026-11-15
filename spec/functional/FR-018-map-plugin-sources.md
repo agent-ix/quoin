@@ -33,8 +33,8 @@ source; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source;
   present; a `//<subdir>` segment SHALL instead produce a git-subdir source with
   the repo, subdirectory, and optional ref.
 - A `package:` prefix SHALL produce an npm source, preserving a leading scope `@`
-  and splitting the version on the final `@`. The npm source mapping is in place
-  for when `ts-plugin-kit` adds npm install support.
+  and splitting the version on the final `@`. Package installation behavior is
+  specified by [FR-187](./FR-187-install-modules-from-npm-packages.md).
 - A bare argument SHALL produce a path source.
 
 ## Acceptance Criteria
