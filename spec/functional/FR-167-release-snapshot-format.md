@@ -57,7 +57,8 @@ runs no git ([FR-166](./FR-166-release-snapshot-command.md)).
 ## Behavior
 
 - The snapshot SHALL carry exactly the members of the table, each once, with `null` for a source value that is absent.
-- WHEN serializing `open_findings`, the command SHALL omit the `cause` member when it is absent and SHALL NOT serialize it as `null`.
+- WHEN serializing `open_findings`, the command SHALL omit the `cause` member when it is absent.
+- The command SHALL NOT serialize absent `cause` as `null`.
 - The snapshot SHALL NOT carry a member that the table does not name, at any depth.
 - The command SHALL order `coverage` by requirement id and then as FR-115 orders criteria.
 - The command SHALL order `open_findings` by `obligation`, `kind`, `path`, `line`, `symbol`, `cause` and `summary`, comparing
