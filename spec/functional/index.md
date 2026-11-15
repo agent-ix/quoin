@@ -167,3 +167,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-184: FR-116 producer definition for the analysis act](./FR-184-analysis-act-producer-definition.md)
 - [FR-185: Quoin exports retained evidence as an in-toto Test Result statement](./FR-185-in-toto-test-result-export.md)
 - [FR-186: Carry Quoin release verification evidence with the tag attestation](./FR-186-release-verification-evidence.md)
+- [FR-187: Install modules from npm packages](./FR-187-install-modules-from-npm-packages.md)

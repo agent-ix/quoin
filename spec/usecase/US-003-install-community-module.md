@@ -24,7 +24,7 @@ relationships:
 ## Context
 
 A user extends the spec vocabulary with an additional artifact/object module
-from a local path, GitHub repository, or package.
+from a local path, GitHub repository, or npm package.
 
 The expected command shape is:
 
@@ -35,10 +35,9 @@ quoin write . --types custom-object
 ```
 
 The installed module should participate in the same authoring and validation
-flow as the default modules. `quoin` maps the source argument to a typed
-`ts-plugin-kit` source and hands off the install; `path` and GitHub (repository
-and monorepo-subdir) sources install today, and the `package:`/npm mapping is in
-place ready for when `ts-plugin-kit` adds npm install support.
+flow as the default modules. `quoin` maps the source argument to a typed source
+and installs it. Package sources are covered by
+[FR-187](../functional/FR-187-install-modules-from-npm-packages.md).
 
 ## Dependencies
 
@@ -46,4 +45,5 @@ place ready for when `ts-plugin-kit` adds npm install support.
   are materialized under `~/.ix/filament/modules`.
 - Catalog loading merges `QUOIN_MODULE_PATHS` overrides with installed modules
   deterministically (env paths first).
-- Install/registry mechanics are delegated to `@agent-ix/ts-plugin-kit`.
+- Install records and materialized modules use the shared registry and module
+  directory described by FR-019.
