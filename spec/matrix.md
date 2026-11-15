@@ -13,4 +13,4 @@ relationships:
 
 | Test ID | Title | Type | Traces To | Status |
 |---------|-------|------|-----------|--------|
-| TC-014 | Default module manifest uses public modules and released source refs | Unit | FR-016-AC-1, FR-016-AC-2, FR-016-AC-4, FR-016-AC-5 | ✅ |
+| TC-014 | Default module manifest pins all ten public modules to release refs | Unit | FR-016-AC-1, FR-016-AC-2, FR-016-AC-4, FR-016-AC-5 | ✅ |

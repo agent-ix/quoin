@@ -458,29 +458,98 @@ mod tests {
 
     #[trace("FR-016-AC-1", "FR-016-AC-2", "FR-016-AC-4", "FR-016-AC-5", "TC-014")]
     #[test]
-    fn default_process_module_tracks_the_release_with_allowed_link_types() {
+    fn default_modules_use_the_expected_public_release_pins() {
         let defaults = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
             .expect("the shipped default-module manifest is valid");
-        let names: Vec<&str> = defaults
+        assert!(
+            defaults.entries.iter().all(|entry| entry.is_enabled()),
+            "all ten public module entries remain enabled"
+        );
+        let source_pins: Vec<(&str, &str, &str, &str)> = defaults
             .entries
             .iter()
-            .map(|entry| entry.name.as_str())
+            .map(|entry| match &entry.source {
+                quoin_modules::Source::GitSubdir {
+                    url,
+                    path,
+                    r#ref: Some(r#ref),
+                } => (
+                    entry.name.as_str(),
+                    url.as_str(),
+                    path.as_str(),
+                    r#ref.as_str(),
+                ),
+                _ => panic!(
+                    "default module {} must name a Git source and an explicit ref",
+                    entry.name
+                ),
+            })
             .collect();
         assert_eq!(
-            names,
+            source_pins,
             [
-                "engineering-assurance",
-                "spec-artifacts-iso",
-                "spec-artifacts-app",
-                "spec-artifacts-process",
-                "spec-objects-business",
-                "spec-objects-architecture",
-                "spec-objects-enterprise",
-                "spec-objects-operational",
-                "spec-objects-security",
-                "spec-objects-safety",
+                (
+                    "engineering-assurance",
+                    "agent-ix/engineering-assurance",
+                    "engineering_assurance",
+                    "v0.8.2"
+                ),
+                (
+                    "spec-artifacts-iso",
+                    "agent-ix/spec-artifacts-iso",
+                    "spec_artifacts_iso",
+                    "v0.25.0"
+                ),
+                (
+                    "spec-artifacts-app",
+                    "agent-ix/spec-artifacts-app",
+                    "spec_artifacts_app",
+                    "v0.10.0"
+                ),
+                (
+                    "spec-artifacts-process",
+                    "agent-ix/spec-artifacts-process",
+                    "spec_artifacts_process",
+                    "v0.34.0"
+                ),
+                (
+                    "spec-objects-business",
+                    "agent-ix/spec-objects-business",
+                    "spec_objects_business",
+                    "v0.10.0"
+                ),
+                (
+                    "spec-objects-architecture",
+                    "agent-ix/spec-objects-architecture",
+                    "spec_objects_architecture",
+                    "v0.11.0"
+                ),
+                (
+                    "spec-objects-enterprise",
+                    "agent-ix/spec-objects-enterprise",
+                    "spec_objects_enterprise",
+                    "v0.9.0"
+                ),
+                (
+                    "spec-objects-operational",
+                    "agent-ix/spec-objects-operational",
+                    "spec_objects_operational",
+                    "v0.10.0"
+                ),
+                (
+                    "spec-objects-security",
+                    "agent-ix/spec-objects-security",
+                    "spec_objects_security",
+                    "v0.11.0"
+                ),
+                (
+                    "spec-objects-safety",
+                    "agent-ix/spec-objects-safety",
+                    "spec_objects_safety",
+                    "v0.8.0"
+                ),
             ],
-            "the default set remains the ten public modules"
+            "all ten public modules must stay pinned to their expected release refs"
         );
         let process = defaults
             .entries
