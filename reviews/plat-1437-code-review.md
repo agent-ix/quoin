@@ -228,3 +228,21 @@ findings:
     finding: "markdown_escape is defined twice with identical bodies in srs.rs and architecture.rs; only the srs.rs copy is tested."
 bindings: []
 ```
+
+## Dispositions
+
+All original findings were fixed after the two coder fix rounds. Focused tests, Clippy, and the ignored real-tool export test passed. The aggregate gate remains for the code lead.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | `systems::load` reads the four systems tables from the requested corpus rather than returning empty vectors. |
+| FND-002 | fixed | Architecture renders port cells and the connections table. |
+| FND-003 | fixed | Uncovered join blocks are reported as lacking a design element. |
+| FND-004 | fixed | Dangling and kind-mismatch references are retained and yield their corresponding gaps. |
+| FND-005 | fixed | Missing design relations yield `design_relations_unavailable`. |
+| FND-006 | fixed | Parts without allocated requirements yield `no_allocation`. |
+| FND-007 | fixed | Malformed, unreadable or contract-violating inputs fail the source. |
+| FND-008 | fixed | Entries without ids derive requirement ids from their criterion ids. |
+| FND-009 | fixed | Focused workspace Clippy with `-D warnings` passed. |
+| FND-010 | fixed | SRS headings use the shared line renderer. |
+| FND-011 | fixed | Escaping is shared in the `markdown` module. |

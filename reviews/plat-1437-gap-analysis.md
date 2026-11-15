@@ -116,3 +116,14 @@ bindings:
   - {test_id: architecture_generator_has_correct_spec, ac_id: FR-193, trace: wrong}
   - {test_id: the_shipped_registry_holds_srs_and_architecture, ac_id: FR-191, trace: correct}
 ```
+
+## Dispositions
+
+All original findings were fixed after the two coder fix rounds. Criterion tests and fixture-backed systems tests are present; the ignored real-tool export test passed. The aggregate gate remains for the code lead.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | SRS tests cover FR-192-AC-1 through AC-6 with criterion tags and behavior assertions. |
+| FND-002 | fixed | Architecture tests cover FR-193-AC-1 through AC-6 with criterion tags and behavior assertions. |
+| FND-003 | fixed | Tests use criterion-level tags on behavior assertions. |
+| FND-004 | fixed | `systems::load` has fixture-backed tests and a caller in the architecture generator. |
