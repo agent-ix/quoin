@@ -81,7 +81,7 @@ Refusals; each exits non-zero with empty stdout and names the control or exclusi
 - If two `scope_exclusion` artifacts name one set and clause, then the command SHALL refuse.
 - If a clause is both mapped by a control and named by a `scope_exclusion`, then the command SHALL refuse.
 - If an identifier of an emitted fact breaks the FR-133 identifier rules, then the command SHALL refuse with the FR-133 status (`invalid-identifier` or `case-collision`).
-- If `--spec` contains a `scope_exclusion` that fails Quire validation because a required disposition field is absent or invalid, then the command SHALL refuse with non-zero status and empty stdout, naming the artifact, set and clause.
+- If `--spec` contains a `scope_exclusion` rejected by its declared `ScopeExclusion` object schema because a required disposition field is absent or invalid, then the command SHALL refuse with non-zero status and empty stdout, naming the artifact, set and clause.
 
 Report (stderr, one line each, sorted, on success):
 
