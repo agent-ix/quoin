@@ -60,3 +60,7 @@ Pass 2, FR-121 at `ab5356be`. Lines 89 and 90 each have one trigger and one resp
 | FND-003 | fixed | Line 89 is now split into two statements. Line 89 covers no frontmatter value: the key is absent from `record` and not defaulted. Line 90 covers a frontmatter value with no section: the value is kept. Each bullet has a single trigger. |
 
 - FND-003 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:89-90`): `If the frontmatter holds no value for a frontmatter-owned key, then Quire SHALL leave the key absent from record, whether or not a section names it, and SHALL NOT default it.` / `If the frontmatter holds a value for a frontmatter-owned key and no section names the key, then Quire SHALL keep the frontmatter value in record; the absence of a section SHALL NOT erase a value the frontmatter projects.`
+
+## Dispositions (pass 3)
+
+Pass 3, FR-121 at `8b7a934e`. Line 91 was rewritten. It is now a `When ... Quire SHALL` statement with one trigger and one response. The `because` clause gives a reason and does not add a second response. No new findings. FND-001..FND-003 stay fixed: lines 87, 89, 90 and 95 are unchanged since pass 2.

@@ -84,3 +84,17 @@ Pass 2 re-read FR-121 at `ab5356be` and quire-rs FR-081 at quire-rs#688 head `22
 - FND-005 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:91`): `When no section names a frontmatter-owned key, Quire SHALL report the section mapping not_applicable for the absent section and SHALL add no recordSources or availability.recordKeys entry for the key; the independent frontmatter_field locator alone supplies the record value when the frontmatter holds one.`
 
 Pass-2 verdict: **CHANGES REQUESTED**, on FND-006 only. It is a one-clause deletion. Everything else in the change is closed.
+
+## Dispositions (pass 3)
+
+Pass 3 re-read FR-121 at `8b7a934e`. The lead reports that `quire validate` passes on this exact head, with only the existing unused-import warning. That was not re-run here. No new findings.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-006 | fixed | The `not_applicable` clause is gone from line 91. The line now says only that Quire adds no `recordSources` or `availability.recordKeys` entry for a frontmatter-owned key with no section. That matches lines 92-93 and 124, and AC-12 and AC-13 now assert it. Line 83 keeps `not_applicable` for keys that are not frontmatter-owned, so the two absent-section rules do not overlap. |
+
+- FND-006 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:91`): `When no section names a frontmatter-owned key, Quire SHALL add no recordSources or availability.recordKeys entry for the key, because the frontmatter projection is independent of the section mapping; the frontmatter_field locator alone supplies the record value when the frontmatter holds one.`
+
+FND-001..FND-005 were re-checked at this head and stay fixed. Lines 78-79, 83, 87-90, 92 and 123-124 are unchanged since pass 2. Follow-up outside this PR: quire-rs#688 should except frontmatter-owned keys from FR-081's absent-section `not_applicable` rule, so the engine spec agrees with line 91.
+
+Pass-3 verdict: **APPROVED.** No finding is open.
