@@ -553,6 +553,64 @@ fn a_run_is_byte_identical_offline_and_changes_nothing() {
     assert_eq!(before, watched(&env));
 }
 
+#[trace("FR-181-AC-11")]
+#[test]
+fn a_profile_set_loads_with_an_edge_type_from_another_installed_module() {
+    let env = env();
+    let owner = env.base.join("src/profile-owner");
+    std::fs::create_dir_all(owner.join("profiles")).unwrap();
+    std::fs::write(
+        owner.join("manifest.yaml"),
+        r"name: profile-owner
+version: 0.1.0
+clause_sets:
+  - cross-module.yaml
+object_types:
+  - name: profile_object
+    data_schema: {type: object}
+    allowed_links: [references]
+",
+    )
+    .unwrap();
+    std::fs::write(
+        owner.join("cross-module.yaml"),
+        set_yaml("cross-module", "1", "[eu, us]"),
+    )
+    .unwrap();
+    std::fs::write(
+        owner.join("profiles/cross.yaml"),
+        profile_yaml(
+            "cross",
+            &[("cross-module", "1")],
+            "context:\n  region: eu\n",
+        ),
+    )
+    .unwrap();
+
+    let provider = env.base.join("src/edge-provider");
+    std::fs::create_dir_all(&provider).unwrap();
+    std::fs::write(
+        provider.join("manifest.yaml"),
+        r"name: edge-provider
+version: 0.1.0
+edge_types:
+  references: {description: Relationship reference, category: dependency}
+",
+    )
+    .unwrap();
+    env.install(&owner);
+    env.install(&provider);
+    env.select("profile: cross\n");
+
+    let output = env.evaluate(&[]);
+    assert!(output.status.success(), "{}", text(&output));
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let set = &report["sets"][0];
+    assert_eq!(set["key"]["id"], "cross-module");
+    assert_eq!(set["status"], "evaluated");
+    assert_eq!(set["report"]["clauseSet"]["id"], "cross-module");
+}
+
 /// The run inside an empty network namespace, where no socket can leave the
 /// process. Skipped, loudly, where user namespaces are not permitted.
 #[trace("NFR-037-AC-2")]

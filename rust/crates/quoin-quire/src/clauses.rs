@@ -152,6 +152,136 @@ pub fn declared_clause_sets(
         .collect()
 }
 
+/// The clause-set keys declared by `module` when all `module_roots` are
+/// installed together. Cross-module vocabularies (including edge types used
+/// by object schemas) are resolved from the complete installed set, while
+/// the returned keys remain attributable to the requested module.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] when any installed module cannot be loaded strictly,
+/// or when the requested module is not in `module_roots`.
+pub fn declared_clause_sets_in_module_set(
+    module: &ModuleRoot,
+    module_roots: &[ModuleRoot],
+    notices: &mut Vec<Notice>,
+) -> Result<Vec<ClauseSetRef>> {
+    let roots: Vec<&std::path::Path> = module_roots.iter().map(ModuleRoot::as_path).collect();
+    let outcome = quire_rs::loader::load_module_set(&roots);
+    if let Some(failure) = outcome.manifest_errors.first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.message.clone(),
+        });
+    }
+    if let Some(failure) = outcome.failures.first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.reason.clone(),
+        });
+    }
+    let requested = module.as_path();
+    let loaded = outcome
+        .modules
+        .iter()
+        .find(|loaded| loaded.root == requested)
+        .ok_or_else(|| Error::ModuleLoad {
+            path: requested.to_path_buf(),
+            reason: "module is not present in the installed module set".to_owned(),
+        })?;
+
+    let registry = load_profile_registry(&roots, requested)?;
+    crate::modules::collect(NoticeKind::ModuleLoad, registry.diagnostics(), notices);
+
+    loaded
+        .clause_sets
+        .iter()
+        .map(|set| {
+            Ok(ClauseSetRef {
+                authority: ClauseSetAuthority::new(set.authority.as_str())?,
+                id: ClauseSetId::new(set.id.as_str())?,
+                version: ClauseSetVersion::new(set.version.as_str())?,
+            })
+        })
+        .collect()
+}
+
+/// Evaluate an exact set from its unique owning module while validating it
+/// against the complete installed module registry.
+///
+/// The caller establishes unique ownership before calling this function.
+/// Keeping the owner first makes the selected module's set the registry's
+/// first contribution if an unrelated module has an identical key.
+///
+/// # Errors
+/// As [`evaluate`], when the module set cannot load strictly or the exact set
+/// is absent from the resulting registry.
+pub fn evaluate_in_module_set(
+    owner: &ModuleRoot,
+    module_roots: &[ModuleRoot],
+    set: &ClauseSetRef,
+    context: &Context,
+    notices: &mut Vec<Notice>,
+) -> Result<quire_rs::ClauseBindingReport> {
+    let mut ordered_roots = Vec::with_capacity(module_roots.len());
+    ordered_roots.push(owner.clone());
+    ordered_roots.extend(
+        module_roots
+            .iter()
+            .filter(|module| *module != owner)
+            .cloned(),
+    );
+    let roots: Vec<&std::path::Path> = ordered_roots.iter().map(ModuleRoot::as_path).collect();
+    let registry = load_profile_registry(&roots, owner.as_path())?;
+    crate::modules::collect(NoticeKind::ModuleLoad, registry.diagnostics(), notices);
+    if let Some(failure) = registry.failures().first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.reason.clone(),
+        });
+    }
+    let loaded = exact(&registry, set)?;
+    Ok(loaded.evaluate(context.as_map()))
+}
+
+/// Load the complete module set under Quire's strict vocabulary rules while
+/// leaving duplicate set ownership to the caller, which can report both
+/// module names as the profile contract requires.
+fn load_profile_registry(
+    roots: &[&std::path::Path],
+    error_path: &std::path::Path,
+) -> Result<quire_rs::Registry> {
+    let registry =
+        quire_rs::Registry::load_module_set(roots).map_err(|error| Error::ModuleLoad {
+            path: error_path.to_path_buf(),
+            reason: error.to_string(),
+        })?;
+    if let Some(diagnostic) = registry.diagnostics().iter().find(|diagnostic| {
+        matches!(
+            diagnostic,
+            quire_rs::Diagnostic::DuplicateModuleName { .. }
+                | quire_rs::Diagnostic::DuplicateArchetype { .. }
+                | quire_rs::Diagnostic::DuplicateEdgeType { .. }
+                | quire_rs::Diagnostic::DuplicateRole { .. }
+                | quire_rs::Diagnostic::DuplicateLexiconTerm { .. }
+                | quire_rs::Diagnostic::DuplicateInverseEdge { .. }
+                | quire_rs::Diagnostic::UnknownEdgeType { .. }
+                | quire_rs::Diagnostic::UnknownRole { .. }
+        )
+    }) {
+        return Err(Error::ModuleLoad {
+            path: error_path.to_path_buf(),
+            reason: diagnostic.to_string(),
+        });
+    }
+    if let Some(failure) = registry.failures().first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.reason.clone(),
+        });
+    }
+    Ok(registry)
+}
+
 /// The licence-restricted clause sets of the module rooted at `module`, as the
 /// engine's `check_publishable` reports them; empty means no restricted set.
 ///
@@ -199,6 +329,41 @@ pub fn restricted_clause_sets(module: &ModuleRoot) -> Result<Vec<quire_rs::Restr
             "expected exactly one module at this root".to_owned(),
         )),
     }
+}
+
+/// The licence-restricted clause sets declared by `module`, resolving its
+/// relationships against the complete installed module set.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] when an installed module cannot be loaded or the
+/// requested module is absent from `module_roots`.
+pub fn restricted_clause_sets_in_module_set(
+    module: &ModuleRoot,
+    module_roots: &[ModuleRoot],
+) -> Result<Vec<quire_rs::RestrictedClauseSet>> {
+    let roots: Vec<&std::path::Path> = module_roots.iter().map(ModuleRoot::as_path).collect();
+    let outcome = quire_rs::loader::load_module_set(&roots);
+    if let Some(failure) = outcome.manifest_errors.first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.message.clone(),
+        });
+    }
+    if let Some(failure) = outcome.failures.first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.reason.clone(),
+        });
+    }
+    let loaded = outcome
+        .modules
+        .iter()
+        .find(|loaded| loaded.root == module.as_path())
+        .ok_or_else(|| Error::ModuleLoad {
+            path: module.as_path().to_path_buf(),
+            reason: "module is not present in the installed module set".to_owned(),
+        })?;
+    Ok(quire_rs::check_publishable(loaded))
 }
 
 /// Whether the module's `manifest.yaml` lists any `clause_sets` entry.

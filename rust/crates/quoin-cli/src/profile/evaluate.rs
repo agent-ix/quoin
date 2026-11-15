@@ -19,15 +19,20 @@ use super::model::{EffectiveProfile, Layer, ModuleRef};
 /// `quoin-quire`; a test can stand in a failing or malformed engine.
 pub(crate) trait Engine {
     /// The keys `module` declares.
-    fn declared(&self, module: &ModuleRef) -> Result<Vec<ClauseSetKey>, String>;
+    fn declared(
+        &self,
+        module: &ModuleRef,
+        modules: &[ModuleRef],
+    ) -> Result<Vec<ClauseSetKey>, String>;
     /// Whether `module` carries a licence-restricted clause set (FR-137).
-    fn is_pack(&self, module: &ModuleRef) -> Result<bool, String>;
+    fn is_pack(&self, module: &ModuleRef, modules: &[ModuleRef]) -> Result<bool, String>;
     /// The engine's `clause-binding-v1` report for one set, as JSON.
     fn evaluate(
         &self,
         module: &ModuleRef,
         key: &ClauseSetKey,
         context: &BTreeMap<String, String>,
+        modules: &[ModuleRef],
     ) -> Result<serde_json::Value, String>;
 }
 
@@ -191,7 +196,7 @@ pub(crate) fn evaluate(
     let mut declared: Vec<(&ModuleRef, Vec<ClauseSetKey>)> = Vec::new();
     for module in modules {
         let keys = engine
-            .declared(module)
+            .declared(module, modules)
             .map_err(|reason| EvaluateError::Engine {
                 key: format!("module `{}`", module.name),
                 reason,
@@ -223,7 +228,7 @@ pub(crate) fn evaluate(
         }
         if *layer == Layer::Project
             && engine
-                .is_pack(owner)
+                .is_pack(owner, modules)
                 .map_err(|reason| EvaluateError::Engine {
                     key: key_text(key),
                     reason,
@@ -236,7 +241,7 @@ pub(crate) fn evaluate(
             });
         }
         let raw = engine
-            .evaluate(owner, key, &profile.context)
+            .evaluate(owner, key, &profile.context, modules)
             .map_err(|reason| EvaluateError::Engine {
                 key: key_text(key),
                 reason,

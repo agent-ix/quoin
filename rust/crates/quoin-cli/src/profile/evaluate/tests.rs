@@ -35,7 +35,11 @@ struct Fake {
 }
 
 impl Engine for Fake {
-    fn declared(&self, module: &ModuleRef) -> Result<Vec<ClauseSetKey>, String> {
+    fn declared(
+        &self,
+        module: &ModuleRef,
+        _modules: &[ModuleRef],
+    ) -> Result<Vec<ClauseSetKey>, String> {
         Ok(self
             .declared
             .iter()
@@ -44,7 +48,7 @@ impl Engine for Fake {
             .collect())
     }
 
-    fn is_pack(&self, module: &ModuleRef) -> Result<bool, String> {
+    fn is_pack(&self, module: &ModuleRef, _modules: &[ModuleRef]) -> Result<bool, String> {
         Ok(self.packs.contains(&module.name.as_str()))
     }
 
@@ -53,6 +57,7 @@ impl Engine for Fake {
         _module: &ModuleRef,
         key: &ClauseSetKey,
         context: &BTreeMap<String, String>,
+        _modules: &[ModuleRef],
     ) -> Result<Value, String> {
         if self.fail == Some(key.id.as_str()) {
             return Err("engine broke".to_owned());
