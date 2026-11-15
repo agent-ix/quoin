@@ -59,3 +59,15 @@ FR-121 → quire-rs FR-081 (new `depends_on`) and quire-rs FR-081 → FR-121
 | --- | --- | --- | --- |
 | FND-001 | medium | The new `depends_on` edge to quire-rs FR-081 makes a dependency cycle. FR-081 implements FR-121, lists quoin FR-121 as Upstream, and is already FR-121's Downstream ("the extractor in `agent-ix/quire-rs`"). The ownership grammar is Quoin's to define, so FR-081 is downstream. Drop that edge and keep the FR-069 edge. | spec/functional/FR-121-record-key-sections-mapping.md:18 |
 | FND-002 | low | The "Upstream, quire-rs" bullet says FR-069 and FR-081 hold "the `frontmatter_field` locator whose ownership this requirement defines". On quire-rs `main` neither defines frontmatter-owned record keys yet; that text is in open quire-rs#688. The bullet does not say the upstream is pending, so a reader following the link finds no such locator rule. | spec/functional/FR-121-record-key-sections-mapping.md:147 |
+
+## Dispositions
+
+Round 1, FR-121 at `21db2ff6`. No new findings from this method. The FR-081 `depends_on` edge is gone. FR-121's only quire-rs typed edge is `depends_on` FR-069. FR-069's typed edges run within quire-rs (they include `requires` FR-081). FR-081 at quire-rs#688 head `7b43672f` has no typed edge to quoin FR-121, only its prose Upstream. So the typed graph has no cycle. The prose path FR-121 → FR-069 → FR-081 ⇢ FR-121 comes from FR-069's existing `requires` FR-081 on quire-rs `main`. This PR did not add it.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The `depends_on` edge to quire-rs FR-081 was removed. FR-081 is now named only as Downstream ("which implements this requirement"). |
+| FND-002 | fixed | The Upstream bullet now cites only FR-069 and says its frontmatter-owned text is pending in quire-rs PR #688. The Downstream FR-081 mention says the same. |
+
+- FND-001 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:16-17`): `- target: "ix://agent-ix/quire-rs/FR-069"` / `type: "depends_on"` (no FR-081 entry follows)
+- FND-002 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:156`): `**Upstream, quire-rs**: [FR-069](ix://agent-ix/quire-rs/FR-069), the frontmatter_field locator and its projection of the frontmatter value; its frontmatter-owned key text is pending in quire-rs PR #688`

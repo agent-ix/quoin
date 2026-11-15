@@ -33,3 +33,15 @@ record outcome a fixture can assert.
 | --- | --- | --- | --- |
 | FND-001 | medium | No AC covers a declared `frontmatter_field`-owned key with neither a frontmatter value nor a section. This is the line 85 rule "an absent frontmatter field leaves the key absent" plus FR-121-CON-1. No test asserts that the key is absent and not defaulted, or what its `availability.recordKeys` state is. | spec/functional/FR-121-record-key-sections-mapping.md:85 |
 | FND-002 | low | FR-121-AC-12 bundles three independent behaviours: frontmatter-only extraction with no diagnostic, an other-mapping key (`## Thresholds`) staying as in AC-8, and a lifecycle key (`## Status`) staying as in AC-4. One pass/fail verdict cannot say which one regressed. | spec/functional/FR-121-record-key-sections-mapping.md:142 |
+
+## Dispositions
+
+Round 1, FR-121 at `21db2ff6`. AC-10..AC-16 run contiguously, each AC is `Test`, and the table keeps three columns. The new AC-16 covers the token scope of line 88. No new findings from this method. AC-12 and AC-13 assert no availability state, a gap tracked as code-review FND-005 and not repeated here.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | AC-13 covers a frontmatter-owned key with neither form present: the key is absent, not empty or defaulted, and there is no diagnostic. |
+| FND-002 | fixed | AC-12 is split: AC-12 covers frontmatter-only extraction, AC-14 the other-mapping key, and AC-15 the lifecycle key without a locator. Each has its own verdict. |
+
+- FND-001 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:148`): `FR-121-AC-13 | A fixture with a frontmatter_field-owned key, no frontmatter value and no section yields a record without the key, not an empty or default value, and no diagnostic.`
+- FND-002 after_excerpt (`spec/functional/FR-121-record-key-sections-mapping.md:147-150`): `FR-121-AC-12 | A fixture with the frontmatter value and no section extracts the frontmatter value with no diagnostic.` / `FR-121-AC-14 | With a frontmatter_field locator declared for one key, a heading that names a key owned by another mapping (## Thresholds) is prose with no diagnostic, as in AC-8.` / `FR-121-AC-15 | ... a lifecycle key that has no such locator (## Status) is read from its section, as in AC-4.`
