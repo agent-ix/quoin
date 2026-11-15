@@ -14,11 +14,14 @@ relationships:
 
 ## Description
 
-The committed default module set SHALL be expressed as a `ts-plugin-kit`
-marketplace manifest stored at `default-modules.yaml`, declaring each default
-module with a typed source named by repository, with no commit id and no tag. A
-module resolves to its repository's default branch. This document defines the structural schema of that file; its behavioral installation
-is specified by
+The quoin CLI SHALL read the committed default module set from the
+`ts-plugin-kit` marketplace manifest at `default-modules.yaml`. Each default
+module SHALL declare a typed source named by repository. The quoin CLI SHALL
+use a module's release tag as `source.ref` when its repository provides one.
+The quoin CLI SHALL use the repository's default branch as `source.ref` when
+its repository provides no release tag for that module. This document defines
+the structural schema of that file; its
+behavioral installation is specified by
 [FR-017](./FR-017-reconcile-default-modules.md).
 
 ## Properties
@@ -63,6 +66,7 @@ schema below, which is the full contract. `schemaVersion` is the constant `1`.
               "url": { "type": "string" },
               "repo": { "type": "string" },
               "path": { "type": "string" },
+              "ref": { "type": "string" },
               "package": { "type": "string" }
             }
           }
@@ -75,10 +79,12 @@ schema below, which is the full contract. `schemaVersion` is the constant `1`.
 
 ## Acceptance Criteria
 
-| ID          | Criteria                                                                               | Verification         |
-| ----------- | -------------------------------------------------------------------------------------- | -------------------- |
-| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest             | None (no native test is tagged to this criterion; PLAT-1045) |
-| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source and no `ref`, and excludes private opt-in modules | None (no native test is tagged to this criterion; PLAT-1045) |
+| ID | Criteria | Verification |
+| --- | --- | --- |
+| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest. | Test (TC-014) |
+| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source, and excludes private opt-in modules. | Test (TC-014) |
+| FR-016-AC-4 | Each Git source sets `source.ref` to a release tag when one exists for its module, and uses the repository's default branch only when no release tag exists. | Test (TC-014) |
+| FR-016-AC-5 | A declared `source.ref` is a string. | Test (TC-014) |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-016-AC-3 is withdrawn. It
 > required every committed copy of a module's pin to agree and the manifest's

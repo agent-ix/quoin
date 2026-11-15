@@ -39,7 +39,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: v0.31.0
+      ref: v0.34.0
 
   - name: spec-objects-business
     defaultEnabled: true

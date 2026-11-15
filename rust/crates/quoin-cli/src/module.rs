@@ -394,8 +394,87 @@ fn indent_json(value: &str, indent: usize) -> String {
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::{command, modules_json};
+    use super::{DEFAULT_MODULES, command, modules_json};
     use ix_trace_rs::trace;
+
+    const EXPECTED_DEFAULT_PINS: [(&str, &str, &str, &str); 10] = [
+        (
+            "engineering-assurance",
+            "agent-ix/engineering-assurance",
+            "engineering_assurance",
+            "v0.8.2",
+        ),
+        (
+            "spec-artifacts-iso",
+            "agent-ix/spec-artifacts-iso",
+            "spec_artifacts_iso",
+            "v0.25.0",
+        ),
+        (
+            "spec-artifacts-app",
+            "agent-ix/spec-artifacts-app",
+            "spec_artifacts_app",
+            "v0.10.0",
+        ),
+        (
+            "spec-artifacts-process",
+            "agent-ix/spec-artifacts-process",
+            "spec_artifacts_process",
+            "v0.34.0",
+        ),
+        (
+            "spec-objects-business",
+            "agent-ix/spec-objects-business",
+            "spec_objects_business",
+            "v0.10.0",
+        ),
+        (
+            "spec-objects-architecture",
+            "agent-ix/spec-objects-architecture",
+            "spec_objects_architecture",
+            "v0.11.0",
+        ),
+        (
+            "spec-objects-enterprise",
+            "agent-ix/spec-objects-enterprise",
+            "spec_objects_enterprise",
+            "v0.9.0",
+        ),
+        (
+            "spec-objects-operational",
+            "agent-ix/spec-objects-operational",
+            "spec_objects_operational",
+            "v0.10.0",
+        ),
+        (
+            "spec-objects-security",
+            "agent-ix/spec-objects-security",
+            "spec_objects_security",
+            "v0.11.0",
+        ),
+        (
+            "spec-objects-safety",
+            "agent-ix/spec-objects-safety",
+            "spec_objects_safety",
+            "v0.8.0",
+        ),
+    ];
+
+    fn source_pin(entry: &quoin_modules::MarketplaceEntry) -> Option<(&str, &str, &str, &str)> {
+        match &entry.source {
+            quoin_modules::Source::GitSubdir {
+                url,
+                path,
+                r#ref: Some(r#ref),
+            } => Some((
+                entry.name.as_str(),
+                url.as_str(),
+                path.as_str(),
+                r#ref.as_str(),
+            )),
+            _ => None,
+        }
+    }
 
     #[trace("FR-017")]
     #[test]
@@ -454,5 +533,42 @@ mod tests {
   ]
 }"#
         );
+    }
+
+    #[trace("FR-016-AC-1", "FR-016-AC-2", "FR-016-AC-4", "FR-016-AC-5", "TC-014")]
+    #[test]
+    fn default_modules_use_the_expected_public_release_pins() {
+        let defaults = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
+            .expect("the shipped default-module manifest is valid");
+        assert!(
+            defaults
+                .entries
+                .iter()
+                .all(quoin_modules::MarketplaceEntry::is_enabled),
+            "all ten public module entries remain enabled"
+        );
+        let source_pins: Vec<_> = defaults.entries.iter().filter_map(source_pin).collect();
+        assert_eq!(
+            source_pins.len(),
+            defaults.entries.len(),
+            "every default module has a Git source and explicit ref"
+        );
+        assert_eq!(
+            source_pins, EXPECTED_DEFAULT_PINS,
+            "all ten public modules must stay pinned to their expected release refs"
+        );
+        let process = defaults
+            .entries
+            .iter()
+            .find(|entry| entry.name.as_str() == "spec-artifacts-process")
+            .expect("the process module is in the default set");
+        assert!(process.is_enabled(), "the process module stays enabled");
+        assert!(matches!(
+            &process.source,
+            quoin_modules::Source::GitSubdir { url, path, r#ref: Some(r#ref) }
+                if url == "agent-ix/spec-artifacts-process"
+                    && path == "spec_artifacts_process"
+                    && r#ref == "v0.34.0"
+        ));
     }
 }
