@@ -6,7 +6,7 @@ analysis: evidence
 scope: "agent-ix/quoin; PR #924 @ ab633975: verification methods of FR-188..FR-192 and NFR-039 criteria and metrics"
 review_set: subset
 relationships:
-  - target: "ix://agent-ix/quoin/NFR-039"
+  - target: "ix://agent-ix/quoin/NFR-040"
     type: references
 ---
 
@@ -46,4 +46,4 @@ and 5bba8af4).
 | --- | --- | --- |
 | FND-001 | fixed | - |
 
-- FND-001 after_excerpt (`spec/non-functional/NFR-039-dossier-is-deterministic-and-records-only.md:45,53`): `| Clock or network reads in the dossier code path | 0 | 0 | Inspection |` / `| NFR-039-AC-2 | Inspection of the dossier code path finds no wall-clock call, and analysis of its dependency graph finds no network crate | Inspection |`
+- FND-001 after_excerpt (`spec/non-functional/NFR-040-dossier-is-deterministic-and-records-only.md:45,53`): `| Clock or network reads in the dossier code path | 0 | 0 | Inspection |` / `| NFR-040-AC-2 | Inspection of the dossier code path finds no wall-clock call, and analysis of its dependency graph finds no network crate | Inspection |`

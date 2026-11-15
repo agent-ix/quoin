@@ -6,11 +6,11 @@ analysis: dependency
 scope: "agent-ix/quoin; PR #924 @ ab633975: FR-188..FR-192, NFR-039; upstream quoin FR-115/FR-165 (rust/crates/quoin-assurance/src/matrix.rs), quoin discharge RMM (rust/crates/quoin-assurance/src/discharge/rmm.rs), quire-cli FR-034/FR-039, quire-rs FR-086, spec-artifacts-process PR #155"
 review_set: subset
 relationships:
+  - target: "ix://agent-ix/quoin/FR-194"
+    type: references
   - target: "ix://agent-ix/quoin/FR-191"
     type: references
-  - target: "ix://agent-ix/quoin/FR-188"
-    type: references
-  - target: "ix://agent-ix/quoin/FR-192"
+  - target: "ix://agent-ix/quoin/FR-195"
     type: references
 ---
 
@@ -87,7 +87,7 @@ and 5bba8af4).
 | FND-003 | fixed | - |
 | FND-004 | fixed | - |
 
-- FND-001 after_excerpt (`spec/functional/FR-191-dossier-trace-matrix-content.md:30-31`): `- The `matrix` source: the output of `quoin matrix --json` over the scope. It supplies, per criterion, `id`, the design cell (`design_elements`), `method`, `static_status` and `evidence_status`, and, when the matrix is empty, `reason`. It does not supply the criterion text or the criticality.` / `- The `requirements` source of FR-189: the criterion `statement` and the requirement `criticality`, joined to the matrix rows by criterion id and requirement id.` (`MatrixCriterion.design_elements` and `MatrixOutput.reason` exist at rust/crates/quoin-assurance/src/matrix.rs:144 and :115.)
-- FND-002 after_excerpt (`spec/functional/FR-188-dossier-command.md:46`): `- When `export` selects one document, `export` SHALL run `quire export` once with that file and without `--bundle-title` and `--bundle-id`.` (FR-188-AC-9 covers it.)
-- FND-003 after_excerpt (`spec/functional/FR-192-dossier-rmm-content.md:51-52`): `- The RMM SHALL NOT write the text of any clause, whatever the binding, the pack or `quire clauses` carries.` / `- The RMM SHALL NOT read the rights metadata of `quire clauses`; the clause id is the only clause member it writes.`
-- FND-004 after_excerpt (`spec/functional/FR-188-dossier-command.md:131`): `- **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-034, FR-038, FR-039.` (spec-artifacts-process PR #155, open, adds `spec/functional/FR-018-dossier-document-archetype.md`.)
+- FND-001 after_excerpt (`spec/functional/FR-194-dossier-trace-matrix-content.md:30-31`): `- The `matrix` source: the output of `quoin matrix --json` over the scope. It supplies, per criterion, `id`, the design cell (`design_elements`), `method`, `static_status` and `evidence_status`, and, when the matrix is empty, `reason`. It does not supply the criterion text or the criticality.` / `- The `requirements` source of FR-192: the criterion `statement` and the requirement `criticality`, joined to the matrix rows by criterion id and requirement id.` (`MatrixCriterion.design_elements` and `MatrixOutput.reason` exist at rust/crates/quoin-assurance/src/matrix.rs:144 and :115.)
+- FND-002 after_excerpt (`spec/functional/FR-191-dossier-command.md:46`): `- When `export` selects one document, `export` SHALL run `quire export` once with that file and without `--bundle-title` and `--bundle-id`.` (FR-191-AC-9 covers it.)
+- FND-003 after_excerpt (`spec/functional/FR-195-dossier-rmm-content.md:51-52`): `- The RMM SHALL NOT write the text of any clause, whatever the binding, the pack or `quire clauses` carries.` / `- The RMM SHALL NOT read the rights metadata of `quire clauses`; the clause id is the only clause member it writes.`
+- FND-004 after_excerpt (`spec/functional/FR-191-dossier-command.md:131`): `- **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-034, FR-038, FR-039.` (spec-artifacts-process PR #155, open, adds `spec/functional/FR-018-dossier-document-archetype.md`.)

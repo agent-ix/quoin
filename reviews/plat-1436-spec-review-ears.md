@@ -6,7 +6,7 @@ analysis: ears-conformance
 scope: "agent-ix/quoin; PR #924 @ ab633975: requirement statements and Behavior bullets of FR-188..FR-192 and NFR-039"
 review_set: subset
 relationships:
-  - target: "ix://agent-ix/quoin/FR-188"
+  - target: "ix://agent-ix/quoin/FR-191"
     type: references
 ---
 
@@ -45,8 +45,11 @@ and 5bba8af4).
 
 | FND | outcome | reason |
 | --- | --- | --- |
-| FND-001 | still-open | Five of the six named rules now carry SHALL, and FR-190's dependency note moved to Dependencies. The sixth, the closed `gap_kind` list, is still a plain statement with no modal: FR-188:91 reads "The closed list of `gap_kind` values is, in this order: ...". No SHALL forbids a kind outside the list. |
+| FND-001 | fixed | FR-191:91 now binds the closed `gap_kind` list with SHALL; the other named rules were already fixed. |
 | FND-002 | fixed | - |
 
-- FND-001 partial after_excerpts, for the parts that are fixed: FR-188:62 `- `generate`, `check` and `export` SHALL require `--version`, ...`; FR-188:65 `- `check` SHALL count a missing file as `differs`.`; FR-188:78 `- Quoin SHALL sort gaps by the key (requirement id, criterion id, element id, clause id, gap kind position), ...`; FR-191:50 `- The trace matrix SHALL NOT use the static-only `quire matrix` (quire-cli FR-043) as its source.`; FR-190:61 `- **Upstream (open)**: `quoin-quire` exposes the design join and design matrix but not the systems records ...` (under Dependencies, no longer in Behavior). Still open at FR-188:91: `- The closed list of `gap_kind` values is, in this order: `no_requirements`, ...`
-- FND-002 after_excerpt (`spec/functional/FR-188-dossier-command.md:16-20`): `Quoin SHALL provide `quoin dossier generate`, which writes the selected dossier documents from the repository's records.` / `Quoin SHALL provide `quoin dossier check`, which compares the selected dossier documents with the files on disk and writes nothing.` / `Quoin SHALL provide `quoin dossier export`, which exports the selected, committed and current dossier documents through `quire export`.`
+- FND-001 after_excerpts, for the parts that are fixed: FR-191:62 `- `generate`, `check` and `export` SHALL require `--version`, ...`; FR-191:65 `- `check` SHALL count a missing file as `differs`.`; FR-191:78 `- Quoin SHALL sort gaps by the key (requirement id, criterion id, element id, clause id, gap kind position), ...`; FR-194:50 `- The trace matrix SHALL NOT use the static-only `quire matrix` (quire-cli FR-043) as its source.`; FR-193:61 `- **Upstream (open)**: `quoin-quire` exposes the design join and design matrix but not the systems records ...` (under Dependencies, no longer in Behavior). Final rule at `spec/functional/FR-191-dossier-command.md:91`:
+```text
+- Quoin SHALL use only these `gap_kind` values, in this order: `no_requirements`, `no_acceptance_criteria`, `criticality_unassigned`, `design_relations_unavailable`, `no_design_element`, `dangling_design_reference`, `design_kind_mismatch`, `no_allocation`, `unbacked_criterion`, `no_evidence`, `no_clause_binding`, `clause_open`.
+```
+- FND-002 after_excerpt (`spec/functional/FR-191-dossier-command.md:16-20`): `Quoin SHALL provide `quoin dossier generate`, which writes the selected dossier documents from the repository's records.` / `Quoin SHALL provide `quoin dossier check`, which compares the selected dossier documents with the files on disk and writes nothing.` / `Quoin SHALL provide `quoin dossier export`, which exports the selected, committed and current dossier documents through `quire export`.`

@@ -6,11 +6,11 @@ analysis: integrity
 scope: "agent-ix/quoin; PR #924 @ ab633975: FR-188..FR-192, NFR-039, US-024; context spec/stakeholder/StR-007, spec/stakeholder/*"
 review_set: subset
 relationships:
-  - target: "ix://agent-ix/quoin/NFR-039"
+  - target: "ix://agent-ix/quoin/NFR-040"
     type: references
-  - target: "ix://agent-ix/quoin/FR-190"
+  - target: "ix://agent-ix/quoin/FR-193"
     type: references
-  - target: "ix://agent-ix/quoin/FR-189"
+  - target: "ix://agent-ix/quoin/FR-192"
     type: references
 ---
 
@@ -55,11 +55,11 @@ and 5bba8af4).
 | FND-007 | fixed | - |
 | FND-008 | fixed | - |
 
-- FND-001 after_excerpt (`spec/non-functional/NFR-039-dossier-is-deterministic-and-records-only.md:23,25,55`): `... SHALL give byte-identical Markdown for the same records and options, where the options include the order of `--clause-binding` and the index order of a pack.` / `... SHALL order output by the dossier order and gap order of FR-188, except where FR-192 keeps a supplied order.` / `| NFR-039-AC-4 | Fixture documents created in a different order on disk give the same bytes, and swapping two `--clause-binding` options changes only the order of the two RMM tables | Test |`
-- FND-002 after_excerpt (`spec/functional/FR-190-dossier-architecture-content.md:44`): `- If the loaded modules declare no `design_relations`, the document SHALL record a `design_relations_unavailable` gap that states the cause.` (`design_relations_unavailable` is in FR-188's closed list at FR-188:91.)
-- FND-003 after_excerpt (`spec/functional/FR-189-dossier-srs-content.md:38,42`): `- If a requirement has zero criteria in its criteria table, the SRS SHALL record a `no_acceptance_criteria` gap naming it.` / `- The SRS SHALL NOT record an `unbacked_criterion` gap, which is reserved for a criterion without a test tag (FR-191).`
-- FND-004 after_excerpt (`spec/functional/FR-189-dossier-srs-content.md:24,39`): `- For an StR, the criteria are the rows of its `Validation Criteria` table.` / `- The SRS SHALL list the Validation Criteria of an StR as its criteria.`
-- FND-005 after_excerpt (`spec/functional/FR-188-dossier-command.md:6-7`; the same edge in FR-189..FR-192 and US-024): `- target: "ix://agent-ix/quoin/StR-010"` / `type: "traces_to"`. New `spec/stakeholder/StR-010-reviewers-receive-documents-generated-from-records.md` states the dossier need.
-- FND-006 after_excerpt (`spec/functional/FR-188-dossier-command.md:77,80`): `- Quoin SHALL compare ids in dossier order: an id is split at `-` into segments; two segments of ASCII digits compare by numeric value, ... `FR-99` sorts before `FR-100`, and `FR-100-AC-2` before `FR-100-AC-10`.` / `- A gap with no id (`no_requirements`, `design_relations_unavailable`, `no_clause_binding`) sorts before gaps that name an id.`
-- FND-007 after_excerpt (`spec/functional/FR-188-dossier-command.md:69,71`): `- A source is one of the record readers named in FR-189 to FR-192: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix` and `discharge`. A source is either a library operation of the Quoin workspace or the equivalent Quoin command, and gives the same result as that command.` / `- If a source fails, the command SHALL exit 3, SHALL name the failed source and its error in `source_failure`, and SHALL write nothing.`
-- FND-008 after_excerpt (`spec/non-functional/NFR-039-dossier-is-deterministic-and-records-only.md:27`): `` `quoin dossier generate` and `quoin dossier check` SHALL NOT read the wall clock or the network. `` (all four statements now name both subcommands).
+- FND-001 after_excerpt (`spec/non-functional/NFR-040-dossier-is-deterministic-and-records-only.md:23,25,55`): `... SHALL give byte-identical Markdown for the same records and options, where the options include the order of `--clause-binding` and the index order of a pack.` / `... SHALL order output by the dossier order and gap order of FR-191, except where FR-195 keeps a supplied order.` / `| NFR-040-AC-4 | Fixture documents created in a different order on disk give the same bytes, and swapping two `--clause-binding` options changes only the order of the two RMM tables | Test |`
+- FND-002 after_excerpt (`spec/functional/FR-193-dossier-architecture-content.md:44`): `- If the loaded modules declare no `design_relations`, the document SHALL record a `design_relations_unavailable` gap that states the cause.` (`design_relations_unavailable` is in FR-191's closed list at FR-191:91.)
+- FND-003 after_excerpt (`spec/functional/FR-192-dossier-srs-content.md:38,42`): `- If a requirement has zero criteria in its criteria table, the SRS SHALL record a `no_acceptance_criteria` gap naming it.` / `- The SRS SHALL NOT record an `unbacked_criterion` gap, which is reserved for a criterion without a test tag (FR-194).`
+- FND-004 after_excerpt (`spec/functional/FR-192-dossier-srs-content.md:24,39`): `- For an StR, the criteria are the rows of its `Validation Criteria` table.` / `- The SRS SHALL list the Validation Criteria of an StR as its criteria.`
+- FND-005 after_excerpt (`spec/functional/FR-191-dossier-command.md:6-7`; the same edge in FR-192..FR-195 and US-024): `- target: "ix://agent-ix/quoin/StR-010"` / `type: "traces_to"`. New `spec/stakeholder/StR-010-reviewers-receive-documents-generated-from-records.md` states the dossier need.
+- FND-006 after_excerpt (`spec/functional/FR-191-dossier-command.md:77,80`): `- Quoin SHALL compare ids in dossier order: an id is split at `-` into segments; two segments of ASCII digits compare by numeric value, ... `FR-99` sorts before `FR-100`, and `FR-100-AC-2` before `FR-100-AC-10`.` / `- A gap with no id (`no_requirements`, `design_relations_unavailable`, `no_clause_binding`) sorts before gaps that name an id.`
+- FND-007 after_excerpt (`spec/functional/FR-191-dossier-command.md:69,71`): `- A source is one of the record readers named in FR-192 to FR-195: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix` and `discharge`. A source is either a library operation of the Quoin workspace or the equivalent Quoin command, and gives the same result as that command.` / `- If a source fails, the command SHALL exit 3, SHALL name the failed source and its error in `source_failure`, and SHALL write nothing.`
+- FND-008 after_excerpt (`spec/non-functional/NFR-040-dossier-is-deterministic-and-records-only.md:27`): `` `quoin dossier generate` and `quoin dossier check` SHALL NOT read the wall clock or the network. `` (all four statements now name both subcommands).

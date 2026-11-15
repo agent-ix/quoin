@@ -6,7 +6,7 @@ analysis: base
 scope: "agent-ix/quoin; PR #924 @ ab633975: spec/functional/FR-188..FR-192, spec/non-functional/NFR-039, spec/usecase/US-024 and the three indexes"
 review_set: subset
 relationships:
-  - target: "ix://agent-ix/quoin/FR-188"
+  - target: "ix://agent-ix/quoin/FR-191"
     type: references
   - target: "ix://agent-ix/quoin/US-024"
     type: references
@@ -67,6 +67,6 @@ and 5bba8af4).
 | FND-002 | fixed | - |
 | FND-003 | fixed | - |
 
-- FND-001 after_excerpt (`spec/functional/FR-188-dossier-command.md:45`): `- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in the fixed order `DOS-SRS`, `DOS-ARCH`, `DOS-TRACE`, `DOS-RMM` and with `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.`
+- FND-001 after_excerpt (`spec/functional/FR-191-dossier-command.md:45`): `- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in the fixed order `DOS-SRS`, `DOS-ARCH`, `DOS-TRACE`, `DOS-RMM` and with `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.`
 - FND-002 after_excerpt (`spec/usecase/US-024-hand-a-reviewer-dossier-documents-generated-from-records.md:31,43`): `- **When** the team runs `quoin dossier generate --version 1.0 --clause-binding binding.json --as-of <RFC 3339 timestamp>`` and `- **When** the team runs `quoin dossier export --to pdf --output dossier.pdf --version 1.0 --clause-binding binding.json --as-of <RFC 3339 timestamp>` with the same values as the generation`
-- FND-003 after_excerpt (`spec/functional/FR-188-dossier-command.md:114`): `| FR-188-AC-4 | On a fixture whose documents are all complete, `check` on a committed file with one hand-edited line reports that document as `differs` and exits 1; with no edit it reports `matches` and exits 0 | Test |`
+- FND-003 after_excerpt (`spec/functional/FR-191-dossier-command.md:114`): `| FR-191-AC-4 | On a fixture whose documents are all complete, `check` on a committed file with one hand-edited line reports that document as `differs` and exits 1; with no edit it reports `matches` and exits 0 | Test |`

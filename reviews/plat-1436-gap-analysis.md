@@ -6,9 +6,9 @@ analysis: gap-analysis
 scope: "agent-ix/quoin; PR #924 @ ab633975: FR-188..FR-192, NFR-039, US-024; cited sources rust/crates/quoin-quire/src, rust/crates/quoin-assurance/src/matrix.rs, rust/crates/quoin-assurance/src/discharge/rmm.rs"
 review_set: subset
 relationships:
-  - target: "ix://agent-ix/quoin/FR-188"
+  - target: "ix://agent-ix/quoin/FR-191"
     type: references
-  - target: "ix://agent-ix/quoin/FR-190"
+  - target: "ix://agent-ix/quoin/FR-193"
     type: references
 ---
 

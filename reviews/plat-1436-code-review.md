@@ -6,9 +6,9 @@ analysis: code-review
 scope: "agent-ix/quoin; PR #924 @ ab633975: spec/functional/FR-188..FR-192, spec/non-functional/NFR-039, spec/usecase/US-024, spec/functional/index.md, spec/non-functional/index.md, spec/usecase/index.md"
 review_set: subset
 relationships:
-  - target: "ix://agent-ix/quoin/FR-188"
+  - target: "ix://agent-ix/quoin/FR-191"
     type: references
-  - target: "ix://agent-ix/quoin/NFR-039"
+  - target: "ix://agent-ix/quoin/NFR-040"
     type: references
 ---
 
