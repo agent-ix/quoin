@@ -30,10 +30,8 @@ A listed set that no installed module declares is reported as `unavailable`, wit
 profile that lists a pack not yet installed degrades: the other sets are still evaluated and the gap is stated. An
 unavailable set is not a failure and is not counted as binding, not-binding or unresolved.
 
-The installed module roots also supply shared semantic registries, including edge-type vocabularies used by an
-owner module's `allowed_links`. Quoin selects each clause set from its unique declaring module, while module loading
-resolves those shared registries from the installed module set. A valid clause module does not become unavailable or
-fail evaluation just because its shared edge vocabulary is declared by another installed module.
+A clause set's declaring module may use an edge type declared by another installed module. Such a set remains
+evaluable when its key is declared and the edge type is available.
 
 The report is JSON with `schemaVersion: source-profile-evaluation-v1` and these fields, all required: `profile` (name),
 `context` (the effective context), `sets` and `summary`. `sets` is a list in profile order of objects with `key`
@@ -57,7 +55,7 @@ own file, so each can be given to `quoin discharge` ([FR-046](./FR-046-clause-di
 
 - Quoin SHALL validate each engine report against `clause-binding-v1` before including it ([FR-029](./FR-029-consume-the-quire-json-contract.md)).
 - Quoin SHALL evaluate each set against only the module that declares its exact key.
-- Quoin SHALL resolve shared edge-type vocabularies against all installed module roots when loading a module that declares a selected set.
+- Quoin SHALL evaluate a selected set whose declaring module uses an edge type registered by another installed module.
 - When a key is declared by more than one installed module, Quoin SHALL refuse the run, naming the modules.
 - When no installed module declares a listed key, Quoin SHALL report that set as `unavailable` and continue with the other sets.
 - Quoin SHALL include the summary counts and no score or percentage.
@@ -78,8 +76,7 @@ own file, so each can be given to `quoin discharge` ([FR-046](./FR-046-clause-di
 | FR-181-AC-8 | A report that fails `clause-binding-v1` validation exits non-zero and is not included. | Test |
 | FR-181-AC-9 | The output validates against the closed `source-profile-evaluation-v1` shape named above, and a document with an extra or missing top-level field fails it. | Test |
 | FR-181-AC-10 | With a value in the context that one set admits and another does not, the first set reports the clause resolved and the second reports it `unresolved`; the value is not rewritten. | Test |
-| FR-181-AC-11 | Hashes of every module root, every selection file and the `spec/` tree taken before and after a run are equal. | Test |
-| FR-181-AC-12 | When a selected set's declaring module uses an edge type registered by another installed module, the set is reported as `evaluated` and no `UnknownEdgeType` failure is returned. | Test |
+| FR-181-AC-11 | When a selected set's declaring module uses an edge type registered by another installed module, the set is reported as `evaluated` and no `UnknownEdgeType` failure is returned. | Test |
 
 ## Dependencies
 
