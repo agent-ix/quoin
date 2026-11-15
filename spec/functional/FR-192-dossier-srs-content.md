@@ -1,5 +1,5 @@
 ---
-id: FR-189
+id: FR-192
 title: "The dossier SRS lists every requirement in scope with its criteria and recorded criticality"
 type: FR
 relationships:
@@ -7,15 +7,15 @@ relationships:
     type: "traces_to"
   - target: "ix://agent-ix/quoin/US-024"
     type: "implements"
-  - target: "ix://agent-ix/quoin/FR-188"
+  - target: "ix://agent-ix/quoin/FR-191"
     type: "extends"
 ---
 
-# FR-189: The dossier SRS lists every requirement in scope with its criteria and recorded criticality
+# FR-192: The dossier SRS lists every requirement in scope with its criteria and recorded criticality
 
 ## Description
 
-When `quoin dossier generate` selects the SRS (`--doc srs`, document id `DOS-SRS`), the SRS SHALL list every requirement document in scope (StR, FR, NFR) in dossier order (FR-188) with its id, title, statement, criteria (id and text) and criticality as recorded.
+When `quoin dossier generate` selects the SRS (`--doc srs`, document id `DOS-SRS`), the SRS SHALL list every requirement document in scope (StR, FR, NFR) in dossier order (FR-191) with its id, title, statement, criteria (id and text) and criticality as recorded.
 
 ## Inputs
 
@@ -39,20 +39,20 @@ When `quoin dossier generate` selects the SRS (`--doc srs`, document id `DOS-SRS
 - The SRS SHALL list the Validation Criteria of an StR as its criteria.
 - If the scope holds no requirement, the SRS SHALL record a `no_requirements` gap.
 - The SRS SHALL NOT infer, default or compute a criticality level.
-- The SRS SHALL NOT record an `unbacked_criterion` gap, which is reserved for a criterion without a test tag (FR-191).
+- The SRS SHALL NOT record an `unbacked_criterion` gap, which is reserved for a criterion without a test tag (FR-194).
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-189-AC-1 | A fixture with three FRs, the third with no `criticality`, renders three sections in dossier order, and the third shows `unassigned` with a `criticality_unassigned` gap | Test |
-| FR-189-AC-2 | A requirement with zero criteria produces a `no_acceptance_criteria` gap naming it and no `unbacked_criterion` gap | Test |
-| FR-189-AC-3 | Absent criticality never renders a level: the section holds no level word for that requirement | Test |
-| FR-189-AC-4 | An empty scope renders no requirement section, a `no_requirements` gap and status `incomplete` | Test |
-| FR-189-AC-5 | Every criterion id and text of the fixture appears under its requirement | Test |
-| FR-189-AC-6 | A fixture StR with a Validation Criteria table lists each validation criterion id and text under the StR and records no `no_acceptance_criteria` gap for it | Test |
+| FR-192-AC-1 | A fixture with three FRs, the third with no `criticality`, renders three sections in dossier order, and the third shows `unassigned` with a `criticality_unassigned` gap | Test |
+| FR-192-AC-2 | A requirement with zero criteria produces a `no_acceptance_criteria` gap naming it and no `unbacked_criterion` gap | Test |
+| FR-192-AC-3 | Absent criticality never renders a level: the section holds no level word for that requirement | Test |
+| FR-192-AC-4 | An empty scope renders no requirement section, a `no_requirements` gap and status `incomplete` | Test |
+| FR-192-AC-5 | Every criterion id and text of the fixture appears under its requirement | Test |
+| FR-192-AC-6 | A fixture StR with a Validation Criteria table lists each validation criterion id and text under the StR and records no `no_acceptance_criteria` gap for it | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-188](./FR-188-dossier-command.md); quire-rs FR-082 (criticality).
+- **Upstream**: [FR-191](./FR-191-dossier-command.md); quire-rs FR-082 (criticality).
 - **Downstream**: none.

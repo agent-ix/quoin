@@ -49,9 +49,9 @@ Quoin renders nothing. Rendering, templates and approval blocks belong to `quire
 
 ## Dependencies (Contextual)
 
-Upstream: StR-010, FR-115, FR-165 and the discharge mapping output. Downstream: FR-188 to FR-192 and NFR-039.
+Upstream: StR-010, FR-115, FR-165 and the discharge mapping output. Downstream: FR-191 to FR-195 and NFR-040.
 
 ## Priority and Risk (Informative)
 
 Priority is P1 for the regulated-software line. The risk is a generator that
-fills a gap with a plausible value, which NFR-039 forbids.
+fills a gap with a plausible value, which NFR-040 forbids.

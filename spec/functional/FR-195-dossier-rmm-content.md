@@ -1,5 +1,5 @@
 ---
-id: FR-192
+id: FR-195
 title: "The dossier requirements mapping matrix renders one table per clause set"
 type: FR
 relationships:
@@ -7,11 +7,11 @@ relationships:
     type: "traces_to"
   - target: "ix://agent-ix/quoin/US-024"
     type: "implements"
-  - target: "ix://agent-ix/quoin/FR-188"
+  - target: "ix://agent-ix/quoin/FR-191"
     type: "extends"
 ---
 
-# FR-192: The dossier requirements mapping matrix renders one table per clause set
+# FR-195: The dossier requirements mapping matrix renders one table per clause set
 
 ## Description
 
@@ -55,17 +55,17 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-192-AC-1 | The rows equal the `quoin discharge --rmm --json` rows for the fixture binding, in the source's order | Test |
-| FR-192-AC-2 | A pack with two clause sets gives two tables in index order | Test |
-| FR-192-AC-3 | With `--doc rmm` and no `--clause-binding` and no `--pack` the document has a `no_clause_binding` gap, status `incomplete`, the command exits 1 and not 2, and no `--as-of` is needed | Test |
-| FR-192-AC-4 | A fixture whose binding and pack carry clause text and whose clauses are marked restricted in `quire clauses` renders only clause ids and the source row members; no clause text appears anywhere in the file or in a gap detail | Test |
-| FR-192-AC-5 | Rows with `compliance` `undischarged`, `attestation_not_current`, `temporary_exception_expired` and `undetermined` each produce one `clause_open` gap | Test |
-| FR-192-AC-6 | `As of` and `unusedFacts` appear in the document as the source reports them | Test |
-| FR-192-AC-7 | `--doc rmm --clause-binding <file>` without `--as-of` exits 2 and writes nothing | Test |
-| FR-192-AC-8 | Rows with `compliance` `compliant`, `tailored` and `not_applicable`, including `tailored` and `not_applicable` rows with empty `evidenceRefs`, produce no `clause_open` gap | Test |
-| FR-192-AC-9 | Swapping two `--clause-binding` options swaps the two tables and changes nothing else in the file | Test |
+| FR-195-AC-1 | The rows equal the `quoin discharge --rmm --json` rows for the fixture binding, in the source's order | Test |
+| FR-195-AC-2 | A pack with two clause sets gives two tables in index order | Test |
+| FR-195-AC-3 | With `--doc rmm` and no `--clause-binding` and no `--pack` the document has a `no_clause_binding` gap, status `incomplete`, the command exits 1 and not 2, and no `--as-of` is needed | Test |
+| FR-195-AC-4 | A fixture whose binding and pack carry clause text and whose clauses are marked restricted in `quire clauses` renders only clause ids and the source row members; no clause text appears anywhere in the file or in a gap detail | Test |
+| FR-195-AC-5 | Rows with `compliance` `undischarged`, `attestation_not_current`, `temporary_exception_expired` and `undetermined` each produce one `clause_open` gap | Test |
+| FR-195-AC-6 | `As of` and `unusedFacts` appear in the document as the source reports them | Test |
+| FR-195-AC-7 | `--doc rmm --clause-binding <file>` without `--as-of` exits 2 and writes nothing | Test |
+| FR-195-AC-8 | Rows with `compliance` `compliant`, `tailored` and `not_applicable`, including `tailored` and `not_applicable` rows with empty `evidenceRefs`, produce no `clause_open` gap | Test |
+| FR-195-AC-9 | Swapping two `--clause-binding` options swaps the two tables and changes nothing else in the file | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-188](./FR-188-dossier-command.md); the discharge mapping output.
+- **Upstream**: [FR-191](./FR-191-dossier-command.md); the discharge mapping output.
 - **Downstream**: none.

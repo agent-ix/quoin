@@ -1,5 +1,5 @@
 ---
-id: FR-190
+id: FR-193
 title: "The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves"
 type: FR
 relationships:
@@ -7,11 +7,11 @@ relationships:
     type: "traces_to"
   - target: "ix://agent-ix/quoin/US-024"
     type: "implements"
-  - target: "ix://agent-ix/quoin/FR-188"
+  - target: "ix://agent-ix/quoin/FR-191"
     type: "extends"
 ---
 
-# FR-190: The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves
+# FR-193: The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves
 
 ## Description
 
@@ -32,7 +32,7 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 
 ## Behavior
 
-- The architecture document SHALL list elements in dossier order (FR-188) by element id.
+- The architecture document SHALL list elements in dossier order (FR-191) by element id.
 - The architecture document SHALL show for each connection its flow direction and both ends.
 - The architecture document SHALL list for each part the requirements allocated to or realized by it, from the join.
 - If the join reports a requirement in the `uncovered` state, the document SHALL record a `no_design_element` gap naming it.
@@ -48,15 +48,15 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-190-AC-1 | A fixture with two parts, one connection, one ADR and one requirement with no design element lists all elements and a `no_design_element` gap naming that requirement | Test |
-| FR-190-AC-2 | A dangling design reference is listed and produces a `dangling_design_reference` gap | Test |
-| FR-190-AC-3 | A module set declaring no `design_relations` yields status `incomplete` with a `design_relations_unavailable` gap, and `generate` does not exit 0 | Test |
-| FR-190-AC-4 | A part with no allocated requirement produces a `no_allocation` gap | Test |
-| FR-190-AC-5 | A connection shows its flow direction and both ends | Test |
-| FR-190-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
+| FR-193-AC-1 | A fixture with two parts, one connection, one ADR and one requirement with no design element lists all elements and a `no_design_element` gap naming that requirement | Test |
+| FR-193-AC-2 | A dangling design reference is listed and produces a `dangling_design_reference` gap | Test |
+| FR-193-AC-3 | A module set declaring no `design_relations` yields status `incomplete` with a `design_relations_unavailable` gap, and `generate` does not exit 0 | Test |
+| FR-193-AC-4 | A part with no allocated requirement produces a `no_allocation` gap | Test |
+| FR-193-AC-5 | A connection shows its flow direction and both ends | Test |
+| FR-193-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-188](./FR-188-dossier-command.md); quire-rs FR-086 and FR-092; quire-cli FR-041 (existing rendering of the join).
+- **Upstream**: [FR-191](./FR-191-dossier-command.md); quire-rs FR-086 and FR-092; quire-cli FR-041 (existing rendering of the join).
 - **Upstream (open)**: `quoin-quire` exposes the design join and design matrix but not the systems records (`PartRecord`, `PortRecord`, `ConnectionRecord`, allocation). Exposing them is build work for PLAT-1437, which implements this document. Until it lands the generator cannot list parts, ports and connections.
 - **Downstream**: none.

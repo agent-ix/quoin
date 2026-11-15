@@ -3,17 +3,17 @@ id: StR-010
 title: "Reviewers receive submission documents generated from the repository's records"
 type: StR
 relationships:
-  - target: "ix://agent-ix/quoin/FR-188"
-    type: "satisfied_by"
-  - target: "ix://agent-ix/quoin/FR-189"
-    type: "satisfied_by"
-  - target: "ix://agent-ix/quoin/FR-190"
-    type: "satisfied_by"
   - target: "ix://agent-ix/quoin/FR-191"
     type: "satisfied_by"
   - target: "ix://agent-ix/quoin/FR-192"
     type: "satisfied_by"
-  - target: "ix://agent-ix/quoin/NFR-039"
+  - target: "ix://agent-ix/quoin/FR-193"
+    type: "satisfied_by"
+  - target: "ix://agent-ix/quoin/FR-194"
+    type: "satisfied_by"
+  - target: "ix://agent-ix/quoin/FR-195"
+    type: "satisfied_by"
+  - target: "ix://agent-ix/quoin/NFR-040"
     type: "satisfied_by"
 ---
 
@@ -52,5 +52,5 @@ the documents restate.
 
 ## Dependencies
 
-FR-188 owns the command, FR-189 to FR-192 own the content of the four documents,
-and NFR-039 owns determinism and the records-only constraint.
+FR-191 owns the command, FR-192 to FR-195 own the content of the four documents,
+and NFR-040 owns determinism and the records-only constraint.

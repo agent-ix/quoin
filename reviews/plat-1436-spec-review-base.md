@@ -55,3 +55,18 @@ start. The base findings below are medium and low.
 | FND-001 | medium | FR-188 says `export` passes `--bundle-title` and `--bundle-id` "taken from this spec" but never states the values, so FR-188-AC-8 ("a bundle title and id") passes for any value and two implementations would title the bundle differently. | spec/functional/FR-188-dossier-command.md:40; spec/functional/FR-188-dossier-command.md:85 |
 | FND-002 | low | US-024's examples contradict FR-188. EX-1 runs `quoin dossier generate` with no `--version`, which FR-188-AC-10 says exits 2 and writes nothing. EX-3 runs `export --to pdf` with no `--output`, which FR-188 Inputs require. | spec/usecase/US-024-hand-a-reviewer-dossier-documents-generated-from-records.md:31; spec/usecase/US-024-hand-a-reviewer-dossier-documents-generated-from-records.md:43 |
 | FND-003 | low | FR-188-AC-4 expects `check` to exit 0 with no edit, but the exit table gives 0 only when every document is also complete. The AC does not say its fixture is complete, so an incomplete fixture correctly exits 1 and fails the AC. | spec/functional/FR-188-dossier-command.md:68; spec/functional/FR-188-dossier-command.md:81 |
+
+## Dispositions
+
+Disposition round 1, checked against PR #924 head 5bba8af4 (fix commits 196404ac
+and 5bba8af4).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+
+- FND-001 after_excerpt (`spec/functional/FR-188-dossier-command.md:45`): `- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in the fixed order `DOS-SRS`, `DOS-ARCH`, `DOS-TRACE`, `DOS-RMM` and with `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.`
+- FND-002 after_excerpt (`spec/usecase/US-024-hand-a-reviewer-dossier-documents-generated-from-records.md:31,43`): `- **When** the team runs `quoin dossier generate --version 1.0 --clause-binding binding.json --as-of <RFC 3339 timestamp>`` and `- **When** the team runs `quoin dossier export --to pdf --output dossier.pdf --version 1.0 --clause-binding binding.json --as-of <RFC 3339 timestamp>` with the same values as the generation`
+- FND-003 after_excerpt (`spec/functional/FR-188-dossier-command.md:114`): `| FR-188-AC-4 | On a fixture whose documents are all complete, `check` on a committed file with one hand-edited line reports that document as `differs` and exits 1; with no edit it reports `matches` and exits 0 | Test |`

@@ -36,3 +36,14 @@ PASS with one medium finding.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | medium | NFR-039-AC-2 and its metric "Clock or network reads during generation: Test" ask for a run "with the clock and network unavailable". A test cannot make the wall clock unavailable to a Rust process, and an offline run that gives the same bytes does not show that no read happened. The no-clock, no-network property should be verified by Inspection or static analysis of the dossier code path: no `SystemTime`, `Instant` or `now()` call, and no network crate in its dependency graph. That is the pattern quire-cli FR-034-AC-6 uses with `cargo deny` and `cargo tree -i`. | spec/non-functional/NFR-039-dossier-is-deterministic-and-records-only.md:45; spec/non-functional/NFR-039-dossier-is-deterministic-and-records-only.md:53 |
+
+## Dispositions
+
+Disposition round 1, checked against PR #924 head 5bba8af4 (fix commits 196404ac
+and 5bba8af4).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+
+- FND-001 after_excerpt (`spec/non-functional/NFR-039-dossier-is-deterministic-and-records-only.md:45,53`): `| Clock or network reads in the dossier code path | 0 | 0 | Inspection |` / `| NFR-039-AC-2 | Inspection of the dossier code path finds no wall-clock call, and analysis of its dependency graph finds no network crate | Inspection |`

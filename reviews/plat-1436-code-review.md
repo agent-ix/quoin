@@ -45,3 +45,9 @@ PASS. No hygiene defect was found in the diff.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | No findings (placeholder) | - |
+
+## Dispositions
+
+Disposition round 1, checked against PR #924 head 5bba8af4. The review pass was
+clean: FND-001 is the clean-review placeholder, not a finding, so no outcome row
+is needed.

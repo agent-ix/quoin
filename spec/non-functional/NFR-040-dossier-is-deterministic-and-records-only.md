@@ -1,28 +1,28 @@
 ---
-id: NFR-039
+id: NFR-040
 title: "Dossier generation is deterministic and writes only what the records state"
 type: NFR
 quality_attribute: reliability
 relationships:
-  - target: "ix://agent-ix/quoin/FR-188"
-    type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-189"
-    type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-190"
-    type: "constrains"
   - target: "ix://agent-ix/quoin/FR-191"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-192"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-193"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-194"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-195"
+    type: "constrains"
 ---
 
-# NFR-039: Dossier generation is deterministic and writes only what the records state
+# NFR-040: Dossier generation is deterministic and writes only what the records state
 
 ## Statement
 
 `quoin dossier generate` and `quoin dossier check` SHALL give byte-identical Markdown for the same records and options, where the options include the order of `--clause-binding` and the index order of a pack.
 
-`quoin dossier generate` and `quoin dossier check` SHALL order output by the dossier order and gap order of FR-188, except where FR-192 keeps a supplied order.
+`quoin dossier generate` and `quoin dossier check` SHALL order output by the dossier order and gap order of FR-191, except where FR-195 keeps a supplied order.
 
 `quoin dossier generate` and `quoin dossier check` SHALL NOT read the wall clock or the network.
 
@@ -49,12 +49,12 @@ A reviewer relies on the documents matching the commit. A value the generator su
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| NFR-039-AC-1 | Two runs over the same commit give byte-identical files | Test |
-| NFR-039-AC-2 | Inspection of the dossier code path finds no wall-clock call, and analysis of its dependency graph finds no network crate | Inspection |
-| NFR-039-AC-3 | For a fixture whose records state no criticality, risk, compliance or acceptability, none of those values appears in any generated file | Test |
-| NFR-039-AC-4 | Fixture documents created in a different order on disk give the same bytes, and swapping two `--clause-binding` options changes only the order of the two RMM tables | Test |
-| NFR-039-AC-5 | A `generate` run that selects only non-RMM documents (`srs`, `architecture`, `trace-matrix`) with no `--as-of` writes no time into any file | Test |
+| NFR-040-AC-1 | Two runs over the same commit give byte-identical files | Test |
+| NFR-040-AC-2 | Inspection of the dossier code path finds no wall-clock call, and analysis of its dependency graph finds no network crate | Inspection |
+| NFR-040-AC-3 | For a fixture whose records state no criticality, risk, compliance or acceptability, none of those values appears in any generated file | Test |
+| NFR-040-AC-4 | Fixture documents created in a different order on disk give the same bytes, and swapping two `--clause-binding` options changes only the order of the two RMM tables | Test |
+| NFR-040-AC-5 | A `generate` run that selects only non-RMM documents (`srs`, `architecture`, `trace-matrix`) with no `--as-of` writes no time into any file | Test |
 
 ## Verification
 
-NFR-039-AC-2 is verified by Inspection and static analysis of the source and the dependency graph, because a test cannot make the clock unavailable to a process. The other criteria are tests over the generated files.
+NFR-040-AC-2 is verified by Inspection and static analysis of the source and the dependency graph, because a test cannot make the clock unavailable to a process. The other criteria are tests over the generated files.
