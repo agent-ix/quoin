@@ -285,8 +285,8 @@ Ruled by the owner, not yet specified in quire-rs:
   `unrepresented` result.
 - The bridge SHALL NOT judge whether the analysis request is the right analysis for the obligation.
 - Trace SHALL expose a counted analysis result as a record claim with its record, run and entry locators, separate
-  from source-symbol claims and citations (FR-078); the symbol `<analysisKind>::<requestDigest>` SHALL appear only as
-  the retained entry's own identity and SHALL NOT be reported as a source symbol.
+  from source-symbol claims and citations (FR-078); for a differential report, the retained run-entry symbol is
+  `<analysisKind>` as FR-151 defines. Trace SHALL NOT report that entry symbol as a source symbol.
 
 ## Constraints
 
@@ -308,7 +308,7 @@ Ruled by the owner, not yet specified in quire-rs:
 | FR-153-AC-6 | An obligation bound through two suites, one with a passing symbol and one with a failing symbol, is uncounted and reports `failed` with the failing suite's locators; no `record_binders` claim and no `qualified-record` status is produced for the passing suite. | Test |
 | FR-153-AC-7 | A second report for a different `requestDigest` recorded into the same suite as a first replaces the first as the suite's latest run, and only the second can count; recorded into a different suite, both are bound and both must pass. | Test |
 | FR-153-AC-8 | A bound `pass` entry with a healthy `quoin evidence audit` and no FR-116 decision is not counted: no `qualified-record` status and no `record_binders` claim. | Test |
-| FR-153-AC-9 | Forward trace on the counted obligation returns the record claim with its locators and provenance; inverse trace by the record or run locator returns the same claim; a source-symbol query for `<analysisKind>::<requestDigest>` returns no claim, and the id appearing in prose stays a citation. | Test |
+| FR-153-AC-9 | Forward trace on the counted obligation returns the record claim with its locators and provenance; inverse trace by the record or run locator returns the same claim; for a differential report, a source-symbol query for its `<analysisKind>` run-entry symbol returns no claim, and the id appearing in prose stays a citation. | Test |
 | FR-153-AC-10 | A `pass` report recorded without `--discharges` produces no claim for any obligation, even where its symbol or digest text equals an obligation id. | Test |
 | FR-153-AC-11 | A passing report stated with `--discharges` for an obligation whose declared method is Test yields `qualification-rejected` naming the method and act pairing premise, with an approved producer definition and every other premise admitted, and is not counted. | Test |
 | FR-153-AC-12 | `quoin matrix` and derived `quoin assurance` accept repeatable `--run-observation FILE` inputs using one `quoin.analysis-run-observation/v1` object per canonical run-record path; the inputs supply CI association, performed checkout SHA and actor-authority evidence without adding those fields to FR-030 run records. Both views expose the selected analysis result, FR-078 category, record locators and each unmet premise in their JSON and text output using the additive quoin-assurance output members defined by FR-115 and FR-040; the quire-rs FR-078 wire contract remains unchanged. | Test |

@@ -54,7 +54,7 @@ nothing.
 Step 3: with every premise admitted the obligation is `qualified-record` with record, run and entry locators and
 leaves `unbacked_rows`; with no FR-093 assessment it is `unevaluated` naming the bounded-reliance premise, and with no CI checkout SHA it is
 `unevaluated` naming the performed-revision premise; each stays in `unbacked_rows` and strict mode rejects; a healthy audit with no qualifier decision is not counted; forward and inverse trace return the same
-record claim and a source-symbol query for the symbol returns none.
+record claim and a source-symbol query for the differential report's `<analysisKind>` run-entry symbol returns none.
 
 Step 4: the refuted store reports `failed`, inconclusive and unavailable report `errored`, disagreement reports
 `absent` with no invented locator; none adds a claim and strict mode rejects.

@@ -190,7 +190,7 @@ no `traceIds` and binds nothing by itself.
 | FR-151-CON-1 | quoin source SHALL contain no copy of the v2 schema, its enums or its text, and no report fixture except a byte-exact capture used as a test input (or a document derived from one by the changes AC-14 states). Runtime storage contains only the allowlisted FR-030 projection, never a source-report copy. | Integrity | Inspection |
 | FR-151-CON-2 | The adapter SHALL add no field to `RunRecord`; `evidence record` retains only the allowlisted projection in the separate FR-030 companion family, with the same suite/timestamp key and immutable pair semantics. | Compatibility | Test |
 | FR-151-CON-3 | quoin SHALL reach the validator and `MAX_REPORT_BYTES` only through a Cargo git dependency on `agent-ix/filament-analyze` following its `main` branch. | Architecture | Inspection |
-| FR-151-CON-4 | The `filament-analyze` dependency SHALL build on every quoin release target, including `x86_64-pc-windows-msvc`. | Compatibility | Test |
+| FR-151-CON-4 | The `filament-analyze` dependency SHALL build on every quoin release target, including `x86_64-pc-windows-msvc`. | Compatibility | Test (TC-001 step 5; native Windows release build) |
 
 ## Acceptance Criteria
 

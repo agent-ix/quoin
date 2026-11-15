@@ -34,6 +34,12 @@ self-contradictory or oversized, writing no run in any refusal.
    bytes, and over one valid report twice from different working directories.
 4. Run `quoin evidence record --tool filament-analyze`, `--tool differential-report`, `--tool quire-analyze`,
    `--tool tl-mltl`, `--tool r2u2` and `--tool c2po` over a valid report, and list the adapters.
+5. Attempt `cargo check --locked -p quoin-cli --target x86_64-pc-windows-msvc` on the Linux host through
+   `/home/peter/dev/worktrees/locked-build.sh <worktree>/rust/target`. Record whether this cross-target check
+   completes. When the host has no compatible Windows cross-assembler, record the toolchain failure without
+   attributing it to the dependency; verify target support against the existing `windows-2025` matrix entry in
+   `.github/workflows/native-release-build.yml`, which builds `quoin-cli` natively for
+   `x86_64-pc-windows-msvc`.
 
 ## Expected Results
 
@@ -50,3 +56,18 @@ Step 3: the `MAX_REPORT_BYTES` + 1 input is refused naming the size limit withou
 
 Step 4: `filament-analyze` and `differential-report` select the adapter; `quire-analyze`, `tl-mltl`, `r2u2` and `c2po`
 do not, and the listing names `filament.differential-report/v2` and no `differential-summary`.
+
+Step 5: the direct cross-target command's exit status and build failure location are recorded. On a Linux host
+without a Windows cross-assembler, `psm` may invoke the host GNU assembler for COFF input and fail; that result
+does not establish whether the dependency builds on Windows. The existing native Windows release job is the
+target-platform build procedure and must remain green for the target to be considered supported.
+
+Recorded verification for PLAT-1707: `x86_64-pc-windows-msvc` was installed, but this Linux host had no
+`clang`, `clang-cl` or MinGW cross compiler. The command
+`/home/peter/dev/worktrees/locked-build.sh <worktree>/rust/target cargo check --locked -p quoin-cli --target x86_64-pc-windows-msvc`
+exited 101. The `psm` 0.1.32 build script selected the Windows GNU assembly and host `cc` rejected COFF
+`.def`/`.scl` directives; `aws-lc-sys` 0.45.0 also failed under host `cc` (`pthread_rwlock_t` unavailable).
+This Linux cross-check is inconclusive for the dependency's native Windows build. The existing
+`.github/workflows/native-release-build.yml` matrix assigns `x86_64-pc-windows-msvc` to `windows-2025` and
+builds `quoin-cli` natively with `cargo build --locked --release -p quoin-cli --bin quoin`; that job is the
+target-platform verification.
