@@ -5,7 +5,7 @@ type: MeasurementPlan
 status: proposed
 owner: analyze-maintainers
 metric: analysis_semantic_fault_differential_and_evidence_conformance
-definition_version: quire-analyze.measurement-v1
+definition_version: filament-analyze.measurement-v1
 stage: gate
 ground_truth_kind: mechanical
 statistical_design:
