@@ -92,6 +92,7 @@ quoin-auditor = { path = "crates/quoin-auditor" }
 quoin-config = { path = "crates/quoin-config" }
 quoin-core = { path = "crates/quoin-core" }
 quoin-delivery = { path = "crates/quoin-delivery" }
+quoin-dossier = { path = "crates/quoin-dossier" }
 quoin-evidence = { path = "crates/quoin-evidence" }
 quoin-evidence-types = { path = "crates/quoin-evidence-types" }
 quoin-finding-types = { path = "crates/quoin-finding-types" }

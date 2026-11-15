@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-dossier"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The dossier document registry, writer and export hand-off behind `quoin dossier` (quoin FR-191)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+# Registers the stub generators `stub-a`, `stub-b`, `stub-gaps`, `stub-fail`
+# and `stub-time` so the command can be driven before any real document
+# exists. Off in every shipped build; `quoin-cli` enables it for its tests
+# through a dev-dependency.
+test-stubs = []
+
+[dependencies]
+ix-cli-kit = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true, features = ["parsing"] }
+
+[dev-dependencies]
+ix-trace-rs = { workspace = true }

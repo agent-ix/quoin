@@ -46,6 +46,10 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin config get",
     "quoin config set",
     "quoin discharge",
+    "quoin dossier",
+    "quoin dossier check",
+    "quoin dossier export",
+    "quoin dossier generate",
     "quoin evidence",
     "quoin evidence audit",
     "quoin evidence export-test-result",
@@ -300,6 +304,7 @@ fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
             "completeness",
             "config",
             "discharge",
+            "dossier",
             "evidence",
             "graph",
             "matrix",
@@ -370,4 +375,18 @@ fn tc_1650_graph_refusals_keep_the_core_exit_taxonomy() {
     assert_eq!(response.outcome, Outcome::Refused);
     assert_eq!(response.outcome.code(), 2);
     assert_eq!(response.diagnostics.len(), 1);
+}
+
+/// FR-191: only a dossier response marks its report as printable at a status
+/// that carries no payload; another command's refusal stays silent on stdout.
+#[trace("FR-191")]
+#[test]
+fn only_a_marked_response_prints_its_report_at_a_failure_status() {
+    let marked = serde_json::json!({ "rendered": "{}", (dossier::FAILURE_REPORT): true });
+    assert!(is_failure_report(&marked));
+    assert!(!is_failure_report(&serde_json::json!({ "rendered": "x" })));
+    assert!(!is_failure_report(&serde_json::Value::Null));
+    assert!(!is_failure_report(
+        &serde_json::json!({ (dossier::FAILURE_REPORT): false })
+    ));
 }

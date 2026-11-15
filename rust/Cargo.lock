@@ -3196,6 +3196,7 @@ dependencies = [
  "quoin-config",
  "quoin-core",
  "quoin-delivery",
+ "quoin-dossier",
  "quoin-evidence",
  "quoin-graph-analysis",
  "quoin-jsonschema",
@@ -3306,6 +3307,19 @@ dependencies = [
  "thiserror",
  "url",
  "zip",
+]
+
+[[package]]
+name = "quoin-dossier"
+version = "0.31.0"
+dependencies = [
+ "ix-cli-kit",
+ "ix-trace-rs",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time",
 ]
 
 [[package]]

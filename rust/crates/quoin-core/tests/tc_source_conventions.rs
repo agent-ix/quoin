@@ -91,8 +91,9 @@ fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {
 /// Developer tools that ship no engine behaviour.
 const DEVELOPER_TOOLS: &[&str] = &["quoin-suite-trace", "quoin-workflow-check"];
 
-/// Executables quoin starts.
-const EXPECTED_EXECUTABLES: &[&str] = &["$EDITOR", "git", "ix-flow"];
+/// Executables quoin starts. `quire` is the one `quoin dossier export` hands a
+/// bundle to (FR-191); quoin renders nothing itself.
+const EXPECTED_EXECUTABLES: &[&str] = &["$EDITOR", "git", "ix-flow", "quire"];
 
 /// Non-literal executor arguments, each keyed by the file that owns it:
 /// `runner_program()` names `ix-flow`; `config edit` starts the operator's own
@@ -100,6 +101,7 @@ const EXPECTED_EXECUTABLES: &[&str] = &["$EDITOR", "git", "ix-flow"];
 const KNOWN_ARGUMENTS: &[(&str, &str, &str)] = &[
     ("quoin-cli/src/flow.rs", "runner_program()", "ix-flow"),
     ("quoin-cli/src/config.rs", "&editor", "$EDITOR"),
+    ("quoin-dossier/src/export.rs", "&options.quire", "quire"),
 ];
 
 /// Fillers keep each character's UTF-8 width so byte offsets agree with the

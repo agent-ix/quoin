@@ -20,6 +20,7 @@ mod completeness;
 mod config;
 mod core_runtime;
 mod discharge;
+mod dossier;
 mod evidence;
 mod flow;
 mod help;
@@ -150,7 +151,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
     let family = routed_family(&args);
     let change_assurance = family.as_deref() == Some("change-assurance");
     // FR-169: a malformed `risk-summary` flag is a usage error, exit 2.
-    let usage_refused = change_assurance || family.as_deref() == Some("risk-summary");
+    // FR-191: a malformed `dossier` flag is a usage error, exit 2.
+    let usage_refused =
+        change_assurance || matches!(family.as_deref(), Some("risk-summary" | "dossier"));
     let matches = command().try_get_matches_from(&args).map_err(|error| {
         let rendered_error = error.to_string();
         let is_help = matches!(
@@ -196,6 +199,8 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
     invocation::with_current(invocation, || {
         if let Some((name @ ("review" | "to-plan"), arguments)) = matches.subcommand() {
             flow::run(name, arguments)
+        } else if let Some(("dossier", arguments)) = matches.subcommand() {
+            dossier::run(arguments).map_err(failure)
         } else {
             dispatch(&matches).map_err(failure)
         }
@@ -395,6 +400,7 @@ fn command() -> Command {
         .subcommand(change_assurance::command())
         .subcommand(evidence::command())
         .subcommand(discharge::command())
+        .subcommand(dossier::command())
         .subcommand(module::command())
         .subcommand(profile::command())
         .subcommand(measurement::command())
@@ -540,6 +546,15 @@ fn request(arguments: &ArgMatches, view: &str) -> Result<serde_json::Value, Stri
     Ok(serde_json::Value::Object(fields))
 }
 
+/// Whether a response at a status that carries no payload still asks for its
+/// report to be printed.
+fn is_failure_report(payload: &serde_json::Value) -> bool {
+    payload
+        .get(dossier::FAILURE_REPORT)
+        .and_then(serde_json::Value::as_bool)
+        == Some(true)
+}
+
 fn emit(response: &Response) -> std::process::ExitCode {
     if let Some(warning) = response
         .payload
@@ -549,7 +564,10 @@ fn emit(response: &Response) -> std::process::ExitCode {
     {
         return std::process::ExitCode::from(EXIT_INTERNAL);
     }
-    if response.outcome.carries_payload() {
+    // FR-191: `dossier --json` states its report on stdout at exit 3 and 4 too,
+    // where it names the failed source or the quire failure. Only a response
+    // that marks itself does this; another command's refusal prints nothing.
+    if response.outcome.carries_payload() || is_failure_report(&response.payload) {
         let Some(rendered) = response
             .payload
             .get("rendered")
