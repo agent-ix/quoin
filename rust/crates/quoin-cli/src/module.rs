@@ -397,6 +397,85 @@ mod tests {
     use super::{DEFAULT_MODULES, command, modules_json};
     use ix_trace_rs::trace;
 
+    const EXPECTED_DEFAULT_PINS: [(&str, &str, &str, &str); 10] = [
+        (
+            "engineering-assurance",
+            "agent-ix/engineering-assurance",
+            "engineering_assurance",
+            "v0.8.2",
+        ),
+        (
+            "spec-artifacts-iso",
+            "agent-ix/spec-artifacts-iso",
+            "spec_artifacts_iso",
+            "v0.25.0",
+        ),
+        (
+            "spec-artifacts-app",
+            "agent-ix/spec-artifacts-app",
+            "spec_artifacts_app",
+            "v0.10.0",
+        ),
+        (
+            "spec-artifacts-process",
+            "agent-ix/spec-artifacts-process",
+            "spec_artifacts_process",
+            "v0.34.0",
+        ),
+        (
+            "spec-objects-business",
+            "agent-ix/spec-objects-business",
+            "spec_objects_business",
+            "v0.10.0",
+        ),
+        (
+            "spec-objects-architecture",
+            "agent-ix/spec-objects-architecture",
+            "spec_objects_architecture",
+            "v0.11.0",
+        ),
+        (
+            "spec-objects-enterprise",
+            "agent-ix/spec-objects-enterprise",
+            "spec_objects_enterprise",
+            "v0.9.0",
+        ),
+        (
+            "spec-objects-operational",
+            "agent-ix/spec-objects-operational",
+            "spec_objects_operational",
+            "v0.10.0",
+        ),
+        (
+            "spec-objects-security",
+            "agent-ix/spec-objects-security",
+            "spec_objects_security",
+            "v0.11.0",
+        ),
+        (
+            "spec-objects-safety",
+            "agent-ix/spec-objects-safety",
+            "spec_objects_safety",
+            "v0.8.0",
+        ),
+    ];
+
+    fn source_pin(entry: &quoin_modules::MarketplaceEntry) -> Option<(&str, &str, &str, &str)> {
+        match &entry.source {
+            quoin_modules::Source::GitSubdir {
+                url,
+                path,
+                r#ref: Some(r#ref),
+            } => Some((
+                entry.name.as_str(),
+                url.as_str(),
+                path.as_str(),
+                r#ref.as_str(),
+            )),
+            _ => None,
+        }
+    }
+
     #[trace("FR-017")]
     #[test]
     fn tc_373_module_defaults_to_list_and_requires_mutation_arguments() {
@@ -462,93 +541,20 @@ mod tests {
         let defaults = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
             .expect("the shipped default-module manifest is valid");
         assert!(
-            defaults.entries.iter().all(|entry| entry.is_enabled()),
+            defaults
+                .entries
+                .iter()
+                .all(quoin_modules::MarketplaceEntry::is_enabled),
             "all ten public module entries remain enabled"
         );
-        let source_pins: Vec<(&str, &str, &str, &str)> = defaults
-            .entries
-            .iter()
-            .map(|entry| match &entry.source {
-                quoin_modules::Source::GitSubdir {
-                    url,
-                    path,
-                    r#ref: Some(r#ref),
-                } => (
-                    entry.name.as_str(),
-                    url.as_str(),
-                    path.as_str(),
-                    r#ref.as_str(),
-                ),
-                _ => panic!(
-                    "default module {} must name a Git source and an explicit ref",
-                    entry.name
-                ),
-            })
-            .collect();
+        let source_pins: Vec<_> = defaults.entries.iter().filter_map(source_pin).collect();
         assert_eq!(
-            source_pins,
-            [
-                (
-                    "engineering-assurance",
-                    "agent-ix/engineering-assurance",
-                    "engineering_assurance",
-                    "v0.8.2"
-                ),
-                (
-                    "spec-artifacts-iso",
-                    "agent-ix/spec-artifacts-iso",
-                    "spec_artifacts_iso",
-                    "v0.25.0"
-                ),
-                (
-                    "spec-artifacts-app",
-                    "agent-ix/spec-artifacts-app",
-                    "spec_artifacts_app",
-                    "v0.10.0"
-                ),
-                (
-                    "spec-artifacts-process",
-                    "agent-ix/spec-artifacts-process",
-                    "spec_artifacts_process",
-                    "v0.34.0"
-                ),
-                (
-                    "spec-objects-business",
-                    "agent-ix/spec-objects-business",
-                    "spec_objects_business",
-                    "v0.10.0"
-                ),
-                (
-                    "spec-objects-architecture",
-                    "agent-ix/spec-objects-architecture",
-                    "spec_objects_architecture",
-                    "v0.11.0"
-                ),
-                (
-                    "spec-objects-enterprise",
-                    "agent-ix/spec-objects-enterprise",
-                    "spec_objects_enterprise",
-                    "v0.9.0"
-                ),
-                (
-                    "spec-objects-operational",
-                    "agent-ix/spec-objects-operational",
-                    "spec_objects_operational",
-                    "v0.10.0"
-                ),
-                (
-                    "spec-objects-security",
-                    "agent-ix/spec-objects-security",
-                    "spec_objects_security",
-                    "v0.11.0"
-                ),
-                (
-                    "spec-objects-safety",
-                    "agent-ix/spec-objects-safety",
-                    "spec_objects_safety",
-                    "v0.8.0"
-                ),
-            ],
+            source_pins.len(),
+            defaults.entries.len(),
+            "every default module has a Git source and explicit ref"
+        );
+        assert_eq!(
+            source_pins, EXPECTED_DEFAULT_PINS,
             "all ten public modules must stay pinned to their expected release refs"
         );
         let process = defaults
