@@ -62,7 +62,8 @@ runs no git ([FR-166](./FR-166-release-snapshot-command.md)).
 - The command SHALL order `open_findings` by `obligation`, `kind`, `path`, `line`, `symbol`, `cause` and `summary`, comparing
   strings bytewise, `line` numerically and an absent value before a present one.
 - The command SHALL carry a `stale-evidence` finding's `cause` into `open_findings` exactly as FR-115 supplies it.
-- For a finding whose kind is not `stale-evidence`, the command SHALL omit `cause` and SHALL NOT derive one from `summary`.
+- The command SHALL omit `cause` from a finding whose kind is not `stale-evidence`.
+- The command SHALL NOT derive `cause` from `summary`.
 - The command SHALL order `soup.rows` as FR-144 orders its rows.
 - The command SHALL order `soup.not_assessed` by `kind`, `tool` and `detail`, comparing bytewise.
 - The command SHALL order `anomalies` by anomaly id.
