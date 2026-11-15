@@ -13,8 +13,8 @@
 //! One report is one comparison, so it is one entry. A `disagreement` is the
 //! one disposition no run-entry outcome carries, so it is named, not rounded.
 
-use ix_trace_rs::implements;
 use filament_analyze::{MAX_REPORT_BYTES, validate_report_document};
+use ix_trace_rs::implements;
 use quoin_store::{canonical_bytes, parse_strict_json_str};
 use serde_json::Value;
 

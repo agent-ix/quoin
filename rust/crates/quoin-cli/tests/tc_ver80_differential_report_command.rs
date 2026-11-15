@@ -13,8 +13,8 @@
 use std::path::Path;
 use std::process::{Command, Output};
 
-use ix_trace_rs::trace;
 use filament_analyze::MAX_REPORT_BYTES;
+use ix_trace_rs::trace;
 
 const DISAGREEMENT: &str =
     include_str!("../../../../tests/fixtures/evidence/differential-report-v2/disagreement.json");

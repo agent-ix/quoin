@@ -18,8 +18,8 @@
 
 use std::collections::BTreeMap;
 
-use ix_trace_rs::trace;
 use filament_analyze::MAX_REPORT_BYTES;
+use ix_trace_rs::trace;
 use quoin_evidence::adapters::{
     ADAPTERS, AdapterResult, AdapterSelection, parse_differential_report, select_adapter,
 };
@@ -112,10 +112,7 @@ fn tc_001_the_canonical_emitter_reproduces_every_capture_byte_for_byte() {
 fn tc_001_agreement_satisfied_is_one_pass_entry_keyed_on_analysis_kind() {
     let result = accepted(SATISFIED);
     assert_eq!(result.entries.len(), 1);
-    assert_eq!(
-        result.entries[0].symbol,
-        SymbolId::new("consistency")
-    );
+    assert_eq!(result.entries[0].symbol, SymbolId::new("consistency"));
     assert_eq!(result.entries[0].outcome, Outcome::Pass);
     assert!(result.entries[0].trace_ids.is_none());
     assert!(result.unrepresented.is_none());
@@ -156,10 +153,7 @@ fn tc_001_projection_contains_only_the_qualified_allowlist() {
 fn tc_001_agreement_refuted_is_one_fail_entry() {
     let result = accepted(REFUTED);
     assert_eq!(result.entries.len(), 1);
-    assert_eq!(
-        result.entries[0].symbol,
-        SymbolId::new("consistency")
-    );
+    assert_eq!(result.entries[0].symbol, SymbolId::new("consistency"));
     assert_eq!(result.entries[0].outcome, Outcome::Fail);
     assert!(result.unrepresented.is_none());
 }
@@ -171,10 +165,7 @@ fn tc_001_disagreement_is_no_entry_and_one_named_unrepresented_result() {
     assert!(result.entries.is_empty());
     let unrepresented = result.unrepresented.unwrap();
     assert_eq!(unrepresented.len(), 1);
-    assert_eq!(
-        unrepresented[0].symbol,
-        "consistency"
-    );
+    assert_eq!(unrepresented[0].symbol, "consistency");
     assert_eq!(unrepresented[0].state, "disagreement");
     assert_eq!(
         unrepresented[0].reason,
@@ -188,10 +179,7 @@ fn tc_001_inconclusive_reports_are_one_error_entry() {
     for capture in [UNKNOWN, TIMEOUT] {
         let result = accepted(capture);
         assert_eq!(result.entries.len(), 1);
-        assert_eq!(
-            result.entries[0].symbol,
-            SymbolId::new("consistency")
-        );
+        assert_eq!(result.entries[0].symbol, SymbolId::new("consistency"));
         assert_eq!(result.entries[0].outcome, Outcome::Error);
         assert!(result.unrepresented.is_none());
     }
@@ -203,10 +191,7 @@ fn tc_001_unavailable_reports_are_one_error_entry() {
     for capture in [MISSING, UNSUPPORTED] {
         let result = accepted(capture);
         assert_eq!(result.entries.len(), 1);
-        assert_eq!(
-            result.entries[0].symbol,
-            SymbolId::new("consistency")
-        );
+        assert_eq!(result.entries[0].symbol, SymbolId::new("consistency"));
         assert_eq!(result.entries[0].outcome, Outcome::Error);
     }
 }
