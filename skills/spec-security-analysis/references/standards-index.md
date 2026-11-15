@@ -12,7 +12,7 @@ Do not select a source or override an evaluation outcome based on this index.
 |----------|---------------------|---------------|
 | [NIST 800-53](nist-800-53/index.md) | Federal information systems | US government, federal contractors |
 | [OWASP ASVS](owasp-asvs/index.md) | Application security verification | Web applications, APIs, mobile |
-| [GDPR](gdpr/index.md) | EU data protection | Any EU user data processing |
+| [GDPR](gdpr/index.md) | See the [GDPR index](gdpr/index.md) for the selected-set boundary | Only as stated in the GDPR index |
 
 ## Standard Summaries
 
@@ -27,9 +27,7 @@ Application Security Verification Standard. 17 verification chapters for testing
 **Context**: Web applications, APIs, and other user-facing software.
 
 ### EU GDPR 2016/679
-General Data Protection Regulation for EU data protection and privacy.
-
-**Context**: Processing personal data of EU residents.
+See the [GDPR index](gdpr/index.md) for the exact selected set, typed clause boundary, applicability rules, and untyped context boundary.
 
 ## Licence-restricted sources
 

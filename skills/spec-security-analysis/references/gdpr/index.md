@@ -1,54 +1,30 @@
-# EU GDPR 2016/679
+# GDPR reference index
 
-**Version**: 2016/679  
-**Scope**: Personal data protection  
-**Region**: EU/EEA (applies globally to EU data subjects)
+## Typed clause set
 
-## When to Apply
+The evaluated GDPR material is limited to the exact set
+[`eu/gdpr-2016-679@2016-05-04`](https://github.com/agent-ix/spec-clauses-eu-law/blob/main/spec_clauses_eu_law/clauses/eu-gdpr-2016-679-2016-05-04.json), only when that exact key is present in the source-profile evaluation. Its complete typed clause boundary is:
 
-Apply GDPR when your component:
-- Processes personal data of EU residents
-- Stores user information
-- Logs user activity
-- Handles consent or preferences
+- Article 25(1)-(2)
+- Article 30(1)(a)-(g), (2)(a)-(d), and (3)-(4), with applicability determined by the person-supplied Article 30 records-applicability value
+- Article 32(1)(a)-(d), (2), and (4)
+- Article 35(1), (2), (7)(a)-(d), (9), and (11), with applicability determined by person-supplied role and high-risk-processing values
 
-## Chapter Selection Guide
+Do not infer or supply those applicability values. The evaluation document is
+the only source of clause outcomes; in generated artifacts, the exact set key
+and clause id are the whole reference. Other GDPR clauses, including breach
+notification, are not evaluated by this set. This index is the sole authority
+for the typed boundary and applicability rules; [Chapter IV](ChIV-ControllerProcessor.md)
+and other skill pages are navigation only.
 
-**Use this to decide which chapter to investigate:**
+## Untyped context
 
-| If your component... | Read Chapter |
-|---------------------|--------------|
-| Handles ANY personal data | [ChIV-ControllerProcessor](ChIV-ControllerProcessor.md) |
-| Needs to implement data subject requests | [ChIII-DataSubjectRights](ChIII-DataSubjectRights.md) |
-| Transfers data outside EU | [ChV-DataTransfers](ChV-DataTransfers.md) |
-| Defines data processing principles | [ChII-Principles](ChII-Principles.md) |
+The following retained chapter summaries are untyped context only. They are not
+clause sets, are not evaluated, and must not be reported as evaluated coverage:
 
-## Chapter Overview
+- [Chapter II - Principles](ChII-Principles.md)
+- [Chapter III - Data Subject Rights](ChIII-DataSubjectRights.md)
+- [Chapter V - Data Transfers](ChV-DataTransfers.md)
 
-| Chapter | Articles | Primary Focus | Read When |
-|---------|----------|---------------|-----------|
-| [ChII-Principles](ChII-Principles.md) | 5-11 | Lawfulness, purpose limitation | Defining data model, processing rules |
-| [ChIII-DataSubjectRights](ChIII-DataSubjectRights.md) | 12-23 | Access, erasure, portability | User-facing data APIs |
-| [ChIV-ControllerProcessor](ChIV-ControllerProcessor.md) | 24-43 | Security, DPIA, breach notification | **Any data processing** |
-| [ChV-DataTransfers](ChV-DataTransfers.md) | 44-50 | International transfers | Cross-border data flow |
-
-## Key Articles for Software
-
-Most software maps primarily to Chapter IV (Controller/Processor):
-
-| Article | Name | Apply When |
-|---------|------|------------|
-| Art. 25 | Data Protection by Design/Default | Any new feature design |
-| Art. 30 | Records of Processing | Any data processing |
-| Art. 32 | Security of Processing | **All components** |
-| Art. 33-34 | Breach Notification | Incident handling |
-| Art. 35 | DPIA | High-risk processing |
-
-## Common Out-of-Scope Assignments
-
-| Article | Responsibility | Assign To |
-|---------|---------------|-----------|
-| Art. 15-18 | Data access/rectification/restriction | Data Service |
-| Art. 17 | Right to erasure | Data Service |
-| Art. 20 | Data portability | Data Service |
-| Art. 37-39 | DPO | Legal/Compliance |
+These files remain context until future clause sets cover their topics. Do not
+map controls from their summaries or infer obligations from them.
