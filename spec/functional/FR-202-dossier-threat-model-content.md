@@ -48,8 +48,8 @@ engine change.
   or not it crosses a boundary or carries data.
 - `### Covered sinks` lists each covered `data_sink` with its `kind`, the classifications reaching it, its threats and its
   controls.
-- `### Open findings` holds one row `GAP: <check> <subject>` per open finding of the three checks for that model's covered
-  elements; the section reads `none` when it holds no finding.
+- `### Open findings` holds one row `GAP: <check> <subject>` per open finding of the three checks on that model's covered
+  elements and considered threats; the section reads `none` when it holds no finding.
 
 ## Behavior
 
@@ -64,13 +64,15 @@ engine change.
 - A carried classification SHALL be shown as its id with its `regulated_categories` as written; a connection carrying none
   reads `none`. A connection crossing no boundary reads `none` in the boundary cell; otherwise the cell shows the boundary id
   and its `trust_level` as written.
-- `GAP:` rows and gaps SHALL come only from the three checks' findings. The generator SHALL NOT recompute a check.
+- `GAP:` rows and gaps SHALL come only from the three checks' findings at their resolved severity. The generator SHALL NOT
+  recompute a check. A check a project sets to `off` yields no row and no gap, as quire-rs FR-096 drops its denials.
+- An element covered, or a threat considered, by two models SHALL get its `GAP:` row in each model's section and one gap in
+  `## Gaps`.
 - Each `crossing-without-threat` finding SHALL produce one `crossing_without_threat` gap naming the connection; each
   `classified-sink-without-threat` finding one `classified_sink_without_threat` gap naming the sink; each
   `threat-without-treatment` finding one `threat_without_treatment` gap naming the threat. When no `threat_model` is in the
   selection the document SHALL hold no model section and one document-level `no_threat_model` gap.
-- Only a `threat_model` document a person authored counts. A proposed draft the repository marks as not committed is not a
-  model and SHALL NOT yield a section.
+- The generator SHALL read only `threat_model` documents in the corpus, which are person-authored (spec-objects-security FR-026).
 - The document is committed and checked like other dossier documents: `check` compares its bytes, `export` requires it current.
   Two generations over the same records SHALL be byte-identical.
 - If a source reader reports an unreadable record, the command SHALL surface a source failure under FR-191 instead of
@@ -91,6 +93,7 @@ engine change.
 | FR-202-AC-7 | Two `generate` runs over the same records produce byte-identical Markdown and `--json`; `check` after an unedited run reports `matches`, and after a hand-edited line reports `differs`. | Test |
 | FR-202-AC-8 | The document holds no threat, STRIDE class, `decision` or `decided_by` value that does not appear in a record, and no score, rank or adequacy statement; a risk with no `decided_by` shows `not stated`. | Test |
 | FR-202-AC-9 | An unreadable `threat` record makes `generate` exit 3 naming the source and leaves every existing file unchanged. | Test |
+| FR-202-AC-10 | A connection covered by two models and lacking a threat gets a `GAP:` row in both sections and one `crossing_without_threat` gap; a considered threat with no treatment gets its `GAP:` row in the section of the model that considers it. | Test |
 
 ## Dependencies
 
