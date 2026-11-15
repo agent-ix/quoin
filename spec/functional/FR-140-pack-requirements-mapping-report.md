@@ -1,34 +1,33 @@
 ---
 id: FR-140
-title: "Pack-level requirements mapping report: one matrix per clause set and a pack index"
+title: "Module requirements mapping report: one matrix per clause set and an index"
 type: FR
 relationships:
   - target: "ix://agent-ix/quoin/FR-135"
     type: "extends"
-  - target: "ix://agent-ix/quoin/FR-137"
-    type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-139"
     type: "depends_on"
 ---
 
-# FR-140: Pack-level requirements mapping report: one matrix per clause set and a pack index
+# FR-140: Module requirements mapping report: one matrix per clause set and an index
 
 ## Description
 
-`quoin discharge --rmm --pack <name>` SHALL report on an installed pack (FR-137):
-one FR-135 requirements mapping matrix for every clause set of the pack, preceded by
-a pack index. The report carries clause ids, force, applicability, compliance and
-evidence references only.
+`quoin discharge --rmm --pack <name>` SHALL report on any installed module that
+declares at least one clause set: one FR-135 requirements mapping matrix for every
+clause set of the module, preceded by an index. Whether FR-137 derives the module
+as a licensed pack SHALL NOT affect this report. The report carries clause ids,
+force, applicability, compliance and evidence references only.
 
 ## Rationale
 
-A pack bundles several clause sets, and a project answers to all of them at once.
+A module can bundle several clause sets, and a project answers to all of them at once.
 FR-135 renders one set per call and needs a hand-built binding report for each. The
 pack report evaluates every set and reuses the FR-135 matrix unchanged, so the pack
-view cannot disagree with the single-set view. Pack content is licensed, so the
-report is built to be safe to share: it names clauses by id and never reproduces
-what they say. The index carries row counts only; a count per compliance value would
-behave like the score FR-135 forbids.
+view cannot disagree with the single-set view. Some pack content is licensed, so
+the report is built to be safe to share: it names clauses by id and never
+reproduces what they say, regardless of module licensing. The index carries row
+counts only; a count per compliance value would behave like the score FR-135 forbids.
 
 ## Interface
 
@@ -38,6 +37,8 @@ quoin discharge --rmm --pack <name> --repo <repo> --as-of <instant>
 ```
 
 - `<name>` is the installed module name, as `quoin module list` shows it.
+- The module SHALL declare at least one clause set. It need not be an FR-137
+  licensed pack.
 - `--context KEY=VALUE` (repeatable) supplies the context facts, parsed by the same
   rule as the single-set evaluation path (`quoin-quire` `Context::from_entries`).
   With none, the context is empty.
@@ -66,8 +67,8 @@ quoin discharge --rmm --pack <name> --repo <repo> --as-of <instant>
 - Two runs over the same inputs SHALL render byte-identical output, whatever the order of the stored facts.
 - If `<name>` is not an installed module, then the command SHALL exit with status 2 naming the unknown name.
 - If `<name>` is not an installed module, then the command SHALL write no output.
-- If `<name>` is installed and FR-137 pack derivation reports it is not a pack, then the command SHALL exit with status 2 naming the module and stating it is not a pack.
-- If `<name>` is installed and FR-137 pack derivation reports it is not a pack, then the command SHALL write no output.
+- If `<name>` is installed and declares no clause sets, then the command SHALL exit with status 2 naming the module and stating it declares no clause sets.
+- If `<name>` is installed and declares no clause sets, then the command SHALL write no output.
 - If a clause set of the pack fails to load, then the command SHALL exit with status 2 naming the set as `authority/id@version` where known and the load error.
 - If a clause set of the pack fails to load, then the command SHALL emit no index and no matrix.
 - If a stored disposition has an empty rationale, then the command SHALL refuse the whole report as FR-135-AC-6 does.
@@ -90,19 +91,21 @@ quoin discharge --rmm --pack <name> --repo <repo> --as-of <instant>
 | FR-140-AC-2 | In a fixture where only one set's clauses use the context dimension `region`, changing `--context region=` from a value that binds a clause to one that does not changes that clause's row to `Not applicable` in that set's matrix and leaves every other set's matrix byte-identical. | Test |
 | FR-140-AC-3 | With facts recorded in the repo's store for one set only, that set shows a `Compliant` row and the other sets show `Not compliant - undischarged` for every binding clause; each index `rowCount` equals the number of rows in that set's matrix. | Test |
 | FR-140-AC-4 | The index, title and context lines the pack report itself writes, and the JSON members, are exactly those named under Behavior: no `%`, `score`, `ratio`, `verdict`, `pass` or `fail` in them, and no per-compliance-value count. Evidence reference strings are excluded from this check. | Test |
-| FR-140-AC-5 | The fixture pack's clause `text`, clause `title` and set `title` each carry a unique sentinel. Searching the Markdown, the JSON, stderr and the output of every refusal in AC-7 to AC-9 for each sentinel finds none. A control run that prints a sentinel is caught by the same search, so the check can fail. | Test |
+| FR-140-AC-5 | The fixture module's clause `text`, clause `title` and set `title` each carry a unique sentinel. Searching the Markdown, the JSON, stderr and the output of every refusal in AC-7 to AC-9 and AC-13 for each sentinel finds none. A control run that prints a sentinel is caught by the same search, so the check can fail. | Test |
 | FR-140-AC-6 | In a sandbox with two initialised git repositories (one the working directory, one as `--repo`), a snapshot of every file in the sandbox, including `IX_HOME` and the evidence store, is identical before and after a run, and `git status --porcelain` is unchanged in both. A control run that deliberately writes a file into a repository is detected by the same oracle. | Test |
-| FR-140-AC-7 | An unknown name and an installed non-pack module (all sets `text: none` or `original`) each exit with status 2, with a message naming the name, and produce no stdout. | Test |
+| FR-140-AC-7 | An unknown name and an installed module that declares no clause sets each exit with status 2, with a message naming the module; the unknown-name message identifies it as unknown and the empty-module message says it declares no clause sets. Both produce no stdout. | Test |
 | FR-140-AC-8 | A pack with a clause-set file that fails to load because a sentinel-bearing `text` or `title` field is malformed exits with status 2, names the set as `authority/id@version` where known, and emits no index and no matrix even when other sets are sound. The sentinel is absent from stdout and stderr. | Test |
 | FR-140-AC-9 | `--pack` with `--binding`, `--facts`, `--inward`, no `--repo`, or no `--rmm`, and `--context` without `--pack`, each exit with status 1 and a message naming the conflict; `--binding` omitted without `--pack` is refused as before. A stored disposition with a whitespace-only rationale refuses the whole report with the FR-135-AC-6 refusal. | Test |
 | FR-140-AC-10 | Two runs from the same inputs with facts recorded in a different order produce byte-identical Markdown and JSON; and a clause id, pack name or context value containing a line break, a pipe, a backtick, a link or raw HTML renders as the literal text in the title, the index and the matrices. | Test |
 | FR-140-AC-11 | The `--json` output of AC-1 validates against the JSON Schema generated from the pack report type, and carries `schemaVersion` `requirements-mapping-pack-v1` with each embedded matrix carrying `requirements-mapping-v1`. | Test |
 | FR-140-AC-12 | The retained `quoin discharge` command help lists `--pack` and `--context`, and the help fixture matches the command. | Test |
+| FR-140-AC-13 | An installed module whose only clause set has `text: original`, installed from a temp directory, exits 0 and renders an index with one entry and exactly one FR-135 matrix. The output has the same structure and matrix content as an equivalent licensed pack report, and contains none of the clause-title or clause-text sentinels. | Test |
+| FR-140-AC-14 | For the module in AC-13, `quoin module list` continues to report `"pack": false`. | Test |
 
 ## Dependencies
 
 - [FR-135](./FR-135-requirements-mapping-matrix-view.md) supplies the matrix, its rows, its escape and the usage and facts refusals.
 - [FR-133](./FR-133-discharge-facts-in-the-evidence-store.md) supplies the stored facts per clause set key.
-- [FR-137](./FR-137-detect-and-place-licensed-packs.md) supplies pack derivation.
+- [FR-137](./FR-137-detect-and-place-licensed-packs.md) continues to govern licensed-pack detection and placement; its pack derivation does not gate this report.
 - [FR-139](./FR-139-pack-writes-nothing-into-a-repository.md) supplies the write boundary this report keeps.
 - Fixtures are original synthetic content with `example.invalid` authorities.
