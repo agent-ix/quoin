@@ -22,7 +22,7 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 
 ## Inputs
 
-- The `discharge` source: `quoin discharge --binding <clause-binding.json> --repo <dir> --as-of <ISO-8601> --rmm --json` for each `--clause-binding`, or `--pack <pack> --rmm --json`. The code is `rust/crates/quoin-assurance/src/discharge/rmm.rs`, `pack_rmm.rs` and `rust/crates/quoin-cli/src/discharge.rs`. A clause binding comes from `quire clauses`.
+- The `discharge` source: `quoin discharge --binding <clause-binding.json> --repo <dir> --as-of <RFC-3339> --rmm --json` for each `--clause-binding`, or `--pack <pack> --rmm --json`. The code is `rust/crates/quoin-assurance/src/discharge/rmm.rs`, `pack_rmm.rs` and `rust/crates/quoin-cli/src/discharge.rs`. A clause binding comes from `quire clauses`.
 - `--as-of`, required whenever `rmm` is selected and a binding or pack is given.
 
 ## Outputs

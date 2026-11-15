@@ -23,7 +23,7 @@ The documents are SRS (`srs`, id `DOS-SRS`), architecture (`architecture`, id `D
 
 ## Inputs
 
-- `generate [--doc srs|architecture|trace-matrix|rmm]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--as-of <ISO-8601>] --version <TEXT> [--json]`.
+- `generate [--doc srs|architecture|trace-matrix|rmm]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--as-of <RFC-3339>] --version <TEXT> [--json]`.
 - `check` takes the same selectors as `generate`.
 - `export --to pdf|docx --output <PATH>` takes the same selectors as `generate`, and also `[--release <TAG>] [--approval <PATH>]... [--template <PATH>] [--quire <PATH>]`.
 
