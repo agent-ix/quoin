@@ -42,3 +42,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-038: Facts from mappings state what people wrote and never invent an attestation or a verdict](./NFR-038-mapping-facts-state-and-never-decide.md)
 - [NFR-039: Formal-rule status runs the verifier once per candidate commit](./NFR-039-formal-rule-status-runs-verifier-once-per-commit.md)
 - [NFR-040: Dossier generation is deterministic and writes only what the records state](./NFR-040-dossier-is-deterministic-and-records-only.md)
+- [NFR-041: M2 dossier documents state recorded values without deriving verdicts](./NFR-041-m2-dossier-states-only-recorded-values.md)
