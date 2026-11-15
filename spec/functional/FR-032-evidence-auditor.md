@@ -65,7 +65,8 @@ different from the answer being yes.
 ## Outputs
 
 - Findings, each with a kind, an obligation, a severity and a summary naming
-  what to do
+  what to do; `stale-evidence` findings additionally carry an optional `cause`
+  (`missing-run` or `failed-run`), omitted when not determined
 - The set of obligations whose evidence is healthy
 - Under `--strict`, a non-zero exit when any reported finding remains
 
@@ -79,6 +80,14 @@ different from the answer being yes.
   passing symbol is evidence, even beside a skipped sibling.
 - The auditor SHALL treat a symbol the run never reported as vacuous in the
   strongest sense: the binding names evidence the suite did not produce.
+- The auditor SHALL set a typed `cause` on every `stale-evidence` finding it
+  emits, from the closed set `missing-run` (the bound suite has no recorded run
+  in the store's `latest_runs`) and `failed-run` (the suite's newest recorded
+  run reports `fail` or `error` for a bound symbol), and SHALL omit `cause`
+  from every finding of any other kind.
+- The auditor SHALL emit at most one `stale-evidence` finding per obligation:
+  the first stale suite in bytewise suite-name order, and within it the first
+  failing symbol in bytewise order, determines the finding and its `cause`.
 - The auditor SHALL NOT execute any suite, spawn any test runner, or modify the
   store.
 
@@ -110,11 +119,22 @@ different from the answer being yes.
 | FR-032-AC-16 | `quoin evidence inspect-mocks` recognizes narrow explicit stand-in forms in Rust, Python and TypeScript test source and records the completed inspection without running a suite or assigning a verdict. `audit` and `assurance` consume the newest inspection record of each suite. A missing inspection is reported as `not-evaluated`, excluded from the healthy count, and prevents `--strict` from passing; it is never converted into a clean result. Tier 1 executes this store-backed command path for `audit.findings`, binds the symbols observed by the production inspector rather than a suite-wide placeholder, and preserves the finding's locus. | Test |
 | FR-032-AC-17 | A binding whose suite's newest recorded run — the same run the store's `latest_runs` selects (FR-030, newest by timestamp) — reports `fail` or `error` for a bound symbol is `stale-evidence` at high severity, naming the failing suite and symbol. A run that failed the tagged test is stale evidence in its own right, not merely old evidence. | Test |
 
+| FR-032-AC-18 | A binding whose suite has no recorded run in `latest_runs` yields a `stale-evidence` finding with `cause` `missing-run`. | Test |
+| FR-032-AC-19 | A binding whose suite's newest recorded run reports `fail` or `error` for a bound symbol yields a `stale-evidence` finding with `cause` `failed-run`. | Test |
+| FR-032-AC-20 | An obligation bound to one suite with no run and another whose newest run failed yields exactly one `stale-evidence` finding, whose suite, symbol and `cause` are those of the first stale suite in bytewise suite-name order. | Test |
+| FR-032-AC-21 | A finding of any kind other than `stale-evidence` serializes with no `cause` key, and `cause` changes no `summary` text, severity, finding order or healthy set. | Test |
+
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) (the store it reads), [FR-031](./FR-031-catalog-driven-advisor.md) (the catalog method conformance is checked against), quire-rs [FR-053](ix://agent-ix/quire-rs/FR-053) (the obligations it compares)
-- **Downstream**: the consuming workflow decides whether a finding blocks; this command reports and, under `--strict`, exits non-zero
+- **Downstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md) (consumes `cause` verbatim) and [FR-167](./FR-167-release-snapshot-format.md) (via FR-115); the consuming workflow decides whether a finding blocks; this command reports and, under `--strict`, exits non-zero
 
+> **CR note (PLAT-1760, 2026-11-15):** `stale-evidence` folded a missing run and a
+> failed run into one kind, distinguishable only by parsing `summary`. AC-18..21
+> add the typed `cause` the auditor now sets. It is a new optional key on the
+> `Finding` JSON, so the canonical bytes of a `stale-evidence` finding change;
+> no other kind's bytes do.
+>
 > **CR note (2026-10-29, PLAT-1213):** The suspect-link check is removed with the
 > binding hash it compared (FR-030 CR note). FR-032-AC-2 and TC-138 are withdrawn;
 > FR-032-AC-1 and FR-032-AC-8 lose their hash clauses, and the `suspect-link`

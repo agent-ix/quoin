@@ -37,7 +37,7 @@ source and restates no vocabulary.
 | `previous_release` | `{ tag, commit }` of the previous release, or `null` for a first release | FR-168 |
 | `coverage` | per requirement: `id` and `criteria`, a list holding for each criterion `id`, `static_status` and `evidence_status` | FR-115 |
 | `evidence_freshness` | the count of criteria at each of the five evidence statuses | FR-115 |
-| `open_findings` | each auditor finding of every criterion: `obligation`, `kind`, `summary`, `path`, `line`, `symbol` | FR-115 `evidence_detail.findings` |
+| `open_findings` | each auditor finding of every criterion: `obligation`, `kind`, `summary`, `path`, `line`, `symbol`, and for a `stale-evidence` finding the optional `cause` (`missing-run` or `failed-run` when present), omitted when absent and omitted on every other kind | FR-115 `evidence_detail.findings` |
 | `soup` | `rows`: per record `purl`, `version`, `group`, `support_status`, `end_of_support`; and `not_assessed`: each item FR-144 appends after its rows, as `{ kind, tool, detail }` | FR-144 |
 | `anomalies` | each carried anomaly: `id`, `title`, `status`, `resolution`, `severity`, `safety_impact`, `unassessed`, `release_rationale` | FR-162, FR-163 |
 | `change_records` | the change-assurance records since the previous release | FR-168 |
@@ -57,10 +57,16 @@ runs no git ([FR-166](./FR-166-release-snapshot-command.md)).
 ## Behavior
 
 - The snapshot SHALL carry exactly the members of the table, each once, with `null` for a source value that is absent.
+- WHEN serializing `open_findings`, the command SHALL omit the `cause` member when it is absent.
+- The command SHALL NOT serialize absent `cause` as `null`.
 - The snapshot SHALL NOT carry a member that the table does not name, at any depth.
 - The command SHALL order `coverage` by requirement id and then as FR-115 orders criteria.
-- The command SHALL order `open_findings` by `obligation`, `kind`, `path`, `line`, `symbol` and `summary`, comparing
+- The command SHALL order `open_findings` by `obligation`, `kind`, `path`, `line`, `symbol`, `cause` and `summary`, comparing
   strings bytewise, `line` numerically and an absent value before a present one.
+- The command SHALL carry a `stale-evidence` finding's `cause` into `open_findings` exactly as FR-115 supplies it, including omitting it when FR-115 omits it.
+- The command SHALL omit `cause` from a finding whose kind is not `stale-evidence`.
+- The command SHALL omit `cause` from a `stale-evidence` finding when FR-115 supplies that finding without `cause`.
+- The command SHALL NOT derive `cause` from `summary`.
 - The command SHALL order `soup.rows` as FR-144 orders its rows.
 - The command SHALL order `soup.not_assessed` by `kind`, `tool` and `detail`, comparing bytewise.
 - The command SHALL order `anomalies` by anomaly id.
@@ -82,12 +88,15 @@ runs no git ([FR-166](./FR-166-release-snapshot-command.md)).
 | FR-167-AC-4 | A fixture with an unresolved-advisory record, a past-end-of-support record and a clean record yields `soup.rows` in that group order with `group` set to `unresolved_advisory`, `past_end_of_support` and `other`, and a scan reported not run, a scan reported unordered, an advisory matching no record and a policy finding matching no record each appear in `soup.not_assessed` with `kind`, `tool` and `detail`, in `kind`, `tool`, `detail` order. | Test |
 | FR-167-AC-5 | A fixture with an open anomaly carrying a two-row release rationale, a `closed` `wont-fix` one and an `unassessed` one lists all three by id, with `release_rationale` byte-equal to the record's entries, and no snapshot member named `rationaleChange`. | Test |
 | FR-167-AC-6 | An empty evidence store yields `coverage` with every criterion `no run evidence` and `open_findings` holding one `undischarged` finding for each criterion, as FR-032-AC-5 reports and FR-115-AC-3 keeps in `evidence_detail`; the other sections are present, never absent. | Test |
-| FR-167-AC-9 | A fixture anomaly file with git history that would give `fixingChange` and `rationaleChange` yields an anomaly row with neither member. | Test |
 | FR-167-AC-7 | A scan of the snapshot's keys and values finds no digest, hash, manifest or score member, and no sentence stating a release accepted, ready or releasable. | Inspection |
+| FR-167-AC-9 | A fixture anomaly file with git history that would give `fixingChange` and `rationaleChange` yields an anomaly row with neither member. | Test |
+| FR-167-AC-10 | A fixture with a `missing-run` and a `failed-run` `stale-evidence` finding yields `open_findings` items whose `cause` equals each, byte for byte, as FR-115 supplies it. | Test |
+| FR-167-AC-11 | An `open_findings` item of any kind other than `stale-evidence` has no `cause` key. | Test |
+| FR-167-AC-12 | A `stale-evidence` finding that FR-115 supplies without `cause` yields an `open_findings` item with no `cause` key, not `null`. | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md), [FR-144](./FR-144-soup-report.md),
+- **Upstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md) (including the typed `cause` of FR-032-AC-18..21), [FR-144](./FR-144-soup-report.md),
   [FR-162](./FR-162-anomaly-report.md), [FR-163](./FR-163-anomaly-report-release-rationale.md),
   [FR-166](./FR-166-release-snapshot-command.md), [FR-168](./FR-168-release-snapshot-change-records.md).
 - **Downstream**: the dossier documents, which read the snapshot.
