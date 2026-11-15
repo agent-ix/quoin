@@ -1,0 +1,62 @@
+---
+id: FR-193
+title: "The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves"
+type: FR
+relationships:
+  - target: "ix://agent-ix/quoin/StR-010"
+    type: "traces_to"
+  - target: "ix://agent-ix/quoin/US-024"
+    type: "implements"
+  - target: "ix://agent-ix/quoin/FR-191"
+    type: "extends"
+---
+
+# FR-193: The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves
+
+## Description
+
+The architecture document (`--doc architecture`, document id `DOS-ARCH`) SHALL
+list parts, their ports, connections (with flow direction and ends),
+allocations and ADRs, and for each part the requirements allocated to or
+realized by it, from the quire-rs design join (quire-rs FR-086).
+
+## Inputs
+
+- The `design-join` source (`quire_rs::design_join`) and the `design-matrix` source (quire-rs FR-092), which `quoin-quire` exposes as `rust/crates/quoin-quire/src/design_join.rs` and `design_matrix.rs`.
+- The `systems-records` source: the systems records `PartRecord`, `PortRecord`, `ConnectionRecord` and allocation of quire-rs `src/semantic/systems.rs`, and the objects `Part`, `Port`, `Connection` and `Allocation` of spec-objects-architecture.
+- Documents of the `ADR` archetype.
+
+## Outputs
+
+- `dossier/DOS-ARCH.md`, then `Gaps`.
+
+## Behavior
+
+- The architecture document SHALL list elements in dossier order (FR-191) by element id.
+- The architecture document SHALL show for each connection its flow direction and both ends.
+- The architecture document SHALL list for each part the requirements allocated to or realized by it, from the join.
+- If the join reports a requirement in the `uncovered` state, the document SHALL record a `no_design_element` gap naming it.
+- If a design reference resolves to no element, the document SHALL show the reference.
+- If a design reference resolves to no element, the document SHALL record a `dangling_design_reference` gap naming it.
+- If the join lists a design element of a kind the relation does not accept (`kind_mismatch`), the document SHALL show the element.
+- If the join lists a design element of a kind the relation does not accept (`kind_mismatch`), the document SHALL record a `design_kind_mismatch` gap naming the requirement and the element.
+- If a part has no allocated requirement, the document SHALL record a `no_allocation` gap naming the part.
+- If the loaded modules declare no `design_relations`, the document SHALL record a `design_relations_unavailable` gap that states the cause.
+- A dangling design reference or a kind mismatch SHALL NOT be dropped.
+
+## Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| FR-193-AC-1 | A fixture with two parts, one connection, one ADR and one requirement with no design element lists all elements and a `no_design_element` gap naming that requirement | Test |
+| FR-193-AC-2 | A dangling design reference is listed and produces a `dangling_design_reference` gap | Test |
+| FR-193-AC-3 | A module set declaring no `design_relations` yields status `incomplete` with a `design_relations_unavailable` gap, and `generate` does not exit 0 | Test |
+| FR-193-AC-4 | A part with no allocated requirement produces a `no_allocation` gap | Test |
+| FR-193-AC-5 | A connection shows its flow direction and both ends | Test |
+| FR-193-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
+
+## Dependencies
+
+- **Upstream**: [FR-191](./FR-191-dossier-command.md); quire-rs FR-086 and FR-092; quire-cli FR-041 (existing rendering of the join).
+- **Upstream (open)**: `quoin-quire` exposes the design join and design matrix but not the systems records (`PartRecord`, `PortRecord`, `ConnectionRecord`, allocation). Exposing them is build work for PLAT-1437, which implements this document. Until it lands the generator cannot list parts, ports and connections.
+- **Downstream**: none.

@@ -171,3 +171,8 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-188: Formal-rule approval state derived from signed commits](./FR-188-formal-rule-approval-state-from-signed-commits.md)
 - [FR-189: Formalize-requirement workflow](./FR-189-formalize-requirement-workflow.md)
 - [FR-190: Formal-rule analysis claim selection excludes drafts](./FR-190-formal-rule-analysis-claim-selection.md)
+- [FR-191: quoin dossier generates, checks and exports the selected dossier documents](./FR-191-dossier-command.md)
+- [FR-192: The dossier SRS lists every requirement in scope with its criteria and recorded criticality](./FR-192-dossier-srs-content.md)
+- [FR-193: The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves](./FR-193-dossier-architecture-content.md)
+- [FR-194: The dossier trace matrix renders the evidence-backed matrix per requirement](./FR-194-dossier-trace-matrix-content.md)
+- [FR-195: The dossier requirements mapping matrix renders one table per clause set](./FR-195-dossier-rmm-content.md)
