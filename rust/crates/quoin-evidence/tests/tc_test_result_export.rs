@@ -35,6 +35,12 @@ fn binding(obligation: &str, suite: &str, symbols: &[&str]) -> Binding {
     }
 }
 
+fn traced_entry(symbol: &str, outcome: Outcome, obligation: &str) -> RunEntry {
+    let mut entry = RunEntry::new(symbol, outcome);
+    entry.trace_ids = Some(vec![obligation.to_owned()]);
+    entry
+}
+
 fn run(suite: &str, entries: Vec<RunEntry>) -> RunRecord {
     RunRecord {
         schema_version: 1,
@@ -57,11 +63,11 @@ fn tc_185_failures_and_missing_runs_never_pass() {
     let runs = vec![
         run(
             "suite-pass",
-            vec![RunEntry::new("test_pass", Outcome::Pass)],
+            vec![traced_entry("test_pass", Outcome::Pass, "FR-1-AC-1")],
         ),
         run(
             "suite-fail",
-            vec![RunEntry::new("test_fail", Outcome::Fail)],
+            vec![traced_entry("test_fail", Outcome::Fail, "FR-1-AC-2")],
         ),
     ];
     let statement = build_statement(subject(), &bindings, &runs).expect("valid subject");
@@ -80,8 +86,8 @@ fn tc_185_a_later_duplicate_failure_cannot_be_hidden_by_a_pass() {
         &[run(
             "suite",
             vec![
-                RunEntry::new("test", Outcome::Pass),
-                RunEntry::new("test", Outcome::Fail),
+                traced_entry("test", Outcome::Pass, "FR-1-AC-1"),
+                traced_entry("test", Outcome::Fail, "FR-1-AC-1"),
             ],
         )],
     )
@@ -98,7 +104,10 @@ fn tc_185_skip_warns_and_all_pass_passes() {
     let skip = build_statement(
         subject(),
         &[binding("FR-2-AC-1", "suite", &["skip"])],
-        &[run("suite", vec![RunEntry::new("skip", Outcome::Skip)])],
+        &[run(
+            "suite",
+            vec![traced_entry("skip", Outcome::Skip, "FR-2-AC-1")],
+        )],
     )
     .expect("valid subject");
     assert_eq!(skip.predicate.result, TestResult::Warned);
@@ -107,12 +116,34 @@ fn tc_185_skip_warns_and_all_pass_passes() {
     let pass = build_statement(
         subject(),
         &[binding("FR-2-AC-2", "suite", &["pass"])],
-        &[run("suite", vec![RunEntry::new("pass", Outcome::Pass)])],
+        &[run(
+            "suite",
+            vec![traced_entry("pass", Outcome::Pass, "FR-2-AC-2")],
+        )],
     )
     .expect("valid subject");
     assert_eq!(pass.predicate.result, TestResult::Passed);
     assert!(pass.predicate.warned_tests.is_empty());
     assert!(pass.predicate.failed_tests.is_empty());
+}
+
+#[trace("FR-185-AC-2")]
+#[test]
+fn tc_185_absent_symbol_remains_warned() {
+    let statement = build_statement(
+        subject(),
+        &[binding("FR-2-AC-3", "suite", &["missing"])],
+        &[run(
+            "suite",
+            vec![traced_entry("other", Outcome::Pass, "FR-2-AC-4")],
+        )],
+    )
+    .expect("valid subject");
+
+    assert_eq!(statement.predicate.result, TestResult::Warned);
+    assert_eq!(statement.predicate.warned_tests, ["FR-2-AC-3"]);
+    assert!(statement.predicate.passed_tests.is_empty());
+    assert!(statement.predicate.failed_tests.is_empty());
 }
 
 #[trace("FR-185-AC-2")]
@@ -124,8 +155,8 @@ fn tc_185_a_later_duplicate_skip_is_not_hidden_by_a_pass() {
         &[run(
             "suite",
             vec![
-                RunEntry::new("test", Outcome::Pass),
-                RunEntry::new("test", Outcome::Skip),
+                traced_entry("test", Outcome::Pass, "FR-2-AC-1"),
+                traced_entry("test", Outcome::Skip, "FR-2-AC-1"),
             ],
         )],
     )
@@ -134,6 +165,59 @@ fn tc_185_a_later_duplicate_skip_is_not_hidden_by_a_pass() {
     assert_eq!(statement.predicate.result, TestResult::Warned);
     assert!(statement.predicate.passed_tests.is_empty());
     assert_eq!(statement.predicate.warned_tests, ["FR-2-AC-1"]);
+    assert!(statement.predicate.failed_tests.is_empty());
+}
+
+#[trace("FR-185-AC-9")]
+#[test]
+fn tc_185_untraced_passing_symbol_is_stale() {
+    let statement = build_statement(
+        subject(),
+        &[binding("FR-9-AC-1", "suite", &["test"])],
+        &[run("suite", vec![RunEntry::new("test", Outcome::Pass)])],
+    )
+    .expect("valid subject");
+
+    assert_eq!(statement.predicate.result, TestResult::Failed);
+    assert!(statement.predicate.passed_tests.is_empty());
+    assert!(statement.predicate.warned_tests.is_empty());
+    assert_eq!(statement.predicate.failed_tests, ["FR-9-AC-1"]);
+}
+
+#[trace("FR-185-AC-9")]
+#[test]
+fn tc_185_passing_symbol_traced_to_another_obligation_is_stale() {
+    let mut entry = RunEntry::new("test", Outcome::Pass);
+    entry.trace_ids = Some(vec!["FR-9-AC-2".to_owned()]);
+    let statement = build_statement(
+        subject(),
+        &[binding("FR-9-AC-1", "suite", &["test"])],
+        &[run("suite", vec![entry])],
+    )
+    .expect("valid subject");
+
+    assert_eq!(statement.predicate.result, TestResult::Failed);
+    assert!(statement.predicate.passed_tests.is_empty());
+    assert!(statement.predicate.warned_tests.is_empty());
+    assert_eq!(statement.predicate.failed_tests, ["FR-9-AC-1"]);
+}
+
+#[trace("FR-185-AC-9")]
+#[test]
+fn tc_185_matching_trace_id_allows_passing_symbol() {
+    let statement = build_statement(
+        subject(),
+        &[binding("FR-9-AC-1", "suite", &["test"])],
+        &[run(
+            "suite",
+            vec![traced_entry("test", Outcome::Pass, "FR-9-AC-1")],
+        )],
+    )
+    .expect("valid subject");
+
+    assert_eq!(statement.predicate.result, TestResult::Passed);
+    assert_eq!(statement.predicate.passed_tests, ["FR-9-AC-1"]);
+    assert!(statement.predicate.warned_tests.is_empty());
     assert!(statement.predicate.failed_tests.is_empty());
 }
 
@@ -165,8 +249,14 @@ fn tc_185_lists_and_configuration_are_deterministic() {
         binding("FR-4-AC-1", "suite-a", &["a"]),
     ];
     let runs = vec![
-        run("suite-b", vec![RunEntry::new("b", Outcome::Pass)]),
-        run("suite-a", vec![RunEntry::new("a", Outcome::Pass)]),
+        run(
+            "suite-b",
+            vec![traced_entry("b", Outcome::Pass, "FR-4-AC-2")],
+        ),
+        run(
+            "suite-a",
+            vec![traced_entry("a", Outcome::Pass, "FR-4-AC-1")],
+        ),
     ];
     let first = build_statement(subject(), &bindings, &runs).expect("valid");
     let second = build_statement(

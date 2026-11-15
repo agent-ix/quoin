@@ -61,9 +61,9 @@ fn fixture() -> (TempDir, PathBuf, PathBuf) {
         .to_string(),
     )
     .expect("bindings written");
-    for (suite, symbol, outcome) in [
-        ("suite-pass", "pass", "pass"),
-        ("suite-fail", "fail", "fail"),
+    for (suite, symbol, outcome, obligation) in [
+        ("suite-pass", "pass", "pass", "FR-1-AC-1"),
+        ("suite-fail", "fail", "fail", "FR-1-AC-2"),
     ] {
         fs::write(
             evidence.join(format!("runs/{suite}/2026-11-13T12~3A00~3A00Z.json")),
@@ -73,7 +73,11 @@ fn fixture() -> (TempDir, PathBuf, PathBuf) {
                 "tool": "cargo test",
                 "evidenceKind": "test",
                 "timestamp": "2026-11-13T12:00:00Z",
-                "entries": [{"symbol": symbol, "outcome": outcome}]
+                "entries": [{
+                    "symbol": symbol,
+                    "outcome": outcome,
+                    "traceIds": [obligation]
+                }]
             })
             .to_string(),
         )
@@ -117,6 +121,63 @@ fn tc_185_cli_exports_pass_fail_and_missing_run_classifications() {
     );
 }
 
+#[trace("FR-185-AC-9")]
+#[test]
+fn tc_185_cli_does_not_export_a_pass_for_an_unrelated_trace_id() {
+    let (root, subject, evidence) = fixture();
+    fs::write(
+        evidence.join("bindings.json"),
+        json!({
+            "schemaVersion": 1,
+            "bindings": [
+                {"obligation":"FR-1-AC-1","suite":"suite-pass","symbols":["pass"]}
+            ]
+        })
+        .to_string(),
+    )
+    .expect("single binding written");
+    fs::write(
+        evidence.join("runs/suite-pass/2026-11-13T12~3A00~3A00Z.json"),
+        json!({
+            "schemaVersion": 1,
+            "suite": "suite-pass",
+            "tool": "cargo test",
+            "evidenceKind": "test",
+            "timestamp": "2026-11-13T12:00:00Z",
+            "entries": [{
+                "symbol": "pass",
+                "outcome": "pass",
+                "traceIds": ["FR-1-AC-OTHER"]
+            }]
+        })
+        .to_string(),
+    )
+    .expect("mismatched run written");
+
+    let output = root.path().join("statement.json");
+    let result = invoke(&subject, &output, &evidence);
+    assert_eq!(
+        result.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let statement: Value = serde_json::from_slice(&fs::read(output).expect("statement exists"))
+        .expect("statement is JSON");
+    assert_eq!(
+        statement.pointer("/predicate/result"),
+        Some(&json!("FAILED"))
+    );
+    assert_eq!(
+        statement.pointer("/predicate/passedTests"),
+        Some(&json!([]))
+    );
+    assert_eq!(
+        statement.pointer("/predicate/failedTests"),
+        Some(&json!(["FR-1-AC-1"]))
+    );
+}
+
 #[trace("FR-185-AC-1", "FR-185-AC-8")]
 #[test]
 fn tc_185_a_later_duplicate_failure_cannot_be_hidden_by_a_pass() {
@@ -130,8 +191,8 @@ fn tc_185_a_later_duplicate_failure_cannot_be_hidden_by_a_pass() {
             "evidenceKind": "test",
             "timestamp": "2026-11-13T12:00:00Z",
             "entries": [
-                {"symbol": "pass", "outcome": "pass"},
-                {"symbol": "pass", "outcome": "fail"}
+                {"symbol": "pass", "outcome": "pass", "traceIds": ["FR-1-AC-1"]},
+                {"symbol": "pass", "outcome": "fail", "traceIds": ["FR-1-AC-1"]}
             ]
         })
         .to_string(),
@@ -181,8 +242,8 @@ fn tc_185_a_later_duplicate_skip_is_not_hidden_by_a_pass() {
             "evidenceKind": "test",
             "timestamp": "2026-11-13T12:00:00Z",
             "entries": [
-                {"symbol": "pass", "outcome": "pass"},
-                {"symbol": "pass", "outcome": "skip"}
+                {"symbol": "pass", "outcome": "pass", "traceIds": ["FR-1-AC-1"]},
+                {"symbol": "pass", "outcome": "skip", "traceIds": ["FR-1-AC-1"]}
             ]
         })
         .to_string(),
