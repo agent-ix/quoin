@@ -31,8 +31,8 @@ self-contradictory or oversized, writing no run in any refusal.
    `quire.differential-report/v2` namespace), absent or non-string `schema`; a missing,
    extra (top level and engine), wrongly typed or out-of-set member; empty, truncated, non-UTF-8, array, scalar and
    non-JSON input; the four self-contradiction reports; a reordered copy and a pretty-printed copy; and, from the
-   selection-bearing capture, two further rows: a `selection` with an extra third member, and a `selection` with a
-   missing list (FR-151-AC-16).
+   selection-bearing capture, two further rows: a `selection` with an extra member, and a `selection` with a
+   missing list, each refused by the owner's validator (FR-151-AC-16).
 3. Run the command over an input of `filament_analyze::MAX_REPORT_BYTES` + 1 bytes and one of exactly `MAX_REPORT_BYTES`
    bytes, and over one valid report twice from different working directories.
 4. Run `quoin evidence record --tool filament-analyze`, `--tool differential-report`, `--tool quire-analyze`,

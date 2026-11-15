@@ -58,10 +58,18 @@ nothing of it.
 - Invariant `qsl_check_passes` SHALL pass when QSL `check` on the draft file
   exits clean (quire-driver `quire-cli`, `Operation::Check`).
 - Invariant `analysis_consistent_with_approved` SHALL pass when a
-  `quire-analyze run-package` over a package holding the draft and the approved
-  rules, selecting the drafted set plus the spans that
+  `filament-analyze run-package` over a package holding the draft and the approved
+  rules, given one `--select` document that holds the spans of the drafted set
+  together with the spans that
   [FR-190](./FR-190-formal-rule-analysis-claim-selection.md) lists for the
   approved rules, reports no failing claim; it SHALL fail on any failing claim.
+  Both sets of spans come from the `quoin formal-rules status` report, and the
+  document is the single claim-selection document of filament-analyze FR-009.
+- If that combined selection would hold no span, then invariant
+  `analysis_consistent_with_approved` SHALL fail.
+- The workflow SHALL NOT invoke `filament-analyze run-package` with an empty
+  selection; an empty selection is never a valid analysis request. No approved
+  rule is not such a case while the drafted set contributes spans.
 - Invariant `formal_rule_approved` SHALL pass only when the drafted set is
   non-empty and `quoin formal-rules status` reports `approved` for every symbol
   in it; an empty drafted set SHALL fail it.
@@ -87,6 +95,8 @@ nothing of it.
 | FR-189-AC-10 | Given a run with an empty drafted set at `awaiting_approval`, invariant `formal_rule_approved` fails | Test |
 | FR-189-AC-11 | Given a draft whose analysis reports a failing claim, the run returns from `analysed` to `drafting` with the diagnostics and an incremented retry counter | Test |
 | FR-189-AC-12 | Given two consecutive failures followed by a passing draft, the run reaches `awaiting_approval` and the next failure count starts at 1 | Test |
+| FR-189-AC-13 | Given a repository with no `approved` rule and a drafted set that holds a span, the analysis runs with a selection of the drafted spans only | Test |
+| FR-189-AC-14 | Given a combined selection with no span, invariant `analysis_consistent_with_approved` fails and `filament-analyze run-package` is not invoked | Test |
 | FR-189-AC-9 | `def.yaml` names `quoin workflow-invariants` as the `ix-flow-invariant-provider` and the provider answers each of the three invariants | Test |
 
 ## Dependencies
