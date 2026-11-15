@@ -228,9 +228,15 @@ fn open(module: &ModuleRef) -> Result<ModuleRoot, String> {
 }
 
 impl Engine for QuireEngine {
-    fn declared(&self, module: &ModuleRef) -> Result<Vec<ClauseSetKey>, String> {
-        let sets = clauses::declared_clause_sets(&open(module)?, &mut Vec::new())
-            .map_err(|e| e.to_string())?;
+    fn declared(
+        &self,
+        module: &ModuleRef,
+        modules: &[ModuleRef],
+    ) -> Result<Vec<ClauseSetKey>, String> {
+        let roots: Result<Vec<ModuleRoot>, String> = modules.iter().map(open).collect();
+        let sets =
+            clauses::declared_clause_sets_in_module_set(&open(module)?, &roots?, &mut Vec::new())
+                .map_err(|e| e.to_string())?;
         Ok(sets
             .into_iter()
             .map(|set| ClauseSetKey {
@@ -241,9 +247,10 @@ impl Engine for QuireEngine {
             .collect())
     }
 
-    fn is_pack(&self, module: &ModuleRef) -> Result<bool, String> {
-        let restricted =
-            clauses::restricted_clause_sets(&open(module)?).map_err(|e| e.to_string())?;
+    fn is_pack(&self, module: &ModuleRef, modules: &[ModuleRef]) -> Result<bool, String> {
+        let roots: Result<Vec<ModuleRoot>, String> = modules.iter().map(open).collect();
+        let restricted = clauses::restricted_clause_sets_in_module_set(&open(module)?, &roots?)
+            .map_err(|e| e.to_string())?;
         Ok(!restricted.is_empty())
     }
 
@@ -252,6 +259,7 @@ impl Engine for QuireEngine {
         module: &ModuleRef,
         key: &ClauseSetKey,
         context: &std::collections::BTreeMap<String, String>,
+        modules: &[ModuleRef],
     ) -> Result<serde_json::Value, String> {
         let reference = quoin_quire::ClauseSetRef {
             authority: quoin_quire::ClauseSetAuthority::new(key.authority.as_str())
@@ -266,9 +274,15 @@ impl Engine for QuireEngine {
                 .insert(dimension.as_str(), value.as_str())
                 .map_err(|e| e.to_string())?;
         }
-        let report =
-            clauses::evaluate(&open(module)?, &reference, &engine_context, &mut Vec::new())
-                .map_err(|e| e.to_string())?;
+        let roots: Result<Vec<ModuleRoot>, String> = modules.iter().map(open).collect();
+        let report = clauses::evaluate_in_module_set(
+            &open(module)?,
+            &roots?,
+            &reference,
+            &engine_context,
+            &mut Vec::new(),
+        )
+        .map_err(|e| e.to_string())?;
         serde_json::to_value(&report).map_err(|e| e.to_string())
     }
 }
