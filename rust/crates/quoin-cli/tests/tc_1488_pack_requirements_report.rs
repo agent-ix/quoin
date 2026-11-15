@@ -467,7 +467,14 @@ fn tc_1488_004_the_index_title_and_json_members_carry_no_score_or_count_per_valu
     assert_eq!(value["schemaVersion"], "requirements-mapping-pack-v1");
 }
 
-#[trace("FR-140-AC-2", "FR-140-AC-3", "FR-140-AC-5", "FR-140-AC-6")]
+#[trace(
+    "FR-140-AC-2",
+    "FR-140-AC-3",
+    "FR-140-AC-5",
+    "FR-140-AC-6",
+    "FR-140-AC-13",
+    "FR-140-AC-14"
+)]
 #[test]
 fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
     let env = env();
