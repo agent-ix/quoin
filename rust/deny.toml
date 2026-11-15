@@ -6,7 +6,7 @@
 #
 # quoin#379 added the workspace's first git source — the `rev`-pinned quire-rs
 # engine. Every AGPL admission below is a named per-crate exception (quire-code-parse,
-# quire-verification-contracts, ix-trace-rs); nothing else in the graph gains one.
+# filament-verification-contracts, ix-trace-rs); nothing else in the graph gains one.
 
 [licenses]
 version = 2
@@ -94,12 +94,12 @@ allow = ["MPL-2.0"]
 crate = "quire-code-parse"
 allow = ["AGPL-3.0-or-later"]
 
-# `quire-verification-contracts` (agent-ix/filament-analyze's dependency, reached
+# `filament-verification-contracts` (agent-ix/filament-analyze's dependency, reached
 # through quoin-evidence's `filament-analyze` report validator, VER-80) is
 # AGPL-3.0-or-later, the same licence quoin carries. Named per crate for the
 # same reason as `quire-code-parse`: the `allow` list stays permissive-only.
 [[licenses.exceptions]]
-crate = "quire-verification-contracts"
+crate = "filament-verification-contracts"
 allow = ["AGPL-3.0-or-later"]
 
 # `ar_archive_writer` (reached through psm <- stacker under the filament-analyze
@@ -305,7 +305,7 @@ unknown-registry = "deny"
 unknown-git = "deny"
 # quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
 # dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
-# consume theirs. Four git sources are admitted, each named by REPOSITORY:
+# consume theirs. Git sources are admitted individually by exact repository URL:
 #
 #   * quire-rs — the engine quoin-quire links (quoin#379).
 #   * engineering-assurance — library containment (quoin#416), the pattern
@@ -315,23 +315,27 @@ unknown-git = "deny"
 #     ports rust.rs symbol extraction onto tree-sitter via this crate.
 #   * filament-core-data — the source of `agent-ix-semantic-schema`, pulled in
 #     transitively by quire-rs at the tag its own manifest names.
+#   * filament-analyze's upstream graph — the report validator's same-branch
+#     dependencies from filament-contract-ir, filament-verification-contracts,
+#     filament-exact, filament-walk and filament-semantic-value.
 #
 # quire-rs and engineering-assurance are each pinned by an exact `rev` in
 # rust/Cargo.toml. quire-code-rs is pinned by an exact `rev` in quire-rs's own
 # manifest, and filament-core-data by the tag quire-rs's manifest names; this
-# repository states neither directly. Allowing a repository here does not
-# weaken any of these pins: `unknown-git = "deny"` still refuses every other
-# git source. A fifth git dependency is listed here in the commit that adds it,
-# or this check refuses it.
+# repository states neither directly. The filament-analyze family follows
+# upstream `main` branches as required by its manifest graph. Listing these
+# repositories does not widen the policy to any other source: `unknown-git =
+# "deny"` still refuses every unlisted Git repository. Every newly required
+# source is listed here in the same commit that adds it, or this check refuses it.
 allow-git = [
     # VER-80: the report validator quoin-evidence links, and its transitive
     # agent-ix git crates.
     "https://github.com/agent-ix/filament-analyze",
-    "https://github.com/agent-ix/quire-contract-ir",
-    "https://github.com/agent-ix/quire-verification-contracts",
-    "https://github.com/agent-ix/quire-exact",
-    "https://github.com/agent-ix/quire-walk",
-    "https://github.com/agent-ix/quire-semantic-value",
+    "https://github.com/agent-ix/filament-contract-ir",
+    "https://github.com/agent-ix/filament-verification-contracts",
+    "https://github.com/agent-ix/filament-exact",
+    "https://github.com/agent-ix/filament-walk",
+    "https://github.com/agent-ix/filament-semantic-value",
     # Compile-checked trace binders: a dev-dependency for `#[trace]` tests, and a
     # normal dependency of the crates that carry `#[implements]` on production items.
     "https://github.com/agent-ix/ix-trace-rs",
