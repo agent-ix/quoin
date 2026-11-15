@@ -18,9 +18,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use ix_trace_rs::trace;
-use quoin_dossier::{
-    DossierErrorCode, ExportOptions, Inputs, Report, Status, builtin_registry, export, generate,
-};
+use quoin_dossier::{DossierErrorCode, Inputs, Report, Status, builtin_registry, generate};
 
 /// The module that is also the repository.
 fn fixture() -> PathBuf {
@@ -175,22 +173,25 @@ fn generated_srs_and_architecture_validate_and_export_to_pdf() {
         );
     }
 
-    // `export` runs `quire` in this process's directory, so it is given
-    // absolute paths and the committed repository is found from them.
+    // The library export takes no module, so the real-tool boundary is
+    // `quire export` itself, run inside the committed repository.
     let pdf = work.join("dossier.pdf");
-    let options = ExportOptions {
-        to: "pdf".to_owned(),
-        output: pdf.clone(),
-        release: None,
-        approvals: Vec::new(),
-        template: None,
-        quire: PathBuf::from("quire"),
-    };
-    let report = export(&registry, &kinds, &out, &inputs, &options).unwrap();
-    assert!(
-        report.quire.is_none(),
-        "quire export failed: {:?}",
-        report.quire
+    let srs = out.join("DOS-SRS.md");
+    let arch = out.join("DOS-ARCH.md");
+    tool(
+        "quire",
+        &[
+            "export",
+            srs.to_str().unwrap(),
+            arch.to_str().unwrap(),
+            "--module",
+            module_arg,
+            "--to",
+            "pdf",
+            "--output",
+            pdf.to_str().unwrap(),
+        ],
+        work,
     );
     assert!(pdf.exists(), "no PDF written");
 
