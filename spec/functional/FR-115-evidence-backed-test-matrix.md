@@ -200,8 +200,9 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
   `evidence_status`, and is never a "pick one" summary. It carries three
   lists, each empty (not absent) when nothing applies:
   - `findings`: every `Finding` this id carries in `audit.findings`, each
-    reduced to `{kind, summary, path, line, symbol}` (`Finding`'s own
-    optional fields, taken verbatim), ordered by the same bucket order the
+    reduced to `{kind, summary, path, line, symbol}` plus the optional typed
+    `cause` (`Finding`'s own optional fields, taken verbatim; see "Typed cause
+    of `stale-evidence`" below), ordered by the same bucket order the
     status mapping uses (suspect-class kinds, alphabetically among
     themselves, then `stale-evidence`, then the remaining undischarged-class
     kinds alphabetically), then by `kind` name within a tie.
@@ -212,6 +213,19 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
     example a criterion the caller's `bindings` never mentions — carries all
     three lists empty; this is the well-defined "reported nowhere" case, not
     an error.
+- **Typed cause of `stale-evidence`.** The `stale` status folds two conditions
+  together, a bound suite with **no recorded run** and a bound run that
+  **failed or errored**, and a consumer must not tell them apart by parsing
+  `summary`. A `stale-evidence` `Finding` therefore carries an optional typed
+  `cause`, set by the auditor's two existing producers: `missing-run` when the
+  bound suite has no recorded run, and `failed-run` when the newest recorded
+  outcome for the bound symbol is `fail` or `error`. `cause` appears in the
+  auditor's JSON `Finding` and, copied verbatim, in each `evidence_detail.findings`
+  item of `quoin matrix --json`. It is **omitted** (never `null`) on every other
+  `FindingKind`, and on a `stale-evidence` finding from no producer that sets it.
+  The cause is additive: it changes no `evidence_status` value, the mapping
+  precedence, any `summary` text, any binding, or any verdict, and
+  `matrix.build` reads it without re-deriving it (FR-115-CON-2).
 - When `analysis_evidence` is supplied, each criterion carries a total
   `analysis_evidence` list, empty when no analysis result targets that criterion.
   Each item is a tagged union: a qualified item has `status: "qualified-record"`
@@ -299,6 +313,9 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
 | FR-115-AC-14 | `quoin matrix` resolves the mock-inspection/catalog/independence inputs through the identical assembly path `quoin evidence audit` uses for the same working tree. Withdrawn: refusal when HEAD cannot be resolved; no commit is resolved or supplied. | Test |
 | FR-115-AC-15 | `quoin matrix --help` (and the retained CLI help surface, `help.rs`) describes the deterministic evidence-backed render, not the retired "Build or update a requirements test matrix" agent-workflow summary. | Test |
 | FR-115-AC-16 | With FR-153 analysis evidence supplied, each Analysis criterion receives only result items whose exact FR-078 target matches its identity; qualified claims appear as `qualified-record`, and every non-qualified cause retains its exact category, locator and unmet-premise detail. JSON and text show the same complete item set; no item is joined by suite, symbol or digest alone, and the legacy auditor-derived `evidence_status` is unchanged. | Test |
+| FR-115-AC-17 | A bound symbol with no recorded run has `evidence_status` `stale` and a `stale-evidence` finding whose `cause` is `missing-run`, in both the auditor's JSON report and the `evidence_detail.findings` of `quoin matrix --json`. | Test |
+| FR-115-AC-18 | A bound symbol whose newest recorded outcome is `fail` or `error` has `evidence_status` `stale` and a `stale-evidence` finding whose `cause` is `failed-run`, in both outputs. A passing bound symbol remains `bound` with no `stale-evidence` finding. | Test |
+| FR-115-AC-19 | A finding of any kind other than `stale-evidence` serializes with no `cause` key in either output, so it never carries a false `failed-run` or `missing-run`. A consumer distinguishes the two stale conditions from the `cause` field alone; the `summary` text, `evidence_status` values, mapping precedence, bindings, and verdict behavior are identical to the same fixture without `cause`. | Test |
 
 ## Dependencies
 
