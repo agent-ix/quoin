@@ -40,3 +40,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-036: The release snapshot is deterministic for the same evidence and never decides a release](./NFR-036-release-snapshot-is-deterministic-and-never-decides.md)
 - [NFR-037: Source profile evaluation is deterministic, offline, and never decides compliance](./NFR-037-source-profile-evaluation-is-deterministic-and-states-only.md)
 - [NFR-038: Facts from mappings state what people wrote and never invent an attestation or a verdict](./NFR-038-mapping-facts-state-and-never-decide.md)
+- [NFR-039: Formal-rule status runs the verifier once per candidate commit](./NFR-039-formal-rule-status-runs-verifier-once-per-commit.md)
