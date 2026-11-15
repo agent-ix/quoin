@@ -9,8 +9,6 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/filament-analyze/FR-009"
     type: "references"
-  - target: "ix://agent-ix/qsl/QSL-1900"
-    type: "references"
 ---
 
 # FR-190: Formal-rule analysis claim selection excludes drafts
@@ -37,11 +35,16 @@ The inputs of `quoin formal-rules status` (FR-188), plus `--select-out <abs path
   FR-188 report entry.
 - Each span's `start` and `end` are the entry's `declaration_range`; FR-188 owns
   that interval and its validity.
+- Precondition: the contract package that the selection is applied to is produced
+  from the same source identity and the same bytes of each file as the HEAD
+  content from which `declaration_range` was computed. For a package produced
+  from other content, the spans carry no meaning and this FR makes no claim.
 - Each span's `identity` is the entry's repo-relative `path`, byte for byte, with
   no normalization. The spelling of the `authority` and of the source reference
   that a package's source map records for a QSL file is owned by the producer of
-  the package's `analysis_claim` nodes (QSL-1900, `ix://agent-ix/qsl/QSL-1900`)
-  and is not defined here.
+  the package's `analysis_claim` nodes (Linear ticket QSL-1900)
+  and is not defined here. This is an unresolved upstream dependency; this FR
+  does not fix the `authority` value.
 - `spans` is ordered by `identity` in UTF-8 byte order, then by `start`.
 - With no `approved` declaration, `spans` is the empty list. Quoin writes that
   document and exits as FR-188 does; it is not a usage error. What the approval
@@ -72,7 +75,7 @@ Exit status is that of FR-188, except for an invalid `--select-out`.
 | FR-190-AC-2 | Given a fixture with no `approved` declaration, the document holds an empty `spans` list and the command exits as FR-188 does | Test |
 | FR-190-AC-3 | Given a fixture where an approved declaration is edited after approval, its span is absent from the document | Test |
 | FR-190-AC-4 | Given an approved declaration that follows a multi-byte character in its file, slicing the file bytes at `[start, end)` yields the declaration span | Test |
-| FR-190-AC-5 | Given approved declarations in files `rules/b.qsl`, `rules/é.qsl` and `rules/z.qsl`, `spans` lists them in that order, the UTF-8 byte order of `identity` | Test |
+| FR-190-AC-5 | Given approved declarations in files `rules/b.qsl`, `rules/z.qsl` and `rules/é.qsl`, `spans` lists them in that order, the UTF-8 byte order of `identity` | Test |
 | FR-190-AC-6 | Given approved declarations at two offsets of one file, `spans` lists them by ascending `start` | Test |
 | FR-190-AC-7 | Given a relative `--select-out`, the command exits `2` and writes no file | Test |
 | FR-190-AC-8 | Given an existing file at `--select-out` and a run where FR-188 exits `2`, no file remains at that path | Test |
