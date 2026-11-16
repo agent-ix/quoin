@@ -38,6 +38,12 @@ pub struct Inputs {
     pub clause_bindings: Vec<PathBuf>,
     /// The regulatory pack, where a document needs one.
     pub pack: Option<String>,
+    /// Clause binding selecting the SOUP report source.
+    pub soup_binding: Option<PathBuf>,
+    /// Optional SOUP record directory, passed to the source unchanged.
+    pub soup_records: Option<PathBuf>,
+    /// Optional public support statements, passed to the source unchanged.
+    pub soup_support: Option<PathBuf>,
     /// The explicit evaluation instant, an RFC 3339 string.
     pub as_of: Option<String>,
     /// The document version written into every generated file.

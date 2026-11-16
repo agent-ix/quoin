@@ -66,6 +66,9 @@ pub(crate) fn inputs() -> Inputs {
         modules: Vec::new(),
         clause_bindings: Vec::new(),
         pack: None,
+        soup_binding: None,
+        soup_records: None,
+        soup_support: None,
         as_of: None,
         version: "1.0".to_owned(),
     }
@@ -95,6 +98,7 @@ pub(crate) fn sources() -> crate::Sources {
     crate::Sources {
         matrix: std::sync::Arc::new(NoMatrix),
         rmm: |_| panic!("unexpected discharge source"),
+        soup: |_| panic!("unexpected SOUP source"),
     }
 }
 

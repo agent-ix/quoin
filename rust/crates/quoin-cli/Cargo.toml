@@ -22,6 +22,7 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
+quoin-soup = { workspace = true }
 ix-trace-rs = { workspace = true }
 ix-cli-kit = { workspace = true }
 clap = { workspace = true }

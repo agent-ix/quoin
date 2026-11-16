@@ -13,7 +13,7 @@ use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 use crate::invocation;
 
-fn settings() -> RuntimeSettings {
+pub(crate) fn settings() -> RuntimeSettings {
     // An explicit root remains a developer override. Release binaries instead
     // materialize their compiled contract under IX_HOME; `CARGO_MANIFEST_DIR`
     // points at a build checkout and is invalid after installation (#527).

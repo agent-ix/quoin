@@ -3206,6 +3206,7 @@ dependencies = [
  "quoin-quire-types",
  "quoin-risk-advice",
  "quoin-semantic",
+ "quoin-soup",
  "quoin-store",
  "quoin-validators",
  "quoin-yaml",
@@ -3316,9 +3317,11 @@ dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
  "quoin-assurance",
+ "quoin-core",
  "quoin-evidence",
  "quoin-quire",
  "quoin-quire-types",
+ "quoin-soup",
  "serde",
  "serde_json",
  "tempfile",
@@ -3517,6 +3520,25 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
+]
+
+[[package]]
+name = "quoin-soup"
+version = "0.31.0"
+dependencies = [
+ "clap",
+ "ix-cli-kit",
+ "ix-trace-rs",
+ "quoin-assurance",
+ "quoin-core",
+ "quoin-evidence",
+ "quoin-quire",
+ "quoin-store",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time",
 ]
 
 [[package]]

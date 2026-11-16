@@ -36,6 +36,15 @@ is stored. Origin: VER-98.
 - `--engineering-assurance <abs path>`: the engineering-assurance executable.
 - `--allowed-signers <abs path>`: the allowed-signers file handed to
   `signature-verify`.
+- Optional gitsign identity mapping flags, supplied together:
+  `--gitsign-certificate-identity <value>`,
+  `--gitsign-certificate-oidc-issuer <value>`, and
+  `--gitsign-principal <value>`. Quoin SHALL reject a partial set before
+  invoking engineering-assurance. When all three are supplied, Quoin SHALL
+  forward them as the `gitsign` object with members
+  `certificate_identity`, `certificate_oidc_issuer`, and `principal` in the
+  `signature-verify` request. Their values SHALL meet the validation rules for
+  those fields in Engineering Assurance FR-040.
 - `--json`: emit the JSON report instead of text.
 
 ## Outputs
@@ -147,6 +156,7 @@ stderr.
 | FR-188-AC-20 | Given an allowed-signers file engineering-assurance refuses with `signature_verify_allowed_signers_invalid`, the command exits `2` and writes no report; given any other `signature-verify` refusal, it exits `3` and writes no report | Test |
 | FR-188-AC-21 | Given a declaration after a multi-byte character (for example `é`) in its file, `declaration_range` counts UTF-8 bytes, so slicing the file bytes at `[start, end)` yields exactly the declaration span, whether the declaration is `approved` or `draft` | Test |
 | FR-188-AC-22 | Given any fixture, every `declaration_range` in the report has `start` below `end`, for `approved` and `draft` declarations alike | Test |
+| FR-188-AC-23 | Given none of the gitsign mapping flags, the `signature-verify` request omits `gitsign`; given all three valid flags, the request carries their exact values in `gitsign`; given only one or two flags, the command exits `2` without invoking engineering-assurance | Test |
 
 ## Dependencies
 
