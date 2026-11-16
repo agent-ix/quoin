@@ -385,7 +385,10 @@ fn real_quire_validates_both_soup_forms_and_exports_the_list() {
         "pkg:cargo/old@1.0.0",
         "pkg:cargo/clean@1.0.0",
     ] {
-        assert!(normalized.contains(component), "{component} absent from PDF text: {exported}");
+        assert!(
+            normalized.contains(component),
+            "{component} absent from PDF text: {exported}"
+        );
     }
     assert!(exported.contains("unresolved"));
     assert!(exported.contains("unknown"));
