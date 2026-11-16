@@ -76,11 +76,14 @@ fn selectors(command: Command) -> Command {
             "PATH",
             "Clause-binding report; repeat to add",
         ))
-        .arg(one(
-            "pack",
-            "PACK",
-            "Regulatory pack, for documents that need one",
-        ))
+        .arg(
+            one(
+                "pack",
+                "PACK",
+                "Regulatory pack, for documents that need one",
+            )
+            .conflicts_with("clause-binding"),
+        )
         .arg(one(
             "as-of",
             "RFC-3339",
@@ -138,52 +141,13 @@ pub(crate) fn command() -> Command {
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
-    run_with(builtin_registry(Arc::new(CliMatrix)), arguments)
-}
-
-/// The matrix `quoin matrix` prints, built through the same
-/// [`crate::matrix::build`] path in this process.
-struct CliMatrix;
-
-impl MatrixSource for CliMatrix {
-    fn matrix(&self, inputs: &Inputs) -> Result<MatrixOutput, SourceFailure> {
-        let failure = |detail: String| SourceFailure {
-            source: "matrix".to_owned(),
-            detail,
-        };
-        let repo = inputs
-            .scope
-            .to_str()
-            .ok_or_else(|| failure("the scope path is not UTF-8".to_owned()))?;
-        let modules = inputs
-            .modules
-            .iter()
-            .map(|module| {
-                module
-                    .to_str()
-                    .map(str::to_owned)
-                    .ok_or_else(|| failure("a module path is not UTF-8".to_owned()))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        let options = AuditOptions::for_modules(modules);
-        let response = match crate::matrix::build(&options, repo, &[]).map_err(failure)? {
-            Built::Matrix(built) => built.response,
-            Built::Declined(response) => response,
-        };
-        if !response.outcome.carries_payload() {
-            let messages: Vec<&str> = response
-                .diagnostics
-                .iter()
-                .map(|diagnostic| diagnostic.message.as_str())
-                .collect();
-            return Err(failure(format!(
-                "the matrix was not built: {}",
-                messages.join("; ")
-            )));
-        }
-        serde_json::from_value(response.payload)
-            .map_err(|error| failure(format!("the matrix payload is malformed: {error}")))
-    }
+    run_with(
+        builtin_registry(quoin_dossier::Sources {
+            matrix: Arc::new(CliMatrix),
+            rmm: rmm_source,
+        }),
+        arguments,
+    )
 }
 
 /// Run against `registry`; a registry that could not be built is exit 2, so a
@@ -356,6 +320,105 @@ fn render_text(mode: Mode, report: &Report) -> String {
         ));
     }
     lines.join("\n")
+}
+
+/// The matrix `quoin matrix` prints, built through the same
+/// [`crate::matrix::build`] path in this process.
+struct CliMatrix;
+
+impl MatrixSource for CliMatrix {
+    fn matrix(&self, inputs: &Inputs) -> Result<MatrixOutput, SourceFailure> {
+        let failure = |detail: String| SourceFailure {
+            source: "matrix".to_owned(),
+            detail,
+        };
+        let repo = inputs
+            .scope
+            .to_str()
+            .ok_or_else(|| failure("the scope path is not UTF-8".to_owned()))?;
+        let modules = inputs
+            .modules
+            .iter()
+            .map(|module| {
+                module
+                    .to_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| failure("a module path is not UTF-8".to_owned()))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let options = AuditOptions::for_modules(modules);
+        let response = match crate::matrix::build(&options, repo, &[]).map_err(failure)? {
+            Built::Matrix(built) => built.response,
+            Built::Declined(response) => response,
+        };
+        if !response.outcome.carries_payload() {
+            let messages: Vec<&str> = response
+                .diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.message.as_str())
+                .collect();
+            return Err(failure(format!(
+                "the matrix was not built: {}",
+                messages.join("; ")
+            )));
+        }
+        serde_json::from_value(response.payload)
+            .map_err(|error| failure(format!("the matrix payload is malformed: {error}")))
+    }
+}
+
+/// Use discharge's own structured operations, never its Markdown renderer.
+fn rmm_source(inputs: &Inputs) -> Result<quoin_dossier::RmmSource, quoin_dossier::SourceFailure> {
+    let result = (|| {
+        let as_of = inputs
+            .as_of
+            .as_deref()
+            .ok_or_else(|| "--as-of is required for rmm".to_owned())?;
+        let repo = inputs.scope.display().to_string();
+        let read = |operation: &str,
+                    request: &serde_json::Value,
+                    field: &str|
+         -> Result<serde_json::Value, String> {
+            let response = crate::core_runtime::invoke(operation, request)?;
+            if !response.outcome.carries_payload() {
+                return Err(format!(
+                    "discharge source declined: {:?}",
+                    response.diagnostics
+                ));
+            }
+            response
+                .payload
+                .get(field)
+                .cloned()
+                .ok_or_else(|| format!("{operation} omitted {field}"))
+        };
+        if let Some(pack) = &inputs.pack {
+            let report = read(
+                "evidence.pack_requirements_matrix",
+                &serde_json::json!({"pack": pack, "repo": repo, "asOf": as_of}),
+                "report",
+            )?;
+            return serde_json::from_value(report)
+                .map(quoin_dossier::RmmSource::Pack)
+                .map_err(|error| error.to_string());
+        }
+        let mut matrices = Vec::new();
+        for path in &inputs.clause_bindings {
+            let binding =
+                crate::discharge::json_input(&path.display().to_string(), "clause binding")?;
+            let matrix = read(
+                "evidence.requirements_matrix",
+                &serde_json::json!({"repo": repo, "binding": binding, "asOf": as_of}),
+                "matrix",
+            )?;
+            matrices.push(serde_json::from_value(matrix).map_err(|error| error.to_string())?);
+        }
+        Ok(quoin_dossier::RmmSource::Bindings(matrices))
+    })();
+    result.map_err(|detail| quoin_dossier::SourceFailure {
+        source: "discharge".to_owned(),
+        detail,
+    })
 }
 
 #[cfg(test)]

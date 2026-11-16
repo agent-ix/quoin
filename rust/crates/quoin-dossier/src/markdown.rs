@@ -12,6 +12,7 @@ use crate::error::SourceFailure;
 pub(crate) fn cell(text: &str) -> String {
     text.replace('\\', "\\\\")
         .replace('|', "\\|")
+        .replace('`', "\\`")
         .replace(['\r', '\n'], " ")
 }
 

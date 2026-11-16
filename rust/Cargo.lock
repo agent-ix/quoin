@@ -3316,6 +3316,7 @@ dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
  "quoin-assurance",
+ "quoin-evidence",
  "quoin-quire",
  "quoin-quire-types",
  "serde",

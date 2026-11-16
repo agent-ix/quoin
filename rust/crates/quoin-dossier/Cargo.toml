@@ -33,4 +33,5 @@ thiserror = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
 
 [dev-dependencies]
+quoin-evidence = { workspace = true }
 ix-trace-rs = { workspace = true }

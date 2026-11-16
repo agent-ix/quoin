@@ -104,7 +104,9 @@ fn blocks_with_state<'a>(
         .filter(move |block| block.get("state").and_then(serde_json::Value::as_str) == Some(state))
 }
 
-fn design_cell(requirement: &MatrixRequirement, criterion: &MatrixCriterion) -> String {
+/// Render the design references and design gaps of one criterion.
+#[must_use]
+pub fn design_cell(requirement: &MatrixRequirement, criterion: &MatrixCriterion) -> String {
     let Some(blocks) = &requirement.design else {
         return "n/a".to_owned();
     };

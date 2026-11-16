@@ -24,6 +24,7 @@ use crate::gap::{Gap, GapKind};
 use crate::markdown::{cell, line, unusable_input};
 use crate::order::dossier_cmp;
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
+use crate::sources::MatrixSource;
 use crate::srs::{REQUIREMENT_TYPES, criteria_of, criticality_of, title_of};
 
 /// The finding kind the matrix reports for stale evidence.
@@ -40,18 +41,6 @@ const STATUSES: [EvidenceStatus; 5] = [
     EvidenceStatus::Undischarged,
     EvidenceStatus::NoRunEvidence,
 ];
-
-/// Where the verification report reads the matrix from: the same
-/// `matrix.build` path `quoin matrix` runs, supplied by the caller that owns
-/// the evidence store and the auditor.
-pub trait MatrixSource: Send + Sync {
-    /// Build the matrix for the repository `inputs` names.
-    ///
-    /// # Errors
-    ///
-    /// Returns the failed source when the matrix cannot be built (exit 3).
-    fn matrix(&self, inputs: &Inputs) -> Result<MatrixOutput, SourceFailure>;
-}
 
 /// The verification report generator.
 pub(crate) struct VerificationReportGenerator {

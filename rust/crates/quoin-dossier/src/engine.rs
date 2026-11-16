@@ -95,8 +95,8 @@ pub(crate) fn render(
     if inputs.as_of.is_none()
         && let Some(needy) = selected
             .iter()
+            .find(|generator| generator.requires_as_of(inputs))
             .map(|generator| generator.spec())
-            .find(|spec| spec.needs_as_of)
     {
         return Err(DossierError::new(
             DossierErrorCode::AsOfRequired,
@@ -114,7 +114,10 @@ pub(crate) fn render(
         let text = compose(
             &spec,
             &inputs.version,
-            inputs.as_of.as_deref(),
+            inputs
+                .as_of
+                .as_deref()
+                .filter(|_| generator.requires_as_of(inputs)),
             &generated.body,
             &generated.gaps,
         );

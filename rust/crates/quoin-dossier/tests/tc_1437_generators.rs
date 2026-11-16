@@ -18,27 +18,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use ix_trace_rs::trace;
-use quoin_assurance::matrix::MatrixOutput;
-use quoin_dossier::{
-    DossierErrorCode, Inputs, MatrixSource, Registry, Report, SourceFailure, Status,
-    builtin_registry, generate,
-};
-
-/// The SRS and architecture never read the matrix.
-struct NoMatrix;
-
-impl MatrixSource for NoMatrix {
-    fn matrix(&self, _inputs: &Inputs) -> Result<MatrixOutput, SourceFailure> {
-        Err(SourceFailure {
-            source: "matrix".to_owned(),
-            detail: "not used by these documents".to_owned(),
-        })
-    }
-}
-
-fn registry() -> Registry {
-    builtin_registry(std::sync::Arc::new(NoMatrix)).unwrap()
-}
+use quoin_dossier::{DossierErrorCode, Inputs, Report, Status, generate};
 
 /// The module that is also the repository.
 fn fixture() -> PathBuf {
@@ -247,4 +227,26 @@ fn a_malformed_file_in_scope_fails_the_source_instead_of_vanishing() {
     .unwrap_err();
     assert_eq!(error.code(), DossierErrorCode::SourceFailed);
     assert!(!out.path().join("DOS-SRS.md").exists());
+}
+
+fn registry() -> quoin_dossier::Registry {
+    quoin_dossier::builtin_registry(quoin_dossier::Sources {
+        matrix: std::sync::Arc::new(NoMatrix),
+        rmm: |_| panic!("unexpected discharge source"),
+    })
+    .unwrap()
+}
+
+struct NoMatrix;
+
+impl quoin_dossier::MatrixSource for NoMatrix {
+    fn matrix(
+        &self,
+        _inputs: &Inputs,
+    ) -> Result<quoin_assurance::matrix::MatrixOutput, quoin_dossier::SourceFailure> {
+        Err(quoin_dossier::SourceFailure {
+            source: "matrix".to_owned(),
+            detail: "not used by these documents".to_owned(),
+        })
+    }
 }
