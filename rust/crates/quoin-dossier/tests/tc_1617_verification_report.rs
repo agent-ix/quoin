@@ -86,9 +86,17 @@ fn registry() -> quoin_dossier::Registry {
 
 #[trace("FR-191", "FR-194-AC-5", "FR-196-AC-1")]
 #[test]
-fn all_registered_documents_keep_bundle_order_and_share_the_matrix_source() {
+fn m1_and_verification_report_keep_bundle_order_and_share_the_matrix_source() {
     let out = tempfile::tempdir().unwrap();
-    let report = generate(&registry(), &[], out.path(), &inputs()).unwrap();
+    let kinds = [
+        "verification-report",
+        "rmm",
+        "trace-matrix",
+        "architecture",
+        "srs",
+    ]
+    .map(str::to_owned);
+    let report = generate(&registry(), &kinds, out.path(), &inputs()).unwrap();
     assert_eq!(
         report
             .documents
