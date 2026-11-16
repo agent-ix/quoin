@@ -185,6 +185,11 @@ fn render_requirement(
         "Criticality: {}\n\n",
         line(criticality.as_deref().unwrap_or("unassigned"))
     );
+    if criticality.is_none() {
+        gaps.push(
+            Gap::new(GapKind::CriticalityUnassigned, id, "has no criticality").for_requirement(id),
+        );
+    }
 
     let stated = document.map(criteria_of).unwrap_or_default();
     if criteria.is_empty() {
@@ -261,7 +266,7 @@ fn evidence_cell(criterion: &MatrixCriterion) -> String {
         }
         items.push(item);
     }
-    joined(items)
+    joined(&items)
 }
 
 /// The retained record binders the matrix attaches to a criterion.
@@ -294,7 +299,7 @@ fn findings_cell(criterion: &MatrixCriterion) -> String {
             items.push(format!("analysis {status}"));
         }
     }
-    joined(items)
+    joined(&items)
 }
 
 fn cause_name(cause: StaleCause) -> &'static str {
@@ -305,7 +310,7 @@ fn cause_name(cause: StaleCause) -> &'static str {
     }
 }
 
-fn joined(items: Vec<String>) -> String {
+fn joined(items: &[String]) -> String {
     if items.is_empty() {
         "none".to_owned()
     } else {
