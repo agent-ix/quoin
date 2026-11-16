@@ -33,7 +33,7 @@ generators.
 
 ## Inputs
 
-- `generate [--doc <registered-kind>]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--soup-binding <PATH>] [--soup-records <DIR>] [--soup-support <PATH>] [--snapshot <PATH>] [--release-verify <PATH>] [--as-of <RFC-3339>] --version <TEXT> [--json]`. The common `--scope` and `--module` select anomaly and risk records; the SOUP and release flags supply their separate sources.
+- `generate [--doc <registered-kind>]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--soup-binding <PATH>] [--soup-records <DIR>] [--soup-support <PATH>] [--snapshot <PATH>] [--release-verify <PATH>] [--as-of <RFC-3339>] --version <TEXT> [--json]`. The common `--scope` and `--module` select anomaly, risk and threat-model records; the SOUP and release flags supply their separate sources.
 - `check` takes the same selectors as `generate`.
 - `export --to pdf|docx --output <PATH>` takes the same selectors as `generate`, and also `[--release <TAG>] [--approval <PATH>]... [--template <PATH>] [--quire <PATH>]`.
 
@@ -77,7 +77,7 @@ generators.
 
 ### Sources and failure
 
-- A source is one of the record readers named in FR-192 to FR-201: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix`, `discharge`, `soup-report`, `anomaly-report`, `risk-summary`, `risk-advise`, `acceptability-policy`, `release-snapshot` and `release-verify`. A source is a library operation of the Quoin workspace or an explicitly supplied EA result and gives the same result as its named source command.
+- A source is one of the record readers named in FR-192 to FR-202: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix`, `discharge`, `soup-report`, `anomaly-report`, `risk-summary`, `risk-advise`, `acceptability-policy`, `release-snapshot`, `release-verify`, `threat-model-records` and `flow-findings`. A source is a library operation of the Quoin workspace or an explicitly supplied EA result and gives the same result as its named source command.
 - `generate`, `check` and `export` SHALL compute every selected document in memory before they write or compare anything.
 - If a source fails, the command SHALL exit 3, SHALL name the failed source and its error in `source_failure`, and SHALL write nothing.
 - If `generate` exits 2 or 3, `generate` SHALL leave every existing file under `<DIR>` unmodified.
@@ -87,8 +87,8 @@ generators.
 
 - Quoin SHALL compare ids in dossier order: an id is split at `-` into segments; two segments of ASCII digits compare by numeric value, any other two segments compare by byte value, a digit segment sorts before a non-digit segment, and an id that is a prefix of another sorts first. `FR-99` sorts before `FR-100`, and `FR-100-AC-2` before `FR-100-AC-10`.
 - Quoin SHALL sort gaps by the key (requirement id, criterion id, element id, clause id, gap kind position), where an absent id sorts first and the gap kind position is the position of the kind in the closed list below.
-- A gap that names a part uses the part id as its element id.
-- A gap with no id (`no_requirements`, `design_relations_unavailable`, `no_clause_binding`) sorts before gaps that name an id.
+- A gap that names a part, a connection, a sink or a threat uses that id as its element id.
+- A gap with no id (`no_requirements`, `design_relations_unavailable`, `no_clause_binding`, `no_threat_model`) sorts before gaps that name an id.
 
 ### Document set
 
@@ -154,4 +154,4 @@ continues to allow committed, current incomplete documents.
 ## Dependencies
 
 - **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-034, FR-038, FR-039.
-- **Downstream**: [FR-192](./FR-192-dossier-srs-content.md) through [FR-195](./FR-195-dossier-rmm-content.md) define M1 content; [FR-196](./FR-196-dossier-verification-report-content.md) through [FR-201](./FR-201-dossier-release-record-content.md) define M2 content. Later document generators register after their own spec and archetype extension.
+- **Downstream**: [FR-192](./FR-192-dossier-srs-content.md) through [FR-195](./FR-195-dossier-rmm-content.md) define M1 content; [FR-196](./FR-196-dossier-verification-report-content.md) through [FR-201](./FR-201-dossier-release-record-content.md) define M2 content; [FR-202](./FR-202-dossier-threat-model-content.md) defines M3 threat-model content. Later document generators register after their own spec and archetype extension.
