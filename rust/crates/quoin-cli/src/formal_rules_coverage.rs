@@ -514,67 +514,7 @@ mod tests {
     #[trace("FR-204-AC-7", "FR-204-AC-8")]
     #[test]
     fn production_report_aggregates_complete_inventory_and_serializes_dispositions() {
-        let source_items = vec![
-            source(
-                "FR-204",
-                "functional/FR-204.md",
-                Some("high"),
-                "requirement",
-            ),
-            source(
-                "FR-204-AC-1",
-                "functional/FR-204.md",
-                Some("high"),
-                "criterion",
-            ),
-            source(
-                "FR-204-AC-2",
-                "functional/FR-204.md",
-                Some("medium"),
-                "criterion",
-            ),
-            source(
-                "FR-204-AC-3",
-                "functional/FR-204.md",
-                Some("low"),
-                "criterion",
-            ),
-            source("FR-205", "functional/FR-205.md", None, "requirement"),
-            source("FR-205-AC-1", "functional/FR-205.md", None, "criterion"),
-        ];
-        let declarations = BTreeMap::from([
-            (
-                "qsl:approved::P1".to_owned(),
-                declaration("qsl:approved::P1", "approved", None),
-            ),
-            (
-                "qsl:draft::P1".to_owned(),
-                declaration("qsl:draft::P1", "draft", Some("changed_since_approval")),
-            ),
-            (
-                "qsl:other-approved::P1".to_owned(),
-                declaration("qsl:other-approved::P1", "approved", None),
-            ),
-        ]);
-        let rules = vec![
-            rule(
-                "qsl:approved::P1",
-                &["FR-204-AC-1", "FR-204-AC-3", "FR-205-AC-1"],
-            ),
-            rule("qsl:draft::P1", &["FR-204-AC-2", "FR-205-AC-1"]),
-            rule("qsl:other-approved::P1", &["FR-204-AC-2"]),
-        ];
-        let dispositions = BTreeMap::from([
-            ("FR-204".to_owned(), "unevaluated".to_owned()),
-            ("FR-204-AC-1".to_owned(), "unevaluated".to_owned()),
-            ("FR-204-AC-2".to_owned(), "qualified-record".to_owned()),
-            ("FR-204-AC-3".to_owned(), "qualified-record".to_owned()),
-            ("FR-205".to_owned(), "failed".to_owned()),
-            ("FR-205-AC-1".to_owned(), "qualified-record".to_owned()),
-        ]);
-
-        let report = build_report(source_items, &rules, &declarations, &dispositions)
-            .expect("complete inventory produces a report");
+        let report = complete_fixture_report();
         assert_eq!(report.items.len(), 6);
         assert_eq!(
             report
@@ -665,6 +605,86 @@ mod tests {
         );
     }
 
+    fn complete_fixture_report() -> super::Report {
+        build_report(
+            fixture_inventory(),
+            &fixture_rules(),
+            &fixture_declarations(),
+            &fixture_dispositions(),
+        )
+        .expect("complete inventory produces a report")
+    }
+
+    fn fixture_inventory() -> Vec<SourceItem> {
+        vec![
+            source(
+                "FR-204",
+                "functional/FR-204.md",
+                Some("high"),
+                "requirement",
+            ),
+            source(
+                "FR-204-AC-1",
+                "functional/FR-204.md",
+                Some("high"),
+                "criterion",
+            ),
+            source(
+                "FR-204-AC-2",
+                "functional/FR-204.md",
+                Some("medium"),
+                "criterion",
+            ),
+            source(
+                "FR-204-AC-3",
+                "functional/FR-204.md",
+                Some("low"),
+                "criterion",
+            ),
+            source("FR-205", "functional/FR-205.md", None, "requirement"),
+            source("FR-205-AC-1", "functional/FR-205.md", None, "criterion"),
+        ]
+    }
+
+    fn fixture_declarations() -> BTreeMap<String, Declaration> {
+        BTreeMap::from([
+            (
+                "qsl:approved::P1".to_owned(),
+                declaration("qsl:approved::P1", "approved", None),
+            ),
+            (
+                "qsl:draft::P1".to_owned(),
+                declaration("qsl:draft::P1", "draft", Some("changed_since_approval")),
+            ),
+            (
+                "qsl:other-approved::P1".to_owned(),
+                declaration("qsl:other-approved::P1", "approved", None),
+            ),
+        ])
+    }
+
+    fn fixture_rules() -> Vec<Value> {
+        vec![
+            rule(
+                "qsl:approved::P1",
+                &["FR-204-AC-1", "FR-204-AC-3", "FR-205-AC-1"],
+            ),
+            rule("qsl:draft::P1", &["FR-204-AC-2", "FR-205-AC-1"]),
+            rule("qsl:other-approved::P1", &["FR-204-AC-2"]),
+        ]
+    }
+
+    fn fixture_dispositions() -> BTreeMap<String, String> {
+        BTreeMap::from([
+            ("FR-204".to_owned(), "unevaluated".to_owned()),
+            ("FR-204-AC-1".to_owned(), "unevaluated".to_owned()),
+            ("FR-204-AC-2".to_owned(), "qualified-record".to_owned()),
+            ("FR-204-AC-3".to_owned(), "qualified-record".to_owned()),
+            ("FR-205".to_owned(), "failed".to_owned()),
+            ("FR-205-AC-1".to_owned(), "qualified-record".to_owned()),
+        ])
+    }
+
     #[trace("FR-204-AC-7", "FR-204-AC-8")]
     #[test]
     fn coverage_json_obeys_the_shipped_closed_schema() {
@@ -714,10 +734,9 @@ mod tests {
             .and_then(Value::as_array_mut)
             .and_then(|items| items.first_mut())
             .and_then(Value::as_object_mut)
-            .map(|item| {
-                item.insert("state".to_owned(), json!("draft"));
-                item.remove("analysis_disposition");
-                item
+            .inspect(|item| {
+                item.extend([("state".to_owned(), json!("draft"))]);
+                let _ = item.remove("analysis_disposition");
             })
             .and_then(|item| item.get_mut("declarations"))
             .and_then(Value::as_array_mut)
