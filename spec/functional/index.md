@@ -183,3 +183,5 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-200: The dossier risk management plan renders the authored policy and states the missing plan record](./FR-200-dossier-risk-management-plan-content.md)
 - [FR-201: The dossier release record renders the committed snapshot and EA release verdict](./FR-201-dossier-release-record-content.md)
 - [FR-202: The dossier threat-model document renders each threat model's covered crossings, sinks, treatments and open findings](./FR-202-dossier-threat-model-content.md)
+- [FR-204: Report formalization state per requirement and criterion](./FR-204-formalization-coverage-state.md)
+- [FR-205: Show formalization as evidence without obligation credit](./FR-205-formalization-as-evidence-kind.md)
