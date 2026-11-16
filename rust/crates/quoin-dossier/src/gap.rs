@@ -57,7 +57,13 @@ pub enum GapKind {
     AnomalyUnassessed,
     /// An impacting carried anomaly has no release rationale.
     AnomalyNoReleaseRationale,
-    /// No acceptability policy is present in scope.
+    /// A source risk-summary row has a completeness finding.
+    RiskChainIncomplete,
+    /// A residual risk has no decision or decider.
+    ResidualRiskUndecided,
+    /// A control has no verification.
+    ControlUnverified,
+    /// No acceptability policy is present for a risk estimate.
     NoAcceptabilityPolicy,
     /// No authored risk management plan record exists.
     NoPlanRecord,
@@ -66,7 +72,7 @@ pub enum GapKind {
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 22] = [
+    pub(crate) const ALL: [Self; 25] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -87,6 +93,9 @@ impl GapKind {
         Self::SoupFieldNotStated,
         Self::AnomalyUnassessed,
         Self::AnomalyNoReleaseRationale,
+        Self::RiskChainIncomplete,
+        Self::ResidualRiskUndecided,
+        Self::ControlUnverified,
         Self::NoAcceptabilityPolicy,
         Self::NoPlanRecord,
     ];
@@ -115,6 +124,9 @@ impl GapKind {
             Self::SoupFieldNotStated => "soup_field_not_stated",
             Self::AnomalyUnassessed => "anomaly_unassessed",
             Self::AnomalyNoReleaseRationale => "anomaly_no_release_rationale",
+            Self::RiskChainIncomplete => "risk_chain_incomplete",
+            Self::ResidualRiskUndecided => "residual_risk_undecided",
+            Self::ControlUnverified => "control_unverified",
             Self::NoAcceptabilityPolicy => "no_acceptability_policy",
             Self::NoPlanRecord => "no_plan_record",
         }
@@ -270,6 +282,9 @@ mod tests {
                 "soup_field_not_stated",
                 "anomaly_unassessed",
                 "anomaly_no_release_rationale",
+                "risk_chain_incomplete",
+                "residual_risk_undecided",
+                "control_unverified",
                 "no_acceptability_policy",
                 "no_plan_record",
             ]
