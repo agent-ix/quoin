@@ -87,6 +87,15 @@ impl AuditOptions {
         }
     }
 
+    /// Options naming only the module roots, as a caller without the flag
+    /// grammar supplies them.
+    pub(crate) fn for_modules(modules: Vec<String>) -> Self {
+        Self {
+            modules,
+            ..Self::default()
+        }
+    }
+
     /// The closed module roots supplied to the coverage walk.
     pub(crate) fn module_paths(&self) -> &[String] {
         &self.modules

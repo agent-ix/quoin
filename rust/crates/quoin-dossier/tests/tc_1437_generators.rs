@@ -18,7 +18,27 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use ix_trace_rs::trace;
-use quoin_dossier::{DossierErrorCode, Inputs, Report, Status, builtin_registry, generate};
+use quoin_assurance::matrix::MatrixOutput;
+use quoin_dossier::{
+    DossierErrorCode, Inputs, MatrixSource, Registry, Report, SourceFailure, Status,
+    builtin_registry, generate,
+};
+
+/// The SRS and architecture never read the matrix.
+struct NoMatrix;
+
+impl MatrixSource for NoMatrix {
+    fn matrix(&self, _inputs: &Inputs) -> Result<MatrixOutput, SourceFailure> {
+        Err(SourceFailure {
+            source: "matrix".to_owned(),
+            detail: "not used by these documents".to_owned(),
+        })
+    }
+}
+
+fn registry() -> Registry {
+    builtin_registry(std::sync::Arc::new(NoMatrix)).unwrap()
+}
 
 /// The module that is also the repository.
 fn fixture() -> PathBuf {
@@ -42,13 +62,7 @@ fn inputs(scope: &Path) -> Inputs {
 }
 
 fn run(kind: &str, scope: &Path, out: &Path) -> Report {
-    generate(
-        &builtin_registry().unwrap(),
-        &[kind.to_owned()],
-        out,
-        &inputs(scope),
-    )
-    .unwrap()
+    generate(&registry(), &[kind.to_owned()], out, &inputs(scope)).unwrap()
 }
 
 /// Every criterion id and text of the repository appears under its requirement
@@ -158,7 +172,7 @@ fn generated_srs_and_architecture_validate_and_export_to_pdf() {
     let out = work.join("dossier");
     let kinds = ["srs".to_owned(), "architecture".to_owned()];
     let inputs = inputs(&fixture());
-    let registry = builtin_registry().unwrap();
+    let registry = registry();
     generate(&registry, &kinds, &out, &inputs).unwrap();
     tool("git", &["add", "-A"], work);
     tool("git", &["commit", "-q", "-m", "generated dossier"], work);
@@ -225,7 +239,7 @@ fn a_malformed_file_in_scope_fails_the_source_instead_of_vanishing() {
     let out = tempfile::tempdir().unwrap();
 
     let error = generate(
-        &builtin_registry().unwrap(),
+        &registry(),
         &["srs".to_owned()],
         out.path(),
         &inputs(scope.path()),
