@@ -134,13 +134,18 @@ pub struct NotAssessed {
 pub enum SoupFailure {
     /// An input was refused; `input` is the flag that supplied it.
     Refused {
+        /// The flag that supplied this source.
         input: &'static str,
+        /// Stable source refusal code.
         code: String,
+        /// Source diagnostic.
         message: String,
     },
     /// An input exists but cannot be read.
     Unreadable {
+        /// The flag that supplied this source.
         input: &'static str,
+        /// Source diagnostic.
         message: String,
     },
     /// An operational failure.
@@ -172,7 +177,10 @@ fn refused(input: &'static str, stop: Stop) -> SoupFailure {
 ///
 /// # Errors
 /// Returns a refused, unreadable or failed source without producing a section.
-pub fn soup_section(inputs: &SoupInputs<'_>, settings: &quoin_core::runtime::RuntimeSettings) -> Result<SoupSection, SoupFailure> {
+pub fn soup_section(
+    inputs: &SoupInputs<'_>,
+    settings: &quoin_core::runtime::RuntimeSettings,
+) -> Result<SoupSection, SoupFailure> {
     let as_of_day = as_of_date(inputs.as_of).map_err(|error| SoupFailure::Refused {
         input: "--as-of",
         code: error.code.as_str().to_owned(),

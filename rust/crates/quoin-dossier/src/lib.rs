@@ -20,8 +20,8 @@ mod order;
 mod registry;
 mod report;
 mod rmm;
-mod sources;
 mod soup;
+mod sources;
 mod srs;
 #[cfg(feature = "test-stubs")]
 mod stub;

@@ -1220,3 +1220,84 @@ fn an_unmatched_finding_that_could_belong_blocks_a_clean_statement() {
     );
     assert_eq!(report["unmatched_policy_findings"][0]["reason"], "no purl");
 }
+
+/// The dossier and the report share the FR-144 library builder.
+#[trace("FR-197-AC-1", "FR-197-AC-6", "FR-197-AC-7", "FR-197-AC-10")]
+#[test]
+fn dossier_soup_rows_equal_the_report_and_pass_optional_source_inputs() {
+    let (repo, binding) = standard();
+    let records = repo.path().join("selected-records");
+    std::fs::rename(repo.records(), &records).unwrap();
+    let support = repo.write("support.json", &json!([{
+        "purl":"pkg:cargo/zed@1.0.0", "support_status":"supported", "end_of_support":"2027-01-01", "source":"https://example.invalid/support"
+    }]));
+    let report = report_json(&repo, &binding, &["--records", records.to_str().unwrap(), "--support", support.to_str().unwrap()]);
+    let out = repo.path().join("dossier");
+    let run = || quoin(repo.home.path(), &[
+        "dossier", "generate", "--doc", "soup", "--scope", repo.path().to_str().unwrap(),
+        "--out", out.to_str().unwrap(), "--version", "1", "--as-of", AS_OF,
+        "--soup-binding", binding.to_str().unwrap(), "--soup-records", records.to_str().unwrap(),
+        "--soup-support", support.to_str().unwrap(), "--json",
+    ]);
+    let generated = run();
+    assert_eq!(generated.status.code(), Some(1), "{generated:?}");
+    let file = out.join("DOS-SOUP.md");
+    let first = std::fs::read_to_string(&file).unwrap();
+    let rows: Vec<_> = first.lines().filter(|line| line.starts_with("| pkg:")).collect();
+    let source = report["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), source.len());
+    for (rendered, source) in rows.iter().zip(source) {
+        assert!(rendered.starts_with(&format!("| {} | {} |", source["purl"].as_str().unwrap(), source["version"].as_str().unwrap())));
+        assert!(rendered.contains(source["policy_status"]["state"].as_str().unwrap()));
+        assert!(rendered.contains(source["support_status"]["value"].as_str().unwrap()));
+        assert!(rendered.contains(source["end_of_support"]["value"].as_str().unwrap()));
+        for advisory in source["advisories"].as_array().unwrap() {
+            assert!(rendered.contains(advisory["rule_id"].as_str().unwrap()));
+            assert!(rendered.contains(advisory["resolution"]["state"].as_str().unwrap()));
+        }
+    }
+    assert!(first.contains("accepted_risk by reviewer-1"));
+    assert!(first.contains("https://example.invalid/support"));
+    assert!(!first.contains("allowed"));
+    std::fs::write(repo.path().join("sbom.json"), "unreadable inventory").unwrap();
+    assert_eq!(run().status.code(), Some(1));
+    assert_eq!(first, std::fs::read_to_string(&file).unwrap());
+    std::fs::remove_file(repo.path().join("sbom.json")).unwrap();
+    assert_eq!(run().status.code(), Some(1));
+    assert_eq!(first, std::fs::read_to_string(&file).unwrap());
+    std::fs::create_dir_all(repo.records()).unwrap();
+    repo.record("added", "pkg:cargo/added@1.0.0", &["serves: []", "known_anomalies: []"]);
+    // Put this new record into the explicitly selected source directory.
+    std::fs::rename(repo.records().join("added.md"), records.join("added.md")).unwrap();
+    assert_eq!(run().status.code(), Some(1));
+    assert_eq!(std::fs::read_to_string(&file).unwrap().matches("| pkg:cargo/added@1.0.0 |").count(), 1);
+    assert_eq!(report_json(&repo, &binding, &["--records", records.to_str().unwrap()])["rows"].as_array().unwrap().iter().filter(|row| row["purl"] == "pkg:cargo/added@1.0.0").count(), 1);
+}
+
+#[trace("FR-197-AC-5", "FR-197-AC-8", "FR-197-AC-9")]
+#[test]
+fn dossier_soup_cli_binding_and_time_failures_keep_exit_and_no_write_contracts() {
+    let repo = Repo::new();
+    let out = repo.path().join("out");
+    let run = |extra: &[&str]| {
+        let mut args = vec!["dossier", "generate", "--doc", "soup", "--scope", repo.path().to_str().unwrap(), "--out", out.to_str().unwrap(), "--version", "1", "--json"];
+        args.extend_from_slice(extra);
+        quoin(repo.home.path(), &args)
+    };
+    // An RMM binding does not select the SOUP source or require time.
+    let no_source = run(&["--clause-binding", "does-not-exist"]);
+    assert_eq!(no_source.status.code(), Some(1), "{no_source:?}");
+    let payload: Value = serde_json::from_slice(&no_source.stdout).unwrap();
+    assert_eq!(payload["documents"][0]["gaps"][0]["gap_kind"], "no_clause_binding");
+    assert!(!std::fs::read_to_string(out.join("DOS-SOUP.md")).unwrap().contains("as_of:"));
+    std::fs::remove_dir_all(&out).unwrap();
+    let no_time = run(&["--soup-binding", "missing-binding"]);
+    assert_eq!(no_time.status.code(), Some(2), "{no_time:?}");
+    assert!(!out.exists());
+    let unreadable = run(&["--soup-binding", "missing-binding", "--as-of", AS_OF, "--doc", "stub-a"]);
+    assert_eq!(unreadable.status.code(), Some(3), "{unreadable:?}");
+    let payload: Value = serde_json::from_slice(&unreadable.stdout).unwrap();
+    assert_eq!(payload["source_failure"]["source"], "quoin soup report");
+    assert!(text(&unreadable.stderr).contains("missing-binding"));
+    assert!(!out.exists(), "no selected document is written after a source failure");
+}

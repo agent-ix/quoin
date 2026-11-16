@@ -9,9 +9,9 @@
 //! optional `--support` file, and it writes nothing. A value no input stated
 //! is `unknown` or `not stated`; nothing is scored or defaulted (NFR-030).
 
+mod dossier;
 mod render;
 pub(crate) mod snapshot;
-mod dossier;
 pub use dossier::{DossierRow, DossierSource, dossier_source};
 
 use std::collections::BTreeMap;
@@ -31,8 +31,8 @@ use super::support::{
     Evaluation, RecordSupport, SupportError, SupportFile, as_of_date, parse_support, record_support,
 };
 use super::{Existing, Stop, arg, read_all_records, refuse};
-use quoin_core::runtime::{RuntimeSettings, dispatch};
 use quoin_core::error::CoreErrorCode;
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 /// A support file larger than this is not read.
 const MAX_SUPPORT_BYTES: u64 = 4 * 1024 * 1024;
@@ -118,7 +118,14 @@ pub(super) fn run(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<
     let binding_path =
         arg(arguments, "binding").ok_or_else(|| "--binding is required".to_owned())?;
 
-    let report = load_report(&repo, &records_dir, binding_path, as_of, arg(arguments, "support").map(Path::new), settings)?;
+    let report = load_report(
+        &repo,
+        &records_dir,
+        binding_path,
+        as_of,
+        arg(arguments, "support").map(Path::new),
+        settings,
+    )?;
     let rendered = if arguments.get_flag("json") {
         render::json(&report)?
     } else {
@@ -127,7 +134,14 @@ pub(super) fn run(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
 }
 
-fn load_report(repo: &Path, records_dir: &Path, binding_path: &str, as_of: &str, support_path: Option<&Path>, settings: &RuntimeSettings) -> Result<Report, Stop> {
+fn load_report(
+    repo: &Path,
+    records_dir: &Path,
+    binding_path: &str,
+    as_of: &str,
+    support_path: Option<&Path>,
+    settings: &RuntimeSettings,
+) -> Result<Report, Stop> {
     if !repo.exists() {
         return Err(refuse(
             "soup.path_missing",

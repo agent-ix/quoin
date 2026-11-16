@@ -15,7 +15,6 @@ mod policy;
 pub(crate) mod report;
 mod support;
 
-
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::io::Write as _;
@@ -26,8 +25,8 @@ use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_evidence::adapters::parse_sbom;
 
-use quoin_core::runtime::{RuntimeSettings, dispatch};
 use plan::{Existing, NewRecord, Plan};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 /// The longest file name the common filesystems accept.
 const MAX_FILE_NAME: usize = 255;
@@ -584,6 +583,11 @@ fn report(planned: &Plan, written: &BTreeMap<String, PathBuf>, unmatched: Option
     text.trim_end().to_owned()
 }
 
-fn invoke(operation: &str, request: &serde_json::Value, settings: &RuntimeSettings) -> Result<Response, String> {
-    dispatch(operation, request, settings).map_err(|error| format!("native runtime {operation} failed: {error}"))
+fn invoke(
+    operation: &str,
+    request: &serde_json::Value,
+    settings: &RuntimeSettings,
+) -> Result<Response, String> {
+    dispatch(operation, request, settings)
+        .map_err(|error| format!("native runtime {operation} failed: {error}"))
 }
