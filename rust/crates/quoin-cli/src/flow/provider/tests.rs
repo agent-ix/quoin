@@ -12,6 +12,8 @@ use super::serve;
 #[cfg(unix)]
 use super::{Context, FormalizeInput, formalization_check_with_tools};
 use ix_trace_rs::trace;
+#[cfg(unix)]
+use quoin_quire::{ModuleRoot, ModuleSelection};
 use serde_json::{Value, json};
 #[cfg(unix)]
 use std::fs;
@@ -85,6 +87,11 @@ fn executable(directory: &Path, name: &str, body: &str) -> PathBuf {
 }
 
 #[cfg(unix)]
+fn module_selection(directory: &Path) -> ModuleSelection {
+    ModuleSelection::Closed(vec![ModuleRoot::open(directory).expect("module root")])
+}
+
+#[cfg(unix)]
 fn formalization_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
     let directory = tempfile::tempdir().expect("temporary repository");
     fs::create_dir_all(directory.path().join("qsl")).expect("qsl dir");
@@ -135,8 +142,9 @@ fn qsl_check_passes_only_with_clean_fsl_outcome_and_bound_formalizes_relation() 
         "quire",
         "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"Rule\"}]}}'; exit 0",
     );
+    let modules = module_selection(directory.path());
 
-    assert!(formalization_check_with_tools(&request, &context, &fsl, &quire).is_ok());
+    assert!(formalization_check_with_tools(&request, &context, &fsl, &quire, &modules).is_ok());
     assert_eq!(
         fs::read(&requirement_path).expect("read requirement after"),
         requirement_before
@@ -154,8 +162,9 @@ fn qsl_check_failure_returns_the_diagnostic_file_line_and_message() {
         "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"refusal\",\"diagnostics\":[{\"locus\":{\"kind\":\"region\",\"start\":11},\"message\":\"expected Boolean\"}]}' ; exit 20",
     );
     let quire = executable(directory.path(), "quire", "exit 99");
+    let modules = module_selection(directory.path());
 
-    let failure = formalization_check_with_tools(&request, &context, &fsl, &quire)
+    let failure = formalization_check_with_tools(&request, &context, &fsl, &quire, &modules)
         .expect_err("type error fails check");
     assert_eq!(failure.code.to_string(), "qsl_check_failed");
     assert_eq!(failure.details["file"], "qsl/rule.native");
@@ -181,8 +190,9 @@ fn a_checked_draft_without_a_bound_formalizes_id_fails_closed() {
         "quire",
         "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[]}}'; exit 0",
     );
+    let modules = module_selection(directory.path());
 
-    let failure = formalization_check_with_tools(&request, &context, &fsl, &quire)
+    let failure = formalization_check_with_tools(&request, &context, &fsl, &quire, &modules)
         .expect_err("unbound marker fails");
     assert_eq!(failure.code.to_string(), "formalizes_marker_missing");
 }
@@ -194,8 +204,9 @@ fn a_missing_fsl_executable_never_passes_the_invariant() {
     let (directory, request, context) = formalization_fixture();
     let missing = directory.path().join("missing-fsl");
     let quire = executable(directory.path(), "quire", "exit 99");
+    let modules = module_selection(directory.path());
 
-    let failure = formalization_check_with_tools(&request, &context, &missing, &quire)
+    let failure = formalization_check_with_tools(&request, &context, &missing, &quire, &modules)
         .expect_err("missing executable fails closed");
     assert_eq!(failure.code.to_string(), "qsl_check_unavailable");
 }

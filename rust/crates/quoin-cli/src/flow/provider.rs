@@ -35,6 +35,10 @@ const REQUEST_PROTOCOL: &str = "quoin.workflow-invariants/v1";
 const RESULT_PROTOCOL: &str = "quoin.workflow-invariants-result/v1";
 
 type Check = Result<(), Failure>;
+type ToolResults = (
+    Result<std::process::Output, String>,
+    Result<std::process::Output, String>,
+);
 
 #[derive(Clone, Copy, Debug)]
 enum Code {
@@ -417,8 +421,7 @@ fn retries_exhausted(instance: &Instance) -> Check {
     let failures = instance
         .items
         .get("formalization_failure")
-        .map(Vec::as_slice)
-        .unwrap_or(&[]);
+        .map_or(&[][..], Vec::as_slice);
     let mut consecutive_failures = 0;
     for (index, failure) in failures.iter().enumerate() {
         let item: FormalizationFailure =
@@ -456,7 +459,8 @@ fn retries_exhausted(instance: &Instance) -> Check {
 fn formalization_check(request: &FormalizeInput, context: &Context) -> Check {
     let fsl = configured_tool("FSL_DRIVER_BIN", Code::QslCheckUnavailable)?;
     let quire = configured_tool("QUIRE_DRIVER_BIN", Code::FormalizesMarkerUnavailable)?;
-    formalization_check_with_tools(request, context, &fsl, &quire)
+    let catalog = Catalog::load(context)?;
+    formalization_check_with_tools(request, context, &fsl, &quire, &catalog.modules)
 }
 
 fn formalization_check_with_tools(
@@ -464,6 +468,7 @@ fn formalization_check_with_tools(
     context: &Context,
     fsl: &Path,
     quire: &Path,
+    modules: &ModuleSelection,
 ) -> Check {
     if request.id.as_deref().is_some_and(|id| id != "request")
         || request
@@ -478,15 +483,14 @@ fn formalization_check_with_tools(
         ));
     }
     let draft = FormalizationDraft::open(request, context)?;
-    let module = formalizes_trace_module()?;
     let deadline = Instant::now() + TOOL_DEADLINE;
     let (check_result, trace_result) =
-        run_formalization_tools(fsl, quire, &draft, &module, deadline)?;
+        run_formalization_tools(fsl, quire, &draft, modules, deadline)?;
     let check_output = check_result.map_err(|message| fail(Code::QslCheckUnavailable, message))?;
-    check_fsl_result(check_output, &draft)?;
+    check_fsl_result(&check_output, &draft)?;
     let trace_output =
         trace_result.map_err(|message| fail(Code::FormalizesMarkerUnavailable, message))?;
-    check_formalizes_result(trace_output, request, &draft)
+    check_formalizes_result(&trace_output, request, &draft)
 }
 
 struct FormalizationDraft {
@@ -531,60 +535,36 @@ impl FormalizationDraft {
     }
 }
 
-fn formalizes_trace_module() -> Result<tempfile::TempDir, Failure> {
-    let module = tempfile::tempdir()
-        .map_err(|error| fail(Code::FormalizesMarkerUnavailable, error.to_string()))?;
-    // Declare the marker contract to Quire; declaration binding stays upstream.
-    let manifest = r#"name: quoin-formalize
-manifest_version: 1.0.0
-version: 0.0.1
-artifact_types:
-- name: FR
-  grammar_ref: iso-spec-core
-- name: NFR
-  grammar_ref: iso-spec-core
-- name: StR
-  grammar_ref: iso-spec-core
-- name: US
-  grammar_ref: iso-spec-core
-traceability:
-  trace_targets: []
-  trace_tags:
-    formalizes:
-    - name: qsl-formalizes-comment
-      language: qsl
-      syntax: comment
-      pattern: '^//\s*formalizes:\s*(.+)$'
-      template: '// formalizes: {ids}'
-"#;
-    std::fs::write(module.path().join("manifest.yaml"), manifest)
-        .map_err(|error| fail(Code::FormalizesMarkerUnavailable, error.to_string()))?;
-    Ok(module)
-}
-
 fn run_formalization_tools(
     fsl: &Path,
     quire: &Path,
     draft: &FormalizationDraft,
-    module: &tempfile::TempDir,
+    modules: &ModuleSelection,
     deadline: Instant,
-) -> Result<
-    (
-        Result<std::process::Output, String>,
-        Result<std::process::Output, String>,
-    ),
-    Failure,
-> {
+) -> Result<ToolResults, Failure> {
     let draft_path = draft
         .path
         .to_str()
         .ok_or_else(|| fail(Code::PathInvalid, "draft path is not UTF-8"))?;
-    let module_path = module.path().to_str().ok_or_else(|| {
-        fail(
-            Code::FormalizesMarkerUnavailable,
-            "module path is not UTF-8",
-        )
-    })?;
+    let module_paths = match modules {
+        ModuleSelection::Closed(roots) => roots
+            .iter()
+            .map(|root| {
+                root.as_path().to_str().map(str::to_owned).ok_or_else(|| {
+                    fail(
+                        Code::FormalizesMarkerUnavailable,
+                        "module path is not UTF-8",
+                    )
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?,
+        ModuleSelection::ScopeOrAmbient | ModuleSelection::Ambient => {
+            return Err(fail(
+                Code::FormalizesMarkerUnavailable,
+                "catalog did not provide a closed module set",
+            ));
+        }
+    };
     let scope = draft
         .root
         .to_str()
@@ -599,22 +579,19 @@ fn run_formalization_tools(
             )
         });
         let trace = threads.spawn(|| {
-            run_tool(
-                quire,
-                &[
-                    "trace",
-                    "--scope",
-                    scope,
-                    "--module",
-                    module_path,
-                    "--file",
-                    &draft.relative,
-                    "--format",
-                    "json",
-                ],
-                &draft.root,
-                deadline,
-            )
+            let mut arguments = vec!["trace".to_owned(), "--scope".to_owned(), scope.to_owned()];
+            for module_path in &module_paths {
+                arguments.push("--module".to_owned());
+                arguments.push(module_path.clone());
+            }
+            arguments.extend([
+                "--file".to_owned(),
+                draft.relative.clone(),
+                "--format".to_owned(),
+                "json".to_owned(),
+            ]);
+            let arguments = arguments.iter().map(String::as_str).collect::<Vec<_>>();
+            run_tool(quire, &arguments, &draft.root, deadline)
         });
         (
             check
@@ -628,7 +605,7 @@ fn run_formalization_tools(
     Ok((check_result, trace_result))
 }
 
-fn check_fsl_result(output: std::process::Output, draft: &FormalizationDraft) -> Check {
+fn check_fsl_result(output: &std::process::Output, draft: &FormalizationDraft) -> Check {
     let check_document: Value = serde_json::from_slice(&output.stdout).map_err(|error| {
         fail_with_details(
             Code::QslCheckFailed,
@@ -637,7 +614,7 @@ fn check_fsl_result(output: std::process::Output, draft: &FormalizationDraft) ->
                 ("file".to_owned(), Value::String(draft.relative.clone())),
                 (
                     "diagnostics".to_owned(),
-                    Value::String(tool_message(&output)),
+                    Value::String(tool_message(output)),
                 ),
             ]),
         )
@@ -666,10 +643,7 @@ fn check_fsl_result(output: std::process::Output, draft: &FormalizationDraft) ->
                 ("diagnostics".to_owned(), diagnostics),
                 (
                     "exit_code".to_owned(),
-                    output
-                        .status
-                        .code()
-                        .map_or(Value::Null, |code| Value::from(code)),
+                    output.status.code().map_or(Value::Null, Value::from),
                 ),
             ]),
         ));
@@ -678,7 +652,7 @@ fn check_fsl_result(output: std::process::Output, draft: &FormalizationDraft) ->
 }
 
 fn check_formalizes_result(
-    output: std::process::Output,
+    output: &std::process::Output,
     request: &FormalizeInput,
     draft: &FormalizationDraft,
 ) -> Check {
@@ -688,7 +662,7 @@ fn check_formalizes_result(
             "quire trace could not verify the formalizes marker",
             BTreeMap::from([(
                 "diagnostics".to_owned(),
-                Value::String(tool_message(&output)),
+                Value::String(tool_message(output)),
             )]),
         ));
     }
@@ -870,7 +844,10 @@ fn check_diagnostics(diagnostics: &[Value], source: &str, file: &str) -> Value {
 fn source_line(source: &str, offset: u64) -> Option<u64> {
     let offset = usize::try_from(offset).ok()?;
     let prefix = source.as_bytes().get(..offset)?;
-    let lines = prefix.iter().filter(|byte| **byte == b'\n').count();
+    let lines = prefix
+        .split(|byte| *byte == b'\n')
+        .count()
+        .saturating_sub(1);
     u64::try_from(lines + 1).ok()
 }
 
