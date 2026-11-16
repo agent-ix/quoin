@@ -23,6 +23,7 @@ test-stubs = []
 
 [dependencies]
 quoin-soup = { workspace = true }
+quoin-anomaly = { workspace = true }
 ix-cli-kit = { workspace = true }
 quoin-assurance = { workspace = true }
 quoin-quire = { workspace = true }
