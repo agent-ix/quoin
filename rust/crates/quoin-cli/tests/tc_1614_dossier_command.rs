@@ -592,7 +592,7 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     let verify = work.path().join("release-verify.json");
     fs::write(
         &verify,
-        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"tag":"v1"},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
     )
     .unwrap();
     let quire = fake_quire(work.path(), 0, "");
@@ -788,7 +788,7 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     let verify = work.path().join("release-verify.json");
     fs::write(
         &verify,
-        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"status":"approved","tag":"v1","approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z"},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
     )
     .unwrap();
     let generated = quoin(
