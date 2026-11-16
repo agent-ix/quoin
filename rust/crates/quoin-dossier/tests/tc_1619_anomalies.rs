@@ -6,11 +6,14 @@
     clippy::expect_used,
     clippy::indexing_slicing,
     clippy::panic,
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
 //! Fixtures for the FR-198 unresolved-anomalies document.
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
@@ -98,17 +101,17 @@ impl Repo {
             "---\nid: {id}\ntitle: \"Fixture {id}\"\ntype: Anomaly\nstatus: {status}\nsafety_impact: {safety_impact}\nseverity: major\n"
         );
         if let Some(resolution) = resolution {
-            frontmatter.push_str(&format!("resolution: {resolution}\n"));
+            writeln!(frontmatter, "resolution: {resolution}").unwrap();
         }
         frontmatter.push_str("---\n# Fixture anomaly\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n| --- | --- | --- | --- |\n");
         for (kind, target, impact, detail) in targets {
-            frontmatter.push_str(&format!("| {kind} | {target} | {impact} | {detail} |\n"));
+            writeln!(frontmatter, "| {kind} | {target} | {impact} | {detail} |").unwrap();
         }
         if !rationales.is_empty() {
             frontmatter
                 .push_str("\n## Release Rationale\n\n| Author | Rationale |\n| --- | --- |\n");
             for (author, reason) in rationales {
-                frontmatter.push_str(&format!("| {author} | {reason} |\n"));
+                writeln!(frontmatter, "| {author} | {reason} |").unwrap();
             }
         }
         self.write(&format!("spec/anomalies/{id}.md"), &frontmatter);
