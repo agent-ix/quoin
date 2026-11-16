@@ -108,7 +108,11 @@ fn render(summary: &Summary, advice: &Advice) -> Generated {
             "the source report found no policy for one or more risk estimates",
         ));
     }
-    Generated { body, gaps }
+    Generated {
+        body,
+        document_version: None,
+        gaps,
+    }
 }
 
 fn render_row(

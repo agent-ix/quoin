@@ -73,6 +73,7 @@ impl Generator for Stub {
             .map_or_else(String::new, |instant| format!("\nAs of {instant}.\n"));
         Ok(Generated {
             body: format!("# {}\n{as_of}", self.spec.title),
+            document_version: None,
             gaps,
         })
     }

@@ -8,35 +8,13 @@
 //! it names and no others, copies the entries as given and orders them. It
 //! reads no record file, fetches no commit and resolves no hash.
 
-use serde::{Deserialize, Serialize};
+use quoin_dossier::release_snapshot::{
+    SnapshotChangeRecord as ChangeRecord, SnapshotPreviousRelease as PreviousRelease,
+};
 use serde_json::Value;
 
 /// The protocol the history file must state.
 const PROTOCOL: &str = "engineering-assurance.release-history/v1";
-
-/// The previous release, as the history file states it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct PreviousRelease {
-    /// The previous release's tag name.
-    pub(crate) tag: String,
-    /// The release commit the tag peels to.
-    pub(crate) commit: String,
-}
-
-/// One change-assurance record, as the history file lists it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct ChangeRecord {
-    /// The record's id.
-    pub(crate) record_id: String,
-    /// The record's revision.
-    pub(crate) revision: u64,
-    /// The record file's repository-relative path.
-    pub(crate) path: String,
-    /// The commit that added the file.
-    pub(crate) commit: String,
-}
 
 /// The members of the history file Quoin reads.
 #[derive(Debug)]

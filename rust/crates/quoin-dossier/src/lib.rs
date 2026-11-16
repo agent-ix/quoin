@@ -20,6 +20,8 @@ mod gap;
 mod markdown;
 mod order;
 mod registry;
+mod release_record;
+pub mod release_snapshot;
 mod report;
 mod risk_management;
 mod risk_plan;
@@ -83,6 +85,7 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
         Box::new(anomalies::AnomaliesGenerator),
         Box::new(risk_management::RiskManagementGenerator),
         Box::new(risk_plan::RiskPlanGenerator(sources.policy)),
+        Box::new(release_record::ReleaseRecordGenerator),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -131,9 +134,9 @@ mod tests {
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_holds_the_nine_documents() {
+    fn the_shipped_registry_holds_the_ten_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 9);
+        assert_eq!(registry.specs().count(), 10);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -146,7 +149,8 @@ mod tests {
                 "soup",
                 "anomalies",
                 "risk-management",
-                "risk-management-plan"
+                "risk-management-plan",
+                "release-record"
             ]
         );
     }
@@ -160,7 +164,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            14
+            15
         );
     }
 }

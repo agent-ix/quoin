@@ -28,6 +28,7 @@ impl Generator for SoupGenerator {
         if inputs.soup_binding.is_none() {
             return Ok(Generated {
                 body: "# SOUP list\n\n".to_owned(),
+                document_version: None,
                 gaps: vec![Gap::new(
                     GapKind::NoClauseBinding,
                     "this document",
@@ -79,6 +80,10 @@ impl Generator for SoupGenerator {
         // The shared source owns the appended sections and every status word.
         body.push_str(&source.appended);
         body.push('\n');
-        Ok(Generated { body, gaps })
+        Ok(Generated {
+            body,
+            document_version: None,
+            gaps,
+        })
     }
 }

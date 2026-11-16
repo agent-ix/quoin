@@ -56,6 +56,10 @@ impl Generator for TraceMatrixGenerator {
     }
 }
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "the report rows are emitted in one fixed, traceable order"
+)]
 fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
     let mut body = String::from("# Trace matrix\n\n");
     let mut gaps = Vec::new();
@@ -153,7 +157,11 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
         }
         body.push('\n');
     }
-    Generated { body, gaps }
+    Generated {
+        body,
+        document_version: None,
+        gaps,
+    }
 }
 
 #[cfg(test)]

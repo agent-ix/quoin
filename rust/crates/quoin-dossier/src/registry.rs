@@ -44,6 +44,10 @@ pub struct Inputs {
     pub soup_records: Option<PathBuf>,
     /// Optional public support statements, passed to the source unchanged.
     pub soup_support: Option<PathBuf>,
+    /// Committed `quoin.release-snapshot/v1` source for the release record.
+    pub snapshot: Option<PathBuf>,
+    /// Engineering Assurance release-verify result for the release record.
+    pub release_verify: Option<PathBuf>,
     /// The explicit evaluation instant, an RFC 3339 string.
     pub as_of: Option<String>,
     /// The document version written into every generated file.
@@ -55,6 +59,9 @@ pub struct Inputs {
 pub struct Generated {
     /// Markdown between the frontmatter and the `Gaps` section.
     pub body: String,
+    /// Optional source-derived version for documents whose version is part of
+    /// the source record rather than a caller-selected report version.
+    pub document_version: Option<String>,
     /// The missing inputs, in any order; the writer sorts them.
     pub gaps: Vec<Gap>,
 }

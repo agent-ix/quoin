@@ -113,7 +113,10 @@ pub(crate) fn render(
         sort_gaps(&mut generated.gaps);
         let text = compose(
             &spec,
-            &inputs.version,
+            generated
+                .document_version
+                .as_deref()
+                .unwrap_or(&inputs.version),
             inputs
                 .as_of
                 .as_deref()

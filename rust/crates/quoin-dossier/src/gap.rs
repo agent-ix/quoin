@@ -67,12 +67,18 @@ pub enum GapKind {
     NoAcceptabilityPolicy,
     /// No authored risk management plan record exists.
     NoPlanRecord,
+    /// No committed release snapshot was supplied.
+    NoSnapshot,
+    /// No Engineering Assurance release verification was supplied.
+    NoReleaseVerifyInput,
+    /// Engineering Assurance did not verify a release.
+    ReleaseNotVerified,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 25] = [
+    pub(crate) const ALL: [Self; 28] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -98,6 +104,9 @@ impl GapKind {
         Self::ControlUnverified,
         Self::NoAcceptabilityPolicy,
         Self::NoPlanRecord,
+        Self::NoSnapshot,
+        Self::NoReleaseVerifyInput,
+        Self::ReleaseNotVerified,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -129,6 +138,9 @@ impl GapKind {
             Self::ControlUnverified => "control_unverified",
             Self::NoAcceptabilityPolicy => "no_acceptability_policy",
             Self::NoPlanRecord => "no_plan_record",
+            Self::NoSnapshot => "no_snapshot",
+            Self::NoReleaseVerifyInput => "no_release_verify_input",
+            Self::ReleaseNotVerified => "release_not_verified",
         }
     }
 
@@ -287,6 +299,9 @@ mod tests {
                 "control_unverified",
                 "no_acceptability_policy",
                 "no_plan_record",
+                "no_snapshot",
+                "no_release_verify_input",
+                "release_not_verified",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {

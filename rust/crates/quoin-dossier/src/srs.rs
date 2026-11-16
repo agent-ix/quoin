@@ -123,7 +123,11 @@ fn render(documents: &[Document]) -> Generated {
         }
     }
 
-    Generated { body, gaps }
+    Generated {
+        body,
+        document_version: None,
+        gaps,
+    }
 }
 
 /// The title from frontmatter; empty when absent.

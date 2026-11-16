@@ -36,6 +36,8 @@ pub struct ExportOptions {
     pub release: Option<String>,
     /// `--approval`, unchanged and in order.
     pub approvals: Vec<PathBuf>,
+    /// Module roots used to validate Markdown inputs.
+    pub modules: Vec<PathBuf>,
     /// `--template`, unchanged.
     pub template: Option<PathBuf>,
     /// The `quire` executable.
@@ -86,6 +88,9 @@ pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec
     ]);
     if let Some(release) = &options.release {
         args.extend(["--release".to_owned(), release.clone()]);
+    }
+    for module in &options.modules {
+        args.extend(["--module".to_owned(), module.display().to_string()]);
     }
     for approval in &options.approvals {
         args.extend(["--approval".to_owned(), approval.display().to_string()]);
@@ -175,6 +180,7 @@ mod tests {
             output: PathBuf::from("out.pdf"),
             release: Some("v1".to_owned()),
             approvals: vec![PathBuf::from("a1.json"), PathBuf::from("a2.json")],
+            modules: Vec::new(),
             template: Some(PathBuf::from("t.typ")),
             quire: PathBuf::from(quire),
         }
@@ -250,6 +256,23 @@ mod tests {
         assert!(args.contains(&"dossier/DOS-A.md".to_owned()));
         assert!(!args.iter().any(|arg| arg.starts_with("--bundle")));
         assert_eq!(args.iter().filter(|arg| arg.contains("DOS-")).count(), 1);
+    }
+
+    #[trace("FR-191-AC-8")]
+    #[test]
+    fn module_roots_are_passed_to_quire_for_document_validation() {
+        let mut options = options("quire");
+        options.modules = vec![
+            PathBuf::from("process-module"),
+            PathBuf::from("other-module"),
+        ];
+        let args = quire_args(&rendered(&["a"]), &options);
+        let module_args: Vec<_> = args
+            .windows(2)
+            .filter(|pair| pair[0] == "--module")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(module_args, ["process-module", "other-module"]);
     }
 
     #[trace("FR-191-AC-6")]
