@@ -811,7 +811,7 @@ fn analysis_consistent_with_approved(
         return Err(fail_with_details(
             Code::DraftClaimsInconsistent,
             "drafted claims are inconsistent",
-            BTreeMap::from([("reports".to_owned(), json!(reports))]),
+            BTreeMap::from([("reports".to_owned(), serde_json::json!(reports))]),
         ));
     }
     let mut classification = "consistent";
@@ -832,8 +832,11 @@ fn analysis_consistent_with_approved(
                 Code::DraftContradictsApproved,
                 "draft contradicts an approved rule",
                 BTreeMap::from([
-                    ("classification".to_owned(), json!("contradicts")),
-                    ("reports".to_owned(), json!(reports)),
+                    (
+                        "classification".to_owned(),
+                        serde_json::json!("contradicts"),
+                    ),
+                    ("reports".to_owned(), serde_json::json!(reports)),
                 ]),
             ));
         }
@@ -861,9 +864,12 @@ fn analysis_consistent_with_approved(
         }
     }
     Ok(BTreeMap::from([
-        ("classification".to_owned(), json!(classification)),
-        ("reports".to_owned(), json!(reports)),
-        ("report_directory".to_owned(), json!(report_dir)),
+        (
+            "classification".to_owned(),
+            serde_json::json!(classification),
+        ),
+        ("reports".to_owned(), serde_json::json!(reports)),
+        ("report_directory".to_owned(), serde_json::json!(report_dir)),
     ]))
 }
 
