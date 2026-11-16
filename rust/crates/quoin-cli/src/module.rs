@@ -456,7 +456,7 @@ mod tests {
             "spec-objects-safety",
             "agent-ix/spec-objects-safety",
             "spec_objects_safety",
-            "v0.8.0",
+            "v0.8.1",
         ),
     ];
 
