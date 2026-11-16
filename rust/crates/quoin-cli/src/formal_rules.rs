@@ -19,7 +19,7 @@ pub(crate) fn command() -> Command {
     Command::new("formal-rules")
         .about("Read formal-rule approval state from signed git commits")
         .subcommand_required(true)
-        .subcommand(
+        .subcommand(with_trust_arguments(
             Command::new("status")
                 .about("Report the current approval state of formalized QSL declarations")
                 .arg(
@@ -28,78 +28,66 @@ pub(crate) fn command() -> Command {
                         .value_name("DIR")
                         .default_value("."),
                 )
-                .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
+                .arg(Arg::new("json").long("json").action(ArgAction::SetTrue)),
+        ))
+        .subcommand(
+            with_trust_arguments(crate::formal_rules_coverage::command())
+                .arg(Arg::new("module").long("module").action(ArgAction::Append))
                 .arg(
-                    Arg::new("engineering-assurance")
-                        .long("engineering-assurance")
-                        .value_name("ABSOLUTE-PATH"),
-                )
-                .arg(
-                    Arg::new("allowed-signers")
-                        .long("allowed-signers")
-                        .value_name("ABSOLUTE-PATH"),
-                )
-                .arg(
-                    Arg::new("gitsign-certificate-identity")
-                        .long("gitsign-certificate-identity")
-                        .value_name("IDENTITY"),
-                )
-                .arg(
-                    Arg::new("gitsign-certificate-oidc-issuer")
-                        .long("gitsign-certificate-oidc-issuer")
-                        .value_name("ISSUER"),
-                )
-                .arg(
-                    Arg::new("gitsign-principal")
-                        .long("gitsign-principal")
-                        .value_name("PRINCIPAL"),
+                    Arg::new("run-observation")
+                        .long("run-observation")
+                        .action(ArgAction::Append)
+                        .num_args(1)
+                        .value_name("FILE"),
                 ),
         )
 }
 
+fn with_trust_arguments(command: Command) -> Command {
+    command
+        .arg(
+            Arg::new("engineering-assurance")
+                .long("engineering-assurance")
+                .value_name("ABSOLUTE-PATH"),
+        )
+        .arg(
+            Arg::new("allowed-signers")
+                .long("allowed-signers")
+                .value_name("ABSOLUTE-PATH"),
+        )
+        .arg(
+            Arg::new("gitsign-certificate-identity")
+                .long("gitsign-certificate-identity")
+                .value_name("IDENTITY"),
+        )
+        .arg(
+            Arg::new("gitsign-certificate-oidc-issuer")
+                .long("gitsign-certificate-oidc-issuer")
+                .value_name("ISSUER"),
+        )
+        .arg(
+            Arg::new("gitsign-principal")
+                .long("gitsign-principal")
+                .value_name("PRINCIPAL"),
+        )
+}
+
 pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
-    let Some(("status", args)) = matches.subcommand() else {
+    let Some((name, args)) = matches.subcommand() else {
         return Err(crate::ShellError::usage(
             "an unknown formal-rules command reached dispatch",
         ));
     };
-    for name in ["engineering-assurance", "allowed-signers"] {
-        let Some(value) = args.get_one::<String>(name) else {
-            return Err(crate::ShellError::usage_refused(format!(
-                "--{name} is required"
-            )));
-        };
-        if value.is_empty() || value.contains('\0') || !Path::new(value).is_absolute() {
-            return Err(crate::ShellError::usage_refused(format!(
-                "--{name} must be an absolute path"
-            )));
-        }
+    if name == "coverage" {
+        return crate::formal_rules_coverage::run(args)
+            .map_err(crate::ShellError::unavailable_invalid);
     }
-    let gitsign_values = [
-        args.get_one::<String>("gitsign-certificate-identity"),
-        args.get_one::<String>("gitsign-certificate-oidc-issuer"),
-        args.get_one::<String>("gitsign-principal"),
-    ];
-    if !matches!(
-        gitsign_values,
-        [None, None, None] | [Some(_), Some(_), Some(_)]
-    ) {
-        return Err(crate::ShellError::usage_refused(
-            "all three gitsign identity options must be supplied together",
+    if name != "status" {
+        return Err(crate::ShellError::usage(
+            "an unknown formal-rules command reached dispatch",
         ));
     }
-    if gitsign_values
-        .iter()
-        .flatten()
-        .any(|value| !valid_gitsign_value(value))
-        || gitsign_values[0].is_some_and(|value| value.starts_with('-'))
-        || gitsign_values[1].is_some_and(|value| value.starts_with('-'))
-    {
-        return Err(crate::ShellError::usage_refused(
-            "gitsign identity values violate FR-040 validation",
-        ));
-    }
-    let report = status(args).map_err(status_shell_error)?;
+    let report = status_report_shell(args)?;
     let rendered = if args.get_flag("json") {
         serde_json::to_string(&report)
             .map_err(|error| crate::ShellError::unavailable(error.to_string()))?
@@ -123,6 +111,60 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
         lines.join("\n")
     };
     Ok(Response::ok(json!({"rendered": rendered})))
+}
+
+pub(crate) fn status_report(args: &ArgMatches) -> Result<Value, String> {
+    validate_status_arguments(args).map_err(status_error_message)?;
+    status(args).map_err(status_error_message)
+}
+
+fn status_report_shell(args: &ArgMatches) -> Result<Value, crate::ShellError> {
+    validate_status_arguments(args).map_err(status_shell_error)?;
+    status(args).map_err(status_shell_error)
+}
+
+fn validate_status_arguments(args: &ArgMatches) -> Result<(), StatusError> {
+    for name in ["engineering-assurance", "allowed-signers"] {
+        let Some(value) = args.get_one::<String>(name) else {
+            return Err(StatusError::Invalid(format!("--{name} is required")));
+        };
+        if value.is_empty() || value.contains('\0') || !Path::new(value).is_absolute() {
+            return Err(StatusError::Invalid(format!(
+                "--{name} must be an absolute path"
+            )));
+        }
+    }
+    let gitsign_values = [
+        args.get_one::<String>("gitsign-certificate-identity"),
+        args.get_one::<String>("gitsign-certificate-oidc-issuer"),
+        args.get_one::<String>("gitsign-principal"),
+    ];
+    if !matches!(
+        gitsign_values,
+        [None, None, None] | [Some(_), Some(_), Some(_)]
+    ) {
+        return Err(StatusError::Invalid(
+            "all three gitsign identity options must be supplied together".to_owned(),
+        ));
+    }
+    if gitsign_values
+        .iter()
+        .flatten()
+        .any(|value| !valid_gitsign_value(value))
+        || gitsign_values[0].is_some_and(|value| value.starts_with('-'))
+        || gitsign_values[1].is_some_and(|value| value.starts_with('-'))
+    {
+        return Err(StatusError::Invalid(
+            "gitsign identity values violate FR-040 validation".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn status_error_message(error: StatusError) -> String {
+    match error {
+        StatusError::Invalid(message) | StatusError::Unavailable(message) => message,
+    }
 }
 
 enum StatusError {
