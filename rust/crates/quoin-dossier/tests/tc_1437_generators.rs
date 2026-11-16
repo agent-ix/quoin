@@ -36,6 +36,9 @@ fn inputs(scope: &Path) -> Inputs {
         modules: vec![fixture()],
         clause_bindings: Vec::new(),
         pack: None,
+        soup_binding: None,
+        soup_records: None,
+        soup_support: None,
         as_of: None,
         version: "1.0".to_owned(),
     }
@@ -233,6 +236,7 @@ fn registry() -> quoin_dossier::Registry {
     quoin_dossier::builtin_registry(quoin_dossier::Sources {
         matrix: std::sync::Arc::new(NoMatrix),
         rmm: |_| panic!("unexpected discharge source"),
+        soup: |_| panic!("unexpected SOUP source"),
     })
     .unwrap()
 }

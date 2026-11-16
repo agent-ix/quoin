@@ -25,33 +25,33 @@ use crate::soup::policy::LicenceOutcome;
 use crate::soup::support::{SupportFile, as_of_date};
 
 /// Everything the SOUP section reads, already opened by the caller.
-pub(crate) struct SoupInputs<'a> {
+pub struct SoupInputs<'a> {
     /// The repository root.
-    pub(crate) repo: &'a Path,
+    pub repo: &'a Path,
     /// The directory of `soup_record` files.
-    pub(crate) records_dir: &'a Path,
+    pub records_dir: &'a Path,
     /// The `--as-of` instant, as supplied.
-    pub(crate) as_of: &'a str,
+    pub as_of: &'a str,
     /// The parsed `clause-binding-v1` report.
-    pub(crate) binding: &'a Value,
+    pub binding: &'a Value,
     /// The support-data file, when supplied.
-    pub(crate) support: Option<&'a Path>,
+    pub support: Option<&'a Path>,
 }
 
 /// The `soup` member: the rows and what FR-144 appends after them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct SoupSection {
+pub struct SoupSection {
     /// One row per `soup_record`, in FR-144's order.
-    pub(crate) rows: Vec<SoupRow>,
+    pub rows: Vec<SoupRow>,
     /// The unmatched findings and the scans that taught nothing.
-    pub(crate) not_assessed: Vec<NotAssessed>,
+    pub not_assessed: Vec<NotAssessed>,
 }
 
 /// FR-144's ordering group of a row.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum Group {
+pub enum Group {
     /// An unresolved advisory or policy finding.
     UnresolvedAdvisory,
     /// Past end of support.
@@ -63,22 +63,22 @@ pub(crate) enum Group {
 /// One SOUP row.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct SoupRow {
+pub struct SoupRow {
     /// The component's purl.
-    pub(crate) purl: String,
+    pub purl: String,
     /// The record's `version`, or `not stated`.
-    pub(crate) version: String,
+    pub version: String,
     /// The row's ordering group.
-    pub(crate) group: Group,
+    pub group: Group,
     /// The report's `support_status` value, unchanged.
-    pub(crate) support_status: Resolved,
+    pub support_status: Resolved,
     /// The report's `end_of_support` value, unchanged.
-    pub(crate) end_of_support: Resolved,
+    pub end_of_support: Resolved,
 }
 
 /// Where a resolved support value came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) enum Origin {
+pub enum Origin {
     /// No input stated it.
     #[serde(rename = "none")]
     None,
@@ -93,54 +93,59 @@ pub(crate) enum Origin {
 /// A support value and what stated it, as the SOUP report's JSON states it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct Resolved {
+pub struct Resolved {
     /// The value, or `unknown`.
-    pub(crate) value: String,
+    pub value: String,
     /// What stated it.
-    pub(crate) origin: Origin,
+    pub origin: Origin,
     /// The support file's source, when it supplied the value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) source: Option<String>,
+    pub source: Option<String>,
     /// The support file's differing statement, when it disagrees with the record.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) disagrees_with: Option<Disagreement>,
+    pub disagrees_with: Option<Disagreement>,
 }
 
 /// The support file's statement that differs from the record's.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct Disagreement {
+pub struct Disagreement {
     /// The support file's value.
-    pub(crate) value: String,
+    pub value: String,
     /// Always the support file.
-    pub(crate) origin: Origin,
+    pub origin: Origin,
     /// The support file's source.
-    pub(crate) source: String,
+    pub source: String,
 }
 
 /// One item FR-144 appends after its rows.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct NotAssessed {
+pub struct NotAssessed {
     /// `unmatched_advisory`, `unmatched_policy_finding` or a `scan_` state.
-    pub(crate) kind: String,
+    pub kind: String,
     /// The scanner.
-    pub(crate) tool: String,
+    pub tool: String,
     /// Defined per `kind` (FR-167).
-    pub(crate) detail: String,
+    pub detail: String,
 }
 
 /// Why the section could not be built.
-pub(crate) enum SoupFailure {
+pub enum SoupFailure {
     /// An input was refused; `input` is the flag that supplied it.
     Refused {
+        /// The flag that supplied this source.
         input: &'static str,
+        /// Stable source refusal code.
         code: String,
+        /// Source diagnostic.
         message: String,
     },
     /// An input exists but cannot be read.
     Unreadable {
+        /// The flag that supplied this source.
         input: &'static str,
+        /// Source diagnostic.
         message: String,
     },
     /// An operational failure.
@@ -169,7 +174,13 @@ fn refused(input: &'static str, stop: Stop) -> SoupFailure {
 }
 
 /// The `soup` member of the snapshot.
-pub(crate) fn soup_section(inputs: &SoupInputs<'_>) -> Result<SoupSection, SoupFailure> {
+///
+/// # Errors
+/// Returns a refused, unreadable or failed source without producing a section.
+pub fn soup_section(
+    inputs: &SoupInputs<'_>,
+    settings: &quoin_core::runtime::RuntimeSettings,
+) -> Result<SoupSection, SoupFailure> {
     let as_of_day = as_of_date(inputs.as_of).map_err(|error| SoupFailure::Refused {
         input: "--as-of",
         code: error.code.as_str().to_owned(),
@@ -187,7 +198,7 @@ pub(crate) fn soup_section(inputs: &SoupInputs<'_>) -> Result<SoupSection, SoupF
     };
     let existing =
         read_distinct_records(inputs.records_dir).map_err(|stop| refused("--records", stop))?;
-    let discharge = discharge_report(inputs.repo, inputs.binding, inputs.as_of).map_err(
+    let discharge = discharge_report(inputs.repo, inputs.binding, inputs.as_of, settings).map_err(
         |failure| match failure {
             DischargeFailure::BadBinding(message) => SoupFailure::Refused {
                 input: "--binding",

@@ -804,6 +804,9 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
         modules: Vec::new(),
         clause_bindings: Vec::new(),
         pack: None,
+        soup_binding: None,
+        soup_records: None,
+        soup_support: None,
         as_of: Some("2026-11-15T00:00:00Z".to_owned()),
         version: "1.0".to_owned(),
     };

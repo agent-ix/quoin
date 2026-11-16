@@ -76,6 +76,21 @@ fn selectors(command: Command) -> Command {
             "PATH",
             "Clause-binding report; repeat to add",
         ))
+        .arg(one(
+            "soup-binding",
+            "FILE",
+            "Clause binding passed to quoin soup report",
+        ))
+        .arg(one(
+            "soup-records",
+            "DIR",
+            "Record directory passed to quoin soup report",
+        ))
+        .arg(one(
+            "soup-support",
+            "FILE",
+            "Support statements passed to quoin soup report",
+        ))
         .arg(
             one(
                 "pack",
@@ -145,6 +160,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         builtin_registry(quoin_dossier::Sources {
             matrix: Arc::new(CliMatrix),
             rmm: rmm_source,
+            soup: soup_source,
         }),
         arguments,
     )
@@ -197,6 +213,9 @@ fn execute(
         modules: paths(arguments, "module"),
         clause_bindings: paths(arguments, "clause-binding"),
         pack: text(arguments, "pack"),
+        soup_binding: text(arguments, "soup-binding").map(PathBuf::from),
+        soup_records: text(arguments, "soup-records").map(PathBuf::from),
+        soup_support: text(arguments, "soup-support").map(PathBuf::from),
         as_of: text(arguments, "as-of"),
         // A missing --version is refused by the library, which owns that rule.
         version: text(arguments, "version").unwrap_or_default(),
@@ -417,6 +436,33 @@ fn rmm_source(inputs: &Inputs) -> Result<quoin_dossier::RmmSource, quoin_dossier
     })();
     result.map_err(|detail| quoin_dossier::SourceFailure {
         source: "discharge".to_owned(),
+        detail,
+    })
+}
+
+/// Use FR-144's shared builder with the host's runtime configuration.
+fn soup_source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, quoin_dossier::SourceFailure> {
+    let result = (|| {
+        let binding = inputs
+            .soup_binding
+            .as_deref()
+            .ok_or_else(|| "--soup-binding is required".to_owned())?;
+        let as_of = inputs
+            .as_of
+            .as_deref()
+            .ok_or_else(|| "--as-of is required".to_owned())?;
+        quoin_soup::dossier_source(
+            &inputs.scope,
+            inputs.soup_records.as_deref(),
+            binding,
+            as_of,
+            inputs.soup_support.as_deref(),
+            &crate::core_runtime::settings(),
+        )
+        .map_err(|error| error.message().to_owned())
+    })();
+    result.map_err(|detail| quoin_dossier::SourceFailure {
+        source: "quoin soup report".to_owned(),
         detail,
     })
 }

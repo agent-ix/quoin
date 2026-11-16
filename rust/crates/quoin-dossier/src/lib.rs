@@ -6,7 +6,7 @@
 //! frontmatter and `Gaps` writer, `generate` / `check`, and the export
 //! hand-off to `quire export`.
 //!
-//! The SRS, architecture, trace matrix, RMM and verification report register in
+//! The SRS, architecture, trace matrix, RMM, verification report and SOUP register in
 //! [`builtin_registry`] in fixed bundle order. The host supplies the matrix
 //! and discharge source adapters so their evidence assembly stays shared.
 
@@ -20,6 +20,7 @@ mod order;
 mod registry;
 mod report;
 mod rmm;
+mod soup;
 mod sources;
 mod srs;
 #[cfg(feature = "test-stubs")]
@@ -74,6 +75,7 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
         Box::new(verification_report::VerificationReportGenerator::new(
             sources.matrix,
         )),
+        Box::new(soup::SoupGenerator(sources.soup)),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -118,13 +120,13 @@ mod tests {
         );
     }
 
-    /// The M1 documents precede the verification report in bundle order.
+    /// Shipped documents register in bundle order.
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_holds_m1_and_verification_report() {
+    fn the_shipped_registry_holds_the_six_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 5);
+        assert_eq!(registry.specs().count(), 6);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -133,7 +135,8 @@ mod tests {
                 "architecture",
                 "trace-matrix",
                 "rmm",
-                "verification-report"
+                "verification-report",
+                "soup"
             ]
         );
     }
@@ -147,7 +150,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            10
+            11
         );
     }
 }

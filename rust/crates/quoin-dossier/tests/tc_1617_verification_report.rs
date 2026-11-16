@@ -39,6 +39,9 @@ fn inputs() -> Inputs {
         modules: vec![fixture()],
         clause_bindings: Vec::new(),
         pack: None,
+        soup_binding: None,
+        soup_records: None,
+        soup_support: None,
         as_of: None,
         version: "1.0".to_owned(),
     }
@@ -271,5 +274,6 @@ fn sources(matrix: MatrixOutput) -> quoin_dossier::Sources {
     quoin_dossier::Sources {
         matrix: Arc::new(Fixed(matrix)),
         rmm: |_| panic!("unexpected discharge source"),
+        soup: |_| panic!("unexpected SOUP source"),
     }
 }
