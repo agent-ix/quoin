@@ -198,16 +198,16 @@ pub fn build_approved_formal_rule_selection(
                     "selected report claim {claim_id} has no assertion"
                 ))
             })?;
-        let matching = rules
+        let mut matching = rules
             .iter()
-            .filter(|rule| rule.get("symbol").and_then(Value::as_str) == Some(symbol))
-            .collect::<Vec<_>>();
-        if matching.len() != 1
-            || matching
-                .first()
-                .and_then(|rule| rule.get("state"))
-                .and_then(Value::as_str)
-                != Some("approved")
+            .filter(|rule| rule.get("symbol").and_then(Value::as_str) == Some(symbol));
+        let Some(matched_rule) = matching.next() else {
+            return Err(refuse_formal_selection(format!(
+                "formal-rule symbol {symbol} is missing or not approved"
+            )));
+        };
+        if matching.next().is_some()
+            || matched_rule.get("state").and_then(Value::as_str) != Some("approved")
         {
             return Err(refuse_formal_selection(format!(
                 "formal-rule symbol {symbol} is missing or not approved"
