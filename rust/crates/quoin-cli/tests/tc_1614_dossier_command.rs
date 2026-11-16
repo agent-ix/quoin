@@ -703,6 +703,40 @@ fn malformed_release_sources_fail_before_the_selected_document_is_written() {
     assert!(!work.path().join("dossier/DOS-REL.md").exists());
 }
 
+#[trace("FR-201-AC-6")]
+#[test]
+fn malformed_release_verify_reasons_fail_before_the_selected_document_is_written() {
+    let work = tempfile::tempdir().unwrap();
+    let source = work.path().join("bad-release-verify.json");
+    fs::write(
+        &source,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"not_released","tag":"v1","reasons":[{}]}"#,
+    )
+    .unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "release-record",
+            "--release-verify",
+            source.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 3, "{}", stderr(&output));
+    let report = json(&output);
+    assert!(
+        report["source_failure"]["source"]
+            .as_str()
+            .unwrap()
+            .contains("bad-release-verify.json")
+    );
+    assert!(!work.path().join("dossier/DOS-REL.md").exists());
+}
+
 #[trace("FR-201-AC-8")]
 #[test]
 fn release_record_generation_needs_no_git_and_is_repeatable() {

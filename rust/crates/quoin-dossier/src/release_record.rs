@@ -98,7 +98,7 @@ fn read_verify(path: &std::path::Path) -> Result<Value, SourceFailure> {
     let valid = match status {
         Some("released") => {
             valid_string("tag")
-                && object.get("reasons").and_then(Value::as_array).is_some()
+                && valid_strings("reasons")
                 && object.get("approval").and_then(Value::as_object).is_some()
                 && valid_nested_strings("release", &["id", "name", "snapshot_path"])
                 && valid_nested_strings("baseline", &["name", "commit"])
@@ -114,9 +114,7 @@ fn read_verify(path: &std::path::Path) -> Result<Value, SourceFailure> {
                 && valid_string("signed_at_source")
                 && object.get("accepted_anomalies").is_none_or(string_array)
         }
-        Some("not_released") => {
-            valid_string("tag") && object.get("reasons").and_then(Value::as_array).is_some()
-        }
+        Some("not_released") => valid_string("tag") && valid_strings("reasons"),
         _ => false,
     };
     if valid {
