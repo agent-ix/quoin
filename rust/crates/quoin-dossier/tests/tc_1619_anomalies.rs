@@ -105,9 +105,8 @@ impl Repo {
             frontmatter.push_str(&format!("| {kind} | {target} | {impact} | {detail} |\n"));
         }
         if !rationales.is_empty() {
-            frontmatter.push_str(
-                "\n## Release Rationale\n\n| Author | Rationale |\n| --- | --- |\n",
-            );
+            frontmatter
+                .push_str("\n## Release Rationale\n\n| Author | Rationale |\n| --- | --- |\n");
             for (author, reason) in rationales {
                 frontmatter.push_str(&format!("| {author} | {reason} |\n"));
             }
@@ -153,10 +152,7 @@ fn registry() -> quoin_dossier::Registry {
 struct NoMatrix;
 
 impl quoin_dossier::MatrixSource for NoMatrix {
-    fn matrix(
-        &self,
-        _: &Inputs,
-    ) -> Result<quoin_assurance::matrix::MatrixOutput, SourceFailure> {
+    fn matrix(&self, _: &Inputs) -> Result<quoin_assurance::matrix::MatrixOutput, SourceFailure> {
         Err(SourceFailure {
             source: "matrix".to_owned(),
             detail: "unexpected source call".to_owned(),
@@ -167,13 +163,8 @@ impl quoin_dossier::MatrixSource for NoMatrix {
 fn generate(repo: &Repo) -> (String, quoin_dossier::Report) {
     let inputs = inputs(repo);
     let out = repo.path().join("dossier");
-    let report = quoin_dossier::generate(
-        &registry(),
-        &["anomalies".to_owned()],
-        &out,
-        &inputs,
-    )
-    .unwrap();
+    let report =
+        quoin_dossier::generate(&registry(), &["anomalies".to_owned()], &out, &inputs).unwrap();
     let document = std::fs::read_to_string(out.join("DOS-ANOM.md")).unwrap();
     (document, report)
 }
@@ -202,8 +193,14 @@ fn selected_rows_groups_assessments_and_ungrouped_values_match_the_source() {
             ),
         ],
         &[
-            ("Dara Imani", "The operator procedure addresses this release risk."),
-            ("Lee Tan", "The monitoring procedure covers this remaining case."),
+            (
+                "Dara Imani",
+                "The operator procedure addresses this release risk.",
+            ),
+            (
+                "Lee Tan",
+                "The monitoring procedure covers this remaining case.",
+            ),
         ],
     );
     repo.anomaly(
@@ -220,7 +217,10 @@ fn selected_rows_groups_assessments_and_ungrouped_values_match_the_source() {
         Some("wont-fix"),
         "impacting",
         &[("Requirement", "FR-003", "Affects", "Retained impact.")],
-        &[("Mina Patel", "The team accepts this documented residual issue.")],
+        &[(
+            "Mina Patel",
+            "The team accepts this documented residual issue.",
+        )],
     );
     repo.anomaly(
         "AN-004",
@@ -240,11 +240,8 @@ fn selected_rows_groups_assessments_and_ungrouped_values_match_the_source() {
     );
 
     let inputs = inputs(&repo);
-    let source = quoin_anomaly::build_report(
-        &inputs.scope,
-        &[GateMode::UnjustifiedImpacting],
-    )
-    .unwrap();
+    let source =
+        quoin_anomaly::build_report(&inputs.scope, &[GateMode::UnjustifiedImpacting]).unwrap();
     let (document, report) = generate(&repo);
     let listed = document
         .lines()
@@ -262,8 +259,13 @@ fn selected_rows_groups_assessments_and_ungrouped_values_match_the_source() {
     assert!(document.contains("| HAZ-001 | AN-001 | Introduces |"));
     assert!(document.contains("| FR-001 | AN-001 | Affects |"));
     assert!(document.contains("| FR-002-AC-1 | AN-002 | Affects |"));
-    assert!(document.contains("| Requirement | FR-001 | Affects | The authored requirement rationale. |"));
-    assert!(document.contains("| Hazard | HAZ-001 | Introduces | The authored hazard rationale. |"));
+    assert!(
+        document
+            .contains("| Requirement | FR-001 | Affects | The authored requirement rationale. |")
+    );
+    assert!(
+        document.contains("| Hazard | HAZ-001 | Introduces | The authored hazard rationale. |")
+    );
     assert!(document.contains("Dara Imani"));
     assert!(document.contains("The operator procedure addresses this release risk."));
     assert!(document.contains("Lee Tan"));
@@ -309,9 +311,10 @@ fn unassessed_and_source_gate_failures_become_gaps_without_suggested_rationale()
 
     let (document, report) = generate(&repo);
     let gaps = &report.documents[0].gaps;
-    assert!(gaps.iter().any(|gap| {
-        gap.gap_kind == GapKind::AnomalyUnassessed && gap.subject == "AN-011"
-    }));
+    assert!(
+        gaps.iter()
+            .any(|gap| { gap.gap_kind == GapKind::AnomalyUnassessed && gap.subject == "AN-011" })
+    );
     assert!(gaps.iter().any(|gap| {
         gap.gap_kind == GapKind::AnomalyNoReleaseRationale && gap.subject == "AN-010"
     }));
@@ -334,13 +337,9 @@ fn an_unreadable_anomaly_is_a_source_failure_before_any_document_is_written() {
         "---\nid: AN-020\ntype: Anomaly\nstatus: open\n---\n# Missing assessment table\n",
     );
     let out = repo.path().join("dossier");
-    let error = quoin_dossier::generate(
-        &registry(),
-        &["anomalies".to_owned()],
-        &out,
-        &inputs(&repo),
-    )
-    .unwrap_err();
+    let error =
+        quoin_dossier::generate(&registry(), &["anomalies".to_owned()], &out, &inputs(&repo))
+            .unwrap_err();
     assert_eq!(error.outcome().code(), 3);
     assert_eq!(
         error.source_failure().unwrap().source,

@@ -11,8 +11,8 @@
 //! bundle order. The host supplies the matrix and discharge source adapters so
 //! their evidence assembly stays shared.
 
-mod architecture;
 mod anomalies;
+mod architecture;
 mod engine;
 mod error;
 mod export;

@@ -27,12 +27,13 @@ impl Generator for AnomaliesGenerator {
     }
 
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
-        let report = build_report(&inputs.scope, &[GateMode::UnjustifiedImpacting]).map_err(
-            |error| SourceFailure {
-                source: "quoin anomaly report".to_owned(),
-                detail: error.to_string(),
-            },
-        )?;
+        let report =
+            build_report(&inputs.scope, &[GateMode::UnjustifiedImpacting]).map_err(|error| {
+                SourceFailure {
+                    source: "quoin anomaly report".to_owned(),
+                    detail: error.to_string(),
+                }
+            })?;
         if !report.unreadable.is_empty() {
             let detail = report
                 .unreadable
@@ -62,7 +63,11 @@ fn render(report: &AnomalyReport) -> Generated {
     let mut body = String::from("# Unresolved anomalies\n\n## By hazard\n\n");
     render_groups(&mut body, "Hazard", &report.by_hazard);
     body.push_str("\n## By requirement\n\n");
-    render_groups(&mut body, "Requirement or criterion", &report.by_requirement);
+    render_groups(
+        &mut body,
+        "Requirement or criterion",
+        &report.by_requirement,
+    );
     body.push_str("\n## Ungrouped\n\n");
     if report.ungrouped.is_empty() {
         body.push_str("none\n");
