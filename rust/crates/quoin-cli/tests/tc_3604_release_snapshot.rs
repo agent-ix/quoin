@@ -1514,7 +1514,7 @@ fn record_failed_run(repo: &Repo) {
         "--results",
         results.to_str().unwrap(),
         "--timestamp",
-        "2026-01-01T00:00:00Z",
+        "2026-01-02T00:00:00Z",
     ]);
 }
 
