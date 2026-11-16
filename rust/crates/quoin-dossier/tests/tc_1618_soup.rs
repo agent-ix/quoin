@@ -11,22 +11,30 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-use std::fs;
-use std::path::{Path, PathBuf};
 use ix_trace_rs::trace;
 use quoin_dossier::{GapKind, Inputs, SourceFailure};
-use quoin_evidence::{DiskEvidence, STORE_SCHEMA_VERSION, SuiteId};
 use quoin_evidence::store::write_scan;
 use quoin_evidence::types::FindingRecord;
+use quoin_evidence::{DiskEvidence, STORE_SCHEMA_VERSION, SuiteId};
 use serde_json::{Value, json};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 const AS_OF: &str = "2026-08-15T00:00:00Z";
 
 fn source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, SourceFailure> {
     quoin_soup::dossier_source(
-        &inputs.scope, inputs.soup_records.as_deref(), inputs.soup_binding.as_deref().unwrap(),
-        inputs.as_of.as_deref().unwrap(), inputs.soup_support.as_deref(), &quoin_core::runtime::RuntimeSettings::default(),
-    ).map_err(|detail| SourceFailure { source: "quoin soup report".to_owned(), detail })
+        &inputs.scope,
+        inputs.soup_records.as_deref(),
+        inputs.soup_binding.as_deref().unwrap(),
+        inputs.as_of.as_deref().unwrap(),
+        inputs.soup_support.as_deref(),
+        &quoin_core::runtime::RuntimeSettings::default(),
+    )
+    .map_err(|detail| SourceFailure {
+        source: "quoin soup report".to_owned(),
+        detail,
+    })
 }
 
 fn registry() -> quoin_dossier::Registry {
@@ -34,13 +42,21 @@ fn registry() -> quoin_dossier::Registry {
         matrix: |_| panic!("unexpected matrix source"),
         rmm: |_| panic!("unexpected discharge source"),
         soup: source,
-    }).unwrap()
+    })
+    .unwrap()
 }
 
 fn inputs(repo: &Path) -> Inputs {
     Inputs {
-        scope: repo.to_path_buf(), modules: Vec::new(), clause_bindings: Vec::new(), pack: None,
-        soup_binding: None, soup_records: None, soup_support: None, as_of: None, version: "1".to_owned(),
+        scope: repo.to_path_buf(),
+        modules: Vec::new(),
+        clause_bindings: Vec::new(),
+        pack: None,
+        soup_binding: None,
+        soup_records: None,
+        soup_support: None,
+        as_of: None,
+        version: "1".to_owned(),
     }
 }
 
@@ -59,21 +75,46 @@ fn binding(repo: &Path) -> PathBuf {
 }
 
 fn scan(repo: &Path, tool: &str, raw: &str) {
-    let adapter = quoin_evidence::adapters::select_finding_adapter(quoin_evidence::adapters::AdapterSelection { adapter: None, tool: Some(tool) }).unwrap();
+    let adapter = quoin_evidence::adapters::select_finding_adapter(
+        quoin_evidence::adapters::AdapterSelection {
+            adapter: None,
+            tool: Some(tool),
+        },
+    )
+    .unwrap();
     let parsed = adapter.run(raw, None).unwrap();
-    write_scan(&mut DiskEvidence::new(repo), &FindingRecord {
-        schema_version: STORE_SCHEMA_VERSION, suite: SuiteId::new(tool), tool: tool.to_owned(), evidence_kind: None,
-        timestamp: "2026-08-01T00:00:00Z".to_owned(), ruleset: parsed.ruleset, rules_evaluated: parsed.rules_evaluated,
-        findings: parsed.findings, evaluated: parsed.evaluated,
-    }).unwrap();
+    write_scan(
+        &mut DiskEvidence::new(repo),
+        &FindingRecord {
+            schema_version: STORE_SCHEMA_VERSION,
+            suite: SuiteId::new(tool),
+            tool: tool.to_owned(),
+            evidence_kind: None,
+            timestamp: "2026-08-01T00:00:00Z".to_owned(),
+            ruleset: parsed.ruleset,
+            rules_evaluated: parsed.rules_evaluated,
+            findings: parsed.findings,
+            evaluated: parsed.evaluated,
+        },
+    )
+    .unwrap();
 }
 
 fn fixture() -> (tempfile::TempDir, Inputs) {
     let repo = tempfile::tempdir().unwrap();
     record(repo.path(), "unresolved", "known_anomalies: []");
-    record(repo.path(), "old", "serves: []\nknown_anomalies: []\nend_of_support: '2026-05-01'");
-    record(repo.path(), "clean", "serves: [FR-1]\nknown_anomalies: []\nsupport_status: supported\nend_of_support: '2027-01-01'");
-    let audit_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../tests/fixtures/evidence/cargo-audit-real.json");
+    record(
+        repo.path(),
+        "old",
+        "serves: []\nknown_anomalies: []\nend_of_support: '2026-05-01'",
+    );
+    record(
+        repo.path(),
+        "clean",
+        "serves: [FR-1]\nknown_anomalies: []\nsupport_status: supported\nend_of_support: '2027-01-01'",
+    );
+    let audit_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/evidence/cargo-audit-real.json");
     let mut audit: Value = serde_json::from_slice(&fs::read(audit_path).unwrap()).unwrap();
     audit["vulnerabilities"] = json!({"found":true,"count":2,"list":[
         {"advisory":{"id":"RUSTSEC-2026-0001","title":"fixture advisory"},"package":{"name":"unresolved","version":"1.0.0"}},
@@ -93,13 +134,27 @@ fn generate(input: &Inputs) -> (String, quoin_dossier::Report) {
     (fs::read_to_string(out.join("DOS-SOUP.md")).unwrap(), report)
 }
 
-#[trace("FR-197-AC-1", "FR-197-AC-2", "FR-197-AC-4", "FR-197-AC-6", "FR-197-AC-7", "FR-197-AC-10")]
+#[trace(
+    "FR-197-AC-1",
+    "FR-197-AC-2",
+    "FR-197-AC-4",
+    "FR-197-AC-6",
+    "FR-197-AC-7",
+    "FR-197-AC-10"
+)]
 #[test]
 fn shared_source_order_words_gaps_and_bytes_are_preserved_without_sbom() {
     let (repo, input) = fixture();
-    fs::write(repo.path().join("sbom.json"), "an SBOM is not a SOUP source").unwrap();
+    fs::write(
+        repo.path().join("sbom.json"),
+        "an SBOM is not a SOUP source",
+    )
+    .unwrap();
     let (text, report) = generate(&input);
-    let rows: Vec<_> = text.lines().filter(|line| line.starts_with("| pkg:")).collect();
+    let rows: Vec<_> = text
+        .lines()
+        .filter(|line| line.starts_with("| pkg:"))
+        .collect();
     assert_eq!(rows.len(), 3);
     assert!(rows[0].starts_with("| pkg:cargo/unresolved@1.0.0 | 1.0.0 | not stated | none |"));
     assert!(rows[1].starts_with("| pkg:cargo/old@1.0.0 | 1.0.0 | none | none |"));
@@ -113,16 +168,44 @@ fn shared_source_order_words_gaps_and_bytes_are_preserved_without_sbom() {
     assert!(text.contains("policy findings not assessed: licence-policy not run"));
     assert!(!text.contains("allowed"));
     let gaps = &report.documents[0].gaps;
-    assert!(gaps.iter().any(|gap| gap.gap_kind == GapKind::SoupFieldNotStated && gap.subject == "pkg:cargo/unresolved@1.0.0" && gap.detail.starts_with("serves:")));
-    assert!(!gaps.iter().any(|gap| gap.subject == "pkg:cargo/old@1.0.0" && gap.detail.starts_with("serves:")));
-    assert_eq!(gaps.iter().filter(|gap| gap.gap_kind == GapKind::SoupPastEndOfSupport).count(), 1);
+    assert!(
+        gaps.iter()
+            .any(|gap| gap.gap_kind == GapKind::SoupFieldNotStated
+                && gap.subject == "pkg:cargo/unresolved@1.0.0"
+                && gap.detail.starts_with("serves:"))
+    );
+    assert!(
+        !gaps
+            .iter()
+            .any(|gap| gap.subject == "pkg:cargo/old@1.0.0" && gap.detail.starts_with("serves:"))
+    );
+    assert_eq!(
+        gaps.iter()
+            .filter(|gap| gap.gap_kind == GapKind::SoupPastEndOfSupport)
+            .count(),
+        1
+    );
     fs::remove_file(repo.path().join("sbom.json")).unwrap();
     assert_eq!(text, generate(&input).0);
     assert_eq!(text, generate(&input).0);
     // Adding a record reaches both the source and the dossier exactly once.
     record(repo.path(), "added", "serves: []\nknown_anomalies: []");
-    assert_eq!(source(&input).unwrap().rows.iter().filter(|row| row.cells[0] == "pkg:cargo/added@1.0.0").count(), 1);
-    assert_eq!(generate(&input).0.matches("| pkg:cargo/added@1.0.0 |").count(), 1);
+    assert_eq!(
+        source(&input)
+            .unwrap()
+            .rows
+            .iter()
+            .filter(|row| row.cells[0] == "pkg:cargo/added@1.0.0")
+            .count(),
+        1
+    );
+    assert_eq!(
+        generate(&input)
+            .0
+            .matches("| pkg:cargo/added@1.0.0 |")
+            .count(),
+        1
+    );
 }
 
 #[trace("FR-197-AC-3")]
@@ -130,17 +213,38 @@ fn shared_source_order_words_gaps_and_bytes_are_preserved_without_sbom() {
 fn advisory_and_policy_remain_unresolved_and_name_each_finding() {
     let (_repo, input) = fixture();
     let sbom = json!({"bomFormat":"CycloneDX","components":[{"name":"unresolved","version":"1.0.0","purl":"pkg:cargo/unresolved@1.0.0","licenses":[{"license":{"id":"GPL-3.0-only"}}]}]});
-    let parsed = quoin_evidence::adapters::parse_licence_policy(&sbom.to_string(), "format: licence-policy-v1\nallow: [MIT]\ndeny: [GPL-3.0-only]\n").unwrap();
-    write_scan(&mut DiskEvidence::new(&input.scope), &FindingRecord {
-        schema_version: STORE_SCHEMA_VERSION, suite: SuiteId::new("licence"), tool: "licence-policy".to_owned(), evidence_kind: None,
-        timestamp: "2026-08-01T00:00:00Z".to_owned(), ruleset: parsed.ruleset, rules_evaluated: parsed.rules_evaluated,
-        findings: parsed.findings, evaluated: parsed.evaluated,
-    }).unwrap();
+    let parsed = quoin_evidence::adapters::parse_licence_policy(
+        &sbom.to_string(),
+        "format: licence-policy-v1\nallow: [MIT]\ndeny: [GPL-3.0-only]\n",
+    )
+    .unwrap();
+    write_scan(
+        &mut DiskEvidence::new(&input.scope),
+        &FindingRecord {
+            schema_version: STORE_SCHEMA_VERSION,
+            suite: SuiteId::new("licence"),
+            tool: "licence-policy".to_owned(),
+            evidence_kind: None,
+            timestamp: "2026-08-01T00:00:00Z".to_owned(),
+            ruleset: parsed.ruleset,
+            rules_evaluated: parsed.rules_evaluated,
+            findings: parsed.findings,
+            evaluated: parsed.evaluated,
+        },
+    )
+    .unwrap();
     let (text, report) = generate(&input);
-    let row = text.lines().find(|line| line.starts_with("| pkg:cargo/unresolved")).unwrap();
+    let row = text
+        .lines()
+        .find(|line| line.starts_with("| pkg:cargo/unresolved"))
+        .unwrap();
     assert_eq!(row.matches("unresolved:").count(), 2);
     assert!(!row.contains("allowed"));
-    let gaps: Vec<_> = report.documents[0].gaps.iter().filter(|gap| gap.gap_kind == GapKind::SoupUnresolvedAdvisory).collect();
+    let gaps: Vec<_> = report.documents[0]
+        .gaps
+        .iter()
+        .filter(|gap| gap.gap_kind == GapKind::SoupUnresolvedAdvisory)
+        .collect();
     assert_eq!(gaps.len(), 2);
     assert_eq!(gaps[0].detail, "cargo-audit RUSTSEC-2026-0001");
     assert_eq!(gaps[1].detail, "licence-policy licence-denied");
@@ -153,31 +257,51 @@ fn absent_binding_skips_source_but_selected_source_failures_write_nothing() {
     let mut input = inputs(repo.path());
     let (text, report) = generate(&input);
     assert_eq!(report.outcome().code(), 1);
-    assert_eq!(report.documents[0].gaps[0].gap_kind, GapKind::NoClauseBinding);
+    assert_eq!(
+        report.documents[0].gaps[0].gap_kind,
+        GapKind::NoClauseBinding
+    );
     assert!(!text.contains("as_of:"));
     assert!(!text.contains("As of:"));
     let out = repo.path().join("never-written");
     input.soup_binding = Some(repo.path().join("missing-binding"));
-    let error = quoin_dossier::generate(&registry(), &["soup".to_owned()], &out, &input).unwrap_err();
+    let error =
+        quoin_dossier::generate(&registry(), &["soup".to_owned()], &out, &input).unwrap_err();
     assert_eq!(error.outcome().code(), 2);
     assert!(!out.exists());
     input.as_of = Some(AS_OF.to_owned());
     record(repo.path(), "one", "serves: []");
-    let error = quoin_dossier::generate(&registry(), &["soup".to_owned()], &out, &input).unwrap_err();
+    let error =
+        quoin_dossier::generate(&registry(), &["soup".to_owned()], &out, &input).unwrap_err();
     assert_eq!(error.outcome().code(), 3);
     assert_eq!(error.source_failure().unwrap().source, "quoin soup report");
-    assert!(error.source_failure().unwrap().detail.contains("missing-binding"));
+    assert!(
+        error
+            .source_failure()
+            .unwrap()
+            .detail
+            .contains("missing-binding")
+    );
     assert!(!out.exists());
     input.soup_binding = Some(binding(repo.path()));
-    fs::write(repo.path().join("spec/soup/one.md"), "---\ntype: soup_record\npurl: pkg:cargo/one@1\nversion: 42\n---\n").unwrap();
-    let error = quoin_dossier::generate(&registry(), &["soup".to_owned()], &out, &input).unwrap_err();
+    fs::write(
+        repo.path().join("spec/soup/one.md"),
+        "---\ntype: soup_record\npurl: pkg:cargo/one@1\nversion: 42\n---\n",
+    )
+    .unwrap();
+    let error =
+        quoin_dossier::generate(&registry(), &["soup".to_owned()], &out, &input).unwrap_err();
     assert_eq!(error.outcome().code(), 3);
     assert!(error.source_failure().unwrap().detail.contains("version"));
     assert!(!out.exists());
 }
 
 fn tool(name: &str, arguments: &[&str], work: &Path) -> String {
-    let output = std::process::Command::new(name).args(arguments).current_dir(work).output().unwrap();
+    let output = std::process::Command::new(name)
+        .args(arguments)
+        .current_dir(work)
+        .output()
+        .unwrap();
     assert!(output.status.success(), "{name} {arguments:?}: {output:?}");
     String::from_utf8(output.stdout).unwrap()
 }
@@ -188,7 +312,11 @@ fn tool(name: &str, arguments: &[&str], work: &Path) -> String {
 #[test]
 #[ignore = "needs quire, pandoc, typst, pdftotext and SPEC_ARTIFACTS_PROCESS_DIR; run with -- --ignored"]
 fn real_quire_validates_both_soup_forms_and_exports_the_list() {
-    let module = fs::canonicalize(std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").expect("set SPEC_ARTIFACTS_PROCESS_DIR to the installed spec_artifacts_process module")).unwrap();
+    let module =
+        fs::canonicalize(std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").expect(
+            "set SPEC_ARTIFACTS_PROCESS_DIR to the installed spec_artifacts_process module",
+        ))
+        .unwrap();
     let (repo, input) = fixture();
     let (expected, _) = generate(&input);
     let source_path = repo.path().join("dossier/DOS-SOUP.md");
@@ -196,17 +324,51 @@ fn real_quire_validates_both_soup_forms_and_exports_the_list() {
     let gaps_out = repo.path().join("gaps");
     quoin_dossier::generate(&registry(), &["soup".to_owned()], &gaps_out, &gap_input).unwrap();
     for path in [&source_path, &gaps_out.join("DOS-SOUP.md")] {
-        tool("quire", &["validate", "--module", module.to_str().unwrap(), path.to_str().unwrap()], repo.path());
+        tool(
+            "quire",
+            &[
+                "validate",
+                "--module",
+                module.to_str().unwrap(),
+                path.to_str().unwrap(),
+            ],
+            repo.path(),
+        );
     }
     tool("git", &["init", "-q"], repo.path());
-    tool("git", &["config", "user.email", "t@example.com"], repo.path());
+    tool(
+        "git",
+        &["config", "user.email", "t@example.com"],
+        repo.path(),
+    );
     tool("git", &["config", "user.name", "t"], repo.path());
     tool("git", &["add", "-A"], repo.path());
-    tool("git", &["commit", "-q", "-m", "generated SOUP list"], repo.path());
+    tool(
+        "git",
+        &["commit", "-q", "-m", "generated SOUP list"],
+        repo.path(),
+    );
     let pdf = repo.path().join("soup.pdf");
-    tool("quire", &["export", source_path.to_str().unwrap(), "--module", module.to_str().unwrap(), "--to", "pdf", "--output", pdf.to_str().unwrap()], repo.path());
+    tool(
+        "quire",
+        &[
+            "export",
+            source_path.to_str().unwrap(),
+            "--module",
+            module.to_str().unwrap(),
+            "--to",
+            "pdf",
+            "--output",
+            pdf.to_str().unwrap(),
+        ],
+        repo.path(),
+    );
     let exported = tool("pdftotext", &[pdf.to_str().unwrap(), "-"], repo.path());
-    for component in ["pkg:cargo/unresolved@1.0.0", "pkg:cargo/old@1.0.0", "pkg:cargo/clean@1.0.0"] {
+    for component in [
+        "pkg:cargo/unresolved@1.0.0",
+        "pkg:cargo/old@1.0.0",
+        "pkg:cargo/clean@1.0.0",
+    ] {
         assert!(exported.contains(component), "{component} absent from PDF");
     }
     assert!(exported.contains("unresolved"));

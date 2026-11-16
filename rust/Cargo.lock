@@ -3317,6 +3317,7 @@ dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
  "quoin-assurance",
+ "quoin-core",
  "quoin-evidence",
  "quoin-quire",
  "quoin-quire-types",
@@ -3536,6 +3537,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror",
  "time",
 ]
 

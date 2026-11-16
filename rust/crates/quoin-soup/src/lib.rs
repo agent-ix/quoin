@@ -5,7 +5,10 @@
 
 mod soup;
 
-pub use soup::report::snapshot::{Disagreement, Group, NotAssessed, Origin, Resolved, SoupFailure, SoupInputs, SoupRow, SoupSection, soup_section};
+pub use soup::report::snapshot::{
+    Disagreement, Group, NotAssessed, Origin, Resolved, SoupFailure, SoupInputs, SoupRow,
+    SoupSection, soup_section,
+};
 pub use soup::{ABOUT, command, run};
 
 pub use soup::report::{DossierRow, DossierSource, dossier_source};
