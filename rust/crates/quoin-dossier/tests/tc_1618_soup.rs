@@ -39,11 +39,19 @@ fn source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, SourceFailure> {
 
 fn registry() -> quoin_dossier::Registry {
     quoin_dossier::builtin_registry(quoin_dossier::Sources {
-        matrix: |_| panic!("unexpected matrix source"),
+        matrix: std::sync::Arc::new(NoMatrix),
         rmm: |_| panic!("unexpected discharge source"),
         soup: source,
     })
     .unwrap()
+}
+
+struct NoMatrix;
+
+impl quoin_dossier::MatrixSource for NoMatrix {
+    fn matrix(&self, _: &Inputs) -> Result<quoin_assurance::matrix::MatrixOutput, SourceFailure> {
+        panic!("unexpected matrix source")
+    }
 }
 
 fn inputs(repo: &Path) -> Inputs {
