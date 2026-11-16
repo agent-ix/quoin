@@ -135,6 +135,7 @@ pub fn command() -> Command {
 }
 
 /// Run the selected SOUP command using the host runtime configuration.
+/// Matches are parsed by [`command`].
 ///
 /// # Errors
 /// Returns operational failures; domain refusals retain their coded response.

@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 
 const AS_OF: &str = "2026-08-15T00:00:00Z";
 
-fn source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, SourceFailure> {
+fn raw_source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, quoin_soup::SoupError> {
     quoin_soup::dossier_source(
         &inputs.scope,
         inputs.soup_records.as_deref(),
@@ -31,7 +31,10 @@ fn source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, SourceFailure> {
         inputs.soup_support.as_deref(),
         &quoin_core::runtime::RuntimeSettings::default(),
     )
-    .map_err(|error| SourceFailure {
+}
+
+fn source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, SourceFailure> {
+    raw_source(inputs).map_err(|error| SourceFailure {
         source: "quoin soup report".to_owned(),
         detail: error.message().to_owned(),
     })
@@ -294,6 +297,7 @@ fn absent_binding_skips_source_but_selected_source_failures_write_nothing() {
     assert!(!out.exists());
     input.as_of = Some(AS_OF.to_owned());
     record(repo.path(), "one", "serves: []");
+    assert_eq!(raw_source(&input).unwrap_err().code(), quoin_soup::SoupErrorCode::Operational);
     let error =
         quoin_dossier::generate(&registry(), &["soup".to_owned()], &out, &input).unwrap_err();
     assert_eq!(error.outcome().code(), 3);
@@ -317,6 +321,10 @@ fn absent_binding_skips_source_but_selected_source_failures_write_nothing() {
     assert_eq!(error.outcome().code(), 3);
     assert!(error.source_failure().unwrap().detail.contains("version"));
     assert!(!out.exists());
+    let source_error = raw_source(&input).unwrap_err();
+    assert_eq!(source_error.code(), quoin_soup::SoupErrorCode::SourceRefused);
+    assert_eq!(source_error.source_diagnostics()[0].code, "soup.record_field_invalid");
+    assert_eq!(source_error.source_diagnostics()[0].context["field"], "version");
 }
 
 fn tool(name: &str, arguments: &[&str], work: &Path) -> String {
