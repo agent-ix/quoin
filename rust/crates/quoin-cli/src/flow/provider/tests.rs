@@ -132,6 +132,34 @@ fn formalization_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
 }
 
 #[cfg(unix)]
+fn approval_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
+    let (directory, mut request, context) = formalization_fixture();
+    request.engineering_assurance = Some("/tmp/engineering-assurance".to_owned());
+    request.allowed_signers = Some("/tmp/allowed-signers".to_owned());
+    request.gitsign = Some(json!({
+        "certificate_identity": "identity",
+        "certificate_oidc_issuer": "issuer",
+        "principal": "alice"
+    }));
+    request.drafted_symbols = vec!["qsl:qsl/rule.native::Rule".to_owned()];
+    (directory, request, context)
+}
+
+#[cfg(unix)]
+fn status_for_rule(directory: &Path, state: &str, reason: Option<&str>) -> PathBuf {
+    let mut rule = json!({
+        "symbol": "qsl:qsl/rule.native::Rule",
+        "state": state
+    });
+    if let Some(reason) = reason {
+        rule["reason"] = json!(reason);
+    }
+    let report = json!({"protocol": "quoin.formal-rule-status/v1", "rules": [rule]});
+    let body = format!("printf '%s\\n' '{report}'");
+    executable(directory, "quoin-status", &body)
+}
+
+#[cfg(unix)]
 #[trace("FR-189-AC-15")]
 #[test]
 fn formal_rule_approval_rejects_invalid_trust_before_status_or_verifier_invocation() {
@@ -244,6 +272,41 @@ fn formal_rule_approval_passes_only_for_a_nonempty_fully_approved_drafted_set() 
     request.drafted_symbols.clear();
     let failure = formal_rule_approved_with_binary(&request, &context, &status)
         .expect_err("empty drafted set is never approved");
+    assert_eq!(failure.code.to_string(), "approval_commit_missing");
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-4")]
+#[test]
+fn formal_rule_approval_fails_for_acknowledged_gate_without_approval_commit() {
+    let (directory, request, context) = approval_fixture();
+    let status = status_for_rule(directory.path(), "draft", Some("no_approval"));
+
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("an acknowledged gate does not replace a signed approval commit");
+    assert_eq!(failure.code.to_string(), "approval_commit_missing");
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-5")]
+#[test]
+fn formal_rule_approval_passes_for_a_drafted_symbol_reported_approved() {
+    let (directory, request, context) = approval_fixture();
+    let status = status_for_rule(directory.path(), "approved", None);
+
+    formal_rule_approved_with_binary(&request, &context, &status)
+        .expect("an approved status passes for the drafted symbol");
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-8")]
+#[test]
+fn formal_rule_approval_fails_for_untrusted_signed_rule() {
+    let (directory, request, context) = approval_fixture();
+    let status = status_for_rule(directory.path(), "draft", Some("approval_untrusted"));
+
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("an untrusted signature does not approve the drafted symbol");
     assert_eq!(failure.code.to_string(), "approval_commit_missing");
 }
 

@@ -988,6 +988,10 @@ mod tests {
         );
         let error = verify(&refusal, &allowed, repo, "HEAD", None)
             .expect_err("allowed-signers refusal is not a report");
+        assert!(
+            matches!(&error, super::StatusError::Invalid(_)),
+            "allowed-signers refusal must retain its dedicated error class"
+        );
         let shell = status_shell_error(error);
         assert_eq!(shell.exit, 2);
         assert!(
