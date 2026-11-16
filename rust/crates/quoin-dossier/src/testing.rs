@@ -93,7 +93,21 @@ pub(crate) fn names(dir: &Path) -> Vec<String> {
 /// Sources that must not be reached by registry and unrelated document tests.
 pub(crate) fn sources() -> crate::Sources {
     crate::Sources {
-        matrix: |_| panic!("unexpected matrix source"),
+        matrix: std::sync::Arc::new(NoMatrix),
         rmm: |_| panic!("unexpected discharge source"),
+    }
+}
+
+struct NoMatrix;
+
+impl crate::MatrixSource for NoMatrix {
+    fn matrix(
+        &self,
+        _inputs: &Inputs,
+    ) -> Result<quoin_assurance::matrix::MatrixOutput, SourceFailure> {
+        Err(SourceFailure {
+            source: "matrix".to_owned(),
+            detail: "not used by these tests".to_owned(),
+        })
     }
 }

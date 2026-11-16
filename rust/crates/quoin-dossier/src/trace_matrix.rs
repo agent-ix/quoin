@@ -4,6 +4,7 @@
 //! The evidence-backed dossier trace matrix (FR-194).
 
 use std::fmt::Write as _;
+use std::sync::Arc;
 
 use quoin_assurance::matrix::{EvidenceStatus, MatrixOutput, design_cell};
 use quoin_quire::records::Document;
@@ -11,11 +12,11 @@ use quoin_quire::records::Document;
 use crate::markdown::{cell, line, prose, unusable_input};
 use crate::order::dossier_cmp;
 use crate::srs::{criteria_of, criticality_of};
-use crate::{DocumentSpec, Gap, GapKind, Generated, Generator, Inputs, SourceFailure};
+use crate::{
+    DocumentSpec, Gap, GapKind, Generated, Generator, Inputs, MatrixSource, SourceFailure,
+};
 
-pub(crate) struct TraceMatrixGenerator(
-    pub(crate) fn(&Inputs) -> Result<MatrixOutput, SourceFailure>,
-);
+pub(crate) struct TraceMatrixGenerator(pub(crate) Arc<dyn MatrixSource>);
 
 impl Generator for TraceMatrixGenerator {
     fn spec(&self) -> DocumentSpec {
@@ -28,7 +29,7 @@ impl Generator for TraceMatrixGenerator {
     }
 
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
-        let matrix = (self.0)(inputs)?;
+        let matrix = self.0.matrix(inputs)?;
         let modules = inputs
             .modules
             .iter()

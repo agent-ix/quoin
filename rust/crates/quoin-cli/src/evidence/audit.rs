@@ -87,8 +87,9 @@ impl AuditOptions {
         }
     }
 
-    /// Audit with module roots and the default policy.
-    pub(crate) fn with_modules(modules: Vec<String>) -> Self {
+    /// Options naming only the module roots, as a caller without the flag
+    /// grammar supplies them.
+    pub(crate) fn for_modules(modules: Vec<String>) -> Self {
         Self {
             modules,
             ..Self::default()

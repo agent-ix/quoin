@@ -6,7 +6,7 @@
 //! frontmatter and `Gaps` writer, `generate` / `check`, and the export
 //! hand-off to `quire export`.
 //!
-//! The SRS, architecture, trace matrix and RMM generators register in
+//! The SRS, architecture, trace matrix, RMM and verification report register in
 //! [`builtin_registry`] in fixed bundle order. The host supplies the matrix
 //! and discharge source adapters so their evidence assembly stays shared.
 
@@ -27,6 +27,7 @@ mod stub;
 #[cfg(test)]
 mod testing;
 mod trace_matrix;
+mod verification_report;
 mod writer;
 
 pub use engine::{check, generate};
@@ -35,7 +36,7 @@ pub use export::{ExportOptions, export};
 pub use gap::{Gap, GapKind};
 pub use registry::{DocumentSpec, Generated, Generator, Inputs, Registry};
 pub use report::{Comparison, DocumentReport, Report, Status};
-pub use sources::{RmmSource, Sources};
+pub use sources::{MatrixSource, RmmSource, Sources};
 
 /// The registry `quoin dossier` runs against.
 ///
@@ -66,8 +67,13 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
     let generators: Vec<Box<dyn Generator>> = vec![
         Box::new(srs::SrsGenerator),
         Box::new(architecture::ArchitectureGenerator),
-        Box::new(trace_matrix::TraceMatrixGenerator(sources.matrix)),
+        Box::new(trace_matrix::TraceMatrixGenerator(std::sync::Arc::clone(
+            &sources.matrix,
+        ))),
         Box::new(rmm::RmmGenerator(sources.rmm)),
+        Box::new(verification_report::VerificationReportGenerator::new(
+            sources.matrix,
+        )),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -112,15 +118,24 @@ mod tests {
         );
     }
 
-    /// All four M1 documents register in bundle order.
+    /// The M1 documents precede the verification report in bundle order.
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_holds_the_four_documents() {
+    fn the_shipped_registry_holds_m1_and_verification_report() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 4);
+        assert_eq!(registry.specs().count(), 5);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
-        assert_eq!(kinds, vec!["srs", "architecture", "trace-matrix", "rmm"]);
+        assert_eq!(
+            kinds,
+            vec![
+                "srs",
+                "architecture",
+                "trace-matrix",
+                "rmm",
+                "verification-report"
+            ]
+        );
     }
 
     #[cfg(feature = "test-stubs")]
@@ -132,7 +147,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            9
+            10
         );
     }
 }

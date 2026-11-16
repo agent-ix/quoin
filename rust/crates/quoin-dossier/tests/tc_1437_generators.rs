@@ -231,8 +231,22 @@ fn a_malformed_file_in_scope_fails_the_source_instead_of_vanishing() {
 
 fn registry() -> quoin_dossier::Registry {
     quoin_dossier::builtin_registry(quoin_dossier::Sources {
-        matrix: |_| panic!("unexpected matrix source"),
+        matrix: std::sync::Arc::new(NoMatrix),
         rmm: |_| panic!("unexpected discharge source"),
     })
     .unwrap()
+}
+
+struct NoMatrix;
+
+impl quoin_dossier::MatrixSource for NoMatrix {
+    fn matrix(
+        &self,
+        _inputs: &Inputs,
+    ) -> Result<quoin_assurance::matrix::MatrixOutput, quoin_dossier::SourceFailure> {
+        Err(quoin_dossier::SourceFailure {
+            source: "matrix".to_owned(),
+            detail: "not used by these documents".to_owned(),
+        })
+    }
 }

@@ -81,7 +81,32 @@ fn matrix() -> MatrixOutput {
 }
 
 fn registry() -> quoin_dossier::Registry {
-    builtin_registry(Arc::new(Fixed(matrix()))).unwrap()
+    builtin_registry(sources(matrix())).unwrap()
+}
+
+#[trace("FR-191", "FR-194-AC-5", "FR-196-AC-1")]
+#[test]
+fn all_registered_documents_keep_bundle_order_and_share_the_matrix_source() {
+    let out = tempfile::tempdir().unwrap();
+    let report = generate(&registry(), &[], out.path(), &inputs()).unwrap();
+    assert_eq!(
+        report
+            .documents
+            .iter()
+            .map(|document| document.id.as_str())
+            .collect::<Vec<_>>(),
+        ["DOS-SRS", "DOS-ARCH", "DOS-TRACE", "DOS-RMM", "DOS-VR"]
+    );
+    for name in ["DOS-TRACE.md", "DOS-VR.md"] {
+        let text = fs::read_to_string(out.path().join(name)).unwrap();
+        for (id, status) in [("FR-001-AC-1", "bound"), ("FR-001-AC-2", "stale")] {
+            let row = text
+                .lines()
+                .find(|row| row.starts_with(&format!("| {id} |")))
+                .unwrap();
+            assert!(row.ends_with(&format!("| {status} |")), "{name}: {row}");
+        }
+    }
 }
 
 fn kinds() -> [String; 1] {
@@ -140,7 +165,7 @@ fn a_stale_suite_without_a_traced_or_retained_binder_is_unbacked() {
     criterion.evidence_detail.bindings = vec![BindingDetail {
         suite: "old-suite".to_owned(),
     }];
-    let registry = builtin_registry(Arc::new(Fixed(source))).unwrap();
+    let registry = builtin_registry(sources(source)).unwrap();
     let out = tempfile::tempdir().unwrap();
     let report = generate(&registry, &kinds(), out.path(), &inputs()).unwrap();
     let text = fs::read_to_string(out.path().join("DOS-VR.md")).unwrap();
@@ -232,4 +257,11 @@ fn the_generated_report_validates_and_exports_to_pdf() {
         text.contains("FR-001-AC-2"),
         "the report row is not in the PDF"
     );
+}
+
+fn sources(matrix: MatrixOutput) -> quoin_dossier::Sources {
+    quoin_dossier::Sources {
+        matrix: Arc::new(Fixed(matrix)),
+        rmm: |_| panic!("unexpected discharge source"),
+    }
 }
