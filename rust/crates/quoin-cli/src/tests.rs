@@ -62,6 +62,8 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin evidence record-operational",
     "quoin evidence trust",
     "quoin formalize",
+    "quoin formal-rules",
+    "quoin formal-rules status",
     "quoin graph",
     "quoin graph change-impact",
     "quoin graph fan-out",
@@ -346,7 +348,7 @@ fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
     assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
     assert_eq!(
         error.message,
-        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, formalize, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, formalize, formal-rules, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     );
 }
 
