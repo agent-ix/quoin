@@ -78,12 +78,12 @@ fn read_verify(path: &std::path::Path) -> Result<Value, SourceFailure> {
         });
     }
     let valid_string = |key: &str| object.get(key).is_some_and(Value::is_string);
-    let valid_strings = |key: &str| {
-        object
-            .get(key)
-            .and_then(Value::as_array)
+    let string_array = |value: &Value| {
+        value
+            .as_array()
             .is_some_and(|values| values.iter().all(Value::is_string))
     };
+    let valid_strings = |key: &str| object.get(key).is_some_and(string_array);
     let valid_nested_strings = |key: &str, members: &[&str]| {
         object
             .get(key)
@@ -112,7 +112,7 @@ fn read_verify(path: &std::path::Path) -> Result<Value, SourceFailure> {
                 && valid_strings("meaning")
                 && valid_string("signed_at")
                 && valid_string("signed_at_source")
-                && object.get("accepted_anomalies").is_none_or(valid_strings)
+                && object.get("accepted_anomalies").is_none_or(string_array)
         }
         Some("not_released") => {
             valid_string("tag") && object.get("reasons").and_then(Value::as_array).is_some()
