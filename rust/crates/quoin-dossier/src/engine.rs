@@ -96,7 +96,12 @@ pub(crate) fn render(
         && let Some(needy) = selected
             .iter()
             .map(|generator| generator.spec())
-            .find(|spec| spec.needs_as_of)
+            .find(|spec| {
+                spec.needs_as_of
+                    && (spec.kind != "rmm"
+                        || !inputs.clause_bindings.is_empty()
+                        || inputs.pack.is_some())
+            })
     {
         return Err(DossierError::new(
             DossierErrorCode::AsOfRequired,

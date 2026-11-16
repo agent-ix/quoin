@@ -89,3 +89,11 @@ pub(crate) fn names(dir: &Path) -> Vec<String> {
     names.sort();
     names
 }
+
+/// Sources that must not be reached by registry and unrelated document tests.
+pub(crate) fn sources() -> crate::Sources {
+    crate::Sources {
+        matrix: |_| panic!("unexpected matrix source"),
+        rmm: |_| panic!("unexpected discharge source"),
+    }
+}

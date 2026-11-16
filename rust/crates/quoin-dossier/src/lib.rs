@@ -19,15 +19,15 @@ mod markdown;
 mod order;
 mod registry;
 mod report;
+mod rmm;
+mod sources;
 mod srs;
 #[cfg(feature = "test-stubs")]
 mod stub;
 #[cfg(test)]
 mod testing;
-mod verification_report;
+mod trace_matrix;
 mod writer;
-
-use std::sync::Arc;
 
 pub use engine::{check, generate};
 pub use error::{DossierError, DossierErrorCode, QuireFailure, SourceFailure};
@@ -35,7 +35,7 @@ pub use export::{ExportOptions, export};
 pub use gap::{Gap, GapKind};
 pub use registry::{DocumentSpec, Generated, Generator, Inputs, Registry};
 pub use report::{Comparison, DocumentReport, Report, Status};
-pub use verification_report::MatrixSource;
+pub use sources::{RmmSource, Sources};
 
 /// The registry `quoin dossier` runs against.
 ///
@@ -43,8 +43,8 @@ pub use verification_report::MatrixSource;
 ///
 /// Returns [`DossierErrorCode::RegistryConflict`] when two generators claim one
 /// kind or one id, so a generator added later is never dropped silently.
-pub fn builtin_registry(matrix: Arc<dyn MatrixSource>) -> Result<Registry, DossierError> {
-    registry_of(builtin_generators(matrix))
+pub fn builtin_registry(sources: Sources) -> Result<Registry, DossierError> {
+    registry_of(builtin_generators(sources))
 }
 
 /// A registry holding `generators` in the order given.
@@ -64,13 +64,12 @@ pub fn registry_of(generators: Vec<Box<dyn Generator>>) -> Result<Registry, Doss
 /// Every generator this build ships, in bundle order. The real generators are
 /// pushed here by the tickets that own their content; under the `test-stubs`
 /// feature the stubs follow.
-fn builtin_generators(matrix: Arc<dyn MatrixSource>) -> Vec<Box<dyn Generator>> {
+fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
     let mut generators: Vec<Box<dyn Generator>> = Vec::new();
     generators.push(Box::new(srs::SrsGenerator));
     generators.push(Box::new(architecture::ArchitectureGenerator));
-    generators.push(Box::new(
-        verification_report::VerificationReportGenerator::new(matrix),
-    ));
+    generators.push(Box::new(trace_matrix::TraceMatrixGenerator(sources.matrix)));
+    generators.push(Box::new(rmm::RmmGenerator(sources.rmm)));
     #[cfg(feature = "test-stubs")]
     generators.extend(stub::stubs());
     generators
@@ -86,7 +85,6 @@ fn builtin_generators(matrix: Arc<dyn MatrixSource>) -> Vec<Box<dyn Generator>> 
 )]
 mod tests {
     use super::*;
-    use crate::error::SourceFailure;
     use crate::testing::doc;
     use ix_trace_rs::trace;
 
@@ -111,29 +109,16 @@ mod tests {
         );
     }
 
-    struct NoMatrix;
-
-    impl MatrixSource for NoMatrix {
-        fn matrix(
-            &self,
-            _inputs: &Inputs,
-        ) -> Result<quoin_assurance::matrix::MatrixOutput, SourceFailure> {
-            Err(SourceFailure {
-                source: "matrix".to_owned(),
-                detail: "no matrix in this test".to_owned(),
-            })
-        }
-    }
-
-    /// The shipped registry holds the SRS, architecture and verification report.
+    /// PLAT-1437 registers the SRS and architecture generators; the shipped
+    /// registry now has 2 real generators.
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_holds_srs_architecture_and_verification_report() {
-        let registry = builtin_registry(Arc::new(NoMatrix)).unwrap();
-        assert_eq!(registry.specs().count(), 3);
+    fn the_shipped_registry_holds_the_four_documents() {
+        let registry = builtin_registry(crate::testing::sources()).unwrap();
+        assert_eq!(registry.specs().count(), 4);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
-        assert_eq!(kinds, vec!["srs", "architecture", "verification-report"]);
+        assert_eq!(kinds, vec!["srs", "architecture", "trace-matrix", "rmm"]);
     }
 
     #[cfg(feature = "test-stubs")]
@@ -141,11 +126,11 @@ mod tests {
     #[test]
     fn the_shipped_stubs_do_not_collide() {
         assert_eq!(
-            builtin_registry(Arc::new(NoMatrix))
+            builtin_registry(crate::testing::sources())
                 .unwrap()
                 .specs()
                 .count(),
-            8
+            9
         );
     }
 }

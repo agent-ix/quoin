@@ -23,7 +23,7 @@ use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixUnbackedClaim, Targe
 use serde::{Deserialize, Serialize};
 
 mod render;
-pub use self::render::render_markdown;
+pub use self::render::{design_cell, render_markdown};
 
 /// The `matrix.build` request: the three inputs, supplied whole.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
