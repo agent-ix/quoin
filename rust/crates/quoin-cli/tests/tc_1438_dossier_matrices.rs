@@ -34,7 +34,7 @@ fn fixture() -> PathBuf {
 }
 
 fn payload(output: &Output) -> Value {
-    serde_json::from_slice(&output.stdout).unwrap_or_else(|error| panic!("{error}: {:?}", output))
+    serde_json::from_slice(&output.stdout).unwrap_or_else(|error| panic!("{error}: {output:?}"))
 }
 
 fn binding(work: &Path) -> PathBuf {
@@ -282,25 +282,63 @@ fn a_restricted_pack_uses_index_order_and_never_renders_clause_text() {
     let repo = work.path().join("repo");
     pack_support::git_init(&repo);
     let module = pack_support::write_module(work.path(), "dossier-pack", "licensed");
-    fs::write(module.join("manifest.yaml"), "name: dossier-pack\nversion: 0.1.0\nclause_sets:\n  - z.yaml\n  - a.yaml\n").unwrap();
+    fs::write(
+        module.join("manifest.yaml"),
+        "name: dossier-pack\nversion: 0.1.0\nclause_sets:\n  - z.yaml\n  - a.yaml\n",
+    )
+    .unwrap();
     for id in ["z", "a"] {
-        fs::write(module.join(format!("{id}.yaml")), pack_support::clause_set_yaml(id, "licensed")).unwrap();
+        fs::write(
+            module.join(format!("{id}.yaml")),
+            pack_support::clause_set_yaml(id, "licensed"),
+        )
+        .unwrap();
     }
     let run = |args: &[&str]| pack_support::quoin(&home, &repo, args, &[]);
     let install = run(&["module", "install", &format!("path:{}", module.display())]);
     assert!(install.status.success(), "{install:?}");
-    let source = run(&["discharge", "--rmm", "--pack", "dossier-pack", "--repo", ".", "--as-of", "2026-11-15T00:00:00Z", "--json"]);
+    let source = run(&[
+        "discharge",
+        "--rmm",
+        "--pack",
+        "dossier-pack",
+        "--repo",
+        ".",
+        "--as-of",
+        "2026-11-15T00:00:00Z",
+        "--json",
+    ]);
     assert!(source.status.success(), "{source:?}");
     let source = payload(&source);
-    let output = run(&["dossier", "generate", "--doc", "rmm", "--version", "1", "--pack", "dossier-pack", "--as-of", "2026-11-15T00:00:00Z", "--json"]);
+    let output = run(&[
+        "dossier",
+        "generate",
+        "--doc",
+        "rmm",
+        "--version",
+        "1",
+        "--pack",
+        "dossier-pack",
+        "--as-of",
+        "2026-11-15T00:00:00Z",
+        "--json",
+    ]);
     assert_eq!(output.status.code(), Some(1), "{output:?}");
     let text = fs::read_to_string(repo.join("dossier/DOS-RMM.md")).unwrap();
-    assert!(!text.contains(pack_support::SENTINEL), "licensed text leaked");
+    assert!(
+        !text.contains(pack_support::SENTINEL),
+        "licensed text leaked"
+    );
     assert!(!text.contains("Synthetic set"), "clause-set title leaked");
     let mut previous = text.find("## Index").unwrap();
     for entry in source["index"].as_array().unwrap() {
         let key = &entry["clauseSet"];
-        let heading = format!("## {}/{}@{}", key["authority"].as_str().unwrap(), key["id"].as_str().unwrap(), key["version"].as_str().unwrap());
+        let heading = format!(
+            "## {}/{}@{}",
+            key["authority"].as_str().unwrap(),
+            key["id"].as_str().unwrap(),
+            key["version"].as_str().unwrap()
+        );
         let next = text.find(&heading).unwrap();
         assert!(previous < next);
         previous = next;
@@ -313,24 +351,76 @@ fn a_restricted_pack_uses_index_order_and_never_renders_clause_text() {
 #[test]
 #[ignore = "needs quire, pandoc, typst and SPEC_ARTIFACTS_PROCESS_DIR; run with -- --ignored"]
 fn generated_matrix_documents_validate_and_export_to_pdf_and_docx() {
-    let module = fs::canonicalize(std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").expect("set SPEC_ARTIFACTS_PROCESS_DIR")).unwrap();
+    let module = fs::canonicalize(
+        std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").expect("set SPEC_ARTIFACTS_PROCESS_DIR"),
+    )
+    .unwrap();
     let work = tempfile::tempdir().unwrap();
     let repo = work.path();
     let fixture = fixture();
     let source = fixture.to_str().unwrap();
     let binding = binding(repo);
-    let output = quoin(repo, &["dossier", "generate", "--doc", "trace-matrix", "--doc", "rmm", "--version", "1", "--scope", source, "--module", source, "--clause-binding", binding.to_str().unwrap(), "--as-of", "2026-11-15T00:00:00Z"]);
+    let output = quoin(
+        repo,
+        &[
+            "dossier",
+            "generate",
+            "--doc",
+            "trace-matrix",
+            "--doc",
+            "rmm",
+            "--version",
+            "1",
+            "--scope",
+            source,
+            "--module",
+            source,
+            "--clause-binding",
+            binding.to_str().unwrap(),
+            "--as-of",
+            "2026-11-15T00:00:00Z",
+        ],
+    );
     assert_eq!(output.status.code(), Some(1), "{output:?}");
-    for args in [&["init", "-q"][..], &["config", "user.email", "t@example.invalid"], &["config", "user.name", "test"], &["add", "."], &["commit", "-q", "-m", "generated documents"]] {
-        assert!(Command::new("git").args(args).current_dir(repo).status().unwrap().success());
+    for args in [
+        &["init", "-q"][..],
+        &["config", "user.email", "t@example.invalid"],
+        &["config", "user.name", "test"],
+        &["add", "."],
+        &["commit", "-q", "-m", "generated documents"],
+    ] {
+        assert!(
+            Command::new("git")
+                .args(args)
+                .current_dir(repo)
+                .status()
+                .unwrap()
+                .success()
+        );
     }
     for name in ["DOS-TRACE", "DOS-RMM"] {
         let path = repo.join(format!("dossier/{name}.md"));
-        let validation = Command::new("quire").arg("validate").arg(&path).arg("--module").arg(&module).current_dir(repo).output().unwrap();
+        let validation = Command::new("quire")
+            .arg("validate")
+            .arg(&path)
+            .arg("--module")
+            .arg(&module)
+            .current_dir(repo)
+            .output()
+            .unwrap();
         assert!(validation.status.success(), "{validation:?}");
         for format in ["pdf", "docx"] {
             let target = repo.join(format!("{name}.{format}"));
-            let exported = Command::new("quire").arg("export").arg(&path).arg("--module").arg(&module).args(["--to", format, "--output"]).arg(&target).current_dir(repo).output().unwrap();
+            let exported = Command::new("quire")
+                .arg("export")
+                .arg(&path)
+                .arg("--module")
+                .arg(&module)
+                .args(["--to", format, "--output"])
+                .arg(&target)
+                .current_dir(repo)
+                .output()
+                .unwrap();
             assert!(exported.status.success(), "{exported:?}");
             assert!(fs::metadata(target).unwrap().len() > 0);
         }

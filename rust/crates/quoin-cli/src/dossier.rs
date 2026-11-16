@@ -313,45 +313,6 @@ fn render_text(mode: Mode, report: &Report) -> String {
     lines.join("\n")
 }
 
-#[cfg(test)]
-#[allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::indexing_slicing,
-    clippy::panic,
-    reason = "in a test, a panic IS the failure report; the production lints stand"
-)]
-mod tests {
-    use super::*;
-    use ix_trace_rs::trace;
-    use quoin_dossier::DossierErrorCode;
-
-    #[trace("FR-191")]
-    #[test]
-    fn a_registry_that_cannot_be_built_is_exit_2_with_a_diagnostic_and_writes_nothing() {
-        let work = tempfile::tempdir().unwrap();
-        let out = work.path().join("dossier");
-        let matches = command()
-            .try_get_matches_from([
-                "dossier",
-                "generate",
-                "--version",
-                "1",
-                "--out",
-                out.to_str().unwrap(),
-            ])
-            .unwrap();
-        let conflict = DossierError::new(
-            DossierErrorCode::RegistryConflict,
-            "document srs (DOS-SRS) conflicts with registered srs (DOS-SRS)",
-        );
-        let response = run_with(Err(conflict), &matches).unwrap();
-        assert_eq!(response.outcome.code(), 2);
-        assert_eq!(response.diagnostics[0].code, "DOSSIER_REGISTRY_CONFLICT");
-        assert!(!out.exists());
-    }
-}
-
 /// Use the exact matrix assembly shared by `quoin matrix` and release snapshots.
 fn matrix_source(
     inputs: &Inputs,
@@ -438,4 +399,43 @@ fn rmm_source(inputs: &Inputs) -> Result<quoin_dossier::RmmSource, quoin_dossier
         source: "discharge".to_owned(),
         detail,
     })
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::*;
+    use ix_trace_rs::trace;
+    use quoin_dossier::DossierErrorCode;
+
+    #[trace("FR-191")]
+    #[test]
+    fn a_registry_that_cannot_be_built_is_exit_2_with_a_diagnostic_and_writes_nothing() {
+        let work = tempfile::tempdir().unwrap();
+        let out = work.path().join("dossier");
+        let matches = command()
+            .try_get_matches_from([
+                "dossier",
+                "generate",
+                "--version",
+                "1",
+                "--out",
+                out.to_str().unwrap(),
+            ])
+            .unwrap();
+        let conflict = DossierError::new(
+            DossierErrorCode::RegistryConflict,
+            "document srs (DOS-SRS) conflicts with registered srs (DOS-SRS)",
+        );
+        let response = run_with(Err(conflict), &matches).unwrap();
+        assert_eq!(response.outcome.code(), 2);
+        assert_eq!(response.diagnostics[0].code, "DOSSIER_REGISTRY_CONFLICT");
+        assert!(!out.exists());
+    }
 }

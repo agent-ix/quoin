@@ -39,7 +39,7 @@ impl Generator for RmmGenerator {
     }
 }
 
-fn failure(error: serde_json::Error) -> SourceFailure {
+fn failure(error: &serde_json::Error) -> SourceFailure {
     SourceFailure {
         source: "discharge".to_owned(),
         detail: error.to_string(),
@@ -62,7 +62,7 @@ fn table<T: Serialize>(
     let _ = writeln!(body, "| {} |", columns.join(" | "));
     let _ = writeln!(body, "| {} |", vec!["---"; columns.len()].join(" | "));
     for row in rows {
-        let row = serde_json::to_value(row).map_err(failure)?;
+        let row = serde_json::to_value(row).map_err(|error| failure(&error))?;
         let cells: Vec<_> = columns
             .iter()
             .map(|column| value_cell(row.get(*column).unwrap_or(&Value::Null)))
@@ -103,7 +103,8 @@ fn matrix(
             | RmmCompliance::AttestationNotCurrent
             | RmmCompliance::TemporaryExceptionExpired
             | RmmCompliance::Undetermined => {
-                let compliance = serde_json::to_value(row.compliance).map_err(failure)?;
+                let compliance =
+                    serde_json::to_value(row.compliance).map_err(|error| failure(&error))?;
                 let detail = format!(
                     "{}: {}",
                     compliance.as_str().unwrap_or_default(),

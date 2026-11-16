@@ -38,12 +38,13 @@ impl Generator for TraceMatrixGenerator {
                 source: "requirements".to_owned(),
                 detail: error.to_string(),
             })?;
-        let corpus = quoin_quire::records::read(
-            &inputs.scope,
-            &quoin_quire::ModuleSelection::Closed(modules),
-            &["FR", "NFR", "StR"],
-        )
-        .map_err(|error| SourceFailure {
+        let selection = if modules.is_empty() {
+            quoin_quire::ModuleSelection::ScopeOrAmbient
+        } else {
+            quoin_quire::ModuleSelection::Closed(modules)
+        };
+        let corpus = quoin_quire::records::read(&inputs.scope, &selection, &["FR", "NFR", "StR"])
+            .map_err(|error| SourceFailure {
             source: "requirements".to_owned(),
             detail: error.to_string(),
         })?;
@@ -204,7 +205,7 @@ mod tests {
             )]
             .into_iter()
             .collect(),
-            sections: Default::default(),
+            sections: std::collections::BTreeMap::default(),
             edges: vec![],
             raw: String::new(),
             contract: Contract::Satisfied,

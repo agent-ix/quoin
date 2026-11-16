@@ -63,13 +63,18 @@ pub fn registry_of(generators: Vec<Box<dyn Generator>>) -> Result<Registry, Doss
 
 /// Every generator this build ships, in bundle order; test stubs follow.
 fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
-    let mut generators: Vec<Box<dyn Generator>> = Vec::new();
-    generators.push(Box::new(srs::SrsGenerator));
-    generators.push(Box::new(architecture::ArchitectureGenerator));
-    generators.push(Box::new(trace_matrix::TraceMatrixGenerator(sources.matrix)));
-    generators.push(Box::new(rmm::RmmGenerator(sources.rmm)));
+    let generators: Vec<Box<dyn Generator>> = vec![
+        Box::new(srs::SrsGenerator),
+        Box::new(architecture::ArchitectureGenerator),
+        Box::new(trace_matrix::TraceMatrixGenerator(sources.matrix)),
+        Box::new(rmm::RmmGenerator(sources.rmm)),
+    ];
     #[cfg(feature = "test-stubs")]
-    generators.extend(stub::stubs());
+    let generators = {
+        let mut generators = generators;
+        generators.extend(stub::stubs());
+        generators
+    };
     generators
 }
 
