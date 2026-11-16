@@ -24,6 +24,10 @@ impl Generator for RmmGenerator {
         }
     }
 
+    fn requires_as_of(&self, inputs: &Inputs) -> bool {
+        !inputs.clause_bindings.is_empty() || inputs.pack.is_some()
+    }
+
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
         if inputs.clause_bindings.is_empty() && inputs.pack.is_none() {
             return Ok(Generated {

@@ -69,14 +69,13 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
             .unwrap_or("the matrix has no criteria");
         let _ = write!(body, "{}\n\n", prose(reason));
         gaps.push(Gap::new(GapKind::NoRequirements, "this document", reason));
-        return Generated { body, gaps };
     }
+    let criteria: Vec<_> = documents.iter().flat_map(criteria_of).collect();
     let mut requirements: Vec<_> = matrix.requirements.iter().collect();
     requirements.sort_by(|a, b| dossier_cmp(&a.id, &b.id));
     for requirement in requirements {
         let document = documents.iter().find(|doc| doc.id == requirement.id);
         let criticality = document.and_then(criticality_of);
-        let criteria = document.map(criteria_of).unwrap_or_default();
         let _ = write!(
             body,
             "## {}\n\nCriticality: {}\n\n",
@@ -106,6 +105,9 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
                 )
                 .for_requirement(&requirement.id),
             );
+        }
+        if requirement.criteria.is_empty() {
+            continue;
         }
         body.push_str("| Criterion | Statement | Design | Method | Static status | Evidence status |\n| --- | --- | --- | --- | --- | --- |\n");
         let mut rows: Vec<_> = requirement.criteria.iter().collect();
@@ -302,5 +304,42 @@ mod tests {
                 "no selected criteria"
             )]
         );
+    }
+
+    #[trace("FR-194-AC-1")]
+    #[test]
+    fn criterion_rows_use_dossier_order_within_their_requirement() {
+        let mut source = matrix();
+        let source_requirement = source
+            .requirements
+            .iter_mut()
+            .find(|row| row.id == "FR-2")
+            .unwrap();
+        let mut tenth = source_requirement.criteria[0].clone();
+        tenth.id = "FR-2-AC-10".to_owned();
+        let mut second = tenth.clone();
+        second.id = "FR-2-AC-2".to_owned();
+        source_requirement.criteria = vec![tenth, second];
+        let generated = render(&source, &[requirement("FR-2", Some("low"))]);
+        assert!(
+            generated.body.find("| FR-2-AC-2 |").unwrap()
+                < generated.body.find("| FR-2-AC-10 |").unwrap()
+        );
+    }
+
+    #[trace("FR-194-AC-5")]
+    #[test]
+    fn criterion_statements_join_by_criterion_id_across_source_documents() {
+        let mut document = requirement("FR-99", Some("low"));
+        document.tables.get_mut("Acceptance Criteria").unwrap().rows[0][0] = "FR-2-AC-1".to_owned();
+        let mut owner = requirement("FR-2", Some("high"));
+        owner.tables.clear();
+        let generated = render(&matrix(), &[document, owner]);
+        assert!(
+            generated
+                .body
+                .contains("| FR-2-AC-1 | statement \\| line \\`tick\\` | DE-1 (component) |")
+        );
+        assert!(generated.body.contains("Criticality: high"));
     }
 }

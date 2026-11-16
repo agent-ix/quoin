@@ -58,6 +58,12 @@ pub trait Generator: Send + Sync {
     /// Which document this generator writes.
     fn spec(&self) -> DocumentSpec;
 
+    /// Whether this run needs an explicit evaluation instant. A source-backed
+    /// document may have no source selected and report that absence as a gap.
+    fn requires_as_of(&self, _inputs: &Inputs) -> bool {
+        self.spec().needs_as_of
+    }
+
     /// Compute the document in memory.
     ///
     /// # Errors
