@@ -31,6 +31,10 @@ fn refuse(message: impl Into<String>) -> EvidenceError {
     EvidenceError::adapter("differential-report", message)
 }
 
+fn refuse_formal_selection(message: impl Into<String>) -> EvidenceError {
+    EvidenceError::adapter("formal-rule-selection", message)
+}
+
 /// Why a document the validator refused was refused, naming a wrong `schema`
 /// value when that is the cause so a v1, v3 or retired-schema document says so.
 fn refusal(raw: &str, validator_error: &str) -> EvidenceError {
@@ -102,26 +106,29 @@ pub fn parse_differential_report(raw: &str) -> Result<AdapterResult, EvidenceErr
 ///
 /// `formal_rule_selection` is required for `formal_rule` and forbidden for
 /// `analysis`; it is checked against the validated report before projection.
+///
+/// # Errors
+///
+/// Returns an adapter error when `run_kind` is unknown, its mapping is
+/// incompatible, or the differential report is invalid.
 pub fn parse_differential_report_for_run(
     raw: &str,
     run_kind: &str,
     formal_rule_selection: Option<&Value>,
 ) -> Result<AdapterResult, EvidenceError> {
-    if !matches!(run_kind, "analysis" | "formal_rule") {
-        return Err(refuse(format!("unsupported run_kind {run_kind:?}")));
-    }
-    match (run_kind, formal_rule_selection) {
-        ("analysis", Some(_)) => {
+    match (run_kind, formal_rule_selection.is_some()) {
+        ("analysis", true) => {
             return Err(refuse(
                 "formal_rule_selection must be absent for run_kind analysis",
             ));
         }
-        ("formal_rule", None) => {
+        ("analysis", false) | ("formal_rule", true) => {}
+        ("formal_rule", false) => {
             return Err(refuse(
                 "formal_rule_selection is required for run_kind formal_rule",
             ));
         }
-        _ => {}
+        _ => return Err(refuse(format!("unsupported run_kind {run_kind:?}"))),
     }
     parse_differential_report_inner(raw, Some((run_kind, formal_rule_selection)))
 }
@@ -130,44 +137,53 @@ pub fn parse_differential_report_for_run(
 /// `claim_symbols` comes from the package selection prepared for this run;
 /// status is accepted only from the matching FR-188 status report and only
 /// when every selected symbol is approved.
+///
+/// # Errors
+///
+/// Returns a stable adapter error when report selection, the claim-to-symbol
+/// map, or the FR-188 status report is absent, inconsistent, or not approved.
 pub fn build_approved_formal_rule_selection(
     report: &Value,
     claim_symbols: &BTreeMap<String, String>,
     status: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, EvidenceError> {
     if status.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1") {
-        return Err("formal-rule status report has an unsupported protocol".to_owned());
+        return Err(refuse_formal_selection(
+            "formal-rule status report has an unsupported protocol",
+        ));
     }
     let selected = report
         .get("selection")
         .and_then(|value| value.get("selected"))
         .and_then(Value::as_array)
-        .ok_or_else(|| "formal-rule report has no selected claim list".to_owned())?;
+        .ok_or_else(|| refuse_formal_selection("formal-rule report has no selected claim list"))?;
     let assertions = report
         .get("assertions")
         .and_then(Value::as_array)
-        .ok_or_else(|| "formal-rule report has no assertion list".to_owned())?;
+        .ok_or_else(|| refuse_formal_selection("formal-rule report has no assertion list"))?;
     let rules = status
         .get("rules")
         .and_then(Value::as_array)
-        .ok_or_else(|| "formal-rule status report has no rules list".to_owned())?;
+        .ok_or_else(|| refuse_formal_selection("formal-rule status report has no rules list"))?;
     let selected_ids = selected
         .iter()
         .map(|claim| {
             claim
                 .as_str()
-                .ok_or_else(|| "selected claim id is not a string".to_owned())
+                .ok_or_else(|| refuse_formal_selection("selected claim id is not a string"))
         })
         .collect::<Result<Vec<_>, _>>()?;
     let unique = selected_ids.iter().copied().collect::<BTreeSet<_>>();
     if unique.len() != selected_ids.len() || claim_symbols.len() != selected_ids.len() {
-        return Err("formal-rule claim mapping is duplicate or incomplete".to_owned());
+        return Err(refuse_formal_selection(
+            "formal-rule claim mapping is duplicate or incomplete",
+        ));
     }
     let mut claims = Vec::with_capacity(selected_ids.len());
     for claim_id in selected_ids {
-        let symbol = claim_symbols
-            .get(claim_id)
-            .ok_or_else(|| format!("formal-rule symbol is missing for {claim_id}"))?;
+        let symbol = claim_symbols.get(claim_id).ok_or_else(|| {
+            refuse_formal_selection(format!("formal-rule symbol is missing for {claim_id}"))
+        })?;
         let assertion = assertions
             .iter()
             .find(|item| {
@@ -177,21 +193,31 @@ pub fn build_approved_formal_rule_selection(
                         .and_then(Value::as_str)
                         .is_some_and(|clause| clause.ends_with(&format!(":{claim_id}")))
             })
-            .ok_or_else(|| format!("selected report claim {claim_id} has no assertion"))?;
+            .ok_or_else(|| {
+                refuse_formal_selection(format!(
+                    "selected report claim {claim_id} has no assertion"
+                ))
+            })?;
         let matching = rules
             .iter()
             .filter(|rule| rule.get("symbol").and_then(Value::as_str) == Some(symbol))
             .collect::<Vec<_>>();
         if matching.len() != 1
-            || matching[0].get("state").and_then(Value::as_str) != Some("approved")
+            || matching
+                .first()
+                .and_then(|rule| rule.get("state"))
+                .and_then(Value::as_str)
+                != Some("approved")
         {
-            return Err(format!(
+            return Err(refuse_formal_selection(format!(
                 "formal-rule symbol {symbol} is missing or not approved"
-            ));
+            )));
         }
-        let source = assertion
-            .get("source")
-            .ok_or_else(|| format!("selected report claim {claim_id} has no source span"))?;
+        let source = assertion.get("source").ok_or_else(|| {
+            refuse_formal_selection(format!(
+                "selected report claim {claim_id} has no source span"
+            ))
+        })?;
         claims.push(serde_json::json!({
             "claim_id": claim_id,
             "source": source,
@@ -204,28 +230,44 @@ pub fn build_approved_formal_rule_selection(
 
 /// Build the `filament-analyze.claim-selection/v1` input for a formal-rule
 /// judgement from an FR-188 status report. Draft and unrecognized states are
-/// never emitted.
-pub fn build_approved_claim_selection(status: &Value) -> Result<Value, String> {
+/// never emitted. The authority comes from the package's source identity and
+/// is copied without normalization.
+///
+/// # Errors
+///
+/// Returns a stable adapter error when the authority or status report is
+/// malformed, or an approved declaration span is invalid or duplicated.
+pub fn build_approved_claim_selection(
+    status: &Value,
+    source_authority: &str,
+) -> Result<Value, EvidenceError> {
+    if source_authority.is_empty() {
+        return Err(refuse_formal_selection(
+            "package source authority must be non-empty",
+        ));
+    }
     if status.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1") {
-        return Err("formal-rule status report has an unsupported protocol".to_owned());
+        return Err(refuse_formal_selection(
+            "formal-rule status report has an unsupported protocol",
+        ));
     }
     let rules = status
         .get("rules")
         .and_then(Value::as_array)
-        .ok_or_else(|| "formal-rule status report has no rules list".to_owned())?;
+        .ok_or_else(|| refuse_formal_selection("formal-rule status report has no rules list"))?;
     let mut spans = Vec::new();
     for rule in rules {
         let state = rule
             .get("state")
             .and_then(Value::as_str)
-            .ok_or_else(|| "formal-rule status entry has no state".to_owned())?;
+            .ok_or_else(|| refuse_formal_selection("formal-rule status entry has no state"))?;
         if state == "draft" {
             continue;
         }
         if state != "approved" {
-            return Err(format!(
+            return Err(refuse_formal_selection(format!(
                 "formal-rule status contains unknown state {state:?}"
-            ));
+            )));
         }
         let identity = rule
             .get("path")
@@ -239,23 +281,28 @@ pub fn build_approved_claim_selection(status: &Value) -> Result<Value, String> {
                     && !path.contains('\\')
                     && !path.chars().any(char::is_control)
             })
-            .ok_or_else(|| "approved formal-rule status entry has an invalid path".to_owned())?;
+            .ok_or_else(|| {
+                refuse_formal_selection("approved formal-rule status entry has an invalid path")
+            })?;
         let range = rule
             .get("declaration_range")
             .and_then(Value::as_object)
             .filter(|range| range.len() == 2)
             .ok_or_else(|| {
-                "approved formal-rule status entry has an invalid declaration range".to_owned()
+                refuse_formal_selection(
+                    "approved formal-rule status entry has an invalid declaration range",
+                )
             })?;
-        let start = range
-            .get("start")
-            .and_then(Value::as_u64)
-            .ok_or_else(|| "approved formal-rule declaration start is invalid".to_owned())?;
+        let start = range.get("start").and_then(Value::as_u64).ok_or_else(|| {
+            refuse_formal_selection("approved formal-rule declaration start is invalid")
+        })?;
         let end = range
             .get("end")
             .and_then(Value::as_u64)
             .filter(|end| start < *end)
-            .ok_or_else(|| "approved formal-rule declaration end is invalid".to_owned())?;
+            .ok_or_else(|| {
+                refuse_formal_selection("approved formal-rule declaration end is invalid")
+            })?;
         spans.push((identity, start, end));
     }
     spans.sort_by(|left, right| {
@@ -269,13 +316,15 @@ pub fn build_approved_claim_selection(status: &Value) -> Result<Value, String> {
         .iter()
         .any(|(identity, start, _)| !seen_spans.insert((identity.to_owned(), *start)))
     {
-        return Err("formal-rule status contains duplicate approved declaration spans".to_owned());
+        return Err(refuse_formal_selection(
+            "formal-rule status contains duplicate approved declaration spans",
+        ));
     }
     let spans = spans
         .into_iter()
         .map(|(identity, start, end)| {
             serde_json::json!({
-                "authority": "quoin",
+                "authority": source_authority,
                 "identity": identity,
                 "start": start,
                 "end": end
@@ -407,18 +456,38 @@ fn analysis_projection(
         "engines": engines,
     });
     if let Some(selection) = report.get("selection") {
-        projection["selection"] = selection.clone();
+        insert_projection_member(&mut projection, "selection", selection.clone())?;
     }
     if let Some((run_kind, formal_rule_selection)) = run_context {
         if run_kind == "formal_rule" {
             validate_formal_rule_selection(report, formal_rule_selection)?;
             if let Some(formal_rule_selection) = formal_rule_selection {
-                projection["formal_rule_selection"] = formal_rule_selection.clone();
+                insert_projection_member(
+                    &mut projection,
+                    "formal_rule_selection",
+                    formal_rule_selection.clone(),
+                )?;
             }
         }
-        projection["run_kind"] = Value::String(run_kind.to_owned());
+        insert_projection_member(
+            &mut projection,
+            "run_kind",
+            Value::String(run_kind.to_owned()),
+        )?;
     }
     Ok(projection)
+}
+
+fn insert_projection_member(
+    projection: &mut Value,
+    key: &str,
+    value: Value,
+) -> Result<(), EvidenceError> {
+    let Some(object) = projection.as_object_mut() else {
+        return Err(refuse("analysis projection is not an object"));
+    };
+    object.insert(key.to_owned(), value);
+    Ok(())
 }
 
 fn validate_formal_rule_selection(

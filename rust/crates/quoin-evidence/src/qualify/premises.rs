@@ -411,20 +411,7 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
     let Some(root) = report.as_object() else {
         return false;
     };
-    if !(5..=8).contains(&root.len())
-        || root.keys().any(|key| {
-            !matches!(
-                key.as_str(),
-                "protocol"
-                    | "disposition"
-                    | "agreed_status"
-                    | "selection"
-                    | "run_kind"
-                    | "formal_rule_selection"
-                    | "producer"
-                    | "engines"
-            )
-        })
+    if !valid_projection_header(root)
         || text(report, "protocol") != Some("quoin.analysis-report-projection/v1")
         || !matches!(
             text(report, "disposition"),
@@ -435,17 +422,6 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
     }
     if root.contains_key("selection") && !root.get("selection").is_some_and(valid_selection) {
         return false;
-    }
-    let run_kind = root.get("run_kind").and_then(Value::as_str);
-    if root.contains_key("run_kind") && !matches!(run_kind, Some("analysis" | "formal_rule")) {
-        return false;
-    }
-    let has_formal_selection = root.contains_key("formal_rule_selection");
-    match run_kind {
-        Some("formal_rule") => {}
-        Some("analysis") if has_formal_selection => return false,
-        None if has_formal_selection => return false,
-        _ => {}
     }
     let Some(producer) = root.get("producer").and_then(Value::as_object) else {
         return false;
@@ -512,6 +488,35 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
         }),
         _ => false,
     }
+}
+
+fn valid_projection_header(root: &serde_json::Map<String, Value>) -> bool {
+    if !(5..=8).contains(&root.len())
+        || root.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "protocol"
+                    | "disposition"
+                    | "agreed_status"
+                    | "selection"
+                    | "run_kind"
+                    | "formal_rule_selection"
+                    | "producer"
+                    | "engines"
+            )
+        })
+    {
+        return false;
+    }
+    let run_kind = root.get("run_kind").and_then(Value::as_str);
+    if root.contains_key("run_kind") && !matches!(run_kind, Some("analysis" | "formal_rule")) {
+        return false;
+    }
+    let has_formal_selection = root.contains_key("formal_rule_selection");
+    !matches!(
+        (run_kind, has_formal_selection),
+        (Some("analysis") | None, true)
+    )
 }
 
 /// A selected report has a non-empty, duplicate-free partition of its claims.

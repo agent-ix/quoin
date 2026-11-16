@@ -239,13 +239,6 @@ fn record_entries(
         )
         .map_err(|error| map_error(&error, op))?
     } else {
-        if request.run_kind.is_some() || request.formal_rule_selection.is_some() {
-            return Err(CoreError::new(
-                CoreErrorCode::BadRequest,
-                "--run-kind and --formal-rule-selection apply only to the differential-report adapter",
-            )
-            .with_context("op", op));
-        }
         (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?
     };
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
@@ -267,6 +260,15 @@ fn record_entries(
                 DISCHARGING_ADAPTERS.join(" and "),
                 adapter.name
             ),
+        )
+        .with_context("op", op));
+    }
+    if adapter.name != "differential-report"
+        && (request.run_kind.is_some() || request.formal_rule_selection.is_some())
+    {
+        return Err(CoreError::new(
+            CoreErrorCode::BadRequest,
+            "--run-kind and --formal-rule-selection apply only to the differential-report adapter",
         )
         .with_context("op", op));
     }

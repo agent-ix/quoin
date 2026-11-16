@@ -355,6 +355,7 @@ fn tc_002_discharges_is_still_refused_on_the_junit_adapter() {
     );
     body["adapter"] = json!("junit");
     body["discharges"] = json!(["FR-001-AC-1"]);
+    body["run_kind"] = json!("analysis");
     body["obligations"] = json!([obligation("FR-001-AC-1")]);
     let error = dispatch("evidence.record", &body, &RuntimeSettings::default())
         .unwrap_err()

@@ -246,11 +246,10 @@ fn formal_rule_selection_builder_maps_only_approved_selected_symbols() {
             {"symbol":"qsl:qsl/rule.native::Rule1","state":"draft"}
         ]
     });
-    assert!(
-        build_approved_formal_rule_selection(&report, &symbols, &draft_status)
-            .unwrap_err()
-            .contains("not approved")
-    );
+    let draft_error =
+        build_approved_formal_rule_selection(&report, &symbols, &draft_status).unwrap_err();
+    assert!(draft_error.to_string().contains("not approved"));
+    assert_eq!(draft_error.code().as_str(), "QE-E001");
 }
 
 #[trace("FR-190-AC-1")]
@@ -264,17 +263,20 @@ fn approved_claim_selection_builder_excludes_draft_spans() {
             {"symbol":"qsl:rules/a.qsl::ApprovedAgain","path":"rules/a.qsl","declaration_range":{"start":50,"end":81},"state":"approved"}
         ]
     });
-    let selection = build_approved_claim_selection(&status).unwrap();
+    let selection = build_approved_claim_selection(&status, "package-authority").unwrap();
     assert_eq!(selection["protocol"], "filament-analyze.claim-selection/v1");
     assert_eq!(selection["spans"].as_array().unwrap().len(), 2);
     assert_eq!(
         selection["spans"][0],
         json!({
-            "authority":"quoin", "identity":"rules/a.qsl", "start":12, "end":34
+        "authority":"package-authority", "identity":"rules/a.qsl", "start":12, "end":34
         })
     );
     assert_eq!(selection["spans"][1]["start"], 50);
     assert!(selection.to_string().find("Draft").is_none());
+
+    let invalid_authority = build_approved_claim_selection(&status, "").unwrap_err();
+    assert_eq!(invalid_authority.code().as_str(), "QE-E001");
 }
 
 #[trace("FR-151-AC-2")]
