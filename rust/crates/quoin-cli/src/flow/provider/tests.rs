@@ -208,7 +208,6 @@ fn formal_rule_approval_rejects_invalid_trust_before_status_or_verifier_invocati
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-4", "FR-189-AC-5", "FR-189-AC-10")]
 #[test]
 fn formal_rule_approval_passes_only_for_a_nonempty_fully_approved_drafted_set() {
     let (directory, mut request, context) = formalization_fixture();
@@ -273,7 +272,6 @@ fn qsl_check_passes_only_with_clean_fsl_outcome_and_bound_formalizes_relation() 
     );
 }
 
-#[trace("FR-189-AC-2")]
 #[cfg(unix)]
 #[test]
 fn qsl_check_failure_returns_the_diagnostic_file_line_and_message() {

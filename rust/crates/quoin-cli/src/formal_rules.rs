@@ -32,14 +32,12 @@ pub(crate) fn command() -> Command {
                 .arg(
                     Arg::new("engineering-assurance")
                         .long("engineering-assurance")
-                        .value_name("ABSOLUTE-PATH")
-                        .required(true),
+                        .value_name("ABSOLUTE-PATH"),
                 )
                 .arg(
                     Arg::new("allowed-signers")
                         .long("allowed-signers")
-                        .value_name("ABSOLUTE-PATH")
-                        .required(true),
+                        .value_name("ABSOLUTE-PATH"),
                 )
                 .arg(
                     Arg::new("gitsign-certificate-identity")
@@ -66,10 +64,13 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
         ));
     };
     for name in ["engineering-assurance", "allowed-signers"] {
-        if let Some(value) = args.get_one::<String>(name)
-            && (value.is_empty() || value.contains('\0') || !Path::new(value).is_absolute())
-        {
-            return Err(crate::ShellError::usage(format!(
+        let Some(value) = args.get_one::<String>(name) else {
+            return Err(crate::ShellError::usage_refused(format!(
+                "--{name} is required"
+            )));
+        };
+        if value.is_empty() || value.contains('\0') || !Path::new(value).is_absolute() {
+            return Err(crate::ShellError::usage_refused(format!(
                 "--{name} must be an absolute path"
             )));
         }
@@ -83,7 +84,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
         gitsign_values,
         [None, None, None] | [Some(_), Some(_), Some(_)]
     ) {
-        return Err(crate::ShellError::usage(
+        return Err(crate::ShellError::usage_refused(
             "all three gitsign identity options must be supplied together",
         ));
     }
@@ -94,11 +95,11 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
         || gitsign_values[0].is_some_and(|value| value.starts_with('-'))
         || gitsign_values[1].is_some_and(|value| value.starts_with('-'))
     {
-        return Err(crate::ShellError::usage(
+        return Err(crate::ShellError::usage_refused(
             "gitsign identity values violate FR-040 validation",
         ));
     }
-    let report = status(args).map_err(crate::ShellError::unavailable)?;
+    let report = status(args).map_err(status_shell_error)?;
     let rendered = if args.get_flag("json") {
         serde_json::to_string(&report)
             .map_err(|error| crate::ShellError::unavailable(error.to_string()))?
@@ -124,7 +125,25 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
     Ok(Response::ok(json!({"rendered": rendered})))
 }
 
-fn status(args: &ArgMatches) -> Result<Value, String> {
+enum StatusError {
+    Invalid(String),
+    Unavailable(String),
+}
+
+fn status_shell_error(error: StatusError) -> crate::ShellError {
+    match error {
+        StatusError::Invalid(message) => crate::ShellError::usage_refused(message),
+        StatusError::Unavailable(message) => crate::ShellError::unavailable_invalid(message),
+    }
+}
+
+impl From<String> for StatusError {
+    fn from(message: String) -> Self {
+        Self::Unavailable(message)
+    }
+}
+
+fn status(args: &ArgMatches) -> Result<Value, StatusError> {
     let repo = PathBuf::from(
         args.get_one::<String>("repo")
             .ok_or_else(|| "--repo default is unavailable".to_owned())?,
@@ -146,7 +165,11 @@ fn status(args: &ArgMatches) -> Result<Value, String> {
             "certificate_oidc_issuer": issuer,
             "principal": principal,
         })),
-        _ => return Err("all three gitsign identity options must be supplied together".to_owned()),
+        _ => {
+            return Err(StatusError::Invalid(
+                "all three gitsign identity options must be supplied together".to_owned(),
+            ));
+        }
     };
 
     let scope = ScopeRoot::open(&repo).map_err(|error| error.to_string())?;
@@ -157,8 +180,7 @@ fn status(args: &ArgMatches) -> Result<Value, String> {
     let model = registry
         .traceability()
         .ok_or_else(|| "no active module declares a traceability model".to_owned())?;
-    let current =
-        quoin_quire::formal_rules::extract(&repo, model).map_err(|error| error.to_string())?;
+    let current = revision_rules(&repo, "HEAD", model)?;
     let candidates = git_output(
         &repo,
         &[
@@ -279,7 +301,7 @@ fn decide(
         if signer.get("mapping").and_then(Value::as_str) != Some("mapped")
             || signer.get("principal").and_then(Value::as_str).is_none()
         {
-            most_recent_reason.get_or_insert("approval_unmapped");
+            most_recent_reason.get_or_insert("approval_unverifiable");
             continue;
         }
         let meaning = result.get("signed_off_meaning").unwrap_or(&Value::Null);
@@ -334,7 +356,7 @@ fn verify(
     repo: &Path,
     revision: &str,
     gitsign: Option<&Value>,
-) -> Result<Value, String> {
+) -> Result<Value, StatusError> {
     let request = signature_request(repo, revision, allowed, gitsign);
     let mut child = ProcessCommand::new(ea)
         .args(["signature-verify", "--request", "-"])
@@ -346,24 +368,43 @@ fn verify(
     child
         .stdin
         .take()
-        .ok_or("engineering-assurance stdin unavailable")?
+        .ok_or_else(|| "engineering-assurance stdin unavailable".to_owned())?
         .write_all(request.to_string().as_bytes())
         .map_err(|error| error.to_string())?;
     let output = child
         .wait_with_output()
         .map_err(|error| error.to_string())?;
     if !output.status.success() {
-        return Err(format!(
+        let refusal: Value = serde_json::from_slice(&output.stdout).unwrap_or(Value::Null);
+        if refusal.get("protocol").and_then(Value::as_str) == Some("engineering-assurance.error/v1")
+        {
+            let code = refusal.get("code").and_then(Value::as_str).unwrap_or("");
+            let message = refusal.get("message").and_then(Value::as_str).unwrap_or("");
+            if code == "signature_verify_allowed_signers_invalid" {
+                return Err(StatusError::Invalid(format!(
+                    "{code}: {message}; {}",
+                    String::from_utf8_lossy(&output.stderr)
+                )));
+            }
+            return Err(StatusError::Unavailable(format!(
+                "{code}: {message}; {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
+        }
+        return Err(StatusError::Unavailable(format!(
             "engineering-assurance signature-verify failed: {}",
             String::from_utf8_lossy(&output.stderr)
-        ));
+        )));
     }
-    let value: Value = serde_json::from_slice(&output.stdout)
-        .map_err(|error| format!("invalid engineering-assurance result: {error}"))?;
+    let value: Value = serde_json::from_slice(&output.stdout).map_err(|error| {
+        StatusError::Unavailable(format!("invalid engineering-assurance result: {error}"))
+    })?;
     if value.get("protocol").and_then(Value::as_str) != Some(RESULT_PROTOCOL)
         || value.get("kind").and_then(Value::as_str) != Some("commit")
     {
-        return Err("engineering-assurance returned an unsupported signature result".to_owned());
+        return Err(StatusError::Unavailable(
+            "engineering-assurance returned an unsupported signature result".to_owned(),
+        ));
     }
     Ok(value)
 }
@@ -479,10 +520,25 @@ fn git_output(repo: &Path, args: &[&OsStr]) -> Result<Vec<u8>, String> {
     reason = "fixture assertions are test failures"
 )]
 mod tests {
-    use super::{DecisionContext, RESULT_PROTOCOL, decide};
+    use super::{
+        DecisionContext, RESULT_PROTOCOL, command, decide, revision_rules, signature_request,
+        status_shell_error, verify,
+    };
+    use ix_trace_rs::trace;
     use quoin_quire::formal_rules::FormalRule;
-    use serde_json::json;
+    use serde_json::{Value, json};
     use std::{fs, path::Path, process::Command};
+
+    #[cfg(unix)]
+    fn executable(directory: &Path, name: &str, body: &str) -> std::path::PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let path = directory.join(name);
+        fs::write(&path, format!("#!/bin/sh\n{body}\n")).expect("write executable");
+        let mut permissions = fs::metadata(&path).expect("metadata").permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&path, permissions).expect("executable permissions");
+        path
+    }
 
     fn model() -> quoin_quire::formal_rules::TraceabilityModel {
         serde_json::from_value(serde_json::json!({
@@ -531,6 +587,50 @@ mod tests {
         (repo, commit)
     }
 
+    #[cfg(unix)]
+    fn command_fixture() -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+        let repo = tempfile::tempdir().expect("temporary status repository");
+        fs::write(
+            repo.path().join("manifest.yaml"),
+            "name: formal-rule-status-fixture\nversion: 0.1.0\ndescription: Status command fixture\nartifact_types:\n  - name: FR\ntraceability:\n  trace_tags:\n    formalizes:\n      - name: formalizes\n        language: qsl\n        syntax: comment\n        pattern: '^// formalizes: (.+)$'\n",
+        )
+        .expect("module manifest");
+        fs::write(
+            repo.path().join("a.native"),
+            "language qsl\nprofile core\n// formalizes: FR-001-AC-1\nrule P1 { check x }\n",
+        )
+        .expect("formalized QSL rule");
+        git(repo.path(), &["init", "-q"]);
+        git(repo.path(), &["config", "user.name", "VER-101 test"]);
+        git(
+            repo.path(),
+            &["config", "user.email", "ver101@example.invalid"],
+        );
+        git(repo.path(), &["add", "manifest.yaml", "a.native"]);
+        git(repo.path(), &["commit", "-q", "-m", "draft formal rule"]);
+        let allowed = repo.path().join("allowed-signers");
+        fs::write(&allowed, "fixture\n").expect("allowed signers");
+        let ea = executable(repo.path(), "engineering-assurance", "exit 99");
+        (repo, ea, allowed)
+    }
+
+    #[cfg(unix)]
+    fn status_matches(repo: &Path, ea: &Path, allowed: &Path) -> clap::ArgMatches {
+        command()
+            .try_get_matches_from([
+                "formal-rules",
+                "status",
+                "--repo",
+                repo.to_str().expect("repo path is UTF-8"),
+                "--engineering-assurance",
+                ea.to_str().expect("EA path is UTF-8"),
+                "--allowed-signers",
+                allowed.to_str().expect("allowed signers path is UTF-8"),
+                "--json",
+            ])
+            .expect("status arguments")
+    }
+
     fn signature(commit: &str, symbol: &str) -> serde_json::Value {
         json!({
             "protocol": RESULT_PROTOCOL,
@@ -554,6 +654,7 @@ mod tests {
         }
     }
 
+    #[trace("FR-188-AC-2")]
     #[test]
     fn absent_candidates_report_no_approval() {
         let repository = tempfile::tempdir().expect("temporary repository");
@@ -599,6 +700,16 @@ mod tests {
         assert_eq!(result.reason, Some("approval_bad_signature"));
     }
 
+    #[trace(
+        "FR-188-AC-3",
+        "FR-188-AC-4",
+        "FR-188-AC-5",
+        "FR-188-AC-6",
+        "FR-188-AC-7",
+        "FR-188-AC-8",
+        "FR-188-AC-9",
+        "FR-188-AC-15"
+    )]
     #[test]
     fn each_signature_and_meaning_failure_maps_to_its_closed_draft_reason() {
         let repository = tempfile::tempdir().expect("temporary repository");
@@ -611,7 +722,15 @@ mod tests {
             (
                 "signed_valid",
                 json!({"signer":{"mapping":"unmapped"}}),
-                "approval_unmapped",
+                "approval_unverifiable",
+            ),
+            (
+                "signed_valid",
+                json!({
+                    "signer":{"mapping":"unmapped"},
+                    "signed_off_meaning":{"presence":"missing","values":[]}
+                }),
+                "approval_unverifiable",
             ),
             (
                 "signed_valid",
@@ -621,6 +740,11 @@ mod tests {
             (
                 "signed_valid",
                 json!({"signer":{"mapping":"mapped","principal":"alice"},"signed_off_meaning":{"presence":"present","values":["release-approved"]}}),
+                "meaning_mismatch",
+            ),
+            (
+                "signed_valid",
+                json!({"signer":{"mapping":"mapped","principal":"alice"},"signed_off_meaning":{"presence":"present","values":["formal-rule-approved", "release-approved"]}}),
                 "meaning_mismatch",
             ),
         ];
@@ -648,6 +772,7 @@ mod tests {
         }
     }
 
+    #[trace("FR-188-AC-1", "FR-188-AC-13")]
     #[test]
     fn approved_state_uses_exact_symbol_and_marker_declaration_bytes() {
         let model = model();
@@ -677,7 +802,7 @@ mod tests {
             format!("// unrelated\n{native}"),
         )
         .expect("edit unrelated line");
-        let current = quoin_quire::formal_rules::extract(repo.path(), &model)
+        let current = revision_rules(repo.path(), "HEAD", &model)
             .expect("extract after unrelated edit")
             .remove(0);
         let still_approved = decide(
@@ -692,6 +817,7 @@ mod tests {
         assert_eq!(still_approved.state, "approved");
     }
 
+    #[trace("FR-188-AC-10", "FR-188-AC-11", "FR-188-AC-12")]
     #[test]
     fn changed_body_renamed_label_and_other_symbol_do_not_inherit_approval() {
         let model = model();
@@ -758,5 +884,244 @@ mod tests {
         )
         .expect("P1 approval does not transfer to P2");
         assert_eq!(p2_status.reason, Some("no_approval"));
+    }
+
+    #[trace("FR-188-AC-14")]
+    #[test]
+    fn most_recent_valid_naming_commit_is_the_approval_of_record() {
+        let model = model();
+        let native = "language qsl\nprofile core\n// formalizes: FR-001\nrule P1 { check x }\n";
+        let (repo, first) = commit_repo(native);
+        let original = revision_rules(repo.path(), "HEAD", &model)
+            .expect("extract initial HEAD")
+            .remove(0);
+        let first_approval = signature(&first, &original.symbol);
+        fs::write(repo.path().join("unrelated.txt"), "new commit\n").expect("unrelated file");
+        git(repo.path(), &["add", "unrelated.txt"]);
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "-q",
+                "-m",
+                "second approval",
+                "-m",
+                "Formal-rule: qsl:a.native::P1",
+            ],
+        );
+        let second = git(repo.path(), &["rev-parse", "HEAD"]);
+        let second_approval = signature(&second, &original.symbol);
+        let current = revision_rules(repo.path(), "HEAD", &model)
+            .expect("extract latest HEAD")
+            .remove(0);
+
+        let result = decide(
+            &current,
+            &[
+                (second.clone(), second_approval),
+                (first.clone(), first_approval),
+            ],
+            &DecisionContext {
+                repo: repo.path(),
+                model: &model,
+            },
+        )
+        .expect("status decision");
+        assert_eq!(
+            result.approval,
+            Some((second, "alice@example.invalid".to_owned()))
+        );
+    }
+
+    #[trace("FR-188-AC-21", "FR-188-AC-22")]
+    #[test]
+    fn dirty_worktree_does_not_change_fixed_head_rule_bytes_or_repository_state() {
+        let model = model();
+        let native = "language qsl\nprofile core\n// formalizes: FR-001\n// é before declaration\nrule P1 { check x }\n";
+        let (repo, commit) = commit_repo(native);
+        let before_head = git(repo.path(), &["rev-parse", "HEAD"]);
+        let before_status = git(repo.path(), &["status", "--porcelain"]);
+        let original = revision_rules(repo.path(), "HEAD", &model)
+            .expect("extract committed rule")
+            .remove(0);
+        assert!(original.declaration_range.start < original.declaration_range.end);
+        assert_eq!(
+            &original.source[original.source.len() - b"rule P1 { check x }\n".len()..],
+            b"rule P1 { check x }\n"
+        );
+
+        fs::write(
+            repo.path().join("a.native"),
+            native.replace("check x", "check dirty"),
+        )
+        .expect("dirty the declaration in the worktree");
+        let current = revision_rules(repo.path(), "HEAD", &model)
+            .expect("extract fixed HEAD after worktree edit")
+            .remove(0);
+        assert_eq!(current, original);
+        let result = decide(
+            &current,
+            &[(commit.clone(), signature(&commit, &current.symbol))],
+            &DecisionContext {
+                repo: repo.path(),
+                model: &model,
+            },
+        )
+        .expect("fixed HEAD remains approved");
+        assert_eq!(result.state, "approved");
+        assert_eq!(git(repo.path(), &["rev-parse", "HEAD"]), before_head);
+        assert_ne!(git(repo.path(), &["status", "--porcelain"]), before_status);
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-188-AC-18", "FR-188-AC-20")]
+    #[test]
+    fn verifier_refusals_keep_usage_and_unavailable_exit_classes_without_report() {
+        let directory = tempfile::tempdir().expect("temporary verifier directory");
+        let allowed = directory.path().join("allowed-signers");
+        fs::write(&allowed, "fixture\n").expect("allowed signers");
+        let repo = directory.path();
+        let refusal = executable(
+            directory.path(),
+            "ea-invalid-allowed",
+            "printf '%s\\n' '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"signature_verify_allowed_signers_invalid\",\"message\":\"bad allowed signers\"}'; printf '%s\\n' diagnostic >&2; exit 2",
+        );
+        let error = verify(&refusal, &allowed, repo, "HEAD", None)
+            .expect_err("allowed-signers refusal is not a report");
+        let shell = status_shell_error(error);
+        assert_eq!(shell.exit, 2);
+        assert!(
+            shell
+                .message
+                .contains("signature_verify_allowed_signers_invalid")
+        );
+
+        let refusal = executable(
+            directory.path(),
+            "ea-other-refusal",
+            "printf '%s\\n' '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"signature_verify_request_invalid\",\"message\":\"bad request\"}'; printf '%s\\n' diagnostic >&2; exit 2",
+        );
+        let error = verify(&refusal, &allowed, repo, "HEAD", None)
+            .expect_err("other refusal is not a report");
+        let shell = status_shell_error(error);
+        assert_eq!(shell.exit, 3);
+        assert!(shell.message.contains("signature_verify_request_invalid"));
+
+        let missing = directory.path().join("missing-ea");
+        let shell = status_shell_error(
+            verify(&missing, &allowed, repo, "HEAD", None)
+                .expect_err("missing executable is unavailable"),
+        );
+        assert_eq!(shell.exit, 3);
+    }
+
+    #[trace("FR-188-AC-18", "FR-188-AC-23")]
+    #[test]
+    fn signature_request_omits_or_forwards_exact_gitsign_values() {
+        let repo = Path::new("/repo");
+        let allowed = Path::new("/allowed-signers");
+        let without = signature_request(repo, "HEAD", allowed, None);
+        assert!(without.get("gitsign").is_none());
+        let gitsign = json!({
+            "certificate_identity":"identity",
+            "certificate_oidc_issuer":"issuer",
+            "principal":"alice"
+        });
+        let with = signature_request(repo, "HEAD", allowed, Some(&gitsign));
+        assert_eq!(with["gitsign"], gitsign);
+
+        let partial = command()
+            .try_get_matches_from([
+                "formal-rules",
+                "status",
+                "--engineering-assurance",
+                "/ea",
+                "--allowed-signers",
+                "/allowed",
+                "--gitsign-certificate-identity",
+                "identity",
+            ])
+            .expect("parser accepts individual optional flags for cross-validation");
+        let error = super::run(&partial).expect_err("partial gitsign set is rejected");
+        assert_eq!(error.exit, 2);
+
+        let missing = command()
+            .try_get_matches_from(["formal-rules", "status"])
+            .expect("command parses before its own FR-188 validation");
+        let error = super::run(&missing).expect_err("required trust flags are rejected");
+        assert_eq!(error.exit, 2);
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-188-AC-17", "FR-188-AC-19")]
+    #[test]
+    fn status_command_is_read_only_and_gate_ack_without_signature_is_not_approval() {
+        let (repo, ea, allowed) = command_fixture();
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "Workflow gate acknowledged",
+                "-m",
+                "Gate-Acknowledged: formalize-requirement",
+            ],
+        );
+        let head_before = git(repo.path(), &["log", "--format=%H"]);
+        let status_before = git(repo.path(), &["status", "--porcelain"]);
+
+        let response =
+            super::run(&status_matches(repo.path(), &ea, &allowed)).expect("status report");
+        let rendered = response.payload["rendered"].as_str().expect("JSON report");
+        let report: Value = serde_json::from_str(rendered).expect("status JSON");
+        assert_eq!(report["rules"][0]["state"], "draft");
+        assert_eq!(report["rules"][0]["reason"], "no_approval");
+        assert_eq!(git(repo.path(), &["log", "--format=%H"]), head_before);
+        assert_eq!(git(repo.path(), &["status", "--porcelain"]), status_before);
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-188-AC-20")]
+    #[test]
+    fn signature_verify_refusals_return_no_report_with_the_contract_exit_code() {
+        let (repo, _ea, allowed) = command_fixture();
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "Formal rule approval",
+                "-m",
+                "Formal-rule: qsl:a.native::P1",
+            ],
+        );
+
+        let allowed_refusal = executable(
+            repo.path(),
+            "ea-allowed-signers-refusal",
+            "printf '%s\\n' '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"signature_verify_allowed_signers_invalid\",\"message\":\"bad allowed signers\"}'; printf '%s\\n' diagnostic >&2; exit 2",
+        );
+        let error = super::run(&status_matches(repo.path(), &allowed_refusal, &allowed))
+            .expect_err("allowed-signers refusal must not produce a report");
+        assert_eq!(error.exit, 2);
+        assert!(
+            error
+                .message
+                .contains("signature_verify_allowed_signers_invalid")
+        );
+
+        let other_refusal = executable(
+            repo.path(),
+            "ea-other-refusal",
+            "printf '%s\\n' '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"signature_verify_request_invalid\",\"message\":\"bad request\"}'; printf '%s\\n' diagnostic >&2; exit 2",
+        );
+        let error = super::run(&status_matches(repo.path(), &other_refusal, &allowed))
+            .expect_err("other refusal must not produce a report");
+        assert_eq!(error.exit, 3);
+        assert!(error.message.contains("signature_verify_request_invalid"));
     }
 }

@@ -98,11 +98,31 @@ impl ShellError {
         }
     }
 
+    /// A host tool or its document operation failed under a contract that
+    /// reserves exit 3 for refusal/unavailability.
+    pub(crate) fn unavailable_invalid(message: impl Into<String>) -> Self {
+        Self {
+            message: format!("    Error: {}", message.into()),
+            exit: EXIT_INVALID,
+            stream: ShellOutput::Stderr,
+        }
+    }
+
     /// A command option combination is not valid for its usage contract.
     pub(crate) fn usage(message: impl Into<String>) -> Self {
         Self {
             message: format!("    Error: {}", message.into()),
             exit: EXIT_INVALID,
+            stream: ShellOutput::Stderr,
+        }
+    }
+
+    /// A command-specific usage refusal whose contract uses the shell's
+    /// refusal status rather than its general invalid-document status.
+    pub(crate) fn usage_refused(message: impl Into<String>) -> Self {
+        Self {
+            message: format!("    Error: {}", message.into()),
+            exit: Outcome::Refused.code(),
             stream: ShellOutput::Stderr,
         }
     }

@@ -178,6 +178,7 @@ fn line_span(source: &[u8], start: usize, end: usize) -> Option<&[u8]> {
 )]
 mod tests {
     use super::{TraceabilityModel, declaration_span, extract, line_span};
+    use ix_trace_rs::trace;
     use std::{fs, path::Path};
 
     #[test]
@@ -191,6 +192,7 @@ mod tests {
         assert_eq!(line_span(source, 0, 2), None);
     }
 
+    #[trace("FR-188-AC-21", "FR-188-AC-22")]
     #[test]
     fn declaration_range_uses_utf8_byte_offsets_and_excludes_marker_lines() {
         let source = "// é before declaration\nrule P1 { check x }\n";
@@ -201,6 +203,7 @@ mod tests {
         assert_eq!(&source.as_bytes()[range], b"rule P1 { check x }");
     }
 
+    #[trace("FR-188-AC-21", "FR-188-AC-22")]
     #[test]
     fn extraction_uses_the_qsl_formalizes_relation_and_retains_exact_span() {
         let root = tempfile::tempdir().expect("temporary source root");
@@ -224,6 +227,7 @@ mod tests {
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].symbol, "qsl:a.native::P1");
         assert_eq!(rules[0].formalizes, ["FR-001", "FR-001-AC-2"]);
+        assert!(rules[0].declaration_range.start < rules[0].declaration_range.end);
         assert_eq!(
             &b"language qsl\nprofile core\n// formalizes: FR-001, FR-001-AC-2\nrule P1 {\n  check x\n}\n"[
                 rules[0].declaration_range.clone()
