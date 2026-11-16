@@ -31,9 +31,9 @@ fn source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, SourceFailure> {
         inputs.soup_support.as_deref(),
         &quoin_core::runtime::RuntimeSettings::default(),
     )
-    .map_err(|detail| SourceFailure {
+    .map_err(|error| SourceFailure {
         source: "quoin soup report".to_owned(),
-        detail,
+        detail: error.message().to_owned(),
     })
 }
 

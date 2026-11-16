@@ -459,6 +459,7 @@ fn soup_source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, quoin_dossi
             inputs.soup_support.as_deref(),
             &crate::core_runtime::settings(),
         )
+        .map_err(|error| error.message().to_owned())
     })();
     result.map_err(|detail| quoin_dossier::SourceFailure {
         source: "quoin soup report".to_owned(),

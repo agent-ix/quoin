@@ -21,6 +21,7 @@ use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgMatches, Command};
+use crate::{SoupError, SoupErrorCode};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_evidence::adapters::parse_sbom;
@@ -137,16 +138,16 @@ pub fn command() -> Command {
 ///
 /// # Errors
 /// Returns operational failures; domain refusals retain their coded response.
-pub fn run(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Response, String> {
+pub fn run(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Response, SoupError> {
     let outcome = match arguments.subcommand() {
         Some(("promote", promote)) => run_promote(promote, settings),
         Some(("report", report)) => report::run(report, settings),
-        _ => return Err("an unknown soup command reached dispatch".to_owned()),
+        _ => return Err(SoupError::new(SoupErrorCode::InvalidCommand, "an unknown soup command reached dispatch")),
     };
     match outcome {
         Ok(response) => Ok(response),
         Err(Stop::Refuse(response)) => Ok(*response),
-        Err(Stop::Fail(message)) => Err(message),
+        Err(Stop::Fail(message)) => Err(SoupError::new(SoupErrorCode::Operational, message)),
     }
 }
 
@@ -161,6 +162,15 @@ enum Stop {
 impl From<String> for Stop {
     fn from(message: String) -> Self {
         Self::Fail(message)
+    }
+}
+
+impl From<Stop> for SoupError {
+    fn from(stop: Stop) -> Self {
+        match stop {
+            Stop::Fail(message) => Self::new(SoupErrorCode::Operational, message),
+            Stop::Refuse(response) => Self::refused(response.diagnostics),
+        }
     }
 }
 

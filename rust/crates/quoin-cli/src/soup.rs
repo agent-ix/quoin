@@ -11,6 +11,7 @@ pub(crate) fn command() -> clap::Command {
 
 pub(crate) fn run(arguments: &clap::ArgMatches) -> Result<quoin_core::protocol::Response, String> {
     quoin_soup::run(arguments, &crate::core_runtime::settings())
+        .map_err(|error| error.message().to_owned())
 }
 
 pub(crate) fn soup_section(inputs: &SoupInputs<'_>) -> Result<SoupSection, SoupFailure> {

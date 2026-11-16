@@ -3,7 +3,8 @@
 
 //! Dossier presentation values from the same FR-144 source (FR-197).
 
-use super::{Listed, Report, Stop, load_report, render};
+use super::{Listed, Report, load_report, render};
+use crate::SoupError;
 use crate::soup::advisory::{Resolution, Tool};
 use quoin_core::runtime::RuntimeSettings;
 use std::path::Path;
@@ -41,7 +42,7 @@ pub fn dossier_source(
     as_of: &str,
     support: Option<&Path>,
     settings: &RuntimeSettings,
-) -> Result<DossierSource, String> {
+) -> Result<DossierSource, SoupError> {
     let default_records = repo.join("spec/soup");
     let report = load_report(
         repo,
@@ -51,15 +52,7 @@ pub fn dossier_source(
         support,
         settings,
     )
-    .map_err(|stop| match stop {
-        Stop::Fail(message) => message,
-        Stop::Refuse(response) => response
-            .diagnostics
-            .iter()
-            .map(|diagnostic| format!("{}: {}", diagnostic.code, diagnostic.message))
-            .collect::<Vec<_>>()
-            .join("; "),
-    })?;
+    .map_err(SoupError::from)?;
     Ok(presentation(&report))
 }
 

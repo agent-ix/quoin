@@ -3,7 +3,10 @@
 
 //! Shared SOUP report assembly and renderings (FR-144, FR-197).
 
+mod error;
 mod soup;
+
+pub use error::{SoupError, SoupErrorCode};
 
 pub use soup::report::snapshot::{
     Disagreement, Group, NotAssessed, Origin, Resolved, SoupFailure, SoupInputs, SoupRow,
