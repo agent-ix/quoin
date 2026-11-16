@@ -274,6 +274,7 @@ fn execute(
                 output: PathBuf::from(text(arguments, "output").unwrap_or_default()),
                 release: text(arguments, "release"),
                 approvals,
+                modules: inputs.modules.clone(),
                 template: text(arguments, "template").map(PathBuf::from),
                 quire: PathBuf::from(
                     text(arguments, "quire").unwrap_or_else(|| "quire".to_owned()),

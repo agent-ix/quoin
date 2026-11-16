@@ -761,9 +761,14 @@ fn release_record_generation_needs_no_git_and_is_repeatable() {
 
 #[trace("FR-201-AC-7")]
 #[test]
-#[ignore = "requires the installed quire, pandoc and pdftotext export toolchain"]
+#[ignore = "requires quire, pandoc, pdftotext and SPEC_ARTIFACTS_PROCESS_DIR"]
 fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     let work = tempfile::tempdir().unwrap();
+    let module = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR")
+        .map(PathBuf::from)
+        .expect("set SPEC_ARTIFACTS_PROCESS_DIR to the spec_artifacts_process module directory");
+    let module = fs::canonicalize(&module).unwrap();
+    let module_arg = module.to_str().unwrap();
     let git = |args: &[&str]| {
         let result = Command::new("git")
             .args(args)
@@ -799,6 +804,8 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
             "1.0",
             "--doc",
             "release-record",
+            "--module",
+            module_arg,
             "--snapshot",
             snapshot.to_str().unwrap(),
             "--release-verify",
@@ -818,6 +825,8 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
                 "1.0",
                 "--doc",
                 "release-record",
+                "--module",
+                module_arg,
                 "--snapshot",
                 snapshot.to_str().unwrap(),
                 "--release-verify",
