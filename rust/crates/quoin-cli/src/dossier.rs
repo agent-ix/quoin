@@ -70,11 +70,14 @@ fn selectors(command: Command) -> Command {
             "PATH",
             "Clause-binding report; repeat to add",
         ))
-        .arg(one(
-            "pack",
-            "PACK",
-            "Regulatory pack, for documents that need one",
-        ))
+        .arg(
+            one(
+                "pack",
+                "PACK",
+                "Regulatory pack, for documents that need one",
+            )
+            .conflicts_with("clause-binding"),
+        )
         .arg(one(
             "as-of",
             "RFC-3339",
@@ -370,9 +373,6 @@ fn rmm_source(inputs: &Inputs) -> Result<quoin_dossier::RmmSource, quoin_dossier
                 .ok_or_else(|| format!("{operation} omitted {field}"))
         };
         if let Some(pack) = &inputs.pack {
-            if !inputs.clause_bindings.is_empty() {
-                return Err("--pack cannot be combined with --clause-binding".to_owned());
-            }
             let report = read(
                 "evidence.pack_requirements_matrix",
                 &serde_json::json!({"pack": pack, "repo": repo, "asOf": as_of}),

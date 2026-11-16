@@ -107,6 +107,50 @@ fn a_binding_or_pack_requires_as_of_before_reading_or_writing() {
     }
 }
 
+#[trace("FR-191")]
+#[test]
+fn pack_and_clause_binding_conflict_is_usage_exit_two_before_source_execution() {
+    for mode in ["generate", "check", "export"] {
+        let work = tempfile::tempdir().unwrap();
+        fs::create_dir(work.path().join("dossier")).unwrap();
+        let existing = work.path().join("dossier/DOS-RMM.md");
+        fs::write(&existing, "existing document").unwrap();
+        let mut args = vec![
+            "dossier",
+            mode,
+            "--doc",
+            "rmm",
+            "--version",
+            "1",
+            "--pack",
+            "missing-pack",
+            "--clause-binding",
+            "missing-binding.json",
+            "--as-of",
+            "2026-11-15T00:00:00Z",
+            "--json",
+        ];
+        if mode == "export" {
+            args.extend(["--to", "pdf", "--output", "out.pdf"]);
+        }
+        let output = quoin(work.path(), &args);
+        assert_eq!(output.status.code(), Some(2), "{mode}: {output:?}");
+        assert!(
+            output.stdout.is_empty(),
+            "{mode}: usage failure emitted a report"
+        );
+        let diagnostic = String::from_utf8(output.stderr).unwrap();
+        assert!(diagnostic.contains("--pack"), "{diagnostic}");
+        assert!(diagnostic.contains("--clause-binding"), "{diagnostic}");
+        assert!(
+            !diagnostic.contains("DOSSIER_SOURCE_FAILED"),
+            "{diagnostic}"
+        );
+        assert_eq!(fs::read_to_string(existing).unwrap(), "existing document");
+        assert!(!work.path().join("out.pdf").exists());
+    }
+}
+
 #[trace("FR-194-AC-1", "FR-194-AC-5")]
 #[test]
 fn dossier_rows_equal_the_evidence_backed_matrix_command() {
