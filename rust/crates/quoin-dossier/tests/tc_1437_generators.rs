@@ -39,6 +39,8 @@ fn inputs(scope: &Path) -> Inputs {
         soup_binding: None,
         soup_records: None,
         soup_support: None,
+        snapshot: None,
+        release_verify: None,
         as_of: None,
         version: "1.0".to_owned(),
     }

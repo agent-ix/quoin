@@ -580,6 +580,279 @@ fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
     );
 }
 
+#[test]
+fn release_verify_result_is_appended_after_user_approvals_once() {
+    let work = tempfile::tempdir().unwrap();
+    let snapshot = work.path().join("snapshot.json");
+    fs::write(
+        &snapshot,
+        r#"{"protocol":"quoin.release-snapshot/v1","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
+    )
+    .unwrap();
+    let verify = work.path().join("release-verify.json");
+    fs::write(
+        &verify,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"tag":"v1"},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+    )
+    .unwrap();
+    let quire = fake_quire(work.path(), 0, "");
+    let generated = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "release-record",
+            "--snapshot",
+            snapshot.to_str().unwrap(),
+            "--release-verify",
+            verify.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    let exported = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "release-record",
+            "--snapshot",
+            snapshot.to_str().unwrap(),
+            "--release-verify",
+            verify.to_str().unwrap(),
+            "--approval",
+            "user-approval.json",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code(&exported), 0, "{}", stderr(&exported));
+    let args = recorded_args(work.path());
+    let approvals: Vec<_> = args
+        .windows(2)
+        .filter(|pair| pair[0] == "--approval")
+        .map(|pair| pair[1].as_str())
+        .collect();
+    assert_eq!(approvals, ["user-approval.json", verify.to_str().unwrap()]);
+}
+
+#[trace("FR-201-AC-3")]
+#[test]
+fn missing_release_record_inputs_leave_gaps_and_exit_partial() {
+    let work = tempfile::tempdir().unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "release-record",
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 1, "{}", stderr(&output));
+    let report = json(&output);
+    assert_eq!(report["documents"][0]["status"], "incomplete");
+    let kinds: Vec<_> = report["documents"][0]["gaps"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|gap| gap["gap_kind"].as_str().unwrap())
+        .collect();
+    assert_eq!(kinds, ["no_snapshot", "no_release_verify_input"]);
+    assert!(work.path().join("dossier/DOS-REL.md").exists());
+}
+
+#[trace("FR-201-AC-6")]
+#[test]
+fn malformed_release_sources_fail_before_the_selected_document_is_written() {
+    let work = tempfile::tempdir().unwrap();
+    let source = work.path().join("bad-snapshot.json");
+    fs::write(&source, "{broken").unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "release-record",
+            "--snapshot",
+            source.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 3, "{}", stderr(&output));
+    let report = json(&output);
+    assert!(
+        report["failureReport"]["source"]
+            .as_str()
+            .unwrap()
+            .contains("bad-snapshot.json")
+    );
+    assert!(!work.path().join("dossier/DOS-REL.md").exists());
+}
+
+#[trace("FR-201-AC-8")]
+#[test]
+fn release_record_generation_needs_no_git_and_is_repeatable() {
+    let work = tempfile::tempdir().unwrap();
+    let empty_path = work.path().join("empty-path");
+    fs::create_dir(&empty_path).unwrap();
+    let snapshot = work.path().join("snapshot.json");
+    fs::write(
+        &snapshot,
+        r#"{"protocol":"quoin.release-snapshot/v1","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
+    )
+    .unwrap();
+    let verify = work.path().join("release-verify.json");
+    fs::write(
+        &verify,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"not_released","tag":"v1","reasons":["approval_not_found"]}"#,
+    )
+    .unwrap();
+    let generate = || {
+        Command::new(env!("CARGO_BIN_EXE_quoin"))
+            .args([
+                "dossier",
+                "generate",
+                "--version",
+                "1.0",
+                "--doc",
+                "release-record",
+                "--snapshot",
+                snapshot.to_str().unwrap(),
+                "--release-verify",
+                verify.to_str().unwrap(),
+            ])
+            .env("PATH", &empty_path)
+            .current_dir(work.path())
+            .output()
+            .expect("quoin starts without git on PATH")
+    };
+    let first = generate();
+    assert_eq!(
+        first.status.code(),
+        Some(1),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let document = work.path().join("dossier/DOS-REL.md");
+    let first_bytes = fs::read(&document).unwrap();
+    let second = generate();
+    assert_eq!(
+        second.status.code(),
+        Some(1),
+        "{}",
+        String::from_utf8_lossy(&second.stderr)
+    );
+    assert_eq!(fs::read(document).unwrap(), first_bytes);
+}
+
+#[trace("FR-201-AC-7")]
+#[test]
+#[ignore = "requires the installed quire, pandoc and pdftotext export toolchain"]
+fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
+    let work = tempfile::tempdir().unwrap();
+    let git = |args: &[&str]| {
+        let result = Command::new("git")
+            .args(args)
+            .current_dir(work.path())
+            .output()
+            .expect("git starts");
+        assert!(
+            result.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    };
+    git(&["init", "-q"]);
+    git(&["config", "user.name", "Dossier Test"]);
+    git(&["config", "user.email", "dossier@example.invalid"]);
+    let snapshot = work.path().join("snapshot.json");
+    fs::write(
+        &snapshot,
+        r#"{"protocol":"quoin.release-snapshot/v1","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
+    )
+    .unwrap();
+    let verify = work.path().join("release-verify.json");
+    fs::write(
+        &verify,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"status":"approved","tag":"v1","approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z"},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+    )
+    .unwrap();
+    let generated = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "release-record",
+            "--snapshot",
+            snapshot.to_str().unwrap(),
+            "--release-verify",
+            verify.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    git(&["add", "dossier/DOS-REL.md"]);
+    git(&["commit", "-qm", "release record"]);
+
+    for (format, output) in [("pdf", "out.pdf"), ("docx", "out.docx")] {
+        let exported = quoin(
+            work.path(),
+            &[
+                "export",
+                "--version",
+                "1.0",
+                "--doc",
+                "release-record",
+                "--snapshot",
+                snapshot.to_str().unwrap(),
+                "--release-verify",
+                verify.to_str().unwrap(),
+                "--to",
+                format,
+                "--output",
+                output,
+                "--quire",
+                "quire",
+            ],
+        );
+        assert_eq!(code(&exported), 0, "{}", stderr(&exported));
+        let extracted = if format == "pdf" {
+            Command::new("pdftotext")
+                .args([output, "-"])
+                .current_dir(work.path())
+                .output()
+                .expect("pdftotext starts")
+        } else {
+            Command::new("pandoc")
+                .args([output, "-t", "plain"])
+                .current_dir(work.path())
+                .output()
+                .expect("pandoc starts")
+        };
+        assert!(
+            extracted.status.success(),
+            "{}",
+            String::from_utf8_lossy(&extracted.stderr)
+        );
+        let text = String::from_utf8_lossy(&extracted.stdout);
+        assert!(text.contains("Ada Example"), "{text}");
+        assert!(text.contains("release authorization"), "{text}");
+    }
+}
+
 #[trace("FR-191-AC-10")]
 #[test]
 fn export_looks_where_out_says_and_names_the_document_missing_under_the_default() {
@@ -807,6 +1080,8 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
         soup_binding: None,
         soup_records: None,
         soup_support: None,
+        snapshot: None,
+        release_verify: None,
         as_of: Some("2026-11-15T00:00:00Z".to_owned()),
         version: "1.0".to_owned(),
     };

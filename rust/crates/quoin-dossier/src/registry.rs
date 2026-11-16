@@ -44,6 +44,10 @@ pub struct Inputs {
     pub soup_records: Option<PathBuf>,
     /// Optional public support statements, passed to the source unchanged.
     pub soup_support: Option<PathBuf>,
+    /// Committed `quoin.release-snapshot/v1` source for the release record.
+    pub snapshot: Option<PathBuf>,
+    /// Engineering Assurance release-verify result for the release record.
+    pub release_verify: Option<PathBuf>,
     /// The explicit evaluation instant, an RFC 3339 string.
     pub as_of: Option<String>,
     /// The document version written into every generated file.

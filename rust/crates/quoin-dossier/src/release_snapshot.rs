@@ -1,0 +1,181 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Agent-IX
+
+//! Closed read-only model and parser for `quoin.release-snapshot/v1`.
+//!
+//! The release command and dossier share this model so reading a committed
+//! snapshot never introduces a second interpretation of its schema.
+
+use serde::{Deserialize, Serialize};
+
+/// The only supported release snapshot protocol.
+pub const RELEASE_SNAPSHOT_PROTOCOL: &str = "quoin.release-snapshot/v1";
+
+/// A release evidence snapshot as written by `quoin release snapshot`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReleaseSnapshot {
+    /// Protocol identifier.
+    pub protocol: String,
+    /// Evaluation instant supplied to the snapshot command.
+    pub as_of: String,
+    /// Baseline commit supplied to the snapshot command.
+    pub baseline_commit: String,
+    /// Previous release, if the source history has one.
+    pub previous_release: Option<SnapshotPreviousRelease>,
+    /// Requirement coverage in source order.
+    pub coverage: Vec<CoverageRequirement>,
+    /// Counts for the evidence freshness statuses.
+    pub evidence_freshness: Freshness,
+    /// Open findings in snapshot order.
+    pub open_findings: Vec<OpenFinding>,
+    /// SOUP state captured in the snapshot.
+    pub soup: quoin_soup::SoupSection,
+    /// Carried anomalies in snapshot order.
+    pub anomalies: Vec<SnapshotAnomaly>,
+    /// Change records in FR-168 source order.
+    pub change_records: Vec<SnapshotChangeRecord>,
+}
+
+impl ReleaseSnapshot {
+    /// Parse and validate a closed release snapshot.
+    pub fn parse(bytes: &[u8]) -> Result<Self, serde_json::Error> {
+        let snapshot: Self = serde_json::from_slice(bytes)?;
+        if snapshot.protocol != RELEASE_SNAPSHOT_PROTOCOL {
+            return Err(<serde_json::Error as serde::de::Error>::custom(format!(
+                "protocol must be {RELEASE_SNAPSHOT_PROTOCOL}"
+            )));
+        }
+        Ok(snapshot)
+    }
+}
+
+/// One requirement's criteria.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverageRequirement {
+    /// Requirement identifier.
+    pub id: String,
+    /// Its criteria.
+    pub criteria: Vec<CoverageCriterion>,
+}
+
+/// One criterion's static and evidence status.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverageCriterion {
+    /// Criterion identifier.
+    pub id: String,
+    /// Static status as captured.
+    pub static_status: String,
+    /// Evidence status as captured.
+    pub evidence_status: quoin_assurance::matrix::EvidenceStatus,
+}
+
+/// Counts for the five evidence statuses.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Freshness {
+    /// Bound evidence count.
+    pub bound: usize,
+    /// Stale evidence count.
+    pub stale: usize,
+    /// Suspect evidence count.
+    pub suspect: usize,
+    /// Undischarged evidence count.
+    pub undischarged: usize,
+    /// Criteria with no run evidence.
+    #[serde(rename = "no run evidence")]
+    pub no_run_evidence: usize,
+}
+
+impl Freshness {
+    /// Add one criterion to the appropriate status count.
+    pub fn count(&mut self, status: quoin_assurance::matrix::EvidenceStatus) {
+        let slot = match status {
+            quoin_assurance::matrix::EvidenceStatus::Bound => &mut self.bound,
+            quoin_assurance::matrix::EvidenceStatus::Stale => &mut self.stale,
+            quoin_assurance::matrix::EvidenceStatus::Suspect => &mut self.suspect,
+            quoin_assurance::matrix::EvidenceStatus::Undischarged => &mut self.undischarged,
+            quoin_assurance::matrix::EvidenceStatus::NoRunEvidence => &mut self.no_run_evidence,
+        };
+        *slot += 1;
+    }
+}
+
+/// One open auditor finding.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OpenFinding {
+    /// Obligation identifier.
+    pub obligation: String,
+    /// Finding kind.
+    pub kind: String,
+    /// Finding summary.
+    pub summary: String,
+    /// Repository path, when present.
+    pub path: Option<String>,
+    /// Source line, when present.
+    pub line: Option<u64>,
+    /// Source symbol, when present.
+    pub symbol: Option<String>,
+    /// Typed stale-evidence cause, when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cause: Option<quoin_assurance::matrix::StaleCause>,
+}
+
+/// An authored anomaly rationale.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RationaleEntry {
+    /// Rationale author.
+    pub author: String,
+    /// Rationale text.
+    pub rationale: String,
+}
+
+/// One carried anomaly as recorded in the snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotAnomaly {
+    /// Anomaly identifier.
+    pub id: String,
+    /// Authored title, when present.
+    pub title: Option<String>,
+    /// Authored status.
+    pub status: String,
+    /// Authored resolution, when present.
+    pub resolution: Option<String>,
+    /// Authored severity, when present.
+    pub severity: Option<String>,
+    /// Authored safety-impact assessment.
+    pub safety_impact: String,
+    /// Whether safety impact is unassessed.
+    pub unassessed: bool,
+    /// Release rationale entries in source order.
+    pub release_rationale: Vec<RationaleEntry>,
+}
+
+/// Previous release as captured in snapshot history.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotPreviousRelease {
+    /// Previous release tag name.
+    pub tag: String,
+    /// Previous release commit value.
+    pub commit: String,
+}
+
+/// One change-assurance record in the snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotChangeRecord {
+    /// Record identifier.
+    pub record_id: String,
+    /// Record revision.
+    pub revision: u64,
+    /// Repository-relative record path.
+    pub path: String,
+    /// Commit value captured by the source history.
+    pub commit: String,
+}

@@ -10,153 +10,15 @@
 
 use std::path::Path;
 
-use quoin_anomaly::{CarriedRead, read_carried};
-use quoin_assurance::matrix::{EvidenceStatus, MatrixOutput, StaleCause};
-use serde::{Deserialize, Serialize};
-
-use super::history::{ChangeRecord, PreviousRelease};
 use super::{Code, Refusal, Stop};
 use crate::evidence::audit::AuditOptions;
 use crate::matrix::{Built, build};
-use crate::soup::SoupSection;
-
-/// The protocol of the snapshot.
-pub(super) const PROTOCOL: &str = "quoin.release-snapshot/v1";
-
-/// The release evidence snapshot.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct Snapshot {
-    pub(super) protocol: String,
-    pub(super) as_of: String,
-    pub(super) baseline_commit: String,
-    pub(super) previous_release: Option<PreviousRelease>,
-    pub(super) coverage: Vec<CoverageRequirement>,
-    pub(super) evidence_freshness: Freshness,
-    pub(super) open_findings: Vec<OpenFinding>,
-    pub(super) soup: SoupSection,
-    pub(super) anomalies: Vec<Anomaly>,
-    pub(super) change_records: Vec<ChangeRecord>,
-}
-
-/// One requirement's criteria.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct CoverageRequirement {
-    pub(super) id: String,
-    pub(super) criteria: Vec<CoverageCriterion>,
-}
-
-/// One criterion's row: the static axis beside the evidence axis.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct CoverageCriterion {
-    pub(super) id: String,
-    pub(super) static_status: String,
-    pub(super) evidence_status: EvidenceStatus,
-}
-
-/// The count of criteria at each of the five evidence statuses.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct Freshness {
-    pub(super) bound: usize,
-    pub(super) stale: usize,
-    pub(super) suspect: usize,
-    pub(super) undischarged: usize,
-    #[serde(rename = "no run evidence")]
-    pub(super) no_run_evidence: usize,
-}
-
-impl Freshness {
-    fn count(&mut self, status: EvidenceStatus) {
-        let slot = match status {
-            EvidenceStatus::Bound => &mut self.bound,
-            EvidenceStatus::Stale => &mut self.stale,
-            EvidenceStatus::Suspect => &mut self.suspect,
-            EvidenceStatus::Undischarged => &mut self.undischarged,
-            EvidenceStatus::NoRunEvidence => &mut self.no_run_evidence,
-        };
-        *slot += 1;
-    }
-}
-
-/// One auditor finding of a criterion.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct OpenFinding {
-    pub(super) obligation: String,
-    pub(super) kind: String,
-    pub(super) summary: String,
-    pub(super) path: Option<String>,
-    pub(super) line: Option<u64>,
-    pub(super) symbol: Option<String>,
-    /// The typed cause of a `stale-evidence` finding: `missing-run` or `failed-run`.
-    ///
-    /// Present only on `stale-evidence` findings; omitted (never `null`) on every
-    /// other kind (FR-167, FR-115-AC-17..18).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(super) cause: Option<StaleCause>,
-}
-
-impl OpenFinding {
-    /// FR-167's order: `obligation`, `kind`, `path`, `line`, `symbol`, `cause`,
-    /// then `summary`. Strings compare bytewise, `line` numerically, and an
-    /// absent value sorts before a present one.
-    fn order_key(
-        &self,
-    ) -> (
-        &str,
-        &str,
-        Option<&str>,
-        Option<u64>,
-        Option<&str>,
-        u8,
-        &str,
-    ) {
-        (
-            &self.obligation,
-            &self.kind,
-            self.path.as_deref(),
-            self.line,
-            self.symbol.as_deref(),
-            cause_order(self.cause),
-            &self.summary,
-        )
-    }
-}
-
-/// Cause ordering for snapshot: absent cause first (0), then failed-run (1),
-/// then missing-run (2) (FR-167).
-fn cause_order(cause: Option<StaleCause>) -> u8 {
-    match cause {
-        None | Some(StaleCause::Invalid) => 0, // absent or invalid: first for snapshots
-        Some(StaleCause::FailedRun) => 1,
-        Some(StaleCause::MissingRun) => 2,
-    }
-}
-
-/// One `{ author, rationale }` entry, as authored.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct RationaleEntry {
-    pub(super) author: String,
-    pub(super) rationale: String,
-}
-
-/// One carried anomaly, with the values its record states.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(super) struct Anomaly {
-    pub(super) id: String,
-    pub(super) title: Option<String>,
-    pub(super) status: String,
-    pub(super) resolution: Option<String>,
-    pub(super) severity: Option<String>,
-    pub(super) safety_impact: String,
-    pub(super) unassessed: bool,
-    pub(super) release_rationale: Vec<RationaleEntry>,
-}
+use quoin_anomaly::{CarriedRead, read_carried};
+use quoin_assurance::matrix::MatrixOutput;
+use quoin_dossier::release_snapshot::{
+    CoverageCriterion, CoverageRequirement, Freshness, OpenFinding, ReleaseSnapshot as Snapshot,
+    SnapshotAnomaly as Anomaly,
+};
 
 /// The sections that come from the evidence matrix.
 pub(super) struct MatrixSections {

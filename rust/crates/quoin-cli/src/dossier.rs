@@ -91,6 +91,16 @@ fn selectors(command: Command) -> Command {
             "FILE",
             "Support statements passed to quoin soup report",
         ))
+        .arg(one(
+            "snapshot",
+            "FILE",
+            "Committed release snapshot for release-record",
+        ))
+        .arg(one(
+            "release-verify",
+            "FILE",
+            "EA release-verify result for release-record",
+        ))
         .arg(
             one(
                 "pack",
@@ -242,6 +252,8 @@ fn execute(
         soup_binding: text(arguments, "soup-binding").map(PathBuf::from),
         soup_records: text(arguments, "soup-records").map(PathBuf::from),
         soup_support: text(arguments, "soup-support").map(PathBuf::from),
+        snapshot: text(arguments, "snapshot").map(PathBuf::from),
+        release_verify: text(arguments, "release-verify").map(PathBuf::from),
         as_of: text(arguments, "as-of"),
         // A missing --version is refused by the library, which owns that rule.
         version: text(arguments, "version").unwrap_or_default(),
@@ -250,11 +262,20 @@ fn execute(
         Mode::Generate => quoin_dossier::generate(registry, &kinds, &out, &inputs),
         Mode::Check => quoin_dossier::check(registry, &kinds, &out, &inputs),
         Mode::Export => {
+            let mut approvals = paths(arguments, "approval");
+            let selects_release_record =
+                kinds.is_empty() || kinds.iter().any(|kind| kind == "release-record");
+            if selects_release_record
+                && let Some(result) = inputs.release_verify.as_ref()
+                && !approvals.contains(result)
+            {
+                approvals.push(result.clone());
+            }
             let options = ExportOptions {
                 to: text(arguments, "to").unwrap_or_default(),
                 output: PathBuf::from(text(arguments, "output").unwrap_or_default()),
                 release: text(arguments, "release"),
-                approvals: paths(arguments, "approval"),
+                approvals,
                 template: text(arguments, "template").map(PathBuf::from),
                 quire: PathBuf::from(
                     text(arguments, "quire").unwrap_or_else(|| "quire".to_owned()),

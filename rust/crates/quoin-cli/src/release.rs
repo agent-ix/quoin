@@ -327,7 +327,7 @@ fn write_snapshot(inputs: &Inputs) -> Result<PathBuf, Stop> {
     let anomalies = snapshot::anomalies(&inputs.repo)?;
 
     let snapshot = snapshot::Snapshot {
-        protocol: snapshot::PROTOCOL.to_owned(),
+        protocol: quoin_dossier::release_snapshot::RELEASE_SNAPSHOT_PROTOCOL.to_owned(),
         as_of: inputs.as_of.clone(),
         baseline_commit: inputs.baseline_commit.clone(),
         previous_release: history.previous_release,
