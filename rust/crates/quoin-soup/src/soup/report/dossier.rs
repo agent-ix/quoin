@@ -148,6 +148,6 @@ fn presentation(report: &Report) -> DossierSource {
         .collect();
     DossierSource {
         rows,
-        appended: render::appended(report),
+        appended: render::appended(report, "###"),
     }
 }

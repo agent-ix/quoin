@@ -269,27 +269,27 @@ pub(super) fn markdown(report: &Report) -> String {
             let _ = writeln!(text, "- Disposition scope: {DISPOSITION_SCOPE}");
         }
     }
-    text.push_str(&appended(report));
+    text.push_str(&appended(report, "##"));
     text
 }
 
-pub(super) fn appended(report: &Report) -> String {
+pub(super) fn appended(report: &Report, heading: &str) -> String {
     let mut text = String::new();
-    text.push_str("\n## Unmatched advisories\n\n");
+    let _ = write!(text, "\n{heading} Unmatched advisories\n\n");
     if report.unmatched.is_empty() {
         text.push_str("none\n");
     }
     for unmatched in &report.unmatched {
         let _ = writeln!(text, "- {}", unmatched_text(unmatched));
     }
-    text.push_str("\n## Unmatched policy findings\n\n");
+    let _ = write!(text, "\n{heading} Unmatched policy findings\n\n");
     if report.unmatched_policy.is_empty() {
         text.push_str("none\n");
     }
     for unmatched in &report.unmatched_policy {
         let _ = writeln!(text, "- {}", policy_unmatched_text(unmatched));
     }
-    text.push_str("\n## Scans\n\n");
+    let _ = write!(text, "\n{heading} Scans\n\n");
     for state in &report.scans {
         let _ = writeln!(text, "- {}: {}", state.tool.name(), scan_text(state));
     }

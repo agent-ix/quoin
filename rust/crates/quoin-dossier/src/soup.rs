@@ -77,7 +77,7 @@ impl Generator for SoupGenerator {
         }
         body.push_str("\n## Unmatched findings and scans not run\n");
         // The shared source owns the appended sections and every status word.
-        body.push_str(&source.appended.replace("\n## ", "\n### "));
+        body.push_str(&source.appended);
         body.push('\n');
         Ok(Generated { body, gaps })
     }
