@@ -20,8 +20,8 @@ use std::fmt::Write as _;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use clap::{Arg, ArgMatches, Command};
 use crate::{SoupError, SoupErrorCode};
+use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_evidence::adapters::parse_sbom;
@@ -142,7 +142,12 @@ pub fn run(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Respons
     let outcome = match arguments.subcommand() {
         Some(("promote", promote)) => run_promote(promote, settings),
         Some(("report", report)) => report::run(report, settings),
-        _ => return Err(SoupError::new(SoupErrorCode::InvalidCommand, "an unknown soup command reached dispatch")),
+        _ => {
+            return Err(SoupError::new(
+                SoupErrorCode::InvalidCommand,
+                "an unknown soup command reached dispatch",
+            ));
+        }
     };
     match outcome {
         Ok(response) => Ok(response),
