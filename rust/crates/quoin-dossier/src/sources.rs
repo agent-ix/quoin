@@ -32,6 +32,8 @@ pub struct Sources {
     pub rmm: fn(&Inputs) -> Result<RmmSource, SourceFailure>,
     /// Build the shared FR-144 report without reading an SBOM.
     pub soup: fn(&Inputs) -> Result<quoin_soup::DossierSource, SourceFailure>,
+    /// Read policy records through quire's typed record reader.
+    pub policy: fn(&Inputs) -> Result<quoin_quire::records::Corpus, SourceFailure>,
 }
 
 /// The two discharge source forms, preserving their supplied order.
