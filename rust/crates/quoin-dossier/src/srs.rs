@@ -18,7 +18,7 @@ use crate::order::dossier_cmp;
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
 
 /// The requirement types the SRS lists.
-const REQUIREMENT_TYPES: [&str; 3] = ["FR", "NFR", "StR"];
+pub(crate) const REQUIREMENT_TYPES: [&str; 3] = ["FR", "NFR", "StR"];
 
 /// The SRS generator.
 pub(crate) struct SrsGenerator;
@@ -127,7 +127,7 @@ fn render(documents: &[Document]) -> Generated {
 }
 
 /// The title from frontmatter; empty when absent.
-fn title_of(doc: &Document) -> String {
+pub(crate) fn title_of(doc: &Document) -> String {
     doc.frontmatter
         .get("title")
         .and_then(Value::as_str)
@@ -150,7 +150,7 @@ fn statement_of(doc: &Document) -> String {
 
 /// The criticality exactly as recorded; `None` when the key is absent, null or
 /// blank. A level is never inferred or defaulted.
-fn criticality_of(doc: &Document) -> Option<String> {
+pub(crate) fn criticality_of(doc: &Document) -> Option<String> {
     let recorded = match doc.frontmatter.get("criticality")? {
         Value::Null => return None,
         Value::String(text) => text.clone(),
@@ -160,7 +160,7 @@ fn criticality_of(doc: &Document) -> Option<String> {
 }
 
 /// The criteria table of a requirement as `(id, text)` pairs.
-fn criteria_of(doc: &Document) -> Vec<(String, String)> {
+pub(crate) fn criteria_of(doc: &Document) -> Vec<(String, String)> {
     let table_name = match doc.kind.as_str() {
         "FR" | "NFR" => "Acceptance Criteria",
         "StR" => "Validation Criteria",

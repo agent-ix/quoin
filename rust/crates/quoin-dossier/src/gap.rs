@@ -41,12 +41,18 @@ pub enum GapKind {
     NoClauseBinding,
     /// A bound clause is still open.
     ClauseOpen,
+    /// A criterion's source finding carries the typed `failed-run` cause.
+    EvidenceFailed,
+    /// A criterion's evidence is stale without a failed run.
+    EvidenceStale,
+    /// A criterion's evidence is distrusted by the auditor.
+    EvidenceSuspect,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 12] = [
+    pub(crate) const ALL: [Self; 15] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -59,6 +65,9 @@ impl GapKind {
         Self::NoEvidence,
         Self::NoClauseBinding,
         Self::ClauseOpen,
+        Self::EvidenceFailed,
+        Self::EvidenceStale,
+        Self::EvidenceSuspect,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -77,6 +86,9 @@ impl GapKind {
             Self::NoEvidence => "no_evidence",
             Self::NoClauseBinding => "no_clause_binding",
             Self::ClauseOpen => "clause_open",
+            Self::EvidenceFailed => "evidence_failed",
+            Self::EvidenceStale => "evidence_stale",
+            Self::EvidenceSuspect => "evidence_suspect",
         }
     }
 
@@ -222,6 +234,9 @@ mod tests {
                 "no_evidence",
                 "no_clause_binding",
                 "clause_open",
+                "evidence_failed",
+                "evidence_stale",
+                "evidence_suspect",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {
