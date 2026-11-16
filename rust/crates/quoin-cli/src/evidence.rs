@@ -136,13 +136,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
     )?)
     .map_err(|error| format!("results are not UTF-8: {error}"))?;
     let formal_rule_selection = read_formal_rule_selection(arguments)?;
-    let policy = arguments
-        .get_one::<String>("policy")
-        .map(|path| {
-            String::from_utf8(bounded_input(path, MAX_RECORD_RESULTS_BYTES)?)
-                .map_err(|error| format!("policy is not UTF-8: {error}"))
-        })
-        .transpose()?;
+    let policy = read_policy(arguments)?;
     let lineage = arguments
         .get_one::<String>("lineage")
         .map(|source| json_input(source))
@@ -230,6 +224,16 @@ fn read_formal_rule_selection(arguments: &ArgMatches) -> Result<Option<serde_jso
             let bytes = bounded_input(path, MAX_RECORD_RESULTS_BYTES)?;
             serde_json::from_slice(&bytes)
                 .map_err(|error| format!("formal-rule-selection is not JSON: {error}"))
+        })
+        .transpose()
+}
+
+fn read_policy(arguments: &ArgMatches) -> Result<Option<String>, String> {
+    arguments
+        .get_one::<String>("policy")
+        .map(|path| {
+            String::from_utf8(bounded_input(path, MAX_RECORD_RESULTS_BYTES)?)
+                .map_err(|error| format!("policy is not UTF-8: {error}"))
         })
         .transpose()
 }
