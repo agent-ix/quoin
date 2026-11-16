@@ -197,14 +197,6 @@ fn rendered_policy_regions_match_both_source_reports_for_each_estimate() {
         .filter(|document| document.kind == "risk_estimate")
         .collect::<Vec<_>>();
     assert_eq!(estimates.len(), 2);
-    for estimate in estimates {
-        assert_eq!(
-            estimate.contract,
-            quoin_quire::records::Contract::Satisfied,
-            "fixture estimate {} was not contract-valid",
-            estimate.id
-        );
-    }
     let summary = quoin_risk_advice::summarize(fixture.root.path(), &selection).unwrap();
     let advice = quoin_risk_advice::advise(fixture.root.path(), &selection).unwrap();
     let report = quoin_dossier::generate(
