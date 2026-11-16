@@ -57,10 +57,10 @@ pub enum GapKind {
     AnomalyUnassessed,
     /// An impacting carried anomaly has no release rationale.
     AnomalyNoReleaseRationale,
-    /// No authored risk management plan record exists.
-    NoPlanRecord,
     /// No acceptability policy is present in scope.
     NoAcceptabilityPolicy,
+    /// No authored risk management plan record exists.
+    NoPlanRecord,
 }
 
 impl GapKind {
@@ -87,8 +87,8 @@ impl GapKind {
         Self::SoupFieldNotStated,
         Self::AnomalyUnassessed,
         Self::AnomalyNoReleaseRationale,
-        Self::NoPlanRecord,
         Self::NoAcceptabilityPolicy,
+        Self::NoPlanRecord,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -115,8 +115,8 @@ impl GapKind {
             Self::SoupFieldNotStated => "soup_field_not_stated",
             Self::AnomalyUnassessed => "anomaly_unassessed",
             Self::AnomalyNoReleaseRationale => "anomaly_no_release_rationale",
-            Self::NoPlanRecord => "no_plan_record",
             Self::NoAcceptabilityPolicy => "no_acceptability_policy",
+            Self::NoPlanRecord => "no_plan_record",
         }
     }
 
@@ -270,8 +270,8 @@ mod tests {
                 "soup_field_not_stated",
                 "anomaly_unassessed",
                 "anomaly_no_release_rationale",
-                "no_plan_record",
                 "no_acceptability_policy",
+                "no_plan_record",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {

@@ -48,11 +48,7 @@ fn render(policies: &[&Document]) -> Result<Generated, SourceFailure> {
          ## Verification of risk controls\n\nNo authored plan record exists.\n\n\
          ## Acceptability policy\n",
     );
-    let mut gaps = vec![Gap::new(
-        GapKind::NoPlanRecord,
-        "this document",
-        "no authored risk management plan record exists",
-    )];
+    let mut gaps = Vec::new();
     if policies.is_empty() {
         gaps.push(Gap::new(
             GapKind::NoAcceptabilityPolicy,
@@ -60,6 +56,11 @@ fn render(policies: &[&Document]) -> Result<Generated, SourceFailure> {
             "no acceptability policy record exists in scope",
         ));
     }
+    gaps.push(Gap::new(
+        GapKind::NoPlanRecord,
+        "this document",
+        "no authored risk management plan record exists",
+    ));
     for policy in policies {
         let severity = required_table(policy, "Severity levels")?;
         let probability = required_table(policy, "Probability levels")?;
@@ -244,7 +245,7 @@ mod tests {
                 .iter()
                 .map(|gap| gap.gap_kind)
                 .collect::<Vec<_>>(),
-            [GapKind::NoPlanRecord, GapKind::NoAcceptabilityPolicy]
+            [GapKind::NoAcceptabilityPolicy, GapKind::NoPlanRecord]
         );
         assert!(!output.body.contains("| Severity level |"));
         assert!(!output.body.contains("| Severity | Probability | Region |"));
