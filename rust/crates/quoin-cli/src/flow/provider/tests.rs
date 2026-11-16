@@ -150,7 +150,7 @@ fn qsl_check_passes_only_with_clean_fsl_outcome_and_bound_formalizes_relation() 
     );
 }
 
-#[trace("FR-189-AC-2", "TC-015")]
+#[trace("FR-189-AC-2")]
 #[cfg(unix)]
 #[test]
 fn qsl_check_failure_returns_the_diagnostic_file_line_and_message() {
@@ -208,7 +208,6 @@ fn a_missing_fsl_executable_never_passes_the_invariant() {
     assert_eq!(failure.code.to_string(), "qsl_check_unavailable");
 }
 
-#[trace("FR-189-AC-3")]
 #[test]
 fn the_retry_guard_requires_four_recorded_consecutive_failures() {
     let failures = |count: usize, cleared: usize| {
@@ -236,7 +235,6 @@ fn the_retry_guard_requires_four_recorded_consecutive_failures() {
     assert!(super::retries_exhausted(&make_instance(4, 1)).is_err());
 }
 
-#[trace("FR-189-AC-6", "FR-189-AC-7")]
 #[test]
 fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

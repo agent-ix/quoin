@@ -759,10 +759,10 @@ mod tests {
     use super::{Harness, formalize_scenarios};
     use ix_trace_rs::trace;
 
-    #[trace("FR-189-AC-2", "TC-015")]
+    #[trace("FR-189-AC-2")]
     #[test]
     #[ignore = "run by make workflow-test with the current ix-flow runtime"]
-    fn tc_015_formalize_failures_return_to_drafting_with_diagnostics() {
+    fn formalize_failures_return_to_drafting_with_diagnostics() {
         let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =

@@ -16,8 +16,8 @@ build: rust-build
 # Workflow definitions ship beside plugin skills. This install supplies only
 # semantic schema build inputs; the archived workflow provider is not used.
 build-inputs:
-	@pnpm install --frozen-lockfile || { rc=$$?; \
-	  echo "build-inputs: 'pnpm install --frozen-lockfile' failed (exit $$rc); the pnpm error is above. If it is a connection error, this step needs the registries in your npm config ('pnpm config get registry'): even a lockfile satisfied from the store re-checks package metadata. Retry waits are bounded by pnpm-workspace.yaml." >&2; \
+	@pnpm install --frozen-lockfile --config.userconfig=/dev/null --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --store-dir $(CARGO_TARGET)/pnpm-store || { rc=$$?; \
+	  echo "build-inputs: 'pnpm install --frozen-lockfile' failed (exit $$rc); the pnpm error is above. It uses npmjs with a target-local store and an empty user config. Retry waits are bounded by pnpm-workspace.yaml." >&2; \
 	  exit $$rc; }
 
 test: rust-gate
@@ -74,8 +74,8 @@ evidence: build-inputs
 
 .PHONY: workflow-test workflow-test-runtime
 workflow-test-runtime:
-	npm install --prefix $(CARGO_TARGET)/workflow-runner --userconfig /dev/null --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.3
+	npm install --prefix $(CARGO_TARGET)/workflow-runner --userconfig /dev/null --cache=$(CARGO_TARGET)/npm-cache --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.3
 
 workflow-test: rust-build workflow-test-runtime
 	cd $(RUST_DIR) && cargo run --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check -- smoke $(CARGO_TARGET)/debug/quoin $(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js $(CURDIR)
-	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::tc_015_formalize_failures_return_to_drafting_with_diagnostics -- --ignored --exact
+	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::formalize_failures_return_to_drafting_with_diagnostics -- --ignored --exact
