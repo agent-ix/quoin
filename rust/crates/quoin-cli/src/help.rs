@@ -92,6 +92,10 @@ const COMMANDS: &[(&str, &str)] = &[
         "evidence",
         "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",
     ),
+    (
+        "formalize",
+        "Draft and QSL-check a formalization proposal.",
+    ),
     ("graph", "Read-only evidence-graph analysis views."),
     ("matrix", crate::matrix::ABOUT),
     (
