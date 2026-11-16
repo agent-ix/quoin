@@ -17,6 +17,9 @@ pub(crate) struct RunObservationFile {
     pub(crate) protocol: String,
     /// Exact canonical store-relative run record path.
     pub(crate) record: String,
+    /// Expected purpose of the run represented by the record.
+    #[serde(default)]
+    pub(crate) run_kind: Option<String>,
     /// Source HEAD selected for this read operation.
     pub(crate) selected_head: Option<String>,
     /// Checkout SHA observed for the run-package execution.
@@ -90,6 +93,15 @@ fn validate(observation: &RunObservationFile, path: &str) -> Result<(), String> 
     if observation.record.is_empty() || !canonical_run_path(&observation.record) {
         return Err(format!(
             "run observation {path} record must be a canonical runs/<suite>/<timestamp>.json path"
+        ));
+    }
+    if observation
+        .run_kind
+        .as_deref()
+        .is_some_and(|kind| !matches!(kind, "analysis" | "formal_rule"))
+    {
+        return Err(format!(
+            "run observation {path} run_kind must be analysis or formal_rule"
         ));
     }
     if observation

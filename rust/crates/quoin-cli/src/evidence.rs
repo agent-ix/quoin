@@ -71,6 +71,12 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("lineage").long("lineage"))
                 .arg(Arg::new("discharges").long("discharges"))
                 .arg(Arg::new("adapter").long("adapter"))
+                .arg(
+                    Arg::new("run-kind")
+                        .long("run-kind")
+                        .value_parser(["analysis", "formal_rule"]),
+                )
+                .arg(Arg::new("formal-rule-selection").long("formal-rule-selection"))
                 .arg(Arg::new("policy").long("policy"))
                 .arg(Arg::new("results").long("results").required(true))
                 .arg(repo_arg())
@@ -129,6 +135,14 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
         MAX_RECORD_RESULTS_BYTES,
     )?)
     .map_err(|error| format!("results are not UTF-8: {error}"))?;
+    let formal_rule_selection = arguments
+        .get_one::<String>("formal-rule-selection")
+        .map(|path| {
+            let bytes = bounded_input(path, MAX_RECORD_RESULTS_BYTES)?;
+            serde_json::from_slice(&bytes)
+                .map_err(|error| format!("formal-rule-selection is not JSON: {error}"))
+        })
+        .transpose()?;
     let policy = arguments
         .get_one::<String>("policy")
         .map(|path| {
@@ -167,6 +181,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
             "repo": repo, "suite": required(arguments, "suite")?, "tool": required(arguments, "tool")?,
             "kind": arguments.get_one::<String>("kind"), "lineage": lineage, "timestamp": timestamp, "adapter": arguments.get_one::<String>("adapter"), "policy": policy,
             "results": results, "discharges": discharges, "obligations": coverage.payload.get("obligations").cloned().unwrap_or_else(|| serde_json::json!([])),
+            "run_kind": arguments.get_one::<String>("run-kind"), "formal_rule_selection": formal_rule_selection,
         }),
     )?;
     render(response, |payload| {

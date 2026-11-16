@@ -21,7 +21,9 @@ use std::collections::BTreeMap;
 use filament_analyze::MAX_REPORT_BYTES;
 use ix_trace_rs::trace;
 use quoin_evidence::adapters::{
-    ADAPTERS, AdapterResult, AdapterSelection, parse_differential_report, select_adapter,
+    ADAPTERS, AdapterResult, AdapterSelection, build_approved_claim_selection,
+    build_approved_formal_rule_selection, parse_differential_report,
+    parse_differential_report_for_run, select_adapter,
 };
 use quoin_evidence::{Outcome, SymbolId};
 use serde_json::{Value, json};
@@ -167,6 +169,112 @@ fn tc_001_projection_retains_selection_and_omits_it_when_source_report_has_none(
         json!({"selected":["claim-0", "claim-1"],"excluded":[]})
     );
     assert_eq!(projection.as_object().unwrap().len(), 6);
+}
+
+#[trace("FR-151-AC-17")]
+#[test]
+fn tc_001_formal_rule_projection_checks_and_retains_claim_mapping() {
+    let report = derive(SATISFIED, |report| {
+        report["selection"] = json!({"selected":["claim-0", "claim-1"],"excluded":[]});
+    });
+    let source: Value = serde_json::from_str(&report).unwrap();
+    let mapping = json!({
+        "claims": [
+            {
+                "claim_id": "claim-0",
+                "source": source["assertions"][0]["source"],
+                "symbol": "qsl:qsl/rule.native::Rule0",
+                "state": "approved"
+            },
+            {
+                "claim_id": "claim-1",
+                "source": source["assertions"][1]["source"],
+                "symbol": "qsl:qsl/rule.native::Rule1",
+                "state": "draft"
+            }
+        ]
+    });
+    let projection = parse_differential_report_for_run(&report, "formal_rule", Some(&mapping))
+        .unwrap()
+        .analysis_projection
+        .unwrap();
+    assert_eq!(projection["run_kind"], "formal_rule");
+    assert_eq!(projection["formal_rule_selection"], mapping);
+
+    let mut incomplete = mapping.clone();
+    incomplete["claims"].as_array_mut().unwrap().pop();
+    let error =
+        parse_differential_report_for_run(&report, "formal_rule", Some(&incomplete)).unwrap_err();
+    assert!(error.to_string().contains("every selected claim"));
+}
+
+#[trace("FR-184-AC-17")]
+#[test]
+fn formal_rule_selection_builder_maps_only_approved_selected_symbols() {
+    let mut report: Value = serde_json::from_str(SATISFIED).unwrap();
+    report["selection"] = json!({"selected":["claim-0", "claim-1"],"excluded":[]});
+    let symbols = BTreeMap::from([
+        (
+            "claim-0".to_owned(),
+            "qsl:qsl/rule.native::Rule0".to_owned(),
+        ),
+        (
+            "claim-1".to_owned(),
+            "qsl:qsl/rule.native::Rule1".to_owned(),
+        ),
+    ]);
+    let status = json!({
+        "protocol":"quoin.formal-rule-status/v1",
+        "rules":[
+            {"symbol":"qsl:qsl/rule.native::Rule0","state":"approved"},
+            {"symbol":"qsl:qsl/rule.native::Rule1","state":"approved"}
+        ]
+    });
+    let mapping = build_approved_formal_rule_selection(&report, &symbols, &status).unwrap();
+    assert_eq!(mapping["claims"].as_array().unwrap().len(), 2);
+    assert_eq!(mapping["claims"][0]["claim_id"], "claim-0");
+    assert_eq!(
+        mapping["claims"][0]["source"],
+        report["assertions"][0]["source"]
+    );
+    assert_eq!(mapping["claims"][0]["state"], "approved");
+
+    let draft_status = json!({
+        "protocol":"quoin.formal-rule-status/v1",
+        "rules":[
+            {"symbol":"qsl:qsl/rule.native::Rule0","state":"approved"},
+            {"symbol":"qsl:qsl/rule.native::Rule1","state":"draft"}
+        ]
+    });
+    assert!(
+        build_approved_formal_rule_selection(&report, &symbols, &draft_status)
+            .unwrap_err()
+            .contains("not approved")
+    );
+}
+
+#[trace("FR-190-AC-1")]
+#[test]
+fn approved_claim_selection_builder_excludes_draft_spans() {
+    let status = json!({
+        "protocol":"quoin.formal-rule-status/v1",
+        "rules":[
+            {"symbol":"qsl:rules/a.qsl::Approved","path":"rules/a.qsl","declaration_range":{"start":12,"end":34},"state":"approved"},
+            {"symbol":"qsl:rules/d.qsl::Draft","path":"rules/d.qsl","declaration_range":{"start":40,"end":68},"state":"draft"},
+            {"symbol":"qsl:rules/a.qsl::ApprovedAgain","path":"rules/a.qsl","declaration_range":{"start":50,"end":81},"state":"approved"}
+        ]
+    });
+    let selection = build_approved_claim_selection(&status).unwrap();
+    assert_eq!(selection["protocol"], "filament-analyze.claim-selection/v1");
+    assert_eq!(selection["spans"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        selection["spans"][0],
+        json!({
+            "authority":"quoin", "identity":"rules/a.qsl", "start":12, "end":34
+        })
+    );
+    assert_eq!(selection["spans"][1]["start"], 50);
+    assert!(selection.to_string().find("Draft").is_none());
 }
 
 #[trace("FR-151-AC-2")]

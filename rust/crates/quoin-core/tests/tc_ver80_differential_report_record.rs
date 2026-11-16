@@ -45,6 +45,7 @@ fn request(dir: &Path, tool: &str, results: &str) -> Value {
         "suite": "SUITE-SMT",
         "tool": tool,
         "timestamp": "2026-01-01T00:00:00Z",
+        "run_kind": "analysis",
         "results": results,
     })
 }
@@ -104,7 +105,8 @@ fn tc_001_a_decided_report_records_one_run_with_one_entry() {
             "quoin.analysis-report-projection/v1"
         );
         assert_eq!(projection["engines"].as_array().unwrap().len(), 2);
-        assert_eq!(projection.as_object().unwrap().len(), 5);
+        assert_eq!(projection["run_kind"], "analysis");
+        assert_eq!(projection.as_object().unwrap().len(), 6);
         for forbidden in [
             "requestDigest",
             "query",

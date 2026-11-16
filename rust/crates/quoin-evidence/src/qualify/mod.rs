@@ -134,6 +134,8 @@ pub struct RetainedRun {
 /// The host's admitted observations of one retained run (FR-116 Inputs).
 #[derive(Debug, Clone, Default)]
 pub struct RunObservation {
+    /// The host's expected report purpose for this run.
+    pub run_kind: Option<String>,
     /// The CI checkout SHA of the `run-package` step that produced the record.
     pub performed_revision: Option<String>,
     /// The execution association of that step.

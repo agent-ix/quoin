@@ -34,7 +34,10 @@ pub use audit_script::parse_audit_script;
 pub use cargo_deny::parse_cargo_deny;
 pub use cargo_mutants::parse_cargo_mutants;
 pub use contract_conformance::{PROTOCOL, parse_contract_conformance};
-pub use differential_report::parse_differential_report;
+pub use differential_report::{
+    build_approved_claim_selection, build_approved_formal_rule_selection,
+    parse_differential_report, parse_differential_report_for_run,
+};
 pub use entries::parse_entries;
 pub use junit::{parse_junit, qualified_name};
 pub use licence_policy::parse_licence_policy;
