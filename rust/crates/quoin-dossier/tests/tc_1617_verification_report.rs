@@ -19,7 +19,7 @@ use std::process::Command;
 use std::sync::Arc;
 
 use ix_trace_rs::trace;
-use quoin_assurance::matrix::MatrixOutput;
+use quoin_assurance::matrix::{BindingDetail, MatrixOutput};
 use quoin_dossier::{Inputs, MatrixSource, SourceFailure, Status, builtin_registry, generate};
 use serde_json::json;
 
@@ -127,6 +127,36 @@ fn generating_twice_gives_byte_identical_files() {
     assert_eq!(
         fs::read(first.path().join("DOS-VR.md")).unwrap(),
         fs::read(second.path().join("DOS-VR.md")).unwrap()
+    );
+}
+
+#[trace("FR-196-AC-5")]
+#[test]
+fn a_stale_suite_without_a_traced_or_retained_binder_is_unbacked() {
+    let mut source = matrix();
+    let criterion = &mut source.requirements[0].criteria[1];
+    criterion.binders.clear();
+    criterion.static_status = "untagged".to_owned();
+    criterion.evidence_detail.bindings = vec![BindingDetail {
+        suite: "old-suite".to_owned(),
+    }];
+    let registry = builtin_registry(Arc::new(Fixed(source))).unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let report = generate(&registry, &kinds(), out.path(), &inputs()).unwrap();
+    let text = fs::read_to_string(out.path().join("DOS-VR.md")).unwrap();
+    assert!(text.contains("suite old-suite"));
+    let gaps: Vec<_> = report.documents[0]
+        .gaps
+        .iter()
+        .map(|gap| (gap.gap_kind.as_str(), gap.subject.as_str()))
+        .collect();
+    assert_eq!(
+        gaps,
+        [
+            ("criticality_unassigned", "FR-001"),
+            ("unbacked_criterion", "FR-001-AC-2"),
+            ("evidence_failed", "FR-001-AC-2"),
+        ]
     );
 }
 

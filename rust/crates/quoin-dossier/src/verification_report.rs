@@ -87,15 +87,16 @@ impl Generator for VerificationReportGenerator {
                 source: "modules".to_owned(),
                 detail: format!("failed to open module: {error}"),
             })?;
-        let corpus = quoin_quire::records::read(
-            &inputs.scope,
-            &quoin_quire::ModuleSelection::Closed(modules),
-            &REQUIREMENT_TYPES,
-        )
-        .map_err(|error| SourceFailure {
-            source: "requirements".to_owned(),
-            detail: format!("failed to read requirement documents: {error}"),
-        })?;
+        let selection = if modules.is_empty() {
+            quoin_quire::ModuleSelection::ScopeOrAmbient
+        } else {
+            quoin_quire::ModuleSelection::Closed(modules)
+        };
+        let corpus = quoin_quire::records::read(&inputs.scope, &selection, &REQUIREMENT_TYPES)
+            .map_err(|error| SourceFailure {
+                source: "requirements".to_owned(),
+                detail: format!("failed to read requirement documents: {error}"),
+            })?;
         if let Some(failure) = unusable_input("requirements", &corpus) {
             return Err(failure);
         }
@@ -285,8 +286,8 @@ fn retained_records(criterion: &MatrixCriterion) -> impl Iterator<Item = &Value>
 fn findings_cell(criterion: &MatrixCriterion) -> String {
     let mut items = Vec::new();
     for finding in &criterion.evidence_detail.findings {
-        items.push(match finding.cause {
-            Some(cause) => format!("{} (cause {})", finding.kind, cause_name(cause)),
+        items.push(match finding.cause.and_then(StaleCause::as_str) {
+            Some(cause) => format!("{} (cause {cause})", finding.kind),
             None => finding.kind.clone(),
         });
     }
@@ -300,14 +301,6 @@ fn findings_cell(criterion: &MatrixCriterion) -> String {
         }
     }
     joined(&items)
-}
-
-fn cause_name(cause: StaleCause) -> &'static str {
-    match cause {
-        StaleCause::FailedRun => "failed-run",
-        StaleCause::MissingRun => "missing-run",
-        StaleCause::Invalid => "invalid",
-    }
 }
 
 fn joined(items: &[String]) -> String {
@@ -354,9 +347,7 @@ fn criterion_gaps(requirement: &str, criterion: &MatrixCriterion) -> Vec<Gap> {
         EvidenceStatus::Bound | EvidenceStatus::Stale => {}
     }
 
-    let backed = !criterion.binders.is_empty()
-        || !criterion.evidence_detail.bindings.is_empty()
-        || retained_records(criterion).next().is_some();
+    let backed = !criterion.binders.is_empty() || retained_records(criterion).next().is_some();
     if !backed {
         gaps.push(gap(
             GapKind::UnbackedCriterion,
@@ -542,6 +533,7 @@ mod tests {
         assert_eq!(
             pairs,
             [
+                ("criticality_unassigned", "FR-1".to_owned()),
                 ("evidence_stale", "FR-1-AC-1".to_owned()),
                 ("evidence_failed", "FR-1-AC-2".to_owned()),
             ]
@@ -590,8 +582,9 @@ mod tests {
         assert_eq!(
             gap_pairs(&render(&source, &[])),
             [
-                ("no_evidence", "FR-1-AC-1".to_owned()),
+                ("criticality_unassigned", "FR-1".to_owned()),
                 ("unbacked_criterion", "FR-1-AC-1".to_owned()),
+                ("no_evidence", "FR-1-AC-1".to_owned()),
             ]
         );
     }
@@ -608,7 +601,10 @@ mod tests {
         }]);
         let generated = render(&matrix(&[("FR-1", vec![inspected])]), &[]);
         assert!(row(&generated, "FR-1-AC-1").contains("record runs/INS/a.json (INS@a, review::x)"));
-        assert!(generated.gaps.is_empty());
+        assert_eq!(
+            gap_pairs(&generated),
+            [("criticality_unassigned", "FR-1".to_owned())]
+        );
     }
 
     #[trace("FR-196-AC-6")]
@@ -622,7 +618,10 @@ mod tests {
         let generated = render(&matrix(&[("FR-1", vec![inspected])]), &[]);
         assert_eq!(
             gap_pairs(&generated),
-            [("no_evidence", "FR-1-AC-1".to_owned())]
+            [
+                ("criticality_unassigned", "FR-1".to_owned()),
+                ("no_evidence", "FR-1-AC-1".to_owned()),
+            ]
         );
     }
 
@@ -636,7 +635,28 @@ mod tests {
         assert!(!generated.body.contains("| Criterion |"));
         assert_eq!(
             gap_pairs(&generated),
-            [("no_acceptance_criteria", "FR-2".to_owned())]
+            [
+                ("no_acceptance_criteria", "FR-2".to_owned()),
+                ("criticality_unassigned", "FR-2".to_owned()),
+            ]
+        );
+    }
+
+    #[trace("FR-196-AC-3")]
+    #[test]
+    fn an_invalid_cause_has_no_invented_spelling() {
+        let source = matrix(&[(
+            "FR-1",
+            vec![criterion(
+                "FR-1-AC-1",
+                "stale",
+                &[binder("t")],
+                &[finding(STALE_EVIDENCE, "x", Some("unknown"))],
+            )],
+        )]);
+        assert_eq!(
+            findings_cell(&source.requirements[0].criteria[0]),
+            "stale-evidence"
         );
     }
 
