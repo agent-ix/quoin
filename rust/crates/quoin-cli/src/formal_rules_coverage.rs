@@ -729,21 +729,7 @@ mod tests {
         assert!(!validator.is_valid(&with_unknown));
 
         let mut draft_without_reason = report.clone();
-        draft_without_reason
-            .get_mut("items")
-            .and_then(Value::as_array_mut)
-            .and_then(|items| items.first_mut())
-            .and_then(Value::as_object_mut)
-            .inspect(|item| {
-                item.extend([("state".to_owned(), json!("draft"))]);
-                let _ = item.remove("analysis_disposition");
-            })
-            .and_then(|item| item.get_mut("declarations"))
-            .and_then(Value::as_array_mut)
-            .and_then(|declarations| declarations.first_mut())
-            .and_then(Value::as_object_mut)
-            .expect("fixture declaration object")
-            .insert("state".to_owned(), json!("draft"));
+        make_first_item_draft_without_reason(&mut draft_without_reason);
         assert!(!validator.is_valid(&draft_without_reason));
 
         let mut analysed_without_qualified_record = report.clone();
@@ -775,6 +761,23 @@ mod tests {
             .expect("fixture item object")
             .insert("analysis_disposition".to_owned(), json!("qualified-record"));
         assert!(!validator.is_valid(&approved_with_qualified_record));
+    }
+
+    fn make_first_item_draft_without_reason(report: &mut Value) {
+        let item = report
+            .get_mut("items")
+            .and_then(Value::as_array_mut)
+            .and_then(|items| items.first_mut())
+            .and_then(Value::as_object_mut)
+            .expect("fixture item object");
+        item.insert("state".to_owned(), json!("draft"));
+        let _ = item.remove("analysis_disposition");
+        item.get_mut("declarations")
+            .and_then(Value::as_array_mut)
+            .and_then(|declarations| declarations.first_mut())
+            .and_then(Value::as_object_mut)
+            .expect("fixture declaration object")
+            .insert("state".to_owned(), json!("draft"));
     }
 
     fn source(id: &str, document: &str, criticality: Option<&str>, kind: &str) -> SourceItem {
