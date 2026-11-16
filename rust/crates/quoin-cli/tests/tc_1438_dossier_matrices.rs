@@ -169,6 +169,7 @@ fn dossier_rows_equal_the_evidence_backed_matrix_command() {
 #[test]
 fn an_empty_matrix_population_renders_the_source_reason() {
     let work = tempfile::tempdir().unwrap();
+    fs::create_dir(work.path().join("spec")).unwrap();
     let module = fixture();
     let repo = work.path().to_str().unwrap();
     let module = module.to_str().unwrap();
@@ -277,7 +278,16 @@ fn dossier_rows_equal_the_discharge_command_member_for_member() {
 #[trace("FR-195-AC-2", "FR-195-AC-4")]
 #[test]
 fn a_restricted_pack_uses_index_order_and_never_renders_clause_text() {
-    let work = pack_support::scratch();
+    let work = std::iter::once(std::env::temp_dir())
+        .chain(std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from))
+        .chain([PathBuf::from("/var/tmp"), PathBuf::from("/dev/shm")])
+        .filter_map(|base| base.canonicalize().ok())
+        .filter(|base| {
+            base.ancestors()
+                .all(|ancestor| !ancestor.join(".git").exists())
+        })
+        .find_map(|base| tempfile::tempdir_in(base).ok())
+        .expect("a writable scratch directory outside every git work tree");
     let home = work.path().join("ix-home");
     let repo = work.path().join("repo");
     pack_support::git_init(&repo);
