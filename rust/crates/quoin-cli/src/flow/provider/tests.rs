@@ -10,7 +10,9 @@
 )]
 use super::serve;
 #[cfg(unix)]
-use super::{Context, FormalizeInput, formalization_check_with_tools};
+use super::{
+    Context, FormalizeInput, formal_rule_approved_with_binary, formalization_check_with_tools,
+};
 use ix_trace_rs::trace;
 #[cfg(unix)]
 use quoin_quire::{ModuleRoot, ModuleSelection};
@@ -115,6 +117,10 @@ fn formalization_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
             answered_at: None,
             requirement_id: "FR-001".to_owned(),
             draft_path: PathBuf::from("qsl/rule.native"),
+            engineering_assurance: None,
+            allowed_signers: None,
+            gitsign: None,
+            drafted_symbols: Vec::new(),
         },
         Context {
             id: "test-context".to_owned(),
@@ -123,6 +129,186 @@ fn formalization_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
             targets: Vec::new(),
         },
     )
+}
+
+#[cfg(unix)]
+fn approval_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
+    let (directory, mut request, context) = formalization_fixture();
+    request.engineering_assurance = Some("/tmp/engineering-assurance".to_owned());
+    request.allowed_signers = Some("/tmp/allowed-signers".to_owned());
+    request.gitsign = Some(json!({
+        "certificate_identity": "identity",
+        "certificate_oidc_issuer": "issuer",
+        "principal": "alice"
+    }));
+    request.drafted_symbols = vec!["qsl:qsl/rule.native::Rule".to_owned()];
+    (directory, request, context)
+}
+
+#[cfg(unix)]
+fn status_for_rule(directory: &Path, state: &str, reason: Option<&str>) -> PathBuf {
+    let mut rule = json!({
+        "symbol": "qsl:qsl/rule.native::Rule",
+        "state": state
+    });
+    if let Some(reason) = reason {
+        rule["reason"] = json!(reason);
+    }
+    let report = json!({"protocol": "quoin.formal-rule-status/v1", "rules": [rule]});
+    let body = format!("printf '%s\\n' '{report}'");
+    executable(directory, "quoin-status", &body)
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-15")]
+#[test]
+fn formal_rule_approval_rejects_invalid_trust_before_status_or_verifier_invocation() {
+    let (directory, mut request, context) = formalization_fixture();
+    request.allowed_signers = Some("relative-allowed-signers".to_owned());
+    request.drafted_symbols = vec!["qsl:qsl/rule.native::Rule".to_owned()];
+    let marker = directory.path().join("status-called");
+    let body = format!(
+        "printf '%s\\n' called > '{}'\nprintf '%s\\n' '{{\"protocol\":\"quoin.formal-rule-status/v1\",\"rules\":[]}}'",
+        marker.display()
+    );
+    let status = executable(directory.path(), "quoin-status", &body);
+
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("relative trust path is refused");
+    assert_eq!(failure.code.to_string(), "formal_rule_trust_inputs_invalid");
+    assert!(
+        !marker.exists(),
+        "invalid trust must not start quoin status"
+    );
+
+    request.allowed_signers = Some("/tmp/allowed-signers".to_owned());
+    request.engineering_assurance = Some("/tmp/ea\0invalid".to_owned());
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("NUL-containing trust path is refused");
+    assert_eq!(failure.code.to_string(), "formal_rule_trust_inputs_invalid");
+    assert!(
+        !marker.exists(),
+        "invalid trust must not start quoin status"
+    );
+
+    request.engineering_assurance = Some("/tmp/engineering-assurance".to_owned());
+    request.engineering_assurance = Some(String::new());
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("empty trust path is refused");
+    assert_eq!(failure.code.to_string(), "formal_rule_trust_inputs_invalid");
+    assert!(
+        !marker.exists(),
+        "invalid trust must not start quoin status"
+    );
+
+    request.engineering_assurance = Some("/tmp/engineering-assurance".to_owned());
+    for gitsign in [
+        json!({
+            "certificate_identity": "identity",
+            "certificate_oidc_issuer": "issuer",
+            "principal": "alice",
+            "unexpected": true
+        }),
+        json!({
+            "certificate_identity": "identity",
+            "certificate_oidc_issuer": "issuer"
+        }),
+        json!({
+            "certificate_identity": "-identity",
+            "certificate_oidc_issuer": "issuer",
+            "principal": "alice"
+        }),
+        json!({
+            "certificate_identity": "identity",
+            "certificate_oidc_issuer": "issuer",
+            "principal": "bad\nprincipal"
+        }),
+    ] {
+        request.gitsign = Some(gitsign);
+        let failure = formal_rule_approved_with_binary(&request, &context, &status)
+            .expect_err("invalid gitsign object is refused");
+        assert_eq!(failure.code.to_string(), "formal_rule_trust_inputs_invalid");
+        assert!(
+            !marker.exists(),
+            "invalid trust must not start quoin status"
+        );
+    }
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-10")]
+#[test]
+fn formal_rule_approval_passes_only_for_a_nonempty_fully_approved_drafted_set() {
+    let (directory, mut request, context) = formalization_fixture();
+    request.engineering_assurance = Some("/tmp/engineering-assurance".to_owned());
+    request.allowed_signers = Some("/tmp/allowed-signers".to_owned());
+    request.gitsign = Some(json!({
+        "certificate_identity": "identity",
+        "certificate_oidc_issuer": "issuer",
+        "principal": "alice"
+    }));
+    request.drafted_symbols = vec!["qsl:qsl/rule.native::Rule".to_owned()];
+    let marker = directory.path().join("status-args");
+    let body = format!(
+        "printf '%s\\n' \"$@\" > '{}'\nprintf '%s\\n' '{{\"protocol\":\"quoin.formal-rule-status/v1\",\"rules\":[{{\"symbol\":\"qsl:qsl/rule.native::Rule\",\"state\":\"approved\"}}]}}'",
+        marker.display()
+    );
+    let status = executable(directory.path(), "quoin-status", &body);
+    assert!(formal_rule_approved_with_binary(&request, &context, &status).is_ok());
+    let arguments = fs::read_to_string(&marker).expect("captured status arguments");
+    for argument in [
+        "--engineering-assurance\n/tmp/engineering-assurance",
+        "--allowed-signers\n/tmp/allowed-signers",
+        "--gitsign-certificate-identity\nidentity",
+        "--gitsign-certificate-oidc-issuer\nissuer",
+        "--gitsign-principal\nalice",
+        "--json",
+    ] {
+        assert!(
+            arguments.contains(argument),
+            "missing explicit argument {argument}"
+        );
+    }
+
+    request.drafted_symbols.clear();
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("empty drafted set is never approved");
+    assert_eq!(failure.code.to_string(), "approval_commit_missing");
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-4")]
+#[test]
+fn formal_rule_approval_fails_for_acknowledged_gate_without_approval_commit() {
+    let (directory, request, context) = approval_fixture();
+    let status = status_for_rule(directory.path(), "draft", Some("no_approval"));
+
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("an acknowledged gate does not replace a signed approval commit");
+    assert_eq!(failure.code.to_string(), "approval_commit_missing");
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-5")]
+#[test]
+fn formal_rule_approval_passes_for_a_drafted_symbol_reported_approved() {
+    let (directory, request, context) = approval_fixture();
+    let status = status_for_rule(directory.path(), "approved", None);
+
+    formal_rule_approved_with_binary(&request, &context, &status)
+        .expect("an approved status passes for the drafted symbol");
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-8")]
+#[test]
+fn formal_rule_approval_fails_for_untrusted_signed_rule() {
+    let (directory, request, context) = approval_fixture();
+    let status = status_for_rule(directory.path(), "draft", Some("approval_untrusted"));
+
+    let failure = formal_rule_approved_with_binary(&request, &context, &status)
+        .expect_err("an untrusted signature does not approve the drafted symbol");
+    assert_eq!(failure.code.to_string(), "approval_commit_missing");
 }
 
 #[cfg(unix)]
@@ -150,7 +336,6 @@ fn qsl_check_passes_only_with_clean_fsl_outcome_and_bound_formalizes_relation() 
     );
 }
 
-#[trace("FR-189-AC-2")]
 #[cfg(unix)]
 #[test]
 fn qsl_check_failure_returns_the_diagnostic_file_line_and_message() {
@@ -274,6 +459,24 @@ fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
     )
     .expect("expected transition contract");
     assert_eq!(definition["transitions"], expected_transitions);
+    let request_schema = &definition["itemSchemas"]["formalization_request"];
+    assert_eq!(
+        request_schema["required"],
+        json!([
+            "requirement_id",
+            "draft_path",
+            "engineering_assurance",
+            "allowed_signers"
+        ])
+    );
+    assert_eq!(
+        request_schema["properties"]["gitsign"]["properties"],
+        json!({
+            "certificate_identity":{"type":"string"},
+            "certificate_oidc_issuer":{"type":"string"},
+            "principal":{"type":"string"}
+        })
+    );
     let approved: Vec<_> = transitions
         .iter()
         .filter(|transition| transition["to"] == "approved")

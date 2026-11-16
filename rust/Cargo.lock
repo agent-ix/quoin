@@ -3058,7 +3058,7 @@ dependencies = [
 [[package]]
 name = "quire-code-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=aac50a6864257f7ea588d2aeb7a337be940b096c#aac50a6864257f7ea588d2aeb7a337be940b096c"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.61.0#84c3e408c636b183de1ae88c89ad3a00e055cef6"
 dependencies = [
  "quire-code-parse",
 ]
@@ -3086,8 +3086,8 @@ dependencies = [
 
 [[package]]
 name = "quire-rs"
-version = "0.60.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=aac50a6864257f7ea588d2aeb7a337be940b096c#aac50a6864257f7ea588d2aeb7a337be940b096c"
+version = "0.61.0"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.61.0#84c3e408c636b183de1ae88c89ad3a00e055cef6"
 dependencies = [
  "agent-ix-semantic-schema",
  "globset",
@@ -3484,6 +3484,7 @@ dependencies = [
  "quoin-yaml",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
 ]
 

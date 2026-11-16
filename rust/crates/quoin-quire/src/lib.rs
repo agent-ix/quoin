@@ -57,6 +57,7 @@ pub mod design_matrix;
 pub mod engine;
 pub mod error;
 pub mod evidence;
+pub mod formal_rules;
 pub mod ids;
 pub mod modules;
 pub mod payload;

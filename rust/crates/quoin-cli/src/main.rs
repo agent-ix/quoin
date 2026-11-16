@@ -23,6 +23,7 @@ mod discharge;
 mod dossier;
 mod evidence;
 mod flow;
+mod formal_rules;
 mod help;
 mod intake_order;
 mod invocation;
@@ -84,6 +85,44 @@ impl ShellError {
         Self {
             message: format!("    Error: {}", message.into()),
             exit: EXIT_COMMAND_FAILURE,
+            stream: ShellOutput::Stderr,
+        }
+    }
+
+    /// A parsed command could not contact one of its required host tools.
+    pub(crate) fn unavailable(message: impl Into<String>) -> Self {
+        Self {
+            message: format!("    Error: {}", message.into()),
+            exit: Outcome::Refused.code(),
+            stream: ShellOutput::Stderr,
+        }
+    }
+
+    /// A host tool or its document operation failed under a contract that
+    /// reserves exit 3 for refusal/unavailability.
+    pub(crate) fn unavailable_invalid(message: impl Into<String>) -> Self {
+        Self {
+            message: format!("    Error: {}", message.into()),
+            exit: EXIT_INVALID,
+            stream: ShellOutput::Stderr,
+        }
+    }
+
+    /// A command option combination is not valid for its usage contract.
+    pub(crate) fn usage(message: impl Into<String>) -> Self {
+        Self {
+            message: format!("    Error: {}", message.into()),
+            exit: EXIT_INVALID,
+            stream: ShellOutput::Stderr,
+        }
+    }
+
+    /// A command-specific usage refusal whose contract uses the shell's
+    /// refusal status rather than its general invalid-document status.
+    pub(crate) fn usage_refused(message: impl Into<String>) -> Self {
+        Self {
+            message: format!("    Error: {}", message.into()),
+            exit: Outcome::Refused.code(),
             stream: ShellOutput::Stderr,
         }
     }
@@ -152,8 +191,10 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
     let change_assurance = family.as_deref() == Some("change-assurance");
     // FR-169: a malformed `risk-summary` flag is a usage error, exit 2.
     // FR-191: a malformed `dossier` flag is a usage error, exit 2.
-    let usage_refused =
-        change_assurance || matches!(family.as_deref(), Some("risk-summary" | "dossier"));
+    let formal_rules = family.as_deref() == Some("formal-rules");
+    let usage_refused = change_assurance
+        || matches!(family.as_deref(), Some("risk-summary" | "dossier"))
+        || formal_rules;
     let matches = command().try_get_matches_from(&args).map_err(|error| {
         let rendered_error = error.to_string();
         let is_help = matches!(
@@ -172,14 +213,18 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
             },
             exit: if is_help {
                 0
-            } else if invalid_subcommand || missing_required {
+            } else if (invalid_subcommand || missing_required) && !formal_rules {
                 EXIT_UNKNOWN_COMMAND
             } else if usage_refused {
                 // A malformed flag is the "usage error" arm of FR-068's
                 // grammar, and it is refused here rather than at dispatch.
                 // Without this the surface answered 2 for everything the
                 // engine refused and 3 for everything the parser did.
-                EXIT_DOCUMENT_REFUSED
+                if formal_rules {
+                    EXIT_INVALID
+                } else {
+                    EXIT_DOCUMENT_REFUSED
+                }
             } else {
                 EXIT_INVALID
             },
@@ -202,6 +247,8 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
             flow::run(name, arguments)
         } else if let Some(("dossier", arguments)) = matches.subcommand() {
             dossier::run(arguments).map_err(failure)
+        } else if let Some(("formal-rules", arguments)) = matches.subcommand() {
+            formal_rules::run(arguments)
         } else {
             dispatch(&matches).map_err(failure)
         }
@@ -407,6 +454,7 @@ fn command() -> Command {
         .subcommand(measurement::command())
         .subcommand(plugin::command())
         .subcommand(release::command())
+        .subcommand(formal_rules::command())
         .subcommand(report::command())
         .subcommand(semantic::command())
         .subcommand(risk::command())

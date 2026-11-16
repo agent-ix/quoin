@@ -38,6 +38,10 @@ const TOPICS: &[(&str, &str)] = &[
         "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",
     ),
     ("formalize", "Draft and QSL-check a formalization proposal."),
+    (
+        "formal-rules",
+        "Read formal-rule approval state from signed git commits.",
+    ),
     ("graph", "Read-only evidence-graph analysis views."),
     (
         "measurement",
@@ -200,7 +204,7 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
 /// The oclif `command_not_found` hook's compact actionable refusal.
 pub(crate) fn unknown_command(name: &str) -> String {
     format!(
-        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, formalize, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, formalize, formal-rules, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     )
 }
 

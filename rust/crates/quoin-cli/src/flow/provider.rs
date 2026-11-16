@@ -31,6 +31,7 @@ const MAX_DOCUMENT: u64 = 4 * 1024 * 1024;
 const MAX_DOCUMENTS: usize = 256;
 const MAX_TOOL_OUTPUT: u64 = 1024 * 1024;
 const TOOL_DEADLINE: Duration = Duration::from_secs(4);
+const MAX_GITSIGN_VALUE_BYTES: usize = 256;
 const REQUEST_PROTOCOL: &str = "quoin.workflow-invariants/v1";
 const RESULT_PROTOCOL: &str = "quoin.workflow-invariants-result/v1";
 
@@ -52,6 +53,10 @@ enum Code {
     DocumentUnavailable,
     FormalizesMarkerMissing,
     FormalizesMarkerUnavailable,
+    FormalRuleApprovalMissing,
+    FormalRuleStatusInvalid,
+    FormalRuleStatusUnavailable,
+    FormalRuleTrustInputsInvalid,
     HumanGateRequired,
     InputUnreadable,
     InvariantUnknown,
@@ -84,6 +89,10 @@ impl std::fmt::Display for Code {
             Self::DocumentUnavailable => "WORKFLOW_DOCUMENT_UNAVAILABLE",
             Self::FormalizesMarkerMissing => "formalizes_marker_missing",
             Self::FormalizesMarkerUnavailable => "formalizes_marker_unavailable",
+            Self::FormalRuleApprovalMissing => "approval_commit_missing",
+            Self::FormalRuleStatusInvalid => "formal_rule_status_invalid",
+            Self::FormalRuleStatusUnavailable => "formal_rule_status_unavailable",
+            Self::FormalRuleTrustInputsInvalid => "formal_rule_trust_inputs_invalid",
             Self::HumanGateRequired => "WORKFLOW_HUMAN_GATE_REQUIRED",
             Self::InputUnreadable => "WORKFLOW_INPUT_UNREADABLE",
             Self::InvariantUnknown => "WORKFLOW_INVARIANT_UNKNOWN",
@@ -219,6 +228,14 @@ struct FormalizeInput {
     answered_at: Option<String>,
     requirement_id: String,
     draft_path: PathBuf,
+    #[serde(default)]
+    engineering_assurance: Option<String>,
+    #[serde(default)]
+    allowed_signers: Option<String>,
+    #[serde(default)]
+    gitsign: Option<Value>,
+    #[serde(default)]
+    drafted_symbols: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -398,6 +415,10 @@ fn check(instance: &Instance, name: &str) -> Check {
             let request: FormalizeInput = one(instance, "formalization_request")?;
             formalization_check(&request, &context)
         }
+        ("formalize", "formal_rule_approved") => {
+            let request: FormalizeInput = one(instance, "formalization_request")?;
+            formal_rule_approved(&request, &context)
+        }
         ("formalize", "formalization_retries_exhausted") => retries_exhausted(instance),
         (_, "human_acceptance_required") => {
             if instance
@@ -415,6 +436,200 @@ fn check(instance: &Instance, name: &str) -> Check {
         }
         _ => Err(fail(Code::InvariantUnknown, name)),
     }
+}
+
+struct FormalRuleTrust<'a> {
+    engineering_assurance: &'a str,
+    allowed_signers: &'a str,
+    gitsign: Option<(&'a str, &'a str, &'a str)>,
+}
+
+fn formal_rule_trust(request: &FormalizeInput) -> Result<FormalRuleTrust<'_>, Failure> {
+    let valid_path = |value: Option<&String>| {
+        value.is_some_and(|path| {
+            !path.is_empty() && !path.contains('\0') && Path::new(path).is_absolute()
+        })
+    };
+    if !valid_path(request.engineering_assurance.as_ref())
+        || !valid_path(request.allowed_signers.as_ref())
+    {
+        return Err(fail(
+            Code::FormalRuleTrustInputsInvalid,
+            "formalization_request requires non-empty absolute engineering_assurance and allowed_signers paths without NUL",
+        ));
+    }
+    let gitsign = match request.gitsign.as_ref() {
+        None => None,
+        Some(value) => {
+            let Some(object) = value.as_object() else {
+                return Err(fail(
+                    Code::FormalRuleTrustInputsInvalid,
+                    "formalization_request.gitsign must be an object",
+                ));
+            };
+            if object.len() != 3
+                || object.keys().any(|key| {
+                    !matches!(
+                        key.as_str(),
+                        "certificate_identity" | "certificate_oidc_issuer" | "principal"
+                    )
+                })
+            {
+                return Err(fail(
+                    Code::FormalRuleTrustInputsInvalid,
+                    "formalization_request.gitsign must contain exactly the three FR-040 fields",
+                ));
+            }
+            let identity = object.get("certificate_identity").and_then(Value::as_str);
+            let issuer = object
+                .get("certificate_oidc_issuer")
+                .and_then(Value::as_str);
+            let principal = object.get("principal").and_then(Value::as_str);
+            let plain = |input: Option<&str>| {
+                input.is_some_and(|text| {
+                    !text.is_empty()
+                        && text.len() <= MAX_GITSIGN_VALUE_BYTES
+                        && !text.chars().any(char::is_control)
+                })
+            };
+            if !plain(identity)
+                || !plain(issuer)
+                || !plain(principal)
+                || identity.is_some_and(|text| text.starts_with('-'))
+                || issuer.is_some_and(|text| text.starts_with('-'))
+            {
+                return Err(fail(
+                    Code::FormalRuleTrustInputsInvalid,
+                    "formalization_request.gitsign values violate FR-040 validation",
+                ));
+            }
+            Some((
+                identity.ok_or_else(|| {
+                    fail(
+                        Code::FormalRuleTrustInputsInvalid,
+                        "formalization_request.gitsign.certificate_identity is required",
+                    )
+                })?,
+                issuer.ok_or_else(|| {
+                    fail(
+                        Code::FormalRuleTrustInputsInvalid,
+                        "formalization_request.gitsign.certificate_oidc_issuer is required",
+                    )
+                })?,
+                principal.ok_or_else(|| {
+                    fail(
+                        Code::FormalRuleTrustInputsInvalid,
+                        "formalization_request.gitsign.principal is required",
+                    )
+                })?,
+            ))
+        }
+    };
+    Ok(FormalRuleTrust {
+        engineering_assurance: request.engineering_assurance.as_deref().ok_or_else(|| {
+            fail(
+                Code::FormalRuleTrustInputsInvalid,
+                "engineering_assurance is required",
+            )
+        })?,
+        allowed_signers: request.allowed_signers.as_deref().ok_or_else(|| {
+            fail(
+                Code::FormalRuleTrustInputsInvalid,
+                "allowed_signers is required",
+            )
+        })?,
+        gitsign,
+    })
+}
+
+fn formal_rule_approved(request: &FormalizeInput, context: &Context) -> Check {
+    formal_rule_trust(request)?;
+    let executable = std::env::current_exe().map_err(|error| {
+        fail(
+            Code::FormalRuleStatusUnavailable,
+            format!("quoin executable is unavailable: {error}"),
+        )
+    })?;
+    formal_rule_approved_with_binary(request, context, &executable)
+}
+
+fn formal_rule_approved_with_binary(
+    request: &FormalizeInput,
+    context: &Context,
+    executable: &Path,
+) -> Check {
+    let trust = formal_rule_trust(request)?;
+    let mut seen = BTreeSet::new();
+    if request.drafted_symbols.is_empty()
+        || request
+            .drafted_symbols
+            .iter()
+            .any(|symbol| symbol.trim().is_empty() || !seen.insert(symbol))
+    {
+        return Err(fail(
+            Code::FormalRuleApprovalMissing,
+            "the drafted formal-rule set must be non-empty and contain unique symbols",
+        ));
+    }
+
+    let mut command = ProcessCommand::new(executable);
+    command
+        .args(["formal-rules", "status", "--repo"])
+        .arg(&context.repo_root)
+        .args(["--engineering-assurance", trust.engineering_assurance])
+        .args(["--allowed-signers", trust.allowed_signers, "--json"]);
+    if let Some((identity, issuer, principal)) = trust.gitsign {
+        command
+            .args(["--gitsign-certificate-identity", identity])
+            .args(["--gitsign-certificate-oidc-issuer", issuer])
+            .args(["--gitsign-principal", principal]);
+    }
+    let output = command.output().map_err(|error| {
+        fail(
+            Code::FormalRuleStatusUnavailable,
+            format!("quoin formal-rules status is unavailable: {error}"),
+        )
+    })?;
+    if !output.status.success() {
+        return Err(fail(
+            Code::FormalRuleStatusUnavailable,
+            format!(
+                "quoin formal-rules status failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ),
+        ));
+    }
+    let report: Value = serde_json::from_slice(&output.stdout).map_err(|error| {
+        fail(
+            Code::FormalRuleStatusInvalid,
+            format!("quoin formal-rules status returned invalid JSON: {error}"),
+        )
+    })?;
+    if report.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1") {
+        return Err(fail(
+            Code::FormalRuleStatusInvalid,
+            "quoin formal-rules status returned an unsupported protocol",
+        ));
+    }
+    let Some(rules) = report.get("rules").and_then(Value::as_array) else {
+        return Err(fail(
+            Code::FormalRuleStatusInvalid,
+            "quoin formal-rules status returned no rule list",
+        ));
+    };
+    let all_approved = request.drafted_symbols.iter().all(|symbol| {
+        rules.iter().any(|rule| {
+            rule.get("symbol").and_then(Value::as_str) == Some(symbol)
+                && rule.get("state").and_then(Value::as_str) == Some("approved")
+        })
+    });
+    if !all_approved {
+        return Err(fail(
+            Code::FormalRuleApprovalMissing,
+            "one or more drafted formal rules lack a valid signed approval commit",
+        ));
+    }
+    Ok(())
 }
 
 fn retries_exhausted(instance: &Instance) -> Check {
