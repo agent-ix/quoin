@@ -31,8 +31,8 @@
 //!    direction the contract test does not check. A shared type cannot drift in
 //!    either direction.
 //! 2. **Compile time.** The minimum engine is not a number to compare; it is
-//!    the `rev` in `Cargo.toml`. An engine without a surface this crate calls
-//!    does not link.
+//!    the released contract in `Cargo.toml`. An engine without a surface this
+//!    crate calls does not link.
 //! 3. **Compile time, honestly.** [`CAPABILITIES`] is asserted by
 //!    [`capability_witnesses`], each of which names the engine item behind one
 //!    token. The pattern is `quire-cli`'s (`src/engine.rs`, agent-ix/

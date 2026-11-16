@@ -91,6 +91,52 @@ traceability:
         template: "#[trace({ids})]"
 "##;
 
+const RECORD_KEYS_MODULE: &str = r##"name: quoin-cli-record-keys-fixture
+version: 0.1.0
+description: Fixture module for required-relation record keys
+artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+  - name: Connection
+  - name: Classification
+    data_schema:
+      schema: schemas/Classification.json
+edge_types:
+  classified-as: { description: a connection names its classification, category: traceability }
+semantic:
+  contract_version: 1.0.0
+  package: agent-ix/quoin-record-keys-fixture
+  exports: [Classification]
+  targets: [json-schema, markdown]
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  required_relations:
+    - name: connection-carries-classification
+      from: Connection
+      edges: [classified-as]
+      to: [Classification]
+      direction: outgoing
+      check: connection-carries-classification
+      record_keys: [classification, privacy]
+  trace_tags:
+    markers:
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: "#[trace({ids})]"
+"##;
+
 /// Three criteria and no declared method, so the catalog cannot add an
 /// `unknown-method` finding that would blur the three statuses under test.
 const SPEC: &str = "---
@@ -209,6 +255,17 @@ fn repository(module: &str) -> Fixture {
     };
     fixture.write("manifest.yaml", module);
     fixture.write("spec/FR-001-example.md", SPEC);
+    fixture
+}
+
+/// A matrix module whose relation endpoint declares the two record keys used
+/// by the record-key parser regression.
+fn record_keys_repository(module: &str) -> Fixture {
+    let fixture = repository(module);
+    fixture.write(
+        "schemas/Classification.json",
+        r#"{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"classification":{"type":"string"},"privacy":{"type":"string"}},"additionalProperties":false}"#,
+    );
     fixture
 }
 
@@ -573,4 +630,55 @@ fn tc_1080_206_help_describes_the_evidence_backed_render() {
         )
     );
     assert!(!root.contains("Build or update a requirements test matrix"));
+}
+
+/// The matrix loads required-relation record keys through the released Quire
+/// engine, including its relation-specific malformed-value diagnostics.
+#[trace("FR-206-AC-1", "FR-206-AC-2", "FR-206-AC-3", "FR-206-AC-4")]
+#[test]
+fn tc_1080_209_matrix_loads_required_relation_record_keys() {
+    let valid = RECORD_KEYS_MODULE.to_owned();
+    let fixture = record_keys_repository(&valid);
+    let output: Value =
+        serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    assert!(output["requirements"].is_array());
+
+    let omitted_module =
+        RECORD_KEYS_MODULE.replace("      record_keys: [classification, privacy]\n", "");
+    let omitted = record_keys_repository(&omitted_module);
+    let output: Value =
+        serde_json::from_str(&omitted.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    assert!(output["requirements"].is_array());
+
+    for invalid in [
+        "null",
+        "[]",
+        "scalar",
+        "[classification, 7]",
+        "[classification, ' ']",
+        "[classification, classification]",
+    ] {
+        let module = RECORD_KEYS_MODULE.replace(
+            "      record_keys: [classification, privacy]\n",
+            &format!("      record_keys: {invalid}\n"),
+        );
+        let fixture = record_keys_repository(&module);
+        let output = fixture.quoin(&["matrix", "--module", ".", "--json"]);
+        assert_eq!(output.status.code(), Some(2), "{invalid}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("connection-carries-classification"),
+            "{invalid}: {stderr}"
+        );
+        assert!(!String::from_utf8_lossy(&output.stdout).contains("requirements"));
+    }
+
+    let unknown = RECORD_KEYS_MODULE.replace(
+        "      record_keys: [classification, privacy]\n",
+        "      record_keys: [classification, privacy]\n      undeclared_key: true\n",
+    );
+    let fixture = repository(&unknown);
+    let output = fixture.quoin(&["matrix", "--module", ".", "--json"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("undeclared_key"));
 }

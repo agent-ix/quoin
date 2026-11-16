@@ -18,17 +18,10 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# THE PIN. Exactly what `quire-cli` HEAD pins, and that is the whole argument:
-# quire-cli is the governed producer of the payloads quoin reads today, so
-# linking its engine byte-for-byte makes `quoin-quire` and the `quire` binary
-# one candidate revision (EPIC #373 the retire-after-parity rule), not two things that agree by
-# version number.
-#
-# `rev`, never a tag or branch: a moving ref makes the gate a claim about
-# whatever resolved that morning. `version = "="` alongside it because the
-# rev's manifest version and `git describe` have disagreed before (0.46.0 vs
-# v0.45.0-123), and a build that resolved a different same-numbered release
-# would be a silent substitution. Both must match or the resolution fails.
+# THE RELEASE CONTRACT. This consumer uses the public quire-rs v0.61.0 release,
+# whose exact semantic version provides required_relations.record_keys. The
+# release tag and exact package version keep Cargo resolution tied to that
+# published contract without a hand-selected commit revision.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject
