@@ -21,6 +21,7 @@ mod registry;
 mod report;
 mod rmm;
 mod sources;
+mod soup;
 mod srs;
 #[cfg(feature = "test-stubs")]
 mod stub;
@@ -74,6 +75,7 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
         Box::new(verification_report::VerificationReportGenerator::new(
             sources.matrix,
         )),
+        Box::new(soup::SoupGenerator(sources.soup)),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -124,7 +126,7 @@ mod tests {
     #[test]
     fn the_shipped_registry_holds_m1_and_verification_report() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 5);
+        assert_eq!(registry.specs().count(), 6);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -133,7 +135,8 @@ mod tests {
                 "architecture",
                 "trace-matrix",
                 "rmm",
-                "verification-report"
+                "verification-report",
+                "soup"
             ]
         );
     }
@@ -147,7 +150,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            10
+            11
         );
     }
 }

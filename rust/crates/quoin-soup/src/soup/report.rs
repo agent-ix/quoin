@@ -11,6 +11,8 @@
 
 mod render;
 pub(crate) mod snapshot;
+mod dossier;
+pub use dossier::{DossierRow, DossierSource, dossier_source};
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -29,7 +31,7 @@ use super::support::{
     Evaluation, RecordSupport, SupportError, SupportFile, as_of_date, parse_support, record_support,
 };
 use super::{Existing, Stop, arg, read_all_records, refuse};
-use crate::core_runtime::invoke_typed;
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use quoin_core::error::CoreErrorCode;
 
 /// A support file larger than this is not read.
@@ -108,7 +110,7 @@ struct Report {
     unreadable_scans: Vec<String>,
 }
 
-pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
+pub(super) fn run(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Response, Stop> {
     let repo = PathBuf::from(arg(arguments, "repo").unwrap_or("."));
     let records_dir =
         arg(arguments, "records").map_or_else(|| repo.join("spec/soup"), PathBuf::from);
@@ -116,6 +118,16 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
     let binding_path =
         arg(arguments, "binding").ok_or_else(|| "--binding is required".to_owned())?;
 
+    let report = load_report(&repo, &records_dir, binding_path, as_of, arg(arguments, "support").map(Path::new), settings)?;
+    let rendered = if arguments.get_flag("json") {
+        render::json(&report)?
+    } else {
+        render::markdown(&report)
+    };
+    Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
+}
+
+fn load_report(repo: &Path, records_dir: &Path, binding_path: &str, as_of: &str, support_path: Option<&Path>, settings: &RuntimeSettings) -> Result<Report, Stop> {
     if !repo.exists() {
         return Err(refuse(
             "soup.path_missing",
@@ -127,20 +139,14 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
         ));
     }
     let as_of_day = as_of_date(as_of).map_err(support_refusal)?;
-    let support = match arg(arguments, "support") {
-        Some(path) => read_support(Path::new(path))?,
+    let support = match support_path {
+        Some(path) => read_support(path)?,
         None => SupportFile::default(),
     };
-    let existing = read_distinct_records(&records_dir)?;
+    let existing = read_distinct_records(records_dir)?;
     let binding = read_binding(binding_path)?;
-    let discharge = discharge_report(&repo, &binding, as_of)?;
-    let report = build(&repo, existing, as_of, as_of_day, &support, &discharge)?;
-    let rendered = if arguments.get_flag("json") {
-        render::json(&report)?
-    } else {
-        render::markdown(&report)
-    };
-    Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
+    let discharge = discharge_report(repo, &binding, as_of, settings)?;
+    build(repo, existing, as_of, as_of_day, &support, &discharge)
 }
 
 /// The `soup_record` files below `records_dir`, refused when two carry one purl.
@@ -242,6 +248,7 @@ fn discharge_report(
     repo: &Path,
     binding: &Value,
     as_of: &str,
+    settings: &RuntimeSettings,
 ) -> Result<DischargeReport, DischargeFailure> {
     // The discharge report is evaluated at an instant; a `--as-of` date is
     // the start of that UTC day.
@@ -251,9 +258,10 @@ fn discharge_report(
         format!("{as_of}T00:00:00Z")
     };
     let operation = "evidence.discharge_report";
-    let response = invoke_typed(
+    let response = dispatch(
         operation,
         &serde_json::json!({ "repo": repo, "binding": binding, "asOf": instant }),
+        settings,
     )
     .map_err(|error| {
         let message = format!("native runtime {operation} failed: {error}");

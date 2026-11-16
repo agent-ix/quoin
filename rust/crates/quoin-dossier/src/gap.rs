@@ -47,12 +47,18 @@ pub enum GapKind {
     EvidenceStale,
     /// A criterion's evidence is distrusted by the auditor.
     EvidenceSuspect,
+    /// A SOUP advisory or policy finding has no current disposition.
+    SoupUnresolvedAdvisory,
+    /// A SOUP component is past its stated support end date.
+    SoupPastEndOfSupport,
+    /// A required SOUP field is absent or unknown.
+    SoupFieldNotStated,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 15] = [
+    pub(crate) const ALL: [Self; 18] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -68,6 +74,9 @@ impl GapKind {
         Self::EvidenceFailed,
         Self::EvidenceStale,
         Self::EvidenceSuspect,
+        Self::SoupUnresolvedAdvisory,
+        Self::SoupPastEndOfSupport,
+        Self::SoupFieldNotStated,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -89,6 +98,9 @@ impl GapKind {
             Self::EvidenceFailed => "evidence_failed",
             Self::EvidenceStale => "evidence_stale",
             Self::EvidenceSuspect => "evidence_suspect",
+            Self::SoupUnresolvedAdvisory => "soup_unresolved_advisory",
+            Self::SoupPastEndOfSupport => "soup_past_end_of_support",
+            Self::SoupFieldNotStated => "soup_field_not_stated",
         }
     }
 
@@ -237,6 +249,9 @@ mod tests {
                 "evidence_failed",
                 "evidence_stale",
                 "evidence_suspect",
+                "soup_unresolved_advisory",
+                "soup_past_end_of_support",
+                "soup_field_not_stated",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {

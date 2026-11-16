@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-soup"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+description = "Shared SOUP report assembly and renderings."
+
+[lints]
+workspace = true
+
+[dependencies]
+clap = { workspace = true }
+ix-cli-kit = { workspace = true }
+quoin-core = { workspace = true }
+quoin-assurance = { workspace = true }
+quoin-evidence = { workspace = true }
+quoin-store = { workspace = true }
+quoin-quire = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+time = { workspace = true, features = ["parsing"] }
+
+[dev-dependencies]
+ix-trace-rs = { workspace = true }
+tempfile = { workspace = true }

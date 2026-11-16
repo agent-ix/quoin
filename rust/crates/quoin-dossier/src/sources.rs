@@ -30,6 +30,8 @@ pub struct Sources {
     pub matrix: Arc<dyn MatrixSource>,
     /// Build the selected bindings or pack against the evidence store.
     pub rmm: fn(&Inputs) -> Result<RmmSource, SourceFailure>,
+    /// Build the shared FR-144 report without reading an SBOM.
+    pub soup: fn(&Inputs) -> Result<quoin_soup::DossierSource, SourceFailure>,
 }
 
 /// The two discharge source forms, preserving their supplied order.

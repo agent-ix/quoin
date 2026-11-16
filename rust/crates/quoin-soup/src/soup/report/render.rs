@@ -26,7 +26,7 @@ fn one_line(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-fn anomaly_text(anomaly: &Anomaly) -> String {
+pub(super) fn anomaly_text(anomaly: &Anomaly) -> String {
     match &anomaly.source_ref {
         Some(source) => format!("{} ({source})", one_line(&anomaly.statement)),
         None => one_line(&anomaly.statement),
@@ -34,7 +34,7 @@ fn anomaly_text(anomaly: &Anomaly) -> String {
 }
 
 /// `not stated`, `none` or the items.
-fn listed_text<T>(listed: &Listed<T>, item: impl Fn(&T) -> String) -> String {
+pub(super) fn listed_text<T>(listed: &Listed<T>, item: impl Fn(&T) -> String) -> String {
     match listed {
         Listed::Absent => NOT_STATED.to_owned(),
         Listed::Empty => "none".to_owned(),
@@ -42,7 +42,7 @@ fn listed_text<T>(listed: &Listed<T>, item: impl Fn(&T) -> String) -> String {
     }
 }
 
-fn resolved_text<T: Copy>(resolved: &Resolved<T>, show: impl Fn(T) -> String) -> String {
+pub(super) fn resolved_text<T: Copy>(resolved: &Resolved<T>, show: impl Fn(T) -> String) -> String {
     match resolved {
         Resolved::Unknown => "unknown".to_owned(),
         Resolved::Record(value) => show(*value),
@@ -76,7 +76,7 @@ fn advisory_text(advisory: &Attached) -> String {
     )
 }
 
-fn policy_finding_text(finding: &PolicyFinding) -> String {
+pub(super) fn policy_finding_text(finding: &PolicyFinding) -> String {
     finding_text(
         finding.tool.name(),
         (&finding.rule_id, &finding.package),
@@ -127,7 +127,7 @@ fn policy_status_word(status: &PolicyStatus) -> Option<&'static str> {
 
 /// The Markdown line of a row's policy status: the wording, and for a clean
 /// scan the scan read.
-fn policy_status_text(status: &PolicyStatus) -> Option<String> {
+pub(super) fn policy_status_text(status: &PolicyStatus) -> Option<String> {
     let word = policy_status_word(status)?;
     Some(match status {
         PolicyStatus::NoFindings { timestamp, ruleset } => format!(
@@ -139,11 +139,11 @@ fn policy_status_text(status: &PolicyStatus) -> Option<String> {
 }
 
 /// Stated on a row whose disposition covers, or was too old to cover, a finding.
-const DISPOSITION_SCOPE: &str = "a disposition covers the findings of this record reported by a scan at or before its attestation; a finding reported by a later scan is unresolved";
+pub(super) const DISPOSITION_SCOPE: &str = "a disposition covers the findings of this record reported by a scan at or before its attestation; a finding reported by a later scan is unresolved";
 
 /// Whether a disposition is in play on the row: some finding it resolved, or
 /// was refused for being older than the scan that reported the finding.
-fn has_disposition(row: &Row) -> bool {
+pub(super) fn has_disposition(row: &Row) -> bool {
     let engaged = |resolution: &Resolution| {
         matches!(
             resolution,
@@ -183,7 +183,7 @@ fn flags(row: &Row) -> String {
 }
 
 /// The row's standing for one tool: its advisories, or why it has none to show.
-fn tool_lines(row: &Row, tool: Tool, osv_database: Option<&str>) -> Vec<String> {
+pub(super) fn tool_lines(row: &Row, tool: Tool, osv_database: Option<&str>) -> Vec<String> {
     let found: Vec<String> = row
         .join
         .advisories
@@ -269,6 +269,12 @@ pub(super) fn markdown(report: &Report) -> String {
             let _ = writeln!(text, "- Disposition scope: {DISPOSITION_SCOPE}");
         }
     }
+    text.push_str(&appended(report));
+    text
+}
+
+pub(super) fn appended(report: &Report) -> String {
+    let mut text = String::new();
     text.push_str("\n## Unmatched advisories\n\n");
     if report.unmatched.is_empty() {
         text.push_str("none\n");
