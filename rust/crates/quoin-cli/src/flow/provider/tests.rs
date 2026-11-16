@@ -125,7 +125,6 @@ fn formalization_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
     )
 }
 
-#[trace("FR-189-AC-1", "FR-189-AC-7")]
 #[cfg(unix)]
 #[test]
 fn qsl_check_passes_only_with_clean_fsl_outcome_and_bound_formalizes_relation() {
@@ -151,7 +150,7 @@ fn qsl_check_passes_only_with_clean_fsl_outcome_and_bound_formalizes_relation() 
     );
 }
 
-#[trace("FR-189-AC-2")]
+#[trace("FR-189-AC-2", "TC-015")]
 #[cfg(unix)]
 #[test]
 fn qsl_check_failure_returns_the_diagnostic_file_line_and_message() {
@@ -175,7 +174,6 @@ fn qsl_check_failure_returns_the_diagnostic_file_line_and_message() {
     );
 }
 
-#[trace("FR-189-AC-3")]
 #[cfg(unix)]
 #[test]
 fn a_checked_draft_without_a_bound_formalizes_id_fails_closed() {
@@ -198,7 +196,6 @@ fn a_checked_draft_without_a_bound_formalizes_id_fails_closed() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-6")]
 #[test]
 fn a_missing_fsl_executable_never_passes_the_invariant() {
     let (directory, request, context) = formalization_fixture();
@@ -239,7 +236,7 @@ fn the_retry_guard_requires_four_recorded_consecutive_failures() {
     assert!(super::retries_exhausted(&make_instance(4, 1)).is_err());
 }
 
-#[trace("FR-189-AC-5")]
+#[trace("FR-189-AC-6", "FR-189-AC-7")]
 #[test]
 fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -265,6 +262,20 @@ fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
         ]
     );
     let transitions = definition["transitions"].as_array().expect("transitions");
+    let expected_transitions = quoin_yaml::from_str(
+        r#"
+- {from: drafting, to: checked, invariants: ["interview.complete:request", qsl_check_passes], defaultGate: auto}
+- {from: checked, to: drafting, defaultGate: auto}
+- {from: checked, to: analysed, defaultGate: auto}
+- {from: analysed, to: drafting, defaultGate: auto}
+- {from: analysed, to: awaiting_approval, invariants: [analysis_consistent_with_approved], defaultGate: auto}
+- {from: awaiting_approval, to: approved, invariants: [formal_rule_approved], defaultGate: hitl}
+- {from: awaiting_approval, to: rejected, defaultGate: hitl}
+- {from: drafting, to: stopped, invariants: [formalization_retries_exhausted], defaultGate: auto}
+"#,
+    )
+    .expect("expected transition contract");
+    assert_eq!(definition["transitions"], expected_transitions);
     let approved: Vec<_> = transitions
         .iter()
         .filter(|transition| transition["to"] == "approved")

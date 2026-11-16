@@ -459,6 +459,16 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         &h.root.join("qsl/rule.native"),
         "// formalizes: FR-001\nRule: Bool = true;\n",
     )?;
+    formalize_success_scenario(h, &fsl_ok, &quire_ok)?;
+    let fsl_bad = executable(
+        &tools,
+        "fsl-bad",
+        "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"refusal\",\"diagnostics\":[{\"locus\":{\"kind\":\"region\",\"start\":1},\"message\":\"expected Boolean\"}]}' ; exit 20",
+    )?;
+    formalize_retry_scenario(h, &fsl_bad, &quire_ok)
+}
+
+fn formalize_success_scenario(h: &Harness, fsl: &Path, quire: &Path) -> Result<()> {
     h.start("formalize", "smoke-formalize-success")?;
     h.answers(
         "smoke-formalize-success",
@@ -467,7 +477,7 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
     )?;
     let success = h.flow_with_tools(
         &["advance", "smoke-formalize-success", "checked"],
-        Some((&fsl_ok, &quire_ok)),
+        Some((fsl, quire)),
     )?;
     let success = passed(&success)?;
     require(
@@ -475,11 +485,10 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         "a clean FSL result with the exact formalizes relation reaches checked",
     )?;
 
-    let fsl_bad = executable(
-        &tools,
-        "fsl-bad",
-        "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"refusal\",\"diagnostics\":[{\"locus\":{\"kind\":\"region\",\"start\":1},\"message\":\"expected Boolean\"}]}' ; exit 20",
-    )?;
+    Ok(())
+}
+
+fn formalize_retry_scenario(h: &Harness, fsl: &Path, quire: &Path) -> Result<()> {
     h.start("formalize", "smoke-formalize-stopped")?;
     h.answers(
         "smoke-formalize-stopped",
@@ -490,7 +499,7 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
     for attempt in 0..4 {
         let failed = h.flow_with_tools(
             &["advance", "smoke-formalize-stopped", "checked"],
-            Some((&fsl_bad, &quire_ok)),
+            Some((fsl, quire)),
         )?;
         let failure: Value = serde_json::from_slice(&failed.stdout).map_err(|e| e.to_string())?;
         require(
@@ -499,6 +508,16 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         )?;
         let last_diagnostic = failure.to_string();
         diagnostics.push(last_diagnostic.clone());
+        let before_recording = passed(&h.flow(&["status", "smoke-formalize-stopped"])?)?;
+        require(
+            text(&before_recording, "/current_phase")? == "drafting"
+                && before_recording
+                    .pointer("/data/items/formalization_failure")
+                    .and_then(Value::as_array)
+                    .map_or(0, Vec::len)
+                    == attempt,
+            format!("failed attempt {attempt} must return to drafting before its retry record"),
+        )?;
         passed(
             &h.flow(&[
                 "add-item",
@@ -508,6 +527,20 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
                 &json!({"id":format!("fsl-failure-{attempt}"),"diagnostic":last_diagnostic})
                     .to_string(),
             ])?,
+        )?;
+        let after_recording = passed(&h.flow(&["status", "smoke-formalize-stopped"])?)?;
+        let failures = after_recording
+            .pointer("/data/items/formalization_failure")
+            .and_then(Value::as_array)
+            .ok_or("retry diagnostic items are absent")?;
+        require(
+            failures.len() == attempt + 1
+                && failures
+                    .last()
+                    .and_then(|item| item.get("diagnostic"))
+                    .and_then(Value::as_str)
+                    == Some(last_diagnostic.as_str()),
+            format!("failed attempt {attempt} must increment the recorded retry count"),
         )?;
     }
     let stopped = passed(&h.flow(&["advance", "smoke-formalize-stopped", "stopped"])?)?;
@@ -712,4 +745,29 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "test assertions may panic"
+)]
+mod tests {
+    use super::{Harness, formalize_scenarios};
+    use ix_trace_rs::trace;
+
+    #[trace("FR-189-AC-2", "TC-015")]
+    #[test]
+    #[ignore = "run by make workflow-test with the current ix-flow runtime"]
+    fn tc_015_formalize_failures_return_to_drafting_with_diagnostics() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        formalize_scenarios(&harness).expect("formalize ix-flow scenarios");
+    }
 }

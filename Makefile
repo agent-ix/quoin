@@ -78,3 +78,4 @@ workflow-test-runtime:
 
 workflow-test: rust-build workflow-test-runtime
 	cd $(RUST_DIR) && cargo run --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check -- smoke $(CARGO_TARGET)/debug/quoin $(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js $(CURDIR)
+	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::tc_015_formalize_failures_return_to_drafting_with_diagnostics -- --ignored --exact
