@@ -117,6 +117,7 @@ fn formalization_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
             answered_at: None,
             requirement_id: "FR-001".to_owned(),
             draft_path: PathBuf::from("qsl/rule.native"),
+            analysis_package: None,
             engineering_assurance: None,
             allowed_signers: None,
             gitsign: None,
@@ -465,6 +466,7 @@ fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
         json!([
             "requirement_id",
             "draft_path",
+            "analysis_package",
             "engineering_assurance",
             "allowed_signers"
         ])
