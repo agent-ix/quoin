@@ -105,7 +105,7 @@ pub(crate) fn compute(
     .map_err(|error| error.to_string())
 }
 
-fn module_selection(paths: &[String]) -> Result<ModuleSelection, String> {
+pub(crate) fn module_selection(paths: &[String]) -> Result<ModuleSelection, String> {
     if paths.is_empty() {
         // Match `quire.coverage`: an inline module at the repository root is
         // the selected model before ambient discovery. The matrix and release

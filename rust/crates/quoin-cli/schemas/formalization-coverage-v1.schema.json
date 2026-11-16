@@ -28,13 +28,83 @@
                 "symbol": { "type": "string", "minLength": 1 },
                 "state": { "enum": ["draft", "approved"] },
                 "reason": { "type": "string", "minLength": 1 }
-              }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": { "state": { "const": "draft" } },
+                    "required": ["state"]
+                  },
+                  "then": { "required": ["reason"] }
+                }
+              ]
             }
           },
           "analysis_disposition": {
             "enum": ["qualified-record", "failed", "errored", "absent", "stale", "unevaluated", "qualification-rejected"]
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "state": { "const": "none" } },
+              "required": ["state"]
+            },
+            "then": {
+              "properties": { "declarations": { "maxItems": 0 } },
+              "not": { "required": ["analysis_disposition"] }
+            }
+          },
+          {
+            "if": {
+              "properties": { "state": { "const": "draft" } },
+              "required": ["state"]
+            },
+            "then": {
+              "properties": {
+                "declarations": {
+                  "minItems": 1,
+                  "contains": { "properties": { "state": { "const": "draft" } } }
+                }
+              },
+              "not": { "required": ["analysis_disposition"] }
+            }
+          },
+          {
+            "if": {
+              "properties": { "state": { "const": "approved" } },
+              "required": ["state"]
+            },
+            "then": {
+              "required": ["analysis_disposition"],
+              "properties": {
+                "declarations": {
+                  "minItems": 1,
+                  "items": { "properties": { "state": { "const": "approved" } } }
+                },
+                "analysis_disposition": {
+                  "enum": ["failed", "errored", "absent", "stale", "unevaluated", "qualification-rejected"]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": { "state": { "const": "analysed" } },
+              "required": ["state"]
+            },
+            "then": {
+              "required": ["analysis_disposition"],
+              "properties": {
+                "declarations": {
+                  "minItems": 1,
+                  "items": { "properties": { "state": { "const": "approved" } } }
+                },
+                "analysis_disposition": { "const": "qualified-record" }
+              }
+            }
+          }
+        ]
       }
     },
     "totals": {

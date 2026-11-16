@@ -96,7 +96,8 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .to_str()
         .ok_or_else(|| "--repo is not valid UTF-8".to_owned())?;
 
-    let status = crate::formal_rules::status_report(arguments)?;
+    let modules = values(arguments, "module");
+    let status = crate::formal_rules::status_report_with_modules(arguments, &modules)?;
     let status_rules = status
         .get("rules")
         .and_then(Value::as_array)
@@ -119,7 +120,6 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         );
     }
 
-    let modules = values(arguments, "module");
     let coverage = crate::core_runtime::invoke(
         "quire.coverage",
         &json!({"scope": repo_text, "modules": modules}),
@@ -220,25 +220,17 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         });
     }
 
-    let rule_rows = status_rules;
-    let report = build_report(source_items, rule_rows, &approvals, &analysis)?;
-    let rendered = if arguments.get_flag("json") {
-        serde_json::to_string_pretty(&report).map_err(|error| error.to_string())?
-    } else {
-        report
-            .items
-            .iter()
-            .map(|item| {
-                let disposition = item
-                    .analysis_disposition
-                    .as_deref()
-                    .map(|value| format!(" ({value})"))
-                    .unwrap_or_default();
-                format!("{} {} {}{disposition}", item.state, item.id, item.document)
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
+    let analysis_dispositions = source_items
+        .iter()
+        .map(|source| (source.id.clone(), disposition_for(&source.id, &analysis)))
+        .collect();
+    let report = build_report(
+        source_items,
+        status_rules,
+        &approvals,
+        &analysis_dispositions,
+    )?;
+    let rendered = render_report(&report, arguments.get_flag("json"))?;
     Ok(Response::ok(json!({"rendered": rendered})))
 }
 
@@ -254,7 +246,7 @@ fn build_report(
     source_items: Vec<SourceItem>,
     rule_rows: &[Value],
     approvals: &BTreeMap<String, Declaration>,
-    analysis: &AnalysisOutcome,
+    analysis_dispositions: &BTreeMap<String, String>,
 ) -> Result<Report, String> {
     let mut by_id: BTreeMap<String, Vec<Declaration>> = BTreeMap::new();
     for rule in rule_rows {
@@ -292,7 +284,12 @@ fn build_report(
         {
             None
         } else {
-            Some(disposition_for(&source.id, analysis))
+            Some(
+                analysis_dispositions
+                    .get(&source.id)
+                    .cloned()
+                    .ok_or_else(|| format!("analysis disposition missing for {}", source.id))?,
+            )
         };
         let state = derive_state(&declarations, analysis_disposition.as_deref());
         items.push(Item {
@@ -330,6 +327,25 @@ fn build_report(
             by_criticality,
         },
     })
+}
+
+fn render_report(report: &Report, json_output: bool) -> Result<String, String> {
+    if json_output {
+        return serde_json::to_string_pretty(report).map_err(|error| error.to_string());
+    }
+    Ok(report
+        .items
+        .iter()
+        .map(|item| {
+            let disposition = item
+                .analysis_disposition
+                .as_deref()
+                .map(|value| format!(" ({value})"))
+                .unwrap_or_default();
+            format!("{} {} {}{disposition}", item.state, item.id, item.document)
+        })
+        .collect::<Vec<_>>()
+        .join("\n"))
 }
 
 fn derive_state(declarations: &[Declaration], disposition: Option<&str>) -> &'static str {
@@ -424,9 +440,12 @@ fn values(arguments: &ArgMatches, name: &str) -> Vec<String> {
     reason = "test failures should name their fixture"
 )]
 mod tests {
+    use std::collections::BTreeMap;
     use std::path::Path;
 
-    use super::{Counts, Declaration, derive_state};
+    use serde_json::{Value, json};
+
+    use super::{Declaration, SourceItem, build_report, derive_state, render_report};
     use ix_trace_rs::trace;
 
     #[trace("FR-204-AC-2", "FR-204-AC-3")]
@@ -449,7 +468,11 @@ mod tests {
             "draft"
         );
         assert_eq!(
-            declarations[1].reason.as_deref(),
+            declarations
+                .get(1)
+                .expect("draft declaration")
+                .reason
+                .as_deref(),
             Some("changed_since_approval")
         );
     }
@@ -490,19 +513,155 @@ mod tests {
 
     #[trace("FR-204-AC-7", "FR-204-AC-8")]
     #[test]
-    fn totals_count_every_state_without_scores() {
-        let mut counts = Counts::default();
-        for state in ["none", "draft", "approved", "analysed"] {
-            counts.increment(state).expect("known state");
-        }
+    fn production_report_aggregates_complete_inventory_and_serializes_dispositions() {
+        let source_items = vec![
+            source(
+                "FR-204",
+                "functional/FR-204.md",
+                Some("high"),
+                "requirement",
+            ),
+            source(
+                "FR-204-AC-1",
+                "functional/FR-204.md",
+                Some("high"),
+                "criterion",
+            ),
+            source(
+                "FR-204-AC-2",
+                "functional/FR-204.md",
+                Some("medium"),
+                "criterion",
+            ),
+            source(
+                "FR-204-AC-3",
+                "functional/FR-204.md",
+                Some("low"),
+                "criterion",
+            ),
+            source("FR-205", "functional/FR-205.md", None, "requirement"),
+            source("FR-205-AC-1", "functional/FR-205.md", None, "criterion"),
+        ];
+        let declarations = BTreeMap::from([
+            (
+                "qsl:approved::P1".to_owned(),
+                declaration("qsl:approved::P1", "approved", None),
+            ),
+            (
+                "qsl:draft::P1".to_owned(),
+                declaration("qsl:draft::P1", "draft", Some("changed_since_approval")),
+            ),
+            (
+                "qsl:other-approved::P1".to_owned(),
+                declaration("qsl:other-approved::P1", "approved", None),
+            ),
+        ]);
+        let rules = vec![
+            rule(
+                "qsl:approved::P1",
+                &["FR-204-AC-1", "FR-204-AC-3", "FR-205-AC-1"],
+            ),
+            rule("qsl:draft::P1", &["FR-204-AC-2", "FR-205-AC-1"]),
+            rule("qsl:other-approved::P1", &["FR-204-AC-2"]),
+        ];
+        let dispositions = BTreeMap::from([
+            ("FR-204".to_owned(), "unevaluated".to_owned()),
+            ("FR-204-AC-1".to_owned(), "unevaluated".to_owned()),
+            ("FR-204-AC-2".to_owned(), "qualified-record".to_owned()),
+            ("FR-204-AC-3".to_owned(), "qualified-record".to_owned()),
+            ("FR-205".to_owned(), "failed".to_owned()),
+            ("FR-205-AC-1".to_owned(), "qualified-record".to_owned()),
+        ]);
+
+        let report = build_report(source_items, &rules, &declarations, &dispositions)
+            .expect("complete inventory produces a report");
+        assert_eq!(report.items.len(), 6);
         assert_eq!(
-            counts,
-            Counts {
-                none: 1,
-                draft: 1,
-                approved: 1,
-                analysed: 1
-            }
+            report
+                .items
+                .iter()
+                .map(|item| (item.id.as_str(), item.state.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                ("FR-204", "none"),
+                ("FR-204-AC-1", "approved"),
+                ("FR-204-AC-2", "draft"),
+                ("FR-204-AC-3", "analysed"),
+                ("FR-205", "none"),
+                ("FR-205-AC-1", "draft"),
+            ]
+        );
+        assert_eq!(
+            report
+                .items
+                .get(1)
+                .expect("approved criterion")
+                .analysis_disposition
+                .as_deref(),
+            Some("unevaluated")
+        );
+        assert_eq!(
+            report
+                .items
+                .get(2)
+                .expect("draft criterion")
+                .analysis_disposition,
+            None
+        );
+        assert_eq!(
+            report
+                .items
+                .get(3)
+                .expect("analysed criterion")
+                .analysis_disposition
+                .as_deref(),
+            Some("qualified-record")
+        );
+        assert_eq!(
+            report
+                .items
+                .get(5)
+                .expect("unassigned criterion")
+                .criticality,
+            None
+        );
+        assert_eq!(
+            report.totals.by_document.get("functional/FR-204.md"),
+            Some(&counts(1, 1, 1, 1))
+        );
+        assert_eq!(
+            report.totals.by_document.get("functional/FR-205.md"),
+            Some(&counts(1, 1, 0, 0))
+        );
+        assert_eq!(
+            report.totals.by_criticality.get("unassigned"),
+            Some(&counts(1, 1, 0, 0))
+        );
+        assert_eq!(
+            report.totals.by_criticality.get("high"),
+            Some(&counts(1, 0, 1, 0))
+        );
+        assert_eq!(
+            report.totals.by_criticality.get("medium"),
+            Some(&counts(0, 1, 0, 0))
+        );
+        assert_eq!(
+            report.totals.by_criticality.get("low"),
+            Some(&counts(0, 0, 0, 1))
+        );
+
+        let rendered = render_report(&report, true).expect("CLI JSON serialization succeeds");
+        let serialized: Value = serde_json::from_str(&rendered).expect("CLI output parses as JSON");
+        let serialized_items = serialized
+            .get("items")
+            .and_then(Value::as_array)
+            .expect("serialized items");
+        assert_eq!(serialized_items.len(), 6);
+        assert_eq!(
+            serialized_items
+                .get(3)
+                .and_then(|item| item.get("analysis_disposition")),
+            Some(&json!("qualified-record"))
         );
     }
 
@@ -539,8 +698,93 @@ mod tests {
             "{:?}",
             validator.errors(&report)
         );
-        let mut with_unknown = report;
-        with_unknown["items"][0]["score"] = serde_json::json!(100);
+        let mut with_unknown = report.clone();
+        with_unknown
+            .get_mut("items")
+            .and_then(Value::as_array_mut)
+            .and_then(|items| items.first_mut())
+            .and_then(Value::as_object_mut)
+            .expect("fixture item object")
+            .insert("score".to_owned(), json!(100));
         assert!(!validator.is_valid(&with_unknown));
+
+        let mut draft_without_reason = report.clone();
+        draft_without_reason
+            .get_mut("items")
+            .and_then(Value::as_array_mut)
+            .and_then(|items| items.first_mut())
+            .and_then(Value::as_object_mut)
+            .map(|item| {
+                item.insert("state".to_owned(), json!("draft"));
+                item.remove("analysis_disposition");
+                item
+            })
+            .and_then(|item| item.get_mut("declarations"))
+            .and_then(Value::as_array_mut)
+            .and_then(|declarations| declarations.first_mut())
+            .and_then(Value::as_object_mut)
+            .expect("fixture declaration object")
+            .insert("state".to_owned(), json!("draft"));
+        assert!(!validator.is_valid(&draft_without_reason));
+
+        let mut analysed_without_qualified_record = report.clone();
+        analysed_without_qualified_record
+            .get_mut("items")
+            .and_then(Value::as_array_mut)
+            .and_then(|items| items.first_mut())
+            .and_then(Value::as_object_mut)
+            .expect("fixture item object")
+            .insert("state".to_owned(), json!("analysed"));
+        assert!(!validator.is_valid(&analysed_without_qualified_record));
+
+        let mut approved_without_disposition = report.clone();
+        approved_without_disposition
+            .get_mut("items")
+            .and_then(Value::as_array_mut)
+            .and_then(|items| items.first_mut())
+            .and_then(Value::as_object_mut)
+            .expect("fixture item object")
+            .remove("analysis_disposition");
+        assert!(!validator.is_valid(&approved_without_disposition));
+
+        let mut approved_with_qualified_record = report;
+        approved_with_qualified_record
+            .get_mut("items")
+            .and_then(Value::as_array_mut)
+            .and_then(|items| items.first_mut())
+            .and_then(Value::as_object_mut)
+            .expect("fixture item object")
+            .insert("analysis_disposition".to_owned(), json!("qualified-record"));
+        assert!(!validator.is_valid(&approved_with_qualified_record));
+    }
+
+    fn source(id: &str, document: &str, criticality: Option<&str>, kind: &str) -> SourceItem {
+        SourceItem {
+            id: id.to_owned(),
+            kind: kind.to_owned(),
+            document: document.to_owned(),
+            criticality: criticality.map(str::to_owned),
+        }
+    }
+
+    fn declaration(symbol: &str, state: &str, reason: Option<&str>) -> Declaration {
+        Declaration {
+            symbol: symbol.to_owned(),
+            state: state.to_owned(),
+            reason: reason.map(str::to_owned),
+        }
+    }
+
+    fn rule(symbol: &str, formalizes: &[&str]) -> Value {
+        json!({"symbol": symbol, "formalizes": formalizes})
+    }
+
+    fn counts(none: usize, draft: usize, approved: usize, analysed: usize) -> super::Counts {
+        super::Counts {
+            none,
+            draft,
+            approved,
+            analysed,
+        }
     }
 }

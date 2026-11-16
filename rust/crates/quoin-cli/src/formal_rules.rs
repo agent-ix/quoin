@@ -9,7 +9,7 @@ use std::process::{Command as ProcessCommand, Stdio};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
-use quoin_quire::{ModuleSelection, ScopeRoot};
+use quoin_quire::ScopeRoot;
 use serde_json::{Value, json};
 
 const REQUEST_PROTOCOL: &str = "engineering-assurance.signature-verify-request/v1";
@@ -113,14 +113,17 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
     Ok(Response::ok(json!({"rendered": rendered})))
 }
 
-pub(crate) fn status_report(args: &ArgMatches) -> Result<Value, String> {
+pub(crate) fn status_report_with_modules(
+    args: &ArgMatches,
+    module_paths: &[String],
+) -> Result<Value, String> {
     validate_status_arguments(args).map_err(status_error_message)?;
-    status(args).map_err(status_error_message)
+    status(args, module_paths).map_err(status_error_message)
 }
 
 fn status_report_shell(args: &ArgMatches) -> Result<Value, crate::ShellError> {
     validate_status_arguments(args).map_err(status_shell_error)?;
-    status(args).map_err(status_shell_error)
+    status(args, &[]).map_err(status_shell_error)
 }
 
 fn validate_status_arguments(args: &ArgMatches) -> Result<(), StatusError> {
@@ -185,7 +188,7 @@ impl From<String> for StatusError {
     }
 }
 
-fn status(args: &ArgMatches) -> Result<Value, StatusError> {
+fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusError> {
     let repo = PathBuf::from(
         args.get_one::<String>("repo")
             .ok_or_else(|| "--repo default is unavailable".to_owned())?,
@@ -216,7 +219,9 @@ fn status(args: &ArgMatches) -> Result<Value, StatusError> {
 
     let scope = ScopeRoot::open(&repo).map_err(|error| error.to_string())?;
     let mut notices = Vec::new();
-    let registry = ModuleSelection::ScopeOrAmbient
+    let selection = crate::analysis_evidence::module_selection(module_paths)
+        .map_err(StatusError::Unavailable)?;
+    let registry = selection
         .resolve(&scope, &mut notices)
         .map_err(|error| error.to_string())?;
     let model = registry

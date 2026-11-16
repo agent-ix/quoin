@@ -40,7 +40,7 @@ const TOPICS: &[(&str, &str)] = &[
     ("formalize", "Draft and QSL-check a formalization proposal."),
     (
         "formal-rules",
-        "Read formal-rule approval state from signed git commits.",
+        "Read formal-rule approval state and formalization coverage.",
     ),
     ("graph", "Read-only evidence-graph analysis views."),
     (
@@ -97,6 +97,10 @@ const COMMANDS: &[(&str, &str)] = &[
         "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",
     ),
     ("formalize", "Draft and QSL-check a formalization proposal."),
+    (
+        "formal-rules",
+        "Read formal-rule approval state and formalization coverage.",
+    ),
     ("graph", "Read-only evidence-graph analysis views."),
     ("matrix", crate::matrix::ABOUT),
     (
