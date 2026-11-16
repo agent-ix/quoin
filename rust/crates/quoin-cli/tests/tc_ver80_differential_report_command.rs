@@ -77,6 +77,7 @@ impl Fixture {
         Command::new(env!("CARGO_BIN_EXE_quoin"))
             .args(["evidence", "record", "--repo", ".", "--module", "."])
             .args(["--suite", "SUITE-SMT", "--tool", "filament-analyze 0.1.0"])
+            .args(["--run-kind", "analysis"])
             .args(["--timestamp", "2026-01-01T00:00:00Z", "--results"])
             .arg(results)
             .args(extra)

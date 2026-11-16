@@ -135,14 +135,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
         MAX_RECORD_RESULTS_BYTES,
     )?)
     .map_err(|error| format!("results are not UTF-8: {error}"))?;
-    let formal_rule_selection: Option<serde_json::Value> = arguments
-        .get_one::<String>("formal-rule-selection")
-        .map(|path| {
-            let bytes = bounded_input(path, MAX_RECORD_RESULTS_BYTES)?;
-            serde_json::from_slice(&bytes)
-                .map_err(|error| format!("formal-rule-selection is not JSON: {error}"))
-        })
-        .transpose()?;
+    let formal_rule_selection = read_formal_rule_selection(arguments)?;
     let policy = arguments
         .get_one::<String>("policy")
         .map(|path| {
@@ -228,6 +221,17 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
             _ => Err("evidence.record returned an unknown payload kind".to_owned()),
         }
     })
+}
+
+fn read_formal_rule_selection(arguments: &ArgMatches) -> Result<Option<serde_json::Value>, String> {
+    arguments
+        .get_one::<String>("formal-rule-selection")
+        .map(|path| {
+            let bytes = bounded_input(path, MAX_RECORD_RESULTS_BYTES)?;
+            serde_json::from_slice(&bytes)
+                .map_err(|error| format!("formal-rule-selection is not JSON: {error}"))
+        })
+        .transpose()
 }
 
 fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
