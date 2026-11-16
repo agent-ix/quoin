@@ -3316,6 +3316,10 @@ dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
  "quoin-assurance",
+<<<<<<< HEAD
+=======
+ "quoin-evidence",
+>>>>>>> ed88fb41 (Cover dossier source parity, ordering, gaps, escaping and export lane)
  "quoin-quire",
  "quoin-quire-types",
  "serde",

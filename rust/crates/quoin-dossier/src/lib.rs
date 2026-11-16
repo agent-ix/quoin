@@ -6,9 +6,9 @@
 //! frontmatter and `Gaps` writer, `generate` / `check`, and the export
 //! hand-off to `quire export`.
 //!
-//! The per-document generators (SRS, architecture, trace matrix, RMM and the
-//! later documents) are not here: each registers itself in [`builtin_registry`]
-//! in the ticket that owns its content, in the fixed bundle order.
+//! The SRS, architecture, trace matrix and RMM generators register in
+//! [`builtin_registry`] in fixed bundle order. The host supplies the matrix
+//! and discharge source adapters so their evidence assembly stays shared.
 
 mod architecture;
 mod engine;
@@ -61,9 +61,7 @@ pub fn registry_of(generators: Vec<Box<dyn Generator>>) -> Result<Registry, Doss
     Ok(registry)
 }
 
-/// Every generator this build ships, in bundle order. The real generators are
-/// pushed here by the tickets that own their content; under the `test-stubs`
-/// feature the stubs follow.
+/// Every generator this build ships, in bundle order; test stubs follow.
 fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
     let mut generators: Vec<Box<dyn Generator>> = Vec::new();
     generators.push(Box::new(srs::SrsGenerator));
@@ -109,8 +107,7 @@ mod tests {
         );
     }
 
-    /// PLAT-1437 registers the SRS and architecture generators; the shipped
-    /// registry now has 2 real generators.
+    /// All four M1 documents register in bundle order.
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]

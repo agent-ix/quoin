@@ -151,3 +151,155 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
     }
     Generated { body, gaps }
 }
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::*;
+    use ix_trace_rs::trace;
+    use quoin_assurance::matrix::{MatrixInput, build};
+    use quoin_quire::records::{Contract, Table};
+    use serde_json::json;
+
+    fn matrix() -> MatrixOutput {
+        let input: MatrixInput = serde_json::from_value(json!({
+            "design_coverage": [
+                {"document": "FR-10.md", "id": "FR-10", "criteria": [
+                    {"id": "FR-10-AC-1", "status": "untagged", "binders": [], "method": "Test"}],
+                 "design": [{"check": "allocated", "state": "uncovered", "elements": []}]},
+                {"document": "FR-2.md", "id": "FR-2", "criteria": [
+                    {"id": "FR-2-AC-1", "status": "tagged", "binders": [], "method": "Analysis", "design_elements": [{"id":"DE-1"}]}],
+                 "design": [{"state":"covered", "elements":[{"id":"DE-1", "kind":"component"}]}]}
+            ],
+            "bindings": {"schemaVersion": 1, "bindings": [{"obligation":"FR-2-AC-1", "suite":"unit", "symbols":[]}]},
+            "audit": {"findings":[], "healthy":["FR-2-AC-1"], "unevaluated":[]}
+        })).unwrap();
+        build(&input).unwrap()
+    }
+
+    fn requirement(id: &str, criticality: Option<&str>) -> Document {
+        Document {
+            path: format!("{id}.md").into(),
+            id: id.to_owned(),
+            kind: "FR".to_owned(),
+            frontmatter: criticality
+                .map(|value| ("criticality".to_owned(), json!(value)))
+                .into_iter()
+                .collect(),
+            tables: [(
+                "Acceptance Criteria".to_owned(),
+                Table {
+                    headers: vec!["ID".to_owned(), "Criteria".to_owned()],
+                    rows: vec![vec![
+                        format!("{id}-AC-1"),
+                        "statement | line\n`tick`".to_owned(),
+                    ]],
+                },
+            )]
+            .into_iter()
+            .collect(),
+            sections: Default::default(),
+            edges: vec![],
+            raw: String::new(),
+            contract: Contract::Satisfied,
+        }
+    }
+
+    #[trace(
+        "FR-194-AC-1",
+        "FR-194-AC-2",
+        "FR-194-AC-4",
+        "FR-194-AC-5",
+        "FR-194-AC-6"
+    )]
+    #[test]
+    fn rows_preserve_the_real_matrix_builder_values_and_join_authored_statements() {
+        let source = matrix();
+        let generated = render(
+            &source,
+            &[
+                requirement("FR-10", None),
+                requirement("FR-2", Some("high")),
+            ],
+        );
+        let rows: Vec<_> = generated
+            .body
+            .lines()
+            .filter(|line| line.starts_with("| FR-"))
+            .collect();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows[0],
+            "| FR-2-AC-1 | statement \\| line \\`tick\\` | DE-1 (component) | Analysis | tagged | bound |"
+        );
+        assert_eq!(
+            rows[1],
+            "| FR-10-AC-1 | statement \\| line \\`tick\\` | no design element (allocated) | Test | untagged | undischarged |"
+        );
+        for requirement in &source.requirements {
+            for criterion in &requirement.criteria {
+                let row = rows.iter().find(|row| row.contains(&criterion.id)).unwrap();
+                assert!(row.ends_with(&format!(
+                    "| {} | {} |",
+                    criterion.static_status,
+                    criterion.evidence_status.as_str()
+                )));
+            }
+        }
+        assert!(generated.body.contains("Criticality: high"));
+        assert!(generated.body.contains("Criticality: unassigned"));
+        for kind in [
+            GapKind::CriticalityUnassigned,
+            GapKind::NoDesignElement,
+            GapKind::UnbackedCriterion,
+            GapKind::NoEvidence,
+        ] {
+            assert_eq!(
+                generated
+                    .gaps
+                    .iter()
+                    .filter(|gap| gap.gap_kind == kind)
+                    .count(),
+                1,
+                "{kind:?}"
+            );
+        }
+        let gap = generated
+            .gaps
+            .iter()
+            .find(|gap| gap.gap_kind == GapKind::NoEvidence)
+            .unwrap();
+        assert_eq!(
+            (&*gap.subject, &*gap.detail),
+            ("FR-10-AC-1", "undischarged")
+        );
+    }
+
+    #[trace("FR-194-AC-3")]
+    #[test]
+    fn an_empty_matrix_preserves_its_reason_as_a_gap() {
+        let generated = render(
+            &MatrixOutput {
+                requirements: vec![],
+                reason: Some("no selected criteria".to_owned()),
+                unclassified: None,
+            },
+            &[],
+        );
+        assert!(generated.body.contains("no selected criteria"));
+        assert_eq!(
+            generated.gaps,
+            [Gap::new(
+                GapKind::NoRequirements,
+                "this document",
+                "no selected criteria"
+            )]
+        );
+    }
+}
