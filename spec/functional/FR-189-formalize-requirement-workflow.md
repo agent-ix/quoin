@@ -65,12 +65,15 @@ adapter to filament-analyze.
   exits clean (quire-driver `quire-cli`, `Operation::Check`).
 - Invariant `analysis_consistent_with_approved` SHALL pass when a
   `filament-analyze run-package` over a package holding the draft and the approved
-  rules, given one `--select` document that holds the spans of the drafted set
-  together with the spans that
-  [FR-190](./FR-190-formal-rule-analysis-claim-selection.md) lists for the
-  approved rules, reports no failing claim; it SHALL fail on any failing claim.
-  Both sets of spans come from the `quoin formal-rules status` report, and the
-  document is the single claim-selection document of filament-analyze FR-009.
+  rules, given one `--select` document containing only the drafted set's spans,
+  reports no failing claim; it SHALL fail on any failing claim. Approved rules
+  remain in the package as unselected peers. Under filament-analyze FR-009,
+  selected claims are the draft claims being checked, while unselected claims
+  provide the approved context used for contradiction and redundancy analysis.
+  The selection spans come from the drafted set in the
+  `quoin formal-rules status` report and SHALL NOT include approved-rule spans.
+  The document is the single claim-selection document of filament-analyze
+  FR-009.
 - When Quoin evaluates `analysis_consistent_with_approved` for a
   `formalization_request`, then Quoin SHALL require `analysis_package` to be a
   non-empty, absolute path to a readable `filament.contract-package/v1` JSON
@@ -92,11 +95,12 @@ adapter to filament-analyze.
   return `analysis_package_invalid` without invoking `filament-analyze` if
   `analysis_package` is missing, empty, relative, contains NUL, or cannot be
   read as a `filament.contract-package/v1` document.
-- If that combined selection would hold no span, then invariant
+- If the drafted set provides no span for the selection, then invariant
   `analysis_consistent_with_approved` SHALL fail.
 - The workflow SHALL NOT invoke `filament-analyze run-package` with an empty
-  selection; an empty selection is never a valid analysis request. No approved
-  rule is not such a case while the drafted set contributes spans.
+  selection; an empty selection is never a valid analysis request. The absence
+  of approved rules SHALL NOT make the selection empty when the drafted set
+  contributes spans.
 - Invariant `formal_rule_approved` SHALL pass only when the drafted set is
   non-empty and `quoin formal-rules status` reports `approved` for every symbol
   in it; an empty drafted set SHALL fail it.
@@ -140,11 +144,12 @@ adapter to filament-analyze.
 | FR-189-AC-11 | Given a draft whose analysis reports a failing claim, the run returns from `analysed` to `drafting` with the diagnostics and an incremented retry counter | Test |
 | FR-189-AC-12 | Given two consecutive failures followed by a passing draft, the run reaches `awaiting_approval` and the next failure count starts at 1 | Test |
 | FR-189-AC-13 | Given a repository with no `approved` rule and a drafted set that holds a span, the analysis runs with a selection of the drafted spans only | Test |
-| FR-189-AC-14 | Given a combined selection with no span, invariant `analysis_consistent_with_approved` fails and `filament-analyze run-package` is not invoked | Test |
+| FR-189-AC-14 | Given a drafted set that provides no selection span, invariant `analysis_consistent_with_approved` fails and `filament-analyze run-package` is not invoked | Test |
 | FR-189-AC-15 | Given a missing, empty, relative, or NUL-containing trust path, or a partial or invalid `gitsign` object in `formalization_request`, the approval invariant returns `formal_rule_trust_inputs_invalid` without invoking engineering-assurance | Test |
-| FR-189-AC-16 | Given an `analysis_package` prepared from the exact draft that passed `qsl_check_passes` and the FR-188 rules reported approved for the run, the analysis invariant invokes `filament-analyze run-package` with that `filament.contract-package/v1` package and one selection containing the drafted spans and approved-rule spans | Test |
+| FR-189-AC-16 | Given an `analysis_package` prepared from the exact draft that passed `qsl_check_passes` and the FR-188 rules reported approved for the run, the analysis invariant invokes `filament-analyze run-package` with that `filament.contract-package/v1` package and one selection containing only the drafted spans | Test |
 | FR-189-AC-17 | Given a missing, empty, relative, or NUL-containing `analysis_package`, or a path that cannot be read as `filament.contract-package/v1`, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze` | Test |
 | FR-189-AC-18 | Given a package whose claims are missing from, extra to, or source-mismatched with the checked draft and FR-188 approved-rule set, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze run-package` | Test |
+| FR-189-AC-19 | Given an approved rule and a drafted rule that contradicts it, the package contains both claims, the selection contains only the drafted span, and the analysis reports the contradiction against the unselected approved peer | Test |
 
 ## Dependencies
 
