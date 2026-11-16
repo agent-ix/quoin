@@ -135,7 +135,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
         MAX_RECORD_RESULTS_BYTES,
     )?)
     .map_err(|error| format!("results are not UTF-8: {error}"))?;
-    let formal_rule_selection = arguments
+    let formal_rule_selection: Option<serde_json::Value> = arguments
         .get_one::<String>("formal-rule-selection")
         .map(|path| {
             let bytes = bounded_input(path, MAX_RECORD_RESULTS_BYTES)?;
