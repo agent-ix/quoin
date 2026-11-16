@@ -27,7 +27,9 @@ SOUP list (`soup`, `DOS-SOUP`), unresolved anomalies (`anomalies`,
 `DOS-ANOM`), risk management (`risk-management`, `DOS-RISK`), risk
 management plan (`risk-management-plan`, `DOS-RMP`) and release record
 (`release-record`, `DOS-REL`). The M3 document is the threat model (`threat-model`, `DOS-TM`),
-specified in [FR-202](./FR-202-dossier-threat-model-content.md). A document kind becomes selectable when
+specified in [FR-202](./FR-202-dossier-threat-model-content.md). The records-of-processing document is
+`records-of-processing` (`DOS-ROP`), specified in [FR-207](./FR-207-dossier-records-of-processing-content.md).
+A document kind becomes selectable when
 its generator is registered; the command frame can ship before later
 generators.
 
@@ -53,7 +55,7 @@ generators.
 - `export` SHALL run `quire export` as an external process with `--source-rev HEAD`.
 - `export` SHALL pass `--release`, each user-supplied `--approval` and `--template` to `quire export` unchanged.
 - When `release-record` is selected and `--release-verify` is supplied, `export` SHALL append that EA result as one more `--approval` after every user-supplied approval, including in a bundle; when `release-record` is not selected, it SHALL NOT append that result.
-- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in this fixed dossier order, independent of generator registration time: the four M1 ids above, then `DOS-VR`, `DOS-SOUP`, `DOS-ANOM`, `DOS-RISK`, `DOS-RMP`, `DOS-REL` for the registered M2 kinds, then `DOS-TM` when registered, then later kinds in their specified order. It SHALL pass `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.
+- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in this fixed dossier order, independent of generator registration time: the four M1 ids above, then `DOS-VR`, `DOS-SOUP`, `DOS-ANOM`, `DOS-RISK`, `DOS-RMP`, `DOS-REL` for the registered M2 kinds, then `DOS-TM` when registered, then `DOS-ROP` when registered, then later kinds in their specified order. It SHALL pass `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.
 - When `export` selects one document, `export` SHALL run `quire export` once with that file and without `--bundle-title` and `--bundle-id`.
 - The flow is commit-then-export because `quire export` takes identity and content from the blob committed at `--source-rev` and refuses a working file that differs from that commit (quire-cli FR-034 section A), and refuses identity options on JSON input. A bundle requires at least two inputs (quire-cli FR-039-AC-7), which is why one document is exported without bundle arguments.
 - Quoin SHALL NOT export an uncommitted file.
@@ -77,7 +79,7 @@ generators.
 
 ### Sources and failure
 
-- A source is one of the record readers named in FR-192 to FR-202: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix`, `discharge`, `soup-report`, `anomaly-report`, `risk-summary`, `risk-advise`, `acceptability-policy`, `release-snapshot`, `release-verify`, `threat-model-records` and `flow-findings`. A source is a library operation of the Quoin workspace or an explicitly supplied EA result and gives the same result as its named source command.
+- A source is one of the record readers named in FR-192 to FR-207: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix`, `discharge`, `soup-report`, `anomaly-report`, `risk-summary`, `risk-advise`, `acceptability-policy`, `release-snapshot`, `release-verify`, `threat-model-records`, `flow-findings` and `processing-activities`. A source is a library operation of the Quoin workspace or an explicitly supplied EA result and gives the same result as its named source command.
 - `generate`, `check` and `export` SHALL compute every selected document in memory before they write or compare anything.
 - If a source fails, the command SHALL exit 3, SHALL name the failed source and its error in `source_failure`, and SHALL write nothing.
 - If `generate` exits 2 or 3, `generate` SHALL leave every existing file under `<DIR>` unmodified.
@@ -88,7 +90,7 @@ generators.
 - Quoin SHALL compare ids in dossier order: an id is split at `-` into segments; two segments of ASCII digits compare by numeric value, any other two segments compare by byte value, a digit segment sorts before a non-digit segment, and an id that is a prefix of another sorts first. `FR-99` sorts before `FR-100`, and `FR-100-AC-2` before `FR-100-AC-10`.
 - Quoin SHALL sort gaps by the key (requirement id, criterion id, element id, clause id, gap kind position), where an absent id sorts first and the gap kind position is the position of the kind in the closed list below.
 - A gap that names a part, a connection, a sink or a threat uses that id as its element id.
-- A gap with no id (`no_requirements`, `design_relations_unavailable`, `no_clause_binding`, `no_threat_model`) sorts before gaps that name an id.
+- A gap with no id (`no_requirements`, `design_relations_unavailable`, `no_clause_binding`, `no_threat_model`, `no_processing_activity`) sorts before gaps that name an id.
 
 ### Document set
 
@@ -99,10 +101,11 @@ generators.
 
 - Each missing input SHALL be one bullet under the final level-2 heading `Gaps`, written `` `<gap_kind>` <subject>: <detail> ``.
 - The section SHALL read `Gaps: none` when it holds no gap.
-- Quoin SHALL use only these `gap_kind` values, in this order: `no_requirements`, `no_acceptance_criteria`, `criticality_unassigned`, `design_relations_unavailable`, `no_design_element`, `dangling_design_reference`, `design_kind_mismatch`, `no_allocation`, `unbacked_criterion`, `no_evidence`, `no_clause_binding`, `clause_open`, `evidence_failed`, `evidence_stale`, `evidence_suspect`, `soup_unresolved_advisory`, `soup_past_end_of_support`, `soup_field_not_stated`, `anomaly_unassessed`, `anomaly_no_release_rationale`, `risk_chain_incomplete`, `residual_risk_undecided`, `control_unverified`, `no_acceptability_policy`, `no_plan_record`, `release_not_verified`, `no_release_verify_input`, `no_snapshot`, `crossing_without_threat`, `classified_sink_without_threat`, `threat_without_treatment`, `no_threat_model`. Later document kinds SHALL extend this list through their own spec before registration.
+- Quoin SHALL use only these `gap_kind` values, in this order: `no_requirements`, `no_acceptance_criteria`, `criticality_unassigned`, `design_relations_unavailable`, `no_design_element`, `dangling_design_reference`, `design_kind_mismatch`, `no_allocation`, `unbacked_criterion`, `no_evidence`, `no_clause_binding`, `clause_open`, `evidence_failed`, `evidence_stale`, `evidence_suspect`, `soup_unresolved_advisory`, `soup_past_end_of_support`, `soup_field_not_stated`, `anomaly_unassessed`, `anomaly_no_release_rationale`, `risk_chain_incomplete`, `residual_risk_undecided`, `control_unverified`, `no_acceptability_policy`, `no_plan_record`, `release_not_verified`, `no_release_verify_input`, `no_snapshot`, `crossing_without_threat`, `classified_sink_without_threat`, `threat_without_treatment`, `no_threat_model`, `no_processing_activity`, `model_facts_unavailable`, `personal_data_categories_unstated`, `recipient_categories_unstated`, `transfer_region_unstated`, `transfer_safeguards_unstated`, `security_measures_unstated`. Later document kinds SHALL extend this list through their own spec before registration.
 - An M3 gap SHALL name a connection for `crossing_without_threat`, a sink for `classified_sink_without_threat`, a threat for `threat_without_treatment`, and the document for `no_threat_model`.
 - A gap SHALL name one subject: the document for `no_requirements`, `design_relations_unavailable` and `no_clause_binding`; a requirement for `no_acceptance_criteria`, `criticality_unassigned` and `no_design_element`; a criterion for `unbacked_criterion` and `no_evidence`; a design reference or element for `dangling_design_reference`, `design_kind_mismatch` and `no_allocation`; a clause for `clause_open`.
 - An M2 gap SHALL name its source subject: a criterion for the three `evidence_*` kinds; a component and finding or field for the three `soup_*` kinds; an anomaly for the two `anomaly_*` kinds; a risk row, residual risk or control for the three risk-chain kinds; the document for absent `no_acceptability_policy` and `no_plan_record`; and the release document or its source result for the three release kinds.
+- A records-of-processing gap SHALL name a covered connection or sink for absent or unstated personal-data categories, a covered sink for an unstated recipient or transfer region, a sink for absent transfer safeguards, a covered connection or sink for missing security measures, and the document for `no_processing_activity` or unavailable model facts.
 - A document with at least one gap SHALL have status `incomplete`.
 - The `--json` report SHALL hold the same gaps as the Markdown, in the same order.
 - Quoin SHALL report a gap and SHALL NOT drop or default it.
@@ -150,8 +153,9 @@ continues to allow committed, current incomplete documents.
 | FR-191-AC-21 | A bundle selecting `release-record` passes user `--approval` files in their given order and appends the supplied EA `--release-verify` result once after them; a bundle without `release-record` does not append it | Test |
 | FR-191-AC-22 | With only the ten M1 and M2 generators registered, unfiltered `generate` writes ten files and exits 1 due to `DOS-RMP`'s permanent `no_plan_record` gap; a complete explicit subset exits 0 | Test |
 | FR-191-AC-23 | With the threat-model generator registered, `generate --doc threat-model` writes `dossier/DOS-TM.md` only, `--doc nope` still exits 2, and a bundle export that selects `DOS-TM` and any M1 or M2 id orders `DOS-TM` after every M1 and M2 id regardless of selector order. | Test |
+| FR-191-AC-24 | With the records-of-processing generator registered, `generate --doc records-of-processing` writes `dossier/DOS-ROP.md` only, `--doc nope` still exits 2, and a bundle export that selects `DOS-ROP` and any earlier id places `DOS-ROP` after that id regardless of selector order. | Test |
 
 ## Dependencies
 
 - **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-034, FR-038, FR-039.
-- **Downstream**: [FR-192](./FR-192-dossier-srs-content.md) through [FR-195](./FR-195-dossier-rmm-content.md) define M1 content; [FR-196](./FR-196-dossier-verification-report-content.md) through [FR-201](./FR-201-dossier-release-record-content.md) define M2 content; [FR-202](./FR-202-dossier-threat-model-content.md) defines M3 threat-model content. Later document generators register after their own spec and archetype extension.
+- **Downstream**: [FR-192](./FR-192-dossier-srs-content.md) through [FR-195](./FR-195-dossier-rmm-content.md) define M1 content; [FR-196](./FR-196-dossier-verification-report-content.md) through [FR-201](./FR-201-dossier-release-record-content.md) define M2 content; [FR-202](./FR-202-dossier-threat-model-content.md) defines M3 threat-model content; [FR-207](./FR-207-dossier-records-of-processing-content.md) defines records-of-processing content. Later document generators register after their own spec and archetype extension.
