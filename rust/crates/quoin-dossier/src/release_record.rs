@@ -278,7 +278,7 @@ fn render_history(body: &mut String, snapshot: &ReleaseSnapshot) {
 }
 
 fn field(body: &mut String, label: &str, value: Option<&Value>) {
-    let value = value.map(scalar).unwrap_or_else(|| "not stated".to_owned());
+    let value = value.map_or_else(|| "not stated".to_owned(), scalar);
     let _ = writeln!(body, "{label}: {}", line(&value));
 }
 

@@ -39,6 +39,11 @@ pub struct ReleaseSnapshot {
 
 impl ReleaseSnapshot {
     /// Parse and validate a closed release snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JSON error if the bytes are malformed, the record is not
+    /// closed, or its protocol identifier is unsupported.
     pub fn parse(bytes: &[u8]) -> Result<Self, serde_json::Error> {
         let snapshot: Self = serde_json::from_slice(bytes)?;
         if snapshot.protocol != RELEASE_SNAPSHOT_PROTOCOL {
@@ -126,6 +131,7 @@ pub struct OpenFinding {
 
 impl OpenFinding {
     /// The stable FR-167 finding order key.
+    #[must_use]
     pub fn order_key(
         &self,
     ) -> (
