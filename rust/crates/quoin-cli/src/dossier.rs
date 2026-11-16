@@ -76,9 +76,21 @@ fn selectors(command: Command) -> Command {
             "PATH",
             "Clause-binding report; repeat to add",
         ))
-        .arg(one("soup-binding", "FILE", "Clause binding passed to quoin soup report"))
-        .arg(one("soup-records", "DIR", "Record directory passed to quoin soup report"))
-        .arg(one("soup-support", "FILE", "Support statements passed to quoin soup report"))
+        .arg(one(
+            "soup-binding",
+            "FILE",
+            "Clause binding passed to quoin soup report",
+        ))
+        .arg(one(
+            "soup-records",
+            "DIR",
+            "Record directory passed to quoin soup report",
+        ))
+        .arg(one(
+            "soup-support",
+            "FILE",
+            "Support statements passed to quoin soup report",
+        ))
         .arg(
             one(
                 "pack",
