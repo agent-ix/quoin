@@ -379,6 +379,7 @@ fn real_quire_validates_both_soup_forms_and_exports_the_list() {
         repo.path(),
     );
     let exported = tool("pdftotext", &[pdf.to_str().unwrap(), "-"], repo.path());
+    let normalized: String = exported.split_whitespace().collect();
     for component in [
         "pkg:cargo/unresolved@1.0.0",
         "pkg:cargo/old@1.0.0",
