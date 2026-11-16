@@ -5,7 +5,7 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/FR-115"
     type: "extends"
-  - target: "ix://agent-ix/quire-rs/FR-076"
+  - target: "ix://agent-ix/quire-rs/FR-058"
     type: "requires"
     cardinality: "1:1"
 ---
@@ -16,8 +16,8 @@ relationships:
 
 The quoin matrix command SHALL load module manifests whose
 `traceability.required_relations[]` entries contain the optional `record_keys`
-field supported by quire-rs v0.61.0. Quoin delegates this manifest contract to
-its linked quire-rs engine and SHALL NOT implement a second parser or reinterpret
+field supported by its linked quire-rs engine. Quoin delegates this manifest
+contract to that engine and SHALL NOT implement a second parser or reinterpret
 the field.
 
 When present, `record_keys` SHALL be a non-empty list of distinct, non-blank
@@ -37,7 +37,7 @@ rejected by the manifest's deny-unknown-fields contract.
 | FR-206-AC-3 | A required relation with no `record_keys` loads and keeps existing behavior. | Test |
 | FR-206-AC-4 | An undeclared key other than `record_keys` remains rejected. | Test |
 | FR-206-AC-5 | `quoin matrix --repo <architecture-repository> --json` loads the current `connection-carries-classification.record_keys` declaration and computes its matrix without `CORE_REFUSED` / `QQ-1010`. | Test |
-| FR-206-AC-6 | Quoin's linked quire-rs dependency is the released v0.61.0 contract; Quoin has no parallel `required_relations.record_keys` parser. | Inspection |
+| FR-206-AC-6 | Quoin's linked quire-rs dependency supports the required-relation `record_keys` contract; Quoin has no parallel parser. | Inspection |
 
 ## Constraints
 
@@ -47,5 +47,5 @@ rejected by the manifest's deny-unknown-fields contract.
 
 ## Dependencies
 
-- **Upstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md), quire-rs [FR-076](ix://agent-ix/quire-rs/FR-076)
+- **Upstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md), quire-rs [FR-058](ix://agent-ix/quire-rs/FR-058)
 - **Downstream**: none
