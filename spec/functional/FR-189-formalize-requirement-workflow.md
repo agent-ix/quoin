@@ -29,9 +29,9 @@ The skill is `formalize-requirement`, laid out like `skills/spec-review/`
 served by the existing `quoin.workflow-invariants/v1` provider
 ([FR-021](./FR-021-launch-ix-flow-runs.md)).
 
-Analysing real QSL drafts in the `analysed` phase depends on QSL-1900
-(QSL emitting `analysis_claim` nodes and a contract package); this FR defines
-nothing of it.
+The analysis invariant consumes an explicit `quire.contract-package/v1` input.
+QSL's native checked-package production and any bridge from
+`filament.checked-package/v2` into this analysis input are outside this FR.
 
 ## Behavior
 
@@ -67,6 +67,17 @@ nothing of it.
   approved rules, reports no failing claim; it SHALL fail on any failing claim.
   Both sets of spans come from the `quoin formal-rules status` report, and the
   document is the single claim-selection document of filament-analyze FR-009.
+- When Quoin evaluates `analysis_consistent_with_approved` for a
+  `formalization_request`, then Quoin SHALL require `analysis_package` to be a
+  non-empty, absolute path to a readable `quire.contract-package/v1` JSON
+  document that contains the draft and approved rules under analysis, use this
+  explicit path as the package input to `filament-analyze run-package`, and not
+  infer a package path from the draft, repository configuration, or ambient
+  environment.
+- When Quoin evaluates `analysis_consistent_with_approved`, then Quoin SHALL
+  return `analysis_package_invalid` without invoking `filament-analyze` if
+  `analysis_package` is missing, empty, relative, contains NUL, or cannot be
+  read as a `quire.contract-package/v1` document.
 - If that combined selection would hold no span, then invariant
   `analysis_consistent_with_approved` SHALL fail.
 - The workflow SHALL NOT invoke `filament-analyze run-package` with an empty
@@ -117,6 +128,8 @@ nothing of it.
 | FR-189-AC-13 | Given a repository with no `approved` rule and a drafted set that holds a span, the analysis runs with a selection of the drafted spans only | Test |
 | FR-189-AC-14 | Given a combined selection with no span, invariant `analysis_consistent_with_approved` fails and `filament-analyze run-package` is not invoked | Test |
 | FR-189-AC-15 | Given a missing, empty, relative, or NUL-containing trust path, or a partial or invalid `gitsign` object in `formalization_request`, the approval invariant returns `formal_rule_trust_inputs_invalid` without invoking engineering-assurance | Test |
+| FR-189-AC-16 | Given a valid explicit `analysis_package` containing a `quire.contract-package/v1` document, the analysis invariant invokes `filament-analyze run-package` with that package and one selection containing the drafted spans and approved-rule spans | Test |
+| FR-189-AC-17 | Given a missing, empty, relative, or NUL-containing `analysis_package`, or a path that cannot be read as `quire.contract-package/v1`, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze` | Test |
 
 ## Dependencies
 
