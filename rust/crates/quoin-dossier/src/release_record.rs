@@ -339,7 +339,7 @@ mod tests {
             "reasons": [],
             "approval": {"tag":"v1.2.3"},
             "release": {"id":"REL-12","name":"Release 12","snapshot_path":"release/snapshot.json"},
-            "baseline": {"name":"Baseline 12","commit":"different-source-commit","items":[{"path":"spec.md","kind":"specification"}]},
+            "baseline": {"name":"Baseline 12","commit":"snapshot-commit","items":[{"path":"spec.md","kind":"specification"}]},
             "approver": "Ada Example",
             "meaning": ["release authorization"],
             "signed_at": "2026-11-02T03:04:05Z",
@@ -365,7 +365,7 @@ mod tests {
         ] {
             assert!(generated.body.contains(source), "missing {source}");
         }
-        assert!(generated.body.contains("different-source-commit"));
+        assert!(generated.body.contains("Baseline commit: snapshot-commit"));
     }
 
     #[trace("FR-201-AC-2", "FR-201-AC-3")]
