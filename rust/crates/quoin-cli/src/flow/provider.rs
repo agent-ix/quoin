@@ -11,6 +11,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command as ProcessCommand, Stdio};
 use std::time::{Duration, Instant};
 
+use filament_contract_model::{
+    CheckedPackageReadLimits, ContractPackageReadResult, ContractPackageV1, ContractPackageWireV1,
+};
 use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -585,7 +588,6 @@ fn formal_rule_approved_with_binary(
     context: &Context,
     executable: &Path,
 ) -> Check {
-    let trust = formal_rule_trust(request)?;
     let mut seen = BTreeSet::new();
     if request.drafted_symbols.is_empty()
         || request
@@ -599,45 +601,7 @@ fn formal_rule_approved_with_binary(
         ));
     }
 
-    let mut command = ProcessCommand::new(executable);
-    command
-        .args(["formal-rules", "status", "--repo"])
-        .arg(&context.repo_root)
-        .args(["--engineering-assurance", trust.engineering_assurance])
-        .args(["--allowed-signers", trust.allowed_signers, "--json"]);
-    if let Some((identity, issuer, principal)) = trust.gitsign {
-        command
-            .args(["--gitsign-certificate-identity", identity])
-            .args(["--gitsign-certificate-oidc-issuer", issuer])
-            .args(["--gitsign-principal", principal]);
-    }
-    let output = command.output().map_err(|error| {
-        fail(
-            Code::FormalRuleStatusUnavailable,
-            format!("quoin formal-rules status is unavailable: {error}"),
-        )
-    })?;
-    if !output.status.success() {
-        return Err(fail(
-            Code::FormalRuleStatusUnavailable,
-            format!(
-                "quoin formal-rules status failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ),
-        ));
-    }
-    let report: Value = serde_json::from_slice(&output.stdout).map_err(|error| {
-        fail(
-            Code::FormalRuleStatusInvalid,
-            format!("quoin formal-rules status returned invalid JSON: {error}"),
-        )
-    })?;
-    if report.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1") {
-        return Err(fail(
-            Code::FormalRuleStatusInvalid,
-            "quoin formal-rules status returned an unsupported protocol",
-        ));
-    }
+    let report = formal_rule_status(request, context, executable)?;
     let Some(rules) = report.get("rules").and_then(Value::as_array) else {
         return Err(fail(
             Code::FormalRuleStatusInvalid,
@@ -707,42 +671,76 @@ struct ClaimSpan {
     symbol: String,
 }
 
+struct AnalysisTools<'a> {
+    status: &'a Path,
+    analyzer: &'a Path,
+    z3: &'a Path,
+    cvc5: &'a Path,
+}
+
+struct PreparedAnalysis {
+    package_path: String,
+    drafts: Vec<ClaimSpan>,
+    peers: Vec<ClaimSpan>,
+}
+
 fn analysis_consistent_with_approved(
     request: &FormalizeInput,
     context: &Context,
 ) -> Result<BTreeMap<String, Value>, Failure> {
-    let package_path = request
-        .analysis_package
-        .as_deref()
-        .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "analysis_package is required"))?;
-    if package_path.is_empty()
-        || package_path.contains('\0')
-        || !Path::new(package_path).is_absolute()
-    {
-        return Err(fail(
-            Code::AnalysisPackageInvalid,
-            "analysis_package must be a non-empty absolute path without NUL",
-        ));
-    }
-    let package_text = read_bounded(Path::new(package_path))
-        .map_err(|error| fail(Code::AnalysisPackageInvalid, error.to_string()))?;
-    let package: Value = serde_json::from_str(&package_text).map_err(|error| {
-        fail(
-            Code::AnalysisPackageInvalid,
-            format!("analysis package is invalid JSON: {error}"),
-        )
-    })?;
-    if package.get("contract_version").and_then(Value::as_str)
-        != Some("filament.contract-package/v1")
-    {
-        return Err(fail(
-            Code::AnalysisPackageInvalid,
-            "analysis_package must use filament.contract-package/v1",
-        ));
-    }
-    let executable = std::env::current_exe()
+    validate_analysis_package_path(request)?;
+    let status = std::env::current_exe()
         .map_err(|error| fail(Code::FormalRuleStatusUnavailable, error.to_string()))?;
-    let status = formal_rule_status(request, context, &executable)?;
+    let analyzer = configured_tool("FILAMENT_ANALYZE_BIN", Code::AnalysisInconclusive)?;
+    let z3 = configured_tool("Z3_BIN", Code::AnalysisInconclusive)?;
+    let cvc5 = configured_tool("CVC5_BIN", Code::AnalysisInconclusive)?;
+    analysis_consistent_with_tools(
+        request,
+        context,
+        &AnalysisTools {
+            status: &status,
+            analyzer: &analyzer,
+            z3: &z3,
+            cvc5: &cvc5,
+        },
+    )
+}
+
+fn analysis_consistent_with_tools(
+    request: &FormalizeInput,
+    context: &Context,
+    tools: &AnalysisTools<'_>,
+) -> Result<BTreeMap<String, Value>, Failure> {
+    let prepared = prepare_analysis(request, context, tools.status)?;
+    let trust = formal_rule_trust(request)?;
+    let report_dir = tempfile::Builder::new()
+        .prefix("quoin-analysis-")
+        .tempdir_in(&context.config_root)
+        .map_err(|error| {
+            fail(
+                Code::AnalysisInconclusive,
+                format!("cannot create report directory: {error}"),
+            )
+        })?
+        .keep();
+    let selection_path = write_draft_selection(&report_dir, &prepared.drafts)?;
+    run_analysis_modes(
+        &prepared,
+        &report_dir,
+        &selection_path,
+        tools,
+        trust.engineering_assurance,
+    )
+}
+
+fn prepare_analysis(
+    request: &FormalizeInput,
+    context: &Context,
+    status_executable: &Path,
+) -> Result<PreparedAnalysis, Failure> {
+    let package_path = validate_analysis_package_path(request)?;
+    let package = read_analysis_package(Path::new(package_path))?;
+    let status = formal_rule_status(request, context, status_executable)?;
     let expected = status_claim_spans(&status, request, context)?;
     let package_spans = package_claim_spans(&package)?;
     let bound = bind_package_claims(&expected, &package_spans, request)?;
@@ -763,21 +761,32 @@ fn analysis_consistent_with_approved(
         ));
     }
 
-    let analyzer = configured_tool("FILAMENT_ANALYZE_BIN", Code::AnalysisInconclusive)?;
-    let z3 = configured_tool("Z3_BIN", Code::AnalysisInconclusive)?;
-    let cvc5 = configured_tool("CVC5_BIN", Code::AnalysisInconclusive)?;
-    let trust = formal_rule_trust(request)?;
-    let report_dir = tempfile::Builder::new()
-        .prefix("quoin-analysis-")
-        .tempdir_in(&context.config_root)
-        .map_err(|error| {
-            fail(
-                Code::AnalysisInconclusive,
-                format!("cannot create report directory: {error}"),
-            )
-        })?
-        .keep();
-    let selection_path = report_dir.join("selection.json");
+    Ok(PreparedAnalysis {
+        package_path: package_path.to_owned(),
+        drafts,
+        peers,
+    })
+}
+
+fn validate_analysis_package_path(request: &FormalizeInput) -> Result<&str, Failure> {
+    let package_path = request
+        .analysis_package
+        .as_deref()
+        .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "analysis_package is required"))?;
+    if package_path.is_empty()
+        || package_path.contains('\0')
+        || !Path::new(package_path).is_absolute()
+    {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "analysis_package must be a non-empty absolute path without NUL",
+        ));
+    }
+    Ok(package_path)
+}
+
+fn write_draft_selection(directory: &Path, drafts: &[ClaimSpan]) -> Result<PathBuf, Failure> {
+    let selection_path = directory.join("selection.json");
     let selected: Vec<_> = drafts.iter().map(|span| serde_json::json!({
         "authority": span.authority, "identity": span.identity, "start": span.start, "end": span.end
     })).collect();
@@ -791,17 +800,27 @@ fn analysis_consistent_with_approved(
             format!("cannot write selection: {error}"),
         )
     })?;
+    Ok(selection_path)
+}
+
+fn run_analysis_modes(
+    prepared: &PreparedAnalysis,
+    report_dir: &Path,
+    selection_path: &Path,
+    tools: &AnalysisTools<'_>,
+    producer: &str,
+) -> Result<BTreeMap<String, Value>, Failure> {
     let mut reports = Vec::new();
-    let run = run_analysis(
-        &analyzer,
-        package_path,
-        &selection_path,
-        &report_dir,
-        "consistency",
-        &z3,
-        &cvc5,
-        trust.engineering_assurance,
-    )?;
+    let invocation = AnalyzerInvocation {
+        analyzer: tools.analyzer,
+        package: &prepared.package_path,
+        selection: selection_path,
+        directory: report_dir,
+        z3: tools.z3,
+        cvc5: tools.cvc5,
+        producer,
+    };
+    let run = run_analysis(&invocation, "consistency")?;
     reports.push(run.path.clone());
     if run.status == "refuted" {
         return Err(fail_with_details(
@@ -811,17 +830,8 @@ fn analysis_consistent_with_approved(
         ));
     }
     let mut classification = "consistent";
-    if !peers.is_empty() {
-        let run = run_analysis(
-            &analyzer,
-            package_path,
-            &selection_path,
-            &report_dir,
-            "contradiction",
-            &z3,
-            &cvc5,
-            trust.engineering_assurance,
-        )?;
+    if !prepared.peers.is_empty() {
+        let run = run_analysis(&invocation, "contradiction")?;
         reports.push(run.path.clone());
         if run.status == "satisfied" {
             return Err(fail_with_details(
@@ -836,23 +846,15 @@ fn analysis_consistent_with_approved(
                 ]),
             ));
         }
-        if drafts
+        if prepared
+            .drafts
             .iter()
             .map(|span| &span.symbol)
             .collect::<BTreeSet<_>>()
             .len()
             == 1
         {
-            let run = run_analysis(
-                &analyzer,
-                package_path,
-                &selection_path,
-                &report_dir,
-                "redundancy",
-                &z3,
-                &cvc5,
-                trust.engineering_assurance,
-            )?;
+            let run = run_analysis(&invocation, "redundancy")?;
             reports.push(run.path.clone());
             if run.status == "satisfied" {
                 classification = "redundant";
@@ -933,6 +935,9 @@ fn status_claim_spans(
         if !selected && !approved {
             continue;
         }
+        if approved && !selected && !rule_formalizes_same_document(rule, &request.requirement_id) {
+            continue;
+        }
         if selected
             && !draft
                 .relative
@@ -986,15 +991,85 @@ fn status_claim_spans(
     Ok(spans)
 }
 
-fn package_claim_spans(package: &Value) -> Result<Vec<ClaimSpan>, Failure> {
-    let nodes = package
-        .pointer("/semantic_graph/nodes")
+fn rule_formalizes_same_document(rule: &Value, requirement_id: &str) -> bool {
+    let target = requirement_document_id(requirement_id);
+    rule.get("formalizes")
         .and_then(Value::as_array)
-        .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "semantic_graph.nodes missing"))?;
-    let map = package
-        .pointer("/source_map/nodes")
-        .and_then(Value::as_array)
-        .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "source_map.nodes missing"))?;
+        .is_some_and(|ids| {
+            ids.iter()
+                .filter_map(Value::as_str)
+                .any(|id| requirement_document_id(id) == target)
+        })
+}
+
+fn requirement_document_id(id: &str) -> &str {
+    id.split_once("-AC-").map_or(id, |(document, _)| document)
+}
+
+fn read_analysis_package(path: &Path) -> Result<ContractPackageV1, Failure> {
+    let invalid = |message: String| fail(Code::AnalysisPackageInvalid, message);
+    let metadata = std::fs::metadata(path).map_err(|error| invalid(error.to_string()))?;
+    if !metadata.is_file() {
+        return Err(invalid("analysis package is not a regular file".to_owned()));
+    }
+    let limits = CheckedPackageReadLimits::bounded();
+    let mut bytes = Vec::new();
+    std::fs::File::open(path)
+        .and_then(|file| {
+            file.take(limits.bytes.saturating_add(1))
+                .read_to_end(&mut bytes)
+        })
+        .map_err(|error| invalid(error.to_string()))?;
+    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > limits.bytes {
+        return Err(invalid(
+            "analysis package exceeds the contract reader byte limit".to_owned(),
+        ));
+    }
+    let admitted = match ContractPackageWireV1::read(&bytes, limits, &Default::default()) {
+        ContractPackageReadResult::Admitted(package) => *package,
+        ContractPackageReadResult::Refused(refusal) => {
+            return Err(invalid(format!("contract package was refused: {refusal}")));
+        }
+        ContractPackageReadResult::Incomplete(incomplete) => {
+            return Err(invalid(format!(
+                "contract package exhausted a read limit: {incomplete:?}"
+            )));
+        }
+        ContractPackageReadResult::CatalogUnavailable(error) => {
+            return Err(invalid(format!(
+                "contract package reader is unavailable: {error}"
+            )));
+        }
+    };
+    Ok(admitted)
+}
+
+fn package_claim_spans(package: &ContractPackageV1) -> Result<Vec<ClaimSpan>, Failure> {
+    let wire = package.wire();
+    let nodes = serde_json::to_value(&wire.semantic_graph.nodes).map_err(|error| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            format!("cannot inspect admitted semantic graph: {error}"),
+        )
+    })?;
+    let nodes = nodes.as_array().ok_or_else(|| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            "admitted semantic graph has no nodes",
+        )
+    })?;
+    let map = serde_json::to_value(&wire.source_map.nodes).map_err(|error| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            format!("cannot inspect admitted source map: {error}"),
+        )
+    })?;
+    let map = map.as_array().ok_or_else(|| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            "admitted source map has no nodes",
+        )
+    })?;
     let claim_ids: BTreeSet<String> = nodes
         .iter()
         .filter(|node| {
@@ -1091,10 +1166,20 @@ fn bind_package_claims(
                 "claim source span does not map uniquely to a drafted or approved declaration",
             ));
         }
-        matched.insert(candidates[0].symbol.clone());
-        let mut claim = claim.clone();
-        claim.symbol = candidates[0].symbol.clone();
-        bound.push(claim);
+        let candidate = candidates.first().ok_or_else(|| {
+            fail(
+                Code::AnalysisPackageInvalid,
+                "claim source span does not map uniquely to a drafted or approved declaration",
+            )
+        })?;
+        matched.insert(candidate.symbol.clone());
+        bound.push(ClaimSpan {
+            authority: claim.authority.clone(),
+            identity: claim.identity.clone(),
+            start: claim.start,
+            end: claim.end,
+            symbol: candidate.symbol.clone(),
+        });
     }
     if expected.iter().any(|span| !matched.contains(&span.symbol))
         || request
@@ -1114,39 +1199,40 @@ struct AnalysisRun {
     status: String,
     path: PathBuf,
 }
-fn run_analysis(
-    analyzer: &Path,
-    package: &str,
-    selection: &Path,
-    directory: &Path,
-    mode: &str,
-    z3: &Path,
-    cvc5: &Path,
-    producer: &str,
-) -> Result<AnalysisRun, Failure> {
-    let path = directory.join(format!("{mode}.json"));
+struct AnalyzerInvocation<'a> {
+    analyzer: &'a Path,
+    package: &'a str,
+    selection: &'a Path,
+    directory: &'a Path,
+    z3: &'a Path,
+    cvc5: &'a Path,
+    producer: &'a str,
+}
+
+fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<AnalysisRun, Failure> {
+    let path = invocation.directory.join(format!("{mode}.json"));
     let arguments = vec![
         "run-package".to_owned(),
         "--package".to_owned(),
-        package.to_owned(),
+        invocation.package.to_owned(),
         "--output".to_owned(),
         path.to_string_lossy().into_owned(),
         "--z3".to_owned(),
-        z3.to_string_lossy().into_owned(),
+        invocation.z3.to_string_lossy().into_owned(),
         "--cvc5".to_owned(),
-        cvc5.to_string_lossy().into_owned(),
+        invocation.cvc5.to_string_lossy().into_owned(),
         "--producer-execute".to_owned(),
-        producer.to_owned(),
+        invocation.producer.to_owned(),
         "--request".to_owned(),
         mode.to_owned(),
         "--select".to_owned(),
-        selection.to_string_lossy().into_owned(),
+        invocation.selection.to_string_lossy().into_owned(),
     ];
     let arguments = arguments.iter().map(String::as_str).collect::<Vec<_>>();
     let output = run_tool(
-        analyzer,
+        invocation.analyzer,
         &arguments,
-        directory,
+        invocation.directory,
         Instant::now() + Duration::from_secs(20),
     )
     .map_err(|error| fail(Code::AnalysisInconclusive, error))?;
@@ -1165,6 +1251,12 @@ fn run_analysis(
             format!("analysis report invalid: {error}"),
         )
     })?;
+    if report.get("analysisKind").and_then(Value::as_str) != Some(mode) {
+        return Err(fail(
+            Code::AnalysisInconclusive,
+            "analysis report names a different request mode",
+        ));
+    }
     let differential = report.get("differential").ok_or_else(|| {
         fail(
             Code::AnalysisInconclusive,

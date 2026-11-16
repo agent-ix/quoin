@@ -56,6 +56,7 @@ serde = { workspace = true }
 semver = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
 tempfile = { workspace = true }
+filament-contract-model = { workspace = true }
 
 [dev-dependencies]
 # The stub generators the dossier command tests drive (PLAT-1614); the feature
