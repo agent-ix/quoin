@@ -185,3 +185,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-202: The dossier threat-model document renders each threat model's covered crossings, sinks, treatments and open findings](./FR-202-dossier-threat-model-content.md)
 - [FR-204: Report formalization state per requirement and criterion](./FR-204-formalization-coverage-state.md)
 - [FR-205: Show formalization as evidence without obligation credit](./FR-205-formalization-as-evidence-kind.md)
+- [FR-206: Load record keys on required relation declarations](./FR-206-required-relation-record-keys.md)
