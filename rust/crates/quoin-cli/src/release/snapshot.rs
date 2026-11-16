@@ -17,7 +17,7 @@ use quoin_anomaly::{CarriedRead, read_carried};
 use quoin_assurance::matrix::MatrixOutput;
 use quoin_dossier::release_snapshot::{
     CoverageCriterion, CoverageRequirement, Freshness, OpenFinding, RationaleEntry,
-    ReleaseSnapshot as Snapshot, SnapshotAnomaly as Anomaly,
+    SnapshotAnomaly as Anomaly,
 };
 
 /// The sections that come from the evidence matrix.
