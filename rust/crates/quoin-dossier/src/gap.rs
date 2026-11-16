@@ -53,12 +53,16 @@ pub enum GapKind {
     SoupPastEndOfSupport,
     /// A required SOUP field is absent or unknown.
     SoupFieldNotStated,
+    /// Anomaly safety impact has not been assessed.
+    AnomalyUnassessed,
+    /// An impacting carried anomaly has no release rationale.
+    AnomalyNoReleaseRationale,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 18] = [
+    pub(crate) const ALL: [Self; 20] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -77,6 +81,8 @@ impl GapKind {
         Self::SoupUnresolvedAdvisory,
         Self::SoupPastEndOfSupport,
         Self::SoupFieldNotStated,
+        Self::AnomalyUnassessed,
+        Self::AnomalyNoReleaseRationale,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -101,6 +107,8 @@ impl GapKind {
             Self::SoupUnresolvedAdvisory => "soup_unresolved_advisory",
             Self::SoupPastEndOfSupport => "soup_past_end_of_support",
             Self::SoupFieldNotStated => "soup_field_not_stated",
+            Self::AnomalyUnassessed => "anomaly_unassessed",
+            Self::AnomalyNoReleaseRationale => "anomaly_no_release_rationale",
         }
     }
 
@@ -252,6 +260,8 @@ mod tests {
                 "soup_unresolved_advisory",
                 "soup_past_end_of_support",
                 "soup_field_not_stated",
+                "anomaly_unassessed",
+                "anomaly_no_release_rationale",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {

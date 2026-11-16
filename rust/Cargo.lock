@@ -3316,6 +3316,7 @@ version = "0.31.0"
 dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
+ "quoin-anomaly",
  "quoin-assurance",
  "quoin-core",
  "quoin-evidence",
