@@ -63,17 +63,51 @@ adapter to filament-analyze.
   recorded by the skill procedure when `drafting` → `checked` is taken.
 - Invariant `qsl_check_passes` SHALL pass when QSL `check` on the draft file
   exits clean (quire-driver `quire-cli`, `Operation::Check`).
-- Invariant `analysis_consistent_with_approved` SHALL pass when a
-  `filament-analyze run-package` over a package holding the draft and the approved
-  rules, given one `--select` document containing only the drafted set's spans,
-  reports no failing claim; it SHALL fail on any failing claim. Approved rules
-  remain in the package as unselected peers. Under filament-analyze FR-009,
-  selected claims are the draft claims being checked, while unselected claims
-  provide the approved context used for contradiction and redundancy analysis.
-  The selection spans come from the drafted set in the
-  `quoin formal-rules status` report and SHALL NOT include approved-rule spans.
-  The document is the single claim-selection document of filament-analyze
-  FR-009.
+- Invariant `analysis_consistent_with_approved` SHALL use the request modes of
+  filament-analyze FR-009 over a package holding the draft and the approved
+  rules, with a `--select` document containing only drafted-set spans. For
+  each request, selected draft claims are the candidate side and unselected
+  approved claims are their peers; approved-rule spans SHALL NOT be added to
+  the selection document. Quoin SHALL first run `--request consistency` on the
+  drafted spans. If the draft set is consistent, then when no approved peer
+  exists this is the final analysis. With approved peers, Quoin SHALL then run
+  `--request contradiction` on the drafted spans against the unselected
+  peers. If exactly one draft symbol is being checked and contradiction
+  reports no conflict, Quoin SHALL also run `--request redundancy` with that
+  draft as the candidate and the approved peers as context. The selection
+  spans come from the drafted set in the
+  `quoin formal-rules status` report. The selection document uses the single
+  claim-selection format of filament-analyze FR-009.
+- For a contradiction request, Quoin SHALL classify an agreed `satisfied`
+  result as `contradicts` and fail the workflow transition.
+- For a contradiction request, Quoin SHALL treat an agreed `refuted` result as
+  no contradiction found.
+- For the one-draft redundancy request, Quoin SHALL classify an agreed
+  `satisfied` result as `redundant` and pass this invariant with that result
+  available to the reviewer.
+- For the one-draft redundancy request, Quoin SHALL classify an agreed
+  `refuted` result after no contradiction as `consistent`.
+- With multiple drafted symbols and approved peers, Quoin SHALL compare the
+  drafted set as one side against the approved peer set.
+- When the contradiction request over multiple drafted symbols is satisfied,
+  Quoin SHALL fail as `contradicts`.
+- When that contradiction request is refuted, Quoin SHALL pass as `consistent`
+  for the drafted set.
+- Quoin SHALL NOT label a multi-draft set `redundant`, since FR-009 redundancy
+  requires exactly one candidate.
+- When a consistency request on the drafted set is refuted, Quoin SHALL fail
+  with `draft_claims_inconsistent` and SHALL NOT classify it as contradicting
+  an approved rule.
+- When no approved peer exists and a consistency request is satisfied, then
+  Quoin SHALL classify the drafted set as `consistent`.
+- When approved peers exist and the consistency precheck is satisfied, then
+  Quoin SHALL run the contradiction request and, when applicable, the
+  redundancy request described above.
+- When any required analysis report is a disagreement, inconclusive,
+  unavailable or otherwise lacks an agreed `satisfied` or `refuted` result,
+  Quoin SHALL fail with `analysis_inconclusive`.
+- When any required report is non-conclusive, the invariant SHALL NOT classify
+  the draft set as `consistent`.
 - When Quoin evaluates `analysis_consistent_with_approved` for a
   `formalization_request`, then Quoin SHALL require `analysis_package` to be a
   non-empty, absolute path to a readable `filament.contract-package/v1` JSON
@@ -100,7 +134,7 @@ adapter to filament-analyze.
 - The workflow SHALL NOT invoke `filament-analyze run-package` with an empty
   selection; an empty selection is never a valid analysis request. The absence
   of approved rules SHALL NOT make the selection empty when the drafted set
-  contributes spans.
+  contributes spans; that case uses consistency mode.
 - Invariant `formal_rule_approved` SHALL pass only when the drafted set is
   non-empty and `quoin formal-rules status` reports `approved` for every symbol
   in it; an empty drafted set SHALL fail it.
@@ -143,13 +177,17 @@ adapter to filament-analyze.
 | FR-189-AC-10 | Given a run with an empty drafted set at `awaiting_approval`, invariant `formal_rule_approved` fails | Test |
 | FR-189-AC-11 | Given a draft whose analysis reports a failing claim, the run returns from `analysed` to `drafting` with the diagnostics and an incremented retry counter | Test |
 | FR-189-AC-12 | Given two consecutive failures followed by a passing draft, the run reaches `awaiting_approval` and the next failure count starts at 1 | Test |
-| FR-189-AC-13 | Given a repository with no `approved` rule and a drafted set that holds a span, the analysis runs with a selection of the drafted spans only | Test |
+| FR-189-AC-13 | Given a repository with no `approved` rule and a drafted set that holds a span, the analysis runs with `--request consistency` and a selection of the drafted spans only; a satisfied result classifies the set `consistent` | Test |
 | FR-189-AC-14 | Given a drafted set that provides no selection span, invariant `analysis_consistent_with_approved` fails and `filament-analyze run-package` is not invoked | Test |
 | FR-189-AC-15 | Given a missing, empty, relative, or NUL-containing trust path, or a partial or invalid `gitsign` object in `formalization_request`, the approval invariant returns `formal_rule_trust_inputs_invalid` without invoking engineering-assurance | Test |
-| FR-189-AC-16 | Given an `analysis_package` prepared from the exact draft that passed `qsl_check_passes` and the FR-188 rules reported approved for the run, the analysis invariant invokes `filament-analyze run-package` with that `filament.contract-package/v1` package and one selection containing only the drafted spans | Test |
+| FR-189-AC-16 | Given an `analysis_package` prepared from the exact draft that passed `qsl_check_passes` and the FR-188 rules reported approved for the run, the analysis invariant invokes `filament-analyze run-package` with that `filament.contract-package/v1` package and one selection containing only the drafted spans; when approved peers exist, it uses `--request contradiction` | Test |
 | FR-189-AC-17 | Given a missing, empty, relative, or NUL-containing `analysis_package`, or a path that cannot be read as `filament.contract-package/v1`, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze` | Test |
 | FR-189-AC-18 | Given a package whose claims are missing from, extra to, or source-mismatched with the checked draft and FR-188 approved-rule set, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze run-package` | Test |
-| FR-189-AC-19 | Given an approved rule and a drafted rule that contradicts it, the package contains both claims, the selection contains only the drafted span, and the analysis reports the contradiction against the unselected approved peer | Test |
+| FR-189-AC-19 | Given an approved rule and a drafted rule that contradicts it, the package contains both claims, the selection contains only the drafted span, the draft passes its consistency precheck, and `--request contradiction` classifies the result as `contradicts` and fails the invariant | Test |
+| FR-189-AC-20 | Given one drafted rule with approved peers and no contradiction, `--request redundancy` classifies it as `redundant` when the peers imply it, otherwise as `consistent`; both results pass the invariant and remain visible to the reviewer | Test |
+| FR-189-AC-21 | With multiple drafted rules and approved peers, Quoin checks draft-set consistency before comparison, then uses `--request contradiction`; it classifies the set as `consistent` only when no contradiction is found, and does not request or claim a multi-candidate redundancy result | Test |
+| FR-189-AC-22 | Given a disagreement, inconclusive, unavailable, or otherwise non-conclusive report from any required mode, the invariant fails with `analysis_inconclusive` and does not classify the rules as `consistent` | Test |
+| FR-189-AC-23 | Given a drafted set that is inconsistent with itself, its consistency request returns refuted and the invariant fails with `draft_claims_inconsistent` before comparing it with approved peers | Test |
 
 ## Dependencies
 
