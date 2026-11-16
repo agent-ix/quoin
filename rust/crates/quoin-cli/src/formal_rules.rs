@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Agent-IX
 //! Read-only, git-derived formal-rule approval status (VER-101).
 
-use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::io::Write;
 use std::path::{Component, Path, PathBuf};
@@ -68,7 +67,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
     };
     for name in ["engineering-assurance", "allowed-signers"] {
         if let Some(value) = args.get_one::<String>(name)
-            && !Path::new(value).is_absolute()
+            && (value.is_empty() || value.contains('\0') || !Path::new(value).is_absolute())
         {
             return Err(crate::ShellError::usage(format!(
                 "--{name} must be an absolute path"
@@ -86,6 +85,17 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
     ) {
         return Err(crate::ShellError::usage(
             "all three gitsign identity options must be supplied together",
+        ));
+    }
+    if gitsign_values
+        .iter()
+        .flatten()
+        .any(|value| !valid_gitsign_value(value))
+        || gitsign_values[0].is_some_and(|value| value.starts_with('-'))
+        || gitsign_values[1].is_some_and(|value| value.starts_with('-'))
+    {
+        return Err(crate::ShellError::usage(
+            "gitsign identity values violate FR-040 validation",
         ));
     }
     let report = status(args).map_err(crate::ShellError::unavailable)?;
@@ -166,21 +176,9 @@ fn status(args: &ArgMatches) -> Result<Value, String> {
         let result = verify(&ea, &allowed, &repo, commit, gitsign.as_ref())?;
         verdicts.push((commit.to_owned(), result));
     }
-    let current_symbols = current
-        .iter()
-        .map(|rule| rule.symbol.clone())
-        .collect::<BTreeSet<_>>();
     let mut rules = Vec::with_capacity(current.len());
     for rule in current {
-        let decision = decide(
-            &rule,
-            &verdicts,
-            &DecisionContext {
-                repo: &repo,
-                model,
-                current_symbols: &current_symbols,
-            },
-        )?;
+        let decision = decide(&rule, &verdicts, &DecisionContext { repo: &repo, model })?;
         let mut fields = serde_json::Map::from_iter([
             ("symbol".to_owned(), json!(rule.symbol)),
             ("path".to_owned(), json!(rule.path)),
@@ -225,7 +223,6 @@ struct Decision {
 struct DecisionContext<'a> {
     repo: &'a Path,
     model: &'a quoin_quire::formal_rules::TraceabilityModel,
-    current_symbols: &'a BTreeSet<String>,
 }
 
 #[allow(
@@ -251,53 +248,30 @@ fn decide(
         }
     }
     if matching.is_empty() {
-        // A label or path rename is recognized only if an earlier approved
-        // symbol's source still corresponds to the current declaration.
-        for (commit, result) in verdicts {
-            if qualifying(result) != Some(commit.as_str()) {
-                continue;
-            }
-            let old = revision_rules(context.repo, commit, context.model)?;
-            if old.iter().any(|candidate| {
-                !context.current_symbols.contains(&candidate.symbol)
-                    && result
-                        .pointer("/trailers/Formal-rule")
-                        .and_then(Value::as_array)
-                        .is_some_and(|values| {
-                            values
-                                .iter()
-                                .any(|value| value.as_str() == Some(&candidate.symbol))
-                        })
-                    && candidate.formalizes == rule.formalizes
-                    && normalized_source(candidate) == normalized_source(rule)
-            }) {
-                return Ok(draft("changed_since_approval"));
-            }
-        }
         return Ok(draft("no_approval"));
     }
-    let mut observed = Vec::new();
+    let mut most_recent_reason = None;
     for (commit, result) in matching {
         if result.get("verified_commit_id").and_then(Value::as_str) != Some(commit.as_str()) {
-            observed.push("approval_unverifiable");
+            most_recent_reason.get_or_insert("approval_unverifiable");
             continue;
         }
         match result["status"].as_str().unwrap_or("") {
             "unsigned" => {
-                observed.push("approval_unsigned");
+                most_recent_reason.get_or_insert("approval_unsigned");
                 continue;
             }
             "signed_bad" => {
-                observed.push("approval_bad_signature");
+                most_recent_reason.get_or_insert("approval_bad_signature");
                 continue;
             }
             "signed_untrusted" => {
-                observed.push("approval_untrusted");
+                most_recent_reason.get_or_insert("approval_untrusted");
                 continue;
             }
             "signed_valid" => {}
             _ => {
-                observed.push("approval_unverifiable");
+                most_recent_reason.get_or_insert("approval_unverifiable");
                 continue;
             }
         }
@@ -305,12 +279,12 @@ fn decide(
         if signer.get("mapping").and_then(Value::as_str) != Some("mapped")
             || signer.get("principal").and_then(Value::as_str).is_none()
         {
-            observed.push("approval_unmapped");
+            most_recent_reason.get_or_insert("approval_unmapped");
             continue;
         }
         let meaning = result.get("signed_off_meaning").unwrap_or(&Value::Null);
         if meaning.get("presence").and_then(Value::as_str) != Some("present") {
-            observed.push("meaning_missing");
+            most_recent_reason.get_or_insert("meaning_missing");
             continue;
         }
         let values = meaning
@@ -319,7 +293,7 @@ fn decide(
             .cloned()
             .unwrap_or_default();
         if values.as_slice() != [json!("formal-rule-approved")] {
-            observed.push("meaning_mismatch");
+            most_recent_reason.get_or_insert("meaning_mismatch");
             continue;
         }
         let old = revision_rules(context.repo, commit, context.model)?;
@@ -338,31 +312,12 @@ fn decide(
                     )),
                 });
             }
-            observed.push("changed_since_approval");
+            most_recent_reason.get_or_insert("changed_since_approval");
         } else {
-            observed.push("changed_since_approval");
+            most_recent_reason.get_or_insert("changed_since_approval");
         }
     }
-    let reason = [
-        "approval_unsigned",
-        "approval_bad_signature",
-        "approval_untrusted",
-        "approval_unverifiable",
-        "approval_unmapped",
-        "meaning_missing",
-        "meaning_mismatch",
-        "changed_since_approval",
-    ]
-    .into_iter()
-    .find(|reason| observed.contains(reason))
-    .unwrap_or("approval_unverifiable");
-    Ok(draft(reason))
-}
-
-fn normalized_source(rule: &quoin_quire::formal_rules::FormalRule) -> Vec<u8> {
-    String::from_utf8_lossy(&rule.source)
-        .replace(&rule.label, "<formal-rule-label>")
-        .into_bytes()
+    Ok(draft(most_recent_reason.unwrap_or("approval_unverifiable")))
 }
 
 fn draft(reason: &'static str) -> Decision {
@@ -371,29 +326,6 @@ fn draft(reason: &'static str) -> Decision {
         reason: Some(reason),
         approval: None,
     }
-}
-
-fn qualifying(result: &Value) -> Option<&str> {
-    (result["status"].as_str() == Some("signed_valid")
-        && result.pointer("/signer/mapping").and_then(Value::as_str) == Some("mapped")
-        && result
-            .pointer("/signer/principal")
-            .and_then(Value::as_str)
-            .is_some()
-        && result
-            .pointer("/signed_off_meaning/presence")
-            .and_then(Value::as_str)
-            == Some("present")
-        && result
-            .pointer("/signed_off_meaning/values")
-            .and_then(Value::as_array)
-            .is_some_and(|v| v.as_slice() == [json!("formal-rule-approved")]))
-    .then(|| {
-        result
-            .pointer("/verified_commit_id")
-            .and_then(Value::as_str)
-    })
-    .flatten()
 }
 
 fn verify(
@@ -520,6 +452,10 @@ fn absolute_file(args: &ArgMatches, name: &str) -> Result<PathBuf, String> {
     Ok(path)
 }
 
+fn valid_gitsign_value(value: &str) -> bool {
+    !value.is_empty() && value.len() <= 256 && !value.chars().any(char::is_control)
+}
+
 fn git_output(repo: &Path, args: &[&OsStr]) -> Result<Vec<u8>, String> {
     let output = ProcessCommand::new("git")
         .arg("-C")
@@ -543,10 +479,10 @@ fn git_output(repo: &Path, args: &[&OsStr]) -> Result<Vec<u8>, String> {
     reason = "fixture assertions are test failures"
 )]
 mod tests {
-    use super::{DecisionContext, RESULT_PROTOCOL, decide, normalized_source};
+    use super::{DecisionContext, RESULT_PROTOCOL, decide};
     use quoin_quire::formal_rules::FormalRule;
     use serde_json::json;
-    use std::{collections::BTreeSet, fs, path::Path, process::Command};
+    use std::{fs, path::Path, process::Command};
 
     fn model() -> quoin_quire::formal_rules::TraceabilityModel {
         serde_json::from_value(serde_json::json!({
@@ -628,7 +564,6 @@ mod tests {
             &DecisionContext {
                 repo: repository.path(),
                 model: &model,
-                current_symbols: &BTreeSet::from([rule().symbol]),
             },
         )
         .expect("status decision");
@@ -637,7 +572,7 @@ mod tests {
     }
 
     #[test]
-    fn draft_reason_uses_the_specified_precedence_across_candidates() {
+    fn draft_reason_comes_from_the_most_recent_naming_commit() {
         let repository = tempfile::tempdir().expect("temporary repository");
         let model = quoin_quire::formal_rules::TraceabilityModel::default();
         let with_status = |status: &str| {
@@ -658,18 +593,16 @@ mod tests {
             &DecisionContext {
                 repo: repository.path(),
                 model: &model,
-                current_symbols: &BTreeSet::from([rule().symbol]),
             },
         )
         .expect("status decision");
-        assert_eq!(result.reason, Some("approval_unsigned"));
+        assert_eq!(result.reason, Some("approval_bad_signature"));
     }
 
     #[test]
     fn each_signature_and_meaning_failure_maps_to_its_closed_draft_reason() {
         let repository = tempfile::tempdir().expect("temporary repository");
         let model = model();
-        let current_symbols = BTreeSet::from([rule().symbol]);
         let cases = [
             ("unsigned", json!({}), "approval_unsigned"),
             ("signed_bad", json!({}), "approval_bad_signature"),
@@ -708,7 +641,6 @@ mod tests {
                 &DecisionContext {
                     repo: repository.path(),
                     model: &model,
-                    current_symbols: &current_symbols,
                 },
             )
             .expect("status decision");
@@ -731,7 +663,6 @@ mod tests {
             &DecisionContext {
                 repo: repo.path(),
                 model: &model,
-                current_symbols: &BTreeSet::from([rule.symbol.clone()]),
             },
         )
         .expect("approved status");
@@ -755,7 +686,6 @@ mod tests {
             &DecisionContext {
                 repo: repo.path(),
                 model: &model,
-                current_symbols: &BTreeSet::from([current.symbol.clone()]),
             },
         )
         .expect("unrelated line leaves approval valid");
@@ -786,7 +716,6 @@ mod tests {
             &DecisionContext {
                 repo: repo.path(),
                 model: &model,
-                current_symbols: &BTreeSet::from([changed.symbol.clone()]),
             },
         )
         .expect("changed status");
@@ -806,11 +735,10 @@ mod tests {
             &DecisionContext {
                 repo: repo.path(),
                 model: &model,
-                current_symbols: &BTreeSet::from([renamed.symbol.clone()]),
             },
         )
         .expect("renamed status");
-        assert_eq!(renamed_status.reason, Some("changed_since_approval"));
+        assert_eq!(renamed_status.reason, Some("no_approval"));
 
         let both = "language qsl\nprofile core\n// formalizes: FR-001\nrule P1 {}\n// formalizes: FR-001\nrule P2 {}\n";
         fs::write(repo.path().join("a.native"), both).expect("two rules");
@@ -820,27 +748,15 @@ mod tests {
             .iter()
             .find(|candidate| candidate.label == "P2")
             .expect("P2 rule");
-        let symbols = rules.iter().map(|rule| rule.symbol.clone()).collect();
         let p2_status = decide(
             p2,
             &[(commit.clone(), approval)],
             &DecisionContext {
                 repo: repo.path(),
                 model: &model,
-                current_symbols: &symbols,
             },
         )
         .expect("P1 approval does not transfer to P2");
         assert_eq!(p2_status.reason, Some("no_approval"));
-    }
-
-    #[test]
-    fn source_normalization_only_substitutes_the_qsl_label() {
-        let original = rule();
-        let mut renamed = rule();
-        renamed.symbol = "qsl:a.native::Pre1".to_owned();
-        renamed.label = "Pre1".to_owned();
-        renamed.source = b"// formalizes: FR-001\nrule Pre1 {}\n".to_vec();
-        assert_eq!(normalized_source(&original), normalized_source(&renamed));
     }
 }

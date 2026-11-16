@@ -45,7 +45,7 @@ quoin-quire-types = { workspace = true }
 ix-trace-rs = { workspace = true }
 quoin-jsonschema = { workspace = true }
 quoin-yaml = { workspace = true }
-quire-rs = { version = "=0.61.0", git = "https://github.com/agent-ix/quire-rs", rev = "84c3e408c636b183de1ae88c89ad3a00e055cef6" }
+quire-rs = { version = "=0.61.0", git = "https://github.com/agent-ix/quire-rs", tag = "v0.61.0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

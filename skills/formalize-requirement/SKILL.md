@@ -20,8 +20,13 @@ Use one requirement or acceptance-criterion id as the input. Draft exactly one
 `// formalizes: <id>` immediately above the declaration that states the rule.
 Do not edit the requirement Markdown.
 
-Run the `formalize` workflow with the requirement id and draft path. The
-workflow invokes the configured `FSL_DRIVER_BIN` for `fsl check` and
+Run the `formalize` workflow with the requirement id, draft path, the absolute
+engineering-assurance executable path, and the absolute allowed-signers path.
+These trust inputs are part of the recorded `formalization_request`; the
+approval invariant does not read them from environment or repository config.
+If using gitsign, patch the request item with one `gitsign` object holding
+exactly `certificate_identity`, `certificate_oidc_issuer`, and `principal`.
+The workflow invokes the configured `FSL_DRIVER_BIN` for `fsl check` and
 `QUIRE_DRIVER_BIN` for Quire's `trace` command. A draft passes only when both
 tools confirm a clean type check and a bound marker for the exact input id.
 
@@ -39,6 +44,12 @@ This preserves its diagnostic while resetting the retry streak if analysis
 later asks for another revision. After the fourth
 consecutive failure, transition to `stopped` and retain the uncleared
 diagnostics in the final report. Do not retry after that transition.
+
+After a clean check, record the exact `qsl:<repo-relative path>::<label>`
+symbols declared in the checked draft in the request item's `drafted_symbols`
+field using `ix-flow update-item`. Keep that set unchanged through analysis
+and the approval gate; the approval invariant requires it to be non-empty and
+checks every listed symbol.
 
 This workflow drafts proposals only. It does not approve a rule or create a
 signed record. The approval transition remains a person-controlled `hitl`

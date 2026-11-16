@@ -42,10 +42,22 @@ transitions:
 itemSchemas:
   quoin_context: {}
   formalization_request:
-    required: [requirement_id, draft_path]
+    required: [requirement_id, draft_path, engineering_assurance, allowed_signers]
     properties:
       requirement_id: {type: string}
       draft_path: {type: string}
+      engineering_assurance: {type: string}
+      allowed_signers: {type: string}
+      gitsign:
+        type: object
+        required: [certificate_identity, certificate_oidc_issuer, principal]
+        properties:
+          certificate_identity: {type: string}
+          certificate_oidc_issuer: {type: string}
+          principal: {type: string}
+      drafted_symbols:
+        type: array
+        items: {type: string}
   formalization_failure:
     required: [diagnostic]
     properties:
@@ -59,3 +71,5 @@ interviews:
     questions:
       - {key: requirement_id, prompt: "Requirement or criterion id to formalize", type: text, required: true}
       - {key: draft_path, prompt: "Repository-relative path for the .native draft", type: text, required: true}
+      - {key: engineering_assurance, prompt: "Absolute path to the engineering-assurance executable", type: text, required: true}
+      - {key: allowed_signers, prompt: "Absolute path to the allowed-signers file", type: text, required: true}
