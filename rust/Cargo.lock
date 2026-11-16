@@ -3315,6 +3315,8 @@ version = "0.31.0"
 dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
+ "quoin-quire",
+ "quoin-quire-types",
  "serde",
  "serde_json",
  "tempfile",

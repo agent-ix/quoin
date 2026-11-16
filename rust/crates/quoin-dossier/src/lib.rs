@@ -10,13 +10,16 @@
 //! later documents) are not here: each registers itself in [`builtin_registry`]
 //! in the ticket that owns its content, in the fixed bundle order.
 
+mod architecture;
 mod engine;
 mod error;
 mod export;
 mod gap;
+mod markdown;
 mod order;
 mod registry;
 mod report;
+mod srs;
 #[cfg(feature = "test-stubs")]
 mod stub;
 #[cfg(test)]
@@ -58,11 +61,9 @@ pub fn registry_of(generators: Vec<Box<dyn Generator>>) -> Result<Registry, Doss
 /// pushed here by the tickets that own their content; under the `test-stubs`
 /// feature the stubs follow.
 fn builtin_generators() -> Vec<Box<dyn Generator>> {
-    #[allow(
-        unused_mut,
-        reason = "the list is empty until a generator or a stub is added"
-    )]
     let mut generators: Vec<Box<dyn Generator>> = Vec::new();
+    generators.push(Box::new(srs::SrsGenerator));
+    generators.push(Box::new(architecture::ArchitectureGenerator));
     #[cfg(feature = "test-stubs")]
     generators.extend(stub::stubs());
     generators
@@ -102,27 +103,22 @@ mod tests {
         );
     }
 
-    /// This frame ships no real generator: the shipped registry is empty until
-    /// PLAT-1437 and PLAT-1438 register theirs, and every run says so and exits 2.
+    /// PLAT-1437 registers the SRS and architecture generators; the shipped
+    /// registry now has 2 real generators.
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_is_empty_and_every_run_is_refused_without_writing() {
-        use crate::testing::inputs;
+    fn the_shipped_registry_holds_srs_and_architecture() {
         let registry = builtin_registry().unwrap();
-        assert_eq!(registry.specs().count(), 0);
-        let work = tempfile::tempdir().unwrap();
-        let out = work.path().join("dossier");
-        let error = generate(&registry, &[], &out, &inputs()).unwrap_err();
-        assert_eq!(error.code(), DossierErrorCode::NoDocuments);
-        assert!(!out.exists());
-        assert!(check(&registry, &[], &out, &inputs()).is_err());
+        assert_eq!(registry.specs().count(), 2);
+        let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
+        assert_eq!(kinds, vec!["srs", "architecture"]);
     }
 
     #[cfg(feature = "test-stubs")]
     #[trace("FR-191")]
     #[test]
     fn the_shipped_stubs_do_not_collide() {
-        assert_eq!(builtin_registry().unwrap().specs().count(), 5);
+        assert_eq!(builtin_registry().unwrap().specs().count(), 7);
     }
 }

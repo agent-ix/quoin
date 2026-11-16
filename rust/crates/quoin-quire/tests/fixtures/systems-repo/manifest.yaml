@@ -1,0 +1,8 @@
+name: quoin-quire-systems-fixture
+version: 0.1.0
+description: Fixture module and repository for the systems records reader
+artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
