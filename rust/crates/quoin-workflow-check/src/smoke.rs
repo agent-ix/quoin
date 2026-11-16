@@ -759,7 +759,7 @@ mod tests {
     use super::{Harness, formalize_scenarios};
     use ix_trace_rs::trace;
 
-    #[trace("FR-189-AC-2")]
+    #[trace("FR-189-AC-2", "FR-189-AC-3")]
     #[test]
     #[ignore = "run by make workflow-test with the current ix-flow runtime"]
     fn formalize_failures_return_to_drafting_with_diagnostics() {
