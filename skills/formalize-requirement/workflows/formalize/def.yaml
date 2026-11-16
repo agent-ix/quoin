@@ -1,0 +1,61 @@
+name: formalize
+version: 1.0.0
+description: Draft and QSL-check a formalization proposal for one requirement.
+initialPhase: drafting
+phases:
+  - {name: drafting}
+  - {name: checked}
+  - {name: analysed}
+  - {name: awaiting_approval}
+  - {name: approved, terminal: true}
+  - {name: rejected, terminal: true}
+  - {name: stopped, terminal: true}
+transitions:
+  - from: drafting
+    to: checked
+    invariants: ["interview.complete:request", qsl_check_passes]
+    defaultGate: auto
+  - from: checked
+    to: drafting
+    defaultGate: auto
+  - from: checked
+    to: analysed
+    defaultGate: auto
+  - from: analysed
+    to: drafting
+    defaultGate: auto
+  - from: analysed
+    to: awaiting_approval
+    invariants: [analysis_consistent_with_approved]
+    defaultGate: auto
+  - from: awaiting_approval
+    to: approved
+    invariants: [formal_rule_approved]
+    defaultGate: hitl
+  - from: awaiting_approval
+    to: rejected
+    defaultGate: hitl
+  - from: drafting
+    to: stopped
+    invariants: [formalization_retries_exhausted]
+    defaultGate: auto
+itemSchemas:
+  quoin_context: {}
+  formalization_request:
+    required: [requirement_id, draft_path]
+    properties:
+      requirement_id: {type: string}
+      draft_path: {type: string}
+  formalization_failure:
+    required: [diagnostic]
+    properties:
+      diagnostic: {type: string}
+      cleared: {type: boolean}
+linkSchemas: {}
+interviews:
+  request:
+    itemType: formalization_request
+    completenessRule: all_required
+    questions:
+      - {key: requirement_id, prompt: "Requirement or criterion id to formalize", type: text, required: true}
+      - {key: draft_path, prompt: "Repository-relative path for the .native draft", type: text, required: true}

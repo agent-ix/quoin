@@ -17,7 +17,7 @@ use serde_json::Value;
 
 use crate::{ShellError, invocation};
 
-const FLOWS: [&str; 2] = ["review", "to-plan"];
+const FLOWS: [&str; 3] = ["formalize", "review", "to-plan"];
 const MAX_OUTPUT: u64 = 1024 * 1024;
 
 pub(crate) fn run(name: &str, arguments: &ArgMatches) -> Result<Response, ShellError> {
