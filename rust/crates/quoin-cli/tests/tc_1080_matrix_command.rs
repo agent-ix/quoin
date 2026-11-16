@@ -269,6 +269,75 @@ fn record_keys_repository(module: &str) -> Fixture {
     fixture
 }
 
+/// The current architecture checkout, read in place. `SPEC_OBJECTS_ARCHITECTURE_DIR`
+/// may name either the repository root or its package directory.
+fn architecture_repository() -> (PathBuf, PathBuf) {
+    let configured = std::env::var_os("SPEC_OBJECTS_ARCHITECTURE_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-architecture"),
+        PathBuf::from,
+    );
+    let module = if configured.join("manifest.yaml").is_file() {
+        configured
+    } else {
+        configured.join("spec_objects_architecture")
+    };
+    let module = std::fs::canonicalize(&module).expect(
+        "spec-objects-architecture module is unavailable; set SPEC_OBJECTS_ARCHITECTURE_DIR",
+    );
+    let manifest = std::fs::read_to_string(module.join("manifest.yaml")).unwrap();
+    assert!(
+        manifest.contains("name: connection-carries-classification")
+            && manifest.contains("record_keys: [regulatedCategories]"),
+        "the current architecture manifest at {} must declare connection-carries-classification.record_keys",
+        module.display()
+    );
+    let repository = module.parent().unwrap().to_path_buf();
+    (repository, module)
+}
+
+/// The FR archetype and traceability schema used by the architecture module.
+fn spec_artifacts_iso_module() -> PathBuf {
+    let configured = std::env::var_os("SPEC_ARTIFACTS_ISO_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-artifacts-iso"),
+        PathBuf::from,
+    );
+    let module = if configured.join("manifest.yaml").is_file() {
+        configured
+    } else {
+        configured.join("spec_artifacts_iso")
+    };
+    std::fs::canonicalize(&module)
+        .expect("spec-artifacts-iso module is unavailable; set SPEC_ARTIFACTS_ISO_DIR")
+}
+
+fn spec_artifacts_process_module() -> PathBuf {
+    let configured = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-artifacts-process"),
+        PathBuf::from,
+    );
+    let module = if configured.join("manifest.yaml").is_file() {
+        configured
+    } else {
+        configured.join("spec_artifacts_process")
+    };
+    std::fs::canonicalize(&module)
+        .expect("spec-artifacts-process module is unavailable; set SPEC_ARTIFACTS_PROCESS_DIR")
+}
+
+fn spec_objects_security_module() -> PathBuf {
+    let configured = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-security"),
+        PathBuf::from,
+    );
+    let module = if configured.join("manifest.yaml").is_file() {
+        configured
+    } else {
+        configured.join("spec_objects_security")
+    };
+    std::fs::canonicalize(&module)
+        .expect("spec-objects-security module is unavailable; set SPEC_OBJECTS_SECURITY_DIR")
+}
+
 /// One passing `unit` run for AC-1 with its mock inspection, and one `legacy`
 /// binding for AC-2 whose run record is gone. AC-3 is bound nowhere.
 fn populated() -> Fixture {
@@ -681,4 +750,46 @@ fn tc_1080_209_matrix_loads_required_relation_record_keys() {
     let output = fixture.quoin(&["matrix", "--module", ".", "--json"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("undeclared_key"));
+}
+
+/// The production matrix loads the current architecture manifest in place.
+/// This covers the real relation declaration whose `record_keys` field
+/// previously made Quoin refuse the module (FR-206-AC-5).
+#[trace("FR-206-AC-5")]
+#[test]
+fn tc_1080_210_matrix_computes_current_architecture_with_record_keys() {
+    let (repository, architecture_module) = architecture_repository();
+    let iso_module = spec_artifacts_iso_module();
+    let process_module = spec_artifacts_process_module();
+    let security_module = spec_objects_security_module();
+    let home = tempfile::tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["matrix", "--repo"])
+        .arg(&repository)
+        .arg("--module")
+        .arg(iso_module)
+        .arg("--module")
+        .arg(process_module)
+        .arg("--module")
+        .arg(security_module)
+        .arg("--module")
+        .arg(architecture_module)
+        .arg("--json")
+        .current_dir(&repository)
+        .env("IX_HOME", home.path())
+        .output()
+        .expect("the native quoin binary runs against the architecture checkout");
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        !String::from_utf8_lossy(&output.stderr).contains("CORE_REFUSED"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let matrix: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(matrix["requirements"].is_array(), "{matrix}");
 }
