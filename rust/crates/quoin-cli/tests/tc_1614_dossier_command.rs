@@ -694,8 +694,9 @@ fn malformed_release_sources_fail_before_the_selected_document_is_written() {
     );
     assert_eq!(code(&output), 3, "{}", stderr(&output));
     let report = json(&output);
+    let detail: Value = serde_json::from_str(report["rendered"].as_str().unwrap()).unwrap();
     assert!(
-        report["failureReport"]["source"]
+        detail["source_failure"]["source"]
             .as_str()
             .unwrap()
             .contains("bad-snapshot.json")
