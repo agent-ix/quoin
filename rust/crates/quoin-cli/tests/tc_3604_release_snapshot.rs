@@ -537,6 +537,7 @@ fn snapshot_shape() -> Shape {
                 ("path", Leaf),
                 ("line", Leaf),
                 ("symbol", Leaf),
+                ("cause", Optional(Box::new(Leaf))),
             ])),
         ),
         ("soup", soup_shape()),
@@ -1466,9 +1467,32 @@ fn tc_1760_snapshot_carries_stale_causes_byte_for_byte() {
     );
 }
 
-/// Record a `broken` suite whose one case, tagged to AC-3, failed.
+/// Bind AC-3 to the `broken` suite, then record a newer failed run for it.
 fn record_failed_run(repo: &Repo) {
     let results = repo.aux("broken.xml");
+    std::fs::write(
+        &results,
+        r#"<testsuite name="broken"><testcase name="broken_case"><properties><property name="trace" value="FR-001-AC-3"/></properties></testcase></testsuite>"#,
+    )
+    .unwrap();
+    repo.ok(&[
+        "evidence",
+        "record",
+        "--repo",
+        repo.path().to_str().unwrap(),
+        "--module",
+        repo.path().to_str().unwrap(),
+        "--suite",
+        "broken",
+        "--tool",
+        "fixture",
+        "--adapter",
+        "junit",
+        "--results",
+        results.to_str().unwrap(),
+        "--timestamp",
+        "2026-01-01T00:00:00Z",
+    ]);
     std::fs::write(
         &results,
         r#"<testsuite name="broken"><testcase name="broken_case"><properties><property name="trace" value="FR-001-AC-3"/></properties><failure/></testcase></testsuite>"#,
@@ -1490,7 +1514,7 @@ fn record_failed_run(repo: &Repo) {
         "--results",
         results.to_str().unwrap(),
         "--timestamp",
-        "2026-01-01T00:00:00Z",
+        "2026-01-02T00:00:00Z",
     ]);
 }
 

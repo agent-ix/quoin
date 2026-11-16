@@ -36,6 +36,29 @@ fn write(path: &Path, content: impl AsRef<[u8]>) -> Result<()> {
     }
     fs::write(path, content).map_err(|e| e.to_string())
 }
+fn executable(directory: &Path, name: &str, body: &str) -> Result<PathBuf> {
+    let path = directory.join(if cfg!(windows) {
+        format!("{name}.cmd")
+    } else {
+        name.to_owned()
+    });
+    let content = if cfg!(windows) {
+        format!("@echo off\r\n{body}\r\n")
+    } else {
+        format!("#!/bin/sh\n{body}\n")
+    };
+    write(&path, content)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(&path)
+            .map_err(|e| e.to_string())?
+            .permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&path, permissions).map_err(|e| e.to_string())?;
+    }
+    Ok(path)
+}
 fn text(value: &Value, pointer: &str) -> Result<String> {
     value
         .pointer(pointer)
@@ -243,20 +266,31 @@ impl Harness {
         Ok(command)
     }
     fn flow(&self, args: &[&str]) -> Result<Output> {
-        self.command(Path::new(if cfg!(windows) { "node.exe" } else { "node" }))?
+        self.flow_with_tools(args, None)
+    }
+    fn flow_with_tools(&self, args: &[&str], tools: Option<(&Path, &Path)>) -> Result<Output> {
+        let mut command =
+            self.command(Path::new(if cfg!(windows) { "node.exe" } else { "node" }))?;
+        command
             .arg(&self.runner)
             .args(args)
             .arg("--config-root")
             .arg(&self.config)
             .arg("--state-dir")
             .arg(self.config.join("flows"))
-            .arg("--json")
-            .output()
-            .map_err(|e| e.to_string())
+            .arg("--json");
+        if let Some((fsl, quire)) = tools {
+            command
+                .env("FSL_DRIVER_BIN", fsl)
+                .env("QUIRE_DRIVER_BIN", quire);
+        }
+        command.output().map_err(|e| e.to_string())
     }
     fn skill(&self, kind: &str) -> PathBuf {
         self.plugin.join("skills").join(if kind == "review" {
             "spec-review"
+        } else if kind == "formalize" {
+            "formalize-requirement"
         } else {
             "spec-to-plan"
         })
@@ -400,10 +434,131 @@ fn lifecycle(h: &Harness) -> Result<()> {
     )?;
     review_scenarios(h, &started)?;
     plan_scenario(h)?;
+    formalize_scenarios(h)?;
     runner_failures(h)?;
     println!(
         "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, published ix-flow, review/profile/plan validation and explicit human acceptance"
     );
+    Ok(())
+}
+
+fn formalize_scenarios(h: &Harness) -> Result<()> {
+    let tools = h.scratch.path().join("formalize tools");
+    fs::create_dir_all(&tools).map_err(|e| e.to_string())?;
+    let fsl_ok = executable(
+        &tools,
+        "fsl-ok",
+        "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"success\",\"diagnostics\":[]}'; exit 0",
+    )?;
+    let quire_ok = executable(
+        &tools,
+        "quire-ok",
+        "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"Rule\"}]}}'; exit 0",
+    )?;
+    write(
+        &h.root.join("qsl/rule.native"),
+        "// formalizes: FR-001\nRule: Bool = true;\n",
+    )?;
+    formalize_success_scenario(h, &fsl_ok, &quire_ok)?;
+    let fsl_bad = executable(
+        &tools,
+        "fsl-bad",
+        "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"refusal\",\"diagnostics\":[{\"locus\":{\"kind\":\"region\",\"start\":1},\"message\":\"expected Boolean\"}]}' ; exit 20",
+    )?;
+    formalize_retry_scenario(h, &fsl_bad, &quire_ok)
+}
+
+fn formalize_success_scenario(h: &Harness, fsl: &Path, quire: &Path) -> Result<()> {
+    h.start("formalize", "smoke-formalize-success")?;
+    h.answers(
+        "smoke-formalize-success",
+        "request",
+        &json!({"requirement_id":"FR-001","draft_path":"qsl/rule.native"}),
+    )?;
+    let success = h.flow_with_tools(
+        &["advance", "smoke-formalize-success", "checked"],
+        Some((fsl, quire)),
+    )?;
+    let success = passed(&success)?;
+    require(
+        text(&success, "/current_phase")? == "checked",
+        "a clean FSL result with the exact formalizes relation reaches checked",
+    )?;
+
+    Ok(())
+}
+
+fn formalize_retry_scenario(h: &Harness, fsl: &Path, quire: &Path) -> Result<()> {
+    h.start("formalize", "smoke-formalize-stopped")?;
+    h.answers(
+        "smoke-formalize-stopped",
+        "request",
+        &json!({"requirement_id":"FR-001","draft_path":"qsl/rule.native"}),
+    )?;
+    let mut diagnostics = Vec::new();
+    for attempt in 0..4 {
+        let failed = h.flow_with_tools(
+            &["advance", "smoke-formalize-stopped", "checked"],
+            Some((fsl, quire)),
+        )?;
+        let failure: Value = serde_json::from_slice(&failed.stdout).map_err(|e| e.to_string())?;
+        require(
+            failure.to_string().contains("qsl_check_failed"),
+            format!("attempt {attempt} must retain the FSL diagnostic: {failure}"),
+        )?;
+        let last_diagnostic = failure.to_string();
+        diagnostics.push(last_diagnostic.clone());
+        let before_recording = passed(&h.flow(&["status", "smoke-formalize-stopped"])?)?;
+        require(
+            text(&before_recording, "/current_phase")? == "drafting"
+                && before_recording
+                    .pointer("/data/items/formalization_failure")
+                    .and_then(Value::as_array)
+                    .map_or(0, Vec::len)
+                    == attempt,
+            format!("failed attempt {attempt} must return to drafting before its retry record"),
+        )?;
+        passed(
+            &h.flow(&[
+                "add-item",
+                "smoke-formalize-stopped",
+                "formalization_failure",
+                "--item",
+                &json!({"id":format!("fsl-failure-{attempt}"),"diagnostic":last_diagnostic})
+                    .to_string(),
+            ])?,
+        )?;
+        let after_recording = passed(&h.flow(&["status", "smoke-formalize-stopped"])?)?;
+        let failures = after_recording
+            .pointer("/data/items/formalization_failure")
+            .and_then(Value::as_array)
+            .ok_or("retry diagnostic items are absent")?;
+        require(
+            failures.len() == attempt + 1
+                && failures
+                    .last()
+                    .and_then(|item| item.get("diagnostic"))
+                    .and_then(Value::as_str)
+                    == Some(last_diagnostic.as_str()),
+            format!("failed attempt {attempt} must increment the recorded retry count"),
+        )?;
+    }
+    let stopped = passed(&h.flow(&["advance", "smoke-formalize-stopped", "stopped"])?)?;
+    require(
+        text(&stopped, "/current_phase")? == "stopped",
+        "four consecutive failed drafts reach stopped",
+    )?;
+    let final_diagnostic = diagnostics.last().ok_or("no checker failures recorded")?;
+    let report = passed(&h.flow(&["status", "smoke-formalize-stopped"])?)?;
+    require(
+        report
+            .pointer("/data/items/formalization_failure/3/diagnostic")
+            .and_then(Value::as_str)
+            == Some(final_diagnostic.as_str())
+            && final_diagnostic.contains("expected Boolean")
+            && final_diagnostic.contains("qsl_check_failed"),
+        format!("the stopped run retains the final checker diagnostics: {report}"),
+    )?;
     Ok(())
 }
 
@@ -590,4 +745,29 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "test assertions may panic"
+)]
+mod tests {
+    use super::{Harness, formalize_scenarios};
+    use ix_trace_rs::trace;
+
+    #[trace("FR-189-AC-2", "FR-189-AC-3")]
+    #[test]
+    #[ignore = "run by make workflow-test with the current ix-flow runtime"]
+    fn formalize_failures_return_to_drafting_with_diagnostics() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        formalize_scenarios(&harness).expect("formalize ix-flow scenarios");
+    }
 }
