@@ -37,6 +37,7 @@ const TOPICS: &[(&str, &str)] = &[
         "evidence",
         "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",
     ),
+    ("formalize", "Draft and QSL-check a formalization proposal."),
     ("graph", "Read-only evidence-graph analysis views."),
     (
         "measurement",
@@ -91,6 +92,7 @@ const COMMANDS: &[(&str, &str)] = &[
         "evidence",
         "The evidence store — what actually ran, and against which\n                    statement (record, gc, export-test-result).",
     ),
+    ("formalize", "Draft and QSL-check a formalization proposal."),
     ("graph", "Read-only evidence-graph analysis views."),
     ("matrix", crate::matrix::ABOUT),
     (
@@ -168,7 +170,7 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
         .collect::<Vec<_>>();
     // These workflows now require an explicit installed-skill path. Render
     // their current Clap grammar instead of the historical bundled-flow page.
-    if matches!(argv.as_slice(), [name, flag] if matches!(name.as_str(), "review" | "to-plan") && flag == "--help")
+    if matches!(argv.as_slice(), [name, flag] if matches!(name.as_str(), "formalize" | "review" | "to-plan") && flag == "--help")
     {
         return None;
     }
@@ -198,7 +200,7 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
 /// The oclif `command_not_found` hook's compact actionable refusal.
 pub(crate) fn unknown_command(name: &str) -> String {
     format!(
-        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, formalize, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     )
 }
 

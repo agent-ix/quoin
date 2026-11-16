@@ -61,6 +61,7 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin evidence record-experiment",
     "quoin evidence record-operational",
     "quoin evidence trust",
+    "quoin formalize",
     "quoin graph",
     "quoin graph change-impact",
     "quoin graph fan-out",
@@ -306,6 +307,7 @@ fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
             "discharge",
             "dossier",
             "evidence",
+            "formalize",
             "graph",
             "matrix",
             "measurement",
@@ -344,7 +346,7 @@ fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
     assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
     assert_eq!(
         error.message,
-        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, formalize, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     );
 }
 

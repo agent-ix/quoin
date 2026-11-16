@@ -197,7 +197,8 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
         ShellError::command
     };
     invocation::with_current(invocation, || {
-        if let Some((name @ ("review" | "to-plan"), arguments)) = matches.subcommand() {
+        if let Some((name @ ("formalize" | "review" | "to-plan"), arguments)) = matches.subcommand()
+        {
             flow::run(name, arguments)
         } else if let Some(("dossier", arguments)) = matches.subcommand() {
             dossier::run(arguments).map_err(failure)
@@ -419,6 +420,7 @@ fn command() -> Command {
                 .hide(true)
                 .about("Evaluate Quoin workflow invariants over bounded JSON on stdin"),
         )
+        .subcommand(flow::command("formalize"))
         .subcommand(flow::command("review"))
         .subcommand(matrix::command())
         .subcommand(flow::command("to-plan"))
