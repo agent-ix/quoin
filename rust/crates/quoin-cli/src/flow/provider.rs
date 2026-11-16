@@ -408,10 +408,6 @@ fn context(instance: &Instance) -> Result<Context, Failure> {
     Ok(context)
 }
 
-fn check(instance: &Instance, name: &str) -> Check {
-    check_with_details(instance, name).map(|_| ())
-}
-
 fn check_with_details(
     instance: &Instance,
     name: &str,

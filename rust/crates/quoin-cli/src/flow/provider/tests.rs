@@ -11,8 +11,8 @@
 use super::serve;
 #[cfg(unix)]
 use super::{
-    Context, FormalizeInput, analysis_consistent_with_approved, formal_rule_approved_with_binary,
-    formalization_check_with_tools,
+    ClaimSpan, Context, FormalizeInput, analysis_consistent_with_approved, bind_package_claims,
+    formal_rule_approved_with_binary, formalization_check_with_tools,
 };
 use ix_trace_rs::trace;
 #[cfg(unix)]
@@ -164,6 +164,48 @@ fn analysis_invariant_requires_an_explicit_package_before_tool_invocation() {
             .expect_err("invalid package path must fail before tool invocation");
         assert_eq!(failure.code.to_string(), "analysis_package_invalid");
     }
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-18")]
+#[test]
+fn analysis_claim_spans_bind_only_to_checked_draft_and_approved_rules() {
+    let (_directory, mut request, _context) = formalization_fixture();
+    let draft = "qsl:qsl/rule.native::Rule".to_owned();
+    request.drafted_symbols = vec![draft.clone()];
+    let expected = vec![ClaimSpan {
+        authority: "file".to_owned(),
+        identity: "qsl/rule.native".to_owned(),
+        start: 10,
+        end: 30,
+        symbol: draft.clone(),
+    }];
+    let package = vec![ClaimSpan {
+        authority: "repo".to_owned(),
+        identity: "qsl/rule.native".to_owned(),
+        start: 12,
+        end: 28,
+        symbol: String::new(),
+    }];
+    let bound = bind_package_claims(&expected, &package, &request)
+        .expect("claim region inside checked declaration is accepted");
+    assert_eq!(bound[0].symbol, draft);
+    assert_eq!(
+        bound[0].authority, "repo",
+        "selection preserves package authority"
+    );
+
+    let extra = vec![ClaimSpan {
+        identity: "qsl/other.native".to_owned(),
+        ..package[0].clone()
+    }];
+    let failure = bind_package_claims(&expected, &extra, &request)
+        .expect_err("a claim from another source cannot map to the checked draft");
+    assert_eq!(failure.code.to_string(), "analysis_package_invalid");
+
+    let failure = bind_package_claims(&expected, &[], &request)
+        .expect_err("the package cannot omit the draft claim");
+    assert_eq!(failure.code.to_string(), "analysis_package_invalid");
 }
 
 #[cfg(unix)]
