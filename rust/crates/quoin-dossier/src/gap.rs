@@ -299,6 +299,9 @@ mod tests {
                 "control_unverified",
                 "no_acceptability_policy",
                 "no_plan_record",
+                "no_snapshot",
+                "no_release_verify_input",
+                "release_not_verified",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {
