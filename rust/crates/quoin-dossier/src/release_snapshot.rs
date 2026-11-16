@@ -124,6 +124,39 @@ pub struct OpenFinding {
     pub cause: Option<quoin_assurance::matrix::StaleCause>,
 }
 
+impl OpenFinding {
+    /// The stable FR-167 finding order key.
+    pub fn order_key(
+        &self,
+    ) -> (
+        &str,
+        &str,
+        Option<&str>,
+        Option<u64>,
+        Option<&str>,
+        u8,
+        &str,
+    ) {
+        (
+            &self.obligation,
+            &self.kind,
+            self.path.as_deref(),
+            self.line,
+            self.symbol.as_deref(),
+            cause_order(self.cause),
+            &self.summary,
+        )
+    }
+}
+
+fn cause_order(cause: Option<quoin_assurance::matrix::StaleCause>) -> u8 {
+    match cause {
+        None | Some(quoin_assurance::matrix::StaleCause::Invalid) => 0,
+        Some(quoin_assurance::matrix::StaleCause::FailedRun) => 1,
+        Some(quoin_assurance::matrix::StaleCause::MissingRun) => 2,
+    }
+}
+
 /// An authored anomaly rationale.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
