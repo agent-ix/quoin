@@ -45,6 +45,7 @@ fn registry() -> quoin_dossier::Registry {
         matrix: std::sync::Arc::new(NoMatrix),
         rmm: |_| panic!("unexpected discharge source"),
         soup: source,
+        policy: |_| panic!("unexpected policy source"),
     })
     .unwrap()
 }

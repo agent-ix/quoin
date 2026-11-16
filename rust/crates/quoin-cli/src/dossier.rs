@@ -161,8 +161,34 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             matrix: Arc::new(CliMatrix),
             rmm: rmm_source,
             soup: soup_source,
+            policy: policy_source,
         }),
         arguments,
+    )
+}
+
+fn policy_source(
+    inputs: &quoin_dossier::Inputs,
+) -> Result<quoin_quire::records::Corpus, quoin_dossier::SourceFailure> {
+    let modules = inputs
+        .modules
+        .iter()
+        .map(quoin_quire::ids::ModuleRoot::open)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| quoin_dossier::SourceFailure {
+            source: "acceptability policy".to_owned(),
+            detail: format!("failed to open module: {error}"),
+        })?;
+    let selection = if modules.is_empty() {
+        quoin_quire::ModuleSelection::ScopeOrAmbient
+    } else {
+        quoin_quire::ModuleSelection::Closed(modules)
+    };
+    quoin_quire::records::read(&inputs.scope, &selection, &["acceptability_policy"]).map_err(
+        |error| quoin_dossier::SourceFailure {
+            source: "acceptability policy".to_owned(),
+            detail: format!("failed to read policy records: {error}"),
+        },
     )
 }
 

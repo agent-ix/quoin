@@ -21,6 +21,7 @@ mod markdown;
 mod order;
 mod registry;
 mod report;
+mod risk_plan;
 mod rmm;
 mod soup;
 mod sources;
@@ -74,6 +75,7 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
             &sources.matrix,
         ))),
         Box::new(rmm::RmmGenerator(sources.rmm)),
+        Box::new(risk_plan::RiskPlanGenerator(sources.policy)),
         Box::new(verification_report::VerificationReportGenerator::new(
             sources.matrix,
         )),
@@ -129,7 +131,7 @@ mod tests {
     #[test]
     fn the_shipped_registry_holds_the_six_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 7);
+        assert_eq!(registry.specs().count(), 8);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -138,6 +140,7 @@ mod tests {
                 "architecture",
                 "trace-matrix",
                 "rmm",
+                "risk-management-plan",
                 "verification-report",
                 "soup",
                 "anomalies"
@@ -154,7 +157,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            12
+            13
         );
     }
 }

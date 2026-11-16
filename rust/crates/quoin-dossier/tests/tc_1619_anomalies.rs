@@ -148,6 +148,12 @@ fn registry() -> quoin_dossier::Registry {
                 detail: "unexpected source call".to_owned(),
             })
         },
+        policy: |_| {
+            Err(SourceFailure {
+                source: "policy".to_owned(),
+                detail: "unexpected source call".to_owned(),
+            })
+        },
     })
     .unwrap()
 }

@@ -99,6 +99,7 @@ pub(crate) fn sources() -> crate::Sources {
         matrix: std::sync::Arc::new(NoMatrix),
         rmm: |_| panic!("unexpected discharge source"),
         soup: |_| panic!("unexpected SOUP source"),
+        policy: |_| panic!("unexpected policy source"),
     }
 }
 

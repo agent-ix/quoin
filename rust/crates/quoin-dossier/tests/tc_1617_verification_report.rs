@@ -275,5 +275,6 @@ fn sources(matrix: MatrixOutput) -> quoin_dossier::Sources {
         matrix: Arc::new(Fixed(matrix)),
         rmm: |_| panic!("unexpected discharge source"),
         soup: |_| panic!("unexpected SOUP source"),
+        policy: |_| panic!("unexpected policy source"),
     }
 }
