@@ -100,7 +100,11 @@ fn render(policies: &[&Document]) -> Result<Generated, SourceFailure> {
         render_table(&mut body, "Regions", regions);
         render_table(&mut body, "Cells", cells);
     }
-    Ok(Generated { body, gaps })
+    Ok(Generated {
+        body,
+        document_version: None,
+        gaps,
+    })
 }
 
 fn required_table<'a>(document: &'a Document, name: &str) -> Result<&'a Table, SourceFailure> {

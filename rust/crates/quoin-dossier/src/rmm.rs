@@ -32,6 +32,7 @@ impl Generator for RmmGenerator {
         if inputs.clause_bindings.is_empty() && inputs.pack.is_none() {
             return Ok(Generated {
                 body: "# Requirements mapping matrix\n\n".to_owned(),
+                document_version: None,
                 gaps: vec![Gap::new(
                     GapKind::NoClauseBinding,
                     "this document",
@@ -176,7 +177,11 @@ fn render(source: &RmmSource) -> Result<Generated, SourceFailure> {
             }
         }
     }
-    Ok(Generated { body, gaps })
+    Ok(Generated {
+        body,
+        document_version: None,
+        gaps,
+    })
 }
 
 #[cfg(test)]

@@ -40,6 +40,7 @@ impl Generator for Doc {
         }
         Ok(Generated {
             body: format!("# {}", self.spec.id),
+            document_version: None,
             gaps: (self.gaps)(),
         })
     }

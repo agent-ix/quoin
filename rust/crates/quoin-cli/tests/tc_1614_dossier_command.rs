@@ -625,6 +625,8 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
             verify.to_str().unwrap(),
             "--approval",
             "user-approval.json",
+            "--approval",
+            verify.to_str().unwrap(),
             "--to",
             "pdf",
             "--output",
@@ -1036,6 +1038,7 @@ impl quoin_dossier::Generator for KindOnly {
     ) -> Result<quoin_dossier::Generated, quoin_dossier::SourceFailure> {
         Ok(quoin_dossier::Generated {
             body: format!("# {}", self.0.title),
+            document_version: None,
             gaps: Vec::new(),
         })
     }

@@ -134,7 +134,11 @@ fn render(report: &AnomalyReport) -> Generated {
             }
         }
     }
-    Generated { body, gaps }
+    Generated {
+        body,
+        document_version: None,
+        gaps,
+    }
 }
 
 fn render_groups(body: &mut String, target_heading: &str, groups: &[quoin_anomaly::report::Group]) {

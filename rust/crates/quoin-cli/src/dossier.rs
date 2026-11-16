@@ -265,10 +265,8 @@ fn execute(
             let mut approvals = paths(arguments, "approval");
             let selects_release_record =
                 kinds.is_empty() || kinds.iter().any(|kind| kind == "release-record");
-            if selects_release_record
-                && let Some(result) = inputs.release_verify.as_ref()
-                && !approvals.contains(result)
-            {
+            if selects_release_record && let Some(result) = inputs.release_verify.as_ref() {
+                approvals.retain(|approval| approval != result);
                 approvals.push(result.clone());
             }
             let options = ExportOptions {

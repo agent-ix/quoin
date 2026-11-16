@@ -59,6 +59,9 @@ pub struct Inputs {
 pub struct Generated {
     /// Markdown between the frontmatter and the `Gaps` section.
     pub body: String,
+    /// Optional source-derived version for documents whose version is part of
+    /// the source record rather than a caller-selected report version.
+    pub document_version: Option<String>,
     /// The missing inputs, in any order; the writer sorts them.
     pub gaps: Vec<Gap>,
 }

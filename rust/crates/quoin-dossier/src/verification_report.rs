@@ -151,7 +151,11 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
         render_requirement(&mut body, &mut gaps, id, document, criteria);
     }
 
-    Generated { body, gaps }
+    Generated {
+        body,
+        document_version: None,
+        gaps,
+    }
 }
 
 /// One requirement's section, its rows and its gaps.

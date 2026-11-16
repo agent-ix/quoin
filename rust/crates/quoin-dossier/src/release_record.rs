@@ -99,6 +99,7 @@ fn read_verify(path: &std::path::Path) -> Result<Value, SourceFailure> {
         Some("released") => {
             valid_string("tag")
                 && object.get("reasons").and_then(Value::as_array).is_some()
+                && object.get("approval").and_then(Value::as_object).is_some()
                 && valid_nested_strings("release", &["id", "name", "snapshot_path"])
                 && valid_nested_strings("baseline", &["name", "commit"])
                 && object
@@ -110,6 +111,7 @@ fn read_verify(path: &std::path::Path) -> Result<Value, SourceFailure> {
                 && valid_string("approver")
                 && valid_strings("meaning")
                 && valid_string("signed_at")
+                && valid_string("signed_at_source")
                 && object.get("accepted_anomalies").is_none_or(valid_strings)
         }
         Some("not_released") => {
@@ -156,7 +158,17 @@ fn render(snapshot: Option<&ReleaseSnapshot>, verify: Option<&Value>) -> Generat
             "no --snapshot file was supplied",
         ));
     }
-    Generated { body, gaps }
+    let document_version = verify
+        .filter(|value| value.get("status").and_then(Value::as_str) == Some("released"))
+        .and_then(|value| value.get("release"))
+        .and_then(|value| value.get("name"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    Generated {
+        body,
+        document_version,
+        gaps,
+    }
 }
 
 fn render_release(body: &mut String, verify: &Value) {
@@ -210,6 +222,7 @@ fn render_decision(body: &mut String, verify: &Value, gaps: &mut Vec<Gap>) {
     field(body, "Approver", verify.get("approver"));
     field(body, "Meaning", verify.get("meaning"));
     field(body, "Signed at", verify.get("signed_at"));
+    field(body, "Signed at source", verify.get("signed_at_source"));
     field(body, "Accepted anomalies", verify.get("accepted_anomalies"));
     if status == "not_released" {
         let reasons = verify.get("reasons").and_then(Value::as_array);
@@ -335,6 +348,7 @@ mod tests {
         });
         let generated = render(Some(&snapshot()), Some(&verify));
         assert!(generated.gaps.is_empty());
+        assert_eq!(generated.document_version.as_deref(), Some("Release 12"));
         let first = generated.body.find("REC-2").unwrap();
         let second = generated.body.find("REC-1").unwrap();
         assert!(first < second);
@@ -393,6 +407,55 @@ mod tests {
                 .iter()
                 .any(|gap| gap.gap_kind == GapKind::NoReleaseVerifyInput)
         );
+    }
+
+    #[trace("FR-201-AC-5")]
+    #[test]
+    fn evidence_store_changes_do_not_change_snapshot_counts_or_history() {
+        let temp = tempfile::tempdir().unwrap();
+        let snapshot_path = temp.path().join("snapshot.json");
+        fs::write(&snapshot_path, serde_json::to_vec(&snapshot()).unwrap()).unwrap();
+        let verify_path = temp.path().join("verify.json");
+        fs::write(
+            &verify_path,
+            serde_json::to_vec(&json!({
+                "protocol": EA_PROTOCOL,
+                "status": "released",
+                "tag": "v1",
+                "reasons": [],
+                "approval": {"status":"approved","tag":"v1"},
+                "release": {"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},
+                "baseline": {"name":"Baseline one","commit":"baseline-commit","items":[]},
+                "approver": "Ada Example",
+                "meaning": ["release authorization"],
+                "signed_at": "2026-11-02T03:04:05Z",
+                "signed_at_source": "tagger_date",
+                "accepted_anomalies": []
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let inputs = Inputs {
+            scope: temp.path().to_owned(),
+            modules: Vec::new(),
+            clause_bindings: Vec::new(),
+            pack: None,
+            soup_binding: None,
+            soup_records: None,
+            soup_support: None,
+            snapshot: Some(snapshot_path),
+            release_verify: Some(verify_path),
+            as_of: None,
+            version: "1.0".to_owned(),
+        };
+        let generator = ReleaseRecordGenerator;
+        let before = generator.generate(&inputs).unwrap();
+        fs::write(temp.path().join("evidence-store.json"), br#"{"bound":99}"#).unwrap();
+        let after = generator.generate(&inputs).unwrap();
+        assert_eq!(after, before);
+        assert!(after.body.contains("Evidence freshness: {\"bound\":1"));
+        assert!(after.body.contains("REC-2"));
+        assert!(after.body.contains("REC-1"));
     }
 
     #[trace("FR-201-AC-6")]

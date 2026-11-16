@@ -124,7 +124,11 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
     allocations_section(&mut body, systems);
     decisions_section(&mut body, adrs);
     findings_sections(&mut body, &mut gaps, &join);
-    Generated { body, gaps }
+    Generated {
+        body,
+        document_version: None,
+        gaps,
+    }
 }
 
 /// What the design join says, before the systems records are added.

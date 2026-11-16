@@ -153,7 +153,11 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
         }
         body.push('\n');
     }
-    Generated { body, gaps }
+    Generated {
+        body,
+        document_version: None,
+        gaps,
+    }
 }
 
 #[cfg(test)]
