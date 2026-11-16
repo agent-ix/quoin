@@ -535,3 +535,26 @@ bindings:
   ac_id: FR-195-AC-4
   trace: correct
 ```
+
+## Dispositions
+
+Round 1 assessed only original FND-001 at `969d1bec1c016266ce2a9c2ac99ba1e72afa75e0`; no other review method was rerun.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The shared dossier selector grammar now declares --pack.conflicts_with("clause-binding"), rejecting the combination before source dispatch through the existing dossier usage exit-2 mapping. The former SourceFailure rejection was removed. The focused regression covers generate, check and export, asserts exit 2 with no report, preserves an existing file and produces no export. Coder log /tmp/plat1438-fix1-tests.log records that test passing; no tests were rerun for this disposition. |
+
+Disposition verdict: **PASS** for the original code-review finding; the separate gap-analysis limitations remain unchanged.
+
+After excerpt:
+
+```rust
+        .arg(
+            one(
+                "pack",
+                "PACK",
+                "Regulatory pack, for documents that need one",
+            )
+            .conflicts_with("clause-binding"),
+        )
+```
