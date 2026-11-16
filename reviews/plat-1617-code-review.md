@@ -427,3 +427,42 @@ bindings:
   ac_id: FR-196-AC-1
   trace: correct
 ```
+
+## Dispositions
+
+Disposition pass 1 at commit `a5b1b91adcb9734d5c335536f43556fd43731b70`, limited to the four original code-review findings. All four are fixed; the original findings and historical verdict above remain unchanged. No gap-analysis rerun or new review layer was performed.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fixed expectations include criticality_unassigned and the FR-191 unbacked_criterion-before-no_evidence order. Full dossier unit rerun passes 71 tests; verification-report integration rerun passes 3 tests. |
+| FND-002 | fixed | Removed cause_name. Rendering calls the source-owned StaleCause::as_str directly; the new invalid-cause regression test passes. |
+| FND-003 | fixed | Only traced binders or retained record binders establish backing; a suite association alone does not. The new public-generator stale-suite regression test passes and emits unbacked_criterion. |
+| FND-004 | fixed | Empty explicit roots use ScopeOrAmbient and nonempty roots use Closed, matching the matrix source selection. The new command regression checks both omitted and explicit module selection against matrix output. |
+
+### Disposition evidence
+
+- `cargo test -p quoin-dossier --lib --test tc_1617_verification_report --locked`: 71 unit tests passed; 3 integration tests passed, 1 ignored.
+- `cargo test -p quoin-cli --test tc_1617_verification_report_command --locked`: 1 command regression test passed, covering both omitted and explicit module roots.
+- Logs: `/tmp/plat-1617-review/disposition-dossier-tests.log` and `/tmp/plat-1617-review/disposition-command-tests.log`.
+
+```yaml
+dispositions:
+- fnd: FND-001
+  outcome: fixed
+  after_excerpt: "            [\n                (\"criticality_unassigned\", \"FR-1\"\
+    .to_owned()),\n                (\"unbacked_criterion\", \"FR-1-AC-1\".to_owned()),\n\
+    \                (\"no_evidence\", \"FR-1-AC-1\".to_owned()),\n            ]"
+- fnd: FND-002
+  outcome: fixed
+  after_excerpt: "        items.push(match finding.cause.and_then(StaleCause::as_str)\
+    \ {\n            Some(cause) => format!(\"{} (cause {cause})\", finding.kind),\n\
+    \            None => finding.kind.clone(),\n        });"
+- fnd: FND-003
+  outcome: fixed
+  after_excerpt: '    let backed = !criterion.binders.is_empty() || retained_records(criterion).next().is_some();'
+- fnd: FND-004
+  outcome: fixed
+  after_excerpt: "        let selection = if modules.is_empty() {\n            quoin_quire::ModuleSelection::ScopeOrAmbient\n\
+    \        } else {\n            quoin_quire::ModuleSelection::Closed(modules)\n\
+    \        };"
+```
