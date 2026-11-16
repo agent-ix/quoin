@@ -15,6 +15,8 @@ use crate::evidence::audit::AuditOptions;
 use crate::matrix::{Built, build};
 use quoin_anomaly::{CarriedRead, read_carried};
 use quoin_assurance::matrix::MatrixOutput;
+#[cfg(test)]
+pub(super) use quoin_dossier::release_snapshot::ReleaseSnapshot as Snapshot;
 use quoin_dossier::release_snapshot::{
     CoverageCriterion, CoverageRequirement, Freshness, OpenFinding, RationaleEntry,
     SnapshotAnomaly as Anomaly,
