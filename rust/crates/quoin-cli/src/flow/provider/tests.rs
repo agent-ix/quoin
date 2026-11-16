@@ -11,7 +11,8 @@
 use super::serve;
 #[cfg(unix)]
 use super::{
-    Context, FormalizeInput, formal_rule_approved_with_binary, formalization_check_with_tools,
+    Context, FormalizeInput, analysis_consistent_with_approved, formal_rule_approved_with_binary,
+    formalization_check_with_tools,
 };
 use ix_trace_rs::trace;
 #[cfg(unix)]
@@ -144,6 +145,25 @@ fn approval_fixture() -> (tempfile::TempDir, FormalizeInput, Context) {
     }));
     request.drafted_symbols = vec!["qsl:qsl/rule.native::Rule".to_owned()];
     (directory, request, context)
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-17")]
+#[test]
+fn analysis_invariant_requires_an_explicit_package_before_tool_invocation() {
+    let (_directory, mut request, context) = formalization_fixture();
+    request.drafted_symbols = vec!["qsl:qsl/rule.native::Rule".to_owned()];
+    request.analysis_package = None;
+    let failure = analysis_consistent_with_approved(&request, &context)
+        .expect_err("missing explicit package must fail closed");
+    assert_eq!(failure.code.to_string(), "analysis_package_invalid");
+
+    for path in ["relative/package.json", ""] {
+        request.analysis_package = Some(path.to_owned());
+        let failure = analysis_consistent_with_approved(&request, &context)
+            .expect_err("invalid package path must fail before tool invocation");
+        assert_eq!(failure.code.to_string(), "analysis_package_invalid");
+    }
 }
 
 #[cfg(unix)]

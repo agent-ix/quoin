@@ -749,13 +749,13 @@ fn analysis_consistent_with_approved(
     let status = formal_rule_status(request, context, &executable)?;
     let expected = status_claim_spans(&status, request, context)?;
     let package_spans = package_claim_spans(&package)?;
-    validate_package_claims(&expected, &package_spans, request)?;
-    let drafts: Vec<_> = expected
+    let bound = bind_package_claims(&expected, &package_spans, request)?;
+    let drafts: Vec<_> = bound
         .iter()
         .filter(|span| request.drafted_symbols.contains(&span.symbol))
         .cloned()
         .collect();
-    let peers: Vec<_> = expected
+    let peers: Vec<_> = bound
         .iter()
         .filter(|span| !request.drafted_symbols.contains(&span.symbol))
         .cloned()
@@ -779,18 +779,17 @@ fn analysis_consistent_with_approved(
                 Code::AnalysisInconclusive,
                 format!("cannot create report directory: {error}"),
             )
-        })?;
-    let selection_path = report_dir.path().join("selection.json");
+        })?
+        .keep();
+    let selection_path = report_dir.join("selection.json");
     let selected: Vec<_> = drafts.iter().map(|span| serde_json::json!({
         "authority": span.authority, "identity": span.identity, "start": span.start, "end": span.end
     })).collect();
     let selection =
         serde_json::json!({"protocol":"filament-analyze.claim-selection/v1","spans":selected});
-    std::fs::write(
-        &selection_path,
-        serde_json::to_vec(&selection).expect("selection JSON serialization"),
-    )
-    .map_err(|error| {
+    let selection_bytes = serde_json::to_vec(&selection)
+        .map_err(|error| fail(Code::AnalysisInconclusive, error.to_string()))?;
+    std::fs::write(&selection_path, selection_bytes).map_err(|error| {
         fail(
             Code::AnalysisInconclusive,
             format!("cannot write selection: {error}"),
@@ -801,7 +800,7 @@ fn analysis_consistent_with_approved(
         &analyzer,
         package_path,
         &selection_path,
-        report_dir.path(),
+        &report_dir,
         "consistency",
         &z3,
         &cvc5,
@@ -821,7 +820,7 @@ fn analysis_consistent_with_approved(
             &analyzer,
             package_path,
             &selection_path,
-            report_dir.path(),
+            &report_dir,
             "contradiction",
             &z3,
             &cvc5,
@@ -849,7 +848,7 @@ fn analysis_consistent_with_approved(
                 &analyzer,
                 package_path,
                 &selection_path,
-                report_dir.path(),
+                &report_dir,
                 "redundancy",
                 &z3,
                 &cvc5,
@@ -861,7 +860,6 @@ fn analysis_consistent_with_approved(
             }
         }
     }
-    let report_dir = report_dir.keep();
     Ok(BTreeMap::from([
         ("classification".to_owned(), json!(classification)),
         ("reports".to_owned(), json!(reports)),
@@ -958,12 +956,7 @@ fn status_claim_spans(
             .get("end")
             .and_then(Value::as_u64)
             .ok_or_else(|| fail(Code::FormalRuleStatusInvalid, "declaration end missing"))?;
-        if end <= start
-            || (selected
-                && !matches!(
-                    rule.get("state").and_then(Value::as_str),
-                    Some("draft" | "approved")
-                ))
+        if end <= start || (selected && rule.get("state").and_then(Value::as_str) != Some("draft"))
         {
             return Err(fail(
                 Code::FormalRuleStatusInvalid,
@@ -1074,18 +1067,18 @@ fn package_claim_spans(package: &Value) -> Result<Vec<ClaimSpan>, Failure> {
     Ok(spans)
 }
 
-fn validate_package_claims(
+fn bind_package_claims(
     expected: &[ClaimSpan],
     package: &[ClaimSpan],
     request: &FormalizeInput,
-) -> Check {
+) -> Result<Vec<ClaimSpan>, Failure> {
     let mut matched = BTreeSet::new();
+    let mut bound = Vec::new();
     for claim in package {
         let candidates: Vec<_> = expected
             .iter()
             .filter(|span| {
-                span.authority == claim.authority
-                    && span.identity == claim.identity
+                span.identity == claim.identity
                     && claim.start >= span.start
                     && claim.end <= span.end
             })
@@ -1097,6 +1090,9 @@ fn validate_package_claims(
             ));
         }
         matched.insert(candidates[0].symbol.clone());
+        let mut claim = claim.clone();
+        claim.symbol = candidates[0].symbol.clone();
+        bound.push(claim);
     }
     if expected.iter().any(|span| !matched.contains(&span.symbol))
         || request
@@ -1109,7 +1105,7 @@ fn validate_package_claims(
             "package omits a drafted or approved claim",
         ));
     }
-    Ok(())
+    Ok(bound)
 }
 
 struct AnalysisRun {
@@ -1127,29 +1123,31 @@ fn run_analysis(
     producer: &str,
 ) -> Result<AnalysisRun, Failure> {
     let path = directory.join(format!("{mode}.json"));
-    let output = ProcessCommand::new(analyzer)
-        .args(["run-package", "--package", package, "--output"])
-        .arg(&path)
-        .args(["--z3"])
-        .arg(z3)
-        .args(["--cvc5"])
-        .arg(cvc5)
-        .args([
-            "--producer-execute",
-            producer,
-            "--request",
-            mode,
-            "--select",
-        ])
-        .arg(selection)
-        .stdin(Stdio::null())
-        .output()
-        .map_err(|error| {
-            fail(
-                Code::AnalysisInconclusive,
-                format!("could not invoke filament-analyze: {error}"),
-            )
-        })?;
+    let arguments = vec![
+        "run-package".to_owned(),
+        "--package".to_owned(),
+        package.to_owned(),
+        "--output".to_owned(),
+        path.to_string_lossy().into_owned(),
+        "--z3".to_owned(),
+        z3.to_string_lossy().into_owned(),
+        "--cvc5".to_owned(),
+        cvc5.to_string_lossy().into_owned(),
+        "--producer-execute".to_owned(),
+        producer.to_owned(),
+        "--request".to_owned(),
+        mode.to_owned(),
+        "--select".to_owned(),
+        selection.to_string_lossy().into_owned(),
+    ];
+    let arguments = arguments.iter().map(String::as_str).collect::<Vec<_>>();
+    let output = run_tool(
+        analyzer,
+        &arguments,
+        directory,
+        Instant::now() + Duration::from_secs(20),
+    )
+    .map_err(|error| fail(Code::AnalysisInconclusive, error))?;
     let bytes = std::fs::read(&path).map_err(|error| {
         fail(
             Code::AnalysisInconclusive,
@@ -1190,6 +1188,17 @@ fn run_analysis(
         return Err(fail(
             Code::AnalysisInconclusive,
             "analysis report is inconclusive",
+        ));
+    }
+    let expected_exit = if status == "satisfied" {
+        Some(0)
+    } else {
+        Some(1)
+    };
+    if output.status.code() != expected_exit {
+        return Err(fail(
+            Code::AnalysisInconclusive,
+            "analysis exit status disagrees with its report",
         ));
     }
     Ok(AnalysisRun {
