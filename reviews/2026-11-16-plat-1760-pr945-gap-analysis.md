@@ -37,3 +37,9 @@ AP-201 (`spec/assurance/AP-201-finding-quality.md`) applies because this review 
 - Reverse gap for the PR diff: no production behavior was added or changed. The snapshot output remains owned by FR-167 and its typed source by FR-115/FR-032. The changed test has a real CLI invocation and exact-value assertion; no test stub was found in the diff.
 - Plan completion: not assessed. Semantic review: skipped; not requested.
 - Baseline comparison: Quoin and Quire matrix counts match clean `origin/main`; FR-167-AC-10 remains untagged there, so this is a verified baseline issue rather than a PR-introduced regression.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | accepted-no-change | The untagged matrix result reproduces on clean origin/main; PR #945 does not change the marker or trace grammar, and the lead has recorded this baseline limitation in the PR under the moving-main rule. |

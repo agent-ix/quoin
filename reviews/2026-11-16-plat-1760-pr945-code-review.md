@@ -37,3 +37,9 @@ The diff changes only an integration test. The added fixture invokes the real `q
 
 - Examined: FR-032-AC-19, FR-167-AC-10, FR-167-AC-11, and AP-201; the test↔AC binding for `tc_1760_snapshot_carries_stale_causes_byte_for_byte` is correct for FR-167-AC-10.
 - Code-review and Rust review were run together per the reviewer workflow. No code or test execution was performed by the reviewer; the aggregate gate remains for the lead after review.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The failing record timestamp is now 2026-01-02T00:00:00Z, after the passing binding record at 2026-01-01T00:00:00Z. |
