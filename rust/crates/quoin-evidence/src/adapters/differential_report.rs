@@ -194,7 +194,7 @@ fn analysis_projection(report: &Value, differential: &Value) -> Result<Value, Ev
         .get("agreedStatus")
         .cloned()
         .unwrap_or(Value::Null);
-    Ok(serde_json::json!({
+    let mut projection = serde_json::json!({
         "protocol": "quoin.analysis-report-projection/v1",
         "disposition": differential.get("disposition").cloned().unwrap_or(Value::Null),
         "agreed_status": agreed_status,
@@ -203,5 +203,9 @@ fn analysis_projection(report: &Value, differential: &Value) -> Result<Value, Ev
             "version": producer.get("version").cloned().unwrap_or(Value::Null),
         },
         "engines": engines,
-    }))
+    });
+    if let Some(selection) = report.get("selection") {
+        projection["selection"] = selection.clone();
+    }
+    Ok(projection)
 }

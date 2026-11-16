@@ -129,6 +129,7 @@ fn tc_001_projection_contains_only_the_qualified_allowlist() {
     );
     assert_eq!(projection["disposition"], "agreement");
     assert_eq!(projection["agreed_status"], "satisfied");
+    assert!(projection.get("selection").is_none());
     assert_eq!(
         projection["producer"],
         json!({"name":"filament-analyze","version":"0.1.0"})
@@ -146,6 +147,26 @@ fn tc_001_projection_contains_only_the_qualified_allowlist() {
         assert!(projection.get(forbidden).is_none());
     }
     assert_eq!(projection.as_object().unwrap().len(), 5);
+}
+
+#[trace("FR-151-AC-16")]
+#[test]
+fn tc_001_projection_retains_selection_and_omits_it_when_source_report_has_none() {
+    let unselected = accepted(SATISFIED).analysis_projection.unwrap();
+    assert!(unselected.get("selection").is_none());
+
+    let report = derive(SATISFIED, |report| {
+        report["selection"] = json!({
+            "selected": ["claim-0", "claim-1"],
+            "excluded": []
+        });
+    });
+    let projection = accepted(&report).analysis_projection.unwrap();
+    assert_eq!(
+        projection["selection"],
+        json!({"selected":["claim-0", "claim-1"],"excluded":[]})
+    );
+    assert_eq!(projection.as_object().unwrap().len(), 6);
 }
 
 #[trace("FR-151-AC-2")]

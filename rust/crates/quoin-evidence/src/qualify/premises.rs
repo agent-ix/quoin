@@ -5,6 +5,7 @@
 //! observation. Nothing here runs a solver, reads a clock or touches a file
 //! (FR-184-CON-2).
 
+use std::collections::BTreeSet;
 use std::path::Path;
 
 use serde_json::Value;
@@ -346,6 +347,15 @@ fn report_premises<'a>(
         ));
         return None;
     }
+    if !report.get("selection").is_some_and(valid_selection) {
+        refusals.push(refusal(
+            Cause::QualificationRejected,
+            Premise::ApprovedFormalRules,
+            locator,
+            "draft_rule_in_judgement: the differential report has no valid claim selection",
+        ));
+        return None;
+    }
     let agreed = text(report, "disposition") == Some("agreement")
         && text(report, "agreed_status") == Some("satisfied");
     if !agreed {
@@ -388,13 +398,16 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
     let Some(root) = report.as_object() else {
         return false;
     };
-    if root.len() != 5
+    if (root.len() != 5 && root.len() != 6)
         || text(report, "protocol") != Some("quoin.analysis-report-projection/v1")
         || !matches!(
             text(report, "disposition"),
             Some("agreement" | "inconclusive" | "unavailable" | "disagreement")
         )
     {
+        return false;
+    }
+    if root.contains_key("selection") && !root.get("selection").is_some_and(valid_selection) {
         return false;
     }
     let Some(producer) = root.get("producer").and_then(Value::as_object) else {
@@ -462,4 +475,41 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
         }),
         _ => false,
     }
+}
+
+/// A selected report has a non-empty, duplicate-free partition of its claims.
+fn valid_selection(selection: &Value) -> bool {
+    let Some(object) = selection.as_object() else {
+        return false;
+    };
+    if object.len() != 2 {
+        return false;
+    }
+    let Some(selected) = object.get("selected").and_then(Value::as_array) else {
+        return false;
+    };
+    let Some(excluded) = object.get("excluded").and_then(Value::as_array) else {
+        return false;
+    };
+    if selected.is_empty() {
+        return false;
+    }
+    let Some(selected_ids) = selection_ids(selected) else {
+        return false;
+    };
+    let Some(excluded_ids) = selection_ids(excluded) else {
+        return false;
+    };
+    selected_ids.is_disjoint(&excluded_ids)
+}
+
+fn selection_ids(items: &[Value]) -> Option<BTreeSet<&str>> {
+    let mut values = BTreeSet::new();
+    for item in items {
+        let value = item.as_str().filter(|value| !value.is_empty())?;
+        if !values.insert(value) {
+            return None;
+        }
+    }
+    Some(values)
 }

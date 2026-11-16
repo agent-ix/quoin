@@ -162,6 +162,7 @@ fn projection(report: &Value) -> Value {
         "protocol": "quoin.analysis-report-projection/v1",
         "disposition": report["differential"]["disposition"],
         "agreed_status": report["differential"]["agreedStatus"],
+        "selection": {"selected": ["claim-0"], "excluded": ["claim-1"]},
         "producer": report["producer"],
         "engines": engines,
     })
@@ -230,8 +231,36 @@ impl Recorded {
 
     /// `quoin evidence record --adapter differential-report --discharges`.
     fn record(&mut self, suite: &str, timestamp: &str, report: &str, discharges: &[&str]) {
+        self.record_with_selection(suite, timestamp, report, discharges, true);
+    }
+
+    /// Retain a report without a claim selection to check fail-closed qualification.
+    fn record_without_selection(
+        &mut self,
+        suite: &str,
+        timestamp: &str,
+        report: &str,
+        discharges: &[&str],
+    ) {
+        self.record_with_selection(suite, timestamp, report, discharges, false);
+    }
+
+    fn record_with_selection(
+        &mut self,
+        suite: &str,
+        timestamp: &str,
+        report: &str,
+        discharges: &[&str],
+        selected: bool,
+    ) {
         let mut result = parse_differential_report(report).unwrap();
-        let projection = result.analysis_projection.take().unwrap();
+        let mut projection = result.analysis_projection.take().unwrap();
+        if selected {
+            projection["selection"] = serde_json::json!({
+                "selected": ["claim-0"],
+                "excluded": ["claim-1"]
+            });
+        }
         let mut entries = result.entries;
         for entry in &mut entries {
             if !discharges.is_empty() {
@@ -426,6 +455,21 @@ fn an_admitted_passing_report_is_a_qualified_record_for_its_own_target_only() {
     );
     // The siblings stay unbacked, so the strict decision still rejects on them.
     assert!(strict_decision(&outcome.report, &[]).is_err());
+}
+
+#[trace("FR-184-AC-18")]
+#[test]
+fn a_passing_report_without_selection_is_rejected_as_draft_rule_in_judgement() {
+    let mut store = Recorded::new();
+    store.record_without_selection("SUITE-A", "2026-11-13T10:00:00Z", SATISFIED, &[AC1]);
+
+    let outcome = store.count(&[AC1], admitted());
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::QualificationRejected,
+        "draft_rule_in_judgement",
+    );
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
 }
 
 /// Assert the obligation is uncounted and one cause names `premise`.
