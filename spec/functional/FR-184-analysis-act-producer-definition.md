@@ -58,7 +58,7 @@ act, and a report from a solver started any other way is not an observation of i
 
 | Input | Source and meaning |
 |---|---|
-| Contract package | The `quire.contract-package/v1` document given as `--package` (filament-analyze FR-009). It names no analysis request; the runner fixes the request. |
+| Contract package | The `filament.contract-package/v1` document given as `--package` (filament-analyze FR-009 / `ContractPackageWireV1`). It names no analysis request; the runner fixes the request. |
 | Solver executables | `--z3` and `--cvc5`, absolute paths with no symbolic-link component (filament-analyze FR-009). |
 | Executor | `--producer-execute`, the absolute path of the `engineering-assurance` executable, never searched for on `PATH`. |
 | Declared method | The selected obligation's declared method, which must be Analysis (FR-116 method/act pairing; FR-152; FR-153). |
