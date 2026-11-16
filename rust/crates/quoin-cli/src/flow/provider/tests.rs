@@ -236,6 +236,7 @@ fn formal_rule_approval_rejects_invalid_trust_before_status_or_verifier_invocati
 }
 
 #[cfg(unix)]
+#[trace("FR-189-AC-10")]
 #[test]
 fn formal_rule_approval_passes_only_for_a_nonempty_fully_approved_drafted_set() {
     let (directory, mut request, context) = formalization_fixture();
