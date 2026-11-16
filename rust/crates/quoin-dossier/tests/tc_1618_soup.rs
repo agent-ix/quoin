@@ -207,11 +207,20 @@ fn shared_source_order_words_gaps_and_bytes_are_preserved_without_sbom() {
         1
     );
     let (added, report) = generate(&input);
-    let row = added.lines().find(|line| line.starts_with("| pkg:cargo/added@1.0.0 |")).unwrap();
+    let row = added
+        .lines()
+        .find(|line| line.starts_with("| pkg:cargo/added@1.0.0 |"))
+        .unwrap();
     assert!(row.starts_with("| pkg:cargo/added@1.0.0 | 1.0.0 | none | not stated |"));
     assert!(row.ends_with("| unknown | unknown |"));
-    assert!(report.documents[0].gaps.iter().any(|gap| gap.subject == "pkg:cargo/added@1.0.0" && gap.gap_kind == GapKind::SoupFieldNotStated && gap.detail.starts_with("known_anomalies:")));
-
+    assert!(
+        report.documents[0]
+            .gaps
+            .iter()
+            .any(|gap| gap.subject == "pkg:cargo/added@1.0.0"
+                && gap.gap_kind == GapKind::SoupFieldNotStated
+                && gap.detail.starts_with("known_anomalies:"))
+    );
 }
 
 #[trace("FR-197-AC-3")]
