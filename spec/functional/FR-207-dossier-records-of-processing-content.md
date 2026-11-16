@@ -16,7 +16,7 @@ relationships:
 
 ## Description
 
-When `quoin dossier generate` selects `records-of-processing` (document id `DOS-ROP`), it SHALL write one section for each `processing_activity` in the selected scope. Each entry SHALL use the sources in the table below. The document is the committed written record; `check` and `export` SHALL use the existing dossier currency rules in FR-191. The document SHALL show gaps instead of filling missing entries with defaults or deriving them from an unlisted source.
+When `quoin dossier generate` selects `records-of-processing` (document id `DOS-ROP`), it SHALL write one section for each `processing_activity` in the selected scope. Each entry SHALL use the sources in the table below. Generation SHALL NOT require a commit, version, `check`, or byte-comparison step. The document SHALL show gaps instead of filling missing entries with defaults or deriving them from an unlisted source.
 
 ## Inputs
 
@@ -35,15 +35,16 @@ The source column is exhaustive. Quoin SHALL use only the named authored fields 
 
 | GDPR Art 30 entry | Controller record (Art 30(1)) | Processor record (Art 30(2)) |
 |---|---|---|
-| (a) Controller / processor identity and contacts | Authored `processing_activity.controller`; optional `joint_controllers`, `representative` and `dpo_contact` | Authored `processing_activity.controller` list (each controller served); optional `representative` and `dpo_contact` |
-| (b) Purposes | Authored `processing_activity.purposes` | Model: each covered sink's authored `kind` and `purpose` |
-| (c) Categories of data subjects | Authored `processing_activity.data_subject_categories` | Model: categories of processing from covered sinks' `kind` and `purpose` |
-| (c) Categories of personal data | Model: `data_classification` records carried by covered connections or sinks, and records carried by connections delivering to covered sinks; use each classification's authored `regulated_categories` and title | Same source and rendering as controller record |
-| (d) Categories of recipients | Model: each covered sink's authored `processor`, `kind` and `audience_roles` | Model: each covered sink's authored `processor`, `kind` and `audience_roles` |
-| (e) Transfers to third countries | Model: each covered sink with an authored `region` member outside the activity's authored `home_regions` | Same source and rendering as controller record |
-| (e) Safeguards for those transfers | Model: controls with a `protects` edge to each transfer sink and their authored `safeguards` | Same source and rendering as controller record |
-| (f) Time limits for erasure | Authored `processing_activity.retention` | Not applicable to the Art 30(2) layout; SHALL NOT be printed as a processor fact |
-| (g) Technical and organisational security measures | Model: controls with a `protects` edge to a covered connection or sink and their authored `safeguards` | Same source and rendering as controller record |
+| (a) Identity and contacts | Authored `processing_activity.controller`; optional `joint_controllers`, `representative` and `dpo_contact` | Art 30(2)(a): authored `processing_activity.processor` for the processor's own name and contact, and `processing_activity.controller` for each controller it acts for; optional `representative` and `dpo_contact` |
+| (b) Purposes / categories of processing | Art 30(1)(b): authored `processing_activity.purposes` | Art 30(2)(b): each covered sink's authored `kind` is listed as a category of processing under each controller named by `processing_activity.controller`; its `purpose`, when present, is shown separately as purpose context and is not counted as a category |
+| (c) Categories of data subjects | Authored `processing_activity.data_subject_categories` | Not an Art 30(2) entry; SHALL NOT be printed as a processor fact |
+| (c) Categories of personal data | Model: `data_classification` records carried by covered connections or sinks, and records carried by connections delivering to covered sinks; use each classification's authored `regulated_categories` and title | Not an Art 30(2) entry; SHALL NOT be printed as a processor fact |
+| (d) Categories of recipients | Model: each covered sink's authored `processor`, `kind` and `audience_roles` | Not an Art 30(2) entry; SHALL NOT be printed as a processor fact |
+| (e) Transfers to third countries and safeguards | Not derivable from `region` and `home_regions`; emit `transfer_region_unstated` and `transfer_safeguards_unstated` gaps for each covered sink. The labels MAY be reported separately as model location facts. | Art 30(2)(c): same transfer gap and supplemental-location contract as the controller record |
+| (f) Time limits for erasure | Authored `processing_activity.retention` | Not an Art 30(2) entry; SHALL NOT be printed as a processor fact |
+| (g) Technical and organisational security measures | Model: controls with a `protects` edge to a covered connection or sink and their authored `safeguards` | Art 30(2)(d): model controls with a `protects` edge to a covered connection or sink and their authored `safeguards` |
+
+`data_sink.region` and `processing_activity.home_regions` are authored location labels. A location is outside the declared home-region labels only when its value does not exactly match any value in `home_regions`; `eu` and `eea` are compared as labels and are not expanded to country lists. This comparison MAY be shown as a separate location fact. It SHALL NOT be described as, or used to infer, a transfer to a third country. The model supplies no legal transfer classification, so the Art 30 transfer entry remains an explicit gap even when location labels are present. Controls protecting a sink MAY supply general security measures, but SHALL NOT be represented as safeguards for a third-country transfer without a transfer classification.
 
 For a covered `part`, its direct `delivers_to` sinks are covered sinks for this report. A connection is covered only when it is an explicit `covers` target. A classification reaches a covered sink when the sink carries it or a connection with a `delivers_to` edge to that sink carries it. A control selected by more than one covered element SHALL appear once per activity entry.
 
@@ -52,7 +53,7 @@ For a covered `part`, its direct `delivers_to` sinks are covered sinks for this 
 ### Document layout
 
 - `DOS-ROP.md` SHALL contain one `## <activity id> — <activity title>` section per `processing_activity`, ordered by dossier id order.
-- A controller activity SHALL render the Art 30(1) entries. A processor activity SHALL render the Art 30(2) entries and SHALL omit controller-only entries (b) purposes authored by the processor and (f) retention.
+- A controller activity SHALL render the Art 30(1) entries. A processor activity SHALL render the Art 30(2) entries, including the processor's own identity/contact and the controllers it acts for, and SHALL NOT render the Art 30(1) purpose, data-subject category, personal-data category, recipient or retention entries as processor facts. Its covered sinks' `kind` values SHALL appear once under Art 30(2)(b) as categories of processing; a sink's `purpose` SHALL be separate purpose context, not a category or a duplicate Art 30(1) purpose entry.
 - Model records and controls SHALL be listed by dossier id order. The document SHALL preserve authored category, purpose, region, audience and safeguards values and SHALL NOT infer a value from a display name.
 - The document SHALL name source model records by id. It SHALL NOT claim legal compliance, adequacy or completeness of the underlying processing.
 
@@ -60,11 +61,11 @@ For a covered `part`, its direct `delivers_to` sinks are covered sinks for this 
 
 - A missing or unusable value named by the field-to-source table SHALL produce a gap with the relevant `gap_kind`, a source subject id, and a detail identifying the missing field or relation.
 - With no `processing_activity`, the report SHALL contain `no_processing_activity` and no activity section.
-- If required facts are absent from the flow report, the report SHALL contain `model_facts_unavailable` naming the activity or model element; Quoin SHALL NOT read a substitute source.
+- If required facts are absent from the flow report, the report SHALL contain `model_facts_unavailable` naming the `DOS-ROP` document; Quoin SHALL NOT read a substitute source or claim the model element is absent from the repository.
 - A covered connection with no `carries` edge SHALL include the row `GAP: (c) categories of personal data — <connection id> carries no classification` and one `personal_data_categories_unstated` gap.
 - A covered sink with no processor, kind or audience-role evidence for the recipient entry SHALL include a `recipient_categories_unstated` gap naming the sink.
-- A covered sink with no `region` SHALL include a `transfer_region_unstated` gap because the transfer condition cannot be determined. A region within `home_regions` is not a transfer.
-- A transfer sink without a protecting control with a stated `safeguards` value SHALL include a `transfer_safeguards_unstated` gap naming the sink.
+- Every covered sink SHALL include a `transfer_region_unstated` gap because the model's location labels cannot establish a third-country transfer. The report MAY separately show whether a sink's location label is outside the activity's exact `home_regions` labels.
+- Every covered sink SHALL include a `transfer_safeguards_unstated` gap because the model does not identify which movements are third-country transfers. A control's safeguards may still be listed as general security measures.
 - A covered connection or sink without any protecting control with a stated `safeguards` value SHALL include a `security_measures_unstated` gap naming that element.
 - Every gap SHALL appear in the document's final `Gaps` section and in the JSON report. The document SHALL have `status: incomplete` when any gap exists, following FR-191.
 
@@ -78,14 +79,14 @@ For a covered `part`, its direct `delivers_to` sinks are covered sinks for this 
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-207-AC-1 | A complete controller fixture yields one activity section whose personal-data categories include `CLASS-PHI` and its `health` category, recipients include `EXT-LAB` and the sink's audience role, and transfers include `SINK-US-ANALYTICS` with its protecting control and safeguards. | Test |
+| FR-207-AC-1 | A controller fixture yields one activity section whose personal-data categories include `CLASS-PHI` and its `health` category, recipients include `EXT-LAB` and the sink's audience role, and the Art 30 transfer entry has explicit region and safeguards gaps; the sink's region label and protecting control are reported only as model facts. | Test |
 | FR-207-AC-2 | A controller activity without authored `retention` fails `quire validate`; a processor activity without it validates and its Art 30(2) section omits entry (f). | Test |
 | FR-207-AC-3 | A covered connection without `carries` produces `GAP: (c) categories of personal data — CONN-7 carries no classification`, one `personal_data_categories_unstated` gap, and a non-zero gap count. | Test |
-| FR-207-AC-4 | A transfer sink with no protecting control that states `safeguards` produces a `transfer_safeguards_unstated` gap naming the sink. | Test |
-| FR-207-AC-5 | A processor activity renders the Art 30(2) layout, uses covered sinks' `kind` and `purpose` for categories of processing, and omits controller-only entries (b) and (f). | Test |
+| FR-207-AC-4 | A covered sink produces `transfer_region_unstated` and `transfer_safeguards_unstated` gaps naming the sink even when it has a region label and a protecting control; controls with `safeguards` may appear only under general security measures. | Test |
+| FR-207-AC-5 | A processor activity with authored processor identity/contact and controller contacts renders Art 30(2)(a), lists each covered sink's `kind` once as a category of processing under Art 30(2)(b), shows its `purpose` separately when present, and does not duplicate either as data-subject categories. | Test |
 | FR-207-AC-6 | A fixture with a missing `covers` target fails validation as dangling, and a `covers` target of `queue` fails as wrong-kind. | Test |
 | FR-207-AC-7 | Missing facts in `quire.flow-report/v1` produce an explicit gap; changing only an unlisted source such as runtime data or an artifact name does not change any entry. | Test |
-| FR-207-AC-8 | Two runs over the same authored records and flow report produce byte-identical Markdown and JSON; adding a `carries` edge changes `check` to `differs` until regeneration. | Test |
+| FR-207-AC-8 | Two runs over the same authored records and flow report produce byte-identical Markdown and JSON; generation requires no commit, version, check, or byte-comparison step. | Test |
 
 ## Dependencies
 

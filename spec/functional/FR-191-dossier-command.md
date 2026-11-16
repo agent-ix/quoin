@@ -29,19 +29,18 @@ management plan (`risk-management-plan`, `DOS-RMP`) and release record
 (`release-record`, `DOS-REL`). The M3 document is the threat model (`threat-model`, `DOS-TM`),
 specified in [FR-202](./FR-202-dossier-threat-model-content.md). The records-of-processing document is
 `records-of-processing` (`DOS-ROP`), specified in [FR-207](./FR-207-dossier-records-of-processing-content.md).
-A document kind becomes selectable when
-its generator is registered; the command frame can ship before later
-generators.
+A document kind becomes selectable for generation when its generator is registered; the command frame can ship before later
+generators. `records-of-processing` is generated directly and is excluded from the versioned `check` and `export` flows.
 
 ## Inputs
 
-- `generate [--doc <registered-kind>]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--soup-binding <PATH>] [--soup-records <DIR>] [--soup-support <PATH>] [--snapshot <PATH>] [--release-verify <PATH>] [--as-of <RFC-3339>] --version <TEXT> [--json]`. The common `--scope` and `--module` select anomaly, risk and threat-model records; the SOUP and release flags supply their separate sources.
-- `check` takes the same selectors as `generate`.
-- `export --to pdf|docx --output <PATH>` takes the same selectors as `generate`, and also `[--release <TAG>] [--approval <PATH>]... [--template <PATH>] [--quire <PATH>]`.
+- `generate [--doc <registered-kind>]... [--out <DIR>] [--scope <DIR>] [--module <PATH>]... [--clause-binding <PATH>]... [--pack <PACK>] [--soup-binding <PATH>] [--soup-records <DIR>] [--soup-support <PATH>] [--snapshot <PATH>] [--release-verify <PATH>] [--as-of <RFC-3339>] [--version <TEXT>] [--json]`. The common `--scope` and `--module` select anomaly, risk and threat-model records; the SOUP and release flags supply their separate sources. `records-of-processing` does not use `--version`.
+- `check` takes the selectors for versioned document kinds; it excludes `records-of-processing`.
+- `export --to pdf|docx --output <PATH>` takes the selectors for exportable versioned kinds, and also `[--release <TAG>] [--approval <PATH>]... [--template <PATH>] [--quire <PATH>]`.
 
 ## Outputs
 
-- `generate`: one Markdown file per selected registered document at `<DIR>/<document-id>.md`. `<DIR>` is `dossier` unless `--out` names another. With no `--doc`, every registered document is selected.
+- `generate`: one Markdown file per selected registered document at `<DIR>/<document-id>.md`. `<DIR>` is `dossier` unless `--out` names another. With no `--doc`, every registered generator is selected. `check` and `export` select only registered kinds supported by those operations.
 - `check`: per document, `matches` or `differs`.
 - `export`: the file `quire export` writes.
 - With `--json`: `{documents:[{id, kind, path, status, gaps:[{gap_kind, subject, detail}]}]}` where `status` is `complete` or `incomplete`. `check` and `export` add `comparison` (`matches` or `differs`) to each document. On exit 3 the report holds `source_failure:{source, detail}`. On exit 4 the report holds `quire:{exit_code, stderr}`.
@@ -55,7 +54,7 @@ generators.
 - `export` SHALL run `quire export` as an external process with `--source-rev HEAD`.
 - `export` SHALL pass `--release`, each user-supplied `--approval` and `--template` to `quire export` unchanged.
 - When `release-record` is selected and `--release-verify` is supplied, `export` SHALL append that EA result as one more `--approval` after every user-supplied approval, including in a bundle; when `release-record` is not selected, it SHALL NOT append that result.
-- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in this fixed dossier order, independent of generator registration time: the four M1 ids above, then `DOS-VR`, `DOS-SOUP`, `DOS-ANOM`, `DOS-RISK`, `DOS-RMP`, `DOS-REL` for the registered M2 kinds, then `DOS-TM` when registered, then `DOS-ROP` when registered, then later kinds in their specified order. It SHALL pass `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.
+- When `export` selects more than one document, `export` SHALL run `quire export` once, as one bundle, with the files in this fixed dossier order, independent of generator registration time: the four M1 ids above, then `DOS-VR`, `DOS-SOUP`, `DOS-ANOM`, `DOS-RISK`, `DOS-RMP`, `DOS-REL` for the registered M2 kinds, then `DOS-TM` when registered, then later exportable kinds in their specified order. `DOS-ROP` is not exportable under this command. It SHALL pass `--bundle-title "Submission Dossier"` and `--bundle-id DOS`.
 - When `export` selects one document, `export` SHALL run `quire export` once with that file and without `--bundle-title` and `--bundle-id`.
 - The flow is commit-then-export because `quire export` takes identity and content from the blob committed at `--source-rev` and refuses a working file that differs from that commit (quire-cli FR-034 section A), and refuses identity options on JSON input. A bundle requires at least two inputs (quire-cli FR-039-AC-7), which is why one document is exported without bundle arguments.
 - Quoin SHALL NOT export an uncommitted file.
@@ -64,7 +63,7 @@ generators.
 
 ### Export currency
 
-- `export` SHALL resolve each selected document at `<DIR>/<document-id>.md`, where `<DIR>` is `dossier` unless `--out` names another.
+- `export` SHALL resolve each selected exportable document at `<DIR>/<document-id>.md`, where `<DIR>` is `dossier` unless `--out` names another.
 - `export` SHALL regenerate each selected document in memory and compare its bytes with the file at its path before it starts `quire export`.
 - If a selected file is missing or its bytes differ from the regenerated bytes, `export` SHALL exit 1, SHALL name the document, and SHALL NOT start `quire export`.
 - `export` SHALL NOT refuse a document because it is `incomplete`; the `Gaps` section travels with the document.
@@ -72,8 +71,9 @@ generators.
 ### Selection and check
 
 - If a `--doc` value has no registered generator, the command SHALL exit 2 and SHALL write nothing.
-- `generate`, `check` and `export` SHALL require `--version`, because the version is part of the generated bytes and `quire export` needs a Version or a Release (quire-cli FR-034). Without it the command SHALL exit 2 and SHALL write nothing.
-- `check` SHALL regenerate each selected document in memory and compare its bytes with the file at its path.
+- `generate`, `check` and `export` SHALL require `--version` when a selected kind uses version metadata. `records-of-processing` generation SHALL neither require nor emit a version.
+- `check` and `export` SHALL reject an explicit `records-of-processing` selection with exit 2 and no output. When no `--doc` is supplied, `check` and `export` SHALL exclude this generation-only kind.
+- `check` SHALL regenerate each selected versioned document in memory and compare its bytes with the file at its path.
 - `check` SHALL write nothing.
 - `check` SHALL count a missing file as `differs`.
 
@@ -94,7 +94,7 @@ generators.
 
 ### Document set
 
-- The generated files SHALL carry the frontmatter of the `DossierDocument` archetype that spec-artifacts-process defines for this feature: `id`, `title`, `version`, `type: DossierDocument`, `document_kind`, `generated_by: quoin dossier` and `as_of` for source-backed RMM and SOUP documents.
+- The generated files SHALL carry the frontmatter of the `DossierDocument` archetype that spec-artifacts-process defines for this feature: `id`, `title`, `type: DossierDocument`, `document_kind` and `generated_by: quoin dossier`; versioned kinds also carry `version`, while `records-of-processing` does not. Source-backed RMM and SOUP documents also carry `as_of`.
 - Each file SHALL end with the level-2 `Gaps` section below.
 
 ### Gaps section
@@ -142,7 +142,7 @@ continues to allow committed, current incomplete documents.
 | FR-191-AC-10 | A dossier generated with `--out other` is exported by `export --out other`, and `export` without `--out` looks under `dossier` and exits 1 naming the missing document | Test |
 | FR-191-AC-11 | `export` over a committed file that differs from the regenerated bytes exits 1, names the document and never starts `quire export` | Test |
 | FR-191-AC-12 | A source that fails makes `generate` exit 3, the report names that source in `source_failure`, no file is written for any selected document, and a file that existed before the run is unchanged | Test |
-| FR-191-AC-13 | `generate`, `check` and `export` without `--version` exit 2 and write nothing | Test |
+| FR-191-AC-13 | `generate`, `check` and `export` without `--version` exit 2 and write nothing when a selected kind uses version metadata; `generate --doc records-of-processing` succeeds without `--version` and omits `version` from its output. | Test |
 | FR-191-AC-14 | A fixture with two gaps of different kinds gives a `Gaps` section with two bullets in gap order, the same two entries in the same order in `--json`, and `Gaps: none` for a complete document | Test |
 | FR-191-AC-15 | A fixture with requirements `FR-99` and `FR-100` and criteria `FR-100-AC-2` and `FR-100-AC-10` lists them in dossier order, and a document-level gap sorts before a gap that names a requirement | Test |
 | FR-191-AC-16 | `export` of an `incomplete` document that is committed and current runs `quire export` and does not refuse it | Test |
@@ -153,7 +153,7 @@ continues to allow committed, current incomplete documents.
 | FR-191-AC-21 | A bundle selecting `release-record` passes user `--approval` files in their given order and appends the supplied EA `--release-verify` result once after them; a bundle without `release-record` does not append it | Test |
 | FR-191-AC-22 | With only the ten M1 and M2 generators registered, unfiltered `generate` writes ten files and exits 1 due to `DOS-RMP`'s permanent `no_plan_record` gap; a complete explicit subset exits 0 | Test |
 | FR-191-AC-23 | With the threat-model generator registered, `generate --doc threat-model` writes `dossier/DOS-TM.md` only, `--doc nope` still exits 2, and a bundle export that selects `DOS-TM` and any M1 or M2 id orders `DOS-TM` after every M1 and M2 id regardless of selector order. | Test |
-| FR-191-AC-24 | With the records-of-processing generator registered, `generate --doc records-of-processing` writes `dossier/DOS-ROP.md` only, `--doc nope` still exits 2, and a bundle export that selects `DOS-ROP` and any earlier id places `DOS-ROP` after that id regardless of selector order. | Test |
+| FR-191-AC-24 | With the records-of-processing generator registered, `generate --doc records-of-processing` writes `dossier/DOS-ROP.md` without a version or commit check; `--doc nope` exits 2; explicit `check` or `export` selection of this kind exits 2, and unfiltered `check` or `export` excludes it. | Test |
 
 ## Dependencies
 
