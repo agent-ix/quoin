@@ -11,7 +11,6 @@
 
 //! Source and engine coverage for the risk-management dossier (FR-199).
 
-use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -116,9 +115,7 @@ impl Fixture {
         let text = format!(
             "---\nid: {id}\ntitle: \"{id}\"\ntype: {kind}\nobject: {kind}\n{front}---\n# [{id}] {id}\n\n{body}{properties}"
         );
-        let records = self.root.path().join("spec");
-        std::fs::create_dir_all(&records).unwrap();
-        std::fs::write(records.join(format!("{id}.md")), text).unwrap();
+        std::fs::write(self.root.path().join(format!("{id}.md")), text).unwrap();
     }
 
     fn link(target: &str, relationship: &str) -> String {
@@ -242,9 +239,7 @@ fn rendered_policy_regions_match_both_source_reports_for_each_estimate() {
 #[test]
 fn unreadable_safety_record_fails_generation_without_writing_selected_document() {
     let scope = tempfile::tempdir().unwrap();
-    let records = scope.path().join("spec");
-    std::fs::create_dir_all(&records).unwrap();
-    std::fs::write(records.join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+    std::fs::write(scope.path().join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
     let out = scope.path().join("dossier");
     let error = quoin_dossier::generate(
         &registry(),
