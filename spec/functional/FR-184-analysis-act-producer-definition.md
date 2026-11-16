@@ -58,12 +58,13 @@ act, and a report from a solver started any other way is not an observation of i
 
 | Input | Source and meaning |
 |---|---|
-| Contract package | The `filament.contract-package/v1` document given as `--package` (filament-analyze FR-009). It names no analysis request; the runner fixes the request. |
+| Contract package | The `quire.contract-package/v1` document given as `--package` (filament-analyze FR-009). It names no analysis request; the runner fixes the request. |
 | Solver executables | `--z3` and `--cvc5`, absolute paths with no symbolic-link component (filament-analyze FR-009). |
 | Executor | `--producer-execute`, the absolute path of the `engineering-assurance` executable, never searched for on `PATH`. |
 | Declared method | The selected obligation's declared method, which must be Analysis (FR-116 method/act pairing; FR-152; FR-153). |
 | Obligation statement | The `--discharges` id the recorder gave to `quoin evidence record` (FR-152). It is the only binding source. |
-| Formal-rule claim mapping | For a formal-rule analysis run, the host supplies the mapping retained as `formal_rule_selection` by FR-151. It maps every selected claim id and source span to its QSL symbol and the `approved` or `draft` status returned by FR-188 when the run was prepared. |
+| Run purpose | The host's explicit run kind, `analysis` for an ordinary analysis report or `formal_rule` for a formal-rule judgement. Existing ordinary projections without this member are treated as `analysis`. |
+| Formal-rule claim mapping | For `run_kind: formal_rule`, the host supplies the mapping retained as `formal_rule_selection` by FR-151. It maps every selected claim id and source span to its QSL symbol and the `approved` or `draft` status returned by FR-188 when the run was prepared. |
 
 ## Outputs
 
@@ -81,7 +82,7 @@ act, and a report from a solver started any other way is not an observation of i
 - The source report is validated against the closed `filament.differential-report/v2` schema. The FR-151 projection
   retains only `producer.name`, `producer.version`, each engine's `configuredExecutable`, observed `identity.path`
   and `identity.version` when present, each engine's `status` and `outcome`, the `disposition`, and the `agreedStatus`,
-  plus the optional formal-rule claim mapping FR-151 defines. The projection adds no member to the source report,
+  plus the run kind and the formal-rule claim mapping when `run_kind` is `formal_rule`, as FR-151 defines. The projection adds no member to the source report,
   `RunRecord` or `RunEntry`. The exact suite/timestamp key
   pairs it with one run; qualification requires the run cardinality and outcome mapped from the disposition and
   agreed status (one entry for agreement, inconclusive or unavailable; zero entries for disagreement). It does not
@@ -107,20 +108,24 @@ naming the performed-revision premise.
 
 ### Formal-rule claim qualification
 
-For a formal-rule analysis run, the host SHALL provide the `formal_rule_selection`
-mapping defined by FR-151 from the selection used for `run-package` and the
-FR-188 status report used to build it. The mapping SHALL contain exactly one
-entry for each id in the report's `selection.selected` array. Each entry SHALL
-name that claim id, the matching report source span, its QSL symbol, and the
-status reported for that symbol when the run was prepared. The qualifier SHALL
-confirm that the mapping's ids equal `selection.selected` exactly, that every
-source span matches the report, and that each selected symbol has state
-`approved`. If the source report has no `selection`, the mapping is missing or
-malformed, the ids or spans differ, or any selected rule has state `draft`, the
-qualifier SHALL return `qualification-rejected` with reason
-`draft_rule_in_judgement`. It SHALL fail closed and SHALL NOT infer a missing
-mapping or status from the current checkout. This mapping records no digest,
-checkout revision, version pin, or repository file path.
+When a formal-rule judgement is qualified, the host SHALL supply expected
+`run_kind: formal_rule`, and the FR-151 projection SHALL carry that same
+discriminator. The host SHALL provide the `formal_rule_selection` mapping from
+the selection used for `run-package` and the FR-188 status report used to build
+it. The mapping SHALL contain exactly one entry for each id in the report's
+`selection.selected` array. Each entry SHALL name that claim id, the matching
+report source span, its QSL symbol, and the status reported for that symbol
+when the run was prepared. The qualifier SHALL confirm that the mapping's ids
+equal `selection.selected` exactly, that every source span matches the report,
+and that each selected symbol has state `approved`. If expected `run_kind` is
+`formal_rule` and the projection's discriminator is missing or different, the
+source report has no `selection`, the mapping is missing or malformed, the ids
+or spans differ, or any selected rule has state `draft`, the qualifier SHALL
+return `qualification-rejected` with reason `draft_rule_in_judgement`. It SHALL
+fail closed and SHALL NOT infer a missing mapping or status from the current
+checkout. Ordinary analysis qualification does not require a
+`formal_rule_selection` mapping. This mapping records no digest, checkout
+revision, version pin, or additional repository file path.
 
 ### Tool and configuration
 
@@ -256,8 +261,9 @@ The criteria describe the approved definition; none claims an implemented qualif
 | FR-184-AC-14 | A satisfied agreement with no CI checkout SHA for the `run-package` step yields `unevaluated` naming the performed-revision premise. | Test |
 | FR-184-AC-15 | One report with `--discharges` for one obligation yields a decision for that obligation only; no sibling obligation is qualified by it. | Test |
 | FR-184-AC-16 | One satisfied report recorded with `--discharges FR-001-AC-1,FR-001-AC-2` qualifies neither obligation: each is `unevaluated` and uncounted. | Test |
-| FR-184-AC-17 | A formal-rule report whose selection ids and source spans each have exactly one matching `formal_rule_selection` entry with state `approved` may qualify; the qualifier uses those entries to check the selected set. | Test |
-| FR-184-AC-18 | A formal-rule report with no selection, no mapping, an incomplete, extra, duplicate, or source-mismatched mapping, or any selected claim mapped to state `draft` yields `qualification-rejected` with reason `draft_rule_in_judgement` and no positive decision. | Test |
+| FR-184-AC-17 | A report qualified with expected `run_kind: formal_rule` whose projection has the same run kind and one matching `formal_rule_selection` entry with state `approved` for each selected claim may qualify; the qualifier checks the selected set. | Test |
+| FR-184-AC-18 | A formal-rule qualification whose projection lacks `run_kind: formal_rule`, whose report has no selection, whose mapping is missing, incomplete, extra, duplicate, or source-mismatched, or whose selected claim maps to state `draft` yields `qualification-rejected` with reason `draft_rule_in_judgement` and no positive decision. | Test |
+| FR-184-AC-19 | An ordinary analysis report with no `formal_rule_selection` mapping remains eligible for qualification under the existing FR-116 premises and is not rejected as `draft_rule_in_judgement`. | Test |
 
 ## Dependencies
 

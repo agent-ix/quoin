@@ -30,8 +30,10 @@ served by the existing `quoin.workflow-invariants/v1` provider
 ([FR-021](./FR-021-launch-ix-flow-runs.md)).
 
 The analysis invariant consumes an explicit `quire.contract-package/v1` input.
-QSL's native checked-package production and any bridge from
-`filament.checked-package/v2` into this analysis input are outside this FR.
+QSL-1900 produces the native `filament.checked-package/v2` artifact; the bridge
+from that artifact into the required Quire contract package is tracked by
+VER-109. Real QSL-source analysis depends on that bridge. This FR defines neither
+QSL's native package nor the bridge.
 
 ## Behavior
 
@@ -70,10 +72,20 @@ QSL's native checked-package production and any bridge from
 - When Quoin evaluates `analysis_consistent_with_approved` for a
   `formalization_request`, then Quoin SHALL require `analysis_package` to be a
   non-empty, absolute path to a readable `quire.contract-package/v1` JSON
-  document that contains the draft and approved rules under analysis, use this
-  explicit path as the package input to `filament-analyze run-package`, and not
-  infer a package path from the draft, repository configuration, or ambient
-  environment.
+  document prepared from the exact `draft_path` that passed
+  `qsl_check_passes` and the formal rules that the FR-188 status report marks
+  `approved` for that run. A trusted package producer SHALL prepare the package
+  from those inputs; the drafting model or agent SHALL NOT supply or replace the
+  package contents. Quoin SHALL use this explicit path as the package input to
+  `filament-analyze run-package` and SHALL NOT infer a package path from the
+  draft, repository configuration, or ambient environment.
+- When Quoin evaluates `analysis_consistent_with_approved`, then Quoin SHALL
+  verify that every claim source span in the package maps to either a symbol in
+  the run's drafted set at `draft_path` or a symbol marked `approved` by the
+  FR-188 status report, and that the package contains no other claim. If any
+  claim is missing, extra, or maps to a different draft or rule, Quoin SHALL
+  fail with `analysis_package_invalid` without invoking
+  `filament-analyze run-package`.
 - When Quoin evaluates `analysis_consistent_with_approved`, then Quoin SHALL
   return `analysis_package_invalid` without invoking `filament-analyze` if
   `analysis_package` is missing, empty, relative, contains NUL, or cannot be
@@ -128,11 +140,13 @@ QSL's native checked-package production and any bridge from
 | FR-189-AC-13 | Given a repository with no `approved` rule and a drafted set that holds a span, the analysis runs with a selection of the drafted spans only | Test |
 | FR-189-AC-14 | Given a combined selection with no span, invariant `analysis_consistent_with_approved` fails and `filament-analyze run-package` is not invoked | Test |
 | FR-189-AC-15 | Given a missing, empty, relative, or NUL-containing trust path, or a partial or invalid `gitsign` object in `formalization_request`, the approval invariant returns `formal_rule_trust_inputs_invalid` without invoking engineering-assurance | Test |
-| FR-189-AC-16 | Given a valid explicit `analysis_package` containing a `quire.contract-package/v1` document, the analysis invariant invokes `filament-analyze run-package` with that package and one selection containing the drafted spans and approved-rule spans | Test |
+| FR-189-AC-16 | Given an `analysis_package` prepared from the exact draft that passed `qsl_check_passes` and the FR-188 rules reported approved for the run, the analysis invariant invokes `filament-analyze run-package` with that package and one selection containing the drafted spans and approved-rule spans | Test |
 | FR-189-AC-17 | Given a missing, empty, relative, or NUL-containing `analysis_package`, or a path that cannot be read as `quire.contract-package/v1`, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze` | Test |
+| FR-189-AC-18 | Given a package whose claims are missing from, extra to, or source-mismatched with the checked draft and FR-188 approved-rule set, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze run-package` | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-188](./FR-188-formal-rule-approval-state-from-signed-commits.md),
-  [FR-021](./FR-021-launch-ix-flow-runs.md), [FR-190](./FR-190-formal-rule-analysis-claim-selection.md),
-  QSL-1900 (precondition for analysing real QSL drafts).
+  [FR-021](./FR-021-launch-ix-flow-runs.md), [FR-190](./FR-190-formal-rule-analysis-claim-selection.md).
+  Real QSL-source analysis additionally depends on QSL-1900's native checked package and VER-109's bridge from
+  `filament.checked-package/v2` into `quire.contract-package/v1`.
