@@ -440,10 +440,16 @@ mod tests {
         let second = render(&summary, &advice);
         assert_eq!(first, second);
         assert!(first.body.contains("## HAZ-1"));
+        assert!(first.body.contains("Harms: HARM-1"));
         assert!(
             first
                 .body
                 .contains("| EST-PRE | pre_control | serious | likely | high |  |")
+        );
+        assert!(
+            first
+                .body
+                .contains("| EST-POST | post_control | minor | unlikely | low |  |")
         );
         assert!(first.body.contains("| CTRL-1 | FR-9 | TC-9 |"));
         assert!(first.body.contains("| RR-1 | accepted | A. Person |"));
@@ -467,25 +473,47 @@ mod tests {
                 finding: RowToken::ResidualRiskUndecided,
                 names: vec!["RR-1".to_owned()],
             },
-            RowFinding {
-                finding: RowToken::HazardWithoutSituation,
-                names: vec!["HAZ-1".to_owned()],
-            },
         ];
+        let mut hazard_without_situation = complete_row();
+        hazard_without_situation.hazard = Some("HAZ-EMPTY".to_owned());
+        hazard_without_situation.situation = None;
+        hazard_without_situation.harms.clear();
+        hazard_without_situation.pre_control.clear();
+        hazard_without_situation.controls.clear();
+        hazard_without_situation.post_control.clear();
+        hazard_without_situation.residual_risks.clear();
+        hazard_without_situation.findings = vec![RowFinding {
+            finding: RowToken::HazardWithoutSituation,
+            names: vec!["HAZ-EMPTY".to_owned()],
+        }];
         let rendered = render(
             &Summary {
                 attribution: quoin_risk_advice::ATTRIBUTION,
-                rows: vec![row],
+                rows: vec![row, hazard_without_situation],
                 unreadable: Vec::new(),
             },
             &advice(),
         );
         assert!(rendered.body.contains("| RR-1 | accepted | not stated |"));
+        assert!(rendered.body.contains("## HAZ-EMPTY"));
+        assert!(
+            rendered
+                .body
+                .contains("`hazard-without-situation`: HAZ-EMPTY")
+        );
         assert!(
             rendered
                 .gaps
                 .iter()
                 .any(|gap| gap.gap_kind == GapKind::ControlUnverified && gap.subject == "CTRL-1")
+        );
+        assert_eq!(
+            rendered
+                .gaps
+                .iter()
+                .filter(|gap| gap.subject == "CTRL-1")
+                .count(),
+            1
         );
         assert!(
             rendered
@@ -493,15 +521,20 @@ mod tests {
                 .iter()
                 .any(|gap| gap.gap_kind == GapKind::ResidualRiskUndecided && gap.subject == "RR-1")
         );
-        assert!(
+        assert_eq!(
             rendered
                 .gaps
                 .iter()
-                .any(|gap| gap.gap_kind == GapKind::RiskChainIncomplete && gap.subject == "HAZ-1")
+                .filter(|gap| gap.subject == "RR-1")
+                .count(),
+            1
         );
+        assert!(rendered.gaps.iter().any(|gap| {
+            gap.gap_kind == GapKind::RiskChainIncomplete && gap.subject == "HAZ-EMPTY"
+        }));
     }
 
-    #[trace("FR-199-AC-5", "FR-199-AC-6")]
+    #[trace("FR-199-AC-6")]
     #[test]
     fn policy_findings_and_undecided_entries_are_rendered_from_advice() {
         let mut row = complete_row();

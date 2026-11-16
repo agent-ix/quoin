@@ -76,13 +76,13 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
             &sources.matrix,
         ))),
         Box::new(rmm::RmmGenerator(sources.rmm)),
-        Box::new(risk_plan::RiskPlanGenerator(sources.policy)),
         Box::new(verification_report::VerificationReportGenerator::new(
             sources.matrix,
         )),
         Box::new(soup::SoupGenerator(sources.soup)),
         Box::new(anomalies::AnomaliesGenerator),
         Box::new(risk_management::RiskManagementGenerator),
+        Box::new(risk_plan::RiskPlanGenerator(sources.policy)),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -142,11 +142,11 @@ mod tests {
                 "architecture",
                 "trace-matrix",
                 "rmm",
-                "risk-management-plan",
                 "verification-report",
                 "soup",
                 "anomalies",
-                "risk-management"
+                "risk-management",
+                "risk-management-plan"
             ]
         );
     }
