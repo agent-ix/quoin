@@ -350,7 +350,7 @@ fn evaluate(request: &Request) -> ResultEnvelope {
         .invariants
         .iter()
         .map(|name| match check_with_details(&request.instance, name) {
-            Ok(()) => Outcome::Passed {
+            Ok(None) => Outcome::Passed {
                 invariant: name.clone(),
                 details: None,
             },
@@ -660,7 +660,7 @@ fn formal_rule_approved_with_binary(
             "one or more drafted formal rules lack a valid signed approval commit",
         ));
     }
-    Ok(None)
+    Ok(())
 }
 
 fn retries_exhausted(instance: &Instance) -> Check {
@@ -729,7 +729,7 @@ fn analysis_consistent_with_approved(
         ));
     }
     let package_text = read_bounded(Path::new(package_path))
-        .map_err(|error| fail(Code::AnalysisPackageInvalid, error))?;
+        .map_err(|error| fail(Code::AnalysisPackageInvalid, error.to_string()))?;
     let package: Value = serde_json::from_str(&package_text).map_err(|error| {
         fail(
             Code::AnalysisPackageInvalid,
