@@ -41,6 +41,7 @@ const OBJECT: &str = "soup_record";
 const MAX_RECORD_BYTES: u64 = 1024 * 1024;
 
 /// Build the SOUP command grammar.
+#[must_use]
 pub fn command() -> Command {
     Command::new("soup")
         .about(ABOUT)

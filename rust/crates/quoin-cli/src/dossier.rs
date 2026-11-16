@@ -428,6 +428,32 @@ fn rmm_source(inputs: &Inputs) -> Result<quoin_dossier::RmmSource, quoin_dossier
     })
 }
 
+/// Use FR-144's shared builder with the host's runtime configuration.
+fn soup_source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, quoin_dossier::SourceFailure> {
+    let result = (|| {
+        let binding = inputs
+            .soup_binding
+            .as_deref()
+            .ok_or_else(|| "--soup-binding is required".to_owned())?;
+        let as_of = inputs
+            .as_of
+            .as_deref()
+            .ok_or_else(|| "--as-of is required".to_owned())?;
+        quoin_soup::dossier_source(
+            &inputs.scope,
+            inputs.soup_records.as_deref(),
+            binding,
+            as_of,
+            inputs.soup_support.as_deref(),
+            &crate::core_runtime::settings(),
+        )
+    })();
+    result.map_err(|detail| quoin_dossier::SourceFailure {
+        source: "quoin soup report".to_owned(),
+        detail,
+    })
+}
+
 #[cfg(test)]
 #[allow(
     clippy::unwrap_used,
@@ -465,30 +491,4 @@ mod tests {
         assert_eq!(response.diagnostics[0].code, "DOSSIER_REGISTRY_CONFLICT");
         assert!(!out.exists());
     }
-}
-
-/// Use FR-144's shared builder with the host's runtime configuration.
-fn soup_source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, quoin_dossier::SourceFailure> {
-    let result = (|| {
-        let binding = inputs
-            .soup_binding
-            .as_deref()
-            .ok_or_else(|| "--soup-binding is required".to_owned())?;
-        let as_of = inputs
-            .as_of
-            .as_deref()
-            .ok_or_else(|| "--as-of is required".to_owned())?;
-        quoin_soup::dossier_source(
-            &inputs.scope,
-            inputs.soup_records.as_deref(),
-            binding,
-            as_of,
-            inputs.soup_support.as_deref(),
-            &crate::core_runtime::settings(),
-        )
-    })();
-    result.map_err(|detail| quoin_dossier::SourceFailure {
-        source: "quoin soup report".to_owned(),
-        detail,
-    })
 }

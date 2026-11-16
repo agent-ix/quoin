@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Source adapters for matrix-backed documents and RMM (FR-194 through FR-196).
+//! Source adapters for matrix-backed documents, RMM and SOUP (FR-194 through FR-197).
 
 use std::sync::Arc;
 
