@@ -15,6 +15,18 @@ statistical_design:
   estimator: proportion
   population_set:
     ids:
+      - "formalize:ix-flow-absent"
+      - "formalize:ix-flow-fails-the-context"
+      - "formalize:ix-flow-fails-the-run"
+      - "formalize:ix-flow-floods-its-output"
+      - "formalize:ix-flow-hangs-the-handshake"
+      - "formalize:ix-flow-hangs-the-run"
+      - "formalize:ix-flow-omits-the-instance-id"
+      - "formalize:ix-flow-prints-garbage"
+      - "formalize:ix-flow-prints-nothing"
+      - "formalize:ix-flow-reports-an-error-payload"
+      - "formalize:ix-flow-reports-an-old-version"
+      - "formalize:ix-flow-reports-no-version"
       - "review:ix-flow-absent"
       - "review:ix-flow-fails-the-context"
       - "review:ix-flow-fails-the-run"
@@ -62,14 +74,16 @@ and `quoin update` fetches over HTTP.
 
 ## Decision Use
 
-Decide whether `quoin review` and `quoin to-plan` hide an `ix-flow` failure.
+Decide whether `quoin formalize`, `quoin review`, and `quoin to-plan` hide an
+`ix-flow` failure.
 
 ## Population
 
 Each workflow command paired with each failure mode, as `command:mode`. The
-commands are found by the producer from the binary's own help text; the twelve
-modes are those the producer stages with its stub, and all are in the set. The
-set is compared with this plan's by the `tc_3004` test.
+commands are found by the producer from the binary's own help text. They are
+`formalize`, `review`, and `to-plan`; the twelve modes are those the producer
+stages with its stub, and all are in the set. The set is compared with this
+plan's by the `tc_3004` test.
 
 | Mode | The stub | The message carries |
 | --- | --- | --- |
