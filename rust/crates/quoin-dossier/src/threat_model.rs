@@ -805,7 +805,7 @@ mod tests {
         assert_eq!(generated.body.matches("CONTROL-1 (encryption)").count(), 1);
     }
 
-    #[trace("FR-202-AC-3, FR-202-AC-13")]
+    #[trace("FR-202-AC-3", "FR-202-AC-13")]
     #[test]
     fn tc_1546_threat_without_treatment_is_listed_per_model_but_gapped_once() {
         let records = corpus(vec![
@@ -916,7 +916,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-202-AC-6, FR-202-AC-7")]
+    #[trace("FR-202-AC-6", "FR-202-AC-7")]
     #[test]
     fn tc_1546_complete_output_is_deterministic_and_has_no_open_findings() {
         let records = corpus(vec![
@@ -937,7 +937,7 @@ mod tests {
         assert!(first.gaps.is_empty());
     }
 
-    #[trace("FR-202-AC-11, FR-202-AC-14")]
+    #[trace("FR-202-AC-11", "FR-202-AC-14")]
     #[test]
     fn tc_1546_scope_and_crossing_rows_follow_dossier_order() {
         let records = corpus(vec![
