@@ -23,6 +23,12 @@ FND-001 is fixed on current PR head. FR-207-AC-1 now has a test binding that exe
 | --- | --- | --- | --- |
 | FND-001 | medium | TC-617 uses a scalar region fixture and does not exercise the flow-report region list contract | rust/crates/quoin-dossier/src/records_of_processing.rs:879-953 |
 
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | low | The new sink-specific regression test is not bound to its Test Case row; Quoin reports it as a tagged claim without a matrix row | rust/crates/quoin-dossier/src/records_of_processing.rs:1132-1134, spec/matrix.md:46 |
+
 ## Coverage
 
 - Matrix: `quoin matrix --repo /home/peter/dev/quoin/.worktrees/plat1658-review-head --json`; FR-207-AC-1..8 were tagged on review head.
@@ -34,3 +40,5 @@ FND-001 is fixed on current PR head. FR-207-AC-1 now has a test binding that exe
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | Current TC-617 fixture uses `region: ["us", "eu"]` and `region: ["eu", "eea"]`; assertions cover one mixed-match sink and one all-matching sink, exercising list-valued flow facts. |
+| FND-002 | still-open | The new function has only `#[trace("FR-207-AC-3")]`, while the matrix binds AC-3 through TC-619 and the test-case row describes a different test. `quoin matrix --repo <head> --json` reports `delivered_classification_only_suppresses_gap_for_its_sink` as `tagged-without-citing-matrix-row`; add an accurately scoped Test Case row and bind the test to it, or otherwise make the matrix evidence model explicitly associate this regression. |
+
