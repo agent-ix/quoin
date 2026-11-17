@@ -66,7 +66,9 @@ pub use discharge::{
     build_discharge_report_with_approval_requirements, build_pack_requirements_mapping,
     build_requirements_mapping, discharge_report_from_store,
     discharge_report_from_store_with_approval_requirements, inward_completeness_from_store,
-    read_discharge_facts, record_discharge_facts, render_discharge_report,
+    inward_completeness_from_store_with_approval_requirements, read_discharge_facts,
+    read_discharge_facts_with_approval_requirements, record_discharge_facts,
+    record_discharge_facts_with_approval_requirements, render_discharge_report,
     render_inward_completeness, render_pack_requirements_mapping, render_requirements_mapping,
 };
 pub use render::{RenderableCase, render_case};
