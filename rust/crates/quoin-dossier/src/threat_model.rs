@@ -312,7 +312,7 @@ fn considered_threats<'a>(
     connections: &[&Document],
     sinks: &[&Document],
     records: &[&'a Document],
-    by_id: &BTreeMap<&str, &Document>,
+    by_id: &BTreeMap<&str, &'a Document>,
 ) -> Vec<&'a Document> {
     let subjects = connections
         .iter()
