@@ -227,9 +227,11 @@ fn classify_binding_clause(
                 Some(fact),
             ));
         }
-        DischargeFact::Direct(_) => partition
-            .direct
-            .push(entry(clause, DischargeState::Direct, None, Some(fact))),
+        DischargeFact::Direct(_) => {
+            partition
+                .direct
+                .push(entry(clause, DischargeState::Direct, None, Some(fact)))
+        }
         DischargeFact::Disposition(_) => partition.dispositions.push(entry(
             clause,
             DischargeState::Disposition,
@@ -242,7 +244,11 @@ fn classify_binding_clause(
 
 fn append_unknown_facts(partition: &mut DischargePartition, facts: &[DischargeFact]) {
     for fact in facts {
-        if !partition.known.iter().any(|clause_id| clause_id == fact.clause_id()) {
+        if !partition
+            .known
+            .iter()
+            .any(|clause_id| clause_id == fact.clause_id())
+        {
             partition.unused_facts.push(UnusedDischargeFact {
                 clause_id: fact.clause_id().to_owned(),
                 kind: fact.kind(),
