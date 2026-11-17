@@ -82,10 +82,10 @@ fn processing_records(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, Sou
                     id: "SINK-COVERED".to_owned(),
                     repo: None,
                     path: "spec/SINK-COVERED.md".to_owned(),
-                    fields: json!({"processor":"Must not be selected", "kind":"archive"})
-                        .as_object()
-                        .cloned()
-                        .unwrap_or_default(),
+                    fields: BTreeMap::from([
+                        ("kind".to_owned(), json!("archive")),
+                        ("processor".to_owned(), json!("Must not be selected")),
+                    ]),
                     edges: Vec::new(),
                 }],
             ),
