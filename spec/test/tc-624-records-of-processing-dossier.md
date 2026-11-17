@@ -11,12 +11,12 @@ relationships:
 
 ## Description
 
-Verify FR-207-AC-8: the same authored activity records and flow report generate byte-identical dossier Markdown and equivalent gap rows without requiring a commit or pre-generation check.
+Verify FR-207-AC-8: the same authored activity records and flow report generate byte-identical dossier Markdown and deterministic JSON output, including ordered gap rows, without requiring a commit or pre-generation check.
 
 ## Test Procedure
 
-Run `tc_1658_controller_lists_classification_recipients_transfer_gaps_and_safeguards` in `quoin-dossier` through `/home/peter/dev/worktrees/locked-build.sh`.
+Run `tc_1658_controller_lists_classification_recipients_transfer_gaps_and_safeguards` in `quoin-dossier` through `/home/peter/dev/worktrees/locked-build.sh`. The test renders the same fixture twice, compares the Markdown body and ordered gaps, then serializes each run's body and gaps as JSON bytes and compares those bytes.
 
 ## Expected Results
 
-Two in-memory generations are equal byte-for-byte in the rendered body and produce the same ordered gap values.
+Two in-memory generations have identical rendered Markdown, ordered gap values, and byte-identical JSON serialization of the generated body and gaps.

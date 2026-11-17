@@ -94,11 +94,11 @@ fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
 
 fn render_activity(
     activity: &Document,
-    facts: &BTreeMap<&str, (&str, &FlowFact)>,
+    facts: &BTreeMap<(Option<&str>, &str), (&str, &FlowFact)>,
     body: &mut String,
     gaps: &mut Vec<Gap>,
 ) -> bool {
-    let activity_fact = facts.get(activity.id.as_str()).map(|(_, fact)| *fact);
+    let activity_fact = facts.get(&(None, activity.id.as_str())).map(|(_, fact)| *fact);
     let mut model_facts_unavailable = activity_fact.is_none();
     let title = value_text(field(activity, "title").unwrap_or(&Value::Null))
         .unwrap_or_else(|| activity.id.clone());
@@ -183,7 +183,7 @@ fn render_processor_activity(
     activity: &Document,
     sinks: &[&FlowFact],
     covered_elements: &[&FlowFact],
-    facts: &BTreeMap<&str, (&str, &FlowFact)>,
+    facts: &BTreeMap<(Option<&str>, &str), (&str, &FlowFact)>,
     sources: &mut BTreeSet<String>,
     body: &mut String,
     gaps: &mut Vec<Gap>,
@@ -267,7 +267,7 @@ fn render_controller_activity(
     covered_elements: &[&FlowFact],
     classification_content: &[String],
     missing_classification: &[(String, String)],
-    facts: &BTreeMap<&str, (&str, &FlowFact)>,
+    facts: &BTreeMap<(Option<&str>, &str), (&str, &FlowFact)>,
     sources: &mut BTreeSet<String>,
     body: &mut String,
     gaps: &mut Vec<Gap>,
@@ -369,20 +369,20 @@ fn append_sources(body: &mut String, sources: BTreeSet<String>) {
     let _ = writeln!(body, "\nSources: {content}\n");
 }
 
-fn facts_by_id(flow: &FlowReport) -> BTreeMap<&str, (&str, &FlowFact)> {
+fn facts_by_id(flow: &FlowReport) -> BTreeMap<(Option<&str>, &str), (&str, &FlowFact)> {
     flow.facts
         .iter()
         .flat_map(|(kind, facts)| {
             facts
                 .iter()
-                .map(move |fact| (fact.id.as_str(), (kind.as_str(), fact)))
+                .map(move |fact| ((fact.repo.as_deref(), fact.id.as_str()), (kind.as_str(), fact)))
         })
         .collect()
 }
 
 fn categorize_targets<'a>(
     targets: &[&'a FlowFactEdge],
-    facts: &BTreeMap<&str, (&str, &'a FlowFact)>,
+    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
     sources: &mut BTreeSet<String>,
 ) -> (
     BTreeMap<&'a str, &'a FlowFact>,
@@ -418,9 +418,11 @@ fn ordered_facts(mut facts: Vec<&FlowFact>) -> Vec<&FlowFact> {
 
 fn fact_for<'a>(
     edge: &FlowFactEdge,
-    facts: &BTreeMap<&str, (&str, &'a FlowFact)>,
+    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
 ) -> Option<&'a FlowFact> {
-    facts.get(edge.target.id.as_str()).map(|(_, fact)| *fact)
+    facts
+        .get(&(edge.target.repo.as_deref(), edge.target.id.as_str()))
+        .map(|(_, fact)| *fact)
 }
 
 fn outgoing<'a>(fact: &'a FlowFact, edge: &str) -> Vec<&'a FlowFactEdge> {
@@ -434,7 +436,7 @@ fn classifications<'a>(
     elements: &[&'a FlowFact],
     connections: &[&'a FlowFact],
     sinks: &[&'a FlowFact],
-    facts: &BTreeMap<&str, (&str, &'a FlowFact)>,
+    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
     sources: &mut BTreeSet<String>,
 ) -> (Vec<String>, Vec<(String, String)>) {
     let sink_ids = sinks
@@ -593,7 +595,7 @@ fn transfer_entry(
 
 fn security_entry<'a>(
     elements: &[&'a FlowFact],
-    facts: &BTreeMap<&str, (&str, &'a FlowFact)>,
+    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
     sources: &mut BTreeSet<String>,
 ) -> (String, Vec<Gap>) {
     let mut controls = BTreeMap::new();
@@ -849,6 +851,27 @@ mod tests {
         }
     }
 
+    #[trace("TC-617", "FR-207-AC-1")]
+    #[test]
+    fn flow_fact_lookup_matches_repository_and_artifact_id() {
+        let mut selected = fact("EXT-SHARED", json!({"processor":"Selected"}), &[]);
+        selected.repo = Some("selected/repo".to_owned());
+        let mut other = fact("EXT-SHARED", json!({"processor":"Other"}), &[]);
+        other.repo = Some("other/repo".to_owned());
+        let flow = flow(vec![("data_sink", selected), ("data_sink", other)]);
+        let facts = facts_by_id(&flow);
+        let mut edge = fact("ACT-1", json!({}), &[("covers", "outgoing", "EXT-SHARED")])
+            .edges
+            .remove(0);
+        edge.target.repo = Some("selected/repo".to_owned());
+
+        assert_eq!(
+            fact_for(&edge, &facts).and_then(|sink| field_fact(sink, "processor")),
+            Some(&json!("Selected")),
+            "the target repository must select its matching duplicate artifact id"
+        );
+    }
+
     fn empty_source(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
         Ok(RecordsOfProcessingSource {
             records: corpus(Vec::new()),
@@ -1003,6 +1026,12 @@ mod tests {
             2
         );
         assert_eq!(generated, render(&records, Some(&flow)));
+        let repeated = render(&records, Some(&flow));
+        let json_output = |generated: &Generated| {
+            serde_json::to_vec(&json!({"body": generated.body, "gaps": generated.gaps}))
+                .unwrap()
+        };
+        assert_eq!(json_output(&generated), json_output(&repeated));
         assert_eq!(
             generated
                 .gaps
