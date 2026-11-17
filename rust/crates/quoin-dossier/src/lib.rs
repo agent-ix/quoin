@@ -45,6 +45,7 @@ pub use gap::{Gap, GapKind};
 pub use registry::{DocumentSpec, Generated, Generator, Inputs, Registry};
 pub use report::{Comparison, DocumentReport, Report, Status};
 pub use sources::{MatrixSource, RmmSource, Sources, ThreatModelSource};
+pub use threat_model::render_threat_model;
 
 /// The registry `quoin dossier` runs against.
 ///

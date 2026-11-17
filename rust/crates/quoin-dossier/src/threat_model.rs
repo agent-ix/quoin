@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The threat-model dossier generator, rendering authored records and engine flow findings (FR-202).
+//! The threat-model dossier generator, rendering authored records and engine flow findings.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -30,14 +30,22 @@ impl Generator for ThreatModelGenerator {
 
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
         let source = (self.0)(inputs)?;
-        if let Some(failure) = unusable_input("threat-model-records", &source.records) {
-            return Err(failure);
-        }
-        Ok(render(&source.records, source.flow.as_ref()))
+        render_threat_model(&source.records, source.flow.as_ref())
     }
 }
 
-fn render(corpus: &Corpus, flow: Option<&quoin_quire::model::FlowReport>) -> Generated {
+/// Render a threat-model dossier from the selected records and flow findings.
+///
+/// This pure entry point is also used by callers that already hold the typed
+/// record corpus and relation report; it performs no I/O and does not recompute
+/// flow checks.
+pub fn render_threat_model(
+    corpus: &Corpus,
+    flow: Option<&quoin_quire::model::FlowReport>,
+) -> Result<Generated, SourceFailure> {
+    if let Some(failure) = unusable_input("threat-model-records", corpus) {
+        return Err(failure);
+    }
     let records = corpus.documents.iter().collect::<Vec<_>>();
     let by_id: BTreeMap<&str, &Document> = records
         .iter()
@@ -67,7 +75,7 @@ fn render(corpus: &Corpus, flow: Option<&quoin_quire::model::FlowReport>) -> Gen
             let sinks = selected(&covered, "data_sink", &by_id);
             let parts = selected(&covered, "part", &by_id);
             let boundaries = selected(&covered, "trust_boundary", &by_id);
-            let considered = considered_threats(model, &connections, &sinks, &records, &by_id);
+            let considered = considered_threats(model, &connections, &sinks, &records);
             let open = findings_for(&denials, &connections, &sinks, &considered);
 
             let _ = writeln!(body, "## {}\n", cell(&model.id));
@@ -77,11 +85,11 @@ fn render(corpus: &Corpus, flow: Option<&quoin_quire::model::FlowReport>) -> Gen
             render_findings(&mut body, &mut gaps, &mut gap_keys, &open);
         }
     }
-    Generated {
+    Ok(Generated {
         body,
         document_version: None,
         gaps,
-    }
+    })
 }
 
 #[derive(Clone, Copy)]
@@ -312,23 +320,24 @@ fn considered_threats<'a>(
     connections: &[&Document],
     sinks: &[&Document],
     records: &[&'a Document],
-    by_id: &BTreeMap<&str, &'a Document>,
 ) -> Vec<&'a Document> {
     let subjects = connections
         .iter()
         .chain(sinks)
         .map(|document| document.id.as_str())
         .collect::<BTreeSet<_>>();
-    let mut threats = edge_targets(model, "considers")
+    let considered = edge_targets(model, "considers")
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+    let mut threats = records
         .iter()
-        .filter_map(|id| by_id.get(id.as_str()).copied())
-        .filter(|document| document.kind == "threat")
-        .chain(records.iter().copied().filter(|document| {
-            document.kind == "threat"
-                && document.edges.iter().any(|(target, relation)| {
-                    relation == "threatens" && subjects.contains(target.as_str())
-                })
-        }))
+        .copied()
+        .filter(|document| document.kind == "threat" && considered.contains(&document.id))
+        .filter(|document| {
+            document.edges.iter().any(|(target, relation)| {
+                relation == "threatens" && subjects.contains(target.as_str())
+            })
+        })
         .collect::<Vec<_>>();
     threats.sort_by(|left, right| crate::order::dossier_cmp(&left.id, &right.id));
     threats.dedup_by(|left, right| left.id == right.id);
@@ -562,7 +571,6 @@ fn check_order(check: &str) -> u8 {
 )]
 mod tests {
     use super::*;
-    use ix_trace_rs::trace;
     use serde_json::{Map, Value, json};
 
     fn document(
@@ -610,7 +618,6 @@ mod tests {
         }
     }
 
-    #[trace("FR-202-AC-1")]
     #[test]
     fn tc_1546_report_preserves_authored_crossing_threat_control_and_acceptance_facts() {
         let records = corpus(vec![
@@ -675,7 +682,7 @@ mod tests {
                 &[],
             ),
         ]);
-        let generated = render(&records, Some(&flow(Vec::new())));
+        let generated = render_threat_model(&records, Some(&flow(Vec::new()))).unwrap();
         assert!(generated.body.contains("CLASS-PHI (health)"));
         assert!(generated.body.contains("BOUND-NET (restricted)"));
         assert!(generated.body.contains("THREAT-1 (tampering)"));
@@ -686,7 +693,6 @@ mod tests {
         assert!(generated.gaps.is_empty());
     }
 
-    #[trace("FR-202-AC-2")]
     #[test]
     fn tc_1546_report_renders_only_engine_findings_and_deduplicates_model_gaps() {
         let records = corpus(vec![
@@ -720,7 +726,7 @@ mod tests {
             severity: "warning",
         };
         let report = flow(vec![denial]);
-        let generated = render(&records, Some(&report));
+        let generated = render_threat_model(&records, Some(&report)).unwrap();
         assert_eq!(
             generated
                 .body
@@ -733,16 +739,14 @@ mod tests {
         assert!(generated.body.contains("(warning)"));
     }
 
-    #[trace("FR-202-AC-5")]
     #[test]
     fn tc_1546_report_without_model_emits_one_document_gap_and_no_findings() {
-        let generated = render(&corpus(Vec::new()), Some(&flow(Vec::new())));
+        let generated = render_threat_model(&corpus(Vec::new()), Some(&flow(Vec::new()))).unwrap();
         assert!(!generated.body.contains("## TM-"));
         assert_eq!(generated.gaps.len(), 1);
         assert_eq!(generated.gaps[0].gap_kind, GapKind::NoThreatModel);
     }
 
-    #[trace("FR-202-AC-15")]
     #[test]
     fn tc_1546_sink_collects_direct_and_delivered_classifications_and_deduplicates_controls() {
         let records = corpus(vec![
@@ -796,7 +800,7 @@ mod tests {
                 &[],
             ),
         ]);
-        let generated = render(&records, Some(&flow(Vec::new())));
+        let generated = render_threat_model(&records, Some(&flow(Vec::new()))).unwrap();
         assert!(
             generated
                 .body
@@ -805,7 +809,6 @@ mod tests {
         assert_eq!(generated.body.matches("CONTROL-1 (encryption)").count(), 1);
     }
 
-    #[trace("FR-202-AC-3", "FR-202-AC-13")]
     #[test]
     fn tc_1546_threat_without_treatment_is_listed_per_model_but_gapped_once() {
         let records = corpus(vec![
@@ -821,6 +824,13 @@ mod tests {
                 "threat_model",
                 json!({}),
                 &[("CONN-1", "covers"), ("THREAT-1", "considers")],
+                &[],
+            ),
+            document(
+                "TM-3",
+                "threat_model",
+                json!({}),
+                &[("CONN-1", "covers")],
                 &[],
             ),
             document("CONN-1", "connection", json!({}), &[], &[]),
@@ -852,7 +862,7 @@ mod tests {
             rationale: "Treatment is not recorded.".to_owned(),
             severity: "error",
         };
-        let generated = render(&records, Some(&flow(vec![denial])));
+        let generated = render_threat_model(&records, Some(&flow(vec![denial]))).unwrap();
         assert_eq!(
             generated
                 .body
@@ -860,11 +870,14 @@ mod tests {
                 .count(),
             2
         );
+        assert!(generated.body.contains("## TM-1"));
+        assert!(generated.body.contains("## TM-2"));
+        let third_model = generated.body.split("## TM-3").nth(1).unwrap();
+        assert!(!third_model.contains("GAP: threat-without-treatment"));
         assert_eq!(generated.gaps.len(), 1);
         assert_eq!(generated.gaps[0].gap_kind, GapKind::ThreatWithoutTreatment);
     }
 
-    #[trace("FR-202-AC-4")]
     #[test]
     fn tc_1546_classified_sink_finding_appears_only_when_engine_reports_it() {
         let records = corpus(vec![
@@ -903,7 +916,7 @@ mod tests {
             rationale: "Threat coverage is incomplete.".to_owned(),
             severity: "warning",
         };
-        let generated = render(&records, Some(&flow(vec![denial])));
+        let generated = render_threat_model(&records, Some(&flow(vec![denial]))).unwrap();
         assert!(generated.body.contains("#### SINK-1"));
         assert!(
             generated
@@ -916,7 +929,6 @@ mod tests {
         );
     }
 
-    #[trace("FR-202-AC-6", "FR-202-AC-7")]
     #[test]
     fn tc_1546_complete_output_is_deterministic_and_has_no_open_findings() {
         let records = corpus(vec![
@@ -930,14 +942,13 @@ mod tests {
             document("CONN-1", "connection", json!({}), &[], &[]),
         ]);
         let report = flow(Vec::new());
-        let first = render(&records, Some(&report));
-        let second = render(&records, Some(&report));
+        let first = render_threat_model(&records, Some(&report)).unwrap();
+        let second = render_threat_model(&records, Some(&report)).unwrap();
         assert_eq!(first, second);
         assert!(first.body.contains("### Open findings\n\nnone"));
         assert!(first.gaps.is_empty());
     }
 
-    #[trace("FR-202-AC-11", "FR-202-AC-14")]
     #[test]
     fn tc_1546_scope_and_crossing_rows_follow_dossier_order() {
         let records = corpus(vec![
@@ -974,7 +985,7 @@ mod tests {
             document("CONN-2", "connection", json!({}), &[], &[]),
             document("CONN-1", "connection", json!({}), &[], &[]),
         ]);
-        let output = render(&records, None).body;
+        let output = render_threat_model(&records, None).unwrap().body;
         assert!(
             output.find("Covered parts: PART-1, PART-2").unwrap()
                 < output
