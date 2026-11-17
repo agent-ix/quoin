@@ -7,6 +7,11 @@ on:
         description: Existing vX.Y.Z tag to package and release
         required: true
         type: string
+      allow_known_workflow_smoke_failure:
+        description: Allow a separately recorded clean-main workflow smoke failure for this release
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -19,6 +24,7 @@ jobs:
     uses: ./.github/workflows/native-release-build.yml
     with:
       tag: ${{ inputs.tag }}
+      allow_known_workflow_smoke_failure: ${{ inputs.allow_known_workflow_smoke_failure }}
     secrets: inherit
 
   publish:
