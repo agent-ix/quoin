@@ -279,5 +279,6 @@ fn sources(matrix: MatrixOutput) -> quoin_dossier::Sources {
         soup: |_| panic!("unexpected SOUP source"),
         policy: |_| panic!("unexpected policy source"),
         threat_model: |_| panic!("unexpected threat-model source"),
+        records_of_processing: |_| panic!("unexpected records-of-processing source"),
     }
 }

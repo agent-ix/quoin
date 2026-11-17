@@ -326,10 +326,16 @@ fn a_failing_source_exits_3_names_it_writes_nothing_and_keeps_existing_files() {
     assert_eq!(names(&work.path().join("dossier")), ["DOS-STUB-A.md"]);
 }
 
-#[trace("FR-191-AC-13")]
+#[trace("FR-191-AC-13", "FR-191-AC-24")]
 #[test]
-fn generate_check_and_export_without_a_version_exit_2_and_write_nothing() {
+fn versionless_generation_is_limited_to_records_of_processing() {
     let work = tempfile::tempdir().unwrap();
+    let spec = work.path().join("spec");
+    fs::create_dir(&spec).unwrap();
+    let module = spec.join("empty-module");
+    fs::create_dir(&module).unwrap();
+    fs::write(module.join("manifest.yaml"), "name: dossier-empty-flow\n").unwrap();
+    let module_path = module.to_str().unwrap();
     for args in [
         &["generate", "--doc", "stub-a"][..],
         &["check", "--doc", "stub-a"][..],
@@ -339,8 +345,42 @@ fn generate_check_and_export_without_a_version_exit_2_and_write_nothing() {
     ] {
         let output = quoin(work.path(), args);
         assert_eq!(code(&output), 2, "{args:?}: {}", stderr(&output));
-        assert_eq!(names(work.path()), Vec::<String>::new(), "{args:?}");
+        assert_eq!(names(work.path()), ["spec"], "{args:?}");
     }
+
+    let generated = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--doc",
+            "records-of-processing",
+            "--module",
+            module_path,
+            "--json",
+        ],
+    );
+    assert_eq!(code(&generated), 1, "{}", stderr(&generated));
+    let report = json(&generated);
+    assert_eq!(report["documents"][0]["id"], "DOS-ROP");
+    let document = read(&work.path().join("dossier/DOS-ROP.md"));
+    assert!(!document.lines().any(|line| line.starts_with("version:")));
+
+    for args in [
+        &["check", "--doc", "records-of-processing"][..],
+        &[
+            "export",
+            "--doc",
+            "records-of-processing",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+        ][..],
+    ] {
+        let output = quoin(work.path(), args);
+        assert_eq!(code(&output), 2, "{args:?}: {}", stderr(&output));
+    }
+    assert!(!work.path().join("out.pdf").exists());
 }
 
 #[trace("FR-191")]

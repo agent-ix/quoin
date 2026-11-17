@@ -36,6 +36,8 @@ pub struct Sources {
     pub policy: fn(&Inputs) -> Result<quoin_quire::records::Corpus, SourceFailure>,
     /// Read threat-model records and the same flow findings as quire's relation report.
     pub threat_model: fn(&Inputs) -> Result<ThreatModelSource, SourceFailure>,
+    /// Read processing activities and authored model facts from quire's flow report.
+    pub records_of_processing: fn(&Inputs) -> Result<RecordsOfProcessingSource, SourceFailure>,
 }
 
 /// The selected records and engine-produced flow findings for DOS-TM.
@@ -43,6 +45,14 @@ pub struct ThreatModelSource {
     /// Typed authored records from the selected scope.
     pub records: quoin_quire::records::Corpus,
     /// Generic flow findings from the linked quire-rs engine; absent when the module declares none.
+    pub flow: Option<quoin_quire::model::FlowReport>,
+}
+
+/// Processing activities and the bounded flow facts used by DOS-ROP.
+pub struct RecordsOfProcessingSource {
+    /// Validated authored processing-activity records.
+    pub records: quoin_quire::records::Corpus,
+    /// Authored model facts and resolved relationships from FR-096.
     pub flow: Option<quoin_quire::model::FlowReport>,
 }
 

@@ -77,6 +77,21 @@ pub trait Generator: Send + Sync {
         self.spec().needs_as_of
     }
 
+    /// Whether generation needs the caller-selected document version.
+    fn requires_version(&self) -> bool {
+        true
+    }
+
+    /// Whether the document can be selected for a freshness check.
+    fn supports_check(&self) -> bool {
+        true
+    }
+
+    /// Whether the document can be selected for export.
+    fn supports_export(&self) -> bool {
+        true
+    }
+
     /// Compute the document in memory.
     ///
     /// # Errors

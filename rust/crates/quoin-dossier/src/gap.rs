@@ -81,12 +81,26 @@ pub enum GapKind {
     ThreatWithoutTreatment,
     /// The selected scope has no threat model record.
     NoThreatModel,
+    /// The selected scope has no processing activity record.
+    NoProcessingActivity,
+    /// Required authored model facts were not available in the flow report.
+    ModelFactsUnavailable,
+    /// A connection or sink has no personal-data classification evidence.
+    PersonalDataCategoriesUnstated,
+    /// A sink has no recipient category evidence.
+    RecipientCategoriesUnstated,
+    /// A sink's transfer region cannot be established from the model.
+    TransferRegionUnstated,
+    /// A sink's transfer safeguards cannot be established from the model.
+    TransferSafeguardsUnstated,
+    /// A connection or sink has no stated security measure.
+    SecurityMeasuresUnstated,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 32] = [
+    pub(crate) const ALL: [Self; 39] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -119,6 +133,13 @@ impl GapKind {
         Self::ClassifiedSinkWithoutThreat,
         Self::ThreatWithoutTreatment,
         Self::NoThreatModel,
+        Self::NoProcessingActivity,
+        Self::ModelFactsUnavailable,
+        Self::PersonalDataCategoriesUnstated,
+        Self::RecipientCategoriesUnstated,
+        Self::TransferRegionUnstated,
+        Self::TransferSafeguardsUnstated,
+        Self::SecurityMeasuresUnstated,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -157,6 +178,13 @@ impl GapKind {
             Self::ClassifiedSinkWithoutThreat => "classified_sink_without_threat",
             Self::ThreatWithoutTreatment => "threat_without_treatment",
             Self::NoThreatModel => "no_threat_model",
+            Self::NoProcessingActivity => "no_processing_activity",
+            Self::ModelFactsUnavailable => "model_facts_unavailable",
+            Self::PersonalDataCategoriesUnstated => "personal_data_categories_unstated",
+            Self::RecipientCategoriesUnstated => "recipient_categories_unstated",
+            Self::TransferRegionUnstated => "transfer_region_unstated",
+            Self::TransferSafeguardsUnstated => "transfer_safeguards_unstated",
+            Self::SecurityMeasuresUnstated => "security_measures_unstated",
         }
     }
 
@@ -322,6 +350,13 @@ mod tests {
                 "classified_sink_without_threat",
                 "threat_without_treatment",
                 "no_threat_model",
+                "no_processing_activity",
+                "model_facts_unavailable",
+                "personal_data_categories_unstated",
+                "recipient_categories_unstated",
+                "transfer_region_unstated",
+                "transfer_safeguards_unstated",
+                "security_measures_unstated",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {

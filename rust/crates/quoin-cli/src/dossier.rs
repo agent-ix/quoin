@@ -117,7 +117,7 @@ fn selectors(command: Command) -> Command {
         .arg(one(
             "version",
             "TEXT",
-            "Document version written into every generated file; required",
+            "Document version for kinds that use version metadata",
         ))
         .arg(
             Arg::new("json")
@@ -173,6 +173,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             soup: soup_source,
             policy: policy_source,
             threat_model: threat_model_source,
+            records_of_processing: records_of_processing_source,
         }),
         arguments,
     )
@@ -267,6 +268,70 @@ fn threat_model_source(
         });
     }
     Ok(quoin_dossier::ThreatModelSource { records, flow })
+}
+
+fn records_of_processing_source(
+    inputs: &quoin_dossier::Inputs,
+) -> Result<quoin_dossier::RecordsOfProcessingSource, quoin_dossier::SourceFailure> {
+    let modules = inputs
+        .modules
+        .iter()
+        .map(quoin_quire::ids::ModuleRoot::open)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| quoin_dossier::SourceFailure {
+            source: "records-of-processing records".to_owned(),
+            detail: format!("failed to open module: {error}"),
+        })?;
+    let selection = if modules.is_empty() {
+        quoin_quire::ModuleSelection::ScopeOrAmbient
+    } else {
+        quoin_quire::ModuleSelection::Closed(modules)
+    };
+    let records = quoin_quire::records::read(
+        &inputs.scope,
+        &selection,
+        &[
+            "processing_activity",
+            "connection",
+            "data_sink",
+            "part",
+            "data_classification",
+            "control",
+        ],
+    )
+    .map_err(|error| quoin_dossier::SourceFailure {
+        source: "records-of-processing records".to_owned(),
+        detail: format!("failed to read processing records: {error}"),
+    })?;
+    let scope = quoin_quire::ids::ScopeRoot::open(&inputs.scope).map_err(|error| {
+        quoin_dossier::SourceFailure {
+            source: "records-of-processing model facts".to_owned(),
+            detail: format!("failed to open scope: {error}"),
+        }
+    })?;
+    let (flow, notices) = quoin_quire::flow_report::compute(&quoin_quire::coverage::Request {
+        scope,
+        modules: selection,
+    })
+    .map_err(|error| quoin_dossier::SourceFailure {
+        source: "records-of-processing model facts".to_owned(),
+        detail: format!("failed to compute flow report: {error}"),
+    })?;
+    let module_notices = notices
+        .iter()
+        .filter(|notice| notice.kind == quoin_quire::NoticeKind::ModuleLoad)
+        .collect::<Vec<_>>();
+    if !module_notices.is_empty() {
+        return Err(quoin_dossier::SourceFailure {
+            source: "records-of-processing model facts".to_owned(),
+            detail: module_notices
+                .iter()
+                .map(|notice| notice.message.as_str())
+                .collect::<Vec<_>>()
+                .join("; "),
+        });
+    }
+    Ok(quoin_dossier::RecordsOfProcessingSource { records, flow })
 }
 
 /// Run against `registry`; a registry that could not be built is exit 2, so a

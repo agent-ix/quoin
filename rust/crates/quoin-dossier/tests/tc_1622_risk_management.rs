@@ -91,6 +91,7 @@ fn registry() -> quoin_dossier::Registry {
         soup: |_| Err(failure("SOUP")),
         policy: policy_source,
         threat_model: |_| panic!("unexpected threat-model source"),
+        records_of_processing: |_| panic!("unexpected records-of-processing source"),
     })
     .unwrap()
 }

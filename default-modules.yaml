@@ -39,7 +39,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: v0.34.0
+      ref: v0.35.0
 
   - name: spec-objects-business
     defaultEnabled: true
@@ -55,7 +55,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-architecture
       path: spec_objects_architecture
-      ref: v0.11.0
+      ref: v0.12.0
 
   - name: spec-objects-enterprise
     defaultEnabled: true
@@ -79,7 +79,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-security
       path: spec_objects_security
-      ref: v0.11.0
+      ref: v0.17.0
 
   - name: spec-objects-safety
     defaultEnabled: true

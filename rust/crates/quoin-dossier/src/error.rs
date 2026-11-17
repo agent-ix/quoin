@@ -20,6 +20,8 @@ pub enum DossierErrorCode {
     UnknownKind,
     /// `--version` is missing or blank. Exit 2.
     VersionRequired,
+    /// A selected document does not support the requested operation. Exit 2.
+    OperationUnsupported,
     /// A selected document needs `--as-of` and none was given. Exit 2.
     AsOfRequired,
     /// `--as-of` is not an RFC 3339 instant. Exit 2.
@@ -50,6 +52,7 @@ impl DossierErrorCode {
         match self {
             Self::UnknownKind => "DOSSIER_UNKNOWN_KIND",
             Self::VersionRequired => "DOSSIER_VERSION_REQUIRED",
+            Self::OperationUnsupported => "DOSSIER_OPERATION_UNSUPPORTED",
             Self::AsOfRequired => "DOSSIER_AS_OF_REQUIRED",
             Self::AsOfInvalid => "DOSSIER_AS_OF_INVALID",
             Self::OutUnwritable => "DOSSIER_OUT_UNWRITABLE",
@@ -68,6 +71,7 @@ impl DossierErrorCode {
         &[
             Self::UnknownKind,
             Self::VersionRequired,
+            Self::OperationUnsupported,
             Self::AsOfRequired,
             Self::AsOfInvalid,
             Self::OutUnwritable,
@@ -92,6 +96,7 @@ impl DossierErrorCode {
         match self {
             Self::UnknownKind
             | Self::VersionRequired
+            | Self::OperationUnsupported
             | Self::AsOfRequired
             | Self::AsOfInvalid
             | Self::OutUnwritable

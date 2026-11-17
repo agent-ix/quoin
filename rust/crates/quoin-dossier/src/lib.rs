@@ -19,6 +19,7 @@ mod export;
 mod gap;
 mod markdown;
 mod order;
+mod records_of_processing;
 mod registry;
 mod release_record;
 pub mod release_snapshot;
@@ -44,7 +45,7 @@ pub use export::{ExportOptions, export};
 pub use gap::{Gap, GapKind};
 pub use registry::{DocumentSpec, Generated, Generator, Inputs, Registry};
 pub use report::{Comparison, DocumentReport, Report, Status};
-pub use sources::{MatrixSource, RmmSource, Sources, ThreatModelSource};
+pub use sources::{MatrixSource, RecordsOfProcessingSource, RmmSource, Sources, ThreatModelSource};
 pub use threat_model::render_threat_model;
 
 /// The registry `quoin dossier` runs against.
@@ -89,6 +90,9 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
         Box::new(risk_plan::RiskPlanGenerator(sources.policy)),
         Box::new(release_record::ReleaseRecordGenerator),
         Box::new(threat_model::ThreatModelGenerator(sources.threat_model)),
+        Box::new(records_of_processing::RecordsOfProcessingGenerator(
+            sources.records_of_processing,
+        )),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -137,9 +141,9 @@ mod tests {
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_holds_the_eleven_documents() {
+    fn the_shipped_registry_holds_the_twelve_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 11);
+        assert_eq!(registry.specs().count(), 12);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -154,7 +158,8 @@ mod tests {
                 "risk-management",
                 "risk-management-plan",
                 "release-record",
-                "threat-model"
+                "threat-model",
+                "records-of-processing"
             ]
         );
     }
@@ -168,7 +173,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            16
+            17
         );
     }
 }

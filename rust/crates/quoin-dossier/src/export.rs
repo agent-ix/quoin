@@ -14,7 +14,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use crate::engine::{Rendered, render, report_with_comparison};
+#[cfg(test)]
+use crate::engine::render;
+use crate::engine::{Operation, Rendered, render_for, report_with_comparison};
 use crate::error::{DossierError, QuireFailure};
 use crate::registry::{Inputs, Registry};
 use crate::report::Report;
@@ -60,7 +62,7 @@ pub fn export(
     inputs: &Inputs,
     options: &ExportOptions,
 ) -> Result<Report, DossierError> {
-    let rendered = render(registry, kinds, out, inputs)?;
+    let rendered = render_for(registry, kinds, out, inputs, Operation::Export)?;
     let mut report = report_with_comparison(&rendered);
     if !report.differing().is_empty() {
         return Ok(report);
