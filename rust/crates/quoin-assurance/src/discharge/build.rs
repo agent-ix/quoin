@@ -10,9 +10,12 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::argument::js_trim_is_empty;
 use quoin_quire_types::{ClauseBinding, ClauseBindingOutcome};
 
-use super::parse::{current_attestation, current_decision_expiry, instant, parse_fact};
+use super::parse::{
+    current_attestation, current_decision_expiry, instant, parse_fact_with_blank_approval_ref,
+};
 use super::report::{
     BuildDischargeRequest, Checked, ClauseDischarge, DischargeBinding, DischargeFact,
     DischargeReport, DischargeSchemaVersion, DischargeState, UnusedDischargeFact, UnusedFactReason,
@@ -52,7 +55,18 @@ pub fn build_discharge_report_with_approval_requirements(
     // and reversing that would change which message a caller sees.
     let mut parsed_facts = Vec::with_capacity(request.facts.len());
     for value in &request.facts {
-        parsed_facts.push(parse_fact(value)?);
+        let fact = parse_fact_with_blank_approval_ref(value, true)?;
+        if let DischargeFact::Direct(direct) = &fact {
+            if direct
+                .approval_ref
+                .as_deref()
+                .is_some_and(js_trim_is_empty)
+                && !required_approval_clauses.contains(&direct.clause_id)
+            {
+                return reject("approvalRef must not be empty");
+            }
+        }
+        parsed_facts.push(fact);
     }
     let facts = index_facts(&parsed_facts)?;
     let mut partition = classify_binding_clauses(

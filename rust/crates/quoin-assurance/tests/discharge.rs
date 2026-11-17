@@ -168,6 +168,30 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
         Some("required approval reference is missing")
     );
 
+    for blank_reference in ["", " \t\n"] {
+        let mut blank_fact = direct();
+        blank_fact["approvalRef"] = serde_json::json!(blank_reference);
+        let open = build_discharge_report_with_approval_requirements(
+            &request(vec![blank_fact.clone()]),
+            &required,
+        )
+        .expect("blank approval references leave policy-required clauses open");
+        assert!(open.binding.direct.is_empty());
+        assert_eq!(open.binding.open[0].clause_id, "SYN-001");
+        assert_eq!(
+            open.binding.open[0].reason.as_deref(),
+            Some("required approval reference is missing")
+        );
+        assert!(matches!(
+            open.binding.open[0].fact.as_ref(),
+            Some(quoin_assurance::DischargeFact::Direct(direct))
+                if direct.approval_ref.as_deref() == Some(blank_reference)
+        ));
+
+        let generic = build_discharge_report(&request(vec![blank_fact]));
+        assert!(generic.is_err_and(|error| error.to_string().contains("approvalRef must not be empty")));
+    }
+
     let mut approved_fact = direct();
     let person_reference = "person://example.invalid/people/privacy-officer";
     approved_fact["approvalRef"] = serde_json::json!(person_reference);

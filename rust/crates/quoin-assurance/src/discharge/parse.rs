@@ -21,6 +21,18 @@ use super::report::{
 /// only THEN the exact-keys check. So a fact carrying both an unknown field
 /// and an empty `authority` is refused for the authority.
 pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
+    parse_fact_with_blank_approval_ref(value, false)
+}
+
+/// Parse a fact for policy-aware discharge classification.
+///
+/// A direct fact's blank `approvalRef` must reach the classifier so it can
+/// leave policy-required clauses open. The generic FR-046 path still rejects
+/// it, and this parser is only used by the policy-aware report builder.
+pub(super) fn parse_fact_with_blank_approval_ref(
+    value: &serde_json::Value,
+    allow_blank_approval_ref: bool,
+) -> Checked<DischargeFact> {
     let fact = object("discharge fact", Some(value))?;
     let kind = one_of_wire(fact.get("kind"), "kind", FactKind::all(), FactKind::as_str)?;
     let clause_id = string_value("clauseId", fact.get("clauseId"))?;
@@ -35,7 +47,13 @@ pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
             )?;
             let approval_ref = fact
                 .get("approvalRef")
-                .map(|value| string_value("approvalRef", Some(value)))
+                .map(|value| {
+                    if allow_blank_approval_ref {
+                        optional_string_value("approvalRef", Some(value))
+                    } else {
+                        string_value("approvalRef", Some(value))
+                    }
+                })
                 .transpose()?;
             Ok(DischargeFact::Direct(DirectDischargeFact {
                 clause_id,
@@ -85,6 +103,16 @@ pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
                 attestation,
             }))
         }
+    }
+}
+
+/// `optionalStringValue(name, value)`: a string without an emptiness policy.
+///
+/// Policy-aware callers decide whether an empty value is open work or invalid.
+fn optional_string_value(name: &str, value: Option<&serde_json::Value>) -> Checked<String> {
+    match value.and_then(serde_json::Value::as_str) {
+        Some(text) => Ok(text.to_owned()),
+        None => reject(format!("{name} must not be empty")),
     }
 }
 
