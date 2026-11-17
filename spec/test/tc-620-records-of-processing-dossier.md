@@ -11,7 +11,7 @@ relationships:
 
 ## Description
 
-Verify FR-207-AC-4: a covered sink retains both transfer gaps even when its location and a protecting control with safeguards are present.
+Verify FR-207-AC-4: a sink selected by the processing activity's security-owned `scopes` edge retains both transfer gaps even when its location and a protecting control with safeguards are present.
 
 ## Test Procedure
 

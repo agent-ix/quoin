@@ -11,7 +11,7 @@ relationships:
 
 ## Description
 
-Verify FR-207-AC-9: covered sinks with the same id in different repositories remain distinct, and a classification delivered to repo-a does not suppress repo-b's missing-category gap.
+Verify FR-207-AC-9: scoped sinks with the same id in different repositories remain distinct, and a classification delivered to repo-a does not suppress repo-b's missing-category gap.
 
 ## Test Procedure
 

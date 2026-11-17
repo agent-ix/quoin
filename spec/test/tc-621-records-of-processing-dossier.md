@@ -11,7 +11,7 @@ relationships:
 
 ## Description
 
-Verify FR-207-AC-5: the processor activity shows its own contact and controllers, each covered sink's kind under Art 30(2)(b), and any sink purpose separately.
+Verify FR-207-AC-5: the processor activity shows its own contact and controllers, each scoped sink's kind under Art 30(2)(b), and any sink purpose separately.
 
 ## Test Procedure
 
