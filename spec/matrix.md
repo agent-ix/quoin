@@ -9,6 +9,8 @@ relationships:
     type: "covers"
   - target: "ix://agent-ix/quoin/FR-207"
     type: "covers"
+  - target: "ix://agent-ix/quoin/FR-046"
+    type: "covers"
 ---
 
 # TM-001: Default module release pin coverage
@@ -17,6 +19,7 @@ relationships:
 
 | Functional Req | Acceptance Criteria | Test Cases | Status |
 | -------------- | ------------------- | ---------- | ------ |
+| FR-046 | FR-046-AC-9 | TC-626 | 🚧 |
 | FR-202 | FR-202-AC-1, FR-202-AC-2, FR-202-AC-3, FR-202-AC-4, FR-202-AC-5, FR-202-AC-6, FR-202-AC-7, FR-202-AC-8, FR-202-AC-9, FR-202-AC-10, FR-202-AC-11, FR-202-AC-12, FR-202-AC-13, FR-202-AC-14, FR-202-AC-15, FR-202-AC-16 | TC-601, TC-602, TC-603, TC-604, TC-605, TC-606, TC-607, TC-608, TC-609, TC-610, TC-611, TC-612, TC-613, TC-614, TC-615, TC-616 | ✅ |
 | FR-207 | FR-207-AC-1, FR-207-AC-2, FR-207-AC-3, FR-207-AC-4, FR-207-AC-5, FR-207-AC-6, FR-207-AC-7, FR-207-AC-8, FR-207-AC-9 | TC-617, TC-618, TC-619, TC-620, TC-621, TC-622, TC-623, TC-624, TC-625 | 🚧 |
 
@@ -50,3 +53,4 @@ relationships:
 | TC-623 | Missing flow report is reported without substitute model facts | Unit | FR-207-AC-7 | 🚧 |
 | TC-624 | Repeated generation is deterministic without release ceremony | Unit | FR-207-AC-8 | 🚧 |
 | TC-625 | Cross-repository sink identity and sink-specific classification gap | Unit | FR-207-AC-9 | 🚧 |
+| TC-626 | Direct approval references remain optional direct-fact metadata | Unit | FR-046-AC-9 | 🚧 |

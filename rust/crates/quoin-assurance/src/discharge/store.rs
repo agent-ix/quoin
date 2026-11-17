@@ -477,7 +477,7 @@ mod tests {
         assert!(!text.contains("SYN-005"), "no other clause is stored");
     }
 
-    #[trace("FR-046-AC-9")]
+    #[trace("FR-046-AC-9", "TC-626")]
     #[test]
     fn direct_approval_ref_is_validated_retained_and_stays_in_the_direct_population() {
         for approval_ref in ["", " \t\n"] {
