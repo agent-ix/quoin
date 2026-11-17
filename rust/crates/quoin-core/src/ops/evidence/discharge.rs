@@ -12,8 +12,10 @@ use std::path::Path;
 
 use quoin_assurance::{
     ClauseApprovalPolicy, DischargeStoreError, RecordDischargeRequest,
-    build_pack_requirements_mapping, build_requirements_mapping, discharge_report_from_store,
-    inward_completeness_from_store, record_discharge_facts, render_inward_completeness,
+    build_pack_requirements_mapping, build_requirements_mapping,
+    discharge_report_from_store_with_approval_requirements,
+    inward_completeness_from_store_with_approval_requirements,
+    record_discharge_facts_with_approval_requirements, render_inward_completeness,
     render_pack_requirements_mapping, render_requirements_mapping,
 };
 use quoin_quire_types::ClauseBindingReport;
@@ -88,6 +90,49 @@ fn map_store_error(error: DischargeStoreError, op: &'static str) -> CoreError {
     }
 }
 
+fn approval_requirements_for_binding(
+    modules: Option<&dyn crate::capabilities::ModuleHost>,
+    binding: &ClauseBindingReport,
+    op: &'static str,
+) -> Result<std::collections::BTreeSet<String>, CoreError> {
+    let Some(modules) = modules else {
+        return Ok(std::collections::BTreeSet::new());
+    };
+    let refused =
+        |detail: String| CoreError::new(CoreErrorCode::Refused, detail).with_context("op", op);
+    let installed = modules
+        .list(None)
+        .map_err(|error| refused(format!("installed modules cannot be listed: {error}")))?;
+    let mut owner = None;
+    for module in installed {
+        let policies = modules
+            .clause_approval_requirements(&module)
+            .map_err(|error| {
+                refused(format!(
+                    "module {} failed to load approval metadata: {error}",
+                    module.name
+                ))
+            })?;
+        for (set, required_clause_ids) in policies {
+            if set.authority.as_str() == binding.clause_set.authority
+                && set.id.as_str() == binding.clause_set.id
+                && set.version.as_str() == binding.clause_set.version
+            {
+                if owner.is_some() {
+                    return Err(refused(format!(
+                        "multiple installed modules declare clause set {}/{}/{}",
+                        binding.clause_set.authority,
+                        binding.clause_set.id,
+                        binding.clause_set.version
+                    )));
+                }
+                owner = Some(required_clause_ids);
+            }
+        }
+    }
+    Ok(owner.unwrap_or_default())
+}
+
 /// Answer an `evidence.record_discharge`.
 ///
 /// # Errors
@@ -109,12 +154,18 @@ pub fn record_discharge(
         binding: request.binding,
         facts: request.facts,
     };
+    let required_approval_clauses =
+        approval_requirements_for_binding(capabilities.modules, &record.binding, op)?;
 
     let host = host(capabilities, op)?;
     let root = host.store_root(Path::new(&request.repo));
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let recorded =
-            record_discharge_facts(source, &record).map_err(|e| map_store_error(e, op))?;
+        let recorded = record_discharge_facts_with_approval_requirements(
+            source,
+            &record,
+            &required_approval_clauses,
+        )
+        .map_err(|e| map_store_error(e, op))?;
         value(&RecordDischargePayload {
             recorded: recorded
                 .into_iter()
@@ -145,11 +196,18 @@ pub fn discharge_report(
     bound(request, op, MAX_DISCHARGE_BYTES)?;
     let request: DischargeReportRequest = parse(request, op)?;
     check_scalar(op, "repo", &request.repo)?;
+    let required_approval_clauses =
+        approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let report = discharge_report_from_store(&*source, &request.binding, &request.as_of)
-            .map_err(|e| map_store_error(e, op))?;
+        let report = discharge_report_from_store_with_approval_requirements(
+            &*source,
+            &request.binding,
+            &request.as_of,
+            &required_approval_clauses,
+        )
+        .map_err(|e| map_store_error(e, op))?;
         value(&report)
     })?;
     Ok(Response::ok(payload))
@@ -183,12 +241,18 @@ pub fn inward_completeness(
     bound(request, op, MAX_DISCHARGE_BYTES)?;
     let request: DischargeReportRequest = parse(request, op)?;
     check_scalar(op, "repo", &request.repo)?;
+    let required_approval_clauses =
+        approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let completeness =
-            inward_completeness_from_store(&*source, &request.binding, &request.as_of)
-                .map_err(|e| map_store_error(e, op))?;
+        let completeness = inward_completeness_from_store_with_approval_requirements(
+            &*source,
+            &request.binding,
+            &request.as_of,
+            &required_approval_clauses,
+        )
+        .map_err(|e| map_store_error(e, op))?;
         value(&InwardCompletenessPayload {
             rendered: render_inward_completeness(&completeness),
             completeness,
@@ -221,11 +285,18 @@ pub fn requirements_matrix(
     bound(request, op, MAX_DISCHARGE_BYTES)?;
     let request: DischargeReportRequest = parse(request, op)?;
     check_scalar(op, "repo", &request.repo)?;
+    let required_approval_clauses =
+        approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let report = discharge_report_from_store(&*source, &request.binding, &request.as_of)
-            .map_err(|e| map_store_error(e, op))?;
+        let report = discharge_report_from_store_with_approval_requirements(
+            &*source,
+            &request.binding,
+            &request.as_of,
+            &required_approval_clauses,
+        )
+        .map_err(|e| map_store_error(e, op))?;
         let matrix = build_requirements_mapping(&request.binding, &report)
             .map_err(|e| map_store_error(DischargeStoreError::Discharge(e), op))?;
         value(&RequirementsMatrixPayload {

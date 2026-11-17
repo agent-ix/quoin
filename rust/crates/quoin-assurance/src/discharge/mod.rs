@@ -111,5 +111,7 @@ pub use store::{
     RecordDischargeRequest, RecordedFact, StoreRefusal, StoredDischargeFact,
     StoredFactSchemaVersion, discharge_report_from_store,
     discharge_report_from_store_with_approval_requirements, inward_completeness_from_store,
-    read_discharge_facts, record_discharge_facts,
+    inward_completeness_from_store_with_approval_requirements, read_discharge_facts,
+    read_discharge_facts_with_approval_requirements, record_discharge_facts,
+    record_discharge_facts_with_approval_requirements,
 };

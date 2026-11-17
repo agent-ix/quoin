@@ -8,6 +8,7 @@
 //! [`super::report`].
 
 use crate::argument::{instant_epoch_millis, js_trim_is_empty};
+use std::collections::BTreeSet;
 
 use super::report::{
     Checked, DirectDischargeFact, DischargeAttestation, DischargeFact, DispositionDecision,
@@ -21,7 +22,7 @@ use super::report::{
 /// only THEN the exact-keys check. So a fact carrying both an unknown field
 /// and an empty `authority` is refused for the authority.
 pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
-    parse_fact_with_blank_approval_ref(value, false)
+    parse_fact_with_approval_requirements(value, &BTreeSet::new())
 }
 
 /// Parse a fact for policy-aware discharge classification.
@@ -29,9 +30,9 @@ pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
 /// A direct fact's blank `approvalRef` must reach the classifier so it can
 /// leave policy-required clauses open. The generic FR-046 path still rejects
 /// it, and this parser is only used by the policy-aware report builder.
-pub(super) fn parse_fact_with_blank_approval_ref(
+pub(super) fn parse_fact_with_approval_requirements(
     value: &serde_json::Value,
-    allow_blank_approval_ref: bool,
+    required_approval_clauses: &BTreeSet<String>,
 ) -> Checked<DischargeFact> {
     let fact = object("discharge fact", Some(value))?;
     let kind = one_of_wire(fact.get("kind"), "kind", FactKind::all(), FactKind::as_str)?;
@@ -48,7 +49,7 @@ pub(super) fn parse_fact_with_blank_approval_ref(
             let approval_ref = fact
                 .get("approvalRef")
                 .map(|value| {
-                    if allow_blank_approval_ref {
+                    if required_approval_clauses.contains(&clause_id) {
                         optional_string_value("approvalRef", Some(value))
                     } else {
                         string_value("approvalRef", Some(value))

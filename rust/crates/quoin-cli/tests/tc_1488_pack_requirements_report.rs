@@ -252,6 +252,18 @@ fn direct(clause: &str) -> serde_json::Value {
 /// Store `facts` for the set `(set, version)` of the fixture authority.
 /// Returns the stored file paths printed by the command.
 fn record(env: &Env, repo: &Path, set: &str, version: &str, facts: &[serde_json::Value]) -> String {
+    let output = record_output(env, repo, set, version, facts);
+    assert!(output.status.success(), "{}", text(&output));
+    String::from_utf8(output.stdout).unwrap()
+}
+
+fn record_output(
+    env: &Env,
+    repo: &Path,
+    set: &str,
+    version: &str,
+    facts: &[serde_json::Value],
+) -> Output {
     let binding = serde_json::json!({
         "schemaVersion": "clause-binding-v1",
         "clauseSet": {"authority": "example.invalid", "id": set, "version": version},
@@ -268,7 +280,7 @@ fn record(env: &Env, repo: &Path, set: &str, version: &str, facts: &[serde_json:
         serde_json::Value::from(facts.to_vec()).to_string(),
     )
     .unwrap();
-    let output = env.run(&[
+    env.run(&[
         "evidence",
         "record-discharge",
         "--repo",
@@ -277,9 +289,7 @@ fn record(env: &Env, repo: &Path, set: &str, version: &str, facts: &[serde_json:
         binding_path.to_str().unwrap(),
         "--facts",
         facts_path.to_str().unwrap(),
-    ]);
-    assert!(output.status.success(), "{}", text(&output));
-    String::from_utf8(output.stdout).unwrap()
+    ])
 }
 
 fn stdout(output: &Output) -> String {
@@ -473,6 +483,28 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
         "required approval reference is missing"
     );
     assert_eq!(row("no-role")["compliance"], "compliant");
+
+    let mut blank_required_approval = direct("art-35(1)");
+    blank_required_approval["approvalRef"] = serde_json::json!(" \t\n");
+    record(&env, &env.repo, "gdpr", "1.0.0", &[blank_required_approval]);
+    let blank_report = json(&env.report(&["--json"]));
+    let blank_rows = blank_report["matrices"][0]["rows"].as_array().unwrap();
+    let art_35 = blank_rows
+        .iter()
+        .find(|row| row["clauseId"] == "art-35(1)")
+        .unwrap();
+    assert_eq!(art_35["compliance"], "undischarged");
+    assert_eq!(art_35["reason"], "required approval reference is missing");
+
+    let mut blank_generic_approval = direct("no-role");
+    blank_generic_approval["approvalRef"] = serde_json::json!("");
+    let rejected = record_output(&env, &env.repo, "gdpr", "1.0.0", &[blank_generic_approval]);
+    assert!(!rejected.status.success(), "{}", text(&rejected));
+    assert!(
+        stderr(&rejected).contains("approvalRef must not be empty"),
+        "{}",
+        text(&rejected)
+    );
 
     let mut approved = direct("art-35(1)");
     approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
