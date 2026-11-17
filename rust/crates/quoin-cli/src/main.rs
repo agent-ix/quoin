@@ -11,6 +11,7 @@
 
 mod advise;
 mod analysis_evidence;
+mod analysis_package;
 mod anomaly;
 mod assurance;
 mod catalog;
