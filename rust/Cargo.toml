@@ -164,7 +164,7 @@ semver = "=1.0.28"
 tar = "=0.4.46"
 tempfile = "=3.27.0"
 url = "=2.5.8"
-zip = { version = "=9.0.0", default-features = false, features = ["deflate"] }
+zip = { version = "=9.0.5", default-features = false, features = ["deflate"] }
 
 [profile.release]
 lto = "thin"

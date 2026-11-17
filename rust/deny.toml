@@ -299,6 +299,12 @@ skip = [
 
 [advisories]
 version = 2
+# chrono is pulled only by filament-verification-contracts, which Quoin does
+# not own. Keep the exception to that crate and remove it when upstream drops
+# chrono, or review and renew by 2027-02-17, whichever comes first.
+ignore = [
+    { id = "RUSTSEC-2026-0543", reason = "chrono is reached only through filament-verification-contracts@0.1.0 in this graph; remove when upstream replaces chrono or review by 2027-02-17, whichever comes first" },
+]
 
 [sources]
 unknown-registry = "deny"
