@@ -98,7 +98,9 @@ fn render_activity(
     body: &mut String,
     gaps: &mut Vec<Gap>,
 ) -> bool {
-    let activity_fact = facts.get(&(None, activity.id.as_str())).map(|(_, fact)| *fact);
+    let activity_fact = facts
+        .get(&(None, activity.id.as_str()))
+        .map(|(_, fact)| *fact);
     let mut model_facts_unavailable = activity_fact.is_none();
     let title = value_text(field(activity, "title").unwrap_or(&Value::Null))
         .unwrap_or_else(|| activity.id.clone());
@@ -152,41 +154,42 @@ fn render_activity(
         model_facts_unavailable = true;
     }
 
-    if field(activity, "role").and_then(Value::as_str) == Some("processor") {
-        render_processor_activity(
-            activity,
-            &sinks,
-            &covered_elements,
+    {
+        let mut context = ActivityContext {
             facts,
-            &mut sources,
+            sources: &mut sources,
             body,
             gaps,
-        );
-    } else {
-        render_controller_activity(
-            activity,
-            &sinks,
-            &covered_elements,
-            &classification_content,
-            &missing_classification,
-            facts,
-            &mut sources,
-            body,
-            gaps,
-        );
+        };
+        if field(activity, "role").and_then(Value::as_str) == Some("processor") {
+            render_processor_activity(activity, &sinks, &covered_elements, &mut context);
+        } else {
+            render_controller_activity(
+                activity,
+                &sinks,
+                &covered_elements,
+                &classification_content,
+                &missing_classification,
+                &mut context,
+            );
+        }
     }
     append_sources(body, sources);
     model_facts_unavailable
+}
+
+struct ActivityContext<'facts, 'state> {
+    facts: &'facts BTreeMap<(Option<&'facts str>, &'facts str), (&'facts str, &'facts FlowFact)>,
+    sources: &'state mut BTreeSet<String>,
+    body: &'state mut String,
+    gaps: &'state mut Vec<Gap>,
 }
 
 fn render_processor_activity(
     activity: &Document,
     sinks: &[&FlowFact],
     covered_elements: &[&FlowFact],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &FlowFact)>,
-    sources: &mut BTreeSet<String>,
-    body: &mut String,
-    gaps: &mut Vec<Gap>,
+    context: &mut ActivityContext<'_, '_>,
 ) {
     let own = field(activity, "processor")
         .and_then(Value::as_str)
@@ -201,12 +204,16 @@ fn render_processor_activity(
             .map(|controller| format!("Controller: {}", cell(&controller))),
     );
     append_authored_fields(&mut identity, activity, &["representative", "dpo_contact"]);
-    row(body, "(a) Identity and contacts", &identity.join("; "));
+    row(
+        context.body,
+        "(a) Identity and contacts",
+        &identity.join("; "),
+    );
 
     let mut categories = Vec::new();
     let controllers = values(field(activity, "controller").unwrap_or(&Value::Null));
     for sink in sinks {
-        sources.insert(sink.id.clone());
+        context.sources.insert(sink.id.clone());
         if let Some(kind) = field_fact(sink, "kind").and_then(Value::as_str) {
             for controller in &controllers {
                 categories.push(format!(
@@ -218,44 +225,45 @@ fn render_processor_activity(
             }
         } else {
             add_gap(
-                gaps,
+                context.gaps,
                 GapKind::RecipientCategoriesUnstated,
                 &sink.id,
                 "kind is unstated",
             );
         }
     }
-    let context = sinks
+    let purpose_context = sinks
         .iter()
         .filter_map(|sink| {
             field_fact(sink, "purpose")
                 .and_then(value_text)
                 .map(|purpose| {
-                    sources.insert(sink.id.clone());
+                    context.sources.insert(sink.id.clone());
                     format!("{}: {}", cell(&sink.id), cell(&purpose))
                 })
         })
         .collect::<Vec<_>>();
     row(
-        body,
+        context.body,
         "(b) Categories of processing",
         &join_or_gap(&categories),
     );
-    if !context.is_empty() {
-        row(body, "Purpose context", &context.join("; "));
+    if !purpose_context.is_empty() {
+        row(context.body, "Purpose context", &purpose_context.join("; "));
     }
-    let (transfer, transfer_gaps) = transfer_entry(sinks, activity, sources);
-    gaps.extend(transfer_gaps);
+    let (transfer, transfer_gaps) = transfer_entry(sinks, activity, context.sources);
+    context.gaps.extend(transfer_gaps);
     row(
-        body,
+        context.body,
         "(c) Transfers to third countries and safeguards",
         &transfer,
     );
-    let (security, security_gaps) = security_entry(covered_elements, facts, sources);
+    let (security, security_gaps) =
+        security_entry(covered_elements, context.facts, context.sources);
     let security = with_security_gaps(&security, &security_gaps);
-    gaps.extend(security_gaps);
+    context.gaps.extend(security_gaps);
     row(
-        body,
+        context.body,
         "(d) Technical and organisational security measures",
         &security,
     );
@@ -267,10 +275,7 @@ fn render_controller_activity(
     covered_elements: &[&FlowFact],
     classification_content: &[String],
     missing_classification: &[(String, String)],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &FlowFact)>,
-    sources: &mut BTreeSet<String>,
-    body: &mut String,
-    gaps: &mut Vec<Gap>,
+    context: &mut ActivityContext<'_, '_>,
 ) {
     let controller = field(activity, "controller")
         .and_then(value_text)
@@ -281,31 +286,44 @@ fn render_controller_activity(
         activity,
         &["joint_controllers", "representative", "dpo_contact"],
     );
-    row(body, "(a) Identity and contacts", &identity.join("; "));
-    row(body, "(b) Purposes", &authored(activity, "purposes"));
     row(
-        body,
+        context.body,
+        "(a) Identity and contacts",
+        &identity.join("; "),
+    );
+    row(
+        context.body,
+        "(b) Purposes",
+        &authored(activity, "purposes"),
+    );
+    row(
+        context.body,
         "(c) Categories of data subjects",
         &authored(activity, "data_subject_categories"),
     );
     for (id, detail) in missing_classification {
-        add_gap(gaps, GapKind::PersonalDataCategoriesUnstated, id, detail);
+        add_gap(
+            context.gaps,
+            GapKind::PersonalDataCategoriesUnstated,
+            id,
+            detail,
+        );
         let _ = writeln!(
-            body,
+            context.body,
             "GAP: (c) categories of personal data — {} {}",
             cell(id),
             cell(detail)
         );
     }
     row(
-        body,
+        context.body,
         "(c) Categories of personal data",
         &join_or_gap(classification_content),
     );
 
     let mut recipients = Vec::new();
     for sink in sinks {
-        sources.insert(sink.id.clone());
+        context.sources.insert(sink.id.clone());
         let processor = field_fact(sink, "processor").and_then(value_text);
         let kind = field_fact(sink, "kind").and_then(value_text);
         let audience = field_fact(sink, "audience_roles")
@@ -313,7 +331,7 @@ fn render_controller_activity(
             .unwrap_or_default();
         if processor.is_none() || kind.is_none() || audience.is_empty() {
             add_gap(
-                gaps,
+                context.gaps,
                 GapKind::RecipientCategoriesUnstated,
                 &sink.id,
                 "processor, kind or audience_roles is unstated",
@@ -328,27 +346,28 @@ fn render_controller_activity(
         ));
     }
     row(
-        body,
+        context.body,
         "(d) Categories of recipients",
         &join_or_gap(&recipients),
     );
-    let (transfer, transfer_gaps) = transfer_entry(sinks, activity, sources);
-    gaps.extend(transfer_gaps);
+    let (transfer, transfer_gaps) = transfer_entry(sinks, activity, context.sources);
+    context.gaps.extend(transfer_gaps);
     row(
-        body,
+        context.body,
         "(e) Transfers to third countries and safeguards",
         &transfer,
     );
     row(
-        body,
+        context.body,
         "(f) Time limits for erasure",
         &authored(activity, "retention"),
     );
-    let (security, security_gaps) = security_entry(covered_elements, facts, sources);
+    let (security, security_gaps) =
+        security_entry(covered_elements, context.facts, context.sources);
     let security = with_security_gaps(&security, &security_gaps);
-    gaps.extend(security_gaps);
+    context.gaps.extend(security_gaps);
     row(
-        body,
+        context.body,
         "(g) Technical and organisational security measures",
         &security,
     );
@@ -373,9 +392,12 @@ fn facts_by_id(flow: &FlowReport) -> BTreeMap<(Option<&str>, &str), (&str, &Flow
     flow.facts
         .iter()
         .flat_map(|(kind, facts)| {
-            facts
-                .iter()
-                .map(move |fact| ((fact.repo.as_deref(), fact.id.as_str()), (kind.as_str(), fact)))
+            facts.iter().map(move |fact| {
+                (
+                    (fact.repo.as_deref(), fact.id.as_str()),
+                    (kind.as_str(), fact),
+                )
+            })
         })
         .collect()
 }
@@ -1028,8 +1050,7 @@ mod tests {
         assert_eq!(generated, render(&records, Some(&flow)));
         let repeated = render(&records, Some(&flow));
         let json_output = |generated: &Generated| {
-            serde_json::to_vec(&json!({"body": generated.body, "gaps": generated.gaps}))
-                .unwrap()
+            serde_json::to_vec(&json!({"body": generated.body, "gaps": generated.gaps})).unwrap()
         };
         assert_eq!(json_output(&generated), json_output(&repeated));
         assert_eq!(
