@@ -50,13 +50,13 @@ quoin-yaml = { workspace = true }
 quoin-quire = { workspace = true }
 quoin-quire-types = { workspace = true }
 quoin-risk-advice = { workspace = true }
+filament-contract-model = { workspace = true }
 thiserror = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
 semver = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
 tempfile = { workspace = true }
-filament-contract-model = { workspace = true }
 
 [dev-dependencies]
 # The stub generators the dossier command tests drive (PLAT-1614); the feature
@@ -68,6 +68,7 @@ quoin-assurance = { workspace = true, features = ["schema"] }
 quoin-jsonschema = { workspace = true }
 schemars = { workspace = true }
 quire-fixtures = { workspace = true }
+quire-canonical = { workspace = true }
 filament-analyze = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }

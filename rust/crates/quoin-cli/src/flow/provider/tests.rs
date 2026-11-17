@@ -227,7 +227,7 @@ fn analysis_claim_spans_bind_only_to_checked_draft_and_approved_rules() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-16")]
+#[trace("VER-109-AC-1", "FR-189-AC-24", "FR-189-AC-26")]
 #[test]
 fn analysis_invariant_uses_valid_package_and_draft_only_selection() {
     let (directory, request, context) = formalization_fixture();
@@ -235,7 +235,7 @@ fn analysis_invariant_uses_valid_package_and_draft_only_selection() {
         ("draft-symbol", "qsl/rule.native"),
         ("approved-symbol", "qsl/approved.native"),
     ];
-    let (package, spans) = contract_analysis_package(directory.path(), &claims);
+    let (package, spans) = native_analysis_package(directory.path(), &claims);
     let draft = spans.first().expect("draft span");
     let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
     let status = status_for_rules(
@@ -291,10 +291,82 @@ fn analysis_invariant_uses_valid_package_and_draft_only_selection() {
             .and_then(Value::as_str),
         Some("qsl/rule.native")
     );
+    let report_paths = result
+        .get("reports")
+        .and_then(Value::as_array)
+        .expect("report paths");
+    let report_path = report_paths
+        .first()
+        .and_then(Value::as_str)
+        .expect("consistency report path");
+    let report: Value =
+        serde_json::from_slice(&fs::read(report_path).expect("differential report"))
+            .expect("differential report JSON");
+    assert_eq!(
+        report
+            .pointer("/selection/selected")
+            .and_then(Value::as_array),
+        Some(&vec![json!("claim-0")])
+    );
+    assert_eq!(
+        report
+            .pointer("/selection/excluded")
+            .and_then(Value::as_array),
+        Some(&vec![json!("claim-1")])
+    );
+    let report_dir = result
+        .get("report_directory")
+        .and_then(Value::as_str)
+        .expect("report directory");
+    let converted: Value = serde_json::from_slice(
+        &fs::read(Path::new(report_dir).join("analysis-package.json"))
+            .expect("lowered native package"),
+    )
+    .expect("lowered package JSON");
+    assert_eq!(
+        converted.get("contract_version").and_then(Value::as_str),
+        Some("filament.contract-package/v1")
+    );
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-17")]
+#[trace("FR-189-AC-16")]
+#[test]
+fn analysis_invariant_keeps_contract_package_v1_input_supported() {
+    let (directory, request, context) = formalization_fixture();
+    let claims = [("draft-symbol", "qsl/rule.native")];
+    let (package, spans) = contract_analysis_package(directory.path(), &claims);
+    let draft = spans.first().expect("draft span");
+    let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
+    let status = status_for_rules(directory.path(), &[status_rule(draft, "draft")]);
+    let (analyzer, log, _) = analyzer_stub(directory.path(), &[("consistency", "satisfied")]);
+    let z3 = executable(directory.path(), "z3", "exit 0");
+    let cvc5 = executable(directory.path(), "cvc5", "exit 0");
+    let result = analysis_consistent_with_tools(
+        &request,
+        &context,
+        &analysis_tools(&status, &analyzer, &z3, &cvc5),
+    )
+    .expect("contract package v1 remains accepted");
+    assert_eq!(
+        fs::read_to_string(log)
+            .expect("mode log")
+            .lines()
+            .collect::<Vec<_>>(),
+        ["consistency"]
+    );
+    let report_dir = result
+        .get("report_directory")
+        .and_then(Value::as_str)
+        .expect("report directory");
+    assert!(
+        !Path::new(report_dir).join("analysis-package.json").exists(),
+        "existing v1 input remains the analyzer package"
+    );
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-17", "FR-189-AC-27")]
 #[test]
 fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages() {
     let (directory, mut request, context) = formalization_fixture();
@@ -310,10 +382,16 @@ fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages()
     let unreadable = directory.path().join("missing-package.json");
     let malformed = directory.path().join("malformed-package.json");
     let wrong_protocol = directory.path().join("wrong-protocol.json");
+    let refused_checked = directory.path().join("refused-checked-package.json");
     fs::write(&malformed, "{").expect("malformed package");
     fs::write(&wrong_protocol, r#"{"contract_version":"other/v1"}"#)
         .expect("wrong protocol package");
-    for package in [&unreadable, &malformed, &wrong_protocol] {
+    fs::write(
+        &refused_checked,
+        include_bytes!("../../../tests/fixtures/formal-rules/checked-package-v2-invalid.json"),
+    )
+    .expect("refused checked package");
+    for package in [&unreadable, &malformed, &wrong_protocol, &refused_checked] {
         request.analysis_package = Some(package.to_string_lossy().into_owned());
         let failure = analysis_consistent_with_tools(
             &request,
@@ -322,8 +400,21 @@ fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages()
         )
         .expect_err("invalid package fails closed before analysis");
         assert_eq!(failure.code.to_string(), "analysis_package_invalid");
+        if package == &refused_checked {
+            assert!(failure.message.contains("checked package was refused"));
+        }
     }
     assert!(!marker.exists());
+    assert!(
+        fs::read_dir(&context.config_root)
+            .expect("config root")
+            .filter_map(Result::ok)
+            .all(|entry| !entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("quoin-analysis-")),
+        "refused input must not create an analyzer report directory"
+    );
 }
 
 #[cfg(unix)]
@@ -339,7 +430,7 @@ fn analysis_package_reader_catalog_failure_is_not_a_package_refusal() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-18")]
+#[trace("FR-189-AC-18", "FR-189-AC-25")]
 #[test]
 fn analysis_invariant_rejects_claims_outside_the_checked_draft_and_approved_set() {
     let (directory, request, context) = formalization_fixture();
@@ -347,7 +438,7 @@ fn analysis_invariant_rejects_claims_outside_the_checked_draft_and_approved_set(
         ("draft-symbol", "qsl/rule.native"),
         ("foreign-symbol", "qsl/foreign.native"),
     ];
-    let (package, spans) = contract_analysis_package(directory.path(), &claims);
+    let (package, spans) = native_analysis_package(directory.path(), &claims);
     let first = span_at(&spans, 0);
     let second = span_at(&spans, 1);
     let request = analysis_request(request, &package, std::slice::from_ref(&first.0));
@@ -387,7 +478,7 @@ fn analysis_invariant_fails_with_contradiction_classification() {
         ("draft-symbol", "qsl/rule.native"),
         ("approved-symbol", "qsl/approved.native"),
     ];
-    let (package, spans) = contract_analysis_package(directory.path(), &claims);
+    let (package, spans) = native_analysis_package(directory.path(), &claims);
     let draft = spans.first().expect("draft span");
     let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
     let status = status_for_rules(
@@ -436,7 +527,7 @@ fn analysis_invariant_classifies_redundancy_or_consistency_for_one_draft() {
             ("draft-symbol", "qsl/rule.native"),
             ("approved-symbol", "qsl/approved.native"),
         ];
-        let (package, spans) = contract_analysis_package(directory.path(), &claims);
+        let (package, spans) = native_analysis_package(directory.path(), &claims);
         let draft = spans.first().expect("draft span");
         let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
         let status = status_for_rules(
@@ -486,7 +577,7 @@ fn analysis_invariant_compares_multi_draft_without_redundancy_mode() {
         ("draft-two", "qsl/rule.native"),
         ("approved-peer", "qsl/approved.native"),
     ];
-    let (package, spans) = contract_analysis_package(directory.path(), &claims);
+    let (package, spans) = native_analysis_package(directory.path(), &claims);
     let request = analysis_request(
         request,
         &package,
@@ -536,7 +627,7 @@ fn analysis_invariant_compares_multi_draft_without_redundancy_mode() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-22")]
+#[trace("FR-189-AC-22", "FR-189-AC-28")]
 #[test]
 fn analysis_invariant_fails_closed_for_disagreement_and_unavailable_reports() {
     for nonconclusive in ["disagreement", "unavailable"] {
@@ -545,7 +636,7 @@ fn analysis_invariant_fails_closed_for_disagreement_and_unavailable_reports() {
             ("draft-symbol", "qsl/rule.native"),
             ("approved-symbol", "qsl/approved.native"),
         ];
-        let (package, spans) = contract_analysis_package(directory.path(), &claims);
+        let (package, spans) = native_analysis_package(directory.path(), &claims);
         let draft = spans.first().expect("draft span");
         let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
         let status = status_for_rules(
@@ -583,7 +674,7 @@ fn analysis_invariant_stops_after_a_self_inconsistent_draft() {
         ("draft-symbol", "qsl/rule.native"),
         ("approved-symbol", "qsl/approved.native"),
     ];
-    let (package, spans) = contract_analysis_package(directory.path(), &claims);
+    let (package, spans) = native_analysis_package(directory.path(), &claims);
     let draft = spans.first().expect("draft span");
     let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
     let status = status_for_rules(
@@ -727,8 +818,11 @@ fn checked_analysis_graph(claims: &[(&str, &str)]) -> (Value, Vec<ExpectedClaimS
 #[cfg(unix)]
 fn checked_analysis_package(claims: &[(&str, &str)]) -> (Vec<u8>, Vec<ExpectedClaimSpan>) {
     let (checked, expected) = checked_analysis_graph(claims);
-    let id = |label: &str| json!({"package":"test/flow","path":[label],"ordinal":0});
-    let checked_bytes = serde_json::to_vec(&checked).expect("checked package JSON");
+    let checked_bytes = quire_canonical::to_vec(
+        &checked,
+        quire_canonical::Limits::new(CheckedPackageReadLimits::bounded().bytes),
+    )
+    .expect("checked package canonical JSON");
     let mut evidence = CheckedPackageEvidence::new();
     evidence.support_feature("filament.value.complete/v1");
     let checked = match CheckedPackageV2::read(
@@ -740,12 +834,48 @@ fn checked_analysis_package(claims: &[(&str, &str)]) -> (Vec<u8>, Vec<ExpectedCl
         other => Err(format!("checked package fixture rejected: {other:?}")),
     }
     .expect("checked package fixture admitted");
+    drop(checked);
+    (checked_bytes, expected)
+}
+
+#[cfg(unix)]
+fn native_analysis_package(
+    directory: &Path,
+    claims: &[(&str, &str)],
+) -> (PathBuf, Vec<ExpectedClaimSpan>) {
+    let (package, expected) = checked_analysis_package(claims);
+    let path = directory.join("analysis-package.json");
+    fs::write(&path, package).expect("write analysis package");
+    (path, expected)
+}
+
+#[cfg(unix)]
+fn contract_analysis_package(
+    directory: &Path,
+    claims: &[(&str, &str)],
+) -> (PathBuf, Vec<ExpectedClaimSpan>) {
+    let (checked_bytes, expected) = checked_analysis_package(claims);
+    let mut evidence = CheckedPackageEvidence::new();
+    evidence.support_feature("filament.value.complete/v1");
+    let checked = match CheckedPackageV2::read(
+        &checked_bytes,
+        CheckedPackageReadLimits::bounded(),
+        &evidence,
+    ) {
+        CheckedPackageV2ReadResult::Admitted(package) => Ok(*package),
+        other => Err(format!("checked package fixture rejected: {other:?}")),
+    };
+    let checked = checked.expect("checked package fixture admitted");
     let requested = claims
         .iter()
         .enumerate()
         .map(|(index, _)| {
-            serde_json::from_value::<CheckedNodeId>(id(&format!("claim/{index}")))
-                .expect("claim node id")
+            serde_json::from_value::<CheckedNodeId>(json!({
+                "package": "test/flow",
+                "path": [format!("claim/{index}")],
+                "ordinal": 0
+            }))
+            .expect("claim node id")
         })
         .collect::<Vec<_>>();
     let profile = CompleteLoweringProfileV2 {
@@ -770,17 +900,8 @@ fn checked_analysis_package(claims: &[(&str, &str)]) -> (Vec<u8>, Vec<ExpectedCl
         .canonical_bytes()
         .expect("canonical contract package")
         .to_vec();
-    (package, expected)
-}
-
-#[cfg(unix)]
-fn contract_analysis_package(
-    directory: &Path,
-    claims: &[(&str, &str)],
-) -> (PathBuf, Vec<ExpectedClaimSpan>) {
-    let (package, expected) = checked_analysis_package(claims);
-    let path = directory.join("analysis-package.json");
-    fs::write(&path, package).expect("write analysis package");
+    let path = directory.join("contract-analysis-package.json");
+    fs::write(&path, package).expect("write contract package");
     (path, expected)
 }
 
@@ -799,13 +920,13 @@ fn analyzer_stub(directory: &Path, outcomes: &[(&str, &str)]) -> (PathBuf, PathB
     for (mode, status) in outcomes {
         let branch = match *status {
             "satisfied" => {
-                "printf '{\"analysisKind\":\"%s\",\"differential\":{\"disposition\":\"agreement\",\"agreedStatus\":\"satisfied\"}}' \"$mode\" > \"$output\"; exit 0"
+                "printf '{\"analysisKind\":\"%s\",\"differential\":{\"disposition\":\"agreement\",\"agreedStatus\":\"satisfied\"},\"selection\":{\"selected\":[\"claim-0\"],\"excluded\":[\"claim-1\"]}}' \"$mode\" > \"$output\"; exit 0"
             }
             "refuted" => {
-                "printf '{\"analysisKind\":\"%s\",\"differential\":{\"disposition\":\"agreement\",\"agreedStatus\":\"refuted\"}}' \"$mode\" > \"$output\"; exit 1"
+                "printf '{\"analysisKind\":\"%s\",\"differential\":{\"disposition\":\"agreement\",\"agreedStatus\":\"refuted\"},\"selection\":{\"selected\":[\"claim-0\"],\"excluded\":[\"claim-1\"]}}' \"$mode\" > \"$output\"; exit 1"
             }
             "disagreement" => {
-                "printf '{\"analysisKind\":\"%s\",\"differential\":{\"disposition\":\"disagreement\",\"agreedStatus\":null}}' \"$mode\" > \"$output\"; exit 3"
+                "printf '{\"analysisKind\":\"%s\",\"differential\":{\"disposition\":\"disagreement\",\"agreedStatus\":null},\"selection\":{\"selected\":[\"claim-0\"],\"excluded\":[\"claim-1\"]}}' \"$mode\" > \"$output\"; exit 3"
             }
             _ => "exit 4",
         };

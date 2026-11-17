@@ -19,7 +19,7 @@ use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::{core_runtime, invocation};
+use crate::{analysis_package, core_runtime, invocation};
 
 const LENSES: [&str; 7] = [
     "failure-domain",
@@ -681,6 +681,7 @@ struct AnalysisTools<'a> {
 
 struct PreparedAnalysis {
     package_path: String,
+    converted_package: Option<Vec<u8>>,
     drafts: Vec<ClaimSpan>,
     peers: Vec<ClaimSpan>,
 }
@@ -712,7 +713,7 @@ fn analysis_consistent_with_tools(
     context: &Context,
     tools: &AnalysisTools<'_>,
 ) -> Result<BTreeMap<String, Value>, Failure> {
-    let prepared = prepare_analysis(request, context, tools.status)?;
+    let mut prepared = prepare_analysis(request, context, tools.status)?;
     let trust = formal_rule_trust(request)?;
     let report_dir = tempfile::Builder::new()
         .prefix("quoin-analysis-")
@@ -724,6 +725,16 @@ fn analysis_consistent_with_tools(
             )
         })?
         .keep();
+    if let Some(bytes) = prepared.converted_package.take() {
+        let package_path = report_dir.join("analysis-package.json");
+        std::fs::write(&package_path, bytes).map_err(|error| {
+            fail(
+                Code::AnalysisInconclusive,
+                format!("cannot write lowered analysis package: {error}"),
+            )
+        })?;
+        prepared.package_path = package_path.to_string_lossy().into_owned();
+    }
     let selection_path = write_draft_selection(&report_dir, &prepared.drafts)?;
     run_analysis_modes(
         &prepared,
@@ -740,9 +751,42 @@ fn prepare_analysis(
     status_executable: &Path,
 ) -> Result<PreparedAnalysis, Failure> {
     let package_path = validate_analysis_package_path(request)?;
-    let package = read_analysis_package(Path::new(package_path))?;
+    let bytes = read_analysis_package_bytes(Path::new(package_path))?;
+    let native_claims = match checked_package_version(&bytes).as_deref() {
+        Some("filament.checked-package/v2") => {
+            Some(analysis_package::claim_spans(&bytes).map_err(checked_package_failure)?)
+        }
+        Some(version) if version.starts_with("filament.checked-package/") => {
+            return Err(fail(
+                Code::AnalysisPackageInvalid,
+                format!("unsupported checked package version: {version}"),
+            ));
+        }
+        _ => None,
+    };
+    let contract_package = if native_claims.is_none() {
+        Some(read_contract_analysis_package(&bytes)?)
+    } else {
+        None
+    };
     let status = formal_rule_status(request, context, status_executable)?;
     let expected = status_claim_spans(&status, request, context)?;
+    let (package, converted_package) = if let Some(claims) = native_claims {
+        let selected = bind_native_claims(&expected, &claims, request)?;
+        let lowered = analysis_package::lower_selected_claims(&bytes, &selected)
+            .map_err(checked_package_failure)?;
+        (read_contract_analysis_package(&lowered)?, Some(lowered))
+    } else {
+        (
+            contract_package.ok_or_else(|| {
+                fail(
+                    Code::AnalysisPackageInvalid,
+                    "analysis package reader returned no package",
+                )
+            })?,
+            None,
+        )
+    };
     let package_spans = package_claim_spans(&package)?;
     let bound = bind_package_claims(&expected, &package_spans, request)?;
     let drafts: Vec<_> = bound
@@ -764,9 +808,61 @@ fn prepare_analysis(
 
     Ok(PreparedAnalysis {
         package_path: package_path.to_owned(),
+        converted_package,
         drafts,
         peers,
     })
+}
+
+fn bind_native_claims(
+    expected: &[ClaimSpan],
+    claims: &[analysis_package::CheckedAnalysisClaimSpan],
+    request: &FormalizeInput,
+) -> Result<Vec<filament_contract_model::CheckedNodeId>, Failure> {
+    if claims.is_empty() {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "checked package contains no source-mapped analysis claims",
+        ));
+    }
+    let mut matched = BTreeSet::new();
+    let mut selected = BTreeSet::new();
+    for claim in claims {
+        let candidates: Vec<_> = expected
+            .iter()
+            .filter(|span| {
+                span.identity == claim.identity
+                    && claim.start >= span.start
+                    && claim.end <= span.end
+            })
+            .collect();
+        if candidates.len() != 1 {
+            return Err(fail(
+                Code::AnalysisPackageInvalid,
+                "checked-package claim does not map uniquely to a drafted or approved declaration",
+            ));
+        }
+        let candidate = candidates.first().ok_or_else(|| {
+            fail(
+                Code::AnalysisPackageInvalid,
+                "checked-package claim does not map uniquely to a drafted or approved declaration",
+            )
+        })?;
+        matched.insert(candidate.symbol.clone());
+        selected.insert(claim.node_id.clone());
+    }
+    if expected.iter().any(|span| !matched.contains(&span.symbol))
+        || request
+            .drafted_symbols
+            .iter()
+            .any(|symbol| !matched.contains(symbol))
+    {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "checked package omits a drafted or approved claim",
+        ));
+    }
+    Ok(selected.into_iter().collect())
 }
 
 fn validate_analysis_package_path(request: &FormalizeInput) -> Result<&str, Failure> {
@@ -1007,7 +1103,7 @@ fn requirement_document_id(id: &str) -> &str {
     id.split_once("-AC-").map_or(id, |(document, _)| document)
 }
 
-fn read_analysis_package(path: &Path) -> Result<ContractPackageV1, Failure> {
+fn read_analysis_package_bytes(path: &Path) -> Result<Vec<u8>, Failure> {
     let invalid = |message: String| fail(Code::AnalysisPackageInvalid, message);
     let metadata = std::fs::metadata(path).map_err(|error| invalid(error.to_string()))?;
     if !metadata.is_file() {
@@ -1026,8 +1122,26 @@ fn read_analysis_package(path: &Path) -> Result<ContractPackageV1, Failure> {
             "analysis package exceeds the contract reader byte limit".to_owned(),
         ));
     }
-    let result = ContractPackageWireV1::read(&bytes, limits, &BTreeMap::default());
-    admit_analysis_package(result)
+    Ok(bytes)
+}
+
+fn checked_package_version(bytes: &[u8]) -> Option<String> {
+    let Ok(value) = serde_json::from_slice::<Value>(bytes) else {
+        return None;
+    };
+    value
+        .get("contract_version")
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+}
+
+fn read_contract_analysis_package(bytes: &[u8]) -> Result<ContractPackageV1, Failure> {
+    let limits = CheckedPackageReadLimits::bounded();
+    admit_analysis_package(ContractPackageWireV1::read(
+        bytes,
+        limits,
+        &BTreeMap::default(),
+    ))
 }
 
 fn admit_analysis_package(result: ContractPackageReadResult) -> Result<ContractPackageV1, Failure> {
@@ -1052,6 +1166,17 @@ fn catalog_unavailable_failure(error: &CatalogReadError) -> Failure {
         Code::CatalogUnavailable,
         format!("contract package reader is unavailable: {error}"),
     )
+}
+
+fn checked_package_failure(error: analysis_package::CheckedPackageError) -> Failure {
+    match error {
+        analysis_package::CheckedPackageError::Invalid(message) => {
+            fail(Code::AnalysisPackageInvalid, message)
+        }
+        analysis_package::CheckedPackageError::CatalogUnavailable(message) => {
+            fail(Code::CatalogUnavailable, message)
+        }
+    }
 }
 
 fn package_claim_spans(package: &ContractPackageV1) -> Result<Vec<ClaimSpan>, Failure> {
@@ -1261,6 +1386,15 @@ fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<Analy
             format!("analysis report invalid: {error}"),
         )
     })?;
+    let status = analysis_report_status(&report, mode, output.status.code())?;
+    Ok(AnalysisRun { status, path })
+}
+
+fn analysis_report_status(
+    report: &Value,
+    mode: &str,
+    exit_status: Option<i32>,
+) -> Result<String, Failure> {
     if report.get("analysisKind").and_then(Value::as_str) != Some(mode) {
         return Err(fail(
             Code::AnalysisInconclusive,
@@ -1273,6 +1407,36 @@ fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<Analy
             "analysis report lacks differential",
         )
     })?;
+    let selection = report
+        .get("selection")
+        .and_then(Value::as_object)
+        .ok_or_else(|| {
+            fail(
+                Code::AnalysisInconclusive,
+                "analysis report lacks selected and excluded claims",
+            )
+        })?;
+    let selected = selection
+        .get("selected")
+        .and_then(Value::as_array)
+        .filter(|claims| claims.iter().all(Value::is_string))
+        .ok_or_else(|| {
+            fail(
+                Code::AnalysisInconclusive,
+                "analysis report selection has invalid selected claims",
+            )
+        })?;
+    if selected.is_empty()
+        || !selection
+            .get("excluded")
+            .and_then(Value::as_array)
+            .is_some_and(|claims| claims.iter().all(Value::is_string))
+    {
+        return Err(fail(
+            Code::AnalysisInconclusive,
+            "analysis report selection has invalid selected or excluded claims",
+        ));
+    }
     if differential.get("disposition").and_then(Value::as_str) != Some("agreement") {
         return Err(fail(
             Code::AnalysisInconclusive,
@@ -1299,16 +1463,13 @@ fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<Analy
     } else {
         Some(1)
     };
-    if output.status.code() != expected_exit {
+    if exit_status != expected_exit {
         return Err(fail(
             Code::AnalysisInconclusive,
             "analysis exit status disagrees with its report",
         ));
     }
-    Ok(AnalysisRun {
-        status: status.to_owned(),
-        path,
-    })
+    Ok(status.to_owned())
 }
 
 fn formalization_check(request: &FormalizeInput, context: &Context) -> Check {

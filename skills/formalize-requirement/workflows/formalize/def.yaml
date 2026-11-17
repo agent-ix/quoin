@@ -72,6 +72,6 @@ interviews:
     questions:
       - {key: requirement_id, prompt: "Requirement or criterion id to formalize", type: text, required: true}
       - {key: draft_path, prompt: "Repository-relative path for the .native draft", type: text, required: true}
-      - {key: analysis_package, prompt: "Absolute path to the prepared filament.contract-package/v1 analysis package", type: text, required: true}
+      - {key: analysis_package, prompt: "Absolute path to a filament.checked-package/v2 or filament.contract-package/v1 analysis package", type: text, required: true}
       - {key: engineering_assurance, prompt: "Absolute path to the engineering-assurance executable", type: text, required: true}
       - {key: allowed_signers, prompt: "Absolute path to the allowed-signers file", type: text, required: true}
