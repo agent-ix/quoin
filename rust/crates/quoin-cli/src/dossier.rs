@@ -212,7 +212,7 @@ fn threat_model_source(
         .map(quoin_quire::ids::ModuleRoot::open)
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| quoin_dossier::SourceFailure {
-            source: "threat-model records".to_owned(),
+            source: "threat-model-records".to_owned(),
             detail: format!("failed to open module: {error}"),
         })?;
     let selection = if modules.is_empty() {
@@ -235,12 +235,12 @@ fn threat_model_source(
         ],
     )
     .map_err(|error| quoin_dossier::SourceFailure {
-        source: "threat-model records".to_owned(),
+        source: "threat-model-records".to_owned(),
         detail: format!("failed to read threat-model records: {error}"),
     })?;
     let scope = quoin_quire::ids::ScopeRoot::open(&inputs.scope).map_err(|error| {
         quoin_dossier::SourceFailure {
-            source: "flow findings".to_owned(),
+            source: "flow-findings".to_owned(),
             detail: format!("failed to open scope: {error}"),
         }
     })?;
@@ -249,7 +249,7 @@ fn threat_model_source(
         modules: selection,
     })
     .map_err(|error| quoin_dossier::SourceFailure {
-        source: "flow findings".to_owned(),
+        source: "flow-findings".to_owned(),
         detail: format!("failed to compute flow report: {error}"),
     })?;
     let module_notices = notices
@@ -258,7 +258,7 @@ fn threat_model_source(
         .collect::<Vec<_>>();
     if !module_notices.is_empty() {
         return Err(quoin_dossier::SourceFailure {
-            source: "flow findings".to_owned(),
+            source: "flow-findings".to_owned(),
             detail: module_notices
                 .iter()
                 .map(|notice| notice.message.as_str())

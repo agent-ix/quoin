@@ -30,7 +30,7 @@ impl Generator for ThreatModelGenerator {
 
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
         let source = (self.0)(inputs)?;
-        if let Some(failure) = unusable_input("threat-model records", &source.records) {
+        if let Some(failure) = unusable_input("threat-model-records", &source.records) {
             return Err(failure);
         }
         Ok(render(&source.records, source.flow.as_ref()))
@@ -67,7 +67,7 @@ fn render(corpus: &Corpus, flow: Option<&quoin_quire::model::FlowReport>) -> Gen
             let sinks = selected(&covered, "data_sink", &by_id);
             let parts = selected(&covered, "part", &by_id);
             let boundaries = selected(&covered, "trust_boundary", &by_id);
-            let considered = considered_threats(&connections, &sinks, &records);
+            let considered = considered_threats(model, &connections, &sinks, &records, &by_id);
             let open = findings_for(&denials, &connections, &sinks, &considered);
 
             let _ = writeln!(body, "## {}\n", cell(&model.id));
@@ -308,26 +308,30 @@ fn selected<'a>(
 }
 
 fn considered_threats<'a>(
+    model: &Document,
     connections: &[&Document],
     sinks: &[&Document],
     records: &[&'a Document],
+    by_id: &BTreeMap<&str, &Document>,
 ) -> Vec<&'a Document> {
     let subjects = connections
         .iter()
         .chain(sinks)
         .map(|document| document.id.as_str())
         .collect::<BTreeSet<_>>();
-    let mut threats = records
+    let mut threats = edge_targets(model, "considers")
         .iter()
-        .copied()
-        .filter(|document| {
+        .filter_map(|id| by_id.get(id.as_str()).copied())
+        .filter(|document| document.kind == "threat")
+        .chain(records.iter().copied().filter(|document| {
             document.kind == "threat"
                 && document.edges.iter().any(|(target, relation)| {
                     relation == "threatens" && subjects.contains(target.as_str())
                 })
-        })
+        }))
         .collect::<Vec<_>>();
     threats.sort_by(|left, right| crate::order::dossier_cmp(&left.id, &right.id));
+    threats.dedup_by(|left, right| left.id == right.id);
     threats
 }
 
@@ -614,7 +618,7 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({"method":"STRIDE", "reviewed_by":"A. Person"}),
-                &[("CONN-1", "covers")],
+                &[("CONN-1", "covers"), ("THREAT-1", "considers")],
                 &[
                     ("Scope", "Selected boundary."),
                     ("Assumptions", "None."),
@@ -809,14 +813,14 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers")],
+                &[("CONN-1", "covers"), ("THREAT-1", "considers")],
                 &[],
             ),
             document(
                 "TM-2",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers")],
+                &[("CONN-1", "covers"), ("THREAT-1", "considers")],
                 &[],
             ),
             document("CONN-1", "connection", json!({}), &[], &[]),
