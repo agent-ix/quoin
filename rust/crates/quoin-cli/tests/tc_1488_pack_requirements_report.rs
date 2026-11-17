@@ -303,7 +303,7 @@ fn install_approval_fixture(env: &Env) {
     .unwrap();
     std::fs::write(
         env.installed_file("gdpr.yaml"),
-        r#"schemaVersion: clause-set-v1
+        r"schemaVersion: clause-set-v1
 authority: example.invalid
 id: gdpr
 title: Synthetic GDPR clauses
@@ -318,7 +318,7 @@ clauses:
   - id: no-role
     force: mandatory
     approvalRoles: []
-"#,
+",
     )
     .unwrap();
 }
