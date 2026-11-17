@@ -43,10 +43,10 @@ relationships:
 | TC-616 | FR-202 AC-16 threat-model dossier behavior | Integration | FR-202-AC-16 | ✅ |
 | TC-617 | Controller dossier reports authored recipients, personal-data categories, location and transfer gaps | Integration | FR-207-AC-1 | 🚧 |
 | TC-618 | Controller and processor retention rules match their Art 30 roles | Integration | FR-207-AC-2 | 🚧 |
-| TC-619 | Unclassified covered connection emits a personal-data category gap | Unit | FR-207-AC-3 | 🚧 |
+| TC-619 | FR-207 AC-3 unclassified scoped connection | Unit | FR-207-AC-3 | 🚧 |
 | TC-620 | Transfer gaps remain even when sink location and controls are present | Unit | FR-207-AC-4 | 🚧 |
 | TC-621 | Processor dossier separates categories of processing from purpose context | Unit | FR-207-AC-5 | 🚧 |
-| TC-622 | Invalid covers edges fail before records-of-processing generation | Unit | FR-207-AC-6 | 🚧 |
+| TC-622 | FR-207 AC-6 invalid processing activity scopes relationships | Unit | FR-207-AC-6 | 🚧 |
 | TC-623 | Missing flow report is reported without substitute model facts | Unit | FR-207-AC-7 | 🚧 |
 | TC-624 | Repeated generation is deterministic without release ceremony | Unit | FR-207-AC-8 | 🚧 |
 | TC-625 | Cross-repository sink identity and sink-specific classification gap | Unit | FR-207-AC-9 | 🚧 |
