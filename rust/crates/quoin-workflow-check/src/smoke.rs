@@ -36,14 +36,14 @@ fn write(path: &Path, content: impl AsRef<[u8]>) -> Result<()> {
     }
     fs::write(path, content).map_err(|e| e.to_string())
 }
-fn executable(directory: &Path, name: &str, body: &str) -> Result<PathBuf> {
+fn executable(directory: &Path, name: &str, body: &str, windows_body: &str) -> Result<PathBuf> {
     let path = directory.join(if cfg!(windows) {
         format!("{name}.cmd")
     } else {
         name.to_owned()
     });
     let content = if cfg!(windows) {
-        format!("@echo off\r\n{body}\r\n")
+        format!("@echo off\r\n{windows_body}\r\n")
     } else {
         format!("#!/bin/sh\n{body}\n")
     };
@@ -449,17 +449,19 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         &tools,
         "fsl-ok",
         "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"success\",\"diagnostics\":[]}'; exit 0",
+        "echo {\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"success\",\"diagnostics\":[]}\r\nexit /b 0",
     )?;
     let quire_ok = executable(
         &tools,
         "quire-ok",
         "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"Rule\"}]}}'; exit 0",
+        "echo {\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"Rule\"}]}}\r\nexit /b 0",
     )?;
     // The request interview also requires these supporting paths. This smoke
     // only advances to `checked`, so the tools are not invoked and no approval
     // is signed.
     let analysis_package = h.scratch.path().join("analysis-package");
-    let engineering_assurance = executable(&tools, "engineering-assurance", "exit 0")?;
+    let engineering_assurance = executable(&tools, "engineering-assurance", "exit 0", "exit /b 0")?;
     let allowed_signers = h.scratch.path().join("allowed-signers");
     write(&allowed_signers, "")?;
     write(
@@ -478,6 +480,7 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         &tools,
         "fsl-bad",
         "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"refusal\",\"diagnostics\":[{\"locus\":{\"kind\":\"region\",\"start\":1},\"message\":\"expected Boolean\"}]}' ; exit 20",
+        "echo {\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"refusal\",\"diagnostics\":[{\"locus\":{\"kind\":\"region\",\"start\":1},\"message\":\"expected Boolean\"}]}\r\nexit /b 20",
     )?;
     formalize_retry_scenario(
         h,
