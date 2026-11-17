@@ -5,6 +5,7 @@
 //! observation. Nothing here runs a solver, reads a clock or touches a file
 //! (FR-184-CON-2).
 
+use std::collections::BTreeSet;
 use std::path::Path;
 
 use serde_json::Value;
@@ -346,6 +347,28 @@ fn report_premises<'a>(
         ));
         return None;
     }
+    let expected_kind = run.observation.run_kind.as_deref().unwrap_or("analysis");
+    let projected_kind = text(report, "run_kind").unwrap_or("analysis");
+    if expected_kind == "formal_rule"
+        && (projected_kind != "formal_rule" || !formal_rule_selection_is_approved(report))
+    {
+        refusals.push(refusal(
+            Cause::QualificationRejected,
+            Premise::ApprovedFormalRules,
+            locator,
+            "draft_rule_in_judgement: the selected claim set is missing, mismatched or includes a non-approved formal rule",
+        ));
+        return None;
+    }
+    if expected_kind == "analysis" && projected_kind != "analysis" {
+        refusals.push(refusal(
+            Cause::RecordConflict,
+            Premise::ToolAndConfiguration,
+            locator,
+            "the host's expected run_kind differs from the retained projection",
+        ));
+        return None;
+    }
     let agreed = text(report, "disposition") == Some("agreement")
         && text(report, "agreed_status") == Some("satisfied");
     if !agreed {
@@ -388,13 +411,16 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
     let Some(root) = report.as_object() else {
         return false;
     };
-    if root.len() != 5
+    if !valid_projection_header(root)
         || text(report, "protocol") != Some("quoin.analysis-report-projection/v1")
         || !matches!(
             text(report, "disposition"),
             Some("agreement" | "inconclusive" | "unavailable" | "disagreement")
         )
     {
+        return false;
+    }
+    if root.contains_key("selection") && !root.get("selection").is_some_and(valid_selection) {
         return false;
     }
     let Some(producer) = root.get("producer").and_then(Value::as_object) else {
@@ -462,4 +488,151 @@ fn valid_projection(report: &Value, run: &crate::types::RunRecord) -> bool {
         }),
         _ => false,
     }
+}
+
+fn valid_projection_header(root: &serde_json::Map<String, Value>) -> bool {
+    if !(5..=8).contains(&root.len())
+        || root.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "protocol"
+                    | "disposition"
+                    | "agreed_status"
+                    | "selection"
+                    | "run_kind"
+                    | "formal_rule_selection"
+                    | "producer"
+                    | "engines"
+            )
+        })
+    {
+        return false;
+    }
+    let run_kind = root.get("run_kind").and_then(Value::as_str);
+    if root.contains_key("run_kind") && !matches!(run_kind, Some("analysis" | "formal_rule")) {
+        return false;
+    }
+    let has_formal_selection = root.contains_key("formal_rule_selection");
+    !matches!(
+        (run_kind, has_formal_selection),
+        (Some("analysis") | None, true)
+    )
+}
+
+/// A selected report has a non-empty, duplicate-free partition of its claims.
+fn valid_selection(selection: &Value) -> bool {
+    let Some(object) = selection.as_object() else {
+        return false;
+    };
+    if object.len() != 2 {
+        return false;
+    }
+    let Some(selected) = object.get("selected").and_then(Value::as_array) else {
+        return false;
+    };
+    let Some(excluded) = object.get("excluded").and_then(Value::as_array) else {
+        return false;
+    };
+    if selected.is_empty() {
+        return false;
+    }
+    let Some(selected_ids) = selection_ids(selected) else {
+        return false;
+    };
+    let Some(excluded_ids) = selection_ids(excluded) else {
+        return false;
+    };
+    selected_ids.is_disjoint(&excluded_ids)
+}
+
+fn selection_ids(items: &[Value]) -> Option<BTreeSet<&str>> {
+    let mut values = BTreeSet::new();
+    for item in items {
+        let value = item.as_str().filter(|value| !value.is_empty())?;
+        if !values.insert(value) {
+            return None;
+        }
+    }
+    Some(values)
+}
+
+fn formal_rule_selection_is_approved(report: &Value) -> bool {
+    let Some(mapping) = report.get("formal_rule_selection") else {
+        return false;
+    };
+    let Some(claims) = mapping.get("claims").and_then(Value::as_array) else {
+        return false;
+    };
+    valid_formal_rule_selection(Some(mapping), report.get("selection"))
+        && claims
+            .iter()
+            .all(|claim| claim.get("state").and_then(Value::as_str) == Some("approved"))
+}
+
+fn valid_formal_rule_selection(mapping: Option<&Value>, selection: Option<&Value>) -> bool {
+    let Some(mapping) = mapping.and_then(Value::as_object) else {
+        return false;
+    };
+    if mapping.len() != 1 {
+        return false;
+    }
+    let Some(claims) = mapping.get("claims").and_then(Value::as_array) else {
+        return false;
+    };
+    let Some(selection) = selection.and_then(Value::as_object) else {
+        return false;
+    };
+    let Some(selected) = selection.get("selected").and_then(Value::as_array) else {
+        return false;
+    };
+    if selected.len() != claims.len() {
+        return false;
+    }
+    let mut symbols = BTreeSet::new();
+    for (selected_id, claim) in selected.iter().zip(claims) {
+        let Some(selected_id) = selected_id.as_str() else {
+            return false;
+        };
+        let Some(claim) = claim.as_object().filter(|claim| claim.len() == 4) else {
+            return false;
+        };
+        if claim.get("claim_id").and_then(Value::as_str) != Some(selected_id) {
+            return false;
+        }
+        let Some(symbol) = claim.get("symbol").and_then(Value::as_str) else {
+            return false;
+        };
+        if !symbol.starts_with("qsl:") || !symbols.insert(symbol) {
+            return false;
+        }
+        if !matches!(
+            claim.get("state").and_then(Value::as_str),
+            Some("approved" | "draft")
+        ) || !valid_source(claim.get("source"))
+        {
+            return false;
+        }
+    }
+    true
+}
+
+fn valid_source(source: Option<&Value>) -> bool {
+    let Some(source) = source.and_then(Value::as_object) else {
+        return false;
+    };
+    if source.len() != 4
+        || source.get("document").and_then(Value::as_str).is_none()
+        || source.get("revision").and_then(Value::as_u64).is_none()
+    {
+        return false;
+    }
+    ["start", "end"].iter().all(|point| {
+        let Some(point) = source.get(*point).and_then(Value::as_object) else {
+            return false;
+        };
+        point.len() == 3
+            && ["byte", "column", "line"]
+                .iter()
+                .all(|member| point.get(*member).and_then(Value::as_u64).is_some())
+    })
 }

@@ -72,6 +72,7 @@ pub fn record(
         ("timestamp", request.timestamp.as_str()),
         ("adapter", request.adapter.as_deref().unwrap_or("")),
         ("kind", request.kind.as_deref().unwrap_or("")),
+        ("run_kind", request.run_kind.as_deref().unwrap_or("")),
     ] {
         check_scalar(op, field, text)?;
     }
@@ -85,6 +86,13 @@ pub fn record(
     // default, so a scan that fell through here would be parsed as entries and
     // written into `runs/`, losing the clean-versus-unrun distinction at intake.
     let payload = if let Some(adapter) = select_finding_adapter(selection) {
+        if request.run_kind.is_some() || request.formal_rule_selection.is_some() {
+            return Err(CoreError::new(
+                CoreErrorCode::BadRequest,
+                "--run-kind and --formal-rule-selection apply only to the differential-report adapter",
+            )
+            .with_context("op", op));
+        }
         record_scan(&request, adapter, host, op)?
     } else {
         record_entries(
@@ -216,7 +224,23 @@ fn record_entries(
     if request.policy.is_some() {
         return Err(map_error(&refuse_policy(adapter.name), op));
     }
-    let result = (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?;
+    let result = if adapter.name == "differential-report" {
+        let run_kind = request.run_kind.as_deref().ok_or_else(|| {
+            CoreError::new(
+                CoreErrorCode::BadRequest,
+                "--run-kind is required for differential-report runs",
+            )
+            .with_context("op", op)
+        })?;
+        quoin_evidence::adapters::parse_differential_report_for_run(
+            &request.results,
+            run_kind,
+            request.formal_rule_selection.as_ref(),
+        )
+        .map_err(|error| map_error(&error, op))?
+    } else {
+        (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?
+    };
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
     let analysis_projection = result.analysis_projection;
     // An inventory (SBOM) names no obligation, so the recorder states which
@@ -236,6 +260,15 @@ fn record_entries(
                 DISCHARGING_ADAPTERS.join(" and "),
                 adapter.name
             ),
+        )
+        .with_context("op", op));
+    }
+    if adapter.name != "differential-report"
+        && (request.run_kind.is_some() || request.formal_rule_selection.is_some())
+    {
+        return Err(CoreError::new(
+            CoreErrorCode::BadRequest,
+            "--run-kind and --formal-rule-selection apply only to the differential-report adapter",
         )
         .with_context("op", op));
     }

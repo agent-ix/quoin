@@ -75,6 +75,8 @@ pub enum Premise {
     ExecutionAssociation,
     /// The producer, solver identities and `producer-execute` observation.
     ToolAndConfiguration,
+    /// The selected claims came only from approved formal-rule declarations.
+    ApprovedFormalRules,
     /// One report states one obligation (FR-184 owner answer 8).
     ActScope,
 }
@@ -91,6 +93,7 @@ impl Premise {
             Self::PerformedRevision => "performed revision",
             Self::ExecutionAssociation => "execution association",
             Self::ToolAndConfiguration => "tool and configuration",
+            Self::ApprovedFormalRules => "approved formal-rule selection",
             Self::ActScope => "act scope",
         }
     }
@@ -131,6 +134,8 @@ pub struct RetainedRun {
 /// The host's admitted observations of one retained run (FR-116 Inputs).
 #[derive(Debug, Clone, Default)]
 pub struct RunObservation {
+    /// The host's expected report purpose for this run.
+    pub run_kind: Option<String>,
     /// The CI checkout SHA of the `run-package` step that produced the record.
     pub performed_revision: Option<String>,
     /// The execution association of that step.

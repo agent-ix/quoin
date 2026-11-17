@@ -215,6 +215,7 @@ fn run_observation(
     });
     let (actor, actor_rejection) = actor_observation(repo, input, run_file, projection_file);
     RunObservation {
+        run_kind: input.run_kind.clone(),
         performed_revision,
         execution,
         actor,

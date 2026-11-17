@@ -635,7 +635,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 [[package]]
 name = "filament-analyze"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e17fbf0f6c593d32ce2555420d615c5dd862e8ef"
+source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e2a8d1b2b2ad4ff3ed80201dac1b6c91457e6d3d"
 dependencies = [
  "filament-analyze-method-contract",
  "filament-contract-model",
@@ -650,12 +650,12 @@ dependencies = [
 [[package]]
 name = "filament-analyze-method-contract"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e17fbf0f6c593d32ce2555420d615c5dd862e8ef"
+source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e2a8d1b2b2ad4ff3ed80201dac1b6c91457e6d3d"
 
 [[package]]
 name = "filament-contract-model"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-contract-ir?branch=main#ce1970fb108fe2c07a3c463b4a405dee529a4330"
+source = "git+https://github.com/agent-ix/filament-contract-ir?branch=main#8eb5201f5ac80c877508b76aa862c0846241cc40"
 dependencies = [
  "filament-exact",
  "filament-semantic-value",
@@ -681,7 +681,7 @@ dependencies = [
 [[package]]
 name = "filament-exact"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-exact?branch=main#f1ef4963d19e343d19fd85f415b509439126f1da"
+source = "git+https://github.com/agent-ix/filament-exact?branch=main#85034c5cbc44fcf47a441cb1cf968564b57cd357"
 dependencies = [
  "allocator-api2",
  "arrayvec",

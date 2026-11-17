@@ -329,6 +329,12 @@ pub struct RecordRequest {
     /// An explicit adapter name.
     #[serde(default)]
     pub adapter: Option<String>,
+    /// Explicit purpose for a report-backed differential-analysis run.
+    #[serde(default)]
+    pub run_kind: Option<String>,
+    /// Claim-to-rule status mapping for a formal-rule run.
+    #[serde(default)]
+    pub formal_rule_selection: Option<serde_json::Value>,
     /// The producer document's text, as the caller read it.
     pub results: String,
     /// Obligation ids the recording was produced to check.

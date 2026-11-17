@@ -45,6 +45,7 @@ fn request(dir: &Path, tool: &str, results: &str) -> Value {
         "suite": "SUITE-SMT",
         "tool": tool,
         "timestamp": "2026-01-01T00:00:00Z",
+        "run_kind": "analysis",
         "results": results,
     })
 }
@@ -104,7 +105,8 @@ fn tc_001_a_decided_report_records_one_run_with_one_entry() {
             "quoin.analysis-report-projection/v1"
         );
         assert_eq!(projection["engines"].as_array().unwrap().len(), 2);
-        assert_eq!(projection.as_object().unwrap().len(), 5);
+        assert_eq!(projection["run_kind"], "analysis");
+        assert_eq!(projection.as_object().unwrap().len(), 6);
         for forbidden in [
             "requestDigest",
             "query",
@@ -353,6 +355,7 @@ fn tc_002_discharges_is_still_refused_on_the_junit_adapter() {
     );
     body["adapter"] = json!("junit");
     body["discharges"] = json!(["FR-001-AC-1"]);
+    body["run_kind"] = json!("analysis");
     body["obligations"] = json!([obligation("FR-001-AC-1")]);
     let error = dispatch("evidence.record", &body, &RuntimeSettings::default())
         .unwrap_err()

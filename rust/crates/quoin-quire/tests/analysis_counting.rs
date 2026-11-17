@@ -162,6 +162,8 @@ fn projection(report: &Value) -> Value {
         "protocol": "quoin.analysis-report-projection/v1",
         "disposition": report["differential"]["disposition"],
         "agreed_status": report["differential"]["agreedStatus"],
+        "selection": {"selected": ["claim-0"], "excluded": ["claim-1"]},
+        "run_kind": "analysis",
         "producer": report["producer"],
         "engines": engines,
     })
@@ -194,8 +196,9 @@ fn conflicting_selected_heads_are_a_record_conflict() {
 
 /// What the host observed of the one act that produced `file`: its own CI
 /// invocation, its own checkout SHA and its own admitted signer.
-fn admitted_run(file: &str) -> RunObservation {
+fn admitted_run(file: &str, run_kind: Option<&str>) -> RunObservation {
     RunObservation {
+        run_kind: run_kind.map(ToOwned::to_owned),
         performed_revision: Some(HEAD.to_owned()),
         execution: Some(ExecutionAssociation::Ci(CiAssociation {
             system: "github".to_owned(),
@@ -230,8 +233,38 @@ impl Recorded {
 
     /// `quoin evidence record --adapter differential-report --discharges`.
     fn record(&mut self, suite: &str, timestamp: &str, report: &str, discharges: &[&str]) {
+        self.record_with_selection(suite, timestamp, report, discharges, true);
+    }
+
+    /// Retain a report without a claim selection to check fail-closed qualification.
+    fn record_without_selection(
+        &mut self,
+        suite: &str,
+        timestamp: &str,
+        report: &str,
+        discharges: &[&str],
+    ) {
+        self.record_with_selection(suite, timestamp, report, discharges, false);
+    }
+
+    fn record_with_selection(
+        &mut self,
+        suite: &str,
+        timestamp: &str,
+        report: &str,
+        discharges: &[&str],
+        selected: bool,
+    ) {
         let mut result = parse_differential_report(report).unwrap();
-        let projection = result.analysis_projection.take().unwrap();
+        let mut projection = result.analysis_projection.take().unwrap();
+        projection["run_kind"] =
+            serde_json::json!(if selected { "analysis" } else { "formal_rule" });
+        if selected {
+            projection["selection"] = serde_json::json!({
+                "selected": ["claim-0"],
+                "excluded": ["claim-1"]
+            });
+        }
         let mut entries = result.entries;
         for entry in &mut entries {
             if !discharges.is_empty() {
@@ -296,13 +329,39 @@ impl Recorded {
                 )
                 .unwrap(),
                 report: Some(report.clone()),
-                observation: admitted_run(path),
+                observation: admitted_run(path, report.get("run_kind").and_then(Value::as_str)),
             })
             .collect()
     }
 
     fn bindings(&self) -> Vec<Binding> {
         read_bindings(&self.source).unwrap().bindings
+    }
+
+    fn mark_formal_rule_selection(&mut self, first_state: &str, second_state: &str) {
+        let (_, projection) = self.reports.last_mut().unwrap();
+        let source: Value = serde_json::from_str(SATISFIED).unwrap();
+        projection["run_kind"] = serde_json::json!("formal_rule");
+        projection["selection"] = serde_json::json!({
+            "selected": ["claim-0", "claim-1"],
+            "excluded": []
+        });
+        projection["formal_rule_selection"] = serde_json::json!({
+            "claims": [
+                {
+                    "claim_id": "claim-0",
+                    "source": source["assertions"][0]["source"],
+                    "symbol": "qsl:qsl/rule.native::Rule0",
+                    "state": first_state,
+                },
+                {
+                    "claim_id": "claim-1",
+                    "source": source["assertions"][1]["source"],
+                    "symbol": "qsl:qsl/rule.native::Rule1",
+                    "state": second_state,
+                }
+            ]
+        });
     }
 
     fn count(&self, requested: &[&str], host: HostObservations) -> Counted {
@@ -428,6 +487,45 @@ fn an_admitted_passing_report_is_a_qualified_record_for_its_own_target_only() {
     assert!(strict_decision(&outcome.report, &[]).is_err());
 }
 
+#[trace("FR-184-AC-18")]
+#[test]
+fn a_passing_report_without_selection_is_rejected_as_draft_rule_in_judgement() {
+    let mut store = Recorded::new();
+    store.record_without_selection("SUITE-A", "2026-11-13T10:00:00Z", SATISFIED, &[AC1]);
+
+    let outcome = store.count(&[AC1], admitted());
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::QualificationRejected,
+        "draft_rule_in_judgement",
+    );
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+}
+
+#[trace("FR-184-AC-17")]
+#[test]
+fn a_formal_rule_report_qualifies_only_when_every_selected_rule_is_approved() {
+    let mut store = satisfied_store(&[AC1]);
+    store.mark_formal_rule_selection("approved", "approved");
+
+    let outcome = store.count(&[AC1], admitted());
+    assert_eq!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+}
+
+#[trace("FR-184-AC-18")]
+#[test]
+fn a_formal_rule_report_with_one_draft_rule_is_rejected() {
+    let mut store = satisfied_store(&[AC1]);
+    store.mark_formal_rule_selection("approved", "draft");
+
+    let outcome = store.count(&[AC1], admitted());
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::QualificationRejected,
+        "draft_rule_in_judgement",
+    );
+}
+
 /// Assert the obligation is uncounted and one cause names `premise`.
 fn assert_uncounted_naming(outcome: &Counted, cause: CauseCode, premise: &str) {
     assert_eq!(counted(outcome), 0);
@@ -436,7 +534,7 @@ fn assert_uncounted_naming(outcome: &Counted, cause: CauseCode, premise: &str) {
     assert!(
         causes(outcome)
             .iter()
-            .any(|(found, detail)| *found == cause && detail.starts_with(premise)),
+            .any(|(found, detail)| *found == cause && detail.contains(premise)),
         "{premise}: {:?}",
         causes(outcome)
     );
