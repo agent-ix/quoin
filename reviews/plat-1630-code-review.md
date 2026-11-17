@@ -30,3 +30,25 @@ I reviewed PR #970's dispatch input and reusable native-release workflow changes
 ## Review evidence
 
 The frozen diff is at `d2fe22adebe3920e7be6035be94130faa742b242`. `git diff --check` passed and both changed workflow files parsed as YAML. No release test was rerun during this review. The recorded v0.36.0 run shows the binary version, default-module installation, and catalog validation succeeded before `smoke-formalize-success` failed; the new boolean allows any failure from that smoke command to be treated as non-blocking.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Commit 9aefc66f requires the explicit override, tag v0.36.0, and all three recorded clean-main markers before it returns success; every other nonzero smoke status is returned unchanged. |
+
+## Disposition evidence
+
+The only bypass path checks the explicit true input, exact tag `v0.36.0`, and the exact smoke scenario, invariant, and missing-field list. The command's captured nonzero status is returned if any condition fails. Version/catalog validation and workflow-checker preparation remain separate hard-failing steps.
+
+```bash
+if [ "$ALLOW_KNOWN_WORKFLOW_SMOKE_FAILURE" = "true" ] \
+  && [ "$TAG" = "v0.36.0" ] \
+  && grep -Fq 'smoke-formalize-success' "$SMOKE_LOG" \
+  && grep -Fq 'invariant_interview_incomplete' "$SMOKE_LOG" \
+  && grep -Fq '"missing":["engineering_assurance","allowed_signers"]' "$SMOKE_LOG"; then
+  echo "::warning::Allowing the recorded v0.36.0 clean-main smoke-formalize-success failure; all other smoke failures remain fatal."
+  exit 0
+fi
+exit "$SMOKE_STATUS"
+```
