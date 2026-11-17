@@ -11,6 +11,10 @@ use std::path::{Path, PathBuf};
 use std::process::{Command as ProcessCommand, Stdio};
 use std::time::{Duration, Instant};
 
+use filament_contract_model::{
+    CatalogReadError, CheckedPackageReadLimits, ContractPackageReadResult, ContractPackageV1,
+    ContractPackageWireV1,
+};
 use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -57,6 +61,10 @@ enum Code {
     FormalRuleStatusInvalid,
     FormalRuleStatusUnavailable,
     FormalRuleTrustInputsInvalid,
+    AnalysisPackageInvalid,
+    AnalysisInconclusive,
+    DraftClaimsInconsistent,
+    DraftContradictsApproved,
     HumanGateRequired,
     InputUnreadable,
     InvariantUnknown,
@@ -93,6 +101,10 @@ impl std::fmt::Display for Code {
             Self::FormalRuleStatusInvalid => "formal_rule_status_invalid",
             Self::FormalRuleStatusUnavailable => "formal_rule_status_unavailable",
             Self::FormalRuleTrustInputsInvalid => "formal_rule_trust_inputs_invalid",
+            Self::AnalysisPackageInvalid => "analysis_package_invalid",
+            Self::AnalysisInconclusive => "analysis_inconclusive",
+            Self::DraftClaimsInconsistent => "draft_claims_inconsistent",
+            Self::DraftContradictsApproved => "draft_claims_contradict_approved",
             Self::HumanGateRequired => "WORKFLOW_HUMAN_GATE_REQUIRED",
             Self::InputUnreadable => "WORKFLOW_INPUT_UNREADABLE",
             Self::InvariantUnknown => "WORKFLOW_INVARIANT_UNKNOWN",
@@ -228,6 +240,7 @@ struct FormalizeInput {
     answered_at: Option<String>,
     requirement_id: String,
     draft_path: PathBuf,
+    analysis_package: Option<String>,
     #[serde(default)]
     engineering_assurance: Option<String>,
     #[serde(default)]
@@ -259,6 +272,8 @@ struct ResultEnvelope {
 enum Outcome {
     Passed {
         invariant: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        details: Option<BTreeMap<String, Value>>,
     },
     Failed {
         invariant: String,
@@ -338,9 +353,14 @@ fn evaluate(request: &Request) -> ResultEnvelope {
     let outcomes = request
         .invariants
         .iter()
-        .map(|name| match check(&request.instance, name) {
-            Ok(()) => Outcome::Passed {
+        .map(|name| match check_with_details(&request.instance, name) {
+            Ok(None) => Outcome::Passed {
                 invariant: name.clone(),
+                details: None,
+            },
+            Ok(Some(details)) => Outcome::Passed {
+                invariant: name.clone(),
+                details: Some(details),
             },
             Err(error) => Outcome::Failed {
                 invariant: name.clone(),
@@ -392,7 +412,10 @@ fn context(instance: &Instance) -> Result<Context, Failure> {
     Ok(context)
 }
 
-fn check(instance: &Instance, name: &str) -> Check {
+fn check_with_details(
+    instance: &Instance,
+    name: &str,
+) -> Result<Option<BTreeMap<String, Value>>, Failure> {
     if !matches!(instance.name.as_str(), "review" | "to-plan" | "formalize") {
         return Err(fail(Code::Unknown, &instance.name));
     }
@@ -402,24 +425,32 @@ fn check(instance: &Instance, name: &str) -> Check {
             let review: ReviewInput = one(instance, "operation_request")?;
             let catalog = Catalog::load(&context)?;
             selection(&review, &catalog)?;
-            profiles(&review, &context, &catalog)
+            profiles(&review, &context, &catalog).map(|()| None)
         }
-        ("review", "selected_analyses_covered") => review_documents(instance, &context),
+        ("review", "selected_analyses_covered") => {
+            review_documents(instance, &context).map(|()| None)
+        }
         ("to-plan", "plan_inputs_ready") => {
             let plan: PlanInput = one(instance, "plan_answers")?;
             plan_paths(&plan, &context)?;
-            Ok(())
+            Ok(None)
         }
-        ("to-plan", "plan_documents_valid") => plan_documents(instance, &context),
+        ("to-plan", "plan_documents_valid") => plan_documents(instance, &context).map(|()| None),
         ("formalize", "qsl_check_passes") => {
             let request: FormalizeInput = one(instance, "formalization_request")?;
-            formalization_check(&request, &context)
+            formalization_check(&request, &context).map(|()| None)
         }
         ("formalize", "formal_rule_approved") => {
             let request: FormalizeInput = one(instance, "formalization_request")?;
-            formal_rule_approved(&request, &context)
+            formal_rule_approved(&request, &context).map(|()| None)
         }
-        ("formalize", "formalization_retries_exhausted") => retries_exhausted(instance),
+        ("formalize", "analysis_consistent_with_approved") => {
+            let request: FormalizeInput = one(instance, "formalization_request")?;
+            analysis_consistent_with_approved(&request, &context).map(Some)
+        }
+        ("formalize", "formalization_retries_exhausted") => {
+            retries_exhausted(instance).map(|()| None)
+        }
         (_, "human_acceptance_required") => {
             if instance
                 .gates
@@ -432,7 +463,7 @@ fn check(instance: &Instance, name: &str) -> Check {
                     "validated->accepted must use hitl",
                 ));
             }
-            Ok(())
+            Ok(None)
         }
         _ => Err(fail(Code::InvariantUnknown, name)),
     }
@@ -558,7 +589,6 @@ fn formal_rule_approved_with_binary(
     context: &Context,
     executable: &Path,
 ) -> Check {
-    let trust = formal_rule_trust(request)?;
     let mut seen = BTreeSet::new();
     if request.drafted_symbols.is_empty()
         || request
@@ -572,45 +602,7 @@ fn formal_rule_approved_with_binary(
         ));
     }
 
-    let mut command = ProcessCommand::new(executable);
-    command
-        .args(["formal-rules", "status", "--repo"])
-        .arg(&context.repo_root)
-        .args(["--engineering-assurance", trust.engineering_assurance])
-        .args(["--allowed-signers", trust.allowed_signers, "--json"]);
-    if let Some((identity, issuer, principal)) = trust.gitsign {
-        command
-            .args(["--gitsign-certificate-identity", identity])
-            .args(["--gitsign-certificate-oidc-issuer", issuer])
-            .args(["--gitsign-principal", principal]);
-    }
-    let output = command.output().map_err(|error| {
-        fail(
-            Code::FormalRuleStatusUnavailable,
-            format!("quoin formal-rules status is unavailable: {error}"),
-        )
-    })?;
-    if !output.status.success() {
-        return Err(fail(
-            Code::FormalRuleStatusUnavailable,
-            format!(
-                "quoin formal-rules status failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ),
-        ));
-    }
-    let report: Value = serde_json::from_slice(&output.stdout).map_err(|error| {
-        fail(
-            Code::FormalRuleStatusInvalid,
-            format!("quoin formal-rules status returned invalid JSON: {error}"),
-        )
-    })?;
-    if report.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1") {
-        return Err(fail(
-            Code::FormalRuleStatusInvalid,
-            "quoin formal-rules status returned an unsupported protocol",
-        ));
-    }
+    let report = formal_rule_status(request, context, executable)?;
     let Some(rules) = report.get("rules").and_then(Value::as_array) else {
         return Err(fail(
             Code::FormalRuleStatusInvalid,
@@ -669,6 +661,654 @@ fn retries_exhausted(instance: &Instance) -> Check {
         ));
     }
     Ok(())
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ClaimSpan {
+    authority: String,
+    identity: String,
+    start: u64,
+    end: u64,
+    symbol: String,
+}
+
+struct AnalysisTools<'a> {
+    status: &'a Path,
+    analyzer: &'a Path,
+    z3: &'a Path,
+    cvc5: &'a Path,
+}
+
+struct PreparedAnalysis {
+    package_path: String,
+    drafts: Vec<ClaimSpan>,
+    peers: Vec<ClaimSpan>,
+}
+
+fn analysis_consistent_with_approved(
+    request: &FormalizeInput,
+    context: &Context,
+) -> Result<BTreeMap<String, Value>, Failure> {
+    validate_analysis_package_path(request)?;
+    let status = std::env::current_exe()
+        .map_err(|error| fail(Code::FormalRuleStatusUnavailable, error.to_string()))?;
+    let analyzer = configured_tool("FILAMENT_ANALYZE_BIN", Code::AnalysisInconclusive)?;
+    let z3 = configured_tool("Z3_BIN", Code::AnalysisInconclusive)?;
+    let cvc5 = configured_tool("CVC5_BIN", Code::AnalysisInconclusive)?;
+    analysis_consistent_with_tools(
+        request,
+        context,
+        &AnalysisTools {
+            status: &status,
+            analyzer: &analyzer,
+            z3: &z3,
+            cvc5: &cvc5,
+        },
+    )
+}
+
+fn analysis_consistent_with_tools(
+    request: &FormalizeInput,
+    context: &Context,
+    tools: &AnalysisTools<'_>,
+) -> Result<BTreeMap<String, Value>, Failure> {
+    let prepared = prepare_analysis(request, context, tools.status)?;
+    let trust = formal_rule_trust(request)?;
+    let report_dir = tempfile::Builder::new()
+        .prefix("quoin-analysis-")
+        .tempdir_in(&context.config_root)
+        .map_err(|error| {
+            fail(
+                Code::AnalysisInconclusive,
+                format!("cannot create report directory: {error}"),
+            )
+        })?
+        .keep();
+    let selection_path = write_draft_selection(&report_dir, &prepared.drafts)?;
+    run_analysis_modes(
+        &prepared,
+        &report_dir,
+        &selection_path,
+        tools,
+        trust.engineering_assurance,
+    )
+}
+
+fn prepare_analysis(
+    request: &FormalizeInput,
+    context: &Context,
+    status_executable: &Path,
+) -> Result<PreparedAnalysis, Failure> {
+    let package_path = validate_analysis_package_path(request)?;
+    let package = read_analysis_package(Path::new(package_path))?;
+    let status = formal_rule_status(request, context, status_executable)?;
+    let expected = status_claim_spans(&status, request, context)?;
+    let package_spans = package_claim_spans(&package)?;
+    let bound = bind_package_claims(&expected, &package_spans, request)?;
+    let drafts: Vec<_> = bound
+        .iter()
+        .filter(|span| request.drafted_symbols.contains(&span.symbol))
+        .cloned()
+        .collect();
+    let peers: Vec<_> = bound
+        .iter()
+        .filter(|span| !request.drafted_symbols.contains(&span.symbol))
+        .cloned()
+        .collect();
+    if drafts.is_empty() {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "drafted set has no source span for selection",
+        ));
+    }
+
+    Ok(PreparedAnalysis {
+        package_path: package_path.to_owned(),
+        drafts,
+        peers,
+    })
+}
+
+fn validate_analysis_package_path(request: &FormalizeInput) -> Result<&str, Failure> {
+    let package_path = request
+        .analysis_package
+        .as_deref()
+        .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "analysis_package is required"))?;
+    if package_path.is_empty()
+        || package_path.contains('\0')
+        || !Path::new(package_path).is_absolute()
+    {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "analysis_package must be a non-empty absolute path without NUL",
+        ));
+    }
+    Ok(package_path)
+}
+
+fn write_draft_selection(directory: &Path, drafts: &[ClaimSpan]) -> Result<PathBuf, Failure> {
+    let selection_path = directory.join("selection.json");
+    let selected: Vec<_> = drafts.iter().map(|span| serde_json::json!({
+        "authority": span.authority, "identity": span.identity, "start": span.start, "end": span.end
+    })).collect();
+    let selection =
+        serde_json::json!({"protocol":"filament-analyze.claim-selection/v1","spans":selected});
+    let selection_bytes = serde_json::to_vec(&selection)
+        .map_err(|error| fail(Code::AnalysisInconclusive, error.to_string()))?;
+    std::fs::write(&selection_path, selection_bytes).map_err(|error| {
+        fail(
+            Code::AnalysisInconclusive,
+            format!("cannot write selection: {error}"),
+        )
+    })?;
+    Ok(selection_path)
+}
+
+fn run_analysis_modes(
+    prepared: &PreparedAnalysis,
+    report_dir: &Path,
+    selection_path: &Path,
+    tools: &AnalysisTools<'_>,
+    producer: &str,
+) -> Result<BTreeMap<String, Value>, Failure> {
+    let mut reports = Vec::new();
+    let invocation = AnalyzerInvocation {
+        analyzer: tools.analyzer,
+        package: &prepared.package_path,
+        selection: selection_path,
+        directory: report_dir,
+        z3: tools.z3,
+        cvc5: tools.cvc5,
+        producer,
+    };
+    let run = run_analysis(&invocation, "consistency")?;
+    reports.push(run.path.clone());
+    if run.status == "refuted" {
+        return Err(fail_with_details(
+            Code::DraftClaimsInconsistent,
+            "drafted claims are inconsistent",
+            BTreeMap::from([("reports".to_owned(), serde_json::json!(reports))]),
+        ));
+    }
+    let mut classification = "consistent";
+    if !prepared.peers.is_empty() {
+        let run = run_analysis(&invocation, "contradiction")?;
+        reports.push(run.path.clone());
+        if run.status == "satisfied" {
+            return Err(fail_with_details(
+                Code::DraftContradictsApproved,
+                "draft contradicts an approved rule",
+                BTreeMap::from([
+                    (
+                        "classification".to_owned(),
+                        serde_json::json!("contradicts"),
+                    ),
+                    ("reports".to_owned(), serde_json::json!(reports)),
+                ]),
+            ));
+        }
+        if prepared
+            .drafts
+            .iter()
+            .map(|span| &span.symbol)
+            .collect::<BTreeSet<_>>()
+            .len()
+            == 1
+        {
+            let run = run_analysis(&invocation, "redundancy")?;
+            reports.push(run.path.clone());
+            if run.status == "satisfied" {
+                classification = "redundant";
+            }
+        }
+    }
+    Ok(BTreeMap::from([
+        (
+            "classification".to_owned(),
+            serde_json::json!(classification),
+        ),
+        ("reports".to_owned(), serde_json::json!(reports)),
+        ("report_directory".to_owned(), serde_json::json!(report_dir)),
+    ]))
+}
+
+fn formal_rule_status(
+    request: &FormalizeInput,
+    context: &Context,
+    executable: &Path,
+) -> Result<Value, Failure> {
+    let trust = formal_rule_trust(request)?;
+    let mut command = ProcessCommand::new(executable);
+    command
+        .args(["formal-rules", "status", "--repo"])
+        .arg(&context.repo_root)
+        .args(["--engineering-assurance", trust.engineering_assurance])
+        .args(["--allowed-signers", trust.allowed_signers, "--json"]);
+    if let Some((identity, issuer, principal)) = trust.gitsign {
+        command
+            .args(["--gitsign-certificate-identity", identity])
+            .args(["--gitsign-certificate-oidc-issuer", issuer])
+            .args(["--gitsign-principal", principal]);
+    }
+    let output = command
+        .output()
+        .map_err(|error| fail(Code::FormalRuleStatusUnavailable, error.to_string()))?;
+    if !output.status.success() {
+        return Err(fail(
+            Code::FormalRuleStatusUnavailable,
+            tool_message(&output),
+        ));
+    }
+    let report: Value = serde_json::from_slice(&output.stdout)
+        .map_err(|error| fail(Code::FormalRuleStatusInvalid, error.to_string()))?;
+    if report.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1")
+        || report.get("rules").and_then(Value::as_array).is_none()
+    {
+        return Err(fail(
+            Code::FormalRuleStatusInvalid,
+            "formal-rules status has an invalid protocol or rules list",
+        ));
+    }
+    Ok(report)
+}
+
+fn status_claim_spans(
+    status: &Value,
+    request: &FormalizeInput,
+    context: &Context,
+) -> Result<Vec<ClaimSpan>, Failure> {
+    let rules = status
+        .get("rules")
+        .and_then(Value::as_array)
+        .ok_or_else(|| fail(Code::FormalRuleStatusInvalid, "rules missing"))?;
+    let draft = FormalizationDraft::open(request, context)?;
+    let mut spans = Vec::new();
+    for rule in rules {
+        let symbol = rule
+            .get("symbol")
+            .and_then(Value::as_str)
+            .ok_or_else(|| fail(Code::FormalRuleStatusInvalid, "rule symbol missing"))?;
+        let selected = request
+            .drafted_symbols
+            .iter()
+            .any(|candidate| candidate == symbol);
+        let approved = rule.get("state").and_then(Value::as_str) == Some("approved");
+        if !selected && !approved {
+            continue;
+        }
+        if approved && !selected && !rule_formalizes_same_document(rule, &request.requirement_id) {
+            continue;
+        }
+        if selected
+            && !draft
+                .relative
+                .eq(rule.get("path").and_then(Value::as_str).unwrap_or_default())
+        {
+            return Err(fail(
+                Code::FormalRuleStatusInvalid,
+                "draft symbol path differs from checked draft",
+            ));
+        }
+        let path = rule
+            .get("path")
+            .and_then(Value::as_str)
+            .ok_or_else(|| fail(Code::FormalRuleStatusInvalid, "rule path missing"))?;
+        let range = rule
+            .get("declaration_range")
+            .ok_or_else(|| fail(Code::FormalRuleStatusInvalid, "declaration_range missing"))?;
+        let start = range
+            .get("start")
+            .and_then(Value::as_u64)
+            .ok_or_else(|| fail(Code::FormalRuleStatusInvalid, "declaration start missing"))?;
+        let end = range
+            .get("end")
+            .and_then(Value::as_u64)
+            .ok_or_else(|| fail(Code::FormalRuleStatusInvalid, "declaration end missing"))?;
+        if end <= start || (selected && rule.get("state").and_then(Value::as_str) != Some("draft"))
+        {
+            return Err(fail(
+                Code::FormalRuleStatusInvalid,
+                "invalid declaration range or draft state",
+            ));
+        }
+        spans.push(ClaimSpan {
+            authority: "file".to_owned(),
+            identity: path.to_owned(),
+            start,
+            end,
+            symbol: symbol.to_owned(),
+        });
+    }
+    if !request
+        .drafted_symbols
+        .iter()
+        .all(|symbol| spans.iter().any(|span| &span.symbol == symbol))
+    {
+        return Err(fail(
+            Code::FormalRuleApprovalMissing,
+            "status report omits a drafted symbol",
+        ));
+    }
+    Ok(spans)
+}
+
+fn rule_formalizes_same_document(rule: &Value, requirement_id: &str) -> bool {
+    let target = requirement_document_id(requirement_id);
+    rule.get("formalizes")
+        .and_then(Value::as_array)
+        .is_some_and(|ids| {
+            ids.iter()
+                .filter_map(Value::as_str)
+                .any(|id| requirement_document_id(id) == target)
+        })
+}
+
+fn requirement_document_id(id: &str) -> &str {
+    id.split_once("-AC-").map_or(id, |(document, _)| document)
+}
+
+fn read_analysis_package(path: &Path) -> Result<ContractPackageV1, Failure> {
+    let invalid = |message: String| fail(Code::AnalysisPackageInvalid, message);
+    let metadata = std::fs::metadata(path).map_err(|error| invalid(error.to_string()))?;
+    if !metadata.is_file() {
+        return Err(invalid("analysis package is not a regular file".to_owned()));
+    }
+    let limits = CheckedPackageReadLimits::bounded();
+    let mut bytes = Vec::new();
+    std::fs::File::open(path)
+        .and_then(|file| {
+            file.take(limits.bytes.saturating_add(1))
+                .read_to_end(&mut bytes)
+        })
+        .map_err(|error| invalid(error.to_string()))?;
+    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > limits.bytes {
+        return Err(invalid(
+            "analysis package exceeds the contract reader byte limit".to_owned(),
+        ));
+    }
+    let result = ContractPackageWireV1::read(&bytes, limits, &BTreeMap::default());
+    admit_analysis_package(result)
+}
+
+fn admit_analysis_package(result: ContractPackageReadResult) -> Result<ContractPackageV1, Failure> {
+    match result {
+        ContractPackageReadResult::Admitted(package) => Ok(*package),
+        ContractPackageReadResult::Refused(refusal) => Err(fail(
+            Code::AnalysisPackageInvalid,
+            format!("contract package was refused: {refusal}"),
+        )),
+        ContractPackageReadResult::Incomplete(incomplete) => Err(fail(
+            Code::AnalysisPackageInvalid,
+            format!("contract package exhausted a read limit: {incomplete:?}"),
+        )),
+        ContractPackageReadResult::CatalogUnavailable(error) => {
+            Err(catalog_unavailable_failure(&error))
+        }
+    }
+}
+
+fn catalog_unavailable_failure(error: &CatalogReadError) -> Failure {
+    fail(
+        Code::CatalogUnavailable,
+        format!("contract package reader is unavailable: {error}"),
+    )
+}
+
+fn package_claim_spans(package: &ContractPackageV1) -> Result<Vec<ClaimSpan>, Failure> {
+    let wire = package.wire();
+    let nodes = serde_json::to_value(&wire.semantic_graph.nodes).map_err(|error| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            format!("cannot inspect admitted semantic graph: {error}"),
+        )
+    })?;
+    let nodes = nodes.as_array().ok_or_else(|| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            "admitted semantic graph has no nodes",
+        )
+    })?;
+    let map = serde_json::to_value(&wire.source_map.nodes).map_err(|error| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            format!("cannot inspect admitted source map: {error}"),
+        )
+    })?;
+    let map = map.as_array().ok_or_else(|| {
+        fail(
+            Code::AnalysisPackageInvalid,
+            "admitted source map has no nodes",
+        )
+    })?;
+    let claim_ids: BTreeSet<String> = nodes
+        .iter()
+        .filter(|node| {
+            node.get("node_tag").and_then(Value::as_str) == Some("claim")
+                && node.get("semantic_form").and_then(Value::as_str) == Some("analysis_claim")
+        })
+        .map(|node| {
+            serde_json::to_string(node.get("node_id").unwrap_or(&Value::Null)).unwrap_or_default()
+        })
+        .collect();
+    if claim_ids.is_empty() {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "package contains no analysis claims",
+        ));
+    }
+    let mut spans = Vec::new();
+    for entry in map {
+        let id =
+            serde_json::to_string(entry.get("node_id").unwrap_or(&Value::Null)).unwrap_or_default();
+        if !claim_ids.contains(&id) {
+            continue;
+        }
+        let occurrences = entry
+            .get("occurrences")
+            .and_then(Value::as_array)
+            .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "claim occurrences missing"))?;
+        for occurrence in occurrences {
+            let regions = occurrence
+                .get("regions")
+                .and_then(Value::as_array)
+                .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "claim regions missing"))?;
+            for region in regions {
+                let source = region
+                    .get("source")
+                    .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "claim source missing"))?;
+                let authority =
+                    source
+                        .get("authority")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            fail(Code::AnalysisPackageInvalid, "source authority missing")
+                        })?;
+                let identity = source
+                    .get("identity")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "source identity missing"))?;
+                let start = region
+                    .get("start")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "source start missing"))?;
+                let end = region
+                    .get("end")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| fail(Code::AnalysisPackageInvalid, "source end missing"))?;
+                spans.push(ClaimSpan {
+                    authority: authority.to_owned(),
+                    identity: identity.to_owned(),
+                    start,
+                    end,
+                    symbol: String::new(),
+                });
+            }
+        }
+    }
+    if spans.is_empty() {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "package claims have no source spans",
+        ));
+    }
+    Ok(spans)
+}
+
+fn bind_package_claims(
+    expected: &[ClaimSpan],
+    package: &[ClaimSpan],
+    request: &FormalizeInput,
+) -> Result<Vec<ClaimSpan>, Failure> {
+    let mut matched = BTreeSet::new();
+    let mut bound = Vec::new();
+    for claim in package {
+        let candidates: Vec<_> = expected
+            .iter()
+            .filter(|span| {
+                span.identity == claim.identity
+                    && claim.start >= span.start
+                    && claim.end <= span.end
+            })
+            .collect();
+        if candidates.len() != 1 {
+            return Err(fail(
+                Code::AnalysisPackageInvalid,
+                "claim source span does not map uniquely to a drafted or approved declaration",
+            ));
+        }
+        let candidate = candidates.first().ok_or_else(|| {
+            fail(
+                Code::AnalysisPackageInvalid,
+                "claim source span does not map uniquely to a drafted or approved declaration",
+            )
+        })?;
+        matched.insert(candidate.symbol.clone());
+        bound.push(ClaimSpan {
+            authority: claim.authority.clone(),
+            identity: claim.identity.clone(),
+            start: claim.start,
+            end: claim.end,
+            symbol: candidate.symbol.clone(),
+        });
+    }
+    if expected.iter().any(|span| !matched.contains(&span.symbol))
+        || request
+            .drafted_symbols
+            .iter()
+            .any(|symbol| !matched.contains(symbol))
+    {
+        return Err(fail(
+            Code::AnalysisPackageInvalid,
+            "package omits a drafted or approved claim",
+        ));
+    }
+    Ok(bound)
+}
+
+struct AnalysisRun {
+    status: String,
+    path: PathBuf,
+}
+struct AnalyzerInvocation<'a> {
+    analyzer: &'a Path,
+    package: &'a str,
+    selection: &'a Path,
+    directory: &'a Path,
+    z3: &'a Path,
+    cvc5: &'a Path,
+    producer: &'a str,
+}
+
+fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<AnalysisRun, Failure> {
+    let path = invocation.directory.join(format!("{mode}.json"));
+    let arguments = vec![
+        "run-package".to_owned(),
+        "--package".to_owned(),
+        invocation.package.to_owned(),
+        "--output".to_owned(),
+        path.to_string_lossy().into_owned(),
+        "--z3".to_owned(),
+        invocation.z3.to_string_lossy().into_owned(),
+        "--cvc5".to_owned(),
+        invocation.cvc5.to_string_lossy().into_owned(),
+        "--producer-execute".to_owned(),
+        invocation.producer.to_owned(),
+        "--request".to_owned(),
+        mode.to_owned(),
+        "--select".to_owned(),
+        invocation.selection.to_string_lossy().into_owned(),
+    ];
+    let arguments = arguments.iter().map(String::as_str).collect::<Vec<_>>();
+    let output = run_tool(
+        invocation.analyzer,
+        &arguments,
+        invocation.directory,
+        Instant::now() + Duration::from_secs(20),
+    )
+    .map_err(|error| fail(Code::AnalysisInconclusive, error))?;
+    let bytes = std::fs::read(&path).map_err(|error| {
+        fail(
+            Code::AnalysisInconclusive,
+            format!(
+                "analysis report unavailable: {error}; {}",
+                tool_message(&output)
+            ),
+        )
+    })?;
+    let report: Value = serde_json::from_slice(&bytes).map_err(|error| {
+        fail(
+            Code::AnalysisInconclusive,
+            format!("analysis report invalid: {error}"),
+        )
+    })?;
+    if report.get("analysisKind").and_then(Value::as_str) != Some(mode) {
+        return Err(fail(
+            Code::AnalysisInconclusive,
+            "analysis report names a different request mode",
+        ));
+    }
+    let differential = report.get("differential").ok_or_else(|| {
+        fail(
+            Code::AnalysisInconclusive,
+            "analysis report lacks differential",
+        )
+    })?;
+    if differential.get("disposition").and_then(Value::as_str) != Some("agreement") {
+        return Err(fail(
+            Code::AnalysisInconclusive,
+            "analysis engines did not agree",
+        ));
+    }
+    let status = differential
+        .get("agreedStatus")
+        .and_then(Value::as_str)
+        .ok_or_else(|| {
+            fail(
+                Code::AnalysisInconclusive,
+                "analysis report lacks agreedStatus",
+            )
+        })?;
+    if !matches!(status, "satisfied" | "refuted") {
+        return Err(fail(
+            Code::AnalysisInconclusive,
+            "analysis report is inconclusive",
+        ));
+    }
+    let expected_exit = if status == "satisfied" {
+        Some(0)
+    } else {
+        Some(1)
+    };
+    if output.status.code() != expected_exit {
+        return Err(fail(
+            Code::AnalysisInconclusive,
+            "analysis exit status disagrees with its report",
+        ));
+    }
+    Ok(AnalysisRun {
+        status: status.to_owned(),
+        path,
+    })
 }
 
 fn formalization_check(request: &FormalizeInput, context: &Context) -> Check {

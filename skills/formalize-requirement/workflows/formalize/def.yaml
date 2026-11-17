@@ -42,10 +42,11 @@ transitions:
 itemSchemas:
   quoin_context: {}
   formalization_request:
-    required: [requirement_id, draft_path, engineering_assurance, allowed_signers]
+    required: [requirement_id, draft_path, analysis_package, engineering_assurance, allowed_signers]
     properties:
       requirement_id: {type: string}
       draft_path: {type: string}
+      analysis_package: {type: string}
       engineering_assurance: {type: string}
       allowed_signers: {type: string}
       gitsign:
@@ -71,5 +72,6 @@ interviews:
     questions:
       - {key: requirement_id, prompt: "Requirement or criterion id to formalize", type: text, required: true}
       - {key: draft_path, prompt: "Repository-relative path for the .native draft", type: text, required: true}
+      - {key: analysis_package, prompt: "Absolute path to the prepared filament.contract-package/v1 analysis package", type: text, required: true}
       - {key: engineering_assurance, prompt: "Absolute path to the engineering-assurance executable", type: text, required: true}
       - {key: allowed_signers, prompt: "Absolute path to the allowed-signers file", type: text, required: true}
