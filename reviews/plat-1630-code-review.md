@@ -57,4 +57,3 @@ The changes resolve approval roles against installed clause-set metadata, gate o
 - FR-208-CON-2: When the Quoin runtime processes approval metadata, it SHALL NOT calculate a risk score, apply a risk threshold, or make an automated risk-acceptability decision. (examined)
 - FR-208: Quoin SHALL apply approval requirements declared by the installed clause set when it discharges facts against a validated binding report. (examined)
 - FR-046 direct facts: A direct evidence fact MAY carry an approvalRef that identifies a human approval associated with the evidence. (context only)
-

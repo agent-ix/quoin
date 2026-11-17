@@ -29,7 +29,7 @@ pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
 ///
 /// A direct fact's blank `approvalRef` must reach the classifier so it can
 /// leave policy-required clauses open. The generic FR-046 path still rejects
-/// it, and this parser is only used by the policy-aware report builder.
+/// it, and this parser is only used by policy-aware report and store paths.
 pub(super) fn parse_fact_with_approval_requirements(
     value: &serde_json::Value,
     required_approval_clauses: &BTreeSet<String>,

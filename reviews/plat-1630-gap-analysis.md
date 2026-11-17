@@ -34,4 +34,3 @@ The repository-driven matrix audit found 623 untagged criteria and 3 criteria ta
 - FR-208 matrix: AC-1 through AC-4 tagged by runnable tests; AC-5 is an Inspection criterion and was reviewed in the runtime output and serializers.
 - Reverse gaps / stubs: changed FR-208 production paths are owned by FR-208; no TODO, FIXME, XXX, `todo!()` or `unimplemented!()` stubs found in changed files.
 - Semantic review: skipped (not requested).
-
