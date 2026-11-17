@@ -105,6 +105,7 @@ statistical_design:
       - "evidence trust:unknown-flag"
       - "evidence:unknown-flag"
       - "evidence:unknown-subcommand"
+      - "formalize:unknown-flag"
       - "graph change-impact:missing-argument"
       - "graph change-impact:unknown-flag"
       - "graph fan-out:missing-argument"

@@ -1160,7 +1160,7 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
         &bad_kind,
         read(&srs).replace(
             "document_kind: \"srs\"",
-            "document_kind: \"verification-report\"",
+            "document_kind: \"unknown-dossier-kind\"",
         ),
     )
     .unwrap();
