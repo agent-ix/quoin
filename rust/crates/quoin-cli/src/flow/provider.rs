@@ -12,7 +12,8 @@ use std::process::{Command as ProcessCommand, Stdio};
 use std::time::{Duration, Instant};
 
 use filament_contract_model::{
-    CheckedPackageReadLimits, ContractPackageReadResult, ContractPackageV1, ContractPackageWireV1,
+    CatalogReadError, CheckedPackageReadLimits, ContractPackageReadResult, ContractPackageV1,
+    ContractPackageWireV1,
 };
 use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde::{Deserialize, Serialize};
@@ -1025,23 +1026,32 @@ fn read_analysis_package(path: &Path) -> Result<ContractPackageV1, Failure> {
             "analysis package exceeds the contract reader byte limit".to_owned(),
         ));
     }
-    let admitted = match ContractPackageWireV1::read(&bytes, limits, &BTreeMap::default()) {
-        ContractPackageReadResult::Admitted(package) => *package,
-        ContractPackageReadResult::Refused(refusal) => {
-            return Err(invalid(format!("contract package was refused: {refusal}")));
-        }
-        ContractPackageReadResult::Incomplete(incomplete) => {
-            return Err(invalid(format!(
-                "contract package exhausted a read limit: {incomplete:?}"
-            )));
-        }
+    let result = ContractPackageWireV1::read(&bytes, limits, &BTreeMap::default());
+    admit_analysis_package(result)
+}
+
+fn admit_analysis_package(result: ContractPackageReadResult) -> Result<ContractPackageV1, Failure> {
+    match result {
+        ContractPackageReadResult::Admitted(package) => Ok(*package),
+        ContractPackageReadResult::Refused(refusal) => Err(fail(
+            Code::AnalysisPackageInvalid,
+            format!("contract package was refused: {refusal}"),
+        )),
+        ContractPackageReadResult::Incomplete(incomplete) => Err(fail(
+            Code::AnalysisPackageInvalid,
+            format!("contract package exhausted a read limit: {incomplete:?}"),
+        )),
         ContractPackageReadResult::CatalogUnavailable(error) => {
-            return Err(invalid(format!(
-                "contract package reader is unavailable: {error}"
-            )));
+            Err(catalog_unavailable_failure(&error))
         }
-    };
-    Ok(admitted)
+    }
+}
+
+fn catalog_unavailable_failure(error: &CatalogReadError) -> Failure {
+    fail(
+        Code::CatalogUnavailable,
+        format!("contract package reader is unavailable: {error}"),
+    )
 }
 
 fn package_claim_spans(package: &ContractPackageV1) -> Result<Vec<ClaimSpan>, Failure> {

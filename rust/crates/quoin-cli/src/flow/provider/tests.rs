@@ -11,9 +11,9 @@
 use super::serve;
 #[cfg(unix)]
 use super::{
-    AnalysisTools, ClaimSpan, Context, FormalizeInput, analysis_consistent_with_approved,
-    analysis_consistent_with_tools, bind_package_claims, formal_rule_approved_with_binary,
-    formalization_check_with_tools,
+    AnalysisTools, CatalogReadError, ClaimSpan, Context, ContractPackageReadResult, FormalizeInput,
+    admit_analysis_package, analysis_consistent_with_approved, analysis_consistent_with_tools,
+    bind_package_claims, formal_rule_approved_with_binary, formalization_check_with_tools,
 };
 #[cfg(unix)]
 use filament_contract_model::{
@@ -28,11 +28,16 @@ use serde_json::{Value, json};
 #[cfg(unix)]
 use std::collections::BTreeSet;
 #[cfg(unix)]
+use std::fmt::Write as _;
+#[cfg(unix)]
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 #[cfg(unix)]
 use std::path::{Path, PathBuf};
+
+#[cfg(unix)]
+type ExpectedClaimSpan = (String, String, u64, u64);
 
 fn request() -> Value {
     json!({"protocol":"quoin.workflow-invariants/v1","evaluated_at":"2026-10-24T00:00:00Z","invariants":["unknown"],"instance":{"defName":"review","items":{},"gateConfig":{}}})
@@ -232,10 +237,10 @@ fn analysis_invariant_uses_valid_package_and_draft_only_selection() {
     ];
     let (package, spans) = contract_analysis_package(directory.path(), &claims);
     let draft = spans.first().expect("draft span");
-    let request = analysis_request(request, &package, &[draft.0.clone()]);
+    let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
     let status = status_for_rules(
         directory.path(),
-        vec![
+        &[
             status_rule(draft, "draft"),
             status_rule(span_at(&spans, 1), "approved"),
         ],
@@ -299,7 +304,7 @@ fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages()
         "analyzer-must-not-run",
         &format!("touch '{}'\\nexit 0", marker.display()),
     );
-    let status = status_for_rules(directory.path(), Vec::new());
+    let status = status_for_rules(directory.path(), &[]);
     let z3 = executable(directory.path(), "z3", "exit 0");
     let cvc5 = executable(directory.path(), "cvc5", "exit 0");
     let unreadable = directory.path().join("missing-package.json");
@@ -322,6 +327,18 @@ fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages()
 }
 
 #[cfg(unix)]
+#[test]
+fn analysis_package_reader_catalog_failure_is_not_a_package_refusal() {
+    let result = ContractPackageReadResult::CatalogUnavailable(CatalogReadError::new(
+        "operations[3].kind",
+        "unsupported operation catalog entry",
+    ));
+    let failure = admit_analysis_package(result)
+        .expect_err("reader catalog failure is an infrastructure failure");
+    assert_eq!(failure.code.to_string(), "WORKFLOW_CATALOG_UNAVAILABLE");
+}
+
+#[cfg(unix)]
 #[trace("FR-189-AC-18")]
 #[test]
 fn analysis_invariant_rejects_claims_outside_the_checked_draft_and_approved_set() {
@@ -333,7 +350,7 @@ fn analysis_invariant_rejects_claims_outside_the_checked_draft_and_approved_set(
     let (package, spans) = contract_analysis_package(directory.path(), &claims);
     let first = span_at(&spans, 0);
     let second = span_at(&spans, 1);
-    let request = analysis_request(request, &package, &[first.0.clone()]);
+    let request = analysis_request(request, &package, std::slice::from_ref(&first.0));
     let mut unrelated_approved = status_rule(second, "approved");
     *unrelated_approved
         .as_object_mut()
@@ -341,7 +358,7 @@ fn analysis_invariant_rejects_claims_outside_the_checked_draft_and_approved_set(
         .expect("formalizes status field") = json!(["FR-002"]);
     let status = status_for_rules(
         directory.path(),
-        vec![status_rule(first, "draft"), unrelated_approved],
+        &[status_rule(first, "draft"), unrelated_approved],
     );
     let marker = directory.path().join("analyzer-called");
     let analyzer = executable(
@@ -372,10 +389,10 @@ fn analysis_invariant_fails_with_contradiction_classification() {
     ];
     let (package, spans) = contract_analysis_package(directory.path(), &claims);
     let draft = spans.first().expect("draft span");
-    let request = analysis_request(request, &package, &[draft.0.clone()]);
+    let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
     let status = status_for_rules(
         directory.path(),
-        vec![
+        &[
             status_rule(draft, "draft"),
             status_rule(span_at(&spans, 1), "approved"),
         ],
@@ -421,10 +438,10 @@ fn analysis_invariant_classifies_redundancy_or_consistency_for_one_draft() {
         ];
         let (package, spans) = contract_analysis_package(directory.path(), &claims);
         let draft = spans.first().expect("draft span");
-        let request = analysis_request(request, &package, &[draft.0.clone()]);
+        let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
         let status = status_for_rules(
             directory.path(),
-            vec![
+            &[
                 status_rule(draft, "draft"),
                 status_rule(span_at(&spans, 1), "approved"),
             ],
@@ -477,7 +494,7 @@ fn analysis_invariant_compares_multi_draft_without_redundancy_mode() {
     );
     let status = status_for_rules(
         directory.path(),
-        vec![
+        &[
             status_rule(span_at(&spans, 0), "draft"),
             status_rule(span_at(&spans, 1), "draft"),
             status_rule(span_at(&spans, 2), "approved"),
@@ -530,10 +547,10 @@ fn analysis_invariant_fails_closed_for_disagreement_and_unavailable_reports() {
         ];
         let (package, spans) = contract_analysis_package(directory.path(), &claims);
         let draft = spans.first().expect("draft span");
-        let request = analysis_request(request, &package, &[draft.0.clone()]);
+        let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
         let status = status_for_rules(
             directory.path(),
-            vec![
+            &[
                 status_rule(draft, "draft"),
                 status_rule(span_at(&spans, 1), "approved"),
             ],
@@ -568,10 +585,10 @@ fn analysis_invariant_stops_after_a_self_inconsistent_draft() {
     ];
     let (package, spans) = contract_analysis_package(directory.path(), &claims);
     let draft = spans.first().expect("draft span");
-    let request = analysis_request(request, &package, &[draft.0.clone()]);
+    let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
     let status = status_for_rules(
         directory.path(),
-        vec![
+        &[
             status_rule(draft, "draft"),
             status_rule(span_at(&spans, 1), "approved"),
         ],
@@ -613,10 +630,7 @@ fn status_for_rule(directory: &Path, state: &str, reason: Option<&str>) -> PathB
 }
 
 #[cfg(unix)]
-fn contract_analysis_package(
-    directory: &Path,
-    claims: &[(&str, &str)],
-) -> (PathBuf, Vec<(String, String, u64, u64)>) {
+fn checked_analysis_graph(claims: &[(&str, &str)]) -> (Value, Vec<ExpectedClaimSpan>) {
     let package_name = "test/flow";
     let draft_identity = "qsl/rule.native";
     let id = |label: &str| json!({"package":package_name,"path":[label],"ordinal":0});
@@ -707,6 +721,13 @@ fn contract_analysis_package(
         "capability_report":[{"feature":"filament.value.complete/v1","disposition":"available"}],
         "diagnostics":{"catalog":{"authority":"repo","identity":"test/diagnostics"},"entries":[]},
     });
+    (checked, expected)
+}
+
+#[cfg(unix)]
+fn checked_analysis_package(claims: &[(&str, &str)]) -> (Vec<u8>, Vec<ExpectedClaimSpan>) {
+    let (checked, expected) = checked_analysis_graph(claims);
+    let id = |label: &str| json!({"package":"test/flow","path":[label],"ordinal":0});
     let checked_bytes = serde_json::to_vec(&checked).expect("checked package JSON");
     let mut evidence = CheckedPackageEvidence::new();
     evidence.support_feature("filament.value.complete/v1");
@@ -715,9 +736,10 @@ fn contract_analysis_package(
         CheckedPackageReadLimits::bounded(),
         &evidence,
     ) {
-        CheckedPackageV2ReadResult::Admitted(package) => *package,
-        other => panic!("checked package fixture rejected: {other:?}"),
-    };
+        CheckedPackageV2ReadResult::Admitted(package) => Ok(*package),
+        other => Err(format!("checked package fixture rejected: {other:?}")),
+    }
+    .expect("checked package fixture admitted");
     let requested = claims
         .iter()
         .enumerate()
@@ -746,14 +768,24 @@ fn contract_analysis_package(
     let package = lowered
         .package
         .canonical_bytes()
-        .expect("canonical contract package");
+        .expect("canonical contract package")
+        .to_vec();
+    (package, expected)
+}
+
+#[cfg(unix)]
+fn contract_analysis_package(
+    directory: &Path,
+    claims: &[(&str, &str)],
+) -> (PathBuf, Vec<ExpectedClaimSpan>) {
+    let (package, expected) = checked_analysis_package(claims);
     let path = directory.join("analysis-package.json");
     fs::write(&path, package).expect("write analysis package");
     (path, expected)
 }
 
 #[cfg(unix)]
-fn status_for_rules(directory: &Path, rules: Vec<Value>) -> PathBuf {
+fn status_for_rules(directory: &Path, rules: &[Value]) -> PathBuf {
     let report = json!({"protocol":"quoin.formal-rule-status/v1","rules":rules});
     let body = format!("printf '%s\\n' '{report}'");
     executable(directory, "quoin-status-analysis", &body)
@@ -775,10 +807,9 @@ fn analyzer_stub(directory: &Path, outcomes: &[(&str, &str)]) -> (PathBuf, PathB
             "disagreement" => {
                 "printf '{\"analysisKind\":\"%s\",\"differential\":{\"disposition\":\"disagreement\",\"agreedStatus\":null}}' \"$mode\" > \"$output\"; exit 3"
             }
-            "unavailable" => "exit 4",
             _ => "exit 4",
         };
-        cases.push_str(&format!("{mode}) {branch} ;;\n"));
+        writeln!(&mut cases, "{mode}) {branch} ;;").expect("append analyzer case");
     }
     let body = format!(
         "while [ \"$#\" -gt 0 ]; do case \"$1\" in --output) output=\"$2\"; shift 2 ;; --request) mode=\"$2\"; shift 2 ;; --select) cp \"$2\" '{}' ; shift 2 ;; *) shift ;; esac; done\nprintf '%s\\n' \"$mode\" >> '{}'\ncase \"$mode\" in\n{}*) exit 4 ;;\nesac",
@@ -833,11 +864,8 @@ fn analysis_tools<'a>(
 }
 
 #[cfg(unix)]
-fn span_at<'a>(
-    spans: &'a [(String, String, u64, u64)],
-    index: usize,
-) -> &'a (String, String, u64, u64) {
-    spans.iter().nth(index).expect("fixture span")
+fn span_at(spans: &[(String, String, u64, u64)], index: usize) -> &(String, String, u64, u64) {
+    spans.get(index).expect("fixture span")
 }
 
 #[cfg(unix)]
