@@ -38,6 +38,10 @@ impl MatrixSource for NoMatrix {
     }
 }
 
+#[allow(
+    clippy::unnecessary_wraps,
+    reason = "source adapters share the fallible generator contract"
+)]
 fn processing_records(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
     let activity = Document {
         path: PathBuf::from("spec/ACT-COVERS.md"),
