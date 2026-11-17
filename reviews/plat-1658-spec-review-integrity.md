@@ -37,3 +37,4 @@ One low consistency finding. Reconcile the aggregate and individual test statuse
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | The aggregate FR-207 row now uses 🚧, matching all eight TC-617..TC-624 rows. The IDs and relationships remain consistent. |
+

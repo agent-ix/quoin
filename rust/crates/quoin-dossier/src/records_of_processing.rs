@@ -1129,7 +1129,7 @@ mod tests {
         );
     }
 
-    #[trace("TC-619", "FR-207-AC-3")]
+    #[trace("TC-625", "FR-207-AC-3")]
     #[test]
     fn delivered_classification_only_suppresses_gap_for_its_sink() {
         let records = corpus(vec![document(

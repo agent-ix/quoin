@@ -29,3 +29,4 @@ description: "Index of test cases (TC) for quoin."
 - [TC-622: FR-207 AC-6 invalid covers relationships](./tc-622-records-of-processing-dossier.md)
 - [TC-623: FR-207 AC-7 missing flow facts](./tc-623-records-of-processing-dossier.md)
 - [TC-624: FR-207 AC-8 deterministic records-of-processing output](./tc-624-records-of-processing-dossier.md)
+- [TC-625: FR-207 AC-3 sink-specific delivered classification](./tc-625-sink-specific-delivered-classification.md)
