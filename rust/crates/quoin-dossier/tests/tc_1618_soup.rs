@@ -46,6 +46,7 @@ fn registry() -> quoin_dossier::Registry {
         rmm: |_| panic!("unexpected discharge source"),
         soup: source,
         policy: |_| panic!("unexpected policy source"),
+        threat_model: |_| panic!("unexpected threat-model source"),
     })
     .unwrap()
 }

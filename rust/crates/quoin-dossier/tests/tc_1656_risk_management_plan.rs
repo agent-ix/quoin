@@ -52,6 +52,7 @@ fn registry() -> quoin_dossier::Registry {
         rmm: |_| Err(unexpected("risk management")),
         soup: |_| Err(unexpected("SOUP")),
         policy: policy_source,
+        threat_model: |_| panic!("unexpected threat-model source"),
     })
     .unwrap()
 }

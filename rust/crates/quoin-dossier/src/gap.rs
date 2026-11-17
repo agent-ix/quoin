@@ -73,12 +73,20 @@ pub enum GapKind {
     NoReleaseVerifyInput,
     /// Engineering Assurance did not verify a release.
     ReleaseNotVerified,
+    /// A covered connection has no reported threat.
+    CrossingWithoutThreat,
+    /// A covered data sink reached by a classification has no reported threat.
+    ClassifiedSinkWithoutThreat,
+    /// A considered threat has neither a treatment control nor an accepted risk.
+    ThreatWithoutTreatment,
+    /// The selected scope has no threat model record.
+    NoThreatModel,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 28] = [
+    pub(crate) const ALL: [Self; 32] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -107,6 +115,10 @@ impl GapKind {
         Self::NoSnapshot,
         Self::NoReleaseVerifyInput,
         Self::ReleaseNotVerified,
+        Self::CrossingWithoutThreat,
+        Self::ClassifiedSinkWithoutThreat,
+        Self::ThreatWithoutTreatment,
+        Self::NoThreatModel,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -141,6 +153,10 @@ impl GapKind {
             Self::NoSnapshot => "no_snapshot",
             Self::NoReleaseVerifyInput => "no_release_verify_input",
             Self::ReleaseNotVerified => "release_not_verified",
+            Self::CrossingWithoutThreat => "crossing_without_threat",
+            Self::ClassifiedSinkWithoutThreat => "classified_sink_without_threat",
+            Self::ThreatWithoutTreatment => "threat_without_treatment",
+            Self::NoThreatModel => "no_threat_model",
         }
     }
 
@@ -302,6 +318,10 @@ mod tests {
                 "no_snapshot",
                 "no_release_verify_input",
                 "release_not_verified",
+                "crossing_without_threat",
+                "classified_sink_without_threat",
+                "threat_without_treatment",
+                "no_threat_model",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {
