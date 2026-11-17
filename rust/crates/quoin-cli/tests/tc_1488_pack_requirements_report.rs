@@ -478,9 +478,7 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
     record(&env, &env.repo, "gdpr", "1.0.0", &[approved]);
     let accepted = json(&env.report(&["--json"]));
-    let rows = accepted["matrices"][0]["rows"]
-        .as_array()
-        .unwrap();
+    let rows = accepted["matrices"][0]["rows"].as_array().unwrap();
     let art_35 = rows
         .iter()
         .find(|row| row["clauseId"] == "art-35(1)")
