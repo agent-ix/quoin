@@ -57,6 +57,6 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 
 ## Dependencies
 
-- **Upstream**: [FR-191](./FR-191-dossier-command.md); quire-rs FR-086 and FR-092; quire-cli FR-041 (existing rendering of the join).
+- **Upstream**: [FR-191](./FR-191-dossier-command.md); quire-rs [FR-086](ix://agent-ix/quire-rs/FR-086) and [FR-092](ix://agent-ix/quire-rs/FR-092); quire-cli [FR-041](ix://agent-ix/quire-cli/FR-041) (existing rendering of the join).
 - **Upstream (open)**: `quoin-quire` exposes the design join and design matrix but not the systems records (`PartRecord`, `PortRecord`, `ConnectionRecord`, allocation). Exposing them is build work for PLAT-1437, which implements this document. Until it lands the generator cannot list parts, ports and connections.
 - **Downstream**: none.
