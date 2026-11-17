@@ -309,9 +309,6 @@ fn matrix_unbacked_claim(
 
     CoverageMatrixUnbackedClaim {
         reason: match source.reason {
-            CoverageMatrixClaimReason::TaggedWithoutCitingMatrixRow => {
-                "tagged-without-citing-matrix-row".to_owned()
-            }
             CoverageMatrixClaimReason::UnmarkedTraceId => "unmarked-trace-id".to_owned(),
         },
         id: source.id.clone(),
