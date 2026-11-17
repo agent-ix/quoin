@@ -60,6 +60,7 @@ fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
     let mut activities = activities;
     activities.sort_by(|left, right| crate::order::dossier_cmp(&left.id, &right.id));
     let mut body = String::from("# Records of processing\n\n");
+    let mut gaps = Vec::new();
     if activities.is_empty() {
         return Generated {
             body,
