@@ -478,6 +478,36 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     assert_eq!(art_35["evidenceRefs"][0], "evidence://run/one");
 }
 
+#[trace("FR-208-AC-4")]
+#[test]
+fn tc_208_004_duplicate_clause_set_owner_refuses_pack_discharge() {
+    let env = env();
+    install_approval_fixture(&env);
+    let duplicate = env.base.join("src/duplicate-pack");
+    std::fs::create_dir_all(&duplicate).unwrap();
+    std::fs::write(
+        duplicate.join("manifest.yaml"),
+        "name: duplicate-pack\nversion: 0.1.0\nclause_sets:\n  - gdpr.yaml\n",
+    )
+    .unwrap();
+    std::fs::copy(env.installed_file("gdpr.yaml"), duplicate.join("gdpr.yaml")).unwrap();
+    let installed = env.run(&[
+        "module",
+        "install",
+        &format!("path:{}", duplicate.display()),
+    ]);
+    assert!(installed.status.success(), "{}", text(&installed));
+
+    let report = env.report(&["--json"]);
+    assert!(!report.status.success(), "{}", text(&report));
+    assert!(
+        text(&report)
+            .contains("multiple installed modules declare clause set example.invalid/gdpr/1.0.0"),
+        "{}",
+        text(&report)
+    );
+}
+
 #[trace("FR-140-AC-4")]
 #[test]
 fn tc_1488_004_the_index_title_and_json_members_carry_no_score_or_count_per_value() {
