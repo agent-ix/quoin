@@ -201,6 +201,12 @@ object_types:
     data_schema: {type: object}
 edge_types:
   scopes: {description: model processing scope, category: dependency}
+semantic:
+  contract_version: 1.0.0
+  package: agent-ix/security-scope-fixture
+  exports: [processing_activity, connection, data_sink, part, queue]
+  targets: [json-schema, markdown]
+  mappings: [relationships]
 "#,
     )
     .unwrap();
