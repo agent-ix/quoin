@@ -142,7 +142,7 @@ fn security_scope_module(root: &std::path::Path) -> PathBuf {
     fs::create_dir_all(root).unwrap();
     fs::write(
         root.join("manifest.yaml"),
-        r#"name: security-scope-fixture
+        r"name: security-scope-fixture
 version: 0.1.0
 object_types:
   - name: processing_activity
@@ -170,7 +170,7 @@ semantic:
   exports: [processing_activity, connection, data_sink, part, queue]
   targets: [json-schema, markdown]
   mappings: [relationships]
-"#,
+",
     )
     .unwrap();
     root.to_path_buf()
