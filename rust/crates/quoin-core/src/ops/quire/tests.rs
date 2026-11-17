@@ -384,7 +384,7 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
         binders,
         unbacked_claims: if id == "FR-001-AC-2" {
             vec![CoverageMatrixUnbackedClaim {
-                reason: CoverageMatrixClaimReason::TaggedWithoutCitingMatrixRow,
+                reason: CoverageMatrixClaimReason::UnmarkedTraceId,
                 id: "FR-001-AC-2".to_owned(),
                 path: "tests/a.rs".to_owned(),
                 line: 12,
