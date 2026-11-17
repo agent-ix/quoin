@@ -414,7 +414,7 @@ mod tests {
             "spec-artifacts-app",
             "agent-ix/spec-artifacts-app",
             "spec_artifacts_app",
-            "v0.10.0",
+            "v0.10.1",
         ),
         (
             "spec-artifacts-process",
