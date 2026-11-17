@@ -54,10 +54,9 @@ pub use authored::{
 };
 pub use case::{AssuranceCase, CaseInput, CaseNode, NodeKind, NodeStatus, Unreadable, build_case};
 pub use discharge::{
-    BuildDischargeRequest, ClauseDischarge, CompletenessSchemaVersion, DISCHARGE_DIR,
-    ClauseApprovalPolicy, DirectDischargeFact, DischargeAttestation, DischargeBinding,
-    DischargeError, DischargeFact,
-    DischargeReport, DischargeSchemaVersion, DischargeState, DischargeStoreError,
+    BuildDischargeRequest, ClauseApprovalPolicy, ClauseDischarge, CompletenessSchemaVersion,
+    DISCHARGE_DIR, DirectDischargeFact, DischargeAttestation, DischargeBinding, DischargeError,
+    DischargeFact, DischargeReport, DischargeSchemaVersion, DischargeState, DischargeStoreError,
     DispositionCounts, DispositionDecision, DispositionFact, FactKind, InwardCompleteness,
     MAX_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS, OpenClause, PackIndexEntry,
     PackRequirementsMapping, PackRequirementsMappingSchemaVersion, RecordDischargeRequest,

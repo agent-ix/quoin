@@ -528,11 +528,17 @@ mod tests {
     #[test]
     fn tc_208_001_approval_roles_are_read_from_the_exact_clause_set() {
         let scratch = Scratch::new();
-        let module = write_module(&scratch, &[("with-roles", "none"), ("without-roles", "none")]);
+        let module = write_module(
+            &scratch,
+            &[("with-roles", "none"), ("without-roles", "none")],
+        );
         let path = scratch.path().join("with-roles.yaml");
         let yaml = std::fs::read_to_string(&path)
             .expect("the declared clause set is readable")
-            .replace("  - id: C-1\n    force: mandatory", "  - id: C-1\n    force: mandatory\n    approvalRoles: [risk-approver]");
+            .replace(
+                "  - id: C-1\n    force: mandatory",
+                "  - id: C-1\n    force: mandatory\n    approvalRoles: [risk-approver]",
+            );
         std::fs::write(path, yaml).expect("approval role is written");
 
         let requirements = approval_required_clauses(&module)

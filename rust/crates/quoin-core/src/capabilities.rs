@@ -118,10 +118,7 @@ pub trait ModuleHost {
         &self,
         module: &InstalledModule,
     ) -> Result<
-        std::collections::BTreeMap<
-            quoin_quire::ClauseSetRef,
-            std::collections::BTreeSet<String>,
-        >,
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
         String,
     >;
 

@@ -106,16 +106,13 @@ impl ModuleHost for FakeHost {
         &self,
         _module: &InstalledModule,
     ) -> Result<
-        std::collections::BTreeMap<
-            quoin_quire::ClauseSetRef,
-            std::collections::BTreeSet<String>,
-        >,
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
         String,
     > {
-        self.evaluation_error
-            .map_or_else(|| Ok(std::collections::BTreeMap::new()), |error| {
-                Err(error.to_owned())
-            })
+        self.evaluation_error.map_or_else(
+            || Ok(std::collections::BTreeMap::new()),
+            |error| Err(error.to_owned()),
+        )
     }
 
     fn install(

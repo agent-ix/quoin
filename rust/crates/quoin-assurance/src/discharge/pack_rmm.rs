@@ -116,14 +116,12 @@ pub fn build_pack_requirements_mapping<S: EvidenceSource + ?Sized>(
         let mut matching = policies;
         let policy = matching.next();
         if matching.next().is_some() {
-            return Err(DischargeStoreError::Discharge(super::report::DischargeError(
-                format!(
+            return Err(DischargeStoreError::Discharge(
+                super::report::DischargeError(format!(
                     "multiple approval policies match clause set {}/{}/{}",
-                    binding.clause_set.authority,
-                    binding.clause_set.id,
-                    binding.clause_set.version
-                ),
-            )));
+                    binding.clause_set.authority, binding.clause_set.id, binding.clause_set.version
+                )),
+            ));
         }
         let report = if let Some(policy) = policy {
             discharge_report_from_store_with_approval_requirements(

@@ -109,7 +109,7 @@ pub use rmm::{
 pub use store::{
     DISCHARGE_DIR, DischargeStoreError, MAX_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS,
     RecordDischargeRequest, RecordedFact, StoreRefusal, StoredDischargeFact,
-    StoredFactSchemaVersion, discharge_report_from_store, inward_completeness_from_store,
-    discharge_report_from_store_with_approval_requirements, read_discharge_facts,
-    record_discharge_facts,
+    StoredFactSchemaVersion, discharge_report_from_store,
+    discharge_report_from_store_with_approval_requirements, inward_completeness_from_store,
+    read_discharge_facts, record_discharge_facts,
 };

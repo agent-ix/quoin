@@ -450,9 +450,7 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
         &[direct("art-35(1)"), direct("no-role")],
     );
     let missing = json(&env.report(&["--json"]));
-    let rows = missing["report"]["matrices"][0]["rows"]
-        .as_array()
-        .unwrap();
+    let rows = missing["report"]["matrices"][0]["rows"].as_array().unwrap();
     let row = |clause_id: &str| {
         rows.iter()
             .find(|row| row["clauseId"] == clause_id)
@@ -466,9 +464,7 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     assert_eq!(row("no-role")["compliance"], "compliant");
 
     let mut approved = direct("art-35(1)");
-    approved["approvalRef"] = serde_json::json!(
-        "person://example.invalid/people/privacy-officer"
-    );
+    approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
     record(&env, &env.repo, "gdpr", "1.0.0", &[approved]);
     let accepted = json(&env.report(&["--json"]));
     let rows = accepted["report"]["matrices"][0]["rows"]

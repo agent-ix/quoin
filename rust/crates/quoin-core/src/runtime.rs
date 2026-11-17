@@ -368,10 +368,7 @@ impl ModuleHost for HostModules {
         &self,
         module: &InstalledModule,
     ) -> Result<
-        std::collections::BTreeMap<
-            quoin_quire::ClauseSetRef,
-            std::collections::BTreeSet<String>,
-        >,
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
         String,
     > {
         let installed = Path::new(&module.target_path);

@@ -40,9 +40,8 @@ use std::collections::BTreeSet;
 use ix_trace_rs::trace;
 use quoin_assurance::discharge::{
     BuildDischargeRequest, DischargeState, DispositionDecision, FactKind, RmmCompliance,
-    UnusedFactReason, build_discharge_report,
-    build_discharge_report_with_approval_requirements, build_requirements_mapping,
-    render_discharge_report,
+    UnusedFactReason, build_discharge_report, build_discharge_report_with_approval_requirements,
+    build_requirements_mapping, render_discharge_report,
 };
 use quoin_quire_types::ClauseBindingReport;
 
@@ -159,8 +158,9 @@ fn tc_1126_every_binding_clause_lands_in_exactly_one_population_and_no_score_is_
 #[test]
 fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
     let required = BTreeSet::from(["SYN-001".to_owned()]);
-    let missing = build_discharge_report_with_approval_requirements(&request(vec![direct()]), &required)
-        .expect("the direct fact is well formed");
+    let missing =
+        build_discharge_report_with_approval_requirements(&request(vec![direct()]), &required)
+            .expect("the direct fact is well formed");
     assert!(missing.binding.direct.is_empty());
     assert_eq!(missing.binding.open[0].clause_id, "SYN-001");
     assert_eq!(
@@ -171,17 +171,18 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
     let mut approved_fact = direct();
     let person_reference = "person://example.invalid/people/privacy-officer";
     approved_fact["approvalRef"] = serde_json::json!(person_reference);
-    let accepted = build_discharge_report_with_approval_requirements(
-        &request(vec![approved_fact]),
-        &required,
-    )
-    .expect("the named-person reference is preserved as caller supplied");
+    let accepted =
+        build_discharge_report_with_approval_requirements(&request(vec![approved_fact]), &required)
+            .expect("the named-person reference is preserved as caller supplied");
     assert_eq!(ids(&accepted.binding.direct), ["SYN-001"]);
     assert_eq!(
-        accepted.binding.direct[0].fact.as_ref().and_then(|fact| match fact {
-            quoin_assurance::DischargeFact::Direct(direct) => direct.approval_ref.as_deref(),
-            quoin_assurance::DischargeFact::Disposition(_) => None,
-        }),
+        accepted.binding.direct[0]
+            .fact
+            .as_ref()
+            .and_then(|fact| match fact {
+                quoin_assurance::DischargeFact::Direct(direct) => direct.approval_ref.as_deref(),
+                quoin_assurance::DischargeFact::Disposition(_) => None,
+            }),
         Some(person_reference)
     );
 
