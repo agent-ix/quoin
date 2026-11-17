@@ -303,11 +303,22 @@ fn install_approval_fixture(env: &Env) {
     .unwrap();
     std::fs::write(
         env.installed_file("gdpr.yaml"),
-        "schemaVersion: clause-set-v1\nauthority: example.invalid\nid: gdpr\n\
-         title: Synthetic GDPR clauses\nversion: 1.0.0\nrights:\n  structure: original\n\
-         text: none\nclauses:\n  - id: art-35(1)\n    force: mandatory\n\
-         approvalRoles: [risk-approver]\n  - id: no-role\n    force: mandatory\n\
-         approvalRoles: []\n",
+        r#"schemaVersion: clause-set-v1
+authority: example.invalid
+id: gdpr
+title: Synthetic GDPR clauses
+version: 1.0.0
+rights:
+  structure: original
+  text: none
+clauses:
+  - id: art-35(1)
+    force: mandatory
+    approvalRoles: [risk-approver]
+  - id: no-role
+    force: mandatory
+    approvalRoles: []
+"#,
     )
     .unwrap();
 }
