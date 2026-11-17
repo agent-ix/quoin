@@ -61,6 +61,13 @@ enum Code {
     FormalRuleStatusInvalid,
     FormalRuleStatusUnavailable,
     FormalRuleTrustInputsInvalid,
+    DataflowCheckUnavailable,
+    DataflowDenied,
+    DataflowNotDenied,
+    DesignGateRequestInvalid,
+    DesignGateRetriesExhausted,
+    DesignGateRetriesNotExhausted,
+    DesignGateDecisionInvalid,
     AnalysisPackageInvalid,
     AnalysisInconclusive,
     DraftClaimsInconsistent,
@@ -101,6 +108,13 @@ impl std::fmt::Display for Code {
             Self::FormalRuleStatusInvalid => "formal_rule_status_invalid",
             Self::FormalRuleStatusUnavailable => "formal_rule_status_unavailable",
             Self::FormalRuleTrustInputsInvalid => "formal_rule_trust_inputs_invalid",
+            Self::DataflowCheckUnavailable => "dataflow_check_unavailable",
+            Self::DataflowDenied => "dataflow_denied",
+            Self::DataflowNotDenied => "dataflow_not_denied",
+            Self::DesignGateRequestInvalid => "design_gate_request_invalid",
+            Self::DesignGateRetriesExhausted => "design_gate_retries_exhausted",
+            Self::DesignGateRetriesNotExhausted => "design_gate_retries_not_exhausted",
+            Self::DesignGateDecisionInvalid => "design_gate_decision_invalid",
             Self::AnalysisPackageInvalid => "analysis_package_invalid",
             Self::AnalysisInconclusive => "analysis_inconclusive",
             Self::DraftClaimsInconsistent => "draft_claims_inconsistent",
@@ -261,6 +275,27 @@ struct FormalizationFailure {
     cleared: bool,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignGateRequest {
+    #[serde(default, rename = "id")]
+    item_id: Option<String>,
+    #[serde(default, rename = "interviewId")]
+    interview_id: Option<String>,
+    #[serde(default, rename = "answeredAt")]
+    answered_at: Option<String>,
+    design_root: PathBuf,
+    module_roots: Vec<PathBuf>,
+    quire_executable: PathBuf,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignGateCheck {
+    attempt: u64,
+    report: Value,
+}
+
 #[derive(Serialize)]
 struct ResultEnvelope {
     protocol: &'static str,
@@ -416,7 +451,10 @@ fn check_with_details(
     instance: &Instance,
     name: &str,
 ) -> Result<Option<BTreeMap<String, Value>>, Failure> {
-    if !matches!(instance.name.as_str(), "review" | "to-plan" | "formalize") {
+    if !matches!(
+        instance.name.as_str(),
+        "review" | "to-plan" | "formalize" | "design-gate"
+    ) {
         return Err(fail(Code::Unknown, &instance.name));
     }
     let context = context(instance)?;
@@ -451,21 +489,511 @@ fn check_with_details(
         ("formalize", "formalization_retries_exhausted") => {
             retries_exhausted(instance).map(|()| None)
         }
+        ("design-gate", "dataflow_rules_pass") => {
+            let request: DesignGateRequest = one(instance, "design_gate_request")?;
+            let (attempt, report) = design_gate_report(instance, &request, &context)?;
+            if report["denials"].as_array().is_some_and(Vec::is_empty) {
+                Ok(Some(BTreeMap::from([
+                    ("attempt".to_owned(), Value::from(attempt)),
+                    ("report".to_owned(), report),
+                ])))
+            } else {
+                Err(dataflow_denied(attempt, report))
+            }
+        }
+        ("design-gate", "design_gate_retry_allowed") => {
+            design_gate_retry_allowed(instance).map(|()| None)
+        }
+        ("design-gate", "design_gate_retries_exhausted") => {
+            design_gate_retries_exhausted(instance).map(|()| None)
+        }
+        ("design-gate", "escalated_acceptance_preserves_denial") => {
+            design_gate_escalated_acceptance(instance).map(Some)
+        }
         (_, "human_acceptance_required") => {
-            if instance
-                .gates
-                .get("validated->accepted")
-                .map(String::as_str)
-                != Some("hitl")
+            let required: &[&str] = if instance.name == "design-gate" {
+                &[
+                    "passed->accepted",
+                    "passed->rejected",
+                    "escalated->accepted",
+                    "escalated->rejected",
+                ]
+            } else {
+                &["validated->accepted"]
+            };
+            if required
+                .iter()
+                .any(|edge| instance.gates.get(*edge).map(String::as_str) != Some("hitl"))
             {
                 return Err(fail(
                     Code::HumanGateRequired,
-                    "validated->accepted must use hitl",
+                    "every acceptance or rejection transition must use hitl",
                 ));
             }
             Ok(None)
         }
         _ => Err(fail(Code::InvariantUnknown, name)),
+    }
+}
+
+fn design_gate_report(
+    instance: &Instance,
+    request: &DesignGateRequest,
+    context: &Context,
+) -> Result<(u64, Value), Failure> {
+    if request.item_id.as_deref().is_some_and(|id| id != "request")
+        || request
+            .interview_id
+            .as_deref()
+            .is_some_and(|id| id != "request")
+        || request.answered_at.as_deref().is_some_and(str::is_empty)
+        || request.module_roots.is_empty()
+        || request.module_roots.len() > 16
+    {
+        return Err(fail(
+            Code::DesignGateRequestInvalid,
+            "design_gate_request requires a quire executable and 1..16 explicit module roots",
+        ));
+    }
+    if !request.quire_executable.is_absolute() || !request.quire_executable.is_file() {
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "the configured quire executable is unavailable",
+        ));
+    }
+    let root = context
+        .repo_root
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    let design_root = scoped_path(&root, &request.design_root)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.message))?;
+    if !design_root.is_dir() {
+        return Err(fail(
+            Code::DesignGateRequestInvalid,
+            "design_root must be a directory within quoin_context.repo_root",
+        ));
+    }
+    let mut module_roots = Vec::with_capacity(request.module_roots.len());
+    let mut module_paths = BTreeSet::new();
+    for path in &request.module_roots {
+        if !path.is_absolute() {
+            return Err(fail(
+                Code::DesignGateRequestInvalid,
+                "every module root must be an absolute path",
+            ));
+        }
+        let module = ModuleRoot::open(path)
+            .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+        if !module_paths.insert(module.as_path().to_path_buf()) {
+            return Err(fail(
+                Code::DesignGateRequestInvalid,
+                "module roots must be unique",
+            ));
+        }
+        module_roots.push(module.as_path().to_path_buf());
+    }
+    let checks = instance
+        .items
+        .get("design_gate_check")
+        .map_or(&[][..], Vec::as_slice);
+    if checks.len() >= 4 {
+        return Err(fail(
+            Code::DesignGateRetriesExhausted,
+            "the fourth denial has already exhausted the retry allowance",
+        ));
+    }
+    let attempt = u64::try_from(checks.len() + 1).map_err(|_| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            "design gate check count is out of range",
+        )
+    })?;
+    for (index, value) in checks.iter().enumerate() {
+        let check: DesignGateCheck = serde_json::from_value(value.clone()).map_err(|error| {
+            fail(
+                Code::DataflowCheckUnavailable,
+                format!("design_gate_check: {error}"),
+            )
+        })?;
+        let expected = u64::try_from(index + 1).unwrap_or(u64::MAX);
+        if check.attempt != expected || validate_flow_report(&check.report).is_err() {
+            return Err(fail(
+                Code::DataflowCheckUnavailable,
+                "design_gate_check reports must be valid and sequential from attempt one",
+            ));
+        }
+        if check.report["denials"].as_array().is_none_or(Vec::is_empty) {
+            return Err(fail(
+                Code::DataflowCheckUnavailable,
+                "every recorded design_gate_check must contain a denial",
+            ));
+        }
+    }
+    let root_text = design_root.to_str().ok_or_else(|| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            "design_root is not valid UTF-8",
+        )
+    })?;
+    let mut args = vec!["relations", "--scope", root_text, "--flow", "--json"];
+    let module_strings = module_roots
+        .iter()
+        .map(|path| {
+            path.to_str().ok_or_else(|| {
+                fail(
+                    Code::DataflowCheckUnavailable,
+                    "module path is not valid UTF-8",
+                )
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    for module in &module_strings {
+        args.push("--module");
+        args.push(module);
+    }
+    let output = run_tool(
+        &request.quire_executable,
+        &args,
+        &root,
+        Instant::now() + Duration::from_secs(30),
+    )
+    .map_err(|message| fail(Code::DataflowCheckUnavailable, message))?;
+    let report: Value = serde_json::from_slice(&output.stdout).map_err(|error| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            format!("quire did not return a usable JSON report: {error}"),
+        )
+    })?;
+    validate_flow_report(&report).map_err(|error| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            format!("quire.flow-report/v1 is incomplete: {error}"),
+        )
+    })?;
+    Ok((attempt, report))
+}
+
+fn design_gate_checks(instance: &Instance) -> Result<Vec<DesignGateCheck>, Failure> {
+    let checks = instance
+        .items
+        .get("design_gate_check")
+        .map_or(&[][..], Vec::as_slice);
+    if checks.len() > 4 {
+        return Err(fail(
+            Code::DesignGateRequestInvalid,
+            "design_gate_check cannot contain more than four attempts",
+        ));
+    }
+    checks
+        .iter()
+        .enumerate()
+        .map(|(index, value)| {
+            let check: DesignGateCheck =
+                serde_json::from_value(value.clone()).map_err(|error| {
+                    fail(
+                        Code::DataflowCheckUnavailable,
+                        format!("design_gate_check: {error}"),
+                    )
+                })?;
+            let expected = u64::try_from(index + 1).unwrap_or(u64::MAX);
+            if check.attempt != expected || validate_flow_report(&check.report).is_err() {
+                return Err(fail(
+                    Code::DataflowCheckUnavailable,
+                    "design_gate_check reports must be valid and sequential from attempt one",
+                ));
+            }
+            if check.report["denials"].as_array().is_none_or(Vec::is_empty) {
+                return Err(fail(
+                    Code::DataflowCheckUnavailable,
+                    "each recorded check must contain a denial",
+                ));
+            }
+            Ok(check)
+        })
+        .collect()
+}
+
+fn design_gate_retry_allowed(instance: &Instance) -> Check {
+    let checks = design_gate_checks(instance)?;
+    let Some(last) = checks.last() else {
+        return Err(fail(
+            Code::DataflowNotDenied,
+            "a valid denied report is required before revision",
+        ));
+    };
+    if last.attempt < 4 {
+        Ok(())
+    } else {
+        Err(fail(
+            Code::DesignGateRetriesExhausted,
+            "revision is not allowed after the fourth failed check",
+        ))
+    }
+}
+
+fn design_gate_retries_exhausted(instance: &Instance) -> Check {
+    let checks = design_gate_checks(instance)?;
+    if checks.last().is_some_and(|last| last.attempt == 4) {
+        Ok(())
+    } else {
+        Err(fail(
+            Code::DesignGateRetriesNotExhausted,
+            "escalation requires the fourth valid evaluator check with denials",
+        ))
+    }
+}
+
+fn design_gate_escalated_acceptance(
+    instance: &Instance,
+) -> Result<BTreeMap<String, Value>, Failure> {
+    let checks = design_gate_checks(instance)?;
+    let Some(last) = checks.last() else {
+        return Err(fail(
+            Code::DesignGateDecisionInvalid,
+            "escalated acceptance requires the final denied report",
+        ));
+    };
+    let denials = last.report["denials"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    if last.attempt != 4 || denials.is_empty() {
+        return Err(fail(
+            Code::DesignGateDecisionInvalid,
+            "an escalated acceptance must preserve the fourth flow denial",
+        ));
+    }
+    Ok(BTreeMap::from([
+        ("decision".to_owned(), Value::String("accepted".to_owned())),
+        (
+            "flow_result".to_owned(),
+            Value::String(Code::DataflowDenied.to_string()),
+        ),
+        ("unresolved_denials".to_owned(), Value::Array(denials)),
+    ]))
+}
+
+fn validate_flow_report(report: &Value) -> Result<(), String> {
+    let object = report
+        .as_object()
+        .ok_or_else(|| "report must be an object".to_owned())?;
+    let expected = [
+        "schema",
+        "rules",
+        "vocabularies",
+        "facts",
+        "denials",
+        "remediations",
+    ];
+    if object.len() != expected.len() || expected.iter().any(|key| !object.contains_key(*key)) {
+        return Err("report must contain exactly schema, rules, vocabularies, facts, denials, and remediations".to_owned());
+    }
+    if report["schema"].as_str() != Some("quire.flow-report/v1")
+        || !report["rules"].is_array()
+        || !report["vocabularies"].is_object()
+        || !report["facts"].is_object()
+        || !report["denials"].is_array()
+        || !report["remediations"].is_array()
+    {
+        return Err("report fields do not match quire.flow-report/v1".to_owned());
+    }
+    for rule in report["rules"].as_array().into_iter().flatten() {
+        if rule.get("name").and_then(Value::as_str).is_none()
+            || rule.get("subject").and_then(Value::as_array).is_none()
+            || rule.get("match").and_then(Value::as_array).is_none()
+            || rule.get("unless_any").and_then(Value::as_array).is_none()
+            || rule.get("check").and_then(Value::as_str).is_none()
+            || rule.get("remediations").and_then(Value::as_array).is_none()
+            || rule.get("rationale").and_then(Value::as_str).is_none()
+        {
+            return Err("each rule must match the flow-rule declaration shape".to_owned());
+        }
+    }
+    for (archetype, fields) in report["vocabularies"].as_object().into_iter().flatten() {
+        if archetype.is_empty() || !fields.is_object() {
+            return Err("vocabularies must map archetypes to field objects".to_owned());
+        }
+        for values in fields
+            .as_object()
+            .into_iter()
+            .flatten()
+            .map(|(_, values)| values)
+        {
+            if !values
+                .as_array()
+                .is_some_and(|values| values.iter().all(Value::is_string))
+            {
+                return Err("vocabulary values must be arrays of strings".to_owned());
+            }
+        }
+    }
+    for (archetype, facts) in report["facts"]
+        .as_object()
+        .ok_or_else(|| "facts must be an object".to_owned())?
+    {
+        if archetype.is_empty() || !facts.is_array() {
+            return Err("facts must map archetypes to arrays".to_owned());
+        }
+        for fact in facts.as_array().into_iter().flatten() {
+            if fact.get("id").and_then(Value::as_str).is_none()
+                || fact.get("fields").and_then(Value::as_object).is_none()
+                || fact.get("edges").and_then(Value::as_array).is_none()
+                || fact.get("repo").is_some_and(|repo| !repo.is_string())
+            {
+                return Err(format!(
+                    "{archetype} fact must contain id, fields and edges"
+                ));
+            }
+        }
+    }
+    for denial in report["denials"].as_array().into_iter().flatten() {
+        if denial.get("rule").and_then(Value::as_str).is_none()
+            || denial.get("check").and_then(Value::as_str).is_none()
+            || denial.get("rationale").and_then(Value::as_str).is_none()
+            || denial.get("severity").and_then(Value::as_str).is_none()
+        {
+            return Err("each denial must name its rule, check, rationale and severity".to_owned());
+        }
+        let subject = denial
+            .get("subject")
+            .ok_or_else(|| "denial subject is missing".to_owned())?;
+        if subject.get("id").and_then(Value::as_str).is_none()
+            || subject.get("archetype").and_then(Value::as_str).is_none()
+            || subject.get("repo").is_some_and(|repo| !repo.is_string())
+        {
+            return Err("denial subject must contain id and archetype".to_owned());
+        }
+        let matched = denial
+            .get("matched")
+            .and_then(Value::as_object)
+            .ok_or_else(|| "denial matched must be an object".to_owned())?;
+        for (archetype, entries) in matched {
+            if archetype.is_empty() || !entries.is_array() {
+                return Err("matched facts must map archetypes to arrays".to_owned());
+            }
+            for entry in entries.as_array().into_iter().flatten() {
+                if entry.get("id").and_then(Value::as_str).is_none()
+                    || entry.get("repo").is_some_and(|repo| !repo.is_string())
+                {
+                    return Err("matched facts must contain ids and optional repos".to_owned());
+                }
+                let id = entry["id"].as_str();
+                let repo = entry.get("repo").and_then(Value::as_str);
+                let referenced = report["facts"][archetype]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .any(|fact| {
+                        fact.get("id").and_then(Value::as_str) == id
+                            && fact.get("repo").and_then(Value::as_str) == repo
+                    });
+                if !referenced {
+                    return Err("matched fact does not resolve in the flow report".to_owned());
+                }
+            }
+        }
+        let remediations = denial
+            .get("remediations")
+            .and_then(Value::as_array)
+            .ok_or_else(|| "denial remediations must be an array".to_owned())?;
+        for remediation in remediations {
+            if remediation.get("name").and_then(Value::as_str).is_none()
+                || remediation
+                    .get("description")
+                    .and_then(Value::as_str)
+                    .is_none()
+                || remediation
+                    .get("change")
+                    .and_then(Value::as_object)
+                    .is_none()
+            {
+                return Err("remediation must contain name, description and change".to_owned());
+            }
+        }
+    }
+    for remediation in report["remediations"].as_array().into_iter().flatten() {
+        let actions = ["adds", "sets", "removes"]
+            .iter()
+            .filter(|key| remediation.get(**key).is_some())
+            .count();
+        if remediation.get("name").and_then(Value::as_str).is_none()
+            || remediation
+                .get("description")
+                .and_then(Value::as_str)
+                .is_none()
+            || actions != 1
+        {
+            return Err("top-level remediation must contain one declared change".to_owned());
+        }
+    }
+    Ok(())
+}
+
+fn dataflow_denied(attempt: u64, report: Value) -> Failure {
+    let denials = report["denials"].as_array().cloned().unwrap_or_default();
+    let facts = &report["facts"];
+    let detail = denials
+        .into_iter()
+        .map(|mut denial| {
+            let categories = denial
+                .pointer("/matched/data_classification")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .flat_map(|matched| {
+                    let id = matched.get("id").and_then(Value::as_str);
+                    let repo = matched.get("repo").and_then(Value::as_str);
+                    facts
+                        .get("data_classification")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter(move |fact| {
+                            fact.get("id").and_then(Value::as_str) == id
+                                && fact.get("repo").and_then(Value::as_str) == repo
+                        })
+                        .flat_map(|fact| {
+                            fact.pointer("/fields/regulated_categories")
+                                .and_then(Value::as_array)
+                                .into_iter()
+                                .flatten()
+                                .filter_map(Value::as_str)
+                                .map(str::to_owned)
+                                .collect::<Vec<_>>()
+                        })
+                })
+                .collect::<Vec<_>>();
+            if let Some(map) = denial.as_object_mut() {
+                map.insert(
+                    "data_categories".to_owned(),
+                    Value::Array(categories.into_iter().map(Value::String).collect()),
+                );
+            }
+            denial
+        })
+        .collect::<Vec<_>>();
+    let mut details = BTreeMap::from([
+        ("attempt".to_owned(), Value::from(attempt)),
+        ("denials".to_owned(), Value::Array(detail)),
+        ("report".to_owned(), report),
+    ]);
+    if let Some(array) = details.get_mut("denials").and_then(Value::as_array_mut) {
+        for denial in array {
+            if denial
+                .get("data_categories")
+                .and_then(Value::as_array)
+                .is_some_and(Vec::is_empty)
+            {
+                if let Some(map) = denial.as_object_mut() {
+                    map.remove("data_categories");
+                }
+            }
+        }
+    }
+    Failure {
+        code: Code::DataflowDenied,
+        message: "data-flow rules deny the current design".to_owned(),
+        details,
     }
 }
 

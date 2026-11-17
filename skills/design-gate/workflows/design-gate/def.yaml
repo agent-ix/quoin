@@ -1,0 +1,80 @@
+name: design-gate
+version: 1.0.0
+description: Propose, check and revise a data-flow design, then wait for a person's decision.
+initialPhase: proposing
+phases:
+  - {name: proposing}
+  - {name: checking}
+  - {name: revising}
+  - {name: passed}
+  - {name: escalated}
+  - {name: accepted, terminal: true}
+  - {name: rejected, terminal: true}
+transitions:
+  - from: proposing
+    to: checking
+    invariants: ["interview.complete:request"]
+    defaultGate: auto
+  - from: checking
+    to: passed
+    invariants: [dataflow_rules_pass]
+    defaultGate: auto
+  - from: checking
+    to: revising
+    invariants: [design_gate_retry_allowed]
+    defaultGate: auto
+  - from: checking
+    to: escalated
+    invariants: [design_gate_retries_exhausted]
+    defaultGate: auto
+  - from: revising
+    to: checking
+    invariants: [design_gate_retry_allowed]
+    defaultGate: auto
+  - from: passed
+    to: accepted
+    invariants: [human_acceptance_required]
+    defaultGate: hitl
+  - from: passed
+    to: rejected
+    invariants: [human_acceptance_required]
+    defaultGate: hitl
+  - from: escalated
+    to: accepted
+    invariants: [human_acceptance_required, escalated_acceptance_preserves_denial]
+    defaultGate: hitl
+  - from: escalated
+    to: rejected
+    invariants: [human_acceptance_required]
+    defaultGate: hitl
+itemSchemas:
+  quoin_context: {}
+  operation_request:
+    required: [design_root, module_roots, quire_executable]
+    properties:
+      design_root: {type: string}
+      module_roots:
+        type: array
+        minItems: 1
+        maxItems: 16
+        items: {type: string}
+      quire_executable: {type: string}
+  design_gate_check:
+    required: [attempt, report]
+    properties:
+      attempt: {type: integer, minimum: 1, maximum: 4}
+      report: {type: object}
+  design_agent_failure:
+    required: [code, message]
+    properties:
+      code: {const: design_agent_unavailable}
+      message: {type: string, minLength: 1}
+linkSchemas: {}
+interviews:
+  request:
+    itemType: operation_request
+    completenessRule: all_required
+    questions:
+      - {key: design_root, prompt: "Repository-relative root of the design to check", type: text, required: true}
+      - {key: module_roots, prompt: "Absolute paths for all rule modules, with no ambient discovery", type: "list<text>", required: true}
+      - {key: quire_executable, prompt: "Absolute path to the quire executable", type: text, required: true}

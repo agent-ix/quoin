@@ -14,6 +14,7 @@ use super::{
     AnalysisTools, CatalogReadError, ClaimSpan, Context, ContractPackageReadResult, FormalizeInput,
     admit_analysis_package, analysis_consistent_with_approved, analysis_consistent_with_tools,
     bind_package_claims, formal_rule_approved_with_binary, formalization_check_with_tools,
+    validate_flow_report,
 };
 #[cfg(unix)]
 use filament_contract_model::{
@@ -101,6 +102,335 @@ fn executable(directory: &Path, name: &str, body: &str) -> PathBuf {
     permissions.set_mode(0o755);
     fs::set_permissions(&path, permissions).expect("executable permissions");
     path
+}
+
+#[cfg(unix)]
+fn flow_report(denials: Value) -> Value {
+    json!({
+        "schema":"quire.flow-report/v1",
+        "rules":[],
+        "vocabularies":{},
+        "facts":{
+            "data_classification":[{
+                "id":"CLASS-1",
+                "fields":{"regulated_categories":["health"]},
+                "edges":[]
+            }],
+            "trust_boundary":[{"id":"BOUNDARY-1","fields":{"trust_level":"untrusted"},"edges":[]}]
+        },
+        "denials":denials,
+        "remediations":[]
+    })
+}
+
+#[cfg(unix)]
+fn flow_denial() -> Value {
+    json!({
+        "rule":"health-across-untrusted-boundary",
+        "check":"health-across-untrusted-boundary",
+        "subject":{"id":"CONN-1","archetype":"connection"},
+        "matched":{"data_classification":[{"id":"CLASS-1"}],"trust_boundary":[{"id":"BOUNDARY-1"}]},
+        "remediations":[{"name":"encrypt-in-transit","description":"Protect the connection.","change":{"adds":{"edge":"protects","direction":"incoming","from":"control","field":"safeguards","value":"encrypt-in-transit"}}}],
+        "rationale":"Health data crossing an untrusted boundary needs protection.",
+        "severity":"warning"
+    })
+}
+
+#[cfg(unix)]
+fn design_gate_instance(directory: &Path, quire: &Path, report: Value, attempt: u64) -> Value {
+    let mut history = Vec::new();
+    for previous in 1..attempt {
+        history.push(json!({"attempt":previous,"report":flow_report(json!([flow_denial()]))}));
+    }
+    history.push(json!({"attempt":attempt,"report":report}));
+    json!({
+        "protocol":"quoin.workflow-invariants/v1",
+        "evaluated_at":"2026-11-17T00:00:00Z",
+        "invariants":["dataflow_rules_pass"],
+        "instance":{
+            "defName":"design-gate",
+            "items":{
+                "quoin_context":[{"id":"test","repo_root":directory,"config_root":directory,"targets":[]}],
+                "design_gate_request":[{"design_root":"design","module_roots":[directory.join("module")],"quire_executable":quire}],
+                "design_gate_check":history
+            },
+            "gateConfig":{
+                "passed->accepted":"hitl","passed->rejected":"hitl",
+                "escalated->accepted":"hitl","escalated->rejected":"hitl"
+            }
+        }
+    })
+}
+
+#[cfg(unix)]
+fn design_gate_fixture(report: &Value, exit: i32) -> (tempfile::TempDir, Value, PathBuf, PathBuf) {
+    let directory = tempfile::tempdir().expect("temporary design-gate repository");
+    fs::create_dir_all(directory.path().join("design/spec")).expect("design scope");
+    fs::create_dir_all(directory.path().join("module")).expect("module root");
+    let output = serde_json::to_string(report).expect("report JSON");
+    let capture = directory.path().join("args");
+    let quire = executable(
+        directory.path(),
+        "quire-capture",
+        &format!(
+            "printf '%s\\n' \"$@\" > '{}'\nprintf '%s\\n' '{}'\nexit {exit}",
+            capture.display(),
+            output
+        ),
+    );
+    let instance = design_gate_instance(directory.path(), &quire, report.clone(), 1);
+    (directory, instance, quire, capture)
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-1", "FR-209-AC-3", "FR-209-AC-5")]
+#[test]
+fn design_gate_binds_to_explicit_quire_flow_json_and_denials_override_exit_status() {
+    let report = flow_report(json!([flow_denial()]));
+    let (directory, request, _, capture) = design_gate_fixture(&report, 17);
+    let input = serde_json::to_vec(&request).expect("request");
+    let mut output = Vec::new();
+    let mut errors = Vec::new();
+    assert_eq!(super::serve(input.as_slice(), &mut output, &mut errors), 0);
+    assert!(errors.is_empty());
+    let result: Value = serde_json::from_slice(&output).expect("provider result");
+    assert_eq!(result["outcomes"][0]["status"], "failed");
+    assert_eq!(result["outcomes"][0]["code"], "dataflow_denied");
+    assert_eq!(
+        result["outcomes"][0]["details"]["denials"][0]["rule"],
+        "health-across-untrusted-boundary"
+    );
+    assert_eq!(
+        result["outcomes"][0]["details"]["denials"][0]["data_categories"],
+        json!(["health"])
+    );
+    assert_eq!(
+        result["outcomes"][0]["details"]["denials"][0]["remediations"][0]["name"],
+        "encrypt-in-transit"
+    );
+    let args = fs::read_to_string(capture).expect("captured quire arguments");
+    assert!(args.contains("relations\n--scope\n"));
+    assert!(args.contains("--flow\n--json\n--module\n"));
+    assert!(
+        args.contains(
+            directory
+                .path()
+                .join("module")
+                .to_str()
+                .expect("module path")
+        )
+    );
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-1", "FR-209-AC-3")]
+#[test]
+fn design_gate_passes_only_for_valid_report_with_no_denials() {
+    let report = flow_report(json!([]));
+    let (_directory, request, _, _) = design_gate_fixture(&report, 4);
+    let input = serde_json::to_vec(&request).expect("request");
+    let mut output = Vec::new();
+    let mut errors = Vec::new();
+    assert_eq!(super::serve(input.as_slice(), &mut output, &mut errors), 0);
+    let result: Value = serde_json::from_slice(&output).expect("provider result");
+    assert_eq!(result["outcomes"][0]["status"], "passed");
+    assert_eq!(
+        result["outcomes"][0]["details"]["report"]["denials"],
+        json!([])
+    );
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-2")]
+#[test]
+fn scripted_remediation_turns_a_denial_into_a_clean_report() {
+    let denied = flow_report(json!([flow_denial()]));
+    let clean = flow_report(json!([]));
+    let (directory, value, _quire, _) = design_gate_fixture(&denied, 0);
+    let design_root = directory.path().join("design");
+    let module_root = directory.path().join("module");
+    let denied_report = directory.path().join("denied.json");
+    let clean_report = directory.path().join("clean.json");
+    fs::write(
+        &denied_report,
+        serde_json::to_vec(&denied).expect("denied JSON"),
+    )
+    .expect("report");
+    fs::write(
+        &clean_report,
+        serde_json::to_vec(&clean).expect("clean JSON"),
+    )
+    .expect("report");
+    let body = format!(
+        "if [ -f '{}/controls/encrypt-in-transit.md' ]; then cat '{}'; else cat '{}'; fi",
+        design_root.display(),
+        clean_report.display(),
+        denied_report.display()
+    );
+    let quire = executable(directory.path(), "quire-dynamic", &body);
+    let mut value = value;
+    value["instance"]["items"]["design_gate_request"][0]["quire_executable"] = json!(quire);
+
+    let first =
+        serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
+    let failure = super::check_with_details(&first, "dataflow_rules_pass")
+        .expect_err("unprotected health flow is denied");
+    assert_eq!(failure.code.to_string(), "dataflow_denied");
+    assert_eq!(
+        failure.details["denials"][0]["data_categories"],
+        json!(["health"])
+    );
+    assert_eq!(
+        failure.details["denials"][0]["remediations"][0]["name"],
+        "encrypt-in-transit"
+    );
+
+    value["instance"]["items"]["design_gate_check"] = json!([{
+        "attempt":1,
+        "report":failure.details["report"]
+    }]);
+    let edit = serde_json::to_vec(&json!({
+        "edits":[{"path":"controls/encrypt-in-transit.md","content":"control: encrypt-in-transit"}]
+    }))
+    .expect("edit request");
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../skills/design-gate/scripts/apply-design-edit.py");
+    let output = std::process::Command::new("python3")
+        .arg(script)
+        .args(["--scope", design_root.to_str().expect("scope")])
+        .arg("--module")
+        .arg(module_root.to_str().expect("module"))
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("start constrained editor");
+    let mut child = output;
+    use std::io::Write as _;
+    child
+        .stdin
+        .take()
+        .expect("editor stdin")
+        .write_all(&edit)
+        .expect("send edit");
+    let output = child.wait_with_output().expect("editor result");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+
+    let revised =
+        serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
+    let passed = super::check_with_details(&revised, "dataflow_rules_pass")
+        .expect("the control clears the rule denial")
+        .expect("report details");
+    assert_eq!(passed["report"]["denials"], json!([]));
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-3")]
+#[test]
+fn design_gate_rejects_malformed_or_wrong_schema_reports() {
+    let directory = tempfile::tempdir().expect("temp");
+    fs::create_dir_all(directory.path().join("design/spec")).expect("design scope");
+    fs::create_dir_all(directory.path().join("module")).expect("module root");
+    let report = flow_report(json!([]));
+    for (name, output) in [
+        ("malformed", "{bad-json".to_owned()),
+        ("wrong-schema", json!({"schema":"other"}).to_string()),
+        ("missing-denials", json!({"schema":"quire.flow-report/v1","rules":[],"vocabularies":{},"facts":{},"remediations":[]}).to_string()),
+        ("missing-matched", {
+            let mut invalid = flow_report(json!([flow_denial()]));
+            invalid["denials"][0].as_object_mut().expect("denial").remove("matched");
+            invalid.to_string()
+        }),
+    ] {
+        let quire = executable(
+            directory.path(),
+            &format!("quire-{name}"),
+            &format!("printf '%s\\n' '{}'", output.replace('\'', "'\\''")),
+        );
+        let input = design_gate_instance(directory.path(), &quire, report.clone(), 1);
+        let input = serde_json::to_vec(&input).expect("request");
+        let mut payload = Vec::new();
+        let mut errors = Vec::new();
+        assert_eq!(super::serve(input.as_slice(), &mut payload, &mut errors), 0);
+        let result: Value = serde_json::from_slice(&payload).expect("provider result");
+        assert_eq!(result["outcomes"][0]["status"], "failed", "{name}");
+        assert_eq!(result["outcomes"][0]["code"], "dataflow_check_unavailable", "{name}");
+    }
+    let missing = directory.path().join("missing-quire");
+    let input = design_gate_instance(directory.path(), &missing, report, 1);
+    let failure = super::check_with_details(
+        &serde_json::from_value::<super::Instance>(input["instance"].clone()).expect("instance"),
+        "dataflow_rules_pass",
+    )
+    .expect_err("missing evaluator cannot pass");
+    assert_eq!(failure.code.to_string(), "dataflow_check_unavailable");
+    assert!(validate_flow_report(&json!({"schema":"other"})).is_err());
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-5")]
+#[test]
+fn design_gate_retry_routes_allow_three_retries_then_escalate() {
+    let report = flow_report(json!([flow_denial()]));
+    let (_directory, instance, _quire, _) = design_gate_fixture(&report, 0);
+    let mut instance: super::Instance =
+        serde_json::from_value(instance["instance"].clone()).expect("instance");
+    for (attempt, expected_retry) in [(1, true), (2, true), (3, true), (4, false)] {
+        instance.items.insert(
+            "design_gate_check".to_owned(),
+            (1..=attempt)
+                .map(|i| json!({"attempt":i,"report":report}))
+                .collect(),
+        );
+        let retry = super::design_gate_retry_allowed(&instance);
+        let exhausted = super::check_with_details(&instance, "design_gate_retries_exhausted");
+        if attempt == 4 {
+            assert!(!expected_retry);
+            assert_eq!(
+                retry
+                    .expect_err("fourth denial cannot retry")
+                    .code
+                    .to_string(),
+                "design_gate_retries_exhausted"
+            );
+            assert!(exhausted.is_ok(), "fourth denial reaches escalation");
+        } else {
+            assert!(expected_retry);
+            assert!(retry.is_ok(), "valid denial before retry bound can revise");
+            assert!(
+                exhausted.is_err(),
+                "escalation before fourth denial is refused"
+            );
+        }
+    }
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-8")]
+#[test]
+fn escalated_human_acceptance_retains_the_denied_evaluator_result() {
+    let report = flow_report(json!([flow_denial()]));
+    let (_directory, value, _, _) = design_gate_fixture(&report, 0);
+    let mut instance: super::Instance =
+        serde_json::from_value(value["instance"].clone()).expect("instance");
+    instance.items.insert(
+        "design_gate_check".to_owned(),
+        (1..=4)
+            .map(|attempt| json!({"attempt":attempt,"report":report}))
+            .collect(),
+    );
+    let details = super::check_with_details(&instance, "escalated_acceptance_preserves_denial")
+        .expect("human decision remains distinct from the evaluator verdict")
+        .expect("acceptance details");
+    assert_eq!(details["decision"], "accepted");
+    assert_eq!(details["flow_result"], "dataflow_denied");
+    assert_eq!(
+        details["unresolved_denials"][0]["rule"],
+        "health-across-untrusted-boundary"
+    );
 }
 
 #[cfg(unix)]
@@ -1323,4 +1653,95 @@ fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
             "terminal {terminal} has an outgoing transition"
         );
     }
+}
+
+#[trace("FR-209-AC-5", "FR-209-AC-6", "FR-209-AC-7")]
+#[test]
+fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../skills/design-gate/workflows/design-gate/def.yaml");
+    let yaml = std::fs::read_to_string(path).expect("read design-gate workflow");
+    let definition = quoin_yaml::from_str(&yaml).expect("parse design-gate workflow");
+    let phases: Vec<_> = definition["phases"]
+        .as_array()
+        .expect("phases")
+        .iter()
+        .filter_map(|phase| phase["name"].as_str())
+        .collect();
+    assert_eq!(
+        phases,
+        [
+            "proposing",
+            "checking",
+            "revising",
+            "passed",
+            "escalated",
+            "accepted",
+            "rejected"
+        ]
+    );
+    let transitions = definition["transitions"].as_array().expect("transitions");
+    let route = |from: &str, to: &str| {
+        transitions
+            .iter()
+            .find(|transition| transition["from"] == from && transition["to"] == to)
+            .unwrap_or_else(|| panic!("missing transition {from}->{to}"))
+    };
+    assert_eq!(
+        route("checking", "passed")["invariants"],
+        json!(["dataflow_rules_pass"])
+    );
+    assert_eq!(
+        route("checking", "escalated")["invariants"],
+        json!(["design_gate_retries_exhausted"])
+    );
+    assert_eq!(
+        route("checking", "revising")["invariants"],
+        json!(["design_gate_retry_allowed"])
+    );
+    assert_eq!(
+        route("revising", "checking")["invariants"],
+        json!(["design_gate_retry_allowed"])
+    );
+    assert!(
+        route("escalated", "accepted")["invariants"]
+            .as_array()
+            .is_some_and(|items| items.contains(&json!("escalated_acceptance_preserves_denial")))
+    );
+    for transition in transitions {
+        if matches!(transition["to"].as_str(), Some("accepted" | "rejected")) {
+            assert_eq!(transition["defaultGate"], "hitl");
+            assert!(
+                transition["invariants"]
+                    .as_array()
+                    .is_some_and(|items| items.contains(&json!("human_acceptance_required")))
+            );
+        }
+        assert!(!matches!(
+            transition["from"].as_str(),
+            Some("accepted" | "rejected")
+        ));
+    }
+    assert_eq!(
+        definition["itemSchemas"]["design_agent_failure"]["properties"]["code"]["const"],
+        "design_agent_unavailable"
+    );
+    let skill_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../skills/design-gate/SKILL.md");
+    let skill = std::fs::read_to_string(skill_path).expect("read design-gate skill");
+    assert!(skill.contains("design_agent_unavailable"));
+    assert!(skill.contains("does not enable signing"));
+}
+
+#[cfg(unix)]
+#[test]
+fn design_gate_acceptance_invariant_requires_every_hitl_edge() {
+    let report = flow_report(json!([]));
+    let (_directory, value, _, _) = design_gate_fixture(&report, 0);
+    let mut instance: super::Instance =
+        serde_json::from_value(value["instance"].clone()).expect("instance");
+    instance.gates.remove("escalated->rejected");
+    let failure = super::check_with_details(&instance, "human_acceptance_required")
+        .expect_err("all accept and reject transitions require HITL");
+    assert_eq!(failure.code.to_string(), "WORKFLOW_HUMAN_GATE_REQUIRED");
 }
