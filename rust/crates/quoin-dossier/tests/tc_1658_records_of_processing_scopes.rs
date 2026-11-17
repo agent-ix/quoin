@@ -12,6 +12,7 @@
 )]
 
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -22,6 +23,7 @@ use quoin_dossier::{
 };
 use quoin_quire::model::{FlowFact, FlowFactEdge, FlowReport};
 use quoin_quire::records::{Contract, Corpus, Document};
+use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde_json::{Map, json};
 
 struct NoMatrix;
@@ -42,7 +44,61 @@ impl MatrixSource for NoMatrix {
     clippy::unnecessary_wraps,
     reason = "source adapters share the fallible generator contract"
 )]
-fn processing_records(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
+fn processing_records(inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
+    let scope = ScopeRoot::open(&inputs.scope).map_err(|error| SourceFailure {
+        source: "records".to_owned(),
+        detail: error.to_string(),
+    })?;
+    let modules = inputs
+        .modules
+        .iter()
+        .map(ModuleRoot::open)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| SourceFailure {
+            source: "records".to_owned(),
+            detail: error.to_string(),
+        })?;
+    let spec_dir = scope.as_path().join("spec");
+    let mut documents = fs::read_dir(&spec_dir)
+        .map_err(|error| SourceFailure {
+            source: "records".to_owned(),
+            detail: error.to_string(),
+        })?
+        .map(|entry| entry.map(|entry| entry.path()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| SourceFailure {
+            source: "records".to_owned(),
+            detail: error.to_string(),
+        })?;
+    documents.sort();
+    let outcome = validate::run(&validate::Request {
+        scope,
+        modules: ModuleSelection::Closed(modules),
+        documents,
+        bundle_package: None,
+    })
+    .map_err(|error| SourceFailure {
+        source: "records".to_owned(),
+        detail: error.to_string(),
+    })?;
+    let failures = outcome
+        .evaluations
+        .iter()
+        .filter(|evaluation| evaluation.outcome == validate::DocumentOutcome::Fail)
+        .flat_map(|evaluation| {
+            evaluation
+                .diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.message.as_str())
+        })
+        .collect::<Vec<_>>();
+    if !failures.is_empty() {
+        return Err(SourceFailure {
+            source: "records".to_owned(),
+            detail: failures.join("; "),
+        });
+    }
+
     let activity = Document {
         path: PathBuf::from("spec/ACT-COVERS.md"),
         id: "ACT-COVERS".to_owned(),
@@ -119,13 +175,51 @@ fn registry() -> quoin_dossier::Registry {
     .unwrap()
 }
 
-#[trace("FR-207-AC-6")]
-#[test]
-fn generated_records_of_processing_ignores_iso_covers_edges() {
-    let work = tempfile::tempdir().unwrap();
-    let inputs = Inputs {
-        scope: work.path().to_path_buf(),
-        modules: Vec::new(),
+fn security_scope_module(root: &std::path::Path) -> PathBuf {
+    fs::create_dir_all(root).unwrap();
+    fs::write(
+        root.join("manifest.yaml"),
+        r#"name: security-scope-fixture
+version: 0.1.0
+object_types:
+  - name: processing_activity
+    data_schema: {type: object}
+    allowed_links: {scopes: [connection, data_sink, part]}
+    body_extraction:
+      yield_pattern:
+        match:
+          id: {from: frontmatter_field, path: [id], required: true}
+          title: {from: frontmatter_field, path: [title], required: true}
+          type: {from: frontmatter_field, path: [type], required: true}
+  - name: connection
+    data_schema: {type: object}
+  - name: data_sink
+    data_schema: {type: object}
+  - name: part
+    data_schema: {type: object}
+  - name: queue
+    data_schema: {type: object}
+edge_types:
+  scopes: {description: model processing scope, category: dependency}
+"#,
+    )
+    .unwrap();
+    root.to_path_buf()
+}
+
+fn record(id: &str, kind: &str, scope_target: Option<&str>) -> String {
+    let relationships = scope_target.map_or_else(String::new, |target| {
+        format!(
+            "\n## Relationships\n\n| Name | Verb | Target | Multiplicity |\n| --- | --- | --- | --- |\n| {id}-scope | scopes | {target} | 0..* |\n"
+        )
+    });
+    format!("---\nid: {id}\ntitle: {id}\ntype: {kind}\n---\n{relationships}")
+}
+
+fn input(work: &std::path::Path, module: &std::path::Path) -> Inputs {
+    Inputs {
+        scope: work.to_path_buf(),
+        modules: vec![module.to_path_buf()],
         clause_bindings: Vec::new(),
         pack: None,
         soup_binding: None,
@@ -135,7 +229,21 @@ fn generated_records_of_processing_ignores_iso_covers_edges() {
         release_verify: None,
         as_of: None,
         version: String::new(),
-    };
+    }
+}
+
+#[trace("FR-207-AC-6")]
+#[test]
+fn generated_records_of_processing_ignores_iso_covers_edges() {
+    let work = tempfile::tempdir().unwrap();
+    let module = security_scope_module(&work.path().join("module"));
+    fs::create_dir(work.path().join("spec")).unwrap();
+    fs::write(
+        work.path().join("spec/ACT-COVERS.md"),
+        record("ACT-COVERS", "processing_activity", None),
+    )
+    .unwrap();
+    let inputs = input(work.path(), &module);
 
     generate(
         &registry(),
@@ -150,4 +258,49 @@ fn generated_records_of_processing_ignores_iso_covers_edges() {
     assert!(!generated.contains("Must not be selected"));
     assert!(!generated.contains("transfer region — SINK-COVERED"));
     assert!(!generated.contains("ModelFactsUnavailable"));
+}
+
+#[trace("FR-207-AC-6")]
+#[test]
+fn dangling_and_wrong_kind_scopes_fail_validation_before_generation() {
+    for (case, target_doc) in [
+        ("dangling", None),
+        (
+            "wrong-kind",
+            Some(("QUEUE-1", record("QUEUE-1", "queue", None))),
+        ),
+    ] {
+        let work = tempfile::tempdir().unwrap();
+        let module = security_scope_module(&work.path().join("module"));
+        let spec = work.path().join("spec");
+        fs::create_dir(&spec).unwrap();
+        fs::write(
+            spec.join("ACT-1.md"),
+            record(
+                "ACT-1",
+                "processing_activity",
+                Some(if case == "dangling" {
+                    "MISSING-1"
+                } else {
+                    "QUEUE-1"
+                }),
+            ),
+        )
+        .unwrap();
+        if let Some((name, content)) = target_doc {
+            fs::write(spec.join(format!("{name}.md")), content).unwrap();
+        }
+        let inputs = input(work.path(), &module);
+        let output = work.path().join("output");
+        let result = generate(
+            &registry(),
+            &["records-of-processing".to_owned()],
+            &output,
+            &inputs,
+        );
+
+        let error = result.expect_err("invalid scopes must stop dossier generation");
+        assert!(error.to_string().contains("scopes"), "{case}: {error}");
+        assert!(!output.join("DOS-ROP.md").exists(), "{case}");
+    }
 }
