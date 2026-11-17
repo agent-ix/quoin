@@ -44,6 +44,10 @@ when no module-specific requirement applies.
 - When a binding clause declares one or more `approvalRoles`, Quoin SHALL
   classify its direct fact as open work when the fact has no `approvalRef` or
   its reference is empty or whitespace-only.
+- When the declared approval requirement calls for a named human approver, the
+  `approvalRef` on a direct fact SHALL identify that person.
+- Quoin SHALL preserve an approval reference as supplied without claiming that
+  it authenticated the person's identity or authority.
 - When a binding clause declares no `approvalRoles`, Quoin SHALL retain the
   FR-046 behavior for a direct fact without `approvalRef`.
 - When a direct fact satisfies a declared approval requirement, Quoin SHALL
@@ -64,11 +68,11 @@ when no module-specific requirement applies.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-208-AC-1 | A binding clause with non-empty `approvalRoles` remains open when its direct fact has no `approvalRef`, or has an empty or whitespace-only reference. | Test |
-| FR-208-AC-2 | A binding clause with non-empty `approvalRoles` is direct when its direct fact has a non-blank `approvalRef`, and the report retains the reference without changing the direct classification. | Test |
+| FR-208-AC-2 | A binding clause with non-empty `approvalRoles` that require a named human approver is direct only when its direct fact has a non-blank `approvalRef` identifying that person; the report retains the reference without changing the direct classification. | Test |
 | FR-208-AC-3 | A binding clause with empty `approvalRoles` continues to accept a direct fact without `approvalRef` as specified by FR-046. | Test |
 | FR-208-AC-4 | When multiple installed modules declare the same exact clause-set identity, discharge fails without selecting either module's approval policy. | Test |
-| FR-208-AC-5 | The report does not claim to authenticate the named approver, role, or authorization represented by an approval reference. | Inspection |
+| FR-208-AC-5 | The report preserves a supplied approval reference and does not claim to authenticate the named approver, role, or authorization represented by it. | Inspection |
 
 ## Dependencies
 
-- **Upstream**: [FR-046](./FR-046-clause-discharge.md) defines the discharge populations and generic approval-reference behavior; [FR-029](./FR-029-quire-rust-engine.md) supplies the runtime-validated Quire contract.
+- **Upstream**: [FR-046](./FR-046-clause-discharge.md) defines the discharge populations and generic approval-reference behavior; [FR-029](./FR-029-consume-the-quire-json-contract.md) supplies the runtime-validated Quire contract.
