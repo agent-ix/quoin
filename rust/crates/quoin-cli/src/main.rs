@@ -24,6 +24,7 @@ mod dossier;
 mod evidence;
 mod flow;
 mod formal_rules;
+mod formal_rules_coverage;
 mod help;
 mod intake_order;
 mod invocation;

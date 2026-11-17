@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "quoin.formalization-coverage/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "items", "totals"],
+  "properties": {
+    "protocol": { "const": "quoin.formalization-coverage/v1" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "document", "state", "declarations"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["requirement", "criterion"] },
+          "document": { "type": "string", "minLength": 1 },
+          "criticality": { "type": "string" },
+          "state": { "enum": ["none", "draft", "approved", "analysed"] },
+          "declarations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["symbol", "state"],
+              "properties": {
+                "symbol": { "type": "string", "minLength": 1 },
+                "state": { "enum": ["draft", "approved"] },
+                "reason": { "type": "string", "minLength": 1 }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": { "state": { "const": "draft" } },
+                    "required": ["state"]
+                  },
+                  "then": { "required": ["reason"] }
+                }
+              ]
+            }
+          },
+          "analysis_disposition": {
+            "enum": ["qualified-record", "failed", "errored", "absent", "stale", "unevaluated", "qualification-rejected"]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "state": { "const": "none" } },
+              "required": ["state"]
+            },
+            "then": {
+              "properties": { "declarations": { "maxItems": 0 } },
+              "not": { "required": ["analysis_disposition"] }
+            }
+          },
+          {
+            "if": {
+              "properties": { "state": { "const": "draft" } },
+              "required": ["state"]
+            },
+            "then": {
+              "properties": {
+                "declarations": {
+                  "minItems": 1,
+                  "contains": { "properties": { "state": { "const": "draft" } } }
+                }
+              },
+              "not": { "required": ["analysis_disposition"] }
+            }
+          },
+          {
+            "if": {
+              "properties": { "state": { "const": "approved" } },
+              "required": ["state"]
+            },
+            "then": {
+              "required": ["analysis_disposition"],
+              "properties": {
+                "declarations": {
+                  "minItems": 1,
+                  "items": { "properties": { "state": { "const": "approved" } } }
+                },
+                "analysis_disposition": {
+                  "enum": ["failed", "errored", "absent", "stale", "unevaluated", "qualification-rejected"]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": { "state": { "const": "analysed" } },
+              "required": ["state"]
+            },
+            "then": {
+              "required": ["analysis_disposition"],
+              "properties": {
+                "declarations": {
+                  "minItems": 1,
+                  "items": { "properties": { "state": { "const": "approved" } } }
+                },
+                "analysis_disposition": { "const": "qualified-record" }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["by_document", "by_criticality"],
+      "properties": {
+        "by_document": { "$ref": "#/$defs/groups" },
+        "by_criticality": { "$ref": "#/$defs/groups" }
+      }
+    }
+  },
+  "$defs": {
+    "groups": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/counts" }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["none", "draft", "approved", "analysed"],
+      "properties": {
+        "none": { "type": "integer", "minimum": 0 },
+        "draft": { "type": "integer", "minimum": 0 },
+        "approved": { "type": "integer", "minimum": 0 },
+        "analysed": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
