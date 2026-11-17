@@ -30,13 +30,19 @@ From the repository root, start the workflow and record its context:
 
 ```sh
 ix-flow run design-gate --path <absolute-path-to-this-skill-directory> --id <run-id> --target . --json
-ix-flow add-item <run-id> quoin_context --item '{"id":"quoin-launch-context","repo_root":"<absolute-repo-root>","config_root":"<absolute-config-root>","targets":["<absolute-repo-root>"]}'
+ix-flow add-item <run-id> quoin_context --item '{"id":"<run-id>","repo_root":"<absolute-repo-root>","config_root":"<absolute-config-root>","targets":["<absolute-repo-root>"]}'
 ```
 
 Record the design root relative to the repository root, every rule-module root
 as an explicit absolute path, and the absolute `quire` executable path in the
 `request` interview. The module list replaces ambient module discovery. Do not
 start with a module directory that is writable by the proposer.
+
+The host supplies `quoin_context` and sets its `id` to the unique workflow run
+id. It owns the workflow id and `config_root`.
+Keep that context unchanged for the whole run and do not give the proposer an
+item-update capability for it. The invariant provider uses that external
+configuration root for its private evaluator-result state.
 
 The request item is:
 
@@ -66,12 +72,11 @@ information.
 After the initial proposal, advance to `checking` and follow the transition
 allowed by the evaluator result. `dataflow_rules_pass` invokes `quire` with the
 configured scope and every explicit module root. On a denied result, its failed
-outcome includes the full report and current attempt. Add that report as a
-`design_gate_check` item before choosing the next transition. Record only
-failed checks; start at attempt 1. The retry invariants validate that history
-and count its sequential denials. A missing, malformed, or unusable report
-surfaces `dataflow_check_unavailable` and leaves the run in `checking`; it
-does not consume an attempt or retry.
+outcome includes the full report and current attempt. The invariant provider
+records valid evaluator results in workflow state outside the design
+repository; it does not trust proposer supplied `design_gate_check` items. A
+missing, malformed, or unusable report surfaces `dataflow_check_unavailable`
+and leaves the run in `checking`; it does not consume an attempt or retry.
 
 Run the checker with the workflow's exact configured paths:
 
@@ -86,12 +91,12 @@ valid, and `denials` is empty. Each denial is sent back with its rule, check,
 subject, matched facts, resolved data categories, and ordered remediation
 details. Warning severity still denies this proposal.
 
-For a valid denial before attempt 4, add its `design_gate_check` item and
-advance `checking` to `revising`, submit a revised design, and then advance
-`revising` to `checking`. N = 3 means the initial attempt plus three retries.
-After the fourth valid report with denials, add its item and advance directly
-from `checking` to `escalated` without another proposer retry. A valid report
-with no denials reaches `passed`, even on attempt 4.
+For a valid denial before attempt 4, advance `checking` to `revising`, submit a
+revised design, and then advance `revising` to `checking`. N = 3 means the
+initial attempt plus three retries. After the fourth valid report with
+denials, advance directly from `checking` to `escalated` without another
+proposer retry. A valid report with no denials reaches `passed`, even on
+attempt 4.
 
 If the design agent cannot start or returns no usable edit, the edit invariant
 returns `design_agent_unavailable`. Keep the run in its current `proposing` or

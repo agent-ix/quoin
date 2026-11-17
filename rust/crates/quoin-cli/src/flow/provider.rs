@@ -293,11 +293,18 @@ struct DesignGateRequest {
     quire_executable: PathBuf,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct DesignGateCheck {
     attempt: u64,
     report: Value,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct DesignGateRunState {
+    checks: Vec<DesignGateCheck>,
+    proposal_pending: bool,
 }
 
 #[derive(Deserialize)]
@@ -508,7 +515,7 @@ fn check_with_details(
         }
         ("design-gate", "dataflow_rules_pass") => {
             let request: DesignGateRequest = one(instance, "operation_request")?;
-            let (attempt, report) = design_gate_report(instance, &request, &context)?;
+            let (attempt, report) = design_gate_report(&request, &context)?;
             if report["denials"].as_array().is_some_and(Vec::is_empty) {
                 Ok(Some(BTreeMap::from([
                     ("attempt".to_owned(), Value::from(attempt)),
@@ -523,13 +530,13 @@ fn check_with_details(
             apply_design_edits(instance, &request, &context).map(|()| None)
         }
         ("design-gate", "design_gate_retry_allowed") => {
-            design_gate_retry_allowed(instance).map(|()| None)
+            design_gate_retry_allowed(&context).map(|()| None)
         }
         ("design-gate", "design_gate_retries_exhausted") => {
-            design_gate_retries_exhausted(instance).map(|()| None)
+            design_gate_retries_exhausted(&context).map(|()| None)
         }
         ("design-gate", "escalated_acceptance_preserves_denial") => {
-            design_gate_escalated_acceptance(instance).map(Some)
+            design_gate_escalated_acceptance(&context).map(Some)
         }
         (_, "human_acceptance_required") => {
             let required: &[&str] = if instance.name == "design-gate" {
@@ -590,6 +597,24 @@ fn apply_design_edits(
         return Err(fail(
             Code::DesignAgentUnavailable,
             "design edit requires the configured explicit rule modules",
+        ));
+    }
+    let state_path = design_gate_state_path(context)?;
+    let mut state = read_design_gate_state(&state_path)?;
+    if state.proposal_pending || state.checks.len() >= 4 {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "the previous proposal has not received an evaluator result or retries are exhausted",
+        ));
+    }
+    if state
+        .checks
+        .last()
+        .is_some_and(|last| last.report["denials"].as_array().is_none_or(Vec::is_empty))
+    {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "a passing design cannot be revised in this run",
         ));
     }
     let repo = context
@@ -680,14 +705,126 @@ fn apply_design_edits(
             std::fs::create_dir_all(parent)
                 .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
         }
-        std::fs::write(path, content)
+        let parent = path.parent().ok_or_else(|| {
+            fail(
+                Code::DesignAgentUnavailable,
+                "authorized edit target has no parent directory",
+            )
+        })?;
+        let mut replacement = tempfile::NamedTempFile::new_in(parent)
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        replacement
+            .write_all(content.as_bytes())
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        if let Ok(metadata) = std::fs::metadata(&path) {
+            replacement
+                .as_file()
+                .set_permissions(metadata.permissions())
+                .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        }
+        replacement
+            .persist(&path)
             .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
     }
+    state.proposal_pending = true;
+    write_design_gate_state(&state_path, &state)?;
+    Ok(())
+}
+
+fn design_gate_state_path(context: &Context) -> Result<PathBuf, Failure> {
+    if context.id.is_empty()
+        || context.id.len() > 128
+        || context.id == "."
+        || context.id == ".."
+        || !context
+            .id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || "-_.".contains(character))
+    {
+        return Err(fail(
+            Code::ContextInvalid,
+            "workflow id is not a safe state key",
+        ));
+    }
+    let repo = context
+        .repo_root
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    std::fs::create_dir_all(&context.config_root)
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    let config = context
+        .config_root
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    if config.starts_with(&repo) {
+        return Err(fail(
+            Code::ContextInvalid,
+            "design-gate state must live outside the design repository",
+        ));
+    }
+    let directory = config.join("design-gate");
+    std::fs::create_dir_all(&directory)
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    let canonical_directory = directory
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    if canonical_directory.starts_with(&repo) {
+        return Err(fail(
+            Code::ContextInvalid,
+            "design-gate state directory resolves inside the design repository",
+        ));
+    }
+    Ok(canonical_directory.join(format!("{}.json", context.id)))
+}
+
+fn read_design_gate_state(path: &Path) -> Result<DesignGateRunState, Failure> {
+    let bytes = match std::fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(DesignGateRunState::default());
+        }
+        Err(error) => return Err(fail(Code::DataflowCheckUnavailable, error.to_string())),
+    };
+    if bytes.len() > 5 * 1024 * 1024 {
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "trusted design-gate run state exceeds 5 MiB",
+        ));
+    }
+    let state: DesignGateRunState = serde_json::from_slice(&bytes)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    if state.checks.len() > 4
+        || state.checks.iter().enumerate().any(|(index, check)| {
+            check.attempt != u64::try_from(index + 1).unwrap_or(u64::MAX)
+                || validate_flow_report(&check.report).is_err()
+        })
+    {
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "trusted design-gate state is malformed or out of sequence",
+        ));
+    }
+    Ok(state)
+}
+
+fn write_design_gate_state(path: &Path, state: &DesignGateRunState) -> Check {
+    let parent = path
+        .parent()
+        .ok_or_else(|| fail(Code::DataflowCheckUnavailable, "state path has no parent"))?;
+    let bytes = serde_json::to_vec(state)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    let mut temporary = tempfile::NamedTempFile::new_in(parent)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    temporary
+        .write_all(&bytes)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    temporary
+        .persist(path)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
     Ok(())
 }
 
 fn design_gate_report(
-    instance: &Instance,
     request: &DesignGateRequest,
     context: &Context,
 ) -> Result<(u64, Value), Failure> {
@@ -742,10 +879,18 @@ fn design_gate_report(
         }
         module_roots.push(module.as_path().to_path_buf());
     }
-    let checks = instance
-        .items
-        .get("design_gate_check")
-        .map_or(&[][..], Vec::as_slice);
+    let state_path = design_gate_state_path(context)?;
+    let mut state = read_design_gate_state(&state_path)?;
+    if !state.proposal_pending {
+        if let Some(last) = state.checks.last() {
+            return Ok((last.attempt, last.report.clone()));
+        }
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "no trusted design proposal is pending evaluation",
+        ));
+    }
+    let checks = &state.checks;
     if checks.len() >= 4 {
         return Err(fail(
             Code::DesignGateRetriesExhausted,
@@ -758,24 +903,18 @@ fn design_gate_report(
             "design gate check count is out of range",
         )
     })?;
-    for (index, value) in checks.iter().enumerate() {
-        let check: DesignGateCheck = serde_json::from_value(value.clone()).map_err(|error| {
-            fail(
-                Code::DataflowCheckUnavailable,
-                format!("design_gate_check: {error}"),
-            )
-        })?;
+    for (index, check) in checks.iter().enumerate() {
         let expected = u64::try_from(index + 1).unwrap_or(u64::MAX);
         if check.attempt != expected || validate_flow_report(&check.report).is_err() {
             return Err(fail(
                 Code::DataflowCheckUnavailable,
-                "design_gate_check reports must be valid and sequential from attempt one",
+                "trusted evaluator reports must be valid and sequential from attempt one",
             ));
         }
         if check.report["denials"].as_array().is_none_or(Vec::is_empty) {
             return Err(fail(
                 Code::DataflowCheckUnavailable,
-                "every recorded design_gate_check must contain a denial",
+                "every prior trusted evaluator result must contain a denial",
             ));
         }
     }
@@ -820,70 +959,73 @@ fn design_gate_report(
             format!("quire.flow-report/v1 is incomplete: {error}"),
         )
     })?;
+    state.checks.push(DesignGateCheck {
+        attempt,
+        report: report.clone(),
+    });
+    state.proposal_pending = false;
+    write_design_gate_state(&state_path, &state).map_err(|error| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            format!("could not retain evaluator result: {}", error.message),
+        )
+    })?;
     Ok((attempt, report))
 }
 
-fn design_gate_checks(instance: &Instance) -> Result<Vec<DesignGateCheck>, Failure> {
-    let checks = instance
-        .items
-        .get("design_gate_check")
-        .map_or(&[][..], Vec::as_slice);
-    if checks.len() > 4 {
-        return Err(fail(
-            Code::DesignGateRequestInvalid,
-            "design_gate_check cannot contain more than four attempts",
-        ));
-    }
-    checks
-        .iter()
-        .enumerate()
-        .map(|(index, value)| {
-            let check: DesignGateCheck =
-                serde_json::from_value(value.clone()).map_err(|error| {
-                    fail(
-                        Code::DataflowCheckUnavailable,
-                        format!("design_gate_check: {error}"),
-                    )
-                })?;
-            let expected = u64::try_from(index + 1).unwrap_or(u64::MAX);
-            if check.attempt != expected || validate_flow_report(&check.report).is_err() {
-                return Err(fail(
-                    Code::DataflowCheckUnavailable,
-                    "design_gate_check reports must be valid and sequential from attempt one",
-                ));
-            }
-            if check.report["denials"].as_array().is_none_or(Vec::is_empty) {
-                return Err(fail(
-                    Code::DataflowCheckUnavailable,
-                    "each recorded check must contain a denial",
-                ));
-            }
-            Ok(check)
-        })
-        .collect()
+fn design_gate_checks(context: &Context) -> Result<DesignGateRunState, Failure> {
+    let state_path = design_gate_state_path(context)?;
+    read_design_gate_state(&state_path)
 }
 
-fn design_gate_retry_allowed(instance: &Instance) -> Check {
-    let checks = design_gate_checks(instance)?;
-    let Some(last) = checks.last() else {
+fn design_gate_retry_allowed(context: &Context) -> Check {
+    let state = design_gate_checks(context)?;
+    let Some(last) = state.checks.last() else {
         return Err(fail(
             Code::DataflowNotDenied,
-            "a valid denied report is required before revision",
+            "a trusted evaluator denial is required before revision",
         ));
     };
-    if last.attempt < 4 {
+    if state.proposal_pending {
+        return Err(fail(
+            Code::DataflowNotDenied,
+            "the pending proposal must be evaluated before revision",
+        ));
+    }
+    if last.attempt == 4
+        && last.report["denials"]
+            .as_array()
+            .is_some_and(|d| !d.is_empty())
+    {
+        return Err(fail(
+            Code::DesignGateRetriesExhausted,
+            "revision is not allowed after the fourth failed evaluator check",
+        ));
+    }
+    if last.attempt < 4
+        && last.report["denials"]
+            .as_array()
+            .is_some_and(|d| !d.is_empty())
+    {
         Ok(())
     } else {
         Err(fail(
-            Code::DesignGateRetriesExhausted,
-            "revision is not allowed after the fourth failed check",
+            Code::DataflowNotDenied,
+            "revision requires the latest trusted evaluator result to contain denials before attempt four",
         ))
     }
 }
 
-fn design_gate_retries_exhausted(instance: &Instance) -> Check {
-    let checks = design_gate_checks(instance)?;
-    if checks.last().is_some_and(|last| last.attempt == 4) {
+fn design_gate_retries_exhausted(context: &Context) -> Check {
+    let state = design_gate_checks(context)?;
+    if !state.proposal_pending
+        && state.checks.last().is_some_and(|last| {
+            last.attempt == 4
+                && last.report["denials"]
+                    .as_array()
+                    .is_some_and(|d| !d.is_empty())
+        })
+    {
         Ok(())
     } else {
         Err(fail(
@@ -893,11 +1035,9 @@ fn design_gate_retries_exhausted(instance: &Instance) -> Check {
     }
 }
 
-fn design_gate_escalated_acceptance(
-    instance: &Instance,
-) -> Result<BTreeMap<String, Value>, Failure> {
-    let checks = design_gate_checks(instance)?;
-    let Some(last) = checks.last() else {
+fn design_gate_escalated_acceptance(context: &Context) -> Result<BTreeMap<String, Value>, Failure> {
+    let state = design_gate_checks(context)?;
+    let Some(last) = state.checks.last() else {
         return Err(fail(
             Code::DesignGateDecisionInvalid,
             "escalated acceptance requires the final denied report",
@@ -907,7 +1047,7 @@ fn design_gate_escalated_acceptance(
         .as_array()
         .cloned()
         .unwrap_or_default();
-    if last.attempt != 4 || denials.is_empty() {
+    if state.proposal_pending || last.attempt != 4 || denials.is_empty() {
         return Err(fail(
             Code::DesignGateDecisionInvalid,
             "an escalated acceptance must preserve the fourth flow denial",
@@ -915,6 +1055,7 @@ fn design_gate_escalated_acceptance(
     }
     Ok(BTreeMap::from([
         ("decision".to_owned(), Value::String("accepted".to_owned())),
+        ("report".to_owned(), last.report.clone()),
         (
             "flow_result".to_owned(),
             Value::String(Code::DataflowDenied.to_string()),
