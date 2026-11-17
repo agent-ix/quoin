@@ -34,6 +34,16 @@ pub struct Sources {
     pub soup: fn(&Inputs) -> Result<quoin_soup::DossierSource, SourceFailure>,
     /// Read policy records through quire's typed record reader.
     pub policy: fn(&Inputs) -> Result<quoin_quire::records::Corpus, SourceFailure>,
+    /// Read threat-model records and the same flow findings as quire's relation report.
+    pub threat_model: fn(&Inputs) -> Result<ThreatModelSource, SourceFailure>,
+}
+
+/// The selected records and engine-produced flow findings for DOS-TM.
+pub struct ThreatModelSource {
+    /// Typed authored records from the selected scope.
+    pub records: quoin_quire::records::Corpus,
+    /// Generic flow findings from the linked quire-rs engine; absent when the module declares none.
+    pub flow: Option<quoin_quire::model::FlowReport>,
 }
 
 /// The two discharge source forms, preserving their supplied order.

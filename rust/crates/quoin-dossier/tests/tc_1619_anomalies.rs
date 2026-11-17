@@ -156,6 +156,7 @@ fn registry() -> quoin_dossier::Registry {
                 detail: "unexpected source call".to_owned(),
             })
         },
+        threat_model: |_| panic!("unexpected threat-model source"),
     })
     .unwrap()
 }

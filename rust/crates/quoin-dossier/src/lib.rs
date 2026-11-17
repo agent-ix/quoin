@@ -33,6 +33,7 @@ mod srs;
 mod stub;
 #[cfg(test)]
 mod testing;
+mod threat_model;
 mod trace_matrix;
 mod verification_report;
 mod writer;
@@ -43,7 +44,8 @@ pub use export::{ExportOptions, export};
 pub use gap::{Gap, GapKind};
 pub use registry::{DocumentSpec, Generated, Generator, Inputs, Registry};
 pub use report::{Comparison, DocumentReport, Report, Status};
-pub use sources::{MatrixSource, RmmSource, Sources};
+pub use sources::{MatrixSource, RmmSource, Sources, ThreatModelSource};
+pub use threat_model::render_threat_model;
 
 /// The registry `quoin dossier` runs against.
 ///
@@ -86,6 +88,7 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
         Box::new(risk_management::RiskManagementGenerator),
         Box::new(risk_plan::RiskPlanGenerator(sources.policy)),
         Box::new(release_record::ReleaseRecordGenerator),
+        Box::new(threat_model::ThreatModelGenerator(sources.threat_model)),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -134,9 +137,9 @@ mod tests {
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_holds_the_ten_documents() {
+    fn the_shipped_registry_holds_the_eleven_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 10);
+        assert_eq!(registry.specs().count(), 11);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -150,7 +153,8 @@ mod tests {
                 "anomalies",
                 "risk-management",
                 "risk-management-plan",
-                "release-record"
+                "release-record",
+                "threat-model"
             ]
         );
     }
@@ -164,7 +168,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            15
+            16
         );
     }
 }

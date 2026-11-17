@@ -113,22 +113,22 @@ engine change.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-202-AC-1 | A fixture with a `threat_model` covering two connections, one carrying `CLASS-PHI` across `BOUND-NET` with `THREAT-1` threatening it, mitigated by `CONTROL-1` and with an accepted risk, lists both connections in `### Covered crossings` with the carried classification, the boundary and trust level, `THREAT-1 (<stride_category>)`, the control and its safeguards, and `RISK-1: accepted, A. Person`. | Test |
-| FR-202-AC-2 | Removing `THREAT-1`'s `threatens` edge yields a `GAP: crossing-without-threat CONN-1` row under `### Open findings` and one `crossing_without_threat` gap naming `CONN-1`; both appear in `--json` in the same order. | Test |
-| FR-202-AC-3 | A considered threat with no control and no accepted risk yields `GAP: threat-without-treatment` and one `threat_without_treatment` gap; with a risk `decision: undecided` it still does, and with `decision: accepted` it does not. | Test |
-| FR-202-AC-4 | A covered sink reached by a classification and with no threat yields `GAP: classified-sink-without-threat` and one `classified_sink_without_threat` gap naming the sink, and the sink is listed under `### Covered sinks`. | Test |
-| FR-202-AC-5 | A selection with no `threat_model` writes `DOS-TM.md` with no model section, one `no_threat_model` gap, and status `incomplete`; the three checks produce no finding. | Test |
-| FR-202-AC-6 | A fully treated fixture reads `none` under `### Open findings`, `Gaps: none`, and status `complete`. | Test |
-| FR-202-AC-7 | Two `generate` runs over the same records produce byte-identical Markdown and `--json`; `check` after an unedited run reports `matches`, and after a hand-edited line reports `differs`. | Test |
-| FR-202-AC-8 | The document holds no threat, STRIDE class, `decision` or `decided_by` value that does not appear in a record, and no score, rank or adequacy statement; a risk with no `decided_by` shows `not stated`. | Test |
-| FR-202-AC-9 | An unreadable `threat` record makes `generate` exit 3 naming the source and leaves every existing file unchanged. | Test |
-| FR-202-AC-10 | A connection covered by two models and lacking a threat gets a `GAP:` row in both sections and one `crossing_without_threat` gap; a considered threat with no treatment gets its `GAP:` row in the section of the model that considers it. | Test |
-| FR-202-AC-11 | A `threat_model` covering a `part`, a `trust_boundary` and a `connection` lists the part and the boundary by id under `### Scope`, in that order, and adds a crossing row only for the connection. | Test |
-| FR-202-AC-12 | With `trace:crossing-without-threat` set to `off`, a connection lacking a threat yields no `GAP:` row and no gap; with it set to `warning`, the row reads `(warning)`, the gap is present and status is `incomplete`. | Test |
-| FR-202-AC-13 | A threat considered by two models and lacking treatment gets its `GAP:` row in each model's section and one `threat_without_treatment` gap. | Test |
-| FR-202-AC-14 | A fixture with two connections, two sinks, three findings of different checks and two part ids in non-sorted source order yields rows, entries, findings and `## Gaps` in the Ordering above; in `## Gaps`, `no_threat_model` precedes the gaps that name an id. | Test |
-| FR-202-AC-15 | A sink carrying `CLASS-PHI` and one reached by a connection that `delivers_to` it and carries `CLASS-PII` each list that classification; a sink with a control that `protects` it and a control that `mitigates` its threat lists each once with safeguards, and a control doing both is listed once. | Test |
-| FR-202-AC-16 | A `threat_model` or `threat` file outside the selected corpus is not read: it yields no model section and no threat cell entry. | Test |
+| FR-202-AC-1 | A fixture with a `threat_model` covering two connections, one carrying `CLASS-PHI` across `BOUND-NET` with `THREAT-1` threatening it, mitigated by `CONTROL-1` and with an accepted risk, lists both connections in `### Covered crossings` with the carried classification, the boundary and trust level, `THREAT-1 (<stride_category>)`, the control and its safeguards, and `RISK-1: accepted, A. Person`. | Test (TC-601) |
+| FR-202-AC-2 | Removing `THREAT-1`'s `threatens` edge yields a `GAP: crossing-without-threat CONN-1` row under `### Open findings` and one `crossing_without_threat` gap naming `CONN-1`; both appear in `--json` in the same order. | Test (TC-602) |
+| FR-202-AC-3 | A considered threat with no control and no accepted risk yields `GAP: threat-without-treatment` and one `threat_without_treatment` gap; with a risk `decision: undecided` it still does, and with `decision: accepted` it does not. | Test (TC-603) |
+| FR-202-AC-4 | A covered sink reached by a classification and with no threat yields `GAP: classified-sink-without-threat` and one `classified_sink_without_threat` gap naming the sink, and the sink is listed under `### Covered sinks`. | Test (TC-604) |
+| FR-202-AC-5 | A selection with no `threat_model` writes `DOS-TM.md` with no model section, one `no_threat_model` gap, and status `incomplete`; the three checks produce no finding. | Test (TC-605) |
+| FR-202-AC-6 | A fully treated fixture reads `none` under `### Open findings`, `Gaps: none`, and status `complete`. | Test (TC-606) |
+| FR-202-AC-7 | Two `generate` runs over the same records produce byte-identical Markdown and `--json`; `check` after an unedited run reports `matches`, and after a hand-edited line reports `differs`. | Test (TC-607) |
+| FR-202-AC-8 | The document holds no threat, STRIDE class, `decision` or `decided_by` value that does not appear in a record, and no score, rank or adequacy statement; a risk with no `decided_by` shows `not stated`. | Test (TC-608) |
+| FR-202-AC-9 | An unreadable `threat` record makes `generate` exit 3 naming the source and leaves every existing file unchanged. | Test (TC-609) |
+| FR-202-AC-10 | A connection covered by two models and lacking a threat gets a `GAP:` row in both sections and one `crossing_without_threat` gap; a considered threat with no treatment gets its `GAP:` row in the section of the model that considers it. | Test (TC-610) |
+| FR-202-AC-11 | A `threat_model` covering a `part`, a `trust_boundary` and a `connection` lists the part and the boundary by id under `### Scope`, in that order, and adds a crossing row only for the connection. | Test (TC-611) |
+| FR-202-AC-12 | With `trace:crossing-without-threat` set to `off`, a connection lacking a threat yields no `GAP:` row and no gap; with it set to `warning`, the row reads `(warning)`, the gap is present and status is `incomplete`. | Test (TC-612) |
+| FR-202-AC-13 | A threat considered by two models and lacking treatment gets its `GAP:` row in each model's section and one `threat_without_treatment` gap. | Test (TC-613) |
+| FR-202-AC-14 | A fixture with two connections, two sinks, three findings of different checks and two part ids in non-sorted source order yields rows, entries, findings and `## Gaps` in the Ordering above. A selection with no `threat_model` yields one `no_threat_model` document gap and no findings. | Test (TC-614) |
+| FR-202-AC-15 | A sink carrying `CLASS-PHI` and one reached by a connection that `delivers_to` it and carries `CLASS-PII` each list that classification; a sink with a control that `protects` it and a control that `mitigates` its threat lists each once with safeguards, and a control doing both is listed once. | Test (TC-615) |
+| FR-202-AC-16 | A `threat_model` or `threat` file outside the selected corpus is not read: it yields no model section and no threat cell entry. | Test (TC-616) |
 
 ## Dependencies
 

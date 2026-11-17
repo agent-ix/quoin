@@ -57,6 +57,7 @@ pub mod design_matrix;
 pub mod engine;
 pub mod error;
 pub mod evidence;
+pub mod flow_report;
 pub mod formal_rules;
 pub mod ids;
 pub mod modules;
@@ -102,6 +103,8 @@ pub mod model {
     };
     pub use quire_rs::corpus::{
         DesignBlock, DesignElement, DesignElementRef, DesignMatrixCriterion, DesignMatrixEntry,
+        FlowDenial, FlowDenialRemediation, FlowDocumentRef, FlowFact, FlowFactEdge,
+        FlowRemediationChange, FlowReport, FlowRuleSummary, FlowSubjectRef,
     };
     pub use quire_rs::coverage::{
         CoverageDiagnostic, CoverageMatrixBinder, CoverageMatrixClaimReason,
@@ -113,6 +116,10 @@ pub mod model {
     pub use quire_rs::metric::{Metric, MetricShape};
     pub use quire_rs::obligation::{CriterionObligation, Obligation};
     pub use quire_rs::symbols::trace::{BindingCensus, UnmatchedTag};
+    pub use quire_rs::traceability::{
+        FlowAddRemediation, FlowCondition, FlowConditionTest, FlowRemediation,
+        FlowRemoveRemediation, FlowSetRemediation, FlowStep,
+    };
     pub use quire_rs::{
         AcceptedAssurancePremises, AssuranceError, AssuranceExport, ClauseBinding,
         ClauseBindingReport, ClauseForce, ClauseSet, ClauseSetDiff, ClauseSetKey, CoverageReport,
