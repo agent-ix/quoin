@@ -419,6 +419,7 @@ mod tests {
     use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
 
     use super::super::fixtures::{binding, direct};
+    use super::super::report::{DischargeFact, DischargeState};
     use super::{
         DischargeStoreError, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS, RecordDischargeRequest,
         StoreRefusal, discharge_report_from_store, inward_completeness_from_store,
@@ -474,6 +475,64 @@ mod tests {
         // The clause's force and expected outputs are the binding report's.
         assert!(!text.contains("expectedOutputs") && !text.contains("mandatory"));
         assert!(!text.contains("SYN-005"), "no other clause is stored");
+    }
+
+    #[trace("FR-046-AC-9", "TC-626")]
+    #[test]
+    fn direct_approval_ref_is_validated_retained_and_stays_in_the_direct_population() {
+        for approval_ref in ["", " \t\n"] {
+            let mut fact = direct();
+            fact["approvalRef"] = approval_ref.into();
+            let mut store = MemoryEvidence::new();
+            let error = record_discharge_facts(&mut store, &record(vec![fact]))
+                .expect_err("empty approval references are refused");
+            assert!(error.to_string().contains("approvalRef must not be empty"));
+            assert_eq!(files(&store), 0, "a refused fact is not written");
+        }
+
+        let approval_ref = "  approval://synthetic/direct-1  ";
+        let mut fact = direct();
+        fact["approvalRef"] = approval_ref.into();
+        let mut store = MemoryEvidence::new();
+        let written = record_discharge_facts(&mut store, &record(vec![fact])).unwrap();
+        let stored_text = store.read(&written[0].path).unwrap().unwrap();
+        let stored: serde_json::Value = serde_json::from_str(&stored_text).unwrap();
+        assert_eq!(stored["fact"]["approvalRef"], approval_ref);
+
+        let facts = read_discharge_facts(&store, &binding().clause_set).unwrap();
+        assert_eq!(facts.len(), 1);
+        assert!(matches!(
+            &facts[0],
+            DischargeFact::Direct(direct) if direct.approval_ref.as_deref() == Some(approval_ref)
+        ));
+        let report = discharge_report_from_store(&store, &binding(), AS_OF).unwrap();
+        assert_eq!(report.binding.direct.len(), 1);
+        assert!(report.binding.dispositions.is_empty());
+        assert_eq!(report.binding.direct[0].state, DischargeState::Direct);
+        assert!(matches!(
+            report.binding.direct[0].fact.as_ref(),
+            Some(DischargeFact::Direct(direct))
+                if direct.approval_ref.as_deref() == Some(approval_ref)
+        ));
+
+        let mut omitted_store = MemoryEvidence::new();
+        let omitted = record_discharge_facts(&mut omitted_store, &record(vec![direct()])).unwrap();
+        let omitted_text = omitted_store.read(&omitted[0].path).unwrap().unwrap();
+        let omitted_record: serde_json::Value = serde_json::from_str(&omitted_text).unwrap();
+        assert!(omitted_record["fact"].get("approvalRef").is_none());
+        let omitted_facts = read_discharge_facts(&omitted_store, &binding().clause_set).unwrap();
+        assert!(matches!(
+            &omitted_facts[0],
+            DischargeFact::Direct(direct) if direct.approval_ref.is_none()
+        ));
+        let omitted_report =
+            discharge_report_from_store(&omitted_store, &binding(), AS_OF).unwrap();
+        assert_eq!(omitted_report.binding.direct.len(), 1);
+        assert!(omitted_report.binding.dispositions.is_empty());
+        assert!(matches!(
+            omitted_report.binding.direct[0].fact.as_ref(),
+            Some(DischargeFact::Direct(direct)) if direct.approval_ref.is_none()
+        ));
     }
 
     #[trace("FR-133-AC-2")]

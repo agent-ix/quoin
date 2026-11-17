@@ -27,14 +27,20 @@ pub(super) fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
     let attestation = parse_attestation(fact.get("attestation"))?;
     match kind {
         FactKind::Direct => {
-            exact(
+            exact_with_optional(
                 fact,
                 "direct discharge fact",
                 &["kind", "clauseId", "evidenceRefs", "attestation"],
+                &["approvalRef"],
             )?;
+            let approval_ref = fact
+                .get("approvalRef")
+                .map(|value| string_value("approvalRef", Some(value)))
+                .transpose()?;
             Ok(DischargeFact::Direct(DirectDischargeFact {
                 clause_id,
                 evidence_refs: non_empty_list("evidenceRefs", fact.get("evidenceRefs"))?,
+                approval_ref,
                 attestation,
             }))
         }
@@ -189,6 +195,17 @@ fn exact(
     name: &str,
     fields: &[&str],
 ) -> Checked<()> {
+    exact_with_optional(value, name, fields, &[])
+}
+
+/// `exact_with_optional(value, name, required, optional)`: no unknown key,
+/// all required keys, and any optional keys may appear at most once.
+fn exact_with_optional(
+    value: &serde_json::Map<String, serde_json::Value>,
+    name: &str,
+    required: &[&str],
+    optional: &[&str],
+) -> Checked<()> {
     // `serde_json::Map`'s backing decides the order two-or-more unknown keys are
     // reported in: `BTreeMap` (sorted) when `preserve_order` is off, or an
     // insertion-ordered `IndexMap` when it is on -- ON in this workspace since
@@ -199,11 +216,11 @@ fn exact(
     // field: only which of several bad keys is named differs, and quoin#373
     // records that verdicts are contractual and prose is not.
     for key in value.keys() {
-        if !fields.contains(&key.as_str()) {
+        if !required.contains(&key.as_str()) && !optional.contains(&key.as_str()) {
             return reject(format!("{name} has unknown field {key}"));
         }
     }
-    for field in fields {
+    for field in required {
         if !value.contains_key(*field) {
             return reject(format!("{name} is missing {field}"));
         }

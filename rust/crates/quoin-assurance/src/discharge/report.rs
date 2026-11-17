@@ -167,6 +167,9 @@ pub struct DirectDischargeFact {
     pub clause_id: String,
     /// Non-empty, and its entries unique.
     pub evidence_refs: Vec<String>,
+    /// A reference to the approval, when supplied.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_ref: Option<String>,
     /// Who attested, and for how long.
     pub attestation: DischargeAttestation,
 }

@@ -30,3 +30,4 @@ description: "Index of test cases (TC) for quoin."
 - [TC-623: FR-207 AC-7 missing flow facts](./tc-623-records-of-processing-dossier.md)
 - [TC-624: FR-207 AC-8 deterministic records-of-processing output](./tc-624-records-of-processing-dossier.md)
 - [TC-625: FR-207 AC-9 cross-repository sink identity](./tc-625-sink-specific-delivered-classification.md)
+- [TC-626: Direct approval references remain optional direct-fact metadata](./TC-626-direct-approval-reference-stays-on-direct-evidence.md)
