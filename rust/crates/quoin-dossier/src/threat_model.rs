@@ -272,7 +272,12 @@ fn render_findings(
         };
         let key = (kind.as_str().to_owned(), finding.subject.to_owned());
         if gap_keys.insert(key) {
-            gaps.push(Gap::new(kind, finding.subject, detail));
+            let gap = Gap::new(kind, finding.subject, detail);
+            gaps.push(if kind == GapKind::NoThreatModel {
+                gap
+            } else {
+                gap.for_element(finding.subject)
+            });
         }
     }
     body.push('\n');
