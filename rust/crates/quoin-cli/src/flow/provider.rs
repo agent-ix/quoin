@@ -64,6 +64,8 @@ enum Code {
     DataflowCheckUnavailable,
     DataflowDenied,
     DataflowNotDenied,
+    DesignAgentUnavailable,
+    RulesModified,
     DesignGateRequestInvalid,
     DesignGateRetriesExhausted,
     DesignGateRetriesNotExhausted,
@@ -111,6 +113,8 @@ impl std::fmt::Display for Code {
             Self::DataflowCheckUnavailable => "dataflow_check_unavailable",
             Self::DataflowDenied => "dataflow_denied",
             Self::DataflowNotDenied => "dataflow_not_denied",
+            Self::DesignAgentUnavailable => "design_agent_unavailable",
+            Self::RulesModified => "rules_modified",
             Self::DesignGateRequestInvalid => "design_gate_request_invalid",
             Self::DesignGateRetriesExhausted => "design_gate_retries_exhausted",
             Self::DesignGateRetriesNotExhausted => "design_gate_retries_not_exhausted",
@@ -294,6 +298,19 @@ struct DesignGateRequest {
 struct DesignGateCheck {
     attempt: u64,
     report: Value,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignEditBatch {
+    edits: Vec<DesignEdit>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignEdit {
+    path: PathBuf,
+    content: String,
 }
 
 #[derive(Serialize)]
@@ -490,7 +507,7 @@ fn check_with_details(
             retries_exhausted(instance).map(|()| None)
         }
         ("design-gate", "dataflow_rules_pass") => {
-            let request: DesignGateRequest = one(instance, "design_gate_request")?;
+            let request: DesignGateRequest = one(instance, "operation_request")?;
             let (attempt, report) = design_gate_report(instance, &request, &context)?;
             if report["denials"].as_array().is_some_and(Vec::is_empty) {
                 Ok(Some(BTreeMap::from([
@@ -500,6 +517,10 @@ fn check_with_details(
             } else {
                 Err(dataflow_denied(attempt, report))
             }
+        }
+        ("design-gate", "design_edit_targets_safe") => {
+            let request: DesignGateRequest = one(instance, "operation_request")?;
+            apply_design_edits(instance, &request, &context).map(|()| None)
         }
         ("design-gate", "design_gate_retry_allowed") => {
             design_gate_retry_allowed(instance).map(|()| None)
@@ -534,6 +555,135 @@ fn check_with_details(
         }
         _ => Err(fail(Code::InvariantUnknown, name)),
     }
+}
+
+fn apply_design_edits(
+    instance: &Instance,
+    request: &DesignGateRequest,
+    context: &Context,
+) -> Check {
+    let Some(values) = instance.items.get("design_edit") else {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "proposer supplied no design_edit output",
+        ));
+    };
+    if values.len() != 1 {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "proposer must supply exactly one design_edit batch",
+        ));
+    }
+    let batch: DesignEditBatch = serde_json::from_value(values[0].clone()).map_err(|error| {
+        fail(
+            Code::DesignAgentUnavailable,
+            format!("design_edit: {error}"),
+        )
+    })?;
+    if batch.edits.is_empty() {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "proposer supplied no usable edits",
+        ));
+    }
+    if request.module_roots.is_empty() || request.module_roots.len() > 16 {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "design edit requires the configured explicit rule modules",
+        ));
+    }
+    let repo = context
+        .repo_root
+        .canonicalize()
+        .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+    let design_root = scoped_path(&repo, &request.design_root).and_then(|path| {
+        path.canonicalize()
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))
+    })?;
+    let modules = request
+        .module_roots
+        .iter()
+        .map(|path| {
+            if !path.is_absolute() {
+                return Err(fail(
+                    Code::DesignAgentUnavailable,
+                    "every rule module root must be an absolute path",
+                ));
+            }
+            ModuleRoot::open(path)
+                .map(|module| module.as_path().to_path_buf())
+                .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    // Resolve and authorize every path before writing any of them.
+    let mut planned = Vec::with_capacity(batch.edits.len());
+    let mut unique = BTreeSet::new();
+    for edit in batch.edits {
+        if edit.path.as_os_str().is_empty()
+            || edit.path.is_absolute()
+            || edit
+                .path
+                .components()
+                .any(|part| !matches!(part, std::path::Component::Normal(_)))
+        {
+            return Err(fail(
+                Code::RulesModified,
+                "design edits must use safe relative paths inside design_root",
+            ));
+        }
+        let joined = design_root.join(&edit.path);
+        let parent = joined
+            .parent()
+            .ok_or_else(|| fail(Code::RulesModified, "edit path has no parent"))?;
+        let mut existing = parent;
+        while !existing.exists() {
+            existing = existing
+                .parent()
+                .ok_or_else(|| fail(Code::RulesModified, "edit path escapes design_root"))?;
+        }
+        let canonical_existing = existing
+            .canonicalize()
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        let suffix = parent
+            .strip_prefix(existing)
+            .map_err(|_| fail(Code::RulesModified, "edit path escapes design_root"))?;
+        let canonical_parent = canonical_existing.join(suffix);
+        let filename = joined
+            .file_name()
+            .ok_or_else(|| fail(Code::RulesModified, "edit path has no filename"))?;
+        let target = if joined.exists() {
+            joined
+                .canonicalize()
+                .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?
+        } else {
+            canonical_parent.join(filename)
+        };
+        if !target.starts_with(&design_root)
+            || modules.iter().any(|module| target.starts_with(module))
+        {
+            return Err(fail(
+                Code::RulesModified,
+                "design edit targets a rule module or leaves design_root",
+            ));
+        }
+        if !unique.insert(target.clone()) {
+            return Err(fail(
+                Code::DesignAgentUnavailable,
+                "design edit batch contains duplicate targets",
+            ));
+        }
+        planned.push((target, edit.content));
+    }
+    for (path, content) in planned {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        }
+        std::fs::write(path, content)
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+    }
+    Ok(())
 }
 
 fn design_gate_report(

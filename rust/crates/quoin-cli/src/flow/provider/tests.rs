@@ -137,12 +137,11 @@ fn flow_denial() -> Value {
 }
 
 #[cfg(unix)]
-fn design_gate_instance(directory: &Path, quire: &Path, report: Value, attempt: u64) -> Value {
+fn design_gate_instance(directory: &Path, quire: &Path, _report: Value, attempt: u64) -> Value {
     let mut history = Vec::new();
     for previous in 1..attempt {
         history.push(json!({"attempt":previous,"report":flow_report(json!([flow_denial()]))}));
     }
-    history.push(json!({"attempt":attempt,"report":report}));
     json!({
         "protocol":"quoin.workflow-invariants/v1",
         "evaluated_at":"2026-11-17T00:00:00Z",
@@ -151,7 +150,7 @@ fn design_gate_instance(directory: &Path, quire: &Path, report: Value, attempt: 
             "defName":"design-gate",
             "items":{
                 "quoin_context":[{"id":"test","repo_root":directory,"config_root":directory,"targets":[]}],
-                "design_gate_request":[{"design_root":"design","module_roots":[directory.join("module")],"quire_executable":quire}],
+                "operation_request":[{"design_root":"design","module_roots":[directory.join("module")],"quire_executable":quire}],
                 "design_gate_check":history
             },
             "gateConfig":{
@@ -248,7 +247,6 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
     let clean = flow_report(json!([]));
     let (directory, value, _quire, _) = design_gate_fixture(&denied, 0);
     let design_root = directory.path().join("design");
-    let module_root = directory.path().join("module");
     let denied_report = directory.path().join("denied.json");
     let clean_report = directory.path().join("clean.json");
     fs::write(
@@ -269,7 +267,7 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
     );
     let quire = executable(directory.path(), "quire-dynamic", &body);
     let mut value = value;
-    value["instance"]["items"]["design_gate_request"][0]["quire_executable"] = json!(quire);
+    value["instance"]["items"]["operation_request"][0]["quire_executable"] = json!(quire);
 
     let first =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
@@ -280,8 +278,21 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
         failure.details["denials"][0]["data_categories"],
         json!(["health"])
     );
+    assert_eq!(failure.details["denials"][0]["subject"]["id"], "CONN-1");
+    assert_eq!(
+        failure.details["denials"][0]["matched"]["data_classification"][0]["id"],
+        "CLASS-1"
+    );
     assert_eq!(
         failure.details["denials"][0]["remediations"][0]["name"],
+        "encrypt-in-transit"
+    );
+    assert_eq!(
+        failure.details["denials"][0]["remediations"][0]["description"],
+        "Protect the connection."
+    );
+    assert_eq!(
+        failure.details["denials"][0]["remediations"][0]["change"]["adds"]["value"],
         "encrypt-in-transit"
     );
 
@@ -289,34 +300,16 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
         "attempt":1,
         "report":failure.details["report"]
     }]);
-    let edit = serde_json::to_vec(&json!({
+    value["instance"]["items"]["design_edit"] = json!([{
         "edits":[{"path":"controls/encrypt-in-transit.md","content":"control: encrypt-in-transit"}]
-    }))
-    .expect("edit request");
-    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../skills/design-gate/scripts/apply-design-edit.py");
-    let output = std::process::Command::new("python3")
-        .arg(script)
-        .args(["--scope", design_root.to_str().expect("scope")])
-        .arg("--module")
-        .arg(module_root.to_str().expect("module"))
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .expect("start constrained editor");
-    let mut child = output;
-    use std::io::Write as _;
-    child
-        .stdin
-        .take()
-        .expect("editor stdin")
-        .write_all(&edit)
-        .expect("send edit");
-    let output = child.wait_with_output().expect("editor result");
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stdout)
+    }]);
+    let proposing =
+        serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
+    super::check_with_details(&proposing, "design_edit_targets_safe")
+        .expect("trusted editor applies scoped edit");
+    assert_eq!(
+        fs::read_to_string(design_root.join("controls/encrypt-in-transit.md")).expect("edit"),
+        "control: encrypt-in-transit"
     );
 
     let revised =
@@ -325,6 +318,60 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
         .expect("the control clears the rule denial")
         .expect("report details");
     assert_eq!(passed["report"]["denials"], json!([]));
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-4")]
+#[test]
+fn design_gate_rejects_rule_module_edit_before_writing_any_batch_item() {
+    let report = flow_report(json!([flow_denial()]));
+    let (directory, mut value, _, _) = design_gate_fixture(&report, 0);
+    let design_file = directory.path().join("design/spec/draft.md");
+    fs::write(&design_file, "original").expect("design file");
+    let module_file = directory.path().join("module/rules.md");
+    fs::write(&module_file, "protected").expect("rule file");
+    value["instance"]["items"]["design_edit"] = json!([{
+        "edits":[
+            {"path":"spec/draft.md","content":"changed"},
+            {"path":"../module/rules.md","content":"tampered"}
+        ]
+    }]);
+    let instance =
+        serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
+    let failure = super::check_with_details(&instance, "design_edit_targets_safe")
+        .expect_err("protected edit denied");
+    assert_eq!(failure.code.to_string(), "rules_modified");
+    assert_eq!(
+        fs::read_to_string(design_file).expect("design file"),
+        "original"
+    );
+    assert_eq!(
+        fs::read_to_string(module_file).expect("rule file"),
+        "protected"
+    );
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-10")]
+#[test]
+fn unavailable_design_agent_stops_before_applying_or_counting_a_check() {
+    let report = flow_report(json!([flow_denial()]));
+    let (_directory, value, _, _) = design_gate_fixture(&report, 0);
+    let instance =
+        serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
+    let failure = super::check_with_details(&instance, "design_edit_targets_safe")
+        .expect_err("missing proposer output stops this phase");
+    assert_eq!(failure.code.to_string(), "design_agent_unavailable");
+    assert!(instance.items["design_gate_check"].is_empty());
+
+    let mut no_output = instance;
+    no_output
+        .items
+        .insert("design_edit".to_owned(), vec![json!({"edits": []})]);
+    let failure = super::check_with_details(&no_output, "design_edit_targets_safe")
+        .expect_err("empty proposer output is unusable");
+    assert_eq!(failure.code.to_string(), "design_agent_unavailable");
+    assert!(no_output.items["design_gate_check"].is_empty());
 }
 
 #[cfg(unix)]
@@ -366,6 +413,14 @@ fn design_gate_rejects_malformed_or_wrong_schema_reports() {
         "dataflow_rules_pass",
     )
     .expect_err("missing evaluator cannot pass");
+    assert_eq!(failure.code.to_string(), "dataflow_check_unavailable");
+    let failing = executable(directory.path(), "quire-fails-without-report", "exit 9");
+    let input = design_gate_instance(directory.path(), &failing, flow_report(json!([])), 1);
+    let failure = super::check_with_details(
+        &serde_json::from_value::<super::Instance>(input["instance"].clone()).expect("instance"),
+        "dataflow_rules_pass",
+    )
+    .expect_err("nonzero evaluator without JSON report is unavailable");
     assert_eq!(failure.code.to_string(), "dataflow_check_unavailable");
     assert!(validate_flow_report(&json!({"schema":"other"})).is_err());
 }
@@ -1688,6 +1743,10 @@ fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
             .unwrap_or_else(|| panic!("missing transition {from}->{to}"))
     };
     assert_eq!(
+        route("proposing", "checking")["invariants"],
+        json!(["interview.complete:request", "design_edit_targets_safe"])
+    );
+    assert_eq!(
         route("checking", "passed")["invariants"],
         json!(["dataflow_rules_pass"])
     );
@@ -1701,7 +1760,7 @@ fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
     );
     assert_eq!(
         route("revising", "checking")["invariants"],
-        json!(["design_gate_retry_allowed"])
+        json!(["design_gate_retry_allowed", "design_edit_targets_safe"])
     );
     assert!(
         route("escalated", "accepted")["invariants"]
@@ -1723,8 +1782,8 @@ fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
         ));
     }
     assert_eq!(
-        definition["itemSchemas"]["design_agent_failure"]["properties"]["code"]["const"],
-        "design_agent_unavailable"
+        definition["itemSchemas"]["design_edit"]["required"],
+        json!(["edits"])
     );
     let skill_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../skills/design-gate/SKILL.md");

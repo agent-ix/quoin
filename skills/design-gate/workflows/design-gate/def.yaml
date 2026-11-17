@@ -13,7 +13,7 @@ phases:
 transitions:
   - from: proposing
     to: checking
-    invariants: ["interview.complete:request"]
+    invariants: ["interview.complete:request", design_edit_targets_safe]
     defaultGate: auto
   - from: checking
     to: passed
@@ -29,7 +29,7 @@ transitions:
     defaultGate: auto
   - from: revising
     to: checking
-    invariants: [design_gate_retry_allowed]
+    invariants: [design_gate_retry_allowed, design_edit_targets_safe]
     defaultGate: auto
   - from: passed
     to: accepted
@@ -64,11 +64,18 @@ itemSchemas:
     properties:
       attempt: {type: integer, minimum: 1, maximum: 4}
       report: {type: object}
-  design_agent_failure:
-    required: [code, message]
+  design_edit:
+    required: [edits]
     properties:
-      code: {const: design_agent_unavailable}
-      message: {type: string, minLength: 1}
+      edits:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [path, content]
+          properties:
+            path: {type: string}
+            content: {type: string}
 linkSchemas: {}
 interviews:
   request:

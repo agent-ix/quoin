@@ -9,6 +9,7 @@ metadata:
     request-protocol: quoin.workflow-invariants/v1
     result-protocol: quoin.workflow-invariants-result/v1
     invariants:
+      - design_edit_targets_safe
       - dataflow_rules_pass
       - design_gate_retry_allowed
       - design_gate_retries_exhausted
@@ -49,28 +50,28 @@ The request item is:
 
 ## Propose and revise
 
-The design agent may read the design and rule inputs, but receives write
-capability only through `scripts/apply-design-edit.py`. Give that tool the
-design root and all configured rule-module roots from the workflow request; it
-accepts only edits whose resolved target stays inside the design root and
-outside every rule module. A rejected target returns `rules_modified` before
-any write. Do not give the proposer a general file-write tool for the design
-repository or any rule module.
+The design agent may read the design and rule inputs. It submits a `design_edit`
+item containing relative paths and replacement content; the workflow provider
+applies the batch using the trusted design root and module roots in the request.
+It checks every target before writing any of them. A target outside the design
+root or inside a rule module returns `rules_modified` before any write. Do not
+give the proposer a general file-write tool for the design repository or any
+rule module.
 
 The proposer may return only design edits. Do not let it change the module
 manifest, `required_relations`, `traceability.flow_rules`, or declared rule
 data. The edit tool does not record file lists, snapshots, digests, or version
 information.
 
-After the initial proposal, advance to `checking` and advance from `checking`
-to `passed`. `dataflow_rules_pass` invokes `quire` with the configured scope
-and every explicit module root. On a denied result, its failed outcome includes
-the full report and current attempt. Add that report as a `design_gate_check`
-item before choosing the next transition. Record only failed checks; start at
-attempt 1. The retry invariants validate that history and count its sequential
-denials. A missing, malformed, or unusable report surfaces
-`dataflow_check_unavailable` and leaves the run in `checking`; it does not
-consume an attempt or retry.
+After the initial proposal, advance to `checking` and follow the transition
+allowed by the evaluator result. `dataflow_rules_pass` invokes `quire` with the
+configured scope and every explicit module root. On a denied result, its failed
+outcome includes the full report and current attempt. Add that report as a
+`design_gate_check` item before choosing the next transition. Record only
+failed checks; start at attempt 1. The retry invariants validate that history
+and count its sequential denials. A missing, malformed, or unusable report
+surfaces `dataflow_check_unavailable` and leaves the run in `checking`; it
+does not consume an attempt or retry.
 
 Run the checker with the workflow's exact configured paths:
 
@@ -92,9 +93,8 @@ After the fourth valid report with denials, add its item and advance directly
 from `checking` to `escalated` without another proposer retry. A valid report
 with no denials reaches `passed`, even on attempt 4.
 
-If the design agent cannot start or returns no usable edit, add a
-`design_agent_failure` item with `code: design_agent_unavailable` and an
-operator-readable message. Keep the run in its current `proposing` or
+If the design agent cannot start or returns no usable edit, the edit invariant
+returns `design_agent_unavailable`. Keep the run in its current `proposing` or
 `revising` phase; an operator may resume or end it. Do not count this as a
 denial or evaluator failure.
 
