@@ -471,13 +471,11 @@ fn classifications<'a>(
         .filter(|(kind, _)| *kind == "connection")
         .map(|(_, fact)| *fact)
         .filter(|connection| {
-            outgoing(connection, "delivers_to")
-                .iter()
-                .any(|edge| {
-                    fact_for(edge, facts).is_some_and(|target| {
-                        sink_ids.contains(&(target.repo.as_deref(), target.id.as_str()))
-                    })
+            outgoing(connection, "delivers_to").iter().any(|edge| {
+                fact_for(edge, facts).is_some_and(|target| {
+                    sink_ids.contains(&(target.repo.as_deref(), target.id.as_str()))
                 })
+            })
         })
         .collect::<Vec<_>>();
     for connection in &delivering {
@@ -533,13 +531,10 @@ fn classifications<'a>(
     }
     for sink in sinks {
         let delivered_classification = delivering.iter().any(|connection| {
-            let delivers_to_sink = outgoing(connection, "delivers_to")
-                .iter()
-                .any(|edge| {
-                    fact_for(edge, facts).is_some_and(|target| {
-                        target.id == sink.id && target.repo == sink.repo
-                    })
-                });
+            let delivers_to_sink = outgoing(connection, "delivers_to").iter().any(|edge| {
+                fact_for(edge, facts)
+                    .is_some_and(|target| target.id == sink.id && target.repo == sink.repo)
+            });
             delivers_to_sink
                 && outgoing(connection, "carries")
                     .iter()
@@ -1181,7 +1176,9 @@ mod tests {
         let generated = render(&records, Some(&flow));
 
         assert!(
-            generated.body.contains("GAP: (c) categories of personal data — SINK-B carries no classification"),
+            generated.body.contains(
+                "GAP: (c) categories of personal data — SINK-B carries no classification"
+            ),
             "the unrelated sink must retain its missing-category gap"
         );
         assert!(
