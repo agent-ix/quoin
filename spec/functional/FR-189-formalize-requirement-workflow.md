@@ -29,13 +29,17 @@ The skill is `formalize-requirement`, laid out like `skills/spec-review/`
 served by the existing `quoin.workflow-invariants/v1` provider
 ([FR-021](./FR-021-launch-ix-flow-runs.md)).
 
-The analysis invariant consumes an explicit `filament.contract-package/v1`
-input, the package protocol accepted by filament-analyze FR-009.
-QSL-1900 produces the native `filament.checked-package/v2` artifact; the bridge
-from that artifact into the required `filament.contract-package/v1` package is
-tracked by VER-109. Real QSL-source analysis depends on that bridge. This FR
-defines neither QSL's native package nor the bridge, and adds no compatibility
-adapter to filament-analyze.
+The analysis invariant SHALL accept either an explicit
+`filament.contract-package/v1` input, the package protocol accepted by
+filament-analyze FR-009, or the native `filament.checked-package/v2` artifact
+written by `fsl compile --output`. For a checked package, Quoin binds its
+source-mapped analysis claims to the run's drafted declarations and the
+FR-188-approved declarations, lowers the admitted claims to the analyzer's
+`filament.contract-package/v1` input, and retains the analyzer's differential
+report with its selected and excluded claims for review. This requirement
+defines the workflow-visible input, binding, lowering, refusal, and report
+behavior; QSL's native package schema and analyzer's package protocol remain
+owned by their respective interfaces.
 
 ## Behavior
 
@@ -109,15 +113,38 @@ adapter to filament-analyze.
 - When any required report is non-conclusive, the invariant SHALL NOT classify
   the draft set as `consistent`.
 - When Quoin evaluates `analysis_consistent_with_approved` for a
-  `formalization_request`, then Quoin SHALL require `analysis_package` to be a
-  non-empty, absolute path to a readable `filament.contract-package/v1` JSON
-  document prepared from the exact `draft_path` that passed
-  `qsl_check_passes` and the formal rules that the FR-188 status report marks
-  `approved` for that run. A trusted package producer SHALL prepare the package
-  from those inputs; the drafting model or agent SHALL NOT supply or replace the
-  package contents. Quoin SHALL use this explicit path as the package input to
-  `filament-analyze run-package` and SHALL NOT infer a package path from the
-  draft, repository configuration, or ambient environment.
+  `formalization_request`, Quoin SHALL require `analysis_package` to be a
+  non-empty, absolute path to a readable JSON document containing either a
+  `filament.contract-package/v1` package or a `filament.checked-package/v2`
+  package produced by `fsl compile --output`. The package SHALL represent the
+  exact draft that passed `qsl_check_passes` and the formal rules that the
+  FR-188 status report marks `approved` for that run. A trusted package
+  producer SHALL prepare the package from those inputs; the drafting model or
+  agent SHALL NOT supply or replace the package contents. Quoin SHALL use this
+  explicit path and SHALL NOT infer a package path from the draft, repository
+  configuration, or ambient environment.
+- For `filament.checked-package/v2`, Quoin SHALL bind every source-mapped
+  analysis claim to exactly one expected declaration by source identity and
+  source interval containment. The expected declarations SHALL comprise the
+  run's drafted symbols and the FR-188-approved symbols. Quoin SHALL require
+  one bound claim for every expected declaration and SHALL reject any missing,
+  extra, ambiguous, or mismatched claim with `analysis_package_invalid` before
+  invoking `filament-analyze run-package`.
+- For `filament.checked-package/v2`, Quoin SHALL lower only the bound claim
+  nodes using the checked-package reader and the `quoin` profile
+  `formal-rule-analysis/v1`. Quoin SHALL refuse analysis if package admission
+  fails, the lowering is incomplete, or the lowering cannot produce a valid
+  `filament.contract-package/v1` package. Quoin SHALL pass the resulting
+  contract package and a selection containing only drafted spans to
+  `filament-analyze run-package`; approved-rule spans SHALL remain unselected.
+- For either accepted package version, a successful analysis result SHALL
+  include `classification`, `reports`, and `report_directory`. Each path in
+  `reports` SHALL identify a retained analyzer report file in
+  `report_directory`. Each report SHALL include a differential result and a
+  `selection` object with `selected` and `excluded` arrays of claim names; the
+  selected array SHALL be non-empty. If a differential or selection report is
+  missing or malformed, Quoin SHALL fail with `analysis_inconclusive` and
+  leave the draft unclassified.
 - When Quoin evaluates `analysis_consistent_with_approved`, then Quoin SHALL
   verify that every claim source span in the package maps to either a symbol in
   the run's drafted set at `draft_path` or a symbol marked `approved` by the
@@ -180,18 +207,23 @@ adapter to filament-analyze.
 | FR-189-AC-13 | Given a repository with no `approved` rule and a drafted set that holds a span, the analysis runs with `--request consistency` and a selection of the drafted spans only; a satisfied result classifies the set `consistent` | Test |
 | FR-189-AC-14 | Given a drafted set that provides no selection span, invariant `analysis_consistent_with_approved` fails and `filament-analyze run-package` is not invoked | Test |
 | FR-189-AC-15 | Given a missing, empty, relative, or NUL-containing trust path, or a partial or invalid `gitsign` object in `formalization_request`, the approval invariant returns `formal_rule_trust_inputs_invalid` without invoking engineering-assurance | Test |
-| FR-189-AC-16 | Given an `analysis_package` prepared from the exact draft that passed `qsl_check_passes` and the FR-188 rules reported approved for the run, the analysis invariant invokes `filament-analyze run-package` with that `filament.contract-package/v1` package and one selection containing only the drafted spans; when approved peers exist, it uses `--request contradiction` | Test |
-| FR-189-AC-17 | Given a missing, empty, relative, or NUL-containing `analysis_package`, or a path that cannot be read as `filament.contract-package/v1`, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze` | Test |
+| FR-189-AC-16 | Given an `analysis_package` prepared from the exact draft that passed `qsl_check_passes` and the FR-188 rules reported approved for the run, the analysis invariant invokes `filament-analyze run-package` with the supplied `filament.contract-package/v1` package and one selection containing only the drafted spans; when approved peers exist, it uses `--request contradiction` | Test |
+| FR-189-AC-17 | Given a missing, empty, relative, or NUL-containing `analysis_package`, or a path that cannot be read as either accepted package version, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze` | Test |
 | FR-189-AC-18 | Given a package whose claims are missing from, extra to, or source-mismatched with the checked draft and FR-188 approved-rule set, the analysis invariant returns `analysis_package_invalid` without invoking `filament-analyze run-package` | Test |
 | FR-189-AC-19 | Given an approved rule and a drafted rule that contradicts it, the package contains both claims, the selection contains only the drafted span, the draft passes its consistency precheck, and `--request contradiction` classifies the result as `contradicts` and fails the invariant | Test |
 | FR-189-AC-20 | Given one drafted rule with approved peers and no contradiction, `--request redundancy` classifies it as `redundant` when the peers imply it, otherwise as `consistent`; both results pass the invariant and remain visible to the reviewer | Test |
 | FR-189-AC-21 | With multiple drafted rules and approved peers, Quoin checks draft-set consistency before comparison, then uses `--request contradiction`; it classifies the set as `consistent` only when no contradiction is found, and does not request or claim a multi-candidate redundancy result | Test |
 | FR-189-AC-22 | Given a disagreement, inconclusive, unavailable, or otherwise non-conclusive report from any required mode, the invariant fails with `analysis_inconclusive` and does not classify the rules as `consistent` | Test |
 | FR-189-AC-23 | Given a drafted set that is inconsistent with itself, its consistency request returns refuted and the invariant fails with `draft_claims_inconsistent` before comparing it with approved peers | Test |
+| FR-189-AC-24 | Given an `analysis_package` containing a `filament.checked-package/v2` artifact written by `fsl compile --output` from the exact checked draft and FR-188-approved rules, the invariant admits it and maps each source-mapped analysis claim to exactly one expected declaration by source identity and interval containment | Test |
+| FR-189-AC-25 | Given a checked package with a missing, extra, ambiguous, or source-mismatched claim, the invariant returns `analysis_package_invalid` and does not invoke `filament-analyze run-package` | Test |
+| FR-189-AC-26 | Given a valid checked package, Quoin lowers the bound draft and approved claims with profile `quoin/formal-rule-analysis/v1`, invokes `filament-analyze run-package` with a non-empty selection containing only drafted spans, and returns `classification`, `reports`, and `report_directory` identifying retained reports with differential results and selected and excluded claim lists | Test |
+| FR-189-AC-27 | Given a checked package refused by admission, any selected claim not fully lowered, or a completed lowering that cannot produce a valid `filament.contract-package/v1` package, Quoin returns a refusal before invoking `filament-analyze run-package` and creates no analyzer report | Test |
+| FR-189-AC-28 | Given an analyzer report without a valid differential or non-empty `selection.selected` and valid `selection.excluded` lists, the invariant fails with `analysis_inconclusive` and does not classify the draft as `consistent` | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-188](./FR-188-formal-rule-approval-state-from-signed-commits.md),
   [FR-021](./FR-021-launch-ix-flow-runs.md), [FR-190](./FR-190-formal-rule-analysis-claim-selection.md).
-  Real QSL-source analysis additionally depends on QSL-1900's native checked package and VER-109's bridge from
-  `filament.checked-package/v2` into `filament.contract-package/v1`.
+  Checked-package analysis depends on QSL-1900's `filament.checked-package/v2`
+  output and its published reader and lowering interface.
