@@ -137,6 +137,13 @@ fn admit_checked_package(bytes: &[u8]) -> Result<CheckedPackageV2, CheckedPackag
 
 #[cfg(test)]
 mod tests {
+    #![allow(
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        reason = "adapter fixtures use checked expectations and JSON indexing"
+    )]
+
+    use ix_trace_rs::trace;
     use serde_json::{Value, json};
 
     use super::{CheckedPackageError, claim_spans, lower_selected_claims};
@@ -150,6 +157,7 @@ mod tests {
         .expect("fixture node id is valid")
     }
 
+    #[trace("FR-189-AC-24", "FR-189-AC-26")]
     #[test]
     fn lowers_only_explicit_approved_and_draft_claims() {
         let bytes =
@@ -179,6 +187,7 @@ mod tests {
         assert_eq!(claims, 2);
     }
 
+    #[trace("FR-189-AC-27")]
     #[test]
     fn refuses_invalid_checked_package_before_producing_analyzer_input() {
         let bytes =

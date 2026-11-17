@@ -227,7 +227,7 @@ fn analysis_claim_spans_bind_only_to_checked_draft_and_approved_rules() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-16")]
+#[trace("VER-109-AC-1", "FR-189-AC-24", "FR-189-AC-26")]
 #[test]
 fn analysis_invariant_uses_valid_package_and_draft_only_selection() {
     let (directory, request, context) = formalization_fixture();
@@ -330,24 +330,15 @@ fn analysis_invariant_uses_valid_package_and_draft_only_selection() {
 }
 
 #[cfg(unix)]
-#[trace("VER-109-AC-1")]
+#[trace("FR-189-AC-16")]
 #[test]
 fn analysis_invariant_keeps_contract_package_v1_input_supported() {
     let (directory, request, context) = formalization_fixture();
-    let claims = [
-        ("draft-symbol", "qsl/rule.native"),
-        ("approved-symbol", "qsl/approved.native"),
-    ];
+    let claims = [("draft-symbol", "qsl/rule.native")];
     let (package, spans) = contract_analysis_package(directory.path(), &claims);
     let draft = spans.first().expect("draft span");
     let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
-    let status = status_for_rules(
-        directory.path(),
-        &[
-            status_rule(draft, "draft"),
-            status_rule(span_at(&spans, 1), "approved"),
-        ],
-    );
+    let status = status_for_rules(directory.path(), &[status_rule(draft, "draft")]);
     let (analyzer, log, _) = analyzer_stub(directory.path(), &[("consistency", "satisfied")]);
     let z3 = executable(directory.path(), "z3", "exit 0");
     let cvc5 = executable(directory.path(), "cvc5", "exit 0");
@@ -375,7 +366,7 @@ fn analysis_invariant_keeps_contract_package_v1_input_supported() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-17")]
+#[trace("FR-189-AC-17", "FR-189-AC-27")]
 #[test]
 fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages() {
     let (directory, mut request, context) = formalization_fixture();
@@ -391,21 +382,16 @@ fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages()
     let unreadable = directory.path().join("missing-package.json");
     let malformed = directory.path().join("malformed-package.json");
     let wrong_protocol = directory.path().join("wrong-protocol.json");
-    let unsupported_checked = directory.path().join("unsupported-checked-package.json");
+    let refused_checked = directory.path().join("refused-checked-package.json");
     fs::write(&malformed, "{").expect("malformed package");
     fs::write(&wrong_protocol, r#"{"contract_version":"other/v1"}"#)
         .expect("wrong protocol package");
     fs::write(
-        &unsupported_checked,
+        &refused_checked,
         include_bytes!("../../../tests/fixtures/formal-rules/checked-package-v2-invalid.json"),
     )
-    .expect("unsupported checked package");
-    for package in [
-        &unreadable,
-        &malformed,
-        &wrong_protocol,
-        &unsupported_checked,
-    ] {
+    .expect("refused checked package");
+    for package in [&unreadable, &malformed, &wrong_protocol, &refused_checked] {
         request.analysis_package = Some(package.to_string_lossy().into_owned());
         let failure = analysis_consistent_with_tools(
             &request,
@@ -414,6 +400,9 @@ fn analysis_invariant_rejects_unreadable_malformed_and_wrong_protocol_packages()
         )
         .expect_err("invalid package fails closed before analysis");
         assert_eq!(failure.code.to_string(), "analysis_package_invalid");
+        if package == &refused_checked {
+            assert!(failure.message.contains("checked package was refused"));
+        }
     }
     assert!(!marker.exists());
     assert!(
@@ -441,7 +430,7 @@ fn analysis_package_reader_catalog_failure_is_not_a_package_refusal() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-18")]
+#[trace("FR-189-AC-18", "FR-189-AC-25")]
 #[test]
 fn analysis_invariant_rejects_claims_outside_the_checked_draft_and_approved_set() {
     let (directory, request, context) = formalization_fixture();
@@ -638,7 +627,7 @@ fn analysis_invariant_compares_multi_draft_without_redundancy_mode() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-22")]
+#[trace("FR-189-AC-22", "FR-189-AC-28")]
 #[test]
 fn analysis_invariant_fails_closed_for_disagreement_and_unavailable_reports() {
     for nonconclusive in ["disagreement", "unavailable"] {

@@ -752,7 +752,7 @@ fn prepare_analysis(
 ) -> Result<PreparedAnalysis, Failure> {
     let package_path = validate_analysis_package_path(request)?;
     let bytes = read_analysis_package_bytes(Path::new(package_path))?;
-    let native_claims = match checked_package_version(&bytes)?.as_deref() {
+    let native_claims = match checked_package_version(&bytes).as_deref() {
         Some("filament.checked-package/v2") => {
             Some(analysis_package::claim_spans(&bytes).map_err(checked_package_failure)?)
         }
@@ -1125,14 +1125,14 @@ fn read_analysis_package_bytes(path: &Path) -> Result<Vec<u8>, Failure> {
     Ok(bytes)
 }
 
-fn checked_package_version(bytes: &[u8]) -> Result<Option<String>, Failure> {
+fn checked_package_version(bytes: &[u8]) -> Option<String> {
     let Ok(value) = serde_json::from_slice::<Value>(bytes) else {
-        return Ok(None);
+        return None;
     };
-    Ok(value
+    value
         .get("contract_version")
         .and_then(Value::as_str)
-        .map(str::to_owned))
+        .map(str::to_owned)
 }
 
 fn read_contract_analysis_package(bytes: &[u8]) -> Result<ContractPackageV1, Failure> {
@@ -1386,6 +1386,15 @@ fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<Analy
             format!("analysis report invalid: {error}"),
         )
     })?;
+    let status = analysis_report_status(&report, mode, output.status.code())?;
+    Ok(AnalysisRun { status, path })
+}
+
+fn analysis_report_status(
+    report: &Value,
+    mode: &str,
+    exit_status: Option<i32>,
+) -> Result<String, Failure> {
     if report.get("analysisKind").and_then(Value::as_str) != Some(mode) {
         return Err(fail(
             Code::AnalysisInconclusive,
@@ -1454,16 +1463,13 @@ fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<Analy
     } else {
         Some(1)
     };
-    if output.status.code() != expected_exit {
+    if exit_status != expected_exit {
         return Err(fail(
             Code::AnalysisInconclusive,
             "analysis exit status disagrees with its report",
         ));
     }
-    Ok(AnalysisRun {
-        status: status.to_owned(),
-        path,
-    })
+    Ok(status.to_owned())
 }
 
 fn formalization_check(request: &FormalizeInput, context: &Context) -> Check {
