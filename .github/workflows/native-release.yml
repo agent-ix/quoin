@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       allow_known_workflow_smoke_failure:
-        description: Allow the recorded smoke-formalize-success baseline failure for v0.36.0 only
+        description: Allow the recorded smoke-formalize-success baseline failure for v0.36.1 only
         required: false
         default: false
         type: boolean

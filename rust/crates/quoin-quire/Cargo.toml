@@ -18,8 +18,8 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# THE RELEASE CONTRACT. This consumer uses the public quire-rs v0.61.0 release,
-# whose exact semantic version provides required_relations.record_keys. The
+# THE RELEASE CONTRACT. This consumer uses the public quire-rs v0.62.2 release,
+# which carries the direct-marker fix required by PLAT-1767. The
 # release tag and exact package version keep Cargo resolution tied to that
 # published contract without a hand-selected commit revision.
 #
@@ -38,7 +38,7 @@ quoin-quire-types = { workspace = true }
 ix-trace-rs = { workspace = true }
 quoin-jsonschema = { workspace = true }
 quoin-yaml = { workspace = true }
-quire-rs = { version = "=0.62.0", git = "https://github.com/agent-ix/quire-rs", tag = "v0.62.0" }
+quire-rs = { version = "=0.62.2", git = "https://github.com/agent-ix/quire-rs", tag = "v0.62.2" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

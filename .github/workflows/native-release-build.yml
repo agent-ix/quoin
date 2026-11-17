@@ -13,7 +13,7 @@ on:
         default: false
         type: boolean
       allow_known_workflow_smoke_failure:
-        description: Allow the recorded smoke-formalize-success baseline failure for v0.36.0 only
+        description: Allow the recorded smoke-formalize-success baseline failure for v0.36.1 only
         required: false
         default: false
         type: boolean
@@ -154,11 +154,11 @@ jobs:
             exit 0
           fi
           if [ "$ALLOW_KNOWN_WORKFLOW_SMOKE_FAILURE" = "true" ] \
-            && [ "$TAG" = "v0.36.0" ] \
+            && [ "$TAG" = "v0.36.1" ] \
             && grep -Fq 'smoke-formalize-success' "$SMOKE_LOG" \
             && grep -Fq 'invariant_interview_incomplete' "$SMOKE_LOG" \
             && grep -Fq '"missing":["engineering_assurance","allowed_signers"]' "$SMOKE_LOG"; then
-            echo "::warning::Allowing the recorded v0.36.0 clean-main smoke-formalize-success failure; all other smoke failures remain fatal."
+            echo "::warning::Allowing the recorded v0.36.1 clean-main smoke-formalize-success failure; all other smoke failures remain fatal."
             exit 0
           fi
           exit "$SMOKE_STATUS"
