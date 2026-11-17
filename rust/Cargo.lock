@@ -3202,6 +3202,7 @@ dependencies = [
  "filament-contract-model",
  "ix-cli-kit",
  "ix-trace-rs",
+ "quire-canonical",
  "quire-fixtures",
  "quoin-anomaly",
  "quoin-assurance",

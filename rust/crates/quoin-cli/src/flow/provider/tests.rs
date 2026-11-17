@@ -818,7 +818,11 @@ fn checked_analysis_graph(claims: &[(&str, &str)]) -> (Value, Vec<ExpectedClaimS
 #[cfg(unix)]
 fn checked_analysis_package(claims: &[(&str, &str)]) -> (Vec<u8>, Vec<ExpectedClaimSpan>) {
     let (checked, expected) = checked_analysis_graph(claims);
-    let checked_bytes = serde_json::to_vec(&checked).expect("checked package JSON");
+    let checked_bytes = quire_canonical::to_vec(
+        &checked,
+        quire_canonical::Limits::new(CheckedPackageReadLimits::bounded().bytes),
+    )
+    .expect("checked package canonical JSON");
     let mut evidence = CheckedPackageEvidence::new();
     evidence.support_feature("filament.value.complete/v1");
     let checked = match CheckedPackageV2::read(
