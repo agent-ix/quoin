@@ -50,7 +50,7 @@ acceptance criterion in the selected corpus: `none`, `draft`, `approved`, or
 
 ## Dependencies
 
-- **Upstream:** [FR-184](./FR-184-analysis-act-producer-definition.md) defines the derived approval state; [FR-153](./FR-153-analysis-result-counting-by-disposition.md) defines the `qualified-record` disposition; quire-rs [FR-094](ix://agent-ix/quire-rs/FR-094) defines the QSL `formalizes` relation, with amendments FR-051, FR-062, and FR-077.
+- **Upstream:** [FR-184](./FR-184-analysis-act-producer-definition.md) defines the derived approval state; [FR-153](./FR-153-analysis-result-counting-by-disposition.md) defines the `qualified-record` disposition; quire-rs [FR-094](ix://agent-ix/quire-rs/FR-094) defines the QSL `formalizes` relation, with amendments [FR-051](ix://agent-ix/quire-rs/FR-051), [FR-062](ix://agent-ix/quire-rs/FR-062), and [FR-077](ix://agent-ix/quire-rs/FR-077).
 - **Downstream:** [FR-205](./FR-205-formalization-as-evidence-kind.md) presents these states as evidence.
 
 ## Acceptance Criteria
