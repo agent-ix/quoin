@@ -527,7 +527,7 @@ mod tests {
     #[trace("FR-208-AC-1", "FR-208-AC-3")]
     #[test]
     fn tc_208_001_approval_roles_are_read_from_the_exact_clause_set() {
-        let scratch = Scratch::new();
+        let scratch = Scratch::new("approval-required-clauses");
         let module = write_module(
             &scratch,
             &[("with-roles", "none"), ("without-roles", "none")],
