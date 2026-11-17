@@ -420,7 +420,7 @@ mod tests {
             "spec-artifacts-process",
             "agent-ix/spec-artifacts-process",
             "spec_artifacts_process",
-            "v0.35.0",
+            "v0.36.0",
         ),
         (
             "spec-objects-business",
@@ -432,7 +432,7 @@ mod tests {
             "spec-objects-architecture",
             "agent-ix/spec-objects-architecture",
             "spec_objects_architecture",
-            "v0.12.0",
+            "v0.14.0",
         ),
         (
             "spec-objects-enterprise",
@@ -450,13 +450,13 @@ mod tests {
             "spec-objects-security",
             "agent-ix/spec-objects-security",
             "spec_objects_security",
-            "v0.17.0",
+            "v0.18.0",
         ),
         (
             "spec-objects-safety",
             "agent-ix/spec-objects-safety",
             "spec_objects_safety",
-            "v0.8.1",
+            "v0.8.2",
         ),
     ];
 
@@ -568,7 +568,7 @@ mod tests {
             quoin_modules::Source::GitSubdir { url, path, r#ref: Some(r#ref) }
                 if url == "agent-ix/spec-artifacts-process"
                     && path == "spec_artifacts_process"
-                    && r#ref == "v0.35.0"
+                    && r#ref == "v0.36.0"
         ));
     }
 }

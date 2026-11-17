@@ -11,7 +11,7 @@ relationships:
 
 ## Description
 
-Verify FR-202-AC-11: A `threat_model` covering a `part`, a `trust_boundary` and a `connection` lists the part and the boundary by id under `### Scope`, in that order, and adds a crossing row only for the connection.
+Verify FR-202-AC-11: A `threat_model` with `scopes` edges to a `part`, a `trust_boundary` and a `connection` lists the part and the boundary by id under `### Scope`, in that order, and adds a crossing row only for the connection; a `covers` edge does not include its target in scope.
 
 ## Test Procedure
 

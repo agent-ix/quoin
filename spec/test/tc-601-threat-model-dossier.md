@@ -11,7 +11,7 @@ relationships:
 
 ## Description
 
-Verify FR-202-AC-1: A fixture with a `threat_model` covering two connections, one carrying `CLASS-PHI` across `BOUND-NET` with `THREAT-1` threatening it, mitigated by `CONTROL-1` and with an accepted risk, lists both connections in `### Covered crossings` with the carried classification, the boundary and trust level, `THREAT-1 (<stride_category>)`, the control and its safeguards, and `RISK-1: accepted, A. Person`.
+Verify FR-202-AC-1: A fixture with a `threat_model` whose `scopes` edges target two connections, one carrying `CLASS-PHI` across `BOUND-NET` with `THREAT-1` threatening it, mitigated by `CONTROL-1` and with an accepted risk, lists both connections in `### Covered crossings` with the carried classification, the boundary and trust level, `THREAT-1 (<stride_category>)`, the control and its safeguards, and `RISK-1: accepted, A. Person`.
 
 ## Test Procedure
 
