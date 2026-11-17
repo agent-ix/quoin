@@ -60,272 +60,22 @@ fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
     let mut activities = activities;
     activities.sort_by(|left, right| crate::order::dossier_cmp(&left.id, &right.id));
     let mut body = String::from("# Records of processing\n\n");
-    let mut gaps = Vec::new();
     if activities.is_empty() {
-        gaps.push(Gap::new(
-            GapKind::NoProcessingActivity,
-            "DOS-ROP",
-            "no processing activity record exists in the selected scope",
-        ));
         return Generated {
             body,
             document_version: None,
-            gaps,
+            gaps: vec![Gap::new(
+                GapKind::NoProcessingActivity,
+                "DOS-ROP",
+                "no processing activity record exists in the selected scope",
+            )],
         };
     }
     let facts = flow.map(facts_by_id).unwrap_or_default();
     let mut model_facts_unavailable = flow
         .is_none_or(|report| report.schema != "quire.flow-report/v1" || report.facts.is_empty());
     for activity in activities {
-        let activity_fact = facts.get(activity.id.as_str()).map(|(_, fact)| *fact);
-        if activity_fact.is_none() {
-            model_facts_unavailable = true;
-        }
-        let title = value_text(field(activity, "title").unwrap_or(&Value::Null))
-            .unwrap_or_else(|| activity.id.clone());
-        let _ = writeln!(body, "## {} — {}\n", cell(&activity.id), cell(&title));
-        body.push_str("| Entry | Content |\n| --- | --- |\n");
-        let is_processor = field(activity, "role").and_then(Value::as_str) == Some("processor");
-        let mut sources = BTreeSet::new();
-        sources.insert(activity.id.clone());
-        let covered = activity_fact
-            .map(|fact| outgoing(fact, "covers"))
-            .unwrap_or_default();
-        let authored_covers = activity
-            .edges
-            .iter()
-            .filter(|(_, relation)| relation == "covers")
-            .map(|(target, _)| target.as_str())
-            .collect::<BTreeSet<_>>();
-        let reported_covers = covered
-            .iter()
-            .map(|edge| edge.target.id.as_str())
-            .collect::<BTreeSet<_>>();
-        if covered.iter().any(|edge| fact_for(edge, &facts).is_none())
-            || authored_covers != reported_covers
-        {
-            model_facts_unavailable = true;
-        }
-        let (connections, sinks, parts) = categorize_targets(&covered, &facts, &mut sources);
-        let mut expanded_sinks = sinks;
-        for edge in parts.iter().flat_map(|part| outgoing(part, "delivers_to")) {
-            if let Some(sink) = fact_for(edge, &facts) {
-                expanded_sinks.insert(sink.id.as_str(), sink);
-            } else {
-                model_facts_unavailable = true;
-            }
-        }
-        let sinks = ordered_facts(expanded_sinks.into_values().collect());
-        let connections = ordered_facts(connections.into_values().collect());
-        let covered_elements = connections
-            .iter()
-            .chain(sinks.iter())
-            .copied()
-            .collect::<Vec<_>>();
-
-        let (classification_content, missing_classification) = classifications(
-            &covered_elements,
-            &connections,
-            &sinks,
-            &facts,
-            &mut sources,
-        );
-        if covered_elements.iter().any(|element| {
-            element.edges.iter().any(|edge| {
-                matches!(edge.edge.as_str(), "carries" | "delivers_to")
-                    && fact_for(edge, &facts).is_none()
-            })
-        }) {
-            model_facts_unavailable = true;
-        }
-        if is_processor {
-            let own = field(activity, "processor")
-                .and_then(Value::as_str)
-                .unwrap_or("not stated");
-            let controllers = field(activity, "controller")
-                .map(values)
-                .unwrap_or_default();
-            let mut identity = vec![format!("Processor: {}", cell(own))];
-            identity.extend(
-                controllers
-                    .into_iter()
-                    .map(|controller| format!("Controller: {}", cell(&controller))),
-            );
-            append_authored_fields(&mut identity, activity, &["representative", "dpo_contact"]);
-            row(&mut body, "(a) Identity and contacts", &identity.join("; "));
-            let mut categories = Vec::new();
-            let controllers = values(field(activity, "controller").unwrap_or(&Value::Null));
-            for sink in &sinks {
-                sources.insert(sink.id.clone());
-                if let Some(kind) = field_fact(sink, "kind").and_then(Value::as_str) {
-                    for controller in &controllers {
-                        categories.push(format!(
-                            "{}: {} ({})",
-                            cell(controller),
-                            cell(kind),
-                            cell(&sink.id)
-                        ));
-                    }
-                } else {
-                    add_gap(
-                        &mut gaps,
-                        GapKind::RecipientCategoriesUnstated,
-                        &sink.id,
-                        "kind is unstated",
-                    );
-                }
-            }
-            let context = sinks
-                .iter()
-                .filter_map(|sink| {
-                    field_fact(sink, "purpose")
-                        .and_then(value_text)
-                        .map(|purpose| {
-                            sources.insert(sink.id.clone());
-                            format!("{}: {}", cell(&sink.id), cell(&purpose))
-                        })
-                })
-                .collect::<Vec<_>>();
-            row(
-                &mut body,
-                "(b) Categories of processing",
-                &join_or_gap(&categories),
-            );
-            if !context.is_empty() {
-                row(&mut body, "Purpose context", &context.join("; "));
-            }
-            let (transfer, transfer_gaps) = transfer_entry(&sinks, activity, &mut sources);
-            gaps.extend(transfer_gaps);
-            row(
-                &mut body,
-                "(c) Transfers to third countries and safeguards",
-                &transfer,
-            );
-            let (security, security_gaps) = security_entry(&covered_elements, &facts, &mut sources);
-            let security = with_security_gaps(&security, &security_gaps);
-            gaps.extend(security_gaps);
-            row(
-                &mut body,
-                "(d) Technical and organisational security measures",
-                &security,
-            );
-        } else {
-            let mut identity = vec![format!(
-                "Controller: {}",
-                field(activity, "controller")
-                    .and_then(value_text)
-                    .map(|v| cell(&v))
-                    .unwrap_or_else(|| "not stated".to_owned())
-            )];
-            append_authored_fields(
-                &mut identity,
-                activity,
-                &["joint_controllers", "representative", "dpo_contact"],
-            );
-            row(&mut body, "(a) Identity and contacts", &identity.join("; "));
-            row(&mut body, "(b) Purposes", &authored(activity, "purposes"));
-            row(
-                &mut body,
-                "(c) Categories of data subjects",
-                &authored(activity, "data_subject_categories"),
-            );
-            if !missing_classification.is_empty() {
-                for (id, detail) in missing_classification {
-                    add_gap(
-                        &mut gaps,
-                        GapKind::PersonalDataCategoriesUnstated,
-                        &id,
-                        &detail,
-                    );
-                    let _ = writeln!(
-                        body,
-                        "GAP: (c) categories of personal data — {} {}",
-                        cell(&id),
-                        cell(&detail)
-                    );
-                }
-            }
-            row(
-                &mut body,
-                "(c) Categories of personal data",
-                &join_or_gap(&classification_content),
-            );
-            let mut recipients = Vec::new();
-            for sink in &sinks {
-                sources.insert(sink.id.clone());
-                let processor = field_fact(sink, "processor").and_then(value_text);
-                let kind = field_fact(sink, "kind").and_then(value_text);
-                let audience = field_fact(sink, "audience_roles")
-                    .map(values)
-                    .unwrap_or_default();
-                if processor.is_none() || kind.is_none() || audience.is_empty() {
-                    add_gap(
-                        &mut gaps,
-                        GapKind::RecipientCategoriesUnstated,
-                        &sink.id,
-                        "processor, kind or audience_roles is unstated",
-                    );
-                }
-                recipients.push(format!(
-                    "{}: processor {}; kind {}; audience {}",
-                    cell(&sink.id),
-                    processor
-                        .map(|v| cell(&v))
-                        .unwrap_or_else(|| "not stated".to_owned()),
-                    kind.map(|v| cell(&v))
-                        .unwrap_or_else(|| "not stated".to_owned()),
-                    if audience.is_empty() {
-                        "not stated".to_owned()
-                    } else {
-                        audience
-                            .iter()
-                            .map(|v| cell(v))
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    }
-                ));
-            }
-            row(
-                &mut body,
-                "(d) Categories of recipients",
-                &join_or_gap(&recipients),
-            );
-            let (transfer, transfer_gaps) = transfer_entry(&sinks, activity, &mut sources);
-            gaps.extend(transfer_gaps);
-            row(
-                &mut body,
-                "(e) Transfers to third countries and safeguards",
-                &transfer,
-            );
-            row(
-                &mut body,
-                "(f) Time limits for erasure",
-                &authored(activity, "retention"),
-            );
-            let (security, security_gaps) = security_entry(&covered_elements, &facts, &mut sources);
-            let security = with_security_gaps(&security, &security_gaps);
-            gaps.extend(security_gaps);
-            row(
-                &mut body,
-                "(g) Technical and organisational security measures",
-                &security,
-            );
-        }
-        let _ = writeln!(
-            body,
-            "\nSources: {}\n",
-            if sources.is_empty() {
-                "none".to_owned()
-            } else {
-                let mut source_ids = sources.into_iter().collect::<Vec<_>>();
-                source_ids.sort_by(|left, right| crate::order::dossier_cmp(left, right));
-                source_ids
-                    .iter()
-                    .map(|id| cell(id))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            }
-        );
+        model_facts_unavailable |= render_activity(activity, &facts, &mut body, &mut gaps);
     }
     if model_facts_unavailable {
         gaps.push(Gap::new(
@@ -339,6 +89,283 @@ fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
         document_version: None,
         gaps,
     }
+}
+
+fn render_activity(
+    activity: &Document,
+    facts: &BTreeMap<&str, (&str, &FlowFact)>,
+    body: &mut String,
+    gaps: &mut Vec<Gap>,
+) -> bool {
+    let activity_fact = facts.get(activity.id.as_str()).map(|(_, fact)| *fact);
+    let mut model_facts_unavailable = activity_fact.is_none();
+    let title = value_text(field(activity, "title").unwrap_or(&Value::Null))
+        .unwrap_or_else(|| activity.id.clone());
+    let _ = writeln!(body, "## {} — {}\n", cell(&activity.id), cell(&title));
+    body.push_str("| Entry | Content |\n| --- | --- |\n");
+
+    let mut sources = BTreeSet::from([activity.id.clone()]);
+    let covered = activity_fact
+        .map(|fact| outgoing(fact, "covers"))
+        .unwrap_or_default();
+    let authored_covers = activity
+        .edges
+        .iter()
+        .filter(|(_, relation)| relation == "covers")
+        .map(|(target, _)| target.as_str())
+        .collect::<BTreeSet<_>>();
+    let reported_covers = covered
+        .iter()
+        .map(|edge| edge.target.id.as_str())
+        .collect::<BTreeSet<_>>();
+    if covered.iter().any(|edge| fact_for(edge, facts).is_none())
+        || authored_covers != reported_covers
+    {
+        model_facts_unavailable = true;
+    }
+
+    let (connections, sinks, parts) = categorize_targets(&covered, facts, &mut sources);
+    let mut expanded_sinks = sinks;
+    for edge in parts.iter().flat_map(|part| outgoing(part, "delivers_to")) {
+        if let Some(sink) = fact_for(edge, facts) {
+            expanded_sinks.insert(sink.id.as_str(), sink);
+        } else {
+            model_facts_unavailable = true;
+        }
+    }
+    let sinks = ordered_facts(expanded_sinks.into_values().collect());
+    let connections = ordered_facts(connections.into_values().collect());
+    let covered_elements = connections
+        .iter()
+        .chain(sinks.iter())
+        .copied()
+        .collect::<Vec<_>>();
+    let (classification_content, missing_classification) =
+        classifications(&covered_elements, &connections, &sinks, facts, &mut sources);
+    if covered_elements.iter().any(|element| {
+        element.edges.iter().any(|edge| {
+            matches!(edge.edge.as_str(), "carries" | "delivers_to")
+                && fact_for(edge, facts).is_none()
+        })
+    }) {
+        model_facts_unavailable = true;
+    }
+
+    if field(activity, "role").and_then(Value::as_str) == Some("processor") {
+        render_processor_activity(
+            activity,
+            &sinks,
+            &covered_elements,
+            facts,
+            &mut sources,
+            body,
+            gaps,
+        );
+    } else {
+        render_controller_activity(
+            activity,
+            &sinks,
+            &covered_elements,
+            &classification_content,
+            &missing_classification,
+            facts,
+            &mut sources,
+            body,
+            gaps,
+        );
+    }
+    append_sources(body, sources);
+    model_facts_unavailable
+}
+
+fn render_processor_activity(
+    activity: &Document,
+    sinks: &[&FlowFact],
+    covered_elements: &[&FlowFact],
+    facts: &BTreeMap<&str, (&str, &FlowFact)>,
+    sources: &mut BTreeSet<String>,
+    body: &mut String,
+    gaps: &mut Vec<Gap>,
+) {
+    let own = field(activity, "processor")
+        .and_then(Value::as_str)
+        .unwrap_or("not stated");
+    let controllers = field(activity, "controller")
+        .map(values)
+        .unwrap_or_default();
+    let mut identity = vec![format!("Processor: {}", cell(own))];
+    identity.extend(
+        controllers
+            .into_iter()
+            .map(|controller| format!("Controller: {}", cell(&controller))),
+    );
+    append_authored_fields(&mut identity, activity, &["representative", "dpo_contact"]);
+    row(body, "(a) Identity and contacts", &identity.join("; "));
+
+    let mut categories = Vec::new();
+    let controllers = values(field(activity, "controller").unwrap_or(&Value::Null));
+    for sink in sinks {
+        sources.insert(sink.id.clone());
+        if let Some(kind) = field_fact(sink, "kind").and_then(Value::as_str) {
+            for controller in &controllers {
+                categories.push(format!(
+                    "{}: {} ({})",
+                    cell(controller),
+                    cell(kind),
+                    cell(&sink.id)
+                ));
+            }
+        } else {
+            add_gap(
+                gaps,
+                GapKind::RecipientCategoriesUnstated,
+                &sink.id,
+                "kind is unstated",
+            );
+        }
+    }
+    let context = sinks
+        .iter()
+        .filter_map(|sink| {
+            field_fact(sink, "purpose")
+                .and_then(value_text)
+                .map(|purpose| {
+                    sources.insert(sink.id.clone());
+                    format!("{}: {}", cell(&sink.id), cell(&purpose))
+                })
+        })
+        .collect::<Vec<_>>();
+    row(
+        body,
+        "(b) Categories of processing",
+        &join_or_gap(&categories),
+    );
+    if !context.is_empty() {
+        row(body, "Purpose context", &context.join("; "));
+    }
+    let (transfer, transfer_gaps) = transfer_entry(sinks, activity, sources);
+    gaps.extend(transfer_gaps);
+    row(
+        body,
+        "(c) Transfers to third countries and safeguards",
+        &transfer,
+    );
+    let (security, security_gaps) = security_entry(covered_elements, facts, sources);
+    let security = with_security_gaps(&security, &security_gaps);
+    gaps.extend(security_gaps);
+    row(
+        body,
+        "(d) Technical and organisational security measures",
+        &security,
+    );
+}
+
+fn render_controller_activity(
+    activity: &Document,
+    sinks: &[&FlowFact],
+    covered_elements: &[&FlowFact],
+    classification_content: &[String],
+    missing_classification: &[(String, String)],
+    facts: &BTreeMap<&str, (&str, &FlowFact)>,
+    sources: &mut BTreeSet<String>,
+    body: &mut String,
+    gaps: &mut Vec<Gap>,
+) {
+    let controller = field(activity, "controller")
+        .and_then(value_text)
+        .map_or_else(|| "not stated".to_owned(), |value| cell(&value));
+    let mut identity = vec![format!("Controller: {controller}")];
+    append_authored_fields(
+        &mut identity,
+        activity,
+        &["joint_controllers", "representative", "dpo_contact"],
+    );
+    row(body, "(a) Identity and contacts", &identity.join("; "));
+    row(body, "(b) Purposes", &authored(activity, "purposes"));
+    row(
+        body,
+        "(c) Categories of data subjects",
+        &authored(activity, "data_subject_categories"),
+    );
+    for (id, detail) in missing_classification {
+        add_gap(gaps, GapKind::PersonalDataCategoriesUnstated, id, detail);
+        let _ = writeln!(
+            body,
+            "GAP: (c) categories of personal data — {} {}",
+            cell(id),
+            cell(detail)
+        );
+    }
+    row(
+        body,
+        "(c) Categories of personal data",
+        &join_or_gap(classification_content),
+    );
+
+    let mut recipients = Vec::new();
+    for sink in sinks {
+        sources.insert(sink.id.clone());
+        let processor = field_fact(sink, "processor").and_then(value_text);
+        let kind = field_fact(sink, "kind").and_then(value_text);
+        let audience = field_fact(sink, "audience_roles")
+            .map(values)
+            .unwrap_or_default();
+        if processor.is_none() || kind.is_none() || audience.is_empty() {
+            add_gap(
+                gaps,
+                GapKind::RecipientCategoriesUnstated,
+                &sink.id,
+                "processor, kind or audience_roles is unstated",
+            );
+        }
+        recipients.push(format!(
+            "{}: processor {}; kind {}; audience {}",
+            cell(&sink.id),
+            processor.map_or_else(|| "not stated".to_owned(), |value| cell(&value)),
+            kind.map_or_else(|| "not stated".to_owned(), |value| cell(&value)),
+            join_or_gap(&audience)
+        ));
+    }
+    row(
+        body,
+        "(d) Categories of recipients",
+        &join_or_gap(&recipients),
+    );
+    let (transfer, transfer_gaps) = transfer_entry(sinks, activity, sources);
+    gaps.extend(transfer_gaps);
+    row(
+        body,
+        "(e) Transfers to third countries and safeguards",
+        &transfer,
+    );
+    row(
+        body,
+        "(f) Time limits for erasure",
+        &authored(activity, "retention"),
+    );
+    let (security, security_gaps) = security_entry(covered_elements, facts, sources);
+    let security = with_security_gaps(&security, &security_gaps);
+    gaps.extend(security_gaps);
+    row(
+        body,
+        "(g) Technical and organisational security measures",
+        &security,
+    );
+}
+
+fn append_sources(body: &mut String, sources: BTreeSet<String>) {
+    let mut source_ids = sources.into_iter().collect::<Vec<_>>();
+    source_ids.sort_by(|left, right| crate::order::dossier_cmp(left, right));
+    let content = if source_ids.is_empty() {
+        "none".to_owned()
+    } else {
+        source_ids
+            .iter()
+            .map(|id| cell(id))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let _ = writeln!(body, "\nSources: {content}\n");
 }
 
 fn facts_by_id(flow: &FlowReport) -> BTreeMap<&str, (&str, &FlowFact)> {
@@ -383,7 +410,7 @@ fn categorize_targets<'a>(
     (connections, sinks, parts)
 }
 
-fn ordered_facts<'a>(mut facts: Vec<&'a FlowFact>) -> Vec<&'a FlowFact> {
+fn ordered_facts(mut facts: Vec<&FlowFact>) -> Vec<&FlowFact> {
     facts.sort_by(|left, right| crate::order::dossier_cmp(&left.id, &right.id));
     facts
 }
@@ -680,14 +707,16 @@ fn authored(document: &Document, name: &str) -> String {
     field(document, name)
         .map(values)
         .filter(|values| !values.is_empty())
-        .map(|values| {
-            values
-                .iter()
-                .map(|value| cell(value))
-                .collect::<Vec<_>>()
-                .join(", ")
-        })
-        .unwrap_or_else(|| "not stated".to_owned())
+        .map_or_else(
+            || "not stated".to_owned(),
+            |values| {
+                values
+                    .iter()
+                    .map(|value| cell(value))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            },
+        )
 }
 
 fn append_authored_fields(output: &mut Vec<String>, document: &Document, names: &[&str]) {
