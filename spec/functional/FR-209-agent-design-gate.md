@@ -45,7 +45,8 @@ test requires or performs signing.
   objects and their resolved `carries`, `crosses`, and `delivers_to` relations.
 - The module set and design root that the run is to check.
 - A scripted design agent that can propose or revise design artifacts from
-  structured denial details. The agent is an untrusted proposer.
+  structured denial details. The agent is an untrusted proposer whose write
+  capability is limited to the design scope.
 - A person who can accept or reject at the workflow's HITL gate.
 
 ## Outputs
@@ -87,18 +88,16 @@ evidence artifact. A transcript is a run log only.
 
 ### Rule-data modification guard
 
-- At run start, the workflow SHALL record the contents and paths of the rule
-  declarations that govern the selected design scope: module declarations of
-  `required_relations` and `traceability.flow_rules`, and their declared rule
-  data under the PLAT-1537 module contract.
-- Before every evaluator invocation and before either acceptance transition,
-  the invariant SHALL compare those paths and contents with the run-start
-  values, including staged, unstaged, added, deleted, and renamed files.
-- If a run changes any guarded rule declaration or rule-data file, the
-  invariant SHALL fail as `rules_modified`; that run SHALL NOT pass even if
-  the changed rules produce zero denials. The workflow SHALL return the
-  guarded path list to the person and SHALL NOT ask the agent to revise the
-  rules.
+- The workflow SHALL give the proposer write access only through a constrained
+  design-edit operation whose targets resolve within the selected design
+  scope. Rule-module inputs, including `required_relations`,
+  `traceability.flow_rules`, and declared rule data under the PLAT-1537 module
+  contract, SHALL be read-only to the proposer.
+- The design-edit operation SHALL reject a write target outside the design
+  scope, including a rule-module input, before applying any change. It SHALL
+  return `rules_modified`, stop the run, and SHALL NOT ask the agent to revise
+  the rules. No run-start snapshot, path/content record, or later file diff
+  SHALL be created or checked for this guard.
 
 ### Loop and human acceptance
 
@@ -108,7 +107,10 @@ evidence artifact. A transcript is a run log only.
   - `proposing` → `checking` (auto).
   - `checking` → `passed` (auto), guarded by `dataflow_rules_pass`.
   - `checking` → `revising` (auto), when the valid report contains one or more
-    denials; the denial details SHALL be supplied to the agent.
+    denials and fewer than four evaluator checks have failed; the denial
+    details SHALL be supplied to the agent.
+  - `checking` → `escalated` (auto), when the fourth valid evaluator check
+    contains one or more denials.
   - `revising` → `checking` (auto), after the agent submits a revised design.
   - `passed` → `accepted` or `rejected` (`hitl`).
   - `escalated` → `accepted` or `rejected` (`hitl`).
@@ -119,8 +121,14 @@ evidence artifact. A transcript is a run log only.
   `escalated` without another agent retry. A zero-denial check reaches
   `passed` even if it is the fourth check.
 - A failed evaluator invocation is unavailable, not a failed design attempt.
-  It SHALL stop automatic revision and surface `dataflow_check_unavailable`
-  for human handling; it SHALL NOT consume the retry allowance or pass.
+  It SHALL stop the run in `checking` and surface
+  `dataflow_check_unavailable` for human handling; it SHALL NOT consume the
+  retry allowance or pass.
+- If the design agent cannot be launched or returns no usable design edit, the
+  workflow SHALL stop in its current `proposing` or `revising` phase and
+  surface `design_agent_unavailable` for an operator to resume or end the run.
+  This result SHALL NOT be treated as a denial or evaluator failure, consume a
+  retry, or enter `passed`, `escalated`, `accepted`, or `rejected`.
 - The workflow SHALL require an explicit person's decision at every
   transition into `accepted` or `rejected`, using `defaultGate: hitl`. The
   person SHALL see the last valid report, the unresolved denials if any, and
@@ -140,12 +148,13 @@ evidence artifact. A transcript is a run log only.
 | FR-209-AC-1 | Given a `quire.flow-report/v1` report with `denials: []`, `dataflow_rules_pass` passes; given any report with one or more denials, it fails as `dataflow_denied`, including when the denial severity is `warning` and the evaluator exits 0. | Test |
 | FR-209-AC-2 | A seeded connection carrying a classification with `regulated_categories: [health]` across an `untrusted` boundary, with no protecting `encrypt-in-transit` control, produces a denial. The scripted agent receives the denial's rule, subject, matched classification and boundary, data category `health`, and `encrypt-in-transit` remediation name, description, and change. After the agent proposes the corresponding control, the next report has no denials and the run reaches `passed`. | Test |
 | FR-209-AC-3 | A report with the wrong schema identifier, malformed JSON, missing `denials`, missing `matched` data, an unavailable evaluator, or a nonzero evaluator failure without a usable report fails as `dataflow_check_unavailable`; none reaches `passed` or is treated as a design denial. | Test |
-| FR-209-AC-4 | If the run changes a guarded `required_relations` declaration, `traceability.flow_rules` declaration, or declared rule-data file in staged, unstaged, added, deleted, or renamed form, the workflow returns `rules_modified` naming the affected paths and never reaches `passed`, including when the modified rules produce zero denials. | Test |
+| FR-209-AC-4 | A scripted proposer write targeting `required_relations`, `traceability.flow_rules`, or declared rule data is rejected before application with `rules_modified`; the run never reaches `passed`, and the workflow creates no run-start snapshot, path/content record, or file diff for this guard. | Test |
 | FR-209-AC-5 | A scripted agent that never resolves a denial receives four evaluator checks total: the initial proposal and three retries. After the fourth failed check the run reaches `escalated`, with no fifth agent retry. A scripted agent that resolves the denial on its fourth check reaches `passed`. | Test |
 | FR-209-AC-6 | The workflow definition has exactly the phases and transitions in Behavior; every transition into `accepted` or `rejected` is gated by `hitl`, and neither terminal phase has an outgoing transition. | Test |
 | FR-209-AC-7 | The agent cannot acknowledge a HITL gate or transition the workflow into either terminal phase. A run with no human acknowledgement remains at its prior phase. | Test |
 | FR-209-AC-8 | A person accepting an escalated run leaves its valid denials in the retained report and the run output states both `accepted` for the human decision and `dataflow_denied` for the evaluator result; it does not state that the evaluator passed. | Test |
 | FR-209-AC-9 | Running the scripted workflow tests creates no signature, signed commit, signer configuration, allowed-signers file, signing key, or release/tag configuration. The workflow and tests do not invoke signed-record verification. | Inspection |
+| FR-209-AC-10 | If the scripted design agent cannot start or returns no usable edit, the run stops in its current `proposing` or `revising` phase with `design_agent_unavailable`; it does not create a denial, consume a retry, or reach `passed`, `escalated`, `accepted`, or `rejected`. An operator can resume or end the run. | Test |
 
 ## Dependencies
 
