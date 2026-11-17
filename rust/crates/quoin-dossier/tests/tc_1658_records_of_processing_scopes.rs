@@ -178,11 +178,9 @@ semantic:
 
 fn record(id: &str, kind: &str, scope_target: Option<&str>) -> String {
     let relationships = scope_target.map_or_else(String::new, |target| {
-        format!(
-            "\n## Relationships\n\n| Name | Verb | Target | Multiplicity |\n| --- | --- | --- | --- |\n| {id}-scope | scopes | {target} | 0..* |\n"
-        )
+        format!("relationships:\n  - target: {target}\n    type: scopes\n")
     });
-    format!("---\nid: {id}\ntitle: {id}\ntype: {kind}\n---\n{relationships}")
+    format!("---\nid: {id}\ntitle: {id}\ntype: {kind}\n{relationships}---\n")
 }
 
 fn input(work: &std::path::Path, module: &std::path::Path) -> Inputs {
@@ -257,13 +255,20 @@ fn generated_records_of_processing_ignores_iso_covers_edges() {
 #[trace("FR-207-AC-6")]
 #[test]
 fn dangling_and_wrong_kind_scopes_fail_validation_before_generation() {
-    for (case, target_doc, expected_reason, target_id) in [
-        ("dangling", None, "dangling-reference", "MISSING-1"),
+    for (case, target_doc, expected_reason, target_id, diagnostic_detail) in [
+        (
+            "dangling",
+            None,
+            "dangling-reference",
+            "MISSING-1",
+            "dangling reference",
+        ),
         (
             "wrong-kind",
             Some(("QUEUE-1", record("QUEUE-1", "queue", None))),
             "target-kind-mismatch",
             "QUEUE-1",
+            "queue",
         ),
     ] {
         let work = tempfile::tempdir().unwrap();
@@ -294,6 +299,13 @@ fn dangling_and_wrong_kind_scopes_fail_validation_before_generation() {
             .find(|finding| finding.reason == expected_reason)
             .unwrap_or_else(|| panic!("{case}: expected {expected_reason}: {validation:?}"));
         assert!(finding.message.contains(target_id), "{case}: {finding:?}");
+        assert!(
+            finding
+                .message
+                .to_ascii_lowercase()
+                .contains(diagnostic_detail),
+            "{case}: {finding:?}"
+        );
         let output = work.path().join("output");
         let result = generate(
             &registry(),
