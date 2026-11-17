@@ -8,7 +8,7 @@
 //! [`super::report`]; the readers it admits facts through are in
 //! [`super::parse`].
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_quire_types::{ClauseBinding, ClauseBindingOutcome};
 
@@ -33,6 +33,23 @@ use super::report::{
               the order the oracle decides in, which is what a reader compares"
 )]
 pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<DischargeReport> {
+    build_discharge_report_with_approval_requirements(request, &BTreeSet::new())
+}
+
+/// Build a discharge report while applying the approval requirements loaded
+/// from the installed clause set.
+///
+/// `required_approval_clauses` contains only clause ids whose set declares one
+/// or more approval roles. The caller resolves the exact clause-set identity
+/// before calling this function; the binding report does not carry that
+/// metadata.
+///
+/// # Errors
+/// As [`build_discharge_report`].
+pub fn build_discharge_report_with_approval_requirements(
+    request: &BuildDischargeRequest,
+    required_approval_clauses: &BTreeSet<String>,
+) -> Checked<DischargeReport> {
     let as_of = instant("asOf", &request.as_of)?;
 
     // Every fact is parsed BEFORE the duplicate check, because the retained
@@ -134,6 +151,17 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
                     continue;
                 }
                 match fact {
+                    DischargeFact::Direct(direct)
+                        if required_approval_clauses.contains(&direct.clause_id)
+                            && direct.approval_ref.is_none() =>
+                    {
+                        open.push(entry(
+                            clause,
+                            DischargeState::Open,
+                            Some("required approval reference is missing".to_owned()),
+                            Some(fact),
+                        ));
+                    }
                     DischargeFact::Direct(_) => {
                         direct.push(entry(clause, DischargeState::Direct, None, Some(fact)));
                     }

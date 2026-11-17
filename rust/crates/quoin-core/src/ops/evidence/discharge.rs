@@ -11,10 +11,10 @@
 use std::path::Path;
 
 use quoin_assurance::{
-    DischargeStoreError, RecordDischargeRequest, build_pack_requirements_mapping,
-    build_requirements_mapping, discharge_report_from_store, inward_completeness_from_store,
-    record_discharge_facts, render_inward_completeness, render_pack_requirements_mapping,
-    render_requirements_mapping,
+    ClauseApprovalPolicy, DischargeStoreError, RecordDischargeRequest,
+    build_pack_requirements_mapping, build_requirements_mapping, discharge_report_from_store,
+    inward_completeness_from_store, record_discharge_facts, render_inward_completeness,
+    render_pack_requirements_mapping, render_requirements_mapping,
 };
 use quoin_quire_types::ClauseBindingReport;
 use serde::{Deserialize, Serialize};
@@ -297,11 +297,13 @@ pub fn pack_matrix(
         )
         .with_context("op", op)
     })?;
-    let installed = modules
+    let installed_modules = modules
         .list(None)
-        .map_err(|e| refused(format!("the installed modules cannot be listed: {e}")))?
-        .into_iter()
+        .map_err(|e| refused(format!("the installed modules cannot be listed: {e}")))?;
+    let installed = installed_modules
+        .iter()
         .find(|module| module.name.as_str() == request.pack)
+        .cloned()
         .ok_or_else(|| refused(format!("{} is not an installed module", request.pack)))?;
     let bindings = modules
         .evaluate_clause_sets(&installed, &context)
@@ -313,6 +315,37 @@ pub fn pack_matrix(
         )));
     }
 
+    let mut installed_clause_sets = std::collections::BTreeSet::new();
+    let mut approval_policies = Vec::new();
+    for module in &installed_modules {
+        let policies = modules
+            .clause_approval_requirements(module)
+            .map_err(|error| {
+                refused(format!(
+                    "module {} failed to load approval metadata: {error}",
+                    module.name
+                ))
+            })?;
+        for (set, required_clause_ids) in policies {
+            if !installed_clause_sets.insert(set.clone()) {
+                return Err(refused(format!(
+                    "multiple installed modules declare clause set {}/{}/{}",
+                    set.authority.as_str(),
+                    set.id.as_str(),
+                    set.version.as_str()
+                )));
+            }
+            if module.name.as_str() == request.pack {
+                approval_policies.push(ClauseApprovalPolicy {
+                    authority: set.authority.as_str().to_owned(),
+                    id: set.id.as_str().to_owned(),
+                    version: set.version.as_str().to_owned(),
+                    required_clause_ids,
+                });
+            }
+        }
+    }
+
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
         let report = build_pack_requirements_mapping(
@@ -321,6 +354,7 @@ pub fn pack_matrix(
             &request.as_of,
             context.as_map(),
             &bindings,
+            &approval_policies,
         )
         .map_err(|e| map_store_error(e, op))?;
         value(&PackRequirementsMatrixPayload {

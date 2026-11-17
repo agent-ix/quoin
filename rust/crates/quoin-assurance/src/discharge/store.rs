@@ -33,7 +33,7 @@ use quoin_evidence::source::EvidenceSource;
 use quoin_quire_types::{ClauseBindingReport, ClauseSetKey};
 use serde::{Deserialize, Serialize};
 
-use super::build::build_discharge_report;
+use super::build::{build_discharge_report, build_discharge_report_with_approval_requirements};
 use super::completeness::{InwardCompleteness, build_inward_completeness};
 use super::report::{BuildDischargeRequest, DischargeError, DischargeFact, DischargeReport};
 
@@ -387,6 +387,34 @@ pub fn discharge_report_from_store<S: EvidenceSource + ?Sized>(
         facts,
         as_of: as_of.to_owned(),
     })?)
+}
+
+/// The discharge report for a live binding report and stored facts, applying
+/// clause-specific approval requirements from the exact installed clause set.
+///
+/// # Errors
+/// As [`discharge_report_from_store`].
+pub fn discharge_report_from_store_with_approval_requirements<S: EvidenceSource + ?Sized>(
+    source: &S,
+    binding: &ClauseBindingReport,
+    as_of: &str,
+    required_approval_clauses: &BTreeSet<String>,
+) -> Result<DischargeReport, DischargeStoreError> {
+    let facts = read_discharge_facts(source, &binding.clause_set)?
+        .iter()
+        .map(|fact| {
+            serde_json::to_value(fact)
+                .map_err(|e| DischargeError(format!("stored fact cannot be re-read: {e}")))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(build_discharge_report_with_approval_requirements(
+        &BuildDischargeRequest {
+            binding: binding.clone(),
+            facts,
+            as_of: as_of.to_owned(),
+        },
+        required_approval_clauses,
+    )?)
 }
 
 /// Inward completeness for a live binding report and the stored facts.

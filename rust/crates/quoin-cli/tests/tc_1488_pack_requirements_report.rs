@@ -295,6 +295,23 @@ fn json(output: &Output) -> serde_json::Value {
     serde_json::from_slice(&output.stdout).unwrap()
 }
 
+fn install_approval_fixture(env: &Env) {
+    std::fs::write(
+        env.installed_file("manifest.yaml"),
+        format!("name: {PACK}\nversion: 0.1.0\nclause_sets:\n  - gdpr.yaml\n"),
+    )
+    .unwrap();
+    std::fs::write(
+        env.installed_file("gdpr.yaml"),
+        "schemaVersion: clause-set-v1\nauthority: example.invalid\nid: gdpr\n\
+         title: Synthetic GDPR clauses\nversion: 1.0.0\nrights:\n  structure: original\n\
+         text: none\nclauses:\n  - id: art-35(1)\n    force: mandatory\n\
+         approvalRoles: [risk-approver]\n  - id: no-role\n    force: mandatory\n\
+         approvalRoles: []\n",
+    )
+    .unwrap();
+}
+
 /// The per-set matrices of a pack report, each from its heading to the next.
 fn matrices(markdown: &str) -> Vec<&str> {
     const HEADING: &str = "# Requirements mapping matrix: ";
@@ -417,6 +434,52 @@ fn tc_1488_003_facts_for_one_set_leave_the_others_undischarged_and_counts_match_
         markdown.contains("| Z-1 | Applicable | Not compliant - undischarged"),
         "{markdown}"
     );
+}
+
+#[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3")]
+#[test]
+fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic_sets() {
+    let env = env();
+    install_approval_fixture(&env);
+
+    record(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[direct("art-35(1)"), direct("no-role")],
+    );
+    let missing = json(&env.report(&["--json"]));
+    let rows = missing["report"]["matrices"][0]["rows"]
+        .as_array()
+        .unwrap();
+    let row = |clause_id: &str| {
+        rows.iter()
+            .find(|row| row["clauseId"] == clause_id)
+            .unwrap()
+    };
+    assert_eq!(row("art-35(1)")["compliance"], "undischarged");
+    assert_eq!(
+        row("art-35(1)")["reason"],
+        "required approval reference is missing"
+    );
+    assert_eq!(row("no-role")["compliance"], "compliant");
+
+    let mut approved = direct("art-35(1)");
+    approved["approvalRef"] = serde_json::json!(
+        "person://example.invalid/people/privacy-officer"
+    );
+    record(&env, &env.repo, "gdpr", "1.0.0", &[approved]);
+    let accepted = json(&env.report(&["--json"]));
+    let rows = accepted["report"]["matrices"][0]["rows"]
+        .as_array()
+        .unwrap();
+    let art_35 = rows
+        .iter()
+        .find(|row| row["clauseId"] == "art-35(1)")
+        .unwrap();
+    assert_eq!(art_35["compliance"], "compliant");
+    assert_eq!(art_35["evidenceRefs"][0], "evidence://run/one");
 }
 
 #[trace("FR-140-AC-4")]

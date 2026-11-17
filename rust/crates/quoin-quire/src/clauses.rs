@@ -126,6 +126,41 @@ pub fn evaluate_all(
         .collect()
 }
 
+/// The clause ids whose declared approval roles require a direct fact to
+/// carry an approval reference, grouped by exact clause-set identity.
+///
+/// The loaded Quire clause set is the source of this metadata; it is kept
+/// separate from `clause-binding-v1`, which does not include approval roles.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] when the module's clause sets do not load strictly,
+/// or [`Error::ContextEntryMalformed`] when a set identity is malformed.
+pub fn approval_required_clauses(
+    module: &ModuleRoot,
+) -> Result<BTreeMap<ClauseSetRef, std::collections::BTreeSet<String>>> {
+    if !declares_clause_sets(module.as_path())? {
+        return Ok(BTreeMap::new());
+    }
+    let registry = load_strict(module, &mut Vec::new())?;
+    registry
+        .clause_sets()
+        .map(|set| {
+            let key = ClauseSetRef {
+                authority: ClauseSetAuthority::new(set.authority.as_str())?,
+                id: ClauseSetId::new(set.id.as_str())?,
+                version: ClauseSetVersion::new(set.version.as_str())?,
+            };
+            let clause_ids = set
+                .clauses
+                .iter()
+                .filter(|clause| !clause.approval_roles.is_empty())
+                .map(|clause| clause.id.clone())
+                .collect();
+            Ok((key, clause_ids))
+        })
+        .collect()
+}
+
 /// The exact clause-set keys the module rooted at `module` declares, in the
 /// engine's key order; empty for a module whose manifest lists no clause sets.
 ///
@@ -487,6 +522,34 @@ mod tests {
         }
         std::fs::write(scratch.path().join("manifest.yaml"), manifest).expect("manifest written");
         ModuleRoot::open(scratch.path()).expect("module root")
+    }
+
+    #[trace("FR-208-AC-1", "FR-208-AC-3")]
+    #[test]
+    fn tc_208_001_approval_roles_are_read_from_the_exact_clause_set() {
+        let scratch = Scratch::new();
+        let module = write_module(&scratch, &[("with-roles", "none"), ("without-roles", "none")]);
+        let path = scratch.path().join("with-roles.yaml");
+        let yaml = std::fs::read_to_string(&path)
+            .expect("the declared clause set is readable")
+            .replace("  - id: C-1\n    force: mandatory", "  - id: C-1\n    force: mandatory\n    approvalRoles: [risk-approver]");
+        std::fs::write(path, yaml).expect("approval role is written");
+
+        let requirements = approval_required_clauses(&module)
+            .expect("approval roles are read from loaded module data");
+        assert_eq!(requirements.len(), 2);
+        let required = requirements
+            .iter()
+            .find(|(key, _)| key.id.as_str() == "with-roles")
+            .map(|(_, clauses)| clauses)
+            .expect("the role-bearing set is present");
+        assert_eq!(required, &["C-1".to_owned()].into_iter().collect());
+        let optional = requirements
+            .iter()
+            .find(|(key, _)| key.id.as_str() == "without-roles")
+            .map(|(_, clauses)| clauses)
+            .expect("the set without roles is present");
+        assert!(optional.is_empty());
     }
 
     #[trace("FR-137-AC-12")]
