@@ -787,7 +787,7 @@ mod tests {
     use serde_json::{Map, json};
     use std::path::PathBuf;
 
-    fn document(id: &str, kind: &str, fields: Value, edges: &[(&str, &str)]) -> Document {
+    fn document(id: &str, kind: &str, fields: &Value, edges: &[(&str, &str)]) -> Document {
         Document {
             path: PathBuf::from(format!("spec/{id}.md")),
             id: id.to_owned(),
@@ -804,7 +804,7 @@ mod tests {
         }
     }
 
-    fn fact(id: &str, fields: Value, edges: &[(&str, &str, &str)]) -> FlowFact {
+    fn fact(id: &str, fields: &Value, edges: &[(&str, &str, &str)]) -> FlowFact {
         FlowFact {
             id: id.to_owned(),
             repo: None,
@@ -865,6 +865,66 @@ mod tests {
         }
     }
 
+    fn controller_flow() -> FlowReport {
+        flow(vec![
+            (
+                "processing_activity",
+                fact(
+                    "ACT-1",
+                    &json!({}),
+                    &[
+                        ("covers", "outgoing", "CONN-1"),
+                        ("covers", "outgoing", "EXT-LAB"),
+                        ("covers", "outgoing", "EXT-EEA"),
+                    ],
+                ),
+            ),
+            (
+                "connection",
+                fact(
+                    "CONN-1",
+                    &json!({}),
+                    &[("carries", "outgoing", "CLASS-PHI")],
+                ),
+            ),
+            (
+                "data_sink",
+                fact(
+                    "EXT-LAB",
+                    &json!({"processor":"External Lab", "kind":"laboratory", "audience_roles":["lab"], "region":["us", "eu"]}),
+                    &[],
+                ),
+            ),
+            (
+                "data_sink",
+                fact(
+                    "EXT-EEA",
+                    &json!({"processor":"EEA Archive", "kind":"archive", "audience_roles":["archive"], "region":["eu", "eea"]}),
+                    &[],
+                ),
+            ),
+            (
+                "data_classification",
+                fact(
+                    "CLASS-PHI",
+                    &json!({"title":"Health data", "regulated_categories":["health"]}),
+                    &[],
+                ),
+            ),
+            (
+                "control",
+                fact(
+                    "CTRL-1",
+                    &json!({"safeguards":"encryption"}),
+                    &[
+                        ("protects", "outgoing", "EXT-LAB"),
+                        ("protects", "outgoing", "EXT-EEA"),
+                    ],
+                ),
+            ),
+        ])
+    }
+
     fn corpus(documents: Vec<Document>) -> Corpus {
         Corpus {
             documents,
@@ -876,13 +936,13 @@ mod tests {
     #[trace("TC-617", "FR-207-AC-1")]
     #[test]
     fn flow_fact_lookup_matches_repository_and_artifact_id() {
-        let mut selected = fact("EXT-SHARED", json!({"processor":"Selected"}), &[]);
+        let mut selected = fact("EXT-SHARED", &json!({"processor":"Selected"}), &[]);
         selected.repo = Some("selected/repo".to_owned());
-        let mut other = fact("EXT-SHARED", json!({"processor":"Other"}), &[]);
+        let mut other = fact("EXT-SHARED", &json!({"processor":"Other"}), &[]);
         other.repo = Some("other/repo".to_owned());
         let flow = flow(vec![("data_sink", selected), ("data_sink", other)]);
         let facts = facts_by_id(&flow);
-        let mut edge = fact("ACT-1", json!({}), &[("covers", "outgoing", "EXT-SHARED")])
+        let mut edge = fact("ACT-1", &json!({}), &[("covers", "outgoing", "EXT-SHARED")])
             .edges
             .remove(0);
         edge.target.repo = Some("selected/repo".to_owned());
@@ -894,6 +954,10 @@ mod tests {
         );
     }
 
+    #[allow(
+        clippy::unnecessary_wraps,
+        reason = "source providers use the fallible generator contract"
+    )]
     fn empty_source(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
         Ok(RecordsOfProcessingSource {
             records: corpus(Vec::new()),
@@ -918,6 +982,10 @@ mod tests {
         }
     }
 
+    #[allow(
+        clippy::unnecessary_wraps,
+        reason = "source providers use the fallible generator contract"
+    )]
     fn invalid_retention_source(
         _inputs: &Inputs,
     ) -> Result<RecordsOfProcessingSource, SourceFailure> {
@@ -926,12 +994,20 @@ mod tests {
         ))
     }
 
+    #[allow(
+        clippy::unnecessary_wraps,
+        reason = "source providers use the fallible generator contract"
+    )]
     fn invalid_queue_source(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
         Ok(invalid_activity_source(
             "covers target queue has wrong kind",
         ))
     }
 
+    #[allow(
+        clippy::unnecessary_wraps,
+        reason = "source providers use the fallible generator contract"
+    )]
     fn invalid_dangling_source(
         _inputs: &Inputs,
     ) -> Result<RecordsOfProcessingSource, SourceFailure> {
@@ -964,62 +1040,10 @@ mod tests {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
-            json!({"title":"Health processing", "role":"controller", "controller":"Example Controller", "purposes":["care"], "data_subject_categories":["patients"], "retention":"7 years", "home_regions":["eu", "eea"]}),
+            &json!({"title":"Health processing", "role":"controller", "controller":"Example Controller", "purposes":["care"], "data_subject_categories":["patients"], "retention":"7 years", "home_regions":["eu", "eea"]}),
             &[],
         )]);
-        let flow = flow(vec![
-            (
-                "processing_activity",
-                fact(
-                    "ACT-1",
-                    json!({}),
-                    &[
-                        ("covers", "outgoing", "CONN-1"),
-                        ("covers", "outgoing", "EXT-LAB"),
-                        ("covers", "outgoing", "EXT-EEA"),
-                    ],
-                ),
-            ),
-            (
-                "connection",
-                fact("CONN-1", json!({}), &[("carries", "outgoing", "CLASS-PHI")]),
-            ),
-            (
-                "data_sink",
-                fact(
-                    "EXT-LAB",
-                    json!({"processor":"External Lab", "kind":"laboratory", "audience_roles":["lab"], "region":["us", "eu"]}),
-                    &[],
-                ),
-            ),
-            (
-                "data_sink",
-                fact(
-                    "EXT-EEA",
-                    json!({"processor":"EEA Archive", "kind":"archive", "audience_roles":["archive"], "region":["eu", "eea"]}),
-                    &[],
-                ),
-            ),
-            (
-                "data_classification",
-                fact(
-                    "CLASS-PHI",
-                    json!({"title":"Health data", "regulated_categories":["health"]}),
-                    &[],
-                ),
-            ),
-            (
-                "control",
-                fact(
-                    "CTRL-1",
-                    json!({"safeguards":"encryption"}),
-                    &[
-                        ("protects", "outgoing", "EXT-LAB"),
-                        ("protects", "outgoing", "EXT-EEA"),
-                    ],
-                ),
-            ),
-        ]);
+        let flow = controller_flow();
         let generated = render(&records, Some(&flow));
         assert!(generated.body.contains("CLASS-PHI (health) — Health data"));
         assert!(
@@ -1069,15 +1093,15 @@ mod tests {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
-            json!({"title":"Activity", "role":"controller"}),
+            &json!({"title":"Activity", "role":"controller"}),
             &[],
         )]);
         let flow = flow(vec![
             (
                 "processing_activity",
-                fact("ACT-1", json!({}), &[("covers", "outgoing", "CONN-7")]),
+                fact("ACT-1", &json!({}), &[("covers", "outgoing", "CONN-7")]),
             ),
-            ("connection", fact("CONN-7", json!({}), &[])),
+            ("connection", fact("CONN-7", &json!({}), &[])),
         ]);
         let generated = render(&records, Some(&flow));
         assert!(
@@ -1105,19 +1129,19 @@ mod tests {
         let records = corpus(vec![document(
             "ACT-2",
             "processing_activity",
-            json!({"title":"Processor work", "role":"processor", "processor":"Processor Co; contact", "controller":["Controller One; contact"], "home_regions":["eu"]}),
+            &json!({"title":"Processor work", "role":"processor", "processor":"Processor Co; contact", "controller":["Controller One; contact"], "home_regions":["eu"]}),
             &[],
         )]);
         let flow = flow(vec![
             (
                 "processing_activity",
-                fact("ACT-2", json!({}), &[("covers", "outgoing", "SINK-2")]),
+                fact("ACT-2", &json!({}), &[("covers", "outgoing", "SINK-2")]),
             ),
             (
                 "data_sink",
                 fact(
                     "SINK-2",
-                    json!({"kind":"analytics", "purpose":"usage metrics"}),
+                    &json!({"kind":"analytics", "purpose":"usage metrics"}),
                     &[],
                 ),
             ),
@@ -1137,7 +1161,7 @@ mod tests {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
-            json!({"title":"Activity"}),
+            &json!({"title":"Activity"}),
             &[],
         )]);
         let generated = render(&records, None);
