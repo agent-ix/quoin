@@ -87,6 +87,7 @@ For a covered `part`, its direct `delivers_to` sinks are covered sinks for this 
 | FR-207-AC-6 | A fixture with a missing `covers` target fails validation as dangling, and a `covers` target of `queue` fails as wrong-kind. | Test |
 | FR-207-AC-7 | Missing facts in `quire.flow-report/v1` produce an explicit gap; changing only an unlisted source such as runtime data or an artifact name does not change any entry. | Test |
 | FR-207-AC-8 | Two runs over the same authored records and flow report produce byte-identical Markdown and JSON; generation requires no commit, version, check, or byte-comparison step. | Test |
+| FR-207-AC-9 | With two covered sink facts sharing an artifact id across different repositories and a classified covered connection whose only `delivers_to` fact names the repo-a sink, the report retains both sinks as distinct `(repository, id)` entries, associates the classification only with repo-a, and contains no `personal_data_categories_unstated` gap for repo-a and exactly one such gap naming repo-b. The result uses only those listed flow-report facts and report output, without legal inference. | Test |
 
 ## Dependencies
 
