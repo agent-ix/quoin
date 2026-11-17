@@ -117,7 +117,7 @@ fn selectors(command: Command) -> Command {
         .arg(one(
             "version",
             "TEXT",
-            "Document version written into every generated file; required",
+            "Document version for kinds that use version metadata",
         ))
         .arg(
             Arg::new("json")

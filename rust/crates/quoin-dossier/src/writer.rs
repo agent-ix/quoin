@@ -24,7 +24,7 @@ const DOCUMENT_TYPE: &str = "DossierDocument";
 #[must_use]
 pub(crate) fn compose(
     spec: &DocumentSpec,
-    version: &str,
+    version: Option<&str>,
     as_of: Option<&str>,
     body: &str,
     gaps: &[Gap],
@@ -33,7 +33,9 @@ pub(crate) fn compose(
     out.push_str("---\n");
     push_field(&mut out, "id", spec.id);
     push_field(&mut out, "title", spec.title);
-    push_field(&mut out, "version", version);
+    if let Some(version) = version {
+        push_field(&mut out, "version", version);
+    }
     let _ = writeln!(out, "type: {DOCUMENT_TYPE}");
     push_field(&mut out, "document_kind", spec.kind);
     let _ = writeln!(out, "generated_by: {GENERATED_BY}");
@@ -90,11 +92,18 @@ mod tests {
     #[trace("FR-191-AC-14")]
     #[test]
     fn a_complete_document_reads_gaps_none_and_carries_exactly_the_archetype_frontmatter() {
-        let text = compose(&SPEC, "1.0", None, "# SRS\n", &[]);
+        let text = compose(&SPEC, Some("1.0"), None, "# SRS\n", &[]);
         assert_eq!(
             text,
             "---\nid: \"DOS-SRS\"\ntitle: \"Software Requirements Specification\"\nversion: \"1.0\"\ntype: DossierDocument\ndocument_kind: \"srs\"\ngenerated_by: quoin dossier\n---\n\n# SRS\n\n## Gaps\n\nGaps: none\n"
         );
+    }
+
+    #[trace("FR-191-AC-13")]
+    #[test]
+    fn a_document_without_version_metadata_omits_the_version_field() {
+        let text = compose(&SPEC, None, None, "# Dossier\n", &[]);
+        assert!(!text.lines().any(|line| line.starts_with("version:")));
     }
 
     #[trace("FR-191-AC-14")]
@@ -104,7 +113,7 @@ mod tests {
             Gap::new(GapKind::NoRequirements, "document", "none found"),
             Gap::new(GapKind::NoEvidence, "FR-1-AC-1", "no test"),
         ];
-        let text = compose(&SPEC, "1.0", None, "", &gaps);
+        let text = compose(&SPEC, Some("1.0"), None, "", &gaps);
         assert!(text.ends_with(
             "## Gaps\n\n- `no_requirements` document: none found\n- `no_evidence` FR-1-AC-1: no test\n"
         ));
@@ -115,17 +124,17 @@ mod tests {
     #[test]
     fn as_of_is_written_only_where_the_document_needs_it() {
         let mut spec = SPEC;
-        let without = compose(&spec, "1", Some("2026-11-15T00:00:00Z"), "", &[]);
+        let without = compose(&spec, Some("1"), Some("2026-11-15T00:00:00Z"), "", &[]);
         assert!(!without.contains("as_of"));
         spec.needs_as_of = true;
-        let with = compose(&spec, "1", Some("2026-11-15T00:00:00Z"), "", &[]);
+        let with = compose(&spec, Some("1"), Some("2026-11-15T00:00:00Z"), "", &[]);
         assert!(with.contains("as_of: \"2026-11-15T00:00:00Z\"\n---"));
     }
 
     #[trace("FR-191")]
     #[test]
     fn a_hostile_version_cannot_add_a_frontmatter_key() {
-        let text = compose(&SPEC, "1\"\ntype: Other", None, "", &[]);
+        let text = compose(&SPEC, Some("1\"\ntype: Other"), None, "", &[]);
         assert!(text.lines().all(|line| line != "type: Other"));
         assert_eq!(
             text.lines()

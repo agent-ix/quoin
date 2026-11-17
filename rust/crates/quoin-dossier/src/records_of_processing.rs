@@ -37,6 +37,18 @@ impl Generator for RecordsOfProcessingGenerator {
         }
         Ok(render(&source.records, source.flow.as_ref()))
     }
+
+    fn requires_version(&self) -> bool {
+        false
+    }
+
+    fn supports_check(&self) -> bool {
+        false
+    }
+
+    fn supports_export(&self) -> bool {
+        false
+    }
 }
 
 fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
@@ -802,6 +814,13 @@ mod tests {
         }
     }
 
+    fn empty_source(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
+        Ok(RecordsOfProcessingSource {
+            records: corpus(Vec::new()),
+            flow: None,
+        })
+    }
+
     fn invalid_activity_source(reason: &str) -> RecordsOfProcessingSource {
         RecordsOfProcessingSource {
             records: corpus(vec![Document {
@@ -839,7 +858,7 @@ mod tests {
         Ok(invalid_activity_source("covers target is dangling"))
     }
 
-    #[trace("FR-207-AC-2")]
+    #[trace("TC-618", "FR-207-AC-2")]
     #[test]
     fn tc_1658_unusable_activity_fields_fail_before_generation() {
         let generator = RecordsOfProcessingGenerator(invalid_retention_source);
@@ -847,7 +866,7 @@ mod tests {
         assert!(failure.detail.contains("retention is required"));
     }
 
-    #[trace("FR-207-AC-6")]
+    #[trace("TC-622", "FR-207-AC-6")]
     #[test]
     fn tc_1658_invalid_covers_edges_fail_before_generation() {
         for source in [invalid_queue_source, invalid_dangling_source] {
@@ -857,9 +876,9 @@ mod tests {
         }
     }
 
-    #[trace("FR-207-AC-1")]
-    #[trace("FR-207-AC-4")]
-    #[trace("FR-207-AC-8")]
+    #[trace("TC-617", "FR-207-AC-1")]
+    #[trace("TC-620", "FR-207-AC-4")]
+    #[trace("TC-624", "FR-207-AC-8")]
     #[test]
     fn tc_1658_controller_lists_classification_recipients_transfer_gaps_and_safeguards() {
         let records = corpus(vec![document(
@@ -942,7 +961,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-207-AC-3")]
+    #[trace("TC-619", "FR-207-AC-3")]
     #[test]
     fn tc_1658_unclassified_connection_emits_gap_row_and_gap_record() {
         let records = corpus(vec![document(
@@ -977,8 +996,8 @@ mod tests {
         );
     }
 
-    #[trace("FR-207-AC-2")]
-    #[trace("FR-207-AC-5")]
+    #[trace("TC-618", "FR-207-AC-2")]
+    #[trace("TC-621", "FR-207-AC-5")]
     #[test]
     fn tc_1658_processor_uses_article_30_2_rows_without_controller_only_entries() {
         let records = corpus(vec![document(
@@ -1010,7 +1029,7 @@ mod tests {
         assert!(!generated.body.contains("(f)"));
     }
 
-    #[trace("FR-207-AC-7")]
+    #[trace("TC-623", "FR-207-AC-7")]
     #[test]
     fn tc_1658_missing_flow_report_is_an_explicit_document_gap() {
         let records = corpus(vec![document(
@@ -1029,7 +1048,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-207-AC-8")]
+    #[trace("TC-624", "FR-207-AC-8")]
     #[test]
     fn tc_1658_no_activity_has_a_document_gap_and_no_activity_section() {
         let generated = render(&corpus(Vec::new()), None);
@@ -1037,5 +1056,65 @@ mod tests {
             gap.gap_kind == GapKind::NoProcessingActivity && gap.subject == "DOS-ROP"
         }));
         assert!(!generated.body.contains("## "));
+    }
+
+    #[trace("FR-191-AC-13", "FR-191-AC-24")]
+    #[test]
+    fn records_of_processing_generates_without_version_and_is_generate_only() {
+        let generator = RecordsOfProcessingGenerator(empty_source);
+        let mut registry = crate::Registry::new();
+        registry.register(Box::new(generator)).unwrap();
+        let mut inputs = crate::testing::inputs();
+        inputs.version.clear();
+        let work = tempfile::tempdir().unwrap();
+        let kinds = ["records-of-processing".to_owned()];
+
+        crate::generate(&registry, &kinds, work.path(), &inputs).unwrap();
+        let generated = std::fs::read_to_string(work.path().join("DOS-ROP.md")).unwrap();
+        assert!(!generated.lines().any(|line| line.starts_with("version:")));
+        assert!(crate::check(&registry, &kinds, work.path(), &inputs)
+            .unwrap_err()
+            .message()
+            .contains("does not support check"));
+        let options = crate::ExportOptions {
+            to: "pdf".to_owned(),
+            output: work.path().join("out.pdf"),
+            release: None,
+            approvals: Vec::new(),
+            modules: Vec::new(),
+            template: None,
+            quire: PathBuf::from("quire"),
+        };
+        assert!(crate::export(&registry, &kinds, work.path(), &inputs, &options)
+            .unwrap_err()
+            .message()
+            .contains("does not support export"));
+
+        let mut mixed = crate::Registry::new();
+        mixed
+            .register(Box::new(RecordsOfProcessingGenerator(empty_source)))
+            .unwrap();
+        mixed
+            .register(Box::new(crate::testing::doc("srs", "DOS-SRS", false)))
+            .unwrap();
+        let inputs = crate::testing::inputs();
+        let checked = crate::check(&mixed, &[], work.path(), &inputs).unwrap();
+        assert_eq!(
+            checked
+                .documents
+                .iter()
+                .map(|document| document.id.as_str())
+                .collect::<Vec<_>>(),
+            ["DOS-SRS"]
+        );
+        let exported = crate::export(&mixed, &[], work.path(), &inputs, &options).unwrap();
+        assert_eq!(
+            exported
+                .documents
+                .iter()
+                .map(|document| document.id.as_str())
+                .collect::<Vec<_>>(),
+            ["DOS-SRS"]
+        );
     }
 }
