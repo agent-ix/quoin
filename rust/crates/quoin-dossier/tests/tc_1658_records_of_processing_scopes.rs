@@ -17,13 +17,14 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use ix_trace_rs::trace;
+use quire_rs::Registry;
+use quire_rs::corpus::{BundlePosture, BundleReport, Spec, validate_bundle};
 use quoin_dossier::{
     Inputs, MatrixSource, RecordsOfProcessingSource, SourceFailure, Sources, builtin_registry,
     generate,
 };
 use quoin_quire::model::{FlowFact, FlowFactEdge, FlowReport};
 use quoin_quire::records::{Contract, Corpus, Document};
-use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde_json::{Map, json};
 
 struct NoMatrix;
@@ -45,57 +46,19 @@ impl MatrixSource for NoMatrix {
     reason = "source adapters share the fallible generator contract"
 )]
 fn processing_records(inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
-    let scope = ScopeRoot::open(&inputs.scope).map_err(|error| SourceFailure {
+    let report = bundle_report(inputs).map_err(|error| SourceFailure {
         source: "records".to_owned(),
-        detail: error.to_string(),
+        detail: error,
     })?;
-    let modules = inputs
-        .modules
-        .iter()
-        .map(ModuleRoot::open)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|error| SourceFailure {
-            source: "records".to_owned(),
-            detail: error.to_string(),
-        })?;
-    let spec_dir = scope.as_path().join("spec");
-    let mut documents = fs::read_dir(&spec_dir)
-        .map_err(|error| SourceFailure {
-            source: "records".to_owned(),
-            detail: error.to_string(),
-        })?
-        .map(|entry| entry.map(|entry| entry.path()))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|error| SourceFailure {
-            source: "records".to_owned(),
-            detail: error.to_string(),
-        })?;
-    documents.sort();
-    let outcome = validate::run(&validate::Request {
-        scope,
-        modules: ModuleSelection::Closed(modules),
-        documents,
-        bundle_package: None,
-    })
-    .map_err(|error| SourceFailure {
-        source: "records".to_owned(),
-        detail: error.to_string(),
-    })?;
-    let failures = outcome
-        .evaluations
-        .iter()
-        .filter(|evaluation| evaluation.outcome == validate::DocumentOutcome::Fail)
-        .flat_map(|evaluation| {
-            evaluation
-                .diagnostics
-                .iter()
-                .map(|diagnostic| diagnostic.message.as_str())
-        })
-        .collect::<Vec<_>>();
-    if !failures.is_empty() {
+    if !report.errors.is_empty() {
         return Err(SourceFailure {
             source: "records".to_owned(),
-            detail: failures.join("; "),
+            detail: report
+                .errors
+                .iter()
+                .map(|finding| format!("{}: {}", finding.reason, finding.message))
+                .collect::<Vec<_>>()
+                .join("; "),
         });
     }
 
@@ -238,6 +201,25 @@ fn input(work: &std::path::Path, module: &std::path::Path) -> Inputs {
     }
 }
 
+fn bundle_report(inputs: &Inputs) -> Result<BundleReport, String> {
+    let module_paths = inputs
+        .modules
+        .iter()
+        .map(PathBuf::as_path)
+        .collect::<Vec<_>>();
+    let registry =
+        Registry::load_module_set_strict(&module_paths).map_err(|error| error.to_string())?;
+    let document_root = inputs.scope.join("spec");
+    let spec = Spec::from_path(&document_root);
+    Ok(validate_bundle(
+        &spec,
+        &registry,
+        BundlePosture::Strict,
+        &document_root,
+        &inputs.scope,
+    ))
+}
+
 #[trace("FR-207-AC-6")]
 #[test]
 fn generated_records_of_processing_ignores_iso_covers_edges() {
@@ -275,11 +257,13 @@ fn generated_records_of_processing_ignores_iso_covers_edges() {
 #[trace("FR-207-AC-6")]
 #[test]
 fn dangling_and_wrong_kind_scopes_fail_validation_before_generation() {
-    for (case, target_doc) in [
-        ("dangling", None),
+    for (case, target_doc, expected_reason, target_id) in [
+        ("dangling", None, "dangling-reference", "MISSING-1"),
         (
             "wrong-kind",
             Some(("QUEUE-1", record("QUEUE-1", "queue", None))),
+            "target-kind-mismatch",
+            "QUEUE-1",
         ),
     ] {
         let work = tempfile::tempdir().unwrap();
@@ -303,6 +287,13 @@ fn dangling_and_wrong_kind_scopes_fail_validation_before_generation() {
             fs::write(spec.join(format!("{name}.md")), content).unwrap();
         }
         let inputs = input(work.path(), &module);
+        let validation = bundle_report(&inputs).expect("bundle validation runs");
+        let finding = validation
+            .errors
+            .iter()
+            .find(|finding| finding.reason == expected_reason)
+            .unwrap_or_else(|| panic!("{case}: expected {expected_reason}: {validation:?}"));
+        assert!(finding.message.contains(target_id), "{case}: {finding:?}");
         let output = work.path().join("output");
         let result = generate(
             &registry(),
