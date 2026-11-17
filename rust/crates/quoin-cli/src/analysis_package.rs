@@ -13,13 +13,17 @@ use filament_contract_model::{
 
 const LOWERING_WORK_LIMIT: u64 = 1_000_000;
 
+#[derive(Debug)]
+pub(crate) enum CheckedPackageError {
+    Invalid(String),
+    CatalogUnavailable(String),
+}
+
 /// One source interval for an admitted native analysis claim.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct CheckedAnalysisClaimSpan {
     /// Node selected for lowering into the analyzer package.
     pub node_id: CheckedNodeId,
-    /// Authority that owns the source document.
-    pub authority: String,
     /// Identity of the source document.
     pub identity: String,
     /// Inclusive source byte start.
@@ -29,7 +33,9 @@ pub(crate) struct CheckedAnalysisClaimSpan {
 }
 
 /// Reads checked-package claims and their exact admitted source intervals.
-pub(crate) fn claim_spans(bytes: &[u8]) -> Result<Vec<CheckedAnalysisClaimSpan>, String> {
+pub(crate) fn claim_spans(
+    bytes: &[u8],
+) -> Result<Vec<CheckedAnalysisClaimSpan>, CheckedPackageError> {
     let package = admit_checked_package(bytes)?;
     let mut spans = Vec::new();
     for entry in package.source_map() {
@@ -41,7 +47,6 @@ pub(crate) fn claim_spans(bytes: &[u8]) -> Result<Vec<CheckedAnalysisClaimSpan>,
         for region in &entry.regions {
             spans.push(CheckedAnalysisClaimSpan {
                 node_id: entry.node_id.clone(),
-                authority: region.source.authority.to_string(),
                 identity: region.source.identity.to_string(),
                 start: region.start,
                 end: region.end,
@@ -49,7 +54,9 @@ pub(crate) fn claim_spans(bytes: &[u8]) -> Result<Vec<CheckedAnalysisClaimSpan>,
         }
     }
     if spans.is_empty() {
-        return Err("checked package contains no source-mapped analysis claims".to_owned());
+        return Err(CheckedPackageError::Invalid(
+            "checked package contains no source-mapped analysis claims".to_owned(),
+        ));
     }
     Ok(spans)
 }
@@ -63,14 +70,18 @@ pub(crate) fn claim_spans(bytes: &[u8]) -> Result<Vec<CheckedAnalysisClaimSpan>,
 pub(crate) fn lower_selected_claims(
     bytes: &[u8],
     selected_claims: &[CheckedNodeId],
-) -> Result<Vec<u8>, String> {
+) -> Result<Vec<u8>, CheckedPackageError> {
     if selected_claims.is_empty() {
-        return Err("formal-rule analysis requires at least one selected claim".to_owned());
+        return Err(CheckedPackageError::Invalid(
+            "formal-rule analysis requires at least one selected claim".to_owned(),
+        ));
     }
     let mut unique = BTreeSet::new();
     for claim in selected_claims {
         if !unique.insert(claim) {
-            return Err("formal-rule claim selection contains a duplicate node".to_owned());
+            return Err(CheckedPackageError::Invalid(
+                "formal-rule claim selection contains a duplicate node".to_owned(),
+            ));
         }
     }
 
@@ -89,29 +100,37 @@ pub(crate) fn lower_selected_claims(
     let lowered = package.lower(selected_claims, &profile);
     for record in &lowered.records {
         if !matches!(record, CompleteLoweringRecordV2::Lowered { .. }) {
-            return Err(format!("selected claim could not be lowered: {record:?}"));
+            return Err(CheckedPackageError::Invalid(format!(
+                "selected claim could not be lowered: {record:?}"
+            )));
         }
     }
     lowered
         .package
         .canonical_bytes()
         .map(ToOwned::to_owned)
-        .ok_or_else(|| "lowered contract package exceeded its byte limit".to_owned())
+        .ok_or_else(|| {
+            CheckedPackageError::Invalid(
+                "lowered contract package exceeded its byte limit".to_owned(),
+            )
+        })
 }
 
-fn admit_checked_package(bytes: &[u8]) -> Result<CheckedPackageV2, String> {
+fn admit_checked_package(bytes: &[u8]) -> Result<CheckedPackageV2, CheckedPackageError> {
     let mut evidence = CheckedPackageEvidence::new();
     evidence.support_feature("filament.value.complete/v1");
     match CheckedPackageV2::read(bytes, CheckedPackageReadLimits::bounded(), &evidence) {
         CheckedPackageV2ReadResult::Admitted(package) => Ok(*package),
-        CheckedPackageV2ReadResult::Refused(refusal) => {
-            Err(format!("checked package was refused: {refusal}"))
-        }
-        CheckedPackageV2ReadResult::Incomplete(incomplete) => Err(format!(
-            "checked package exceeded a reader limit: {incomplete:?}"
+        CheckedPackageV2ReadResult::Refused(refusal) => Err(CheckedPackageError::Invalid(format!(
+            "checked package was refused: {refusal}"
+        ))),
+        CheckedPackageV2ReadResult::Incomplete(incomplete) => Err(CheckedPackageError::Invalid(
+            format!("checked package exceeded a reader limit: {incomplete:?}"),
         )),
         CheckedPackageV2ReadResult::CatalogUnavailable(error) => {
-            Err(format!("checked-package reader is unavailable: {error}"))
+            Err(CheckedPackageError::CatalogUnavailable(format!(
+                "checked-package reader is unavailable: {error}"
+            )))
         }
     }
 }
@@ -120,7 +139,7 @@ fn admit_checked_package(bytes: &[u8]) -> Result<CheckedPackageV2, String> {
 mod tests {
     use serde_json::{Value, json};
 
-    use super::{claim_spans, lower_selected_claims};
+    use super::{CheckedPackageError, claim_spans, lower_selected_claims};
 
     fn fixture_id(path: &str) -> filament_contract_model::CheckedNodeId {
         serde_json::from_value(json!({
@@ -166,6 +185,10 @@ mod tests {
             include_bytes!("../tests/fixtures/formal-rules/checked-package-v2-invalid.json");
         let refusal = lower_selected_claims(bytes, &[fixture_id("claim/draft")])
             .expect_err("unsupported package is refused");
-        assert!(refusal.contains("checked package was refused"));
+        assert!(matches!(
+            refusal,
+            CheckedPackageError::Invalid(message)
+                if message.contains("checked package was refused")
+        ));
     }
 }
