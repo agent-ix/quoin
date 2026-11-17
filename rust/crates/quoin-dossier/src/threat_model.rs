@@ -589,7 +589,10 @@ mod tests {
             path: format!("spec/{id}.md").into(),
             id: id.to_owned(),
             kind: kind.to_owned(),
-            frontmatter: fields.as_object().cloned().unwrap_or_else(Map::new),
+            frontmatter: match fields {
+                Value::Object(fields) => fields,
+                _ => Map::new(),
+            },
             edges: edges
                 .iter()
                 .map(|(target, relation)| ((*target).to_owned(), (*relation).to_owned()))
