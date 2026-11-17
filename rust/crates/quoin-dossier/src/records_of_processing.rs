@@ -113,26 +113,26 @@ fn render_activity(
     body.push_str("| Entry | Content |\n| --- | --- |\n");
 
     let mut sources = BTreeSet::from([activity.id.clone()]);
-    let covered = activity_fact
-        .map(|fact| outgoing(fact, "covers"))
+    let scoped = activity_fact
+        .map(|fact| outgoing(fact, "scopes"))
         .unwrap_or_default();
-    let authored_covers = activity
+    let authored_scopes = activity
         .edges
         .iter()
-        .filter(|(_, relation)| relation == "covers")
+        .filter(|(_, relation)| relation == "scopes")
         .map(|(target, _)| target.as_str())
         .collect::<BTreeSet<_>>();
-    let reported_covers = covered
+    let reported_scopes = scoped
         .iter()
         .map(|edge| edge.target.id.as_str())
         .collect::<BTreeSet<_>>();
-    if covered.iter().any(|edge| fact_for(edge, facts).is_none())
-        || authored_covers != reported_covers
+    if scoped.iter().any(|edge| fact_for(edge, facts).is_none())
+        || authored_scopes != reported_scopes
     {
         model_facts_unavailable = true;
     }
 
-    let (connections, sinks, parts) = categorize_targets(&covered, facts, &mut sources);
+    let (connections, sinks, parts) = categorize_targets(&scoped, facts, &mut sources);
     let mut expanded_sinks = sinks;
     for edge in parts.iter().flat_map(|part| outgoing(part, "delivers_to")) {
         if let Some(sink) = fact_for(edge, facts) {
@@ -143,14 +143,14 @@ fn render_activity(
     }
     let sinks = ordered_facts(expanded_sinks.into_values().collect());
     let connections = ordered_facts(connections.into_values().collect());
-    let covered_elements = connections
+    let scoped_elements = connections
         .iter()
         .chain(sinks.iter())
         .copied()
         .collect::<Vec<_>>();
     let (classification_content, missing_classification) =
-        classifications(&covered_elements, &connections, &sinks, facts, &mut sources);
-    if covered_elements.iter().any(|element| {
+        classifications(&scoped_elements, &connections, &sinks, facts, &mut sources);
+    if scoped_elements.iter().any(|element| {
         element.edges.iter().any(|edge| {
             matches!(edge.edge.as_str(), "carries" | "delivers_to")
                 && fact_for(edge, facts).is_none()
@@ -167,12 +167,12 @@ fn render_activity(
             gaps,
         };
         if field(activity, "role").and_then(Value::as_str) == Some("processor") {
-            render_processor_activity(activity, &sinks, &covered_elements, &mut context);
+            render_processor_activity(activity, &sinks, &scoped_elements, &mut context);
         } else {
             render_controller_activity(
                 activity,
                 &sinks,
-                &covered_elements,
+                &scoped_elements,
                 &classification_content,
                 &missing_classification,
                 &mut context,
@@ -193,7 +193,7 @@ struct ActivityContext<'facts, 'state> {
 fn render_processor_activity(
     activity: &Document,
     sinks: &[&FlowFact],
-    covered_elements: &[&FlowFact],
+    scoped_elements: &[&FlowFact],
     context: &mut ActivityContext<'_, '_>,
 ) {
     let own = field(activity, "processor")
@@ -263,8 +263,7 @@ fn render_processor_activity(
         "(c) Transfers to third countries and safeguards",
         &transfer,
     );
-    let (security, security_gaps) =
-        security_entry(covered_elements, context.facts, context.sources);
+    let (security, security_gaps) = security_entry(scoped_elements, context.facts, context.sources);
     let security = with_security_gaps(&security, &security_gaps);
     context.gaps.extend(security_gaps);
     row(
@@ -277,7 +276,7 @@ fn render_processor_activity(
 fn render_controller_activity(
     activity: &Document,
     sinks: &[&FlowFact],
-    covered_elements: &[&FlowFact],
+    scoped_elements: &[&FlowFact],
     classification_content: &[String],
     missing_classification: &[(String, String)],
     context: &mut ActivityContext<'_, '_>,
@@ -367,8 +366,7 @@ fn render_controller_activity(
         "(f) Time limits for erasure",
         &authored(activity, "retention"),
     );
-    let (security, security_gaps) =
-        security_entry(covered_elements, context.facts, context.sources);
+    let (security, security_gaps) = security_entry(scoped_elements, context.facts, context.sources);
     let security = with_security_gaps(&security, &security_gaps);
     context.gaps.extend(security_gaps);
     row(
@@ -881,9 +879,9 @@ mod tests {
                     "ACT-1",
                     &json!({}),
                     &[
-                        ("covers", "outgoing", "CONN-1"),
-                        ("covers", "outgoing", "EXT-LAB"),
-                        ("covers", "outgoing", "EXT-EEA"),
+                        ("scopes", "outgoing", "CONN-1"),
+                        ("scopes", "outgoing", "EXT-LAB"),
+                        ("scopes", "outgoing", "EXT-EEA"),
                     ],
                 ),
             ),
@@ -941,7 +939,6 @@ mod tests {
         }
     }
 
-    #[trace("TC-617", "FR-207-AC-1")]
     #[test]
     fn flow_fact_lookup_matches_repository_and_artifact_id() {
         let mut selected = fact("EXT-SHARED", &json!({"processor":"Selected"}), &[]);
@@ -950,7 +947,7 @@ mod tests {
         other.repo = Some("other/repo".to_owned());
         let flow = flow(vec![("data_sink", selected), ("data_sink", other)]);
         let facts = facts_by_id(&flow);
-        let mut edge = fact("ACT-1", &json!({}), &[("covers", "outgoing", "EXT-SHARED")])
+        let mut edge = fact("ACT-1", &json!({}), &[("scopes", "outgoing", "EXT-SHARED")])
             .edges
             .remove(0);
         edge.target.repo = Some("selected/repo".to_owned());
@@ -1008,7 +1005,7 @@ mod tests {
     )]
     fn invalid_queue_source(_inputs: &Inputs) -> Result<RecordsOfProcessingSource, SourceFailure> {
         Ok(invalid_activity_source(
-            "covers target queue has wrong kind",
+            "scopes target queue has wrong kind",
         ))
     }
 
@@ -1019,10 +1016,10 @@ mod tests {
     fn invalid_dangling_source(
         _inputs: &Inputs,
     ) -> Result<RecordsOfProcessingSource, SourceFailure> {
-        Ok(invalid_activity_source("covers target is dangling"))
+        Ok(invalid_activity_source("scopes target is dangling"))
     }
 
-    #[trace("TC-618", "FR-207-AC-2")]
+    #[trace("FR-207-AC-2")]
     #[test]
     fn tc_1658_unusable_activity_fields_fail_before_generation() {
         let generator = RecordsOfProcessingGenerator(invalid_retention_source);
@@ -1030,26 +1027,30 @@ mod tests {
         assert!(failure.detail.contains("retention is required"));
     }
 
-    #[trace("TC-622", "FR-207-AC-6")]
+    #[trace("FR-207-AC-6")]
     #[test]
-    fn tc_1658_invalid_covers_edges_fail_before_generation() {
+    fn tc_1658_invalid_scopes_edges_fail_before_generation() {
         for source in [invalid_queue_source, invalid_dangling_source] {
             let generator = RecordsOfProcessingGenerator(source);
             let failure = generator.generate(&crate::testing::inputs()).unwrap_err();
-            assert!(failure.detail.contains("covers target"));
+            assert!(failure.detail.contains("scopes target"));
         }
     }
 
-    #[trace("TC-617", "FR-207-AC-1")]
-    #[trace("TC-620", "FR-207-AC-4")]
-    #[trace("TC-624", "FR-207-AC-8")]
+    #[trace("FR-207-AC-1")]
+    #[trace("FR-207-AC-4")]
+    #[trace("FR-207-AC-8")]
     #[test]
     fn tc_1658_controller_lists_classification_recipients_transfer_gaps_and_safeguards() {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
             &json!({"title":"Health processing", "role":"controller", "controller":"Example Controller", "purposes":["care"], "data_subject_categories":["patients"], "retention":"7 years", "home_regions":["eu", "eea"]}),
-            &[],
+            &[
+                ("CONN-1", "scopes"),
+                ("EXT-LAB", "scopes"),
+                ("EXT-EEA", "scopes"),
+            ],
         )]);
         let flow = controller_flow();
         let generated = render(&records, Some(&flow));
@@ -1095,19 +1096,19 @@ mod tests {
         );
     }
 
-    #[trace("TC-619", "FR-207-AC-3")]
+    #[trace("FR-207-AC-3")]
     #[test]
     fn tc_1658_unclassified_connection_emits_gap_row_and_gap_record() {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
             &json!({"title":"Activity", "role":"controller"}),
-            &[],
+            &[("CONN-7", "scopes")],
         )]);
         let flow = flow(vec![
             (
                 "processing_activity",
-                fact("ACT-1", &json!({}), &[("covers", "outgoing", "CONN-7")]),
+                fact("ACT-1", &json!({}), &[("scopes", "outgoing", "CONN-7")]),
             ),
             ("connection", fact("CONN-7", &json!({}), &[])),
         ]);
@@ -1130,21 +1131,21 @@ mod tests {
         );
     }
 
-    #[trace("TC-625", "FR-207-AC-9")]
+    #[trace("FR-207-AC-9")]
     #[test]
     fn duplicate_sink_ids_in_different_repos_are_retained_and_gapped_per_repo() {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
             &json!({"title":"Activity", "role":"controller"}),
-            &[],
+            &[("SINK-SHARED", "scopes")],
         )]);
         let mut activity = fact(
             "ACT-1",
             &json!({}),
             &[
-                ("covers", "outgoing", "SINK-SHARED"),
-                ("covers", "outgoing", "SINK-SHARED"),
+                ("scopes", "outgoing", "SINK-SHARED"),
+                ("scopes", "outgoing", "SINK-SHARED"),
             ],
         );
         activity.edges[0].target.repo = Some("repo-a".to_owned());
@@ -1216,20 +1217,20 @@ mod tests {
         );
     }
 
-    #[trace("TC-618", "FR-207-AC-2")]
-    #[trace("TC-621", "FR-207-AC-5")]
+    #[trace("FR-207-AC-2")]
+    #[trace("FR-207-AC-5")]
     #[test]
     fn tc_1658_processor_uses_article_30_2_rows_without_controller_only_entries() {
         let records = corpus(vec![document(
             "ACT-2",
             "processing_activity",
             &json!({"title":"Processor work", "role":"processor", "processor":"Processor Co; contact", "controller":["Controller One; contact"], "home_regions":["eu"]}),
-            &[],
+            &[("SINK-2", "scopes")],
         )]);
         let flow = flow(vec![
             (
                 "processing_activity",
-                fact("ACT-2", &json!({}), &[("covers", "outgoing", "SINK-2")]),
+                fact("ACT-2", &json!({}), &[("scopes", "outgoing", "SINK-2")]),
             ),
             (
                 "data_sink",
@@ -1249,7 +1250,7 @@ mod tests {
         assert!(!generated.body.contains("(f)"));
     }
 
-    #[trace("TC-623", "FR-207-AC-7")]
+    #[trace("FR-207-AC-7")]
     #[test]
     fn tc_1658_missing_flow_report_is_an_explicit_document_gap() {
         let records = corpus(vec![document(
@@ -1268,7 +1269,7 @@ mod tests {
         );
     }
 
-    #[trace("TC-624", "FR-207-AC-8")]
+    #[trace("FR-207-AC-8")]
     #[test]
     fn tc_1658_no_activity_has_a_document_gap_and_no_activity_section() {
         let generated = render(&corpus(Vec::new()), None);
