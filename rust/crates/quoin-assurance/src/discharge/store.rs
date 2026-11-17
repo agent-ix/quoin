@@ -517,6 +517,8 @@ pub fn inward_completeness_from_store_with_approval_requirements<S: EvidenceSour
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use std::collections::BTreeSet;
+
     use ix_trace_rs::trace;
     use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
 

@@ -10,6 +10,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::argument::js_trim_is_empty;
 use quoin_quire_types::{ClauseBinding, ClauseBindingOutcome};
 
 use super::parse::{
