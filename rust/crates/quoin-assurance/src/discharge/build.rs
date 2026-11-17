@@ -223,7 +223,10 @@ fn classify_binding_clause(
     match fact {
         DischargeFact::Direct(direct)
             if required_approval_clauses.contains(&direct.clause_id)
-                && direct.approval_ref.is_none() =>
+                && direct
+                    .approval_ref
+                    .as_deref()
+                    .is_none_or(js_trim_is_empty) =>
         {
             partition.open.push(entry(
                 clause,
