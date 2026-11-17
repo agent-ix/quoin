@@ -455,25 +455,54 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         "quire-ok",
         "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"Rule\"}]}}'; exit 0",
     )?;
+    // The request interview also requires these approval-tool paths. This
+    // smoke only advances to `checked`, so the stub and empty allow-list are
+    // deliberately not invoked and no approval is signed.
+    let engineering_assurance = executable(&tools, "engineering-assurance", "exit 0")?;
+    let allowed_signers = h.scratch.path().join("allowed-signers");
+    write(&allowed_signers, "")?;
     write(
         &h.root.join("qsl/rule.native"),
         "// formalizes: FR-001\nRule: Bool = true;\n",
     )?;
-    formalize_success_scenario(h, &fsl_ok, &quire_ok)?;
+    formalize_success_scenario(
+        h,
+        &fsl_ok,
+        &quire_ok,
+        &engineering_assurance,
+        &allowed_signers,
+    )?;
     let fsl_bad = executable(
         &tools,
         "fsl-bad",
         "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"refusal\",\"diagnostics\":[{\"locus\":{\"kind\":\"region\",\"start\":1},\"message\":\"expected Boolean\"}]}' ; exit 20",
     )?;
-    formalize_retry_scenario(h, &fsl_bad, &quire_ok)
+    formalize_retry_scenario(
+        h,
+        &fsl_bad,
+        &quire_ok,
+        &engineering_assurance,
+        &allowed_signers,
+    )
 }
 
-fn formalize_success_scenario(h: &Harness, fsl: &Path, quire: &Path) -> Result<()> {
+fn formalize_success_scenario(
+    h: &Harness,
+    fsl: &Path,
+    quire: &Path,
+    engineering_assurance: &Path,
+    allowed_signers: &Path,
+) -> Result<()> {
     h.start("formalize", "smoke-formalize-success")?;
     h.answers(
         "smoke-formalize-success",
         "request",
-        &json!({"requirement_id":"FR-001","draft_path":"qsl/rule.native"}),
+        &json!({
+            "requirement_id":"FR-001",
+            "draft_path":"qsl/rule.native",
+            "engineering_assurance":engineering_assurance,
+            "allowed_signers":allowed_signers
+        }),
     )?;
     let success = h.flow_with_tools(
         &["advance", "smoke-formalize-success", "checked"],
@@ -488,12 +517,23 @@ fn formalize_success_scenario(h: &Harness, fsl: &Path, quire: &Path) -> Result<(
     Ok(())
 }
 
-fn formalize_retry_scenario(h: &Harness, fsl: &Path, quire: &Path) -> Result<()> {
+fn formalize_retry_scenario(
+    h: &Harness,
+    fsl: &Path,
+    quire: &Path,
+    engineering_assurance: &Path,
+    allowed_signers: &Path,
+) -> Result<()> {
     h.start("formalize", "smoke-formalize-stopped")?;
     h.answers(
         "smoke-formalize-stopped",
         "request",
-        &json!({"requirement_id":"FR-001","draft_path":"qsl/rule.native"}),
+        &json!({
+            "requirement_id":"FR-001",
+            "draft_path":"qsl/rule.native",
+            "engineering_assurance":engineering_assurance,
+            "allowed_signers":allowed_signers
+        }),
     )?;
     let mut diagnostics = Vec::new();
     for attempt in 0..4 {
