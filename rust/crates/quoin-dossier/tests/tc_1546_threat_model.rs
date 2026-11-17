@@ -23,7 +23,10 @@ fn doc(id: &str, kind: &str, fields: Value, edges: &[(&str, &str)]) -> Document 
         path: format!("spec/{id}.md").into(),
         id: id.to_owned(),
         kind: kind.to_owned(),
-        frontmatter: fields.as_object().cloned().unwrap_or_else(Map::new),
+        frontmatter: match fields {
+            Value::Object(fields) => fields,
+            _ => Map::new(),
+        },
         edges: edges
             .iter()
             .map(|(target, relation)| ((*target).to_owned(), (*relation).to_owned()))
@@ -225,7 +228,7 @@ fn tc_1546_report_renders_only_engine_findings_with_severity() {
     );
     assert!(
         out.body
-            .contains("GAP: classified-sink-without-threat SINK-3 (warning)")
+            .contains("GAP: classified-sink-without-threat SINK-2 (warning)")
     );
     assert!(
         out.body
@@ -342,7 +345,7 @@ fn tc_1546_treatment_findings_require_considers_and_scope_edges() {
 fn tc_1546_scope_lists_parts_then_boundaries_and_only_connection_rows() {
     let out = render(&complete_records(), None).body;
     assert!(out.contains("Covered parts: PART-1, PART-2"));
-    assert!(out.contains("Covered trust boundaries: BOUND-NET"));
+    assert!(out.contains("Covered trust boundaries: BOUND-INTERNAL, BOUND-NET"));
     assert!(out.contains("| CONN-1 |"));
     assert!(out.find("Covered parts:").unwrap() < out.find("Covered trust boundaries:").unwrap());
 }

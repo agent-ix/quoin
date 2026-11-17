@@ -39,6 +39,11 @@ impl Generator for ThreatModelGenerator {
 /// This pure entry point is also used by callers that already hold the typed
 /// record corpus and relation report; it performs no I/O and does not recompute
 /// flow checks.
+///
+/// # Errors
+///
+/// Returns the corpus source failure when the selected records include
+/// unreadable or malformed inputs.
 pub fn render_threat_model(
     corpus: &Corpus,
     flow: Option<&quoin_quire::model::FlowReport>,
