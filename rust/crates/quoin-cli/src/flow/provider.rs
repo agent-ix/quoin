@@ -1025,7 +1025,7 @@ fn read_analysis_package(path: &Path) -> Result<ContractPackageV1, Failure> {
             "analysis package exceeds the contract reader byte limit".to_owned(),
         ));
     }
-    let admitted = match ContractPackageWireV1::read(&bytes, limits, &Default::default()) {
+    let admitted = match ContractPackageWireV1::read(&bytes, limits, &BTreeMap::default()) {
         ContractPackageReadResult::Admitted(package) => *package,
         ContractPackageReadResult::Refused(refusal) => {
             return Err(invalid(format!("contract package was refused: {refusal}")));
