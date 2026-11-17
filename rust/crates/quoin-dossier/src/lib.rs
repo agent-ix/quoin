@@ -45,9 +45,7 @@ pub use export::{ExportOptions, export};
 pub use gap::{Gap, GapKind};
 pub use registry::{DocumentSpec, Generated, Generator, Inputs, Registry};
 pub use report::{Comparison, DocumentReport, Report, Status};
-pub use sources::{
-    MatrixSource, RecordsOfProcessingSource, RmmSource, Sources, ThreatModelSource,
-};
+pub use sources::{MatrixSource, RecordsOfProcessingSource, RmmSource, Sources, ThreatModelSource};
 pub use threat_model::render_threat_model;
 
 /// The registry `quoin dossier` runs against.

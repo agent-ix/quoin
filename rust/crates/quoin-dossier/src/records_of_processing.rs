@@ -1072,10 +1072,12 @@ mod tests {
         crate::generate(&registry, &kinds, work.path(), &inputs).unwrap();
         let generated = std::fs::read_to_string(work.path().join("DOS-ROP.md")).unwrap();
         assert!(!generated.lines().any(|line| line.starts_with("version:")));
-        assert!(crate::check(&registry, &kinds, work.path(), &inputs)
-            .unwrap_err()
-            .message()
-            .contains("does not support check"));
+        assert!(
+            crate::check(&registry, &kinds, work.path(), &inputs)
+                .unwrap_err()
+                .message()
+                .contains("does not support check")
+        );
         let options = crate::ExportOptions {
             to: "pdf".to_owned(),
             output: work.path().join("out.pdf"),
@@ -1085,10 +1087,12 @@ mod tests {
             template: None,
             quire: PathBuf::from("quire"),
         };
-        assert!(crate::export(&registry, &kinds, work.path(), &inputs, &options)
-            .unwrap_err()
-            .message()
-            .contains("does not support export"));
+        assert!(
+            crate::export(&registry, &kinds, work.path(), &inputs, &options)
+                .unwrap_err()
+                .message()
+                .contains("does not support export")
+        );
 
         let mut mixed = crate::Registry::new();
         mixed

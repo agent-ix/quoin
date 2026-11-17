@@ -353,11 +353,7 @@ fn versionless_generation_is_limited_to_records_of_processing() {
     assert!(!document.lines().any(|line| line.starts_with("version:")));
 
     for args in [
-        &[
-            "check",
-            "--doc",
-            "records-of-processing",
-        ][..],
+        &["check", "--doc", "records-of-processing"][..],
         &[
             "export",
             "--doc",
