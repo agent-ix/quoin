@@ -57,3 +57,33 @@ The changes resolve approval roles against installed clause-set metadata, gate o
 - FR-208-CON-2: When the Quoin runtime processes approval metadata, it SHALL NOT calculate a risk score, apply a risk threshold, or make an automated risk-acceptability decision. (examined)
 - FR-208: Quoin SHALL apply approval requirements declared by the installed clause set when it discharges facts against a validated binding report. (examined)
 - FR-046 direct facts: A direct evidence fact MAY carry an approvalRef that identifies a human approval associated with the evidence. (context only)
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | high | The non-pack discharge, completeness, and requirements-matrix operations bypass module approval metadata | rust/crates/quoin-core/src/ops/evidence/discharge.rs:204,243,280 |
+| FND-003 | high | Core imports new policy-aware store APIs that are missing from the quoin-assurance crate-root exports, so the Rust build fails | rust/crates/quoin-assurance/src/lib.rs:59 |
+
+## Finding Details — Disposition Pass 1
+
+| FND | Severity | Check | Summary |
+| --- | --- | --- | --- |
+| FND-002 | high | code-bug | Before the current fix round, `evidence.discharge_report`, `evidence.inward_completeness`, and `evidence.requirements_matrix` continued using generic store readers. A missing approval reference on a clause whose installed module requires it could therefore be reported as direct evidence or make the stored blank reference unreadable, even though the pack matrix used module-specific policy. All public discharge-backed views need exact-owner resolution and the policy-aware reader. |
+| FND-003 | high | code-bug | The changed `quoin-core` module imports the new policy-aware store APIs from the public `quoin_assurance` crate root, but `quoin-assurance/src/lib.rs` does not re-export `inward_completeness_from_store_with_approval_requirements` or `record_discharge_facts_with_approval_requirements`. A focused CLI test build fails with unresolved imports before any test runs. |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Required blank or whitespace-only approval references are classified as open work. |
+| FND-002 | fixed | All discharge-backed evidence views resolve exact-owner policy and use policy-aware store access. |
+| FND-003 | fixed | Both policy-aware APIs are publicly re-exported from quoin-assurance. |
+
+### Disposition evidence
+
+- FND-001, `rust/crates/quoin-assurance/src/discharge/build.rs`: `if required_approval_clauses.contains(&direct.clause_id) && direct.approval_ref.as_deref().is_none_or(js_trim_is_empty) => { partition.open.push(...) }`.
+- FND-002, `rust/crates/quoin-core/src/ops/evidence/discharge.rs`: `let required_approval_clauses = approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;` followed by `discharge_report_from_store_with_approval_requirements(..., &required_approval_clauses)`; `inward_completeness` likewise calls `inward_completeness_from_store_with_approval_requirements`.
+- FND-003, `rust/crates/quoin-assurance/src/lib.rs`: `discharge_report_from_store_with_approval_requirements`, `inward_completeness_from_store_with_approval_requirements`, and `record_discharge_facts_with_approval_requirements` are in the public `pub use discharge::{...}` list.
+
+
