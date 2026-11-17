@@ -1130,7 +1130,7 @@ mod tests {
         );
     }
 
-    #[trace("TC-625", "FR-207-AC-3")]
+    #[trace("TC-625", "FR-207-AC-9")]
     #[test]
     fn duplicate_sink_ids_in_different_repos_are_retained_and_gapped_per_repo() {
         let records = corpus(vec![document(
