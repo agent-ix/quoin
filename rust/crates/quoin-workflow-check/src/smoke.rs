@@ -455,9 +455,10 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         "quire-ok",
         "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"Rule\"}]}}'; exit 0",
     )?;
-    // The request interview also requires these approval-tool paths. This
-    // smoke only advances to `checked`, so the stub and empty allow-list are
-    // deliberately not invoked and no approval is signed.
+    // The request interview also requires these supporting paths. This smoke
+    // only advances to `checked`, so the tools are not invoked and no approval
+    // is signed.
+    let analysis_package = h.scratch.path().join("analysis-package");
     let engineering_assurance = executable(&tools, "engineering-assurance", "exit 0")?;
     let allowed_signers = h.scratch.path().join("allowed-signers");
     write(&allowed_signers, "")?;
@@ -469,6 +470,7 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         h,
         &fsl_ok,
         &quire_ok,
+        &analysis_package,
         &engineering_assurance,
         &allowed_signers,
     )?;
@@ -481,6 +483,7 @@ fn formalize_scenarios(h: &Harness) -> Result<()> {
         h,
         &fsl_bad,
         &quire_ok,
+        &analysis_package,
         &engineering_assurance,
         &allowed_signers,
     )
@@ -490,6 +493,7 @@ fn formalize_success_scenario(
     h: &Harness,
     fsl: &Path,
     quire: &Path,
+    analysis_package: &Path,
     engineering_assurance: &Path,
     allowed_signers: &Path,
 ) -> Result<()> {
@@ -500,6 +504,7 @@ fn formalize_success_scenario(
         &json!({
             "requirement_id":"FR-001",
             "draft_path":"qsl/rule.native",
+            "analysis_package":analysis_package,
             "engineering_assurance":engineering_assurance,
             "allowed_signers":allowed_signers
         }),
@@ -521,6 +526,7 @@ fn formalize_retry_scenario(
     h: &Harness,
     fsl: &Path,
     quire: &Path,
+    analysis_package: &Path,
     engineering_assurance: &Path,
     allowed_signers: &Path,
 ) -> Result<()> {
@@ -531,6 +537,7 @@ fn formalize_retry_scenario(
         &json!({
             "requirement_id":"FR-001",
             "draft_path":"qsl/rule.native",
+            "analysis_package":analysis_package,
             "engineering_assurance":engineering_assurance,
             "allowed_signers":allowed_signers
         }),
