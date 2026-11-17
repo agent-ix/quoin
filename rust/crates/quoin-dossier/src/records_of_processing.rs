@@ -1193,6 +1193,10 @@ mod tests {
         assert!(generated.body.contains("Repo A processor"));
         assert!(generated.body.contains("Repo B processor"));
         assert!(
+            generated.body.contains("CLASS-A (health)"),
+            "repo-a's delivered classification must be rendered"
+        );
+        assert!(
             generated.body.contains(
                 "GAP: (c) categories of personal data — SINK-SHARED carries no classification"
             ),
