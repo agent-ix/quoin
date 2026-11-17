@@ -37,4 +37,3 @@ One medium coverage finding: TC-624 must compare the generated JSON report acros
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | TC-624 now renders the same fixture twice, compares the Markdown body and ordered gaps, and serializes each run's generated body and gaps to JSON bytes for an equality assertion. The criterion and test procedure now state the exact JSON content being compared. |
-

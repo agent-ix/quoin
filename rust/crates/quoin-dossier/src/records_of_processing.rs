@@ -1129,7 +1129,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-207-AC-3")]
+    #[trace("TC-619", "FR-207-AC-3")]
     #[test]
     fn delivered_classification_only_suppresses_gap_for_its_sink() {
         let records = corpus(vec![document(
@@ -1138,58 +1138,67 @@ mod tests {
             &json!({"title":"Activity", "role":"controller"}),
             &[],
         )]);
+        let mut activity = fact(
+            "ACT-1",
+            &json!({}),
+            &[
+                ("covers", "outgoing", "SINK-SHARED"),
+                ("covers", "outgoing", "SINK-SHARED"),
+            ],
+        );
+        activity.edges[0].target.repo = Some("repo-a".to_owned());
+        activity.edges[1].target.repo = Some("repo-b".to_owned());
+
+        let mut connection = fact(
+            "CONN-A",
+            &json!({}),
+            &[
+                ("delivers_to", "outgoing", "SINK-SHARED"),
+                ("carries", "outgoing", "CLASS-A"),
+            ],
+        );
+        connection.edges[0].target.repo = Some("repo-a".to_owned());
+        connection.edges[1].target.repo = Some("repo-a".to_owned());
+
+        let mut sink_a = fact("SINK-SHARED", &json!({}), &[]);
+        sink_a.repo = Some("repo-a".to_owned());
+        let mut sink_b = fact("SINK-SHARED", &json!({}), &[]);
+        sink_b.repo = Some("repo-b".to_owned());
+        let mut classification = fact(
+            "CLASS-A",
+            &json!({"title":"Health data", "regulated_categories":["health"]}),
+            &[],
+        );
+        classification.repo = Some("repo-a".to_owned());
+
         let flow = flow(vec![
-            (
-                "processing_activity",
-                fact(
-                    "ACT-1",
-                    &json!({}),
-                    &[
-                        ("covers", "outgoing", "SINK-A"),
-                        ("covers", "outgoing", "SINK-B"),
-                    ],
-                ),
-            ),
-            (
-                "connection",
-                fact(
-                    "CONN-A",
-                    &json!({}),
-                    &[
-                        ("delivers_to", "outgoing", "SINK-A"),
-                        ("carries", "outgoing", "CLASS-A"),
-                    ],
-                ),
-            ),
-            ("data_sink", fact("SINK-A", &json!({}), &[])),
-            ("data_sink", fact("SINK-B", &json!({}), &[])),
-            (
-                "data_classification",
-                fact(
-                    "CLASS-A",
-                    &json!({"title":"Health data", "regulated_categories":["health"]}),
-                    &[],
-                ),
-            ),
+            ("processing_activity", activity),
+            ("connection", connection),
+            ("data_sink", sink_a),
+            ("data_sink", sink_b),
+            ("data_classification", classification),
         ]);
 
         let generated = render(&records, Some(&flow));
 
         assert!(
             generated.body.contains(
-                "GAP: (c) categories of personal data — SINK-B carries no classification"
+                "GAP: (c) categories of personal data — SINK-SHARED carries no classification"
             ),
-            "the unrelated sink must retain its missing-category gap"
+            "the duplicate id in repo-b must retain its missing-category gap"
         );
-        assert!(
-            generated.gaps.iter().any(|gap| {
-                gap.gap_kind == GapKind::PersonalDataCategoriesUnstated && gap.subject == "SINK-B"
-            }),
-            "the unrelated sink gap must appear in the structured report"
+        assert_eq!(
+            generated
+                .gaps
+                .iter()
+                .filter(|gap| {
+                    gap.gap_kind == GapKind::PersonalDataCategoriesUnstated
+                        && gap.subject == "SINK-SHARED"
+                })
+                .count(),
+            1,
+            "repo-a is covered by the classified connection; repo-b is not"
         );
-        assert!(!generated.gaps.iter().any(|gap| {
-            gap.gap_kind == GapKind::PersonalDataCategoriesUnstated && gap.subject == "SINK-A"
-        }));
     }
 
     #[trace("TC-618", "FR-207-AC-2")]

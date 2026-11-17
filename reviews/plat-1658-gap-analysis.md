@@ -34,4 +34,3 @@ FND-001 is fixed on current PR head. FR-207-AC-1 now has a test binding that exe
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | Current TC-617 fixture uses `region: ["us", "eu"]` and `region: ["eu", "eea"]`; assertions cover one mixed-match sink and one all-matching sink, exercising list-valued flow facts. |
-
