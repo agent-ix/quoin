@@ -795,4 +795,184 @@ mod tests {
         );
         assert_eq!(generated.body.matches("CONTROL-1 (encryption)").count(), 1);
     }
+
+    #[trace("FR-202-AC-3, FR-202-AC-13")]
+    #[test]
+    fn tc_1546_threat_without_treatment_is_listed_per_model_but_gapped_once() {
+        let records = corpus(vec![
+            document(
+                "TM-1",
+                "threat_model",
+                json!({}),
+                &[("CONN-1", "covers")],
+                &[],
+            ),
+            document(
+                "TM-2",
+                "threat_model",
+                json!({}),
+                &[("CONN-1", "covers")],
+                &[],
+            ),
+            document("CONN-1", "connection", json!({}), &[], &[]),
+            document(
+                "THREAT-1",
+                "threat",
+                json!({"stride_category":"repudiation"}),
+                &[("CONN-1", "threatens")],
+                &[],
+            ),
+            document(
+                "RISK-1",
+                "risk",
+                json!({"decision":"undecided"}),
+                &[("THREAT-1", "arises_from")],
+                &[],
+            ),
+        ]);
+        let denial = quoin_quire::model::FlowDenial {
+            rule: "treatment".to_owned(),
+            check: "trace:threat-without-treatment".to_owned(),
+            subject: quoin_quire::model::FlowSubjectRef {
+                id: "THREAT-1".to_owned(),
+                repo: None,
+                archetype: "threat".to_owned(),
+            },
+            matched: BTreeMap::new(),
+            remediations: Vec::new(),
+            rationale: "Treatment is not recorded.".to_owned(),
+            severity: "error",
+        };
+        let generated = render(&records, Some(&flow(vec![denial])));
+        assert_eq!(
+            generated
+                .body
+                .matches("GAP: threat-without-treatment THREAT-1 (error)")
+                .count(),
+            2
+        );
+        assert_eq!(generated.gaps.len(), 1);
+        assert_eq!(generated.gaps[0].gap_kind, GapKind::ThreatWithoutTreatment);
+    }
+
+    #[trace("FR-202-AC-4")]
+    #[test]
+    fn tc_1546_classified_sink_finding_appears_only_when_engine_reports_it() {
+        let records = corpus(vec![
+            document(
+                "TM-1",
+                "threat_model",
+                json!({}),
+                &[("SINK-1", "covers")],
+                &[],
+            ),
+            document(
+                "SINK-1",
+                "data_sink",
+                json!({"kind":"database"}),
+                &[("CLASS-PHI", "carries")],
+                &[],
+            ),
+            document(
+                "CLASS-PHI",
+                "data_classification",
+                json!({"regulated_categories":["health"]}),
+                &[],
+                &[],
+            ),
+        ]);
+        let denial = quoin_quire::model::FlowDenial {
+            rule: "classified-sink".to_owned(),
+            check: "trace:classified-sink-without-threat".to_owned(),
+            subject: quoin_quire::model::FlowSubjectRef {
+                id: "SINK-1".to_owned(),
+                repo: None,
+                archetype: "data_sink".to_owned(),
+            },
+            matched: BTreeMap::new(),
+            remediations: Vec::new(),
+            rationale: "Threat coverage is incomplete.".to_owned(),
+            severity: "warning",
+        };
+        let generated = render(&records, Some(&flow(vec![denial])));
+        assert!(generated.body.contains("#### SINK-1"));
+        assert!(
+            generated
+                .body
+                .contains("GAP: classified-sink-without-threat SINK-1 (warning)")
+        );
+        assert_eq!(
+            generated.gaps[0].gap_kind,
+            GapKind::ClassifiedSinkWithoutThreat
+        );
+    }
+
+    #[trace("FR-202-AC-6, FR-202-AC-7")]
+    #[test]
+    fn tc_1546_complete_output_is_deterministic_and_has_no_open_findings() {
+        let records = corpus(vec![
+            document(
+                "TM-1",
+                "threat_model",
+                json!({}),
+                &[("CONN-1", "covers")],
+                &[],
+            ),
+            document("CONN-1", "connection", json!({}), &[], &[]),
+        ]);
+        let report = flow(Vec::new());
+        let first = render(&records, Some(&report));
+        let second = render(&records, Some(&report));
+        assert_eq!(first, second);
+        assert!(first.body.contains("### Open findings\n\nnone"));
+        assert!(first.gaps.is_empty());
+    }
+
+    #[trace("FR-202-AC-11, FR-202-AC-14")]
+    #[test]
+    fn tc_1546_scope_and_crossing_rows_follow_dossier_order() {
+        let records = corpus(vec![
+            document(
+                "TM-1",
+                "threat_model",
+                json!({}),
+                &[
+                    ("PART-2", "covers"),
+                    ("BOUND-2", "covers"),
+                    ("CONN-2", "covers"),
+                    ("PART-1", "covers"),
+                    ("CONN-1", "covers"),
+                    ("BOUND-1", "covers"),
+                ],
+                &[],
+            ),
+            document("PART-2", "part", json!({}), &[], &[]),
+            document("PART-1", "part", json!({}), &[], &[]),
+            document(
+                "BOUND-2",
+                "trust_boundary",
+                json!({"trust_level":"internal"}),
+                &[],
+                &[],
+            ),
+            document(
+                "BOUND-1",
+                "trust_boundary",
+                json!({"trust_level":"external"}),
+                &[],
+                &[],
+            ),
+            document("CONN-2", "connection", json!({}), &[], &[]),
+            document("CONN-1", "connection", json!({}), &[], &[]),
+        ]);
+        let output = render(&records, None).body;
+        assert!(
+            output.find("Covered parts: PART-1, PART-2").unwrap()
+                < output
+                    .find("Covered trust boundaries: BOUND-1, BOUND-2")
+                    .unwrap()
+        );
+        assert!(output.find("Covered crossings").unwrap() < output.find("| CONN-1 |").unwrap());
+        assert!(output.find("| CONN-1 |").unwrap() < output.find("| CONN-2 |").unwrap());
+    }
 }
