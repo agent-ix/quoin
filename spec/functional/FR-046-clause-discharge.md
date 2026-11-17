@@ -28,6 +28,10 @@ approval reference. A `temporary_exception` fact SHALL additionally carry a
 top-level `decisionExpiresAt`, distinct from `attestation.expiresAt`; the former
 limits the decision and the latter limits the attestation.
 
+A direct evidence fact MAY carry an `approvalRef` that identifies a human
+approval associated with the evidence. When present, Quoin SHALL retain the
+reference on the direct fact without classifying that fact as a disposition.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -40,6 +44,7 @@ limits the decision and the latter limits the attestation.
 | FR-046-AC-6 | `quoin discharge` renders every population as deterministic Markdown or JSON and accepts both binding and fact inputs as files. | Test |
 | FR-046-AC-7 | A disposition fact uses exactly one decision from `delegated`, `accepted_risk` or `temporary_exception`, names its owner and approval reference, and carries a valid human-supplied actor, authority and validity interval; a `temporary_exception` also carries `decisionExpiresAt` while other decisions omit it. | Test (TC-003) |
 | FR-046-AC-8 | A `temporary_exception` fact discharges its binding clause only while `asOf` is earlier than `decisionExpiresAt` and its attestation is current; when `asOf` equals or exceeds `decisionExpiresAt`, the clause is open with reason `temporary exception expired`. | Test (TC-003) |
+| FR-046-AC-9 | A direct evidence fact with a non-empty `approvalRef` is accepted and retains that reference in the direct population; the clause remains classified as direct evidence, and a direct fact without `approvalRef` remains valid. | Test |
 
 ## Constraints
 
