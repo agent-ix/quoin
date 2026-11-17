@@ -463,7 +463,7 @@ fn classifications<'a>(
 ) -> (Vec<String>, Vec<(String, String)>) {
     let sink_ids = sinks
         .iter()
-        .map(|sink| sink.id.as_str())
+        .map(|sink| (sink.repo.as_deref(), sink.id.as_str()))
         .collect::<BTreeSet<_>>();
     let mut carriers = elements.to_vec();
     let delivering = facts
@@ -473,7 +473,11 @@ fn classifications<'a>(
         .filter(|connection| {
             outgoing(connection, "delivers_to")
                 .iter()
-                .any(|edge| sink_ids.contains(edge.target.id.as_str()))
+                .any(|edge| {
+                    fact_for(edge, facts).is_some_and(|target| {
+                        sink_ids.contains(&(target.repo.as_deref(), target.id.as_str()))
+                    })
+                })
         })
         .collect::<Vec<_>>();
     for connection in &delivering {
@@ -529,9 +533,17 @@ fn classifications<'a>(
     }
     for sink in sinks {
         let delivered_classification = delivering.iter().any(|connection| {
-            outgoing(connection, "carries")
+            let delivers_to_sink = outgoing(connection, "delivers_to")
                 .iter()
-                .any(|edge| edge.archetype == "data_classification")
+                .any(|edge| {
+                    fact_for(edge, facts).is_some_and(|target| {
+                        target.id == sink.id && target.repo == sink.repo
+                    })
+                });
+            delivers_to_sink
+                && outgoing(connection, "carries")
+                    .iter()
+                    .any(|edge| edge.archetype == "data_classification")
         });
         if outgoing(sink, "carries").is_empty() && !delivered_classification {
             missing.push((sink.id.clone(), "carries no classification".to_owned()));
@@ -1120,6 +1132,67 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[trace("FR-207-AC-3")]
+    #[test]
+    fn delivered_classification_only_suppresses_gap_for_its_sink() {
+        let records = corpus(vec![document(
+            "ACT-1",
+            "processing_activity",
+            &json!({"title":"Activity", "role":"controller"}),
+            &[],
+        )]);
+        let flow = flow(vec![
+            (
+                "processing_activity",
+                fact(
+                    "ACT-1",
+                    &json!({}),
+                    &[
+                        ("covers", "outgoing", "SINK-A"),
+                        ("covers", "outgoing", "SINK-B"),
+                    ],
+                ),
+            ),
+            (
+                "connection",
+                fact(
+                    "CONN-A",
+                    &json!({}),
+                    &[
+                        ("delivers_to", "outgoing", "SINK-A"),
+                        ("carries", "outgoing", "CLASS-A"),
+                    ],
+                ),
+            ),
+            ("data_sink", fact("SINK-A", &json!({}), &[])),
+            ("data_sink", fact("SINK-B", &json!({}), &[])),
+            (
+                "data_classification",
+                fact(
+                    "CLASS-A",
+                    &json!({"title":"Health data", "regulated_categories":["health"]}),
+                    &[],
+                ),
+            ),
+        ]);
+
+        let generated = render(&records, Some(&flow));
+
+        assert!(
+            generated.body.contains("GAP: (c) categories of personal data — SINK-B carries no classification"),
+            "the unrelated sink must retain its missing-category gap"
+        );
+        assert!(
+            generated.gaps.iter().any(|gap| {
+                gap.gap_kind == GapKind::PersonalDataCategoriesUnstated && gap.subject == "SINK-B"
+            }),
+            "the unrelated sink gap must appear in the structured report"
+        );
+        assert!(!generated.gaps.iter().any(|gap| {
+            gap.gap_kind == GapKind::PersonalDataCategoriesUnstated && gap.subject == "SINK-A"
+        }));
     }
 
     #[trace("TC-618", "FR-207-AC-2")]

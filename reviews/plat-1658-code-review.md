@@ -28,6 +28,7 @@ FND-001 is fixed on current PR head `2c9be0f241762628715f8f321d3c9ba597105552`. 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-002 | medium | Flow facts are indexed by artifact id alone, so duplicate ids across selected repository members can resolve to another member's data | rust/crates/quoin-dossier/src/records_of_processing.rs:344-352,391-395 |
+| FND-003 | medium | A classification on any delivering connection suppresses the missing-classification gap for every covered sink, including sinks that connection does not deliver to | rust/crates/quoin-dossier/src/records_of_processing.rs:531-537 |
 
 ## Dispositions
 
@@ -35,6 +36,14 @@ FND-001 is fixed on current PR head `2c9be0f241762628715f8f321d3c9ba597105552`. 
 | --- | --- | --- |
 | FND-001 | fixed | Current `transfer_entry` maps each `region` member independently and compares each member to the authored `home_regions` values. The updated TC-617 fixture covers both a mixed matching/non-matching list and an all-matching multi-label list. |
 | FND-002 | still-open | `FlowFact` and `FlowDocumentRef` carry an optional repository identity, but `facts_by_id` and `fact_for` discard it and key only by id. With multiple selected modules that contain the same artifact id, an edge can resolve to a different repository member's fact and render the wrong record. |
+| FND-002 | fixed | `facts_by_id` now keys facts by `(repo, id)` and `fact_for` looks up the target's `(repo, id)`. The regression test creates duplicate ids in two repositories and asserts that an edge with `repo: selected/repo` resolves the selected repository's processor value. |
+| FND-003 | still-open | For each sink, `delivered_classification` checks whether any connection delivering to any covered sink carries a classification. With sinks A and B and a classified connection delivering only to A, that boolean is true for B too, so B gets no missing-category gap. The test/code should associate the classification with the specific sink reached by the carrying connection. |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | medium | A classification on any delivering connection suppresses the missing-classification gap for every covered sink, including sinks that connection does not deliver to | rust/crates/quoin-dossier/src/records_of_processing.rs:531-537 |
 
 ## Review Scope
 

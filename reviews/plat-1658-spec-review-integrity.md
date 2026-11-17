@@ -32,3 +32,9 @@ One low consistency finding. Reconcile the aggregate and individual test statuse
 | Test index entries TC-617..TC-624 | examined | IDs and paths match the test documents |
 | TC-617..TC-624 frontmatter IDs and relationships | examined | IDs are unique and each verifies FR-207 |
 
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The aggregate FR-207 row now uses 🚧, matching all eight TC-617..TC-624 rows. The IDs and relationships remain consistent. |
+
