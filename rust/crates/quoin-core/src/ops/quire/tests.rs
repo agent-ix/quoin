@@ -119,7 +119,10 @@ impl QuireHost for FakeEngine {
         modules: &[PathBuf],
     ) -> Result<quoin_quire::model::RelationReport, quoin_quire::Error> {
         self.record(scope, modules);
-        Ok(quoin_quire::model::RelationReport { relations: vec![] })
+        Ok(quoin_quire::model::RelationReport {
+            relations: vec![],
+            flow: None,
+        })
     }
 
     fn design_matrix(

@@ -15,6 +15,11 @@ use crate::gap::{Gap, GapKind};
 use crate::markdown::{cell, unusable_input};
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
 
+type FactIdentity<'a> = (Option<&'a str>, &'a str);
+type FactIndex<'a> = BTreeMap<FactIdentity<'a>, (&'a str, &'a FlowFact)>;
+type SelectedFacts<'a> = BTreeMap<FactIdentity<'a>, &'a FlowFact>;
+type CategorizedTargets<'a> = (SelectedFacts<'a>, SelectedFacts<'a>, Vec<&'a FlowFact>);
+
 /// Reads validated activities and the flow report from quire-rs.
 pub(crate) struct RecordsOfProcessingGenerator(
     pub(crate) fn(&Inputs) -> Result<RecordsOfProcessingSource, SourceFailure>,
@@ -94,7 +99,7 @@ fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
 
 fn render_activity(
     activity: &Document,
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &FlowFact)>,
+    facts: &FactIndex<'_>,
     body: &mut String,
     gaps: &mut Vec<Gap>,
 ) -> bool {
@@ -131,7 +136,7 @@ fn render_activity(
     let mut expanded_sinks = sinks;
     for edge in parts.iter().flat_map(|part| outgoing(part, "delivers_to")) {
         if let Some(sink) = fact_for(edge, facts) {
-            expanded_sinks.insert(sink.id.as_str(), sink);
+            expanded_sinks.insert((sink.repo.as_deref(), sink.id.as_str()), sink);
         } else {
             model_facts_unavailable = true;
         }
@@ -179,7 +184,7 @@ fn render_activity(
 }
 
 struct ActivityContext<'facts, 'state> {
-    facts: &'facts BTreeMap<(Option<&'facts str>, &'facts str), (&'facts str, &'facts FlowFact)>,
+    facts: &'facts FactIndex<'facts>,
     sources: &'state mut BTreeSet<String>,
     body: &'state mut String,
     gaps: &'state mut Vec<Gap>,
@@ -388,7 +393,7 @@ fn append_sources(body: &mut String, sources: BTreeSet<String>) {
     let _ = writeln!(body, "\nSources: {content}\n");
 }
 
-fn facts_by_id(flow: &FlowReport) -> BTreeMap<(Option<&str>, &str), (&str, &FlowFact)> {
+fn facts_by_id(flow: &FlowReport) -> FactIndex<'_> {
     flow.facts
         .iter()
         .flat_map(|(kind, facts)| {
@@ -404,13 +409,9 @@ fn facts_by_id(flow: &FlowReport) -> BTreeMap<(Option<&str>, &str), (&str, &Flow
 
 fn categorize_targets<'a>(
     targets: &[&'a FlowFactEdge],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
+    facts: &FactIndex<'a>,
     sources: &mut BTreeSet<String>,
-) -> (
-    BTreeMap<&'a str, &'a FlowFact>,
-    BTreeMap<&'a str, &'a FlowFact>,
-    Vec<&'a FlowFact>,
-) {
+) -> CategorizedTargets<'a> {
     let mut connections = BTreeMap::new();
     let mut sinks = BTreeMap::new();
     let mut parts = Vec::new();
@@ -419,12 +420,13 @@ fn categorize_targets<'a>(
             continue;
         };
         sources.insert(fact.id.clone());
+        let identity = (fact.repo.as_deref(), fact.id.as_str());
         match edge.archetype.as_str() {
             "connection" => {
-                connections.insert(fact.id.as_str(), fact);
+                connections.insert(identity, fact);
             }
             "data_sink" => {
-                sinks.insert(fact.id.as_str(), fact);
+                sinks.insert(identity, fact);
             }
             "part" => parts.push(fact),
             _ => {}
@@ -434,14 +436,13 @@ fn categorize_targets<'a>(
 }
 
 fn ordered_facts(mut facts: Vec<&FlowFact>) -> Vec<&FlowFact> {
-    facts.sort_by(|left, right| crate::order::dossier_cmp(&left.id, &right.id));
+    facts.sort_by(|left, right| {
+        crate::order::dossier_cmp(&left.id, &right.id).then_with(|| left.repo.cmp(&right.repo))
+    });
     facts
 }
 
-fn fact_for<'a>(
-    edge: &FlowFactEdge,
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
-) -> Option<&'a FlowFact> {
+fn fact_for<'a>(edge: &FlowFactEdge, facts: &FactIndex<'a>) -> Option<&'a FlowFact> {
     facts
         .get(&(edge.target.repo.as_deref(), edge.target.id.as_str()))
         .map(|(_, fact)| *fact)
@@ -458,7 +459,7 @@ fn classifications<'a>(
     elements: &[&'a FlowFact],
     connections: &[&'a FlowFact],
     sinks: &[&'a FlowFact],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
+    facts: &FactIndex<'a>,
     sources: &mut BTreeSet<String>,
 ) -> (Vec<String>, Vec<(String, String)>) {
     let sink_ids = sinks
@@ -624,7 +625,7 @@ fn transfer_entry(
 
 fn security_entry<'a>(
     elements: &[&'a FlowFact],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
+    facts: &FactIndex<'a>,
     sources: &mut BTreeSet<String>,
 ) -> (String, Vec<Gap>) {
     let mut controls = BTreeMap::new();
@@ -1129,9 +1130,9 @@ mod tests {
         );
     }
 
-    #[trace("TC-619", "FR-207-AC-3")]
+    #[trace("TC-625", "FR-207-AC-9")]
     #[test]
-    fn delivered_classification_only_suppresses_gap_for_its_sink() {
+    fn duplicate_sink_ids_in_different_repos_are_retained_and_gapped_per_repo() {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
@@ -1160,9 +1161,17 @@ mod tests {
         connection.edges[0].target.repo = Some("repo-a".to_owned());
         connection.edges[1].target.repo = Some("repo-a".to_owned());
 
-        let mut sink_a = fact("SINK-SHARED", &json!({}), &[]);
+        let mut sink_a = fact(
+            "SINK-SHARED",
+            &json!({"processor":"Repo A processor", "kind":"repo-a-kind", "audience_roles":["repo-a-audience"]}),
+            &[],
+        );
         sink_a.repo = Some("repo-a".to_owned());
-        let mut sink_b = fact("SINK-SHARED", &json!({}), &[]);
+        let mut sink_b = fact(
+            "SINK-SHARED",
+            &json!({"processor":"Repo B processor", "kind":"repo-b-kind", "audience_roles":["repo-b-audience"]}),
+            &[],
+        );
         sink_b.repo = Some("repo-b".to_owned());
         let mut classification = fact(
             "CLASS-A",
@@ -1181,6 +1190,12 @@ mod tests {
 
         let generated = render(&records, Some(&flow));
 
+        assert!(generated.body.contains("Repo A processor"));
+        assert!(generated.body.contains("Repo B processor"));
+        assert!(
+            generated.body.contains("CLASS-A (health)"),
+            "repo-a's delivered classification must be rendered"
+        );
         assert!(
             generated.body.contains(
                 "GAP: (c) categories of personal data — SINK-SHARED carries no classification"
