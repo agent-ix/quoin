@@ -1,9 +1,9 @@
 ---
-id: SR-1624
-title: "Rust code review — PLAT-1658 records-of-processing generator (Quoin PR #962)"
+id: SR-20261116075218
+title: "Code review — Quoin PLAT-1658 PR #963"
 type: SpecReview
 analysis: code-review
-scope: "agent-ix/quoin; rust/crates/quoin-dossier/src/records_of_processing.rs, spec/functional/FR-207-dossier-records-of-processing-content.md"
+scope: "agent-ix/quoin PR #963; rust/crates/quoin-cli/src/module.rs, rust/crates/quoin-dossier/src/records_of_processing.rs, spec/test/tc-625-sink-specific-delivered-classification.md"
 review_set: subset
 relationships:
   - {target: "ix://agent-ix/quoin/FR-207", type: references}
@@ -11,45 +11,30 @@ relationships:
 
 ## Summary
 
-Rust code review for PLAT-1658/Quoin PR #962. Rust-specific review is folded into this code-review artifact. On review head `8589b1ab`, `transfer_entry` converted the region list to one comma-separated string before comparing it against individual `home_regions` labels. A sink with multiple exact matching region labels was therefore incorrectly reported as outside those labels. This was recorded as FND-001. The fix round at `2c9be0f2` iterates each authored label and has both mixed-match and all-match fixtures.
+Reviewed the Rust test and expected default-module pin change in Quoin PR #963 at head `6863e87a`. The sink-specific regression is matrix-bound, but TC-625 claims a duplicate-id, cross-repository case that its test fixture does not construct.
 
 ## Verdict
 
-FND-001 is fixed on current PR head `2c9be0f241762628715f8f321d3c9ba597105552`. Current code preserves array semantics when comparing and rendering the model location. The new test asserts an outside label alongside a matching label and an all-matching multi-label sink. No additional code-review finding was added in this disposition pass.
+**CONDITIONAL** — one medium code-test alignment finding remains: the test does not verify the cross-repository duplicate-id condition promised by TC-625.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | medium | Transfer location comparison joins region arrays before matching home-region labels | rust/crates/quoin-dossier/src/records_of_processing.rs:503-523 |
-
-## New findings (disposition pass 1)
-
-| ID | Severity | Summary | Refs |
-| --- | --- | --- | --- |
-| FND-002 | medium | Flow facts are indexed by artifact id alone, so duplicate ids across selected repository members can resolve to another member's data | rust/crates/quoin-dossier/src/records_of_processing.rs:344-352,391-395 |
-| FND-003 | medium | A classification on any delivering connection suppresses the missing-classification gap for every covered sink, including sinks that connection does not deliver to | rust/crates/quoin-dossier/src/records_of_processing.rs:531-537 |
-
-## Dispositions
-
-| FND | outcome | reason |
-| --- | --- | --- |
-| FND-001 | fixed | Current `transfer_entry` maps each `region` member independently and compares each member to the authored `home_regions` values. The updated TC-617 fixture covers both a mixed matching/non-matching list and an all-matching multi-label list. |
-| FND-002 | still-open | `FlowFact` and `FlowDocumentRef` carry an optional repository identity, but `facts_by_id` and `fact_for` discard it and key only by id. With multiple selected modules that contain the same artifact id, an edge can resolve to a different repository member's fact and render the wrong record. |
-| FND-002 | fixed | `facts_by_id` now keys facts by `(repo, id)` and `fact_for` looks up the target's `(repo, id)`. The regression test creates duplicate ids in two repositories and asserts that an edge with `repo: selected/repo` resolves the selected repository's processor value. |
-| FND-003 | still-open | For each sink, `delivered_classification` checks whether any connection delivering to any covered sink carries a classification. With sinks A and B and a classified connection delivering only to A, that boolean is true for B too, so B gets no missing-category gap. The test/code should associate the classification with the specific sink reached by the carrying connection. |
-| FND-003 | fixed | The code now checks that the carrying connection's resolved `delivers_to` target matches the current sink by `(repo, id)`. `delivered_classification_only_suppresses_gap_for_its_sink` verifies SINK-A has no classification gap while SINK-B retains both the rendered row and structured gap. |
-
-## New findings (disposition pass 2)
-
-| ID | Severity | Summary | Refs |
-| --- | --- | --- | --- |
-| FND-003 | medium | A classification on any delivering connection suppresses the missing-classification gap for every covered sink, including sinks that connection does not deliver to | rust/crates/quoin-dossier/src/records_of_processing.rs:531-537 |
+| FND-001 | medium | The sink-specific test does not exercise TC-625's same-id cross-repository scenario | spec/test/tc-625-sink-specific-delivered-classification.md:14-22, rust/crates/quoin-dossier/src/records_of_processing.rs:1134-1192 |
 
 ## Review Scope
 
 | Unit | Role | Result |
 | --- | --- | --- |
-| FR-207 AC-1 and location-label comparison | examined | FND-001 fixed; FND-002 remains open for multi-repository model identities |
-| FR-207 source boundary (`quire.flow-report/v1`) | examined | FND-002 |
+| `delivered_classification_only_suppresses_gap_for_its_sink` | Rust behavior and assertions | Confirms a classification on SINK-A does not suppress SINK-B's gap; the test uses distinct ids and no repository identities, contrary to TC-625's stated case. |
+| module expected-pin assertion | configuration regression test | Updated expected architecture module ref to v0.12.0, matching current main's default module manifest. |
+| matrix coverage | Quoin matrix | FR-207 AC-1..AC-8 tagged; TC-625 binds the new sink-specific function; no FR-207 unbacked claims. |
+| assurance profiles | scope check | AP-201 (finding measurement) and AP-202 (Jev lens evaluation) do not apply to this change. |
+| gates | CI | Not run locally; review brief prohibited the aggregate gate before review. |
 
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | rejected | The finding was based on stale fixture text. On PR head `6863e87a`, the fixture creates two `SINK-SHARED` facts, sets their repo identities to `repo-a` and `repo-b`, gives the activity covers edges for both identities, and gives only the repo-a connection the delivery/classification edges. The cited lines 1141-1172 establish the duplicate-id cross-repository case, so the original mismatch claim is not true of the reviewed head. |

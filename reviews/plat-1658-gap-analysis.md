@@ -1,9 +1,9 @@
 ---
-id: SR-1625
-title: "Gap analysis — PLAT-1658 records-of-processing generator (Quoin PR #962)"
+id: SR-20261116075219
+title: "Gap analysis — Quoin PLAT-1658 PR #963"
 type: SpecReview
 analysis: gap-analysis
-scope: "agent-ix/quoin; spec/functional/FR-207-dossier-records-of-processing-content.md, spec/test/tc-617-records-of-processing-dossier.md, rust/crates/quoin-dossier/src/records_of_processing.rs"
+scope: "agent-ix/quoin PR #963; FR-207, TC-625, spec/matrix.md, spec/test/index.md, rust/crates/quoin-dossier/src/records_of_processing.rs"
 review_set: subset
 relationships:
   - {target: "ix://agent-ix/quoin/FR-207", type: references}
@@ -11,34 +11,23 @@ relationships:
 
 ## Summary
 
-The computed Quoin matrix on review head `8589b1ab` reported FR-207-AC-1..8 as tagged. Gap-analysis FND-001 noted that TC-617's fixture supplied `region` as a scalar, while the Quire flow-report contract exposes it as a list; the test could not detect the region-list comparison defect. On current PR head `2c9be0f2`, TC-617 supplies multiple labels and checks mixed and all-matching cases, so the missing coverage is repaired. Plan completion: not assessed.
+Ran the Quoin matrix for the FR-207 trace chain affected by PR #963. All eight FR-207 criteria are tagged, the new function binds through TC-625, and there are no FR-207 unbacked claims. The optional semantic review and plan completion were not run; no plan was supplied.
 
 ## Verdict
 
-FND-001 is fixed on current PR head. FR-207-AC-1 now has a test binding that exercises list-valued region facts and the exact label comparison. The review did not assess unrelated repository-wide matrix gaps.
+**PASS** — the affected FR-207 criteria are tagged, and the new test has no unbacked matrix claim.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | medium | TC-617 uses a scalar region fixture and does not exercise the flow-report region list contract | rust/crates/quoin-dossier/src/records_of_processing.rs:879-953 |
-
-## New findings (disposition pass 2)
-
-| ID | Severity | Summary | Refs |
-| --- | --- | --- | --- |
-| FND-002 | low | The new sink-specific regression test is not bound to its Test Case row; Quoin reports it as a tagged claim without a matrix row | rust/crates/quoin-dossier/src/records_of_processing.rs:1132-1134, spec/matrix.md:46 |
+| FND-001 | low | No findings (placeholder) | - |
 
 ## Coverage
 
-- Matrix: `quoin matrix --repo /home/peter/dev/quoin/.worktrees/plat1658-review-head --json`; FR-207-AC-1..8 were tagged on review head.
-- Reviewed FR-207 AC-1 against its test binding and source implementation.
-- Plan completion: not assessed.
-
-## Dispositions
-
-| FND | outcome | reason |
-| --- | --- | --- |
-| FND-001 | fixed | Current TC-617 fixture uses `region: ["us", "eu"]` and `region: ["eu", "eea"]`; assertions cover one mixed-match sink and one all-matching sink, exercising list-valued flow facts. |
-| FND-002 | still-open | The new function has only `#[trace("FR-207-AC-3")]`, while the matrix binds AC-3 through TC-619 and the test-case row describes a different test. `quoin matrix --repo <head> --json` reports `delivered_classification_only_suppresses_gap_for_its_sink` as `tagged-without-citing-matrix-row`; add an accurately scoped Test Case row and bind the test to it, or otherwise make the matrix evidence model explicitly associate this regression. |
-
+- Matrix command: `quoin matrix --repo <PR #963 worktree> --json` (Quoin 0.35.0).
+- FR-207 AC-1..AC-8: all `tagged`.
+- `delivered_classification_only_suppresses_gap_for_its_sink` is a binder for FR-207-AC-3 through TC-625; FR-207 has no `unbacked_claims`.
+- Reverse implementation-gap analysis: the PR changes a Rust test tag and a test expectation only; no production implementation was added or removed.
+- Optional semantic review: skipped (not requested). Plan completion: not assessed.
+- Assurance profiles: AP-201 and AP-202 are outside the reviewed behavior's scope.
