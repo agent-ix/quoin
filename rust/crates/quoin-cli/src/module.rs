@@ -432,7 +432,7 @@ mod tests {
             "spec-objects-architecture",
             "agent-ix/spec-objects-architecture",
             "spec_objects_architecture",
-            "v0.11.0",
+            "v0.12.0",
         ),
         (
             "spec-objects-enterprise",
