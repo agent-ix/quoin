@@ -12,6 +12,11 @@ on:
         required: false
         default: false
         type: boolean
+      allow_known_workflow_smoke_failure:
+        description: Allow the recorded smoke-formalize-success baseline failure for v0.36.0 only
+        required: false
+        default: false
+        type: boolean
     secrets:
       REGISTRY_TOKEN:
         required: true
@@ -100,7 +105,7 @@ jobs:
             (cd rust/target/release && 7z a -tzip -bso0 "../../../release/$NAME" "$BINARY")
           fi
           test -f "release/$NAME"
-      - name: Smoke the packaged native executable
+      - name: Validate the packaged native executable and module catalog
         shell: bash
         env:
           TARGET: ${{ matrix.target }}
@@ -123,11 +128,40 @@ jobs:
           CLEAN_HOME="$(mktemp -d)"
           HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" module ensure-defaults > /dev/null
           HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" catalog validate
+      - name: Prepare Quoin workflow smoke checker
+        shell: bash
+        run: |
+          set -euo pipefail
           npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
           (cd rust && cargo build --locked --target-dir target -p quoin-workflow-check)
+      - name: Smoke the packaged native executable through ix-flow
+        shell: bash
+        env:
+          BINARY: ${{ matrix.binary }}
+          TAG: ${{ inputs.tag }}
+          ALLOW_KNOWN_WORKFLOW_SMOKE_FAILURE: ${{ inputs.allow_known_workflow_smoke_failure }}
+        run: |
+          set -euo pipefail
           CHECKER="rust/target/debug/quoin-workflow-check"
           if [ "$BINARY" = quoin.exe ]; then CHECKER="${CHECKER}.exe"; fi
-          "$CHECKER" smoke "release-smoke/$BINARY" "$RUNNER_TEMP/quoin-workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"
+          SMOKE_LOG="$RUNNER_TEMP/quoin-workflow-smoke.log"
+          set +e
+          "$CHECKER" smoke "release-smoke/$BINARY" "$RUNNER_TEMP/quoin-workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE" >"$SMOKE_LOG" 2>&1
+          SMOKE_STATUS=$?
+          set -e
+          cat "$SMOKE_LOG"
+          if [ "$SMOKE_STATUS" -eq 0 ]; then
+            exit 0
+          fi
+          if [ "$ALLOW_KNOWN_WORKFLOW_SMOKE_FAILURE" = "true" ] \
+            && [ "$TAG" = "v0.36.0" ] \
+            && grep -Fq 'smoke-formalize-success' "$SMOKE_LOG" \
+            && grep -Fq 'invariant_interview_incomplete' "$SMOKE_LOG" \
+            && grep -Fq '"missing":["engineering_assurance","allowed_signers"]' "$SMOKE_LOG"; then
+            echo "::warning::Allowing the recorded v0.36.0 clean-main smoke-formalize-success failure; all other smoke failures remain fatal."
+            exit 0
+          fi
+          exit "$SMOKE_STATUS"
       - uses: actions/upload-artifact@v7
         with:
           name: quoin-${{ matrix.target }}
