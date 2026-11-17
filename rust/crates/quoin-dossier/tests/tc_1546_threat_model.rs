@@ -87,14 +87,14 @@ fn complete_records() -> Corpus {
             "threat_model",
             json!({"method":"stride_per_interaction", "reviewed_by":"A. Person"}),
             &[
-                ("PART-2", "covers"),
-                ("PART-1", "covers"),
-                ("BOUND-NET", "covers"),
-                ("BOUND-INTERNAL", "covers"),
-                ("CONN-1", "covers"),
-                ("CONN-2", "covers"),
-                ("SINK-1", "covers"),
-                ("SINK-2", "covers"),
+                ("PART-2", "scopes"),
+                ("PART-1", "scopes"),
+                ("BOUND-NET", "scopes"),
+                ("BOUND-INTERNAL", "scopes"),
+                ("CONN-1", "scopes"),
+                ("CONN-2", "scopes"),
+                ("SINK-1", "scopes"),
+                ("SINK-2", "scopes"),
                 ("THREAT-1", "considers"),
             ],
         ),
@@ -309,13 +309,13 @@ fn tc_1546_treatment_findings_require_considers_and_scope_edges() {
         "TM-2",
         "threat_model",
         json!({}),
-        &[("CONN-2", "covers")],
+        &[("CONN-2", "scopes")],
     ));
     records.documents.push(doc(
         "TM-3",
         "threat_model",
         json!({}),
-        &[("CONN-1", "covers"), ("THREAT-1", "considers")],
+        &[("CONN-1", "scopes"), ("THREAT-1", "considers")],
     ));
     let out = render(
         &records,
@@ -343,10 +343,18 @@ fn tc_1546_treatment_findings_require_considers_and_scope_edges() {
 #[trace("FR-202-AC-11", "TC-611")]
 #[test]
 fn tc_1546_scope_lists_parts_then_boundaries_and_only_connection_rows() {
-    let out = render(&complete_records(), None).body;
+    let mut records = complete_records();
+    records.documents[0]
+        .edges
+        .iter_mut()
+        .find(|(target, relation)| target == "CONN-2" && relation == "scopes")
+        .unwrap()
+        .1 = "covers".to_owned();
+    let out = render(&records, None).body;
     assert!(out.contains("Covered parts: PART-1, PART-2"));
     assert!(out.contains("Covered trust boundaries: BOUND-INTERNAL, BOUND-NET"));
     assert!(out.contains("| CONN-1 |"));
+    assert!(!out.contains("| CONN-2 |"));
     assert!(out.find("Covered parts:").unwrap() < out.find("Covered trust boundaries:").unwrap());
 }
 

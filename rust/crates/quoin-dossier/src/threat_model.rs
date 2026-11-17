@@ -75,11 +75,11 @@ pub fn render_threat_model(
         let denials = relevant_denials(flow);
         let mut gap_keys = BTreeSet::new();
         for model in models {
-            let covered = edge_targets(model, "covers");
-            let connections = selected(&covered, "connection", &by_id);
-            let sinks = selected(&covered, "data_sink", &by_id);
-            let parts = selected(&covered, "part", &by_id);
-            let boundaries = selected(&covered, "trust_boundary", &by_id);
+            let scoped = edge_targets(model, "scopes");
+            let connections = selected(&scoped, "connection", &by_id);
+            let sinks = selected(&scoped, "data_sink", &by_id);
+            let parts = selected(&scoped, "part", &by_id);
+            let boundaries = selected(&scoped, "trust_boundary", &by_id);
             let considered = considered_threats(model, &connections, &sinks, &records);
             let open = findings_for(&denials, &connections, &sinks, &considered);
 
@@ -633,7 +633,7 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({"method":"STRIDE", "reviewed_by":"A. Person"}),
-                &[("CONN-1", "covers"), ("THREAT-1", "considers")],
+                &[("CONN-1", "scopes"), ("THREAT-1", "considers")],
                 &[
                     ("Scope", "Selected boundary."),
                     ("Assumptions", "None."),
@@ -708,14 +708,14 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers")],
+                &[("CONN-1", "scopes")],
                 &[],
             ),
             document(
                 "TM-2",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers")],
+                &[("CONN-1", "scopes")],
                 &[],
             ),
             document("CONN-1", "connection", json!({}), &[], &[]),
@@ -762,7 +762,7 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({}),
-                &[("SINK-1", "covers")],
+                &[("SINK-1", "scopes")],
                 &[],
             ),
             document(
@@ -824,21 +824,21 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers"), ("THREAT-1", "considers")],
+                &[("CONN-1", "scopes"), ("THREAT-1", "considers")],
                 &[],
             ),
             document(
                 "TM-2",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers"), ("THREAT-1", "considers")],
+                &[("CONN-1", "scopes"), ("THREAT-1", "considers")],
                 &[],
             ),
             document(
                 "TM-3",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers")],
+                &[("CONN-1", "scopes")],
                 &[],
             ),
             document("CONN-1", "connection", json!({}), &[], &[]),
@@ -893,7 +893,7 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({}),
-                &[("SINK-1", "covers")],
+                &[("SINK-1", "scopes")],
                 &[],
             ),
             document(
@@ -944,7 +944,7 @@ mod tests {
                 "TM-1",
                 "threat_model",
                 json!({}),
-                &[("CONN-1", "covers")],
+                &[("CONN-1", "scopes")],
                 &[],
             ),
             document("CONN-1", "connection", json!({}), &[], &[]),
@@ -965,12 +965,12 @@ mod tests {
                 "threat_model",
                 json!({}),
                 &[
-                    ("PART-2", "covers"),
-                    ("BOUND-2", "covers"),
-                    ("CONN-2", "covers"),
-                    ("PART-1", "covers"),
-                    ("CONN-1", "covers"),
-                    ("BOUND-1", "covers"),
+                    ("PART-2", "scopes"),
+                    ("BOUND-2", "scopes"),
+                    ("CONN-2", "scopes"),
+                    ("PART-1", "scopes"),
+                    ("CONN-1", "scopes"),
+                    ("BOUND-1", "scopes"),
                 ],
                 &[],
             ),
