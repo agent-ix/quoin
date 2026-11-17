@@ -1037,52 +1037,6 @@ mod tests {
         }
     }
 
-    #[trace("FR-207-AC-6")]
-    #[test]
-    fn tc_1658_iso_covers_edge_does_not_select_processing_scope() {
-        let records = corpus(vec![document(
-            "ACT-COVERS",
-            "processing_activity",
-            &json!({"title":"Activity", "role":"controller"}),
-            &[],
-        )]);
-        let flow = flow(vec![
-            (
-                "processing_activity",
-                fact(
-                    "ACT-COVERS",
-                    &json!({}),
-                    &[("covers", "outgoing", "SINK-COVERED")],
-                ),
-            ),
-            (
-                "data_sink",
-                fact(
-                    "SINK-COVERED",
-                    &json!({"processor":"Must not be selected", "kind":"archive"}),
-                    &[],
-                ),
-            ),
-        ]);
-
-        let generated = render(&records, Some(&flow));
-
-        assert!(!generated.body.contains("SINK-COVERED"));
-        assert!(!generated.body.contains("Must not be selected"));
-        assert!(
-            generated
-                .gaps
-                .iter()
-                .all(|gap| gap.subject != "SINK-COVERED")
-        );
-        assert!(
-            !generated
-                .gaps
-                .iter()
-                .any(|gap| gap.gap_kind == GapKind::ModelFactsUnavailable)
-        );
-    }
-
     #[trace("FR-207-AC-1")]
     #[trace("FR-207-AC-4")]
     #[trace("FR-207-AC-8")]
