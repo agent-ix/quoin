@@ -15,6 +15,11 @@ use crate::gap::{Gap, GapKind};
 use crate::markdown::{cell, unusable_input};
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
 
+type FactIdentity<'a> = (Option<&'a str>, &'a str);
+type FactIndex<'a> = BTreeMap<FactIdentity<'a>, (&'a str, &'a FlowFact)>;
+type SelectedFacts<'a> = BTreeMap<FactIdentity<'a>, &'a FlowFact>;
+type CategorizedTargets<'a> = (SelectedFacts<'a>, SelectedFacts<'a>, Vec<&'a FlowFact>);
+
 /// Reads validated activities and the flow report from quire-rs.
 pub(crate) struct RecordsOfProcessingGenerator(
     pub(crate) fn(&Inputs) -> Result<RecordsOfProcessingSource, SourceFailure>,
@@ -94,7 +99,7 @@ fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
 
 fn render_activity(
     activity: &Document,
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &FlowFact)>,
+    facts: &FactIndex<'_>,
     body: &mut String,
     gaps: &mut Vec<Gap>,
 ) -> bool {
@@ -179,7 +184,7 @@ fn render_activity(
 }
 
 struct ActivityContext<'facts, 'state> {
-    facts: &'facts BTreeMap<(Option<&'facts str>, &'facts str), (&'facts str, &'facts FlowFact)>,
+    facts: &'facts FactIndex<'facts>,
     sources: &'state mut BTreeSet<String>,
     body: &'state mut String,
     gaps: &'state mut Vec<Gap>,
@@ -388,7 +393,7 @@ fn append_sources(body: &mut String, sources: BTreeSet<String>) {
     let _ = writeln!(body, "\nSources: {content}\n");
 }
 
-fn facts_by_id(flow: &FlowReport) -> BTreeMap<(Option<&str>, &str), (&str, &FlowFact)> {
+fn facts_by_id(flow: &FlowReport) -> FactIndex<'_> {
     flow.facts
         .iter()
         .flat_map(|(kind, facts)| {
@@ -404,13 +409,9 @@ fn facts_by_id(flow: &FlowReport) -> BTreeMap<(Option<&str>, &str), (&str, &Flow
 
 fn categorize_targets<'a>(
     targets: &[&'a FlowFactEdge],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
+    facts: &FactIndex<'a>,
     sources: &mut BTreeSet<String>,
-) -> (
-    BTreeMap<(Option<&'a str>, &'a str), &'a FlowFact>,
-    BTreeMap<(Option<&'a str>, &'a str), &'a FlowFact>,
-    Vec<&'a FlowFact>,
-) {
+) -> CategorizedTargets<'a> {
     let mut connections = BTreeMap::new();
     let mut sinks = BTreeMap::new();
     let mut parts = Vec::new();
@@ -441,10 +442,7 @@ fn ordered_facts(mut facts: Vec<&FlowFact>) -> Vec<&FlowFact> {
     facts
 }
 
-fn fact_for<'a>(
-    edge: &FlowFactEdge,
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
-) -> Option<&'a FlowFact> {
+fn fact_for<'a>(edge: &FlowFactEdge, facts: &FactIndex<'a>) -> Option<&'a FlowFact> {
     facts
         .get(&(edge.target.repo.as_deref(), edge.target.id.as_str()))
         .map(|(_, fact)| *fact)
@@ -461,7 +459,7 @@ fn classifications<'a>(
     elements: &[&'a FlowFact],
     connections: &[&'a FlowFact],
     sinks: &[&'a FlowFact],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
+    facts: &FactIndex<'a>,
     sources: &mut BTreeSet<String>,
 ) -> (Vec<String>, Vec<(String, String)>) {
     let sink_ids = sinks
@@ -627,7 +625,7 @@ fn transfer_entry(
 
 fn security_entry<'a>(
     elements: &[&'a FlowFact],
-    facts: &BTreeMap<(Option<&str>, &str), (&str, &'a FlowFact)>,
+    facts: &FactIndex<'a>,
     sources: &mut BTreeSet<String>,
 ) -> (String, Vec<Gap>) {
     let mut controls = BTreeMap::new();
