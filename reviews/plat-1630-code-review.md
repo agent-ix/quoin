@@ -85,5 +85,3 @@ The changes resolve approval roles against installed clause-set metadata, gate o
 - FND-001, `rust/crates/quoin-assurance/src/discharge/build.rs`: `if required_approval_clauses.contains(&direct.clause_id) && direct.approval_ref.as_deref().is_none_or(js_trim_is_empty) => { partition.open.push(...) }`.
 - FND-002, `rust/crates/quoin-core/src/ops/evidence/discharge.rs`: `let required_approval_clauses = approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;` followed by `discharge_report_from_store_with_approval_requirements(..., &required_approval_clauses)`; `inward_completeness` likewise calls `inward_completeness_from_store_with_approval_requirements`.
 - FND-003, `rust/crates/quoin-assurance/src/lib.rs`: `discharge_report_from_store_with_approval_requirements`, `inward_completeness_from_store_with_approval_requirements`, and `record_discharge_facts_with_approval_requirements` are in the public `pub use discharge::{...}` list.
-
-
