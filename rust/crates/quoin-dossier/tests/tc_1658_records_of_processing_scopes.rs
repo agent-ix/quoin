@@ -266,9 +266,9 @@ fn dangling_and_wrong_kind_scopes_fail_validation_before_generation() {
         (
             "wrong-kind",
             Some(("QUEUE-1", record("QUEUE-1", "queue", None))),
-            "target-kind-mismatch",
+            "disallowed-edge-target",
             "QUEUE-1",
-            "queue",
+            "does not satisfy",
         ),
     ] {
         let work = tempfile::tempdir().unwrap();
@@ -306,6 +306,13 @@ fn dangling_and_wrong_kind_scopes_fail_validation_before_generation() {
                 .contains(diagnostic_detail),
             "{case}: {finding:?}"
         );
+        if case == "wrong-kind" {
+            assert!(
+                finding
+                    .message
+                    .contains("[\"connection\", \"data_sink\", \"part\"]")
+            );
+        }
         let output = work.path().join("output");
         let result = generate(
             &registry(),
