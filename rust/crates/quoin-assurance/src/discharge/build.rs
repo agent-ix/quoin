@@ -26,12 +26,6 @@ use super::report::{
 /// [`crate::DischargeError`] when `asOf` is not an instant, when any supplied fact
 /// fails `parseFact`/`parseAttestation`, or when two facts name the same
 /// clause. FR-046-AC-5: a duplicate is rejected, never resolved by ordering.
-#[expect(
-    clippy::too_many_lines,
-    reason = "the retained buildDischargeReport is one function, and splitting \
-              it would put the partition's reading order somewhere other than \
-              the order the oracle decides in, which is what a reader compares"
-)]
 pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<DischargeReport> {
     build_discharge_report_with_approval_requirements(request, &BTreeSet::new())
 }
@@ -230,7 +224,7 @@ fn classify_binding_clause(
         DischargeFact::Direct(_) => {
             partition
                 .direct
-                .push(entry(clause, DischargeState::Direct, None, Some(fact)))
+                .push(entry(clause, DischargeState::Direct, None, Some(fact)));
         }
         DischargeFact::Disposition(_) => partition.dispositions.push(entry(
             clause,
