@@ -91,12 +91,7 @@ impl Rendered {
     }
 }
 
-/// Validate the run-wide inputs and compute the selected documents.
-///
-/// # Errors
-///
-/// Exit 2 for a blank version, an invalid or missing `--as-of`, or an unknown
-/// kind; exit 3 for the first generator whose source fails.
+#[cfg(test)]
 pub(crate) fn render(
     registry: &Registry,
     kinds: &[String],

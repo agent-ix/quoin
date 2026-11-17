@@ -14,7 +14,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use crate::engine::{Operation, Rendered, render, render_for, report_with_comparison};
+#[cfg(test)]
+use crate::engine::render;
+use crate::engine::{Operation, Rendered, render_for, report_with_comparison};
 use crate::error::{DossierError, QuireFailure};
 use crate::registry::{Inputs, Registry};
 use crate::report::Report;

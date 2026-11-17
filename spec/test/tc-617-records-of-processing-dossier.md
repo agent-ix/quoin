@@ -19,4 +19,4 @@ Run `tc_1658_controller_lists_classification_recipients_transfer_gaps_and_safegu
 
 ## Expected Results
 
-The assertions verify the personal-data classification and title, recipient and audience, location label, general security control and explicit transfer-region and transfer-safeguards gaps.
+The assertions verify the personal-data classification and title, recipient and audience, a mixed `region` list with one matching and one outside home-region label, a multi-region sink whose labels all match, the general security control, and explicit transfer-region and transfer-safeguards gaps for both sinks.

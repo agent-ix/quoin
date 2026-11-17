@@ -330,6 +330,12 @@ fn a_failing_source_exits_3_names_it_writes_nothing_and_keeps_existing_files() {
 #[test]
 fn versionless_generation_is_limited_to_records_of_processing() {
     let work = tempfile::tempdir().unwrap();
+    let spec = work.path().join("spec");
+    fs::create_dir(&spec).unwrap();
+    let module = spec.join("empty-module");
+    fs::create_dir(&module).unwrap();
+    fs::write(module.join("manifest.yaml"), "name: dossier-empty-flow\n").unwrap();
+    let module_path = module.to_str().unwrap();
     for args in [
         &["generate", "--doc", "stub-a"][..],
         &["check", "--doc", "stub-a"][..],
@@ -339,12 +345,19 @@ fn versionless_generation_is_limited_to_records_of_processing() {
     ] {
         let output = quoin(work.path(), args);
         assert_eq!(code(&output), 2, "{args:?}: {}", stderr(&output));
-        assert_eq!(names(work.path()), Vec::<String>::new(), "{args:?}");
+        assert_eq!(names(work.path()), ["spec"], "{args:?}");
     }
 
     let generated = quoin(
         work.path(),
-        &["generate", "--doc", "records-of-processing", "--json"],
+        &[
+            "generate",
+            "--doc",
+            "records-of-processing",
+            "--module",
+            module_path,
+            "--json",
+        ],
     );
     assert_eq!(code(&generated), 1, "{}", stderr(&generated));
     let report = json(&generated);

@@ -507,22 +507,27 @@ fn transfer_entry(
     let mut gaps = Vec::new();
     for sink in sinks {
         sources.insert(sink.id.clone());
-        let region = field_fact(sink, "region").and_then(value_text);
-        let location = region
-            .as_ref()
-            .map(|value| {
-                format!(
-                    "{}: region {}{}",
-                    cell(&sink.id),
-                    cell(value),
-                    if home.iter().any(|candidate| candidate == value) {
-                        " (matches home region)"
-                    } else {
-                        " (outside exact home-region labels)"
-                    }
-                )
-            })
-            .unwrap_or_else(|| format!("{}: region not stated", cell(&sink.id)));
+        let regions = field_fact(sink, "region").map(values).unwrap_or_default();
+        let location = if regions.is_empty() {
+            format!("{}: region not stated", cell(&sink.id))
+        } else {
+            let labels = regions
+                .iter()
+                .map(|region| {
+                    format!(
+                        "region {}{}",
+                        cell(region),
+                        if home.iter().any(|candidate| candidate == region) {
+                            " (matches home region)"
+                        } else {
+                            " (outside exact home-region labels)"
+                        }
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("{}: {labels}", cell(&sink.id))
+        };
         facts.push(format!(
             "{location}; GAP: transfer region — {} is not classified as a third-country transfer; GAP: transfer safeguards — no transfer safeguard is identified for {}",
             cell(&sink.id),
@@ -884,7 +889,7 @@ mod tests {
         let records = corpus(vec![document(
             "ACT-1",
             "processing_activity",
-            json!({"title":"Health processing", "role":"controller", "controller":"Example Controller", "purposes":["care"], "data_subject_categories":["patients"], "retention":"7 years", "home_regions":["eu"]}),
+            json!({"title":"Health processing", "role":"controller", "controller":"Example Controller", "purposes":["care"], "data_subject_categories":["patients"], "retention":"7 years", "home_regions":["eu", "eea"]}),
             &[],
         )]);
         let flow = flow(vec![
@@ -896,6 +901,7 @@ mod tests {
                     &[
                         ("covers", "outgoing", "CONN-1"),
                         ("covers", "outgoing", "EXT-LAB"),
+                        ("covers", "outgoing", "EXT-EEA"),
                     ],
                 ),
             ),
@@ -907,7 +913,15 @@ mod tests {
                 "data_sink",
                 fact(
                     "EXT-LAB",
-                    json!({"processor":"External Lab", "kind":"laboratory", "audience_roles":["lab"], "region":"us"}),
+                    json!({"processor":"External Lab", "kind":"laboratory", "audience_roles":["lab"], "region":["us", "eu"]}),
+                    &[],
+                ),
+            ),
+            (
+                "data_sink",
+                fact(
+                    "EXT-EEA",
+                    json!({"processor":"EEA Archive", "kind":"archive", "audience_roles":["archive"], "region":["eu", "eea"]}),
                     &[],
                 ),
             ),
@@ -924,7 +938,10 @@ mod tests {
                 fact(
                     "CTRL-1",
                     json!({"safeguards":"encryption"}),
-                    &[("protects", "outgoing", "EXT-LAB")],
+                    &[
+                        ("protects", "outgoing", "EXT-LAB"),
+                        ("protects", "outgoing", "EXT-EEA"),
+                    ],
                 ),
             ),
         ]);
@@ -935,7 +952,12 @@ mod tests {
                 .body
                 .contains("EXT-LAB: processor External Lab; kind laboratory; audience lab")
         );
-        assert!(generated.body.contains("region us"));
+        assert!(generated.body.contains(
+            "EXT-LAB: region us (outside exact home-region labels), region eu (matches home region)"
+        ));
+        assert!(generated.body.contains(
+            "EXT-EEA: region eu (matches home region), region eea (matches home region)"
+        ));
         assert!(generated.body.contains("CTRL-1 (encryption)"));
         assert!(
             generated
@@ -948,7 +970,7 @@ mod tests {
                 .iter()
                 .filter(|gap| gap.gap_kind == GapKind::TransferRegionUnstated)
                 .count(),
-            1
+            2
         );
         assert_eq!(generated, render(&records, Some(&flow)));
         assert_eq!(
@@ -957,7 +979,7 @@ mod tests {
                 .iter()
                 .filter(|gap| gap.gap_kind == GapKind::TransferSafeguardsUnstated)
                 .count(),
-            1
+            2
         );
     }
 
