@@ -1,17 +1,17 @@
 ---
 id: TC-619
-title: "FR-207 AC-3 unclassified covered connection"
+title: "FR-207 AC-3 unclassified scoped connection"
 type: TC
 relationships:
   - target: "ix://agent-ix/quoin/FR-207"
     type: "verifies"
 ---
 
-# TC-619: FR-207 AC-3 unclassified covered connection
+# TC-619: FR-207 AC-3 unclassified scoped connection
 
 ## Description
 
-Verify FR-207-AC-3: a covered connection with no `carries` edge produces the explicit personal-data category gap and one typed gap record.
+Verify FR-207-AC-3: a connection selected by the processing activity's security-owned `scopes` edge, with no `carries` edge, produces the explicit personal-data category gap and one typed gap record.
 
 ## Test Procedure
 
