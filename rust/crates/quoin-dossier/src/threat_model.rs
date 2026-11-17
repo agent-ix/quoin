@@ -33,14 +33,11 @@ impl Generator for ThreatModelGenerator {
         if let Some(failure) = unusable_input("threat-model records", &source.records) {
             return Err(failure);
         }
-        render(&source.records, source.flow.as_ref())
+        Ok(render(&source.records, source.flow.as_ref()))
     }
 }
 
-fn render(
-    corpus: &Corpus,
-    flow: Option<&quoin_quire::model::FlowReport>,
-) -> Result<Generated, SourceFailure> {
+fn render(corpus: &Corpus, flow: Option<&quoin_quire::model::FlowReport>) -> Generated {
     let records = corpus.documents.iter().collect::<Vec<_>>();
     let by_id: BTreeMap<&str, &Document> = records
         .iter()
@@ -80,11 +77,11 @@ fn render(
             render_findings(&mut body, &mut gaps, &mut gap_keys, &open);
         }
     }
-    Ok(Generated {
+    Generated {
         body,
         document_version: None,
         gaps,
-    })
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -192,7 +189,7 @@ fn render_crossings(
     body.push_str("### Covered crossings\n\n| Connection | Carried classifications and categories | Boundary and trust level | Threats (STRIDE class) | Controls and safeguards | Acceptance |\n| --- | --- | --- | --- | --- | --- |\n");
     for connection in connections {
         let threats = threats_for(connection, records);
-        let classification = classifications_for(connection, records, by_id);
+        let classification = classifications_for(connection, by_id);
         let boundaries = edge_targets(connection, "crosses")
             .iter()
             .filter_map(|id| by_id.get(id.as_str()).copied())
@@ -345,13 +342,9 @@ fn threats_for<'a>(subject: &Document, records: &[&'a Document]) -> Vec<&'a Docu
     threats
 }
 
-fn classifications_for(
-    connection: &Document,
-    records: &[&Document],
-    by_id: &BTreeMap<&str, &Document>,
-) -> String {
+fn classifications_for(connection: &Document, by_id: &BTreeMap<&str, &Document>) -> String {
     let ids = edge_targets(connection, "carries");
-    classification_text(&ids, records, by_id)
+    classification_text(&ids, by_id)
 }
 
 fn sink_classifications(
@@ -367,14 +360,10 @@ fn sink_classifications(
     }
     ids.sort_by(|left, right| crate::order::dossier_cmp(left, right));
     ids.dedup();
-    classification_text(&ids, records, by_id)
+    classification_text(&ids, by_id)
 }
 
-fn classification_text(
-    ids: &[String],
-    _records: &[&Document],
-    by_id: &BTreeMap<&str, &Document>,
-) -> String {
+fn classification_text(ids: &[String], by_id: &BTreeMap<&str, &Document>) -> String {
     let values = ids
         .iter()
         .filter_map(|id| by_id.get(id.as_str()).copied())
@@ -677,7 +666,7 @@ mod tests {
                 &[],
             ),
         ]);
-        let generated = render(&records, Some(&flow(Vec::new()))).unwrap();
+        let generated = render(&records, Some(&flow(Vec::new())));
         assert!(generated.body.contains("CLASS-PHI (health)"));
         assert!(generated.body.contains("BOUND-NET (restricted)"));
         assert!(generated.body.contains("THREAT-1 (tampering)"));
@@ -722,7 +711,7 @@ mod tests {
             severity: "warning",
         };
         let report = flow(vec![denial]);
-        let generated = render(&records, Some(&report)).unwrap();
+        let generated = render(&records, Some(&report));
         assert_eq!(
             generated
                 .body
@@ -738,7 +727,7 @@ mod tests {
     #[trace("FR-202-AC-5")]
     #[test]
     fn tc_1546_report_without_model_emits_one_document_gap_and_no_findings() {
-        let generated = render(&corpus(Vec::new()), Some(&flow(Vec::new()))).unwrap();
+        let generated = render(&corpus(Vec::new()), Some(&flow(Vec::new())));
         assert!(!generated.body.contains("## TM-"));
         assert_eq!(generated.gaps.len(), 1);
         assert_eq!(generated.gaps[0].gap_kind, GapKind::NoThreatModel);
@@ -798,7 +787,7 @@ mod tests {
                 &[],
             ),
         ]);
-        let generated = render(&records, Some(&flow(Vec::new()))).unwrap();
+        let generated = render(&records, Some(&flow(Vec::new())));
         assert!(
             generated
                 .body
