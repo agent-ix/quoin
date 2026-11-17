@@ -81,7 +81,8 @@ pub struct StoredDischargeFact {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct StoredDischargeFactValue {
-    schema_version: StoredFactSchemaVersion,
+    #[serde(rename = "schemaVersion")]
+    _schema_version: StoredFactSchemaVersion,
     clause_set: ClauseSetKey,
     fact: serde_json::Value,
 }
@@ -261,6 +262,9 @@ pub fn record_discharge_facts<S: EvidenceSource + ?Sized>(
 /// The caller resolves `required_approval_clauses` from the unique installed
 /// owner of `request.binding.clause_set`. Generic FR-046 callers should use
 /// [`record_discharge_facts`], which rejects blank approval references.
+///
+/// # Errors
+/// As [`record_discharge_facts`].
 pub fn record_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Sized>(
     source: &mut S,
     request: &RecordDischargeRequest,
@@ -365,6 +369,9 @@ pub fn read_discharge_facts<S: EvidenceSource + ?Sized>(
 
 /// Read facts while permitting blank approval references for required clause
 /// ids from the unique installed owner of `set`.
+///
+/// # Errors
+/// As [`read_discharge_facts`].
 pub fn read_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Sized>(
     source: &S,
     set: &ClauseSetKey,
@@ -394,7 +401,6 @@ pub fn read_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Size
         }
         let record: StoredDischargeFactValue =
             serde_json::from_str(&text).map_err(|e| unreadable(e.to_string()))?;
-        let _schema_version = record.schema_version;
         let fact = fact_for_approval_policy(&record.fact, required_approval_clauses)
             .map_err(|error| unreadable(error.to_string()))?;
         if &record.clause_set != set || fact_path(set, fact.clause_id())? != path {
@@ -493,6 +499,9 @@ pub fn inward_completeness_from_store<S: EvidenceSource + ?Sized>(
 
 /// Inward completeness from stored facts with the unique installed clause-set
 /// owner's approval requirements applied.
+///
+/// # Errors
+/// As [`inward_completeness_from_store`].
 pub fn inward_completeness_from_store_with_approval_requirements<S: EvidenceSource + ?Sized>(
     source: &S,
     binding: &ClauseBindingReport,
