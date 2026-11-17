@@ -189,7 +189,9 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
         ));
 
         let generic = build_discharge_report(&request(vec![blank_fact]));
-        assert!(generic.is_err_and(|error| error.to_string().contains("approvalRef must not be empty")));
+        assert!(
+            generic.is_err_and(|error| error.to_string().contains("approvalRef must not be empty"))
+        );
     }
 
     let mut approved_fact = direct();

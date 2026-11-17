@@ -57,10 +57,7 @@ pub fn build_discharge_report_with_approval_requirements(
     for value in &request.facts {
         let fact = parse_fact_with_blank_approval_ref(value, true)?;
         if let DischargeFact::Direct(direct) = &fact {
-            if direct
-                .approval_ref
-                .as_deref()
-                .is_some_and(js_trim_is_empty)
+            if direct.approval_ref.as_deref().is_some_and(js_trim_is_empty)
                 && !required_approval_clauses.contains(&direct.clause_id)
             {
                 return reject("approvalRef must not be empty");
