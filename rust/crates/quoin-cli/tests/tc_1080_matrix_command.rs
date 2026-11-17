@@ -91,6 +91,52 @@ traceability:
         template: "#[trace({ids})]"
 "##;
 
+const RECORD_KEYS_MODULE: &str = r##"name: quoin-cli-record-keys-fixture
+version: 0.1.0
+description: Fixture module for required-relation record keys
+artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+  - name: Connection
+  - name: Classification
+    data_schema:
+      schema: schemas/Classification.json
+edge_types:
+  classified-as: { description: a connection names its classification, category: traceability }
+semantic:
+  contract_version: 1.0.0
+  package: agent-ix/quoin-record-keys-fixture
+  exports: [Classification]
+  targets: [json-schema, markdown]
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  required_relations:
+    - name: connection-carries-classification
+      from: Connection
+      edges: [classified-as]
+      to: [Classification]
+      direction: outgoing
+      check: connection-carries-classification
+      record_keys: [classification, privacy]
+  trace_tags:
+    markers:
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: "#[trace({ids})]"
+"##;
+
 /// Three criteria and no declared method, so the catalog cannot add an
 /// `unknown-method` finding that would blur the three statuses under test.
 const SPEC: &str = "---
@@ -210,6 +256,146 @@ fn repository(module: &str) -> Fixture {
     fixture.write("manifest.yaml", module);
     fixture.write("spec/FR-001-example.md", SPEC);
     fixture
+}
+
+/// A matrix module whose relation endpoint declares the two record keys used
+/// by the record-key parser regression.
+fn record_keys_repository(module: &str) -> Fixture {
+    let fixture = repository(module);
+    fixture.write(
+        "schemas/Classification.json",
+        r#"{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"classification":{"type":"string"},"privacy":{"type":"string"}},"additionalProperties":false}"#,
+    );
+    fixture
+}
+
+fn install_defaults(home: &Path) {
+    let installed = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["module", "ensure-defaults"])
+        .env("IX_HOME", home)
+        .output()
+        .expect("the native quoin binary installs its published default modules");
+    assert_eq!(
+        installed.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&installed.stderr)
+    );
+}
+
+fn install_module_package(home: &Path, package: &str) {
+    let source = format!("package:{package}");
+    let installed = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["module", "install", &source])
+        .env("IX_HOME", home)
+        .output()
+        .expect("the native quoin binary installs the current published module");
+    assert_eq!(
+        installed.status.code(),
+        Some(0),
+        "{package}: {}",
+        String::from_utf8_lossy(&installed.stderr)
+    );
+}
+
+fn clone_current_architecture(repository: &Path) {
+    let cloned = Command::new("git")
+        .args([
+            "clone",
+            "--depth",
+            "1",
+            "https://github.com/agent-ix/spec-objects-architecture.git",
+        ])
+        .arg(repository)
+        .output()
+        .expect("git is available to fetch the current public architecture repository");
+    assert_eq!(
+        cloned.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&cloned.stderr)
+    );
+}
+
+fn assert_architecture_relation_rows(manifest: &Value) {
+    let required_relations = manifest["traceability"]["required_relations"]
+        .as_array()
+        .expect("the architecture module declares required relations");
+    let expected_relations = [
+        (
+            "connection-carries-classification",
+            &["regulatedCategories"][..],
+        ),
+        (
+            "classification-carried-by-connection",
+            &["regulatedCategories"][..],
+        ),
+        ("connection-crosses-trust-boundary", &["trust_level"][..]),
+        (
+            "connection-delivers-to-sink",
+            &["kind", "processorAgreement", "processor"][..],
+        ),
+        (
+            "part-delivers-to-sink",
+            &["kind", "processorAgreement", "processor"][..],
+        ),
+    ];
+    for (name, keys) in expected_relations {
+        assert!(
+            required_relations.iter().any(|relation| {
+                relation["name"] == name
+                    && relation["record_keys"]
+                        == serde_json::Value::Array(
+                            keys.iter().map(|key| serde_json::json!(key)).collect(),
+                        )
+            }),
+            "the current architecture module retains required relation {name} with its record_keys"
+        );
+    }
+}
+
+fn assert_fr015_matrix_bindings(matrix: &Value) {
+    let requirements = matrix["requirements"].as_array().unwrap();
+    let fr_015 = requirements
+        .iter()
+        .find(|requirement| requirement["id"] == "FR-015")
+        .expect("the current architecture matrix preserves FR-015");
+    let criteria = fr_015["criteria"].as_array().unwrap();
+    let criterion_ids: Vec<&str> = criteria
+        .iter()
+        .map(|criterion| criterion["id"].as_str().unwrap())
+        .collect();
+    assert!(criterion_ids.contains(&"FR-015-AC-4"), "{criterion_ids:?}");
+    assert!(criterion_ids.contains(&"FR-015-AC-5"), "{criterion_ids:?}");
+    let ac_4 = criteria
+        .iter()
+        .find(|criterion| criterion["id"] == "FR-015-AC-4")
+        .unwrap();
+    let ac_4_binders = ac_4["binders"].as_array().unwrap();
+    assert!(
+        ac_4_binders.iter().any(|binder| {
+            binder["path"] == "tests/test_data_sink.py"
+                && binder["qualified_name"]
+                    == "test_delivers_to_and_carries_validate_and_refuse_wrong_or_dangling_targets"
+        }),
+        "FR-015-AC-4 binders: {ac_4_binders:?}"
+    );
+    let ac_5 = criteria
+        .iter()
+        .find(|criterion| criterion["id"] == "FR-015-AC-5")
+        .unwrap();
+    let ac_5_binders = ac_5["binders"].as_array().unwrap();
+    for expected in [
+        "test_delivers_to_and_carries_validate_and_refuse_wrong_or_dangling_targets",
+        "test_data_sink_is_exported_and_declares_only_the_supported_links",
+    ] {
+        assert!(
+            ac_5_binders
+                .iter()
+                .any(|binder| binder["qualified_name"] == expected),
+            "FR-015-AC-5 binders: {ac_5_binders:?}"
+        );
+    }
 }
 
 /// One passing `unit` run for AC-1 with its mock inspection, and one `legacy`
@@ -573,4 +759,94 @@ fn tc_1080_206_help_describes_the_evidence_backed_render() {
         )
     );
     assert!(!root.contains("Build or update a requirements test matrix"));
+}
+
+/// The matrix loads required-relation record keys through the released Quire
+/// engine, including its relation-specific malformed-value diagnostics.
+#[trace("FR-206-AC-1", "FR-206-AC-2", "FR-206-AC-3", "FR-206-AC-4")]
+#[test]
+fn tc_1080_209_matrix_loads_required_relation_record_keys() {
+    let valid = RECORD_KEYS_MODULE.to_owned();
+    let fixture = record_keys_repository(&valid);
+    let output: Value =
+        serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    assert!(output["requirements"].is_array());
+
+    let omitted_module =
+        RECORD_KEYS_MODULE.replace("      record_keys: [classification, privacy]\n", "");
+    let omitted = record_keys_repository(&omitted_module);
+    let output: Value =
+        serde_json::from_str(&omitted.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    assert!(output["requirements"].is_array());
+
+    for invalid in [
+        "null",
+        "[]",
+        "scalar",
+        "[classification, 7]",
+        "[classification, ' ']",
+        "[classification, classification]",
+    ] {
+        let module = RECORD_KEYS_MODULE.replace(
+            "      record_keys: [classification, privacy]\n",
+            &format!("      record_keys: {invalid}\n"),
+        );
+        let fixture = record_keys_repository(&module);
+        let output = fixture.quoin(&["matrix", "--module", ".", "--json"]);
+        assert_eq!(output.status.code(), Some(2), "{invalid}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("connection-carries-classification"),
+            "{invalid}: {stderr}"
+        );
+        assert!(!String::from_utf8_lossy(&output.stdout).contains("requirements"));
+    }
+
+    let unknown = RECORD_KEYS_MODULE.replace(
+        "      record_keys: [classification, privacy]\n",
+        "      record_keys: [classification, privacy]\n      undeclared_key: true\n",
+    );
+    let fixture = repository(&unknown);
+    let output = fixture.quoin(&["matrix", "--module", ".", "--json"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("undeclared_key"));
+}
+
+/// The production matrix loads the released architecture module and the current
+/// architecture repository using only the clean Quoin defaults. This covers
+/// the real relation declaration whose `record_keys` field previously made
+/// Quoin refuse the module (FR-206-AC-5).
+#[trace("FR-206-AC-5")]
+#[test]
+fn tc_1080_210_matrix_computes_current_architecture_with_record_keys() {
+    let scratch = tempfile::tempdir().unwrap();
+    let home = scratch.path().join("ix-home");
+    let repository = scratch.path().join("spec-objects-architecture");
+    install_defaults(&home);
+    install_module_package(&home, "@agent-ix/spec-objects-architecture");
+    install_module_package(&home, "@agent-ix/spec-objects-security");
+    clone_current_architecture(&repository);
+    let manifest_path = home.join("filament/modules/spec-objects-architecture/manifest.yaml");
+    let manifest: Value = quoin_yaml::from_str(&std::fs::read_to_string(&manifest_path).unwrap())
+        .expect("the current installed architecture module manifest parses");
+    assert_architecture_relation_rows(&manifest);
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["matrix", "--repo"])
+        .arg(&repository)
+        .arg("--json")
+        .current_dir(&repository)
+        .env("IX_HOME", &home)
+        .output()
+        .expect("the native quoin binary runs against the architecture checkout");
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(!stderr.contains("CORE_REFUSED"), "{stderr}");
+    assert!(!stderr.contains("QQ-1020"), "{stderr}");
+    let matrix: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_fr015_matrix_bindings(&matrix);
 }
