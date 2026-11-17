@@ -245,7 +245,7 @@ fn generated_records_of_processing_ignores_iso_covers_edges() {
     .unwrap();
     let inputs = input(work.path(), &module);
 
-    generate(
+    let report = generate(
         &registry(),
         &["records-of-processing".to_owned()],
         work.path(),
@@ -253,6 +253,12 @@ fn generated_records_of_processing_ignores_iso_covers_edges() {
     )
     .unwrap();
 
+    let document = report
+        .documents
+        .iter()
+        .find(|document| document.id == "DOS-ROP")
+        .expect("records-of-processing report exists");
+    assert!(document.gaps.is_empty(), "covers-only sink added gaps");
     let generated = std::fs::read_to_string(work.path().join("DOS-ROP.md")).unwrap();
     assert!(!generated.contains("SINK-COVERED"));
     assert!(!generated.contains("Must not be selected"));

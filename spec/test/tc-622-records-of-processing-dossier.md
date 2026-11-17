@@ -15,7 +15,7 @@ Verify FR-207-AC-6: wrong-kind and dangling security-owned `scopes` targets on a
 
 ## Test Procedure
 
-Run `tc_1658_invalid_processing_activity_scopes_fail_before_generation` in `quoin-dossier` through `/home/peter/dev/worktrees/locked-build.sh`. The test includes schema-backed dangling and wrong-kind `scopes` cases plus the synthetic flow-report case described above.
+Run `dangling_and_wrong_kind_scopes_fail_validation_before_generation` and `generated_records_of_processing_ignores_iso_covers_edges` in `quoin-dossier` through `/home/peter/dev/worktrees/locked-build.sh`. The first creates a temporary module schema with security-owned `scopes` links, validates dangling and wrong-kind targets with `quoin_quire::validate::run`, then drives the failures through the built-in dossier registry and `generate`. The second sends a synthetic covers-only flow report through the same registry and verifies both the rendered document and report gaps.
 
 ## Expected Results
 
