@@ -178,14 +178,14 @@ impl Harness {
                 "plugin manifest must match the release checker version",
             )?;
         }
-        let runner = fs::canonicalize(runner).map_err(|e| e.to_string())?;
-        let runner_bin = runner
+        let runner_bin = Path::new(runner)
             .parent()
             .and_then(Path::parent)
             .and_then(Path::parent)
             .and_then(Path::parent)
             .ok_or("ix-flow package location invalid")?
             .join(".bin");
+        let runner = fs::canonicalize(runner).map_err(|e| e.to_string())?;
         fs::create_dir_all(&root).map_err(|e| e.to_string())?;
         let root = fs::canonicalize(root).map_err(|e| e.to_string())?;
         let harness = Self {
