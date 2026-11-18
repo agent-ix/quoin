@@ -41,3 +41,9 @@ Reviewed the retained assurance help update and its subprocess regression agains
 | ID      | Severity | Summary                                                                                                                        | Refs                                                        |
 | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
 | FND-001 | low      | The help-only test is tagged as evidence for FR-205-AC-1, which requires consuming and presenting valid records.               | rust/crates/quoin-cli/tests/tc_retained_help_capture.rs:224 |
+
+## Dispositions
+
+| FND     | outcome | reason |
+| ------- | ------- | ------ |
+| FND-001 | fixed   | The help-only test now traces FR-205-AC-12, whose acceptance criterion explicitly covers the displayed option. |
