@@ -353,7 +353,7 @@ mod tests {
     use ix_trace_rs::trace;
     use serde_json::json;
 
-    #[trace("FR-205-AC-8")]
+    #[trace("FR-205-AC-1", "FR-205-AC-8")]
     #[test]
     fn colliding_flat_labels_keep_distinct_source_document_tuples() {
         let file = tempfile::NamedTempFile::new().expect("temporary records file");
@@ -374,12 +374,89 @@ mod tests {
         assert_eq!(records.len(), 2);
         assert_eq!(records[0].obligation_declaration, "decl-a");
         assert_eq!(records[1].obligation_declaration, "decl-b");
+        assert_eq!(records[0].record["state"], "eligible");
+        assert_eq!(records[1].record["criterion_id"]["scoped_document"], "b.md");
+    }
+
+    #[trace("FR-205-AC-3")]
+    #[test]
+    fn draft_authored_pair_keeps_the_derived_draft_reason() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        std::fs::write(file.path(), r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"authored"}]"#).expect("write records");
+        let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
+        let rules = [
+            json!({"symbol":"P1","formalizes":["FR-1-AC-1"],"state":"draft","reason":"review not complete"}),
+        ];
+        let result = read_and_join(
+            file.path().to_str().expect("path is UTF-8"),
+            &obligations,
+            &rules,
+        )
+        .expect("draft authored pair is valid");
+        assert_eq!(
+            result[0].draft_reason.as_deref(),
+            Some("review not complete")
+        );
+        assert!(result[0].record.get("reason").is_none());
+    }
+
+    #[trace("FR-205-AC-4")]
+    #[test]
+    fn none_accepts_only_eligible_or_justified_not_applicable() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        std::fs::write(file.path(), r#"[
+          {"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"},
+          {"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-2"},"state":"not-applicable","reason":"outside the selected boundary"}
+        ]"#).expect("write records");
+        let obligations = json!([
+            {"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"},
+            {"source":"decl","document":"FR-1.md","id":"FR-1-AC-2"}
+        ]);
+        let records = read_and_join(
+            file.path().to_str().expect("path is UTF-8"),
+            &obligations,
+            &[],
+        )
+        .expect("none states are valid");
+        assert_eq!(records[0].record["state"], "eligible");
+        assert_eq!(records[1].record["reason"], "outside the selected boundary");
+    }
+
+    #[trace("FR-205-AC-6")]
+    #[test]
+    fn missing_duplicate_and_none_state_mismatch_are_rejected() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
+        let path = file.path().to_str().expect("path is UTF-8");
+        std::fs::write(path, "[]").expect("write missing input");
+        assert!(read_and_join(path, &obligations, &[]).is_err());
+        let record = r#"{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}"#;
+        std::fs::write(path, format!("[{record},{record}]")).expect("write duplicate input");
+        assert!(read_and_join(path, &obligations, &[]).is_err());
+        std::fs::write(path, r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"proved","clause_address":{}}]"#).expect("write mismatched input");
+        assert!(read_and_join(path, &obligations, &[]).is_err());
+    }
+
+    #[trace("FR-205-AC-7")]
+    #[test]
+    fn approved_items_do_not_promote_eligible_records() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        std::fs::write(file.path(), r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}]"#).expect("write records");
+        let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
+        let rules = [json!({"symbol":"P1","formalizes":["FR-1-AC-1"],"state":"approved"})];
+        let records = read_and_join(
+            file.path().to_str().expect("path is UTF-8"),
+            &obligations,
+            &rules,
+        )
+        .expect("approved pairing is valid");
+        assert_eq!(records[0].record["state"], "eligible");
     }
 
     #[trace("FR-205-AC-9")]
     #[test]
     fn clause_package_identity_must_be_a_package_id_string() {
-        let input = json!({
+        let mut input = json!({
             "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
             "state":"authored",
             "clause_address":{
@@ -392,7 +469,18 @@ mod tests {
                 }
             }
         });
-        assert!(serde_json::from_value::<super::Record>(input).is_err());
+        assert!(serde_json::from_value::<super::Record>(input.clone()).is_err());
+        input["clause_address"]["package_identity"] = json!("package-core");
+        input["clause_address"]["source_span"]["start"]["source"]["revision"] = json!(7);
+        input["clause_address"]["source_span"]["end"]["source"]["revision"] = json!(7);
+        let record = serde_json::from_value::<super::Record>(input)
+            .expect("typed FR-012 source identities are retained");
+        let wire = serde_json::to_value(record).expect("record serializes");
+        assert_eq!(
+            wire["clause_address"]["source_span"]["start"]["source"]["revision"],
+            7
+        );
+        assert!(wire["clause_address"].get("requirement_revision").is_none());
     }
 
     #[trace("FR-205-AC-10")]
@@ -405,6 +493,17 @@ mod tests {
         let record = serde_json::from_value::<super::Record>(eligible_with_reason)
             .expect("shape is syntactically valid");
         assert!(super::validate_record(&record).is_err());
+
+        let unknown_without_address = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"unknown","reason":"inventory unavailable"
+        });
+        let record = serde_json::from_value::<super::Record>(unknown_without_address)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_ok());
+        // Whether a formal clause exists when the address is omitted cannot
+        // be decided without the selected package inventory (FR-205 inputs
+        // do not carry it).
 
         let authored_without_address = json!({
             "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},

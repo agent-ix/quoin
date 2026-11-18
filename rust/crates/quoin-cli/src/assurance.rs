@@ -27,7 +27,8 @@ pub(crate) fn command() -> Command {
         .arg(
             Arg::new("formalization-records")
                 .long("formalization-records")
-                .value_name("FILE"),
+                .value_name("FILE")
+                .help("Consume a top-level array of Contract IR FR-071 records"),
         )
         .arg(
             Arg::new("run-observation")
