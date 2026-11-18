@@ -292,6 +292,39 @@ fn record_output(
     ])
 }
 
+fn approval_clause_set(id: &str, approval_roles: &str) -> String {
+    format!(
+        "schemaVersion: clause-set-v1\nauthority: example.invalid\nid: {id}\ntitle: Synthetic rules\nversion: \"1\"\nrights:\n  structure: original\n  text: none\nclauses:\n  - id: C-1\n    force: mandatory\n    approvalRoles: {approval_roles}\n"
+    )
+}
+
+fn one_clause_binding(set: &str) -> serde_json::Value {
+    serde_json::json!({
+        "schemaVersion": "clause-binding-v1",
+        "clauseSet": {"authority": "example.invalid", "id": set, "version": "1"},
+        "context": {},
+        "clauses": [{
+            "clauseId": "C-1", "force": "mandatory", "outcome": "binding",
+            "reasons": [], "expectedOutputs": []
+        }]
+    })
+}
+
+fn discharge_output(env: &Env, repo: &Path, set: &str) -> Output {
+    let binding_path = env.base.join(format!("discharge-binding-{set}.json"));
+    std::fs::write(&binding_path, one_clause_binding(set).to_string()).unwrap();
+    env.run(&[
+        "discharge",
+        "--binding",
+        binding_path.to_str().unwrap(),
+        "--repo",
+        repo.to_str().unwrap(),
+        "--as-of",
+        AS_OF,
+        "--json",
+    ])
+}
+
 fn stdout(output: &Output) -> String {
     String::from_utf8(output.stdout.clone()).unwrap()
 }
@@ -517,6 +550,189 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
         .unwrap();
     assert_eq!(art_35["compliance"], "compliant");
     assert_eq!(art_35["evidenceRefs"][0], "evidence://run/one");
+}
+
+#[trace("FR-208-AC-6")]
+#[test]
+fn tc_208_005_record_discharge_reads_approval_metadata_with_the_full_module_set() {
+    let env = env();
+    let owner = env.base.join("src/cross-vocabulary-pack");
+    std::fs::create_dir_all(&owner).unwrap();
+    std::fs::write(
+        owner.join("manifest.yaml"),
+        r"name: cross-vocabulary-pack
+version: 0.1.0
+clause_sets:
+  - rules.yaml
+object_types:
+  - name: cross_object
+    data_schema: {type: object}
+    allowed_links: [references]
+",
+    )
+    .unwrap();
+    std::fs::write(
+        owner.join("rules.yaml"),
+        r#"schemaVersion: clause-set-v1
+authority: example.invalid
+id: cross-vocabulary
+title: Cross-vocabulary rules
+version: "1"
+rights:
+  structure: original
+  text: none
+clauses:
+  - id: C-1
+    force: mandatory
+    approvalRoles: [privacy-officer]
+"#,
+    )
+    .unwrap();
+    let owner_install = env.run(&["module", "install", &format!("path:{}", owner.display())]);
+    assert!(owner_install.status.success(), "{}", text(&owner_install));
+
+    let provider = env.base.join("src/edge-vocabulary");
+    std::fs::create_dir_all(&provider).unwrap();
+    std::fs::write(
+        provider.join("manifest.yaml"),
+        r"name: edge-vocabulary
+version: 0.1.0
+edge_types:
+  references: {description: Relationship reference, category: dependency}
+",
+    )
+    .unwrap();
+    let provider_install = env.run(&["module", "install", &format!("path:{}", provider.display())]);
+    assert!(
+        provider_install.status.success(),
+        "{}",
+        text(&provider_install)
+    );
+
+    let missing_approval =
+        record_output(&env, &env.repo, "cross-vocabulary", "1", &[direct("C-1")]);
+    assert!(
+        missing_approval.status.success(),
+        "{}",
+        text(&missing_approval)
+    );
+    let missing_report = json(&discharge_output(&env, &env.repo, "cross-vocabulary"));
+    assert!(
+        missing_report["binding"]["open"][0]["reason"] == "required approval reference is missing",
+        "{missing_report}"
+    );
+
+    let mut fact = direct("C-1");
+    fact["approvalRef"] = serde_json::json!("person://example.invalid/privacy-officer");
+    let recorded = record_output(&env, &env.repo, "cross-vocabulary", "1", &[fact]);
+    assert!(recorded.status.success(), "{}", text(&recorded));
+    assert!(stdout(&recorded).contains("C-1"), "{}", stdout(&recorded));
+    let approved_report = json(&discharge_output(&env, &env.repo, "cross-vocabulary"));
+    assert_eq!(approved_report["binding"]["direct"][0]["clauseId"], "C-1");
+}
+
+#[trace("FR-208-AC-7")]
+#[test]
+fn tc_208_006_vocabulary_provider_approval_roles_do_not_apply_to_owner_set() {
+    let env = env();
+    let owner = env.base.join("src/attributed-owner");
+    std::fs::create_dir_all(&owner).unwrap();
+    std::fs::write(
+        owner.join("manifest.yaml"),
+        "name: attributed-owner\nversion: 0.1.0\nclause_sets:\n  - owner.yaml\nobject_types:\n  - name: owner_object\n    data_schema: {type: object}\n    allowed_links: [references]\n",
+    )
+    .unwrap();
+    std::fs::write(
+        owner.join("owner.yaml"),
+        approval_clause_set("owner-set", "[]"),
+    )
+    .unwrap();
+    let owner_install = env.run(&["module", "install", &format!("path:{}", owner.display())]);
+    assert!(owner_install.status.success(), "{}", text(&owner_install));
+
+    let provider = env.base.join("src/policy-provider");
+    std::fs::create_dir_all(&provider).unwrap();
+    std::fs::write(
+        provider.join("manifest.yaml"),
+        "name: policy-provider\nversion: 0.1.0\nedge_types:\n  references: {description: Relationship reference, category: dependency}\nclause_sets:\n  - provider.yaml\n",
+    )
+    .unwrap();
+    std::fs::write(
+        provider.join("provider.yaml"),
+        approval_clause_set("provider-set", "[privacy-officer]"),
+    )
+    .unwrap();
+    let provider_install = env.run(&["module", "install", &format!("path:{}", provider.display())]);
+    assert!(
+        provider_install.status.success(),
+        "{}",
+        text(&provider_install)
+    );
+
+    let recorded = record_output(&env, &env.repo, "owner-set", "1", &[direct("C-1")]);
+    assert!(recorded.status.success(), "{}", text(&recorded));
+    let report = json(&discharge_output(&env, &env.repo, "owner-set"));
+    assert_eq!(report["binding"]["direct"][0]["clauseId"], "C-1");
+}
+
+#[trace("FR-208-AC-8")]
+#[test]
+fn tc_208_007_record_discharge_refuses_an_unknown_edge_type() {
+    let env = env();
+    let owner = env.base.join("src/unknown-vocabulary-pack");
+    std::fs::create_dir_all(&owner).unwrap();
+    std::fs::write(
+        owner.join("manifest.yaml"),
+        "name: unknown-vocabulary-pack\nversion: 0.1.0\nclause_sets:\n  - rules.yaml\nobject_types:\n  - name: owner_object\n    data_schema: {type: object}\n    allowed_links: [references]\n",
+    )
+    .unwrap();
+    std::fs::write(
+        owner.join("rules.yaml"),
+        approval_clause_set("unknown-vocabulary", "[privacy-officer]"),
+    )
+    .unwrap();
+    let installed = env.run(&["module", "install", &format!("path:{}", owner.display())]);
+    assert!(installed.status.success(), "{}", text(&installed));
+
+    let refused = record_output(&env, &env.repo, "unknown-vocabulary", "1", &[direct("C-1")]);
+    assert!(!refused.status.success(), "{}", text(&refused));
+    assert!(
+        text(&refused).contains("UnknownEdgeType") && text(&refused).contains("references"),
+        "{}",
+        text(&refused)
+    );
+}
+
+#[trace("FR-208-AC-4")]
+#[test]
+fn tc_208_008_record_discharge_refuses_duplicate_clause_set_owners() {
+    let env = env();
+    for name in ["first-owner", "duplicate-owner"] {
+        let module = env.base.join("src").join(name);
+        std::fs::create_dir_all(&module).unwrap();
+        std::fs::write(
+            module.join("manifest.yaml"),
+            format!("name: {name}\nversion: 0.1.0\nclause_sets:\n  - rules.yaml\n"),
+        )
+        .unwrap();
+        std::fs::write(
+            module.join("rules.yaml"),
+            approval_clause_set("collision-set", "[privacy-officer]"),
+        )
+        .unwrap();
+        let installed = env.run(&["module", "install", &format!("path:{}", module.display())]);
+        assert!(installed.status.success(), "{}", text(&installed));
+    }
+
+    let refused = record_output(&env, &env.repo, "collision-set", "1", &[direct("C-1")]);
+    assert!(!refused.status.success(), "{}", text(&refused));
+    assert!(
+        text(&refused).contains(
+            "multiple installed modules declare clause set example.invalid/collision-set/1"
+        ),
+        "{}",
+        text(&refused)
+    );
 }
 
 #[trace("FR-208-AC-4")]

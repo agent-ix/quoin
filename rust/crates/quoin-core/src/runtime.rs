@@ -314,6 +314,17 @@ impl HostModules {
 /// `quoin-quire`. Quoin restates no rights rule here.
 struct QuirePacks;
 
+fn module_root(module: &InstalledModule) -> Result<ModuleRoot, String> {
+    let installed = Path::new(&module.target_path);
+    let manifest = quoin_modules::module_name::locate_manifest(installed)
+        .map_err(|error| error.to_string())?;
+    ModuleRoot::open(manifest.parent().unwrap_or(installed)).map_err(|error| error.to_string())
+}
+
+fn installed_module_roots(modules: &[InstalledModule]) -> Result<Vec<ModuleRoot>, String> {
+    modules.iter().map(module_root).collect()
+}
+
 impl PackProbe for QuirePacks {
     fn restricted_sets(&self, module_dir: &Path) -> Result<Vec<RestrictedSet>, String> {
         let root = ModuleRoot::open(module_dir).map_err(|e| e.to_string())?;
@@ -332,11 +343,8 @@ impl PackProbe for QuirePacks {
 
 impl ModuleHost for HostModules {
     fn is_pack(&self, module: &InstalledModule) -> Result<bool, String> {
-        let installed = Path::new(&module.target_path);
-        let manifest =
-            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
-        let dir = manifest.parent().unwrap_or(installed);
-        Ok(!QuirePacks.restricted_sets(dir)?.is_empty())
+        let root = module_root(module)?;
+        Ok(!QuirePacks.restricted_sets(root.as_path())?.is_empty())
     }
 
     fn evaluate_clause_sets(
@@ -344,11 +352,7 @@ impl ModuleHost for HostModules {
         module: &InstalledModule,
         context: &quoin_quire::clauses::Context,
     ) -> Result<Vec<quoin_quire_types::ClauseBindingReport>, String> {
-        let installed = Path::new(&module.target_path);
-        let manifest =
-            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
-        let root =
-            ModuleRoot::open(manifest.parent().unwrap_or(installed)).map_err(|e| e.to_string())?;
+        let root = module_root(module)?;
         let sets = quoin_quire::clauses::evaluate_all(&root, context, &mut Vec::new())
             .map_err(|e| e.to_string())?;
         sets.into_iter()
@@ -367,16 +371,15 @@ impl ModuleHost for HostModules {
     fn clause_approval_requirements(
         &self,
         module: &InstalledModule,
+        installed_modules: &[InstalledModule],
     ) -> Result<
         std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
         String,
     > {
-        let installed = Path::new(&module.target_path);
-        let manifest =
-            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
-        let root =
-            ModuleRoot::open(manifest.parent().unwrap_or(installed)).map_err(|e| e.to_string())?;
-        quoin_quire::clauses::approval_required_clauses(&root).map_err(|e| e.to_string())
+        let root = module_root(module)?;
+        let roots = installed_module_roots(installed_modules)?;
+        quoin_quire::clauses::approval_required_clauses_in_module_set(&root, &roots)
+            .map_err(|error| error.to_string())
     }
 
     fn list(&self, home: Option<&Path>) -> Result<Vec<InstalledModule>, ModulesError> {

@@ -161,6 +161,66 @@ pub fn approval_required_clauses(
         .collect()
 }
 
+/// The approval requirements declared by `module`, validating its clause sets
+/// against the complete installed module vocabulary.
+///
+/// The returned keys remain attributable to `module`; other installed modules
+/// contribute vocabulary but do not contribute approval policies to this
+/// result.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] when any installed module fails strict loading, or
+/// when `module` is not present in `module_roots`.
+pub fn approval_required_clauses_in_module_set(
+    module: &ModuleRoot,
+    module_roots: &[ModuleRoot],
+) -> Result<BTreeMap<ClauseSetRef, std::collections::BTreeSet<String>>> {
+    let roots: Vec<&std::path::Path> = module_roots.iter().map(ModuleRoot::as_path).collect();
+    let outcome = quire_rs::loader::load_module_set(&roots);
+    if let Some(failure) = outcome.manifest_errors.first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.message.clone(),
+        });
+    }
+    if let Some(failure) = outcome.failures.first() {
+        return Err(Error::ModuleLoad {
+            path: failure.path.clone(),
+            reason: failure.reason.clone(),
+        });
+    }
+    let requested = module.as_path();
+    let loaded = outcome
+        .modules
+        .iter()
+        .find(|loaded| loaded.root == requested)
+        .ok_or_else(|| Error::ModuleLoad {
+            path: requested.to_path_buf(),
+            reason: "module is not present in the installed module set".to_owned(),
+        })?;
+
+    let _registry = load_profile_registry(&roots, requested)?;
+
+    loaded
+        .clause_sets
+        .iter()
+        .map(|set| {
+            let key = ClauseSetRef {
+                authority: ClauseSetAuthority::new(set.authority.as_str())?,
+                id: ClauseSetId::new(set.id.as_str())?,
+                version: ClauseSetVersion::new(set.version.as_str())?,
+            };
+            let clause_ids = set
+                .clauses
+                .iter()
+                .filter(|clause| !clause.approval_roles.is_empty())
+                .map(|clause| clause.id.clone())
+                .collect();
+            Ok((key, clause_ids))
+        })
+        .collect()
+}
+
 /// The exact clause-set keys the module rooted at `module` declares, in the
 /// engine's key order; empty for a module whose manifest lists no clause sets.
 ///
