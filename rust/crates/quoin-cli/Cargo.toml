@@ -43,7 +43,7 @@ quoin-graph-analysis = { workspace = true }
 # frontmatter parse and types `quoin-measurement` itself uses, rather than a
 # second reader of the same documents here.
 quoin-measurement = { workspace = true, features = ["campaign"] }
-engineering-assurance = { workspace = true, features = ["campaign"] }
+engineering-assurance = { workspace = true, features = ["campaign", "evidence"] }
 signal-hook = { workspace = true }
 quoin-store = { workspace = true }
 quoin-yaml = { workspace = true }

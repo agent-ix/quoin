@@ -52,7 +52,10 @@ pub use authored::{
     EvidenceRefState, ReasoningView, SufficiencyDecision, TopClaimView, UnusedDecision,
     ViewSchemaVersion, ViewStatus, build_authored_argument_view, render_authored_argument,
 };
-pub use case::{AssuranceCase, CaseInput, CaseNode, NodeKind, NodeStatus, Unreadable, build_case};
+pub use case::{
+    AssuranceCase, CaseInput, CaseNode, FormalizationRecordView, NodeKind, NodeStatus, Unreadable,
+    build_case,
+};
 pub use discharge::{
     BuildDischargeRequest, ClauseApprovalPolicy, ClauseDischarge, CompletenessSchemaVersion,
     DISCHARGE_DIR, DirectDischargeFact, DischargeAttestation, DischargeBinding, DischargeError,

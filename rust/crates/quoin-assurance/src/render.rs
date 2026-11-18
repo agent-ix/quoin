@@ -118,6 +118,7 @@ pub fn render_case(assurance: &RenderableCase) -> String {
     lines.extend(independence_section(
         assurance.evidence_independence.as_deref().unwrap_or(&[]),
     ));
+    lines.extend(formalization_section(&assurance.formalization_records));
     lines.join("\n")
 }
 
@@ -235,6 +236,95 @@ fn render_node(node: &CaseNode, depth: usize) -> Vec<String> {
     out
 }
 
+fn formalization_section(records: &[crate::case::FormalizationRecordView]) -> Vec<String> {
+    if records.is_empty() {
+        return Vec::new();
+    }
+    let mut lines = vec![
+        "## Formalization coverage".to_owned(),
+        String::new(),
+        "These FR-071 records are evidence and do not grant obligation coverage.".to_owned(),
+        String::new(),
+    ];
+    for item in records {
+        let state = item
+            .record
+            .get("state")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown");
+        let requirement = item
+            .criterion_id
+            .split("-AC-")
+            .next()
+            .unwrap_or(&item.criterion_id);
+        let identity = format!(
+            "{requirement} / {} / {} / {}",
+            item.obligation_declaration, item.scoped_document, item.criterion_id
+        );
+        let reason = item
+            .record
+            .get("reason")
+            .and_then(serde_json::Value::as_str);
+        let envelope_invalid = item
+            .record
+            .get("evidence")
+            .and_then(|evidence| evidence.get("validation_errors"))
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|errors| !errors.is_empty());
+        let proved_without_evidence = state == "proved"
+            && item
+                .record
+                .get("evidence")
+                .is_none_or(serde_json::Value::is_null);
+        let proved_unavailable = state == "proved"
+            && item
+                .record
+                .get("evidence")
+                .and_then(|evidence| evidence.get("availability"))
+                .and_then(serde_json::Value::as_str)
+                == Some("unavailable");
+        if matches!(
+            state,
+            "eligible" | "authored" | "unknown" | "unavailable" | "not-applicable"
+        ) || envelope_invalid
+            || proved_without_evidence
+            || proved_unavailable
+        {
+            lines.push(format!("- **{identity}** — formalization gap: {state}"));
+            if proved_without_evidence {
+                lines.push(
+                    "  - proved state has no evidence envelope; it is not credited".to_owned(),
+                );
+            }
+            if proved_unavailable {
+                lines.push(
+                    "  - evidence availability is unavailable; proved state is not credited"
+                        .to_owned(),
+                );
+            }
+            if envelope_invalid {
+                lines.push(
+                    "  - evidence envelope has validation errors; it is preserved but not credited"
+                        .to_owned(),
+                );
+            }
+            if let Some(reason) = reason {
+                lines.push(format!("  - reason: {reason}"));
+            }
+            if let Some(draft_reason) = &item.draft_reason {
+                lines.push(format!("  - FR-204 draft reason: {draft_reason}"));
+            }
+        } else {
+            lines.push(format!(
+                "- **{identity}** — formalization evidence: {}",
+                item.record
+            ));
+        }
+    }
+    lines.push(String::new());
+    lines
+}
+
 /// `suites S1 (2026-…), S2; newest 2026-…; verdict fresh`.
 fn evidence_line(evidence: &LeafEvidence) -> String {
     let suites: Vec<String> = evidence
@@ -337,5 +427,81 @@ fn label(node: &CaseNode) -> String {
         format!("{truncated} ◇")
     } else {
         truncated
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test fixtures may panic")]
+mod formalization_tests {
+    use super::formalization_section;
+    use crate::case::FormalizationRecordView;
+    use ix_trace_rs::trace;
+
+    #[trace("FR-205-AC-11")]
+    #[test]
+    fn invalid_envelope_is_preserved_and_rendered_as_a_gap() {
+        let record = FormalizationRecordView {
+            obligation_id: "FR-1-AC-1".to_owned(),
+            obligation_declaration: "decl".to_owned(),
+            scoped_document: "FR-1.md".to_owned(),
+            criterion_id: "FR-1-AC-1".to_owned(),
+            record: serde_json::json!({
+                "state":"proved",
+                "evidence":{"validation_errors":["invalid producer result"]}
+            }),
+            draft_reason: None,
+        };
+        let rendered = formalization_section(&[record]).join("\n");
+        assert!(rendered.contains("formalization gap: proved"));
+        assert!(rendered.contains("preserved but not credited"));
+        assert!(!rendered.contains("formalization evidence:"));
+
+        let unavailable_envelope = FormalizationRecordView {
+            obligation_id: "FR-2-AC-2".to_owned(),
+            obligation_declaration: "decl".to_owned(),
+            scoped_document: "FR-2.md".to_owned(),
+            criterion_id: "FR-2-AC-2".to_owned(),
+            record: serde_json::json!({
+                "state":"proved",
+                "evidence":{"availability":"unavailable","validation_errors":[]}
+            }),
+            draft_reason: None,
+        };
+        let rendered = formalization_section(&[unavailable_envelope]).join("\n");
+        assert!(rendered.contains("evidence availability is unavailable"));
+        assert!(!rendered.contains("formalization evidence:"));
+
+        let missing_envelope = FormalizationRecordView {
+            obligation_id: "FR-2-AC-1".to_owned(),
+            obligation_declaration: "decl".to_owned(),
+            scoped_document: "FR-2.md".to_owned(),
+            criterion_id: "FR-2-AC-1".to_owned(),
+            record: serde_json::json!({"state":"proved"}),
+            draft_reason: None,
+        };
+        let rendered = formalization_section(&[missing_envelope]).join("\n");
+        assert!(rendered.contains("proved state has no evidence envelope"));
+        assert!(!rendered.contains("formalization evidence:"));
+    }
+
+    #[trace("FR-205-AC-2")]
+    #[test]
+    fn terminal_formalization_state_and_reason_are_shown_as_evidence() {
+        let record = FormalizationRecordView {
+            obligation_id: "FR-3-AC-1".to_owned(),
+            obligation_declaration: "decl".to_owned(),
+            scoped_document: "FR-3.md".to_owned(),
+            criterion_id: "FR-3-AC-1".to_owned(),
+            record: serde_json::json!({
+                "state":"rejected",
+                "reason":"type check failed",
+                "evidence":{"validation_errors":[]}
+            }),
+            draft_reason: None,
+        };
+        let rendered = formalization_section(&[record]).join("\n");
+        assert!(rendered.contains("formalization evidence:"));
+        assert!(rendered.contains("\"state\":\"rejected\""));
+        assert!(rendered.contains("type check failed"));
     }
 }

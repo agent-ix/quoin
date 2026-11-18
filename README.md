@@ -248,6 +248,7 @@ quoin discharge --binding binding.json --facts discharge-facts.json \
   --as-of 2026-08-28T00:00:00Z --json
 quoin assurance --argument AA-001 --decisions sufficiency-decisions.json \
   --as-of 2026-08-28T00:00:00Z
+quoin assurance --repo . --formalization-records formalization-records.json
 quoin evidence record-experiment --repo . --input experiment.json
 quoin evidence record-operational --repo . --input operational.json
 ```

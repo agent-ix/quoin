@@ -555,6 +555,66 @@ fn tc_1080_201_renders_markdown_and_canonical_json_deterministically() {
     );
 }
 
+/// Formalization records are consumed by assurance and leave the real matrix
+/// result byte-identical (VER-105).
+#[trace("FR-205-AC-5")]
+#[test]
+fn formalization_assurance_read_does_not_change_matrix_coverage() {
+    let fixture = repository(MODULE);
+    let git = Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(fixture.repo())
+        .output()
+        .expect("git initializes fixture repository");
+    assert!(git.status.success());
+    for args in [
+        &["config", "user.name", "Fixture"][..],
+        &["config", "user.email", "fixture@example.invalid"][..],
+        &["add", "."][..],
+        &["commit", "-qm", "fixture"][..],
+    ] {
+        let output = Command::new("git")
+            .args(args)
+            .current_dir(fixture.repo())
+            .output()
+            .expect("git fixture operation runs");
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let before: Value = serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"]))
+        .expect("matrix is JSON");
+    let records = fixture.write(
+        "formalization-records.json",
+        r#"[
+          {"criterion_id":{"obligation_declaration":"acceptance-criterion","scoped_document":"spec/FR-001-example.md","criterion_id":"FR-001-AC-1"},"state":"eligible"},
+          {"criterion_id":{"obligation_declaration":"acceptance-criterion","scoped_document":"spec/FR-001-example.md","criterion_id":"FR-001-AC-2"},"state":"eligible"},
+          {"criterion_id":{"obligation_declaration":"acceptance-criterion","scoped_document":"spec/FR-001-example.md","criterion_id":"FR-001-AC-3"},"state":"eligible"}
+        ]"#,
+    );
+    let output = fixture.quoin(&[
+        "assurance",
+        "--repo",
+        ".",
+        "--module",
+        ".",
+        "--formalization-records",
+        records.to_str().unwrap(),
+        "--json",
+    ]);
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let after: Value = serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"]))
+        .expect("matrix remains JSON");
+    assert_eq!(before["requirements"], after["requirements"]);
+}
+
 /// The CLI JSON render forwards Quire's unbacked claim diagnostics without
 /// changing their static status or binding list.
 #[trace("FR-115-AC-1", "FR-115-AC-11")]

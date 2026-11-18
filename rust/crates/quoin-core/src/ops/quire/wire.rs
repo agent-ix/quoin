@@ -50,6 +50,35 @@ pub struct CoverageRequest {
     /// discovery rather than adding to it (quire-rs#405).
     #[serde(default)]
     pub modules: Vec<String>,
+    /// Preserve Quire's source/document/id tuples for the FR-205 consumer.
+    #[serde(default)]
+    pub include_formalization_identities: bool,
+}
+
+/// The strict request accepted by `quire.design_matrix`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DesignMatrixRequest {
+    /// The repository root to derive obligations from.
+    pub scope: String,
+    /// Module roots supplying the traceability model, in the order given.
+    #[serde(default)]
+    pub modules: Vec<String>,
+}
+
+/// Exact authored identity of one Quire coverage row, available only to the
+/// FR-205 assurance consumer when explicitly requested.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct FormalizationIdentity {
+    /// Quire source declaration name.
+    pub source: String,
+    /// Scope-relative document path.
+    pub document: String,
+    /// Quire criterion id.
+    pub id: String,
 }
 
 /// The request accepted by `quire.design_join`.
@@ -88,6 +117,9 @@ pub struct CoveragePayload {
     /// it. The class floors (FR-160) read the legal classes from here.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub carried_vocabulary: BTreeMap<String, Vec<String>>,
+    /// Exact row identities, present only for the FR-205 consumer request.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formalization_identities: Option<Vec<FormalizationIdentity>>,
 }
 
 /// The `quire.design_matrix` payload, retaining the engine's matrix entries.

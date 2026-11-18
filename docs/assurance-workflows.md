@@ -91,6 +91,18 @@ whose review is due, unresolved challenges, accepted risks without a current
 expiry, open binding clauses, and unresolved applicability also keep the top
 claim open.
 
+`quoin assurance --formalization-records records.json` accepts a top-level
+array of Contract IR FR-071 coverage-state records. It joins each record to
+Quire's `(source, document, id)` identity and shows gaps separately from
+formalization evidence; those records do not change matrix coverage.
+The consumer can validate an address that is present, including its FR-012
+source identity and revision. For `unknown` and `unavailable`, determining
+whether an omitted address corresponds to a clause requires the selected
+package's clause inventory, which this consumer input does not include; Quoin
+preserves the producer's address presence as a closed-in-ticket limitation.
+An FR-071 `proved` state without an evidence envelope, or with an envelope
+that carries validation errors, is preserved as a gap and receives no credit.
+
 ## 4. Publish immutable evidence
 
 `record-experiment` accepts `experiment-record-v1`; `record-operational`

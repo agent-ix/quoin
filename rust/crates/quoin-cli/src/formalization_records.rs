@@ -1,0 +1,707 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Agent-IX
+//! Strict FR-071 input validation and tuple joins for VER-105.
+
+use std::collections::BTreeMap;
+
+use engineering_assurance::evidence::EvidenceEnvelope;
+use filament_contract_model::{PackageId, SourceIdentity, SourceLocation, SourceSpan};
+use quoin_assurance::FormalizationRecordView;
+use serde::Deserialize;
+use serde_json::Value;
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CriterionId {
+    obligation_declaration: String,
+    scoped_document: String,
+    #[serde(rename = "criterion_id")]
+    id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ClauseAddress {
+    package_identity: String,
+    criterion_id: CriterionId,
+    clause_id: String,
+    source_span: SpanWire,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SpanWire {
+    start: LocationWire,
+    end: LocationWire,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LocationWire {
+    source: SourceIdentity,
+    line: u32,
+    column: u32,
+    byte_offset: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Record {
+    criterion_id: CriterionId,
+    state: String,
+    #[serde(default)]
+    clause_address: Option<ClauseAddress>,
+    #[serde(default)]
+    reason: Option<String>,
+    #[serde(default)]
+    evidence: Option<EvidenceEnvelope>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct Identity(String, String, String);
+
+impl From<&CriterionId> for Identity {
+    fn from(value: &CriterionId) -> Self {
+        Self(
+            value.obligation_declaration.clone(),
+            value.scoped_document.clone(),
+            value.id.clone(),
+        )
+    }
+}
+
+#[derive(Debug)]
+struct Row {
+    id: String,
+    state: String,
+    draft_reason: Option<String>,
+}
+
+pub(crate) fn read_and_join(
+    path: &str,
+    obligations: &Value,
+    identities: &Value,
+    rules: &[Value],
+) -> Result<Vec<FormalizationRecordView>, String> {
+    let values = records_file(path)?;
+    let inventory = inventory(obligations, identities, rules)?;
+    let records = validate_records(&values, &inventory)?;
+    // Align the supplied producer record with FR-204's derived item state.
+    let mut result = Vec::with_capacity(records.len());
+    for (identity, record) in records {
+        let row = inventory
+            .get(&identity)
+            .ok_or_else(|| "joined criterion disappeared".to_owned())?;
+        let state = record
+            .get("state")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "validated record omitted state".to_owned())?;
+        let reason = record.get("reason").and_then(Value::as_str);
+        if row.state == "none"
+            && state != "eligible"
+            && !(state == "not-applicable" && reason.is_some())
+        {
+            return Err(format!(
+                "FR-204 none criterion {} requires eligible or justified not-applicable",
+                row.id
+            ));
+        }
+        if row.state == "draft" && state != "authored" {
+            return Err(format!(
+                "FR-204 draft criterion {} requires authored",
+                row.id
+            ));
+        }
+        result.push(FormalizationRecordView {
+            obligation_id: row.id.clone(),
+            obligation_declaration: identity.0.clone(),
+            scoped_document: identity.1.clone(),
+            criterion_id: identity.2.clone(),
+            record,
+            draft_reason: row.draft_reason.clone(),
+        });
+    }
+    Ok(result)
+}
+
+fn records_file(path: &str) -> Result<Vec<Value>, String> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|error| format!("formalization records are not readable JSON: {error}"))?;
+    let raw: Value = serde_json::from_str(&text)
+        .map_err(|error| format!("formalization records are not readable JSON: {error}"))?;
+    raw.as_array()
+        .cloned()
+        .ok_or_else(|| "formalization records must be a top-level JSON array".to_owned())
+}
+
+fn inventory(
+    obligations: &Value,
+    identities: &Value,
+    rules: &[Value],
+) -> Result<BTreeMap<Identity, Row>, String> {
+    let rows = obligations
+        .as_array()
+        .ok_or_else(|| "quire.coverage obligations must be an array".to_owned())?;
+    let identity_rows = identities
+        .as_array()
+        .ok_or_else(|| "quire.coverage omitted formalization identities".to_owned())?;
+    if rows.len() != identity_rows.len() {
+        return Err("Quire formalization identity count differs from obligation count".to_owned());
+    }
+    let mut inventory = BTreeMap::new();
+    for (row, identity_row) in rows.iter().zip(identity_rows) {
+        let id = text_field(row, "id")?;
+        let identity_id = text_field(identity_row, "id")?;
+        if identity_id != id {
+            return Err(format!(
+                "Quire formalization identity is out of order for {id}"
+            ));
+        }
+        let identity = Identity(
+            text_field(identity_row, "source")?.to_owned(),
+            text_field(identity_row, "document")?.to_owned(),
+            id.to_owned(),
+        );
+        let (state, draft_reason) = formalization_item(id, rules)?;
+        if inventory
+            .insert(
+                identity,
+                Row {
+                    id: id.to_owned(),
+                    state,
+                    draft_reason,
+                },
+            )
+            .is_some()
+        {
+            return Err(format!(
+                "Quire inventory contains duplicate criterion tuple for {id}"
+            ));
+        }
+    }
+    Ok(inventory)
+}
+
+fn validate_records(
+    values: &[Value],
+    inventory: &BTreeMap<Identity, Row>,
+) -> Result<BTreeMap<Identity, Value>, String> {
+    let mut records = BTreeMap::new();
+    for value in values {
+        if value.as_object().is_some_and(|object| {
+            object.get("reason").is_some_and(Value::is_null)
+                || object.get("clause_address").is_some_and(Value::is_null)
+        }) {
+            return Err("optional FR-071 members must be omitted rather than null".to_owned());
+        }
+        let record: Record = serde_json::from_value(value.clone())
+            .map_err(|error| format!("record violates FR-071: {error}"))?;
+        validate_record(&record)?;
+        let identity = Identity::from(&record.criterion_id);
+        if !inventory.contains_key(&identity) {
+            return Err(format!(
+                "formalization record does not match a Quire criterion: {}",
+                identity.2
+            ));
+        }
+        if records.insert(identity.clone(), value.clone()).is_some() {
+            return Err(format!("duplicate formalization record for {}", identity.2));
+        }
+    }
+    if records.len() != inventory.len() {
+        let missing = inventory
+            .keys()
+            .find(|identity| !records.contains_key(*identity))
+            .map_or("unknown", |identity| identity.2.as_str());
+        return Err(format!(
+            "formalization records missing Quire criterion {missing}"
+        ));
+    }
+    Ok(records)
+}
+
+fn formalization_item(id: &str, rules: &[Value]) -> Result<(String, Option<String>), String> {
+    let mut declarations = Vec::new();
+    for rule in rules {
+        let symbol = rule
+            .get("symbol")
+            .and_then(Value::as_str)
+            .unwrap_or("<unknown>");
+        let linked = rule
+            .get("formalizes")
+            .and_then(Value::as_array)
+            .ok_or_else(|| format!("formal rule {symbol} omitted formalizes"))?;
+        if linked.iter().any(|target| target.as_str() == Some(id)) {
+            declarations.push((
+                rule.get("state").and_then(Value::as_str).unwrap_or("draft"),
+                rule.get("reason")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
+            ));
+        }
+    }
+    if declarations.is_empty() {
+        return Ok(("none".to_owned(), None));
+    }
+    if let Some((_, reason)) = declarations.iter().find(|(state, _)| *state == "draft") {
+        return Ok(("draft".to_owned(), reason.clone()));
+    }
+    let analysed = declarations.iter().any(|(state, _)| *state == "analysed");
+    Ok((
+        if analysed { "analysed" } else { "approved" }.to_owned(),
+        None,
+    ))
+}
+
+fn validate_record(record: &Record) -> Result<(), String> {
+    if [
+        &record.criterion_id.obligation_declaration,
+        &record.criterion_id.scoped_document,
+        &record.criterion_id.id,
+    ]
+    .iter()
+    .any(|part| part.is_empty())
+    {
+        return Err("FR-071 criterion identity members must be non-empty".to_owned());
+    }
+    validate_state_reason(record)?;
+    validate_clause_address(record)?;
+    // Invalid producer observations remain evidence gaps. FR-071 preserves
+    // the shared envelope, including its validation errors, for inspection.
+    let _ = &record.evidence;
+    Ok(())
+}
+
+fn validate_state_reason(record: &Record) -> Result<(), String> {
+    let reason_required = matches!(
+        record.state.as_str(),
+        "rejected" | "inconclusive" | "unknown" | "unavailable" | "not-applicable"
+    );
+    let reason_forbidden = matches!(
+        record.state.as_str(),
+        "eligible"
+            | "authored"
+            | "parsed"
+            | "typechecked"
+            | "lowered"
+            | "backend_supported"
+            | "proved"
+    );
+    if !matches!(
+        record.state.as_str(),
+        "eligible"
+            | "authored"
+            | "parsed"
+            | "typechecked"
+            | "lowered"
+            | "backend_supported"
+            | "proved"
+            | "inconclusive"
+            | "rejected"
+            | "unknown"
+            | "unavailable"
+            | "not-applicable"
+    ) {
+        return Err(format!("invalid FR-071 state {}", record.state));
+    }
+    if reason_required && record.reason.as_deref().is_none_or(str::is_empty) {
+        return Err(format!(
+            "FR-071 state {} requires a non-empty reason",
+            record.state
+        ));
+    }
+    if reason_forbidden && record.reason.is_some() {
+        return Err(format!("FR-071 state {} forbids reason", record.state));
+    }
+    Ok(())
+}
+
+fn validate_clause_address(record: &Record) -> Result<(), String> {
+    let address_required = matches!(
+        record.state.as_str(),
+        "authored"
+            | "parsed"
+            | "typechecked"
+            | "lowered"
+            | "backend_supported"
+            | "proved"
+            | "rejected"
+            | "inconclusive"
+    );
+    if address_required && record.clause_address.is_none() {
+        return Err(format!(
+            "FR-071 state {} requires clause_address",
+            record.state
+        ));
+    }
+    if matches!(record.state.as_str(), "eligible" | "not-applicable")
+        && record.clause_address.is_some()
+    {
+        return Err(format!(
+            "FR-071 state {} forbids clause_address",
+            record.state
+        ));
+    }
+    if matches!(record.state.as_str(), "unknown" | "unavailable")
+        && record
+            .clause_address
+            .as_ref()
+            .is_some_and(|address| address.clause_id.is_empty())
+    {
+        return Err("clause_id must be non-empty".to_owned());
+    }
+    if let Some(address) = &record.clause_address {
+        PackageId::new(address.package_identity.clone()).map_err(|error| error.to_string())?;
+        filament_contract_model::ClauseId::new(address.clause_id.clone())
+            .map_err(|error| error.to_string())?;
+        if address.clause_id.is_empty()
+            || Identity::from(&address.criterion_id) != Identity::from(&record.criterion_id)
+        {
+            return Err("clause_address identity must equal record criterion_id".to_owned());
+        }
+        let start = SourceLocation::new(
+            address.source_span.start.source.clone(),
+            address.source_span.start.line,
+            address.source_span.start.column,
+            address.source_span.start.byte_offset,
+        )
+        .map_err(|e| e.to_string())?;
+        let end = SourceLocation::new(
+            address.source_span.end.source.clone(),
+            address.source_span.end.line,
+            address.source_span.end.column,
+            address.source_span.end.byte_offset,
+        )
+        .map_err(|e| e.to_string())?;
+        SourceSpan::new(start, end).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+fn text_field<'a>(value: &'a Value, name: &str) -> Result<&'a str, String> {
+    value
+        .get(name)
+        .and_then(Value::as_str)
+        .filter(|text| !text.is_empty())
+        .ok_or_else(|| format!("Quire coverage row requires non-empty {name}"))
+}
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test fixtures may panic")]
+mod tests {
+    use super::read_and_join;
+    use ix_trace_rs::trace;
+    use quoin_assurance::FormalizationRecordView;
+    use serde_json::json;
+
+    fn item<T>(items: &[T], index: usize) -> &T {
+        items.get(index).expect("test item exists")
+    }
+
+    fn field<'a>(value: &'a serde_json::Value, name: &str) -> &'a serde_json::Value {
+        value.get(name).expect("test field exists")
+    }
+
+    fn value_at<'a>(value: &'a serde_json::Value, path: &[&str]) -> &'a serde_json::Value {
+        path.iter()
+            .try_fold(value, |current, key| current.get(*key))
+            .expect("test path exists")
+    }
+
+    fn value_at_mut<'a>(
+        value: &'a mut serde_json::Value,
+        path: &[&str],
+    ) -> &'a mut serde_json::Value {
+        path.iter()
+            .try_fold(value, |current, key| current.get_mut(*key))
+            .expect("test path exists")
+    }
+
+    fn rendered(records: &[FormalizationRecordView]) -> String {
+        let case: quoin_assurance::RenderableCase = serde_json::from_value(json!({
+            "claims": [],
+            "unreachable": [],
+            "unreadable": [],
+            "producerTrust": [],
+            "formalizationRecords": records
+        }))
+        .expect("validated formalization records render");
+        quoin_assurance::render_case(&case)
+    }
+
+    fn join(
+        path: &str,
+        obligations: &serde_json::Value,
+        rules: &[serde_json::Value],
+    ) -> Result<Vec<FormalizationRecordView>, String> {
+        let identities = serde_json::Value::Array(
+            obligations
+                .as_array()
+                .into_iter()
+                .flatten()
+                .map(|row| {
+                    json!({
+                        "source": field(row, "source"),
+                        "document": field(row, "document"),
+                        "id": field(row, "id")
+                    })
+                })
+                .collect(),
+        );
+        read_and_join(path, obligations, &identities, rules)
+    }
+
+    #[trace("FR-205-AC-1", "FR-205-AC-8")]
+    #[test]
+    fn colliding_flat_labels_keep_distinct_source_document_tuples() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        std::fs::write(file.path(), r#"[
+          {"criterion_id":{"obligation_declaration":"decl-a","scoped_document":"a.md","criterion_id":"FR-1-AC-1"},"state":"eligible"},
+          {"criterion_id":{"obligation_declaration":"decl-b","scoped_document":"b.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}
+        ]"#).expect("write records");
+        let obligations = json!([
+            {"source":"decl-a","document":"a.md","id":"FR-1-AC-1"},
+            {"source":"decl-b","document":"b.md","id":"FR-1-AC-1"}
+        ]);
+        let records = join(
+            file.path().to_str().expect("path is UTF-8"),
+            &obligations,
+            &[],
+        )
+        .expect("exact tuple joins");
+        assert_eq!(records.len(), 2);
+        assert_eq!(item(&records, 0).obligation_declaration, "decl-a");
+        assert_eq!(item(&records, 1).obligation_declaration, "decl-b");
+        assert_eq!(field(&item(&records, 0).record, "state"), "eligible");
+        assert_eq!(
+            field(
+                field(&item(&records, 1).record, "criterion_id"),
+                "scoped_document"
+            ),
+            "b.md"
+        );
+        let rendered = rendered(&records);
+        assert_eq!(rendered.matches("formalization gap: eligible").count(), 2);
+        assert!(rendered.contains("decl-a / a.md / FR-1-AC-1"));
+        assert!(rendered.contains("decl-b / b.md / FR-1-AC-1"));
+    }
+
+    #[trace("FR-205-AC-3")]
+    #[test]
+    fn draft_authored_pair_keeps_the_derived_draft_reason() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        std::fs::write(file.path(), r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"authored","clause_address":{"package_identity":"pkg","criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"clause_id":"clause-1","source_span":{"start":{"source":{"document":"source.md","revision":1},"line":1,"column":1,"byte_offset":0},"end":{"source":{"document":"source.md","revision":1},"line":1,"column":2,"byte_offset":1}}}}]"#).expect("write records");
+        let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
+        let rules = [
+            json!({"symbol":"P1","formalizes":["FR-1-AC-1"],"state":"draft","reason":"review not complete"}),
+        ];
+        let result = join(
+            file.path().to_str().expect("path is UTF-8"),
+            &obligations,
+            &rules,
+        )
+        .expect("draft authored pair is valid");
+        assert_eq!(
+            item(&result, 0).draft_reason.as_deref(),
+            Some("review not complete")
+        );
+        assert!(item(&result, 0).record.get("reason").is_none());
+        let rendered = rendered(&result);
+        assert!(rendered.contains("formalization gap: authored"));
+        assert!(rendered.contains("FR-204 draft reason: review not complete"));
+    }
+
+    #[trace("FR-205-AC-4")]
+    #[test]
+    fn none_accepts_only_eligible_or_justified_not_applicable() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        std::fs::write(file.path(), r#"[
+          {"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"},
+          {"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-2"},"state":"not-applicable","reason":"outside the selected boundary"}
+        ]"#).expect("write records");
+        let obligations = json!([
+            {"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"},
+            {"source":"decl","document":"FR-1.md","id":"FR-1-AC-2"}
+        ]);
+        let records = join(
+            file.path().to_str().expect("path is UTF-8"),
+            &obligations,
+            &[],
+        )
+        .expect("none states are valid");
+        assert_eq!(field(&item(&records, 0).record, "state"), "eligible");
+        assert_eq!(
+            field(&item(&records, 1).record, "reason"),
+            "outside the selected boundary"
+        );
+        let rendered = rendered(&records);
+        assert!(rendered.contains("formalization gap: eligible"));
+        assert!(rendered.contains("formalization gap: not-applicable"));
+        assert!(rendered.contains("outside the selected boundary"));
+    }
+
+    #[trace("FR-205-AC-6")]
+    #[test]
+    fn missing_duplicate_and_none_state_mismatch_are_rejected() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
+        let path = file.path().to_str().expect("path is UTF-8");
+        std::fs::write(path, "[]").expect("write missing input");
+        assert!(join(path, &obligations, &[]).is_err());
+        std::fs::write(path, "not json").expect("write malformed input");
+        assert!(join(path, &obligations, &[]).is_err());
+        let record = r#"{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}"#;
+        std::fs::write(path, format!("[{record},{record}]")).expect("write duplicate input");
+        assert!(join(path, &obligations, &[]).is_err());
+        std::fs::write(path, r#"[
+          {"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"},
+          {"criterion_id":{"obligation_declaration":"extra","scoped_document":"other.md","criterion_id":"FR-9-AC-9"},"state":"eligible"}
+        ]"#).expect("write extra record");
+        assert!(join(path, &obligations, &[]).is_err());
+        std::fs::write(path, r#"[{"criterion_id":{"obligation_declaration":"wrong","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}]"#).expect("write unjoinable record");
+        assert!(join(path, &obligations, &[]).is_err());
+        std::fs::write(path, r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"proved","clause_address":{}}]"#).expect("write mismatched input");
+        assert!(join(path, &obligations, &[]).is_err());
+    }
+
+    #[trace("FR-205-AC-7")]
+    #[test]
+    fn approved_items_do_not_promote_eligible_records() {
+        let file = tempfile::NamedTempFile::new().expect("temporary records file");
+        std::fs::write(file.path(), r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}]"#).expect("write records");
+        let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
+        let rules = [json!({"symbol":"P1","formalizes":["FR-1-AC-1"],"state":"approved"})];
+        let records = join(
+            file.path().to_str().expect("path is UTF-8"),
+            &obligations,
+            &rules,
+        )
+        .expect("approved pairing is valid");
+        assert_eq!(field(&item(&records, 0).record, "state"), "eligible");
+        let rendered = rendered(&records);
+        assert!(rendered.contains("formalization gap: eligible"));
+        assert!(!rendered.contains("formalization evidence:"));
+    }
+
+    #[trace("FR-205-AC-9")]
+    #[test]
+    fn clause_package_identity_must_be_a_package_id_string() {
+        let mut input = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"authored",
+            "clause_address":{
+                "package_identity":17,
+                "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+                "clause_id":"clause-1",
+                "source_span":{
+                    "start":{"source":{"document":"source.md","revision":1},"line":1,"column":1,"byte_offset":0},
+                    "end":{"source":{"document":"source.md","revision":1},"line":1,"column":2,"byte_offset":1}
+                }
+            }
+        });
+        assert!(serde_json::from_value::<super::Record>(input.clone()).is_err());
+        *value_at_mut(&mut input, &["clause_address", "package_identity"]) = json!("package-core");
+        *value_at_mut(
+            &mut input,
+            &[
+                "clause_address",
+                "source_span",
+                "start",
+                "source",
+                "revision",
+            ],
+        ) = json!(7);
+        *value_at_mut(
+            &mut input,
+            &["clause_address", "source_span", "end", "source", "revision"],
+        ) = json!(7);
+        let source: filament_contract_model::SourceIdentity = serde_json::from_value(
+            value_at(
+                &input,
+                &["clause_address", "source_span", "start", "source"],
+            )
+            .clone(),
+        )
+        .expect("FR-012 source identity deserializes");
+        let wire = serde_json::to_value(source).expect("source identity serializes");
+        assert_eq!(field(&wire, "revision"), 7);
+        assert!(
+            field(&input, "clause_address")
+                .get("requirement_revision")
+                .is_none()
+        );
+    }
+
+    #[trace("FR-205-AC-10")]
+    #[test]
+    fn state_specific_reason_and_address_rules_are_enforced() {
+        let eligible_with_reason = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"eligible","reason":"should be absent"
+        });
+        let record = serde_json::from_value::<super::Record>(eligible_with_reason)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_err());
+
+        let unknown_without_address = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"unknown","reason":"inventory unavailable"
+        });
+        let record = serde_json::from_value::<super::Record>(unknown_without_address)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_ok());
+        // Whether a formal clause exists when the address is omitted cannot
+        // be decided without the selected package inventory (FR-205 inputs
+        // do not carry it).
+
+        let authored_without_address = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"authored"
+        });
+        let record = serde_json::from_value::<super::Record>(authored_without_address)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_err());
+
+        let unknown_without_reason = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"unknown"
+        });
+        let record = serde_json::from_value::<super::Record>(unknown_without_reason)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_err());
+    }
+
+    #[trace("FR-205-AC-11")]
+    #[test]
+    fn invalid_shared_envelope_is_preserved_as_a_record() {
+        let envelope = json!({
+            "producer_id":"producer",
+            "availability":null,
+            "observation":{"command":["formalizer"],"elapsed_ms":0,"exit_code":null,"outcome":"not-run","diagnostic_category":null},
+            "governing":null,
+            "next_action":null,
+            "owner":null,
+            "boundary_rationale":null,
+            "quoin_reference":null,
+            "validation_errors":["producer output is invalid"]
+        });
+        let result: Result<super::Record, _> = serde_json::from_value(json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"proved",
+            "clause_address":{
+                "package_identity":"package",
+                "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+                "clause_id":"clause-1",
+                "source_span":{
+                    "start":{"source":{"document":"source.md","revision":1},"line":1,"column":1,"byte_offset":0},
+                    "end":{"source":{"document":"source.md","revision":1},"line":1,"column":2,"byte_offset":1}
+                }
+            },
+            "evidence":envelope
+        }));
+        assert!(
+            result.is_ok(),
+            "shared envelope validation errors remain consumable"
+        );
+    }
+}
