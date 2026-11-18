@@ -105,7 +105,8 @@ fn executable(directory: &Path, name: &str, body: &str) -> PathBuf {
 }
 
 #[cfg(unix)]
-fn flow_report(denials: Value) -> Value {
+fn flow_report(denials: impl Into<Value>) -> Value {
+    let denials = denials.into();
     json!({
         "schema":"quire.flow-report/v1",
         "rules":[],
@@ -2045,7 +2046,8 @@ fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
         transitions
             .iter()
             .find(|transition| transition["from"] == from && transition["to"] == to)
-            .unwrap_or_else(|| panic!("missing transition {from}->{to}"))
+            .cloned()
+            .unwrap_or(Value::Null)
     };
     assert_eq!(
         route("proposing", "checking")["invariants"],
