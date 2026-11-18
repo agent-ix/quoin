@@ -364,6 +364,21 @@ impl ModuleHost for HostModules {
             .collect()
     }
 
+    fn clause_approval_requirements(
+        &self,
+        module: &InstalledModule,
+    ) -> Result<
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
+        String,
+    > {
+        let installed = Path::new(&module.target_path);
+        let manifest =
+            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
+        let root =
+            ModuleRoot::open(manifest.parent().unwrap_or(installed)).map_err(|e| e.to_string())?;
+        quoin_quire::clauses::approval_required_clauses(&root).map_err(|e| e.to_string())
+    }
+
     fn list(&self, home: Option<&Path>) -> Result<Vec<InstalledModule>, ModulesError> {
         // The closure is NOT redundant, and clippy's suggested method path does
         // not compile: `with_installer` binds its installer to a lifetime local

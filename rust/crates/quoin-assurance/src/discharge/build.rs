@@ -8,11 +8,14 @@
 //! [`super::report`]; the readers it admits facts through are in
 //! [`super::parse`].
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
+use crate::argument::js_trim_is_empty;
 use quoin_quire_types::{ClauseBinding, ClauseBindingOutcome};
 
-use super::parse::{current_attestation, current_decision_expiry, instant, parse_fact};
+use super::parse::{
+    current_attestation, current_decision_expiry, instant, parse_fact_with_approval_requirements,
+};
 use super::report::{
     BuildDischargeRequest, Checked, ClauseDischarge, DischargeBinding, DischargeFact,
     DischargeReport, DischargeSchemaVersion, DischargeState, UnusedDischargeFact, UnusedFactReason,
@@ -26,13 +29,24 @@ use super::report::{
 /// [`crate::DischargeError`] when `asOf` is not an instant, when any supplied fact
 /// fails `parseFact`/`parseAttestation`, or when two facts name the same
 /// clause. FR-046-AC-5: a duplicate is rejected, never resolved by ordering.
-#[expect(
-    clippy::too_many_lines,
-    reason = "the retained buildDischargeReport is one function, and splitting \
-              it would put the partition's reading order somewhere other than \
-              the order the oracle decides in, which is what a reader compares"
-)]
 pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<DischargeReport> {
+    build_discharge_report_with_approval_requirements(request, &BTreeSet::new())
+}
+
+/// Build a discharge report while applying the approval requirements loaded
+/// from the installed clause set.
+///
+/// `required_approval_clauses` contains only clause ids whose set declares one
+/// or more approval roles. The caller resolves the exact clause-set identity
+/// before calling this function; the binding report does not carry that
+/// metadata.
+///
+/// # Errors
+/// As [`build_discharge_report`].
+pub fn build_discharge_report_with_approval_requirements(
+    request: &BuildDischargeRequest,
+    required_approval_clauses: &BTreeSet<String>,
+) -> Checked<DischargeReport> {
     let as_of = instant("asOf", &request.as_of)?;
 
     // Every fact is parsed BEFORE the duplicate check, because the retained
@@ -41,124 +55,19 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
     // and reversing that would change which message a caller sees.
     let mut parsed_facts = Vec::with_capacity(request.facts.len());
     for value in &request.facts {
-        parsed_facts.push(parse_fact(value)?);
+        parsed_facts.push(parse_fact_with_approval_requirements(
+            value,
+            required_approval_clauses,
+        )?);
     }
-    let mut facts: BTreeMap<&str, &DischargeFact> = BTreeMap::new();
-    for fact in &parsed_facts {
-        if facts.contains_key(fact.clause_id()) {
-            return reject(format!(
-                "duplicate discharge fact for clause {}",
-                fact.clause_id()
-            ));
-        }
-        facts.insert(fact.clause_id(), fact);
-    }
-
-    // FR-046-AC-2: every binding clause appears exactly once, so a binding
-    // report naming one clause twice is refused rather than counted twice.
-    let mut seen: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
-    for clause in &request.binding.clauses {
-        if !seen.insert(clause.clause_id.as_str()) {
-            return reject(format!(
-                "duplicate clause {} in the binding report",
-                clause.clause_id
-            ));
-        }
-    }
-
-    let mut direct = Vec::new();
-    let mut dispositions = Vec::new();
-    let mut open = Vec::new();
-    let mut unresolved = Vec::new();
-    let mut not_binding = Vec::new();
-    let mut unused_facts = Vec::new();
-    let mut known: Vec<&str> = Vec::with_capacity(request.binding.clauses.len());
-
-    for clause in &request.binding.clauses {
-        known.push(clause.clause_id.as_str());
-        let fact = facts.get(clause.clause_id.as_str()).copied();
-        match clause.outcome {
-            ClauseBindingOutcome::Unresolved => {
-                unresolved.push(entry(
-                    clause,
-                    DischargeState::Unresolved,
-                    Some(reason_for(clause)),
-                    None,
-                ));
-                if let Some(fact) = fact {
-                    unused_facts.push(UnusedDischargeFact {
-                        clause_id: clause.clause_id.clone(),
-                        kind: fact.kind(),
-                        reason: UnusedFactReason::Unresolved,
-                    });
-                }
-            }
-            ClauseBindingOutcome::NotBinding => {
-                not_binding.push(entry(clause, DischargeState::NotBinding, None, None));
-                if let Some(fact) = fact {
-                    unused_facts.push(UnusedDischargeFact {
-                        clause_id: clause.clause_id.clone(),
-                        kind: fact.kind(),
-                        reason: UnusedFactReason::NotBinding,
-                    });
-                }
-            }
-            ClauseBindingOutcome::Binding => {
-                let Some(fact) = fact else {
-                    open.push(entry(
-                        clause,
-                        DischargeState::Open,
-                        Some("no discharge fact".to_owned()),
-                        None,
-                    ));
-                    continue;
-                };
-                // A temporary exception's decision expiry is the more specific
-                // state when it coincides with (or precedes) attestation expiry.
-                if let Some(expired) = current_decision_expiry(fact, as_of)? {
-                    open.push(entry(
-                        clause,
-                        DischargeState::Open,
-                        Some(expired),
-                        Some(fact),
-                    ));
-                    continue;
-                }
-                if let Some(current) = current_attestation(fact.attestation(), as_of)? {
-                    open.push(entry(
-                        clause,
-                        DischargeState::Open,
-                        Some(current),
-                        Some(fact),
-                    ));
-                    continue;
-                }
-                match fact {
-                    DischargeFact::Direct(_) => {
-                        direct.push(entry(clause, DischargeState::Direct, None, Some(fact)));
-                    }
-                    DischargeFact::Disposition(_) => {
-                        dispositions.push(entry(
-                            clause,
-                            DischargeState::Disposition,
-                            None,
-                            Some(fact),
-                        ));
-                    }
-                }
-            }
-        }
-    }
-
-    for fact in &parsed_facts {
-        if !known.contains(&fact.clause_id()) {
-            unused_facts.push(UnusedDischargeFact {
-                clause_id: fact.clause_id().to_owned(),
-                kind: fact.kind(),
-                reason: UnusedFactReason::UnknownClause,
-            });
-        }
-    }
+    let facts = index_facts(&parsed_facts)?;
+    let mut partition = classify_binding_clauses(
+        &request.binding.clauses,
+        &facts,
+        as_of,
+        required_approval_clauses,
+    )?;
+    append_unknown_facts(&mut partition, &parsed_facts);
 
     Ok(DischargeReport {
         schema_version: DischargeSchemaVersion::V1,
@@ -166,14 +75,187 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
         context: request.binding.context.clone(),
         as_of: request.as_of.clone(),
         binding: DischargeBinding {
-            direct,
-            dispositions,
-            open,
+            direct: partition.direct,
+            dispositions: partition.dispositions,
+            open: partition.open,
         },
-        unresolved,
-        not_binding,
-        unused_facts,
+        unresolved: partition.unresolved,
+        not_binding: partition.not_binding,
+        unused_facts: partition.unused_facts,
     })
+}
+
+#[derive(Default)]
+struct DischargePartition {
+    direct: Vec<ClauseDischarge>,
+    dispositions: Vec<ClauseDischarge>,
+    open: Vec<ClauseDischarge>,
+    unresolved: Vec<ClauseDischarge>,
+    not_binding: Vec<ClauseDischarge>,
+    unused_facts: Vec<UnusedDischargeFact>,
+    known: Vec<String>,
+}
+
+fn index_facts(facts: &[DischargeFact]) -> Checked<BTreeMap<&str, &DischargeFact>> {
+    let mut indexed = BTreeMap::new();
+    for fact in facts {
+        if indexed.contains_key(fact.clause_id()) {
+            return reject(format!(
+                "duplicate discharge fact for clause {}",
+                fact.clause_id()
+            ));
+        }
+        indexed.insert(fact.clause_id(), fact);
+    }
+    Ok(indexed)
+}
+
+fn classify_binding_clauses(
+    clauses: &[ClauseBinding],
+    facts: &BTreeMap<&str, &DischargeFact>,
+    as_of: i64,
+    required_approval_clauses: &BTreeSet<String>,
+) -> Checked<DischargePartition> {
+    let mut seen = std::collections::BTreeSet::new();
+    let mut partition = DischargePartition::default();
+    for clause in clauses {
+        if !seen.insert(clause.clause_id.as_str()) {
+            return reject(format!(
+                "duplicate clause {} in the binding report",
+                clause.clause_id
+            ));
+        }
+        partition.known.push(clause.clause_id.clone());
+        classify_clause(
+            clause,
+            facts.get(clause.clause_id.as_str()).copied(),
+            as_of,
+            required_approval_clauses,
+            &mut partition,
+        )?;
+    }
+    Ok(partition)
+}
+
+fn classify_clause(
+    clause: &ClauseBinding,
+    fact: Option<&DischargeFact>,
+    as_of: i64,
+    required_approval_clauses: &BTreeSet<String>,
+    partition: &mut DischargePartition,
+) -> Checked<()> {
+    match clause.outcome {
+        ClauseBindingOutcome::Unresolved => {
+            partition.unresolved.push(entry(
+                clause,
+                DischargeState::Unresolved,
+                Some(reason_for(clause)),
+                None,
+            ));
+            if let Some(fact) = fact {
+                partition.unused_facts.push(UnusedDischargeFact {
+                    clause_id: clause.clause_id.clone(),
+                    kind: fact.kind(),
+                    reason: UnusedFactReason::Unresolved,
+                });
+            }
+        }
+        ClauseBindingOutcome::NotBinding => {
+            partition
+                .not_binding
+                .push(entry(clause, DischargeState::NotBinding, None, None));
+            if let Some(fact) = fact {
+                partition.unused_facts.push(UnusedDischargeFact {
+                    clause_id: clause.clause_id.clone(),
+                    kind: fact.kind(),
+                    reason: UnusedFactReason::NotBinding,
+                });
+            }
+        }
+        ClauseBindingOutcome::Binding => {
+            classify_binding_clause(clause, fact, as_of, required_approval_clauses, partition)?;
+        }
+    }
+    Ok(())
+}
+
+fn classify_binding_clause(
+    clause: &ClauseBinding,
+    fact: Option<&DischargeFact>,
+    as_of: i64,
+    required_approval_clauses: &BTreeSet<String>,
+    partition: &mut DischargePartition,
+) -> Checked<()> {
+    let Some(fact) = fact else {
+        partition.open.push(entry(
+            clause,
+            DischargeState::Open,
+            Some("no discharge fact".to_owned()),
+            None,
+        ));
+        return Ok(());
+    };
+    // A temporary exception's decision expiry is the more specific state
+    // when it coincides with (or precedes) attestation expiry.
+    if let Some(expired) = current_decision_expiry(fact, as_of)? {
+        partition.open.push(entry(
+            clause,
+            DischargeState::Open,
+            Some(expired),
+            Some(fact),
+        ));
+        return Ok(());
+    }
+    if let Some(current) = current_attestation(fact.attestation(), as_of)? {
+        partition.open.push(entry(
+            clause,
+            DischargeState::Open,
+            Some(current),
+            Some(fact),
+        ));
+        return Ok(());
+    }
+    match fact {
+        DischargeFact::Direct(direct)
+            if required_approval_clauses.contains(&direct.clause_id)
+                && direct.approval_ref.as_deref().is_none_or(js_trim_is_empty) =>
+        {
+            partition.open.push(entry(
+                clause,
+                DischargeState::Open,
+                Some("required approval reference is missing".to_owned()),
+                Some(fact),
+            ));
+        }
+        DischargeFact::Direct(_) => {
+            partition
+                .direct
+                .push(entry(clause, DischargeState::Direct, None, Some(fact)));
+        }
+        DischargeFact::Disposition(_) => partition.dispositions.push(entry(
+            clause,
+            DischargeState::Disposition,
+            None,
+            Some(fact),
+        )),
+    }
+    Ok(())
+}
+
+fn append_unknown_facts(partition: &mut DischargePartition, facts: &[DischargeFact]) {
+    for fact in facts {
+        if !partition
+            .known
+            .iter()
+            .any(|clause_id| clause_id == fact.clause_id())
+        {
+            partition.unused_facts.push(UnusedDischargeFact {
+                clause_id: fact.clause_id().to_owned(),
+                kind: fact.kind(),
+                reason: UnusedFactReason::UnknownClause,
+            });
+        }
+    }
 }
 
 /// `entry(clause, state, reason?, fact?)`.

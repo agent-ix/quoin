@@ -35,10 +35,13 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use std::collections::BTreeSet;
+
 use ix_trace_rs::trace;
 use quoin_assurance::discharge::{
     BuildDischargeRequest, DischargeState, DispositionDecision, FactKind, RmmCompliance,
-    UnusedFactReason, build_discharge_report, build_requirements_mapping, render_discharge_report,
+    UnusedFactReason, build_discharge_report, build_discharge_report_with_approval_requirements,
+    build_requirements_mapping, render_discharge_report,
 };
 use quoin_quire_types::ClauseBindingReport;
 
@@ -149,6 +152,69 @@ fn tc_1126_every_binding_clause_lands_in_exactly_one_population_and_no_score_is_
     let text = serde_json::to_string(&value).expect("it serialises");
     assert!(!text.to_lowercase().contains("score"), "{text}");
     assert!(value.get("score").is_none());
+}
+
+#[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3")]
+#[test]
+fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
+    let required = BTreeSet::from(["SYN-001".to_owned()]);
+    let missing =
+        build_discharge_report_with_approval_requirements(&request(vec![direct()]), &required)
+            .expect("the direct fact is well formed");
+    assert!(missing.binding.direct.is_empty());
+    assert_eq!(missing.binding.open[0].clause_id, "SYN-001");
+    assert_eq!(
+        missing.binding.open[0].reason.as_deref(),
+        Some("required approval reference is missing")
+    );
+
+    for blank_reference in ["", " \t\n"] {
+        let mut blank_fact = direct();
+        blank_fact["approvalRef"] = serde_json::json!(blank_reference);
+        let open = build_discharge_report_with_approval_requirements(
+            &request(vec![blank_fact.clone()]),
+            &required,
+        )
+        .expect("blank approval references leave policy-required clauses open");
+        assert!(open.binding.direct.is_empty());
+        assert_eq!(open.binding.open[0].clause_id, "SYN-001");
+        assert_eq!(
+            open.binding.open[0].reason.as_deref(),
+            Some("required approval reference is missing")
+        );
+        assert!(matches!(
+            open.binding.open[0].fact.as_ref(),
+            Some(quoin_assurance::DischargeFact::Direct(direct))
+                if direct.approval_ref.as_deref() == Some(blank_reference)
+        ));
+
+        let generic = build_discharge_report(&request(vec![blank_fact]));
+        assert!(
+            generic.is_err_and(|error| error.to_string().contains("approvalRef must not be empty"))
+        );
+    }
+
+    let mut approved_fact = direct();
+    let person_reference = "person://example.invalid/people/privacy-officer";
+    approved_fact["approvalRef"] = serde_json::json!(person_reference);
+    let accepted =
+        build_discharge_report_with_approval_requirements(&request(vec![approved_fact]), &required)
+            .expect("the named-person reference is preserved as caller supplied");
+    assert_eq!(ids(&accepted.binding.direct), ["SYN-001"]);
+    assert_eq!(
+        accepted.binding.direct[0]
+            .fact
+            .as_ref()
+            .and_then(|fact| match fact {
+                quoin_assurance::DischargeFact::Direct(direct) => direct.approval_ref.as_deref(),
+                quoin_assurance::DischargeFact::Disposition(_) => None,
+            }),
+        Some(person_reference)
+    );
+
+    let generic = build_discharge_report(&request(vec![direct()]))
+        .expect("FR-046 keeps a direct approval reference optional when no policy applies");
+    assert_eq!(ids(&generic.binding.direct), ["SYN-001"]);
 }
 
 /// Provenance: quoin#384, tests/discharge.test.ts

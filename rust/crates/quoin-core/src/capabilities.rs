@@ -110,6 +110,18 @@ pub trait ModuleHost {
         context: &quoin_quire::clauses::Context,
     ) -> Result<Vec<quoin_quire_types::ClauseBindingReport>, String>;
 
+    /// The exact clause-set policies declared by one installed module.
+    ///
+    /// # Errors
+    /// The module's load error or a malformed clause-set identity, as text.
+    fn clause_approval_requirements(
+        &self,
+        module: &InstalledModule,
+    ) -> Result<
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
+        String,
+    >;
+
     /// Install one ad-hoc source, rolling back to the previous version on a
     /// semantic-contract rejection.
     ///

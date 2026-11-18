@@ -1,54 +1,87 @@
 ---
-id: SR-20261116075227
-title: "Code review — PLAT-1630 Quoin native release smoke override"
+id: SR-20261117175240
+title: "Code review — PLAT-1630 clause approval enforcement"
 type: SpecReview
 analysis: code-review
-scope: "agent-ix/quoin; PLAT-1630 PR #970: .github/workflows/native-release.yml, .github/workflows/native-release-build.yml"
+scope: "agent-ix/quoin; rust/crates/quoin-assurance/src/discharge/{build.rs,mod.rs,pack_rmm.rs,rmm.rs,store.rs}; rust/crates/quoin-assurance/tests/discharge.rs; rust/crates/quoin-cli/tests/tc_1488_pack_requirements_report.rs; rust/crates/quoin-core/src/{capabilities.rs,runtime.rs,ops/evidence/discharge.rs,ops/modules/support.rs}; rust/crates/quoin-quire/src/clauses.rs; FR-208"
 review_set: subset
 ---
 
 ## Summary
 
-I reviewed PR #970's dispatch input and reusable native-release workflow changes. The package validation and checker setup remain hard failures, but the explicit override can waive any ix-flow smoke failure for any tag, not just the recorded clean-main case.
+Reviewed the FR-208 runtime and pack-discharge changes in Quoin PR #981, including Rust implementation, boundaries, and tagged tests. The runtime applies approval policies from loaded module metadata and preserves supplied references, but it refuses blank references before the required open-work classification can run.
 
 ## Verdict
 
-**CONDITIONAL** — constrain the exception to the recorded baseline failure and release before enabling it; the current boolean turns the entire smoke step into a bypass for arbitrary failures.
+**CONDITIONAL** — one medium finding remains in the FR-208-AC-1 input path.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | medium | The override can hide unrelated ix-flow smoke failures for any release tag. | .github/workflows/native-release-build.yml:137-146; .github/workflows/native-release.yml:10-27 |
+| FND-001 | medium | Blank `approvalRef` values are rejected instead of leaving required clauses open | rust/crates/quoin-assurance/src/discharge/parse.rs:38 |
 
-## Scope examined
+## Review Scope
 
-- `.github/workflows/native-release.yml`: the workflow-dispatch input defaults to false and is passed to the reusable workflow.
-- `.github/workflows/native-release-build.yml`: the reusable input defaults to false; packaged binary version, default-module setup, and catalog validation remain in a hard-failing step; npm and checker installation/build remain in a hard-failing preparation step; only the complete ix-flow smoke command has conditional `continue-on-error`.
-- PLAT-1630 AC-5 as context: release output must be consumable by the EU pack, but it does not narrow the workflow exception to one known failure or tag.
+- Rust API, exact clause-set metadata loading, discharge classification, RMM mapping, and pack report integration were examined across every changed production file listed in `scope`.
+- New tests in `rust/crates/quoin-assurance/tests/discharge.rs`, `rust/crates/quoin-cli/tests/tc_1488_pack_requirements_report.rs`, and `rust/crates/quoin-quire/src/clauses.rs` were examined for behavior, trace tags, and assertion strength.
+- FR-208 and its acceptance criteria and constraints were examined; FR-046 direct-reference behavior was read as context.
+- No applicable AssuranceProfile was present under `spec/`.
 
-## Review evidence
+## Method and Gates
 
-The frozen diff is at `d2fe22adebe3920e7be6035be94130faa742b242`. `git diff --check` passed and both changed workflow files parsed as YAML. No release test was rerun during this review. The recorded v0.36.0 run shows the binary version, default-module installation, and catalog validation succeeded before `smoke-formalize-success` failed; the new boolean allows any failure from that smoke command to be treated as non-blocking.
+- Rust review: applied repository Rust conventions and the API, implementation, wire-boundary, and testing checks.
+- `cargo fmt --all --check`: passed.
+- Focused FR-208 Rust tests: pending at artifact creation.
+- `cargo deny` was not run; its known RustSec findings are assigned to the owner lane and are outside this review's remit.
+- No changes to CI workflow files were present in the PR diff.
+
+## Verdict Detail
+
+The changes resolve approval roles against installed clause-set metadata, gate only the direct-fact population, leave empty-role policies on FR-046 behavior, reject duplicate clause-set declarations, and retain caller-supplied approval references without adding authentication claims. The tagged test matrix covers FR-208-AC-1 through AC-4; AC-5 is specified for inspection and was inspected directly. The missing blank-reference path is recorded above.
+
+## Findings Detail
+
+| FND | Severity | Check | Summary |
+| --- | --- | --- | --- |
+| FND-001 | medium | code-bug | FR-208-AC-1 requires an empty or whitespace-only approval reference to remain open work. `parse_fact` sends every present `approvalRef` through `string_value`, which rejects blank text before `classify_binding_clause` can classify the fact as open. The command therefore refuses the fact instead of producing the required open-work report. |
+
+## Scope Records
+
+- FR-208-AC-1: A binding clause with non-empty `approvalRoles` remains open when its direct fact has no `approvalRef`, or has an empty or whitespace-only reference. (examined)
+- FR-208-AC-2: A binding clause with non-empty `approvalRoles` that require a named human approver is direct only when its direct fact has a non-blank `approvalRef` identifying that person; the report retains the reference without changing the direct classification. (examined)
+- FR-208-AC-3: A binding clause with empty `approvalRoles` continues to accept a direct fact without `approvalRef` as specified by FR-046. (examined)
+- FR-208-AC-4: When multiple installed modules declare the same exact clause-set identity, discharge fails without selecting either module's approval policy. (examined)
+- FR-208-AC-5: The report preserves a supplied approval reference and does not claim to authenticate the named approver, role, or authorization represented by it. (examined)
+- FR-208-CON-1: A clause set's approval requirement applies only to facts for the exact clause-set identity and clause ID declared by that set. (examined)
+- FR-208-CON-2: When the Quoin runtime processes approval metadata, it SHALL NOT calculate a risk score, apply a risk threshold, or make an automated risk-acceptability decision. (examined)
+- FR-208: Quoin SHALL apply approval requirements declared by the installed clause set when it discharges facts against a validated binding report. (examined)
+- FR-046 direct facts: A direct evidence fact MAY carry an approvalRef that identifies a human approval associated with the evidence. (context only)
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-002 | high | The non-pack discharge, completeness, and requirements-matrix operations bypass module approval metadata | rust/crates/quoin-core/src/ops/evidence/discharge.rs:204,243,280 |
+| FND-003 | high | Core imports new policy-aware store APIs that are missing from the quoin-assurance crate-root exports, so the Rust build fails | rust/crates/quoin-assurance/src/lib.rs:59 |
+
+## Finding Details — Disposition Pass 1
+
+| FND | Severity | Check | Summary |
+| --- | --- | --- | --- |
+| FND-002 | high | code-bug | Before the current fix round, `evidence.discharge_report`, `evidence.inward_completeness`, and `evidence.requirements_matrix` continued using generic store readers. A missing approval reference on a clause whose installed module requires it could therefore be reported as direct evidence or make the stored blank reference unreadable, even though the pack matrix used module-specific policy. All public discharge-backed views need exact-owner resolution and the policy-aware reader. |
+| FND-003 | high | code-bug | The changed `quoin-core` module imports the new policy-aware store APIs from the public `quoin_assurance` crate root, but `quoin-assurance/src/lib.rs` does not re-export `inward_completeness_from_store_with_approval_requirements` or `record_discharge_facts_with_approval_requirements`. A focused CLI test build fails with unresolved imports before any test runs. |
 
 ## Dispositions
 
 | FND | outcome | reason |
 | --- | --- | --- |
-| FND-001 | fixed | Commit 9aefc66f requires the explicit override, tag v0.36.0, and all three recorded clean-main markers before it returns success; every other nonzero smoke status is returned unchanged. |
+| FND-001 | fixed | Required blank or whitespace-only approval references are classified as open work. |
+| FND-002 | fixed | All discharge-backed evidence views resolve exact-owner policy and use policy-aware store access. |
+| FND-003 | fixed | Both policy-aware APIs are publicly re-exported from quoin-assurance. |
 
-## Disposition evidence
+### Disposition evidence
 
-The only bypass path checks the explicit true input, exact tag `v0.36.0`, and the exact smoke scenario, invariant, and missing-field list. The command's captured nonzero status is returned if any condition fails. Version/catalog validation and workflow-checker preparation remain separate hard-failing steps.
-
-```bash
-if [ "$ALLOW_KNOWN_WORKFLOW_SMOKE_FAILURE" = "true" ] \
-  && [ "$TAG" = "v0.36.0" ] \
-  && grep -Fq 'smoke-formalize-success' "$SMOKE_LOG" \
-  && grep -Fq 'invariant_interview_incomplete' "$SMOKE_LOG" \
-  && grep -Fq '"missing":["engineering_assurance","allowed_signers"]' "$SMOKE_LOG"; then
-  echo "::warning::Allowing the recorded v0.36.0 clean-main smoke-formalize-success failure; all other smoke failures remain fatal."
-  exit 0
-fi
-exit "$SMOKE_STATUS"
-```
+- FND-001, `rust/crates/quoin-assurance/src/discharge/build.rs`: `if required_approval_clauses.contains(&direct.clause_id) && direct.approval_ref.as_deref().is_none_or(js_trim_is_empty) => { partition.open.push(...) }`.
+- FND-002, `rust/crates/quoin-core/src/ops/evidence/discharge.rs`: `let required_approval_clauses = approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;` followed by `discharge_report_from_store_with_approval_requirements(..., &required_approval_clauses)`; `inward_completeness` likewise calls `inward_completeness_from_store_with_approval_requirements`.
+- FND-003, `rust/crates/quoin-assurance/src/lib.rs`: `discharge_report_from_store_with_approval_requirements`, `inward_completeness_from_store_with_approval_requirements`, and `record_discharge_facts_with_approval_requirements` are in the public `pub use discharge::{...}` list.

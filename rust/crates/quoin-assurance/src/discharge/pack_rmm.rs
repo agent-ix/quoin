@@ -9,7 +9,7 @@
 //! cannot disagree with the single-set view. The report names clauses by id
 //! and sets by key; nothing here reads a clause's text or title.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_evidence::source::EvidenceSource;
 use quoin_quire_types::{ClauseBindingReport, ClauseSetKey};
@@ -18,7 +18,10 @@ use serde::{Deserialize, Serialize};
 use super::rmm::{
     RequirementsMapping, build_requirements_mapping, escape, render_requirements_mapping,
 };
-use super::store::{DischargeStoreError, discharge_report_from_store};
+use super::store::{
+    DischargeStoreError, discharge_report_from_store,
+    discharge_report_from_store_with_approval_requirements,
+};
 
 /// The one accepted `schemaVersion` of a pack report.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -27,6 +30,20 @@ pub enum PackRequirementsMappingSchemaVersion {
     /// `requirements-mapping-pack-v1`.
     #[serde(rename = "requirements-mapping-pack-v1")]
     V1,
+}
+
+/// Approval-required clauses for one exact clause set, loaded from the module
+/// that owns it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClauseApprovalPolicy {
+    /// The clause-set authority.
+    pub authority: String,
+    /// The clause-set identifier.
+    pub id: String,
+    /// The exact clause-set version.
+    pub version: String,
+    /// Clause ids whose metadata declares one or more approval roles.
+    pub required_clause_ids: BTreeSet<String>,
 }
 
 /// One index entry: a set and the number of rows of its matrix, nothing else.
@@ -81,6 +98,7 @@ pub fn build_pack_requirements_mapping<S: EvidenceSource + ?Sized>(
     as_of: &str,
     context: &BTreeMap<String, String>,
     bindings: &[ClauseBindingReport],
+    approval_policies: &[ClauseApprovalPolicy],
 ) -> Result<PackRequirementsMapping, DischargeStoreError> {
     let mut ordered: Vec<(String, &ClauseBindingReport)> = bindings
         .iter()
@@ -90,7 +108,31 @@ pub fn build_pack_requirements_mapping<S: EvidenceSource + ?Sized>(
     let mut index = Vec::with_capacity(ordered.len());
     let mut matrices = Vec::with_capacity(ordered.len());
     for (_, binding) in ordered {
-        let report = discharge_report_from_store(source, binding, as_of)?;
+        let policies = approval_policies.iter().filter(|policy| {
+            policy.authority == binding.clause_set.authority
+                && policy.id == binding.clause_set.id
+                && policy.version == binding.clause_set.version
+        });
+        let mut matching = policies;
+        let policy = matching.next();
+        if matching.next().is_some() {
+            return Err(DischargeStoreError::Discharge(
+                super::report::DischargeError(format!(
+                    "multiple approval policies match clause set {}/{}/{}",
+                    binding.clause_set.authority, binding.clause_set.id, binding.clause_set.version
+                )),
+            ));
+        }
+        let report = if let Some(policy) = policy {
+            discharge_report_from_store_with_approval_requirements(
+                source,
+                binding,
+                as_of,
+                &policy.required_clause_ids,
+            )?
+        } else {
+            discharge_report_from_store(source, binding, as_of)?
+        };
         let matrix = build_requirements_mapping(binding, &report)?;
         index.push(PackIndexEntry {
             clause_set: binding.clause_set.clone(),

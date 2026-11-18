@@ -252,6 +252,18 @@ fn direct(clause: &str) -> serde_json::Value {
 /// Store `facts` for the set `(set, version)` of the fixture authority.
 /// Returns the stored file paths printed by the command.
 fn record(env: &Env, repo: &Path, set: &str, version: &str, facts: &[serde_json::Value]) -> String {
+    let output = record_output(env, repo, set, version, facts);
+    assert!(output.status.success(), "{}", text(&output));
+    String::from_utf8(output.stdout).unwrap()
+}
+
+fn record_output(
+    env: &Env,
+    repo: &Path,
+    set: &str,
+    version: &str,
+    facts: &[serde_json::Value],
+) -> Output {
     let binding = serde_json::json!({
         "schemaVersion": "clause-binding-v1",
         "clauseSet": {"authority": "example.invalid", "id": set, "version": version},
@@ -268,7 +280,7 @@ fn record(env: &Env, repo: &Path, set: &str, version: &str, facts: &[serde_json:
         serde_json::Value::from(facts.to_vec()).to_string(),
     )
     .unwrap();
-    let output = env.run(&[
+    env.run(&[
         "evidence",
         "record-discharge",
         "--repo",
@@ -277,9 +289,7 @@ fn record(env: &Env, repo: &Path, set: &str, version: &str, facts: &[serde_json:
         binding_path.to_str().unwrap(),
         "--facts",
         facts_path.to_str().unwrap(),
-    ]);
-    assert!(output.status.success(), "{}", text(&output));
-    String::from_utf8(output.stdout).unwrap()
+    ])
 }
 
 fn stdout(output: &Output) -> String {
@@ -293,6 +303,34 @@ fn stderr(output: &Output) -> String {
 fn json(output: &Output) -> serde_json::Value {
     assert!(output.status.success(), "{}", text(output));
     serde_json::from_slice(&output.stdout).unwrap()
+}
+
+fn install_approval_fixture(env: &Env) {
+    std::fs::write(
+        env.installed_file("manifest.yaml"),
+        format!("name: {PACK}\nversion: 0.1.0\nclause_sets:\n  - gdpr.yaml\n"),
+    )
+    .unwrap();
+    std::fs::write(
+        env.installed_file("gdpr.yaml"),
+        r"schemaVersion: clause-set-v1
+authority: example.invalid
+id: gdpr
+title: Synthetic GDPR clauses
+version: 1.0.0
+rights:
+  structure: original
+  text: none
+clauses:
+  - id: art-35(1)
+    force: mandatory
+    approvalRoles: [risk-approver]
+  - id: no-role
+    force: mandatory
+    approvalRoles: []
+",
+    )
+    .unwrap();
 }
 
 /// The per-set matrices of a pack report, each from its heading to the next.
@@ -416,6 +454,98 @@ fn tc_1488_003_facts_for_one_set_leave_the_others_undischarged_and_counts_match_
     assert!(
         markdown.contains("| Z-1 | Applicable | Not compliant - undischarged"),
         "{markdown}"
+    );
+}
+
+#[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3")]
+#[test]
+fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic_sets() {
+    let env = env();
+    install_approval_fixture(&env);
+
+    record(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[direct("art-35(1)"), direct("no-role")],
+    );
+    let missing = json(&env.report(&["--json"]));
+    let rows = missing["matrices"][0]["rows"].as_array().unwrap();
+    let row = |clause_id: &str| {
+        rows.iter()
+            .find(|row| row["clauseId"] == clause_id)
+            .unwrap()
+    };
+    assert_eq!(row("art-35(1)")["compliance"], "undischarged");
+    assert_eq!(
+        row("art-35(1)")["reason"],
+        "required approval reference is missing"
+    );
+    assert_eq!(row("no-role")["compliance"], "compliant");
+
+    let mut blank_required_approval = direct("art-35(1)");
+    blank_required_approval["approvalRef"] = serde_json::json!(" \t\n");
+    record(&env, &env.repo, "gdpr", "1.0.0", &[blank_required_approval]);
+    let blank_report = json(&env.report(&["--json"]));
+    let blank_rows = blank_report["matrices"][0]["rows"].as_array().unwrap();
+    let art_35 = blank_rows
+        .iter()
+        .find(|row| row["clauseId"] == "art-35(1)")
+        .unwrap();
+    assert_eq!(art_35["compliance"], "undischarged");
+    assert_eq!(art_35["reason"], "required approval reference is missing");
+
+    let mut blank_generic_approval = direct("no-role");
+    blank_generic_approval["approvalRef"] = serde_json::json!("");
+    let rejected = record_output(&env, &env.repo, "gdpr", "1.0.0", &[blank_generic_approval]);
+    assert!(!rejected.status.success(), "{}", text(&rejected));
+    assert!(
+        stderr(&rejected).contains("approvalRef must not be empty"),
+        "{}",
+        text(&rejected)
+    );
+
+    let mut approved = direct("art-35(1)");
+    approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
+    record(&env, &env.repo, "gdpr", "1.0.0", &[approved]);
+    let accepted = json(&env.report(&["--json"]));
+    let rows = accepted["matrices"][0]["rows"].as_array().unwrap();
+    let art_35 = rows
+        .iter()
+        .find(|row| row["clauseId"] == "art-35(1)")
+        .unwrap();
+    assert_eq!(art_35["compliance"], "compliant");
+    assert_eq!(art_35["evidenceRefs"][0], "evidence://run/one");
+}
+
+#[trace("FR-208-AC-4")]
+#[test]
+fn tc_208_004_duplicate_clause_set_owner_refuses_pack_discharge() {
+    let env = env();
+    install_approval_fixture(&env);
+    let duplicate = env.base.join("src/duplicate-pack");
+    std::fs::create_dir_all(&duplicate).unwrap();
+    std::fs::write(
+        duplicate.join("manifest.yaml"),
+        "name: duplicate-pack\nversion: 0.1.0\nclause_sets:\n  - gdpr.yaml\n",
+    )
+    .unwrap();
+    std::fs::copy(env.installed_file("gdpr.yaml"), duplicate.join("gdpr.yaml")).unwrap();
+    let installed = env.run(&[
+        "module",
+        "install",
+        &format!("path:{}", duplicate.display()),
+    ]);
+    assert!(installed.status.success(), "{}", text(&installed));
+
+    let report = env.report(&["--json"]);
+    assert!(!report.status.success(), "{}", text(&report));
+    assert!(
+        text(&report)
+            .contains("multiple installed modules declare clause set example.invalid/gdpr/1.0.0"),
+        "{}",
+        text(&report)
     );
 }
 

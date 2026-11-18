@@ -197,6 +197,11 @@ fn row(
             RmmApplicability::Applicable,
             RmmCompliance::TemporaryExceptionExpired,
         ),
+        DischargeState::Open
+            if entry.reason.as_deref() == Some("required approval reference is missing") =>
+        {
+            (RmmApplicability::Applicable, RmmCompliance::Undischarged)
+        }
         DischargeState::Open if entry.fact.is_some() => (
             RmmApplicability::Applicable,
             RmmCompliance::AttestationNotCurrent,
