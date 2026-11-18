@@ -96,7 +96,7 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
                 .ok_or_else(|| "workflow target path is not UTF-8".to_owned())
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let context = serde_json::json!({"id":"quoin-launch-context","repo_root":root_text,"config_root":config_text,"targets":target_text});
+    let mut context = serde_json::json!({"id":"quoin-launch-context","repo_root":root_text,"config_root":config_text,"targets":target_text});
     let mut command = runner(&home, "run");
     command.arg(name).arg("--path").arg(path);
     if let Some(id) = arguments.get_one::<String>("id") {
@@ -109,6 +109,12 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
     let result: Value = serde_json::from_str(&started)
         .map_err(|e| format!("ix-flow returned invalid JSON: {e}"))?;
     let id = instance_id(&result)?;
+    if name == "design-gate" {
+        context
+            .as_object_mut()
+            .ok_or_else(|| LaunchFailure::Local("Quoin context is not an object".to_owned()))?
+            .insert("id".to_owned(), Value::String(id.to_owned()));
+    }
     let recorded = if name == "design-gate" {
         execute_host_seed(
             &home,
