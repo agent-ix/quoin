@@ -48,6 +48,9 @@ wrap, or define a local record protocol.
   `not-applicable` is shown as a gap. Records in other valid states are shown
   in the separate formalization evidence view, retaining their FR-071 state and
   any required reason. Neither presentation grants obligation coverage credit.
+- The FR-071 state determines gap or evidence presentation. An FR-204 state of
+  `approved` or `analysed` SHALL NOT route an FR-071 gap state into the evidence
+  view.
 - For an FR-204 item in state `draft` matched to an FR-071 `authored` record,
   `quoin assurance` shows the derived draft reason from FR-204 beside the gap.
 - `criterion_id` SHALL preserve the exact Quire-authored identity from FR-071:
@@ -114,13 +117,20 @@ wrap, or define a local record protocol.
 - Quoin SHALL NOT synthesize replacement values for an FR-071 record.
 - When the matched FR-204 item state is `none`, the FR-071 record state SHALL
   be `eligible`, or `not-applicable` only for an explicit FR-204 exclusion
-  with a non-empty FR-071 reason; Quoin SHALL show either record as a gap.
+  with a non-empty FR-071 reason. Quoin SHALL show either valid record as a gap.
 - When the matched FR-204 item state is `draft`, the FR-071 record state SHALL
-  be `authored`; Quoin SHALL show it as a gap and display the derived approval
+  be `authored`. Quoin SHALL show it as a gap and display the derived approval
   reason from FR-204. The FR-071 `reason` member remains absent for `authored`.
-- When the matched FR-204 item state is `approved` or `analysed`, Quoin SHALL
-  show the matched record in the separate formalization evidence view, retaining
-  its supplied FR-071 state and any supplied formalization reason.
+- Quoin SHALL reject the input without rendering formalization records when an
+  FR-204 `none` item is paired with any FR-071 state other than `eligible` or a
+  justified `not-applicable`, or an FR-204 `draft` item is paired with any
+  state other than `authored`.
+- When Quoin matches a record to an FR-204 item in state `approved` or
+  `analysed`, it SHALL present an FR-071 gap state as a gap. FR-204 `none` and
+  `draft` pairings follow the explicit state-alignment rules above.
+- Quoin SHALL present only non-gap FR-071 states in the separate formalization
+  evidence view, retaining the supplied state and any required reason. This
+  includes preserving `rejected` and `inconclusive` as distinct states.
 - Quoin SHALL NOT change the result or coverage fields of `quoin matrix` when it
   displays any formalization record.
 - Quoin SHALL present `unknown`, `unavailable`, and `not-applicable` as
@@ -142,10 +152,11 @@ wrap, or define a local record protocol.
 | FR-205-AC-1 | Given a file with exactly one valid FR-071 record for each selected Quire criterion, `quoin assurance --formalization-records <FILE>` presents each matched record under its owning requirement without changing the record value. | Test |
 | FR-205-AC-2 | Given a valid FR-071 record in a formalization state other than `eligible`, `authored`, `unknown`, `unavailable`, or `not-applicable`, `quoin assurance` presents the supplied state and any required reason in the separate formalization evidence view without deriving a replacement state from FR-204 or FR-153. | Test |
 | FR-205-AC-3 | Given a Quire criterion whose FR-204 item state is `draft` and a matched FR-071 record in state `authored`, `quoin assurance` shows a gap with the FR-204 draft reason; the supplied FR-071 record remains unchanged and has no `reason` member. | Test |
-| FR-205-AC-4 | Given a Quire criterion whose FR-204 item state is `none` and a matched FR-071 record in state `eligible` or `not-applicable`, `quoin assurance` shows a gap; `not-applicable` retains its required FR-071 reason. | Test |
+| FR-205-AC-4 | Given a Quire criterion whose FR-204 item state is `none` and a matched FR-071 record in state `eligible` or justified `not-applicable`, `quoin assurance` shows a gap; `not-applicable` retains its required FR-071 reason. | Test |
 | FR-205-AC-5 | Given a corpus and obligations with or without formalization evidence, every obligation has identical coverage credit in `quoin matrix`; formalization evidence alone grants no credit to Test, Analysis, or Inspection obligations. | Test |
-| FR-205-AC-6 | Given a supplied `--formalization-records` file with malformed JSON, a record that violates FR-071 (including its state-dependent `reason` or `clause_address` rule), a missing/duplicate/extra criterion record, or a record that cannot be joined to the Quire inventory, Quoin rejects the input and presents no formalization records. | Test |
-| FR-205-AC-7 | Given two Quire coverage rows whose `source`, `document`, or `id` differs, the input records join only by their full `(obligation_declaration, scoped_document, criterion_id)` tuples, even when flattened labels collide. | Test |
-| FR-205-AC-8 | Given a record with a clause address, the address contains the FR-071 package identity, criterion identity, clause id, and source span; the span preserves FR-012 `SourceIdentity`, including source-document identity and revision, while the address contains no requirement revision, statement hash, digest, or file hash. | Test |
-| FR-205-AC-9 | Given a consumed record, Quoin enforces FR-071's state-dependent `clause_address` and `reason` presence rules, including non-empty reasons for `rejected`, `inconclusive`, `unknown`, `unavailable`, and `not-applicable`. | Test |
-| FR-205-AC-10 | Given a consumed record with an evidence envelope, Quoin validates and preserves the shared Engineering Assurance FR-004/FR-009 value; it does not define, produce, or serialize a parallel envelope shape. | Test |
+| FR-205-AC-6 | Given a supplied `--formalization-records` file with malformed JSON, a record that violates FR-071 (including its state-dependent `reason` or `clause_address` rule), an FR-204 `none`/`draft` state mismatch, a missing/duplicate/extra criterion record, or a record that cannot be joined to the Quire inventory, Quoin rejects the input and presents no formalization records. | Test |
+| FR-205-AC-7 | Given a record in state `eligible`, `authored`, `unknown`, `unavailable`, or `not-applicable` and an FR-204 item state `approved` or `analysed`, `quoin assurance` still renders the record as a gap and does not route it into formalization evidence. | Test |
+| FR-205-AC-8 | Given two Quire coverage rows whose `source`, `document`, or `id` differs, the input records join only by their full `(obligation_declaration, scoped_document, criterion_id)` tuples, even when flattened labels collide. | Test |
+| FR-205-AC-9 | Given a record with a clause address, the address contains the FR-071 package identity, criterion identity, clause id, and source span; the span preserves FR-012 `SourceIdentity`, including source-document identity and revision, while the address contains no requirement revision, statement hash, digest, or file hash. | Test |
+| FR-205-AC-10 | Given a consumed record, Quoin enforces FR-071's state-dependent `clause_address` and `reason` presence rules, including non-empty reasons for `rejected`, `inconclusive`, `unknown`, `unavailable`, and `not-applicable`. | Test |
+| FR-205-AC-11 | Given a consumed record with an evidence envelope, Quoin validates and preserves the shared Engineering Assurance FR-004/FR-009 value; it does not define, produce, or serialize a parallel envelope shape. | Test |
