@@ -343,11 +343,8 @@ impl PackProbe for QuirePacks {
 
 impl ModuleHost for HostModules {
     fn is_pack(&self, module: &InstalledModule) -> Result<bool, String> {
-        let installed = Path::new(&module.target_path);
-        let manifest =
-            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
-        let dir = manifest.parent().unwrap_or(installed);
-        Ok(!QuirePacks.restricted_sets(dir)?.is_empty())
+        let root = module_root(module)?;
+        Ok(!QuirePacks.restricted_sets(root.as_path())?.is_empty())
     }
 
     fn evaluate_clause_sets(
@@ -355,11 +352,7 @@ impl ModuleHost for HostModules {
         module: &InstalledModule,
         context: &quoin_quire::clauses::Context,
     ) -> Result<Vec<quoin_quire_types::ClauseBindingReport>, String> {
-        let installed = Path::new(&module.target_path);
-        let manifest =
-            quoin_modules::module_name::locate_manifest(installed).map_err(|e| e.to_string())?;
-        let root =
-            ModuleRoot::open(manifest.parent().unwrap_or(installed)).map_err(|e| e.to_string())?;
+        let root = module_root(module)?;
         let sets = quoin_quire::clauses::evaluate_all(&root, context, &mut Vec::new())
             .map_err(|e| e.to_string())?;
         sets.into_iter()
