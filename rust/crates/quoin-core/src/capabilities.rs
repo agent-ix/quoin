@@ -117,6 +117,7 @@ pub trait ModuleHost {
     fn clause_approval_requirements(
         &self,
         module: &InstalledModule,
+        installed_modules: &[InstalledModule],
     ) -> Result<
         std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
         String,
