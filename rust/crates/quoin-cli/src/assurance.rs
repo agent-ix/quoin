@@ -151,15 +151,13 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         return Ok(coverage);
     }
     let obligations = field(&coverage.payload, "obligations")?;
-    let formalization_records = formalization_path
-        .map(|path| {
-            let rules =
-                crate::formal_rules::assurance_declarations(std::path::Path::new(&repo), &modules)?;
-            let identities = field(&coverage.payload, "formalization_identities")?;
-            crate::formalization_records::read_and_join(path, &obligations, &identities, &rules)
-        })
-        .transpose()?
-        .unwrap_or_default();
+    let formalization_records = read_formalization_records(
+        formalization_path,
+        &repo,
+        &modules,
+        &obligations,
+        &coverage.payload,
+    )?;
     let policy = policy(arguments, &obligations)?;
     let store = invoke(
         "evidence.audit_inputs",
@@ -194,52 +192,18 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     if !trust.outcome.carries_payload() {
         return Ok(trust);
     }
-    let mut unreadable = field(&frontmatter.payload, "unreadable")?
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
-    unreadable.extend(field(&trust.payload, "unreadable")?.as_array().into_iter().flatten().filter_map(serde_json::Value::as_str).map(|path| serde_json::json!({ "path": path, "reason": "trust decision is unreadable or invalid" })));
-    let observations: Vec<serde_json::Value> = ["runs", "scans"]
-        .iter()
-        .filter_map(|key| store.payload.get(*key)?.as_array())
-        .flatten()
-        .filter_map(|record| {
-            Some(serde_json::json!({
-                "suite": record.get("suite")?,
-                "timestamp": record.get("timestamp")?,
-            }))
-        })
-        .collect();
-    let (case_obligations, analysis_evidence) = analysis_case_inputs(
-        &repo,
-        &modules,
-        &store.payload,
-        field(&coverage.payload, "obligations")?,
-        &run_observations,
-    )?;
-    let mut case_request = serde_json::json!({
-        "bindings": field(&store.payload, "bindings")?, "observations": observations,
-        "healthy": field(&audit.payload, "report")?.get("healthy"),
-        "unevaluated": field(&audit.payload, "report")?.get("unevaluated"),
-            "documents": field(&frontmatter.payload, "documents")?, "obligations": case_obligations,
-        "findings": field(&field(&audit.payload, "report")?, "findings")?,
-        "unreadable": unreadable, "producer_trust": field(&trust.payload, "assessments")?,
-        "evidence_independence": audit.payload.get("independence"),
-        "formalization_records": formalization_records
-    });
-    case_request
-        .as_object_mut()
-        .ok_or_else(|| "assurance case request must be an object".to_owned())?
-        .insert("analysis_evidence".to_owned(), analysis_evidence);
-    if let Some(claim_types) = arguments.get_many::<String>("claim-type") {
-        case_request
-            .as_object_mut()
-            .ok_or_else(|| "assurance case request must be an object".to_owned())?
-            .insert(
-                "claim_types".to_owned(),
-                serde_json::json!(claim_types.cloned().collect::<Vec<_>>()),
-            );
-    }
+    let case_request = build_case_request(&CaseRequestInputs {
+        arguments,
+        repo: &repo,
+        modules: &modules,
+        run_observations: &run_observations,
+        coverage: &coverage.payload,
+        formalization_records: &formalization_records,
+        store: &store.payload,
+        audit: &audit.payload,
+        frontmatter: &frontmatter.payload,
+        trust: &trust.payload,
+    })?;
     let case = invoke("assurance.build_case", &case_request)?;
     if !case.outcome.carries_payload() {
         return Ok(case);
@@ -249,6 +213,93 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         &case.payload,
         arguments.get_flag("json"),
     )
+}
+
+struct CaseRequestInputs<'a> {
+    arguments: &'a ArgMatches,
+    repo: &'a str,
+    modules: &'a [String],
+    run_observations: &'a [crate::run_observation::RunObservationFile],
+    coverage: &'a serde_json::Value,
+    formalization_records: &'a [quoin_assurance::FormalizationRecordView],
+    store: &'a serde_json::Value,
+    audit: &'a serde_json::Value,
+    frontmatter: &'a serde_json::Value,
+    trust: &'a serde_json::Value,
+}
+
+fn build_case_request(input: &CaseRequestInputs<'_>) -> Result<serde_json::Value, String> {
+    let CaseRequestInputs {
+        arguments,
+        repo,
+        modules,
+        run_observations,
+        coverage,
+        formalization_records,
+        store,
+        audit,
+        frontmatter,
+        trust,
+    } = input;
+    let mut unreadable = field(frontmatter, "unreadable")?
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    unreadable.extend(field(trust, "unreadable")?.as_array().into_iter().flatten().filter_map(serde_json::Value::as_str).map(|path| serde_json::json!({ "path": path, "reason": "trust decision is unreadable or invalid" })));
+    let observations: Vec<serde_json::Value> = ["runs", "scans"]
+        .iter()
+        .filter_map(|key| store.get(*key)?.as_array())
+        .flatten()
+        .filter_map(|record| {
+            Some(serde_json::json!({
+                "suite": record.get("suite")?,
+                "timestamp": record.get("timestamp")?,
+            }))
+        })
+        .collect();
+    let (case_obligations, analysis_evidence) = analysis_case_inputs(
+        repo,
+        modules,
+        store,
+        field(coverage, "obligations")?,
+        run_observations,
+    )?;
+    let mut case_request = serde_json::json!({
+        "bindings": field(store, "bindings")?, "observations": observations,
+        "healthy": field(&field(audit, "report")?, "healthy")?,
+        "unevaluated": field(&field(audit, "report")?, "unevaluated")?,
+        "documents": field(frontmatter, "documents")?, "obligations": case_obligations,
+        "findings": field(&field(audit, "report")?, "findings")?,
+        "unreadable": unreadable, "producer_trust": field(trust, "assessments")?,
+        "evidence_independence": audit.get("independence"),
+        "formalization_records": formalization_records
+    });
+    let object = case_request
+        .as_object_mut()
+        .ok_or_else(|| "assurance case request must be an object".to_owned())?;
+    object.insert("analysis_evidence".to_owned(), analysis_evidence);
+    if let Some(claim_types) = arguments.get_many::<String>("claim-type") {
+        object.insert(
+            "claim_types".to_owned(),
+            serde_json::json!(claim_types.cloned().collect::<Vec<_>>()),
+        );
+    }
+    Ok(case_request)
+}
+
+fn read_formalization_records(
+    path: Option<&String>,
+    repo: &str,
+    modules: &[String],
+    obligations: &serde_json::Value,
+    coverage: &serde_json::Value,
+) -> Result<Vec<quoin_assurance::FormalizationRecordView>, String> {
+    let Some(path) = path else {
+        return Ok(Vec::new());
+    };
+    let rules = crate::formal_rules::assurance_declarations(std::path::Path::new(repo), modules)?;
+    let identities = field(coverage, "formalization_identities")?;
+    crate::formalization_records::read_and_join(path, obligations, &identities, &rules)
 }
 
 fn read_run_observations(

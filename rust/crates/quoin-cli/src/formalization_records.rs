@@ -15,7 +15,8 @@ use serde_json::Value;
 struct CriterionId {
     obligation_declaration: String,
     scoped_document: String,
-    criterion_id: String,
+    #[serde(rename = "criterion_id")]
+    id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,7 +65,7 @@ impl From<&CriterionId> for Identity {
         Self(
             value.obligation_declaration.clone(),
             value.scoped_document.clone(),
-            value.criterion_id.clone(),
+            value.id.clone(),
         )
     }
 }
@@ -82,88 +83,12 @@ pub(crate) fn read_and_join(
     identities: &Value,
     rules: &[Value],
 ) -> Result<Vec<FormalizationRecordView>, String> {
-    let text = std::fs::read_to_string(path)
-        .map_err(|error| format!("formalization records are not readable JSON: {error}"))?;
-    let raw: Value = serde_json::from_str(&text)
-        .map_err(|error| format!("formalization records are not readable JSON: {error}"))?;
-    let values = raw
-        .as_array()
-        .ok_or_else(|| "formalization records must be a top-level JSON array".to_owned())?;
-    let rows = obligations
-        .as_array()
-        .ok_or_else(|| "quire.coverage obligations must be an array".to_owned())?;
-    let identity_rows = identities
-        .as_array()
-        .ok_or_else(|| "quire.coverage omitted formalization identities".to_owned())?;
-    if rows.len() != identity_rows.len() {
-        return Err("Quire formalization identity count differs from obligation count".to_owned());
-    }
-    let mut inventory = BTreeMap::new();
-    for (row, identity_row) in rows.iter().zip(identity_rows) {
-        let id = text_field(row, "id")?;
-        let identity_id = text_field(identity_row, "id")?;
-        if identity_id != id {
-            return Err(format!(
-                "Quire formalization identity is out of order for {id}"
-            ));
-        }
-        let source = text_field(identity_row, "source")?;
-        let document = text_field(identity_row, "document")?;
-        let identity = Identity(source.to_owned(), document.to_owned(), id.to_owned());
-        let (state, draft_reason) = formalization_item(id, rules)?;
-        if inventory
-            .insert(
-                identity.clone(),
-                Row {
-                    id: id.to_owned(),
-                    state,
-                    draft_reason,
-                },
-            )
-            .is_some()
-        {
-            return Err(format!(
-                "Quire inventory contains duplicate criterion tuple for {id}"
-            ));
-        }
-    }
-    let mut records = BTreeMap::<Identity, (Value, Option<String>)>::new();
-    for value in values {
-        if value.as_object().is_some_and(|object| {
-            object.get("reason").is_some_and(Value::is_null)
-                || object.get("clause_address").is_some_and(Value::is_null)
-        }) {
-            return Err("optional FR-071 members must be omitted rather than null".to_owned());
-        }
-        let record: Record = serde_json::from_value(value.clone())
-            .map_err(|error| format!("record violates FR-071: {error}"))?;
-        validate_record(&record)?;
-        let identity = Identity::from(&record.criterion_id);
-        if !inventory.contains_key(&identity) {
-            return Err(format!(
-                "formalization record does not match a Quire criterion: {}",
-                identity.2
-            ));
-        }
-        if records
-            .insert(identity.clone(), (value.clone(), None))
-            .is_some()
-        {
-            return Err(format!("duplicate formalization record for {}", identity.2));
-        }
-    }
-    if records.len() != inventory.len() {
-        let missing = inventory
-            .keys()
-            .find(|identity| !records.contains_key(*identity))
-            .map_or("unknown", |identity| identity.2.as_str());
-        return Err(format!(
-            "formalization records missing Quire criterion {missing}"
-        ));
-    }
+    let values = records_file(path)?;
+    let inventory = inventory(obligations, identities, rules)?;
+    let records = validate_records(&values, &inventory)?;
     // Align the supplied producer record with FR-204's derived item state.
     let mut result = Vec::with_capacity(records.len());
-    for (identity, (record, _)) in records {
+    for (identity, record) in records {
         let row = inventory
             .get(&identity)
             .ok_or_else(|| "joined criterion disappeared".to_owned())?;
@@ -197,6 +122,102 @@ pub(crate) fn read_and_join(
         });
     }
     Ok(result)
+}
+
+fn records_file(path: &str) -> Result<Vec<Value>, String> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|error| format!("formalization records are not readable JSON: {error}"))?;
+    let raw: Value = serde_json::from_str(&text)
+        .map_err(|error| format!("formalization records are not readable JSON: {error}"))?;
+    raw.as_array()
+        .cloned()
+        .ok_or_else(|| "formalization records must be a top-level JSON array".to_owned())
+}
+
+fn inventory(
+    obligations: &Value,
+    identities: &Value,
+    rules: &[Value],
+) -> Result<BTreeMap<Identity, Row>, String> {
+    let rows = obligations
+        .as_array()
+        .ok_or_else(|| "quire.coverage obligations must be an array".to_owned())?;
+    let identity_rows = identities
+        .as_array()
+        .ok_or_else(|| "quire.coverage omitted formalization identities".to_owned())?;
+    if rows.len() != identity_rows.len() {
+        return Err("Quire formalization identity count differs from obligation count".to_owned());
+    }
+    let mut inventory = BTreeMap::new();
+    for (row, identity_row) in rows.iter().zip(identity_rows) {
+        let id = text_field(row, "id")?;
+        let identity_id = text_field(identity_row, "id")?;
+        if identity_id != id {
+            return Err(format!(
+                "Quire formalization identity is out of order for {id}"
+            ));
+        }
+        let identity = Identity(
+            text_field(identity_row, "source")?.to_owned(),
+            text_field(identity_row, "document")?.to_owned(),
+            id.to_owned(),
+        );
+        let (state, draft_reason) = formalization_item(id, rules)?;
+        if inventory
+            .insert(
+                identity,
+                Row {
+                    id: id.to_owned(),
+                    state,
+                    draft_reason,
+                },
+            )
+            .is_some()
+        {
+            return Err(format!(
+                "Quire inventory contains duplicate criterion tuple for {id}"
+            ));
+        }
+    }
+    Ok(inventory)
+}
+
+fn validate_records(
+    values: &[Value],
+    inventory: &BTreeMap<Identity, Row>,
+) -> Result<BTreeMap<Identity, Value>, String> {
+    let mut records = BTreeMap::new();
+    for value in values {
+        if value.as_object().is_some_and(|object| {
+            object.get("reason").is_some_and(Value::is_null)
+                || object.get("clause_address").is_some_and(Value::is_null)
+        }) {
+            return Err("optional FR-071 members must be omitted rather than null".to_owned());
+        }
+        let record: Record = serde_json::from_value(value.clone())
+            .map_err(|error| format!("record violates FR-071: {error}"))?;
+        validate_record(&record)?;
+        let identity = Identity::from(&record.criterion_id);
+        if !inventory.contains_key(&identity) {
+            return Err(format!(
+                "formalization record does not match a Quire criterion: {}",
+                identity.2
+            ));
+        }
+        if records.insert(identity.clone(), value.clone()).is_some() {
+            return Err(format!("duplicate formalization record for {}", identity.2));
+        }
+    }
+    if records.len() != inventory.len() {
+        let missing = inventory
+            .keys()
+            .find(|identity| !records.contains_key(*identity))
+            .map_or("unknown", |identity| identity.2.as_str());
+        return Err(format!(
+            "formalization records missing Quire criterion {missing}"
+        ));
+    }
+    Ok(records)
 }
 
 fn formalization_item(id: &str, rules: &[Value]) -> Result<(String, Option<String>), String> {
@@ -236,13 +257,22 @@ fn validate_record(record: &Record) -> Result<(), String> {
     if [
         &record.criterion_id.obligation_declaration,
         &record.criterion_id.scoped_document,
-        &record.criterion_id.criterion_id,
+        &record.criterion_id.id,
     ]
     .iter()
     .any(|part| part.is_empty())
     {
         return Err("FR-071 criterion identity members must be non-empty".to_owned());
     }
+    validate_state_reason(record)?;
+    validate_clause_address(record)?;
+    // Invalid producer observations remain evidence gaps. FR-071 preserves
+    // the shared envelope, including its validation errors, for inspection.
+    let _ = &record.evidence;
+    Ok(())
+}
+
+fn validate_state_reason(record: &Record) -> Result<(), String> {
     let reason_required = matches!(
         record.state.as_str(),
         "rejected" | "inconclusive" | "unknown" | "unavailable" | "not-applicable"
@@ -283,6 +313,10 @@ fn validate_record(record: &Record) -> Result<(), String> {
     if reason_forbidden && record.reason.is_some() {
         return Err(format!("FR-071 state {} forbids reason", record.state));
     }
+    Ok(())
+}
+
+fn validate_clause_address(record: &Record) -> Result<(), String> {
     let address_required = matches!(
         record.state.as_str(),
         "authored"
@@ -341,9 +375,6 @@ fn validate_record(record: &Record) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
         SourceSpan::new(start, end).map_err(|e| e.to_string())?;
     }
-    // Invalid producer observations remain evidence gaps. FR-071 preserves
-    // the shared envelope, including its validation errors, for inspection.
-    let _ = &record.evidence;
     Ok(())
 }
 
@@ -362,6 +393,29 @@ mod tests {
     use ix_trace_rs::trace;
     use quoin_assurance::FormalizationRecordView;
     use serde_json::json;
+
+    fn item<T>(items: &[T], index: usize) -> &T {
+        items.get(index).expect("test item exists")
+    }
+
+    fn field<'a>(value: &'a serde_json::Value, name: &str) -> &'a serde_json::Value {
+        value.get(name).expect("test field exists")
+    }
+
+    fn value_at<'a>(value: &'a serde_json::Value, path: &[&str]) -> &'a serde_json::Value {
+        path.iter()
+            .try_fold(value, |current, key| current.get(*key))
+            .expect("test path exists")
+    }
+
+    fn value_at_mut<'a>(
+        value: &'a mut serde_json::Value,
+        path: &[&str],
+    ) -> &'a mut serde_json::Value {
+        path.iter()
+            .try_fold(value, |current, key| current.get_mut(*key))
+            .expect("test path exists")
+    }
 
     fn rendered(records: &[FormalizationRecordView]) -> String {
         let case: quoin_assurance::RenderableCase = serde_json::from_value(json!({
@@ -387,9 +441,9 @@ mod tests {
                 .flatten()
                 .map(|row| {
                     json!({
-                        "source": row["source"],
-                        "document": row["document"],
-                        "id": row["id"]
+                        "source": field(row, "source"),
+                        "document": field(row, "document"),
+                        "id": field(row, "id")
                     })
                 })
                 .collect(),
@@ -416,10 +470,16 @@ mod tests {
         )
         .expect("exact tuple joins");
         assert_eq!(records.len(), 2);
-        assert_eq!(records[0].obligation_declaration, "decl-a");
-        assert_eq!(records[1].obligation_declaration, "decl-b");
-        assert_eq!(records[0].record["state"], "eligible");
-        assert_eq!(records[1].record["criterion_id"]["scoped_document"], "b.md");
+        assert_eq!(item(&records, 0).obligation_declaration, "decl-a");
+        assert_eq!(item(&records, 1).obligation_declaration, "decl-b");
+        assert_eq!(field(&item(&records, 0).record, "state"), "eligible");
+        assert_eq!(
+            field(
+                field(&item(&records, 1).record, "criterion_id"),
+                "scoped_document"
+            ),
+            "b.md"
+        );
         let rendered = rendered(&records);
         assert_eq!(rendered.matches("formalization gap: eligible").count(), 2);
         assert!(rendered.contains("decl-a / a.md / FR-1-AC-1"));
@@ -442,10 +502,10 @@ mod tests {
         )
         .expect("draft authored pair is valid");
         assert_eq!(
-            result[0].draft_reason.as_deref(),
+            item(&result, 0).draft_reason.as_deref(),
             Some("review not complete")
         );
-        assert!(result[0].record.get("reason").is_none());
+        assert!(item(&result, 0).record.get("reason").is_none());
         let rendered = rendered(&result);
         assert!(rendered.contains("formalization gap: authored"));
         assert!(rendered.contains("FR-204 draft reason: review not complete"));
@@ -469,8 +529,11 @@ mod tests {
             &[],
         )
         .expect("none states are valid");
-        assert_eq!(records[0].record["state"], "eligible");
-        assert_eq!(records[1].record["reason"], "outside the selected boundary");
+        assert_eq!(field(&item(&records, 0).record, "state"), "eligible");
+        assert_eq!(
+            field(&item(&records, 1).record, "reason"),
+            "outside the selected boundary"
+        );
         let rendered = rendered(&records);
         assert!(rendered.contains("formalization gap: eligible"));
         assert!(rendered.contains("formalization gap: not-applicable"));
@@ -514,7 +577,7 @@ mod tests {
             &rules,
         )
         .expect("approved pairing is valid");
-        assert_eq!(records[0].record["state"], "eligible");
+        assert_eq!(field(&item(&records, 0).record, "state"), "eligible");
         let rendered = rendered(&records);
         assert!(rendered.contains("formalization gap: eligible"));
         assert!(!rendered.contains("formalization evidence:"));
@@ -537,17 +600,33 @@ mod tests {
             }
         });
         assert!(serde_json::from_value::<super::Record>(input.clone()).is_err());
-        input["clause_address"]["package_identity"] = json!("package-core");
-        input["clause_address"]["source_span"]["start"]["source"]["revision"] = json!(7);
-        input["clause_address"]["source_span"]["end"]["source"]["revision"] = json!(7);
+        *value_at_mut(&mut input, &["clause_address", "package_identity"]) = json!("package-core");
+        *value_at_mut(
+            &mut input,
+            &[
+                "clause_address",
+                "source_span",
+                "start",
+                "source",
+                "revision",
+            ],
+        ) = json!(7);
+        *value_at_mut(
+            &mut input,
+            &["clause_address", "source_span", "end", "source", "revision"],
+        ) = json!(7);
         let source: filament_contract_model::SourceIdentity = serde_json::from_value(
-            input["clause_address"]["source_span"]["start"]["source"].clone(),
+            value_at(
+                &input,
+                &["clause_address", "source_span", "start", "source"],
+            )
+            .clone(),
         )
         .expect("FR-012 source identity deserializes");
         let wire = serde_json::to_value(source).expect("source identity serializes");
-        assert_eq!(wire["revision"], 7);
+        assert_eq!(field(&wire, "revision"), 7);
         assert!(
-            input["clause_address"]
+            field(&input, "clause_address")
                 .get("requirement_revision")
                 .is_none()
         );
