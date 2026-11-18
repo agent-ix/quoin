@@ -104,9 +104,9 @@ fn approval_requirements_for_binding(
         .list(None)
         .map_err(|error| refused(format!("installed modules cannot be listed: {error}")))?;
     let mut owner = None;
-    for module in installed {
+    for module in &installed {
         let policies = modules
-            .clause_approval_requirements(&module)
+            .clause_approval_requirements(module, &installed)
             .map_err(|error| {
                 refused(format!(
                     "module {} failed to load approval metadata: {error}",
@@ -390,7 +390,7 @@ pub fn pack_matrix(
     let mut approval_policies = Vec::new();
     for module in &installed_modules {
         let policies = modules
-            .clause_approval_requirements(module)
+            .clause_approval_requirements(module, &installed_modules)
             .map_err(|error| {
                 refused(format!(
                     "module {} failed to load approval metadata: {error}",

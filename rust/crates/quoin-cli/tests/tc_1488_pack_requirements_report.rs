@@ -519,6 +519,70 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     assert_eq!(art_35["evidenceRefs"][0], "evidence://run/one");
 }
 
+#[trace("FR-208-AC-1")]
+#[test]
+fn tc_208_005_record_discharge_reads_approval_metadata_with_the_full_module_set() {
+    let env = env();
+    let owner = env.base.join("src/cross-vocabulary-pack");
+    std::fs::create_dir_all(&owner).unwrap();
+    std::fs::write(
+        owner.join("manifest.yaml"),
+        r"name: cross-vocabulary-pack
+version: 0.1.0
+clause_sets:
+  - rules.yaml
+object_types:
+  - name: cross_object
+    data_schema: {type: object}
+    allowed_links: [references]
+",
+    )
+    .unwrap();
+    std::fs::write(
+        owner.join("rules.yaml"),
+        r#"schemaVersion: clause-set-v1
+authority: example.invalid
+id: cross-vocabulary
+title: Cross-vocabulary rules
+version: "1"
+rights:
+  structure: original
+  text: none
+clauses:
+  - id: C-1
+    force: mandatory
+    approvalRoles: [privacy-officer]
+"#,
+    )
+    .unwrap();
+    let owner_install = env.run(&["module", "install", &format!("path:{}", owner.display())]);
+    assert!(owner_install.status.success(), "{}", text(&owner_install));
+
+    let provider = env.base.join("src/edge-vocabulary");
+    std::fs::create_dir_all(&provider).unwrap();
+    std::fs::write(
+        provider.join("manifest.yaml"),
+        r"name: edge-vocabulary
+version: 0.1.0
+edge_types:
+  references: {description: Relationship reference, category: dependency}
+",
+    )
+    .unwrap();
+    let provider_install = env.run(&["module", "install", &format!("path:{}", provider.display())]);
+    assert!(
+        provider_install.status.success(),
+        "{}",
+        text(&provider_install)
+    );
+
+    let mut fact = direct("C-1");
+    fact["approvalRef"] = serde_json::json!("person://example.invalid/privacy-officer");
+    let recorded = record_output(&env, &env.repo, "cross-vocabulary", "1", &[fact]);
+    assert!(recorded.status.success(), "{}", text(&recorded));
+    assert!(stdout(&recorded).contains("C-1"), "{}", stdout(&recorded));
+}
+
 #[trace("FR-208-AC-4")]
 #[test]
 fn tc_208_004_duplicate_clause_set_owner_refuses_pack_discharge() {
