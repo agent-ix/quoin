@@ -206,18 +206,28 @@ fn host_entrypoint() -> Result<PathBuf, LaunchFailure> {
     let runner = executable_path(runner_program())?
         .canonicalize()
         .map_err(|e| LaunchFailure::Local(format!("could not resolve ix-flow executable: {e}")))?;
-    let package = runner
+    let runner_directory = runner
         .parent()
-        .and_then(std::path::Path::parent)
-        .ok_or_else(|| LaunchFailure::Local("ix-flow package location is invalid".to_owned()))?;
-    let host = package.join("dist/host.js");
-    if !host.is_file() {
-        return Err(LaunchFailure::Local(format!(
-            "installed ix-flow package has no host API at {}; update ix-flow before starting design-gate",
-            host.display(),
-        )));
-    }
-    Ok(host)
+        .ok_or_else(|| LaunchFailure::Local("ix-flow executable has no parent".to_owned()))?;
+    let candidates = [
+        runner_directory
+            .parent()
+            .map(|package| package.join("dist/host.js")),
+        runner_directory
+            .parent()
+            .map(|modules| modules.join("@agent-ix/ix-flow/dist/host.js")),
+        Some(runner_directory.join("node_modules/@agent-ix/ix-flow/dist/host.js")),
+    ];
+    candidates
+        .into_iter()
+        .flatten()
+        .find(|candidate| candidate.is_file())
+        .ok_or_else(|| {
+            LaunchFailure::Local(format!(
+                "installed ix-flow package has no host API near {}; update ix-flow before starting design-gate",
+                runner.display(),
+            ))
+        })
 }
 
 fn executable_path(program: &str) -> Result<PathBuf, LaunchFailure> {
