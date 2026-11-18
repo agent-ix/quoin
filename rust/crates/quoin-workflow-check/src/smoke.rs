@@ -465,7 +465,7 @@ fn design_gate_context_seeded(h: &Harness) -> Result<()> {
             target
                 .to_str()
                 .map(str::to_owned)
-                .ok_or("canonical target path is not UTF-8")
+                .ok_or_else(|| "canonical target path is not UTF-8".to_owned())
         })
         .collect::<Result<Vec<_>>>()?;
     launch_design_gate(h, id, &target_args)?;
@@ -581,8 +581,8 @@ fn assert_design_gate_empty_targets(h: &Harness) -> Result<()> {
 }
 
 fn launch_design_gate(h: &Harness, id: &str, targets: &[&str]) -> Result<Value> {
-    let mut command = h
-        .command(&h.binary)?
+    let mut command = h.command(&h.binary)?;
+    command
         .arg("--config-root")
         .arg(&h.config)
         .args(["design-gate", "--path"])
