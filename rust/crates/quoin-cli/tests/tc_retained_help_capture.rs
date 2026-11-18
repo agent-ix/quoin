@@ -219,7 +219,7 @@ fn tc_373_update_help_describes_the_release_manifest_not_an_npm_install() {
 /// The retained assurance help advertises the FR-071 records input that
 /// `quoin assurance` already accepts.
 /// Provenance: VER-111.
-#[trace("FR-205-AC-1")]
+#[trace("FR-205-AC-12")]
 #[test]
 fn tc_205_assurance_help_exposes_formalization_records() {
     let output = invoke(&["assurance".to_owned(), "--help".to_owned()]);
