@@ -5,7 +5,7 @@
 use std::collections::BTreeMap;
 
 use engineering_assurance::evidence::EvidenceEnvelope;
-use filament_contract_model::{SourceIdentity, SourceLocation, SourceSpan};
+use filament_contract_model::{PackageId, SourceIdentity, SourceLocation, SourceSpan};
 use quoin_assurance::FormalizationRecordView;
 use serde::Deserialize;
 use serde_json::Value;
@@ -21,7 +21,7 @@ struct CriterionId {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ClauseAddress {
-    package_identity: Value,
+    package_identity: String,
     criterion_id: CriterionId,
     clause_id: String,
     source_span: SpanWire,
@@ -302,6 +302,7 @@ fn validate_record(record: &Record) -> Result<(), String> {
         return Err("clause_id must be non-empty".to_owned());
     }
     if let Some(address) = &record.clause_address {
+        PackageId::new(address.package_identity.clone()).map_err(|error| error.to_string())?;
         if address.clause_id.is_empty()
             || Identity::from(&address.criterion_id) != Identity::from(&record.criterion_id)
         {
@@ -322,9 +323,6 @@ fn validate_record(record: &Record) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
         SourceSpan::new(start, end).map_err(|e| e.to_string())?;
-        if address.package_identity.is_null() {
-            return Err("package_identity must be present".to_owned());
-        }
     }
     if let Some(evidence) = &record.evidence {
         if !evidence.is_valid() {
@@ -370,5 +368,24 @@ mod tests {
         assert_eq!(records.len(), 2);
         assert_eq!(records[0].obligation_declaration, "decl-a");
         assert_eq!(records[1].obligation_declaration, "decl-b");
+    }
+
+    #[trace("FR-205-AC-9")]
+    #[test]
+    fn clause_package_identity_must_be_a_package_id_string() {
+        let input = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"authored",
+            "clause_address":{
+                "package_identity":17,
+                "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+                "clause_id":"clause-1",
+                "source_span":{
+                    "start":{"source":{"document":"source.md","revision":1},"line":1,"column":1,"byte_offset":0},
+                    "end":{"source":{"document":"source.md","revision":1},"line":1,"column":2,"byte_offset":1}
+                }
+            }
+        });
+        assert!(serde_json::from_value::<super::Record>(input).is_err());
     }
 }
