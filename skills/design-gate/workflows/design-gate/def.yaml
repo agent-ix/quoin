@@ -47,6 +47,7 @@ transitions:
     to: rejected
     invariants: [human_acceptance_required]
     defaultGate: hitl
+systemOwnedItemTypes: [quoin_context]
 itemSchemas:
   quoin_context: {}
   operation_request:

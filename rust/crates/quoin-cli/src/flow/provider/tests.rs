@@ -2110,6 +2110,7 @@ fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
         ]
     );
     let transitions = definition["transitions"].as_array().expect("transitions");
+    assert_eq!(definition["systemOwnedItemTypes"], json!(["quoin_context"]));
     let route = |from: &str, to: &str| {
         transitions
             .iter()
