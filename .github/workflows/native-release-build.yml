@@ -127,7 +127,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
+          npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.4
           (cd rust && cargo build --locked --target-dir target -p quoin-workflow-check)
       - name: Smoke the packaged native executable through ix-flow
         shell: bash
