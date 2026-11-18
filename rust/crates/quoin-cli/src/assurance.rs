@@ -25,6 +25,11 @@ pub(crate) fn command() -> Command {
         .arg(Arg::new("discharge").long("discharge"))
         .arg(Arg::new("evidence").long("evidence"))
         .arg(
+            Arg::new("formalization-records")
+                .long("formalization-records")
+                .value_name("FILE"),
+        )
+        .arg(
             Arg::new("run-observation")
                 .long("run-observation")
                 .action(ArgAction::Append)
@@ -37,6 +42,12 @@ pub(crate) fn command() -> Command {
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     if arguments.get_one::<String>("argument").is_some() {
+        if arguments
+            .get_one::<String>("formalization-records")
+            .is_some()
+        {
+            return Err("--formalization-records applies only to derived assurance".to_owned());
+        }
         return authored(arguments);
     }
     derived(arguments)
@@ -131,6 +142,18 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         return Ok(coverage);
     }
     let obligations = field(&coverage.payload, "obligations")?;
+    let formalization_records = arguments
+        .get_one::<String>("formalization-records")
+        .map(|path| {
+            let status = crate::formal_rules::status_report_with_modules(arguments, &modules)?;
+            let rules = status
+                .get("rules")
+                .and_then(serde_json::Value::as_array)
+                .ok_or_else(|| "formal-rules status omitted rules".to_owned())?;
+            crate::formalization_records::read_and_join(path, &obligations, rules)
+        })
+        .transpose()?
+        .unwrap_or_default();
     let policy = policy(arguments, &obligations)?;
     let store = invoke(
         "evidence.audit_inputs",
@@ -195,7 +218,8 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             "documents": field(&frontmatter.payload, "documents")?, "obligations": case_obligations,
         "findings": field(&field(&audit.payload, "report")?, "findings")?,
         "unreadable": unreadable, "producer_trust": field(&trust.payload, "assessments")?,
-        "evidence_independence": audit.payload.get("independence")
+        "evidence_independence": audit.payload.get("independence"),
+        "formalization_records": formalization_records
     });
     case_request
         .as_object_mut()

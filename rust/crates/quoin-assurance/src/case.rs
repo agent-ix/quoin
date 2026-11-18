@@ -99,8 +99,30 @@ pub struct CaseNode {
     /// FR-153/FR-078 items for an Analysis solution's exact target.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub analysis_evidence: Option<Vec<serde_json::Value>>,
+    /// FR-071 formalization records and derived FR-204 gap details.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub formalization_records: Vec<FormalizationRecordView>,
     /// Sub-claims first, then evidence.
     pub children: Vec<CaseNode>,
+}
+
+/// A validated FR-071 record associated with its Quire obligation row.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FormalizationRecordView {
+    /// The Quire obligation id used by the assurance-case leaf.
+    pub obligation_id: String,
+    /// Full Quire authored identity, in FR-071 field order.
+    pub obligation_declaration: String,
+    /// Scope-relative document identity.
+    pub scoped_document: String,
+    /// Exact criterion identity.
+    pub criterion_id: String,
+    /// The exact FR-071 record supplied by Contract IR.
+    pub record: serde_json::Value,
+    /// FR-204 draft reason shown alongside an authored gap.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub draft_reason: Option<String>,
 }
 
 /// A document whose frontmatter could not be read.
@@ -234,6 +256,9 @@ pub struct CaseInput {
     /// FR-153/FR-078 claims and causes, already selected for this read.
     #[serde(default)]
     pub analysis_evidence: Option<crate::matrix::AnalysisEvidenceInput>,
+    /// Validated FR-071 records joined to Quire rows by the CLI.
+    #[serde(default)]
+    pub formalization_records: Option<Vec<FormalizationRecordView>>,
 }
 
 /// The edge verbs that mean "this document elaborates that one".
@@ -496,6 +521,7 @@ fn node_for(
             store,
             analysis_evidence,
             &all_obligations,
+            input.formalization_records.as_deref(),
         )
     }));
 
@@ -521,6 +547,7 @@ fn node_for(
         because,
         evidence: None,
         analysis_evidence: None,
+        formalization_records: Vec::new(),
         children: parts,
     }
 }

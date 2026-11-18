@@ -229,6 +229,28 @@ fn render_node(node: &CaseNode, depth: usize) -> Vec<String> {
             out.push(format!("{indent}  - analysis evidence: {item}"));
         }
     }
+    for item in &node.formalization_records {
+        let record = &item.record;
+        let state = record
+            .get("state")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown");
+        let reason = record.get("reason").and_then(serde_json::Value::as_str);
+        if matches!(
+            state,
+            "eligible" | "authored" | "unknown" | "unavailable" | "not-applicable"
+        ) {
+            out.push(format!("{indent}  - formalization gap: {state}"));
+            if let Some(reason) = reason {
+                out.push(format!("{indent}    - reason: {reason}"));
+            }
+            if let Some(draft_reason) = &item.draft_reason {
+                out.push(format!("{indent}    - FR-204 draft reason: {draft_reason}"));
+            }
+        } else {
+            out.push(format!("{indent}  - formalization evidence: {record}"));
+        }
+    }
     for child in &node.children {
         out.extend(render_node(child, depth + 1));
     }
