@@ -79,7 +79,7 @@ when no module-specific requirement applies.
 | FR-208-AC-4 | When multiple installed modules declare the same exact clause-set identity, discharge fails without selecting either module's approval policy. | Test |
 | FR-208-AC-5 | The report preserves a supplied approval reference and does not claim to authenticate the named approver, role, or authorization represented by it. | Inspection |
 | FR-208-AC-6 | When the uniquely resolved clause set uses an edge type declared by another installed module, `record-discharge` validates the clause set using vocabulary from all installed modules. | Test |
-| FR-208-AC-7 | When a module supplies vocabulary for a uniquely resolved clause set, the report attributes the clause set to its declaring module and only that module's `approvalRoles` affect discharge classification. | Test |
+| FR-208-AC-7 | When a module supplies vocabulary for a uniquely resolved clause set, that provider's `approvalRoles` do not affect discharge classification; only the clause-set declaring module's `approvalRoles` do. | Test |
 | FR-208-AC-8 | When the uniquely resolved clause set uses an edge type declared by no installed module, discharge fails with a diagnostic identifying the unknown edge type. | Test |
 
 ## Dependencies
