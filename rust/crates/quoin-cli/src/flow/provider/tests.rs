@@ -808,7 +808,7 @@ fn proposer_supplied_history_cannot_forge_evaluator_denials_or_escalation() {
 #[cfg(unix)]
 #[trace("FR-209-AC-5")]
 #[test]
-fn engine_run_identity_selects_only_its_trusted_evaluator_history() {
+fn design_gate_engine_run_identity_selects_only_its_trusted_evaluator_history() {
     let report = flow_report(json!([flow_denial()]));
     let (_directory, mut value, _, _) = design_gate_fixture(&report, 0);
     let initial: super::Instance =
