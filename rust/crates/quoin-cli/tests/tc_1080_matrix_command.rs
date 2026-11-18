@@ -569,18 +569,20 @@ fn tc_1080_207_json_forwards_unbacked_claims() {
         serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
     let criterion = &matrix["requirements"][0]["criteria"][1];
     assert_eq!(criterion["id"], "FR-001-AC-2");
-    assert_eq!(criterion["static_status"], "untagged");
-    assert_eq!(criterion["binders"], serde_json::json!([]));
+    assert_eq!(criterion["static_status"], "tagged");
+    assert_eq!(
+        criterion["binders"],
+        serde_json::json!([{
+            "column": 5,
+            "kind": "test_function",
+            "line": 5,
+            "path": "tests/matrix_claims.rs",
+            "qualified_name": "tests::tc001_first_behavior"
+        }])
+    );
     assert_eq!(
         criterion["unbacked_claims"],
         serde_json::json!([
-            {
-                "reason": "tagged-without-citing-matrix-row",
-                "id": "FR-001-AC-2",
-                "path": "tests/matrix_claims.rs",
-                "line": 5,
-                "symbol": "tests::tc001_first_behavior"
-            },
             {
                 "reason": "unmarked-trace-id",
                 "id": "FR-001-AC-2",
