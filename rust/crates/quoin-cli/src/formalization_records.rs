@@ -399,7 +399,7 @@ mod tests {
     #[test]
     fn draft_authored_pair_keeps_the_derived_draft_reason() {
         let file = tempfile::NamedTempFile::new().expect("temporary records file");
-        std::fs::write(file.path(), r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"authored"}]"#).expect("write records");
+        std::fs::write(file.path(), r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"authored","clause_address":{"package_identity":"pkg","criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"clause_id":"clause-1","source_span":{"start":{"source":{"document":"source.md","revision":1},"line":1,"column":1,"byte_offset":0},"end":{"source":{"document":"source.md","revision":1},"line":1,"column":2,"byte_offset":1}}}}]"#).expect("write records");
         let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
         let rules = [
             json!({"symbol":"P1","formalizes":["FR-1-AC-1"],"state":"draft","reason":"review not complete"}),
