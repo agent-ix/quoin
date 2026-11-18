@@ -184,8 +184,18 @@ fn fail_with_details(
 struct Request {
     protocol: String,
     invariants: Vec<String>,
+    run: RunIdentity,
     instance: Instance,
     evaluated_at: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RunIdentity {
+    instance_id: String,
+    state_version: u64,
+    state: String,
+    transition_key: String,
 }
 
 #[derive(Deserialize)]
@@ -297,12 +307,14 @@ struct DesignGateRequest {
 #[serde(deny_unknown_fields)]
 struct DesignGateCheck {
     attempt: u64,
+    state_version: u64,
     report: Value,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct DesignGateRunState {
+    run_id: String,
     checks: Vec<DesignGateCheck>,
     proposal_pending: bool,
 }
@@ -396,6 +408,15 @@ fn read_request(input: impl Read) -> Result<Request, Failure> {
             "expected quoin.workflow-invariants/v1 and evaluated_at",
         ));
     }
+    if request.run.instance_id.is_empty()
+        || request.run.state.is_empty()
+        || request.run.transition_key.is_empty()
+    {
+        return Err(fail(
+            Code::BadRequest,
+            "run requires immutable instance_id, state_version, state, and transition_key",
+        ));
+    }
     if request.invariants.is_empty()
         || request.invariants.len() > 16
         || request
@@ -412,20 +433,27 @@ fn evaluate(request: &Request) -> ResultEnvelope {
     let outcomes = request
         .invariants
         .iter()
-        .map(|name| match check_with_details(&request.instance, name) {
-            Ok(None) => Outcome::Passed {
-                invariant: name.clone(),
-                details: None,
-            },
-            Ok(Some(details)) => Outcome::Passed {
-                invariant: name.clone(),
-                details: Some(details),
-            },
-            Err(error) => Outcome::Failed {
-                invariant: name.clone(),
-                code: error.code,
-                details: error.details,
-            },
+        .map(|name| {
+            match check_with_details(
+                &request.instance,
+                name,
+                &request.run.instance_id,
+                request.run.state_version,
+            ) {
+                Ok(None) => Outcome::Passed {
+                    invariant: name.clone(),
+                    details: None,
+                },
+                Ok(Some(details)) => Outcome::Passed {
+                    invariant: name.clone(),
+                    details: Some(details),
+                },
+                Err(error) => Outcome::Failed {
+                    invariant: name.clone(),
+                    code: error.code,
+                    details: error.details,
+                },
+            }
         })
         .collect();
     ResultEnvelope {
@@ -474,6 +502,8 @@ fn context(instance: &Instance) -> Result<Context, Failure> {
 fn check_with_details(
     instance: &Instance,
     name: &str,
+    run_id: &str,
+    state_version: u64,
 ) -> Result<Option<BTreeMap<String, Value>>, Failure> {
     if !matches!(
         instance.name.as_str(),
@@ -515,7 +545,7 @@ fn check_with_details(
         }
         ("design-gate", "dataflow_rules_pass") => {
             let request: DesignGateRequest = one(instance, "operation_request")?;
-            let (attempt, report) = design_gate_report(&request, &context)?;
+            let (attempt, report) = design_gate_report(&request, &context, run_id, state_version)?;
             if report_denials(&report).is_empty() {
                 Ok(Some(BTreeMap::from([
                     ("attempt".to_owned(), Value::from(attempt)),
@@ -527,16 +557,16 @@ fn check_with_details(
         }
         ("design-gate", "design_edit_targets_safe") => {
             let request: DesignGateRequest = one(instance, "operation_request")?;
-            apply_design_edits(instance, &request, &context).map(|()| None)
+            apply_design_edits(instance, &request, &context, run_id).map(|()| None)
         }
         ("design-gate", "design_gate_retry_allowed") => {
-            design_gate_retry_allowed(&context).map(|()| None)
+            design_gate_retry_allowed(&context, run_id).map(|()| None)
         }
         ("design-gate", "design_gate_retries_exhausted") => {
-            design_gate_retries_exhausted(&context).map(|()| None)
+            design_gate_retries_exhausted(&context, run_id).map(|()| None)
         }
         ("design-gate", "escalated_acceptance_preserves_denial") => {
-            design_gate_escalated_acceptance(&context).map(Some)
+            design_gate_escalated_acceptance(&context, run_id).map(Some)
         }
         (_, "human_acceptance_required") => {
             let required: &[&str] = if instance.name == "design-gate" {
@@ -568,6 +598,7 @@ fn apply_design_edits(
     instance: &Instance,
     request: &DesignGateRequest,
     context: &Context,
+    run_id: &str,
 ) -> Check {
     let Some(values) = instance.items.get("design_edit") else {
         return Err(fail(
@@ -603,8 +634,8 @@ fn apply_design_edits(
             "design edit requires the configured explicit rule modules",
         ));
     }
-    let state_path = design_gate_state_path(context)?;
-    let mut state = read_design_gate_state(&state_path)?;
+    let state_path = design_gate_state_path(context, run_id)?;
+    let mut state = read_design_gate_state(&state_path, run_id)?;
     if state.proposal_pending || state.checks.len() >= 4 {
         return Err(fail(
             Code::DesignAgentUnavailable,
@@ -756,19 +787,18 @@ fn write_design_edits(planned: Vec<(PathBuf, String)>) -> Check {
     Ok(())
 }
 
-fn design_gate_state_path(context: &Context) -> Result<PathBuf, Failure> {
-    if context.id.is_empty()
-        || context.id.len() > 128
-        || context.id == "."
-        || context.id == ".."
-        || !context
-            .id
+fn design_gate_state_path(context: &Context, run_id: &str) -> Result<PathBuf, Failure> {
+    if run_id.is_empty()
+        || run_id.len() > 128
+        || run_id == "."
+        || run_id == ".."
+        || !run_id
             .chars()
             .all(|character| character.is_ascii_alphanumeric() || "-_.".contains(character))
     {
         return Err(fail(
             Code::ContextInvalid,
-            "workflow id is not a safe state key",
+            "immutable workflow run id is not a safe state key",
         ));
     }
     let repo = context
@@ -799,14 +829,17 @@ fn design_gate_state_path(context: &Context) -> Result<PathBuf, Failure> {
             "design-gate state directory resolves inside the design repository",
         ));
     }
-    Ok(canonical_directory.join(format!("{}.json", context.id)))
+    Ok(canonical_directory.join(format!("{run_id}.json")))
 }
 
-fn read_design_gate_state(path: &Path) -> Result<DesignGateRunState, Failure> {
+fn read_design_gate_state(path: &Path, run_id: &str) -> Result<DesignGateRunState, Failure> {
     let bytes = match std::fs::read(path) {
         Ok(bytes) => bytes,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(DesignGateRunState::default());
+            return Ok(DesignGateRunState {
+                run_id: run_id.to_owned(),
+                ..DesignGateRunState::default()
+            });
         }
         Err(error) => return Err(fail(Code::DataflowCheckUnavailable, error.to_string())),
     };
@@ -818,7 +851,8 @@ fn read_design_gate_state(path: &Path) -> Result<DesignGateRunState, Failure> {
     }
     let state: DesignGateRunState = serde_json::from_slice(&bytes)
         .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
-    if state.checks.len() > 4
+    if state.run_id != run_id
+        || state.checks.len() > 4
         || state.checks.iter().enumerate().any(|(index, check)| {
             check.attempt != u64::try_from(index + 1).unwrap_or(u64::MAX)
                 || validate_flow_report(&check.report).is_err()
@@ -852,10 +886,12 @@ fn write_design_gate_state(path: &Path, state: &DesignGateRunState) -> Check {
 fn design_gate_report(
     request: &DesignGateRequest,
     context: &Context,
+    run_id: &str,
+    state_version: u64,
 ) -> Result<(u64, Value), Failure> {
     let (root, design_root, module_roots) = design_gate_paths(request, context)?;
-    let state_path = design_gate_state_path(context)?;
-    let mut state = read_design_gate_state(&state_path)?;
+    let state_path = design_gate_state_path(context, run_id)?;
+    let mut state = read_design_gate_state(&state_path, run_id)?;
     if !state.proposal_pending {
         if let Some(last) = state.checks.last() {
             return Ok((last.attempt, last.report.clone()));
@@ -881,6 +917,7 @@ fn design_gate_report(
     let report = run_design_evaluator(request, &root, &design_root, &module_roots)?;
     state.checks.push(DesignGateCheck {
         attempt,
+        state_version,
         report: report.clone(),
     });
     state.proposal_pending = false;
@@ -1020,13 +1057,13 @@ fn run_design_evaluator(
     Ok(report)
 }
 
-fn design_gate_checks(context: &Context) -> Result<DesignGateRunState, Failure> {
-    let state_path = design_gate_state_path(context)?;
-    read_design_gate_state(&state_path)
+fn design_gate_checks(context: &Context, run_id: &str) -> Result<DesignGateRunState, Failure> {
+    let state_path = design_gate_state_path(context, run_id)?;
+    read_design_gate_state(&state_path, run_id)
 }
 
-fn design_gate_retry_allowed(context: &Context) -> Check {
-    let state = design_gate_checks(context)?;
+fn design_gate_retry_allowed(context: &Context, run_id: &str) -> Check {
+    let state = design_gate_checks(context, run_id)?;
     let Some(last) = state.checks.last() else {
         return Err(fail(
             Code::DataflowNotDenied,
@@ -1055,8 +1092,8 @@ fn design_gate_retry_allowed(context: &Context) -> Check {
     }
 }
 
-fn design_gate_retries_exhausted(context: &Context) -> Check {
-    let state = design_gate_checks(context)?;
+fn design_gate_retries_exhausted(context: &Context, run_id: &str) -> Check {
+    let state = design_gate_checks(context, run_id)?;
     if !state.proposal_pending
         && state
             .checks
@@ -1072,8 +1109,11 @@ fn design_gate_retries_exhausted(context: &Context) -> Check {
     }
 }
 
-fn design_gate_escalated_acceptance(context: &Context) -> Result<BTreeMap<String, Value>, Failure> {
-    let state = design_gate_checks(context)?;
+fn design_gate_escalated_acceptance(
+    context: &Context,
+    run_id: &str,
+) -> Result<BTreeMap<String, Value>, Failure> {
+    let state = design_gate_checks(context, run_id)?;
     let Some(last) = state.checks.last() else {
         return Err(fail(
             Code::DesignGateDecisionInvalid,

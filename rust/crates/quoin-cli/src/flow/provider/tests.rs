@@ -41,7 +41,15 @@ use std::path::{Path, PathBuf};
 type ExpectedClaimSpan = (String, String, u64, u64);
 
 fn request() -> Value {
-    json!({"protocol":"quoin.workflow-invariants/v1","evaluated_at":"2026-10-24T00:00:00Z","invariants":["unknown"],"instance":{"defName":"review","items":{},"gateConfig":{}}})
+    json!({"protocol":"quoin.workflow-invariants/v1","evaluated_at":"2026-10-24T00:00:00Z","invariants":["unknown"],"run":{"instance_id":"run-1","state_version":0,"state":"checking","transition_key":"proposing->checking"},"instance":{"defName":"review","items":{},"gateConfig":{}}})
+}
+
+#[cfg(unix)]
+fn check_with_details(
+    instance: &super::Instance,
+    name: &str,
+) -> Result<Option<std::collections::BTreeMap<String, Value>>, super::Failure> {
+    super::check_with_details(instance, name, "run-1", 0)
 }
 
 #[trace("FR-021-AC-5")]
@@ -171,6 +179,7 @@ fn design_gate_instance(directory: &DesignGateTestDirs, quire: &Path) -> Value {
         "protocol":"quoin.workflow-invariants/v1",
         "evaluated_at":"2026-11-17T00:00:00Z",
         "invariants":["dataflow_rules_pass"],
+        "run":{"instance_id":"run-1","state_version":0,"state":"checking","transition_key":"proposing->checking"},
         "instance":{
             "defName":"design-gate",
             "items":{
@@ -195,7 +204,7 @@ fn prime_design_gate_proposal(value: &Value) {
             "edits":[{"path":"spec/proposal.md","content":"initial design"}]
         })],
     );
-    super::check_with_details(&instance, "design_edit_targets_safe")
+    check_with_details(&instance, "design_edit_targets_safe")
         .expect("trusted design edit creates the proposal pending evaluator check");
 }
 
@@ -212,11 +221,13 @@ fn design_gate_context(instance: &super::Instance) -> super::Context {
 
 #[cfg(unix)]
 fn seed_trusted_denials(context: &super::Context, report: &Value, count: u64) {
-    let state_path = super::design_gate_state_path(context).expect("state path");
+    let state_path = super::design_gate_state_path(context, "run-1").expect("state path");
     let state = super::DesignGateRunState {
+        run_id: "run-1".to_owned(),
         checks: (1..=count)
             .map(|attempt| super::DesignGateCheck {
                 attempt,
+                state_version: attempt,
                 report: report.clone(),
             })
             .collect(),
@@ -385,7 +396,7 @@ fn installed_plat_flow_rule_checks_a_seeded_connection_and_protecting_control() 
     prime_design_gate_proposal(&workflow);
     let instance =
         serde_json::from_value::<super::Instance>(workflow["instance"].clone()).expect("instance");
-    let denial = super::check_with_details(&instance, "dataflow_rules_pass")
+    let denial = check_with_details(&instance, "dataflow_rules_pass")
         .expect_err("the installed PLAT rule denies the unprotected connection");
     assert_eq!(denial.code.to_string(), "dataflow_denied");
     assert_eq!(denial.details["report"]["schema"], "quire.flow-report/v1");
@@ -407,9 +418,9 @@ fn installed_plat_flow_rule_checks_a_seeded_connection_and_protecting_control() 
             "edits":[{"path":"spec/CTRL-001.md","content":"---\nid: CTRL-001\ntitle: CTRL-001\ntype: control\nsafeguards: [encrypt-in-transit]\nrelationships:\n  - type: protects\n    target: CONN-001\n---\n# CTRL-001\n"}]
         })],
     );
-    super::check_with_details(&instance, "design_edit_targets_safe")
+    check_with_details(&instance, "design_edit_targets_safe")
         .expect("apply the modeled protecting control through the workflow editor");
-    let cleared = super::check_with_details(&instance, "dataflow_rules_pass")
+    let cleared = check_with_details(&instance, "dataflow_rules_pass")
         .expect("the installed PLAT rule accepts the protecting control")
         .expect("clean evaluator report");
     assert!(
@@ -471,7 +482,7 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
 
     let first =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    let failure = super::check_with_details(&first, "dataflow_rules_pass")
+    let failure = check_with_details(&first, "dataflow_rules_pass")
         .expect_err("unprotected health flow is denied");
     assert_eq!(failure.code.to_string(), "dataflow_denied");
     assert_eq!(
@@ -505,7 +516,7 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
     }]);
     let proposing =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    super::check_with_details(&proposing, "design_edit_targets_safe")
+    check_with_details(&proposing, "design_edit_targets_safe")
         .expect("trusted editor applies scoped edit");
     assert_eq!(
         fs::read_to_string(design_root.join("controls/encrypt-in-transit.md")).expect("edit"),
@@ -514,7 +525,7 @@ fn scripted_remediation_turns_a_denial_into_a_clean_report() {
 
     let revised =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    let passed = super::check_with_details(&revised, "dataflow_rules_pass")
+    let passed = check_with_details(&revised, "dataflow_rules_pass")
         .expect("the control clears the rule denial")
         .expect("report details");
     assert_eq!(passed["report"]["denials"], json!([]));
@@ -538,7 +549,7 @@ fn design_gate_rejects_rule_module_edit_before_writing_any_batch_item() {
     }]);
     let instance =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    let failure = super::check_with_details(&instance, "design_edit_targets_safe")
+    let failure = check_with_details(&instance, "design_edit_targets_safe")
         .expect_err("protected edit denied");
     assert_eq!(failure.code.to_string(), "rules_modified");
     assert_eq!(
@@ -566,7 +577,7 @@ fn design_gate_replaces_hard_link_without_mutating_the_protected_inode() {
     }]);
     let instance =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    super::check_with_details(&instance, "design_edit_targets_safe")
+    check_with_details(&instance, "design_edit_targets_safe")
         .expect("atomic replacement detaches the design name from the protected inode");
     assert_eq!(
         fs::read_to_string(rule_file).expect("protected rule"),
@@ -589,7 +600,7 @@ fn design_gate_requires_operator_state_root_outside_design_repository() {
     }]);
     let instance =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    let failure = super::check_with_details(&instance, "design_edit_targets_safe")
+    let failure = check_with_details(&instance, "design_edit_targets_safe")
         .expect_err("workflow state cannot be placed in agent-writable design scope");
     assert_eq!(failure.code.to_string(), "WORKFLOW_CONTEXT_INVALID");
     assert!(!directory.path().join("design/spec/draft.md").exists());
@@ -608,7 +619,7 @@ fn design_gate_requires_operator_state_root_outside_design_repository() {
     }]);
     let instance =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    let failure = super::check_with_details(&instance, "design_edit_targets_safe")
+    let failure = check_with_details(&instance, "design_edit_targets_safe")
         .expect_err("state directory aliases into the repository are rejected");
     assert_eq!(failure.code.to_string(), "WORKFLOW_CONTEXT_INVALID");
 }
@@ -620,7 +631,7 @@ fn unavailable_design_agent_stops_before_applying_or_counting_a_check() {
     let (_directory, value, _, _) = design_gate_fixture(&flow_report(json!([])), 0);
     let instance =
         serde_json::from_value::<super::Instance>(value["instance"].clone()).expect("instance");
-    let failure = super::check_with_details(&instance, "design_edit_targets_safe")
+    let failure = check_with_details(&instance, "design_edit_targets_safe")
         .expect_err("missing proposer output stops this phase");
     assert_eq!(failure.code.to_string(), "design_agent_unavailable");
     assert!(!instance.items.contains_key("design_gate_check"));
@@ -629,7 +640,7 @@ fn unavailable_design_agent_stops_before_applying_or_counting_a_check() {
     no_output
         .items
         .insert("design_edit".to_owned(), vec![json!({"edits": []})]);
-    let failure = super::check_with_details(&no_output, "design_edit_targets_safe")
+    let failure = check_with_details(&no_output, "design_edit_targets_safe")
         .expect_err("empty proposer output is unusable");
     assert_eq!(failure.code.to_string(), "design_agent_unavailable");
     assert!(!no_output.items.contains_key("design_gate_check"));
@@ -673,7 +684,7 @@ fn design_gate_rejects_malformed_or_wrong_schema_reports() {
     let missing = directory.path().join("missing-quire");
     let input = design_gate_instance(&directory, &missing);
     prime_design_gate_proposal(&input);
-    let failure = super::check_with_details(
+    let failure = check_with_details(
         &serde_json::from_value::<super::Instance>(input["instance"].clone()).expect("instance"),
         "dataflow_rules_pass",
     )
@@ -685,7 +696,7 @@ fn design_gate_rejects_malformed_or_wrong_schema_reports() {
     let failing = executable(directory.path(), "quire-fails-without-report", "exit 9");
     let input = design_gate_instance(&directory, &failing);
     prime_design_gate_proposal(&input);
-    let failure = super::check_with_details(
+    let failure = check_with_details(
         &serde_json::from_value::<super::Instance>(input["instance"].clone()).expect("instance"),
         "dataflow_rules_pass",
     )
@@ -705,8 +716,8 @@ fn design_gate_retry_routes_allow_three_retries_then_escalate() {
     let context = design_gate_context(&instance);
     for (attempt, expected_retry) in [(1, true), (2, true), (3, true), (4, false)] {
         seed_trusted_denials(&context, &report, attempt);
-        let retry = super::design_gate_retry_allowed(&context);
-        let exhausted = super::design_gate_retries_exhausted(&context);
+        let retry = super::design_gate_retry_allowed(&context, "run-1");
+        let exhausted = super::design_gate_retries_exhausted(&context, "run-1");
         if attempt == 4 {
             assert!(!expected_retry);
             assert_eq!(
@@ -738,7 +749,7 @@ fn escalated_human_acceptance_retains_the_denied_evaluator_result() {
         serde_json::from_value(value["instance"].clone()).expect("instance");
     let context = design_gate_context(&instance);
     seed_trusted_denials(&context, &report, 4);
-    let details = super::check_with_details(&instance, "escalated_acceptance_preserves_denial")
+    let details = check_with_details(&instance, "escalated_acceptance_preserves_denial")
         .expect("human decision remains distinct from the evaluator verdict")
         .expect("acceptance details");
     assert_eq!(details["decision"], "accepted");
@@ -765,32 +776,71 @@ fn proposer_supplied_history_cannot_forge_evaluator_denials_or_escalation() {
         serde_json::from_value(value["instance"].clone()).expect("instance");
     let context = design_gate_context(&instance);
     assert_eq!(
-        super::design_gate_retries_exhausted(&context)
+        super::design_gate_retries_exhausted(&context, "run-1")
             .expect_err("untrusted items are not evaluator history")
             .code
             .to_string(),
         "design_gate_retries_not_exhausted"
     );
     assert_eq!(
-        super::design_gate_escalated_acceptance(&context)
+        super::design_gate_escalated_acceptance(&context, "run-1")
             .expect_err("untrusted items cannot back an escalated decision")
             .code
             .to_string(),
         "design_gate_decision_invalid"
     );
     assert_eq!(
-        super::design_gate_retry_allowed(&context)
+        super::design_gate_retry_allowed(&context, "run-1")
             .expect_err("a forged denial cannot authorize a retry")
             .code
             .to_string(),
         "dataflow_not_denied"
     );
     assert_eq!(
-        super::check_with_details(&instance, "dataflow_rules_pass")
+        check_with_details(&instance, "dataflow_rules_pass")
             .expect_err("a fake report item cannot stand in for a proposal evaluator run")
             .code
             .to_string(),
         "dataflow_check_unavailable"
+    );
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-5")]
+#[test]
+fn engine_run_identity_selects_only_its_trusted_evaluator_history() {
+    let report = flow_report(json!([flow_denial()]));
+    let (_directory, mut value, _, _) = design_gate_fixture(&report, 0);
+    let initial: super::Instance =
+        serde_json::from_value(value["instance"].clone()).expect("instance");
+    let context = design_gate_context(&initial);
+    seed_trusted_denials(&context, &report, 4);
+
+    value["invariants"] = json!(["design_gate_retries_exhausted"]);
+    value["instance"]["items"]["quoin_context"][0]["id"] = json!("proposer-selected-key");
+    value["instance"]["items"]["design_gate_check"] = json!(
+        (1..=4)
+            .map(|attempt| json!({"attempt":attempt,"report":report}))
+            .collect::<Vec<_>>()
+    );
+
+    let evaluate = |request: &Value| {
+        let input = serde_json::to_vec(request).expect("provider request");
+        let (mut output, mut errors) = (Vec::new(), Vec::new());
+        assert_eq!(serve(input.as_slice(), &mut output, &mut errors), 0);
+        assert!(errors.is_empty());
+        serde_json::from_slice::<Value>(&output).expect("provider result")
+    };
+
+    let same_run = evaluate(&value);
+    assert_eq!(same_run["outcomes"][0]["status"], "passed");
+
+    value["run"]["instance_id"] = json!("run-2");
+    let other_run = evaluate(&value);
+    assert_eq!(other_run["outcomes"][0]["status"], "failed");
+    assert_eq!(
+        other_run["outcomes"][0]["code"],
+        "design_gate_retries_not_exhausted"
     );
 }
 
@@ -2107,7 +2157,7 @@ fn design_gate_acceptance_invariant_requires_every_hitl_edge() {
     let mut instance: super::Instance =
         serde_json::from_value(value["instance"].clone()).expect("instance");
     instance.gates.remove("escalated->rejected");
-    let failure = super::check_with_details(&instance, "human_acceptance_required")
+    let failure = check_with_details(&instance, "human_acceptance_required")
         .expect_err("all accept and reject transitions require HITL");
     assert_eq!(failure.code.to_string(), "WORKFLOW_HUMAN_GATE_REQUIRED");
 }
