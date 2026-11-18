@@ -87,6 +87,7 @@ const COMMANDS: &[(&str, &str)] = &[
         "Report which declared vocabulary values no requirement owns,\n                    and judge the excuses.",
     ),
     ("config", "Read a stored quoin config value."),
+    ("design-gate", "Start the Quoin design-gate workflow."),
     (
         "discharge",
         "Partition binding clauses into direct evidence,\n                    dispositions, and open work.",
@@ -208,7 +209,7 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
 /// The oclif `command_not_found` hook's compact actionable refusal.
 pub(crate) fn unknown_command(name: &str) -> String {
     format!(
-        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, discharge, evidence, formalize, formal-rules, graph, matrix, measurement, module, release, \n ›   report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, design-gate, discharge, evidence, formalize, formal-rules, graph, matrix, measurement, module, \n ›   release, report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     )
 }
 
