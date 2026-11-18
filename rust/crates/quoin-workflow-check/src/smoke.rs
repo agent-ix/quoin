@@ -637,6 +637,46 @@ fn design_gate_missing_host_refused(h: &Harness) -> Result<()> {
     )
 }
 
+#[cfg(test)]
+fn design_gate_incompatible_host_refused(h: &Harness) -> Result<()> {
+    let fake_package = h.scratch.path().join("ix-flow-incompatible-host");
+    let fake_bin = fake_package.join("bin");
+    let host_entry = fake_package.join("dist/host.js");
+    let marker = h.scratch.path().join("ix-flow-run-invoked");
+    write(&host_entry, "export class WorkflowCommandRunner {}\n")?;
+    let body = "if [ \"$1\" = \"--version\" ]; then printf '0.3.3\\n'; exit 0; fi\nprintf '%s\\n' \"$*\" > \"$QUOIN_TEST_RUN_MARKER\"\nprintf '{\"ok\":true,\"instance_id\":\"unexpected-run\"}\\n'";
+    let windows_body = "@echo off\r\nif \"%~1\"==\"--version\" (echo 0.3.3& exit /b 0)\r\necho %* > \"%QUOIN_TEST_RUN_MARKER%\"\r\necho {\"ok\":true,\"instance_id\":\"unexpected-run\"}\r\n";
+    executable(&fake_bin, "ix-flow", body, windows_body)?;
+    let mut paths = vec![fake_bin];
+    paths.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    let search = std::env::join_paths(paths).map_err(|error| error.to_string())?;
+    let id = "smoke-design-gate-incompatible-host";
+    let output = h
+        .command(&h.binary)?
+        .env("PATH", search)
+        .env("QUOIN_TEST_RUN_MARKER", &marker)
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["design-gate", "--path"])
+        .arg(h.skill("design-gate"))
+        .args(["--id", id, "--target", "spec/target.md", "--json"])
+        .output()
+        .map_err(|error| error.to_string())?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    require(
+        !output.status.success()
+            && stderr.contains("WorkflowCommandRunner.seedSystemOwnedItem is unavailable")
+            && stderr.contains("update ix-flow before starting design-gate"),
+        format!("incompatible ix-flow host API must fail actionably: {stderr}"),
+    )?;
+    require(
+        !marker.exists() && !h.config.join("flows").join(format!("{id}.json")).exists(),
+        "incompatible host API must be refused before ix-flow creates a run",
+    )
+}
+
 fn formalize_scenarios(h: &Harness) -> Result<()> {
     let tools = h.scratch.path().join("formalize tools");
     fs::create_dir_all(&tools).map_err(|e| e.to_string())?;
@@ -1002,7 +1042,8 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
 )]
 mod tests {
     use super::{
-        Harness, design_gate_context_seeded, design_gate_missing_host_refused, formalize_scenarios,
+        Harness, design_gate_context_seeded, design_gate_incompatible_host_refused,
+        design_gate_missing_host_refused, formalize_scenarios,
     };
     use ix_trace_rs::trace;
 
@@ -1028,6 +1069,18 @@ mod tests {
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
         let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
         design_gate_missing_host_refused(&harness).expect("missing host API is refused");
+    }
+
+    #[trace("FR-020-AC-7")]
+    #[test]
+    #[ignore = "run by make workflow-test"]
+    fn design_gate_refuses_incompatible_host_api_before_run_creation() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        design_gate_incompatible_host_refused(&harness).expect("incompatible host API is refused");
     }
 
     #[test]

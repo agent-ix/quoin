@@ -58,7 +58,9 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
         );
     }
     let host_entry = if name == "design-gate" {
-        Some(host_entrypoint()?)
+        let host_entry = host_entrypoint()?;
+        preflight_host_api(&host_entry)?;
+        Some(host_entry)
     } else {
         None
     };
@@ -228,6 +230,35 @@ fn host_entrypoint() -> Result<PathBuf, LaunchFailure> {
                 runner.display(),
             ))
         })
+}
+
+fn preflight_host_api(host_entry: &std::path::Path) -> Result<(), LaunchFailure> {
+    let source = r"import { pathToFileURL } from 'node:url';
+try {
+  const host = await import(pathToFileURL(process.argv[1]).href);
+  const runner = host.WorkflowCommandRunner;
+  if (typeof runner !== 'function' || typeof runner.prototype?.seedSystemOwnedItem !== 'function') {
+    throw new Error('WorkflowCommandRunner.seedSystemOwnedItem is unavailable');
+  }
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+}
+";
+    let mut command = ProcessCommand::new(node_program());
+    command
+        .arg("--input-type=module")
+        .arg("-e")
+        .arg(source)
+        .arg(host_entry);
+    execute(&mut command).map(|_| ()).map_err(|error| {
+        let detail = match error {
+            LaunchFailure::Child(_, detail) | LaunchFailure::Local(detail) => detail,
+        };
+        LaunchFailure::Local(format!(
+            "installed ix-flow host API is incompatible ({detail}); update ix-flow before starting design-gate"
+        ))
+    })
 }
 
 fn executable_path(program: &str) -> Result<PathBuf, LaunchFailure> {
