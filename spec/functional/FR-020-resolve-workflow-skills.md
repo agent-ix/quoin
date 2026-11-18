@@ -14,28 +14,41 @@ relationships:
 ## Description
 
 Quoin SHALL own review and to-plan definitions and instructions as first-party
-source beside their agent plugin skills. Each skill SHALL declare its relative
-workflows directory in metadata. ix-flow SHALL load these ordinary files from
-an explicit skill directory. The CLI SHALL supply the native invariant provider.
-The workflow SHALL require no archived provider package or private checkout.
+source beside their agent plugin skills. The design-gate workflow in
+[FR-209](./FR-209-agent-design-gate.md) SHALL also be launchable through
+Quoin's convenience CLI. Each skill SHALL declare its relative workflows
+directory in metadata. ix-flow SHALL load these ordinary files from an explicit
+skill directory. The CLI SHALL supply the native invariant provider. The
+workflow SHALL require no archived provider package or private checkout.
 
 ## Inputs
 
 - The workflow name, explicit skill directory, config root, repository and targets.
-- Installed Quoin and ix-flow executables on PATH.
+- Installed Quoin and ix-flow executables, with the ix-flow host API available
+  from the installed package for design-gate.
 
 ## Outputs
 
 - An ix-flow run referencing the supplied skill directory and repository context.
+- For design-gate, one host-seeded, system-owned `quoin_context` item.
 - An actionable refusal when a skill path or supported runner is unavailable.
 
 ## Behavior
 
-- Quoin SHALL recognize review and to-plan and retain matrix as a computed view.
+- Quoin SHALL recognize review, to-plan, and design-gate launchers and retain
+  matrix as a computed view.
 - The plugin SHALL ship SKILL.md and workflows/<name>/def.yaml for each workflow.
-- The agent SHALL launch the installed skill through ix-flow run --path.
+- For review and to-plan, the agent SHALL launch the installed skill through
+  `ix-flow run --path`. For design-gate, the agent SHALL use
+  `quoin design-gate --path` so Quoin seeds its protected context.
 - The convenience CLI SHALL accept --path and initialize one quoin_context item.
-- The CLI SHALL require ix-flow >=0.3.1 before creating a run.
+- When `quoin design-gate` launches a run, the host SHALL seed exactly one
+  system-owned `quoin_context` before returning control to the proposer.
+- The design-gate host SHALL set `quoin_context.id` to the engine run ID and
+  derive `repo_root`, `config_root`, and canonical contained targets from the
+  launch environment; the proposer SHALL NOT supply or replace these values.
+- The CLI SHALL require ix-flow >=0.3.1 before creating review or to-plan runs
+  and SHALL verify the host seeding API before creating a design-gate run.
 - Quoin SHALL record canonical repository/config roots and contained targets.
 - Quoin SHALL preserve existing runs and their recorded skill paths.
 - Quoin SHALL ignore the obsolete IX_SPEC_WORKFLOWS_ROOT override.
@@ -50,8 +63,11 @@ The workflow SHALL require no archived provider package or private checkout.
 | FR-020-AC-3 | A missing or incompatible ix-flow reports the supported installation command without creating a run. | Test |
 | FR-020-AC-4 | A missing explicit skill directory reports how to provide the installed plugin skill, without extracting workflow assets. | Test |
 | FR-020-AC-5 | Run context resolves relative documents under the subject repository, including paths with spaces. | Test |
+| FR-020-AC-6 | Given a compatible ix-flow host API, `quoin design-gate` creates one system-owned `quoin_context` whose ID equals the engine run ID, whose repository and config roots are canonical launch paths, and whose targets are canonical paths contained by the repository; proposer add, replacement, or update attempts fail and leave the seeded item unchanged. | Test |
+| FR-020-AC-7 | Given an ix-flow package without the host seeding API, `quoin design-gate` returns an actionable error before creating a run. | Test |
 
 ## Dependencies
 
 - Upstream: [StR-004](../stakeholder/StR-004-governed-workflows.md).
 - Downstream: [FR-021](./FR-021-launch-ix-flow-runs.md).
+- Related: [FR-209](./FR-209-agent-design-gate.md) defines the workflow launched here.
