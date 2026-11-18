@@ -291,6 +291,8 @@ impl Harness {
             "spec-review"
         } else if kind == "formalize" {
             "formalize-requirement"
+        } else if kind == "design-gate" {
+            "design-gate"
         } else {
             "spec-to-plan"
         })
@@ -370,6 +372,7 @@ fn lifecycle(h: &Harness) -> Result<()> {
         .output()
         .map_err(|e| e.to_string())?;
     passed(&convenience)?;
+    design_gate_context_seeded(h)?;
     h.answers("smoke-base", "request", &selection("base", &[]))?;
     h.advance("smoke-base", "analyses_run")?;
     h.advance("smoke-base", "reviews_rendered")?;
@@ -440,6 +443,44 @@ fn lifecycle(h: &Harness) -> Result<()> {
         "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, published ix-flow, review/profile/plan validation and explicit human acceptance"
     );
     Ok(())
+}
+
+fn design_gate_context_seeded(h: &Harness) -> Result<()> {
+    let id = "smoke-design-gate-context";
+    let output = h
+        .command(&h.binary)?
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["design-gate", "--path"])
+        .arg(h.skill("design-gate"))
+        .args(["--id", id, "--target", "spec/target.md", "--json"])
+        .output()
+        .map_err(|e| e.to_string())?;
+    passed(&output)?;
+
+    let status = passed(&h.flow(&["status", id])?)?;
+    let context = status
+        .pointer("/data/items/quoin_context/0")
+        .ok_or("design-gate host did not seed quoin_context")?;
+    require(
+        context.get("id").and_then(Value::as_str) == Some(id),
+        "design-gate context id must be the engine run id",
+    )?;
+    require(
+        context.get("repo_root").and_then(Value::as_str) == h.root.to_str(),
+        "design-gate host must derive repo_root from the launch repository",
+    )?;
+    require(
+        context.get("config_root").and_then(Value::as_str) == h.config.to_str(),
+        "design-gate host must derive config_root from Quoin configuration",
+    )?;
+    require(
+        context
+            .get("targets")
+            .and_then(Value::as_array)
+            .is_some_and(|targets| targets.len() == 1),
+        "design-gate host must seed the explicit target set",
+    )
 }
 
 fn formalize_scenarios(h: &Harness) -> Result<()> {

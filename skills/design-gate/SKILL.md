@@ -26,11 +26,11 @@ it.
 
 ## Start the run
 
-From the repository root, start the workflow and record its context:
+From the repository root, ask Quoin to start the workflow and seed its
+protected context through the ix-flow host API:
 
 ```sh
-ix-flow run design-gate --path <absolute-path-to-this-skill-directory> --id <run-id> --target . --json
-ix-flow add-item <run-id> quoin_context --item '{"id":"<run-id>","repo_root":"<absolute-repo-root>","config_root":"<absolute-config-root>","targets":["<absolute-repo-root>"]}'
+quoin design-gate --path <absolute-path-to-this-skill-directory> --id <run-id> --target . --json
 ```
 
 Record the design root relative to the repository root, every rule-module root
@@ -38,11 +38,12 @@ as an explicit absolute path, and the absolute `quire` executable path in the
 `request` interview. The module list replaces ambient module discovery. Do not
 start with a module directory that is writable by the proposer.
 
-The host supplies `quoin_context` and sets its `id` to the unique workflow run
-id. It owns the workflow id and `config_root`.
-Keep that context unchanged for the whole run and do not give the proposer an
-item-update capability for it. The invariant provider uses that external
-configuration root for its private evaluator-result state.
+Quoin owns run creation and supplies `quoin_context` as a system-owned item
+through a service runner. It sets the context `id` to the engine run id and
+derives `repo_root`, `config_root`, and `targets` from the launch environment.
+The agent cannot add or update this item. The invariant provider keys its
+private evaluator-result state with the immutable engine run identity and uses
+the context's configuration root only as the storage location.
 
 The request item is:
 
