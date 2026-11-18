@@ -842,6 +842,24 @@ fn engine_run_identity_selects_only_its_trusted_evaluator_history() {
         other_run["outcomes"][0]["code"],
         "design_gate_retries_not_exhausted"
     );
+
+    let run_one_state = super::design_gate_state_path(&context, "run-1").expect("state path");
+    super::write_design_gate_state(
+        &run_one_state,
+        &super::DesignGateRunState {
+            run_id: "run-2".to_owned(),
+            checks: Vec::new(),
+            proposal_pending: false,
+        },
+    )
+    .expect("write mismatched state fixture");
+    assert_eq!(
+        super::read_design_gate_state(&run_one_state, "run-1")
+            .expect_err("a state file cannot claim another engine run")
+            .code
+            .to_string(),
+        "dataflow_check_unavailable"
+    );
 }
 
 #[cfg(unix)]
