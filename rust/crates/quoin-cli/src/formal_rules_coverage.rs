@@ -197,28 +197,8 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let obligation_rows = obligation_value
         .as_array()
         .ok_or_else(|| "quire.coverage obligations must be an array".to_owned())?;
-    for row in obligation_rows {
-        let id = required_text(row, "id")?;
-        if !is_criterion_id(id) {
-            continue;
-        }
-        let document = relative_spec_path(&repo, required_text(row, "document")?)?;
-        let criticality =
-            row.get("criticality")
-                .filter(|value| !value.is_null())
-                .map(|value| {
-                    value.as_str().map(str::to_owned).ok_or_else(|| {
-                        format!("{document}: criterion criticality must be a string")
-                    })
-                })
-                .transpose()?;
-        source_items.push(SourceItem {
-            id: id.to_owned(),
-            kind: "criterion".to_owned(),
-            document,
-            criticality,
-        });
-    }
+    let criterion_sources = criterion_source_items(&repo, obligation_rows, &source_items)?;
+    source_items.extend(criterion_sources);
 
     let analysis_dispositions = source_items
         .iter()
@@ -421,6 +401,77 @@ fn relative_spec_path(repo: &Path, path: &str) -> Result<String, String> {
         .ok_or_else(|| "document path is not valid UTF-8".to_owned())
 }
 
+fn criterion_source_items(
+    repo: &Path,
+    obligation_rows: &[Value],
+    requirement_sources: &[SourceItem],
+) -> Result<Vec<SourceItem>, String> {
+    let mut source_items = Vec::new();
+    for row in obligation_rows {
+        let id = required_text(row, "id")?;
+        if !is_criterion_id(id) {
+            continue;
+        }
+        let document = row
+            .get("document")
+            .and_then(Value::as_str)
+            .filter(|document| !document.trim().is_empty())
+            .ok_or_else(|| missing_criterion_document_error(repo, id, requirement_sources))?;
+        let document = relative_spec_path(repo, document)?;
+        let criticality =
+            row.get("criticality")
+                .filter(|value| !value.is_null())
+                .map(|value| {
+                    value.as_str().map(str::to_owned).ok_or_else(|| {
+                        format!("{document}: criterion criticality must be a string")
+                    })
+                })
+                .transpose()?;
+        source_items.push(SourceItem {
+            id: id.to_owned(),
+            kind: "criterion".to_owned(),
+            document,
+            criticality,
+        });
+    }
+    Ok(source_items)
+}
+
+fn missing_criterion_document_error(
+    repo: &Path,
+    id: &str,
+    requirement_sources: &[SourceItem],
+) -> String {
+    if let Some((document, line)) = criterion_source_locus(repo, id, requirement_sources) {
+        return format!(
+            "{document}:{line}: criterion {id} has missing or malformed source document metadata"
+        );
+    }
+    format!(
+        "criterion {id}: quire.coverage omitted valid source document metadata, and the authored row could not be located"
+    )
+}
+
+fn criterion_source_locus(
+    repo: &Path,
+    criterion_id: &str,
+    requirement_sources: &[SourceItem],
+) -> Option<(String, usize)> {
+    let requirement_id = criterion_id.split_once("-AC-")?.0;
+    let source = requirement_sources
+        .iter()
+        .find(|source| source.kind == "requirement" && source.id == requirement_id)?;
+    let document = format!("spec/{}", source.document);
+    let contents = std::fs::read_to_string(repo.join("spec").join(&source.document)).ok()?;
+    let line = contents.lines().enumerate().find_map(|(index, line)| {
+        let line = line.trim_start();
+        let row = line.strip_prefix('|')?;
+        let first_cell = row.split('|').next()?.trim();
+        (first_cell == criterion_id).then_some(index + 1)
+    })?;
+    Some((document, line))
+}
+
 fn required_text<'a>(value: &'a Value, field: &str) -> Result<&'a str, String> {
     value
         .get(field)
@@ -445,7 +496,9 @@ mod tests {
 
     use serde_json::{Value, json};
 
-    use super::{Declaration, SourceItem, build_report, derive_state, render_report};
+    use super::{
+        Declaration, SourceItem, build_report, criterion_source_items, derive_state, render_report,
+    };
     use ix_trace_rs::trace;
 
     #[trace("FR-204-AC-2", "FR-204-AC-3")]
@@ -603,6 +656,53 @@ mod tests {
                 .and_then(|item| item.get("analysis_disposition")),
             Some(&json!("qualified-record"))
         );
+    }
+
+    #[trace("FR-204-AC-9")]
+    #[test]
+    fn malformed_criterion_document_metadata_reports_the_authored_source_locus() {
+        let repository = tempfile::tempdir().expect("temporary repository");
+        let document = repository
+            .path()
+            .join("spec/functional/FR-204-formalization-coverage-state.md");
+        std::fs::create_dir_all(document.parent().expect("document parent"))
+            .expect("spec directory is created");
+        std::fs::write(
+            &document,
+            "---\nid: FR-204\ntype: FR\n---\n# FR-204\n| ID | Criteria | Verification |\n|----|----------|--------------|\n| FR-204-AC-9 | malformed row | Test |\n",
+        )
+        .expect("fixture document is written");
+        let requirements = [source(
+            "FR-204",
+            "functional/FR-204-formalization-coverage-state.md",
+            None,
+            "requirement",
+        )];
+        let valid = json!({"id": "FR-204-AC-9", "document": "spec/functional/FR-204-formalization-coverage-state.md"});
+        let valid_sources = criterion_source_items(repository.path(), &[valid], &requirements)
+            .expect("valid document metadata is retained");
+        assert_eq!(
+            valid_sources
+                .first()
+                .expect("valid criterion source")
+                .document,
+            "functional/FR-204-formalization-coverage-state.md"
+        );
+
+        let malformed_rows = [
+            json!({"id": "FR-204-AC-9"}),
+            json!({"id": "FR-204-AC-9", "document": null}),
+            json!({"id": "FR-204-AC-9", "document": 42}),
+        ];
+        for row in malformed_rows {
+            let error = criterion_source_items(repository.path(), &[row], &requirements)
+                .expect_err("malformed document metadata is rejected");
+            assert_eq!(
+                error,
+                "spec/functional/FR-204-formalization-coverage-state.md:8: criterion FR-204-AC-9 has missing or malformed source document metadata"
+            );
+            assert!(!error.contains("record omitted string field document"));
+        }
     }
 
     fn complete_fixture_report() -> super::Report {
