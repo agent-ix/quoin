@@ -440,7 +440,7 @@ fn lifecycle(h: &Harness) -> Result<()> {
     formalize_scenarios(h)?;
     runner_failures(h)?;
     println!(
-        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, published ix-flow, review/profile/plan validation and explicit human acceptance"
+        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, host-capable ix-flow package, review/profile/plan validation and explicit human acceptance"
     );
     Ok(())
 }
