@@ -85,22 +85,32 @@ fn set_title_sentinel(set: &str) -> String {
 
 /// Every sentinel the fixture pack carries.
 fn sentinels() -> Vec<String> {
-    let mut all = Vec::new();
-    for (set, _, clauses) in pack_sets() {
-        all.push(set_title_sentinel(set));
-        for index in 0..clauses.len() {
-            all.push(text_sentinel(set, index));
-            all.push(title_sentinel(set, index));
-        }
+    pack_sets().iter().flat_map(set_sentinels).collect()
+}
+
+/// Every sentinel carried by one clause set.
+fn set_sentinels(set: &SetSpec) -> Vec<String> {
+    let (id, _, clauses) = set;
+    let mut all = vec![set_title_sentinel(id)];
+    for index in 0..clauses.len() {
+        all.push(text_sentinel(id, index));
+        all.push(title_sentinel(id, index));
     }
     all
 }
 
 /// The sentinels found in `output`; empty means none leaked.
 fn leaked(output: &str) -> Vec<String> {
-    sentinels()
-        .into_iter()
+    let expected = sentinels();
+    leaked_from(output, &expected)
+}
+
+/// The supplied sentinels found in `output`; empty means none leaked.
+fn leaked_from(output: &str, expected: &[String]) -> Vec<String> {
+    expected
+        .iter()
         .filter(|sentinel| output.contains(sentinel.as_str()))
+        .cloned()
         .collect()
 }
 
@@ -834,6 +844,8 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
     // A module with original text and a module that fails to load refuse without the text.
     let mut open_set = pack_sets().remove(0);
     open_set.0 = "open-zeta";
+    let mut expected_sentinels = sentinels();
+    expected_sentinels.extend(set_sentinels(&open_set));
     let open = write_pack(
         &env.base.join("open-src"),
         "open-module",
@@ -880,7 +892,11 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
     outputs.push(env.report(&[]));
     for output in &outputs {
         let printed = text(output);
-        assert_eq!(leaked(&printed), Vec::<String>::new(), "{printed}");
+        assert_eq!(
+            leaked_from(&printed, &expected_sentinels),
+            Vec::<String>::new(),
+            "{printed}"
+        );
     }
 
     // The control: a real run that prints a sentinel is caught by the same
@@ -889,7 +905,7 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
         .arg(env.installed_file("alpha.yaml"))
         .output()
         .unwrap();
-    assert!(!leaked(&text(&control)).is_empty());
+    assert!(!leaked_from(&text(&control), &expected_sentinels).is_empty());
 }
 
 /// Everything under the sandbox, plus both repositories' porcelain status.
