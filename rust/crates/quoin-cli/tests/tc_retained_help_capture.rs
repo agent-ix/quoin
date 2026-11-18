@@ -216,6 +216,26 @@ fn tc_373_update_help_describes_the_release_manifest_not_an_npm_install() {
     assert!(!help.contains("registry.npmjs.org"), "{help}");
 }
 
+/// The retained assurance help advertises the FR-071 records input that
+/// `quoin assurance` already accepts.
+/// Provenance: VER-111.
+#[trace("FR-205-AC-1")]
+#[test]
+fn tc_205_assurance_help_exposes_formalization_records() {
+    let output = invoke(&["assurance".to_owned(), "--help".to_owned()]);
+    assert_eq!(output.status.code(), Some(0));
+    let help = text(&output.stdout);
+    assert!(
+        help.contains("[--formalization-records <FILE>]"),
+        "usage must show the option and its file argument: {help}"
+    );
+    assert!(
+        help.contains("--formalization-records=<FILE>"),
+        "flags must describe the option and its file argument: {help}"
+    );
+    assert!(help.contains("Contract IR FR-071 records"), "{help}");
+}
+
 /// `quoin measurement record --help` describes the collection format and
 /// points at the worked example, so the format is learnable without reading
 /// the code (PLAT-1050).
