@@ -118,6 +118,7 @@ pub fn render_case(assurance: &RenderableCase) -> String {
     lines.extend(independence_section(
         assurance.evidence_independence.as_deref().unwrap_or(&[]),
     ));
+    lines.extend(formalization_section(&assurance.formalization_records));
     lines.join("\n")
 }
 
@@ -229,32 +230,61 @@ fn render_node(node: &CaseNode, depth: usize) -> Vec<String> {
             out.push(format!("{indent}  - analysis evidence: {item}"));
         }
     }
-    for item in &node.formalization_records {
-        let record = &item.record;
-        let state = record
-            .get("state")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or("unknown");
-        let reason = record.get("reason").and_then(serde_json::Value::as_str);
-        if matches!(
-            state,
-            "eligible" | "authored" | "unknown" | "unavailable" | "not-applicable"
-        ) {
-            out.push(format!("{indent}  - formalization gap: {state}"));
-            if let Some(reason) = reason {
-                out.push(format!("{indent}    - reason: {reason}"));
-            }
-            if let Some(draft_reason) = &item.draft_reason {
-                out.push(format!("{indent}    - FR-204 draft reason: {draft_reason}"));
-            }
-        } else {
-            out.push(format!("{indent}  - formalization evidence: {record}"));
-        }
-    }
     for child in &node.children {
         out.extend(render_node(child, depth + 1));
     }
     out
+}
+
+fn formalization_section(records: &[crate::case::FormalizationRecordView]) -> Vec<String> {
+    if records.is_empty() {
+        return Vec::new();
+    }
+    let mut lines = vec![
+        "## Formalization coverage".to_owned(),
+        String::new(),
+        "These FR-071 records are evidence and do not grant obligation coverage.".to_owned(),
+        String::new(),
+    ];
+    for item in records {
+        let state = item
+            .record
+            .get("state")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown");
+        let requirement = item
+            .criterion_id
+            .split("-AC-")
+            .next()
+            .unwrap_or(&item.criterion_id);
+        let identity = format!(
+            "{requirement} / {} / {} / {}",
+            item.obligation_declaration, item.scoped_document, item.criterion_id
+        );
+        let reason = item
+            .record
+            .get("reason")
+            .and_then(serde_json::Value::as_str);
+        if matches!(
+            state,
+            "eligible" | "authored" | "unknown" | "unavailable" | "not-applicable"
+        ) {
+            lines.push(format!("- **{identity}** — formalization gap: {state}"));
+            if let Some(reason) = reason {
+                lines.push(format!("  - reason: {reason}"));
+            }
+            if let Some(draft_reason) = &item.draft_reason {
+                lines.push(format!("  - FR-204 draft reason: {draft_reason}"));
+            }
+        } else {
+            lines.push(format!(
+                "- **{identity}** — formalization evidence: {}",
+                item.record
+            ));
+        }
+    }
+    lines.push(String::new());
+    lines
 }
 
 /// `suites S1 (2026-…), S2; newest 2026-…; verdict fresh`.

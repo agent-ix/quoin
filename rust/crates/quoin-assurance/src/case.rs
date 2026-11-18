@@ -99,9 +99,6 @@ pub struct CaseNode {
     /// FR-153/FR-078 items for an Analysis solution's exact target.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub analysis_evidence: Option<Vec<serde_json::Value>>,
-    /// FR-071 formalization records and derived FR-204 gap details.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub formalization_records: Vec<FormalizationRecordView>,
     /// Sub-claims first, then evidence.
     pub children: Vec<CaseNode>,
 }
@@ -203,6 +200,9 @@ pub struct AssuranceCase<Trust = serde_json::Value, Independence = serde_json::V
     // sake of an absent list. `Option::default` is `None` for any `T`.
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub evidence_independence: Option<Vec<Independence>>,
+    /// Validated FR-071 records, preserving their full source-authored tuples.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub formalization_records: Vec<FormalizationRecordView>,
 }
 
 /// What the view is given to read.
@@ -410,6 +410,7 @@ pub fn build_case(input: &CaseInput) -> AssuranceCase {
             .evidence_independence
             .as_deref()
             .map(|values| sorted_by_key(values, "obligation")),
+        formalization_records: input.formalization_records.clone().unwrap_or_default(),
     }
 }
 
@@ -521,7 +522,6 @@ fn node_for(
             store,
             analysis_evidence,
             &all_obligations,
-            input.formalization_records.as_deref(),
         )
     }));
 
@@ -547,7 +547,6 @@ fn node_for(
         because,
         evidence: None,
         analysis_evidence: None,
-        formalization_records: Vec::new(),
         children: parts,
     }
 }

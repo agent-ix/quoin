@@ -11,7 +11,7 @@ use quoin_quire_types::{Obligation, TargetLocus};
 use quoin_store::instant::{Instant, InstantGrammar};
 use serde::{Deserialize, Serialize};
 
-use super::{CaseInput, CaseNode, FormalizationRecordView, NodeKind, NodeStatus};
+use super::{CaseInput, CaseNode, NodeKind, NodeStatus};
 use crate::matrix::{EvidenceStatus, bucket, status_of};
 
 /// One suite bound to a leaf, with the newest run or scan the store holds for it.
@@ -145,7 +145,6 @@ pub(super) fn strategy_for(
         because: None,
         evidence: None,
         analysis_evidence: None,
-        formalization_records: Vec::new(),
         children: sub_nodes,
     }
 }
@@ -156,7 +155,6 @@ pub(super) fn solution_for(
     store: &Store,
     analysis_evidence: Option<&super::super::matrix::AnalysisEvidenceInput>,
     all_obligations: &[&Obligation],
-    formalization_records: Option<&[FormalizationRecordView]>,
 ) -> CaseNode {
     let findings = finding_for
         .get(obligation.id.as_str())
@@ -201,16 +199,6 @@ pub(super) fn solution_for(
         because,
         evidence: evidence_for(id, findings, healthy, store),
         analysis_evidence,
-        formalization_records: formalization_records
-            .unwrap_or_default()
-            .iter()
-            .filter(|record| {
-                record.obligation_declaration == obligation.source.as_deref().unwrap_or_default()
-                    && record.scoped_document == obligation.document.as_deref().unwrap_or_default()
-                    && record.criterion_id == obligation.id
-            })
-            .cloned()
-            .collect(),
         children: Vec::new(),
     }
 }

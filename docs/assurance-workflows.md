@@ -91,6 +91,11 @@ whose review is due, unresolved challenges, accepted risks without a current
 expiry, open binding clauses, and unresolved applicability also keep the top
 claim open.
 
+`quoin assurance --formalization-records records.json` accepts a top-level
+array of Contract IR FR-071 coverage-state records. It joins each record to
+Quire's `(source, document, id)` identity and shows gaps separately from
+formalization evidence; those records do not change matrix coverage.
+
 ## 4. Publish immutable evidence
 
 `record-experiment` accepts `experiment-record-v1`; `record-operational`
