@@ -834,7 +834,11 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
     // A module with original text and a module that fails to load refuse without the text.
     let mut open_set = pack_sets().remove(0);
     open_set.0 = "open-zeta";
-    let open = write_pack(&env.base.join("open-src"), "open-module", &[open_set]);
+    let open = write_pack(
+        &env.base.join("open-src"),
+        "open-module",
+        &[open_set.clone()],
+    );
     std::fs::write(
         open.join("open-zeta.yaml"),
         set_yaml(&open_set).replace("text: licensed", "text: original"),
