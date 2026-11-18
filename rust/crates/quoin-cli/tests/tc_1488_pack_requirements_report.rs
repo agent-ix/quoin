@@ -832,14 +832,12 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
         env.report_in(&env.repo, "no-such-pack", &[]),
     ];
     // A module with original text and a module that fails to load refuse without the text.
-    let open = write_pack(
-        &env.base.join("open-src"),
-        "open-module",
-        &[pack_sets().remove(0)],
-    );
+    let mut open_set = pack_sets().remove(0);
+    open_set.0 = "open-zeta";
+    let open = write_pack(&env.base.join("open-src"), "open-module", &[open_set]);
     std::fs::write(
-        open.join("zeta.yaml"),
-        set_yaml(&pack_sets()[0]).replace("text: licensed", "text: original"),
+        open.join("open-zeta.yaml"),
+        set_yaml(&open_set).replace("text: licensed", "text: original"),
     )
     .unwrap();
     let installed = env.run(&["module", "install", &format!("path:{}", open.display())]);
@@ -853,7 +851,7 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
         report["index"][0]["clauseSet"]["authority"],
         "example.invalid"
     );
-    assert_eq!(report["index"][0]["clauseSet"]["id"], "zeta");
+    assert_eq!(report["index"][0]["clauseSet"]["id"], "open-zeta");
     assert_eq!(report["index"][0]["clauseSet"]["version"], "1");
     let listed = env.run(&["module", "list"]);
     assert!(listed.status.success(), "{}", text(&listed));
