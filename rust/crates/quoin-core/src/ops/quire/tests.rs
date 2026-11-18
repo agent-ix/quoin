@@ -197,6 +197,21 @@ fn design_matrix_is_registered_and_keeps_coverage_available() {
     );
 }
 
+#[trace("FR-205-AC-8")]
+#[test]
+fn design_matrix_rejects_the_coverage_only_formalization_identity_flag() {
+    let error = design_matrix(
+        &json!({
+            "scope":"/repo",
+            "include_formalization_identities":true
+        }),
+        &Capabilities::none(),
+    )
+    .unwrap_err();
+    assert_eq!(error.code, CoreErrorCode::BadRequest);
+    assert_eq!(error.context["op"], "quire.design_matrix");
+}
+
 /// An undeclared relation is refused with its named cause and no matrix payload.
 ///
 /// Provenance: PLAT-1590

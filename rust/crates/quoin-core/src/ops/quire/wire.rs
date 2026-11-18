@@ -55,6 +55,18 @@ pub struct CoverageRequest {
     pub include_formalization_identities: bool,
 }
 
+/// The strict request accepted by `quire.design_matrix`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DesignMatrixRequest {
+    /// The repository root to derive obligations from.
+    pub scope: String,
+    /// Module roots supplying the traceability model, in the order given.
+    #[serde(default)]
+    pub modules: Vec<String>,
+}
+
 /// Exact authored identity of one Quire coverage row, available only to the
 /// FR-205 assurance consumer when explicitly requested.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

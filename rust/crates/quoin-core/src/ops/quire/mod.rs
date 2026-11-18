@@ -73,7 +73,7 @@ use crate::protocol::Response;
 
 use self::taxonomy::map_error;
 pub use self::wire::{
-    CoveragePayload, CoverageRequest, DesignJoinRequest, DesignMatrixPayload,
+    CoveragePayload, CoverageRequest, DesignJoinRequest, DesignMatrixPayload, DesignMatrixRequest,
     FormalizationIdentity, MAX_REQUEST_BYTES, MAX_SCALAR_BYTES, PropertiesPayload,
     PropertiesRequest,
 };
@@ -141,7 +141,7 @@ pub fn design_matrix(
     capabilities: &Capabilities<'_>,
 ) -> Result<Response, CoreError> {
     const OP: &str = "quire.design_matrix";
-    let request: CoverageRequest = read(request, OP)?;
+    let request: DesignMatrixRequest = read(request, OP)?;
     check_bound(OP, "scope", &request.scope)?;
     for module in &request.modules {
         check_bound(OP, "modules", module)?;
