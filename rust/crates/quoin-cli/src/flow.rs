@@ -17,7 +17,7 @@ use serde_json::Value;
 
 use crate::{ShellError, invocation};
 
-const FLOWS: [&str; 3] = ["formalize", "review", "to-plan"];
+const FLOWS: [&str; 4] = ["formalize", "review", "to-plan", "design-gate"];
 const MAX_OUTPUT: u64 = 1024 * 1024;
 
 pub(crate) fn run(name: &str, arguments: &ArgMatches) -> Result<Response, ShellError> {
@@ -57,6 +57,13 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
                 .into(),
         );
     }
+    let host_entry = if name == "design-gate" {
+        let host_entry = host_entrypoint()?;
+        preflight_host_api(&host_entry)?;
+        Some(host_entry)
+    } else {
+        None
+    };
     let repo = std::env::current_dir()
         .and_then(|p| p.canonicalize())
         .map_err(|e| e.to_string())?;
@@ -91,7 +98,7 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
                 .ok_or_else(|| "workflow target path is not UTF-8".to_owned())
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let context = serde_json::json!({"id":"quoin-launch-context","repo_root":root_text,"config_root":config_text,"targets":target_text});
+    let mut context = serde_json::json!({"id":"quoin-launch-context","repo_root":root_text,"config_root":config_text,"targets":target_text});
     let mut command = runner(&home, "run");
     command.arg(name).arg("--path").arg(path);
     if let Some(id) = arguments.get_one::<String>("id") {
@@ -104,22 +111,13 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
     let result: Value = serde_json::from_str(&started)
         .map_err(|e| format!("ix-flow returned invalid JSON: {e}"))?;
     let id = instance_id(&result)?;
-    let recorded = execute(
-        runner(&home, "add-item")
-            .arg(id)
-            .arg("quoin_context")
-            .arg("--item")
-            .arg(context.to_string()),
-    )
-    .map_err(|error| match error {
-        LaunchFailure::Child(exit, detail) => LaunchFailure::Child(
-            exit,
-            format!("run {id} remains at intake: context initialization failed: {detail}"),
-        ),
-        LaunchFailure::Local(detail) => LaunchFailure::Local(format!(
-            "run {id} remains at intake: context initialization failed: {detail}"
-        )),
-    })?;
+    if name == "design-gate" {
+        context
+            .as_object_mut()
+            .ok_or_else(|| LaunchFailure::Local("Quoin context is not an object".to_owned()))?
+            .insert("id".to_owned(), Value::String(id.to_owned()));
+    }
+    let recorded = record_context(name, &home, &repo, id, &context, host_entry.as_deref())?;
     let rendered = if arguments.get_flag("json") {
         recorded.trim_end().to_owned()
     } else {
@@ -132,6 +130,145 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
         )
     };
     Ok(Response::ok(serde_json::json!({"rendered":rendered})))
+}
+
+fn record_context(
+    name: &str,
+    home: &std::path::Path,
+    repo: &std::path::Path,
+    id: &str,
+    context: &Value,
+    host_entry: Option<&std::path::Path>,
+) -> Result<String, LaunchFailure> {
+    let recorded = if name == "design-gate" {
+        let host_entry = host_entry.ok_or_else(|| {
+            LaunchFailure::Local("ix-flow host API preflight was skipped".to_owned())
+        })?;
+        execute_host_seed(home, repo, id, context, host_entry)
+    } else {
+        execute(
+            runner(home, "add-item")
+                .arg(id)
+                .arg("quoin_context")
+                .arg("--item")
+                .arg(context.to_string()),
+        )
+    };
+    recorded.map_err(|error| match error {
+        LaunchFailure::Child(exit, detail) => LaunchFailure::Child(
+            exit,
+            format!("run {id} remains at intake: context initialization failed: {detail}"),
+        ),
+        LaunchFailure::Local(detail) => LaunchFailure::Local(format!(
+            "run {id} remains at intake: context initialization failed: {detail}"
+        )),
+    })
+}
+
+fn execute_host_seed(
+    home: &std::path::Path,
+    repo: &std::path::Path,
+    id: &str,
+    context: &Value,
+    host_entry: &std::path::Path,
+) -> Result<String, LaunchFailure> {
+    let source = r"import { pathToFileURL } from 'node:url';
+const { WorkflowCommandRunner } = await import(pathToFileURL(process.argv[1]).href);
+const { runId, item, cwd, stateDir } = JSON.parse(process.argv[2]);
+const runner = new WorkflowCommandRunner({
+  cwd,
+  config: { stateDir, defaultDefinition: 'workflow', output: 'json' },
+  actor: { kind: 'service', id: 'quoin-host' },
+});
+const result = await runner.seedSystemOwnedItem({ id: runId, type: 'quoin_context', item });
+if (!result.ok) {
+  console.error(JSON.stringify(result));
+  process.exitCode = 1;
+} else {
+  console.log(JSON.stringify(result));
+}
+";
+    let input = serde_json::json!({
+        "runId": id,
+        "item": context,
+        "cwd": repo,
+        "stateDir": home.join("flows"),
+    });
+    let mut command = ProcessCommand::new(node_program());
+    command
+        .arg("--input-type=module")
+        .arg("-e")
+        .arg(source)
+        .arg(host_entry)
+        .arg(input.to_string());
+    execute(&mut command)
+}
+
+fn host_entrypoint() -> Result<PathBuf, LaunchFailure> {
+    let runner = executable_path(runner_program())?
+        .canonicalize()
+        .map_err(|e| LaunchFailure::Local(format!("could not resolve ix-flow executable: {e}")))?;
+    let runner_directory = runner
+        .parent()
+        .ok_or_else(|| LaunchFailure::Local("ix-flow executable has no parent".to_owned()))?;
+    let candidates = [
+        runner_directory
+            .parent()
+            .map(|package| package.join("dist/host.js")),
+        runner_directory
+            .parent()
+            .map(|modules| modules.join("@agent-ix/ix-flow/dist/host.js")),
+        Some(runner_directory.join("node_modules/@agent-ix/ix-flow/dist/host.js")),
+    ];
+    candidates
+        .into_iter()
+        .flatten()
+        .find(|candidate| candidate.is_file())
+        .ok_or_else(|| {
+            LaunchFailure::Local(format!(
+                "installed ix-flow package has no host API near {}; update ix-flow before starting design-gate",
+                runner.display(),
+            ))
+        })
+}
+
+fn preflight_host_api(host_entry: &std::path::Path) -> Result<(), LaunchFailure> {
+    let source = r"import { pathToFileURL } from 'node:url';
+try {
+  const host = await import(pathToFileURL(process.argv[1]).href);
+  const runner = host.WorkflowCommandRunner;
+  if (typeof runner !== 'function' || typeof runner.prototype?.seedSystemOwnedItem !== 'function') {
+    throw new Error('WorkflowCommandRunner.seedSystemOwnedItem is unavailable');
+  }
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+}
+";
+    let mut command = ProcessCommand::new(node_program());
+    command
+        .arg("--input-type=module")
+        .arg("-e")
+        .arg(source)
+        .arg(host_entry);
+    execute(&mut command).map(|_| ()).map_err(|error| {
+        let detail = match error {
+            LaunchFailure::Child(_, detail) | LaunchFailure::Local(detail) => detail,
+        };
+        LaunchFailure::Local(format!(
+            "installed ix-flow host API is incompatible ({detail}); update ix-flow before starting design-gate"
+        ))
+    })
+}
+
+fn executable_path(program: &str) -> Result<PathBuf, LaunchFailure> {
+    let path = std::env::var_os("PATH").ok_or_else(|| {
+        LaunchFailure::Local("PATH is unavailable while resolving ix-flow".to_owned())
+    })?;
+    std::env::split_paths(&path)
+        .map(|directory| directory.join(program))
+        .find(|candidate| candidate.is_file())
+        .ok_or_else(|| LaunchFailure::Local("could not locate ix-flow on PATH".to_owned()))
 }
 
 fn instance_id(result: &Value) -> Result<&str, String> {
@@ -264,7 +401,7 @@ fn execute(command: &mut ProcessCommand) -> Result<String, LaunchFailure> {
 
 pub(crate) fn command(name: &'static str) -> Command {
     Command::new(name)
-        .about("Start the Quoin-owned specification workflow")
+        .about("Start a Quoin-owned workflow")
         .arg(
             Arg::new("path")
                 .long("path")
@@ -296,6 +433,10 @@ fn runner_program() -> &'static str {
     } else {
         "ix-flow"
     }
+}
+
+fn node_program() -> &'static str {
+    if cfg!(windows) { "node.exe" } else { "node" }
 }
 
 #[cfg(test)]

@@ -178,14 +178,14 @@ impl Harness {
                 "plugin manifest must match the release checker version",
             )?;
         }
-        let runner = fs::canonicalize(runner).map_err(|e| e.to_string())?;
-        let runner_bin = runner
+        let runner_bin = Path::new(runner)
             .parent()
             .and_then(Path::parent)
             .and_then(Path::parent)
             .and_then(Path::parent)
             .ok_or("ix-flow package location invalid")?
             .join(".bin");
+        let runner = fs::canonicalize(runner).map_err(|e| e.to_string())?;
         fs::create_dir_all(&root).map_err(|e| e.to_string())?;
         let root = fs::canonicalize(root).map_err(|e| e.to_string())?;
         let harness = Self {
@@ -291,6 +291,8 @@ impl Harness {
             "spec-review"
         } else if kind == "formalize" {
             "formalize-requirement"
+        } else if kind == "design-gate" {
+            "design-gate"
         } else {
             "spec-to-plan"
         })
@@ -437,9 +439,242 @@ fn lifecycle(h: &Harness) -> Result<()> {
     formalize_scenarios(h)?;
     runner_failures(h)?;
     println!(
-        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, published ix-flow, review/profile/plan validation and explicit human acceptance"
+        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, host-capable ix-flow package, review/profile/plan validation and explicit human acceptance"
     );
     Ok(())
+}
+
+#[cfg(test)]
+fn design_gate_context_seeded(h: &Harness) -> Result<()> {
+    let id = "smoke-design-gate-context";
+    write(
+        &h.root.join("spec/second-target.md"),
+        simple("FR", "FR-002"),
+    )?;
+    let target_args = ["spec/target.md", "spec/second-target.md"];
+    let canonical_targets = target_args
+        .iter()
+        .map(|target| {
+            h.root
+                .join(target)
+                .canonicalize()
+                .map_err(|error| error.to_string())
+        })
+        .collect::<Result<Vec<_>>>()?
+        .iter()
+        .map(|target| {
+            target
+                .to_str()
+                .map(str::to_owned)
+                .ok_or_else(|| "canonical target path is not UTF-8".to_owned())
+        })
+        .collect::<Result<Vec<_>>>()?;
+    launch_design_gate(h, id, &target_args)?;
+    let original_context = validate_design_gate_context(h, id, &canonical_targets)?;
+    design_gate_proposer_writes_refused(h, id, &original_context)?;
+    assert_design_gate_empty_targets(h)
+}
+
+#[cfg(test)]
+fn validate_design_gate_context(
+    h: &Harness,
+    id: &str,
+    expected_targets: &[String],
+) -> Result<Value> {
+    let status = passed(&h.flow(&["status", id])?)?;
+    let contexts = status
+        .pointer("/data/items/quoin_context")
+        .and_then(Value::as_array)
+        .ok_or("design-gate host did not seed quoin_context")?;
+    require(
+        contexts.len() == 1,
+        "design-gate must seed one context item",
+    )?;
+    let context = contexts.first().ok_or("design-gate context is missing")?;
+    require(
+        context.get("id").and_then(Value::as_str) == Some(id),
+        "design-gate context id must be the engine run id",
+    )?;
+    require(
+        context.get("repo_root").and_then(Value::as_str) == h.root.to_str(),
+        "design-gate host must derive repo_root from the launch repository",
+    )?;
+    require(
+        context.get("config_root").and_then(Value::as_str) == h.config.to_str(),
+        "design-gate host must derive config_root from Quoin configuration",
+    )?;
+    let expected_targets = Value::Array(
+        expected_targets
+            .iter()
+            .cloned()
+            .map(Value::String)
+            .collect(),
+    );
+    require(
+        context.get("targets") == Some(&expected_targets),
+        "design-gate targets must equal the canonicalized repeatable target arguments",
+    )?;
+    Ok(context.clone())
+}
+
+#[cfg(test)]
+fn design_gate_proposer_writes_refused(
+    h: &Harness,
+    id: &str,
+    original_context: &Value,
+) -> Result<()> {
+    let unseeded_id = "smoke-design-gate-agent-add";
+    let skill = h.skill("design-gate");
+    let skill = skill.to_str().ok_or("design-gate path is not UTF-8")?;
+    passed(&h.flow(&["run", "design-gate", "--path", skill, "--id", unseeded_id])?)?;
+    refused(
+        &h.flow(&[
+            "add-item",
+            unseeded_id,
+            "quoin_context",
+            "--item",
+            &json!({"id":"agent-seed","config_root":"/attacker"}).to_string(),
+        ])?,
+        "item_system_owned",
+    )?;
+    refused(
+        &h.flow(&[
+            "add-item",
+            id,
+            "quoin_context",
+            "--item",
+            &json!({"id":"replacement","config_root":"/attacker"}).to_string(),
+        ])?,
+        "item_system_owned",
+    )?;
+    refused(
+        &h.flow(&[
+            "update-item",
+            id,
+            "quoin_context",
+            id,
+            "--patch",
+            &json!({"config_root":"/attacker"}).to_string(),
+        ])?,
+        "item_system_owned",
+    )?;
+    let after = passed(&h.flow(&["status", id])?)?;
+    let after_contexts = after
+        .pointer("/data/items/quoin_context")
+        .and_then(Value::as_array)
+        .ok_or("design-gate context disappeared after rejected writes")?;
+    require(
+        after_contexts.len() == 1 && after_contexts.first() == Some(original_context),
+        "rejected proposer writes must leave the seeded context unchanged",
+    )
+}
+
+#[cfg(test)]
+fn assert_design_gate_empty_targets(h: &Harness) -> Result<()> {
+    let empty_id = "smoke-design-gate-empty-targets";
+    launch_design_gate(h, empty_id, &[])?;
+    let empty_status = passed(&h.flow(&["status", empty_id])?)?;
+    let empty_context = empty_status
+        .pointer("/data/items/quoin_context/0")
+        .ok_or("design-gate did not seed context for an empty target set")?;
+    let no_targets = Value::Array(Vec::new());
+    require(
+        empty_context.get("targets") == Some(&no_targets),
+        "omitted --target arguments must seed an empty target list",
+    )
+}
+
+#[cfg(test)]
+fn launch_design_gate(h: &Harness, id: &str, targets: &[&str]) -> Result<Value> {
+    let mut command = h.command(&h.binary)?;
+    command
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["design-gate", "--path"])
+        .arg(h.skill("design-gate"))
+        .args(["--id", id, "--json"]);
+    for target in targets {
+        command.arg("--target").arg(target);
+    }
+    passed(&command.output().map_err(|error| error.to_string())?)
+}
+
+#[cfg(test)]
+fn design_gate_missing_host_refused(h: &Harness) -> Result<()> {
+    let fake_package = h.scratch.path().join("ix-flow-without-host");
+    let fake_bin = fake_package.join("bin");
+    let marker = h.scratch.path().join("ix-flow-run-invoked");
+    let body = "if [ \"$1\" = \"--version\" ]; then printf '0.3.3\\n'; exit 0; fi\nprintf '%s\\n' \"$*\" > \"$QUOIN_TEST_RUN_MARKER\"\nprintf '{\"ok\":true,\"instance_id\":\"unexpected-run\"}\\n'";
+    let windows_body = "@echo off\r\nif \"%~1\"==\"--version\" (echo 0.3.3& exit /b 0)\r\necho %* > \"%QUOIN_TEST_RUN_MARKER%\"\r\necho {\"ok\":true,\"instance_id\":\"unexpected-run\"}\r\n";
+    executable(&fake_bin, "ix-flow", body, windows_body)?;
+    let mut paths = vec![fake_bin];
+    paths.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    let search = std::env::join_paths(paths).map_err(|error| error.to_string())?;
+    let id = "smoke-design-gate-missing-host";
+    let output = h
+        .command(&h.binary)?
+        .env("PATH", search)
+        .env("QUOIN_TEST_RUN_MARKER", &marker)
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["design-gate", "--path"])
+        .arg(h.skill("design-gate"))
+        .args(["--id", id, "--target", "spec/target.md", "--json"])
+        .output()
+        .map_err(|error| error.to_string())?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    require(
+        !output.status.success()
+            && stderr.contains("installed ix-flow package has no host API")
+            && stderr.contains("update ix-flow before starting design-gate"),
+        format!("missing ix-flow host API must fail actionably: {stderr}"),
+    )?;
+    require(
+        !marker.exists() && !h.config.join("flows").join(format!("{id}.json")).exists(),
+        "missing host API must be refused before ix-flow creates a run",
+    )
+}
+
+#[cfg(test)]
+fn design_gate_incompatible_host_refused(h: &Harness) -> Result<()> {
+    let fake_package = h.scratch.path().join("ix-flow-incompatible-host");
+    let fake_bin = fake_package.join("bin");
+    let host_entry = fake_package.join("dist/host.js");
+    let marker = h.scratch.path().join("ix-flow-run-invoked");
+    write(&host_entry, "export class WorkflowCommandRunner {}\n")?;
+    let body = "if [ \"$1\" = \"--version\" ]; then printf '0.3.3\\n'; exit 0; fi\nprintf '%s\\n' \"$*\" > \"$QUOIN_TEST_RUN_MARKER\"\nprintf '{\"ok\":true,\"instance_id\":\"unexpected-run\"}\\n'";
+    let windows_body = "@echo off\r\nif \"%~1\"==\"--version\" (echo 0.3.3& exit /b 0)\r\necho %* > \"%QUOIN_TEST_RUN_MARKER%\"\r\necho {\"ok\":true,\"instance_id\":\"unexpected-run\"}\r\n";
+    executable(&fake_bin, "ix-flow", body, windows_body)?;
+    let mut paths = vec![fake_bin];
+    paths.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    let search = std::env::join_paths(paths).map_err(|error| error.to_string())?;
+    let id = "smoke-design-gate-incompatible-host";
+    let output = h
+        .command(&h.binary)?
+        .env("PATH", search)
+        .env("QUOIN_TEST_RUN_MARKER", &marker)
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["design-gate", "--path"])
+        .arg(h.skill("design-gate"))
+        .args(["--id", id, "--target", "spec/target.md", "--json"])
+        .output()
+        .map_err(|error| error.to_string())?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    require(
+        !output.status.success()
+            && stderr.contains("WorkflowCommandRunner.seedSystemOwnedItem is unavailable")
+            && stderr.contains("update ix-flow before starting design-gate"),
+        format!("incompatible ix-flow host API must fail actionably: {stderr}"),
+    )?;
+    require(
+        !marker.exists() && !h.config.join("flows").join(format!("{id}.json")).exists(),
+        "incompatible host API must be refused before ix-flow creates a run",
+    )
 }
 
 fn formalize_scenarios(h: &Harness) -> Result<()> {
@@ -806,7 +1041,48 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
     reason = "test assertions may panic"
 )]
 mod tests {
-    use super::{Harness, formalize_scenarios};
+    use super::{
+        Harness, design_gate_context_seeded, design_gate_incompatible_host_refused,
+        design_gate_missing_host_refused, formalize_scenarios,
+    };
+    use ix_trace_rs::trace;
+
+    #[trace("FR-020-AC-6")]
+    #[test]
+    #[ignore = "run by make workflow-test with the current ix-flow host package"]
+    fn design_gate_context_is_seeded_and_protected() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        design_gate_context_seeded(&harness).expect("design-gate host seeding and protection");
+    }
+
+    #[trace("FR-020-AC-7")]
+    #[test]
+    #[ignore = "run by make workflow-test"]
+    fn design_gate_refuses_runner_without_host_api_before_run_creation() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        design_gate_missing_host_refused(&harness).expect("missing host API is refused");
+    }
+
+    #[trace("FR-020-AC-7")]
+    #[test]
+    #[ignore = "run by make workflow-test"]
+    fn design_gate_refuses_incompatible_host_api_before_run_creation() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        design_gate_incompatible_host_refused(&harness).expect("incompatible host API is refused");
+    }
+
     #[test]
     #[ignore = "run by make workflow-test with the current ix-flow runtime"]
     fn formalize_failures_return_to_drafting_with_diagnostics() {

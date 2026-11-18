@@ -72,10 +72,19 @@ evidence: build-inputs
 		--results $(EVIDENCE_DIR)/junit-traced.xml || exit 1; \
 	exit $$status
 
+# Set IX_FLOW_PACKAGE to a built local ix-flow package when testing a host API
+# change before its npmjs release; dependencies still resolve from npmjs.
 .PHONY: workflow-test workflow-test-runtime
 workflow-test-runtime:
-	npm install --prefix $(CARGO_TARGET)/workflow-runner --userconfig /dev/null --cache=$(CARGO_TARGET)/npm-cache --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.3
+	@if [ -n "$(IX_FLOW_PACKAGE)" ]; then \
+	  npm install --prefix $(CARGO_TARGET)/workflow-runner --userconfig /dev/null --cache=$(CARGO_TARGET)/npm-cache --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund "$(IX_FLOW_PACKAGE)"; \
+	else \
+	npm install --prefix $(CARGO_TARGET)/workflow-runner --userconfig /dev/null --cache=$(CARGO_TARGET)/npm-cache --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.3; \
+	fi
 
 workflow-test: rust-build workflow-test-runtime
 	cd $(RUST_DIR) && cargo run --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check -- smoke $(CARGO_TARGET)/debug/quoin $(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js $(CURDIR)
 	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::formalize_failures_return_to_drafting_with_diagnostics -- --ignored --exact
+	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_context_is_seeded_and_protected -- --ignored --exact
+	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_refuses_runner_without_host_api_before_run_creation -- --ignored --exact
+	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_refuses_incompatible_host_api_before_run_creation -- --ignored --exact

@@ -244,7 +244,8 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
         ShellError::command
     };
     invocation::with_current(invocation, || {
-        if let Some((name @ ("formalize" | "review" | "to-plan"), arguments)) = matches.subcommand()
+        if let Some((name @ ("formalize" | "review" | "to-plan" | "design-gate"), arguments)) =
+            matches.subcommand()
         {
             flow::run(name, arguments)
         } else if let Some(("dossier", arguments)) = matches.subcommand() {
@@ -474,6 +475,7 @@ fn command() -> Command {
         .subcommand(flow::command("review"))
         .subcommand(matrix::command())
         .subcommand(flow::command("to-plan"))
+        .subcommand(flow::command("design-gate"))
         .subcommand(
             Command::new("graph")
                 .about("Read-only evidence graph views")
