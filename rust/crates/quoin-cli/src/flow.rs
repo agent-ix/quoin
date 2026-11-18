@@ -115,34 +115,7 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
             .ok_or_else(|| LaunchFailure::Local("Quoin context is not an object".to_owned()))?
             .insert("id".to_owned(), Value::String(id.to_owned()));
     }
-    let recorded = if name == "design-gate" {
-        execute_host_seed(
-            &home,
-            &repo,
-            id,
-            &context,
-            host_entry.as_deref().ok_or_else(|| {
-                LaunchFailure::Local("ix-flow host API preflight was skipped".to_owned())
-            })?,
-        )
-    } else {
-        execute(
-            runner(&home, "add-item")
-                .arg(id)
-                .arg("quoin_context")
-                .arg("--item")
-                .arg(context.to_string()),
-        )
-    }
-    .map_err(|error| match error {
-        LaunchFailure::Child(exit, detail) => LaunchFailure::Child(
-            exit,
-            format!("run {id} remains at intake: context initialization failed: {detail}"),
-        ),
-        LaunchFailure::Local(detail) => LaunchFailure::Local(format!(
-            "run {id} remains at intake: context initialization failed: {detail}"
-        )),
-    })?;
+    let recorded = record_context(name, &home, &repo, id, &context, host_entry.as_deref())?;
     let rendered = if arguments.get_flag("json") {
         recorded.trim_end().to_owned()
     } else {
@@ -157,6 +130,39 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
     Ok(Response::ok(serde_json::json!({"rendered":rendered})))
 }
 
+fn record_context(
+    name: &str,
+    home: &std::path::Path,
+    repo: &std::path::Path,
+    id: &str,
+    context: &Value,
+    host_entry: Option<&std::path::Path>,
+) -> Result<String, LaunchFailure> {
+    let recorded = if name == "design-gate" {
+        let host_entry = host_entry.ok_or_else(|| {
+            LaunchFailure::Local("ix-flow host API preflight was skipped".to_owned())
+        })?;
+        execute_host_seed(home, repo, id, context, host_entry)
+    } else {
+        execute(
+            runner(home, "add-item")
+                .arg(id)
+                .arg("quoin_context")
+                .arg("--item")
+                .arg(context.to_string()),
+        )
+    };
+    recorded.map_err(|error| match error {
+        LaunchFailure::Child(exit, detail) => LaunchFailure::Child(
+            exit,
+            format!("run {id} remains at intake: context initialization failed: {detail}"),
+        ),
+        LaunchFailure::Local(detail) => LaunchFailure::Local(format!(
+            "run {id} remains at intake: context initialization failed: {detail}"
+        )),
+    })
+}
+
 fn execute_host_seed(
     home: &std::path::Path,
     repo: &std::path::Path,
@@ -164,7 +170,7 @@ fn execute_host_seed(
     context: &Value,
     host_entry: &std::path::Path,
 ) -> Result<String, LaunchFailure> {
-    let source = r#"import { pathToFileURL } from 'node:url';
+    let source = r"import { pathToFileURL } from 'node:url';
 const { WorkflowCommandRunner } = await import(pathToFileURL(process.argv[1]).href);
 const { runId, item, cwd, stateDir } = JSON.parse(process.argv[2]);
 const runner = new WorkflowCommandRunner({
@@ -179,7 +185,7 @@ if (!result.ok) {
 } else {
   console.log(JSON.stringify(result));
 }
-"#;
+";
     let input = serde_json::json!({
         "runId": id,
         "item": context,
