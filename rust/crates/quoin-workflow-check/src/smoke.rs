@@ -444,6 +444,7 @@ fn lifecycle(h: &Harness) -> Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 fn design_gate_context_seeded(h: &Harness) -> Result<()> {
     let id = "smoke-design-gate-context";
     write(
@@ -474,6 +475,7 @@ fn design_gate_context_seeded(h: &Harness) -> Result<()> {
     assert_design_gate_empty_targets(h)
 }
 
+#[cfg(test)]
 fn validate_design_gate_context(
     h: &Harness,
     id: &str,
@@ -515,6 +517,7 @@ fn validate_design_gate_context(
     Ok(context.clone())
 }
 
+#[cfg(test)]
 fn design_gate_proposer_writes_refused(
     h: &Harness,
     id: &str,
@@ -566,6 +569,7 @@ fn design_gate_proposer_writes_refused(
     )
 }
 
+#[cfg(test)]
 fn assert_design_gate_empty_targets(h: &Harness) -> Result<()> {
     let empty_id = "smoke-design-gate-empty-targets";
     launch_design_gate(h, empty_id, &[])?;
@@ -580,6 +584,7 @@ fn assert_design_gate_empty_targets(h: &Harness) -> Result<()> {
     )
 }
 
+#[cfg(test)]
 fn launch_design_gate(h: &Harness, id: &str, targets: &[&str]) -> Result<Value> {
     let mut command = h.command(&h.binary)?;
     command
@@ -594,6 +599,7 @@ fn launch_design_gate(h: &Harness, id: &str, targets: &[&str]) -> Result<Value> 
     passed(&command.output().map_err(|error| error.to_string())?)
 }
 
+#[cfg(test)]
 fn design_gate_missing_host_refused(h: &Harness) -> Result<()> {
     let fake_package = h.scratch.path().join("ix-flow-without-host");
     let fake_bin = fake_package.join("bin");
