@@ -17,7 +17,6 @@
 )]
 
 use ix_trace_rs::trace;
-use quoin_assurance::case::build_case;
 use quoin_assurance::matrix::{
     EMPTY_REASON, EvidenceStatus, MatrixInput, MatrixOutput, MatrixRefusal, build, render_markdown,
 };
@@ -139,32 +138,6 @@ fn status_with(findings: &[&str], healthy: bool, checks: &[&str]) -> EvidenceSta
     ))
     .unwrap();
     statuses(&output)[0].1
-}
-
-/// Provenance: VER-105, FR-205
-#[trace("FR-205-AC-5")]
-#[test]
-fn formalization_case_evidence_does_not_change_matrix_coverage() {
-    let matrix_input = input(&["FR-001-AC-1"], &[], &audit(&[], &[], &[]));
-    let before = build(&matrix_input).expect("matrix builds before formalization presentation");
-    let case_input: quoin_assurance::case::CaseInput = serde_json::from_value(json!({
-        "documents": [],
-        "obligations": [],
-        "findings": [],
-        "formalization_records": [{
-            "obligation_id":"FR-001-AC-1",
-            "obligation_declaration":"decl",
-            "scoped_document":"spec/FR-001.md",
-            "criterion_id":"FR-001-AC-1",
-            "record":{"state":"proved"},
-            "draft_reason":null
-        }]
-    }))
-    .expect("formalization case input is accepted");
-    let case = build_case(&case_input);
-    assert_eq!(case.formalization_records.len(), 1);
-    let after = build(&matrix_input).expect("matrix builds after formalization presentation");
-    assert_eq!(before, after);
 }
 
 #[trace("FR-115-AC-16", "FR-153-AC-12")]

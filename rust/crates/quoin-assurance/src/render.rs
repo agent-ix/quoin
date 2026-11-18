@@ -276,16 +276,30 @@ fn formalization_section(records: &[crate::case::FormalizationRecordView]) -> Ve
                 .record
                 .get("evidence")
                 .is_none_or(serde_json::Value::is_null);
+        let proved_unavailable = state == "proved"
+            && item
+                .record
+                .get("evidence")
+                .and_then(|evidence| evidence.get("availability"))
+                .and_then(serde_json::Value::as_str)
+                == Some("unavailable");
         if matches!(
             state,
             "eligible" | "authored" | "unknown" | "unavailable" | "not-applicable"
         ) || envelope_invalid
             || proved_without_evidence
+            || proved_unavailable
         {
             lines.push(format!("- **{identity}** — formalization gap: {state}"));
             if proved_without_evidence {
                 lines.push(
                     "  - proved state has no evidence envelope; it is not credited".to_owned(),
+                );
+            }
+            if proved_unavailable {
+                lines.push(
+                    "  - evidence availability is unavailable; proved state is not credited"
+                        .to_owned(),
                 );
             }
             if envelope_invalid {
@@ -335,6 +349,21 @@ mod formalization_tests {
         let rendered = formalization_section(&[record]).join("\n");
         assert!(rendered.contains("formalization gap: proved"));
         assert!(rendered.contains("preserved but not credited"));
+        assert!(!rendered.contains("formalization evidence:"));
+
+        let unavailable_envelope = FormalizationRecordView {
+            obligation_id: "FR-2-AC-2".to_owned(),
+            obligation_declaration: "decl".to_owned(),
+            scoped_document: "FR-2.md".to_owned(),
+            criterion_id: "FR-2-AC-2".to_owned(),
+            record: serde_json::json!({
+                "state":"proved",
+                "evidence":{"availability":"unavailable","validation_errors":[]}
+            }),
+            draft_reason: None,
+        };
+        let rendered = formalization_section(&[unavailable_envelope]).join("\n");
+        assert!(rendered.contains("evidence availability is unavailable"));
         assert!(!rendered.contains("formalization evidence:"));
 
         let missing_envelope = FormalizationRecordView {

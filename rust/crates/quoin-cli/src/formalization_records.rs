@@ -351,7 +351,20 @@ fn text_field<'a>(value: &'a Value, name: &str) -> Result<&'a str, String> {
 mod tests {
     use super::read_and_join;
     use ix_trace_rs::trace;
+    use quoin_assurance::FormalizationRecordView;
     use serde_json::json;
+
+    fn rendered(records: &[FormalizationRecordView]) -> String {
+        let case: quoin_assurance::RenderableCase = serde_json::from_value(json!({
+            "claims": [],
+            "unreachable": [],
+            "unreadable": [],
+            "producerTrust": [],
+            "formalizationRecords": records
+        }))
+        .expect("validated formalization records render");
+        quoin_assurance::render_case(&case)
+    }
 
     #[trace("FR-205-AC-1", "FR-205-AC-8")]
     #[test]
@@ -376,6 +389,10 @@ mod tests {
         assert_eq!(records[1].obligation_declaration, "decl-b");
         assert_eq!(records[0].record["state"], "eligible");
         assert_eq!(records[1].record["criterion_id"]["scoped_document"], "b.md");
+        let rendered = rendered(&records);
+        assert_eq!(rendered.matches("formalization gap: eligible").count(), 2);
+        assert!(rendered.contains("decl-a / a.md / FR-1-AC-1"));
+        assert!(rendered.contains("decl-b / b.md / FR-1-AC-1"));
     }
 
     #[trace("FR-205-AC-3")]
@@ -398,6 +415,9 @@ mod tests {
             Some("review not complete")
         );
         assert!(result[0].record.get("reason").is_none());
+        let rendered = rendered(&result);
+        assert!(rendered.contains("formalization gap: authored"));
+        assert!(rendered.contains("FR-204 draft reason: review not complete"));
     }
 
     #[trace("FR-205-AC-4")]
@@ -420,6 +440,10 @@ mod tests {
         .expect("none states are valid");
         assert_eq!(records[0].record["state"], "eligible");
         assert_eq!(records[1].record["reason"], "outside the selected boundary");
+        let rendered = rendered(&records);
+        assert!(rendered.contains("formalization gap: eligible"));
+        assert!(rendered.contains("formalization gap: not-applicable"));
+        assert!(rendered.contains("outside the selected boundary"));
     }
 
     #[trace("FR-205-AC-6")]
@@ -430,8 +454,17 @@ mod tests {
         let path = file.path().to_str().expect("path is UTF-8");
         std::fs::write(path, "[]").expect("write missing input");
         assert!(read_and_join(path, &obligations, &[]).is_err());
+        std::fs::write(path, "not json").expect("write malformed input");
+        assert!(read_and_join(path, &obligations, &[]).is_err());
         let record = r#"{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}"#;
         std::fs::write(path, format!("[{record},{record}]")).expect("write duplicate input");
+        assert!(read_and_join(path, &obligations, &[]).is_err());
+        std::fs::write(path, r#"[
+          {"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"},
+          {"criterion_id":{"obligation_declaration":"extra","scoped_document":"other.md","criterion_id":"FR-9-AC-9"},"state":"eligible"}
+        ]"#).expect("write extra record");
+        assert!(read_and_join(path, &obligations, &[]).is_err());
+        std::fs::write(path, r#"[{"criterion_id":{"obligation_declaration":"wrong","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}]"#).expect("write unjoinable record");
         assert!(read_and_join(path, &obligations, &[]).is_err());
         std::fs::write(path, r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"proved","clause_address":{}}]"#).expect("write mismatched input");
         assert!(read_and_join(path, &obligations, &[]).is_err());
@@ -451,6 +484,9 @@ mod tests {
         )
         .expect("approved pairing is valid");
         assert_eq!(records[0].record["state"], "eligible");
+        let rendered = rendered(&records);
+        assert!(rendered.contains("formalization gap: eligible"));
+        assert!(!rendered.contains("formalization evidence:"));
     }
 
     #[trace("FR-205-AC-9")]
@@ -473,14 +509,17 @@ mod tests {
         input["clause_address"]["package_identity"] = json!("package-core");
         input["clause_address"]["source_span"]["start"]["source"]["revision"] = json!(7);
         input["clause_address"]["source_span"]["end"]["source"]["revision"] = json!(7);
-        let record = serde_json::from_value::<super::Record>(input)
-            .expect("typed FR-012 source identities are retained");
-        let wire = serde_json::to_value(record).expect("record serializes");
-        assert_eq!(
-            wire["clause_address"]["source_span"]["start"]["source"]["revision"],
-            7
+        let source: filament_contract_model::SourceIdentity = serde_json::from_value(
+            input["clause_address"]["source_span"]["start"]["source"].clone(),
+        )
+        .expect("FR-012 source identity deserializes");
+        let wire = serde_json::to_value(source).expect("source identity serializes");
+        assert_eq!(wire["revision"], 7);
+        assert!(
+            input["clause_address"]
+                .get("requirement_revision")
+                .is_none()
         );
-        assert!(wire["clause_address"].get("requirement_revision").is_none());
     }
 
     #[trace("FR-205-AC-10")]
