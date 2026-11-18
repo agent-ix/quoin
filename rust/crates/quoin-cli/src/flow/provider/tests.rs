@@ -855,7 +855,8 @@ fn engine_run_identity_selects_only_its_trusted_evaluator_history() {
     .expect("write mismatched state fixture");
     assert_eq!(
         super::read_design_gate_state(&run_one_state, "run-1")
-            .expect_err("a state file cannot claim another engine run")
+            .err()
+            .expect("a state file cannot claim another engine run")
             .code
             .to_string(),
         "dataflow_check_unavailable"
