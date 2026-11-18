@@ -103,6 +103,7 @@ pub(crate) fn input(
         producer_trust: None,
         evidence_independence: None,
         analysis_evidence: None,
+        formalization_records: None,
     }
 }
 
