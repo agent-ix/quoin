@@ -47,8 +47,10 @@ workflow SHALL require no archived provider package or private checkout.
 - The design-gate host SHALL set `quoin_context.id` to the engine run ID and
   derive `repo_root`, `config_root`, and canonical contained targets from the
   launch environment; the proposer SHALL NOT supply or replace these values.
-- The CLI SHALL require ix-flow >=0.3.1 before creating review or to-plan runs
-  and SHALL verify the host seeding API before creating a design-gate run.
+- When a review or to-plan run is requested, the CLI SHALL require ix-flow
+  >=0.3.1.
+- When a design-gate run is requested, the CLI SHALL verify that the installed
+  ix-flow package exposes the host seeding API before creating the run.
 - Quoin SHALL record canonical repository/config roots and contained targets.
 - Quoin SHALL preserve existing runs and their recorded skill paths.
 - Quoin SHALL ignore the obsolete IX_SPEC_WORKFLOWS_ROOT override.
@@ -63,7 +65,7 @@ workflow SHALL require no archived provider package or private checkout.
 | FR-020-AC-3 | A missing or incompatible ix-flow reports the supported installation command without creating a run. | Test |
 | FR-020-AC-4 | A missing explicit skill directory reports how to provide the installed plugin skill, without extracting workflow assets. | Test |
 | FR-020-AC-5 | Run context resolves relative documents under the subject repository, including paths with spaces. | Test |
-| FR-020-AC-6 | Given a compatible ix-flow host API, `quoin design-gate` creates one system-owned `quoin_context` whose ID equals the engine run ID, whose repository and config roots are canonical launch paths, and whose targets are canonical paths contained by the repository; proposer add, replacement, or update attempts fail and leave the seeded item unchanged. | Test |
+| FR-020-AC-6 | Given a compatible ix-flow host API, `quoin design-gate` creates one system-owned `quoin_context` whose ID equals the engine run ID, whose repository and config roots are canonical launch paths, and whose `targets` exactly equal the canonicalized repeatable `--target` arguments (an empty list when none are supplied); proposer add, replacement, or update attempts fail and leave the seeded item unchanged. | Test |
 | FR-020-AC-7 | Given an ix-flow package without the host seeding API, `quoin design-gate` returns an actionable error before creating a run. | Test |
 
 ## Dependencies
