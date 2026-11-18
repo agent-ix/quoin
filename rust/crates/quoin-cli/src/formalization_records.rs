@@ -120,6 +120,12 @@ pub(crate) fn read_and_join(
     }
     let mut records = BTreeMap::<Identity, (Value, Option<String>)>::new();
     for value in values {
+        if value.as_object().is_some_and(|object| {
+            object.get("reason").is_some_and(Value::is_null)
+                || object.get("clause_address").is_some_and(Value::is_null)
+        }) {
+            return Err("optional FR-071 members must be omitted rather than null".to_owned());
+        }
         let record: Record = serde_json::from_value(value.clone())
             .map_err(|error| format!("record violates FR-071: {error}"))?;
         validate_record(&record)?;
@@ -303,6 +309,8 @@ fn validate_record(record: &Record) -> Result<(), String> {
     }
     if let Some(address) = &record.clause_address {
         PackageId::new(address.package_identity.clone()).map_err(|error| error.to_string())?;
+        filament_contract_model::ClauseId::new(address.clause_id.clone())
+            .map_err(|error| error.to_string())?;
         if address.clause_id.is_empty()
             || Identity::from(&address.criterion_id) != Identity::from(&record.criterion_id)
         {
@@ -387,5 +395,33 @@ mod tests {
             }
         });
         assert!(serde_json::from_value::<super::Record>(input).is_err());
+    }
+
+    #[trace("FR-205-AC-10")]
+    #[test]
+    fn state_specific_reason_and_address_rules_are_enforced() {
+        let eligible_with_reason = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"eligible","reason":"should be absent"
+        });
+        let record = serde_json::from_value::<super::Record>(eligible_with_reason)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_err());
+
+        let authored_without_address = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"authored"
+        });
+        let record = serde_json::from_value::<super::Record>(authored_without_address)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_err());
+
+        let unknown_without_reason = json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"unknown"
+        });
+        let record = serde_json::from_value::<super::Record>(unknown_without_reason)
+            .expect("shape is syntactically valid");
+        assert!(super::validate_record(&record).is_err());
     }
 }
