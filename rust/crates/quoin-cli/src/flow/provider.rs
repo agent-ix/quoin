@@ -61,6 +61,15 @@ enum Code {
     FormalRuleStatusInvalid,
     FormalRuleStatusUnavailable,
     FormalRuleTrustInputsInvalid,
+    DataflowCheckUnavailable,
+    DataflowDenied,
+    DataflowNotDenied,
+    DesignAgentUnavailable,
+    RulesModified,
+    DesignGateRequestInvalid,
+    DesignGateRetriesExhausted,
+    DesignGateRetriesNotExhausted,
+    DesignGateDecisionInvalid,
     AnalysisPackageInvalid,
     AnalysisInconclusive,
     DraftClaimsInconsistent,
@@ -101,6 +110,15 @@ impl std::fmt::Display for Code {
             Self::FormalRuleStatusInvalid => "formal_rule_status_invalid",
             Self::FormalRuleStatusUnavailable => "formal_rule_status_unavailable",
             Self::FormalRuleTrustInputsInvalid => "formal_rule_trust_inputs_invalid",
+            Self::DataflowCheckUnavailable => "dataflow_check_unavailable",
+            Self::DataflowDenied => "dataflow_denied",
+            Self::DataflowNotDenied => "dataflow_not_denied",
+            Self::DesignAgentUnavailable => "design_agent_unavailable",
+            Self::RulesModified => "rules_modified",
+            Self::DesignGateRequestInvalid => "design_gate_request_invalid",
+            Self::DesignGateRetriesExhausted => "design_gate_retries_exhausted",
+            Self::DesignGateRetriesNotExhausted => "design_gate_retries_not_exhausted",
+            Self::DesignGateDecisionInvalid => "design_gate_decision_invalid",
             Self::AnalysisPackageInvalid => "analysis_package_invalid",
             Self::AnalysisInconclusive => "analysis_inconclusive",
             Self::DraftClaimsInconsistent => "draft_claims_inconsistent",
@@ -261,6 +279,47 @@ struct FormalizationFailure {
     cleared: bool,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignGateRequest {
+    #[serde(default, rename = "id")]
+    item_id: Option<String>,
+    #[serde(default, rename = "interviewId")]
+    interview_id: Option<String>,
+    #[serde(default, rename = "answeredAt")]
+    answered_at: Option<String>,
+    design_root: PathBuf,
+    module_roots: Vec<PathBuf>,
+    quire_executable: PathBuf,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct DesignGateCheck {
+    attempt: u64,
+    report: Value,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct DesignGateRunState {
+    checks: Vec<DesignGateCheck>,
+    proposal_pending: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignEditBatch {
+    edits: Vec<DesignEdit>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesignEdit {
+    path: PathBuf,
+    content: String,
+}
+
 #[derive(Serialize)]
 struct ResultEnvelope {
     protocol: &'static str,
@@ -416,7 +475,10 @@ fn check_with_details(
     instance: &Instance,
     name: &str,
 ) -> Result<Option<BTreeMap<String, Value>>, Failure> {
-    if !matches!(instance.name.as_str(), "review" | "to-plan" | "formalize") {
+    if !matches!(
+        instance.name.as_str(),
+        "review" | "to-plan" | "formalize" | "design-gate"
+    ) {
         return Err(fail(Code::Unknown, &instance.name));
     }
     let context = context(instance)?;
@@ -451,22 +513,868 @@ fn check_with_details(
         ("formalize", "formalization_retries_exhausted") => {
             retries_exhausted(instance).map(|()| None)
         }
+        ("design-gate", "dataflow_rules_pass") => {
+            let request: DesignGateRequest = one(instance, "operation_request")?;
+            let (attempt, report) = design_gate_report(&request, &context)?;
+            if report_denials(&report).is_empty() {
+                Ok(Some(BTreeMap::from([
+                    ("attempt".to_owned(), Value::from(attempt)),
+                    ("report".to_owned(), report),
+                ])))
+            } else {
+                Err(dataflow_denied(attempt, report))
+            }
+        }
+        ("design-gate", "design_edit_targets_safe") => {
+            let request: DesignGateRequest = one(instance, "operation_request")?;
+            apply_design_edits(instance, &request, &context).map(|()| None)
+        }
+        ("design-gate", "design_gate_retry_allowed") => {
+            design_gate_retry_allowed(&context).map(|()| None)
+        }
+        ("design-gate", "design_gate_retries_exhausted") => {
+            design_gate_retries_exhausted(&context).map(|()| None)
+        }
+        ("design-gate", "escalated_acceptance_preserves_denial") => {
+            design_gate_escalated_acceptance(&context).map(Some)
+        }
         (_, "human_acceptance_required") => {
-            if instance
-                .gates
-                .get("validated->accepted")
-                .map(String::as_str)
-                != Some("hitl")
+            let required: &[&str] = if instance.name == "design-gate" {
+                &[
+                    "passed->accepted",
+                    "passed->rejected",
+                    "escalated->accepted",
+                    "escalated->rejected",
+                ]
+            } else {
+                &["validated->accepted"]
+            };
+            if required
+                .iter()
+                .any(|edge| instance.gates.get(*edge).map(String::as_str) != Some("hitl"))
             {
                 return Err(fail(
                     Code::HumanGateRequired,
-                    "validated->accepted must use hitl",
+                    "every acceptance or rejection transition must use hitl",
                 ));
             }
             Ok(None)
         }
         _ => Err(fail(Code::InvariantUnknown, name)),
     }
+}
+
+fn apply_design_edits(
+    instance: &Instance,
+    request: &DesignGateRequest,
+    context: &Context,
+) -> Check {
+    let Some(values) = instance.items.get("design_edit") else {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "proposer supplied no design_edit output",
+        ));
+    };
+    if values.len() != 1 {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "proposer must supply exactly one design_edit batch",
+        ));
+    }
+    let value = values
+        .first()
+        .cloned()
+        .ok_or_else(|| fail(Code::DesignAgentUnavailable, "design_edit batch is missing"))?;
+    let batch: DesignEditBatch = serde_json::from_value(value).map_err(|error| {
+        fail(
+            Code::DesignAgentUnavailable,
+            format!("design_edit: {error}"),
+        )
+    })?;
+    if batch.edits.is_empty() {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "proposer supplied no usable edits",
+        ));
+    }
+    if request.module_roots.is_empty() || request.module_roots.len() > 16 {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "design edit requires the configured explicit rule modules",
+        ));
+    }
+    let state_path = design_gate_state_path(context)?;
+    let mut state = read_design_gate_state(&state_path)?;
+    if state.proposal_pending || state.checks.len() >= 4 {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "the previous proposal has not received an evaluator result or retries are exhausted",
+        ));
+    }
+    if state
+        .checks
+        .last()
+        .is_some_and(|last| report_denials(&last.report).is_empty())
+    {
+        return Err(fail(
+            Code::DesignAgentUnavailable,
+            "a passing design cannot be revised in this run",
+        ));
+    }
+    let repo = context
+        .repo_root
+        .canonicalize()
+        .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+    let design_root = scoped_path(&repo, &request.design_root).and_then(|path| {
+        path.canonicalize()
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))
+    })?;
+    let modules = design_module_paths(&request.module_roots)?;
+    let planned = plan_design_edits(batch.edits, &design_root, &modules)?;
+    write_design_edits(planned)?;
+    state.proposal_pending = true;
+    write_design_gate_state(&state_path, &state)?;
+    Ok(())
+}
+
+fn design_module_paths(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Failure> {
+    paths
+        .iter()
+        .map(|path| {
+            if !path.is_absolute() {
+                return Err(fail(
+                    Code::DesignAgentUnavailable,
+                    "every rule module root must be an absolute path",
+                ));
+            }
+            ModuleRoot::open(path)
+                .map(|module| module.as_path().to_path_buf())
+                .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))
+        })
+        .collect()
+}
+
+fn plan_design_edits(
+    edits: Vec<DesignEdit>,
+    design_root: &Path,
+    modules: &[PathBuf],
+) -> Result<Vec<(PathBuf, String)>, Failure> {
+    let mut planned = Vec::with_capacity(edits.len());
+    let mut unique = BTreeSet::new();
+    for edit in edits {
+        let target = design_edit_target(&edit.path, design_root, modules)?;
+        if !unique.insert(target.clone()) {
+            return Err(fail(
+                Code::DesignAgentUnavailable,
+                "design edit batch contains duplicate targets",
+            ));
+        }
+        planned.push((target, edit.content));
+    }
+    Ok(planned)
+}
+
+fn design_edit_target(
+    path: &Path,
+    design_root: &Path,
+    modules: &[PathBuf],
+) -> Result<PathBuf, Failure> {
+    if path.as_os_str().is_empty()
+        || path.is_absolute()
+        || path
+            .components()
+            .any(|part| !matches!(part, std::path::Component::Normal(_)))
+    {
+        return Err(fail(
+            Code::RulesModified,
+            "design edits must use safe relative paths inside design_root",
+        ));
+    }
+    let joined = design_root.join(path);
+    let parent = joined
+        .parent()
+        .ok_or_else(|| fail(Code::RulesModified, "edit path has no parent"))?;
+    let mut existing = parent;
+    while !existing.exists() {
+        existing = existing
+            .parent()
+            .ok_or_else(|| fail(Code::RulesModified, "edit path escapes design_root"))?;
+    }
+    let canonical_existing = existing
+        .canonicalize()
+        .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+    let suffix = parent
+        .strip_prefix(existing)
+        .map_err(|_| fail(Code::RulesModified, "edit path escapes design_root"))?;
+    let canonical_parent = canonical_existing.join(suffix);
+    let filename = joined
+        .file_name()
+        .ok_or_else(|| fail(Code::RulesModified, "edit path has no filename"))?;
+    let target = if joined.exists() {
+        joined
+            .canonicalize()
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?
+    } else {
+        canonical_parent.join(filename)
+    };
+    if !target.starts_with(design_root) || modules.iter().any(|module| target.starts_with(module)) {
+        return Err(fail(
+            Code::RulesModified,
+            "design edit targets a rule module or leaves design_root",
+        ));
+    }
+    Ok(target)
+}
+
+fn write_design_edits(planned: Vec<(PathBuf, String)>) -> Check {
+    for (path, content) in planned {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        }
+        let parent = path.parent().ok_or_else(|| {
+            fail(
+                Code::DesignAgentUnavailable,
+                "authorized edit target has no parent directory",
+            )
+        })?;
+        let mut replacement = tempfile::NamedTempFile::new_in(parent)
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        replacement
+            .write_all(content.as_bytes())
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        if let Ok(metadata) = std::fs::metadata(&path) {
+            replacement
+                .as_file()
+                .set_permissions(metadata.permissions())
+                .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+        }
+        replacement
+            .persist(&path)
+            .map_err(|error| fail(Code::DesignAgentUnavailable, error.to_string()))?;
+    }
+    Ok(())
+}
+
+fn design_gate_state_path(context: &Context) -> Result<PathBuf, Failure> {
+    if context.id.is_empty()
+        || context.id.len() > 128
+        || context.id == "."
+        || context.id == ".."
+        || !context
+            .id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || "-_.".contains(character))
+    {
+        return Err(fail(
+            Code::ContextInvalid,
+            "workflow id is not a safe state key",
+        ));
+    }
+    let repo = context
+        .repo_root
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    std::fs::create_dir_all(&context.config_root)
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    let config = context
+        .config_root
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    if config.starts_with(&repo) {
+        return Err(fail(
+            Code::ContextInvalid,
+            "design-gate state must live outside the design repository",
+        ));
+    }
+    let directory = config.join("design-gate");
+    std::fs::create_dir_all(&directory)
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    let canonical_directory = directory
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    if canonical_directory.starts_with(&repo) {
+        return Err(fail(
+            Code::ContextInvalid,
+            "design-gate state directory resolves inside the design repository",
+        ));
+    }
+    Ok(canonical_directory.join(format!("{}.json", context.id)))
+}
+
+fn read_design_gate_state(path: &Path) -> Result<DesignGateRunState, Failure> {
+    let bytes = match std::fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(DesignGateRunState::default());
+        }
+        Err(error) => return Err(fail(Code::DataflowCheckUnavailable, error.to_string())),
+    };
+    if bytes.len() > 5 * 1024 * 1024 {
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "trusted design-gate run state exceeds 5 MiB",
+        ));
+    }
+    let state: DesignGateRunState = serde_json::from_slice(&bytes)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    if state.checks.len() > 4
+        || state.checks.iter().enumerate().any(|(index, check)| {
+            check.attempt != u64::try_from(index + 1).unwrap_or(u64::MAX)
+                || validate_flow_report(&check.report).is_err()
+        })
+    {
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "trusted design-gate state is malformed or out of sequence",
+        ));
+    }
+    Ok(state)
+}
+
+fn write_design_gate_state(path: &Path, state: &DesignGateRunState) -> Check {
+    let parent = path
+        .parent()
+        .ok_or_else(|| fail(Code::DataflowCheckUnavailable, "state path has no parent"))?;
+    let bytes = serde_json::to_vec(state)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    let mut temporary = tempfile::NamedTempFile::new_in(parent)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    temporary
+        .write_all(&bytes)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    temporary
+        .persist(path)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+    Ok(())
+}
+
+fn design_gate_report(
+    request: &DesignGateRequest,
+    context: &Context,
+) -> Result<(u64, Value), Failure> {
+    let (root, design_root, module_roots) = design_gate_paths(request, context)?;
+    let state_path = design_gate_state_path(context)?;
+    let mut state = read_design_gate_state(&state_path)?;
+    if !state.proposal_pending {
+        if let Some(last) = state.checks.last() {
+            return Ok((last.attempt, last.report.clone()));
+        }
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "no trusted design proposal is pending evaluation",
+        ));
+    }
+    if state.checks.len() >= 4 {
+        return Err(fail(
+            Code::DesignGateRetriesExhausted,
+            "the fourth denial has already exhausted the retry allowance",
+        ));
+    }
+    validate_prior_design_denials(&state.checks)?;
+    let attempt = u64::try_from(state.checks.len() + 1).map_err(|_| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            "design gate check count is out of range",
+        )
+    })?;
+    let report = run_design_evaluator(request, &root, &design_root, &module_roots)?;
+    state.checks.push(DesignGateCheck {
+        attempt,
+        report: report.clone(),
+    });
+    state.proposal_pending = false;
+    write_design_gate_state(&state_path, &state).map_err(|error| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            format!("could not retain evaluator result: {}", error.message),
+        )
+    })?;
+    Ok((attempt, report))
+}
+
+fn design_gate_paths(
+    request: &DesignGateRequest,
+    context: &Context,
+) -> Result<(PathBuf, PathBuf, Vec<PathBuf>), Failure> {
+    if request.item_id.as_deref().is_some_and(|id| id != "request")
+        || request
+            .interview_id
+            .as_deref()
+            .is_some_and(|id| id != "request")
+        || request.answered_at.as_deref().is_some_and(str::is_empty)
+        || request.module_roots.is_empty()
+        || request.module_roots.len() > 16
+    {
+        return Err(fail(
+            Code::DesignGateRequestInvalid,
+            "design_gate_request requires a quire executable and 1..16 explicit module roots",
+        ));
+    }
+    if !request.quire_executable.is_absolute() || !request.quire_executable.is_file() {
+        return Err(fail(
+            Code::DataflowCheckUnavailable,
+            "the configured quire executable is unavailable",
+        ));
+    }
+    let root = context
+        .repo_root
+        .canonicalize()
+        .map_err(|error| fail(Code::ContextInvalid, error.to_string()))?;
+    let design_root = scoped_path(&root, &request.design_root)
+        .map_err(|error| fail(Code::DataflowCheckUnavailable, error.message))?;
+    if !design_root.is_dir() {
+        return Err(fail(
+            Code::DesignGateRequestInvalid,
+            "design_root must be a directory within quoin_context.repo_root",
+        ));
+    }
+    let mut module_roots = Vec::with_capacity(request.module_roots.len());
+    let mut module_paths = BTreeSet::new();
+    for path in &request.module_roots {
+        if !path.is_absolute() {
+            return Err(fail(
+                Code::DesignGateRequestInvalid,
+                "every module root must be an absolute path",
+            ));
+        }
+        let module = ModuleRoot::open(path)
+            .map_err(|error| fail(Code::DataflowCheckUnavailable, error.to_string()))?;
+        if !module_paths.insert(module.as_path().to_path_buf()) {
+            return Err(fail(
+                Code::DesignGateRequestInvalid,
+                "module roots must be unique",
+            ));
+        }
+        module_roots.push(module.as_path().to_path_buf());
+    }
+    Ok((root, design_root, module_roots))
+}
+
+fn validate_prior_design_denials(checks: &[DesignGateCheck]) -> Check {
+    for (index, check) in checks.iter().enumerate() {
+        let expected = u64::try_from(index + 1).unwrap_or(u64::MAX);
+        if check.attempt != expected || validate_flow_report(&check.report).is_err() {
+            return Err(fail(
+                Code::DataflowCheckUnavailable,
+                "trusted evaluator reports must be valid and sequential from attempt one",
+            ));
+        }
+        if report_denials(&check.report).is_empty() {
+            return Err(fail(
+                Code::DataflowCheckUnavailable,
+                "every prior trusted evaluator result must contain a denial",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn run_design_evaluator(
+    request: &DesignGateRequest,
+    root: &Path,
+    design_root: &Path,
+    module_roots: &[PathBuf],
+) -> Result<Value, Failure> {
+    let root_text = design_root.to_str().ok_or_else(|| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            "design_root is not valid UTF-8",
+        )
+    })?;
+    let mut args = vec!["relations", "--scope", root_text, "--flow", "--json"];
+    let module_strings = module_roots
+        .iter()
+        .map(|path| {
+            path.to_str().ok_or_else(|| {
+                fail(
+                    Code::DataflowCheckUnavailable,
+                    "module path is not valid UTF-8",
+                )
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    for module in &module_strings {
+        args.push("--module");
+        args.push(module);
+    }
+    let output = run_tool(
+        &request.quire_executable,
+        &args,
+        root,
+        Instant::now() + Duration::from_secs(30),
+    )
+    .map_err(|message| fail(Code::DataflowCheckUnavailable, message))?;
+    let report: Value = serde_json::from_slice(&output.stdout).map_err(|error| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            format!("quire did not return a usable JSON report: {error}"),
+        )
+    })?;
+    validate_flow_report(&report).map_err(|error| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            format!("quire.flow-report/v1 is incomplete: {error}"),
+        )
+    })?;
+    Ok(report)
+}
+
+fn design_gate_checks(context: &Context) -> Result<DesignGateRunState, Failure> {
+    let state_path = design_gate_state_path(context)?;
+    read_design_gate_state(&state_path)
+}
+
+fn design_gate_retry_allowed(context: &Context) -> Check {
+    let state = design_gate_checks(context)?;
+    let Some(last) = state.checks.last() else {
+        return Err(fail(
+            Code::DataflowNotDenied,
+            "a trusted evaluator denial is required before revision",
+        ));
+    };
+    if state.proposal_pending {
+        return Err(fail(
+            Code::DataflowNotDenied,
+            "the pending proposal must be evaluated before revision",
+        ));
+    }
+    if last.attempt == 4 && !report_denials(&last.report).is_empty() {
+        return Err(fail(
+            Code::DesignGateRetriesExhausted,
+            "revision is not allowed after the fourth failed evaluator check",
+        ));
+    }
+    if last.attempt < 4 && !report_denials(&last.report).is_empty() {
+        Ok(())
+    } else {
+        Err(fail(
+            Code::DataflowNotDenied,
+            "revision requires the latest trusted evaluator result to contain denials before attempt four",
+        ))
+    }
+}
+
+fn design_gate_retries_exhausted(context: &Context) -> Check {
+    let state = design_gate_checks(context)?;
+    if !state.proposal_pending
+        && state
+            .checks
+            .last()
+            .is_some_and(|last| last.attempt == 4 && !report_denials(&last.report).is_empty())
+    {
+        Ok(())
+    } else {
+        Err(fail(
+            Code::DesignGateRetriesNotExhausted,
+            "escalation requires the fourth valid evaluator check with denials",
+        ))
+    }
+}
+
+fn design_gate_escalated_acceptance(context: &Context) -> Result<BTreeMap<String, Value>, Failure> {
+    let state = design_gate_checks(context)?;
+    let Some(last) = state.checks.last() else {
+        return Err(fail(
+            Code::DesignGateDecisionInvalid,
+            "escalated acceptance requires the final denied report",
+        ));
+    };
+    let denials = report_denials(&last.report).to_vec();
+    if state.proposal_pending || last.attempt != 4 || denials.is_empty() {
+        return Err(fail(
+            Code::DesignGateDecisionInvalid,
+            "an escalated acceptance must preserve the fourth flow denial",
+        ));
+    }
+    Ok(BTreeMap::from([
+        ("decision".to_owned(), Value::String("accepted".to_owned())),
+        ("report".to_owned(), last.report.clone()),
+        (
+            "flow_result".to_owned(),
+            Value::String(Code::DataflowDenied.to_string()),
+        ),
+        ("unresolved_denials".to_owned(), Value::Array(denials)),
+    ]))
+}
+
+fn validate_flow_report(report: &Value) -> Result<(), String> {
+    let object = report
+        .as_object()
+        .ok_or_else(|| "report must be an object".to_owned())?;
+    let expected = [
+        "schema",
+        "rules",
+        "vocabularies",
+        "facts",
+        "denials",
+        "remediations",
+    ];
+    if object.len() != expected.len() || expected.iter().any(|key| !object.contains_key(*key)) {
+        return Err("report must contain exactly schema, rules, vocabularies, facts, denials, and remediations".to_owned());
+    }
+    if report.get("schema").and_then(Value::as_str) != Some("quire.flow-report/v1")
+        || report.get("rules").and_then(Value::as_array).is_none()
+        || report
+            .get("vocabularies")
+            .and_then(Value::as_object)
+            .is_none()
+        || report.get("facts").and_then(Value::as_object).is_none()
+        || report.get("denials").and_then(Value::as_array).is_none()
+        || report
+            .get("remediations")
+            .and_then(Value::as_array)
+            .is_none()
+    {
+        return Err("report fields do not match quire.flow-report/v1".to_owned());
+    }
+    validate_rules_and_vocabularies(report)?;
+    validate_facts(report)?;
+    validate_denials(report)?;
+    validate_top_remediations(report)
+}
+
+fn validate_rules_and_vocabularies(report: &Value) -> Result<(), String> {
+    for rule in report
+        .get("rules")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        if rule.get("name").and_then(Value::as_str).is_none()
+            || rule.get("subject").and_then(Value::as_array).is_none()
+            || rule.get("match").and_then(Value::as_array).is_none()
+            || rule.get("unless_any").and_then(Value::as_array).is_none()
+            || rule.get("check").and_then(Value::as_str).is_none()
+            || rule.get("remediations").and_then(Value::as_array).is_none()
+            || rule.get("rationale").and_then(Value::as_str).is_none()
+        {
+            return Err("each rule must match the flow-rule declaration shape".to_owned());
+        }
+    }
+    for (archetype, fields) in report
+        .get("vocabularies")
+        .and_then(Value::as_object)
+        .into_iter()
+        .flatten()
+    {
+        if archetype.is_empty() || !fields.is_object() {
+            return Err("vocabularies must map archetypes to field objects".to_owned());
+        }
+        for values in fields
+            .as_object()
+            .into_iter()
+            .flatten()
+            .map(|(_, values)| values)
+        {
+            if !values
+                .as_array()
+                .is_some_and(|values| values.iter().all(Value::is_string))
+            {
+                return Err("vocabulary values must be arrays of strings".to_owned());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_facts(report: &Value) -> Result<(), String> {
+    for (archetype, facts) in report
+        .get("facts")
+        .and_then(Value::as_object)
+        .into_iter()
+        .flatten()
+    {
+        if archetype.is_empty() || !facts.is_array() {
+            return Err("facts must map archetypes to arrays".to_owned());
+        }
+        for fact in facts.as_array().into_iter().flatten() {
+            if fact.get("id").and_then(Value::as_str).is_none()
+                || fact.get("fields").and_then(Value::as_object).is_none()
+                || fact.get("edges").and_then(Value::as_array).is_none()
+                || fact.get("repo").is_some_and(|repo| !repo.is_string())
+            {
+                return Err(format!(
+                    "{archetype} fact must contain id, fields and edges"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_denials(report: &Value) -> Result<(), String> {
+    for denial in report
+        .get("denials")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        if denial.get("rule").and_then(Value::as_str).is_none()
+            || denial.get("check").and_then(Value::as_str).is_none()
+            || denial.get("rationale").and_then(Value::as_str).is_none()
+            || denial.get("severity").and_then(Value::as_str).is_none()
+        {
+            return Err("each denial must name its rule, check, rationale and severity".to_owned());
+        }
+        let subject = denial
+            .get("subject")
+            .ok_or_else(|| "denial subject is missing".to_owned())?;
+        if subject.get("id").and_then(Value::as_str).is_none()
+            || subject.get("archetype").and_then(Value::as_str).is_none()
+            || subject.get("repo").is_some_and(|repo| !repo.is_string())
+        {
+            return Err("denial subject must contain id and archetype".to_owned());
+        }
+        let matched = denial
+            .get("matched")
+            .and_then(Value::as_object)
+            .ok_or_else(|| "denial matched must be an object".to_owned())?;
+        for (archetype, entries) in matched {
+            if archetype.is_empty() || !entries.is_array() {
+                return Err("matched facts must map archetypes to arrays".to_owned());
+            }
+            for entry in entries.as_array().into_iter().flatten() {
+                if entry.get("id").and_then(Value::as_str).is_none()
+                    || entry.get("repo").is_some_and(|repo| !repo.is_string())
+                {
+                    return Err("matched facts must contain ids and optional repos".to_owned());
+                }
+                let id = entry.get("id").and_then(Value::as_str);
+                let repo = entry.get("repo").and_then(Value::as_str);
+                let referenced = report
+                    .get("facts")
+                    .and_then(|facts| facts.get(archetype))
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .any(|fact| {
+                        fact.get("id").and_then(Value::as_str) == id
+                            && fact.get("repo").and_then(Value::as_str) == repo
+                    });
+                if !referenced {
+                    return Err("matched fact does not resolve in the flow report".to_owned());
+                }
+            }
+        }
+        let remediations = denial
+            .get("remediations")
+            .and_then(Value::as_array)
+            .ok_or_else(|| "denial remediations must be an array".to_owned())?;
+        for remediation in remediations {
+            if remediation.get("name").and_then(Value::as_str).is_none()
+                || remediation
+                    .get("description")
+                    .and_then(Value::as_str)
+                    .is_none()
+                || remediation
+                    .get("change")
+                    .and_then(Value::as_object)
+                    .is_none()
+            {
+                return Err("remediation must contain name, description and change".to_owned());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_top_remediations(report: &Value) -> Result<(), String> {
+    for remediation in report
+        .get("remediations")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let actions = ["adds", "sets", "removes"]
+            .iter()
+            .filter(|key| remediation.get(**key).is_some())
+            .count();
+        if remediation.get("name").and_then(Value::as_str).is_none()
+            || remediation
+                .get("description")
+                .and_then(Value::as_str)
+                .is_none()
+            || actions != 1
+        {
+            return Err("top-level remediation must contain one declared change".to_owned());
+        }
+    }
+    Ok(())
+}
+
+fn dataflow_denied(attempt: u64, report: Value) -> Failure {
+    let denials = report_denials(&report).to_vec();
+    let facts = report.get("facts").unwrap_or(&Value::Null);
+    let detail = denials
+        .into_iter()
+        .map(|mut denial| {
+            let categories = denial
+                .pointer("/matched/data_classification")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .flat_map(|matched| {
+                    let id = matched.get("id").and_then(Value::as_str);
+                    let repo = matched.get("repo").and_then(Value::as_str);
+                    facts
+                        .get("data_classification")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter(move |fact| {
+                            fact.get("id").and_then(Value::as_str) == id
+                                && fact.get("repo").and_then(Value::as_str) == repo
+                        })
+                        .flat_map(|fact| {
+                            fact.pointer("/fields/regulated_categories")
+                                .and_then(Value::as_array)
+                                .into_iter()
+                                .flatten()
+                                .filter_map(Value::as_str)
+                                .map(str::to_owned)
+                                .collect::<Vec<_>>()
+                        })
+                })
+                .collect::<Vec<_>>();
+            if let Some(map) = denial.as_object_mut() {
+                map.insert(
+                    "data_categories".to_owned(),
+                    Value::Array(categories.into_iter().map(Value::String).collect()),
+                );
+            }
+            denial
+        })
+        .collect::<Vec<_>>();
+    let mut details = BTreeMap::from([
+        ("attempt".to_owned(), Value::from(attempt)),
+        ("denials".to_owned(), Value::Array(detail)),
+        ("report".to_owned(), report),
+    ]);
+    if let Some(array) = details.get_mut("denials").and_then(Value::as_array_mut) {
+        for denial in array {
+            if denial
+                .get("data_categories")
+                .and_then(Value::as_array)
+                .is_some_and(Vec::is_empty)
+                && let Some(map) = denial.as_object_mut()
+            {
+                map.remove("data_categories");
+            }
+        }
+    }
+    Failure {
+        code: Code::DataflowDenied,
+        message: "data-flow rules deny the current design".to_owned(),
+        details,
+    }
+}
+
+fn report_denials(report: &Value) -> &[Value] {
+    report
+        .get("denials")
+        .and_then(Value::as_array)
+        .map_or(&[], Vec::as_slice)
 }
 
 struct FormalRuleTrust<'a> {
