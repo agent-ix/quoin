@@ -135,20 +135,28 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
     let run_observations = read_run_observations(arguments)?;
     let modules = values(arguments, "module");
-    let coverage = invoke(
-        "quire.coverage",
-        &serde_json::json!({ "scope": repo, "modules": modules }),
-    )?;
+    let formalization_path = arguments.get_one::<String>("formalization-records");
+    let mut coverage_request = serde_json::json!({ "scope": repo, "modules": modules });
+    if formalization_path.is_some() {
+        coverage_request
+            .as_object_mut()
+            .ok_or_else(|| "coverage request must be an object".to_owned())?
+            .insert(
+                "include_formalization_identities".to_owned(),
+                serde_json::Value::Bool(true),
+            );
+    }
+    let coverage = invoke("quire.coverage", &coverage_request)?;
     if !coverage.outcome.carries_payload() {
         return Ok(coverage);
     }
     let obligations = field(&coverage.payload, "obligations")?;
-    let formalization_records = arguments
-        .get_one::<String>("formalization-records")
+    let formalization_records = formalization_path
         .map(|path| {
             let rules =
                 crate::formal_rules::assurance_declarations(std::path::Path::new(&repo), &modules)?;
-            crate::formalization_records::read_and_join(path, &obligations, &rules)
+            let identities = field(&coverage.payload, "formalization_identities")?;
+            crate::formalization_records::read_and_join(path, &obligations, &identities, &rules)
         })
         .transpose()?
         .unwrap_or_default();

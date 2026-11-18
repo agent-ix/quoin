@@ -73,8 +73,9 @@ use crate::protocol::Response;
 
 use self::taxonomy::map_error;
 pub use self::wire::{
-    CoveragePayload, CoverageRequest, DesignJoinRequest, DesignMatrixPayload, MAX_REQUEST_BYTES,
-    MAX_SCALAR_BYTES, PropertiesPayload, PropertiesRequest,
+    CoveragePayload, CoverageRequest, DesignJoinRequest, DesignMatrixPayload,
+    FormalizationIdentity, MAX_REQUEST_BYTES, MAX_SCALAR_BYTES, PropertiesPayload,
+    PropertiesRequest,
 };
 
 /// Answer a `quire.coverage`.
@@ -115,6 +116,18 @@ pub fn coverage(
             .map(matrix_requirement)
             .collect(),
         carried_vocabulary: outcome.report.carried_vocabulary.clone(),
+        formalization_identities: request.include_formalization_identities.then(|| {
+            outcome
+                .report
+                .obligations
+                .iter()
+                .map(|row| FormalizationIdentity {
+                    source: row.source.clone(),
+                    document: row.document.clone(),
+                    id: row.id.clone(),
+                })
+                .collect()
+        }),
     })
 }
 

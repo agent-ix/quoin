@@ -344,6 +344,10 @@ fn coverage_projects_the_obligations_the_engine_derived() {
     assert_eq!(response.outcome.code(), 0);
     let obligations = payload(&response)["obligations"].as_array().unwrap();
     assert_eq!(obligations.len(), 2);
+    assert!(
+        payload(&response).get("formalization_identities").is_none(),
+        "default coverage output remains unchanged"
+    );
     assert_eq!(obligations[0]["id"], "FR-001-AC-1");
     assert_eq!(obligations[0]["target_ids"], json!(["TC-1249"]));
     assert_eq!(obligations[0]["parameters"]["threshold"], "0.9");
@@ -360,6 +364,29 @@ fn coverage_projects_the_obligations_the_engine_derived() {
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0]["reason"], "uncatalogued-verification-method");
     assert_eq!(diagnostics[0]["value"], "Inspection");
+}
+
+/// FR-205 opts into Quire's exact authored identity without changing default coverage payloads.
+#[trace("FR-205-AC-8")]
+#[test]
+fn coverage_can_expose_authored_identity_only_when_requested() {
+    let engine = FakeEngine {
+        obligations: vec![obligation()],
+        ..FakeEngine::default()
+    };
+    let request = json!({
+        "scope":"/repo",
+        "include_formalization_identities":true
+    });
+    let response = coverage(&request, &Capabilities::with_quire(&engine)).unwrap();
+    assert_eq!(
+        payload(&response)["formalization_identities"],
+        json!([{
+            "source":"acceptance-criterion",
+            "document":"spec/FR-001.md",
+            "id":"FR-001-AC-1"
+        }])
+    );
 }
 
 /// One engine `coverage_matrix` entry covering every status and an ignored

@@ -79,6 +79,7 @@ struct Row {
 pub(crate) fn read_and_join(
     path: &str,
     obligations: &Value,
+    identities: &Value,
     rules: &[Value],
 ) -> Result<Vec<FormalizationRecordView>, String> {
     let text = std::fs::read_to_string(path)
@@ -91,15 +92,23 @@ pub(crate) fn read_and_join(
     let rows = obligations
         .as_array()
         .ok_or_else(|| "quire.coverage obligations must be an array".to_owned())?;
+    let identity_rows = identities
+        .as_array()
+        .ok_or_else(|| "quire.coverage omitted formalization identities".to_owned())?;
+    if rows.len() != identity_rows.len() {
+        return Err("Quire formalization identity count differs from obligation count".to_owned());
+    }
     let mut inventory = BTreeMap::new();
-    for row in rows {
+    for (row, identity_row) in rows.iter().zip(identity_rows) {
         let id = text_field(row, "id")?;
-        let Some(source) = row.get("source").and_then(Value::as_str) else {
-            return Err(format!("Quire row {id} omitted source"));
-        };
-        let Some(document) = row.get("document").and_then(Value::as_str) else {
-            return Err(format!("Quire row {id} omitted document"));
-        };
+        let identity_id = text_field(identity_row, "id")?;
+        if identity_id != id {
+            return Err(format!(
+                "Quire formalization identity is out of order for {id}"
+            ));
+        }
+        let source = text_field(identity_row, "source")?;
+        let document = text_field(identity_row, "document")?;
         let identity = Identity(source.to_owned(), document.to_owned(), id.to_owned());
         let (state, draft_reason) = formalization_item(id, rules)?;
         if inventory
@@ -366,6 +375,28 @@ mod tests {
         quoin_assurance::render_case(&case)
     }
 
+    fn join(
+        path: &str,
+        obligations: &serde_json::Value,
+        rules: &[serde_json::Value],
+    ) -> Result<Vec<FormalizationRecordView>, String> {
+        let identities = serde_json::Value::Array(
+            obligations
+                .as_array()
+                .into_iter()
+                .flatten()
+                .map(|row| {
+                    json!({
+                        "source": row["source"],
+                        "document": row["document"],
+                        "id": row["id"]
+                    })
+                })
+                .collect(),
+        );
+        read_and_join(path, obligations, &identities, rules)
+    }
+
     #[trace("FR-205-AC-1", "FR-205-AC-8")]
     #[test]
     fn colliding_flat_labels_keep_distinct_source_document_tuples() {
@@ -378,7 +409,7 @@ mod tests {
             {"source":"decl-a","document":"a.md","id":"FR-1-AC-1"},
             {"source":"decl-b","document":"b.md","id":"FR-1-AC-1"}
         ]);
-        let records = read_and_join(
+        let records = join(
             file.path().to_str().expect("path is UTF-8"),
             &obligations,
             &[],
@@ -404,7 +435,7 @@ mod tests {
         let rules = [
             json!({"symbol":"P1","formalizes":["FR-1-AC-1"],"state":"draft","reason":"review not complete"}),
         ];
-        let result = read_and_join(
+        let result = join(
             file.path().to_str().expect("path is UTF-8"),
             &obligations,
             &rules,
@@ -432,7 +463,7 @@ mod tests {
             {"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"},
             {"source":"decl","document":"FR-1.md","id":"FR-1-AC-2"}
         ]);
-        let records = read_and_join(
+        let records = join(
             file.path().to_str().expect("path is UTF-8"),
             &obligations,
             &[],
@@ -453,21 +484,21 @@ mod tests {
         let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
         let path = file.path().to_str().expect("path is UTF-8");
         std::fs::write(path, "[]").expect("write missing input");
-        assert!(read_and_join(path, &obligations, &[]).is_err());
+        assert!(join(path, &obligations, &[]).is_err());
         std::fs::write(path, "not json").expect("write malformed input");
-        assert!(read_and_join(path, &obligations, &[]).is_err());
+        assert!(join(path, &obligations, &[]).is_err());
         let record = r#"{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}"#;
         std::fs::write(path, format!("[{record},{record}]")).expect("write duplicate input");
-        assert!(read_and_join(path, &obligations, &[]).is_err());
+        assert!(join(path, &obligations, &[]).is_err());
         std::fs::write(path, r#"[
           {"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"},
           {"criterion_id":{"obligation_declaration":"extra","scoped_document":"other.md","criterion_id":"FR-9-AC-9"},"state":"eligible"}
         ]"#).expect("write extra record");
-        assert!(read_and_join(path, &obligations, &[]).is_err());
+        assert!(join(path, &obligations, &[]).is_err());
         std::fs::write(path, r#"[{"criterion_id":{"obligation_declaration":"wrong","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}]"#).expect("write unjoinable record");
-        assert!(read_and_join(path, &obligations, &[]).is_err());
+        assert!(join(path, &obligations, &[]).is_err());
         std::fs::write(path, r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"proved","clause_address":{}}]"#).expect("write mismatched input");
-        assert!(read_and_join(path, &obligations, &[]).is_err());
+        assert!(join(path, &obligations, &[]).is_err());
     }
 
     #[trace("FR-205-AC-7")]
@@ -477,7 +508,7 @@ mod tests {
         std::fs::write(file.path(), r#"[{"criterion_id":{"obligation_declaration":"decl","scoped_document":"FR-1.md","criterion_id":"FR-1-AC-1"},"state":"eligible"}]"#).expect("write records");
         let obligations = json!([{"source":"decl","document":"FR-1.md","id":"FR-1-AC-1"}]);
         let rules = [json!({"symbol":"P1","formalizes":["FR-1-AC-1"],"state":"approved"})];
-        let records = read_and_join(
+        let records = join(
             file.path().to_str().expect("path is UTF-8"),
             &obligations,
             &rules,
