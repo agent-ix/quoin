@@ -121,6 +121,39 @@ pub(crate) fn status_report_with_modules(
     status(args, module_paths).map_err(status_error_message)
 }
 
+/// Read the current QSL formalizes relations for assurance's FR-204 state
+/// alignment without invoking signature verification or enabling signed
+/// approvals on the selected repository.
+pub(crate) fn assurance_declarations(
+    repo: &Path,
+    module_paths: &[String],
+) -> Result<Vec<Value>, String> {
+    let repo = repo
+        .canonicalize()
+        .map_err(|error| format!("repository is unavailable: {error}"))?;
+    let scope = ScopeRoot::open(&repo).map_err(|error| error.to_string())?;
+    let mut notices = Vec::new();
+    let selection = crate::analysis_evidence::module_selection(module_paths)?;
+    let registry = selection
+        .resolve(&scope, &mut notices)
+        .map_err(|error| error.to_string())?;
+    let model = registry
+        .traceability()
+        .ok_or_else(|| "no active module declares a traceability model".to_owned())?;
+    let current = revision_rules(&repo, "HEAD", model)?;
+    Ok(current
+        .into_iter()
+        .map(|rule| {
+            json!({
+                "symbol": rule.symbol,
+                "formalizes": rule.formalizes,
+                "state": "draft",
+                "reason": "approval state is not consulted by quoin assurance"
+            })
+        })
+        .collect())
+}
+
 fn status_report_shell(args: &ArgMatches) -> Result<Value, crate::ShellError> {
     validate_status_arguments(args).map_err(status_shell_error)?;
     status(args, &[]).map_err(status_shell_error)

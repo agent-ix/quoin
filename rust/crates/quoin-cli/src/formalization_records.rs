@@ -332,11 +332,9 @@ fn validate_record(record: &Record) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
         SourceSpan::new(start, end).map_err(|e| e.to_string())?;
     }
-    if let Some(evidence) = &record.evidence {
-        if !evidence.is_valid() {
-            return Err("FR-071 EvidenceEnvelope contains validation_errors".to_owned());
-        }
-    }
+    // Invalid producer observations remain evidence gaps. FR-071 preserves
+    // the shared envelope, including its validation errors, for inspection.
+    let _ = &record.evidence;
     Ok(())
 }
 
@@ -423,5 +421,39 @@ mod tests {
         let record = serde_json::from_value::<super::Record>(unknown_without_reason)
             .expect("shape is syntactically valid");
         assert!(super::validate_record(&record).is_err());
+    }
+
+    #[trace("FR-205-AC-11")]
+    #[test]
+    fn invalid_shared_envelope_is_preserved_as_a_record() {
+        let envelope = json!({
+            "producer_id":"producer",
+            "availability":null,
+            "observation":{"command":["formalizer"],"elapsed_ms":0,"exit_code":null,"outcome":"not-run","diagnostic_category":null},
+            "governing":null,
+            "next_action":null,
+            "owner":null,
+            "boundary_rationale":null,
+            "quoin_reference":null,
+            "validation_errors":["producer output is invalid"]
+        });
+        let result: Result<super::Record, _> = serde_json::from_value(json!({
+            "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+            "state":"proved",
+            "clause_address":{
+                "package_identity":"package",
+                "criterion_id":{"obligation_declaration":"decl","scoped_document":"doc.md","criterion_id":"FR-1-AC-1"},
+                "clause_id":"clause-1",
+                "source_span":{
+                    "start":{"source":{"document":"source.md","revision":1},"line":1,"column":1,"byte_offset":0},
+                    "end":{"source":{"document":"source.md","revision":1},"line":1,"column":2,"byte_offset":1}
+                }
+            },
+            "evidence":envelope
+        }));
+        assert!(
+            result.is_ok(),
+            "shared envelope validation errors remain consumable"
+        );
     }
 }

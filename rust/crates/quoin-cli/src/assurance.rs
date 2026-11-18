@@ -145,12 +145,9 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let formalization_records = arguments
         .get_one::<String>("formalization-records")
         .map(|path| {
-            let status = crate::formal_rules::status_report_with_modules(arguments, &modules)?;
-            let rules = status
-                .get("rules")
-                .and_then(serde_json::Value::as_array)
-                .ok_or_else(|| "formal-rules status omitted rules".to_owned())?;
-            crate::formalization_records::read_and_join(path, &obligations, rules)
+            let rules =
+                crate::formal_rules::assurance_declarations(std::path::Path::new(&repo), &modules)?;
+            crate::formalization_records::read_and_join(path, &obligations, &rules)
         })
         .transpose()?
         .unwrap_or_default();

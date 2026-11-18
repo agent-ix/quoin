@@ -265,11 +265,24 @@ fn formalization_section(records: &[crate::case::FormalizationRecordView]) -> Ve
             .record
             .get("reason")
             .and_then(serde_json::Value::as_str);
+        let envelope_invalid = item
+            .record
+            .get("evidence")
+            .and_then(|evidence| evidence.get("validation_errors"))
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|errors| !errors.is_empty());
         if matches!(
             state,
             "eligible" | "authored" | "unknown" | "unavailable" | "not-applicable"
-        ) {
+        ) || envelope_invalid
+        {
             lines.push(format!("- **{identity}** — formalization gap: {state}"));
+            if envelope_invalid {
+                lines.push(
+                    "  - evidence envelope has validation errors; it is preserved but not credited"
+                        .to_owned(),
+                );
+            }
             if let Some(reason) = reason {
                 lines.push(format!("  - reason: {reason}"));
             }
@@ -285,6 +298,34 @@ fn formalization_section(records: &[crate::case::FormalizationRecordView]) -> Ve
     }
     lines.push(String::new());
     lines
+}
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test fixtures may panic")]
+mod formalization_tests {
+    use super::formalization_section;
+    use crate::case::FormalizationRecordView;
+    use ix_trace_rs::trace;
+
+    #[trace("FR-205-AC-11")]
+    #[test]
+    fn invalid_envelope_is_preserved_and_rendered_as_a_gap() {
+        let record = FormalizationRecordView {
+            obligation_id: "FR-1-AC-1".to_owned(),
+            obligation_declaration: "decl".to_owned(),
+            scoped_document: "FR-1.md".to_owned(),
+            criterion_id: "FR-1-AC-1".to_owned(),
+            record: serde_json::json!({
+                "state":"proved",
+                "evidence":{"validation_errors":["invalid producer result"]}
+            }),
+            draft_reason: None,
+        };
+        let rendered = formalization_section(&[record]).join("\n");
+        assert!(rendered.contains("formalization gap: proved"));
+        assert!(rendered.contains("preserved but not credited"));
+        assert!(!rendered.contains("formalization evidence:"));
+    }
 }
 
 /// `suites S1 (2026-…), S2; newest 2026-…; verdict fresh`.
