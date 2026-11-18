@@ -59,3 +59,11 @@ The new `module_root` helper duplicates the `locate_manifest` plus `ModuleRoot::
 - Focused `tc_208_005_record_discharge_reads_approval_metadata_with_the_full_module_set` via `locked-build.sh`: 1 passed. The first attempt found the documented `node_modules` schema build input missing; after `pnpm install --frozen-lockfile`, the focused test passed.
 - `cargo clippy --manifest-path rust/Cargo.toml --locked -p quoin-quire -p quoin-core -p quoin-cli --all-targets --all-features -- -D warnings` via `locked-build.sh`: passed.
 - `cargo deny check` from `rust/` via `locked-build.sh`: passed (`advisories ok, bans ok, licenses ok, sources ok`); it emitted the existing yanked `yoke-derive 0.8.3` warning.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Added FR-208-AC-6..8 and tests for missing-vocabulary refusal, duplicate-owner refusal, and provider-policy attribution; the cross-vocabulary test also checks the required reference/open and direct classification. after_excerpt: `| FR-208-AC-8 | When the uniquely resolved clause set uses an edge type declared by no installed module, discharge fails with a diagnostic identifying the unknown edge type. | Test |` |
+| FND-002 | fixed | The cross-vocabulary test now claims its new criterion, which explicitly describes the behavior it exercises. after_excerpt: `#[trace("FR-208-AC-6")]` |
+| FND-003 | fixed | `HostModules::is_pack` and `HostModules::evaluate_clause_sets` now both call the shared module-root helper. after_excerpt: `let root = module_root(module)?;` |

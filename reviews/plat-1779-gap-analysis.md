@@ -53,3 +53,10 @@ No source or test stub was observed in the changed files. Repository-wide untagg
 - `quoin matrix --repo <review-worktree> --json` and the same command on detached `origin/main` completed; static status totals match exactly.
 - The changed regression passed independently through `locked-build.sh` after running the repository's frozen pnpm install for the required semantic schema build inputs.
 - This is a planless subset audit; plan completion was not assessed. Optional semantic review was skipped.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-208 now explicitly owns the complete installed vocabulary and provider-policy boundaries for record-discharge, with ACs for valid external vocabulary, provider attribution, and unknown vocabulary. after_excerpt: `| FR-208-AC-6 | When the uniquely resolved clause set uses an edge type declared by another installed module, `record-discharge` validates the clause set using vocabulary from all installed modules. | Test |` |
+| FND-002 | fixed | The new test is tagged to FR-208-AC-6, which directly specifies cross-module approval-metadata loading. after_excerpt: `#[trace("FR-208-AC-6")]` |
