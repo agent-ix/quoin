@@ -44,6 +44,8 @@ acceptance criterion in the selected corpus: `none`, `draft`, `approved`, or
 - When no selected judging run has a disposition, Quoin SHALL report `unevaluated` as the analysis disposition alongside `approved`.
 - Quoin SHALL derive a requirement's state independently of the states of its acceptance criteria.
 - Quoin SHALL derive every item's state from its formalizes relations, [FR-184](./FR-184-analysis-act-producer-definition.md) approval state, and [FR-153](./FR-153-analysis-result-counting-by-disposition.md) analysis disposition.
+- If a discovered criterion cannot be associated with its authored source document because required inventory metadata is missing or malformed, Quoin SHALL reject the coverage report with a diagnostic that identifies the criterion and locates its authored row.
+- Quoin SHALL NOT abort on such a criterion with an unlocated deserialization error.
 - Quoin SHALL NOT store a second formalization-state record.
 - Totals SHALL equal the counts of the listed items in their respective document, criticality, and state groups.
 - The output SHALL NOT contain an aggregate score or percentage.
@@ -65,3 +67,4 @@ acceptance criterion in the selected corpus: `none`, `draft`, `approved`, or
 | FR-204-AC-6 | Given a requirement and its acceptance criteria with different formalization evidence, each criterion's state is derived independently and does not change the requirement's state. | Test |
 | FR-204-AC-7 | Given a corpus with a null or absent criticality, the item's count appears in `unassigned`; for every document and criticality group, each state total equals the number of listed items in that group and state. | Test |
 | FR-204-AC-8 | Given any coverage output, the number of items equals the number of requirement and acceptance-criterion identifiers in the selected corpus, and the output contains no aggregate score or percentage. | Test |
+| FR-204-AC-9 | Given a discovered criterion row with a missing, null, or non-string source-document field, `quoin formal-rules coverage` emits a diagnostic naming the criterion ID and the authored spec path and line of its row, exits nonzero, and emits no partial coverage report; it does not abort with a generic missing-field error. | Test |
