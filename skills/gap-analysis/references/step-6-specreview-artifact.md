@@ -9,12 +9,16 @@ planless PASS as evidence that planned work was completed.
 
 ## Render the template, then author (guardrail)
 
-The `SpecReview` archetype lives in `spec-artifacts-process`. Render its skeleton first,
+The `SpecReview` archetype lives in `spec-artifacts-process`. Read its skeleton and schema first,
 then author, then validate (the ecosystem direct-render-then-validate model):
 
 ```
-quoin write . --types SpecReview
+quoin write <project_root> --types SpecReview --json
 ```
+
+This command returns an authoring pack, not rendered Markdown. Read the returned
+`skeletonPath` and `schemaPath`. Validate the review file you actually authored,
+not the pack's default `spec/**/*.md` glob.
 
 If `quoin write` is unavailable, use the complete frontmatter, body, findings-table, and
 validation contract below. Do not consult a private repository, user-home path, or
@@ -54,7 +58,8 @@ relationships:
 ```
 
 `<org>`/`<component>` and `<SPEC-id>` come from `spec/spec.md` (`org`, `name`, `id`); the
-optional `<Plan-id>` from target selection. Never emit a `reviews` edge to a plan in a
+optional `<Plan-id>` from target selection. If the spec root has no document id, reference its real repository URI
+`ix://<org>/<component>` instead of inventing a SPEC id. Never emit a `reviews` edge to a plan in a
 planless run — a relationship to a plan nobody audited is a fabricated claim.
 
 ## Body
@@ -111,7 +116,8 @@ will not bind it — and a reader cannot tell which they are looking at unless i
 
 ### Findings table contract (validated)
 
-- Headers EXACTLY: `ID | Severity | Summary | Refs`.
+- Required headers, in order: `ID | Severity | Summary | Refs`. The current
+  schema also permits an optional final `Escape Cause` column; follow its enum.
 - `ID` matches `^FND-\d+$`; ≥1 row.
 - `Severity` ∈ `low | medium | high`.
 - A clean audit still records one row: `FND-001 | low | No gaps found | -`.
@@ -125,8 +131,8 @@ will not bind it — and a reader cannot tell which they are looking at unless i
 
 ### What a planless PASS means
 
-A planless PASS asserts **repository assurance only**: every criterion is backed by a tagged
-test, no meaningful code lacks an owning requirement, and no stub or inflated coverage
+A planless PASS asserts **repository assurance only**: every live criterion requiring a source test is backed by a tagged
+test, other accepted evidence and retired criteria are counted separately, no meaningful code lacks an owning requirement, and no stub or inflated coverage
 stands behind a claim. It asserts nothing about whether the work was planned, tracked, or
 completed against a plan — that question was not asked. Keep the Summary and Verdict lines
 consistent with that, and leave `Plan completion: not assessed` visible in `## Coverage` as
@@ -135,7 +141,7 @@ the record of what the PASS does not cover.
 ## Validate
 
 ```
-quire validate --scope <project_root> "reviews/**/*.md"
+quire validate --scope <project_root> "reviews/<this-review>.md"
 ```
 
 **Always pass `--scope <project_root>` explicitly, as above.** A relative glob resolves

@@ -11,6 +11,12 @@ description: >-
 
 # Gap Analysis
 
+Invoke this agent skill as `quoin:gap-analysis` (or `/gap-analysis` in a host
+that exposes slash commands). It is not a shell subcommand: do not run
+`quoin gap-analysis`. Read and execute the procedures below; their command examples identify the
+shell invocations. A failed invented subcommand does not
+make this skill unavailable or excuse skipping reverse-gap and stub checks.
+
 If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
 
 Use this skill as a **repository assurance audit**. The chain it verifies is always the
@@ -23,7 +29,7 @@ spec criteria  ↔  computed Test Matrix  ↔  tagged tests  ↔  source code
 It answers three questions by default, a fourth on request, and a fifth only when the
 caller explicitly hands it a plan:
 
-1. **Is every criterion tested?** Every acceptance criterion is backed by an actual test
+1. **Is every criterion tested?** Every live criterion requiring source verification is backed by an actual test
    carrying its id as a **trace tag** (`FR-xxx-AC-x`) in the test code. The Test Matrix
    that answers this is computed by `quire matrix` (and `quoin matrix`, which adds run
    evidence); nobody writes it by hand.
@@ -52,7 +58,7 @@ is offered on the same terms as ever. The SpecReview records, verbatim:
 Plan completion: not assessed
 ```
 
-**Plan-assisted (opt-in).** The caller names a plan — `gap-analysis --plan Plan-001`, or
+**Plan-assisted (opt-in).** The caller names a plan — `/gap-analysis --plan Plan-001`, or
 says so in the request. The same repository audit runs **identically and over the same
 repository scope**, and plan-completeness bookkeeping is added on top.
 
@@ -106,7 +112,8 @@ whether a plan was explicitly supplied.
 there is no evidence to read) and interpret the computed matrix — untagged criteria,
 criteria tagged only by ignored tests, suspect or stale evidence, and stale tags. The
 computation is the engine's; the severity and the verdict stay here. A repo whose module
-set declares no `traceability:` model falls back to a grep index, declared as such.
+set declares no `traceability:` model falls back to a provisional grep index, declared
+as such; it cannot establish an engine-backed PASS.
 
 **Always — [Underspecified code](references/step-4-underspecified-code.md).** Find
 code/behavior with no owning requirement (reverse gap), plus stubs and coverage inflation

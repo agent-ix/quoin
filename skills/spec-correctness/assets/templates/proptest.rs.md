@@ -34,7 +34,7 @@ proptest! {
 }
 ```
 
-Both tag carriers are present: the `#[trace("FR-012-AC-1")]` attribute (the
+The marker binds evidence; the name is navigation only: the `#[trace("FR-012-AC-1")]` attribute (the
 criterion id; a comment id binds nothing), and
 `fr_012_ac_1_` in the function name.
 

@@ -31,7 +31,7 @@ def test_fr_012_ac_1_duplicate_modules_sorted(catalog):
         assert dup.modules == sorted(dup.modules)
 ```
 
-Both tag carriers: the `@pytest.mark.trace("FR-012-AC-1")` marker (the criterion id;
+The marker binds evidence; the name is navigation only: the `@pytest.mark.trace("FR-012-AC-1")` marker (the criterion id;
 a docstring id binds nothing; the marker is
 registered by the `ix_trace_py` pytest plugin, or by a `markers = trace(*ids)` entry in the pytest
 config, otherwise `--strict-markers` rejects it), and `fr_012_ac_1_`

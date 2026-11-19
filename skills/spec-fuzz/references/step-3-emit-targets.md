@@ -8,8 +8,8 @@ Templates: [cargo-fuzz](../assets/templates/cargo-fuzz.rs.md) ·
 
 ## The tag contract
 
-Inherited from `spec-correctness` step 4, unchanged, because `gap-analysis` reconciles by the
-same grep. **Two independent carriers**, so one formatting change cannot break reconciliation:
+Inherited from `spec-correctness` step 4: gap analysis reads the computed matrix.
+Only the explicit marker binds evidence; the target name is for navigation:
 
 1. The explicit trace marker with the obligation or criterion id: `#[trace("NFR-003-M-1")]`, `@pytest.mark.trace("NFR-003-M-1")`,
    `trace("NFR-003-M-1")`. An id in a comment or docstring binds nothing.
