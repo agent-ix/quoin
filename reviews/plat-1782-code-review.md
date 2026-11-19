@@ -56,3 +56,23 @@ AP-201 (spec/assurance/AP-201-finding-quality.md) was read as context: its bench
 
 Plan completion: not assessed
 Semantic review: skipped; no whole-repository semantic review claimed.
+
+## Dispositions
+
+Round 1 independently reviewed `f9840129599c3e5dd091768d2f1eeb5988177d05` on the same frozen author tree.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Removed the exclusive bash-fence rule; command examples, including untyped artifact steps, now remain executable. |
+
+## Disposition Verification
+
+- `make skill-behavior-test` independently passed all six synthetic interpretation cases against the current source.
+- Independent pre-repair control using `--skill-root /tmp/gap-instruction-before-repair` exited 1 at the unknown-status assertion: qualified-record and retired are unsupported under those instructions.
+- The new target explicitly separates live instruction interpretation from the existing installed-binary smoke. The synthetic controls do not claim to execute a full repository audit.
+- Ruff and `git diff --check` passed; author tree remained unchanged at the reviewed head.
+- No new defect was found in the fix round. Original findings above are preserved verbatim.
+
+## Current Disposition Verdict
+
+**PASS** — FND-001 is fixed; no open findings remain for this method. Final exact-head gate, source merge and release remain the parent's actions.
