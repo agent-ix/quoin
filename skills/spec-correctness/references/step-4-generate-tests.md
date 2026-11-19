@@ -9,17 +9,20 @@ Templates per harness:
 
 ## The tag contract
 
-`gap-analysis` step 3 greps for four forms. Every generated test carries **two independent
-carriers**, so a single formatting change cannot break reconciliation:
+`gap-analysis` reads the computed matrix. Every generated test carries an explicit
+verification marker and a readable name:
 
 1. The explicit trace marker carrying the criterion id
    (`#[trace("FR-027-AC-1")]`, `@pytest.mark.trace("FR-027-AC-1")`, `trace("FR-027-AC-1")`).
    An id written in a comment or docstring binds nothing (`quire coverage` reports
    `trace-id-outside-marker`).
-2. The test function or `describe` name containing the id —
+2. For navigation only, the test function or `describe` name containing the id —
    `fr_027_ac_1_…` in Rust/Python, `"FR-027-AC-1 …"` in TypeScript.
 
-### Where carrier 1 attaches
+Only the explicit marker binds verification evidence. Names, comments, docstrings,
+and provenance do not independently bind. Confirm binding with the computed matrix.
+
+### Where the marker attaches
 
 A carrier is not free-floating text. `quire coverage` binds a tag to the **test symbol
 whose source span encloses it** — the span covering that symbol's annotation block, its
@@ -38,7 +41,7 @@ shipped that way in `@agent-ix/quoin@0.12.x` and every criterion in them scored 
 (agent-ix/quoin#61). **Do not verify placement with grep**: grep does not care where a
 comment sits, which is exactly why the defect shipped.
 
-Plus one provenance line, ignored by the reconciliation grep and read by this skill on
+Plus one provenance line, ignored by matrix reconciliation and read by this skill on
 re-runs:
 
 ```

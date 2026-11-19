@@ -46,7 +46,7 @@ Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (s
 
 | Field | Source | Values |
 | --- | --- | --- |
-| `static_status` (`status` under `quire matrix`) | trace tags | `tagged` · `untagged` · `tagged-by-ignored-test` · `method-without-symbol` |
+| `static_status` (`status` under `quire matrix`) | trace tags | `qualified-record` · `retired` · `tagged` · `untagged` · `tagged-by-ignored-test` · `method-without-symbol` |
 | `binders` | trace tags | one `{path, line, column, qualified_name, kind}` per test bound to the criterion |
 | `method` | the criterion's Verification cell | omitted when the criterion names none |
 | `evidence_status` (`quoin matrix` only) | evidence store + auditor | `bound` · `stale` · `suspect` · `undischarged` · `no run evidence` |
@@ -57,6 +57,11 @@ declares mints no source symbol (`Inspection`, `Analysis`, `Manual`, `Eval` unde
 `spec-artifacts-process`), so no test tag is expected. It is neither a
 gap nor coverage — count it separately.
 
+`qualified-record` means the engine accepted retained evidence for that exact criterion;
+report it separately from source-test tagging. `retired` is historical identity,
+not a live missing-test finding. Neither status proves a test ran. Unknown future
+statuses must be reported as unsupported, not silently discarded or counted as covered.
+
 ## Stale tags
 
 A test tagged with an id no criterion declares binds to nothing, and the matrix cannot show
@@ -66,7 +71,11 @@ it. Read those from the coverage report:
 quire coverage --scope <project_root> --json
 ```
 
-Use only `untracked_symbols` (`path`, `symbol`, `trace_id`) and `diagnostics` from it. Its
+Read `untracked_symbols` (`path`, `symbol`, `trace_id`), `diagnostics`, and
+`binding_census`. Inspect each diagnostic's reason and guidance, including refused
+or unreadable marker forms. A census with candidates or tagged symbols but no
+bound symbols can indicate incompatible markers, not absent tests. Preserve
+these distinctions in findings and report incomplete extraction explicitly. Its
 reference-row fields (`unbacked_rows`, `status_lies`) describe hand-written matrix rows, which
 this step does not audit.
 
@@ -94,11 +103,12 @@ for execution evidence.
 - **Zero criteria is not full coverage.** Under `--format json`, `quire matrix` omits the
   `coverage_matrix` key entirely (the `No obligations matched this scope.` line appears only
   in markdown output), and `quoin matrix --json` returns a `reason` with no requirements,
-  when the declared model matched nothing. Treat that as **no data**, say so in `## Coverage`, and fall back (below).
+  when the declared model matched nothing. Treat that as **no data**, diagnose scope
+  and model selection, and record the limitation in `## Coverage`.
   It is not a `PASS`.
-- **A non-empty `diagnostics` list** from `quire coverage` means a declaration selected
-  nothing — an unreadable document, or a model with no trace targets. The matrix is then
-  measuring less than it appears to.
+- **Diagnostics have different meanings.** Classify each by its reported reason and
+  guidance. Selection failures, malformed markers, unsupported languages, and
+  stale references require different remedies. Do not collapse them into missing tests.
 
 ## Fallback: a repo on an older module set
 
@@ -106,7 +116,8 @@ for execution evidence.
 module declares a `traceability:` model (FR-050-AC-9). That is a real repo state, not an
 error to swallow.
 
-When the commands refuse, or report zero criteria, fall back to a grep index of trace tags
+Only after verifying that no active module declares a usable traceability model,
+fall back to a grep index of trace tags
 across the test tree (`.py` / `.ts` / `.rs`: `#[trace("FR-001-AC-2")]`,
 `@pytest.mark.trace("FR-001-AC-2")`, `trace("FR-001-AC-2")`, criterion ids in test docstrings), reconcile it against
 the criteria ids in `spec/` by hand, and **say which path ran** in `## Coverage`:
@@ -122,10 +133,17 @@ the engine will not bind it (for example above a `describe(` block, which regist
 symbol). **Never present a grep count as a coverage figure** without naming it as a
 fallback.
 
+Command failures, timeouts, zero criteria, partial reads, or an unavailable evidence
+store do not by themselves authorize grep fallback. Preserve exit status and stderr;
+use the documented static matrix fallback when appropriate. Continue reverse-gap
+and stub inspection. An unresolved extraction or command failure prevents PASS;
+record a high finding for the incomplete audit rather than fabricating coverage.
+Grep results are provisional and cannot establish an engine-backed PASS.
+
 ## Rollup
 
 For `## Coverage`, count criteria by static status (`tagged` / `untagged` /
-`tagged-by-ignored-test` / `method-without-symbol`) and, when `quoin matrix` ran, by evidence
+`tagged-by-ignored-test` / `method-without-symbol` / `qualified-record` / `retired`) and, when `quoin matrix` ran, by evidence
 status. Report the numbers the tool produced — do not recompute them, and do not quote a
 figure from an earlier run whose provenance you cannot state.
 

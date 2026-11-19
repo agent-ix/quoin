@@ -38,7 +38,7 @@ describe("FR-012-AC-1 duplicate modules are sorted", () => {
 });
 ```
 
-Both tag carriers: the `trace("FR-012-AC-1")` call (the criterion id; an id in a
+The marker binds evidence; the name is navigation only: the `trace("FR-012-AC-1")` call (the criterion id; an id in a
 comment binds nothing), and `FR-012-AC-1` inside
 the `describe` title. `trace(...ids: string[]): void` records the ids on the running
 test when `QUIRE_TRACE_EMIT=1` (and does nothing otherwise), so it must be called inside a test

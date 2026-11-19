@@ -15,8 +15,8 @@ The target of gap-analysis is a repository, not a plan. A plan is an optional ex
    names another.
 2. **Spec root.** Single-repo: `spec/`. Multi-repo: `specs/<category>/<component>/spec/`.
 3. **`org` / `component`.** Read from `spec/spec.md` frontmatter (`org`, `name`). These build
-   the `ix://<org>/<component>/<id>` URIs used in the SpecReview `relationships:`. Note the
-   same document's `id` (e.g. `SPEC-001`) for the `references` edge.
+   the `ix://<org>/<component>/<id>` URIs used in the SpecReview `relationships:`. Read its `id` if present for the `references` edge; otherwise reference
+   the repository URI itself. Never invent a missing spec-root id.
 4. **Requirements.** Note the requirement files under `spec/functional/`,
    `spec/non-functional/`, `spec/usecase/`, `spec/stakeholder/` — the matrix and reverse-gap
    steps trace against their criterion ids. The Test Matrix is computed from them in the

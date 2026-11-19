@@ -88,3 +88,7 @@ workflow-test: rust-build workflow-test-runtime
 	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_context_is_seeded_and_protected -- --ignored --exact
 	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_refuses_runner_without_host_api_before_run_creation -- --ignored --exact
 	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_refuses_incompatible_host_api_before_run_creation -- --ignored --exact
+
+.PHONY: skill-test
+skill-test:
+	python3 tests/scripts/check_gap_analysis.py
