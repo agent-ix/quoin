@@ -2,10 +2,10 @@
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 
 def run(*args):
@@ -117,6 +117,7 @@ The system SHALL return twice the input integer.
                 "tests",
             ],
             cwd=root,
+            check=False,
             capture_output=True,
             text=True,
             env={**os.environ, "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"},
