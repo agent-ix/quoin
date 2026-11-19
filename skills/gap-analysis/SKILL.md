@@ -13,8 +13,8 @@ description: >-
 
 Invoke this agent skill as `quoin:gap-analysis` (or `/gap-analysis` in a host
 that exposes slash commands). It is not a shell subcommand: do not run
-`quoin gap-analysis`. Read and execute the procedures below; only their fenced
-`bash` commands are shell invocations. A failed invented subcommand does not
+`quoin gap-analysis`. Read and execute the procedures below; their command examples identify the
+shell invocations. A failed invented subcommand does not
 make this skill unavailable or excuse skipping reverse-gap and stub checks.
 
 If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.

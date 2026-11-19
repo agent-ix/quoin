@@ -92,3 +92,7 @@ workflow-test: rust-build workflow-test-runtime
 .PHONY: skill-test
 skill-test:
 	python3 tests/scripts/check_gap_analysis.py
+
+.PHONY: skill-behavior-test
+skill-behavior-test:
+	python3 tests/scripts/check_gap_instruction_behavior.py
