@@ -35,8 +35,8 @@ ten public Git-subdirectory module refs:
 
 | Module | Repository | Module path | Release ref |
 | --- | --- | --- | --- |
-| engineering-assurance | agent-ix/engineering-assurance | engineering_assurance | v0.8.2 |
-| spec-artifacts-iso | agent-ix/spec-artifacts-iso | spec_artifacts_iso | v0.25.0 |
+| engineering-assurance | agent-ix/engineering-assurance | engineering_assurance | v0.10.1 |
+| spec-artifacts-iso | agent-ix/spec-artifacts-iso | spec_artifacts_iso | v0.27.0 |
 | spec-artifacts-app | agent-ix/spec-artifacts-app | spec_artifacts_app | v0.10.0 |
 | spec-artifacts-process | agent-ix/spec-artifacts-process | spec_artifacts_process | v0.34.0 |
 | spec-objects-business | agent-ix/spec-objects-business | spec_objects_business | v0.10.0 |

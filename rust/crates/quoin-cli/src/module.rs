@@ -402,13 +402,13 @@ mod tests {
             "engineering-assurance",
             "agent-ix/engineering-assurance",
             "engineering_assurance",
-            "v0.8.2",
+            "v0.10.1",
         ),
         (
             "spec-artifacts-iso",
             "agent-ix/spec-artifacts-iso",
             "spec_artifacts_iso",
-            "v0.25.0",
+            "v0.27.0",
         ),
         (
             "spec-artifacts-app",
