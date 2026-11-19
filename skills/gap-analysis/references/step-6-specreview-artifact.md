@@ -131,8 +131,8 @@ will not bind it — and a reader cannot tell which they are looking at unless i
 
 ### What a planless PASS means
 
-A planless PASS asserts **repository assurance only**: every criterion is backed by a tagged
-test, no meaningful code lacks an owning requirement, and no stub or inflated coverage
+A planless PASS asserts **repository assurance only**: every live criterion requiring a source test is backed by a tagged
+test, other accepted evidence and retired criteria are counted separately, no meaningful code lacks an owning requirement, and no stub or inflated coverage
 stands behind a claim. It asserts nothing about whether the work was planned, tracked, or
 completed against a plan — that question was not asked. Keep the Summary and Verdict lines
 consistent with that, and leave `Plan completion: not assessed` visible in `## Coverage` as

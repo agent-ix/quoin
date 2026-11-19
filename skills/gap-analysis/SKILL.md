@@ -112,7 +112,8 @@ whether a plan was explicitly supplied.
 there is no evidence to read) and interpret the computed matrix — untagged criteria,
 criteria tagged only by ignored tests, suspect or stale evidence, and stale tags. The
 computation is the engine's; the severity and the verdict stay here. A repo whose module
-set declares no `traceability:` model falls back to a grep index, declared as such.
+set declares no `traceability:` model falls back to a provisional grep index, declared
+as such; it cannot establish an engine-backed PASS.
 
 **Always — [Underspecified code](references/step-4-underspecified-code.md).** Find
 code/behavior with no owning requirement (reverse gap), plus stubs and coverage inflation
