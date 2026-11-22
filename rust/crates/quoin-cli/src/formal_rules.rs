@@ -507,7 +507,6 @@ fn signature_request(
         ("revision".to_owned(), json!(revision)),
         ("kind".to_owned(), json!("commit")),
         ("allowed_signers".to_owned(), json!(allowed)),
-        ("trailer_keys".to_owned(), json!(["Formal-rule"])),
     ]);
     if let Some(gitsign) = gitsign {
         request.insert("gitsign".to_owned(), gitsign.clone());
