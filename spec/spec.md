@@ -209,6 +209,7 @@ index; the files are authoritative.
 - [FR-043](./functional/FR-043-quality-benchmark.md) — run the governed quality benchmark.
 - [FR-044](./functional/FR-044-plan-governed-measurements.md) — store and report plan-governed measurements.
 - [FR-045](./functional/FR-045-portfolio-measurement-report.md) — report measurement portfolios across repositories.
+- [FR-210](./functional/FR-210-retained-proof-manifest.md) — retain proof commitments in an independently protected manifest.
 
 **Semantic-module architecture**
 

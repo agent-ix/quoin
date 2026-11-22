@@ -12,6 +12,8 @@ relationships:
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-064"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-210"
+    type: "requires"
   - target: "ix://agent-ix/ix-flow/FR-013"
     type: "requires"
   - target: "ix://agent-ix/ix-flow/FR-018"
@@ -40,6 +42,13 @@ The verifier SHALL run no producer or proof command. Its three outcomes mean:
 `invalid` SHALL dominate `incomplete`.
 
 When no invalid check exists, any incomplete check SHALL dominate `valid`.
+
+When Quoin evaluates a selected proof for validity, it SHALL verify the
+independently retained manifest and its signed checkpoint under
+[FR-210](./FR-210-retained-proof-manifest.md). A local attestation commitment
+alone does not detect joint replacement of attestation metadata and output
+bytes. Missing or unavailable retention/checkpoint evidence is incomplete;
+contradictory manifest or checkpoint evidence is invalid.
 
 ## Properties
 
@@ -510,12 +519,14 @@ kept.
 | FR-065-AC-21 | The receipt schema and reader require a non-null `claimed_approval` to carry exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`; a claim with both, neither, one half of the first form, an instant not of the form `YYYY-MM-DDTHH:MM:SSZ` or not a real calendar second, a `transparency_log` or other unknown source or reason, or an undeclared time member is refused, and the receipt reports a claim's time, source or missing reason unchanged. | Test |
 | FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Test |
 | FR-065-AC-23 | A v2 proof attestation whose output bytes or any committed metadata are substituted, even at equal output length, is invalid with `output_integrity_mismatch`; a legacy v1 attestation remains readable but is incomplete with `output_integrity_unavailable` and never supports a valid proof result. | Integration |
+| FR-065-AC-24 | A selected proof is valid only when the exact attestation and output digests are present in the complete retained manifest and its head, exact tag object, purpose, record/candidate scope, and proof population match a verified signed checkpoint; missing or unavailable retention/checkpoint evidence is incomplete, while a changed manifest, metadata/output joint substitution, or checkpoint mismatch is invalid. | Integration |
 
 ## Dependencies
 
 - **Upstream**: [FR-032](./FR-032-evidence-auditor.md),
   [FR-063](./FR-063-change-assurance-record-integrity.md),
-  [FR-064](./FR-064-proof-attestation.md), and ix-flow FR-013/018.
+  [FR-064](./FR-064-proof-attestation.md),
+  [FR-210](./FR-210-retained-proof-manifest.md), and ix-flow FR-013/018.
 - **Downstream**: advisory pilots and explicitly promoted assurance profiles may
   consume the outcome; this requirement defines no merge gate or promotion
   policy.

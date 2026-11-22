@@ -189,3 +189,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-207: The dossier records of processing render authored activities and listed model facts](./FR-207-dossier-records-of-processing-content.md)
 - [FR-208: Apply module-specific approval requirements to clause discharge](./FR-208-module-specific-discharge-approval.md)
 - [FR-209: Agent design-gate workflow for boundary-crossing rules](./FR-209-agent-design-gate.md)
+- [FR-210: Retain proof commitments in an independently protected manifest](./FR-210-retained-proof-manifest.md)
