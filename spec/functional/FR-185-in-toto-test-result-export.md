@@ -32,10 +32,11 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - `--execution-provenance <provenance.json>`: the version-2 DSSE envelope
   produced by the signed source release workflow and verified by the
   Engineering Assurance release-evidence verifier under its existing trust
-  policy. Its payload contains `sourceRevision`, the complete computed Quire
-  Test Matrix for that revision, and `runs`: a list of suite id, record path,
-  and SHA-256 for each expected run record. A caller-selected obligation list
-  is not an accepted population source.
+  policy. Its payload contains `sourceRevision`, `suiteDeclarationsSha256`, the
+  complete computed Quire Test Matrix for that revision, and `runs`: a list of
+  suite id, record path, and SHA-256 or `null` when the expected run record is
+  absent. A caller-selected obligation list is not an accepted population
+  source.
 - `--output <statement.json>`: the destination path for the statement.
 - `--evidence-dir <DIR>`: the retained evidence store to read; it defaults to
   `spec/evidence`.
@@ -50,8 +51,9 @@ which this requirement adopts unchanged. The predicate fields conform to the
 ## Behavior
 
 - When a user runs `quoin evidence export-test-result`, Quoin SHALL read only
-  the retained run records, `bindings.json`, and the execution-provenance file
-  and SHALL NOT read Git state, access the network, or spawn a process.
+  the retained run records, `bindings.json`, the maintained suite declarations
+  at `spec/evidence/suites.md`, and the execution-provenance file. Quoin SHALL
+  NOT read Git state, access the network, or spawn a process.
 - The statement SHALL contain exactly `_type`, `subject`, `predicateType` and
   `predicate`, with `_type` equal to
   `https://in-toto.io/Statement/v1` and `predicateType` equal to
@@ -68,13 +70,16 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - Quoin SHALL derive the required population from every active obligation in
   the computed Test Matrix for the immutable source revision identified by the
   execution provenance and the maintained suite declarations for that
-  revision. Quoin SHALL NOT accept a caller-selected subset or infer the
+  revision. Quoin SHALL verify the exact suite-declaration bytes against
+  `suiteDeclarationsSha256` in the signed payload before deriving this
+  population. Quoin SHALL NOT accept a caller-selected subset or infer the
   population from `bindings.json`.
 - The signed source release workflow SHALL produce the version-2 DSSE
   execution-provenance envelope defined by FR-186. Its payload SHALL contain
-  the source revision, complete Test Matrix, and expected suite/run paths and
-  digests. The source revision SHALL be the revision used to compute the
-  matrix and execute the declared suites.
+  the source revision, suite-declaration digest, complete Test Matrix, and
+  expected suite/run paths and digests. An absent expected run SHALL be
+  represented by a `null` run-record digest. The source revision SHALL be the
+  revision used to compute the matrix and execute the declared suites.
 - The Engineering Assurance verifier SHALL authenticate the envelope's source
   workflow identity and validate its revision and artifact provenance under
   the FR-069 trust policy before passing the envelope to Quoin. Quoin SHALL
@@ -105,6 +110,8 @@ which this requirement adopts unchanged. The predicate fields conform to the
   untrusted source identity, or names a revision that differs from any subject
   descriptor. Quoin SHALL also refuse when a present run record does not match
   its committed digest or the signed matrix payload is altered.
+- Quoin SHALL refuse the export when `spec/evidence/suites.md` is absent or its
+  bytes do not match the suite-declaration digest in valid provenance.
 - When provenance is valid but a required obligation has no binding, has an
   empty symbol set, or lacks an expected run record, Quoin SHALL include that
   obligation in `failedTests`. These incomplete-evidence cases SHALL NOT cause
@@ -183,8 +190,8 @@ which this requirement adopts unchanged. The predicate fields conform to the
 | FR-185-AC-8 | The consumer-side negative check from Engineering Assurance FR-069-AC-2 is reproducible from Quoin: an export cannot produce `result: PASSED` with a non-empty `failedTests`, including when a correctly traced passing duplicate entry precedes a failing entry for the same bound symbol. | Test |
 | FR-185-AC-9 | When a bound symbol has a passing run entry but that entry omits `traceIds` or lists only another obligation, the exporter places the bound obligation in `failedTests`, never `passedTests` or `warnedTests`, and sets `result: FAILED`; the same result applies to a legacy run record with no `traceIds`. A matching `traceIds` entry permits the existing outcome rules to classify the obligation. | Test |
 | FR-185-AC-10 | For the complete computed Test Matrix population in verified provenance, an obligation omitted from `bindings.json` is listed in `failedTests`; adding or removing unrelated bindings does not shrink or expand the matrix population. | Test |
-| FR-185-AC-11 | An obligation whose binding has no symbols is listed in `failedTests`; provenance with an incomplete Test Matrix or run list fails signature/digest verification and cannot produce `PASSED`. | Test |
-| FR-185-AC-12 | A valid source-workflow provenance signature, authenticated by the Engineering Assurance verifier, with unaltered complete matrix payload, matching run-record digests, and matching subject revision permits the existing verdict rules. Missing, malformed, invalid-signature, untrusted, or subject-mismatched provenance refuses the export; a valid envelope with a missing required run/binding/symbol lists only the affected obligation in `failedTests`. Version-1 RunRecord values remain readable without acquiring revision fields. | Test |
+| FR-185-AC-11 | Quoin verifies the maintained suite-declaration file against the signed `suiteDeclarationsSha256`; a missing or changed file refuses export. A source-workflow test compares the signed Test Matrix to the complete Quire matrix at `sourceRevision` and detects an omitted active obligation even when the DSSE signature is valid. | Test |
+| FR-185-AC-12 | A valid source-workflow provenance signature, authenticated by the Engineering Assurance verifier, with matching suite-declaration digest, complete matrix, matching present run-record digests, and matching subject revision permits verdict evaluation. Missing, malformed, invalid-signature, untrusted, or subject-mismatched provenance refuses the export; a valid complete envelope with a missing expected run/binding/symbol lists only affected obligations in `failedTests`. Version-1 RunRecord values remain readable without acquiring revision fields. | Test |
 
 ## Dependencies
 
