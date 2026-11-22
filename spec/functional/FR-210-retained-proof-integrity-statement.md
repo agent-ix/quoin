@@ -117,7 +117,8 @@ attestation identifiers.
 - The exact accepted `ProofAttestation` bytes and retained output bytes from
   [FR-064](./FR-064-proof-attestation.md).
 - The configured signed-tag request for purpose, statement digest, exact proof
-  scope, signer/trust policy, and tag object.
+  scope, signer/trust policy, and tag reference. No caller-supplied expected
+  tag object id is trusted as an anchor.
 - The organization's selected retention service and its non-secret retention
   configuration.
 - The checkpoint verification result from
@@ -126,7 +127,7 @@ attestation identifiers.
 ## Outputs
 
 - The canonical `proof-integrity-statement/v1`, its statement digest, and exact
-  signed tag object id returned by FR-080.
+  signed tag object id returned by FR-080 for the object it verified.
 - The verified status or refusal/unavailable cause from FR-080.
 - The retention service's returned object identifiers and operation outcomes.
   Quoin SHALL NOT emit credentials.
@@ -143,9 +144,22 @@ attestation identifiers.
   calculating `statement_digest`.
 - When Quoin evaluates a proof for validity, it SHALL submit the exact
   statement digest, purpose, and proof scope to Engineering Assurance FR-080.
+- FR-080 SHALL parse checkpoint fields and verify the signature from the same
+  immutable annotated tag object fetched for one verification operation.
+- FR-080 SHALL return the full object id of that exact annotated tag object
+  with its parsed checkpoint and signature result.
+- FR-080 SHALL return a non-verified result if its parsed fields and signature
+  verdict do not refer to the same immutable tag object id.
 - Quoin SHALL accept the checkpoint only when FR-080 verifies the expected
-  statement digest and scope against the same exact signed annotated tag object
-  whose signature it verified.
+  statement digest and scope from that same object and returns its exact object
+  id with the result.
+- Quoin SHALL report the returned object id as the checkpoint object id; in the
+  absence of a separate trusted anchor, Quoin SHALL NOT claim that it pins this
+  id to a prior checkpoint.
+- A second tag signed by the same trusted identity over the same purpose,
+  statement digest, and scope SHALL be a distinct valid checkpoint when FR-080
+  verifies that tag's own immutable object. FR-080 SHALL return that object's
+  distinct object id.
 - Quoin SHALL retain the exact statement, signed tag object, attestation bytes,
   and output bytes in the organization's selected retention service.
 - Quoin SHALL compare bytes read from the service with the exact expected
@@ -175,12 +189,13 @@ attestation identifiers.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-210-AC-1 | Each canonical `proof-integrity-statement/v1` binds exactly one record ID/revision, candidate revision, proof ID, attestation ID, exact attestation-byte SHA-256, exact output-byte SHA-256, output size, and media type; undeclared fields and duplicate JSON names are rejected. | Test |
-| FR-210-AC-2 | The statement digest is reproducible; changing any bound field or exact source byte changes the statement digest, and a signed tag for another purpose, statement digest, scope, tag object, or untrusted signer never verifies. | Test |
+| FR-210-AC-2 | The statement digest is reproducible; changing any bound field or exact source byte changes the statement digest, and a signed tag for another purpose, statement digest, scope, or untrusted signer never verifies. | Test |
 | FR-210-AC-3 | The exact statement, signed tag object, attestation bytes, and output bytes are retained and read back byte-for-byte from the selected service; unavailable or missing service/object evidence is incomplete and never qualifies. | Integration |
 | FR-210-AC-4 | A repeatable integration test against the selected real provider closes and reopens the service client, copies the retained objects, attempts update and deletion of each object, and proves that exact bytes remain retrievable and the provider refuses both operations under the selected policy. The test evidence identifies provider, non-secret configuration, run/object IDs, digests, and results without credentials. | Integration |
-| FR-210-AC-5 | Joint replacement of attestation metadata and output bytes, statement substitution, changed-length or equal-length content mutation, replay across proof/record/revision, missing signature, bad signature, wrong tag purpose, and exact-tag-object substitution each produce incomplete or invalid evidence, never a valid proof. | Integration |
-| FR-210-AC-6 | A deliberately removed statement-digest or exact-tag-object comparison makes its corresponding negative-control test fail. | Test |
+| FR-210-AC-5 | Joint replacement of attestation metadata and output bytes, statement substitution, changed-length or equal-length content mutation, replay across proof/record/revision, missing or bad signature, and wrong signer, trust, purpose, digest, or scope produce incomplete or invalid evidence, never a valid proof. | Integration |
+| FR-210-AC-6 | A deliberately removed statement-digest comparison, or a result that parses checkpoint fields from one object and verifies a signature from another, makes its corresponding negative-control test fail. | Test |
 | FR-210-AC-7 | A successful checkpoint does not produce human approval, signer role authorization, or proof correctness, and the receipt preserves the statement digest, exact tag object id, and checkpoint status for the selected proof. | Test |
+| FR-210-AC-8 | FR-080 parses and verifies one fetched immutable tag object atomically, returns that object's full id, and refuses a parsed-versus-verified object mismatch. A second trusted signature over the same purpose, statement digest, and scope may verify as a distinct checkpoint with its distinct returned object id; without a separate trusted anchor, Quoin claims no prior-object-id pinning. | Integration |
 
 ## Dependencies
 
