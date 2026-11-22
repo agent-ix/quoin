@@ -119,6 +119,7 @@ fn retired_requirements_remain_linked_and_are_reported_by_exact_status() {
         ("FR-001", Some("retired")),
         ("FR-002", Some("draft")),
         ("FR-003", None),
+        ("FR-004", Some("Retired")),
     ] {
         let status = status.map_or_else(String::new, |status| format!("status: {status}\n"));
         put(
@@ -144,7 +145,7 @@ fn retired_requirements_remain_linked_and_are_reported_by_exact_status() {
     let control = &report["rows"][0]["controls"][0];
     assert_eq!(
         control["requirements"],
-        serde_json::json!(["FR-001", "FR-002", "FR-003"])
+        serde_json::json!(["FR-001", "FR-002", "FR-003", "FR-004"])
     );
     assert_eq!(
         control["retired_requirements"],

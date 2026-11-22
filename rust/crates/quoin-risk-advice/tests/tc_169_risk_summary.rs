@@ -231,7 +231,7 @@ fn a_complete_chain_is_one_row_with_exact_keys_and_no_findings() {
     );
     assert_eq!(
         row["controls"],
-        json!([{"control": "CTRL-1", "requirements": ["FR-9"], "verifications": ["TC-9"]}])
+        json!([{"control": "CTRL-1", "requirements": ["FR-9"], "retired_requirements": [], "verifications": ["TC-9"]}])
     );
     assert_eq!(
         row["residual_risks"],
@@ -805,7 +805,9 @@ fn the_markdown_joins_ids_entries_and_pairs_with_the_documented_separators() {
         ),
         "{row}"
     );
-    assert!(row.contains("control=CTRL-1; requirements=FR-9; verifications=TC-9"));
+    assert!(row.contains(
+        "control=CTRL-1; requirements=FR-9; retired_requirements=[]; verifications=TC-9"
+    ));
     assert!(row.contains("residual_risk=RR-1; decision=accepted; decided_by=Pat"));
     assert!(row.contains("finding=post-control-estimate-without-decision; names=EST-C"));
     // The stem appears only in the attribution, a finding token and copied values.

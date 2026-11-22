@@ -18,11 +18,27 @@ use std::process::{Command, Output};
 /// The clause text every fixture carries; no output may ever contain it.
 pub(crate) const SENTINEL: &str = "SENTINEL-sprocket-text-7731";
 
-/// A directory outside every git work tree. The default temp directory of a
-/// development machine may itself sit inside one (a stray `.git` in `/tmp`),
-/// which would make every "outside any work tree" case false.
+/// A directory outside every git work tree. A `.git` marker alone is not
+/// sufficient: development environments may leave empty markers in temp roots.
 pub(crate) fn clean_base() -> PathBuf {
-    let outside = |dir: &Path| dir.ancestors().all(|d| !d.join(".git").exists());
+    let outside = |dir: &Path| {
+        dir.ancestors().all(|ancestor| {
+            match Command::new("git")
+                .arg("-C")
+                .arg(ancestor)
+                .args(["rev-parse", "--is-inside-work-tree"])
+                .output()
+            {
+                Ok(output) if output.status.success() => output.stdout.trim() == b"false",
+                Ok(output)
+                    if String::from_utf8_lossy(&output.stderr).contains("not a git repository") =>
+                {
+                    true
+                }
+                _ => false,
+            }
+        })
+    };
     [std::env::temp_dir(), "/var/tmp".into(), "/dev/shm".into()]
         .into_iter()
         .filter_map(|dir| dir.canonicalize().ok())
