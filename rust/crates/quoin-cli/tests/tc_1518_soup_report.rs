@@ -1201,6 +1201,77 @@ fn a_disposition_does_not_cover_a_later_policy_scan() {
     assert!(markdown.contains("- Disposition scope: "), "{markdown}");
 }
 
+#[trace("FR-144-AC-21", "FR-144-AC-23")]
+#[test]
+fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
+    let repo = Repo::new();
+    repo.record(
+        "matched",
+        "pkg:cargo/matched@1.0.0",
+        &[
+            "disposition_clause: \"C-DISP\"",
+            "vex_statements:",
+            "  - advisory: RUSTSEC-SYNTHETIC-1",
+            "    status: not_affected",
+            "    justification: vulnerable_code_not_present",
+            "    impact_statement: synthetic impact details",
+            "    assessed_by: synthetic reviewer",
+            "    assessed_at: '2026-08-02'",
+            "    evidence_refs: [evidence://review/synthetic-1]",
+        ],
+    );
+    repo.record("absent", "pkg:cargo/absent@1.0.0", &[]);
+    repo.record(
+        "mismatch",
+        "pkg:cargo/mismatch@1.0.0",
+        &[
+            "vex_statements:",
+            "  - advisory: RUSTSEC-SYNTHETIC-OTHER",
+            "    status: under_investigation",
+            "    assessed_by: synthetic reviewer",
+            "    assessed_at: '2026-08-02'",
+        ],
+    );
+    repo.audit(&[
+        ("RUSTSEC-SYNTHETIC-1", "matched", "1.0.0"),
+        ("RUSTSEC-SYNTHETIC-2", "absent", "1.0.0"),
+        ("RUSTSEC-SYNTHETIC-3", "mismatch", "1.0.0"),
+    ]);
+    let binding = repo.binding(&["C-DISP"]);
+    let report = report_json(&repo, &binding, &[]);
+
+    let matched = &row(&report, "pkg:cargo/matched@1.0.0")["advisories"][0];
+    assert_eq!(matched["rule_id"], "RUSTSEC-SYNTHETIC-1");
+    assert_eq!(matched["resolution"]["state"], "resolved");
+    assert_eq!(matched["vex_statement"]["status"], "not_affected");
+    assert_eq!(
+        matched["vex_statement"]["justification"],
+        "vulnerable_code_not_present"
+    );
+    assert_eq!(
+        matched["vex_statement"]["impact_statement"],
+        "synthetic impact details"
+    );
+    assert_eq!(matched["vex_statement"]["assessed_by"], "synthetic reviewer");
+    assert_eq!(matched["vex_statement"]["assessed_at"], "2026-08-02");
+    assert_eq!(
+        matched["vex_statement"]["evidence_refs"],
+        json!(["evidence://review/synthetic-1"])
+    );
+    assert_eq!(
+        row(&report, "pkg:cargo/absent@1.0.0")["advisories"][0]["vex_statement"],
+        "no statement"
+    );
+    assert_eq!(
+        row(&report, "pkg:cargo/mismatch@1.0.0")["advisories"][0]["vex_statement"],
+        "no statement"
+    );
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert!(markdown.contains("not_affected"), "{markdown}");
+    assert!(markdown.contains("resolved: accepted_risk by reviewer-1"), "{markdown}");
+    assert!(markdown.contains("VEX: no statement"), "{markdown}");
+}
+
 /// An unmatched no-purl finding could belong to an evaluated record, so the row
 /// states why it cannot be called clean (FR-144's closed status list names it).
 #[trace("FR-144-AC-19", "NFR-030-AC-5")]
