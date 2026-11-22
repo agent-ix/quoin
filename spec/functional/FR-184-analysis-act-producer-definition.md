@@ -41,7 +41,7 @@ definition for the analysis act as a decision it does not take. This requirement
 the host supplies, what a positive decision means and what it does not mean. The FR-116 owner approved it; the
 approval is recorded in the Owner approval section.
 
-The definition has the identity `analysis-act` and the version `1`. It
+The definition has the identity `analysis-act` and the version `2`. It
 cites the owners of the report, the runner and the executor and does not restate them.
 
 ### What runs
@@ -94,11 +94,26 @@ act, and a report from a solver started any other way is not an observation of i
 
 ### Execution association
 
-The qualifier SHALL admit an execution association only from CI; a manual run is not an association this definition
-admits. The required invocation is the
-`run-package` step of the CI workflow that runs the analysis act. The host supplies the association FR-116 requires:
-the exact system, project, run, attempt, job and invocation of that step. This requirement names the step and edits no
-workflow file; changing the step needs the owner's clearance.
+The act SHALL run only in the Quoin repository's GitHub Actions workflow through the `workflow_dispatch` event. This
+is a manually started CI workflow execution, not a local/manual act; no `push`, `pull_request`, `schedule`, or other
+automatic trigger is admitted by this definition. The required invocation is exactly one `filament-analyze
+run-package` step in that run. The host SHALL authenticate the association against GitHub's API using credentials
+available only to the workflow host and SHALL derive, rather than accept as caller-authored report fields, the
+repository owner/name, workflow identity, event name, run id, run attempt, job id, invocation identity, actor, and
+checkout SHA. The authenticated workflow run and job SHALL agree on repository, workflow, event, run id, attempt,
+job, and checkout SHA; the checkout SHA SHALL be the commit actually checked out for the invocation. A missing,
+failed, ambiguous, or mismatched lookup leaves the association or performed revision unevaluated. A supplied run URL,
+environment variable, report field, or green status by itself is not authenticated association evidence.
+
+The workflow SHALL publish the exact report bytes produced by that invocation as an artifact of the authenticated
+run. The host SHALL retrieve that artifact through the authenticated run, verify the artifact's service-provided
+digest, and compute and retain the SHA-256 of the exact `filament.differential-report/v2` bytes selected from it. The
+report SHALL validate under FR-151; the artifact SHALL contain exactly one such report for this invocation. The
+host's validation-evidence reference SHALL bind the authenticated run/attempt/job/invocation tuple, checkout SHA,
+artifact identity and digest, report byte digest, and the exact report projection supplied to qualification. No
+association or output identity is inferred from a filename. This definition adds no member to the closed report
+schema or the FR-151 projection. A workflow change is required to implement this definition and is outside this
+specification change.
 
 ### Source revision
 
@@ -129,9 +144,43 @@ revision, version pin, or additional repository file path.
 
 ### Tool and configuration
 
-No named version set and no pin is required. The qualifier reads the observed solver `identity.version` and the
-`producer.version` in the FR-151 projection, and requires no particular value of either; the definition records no
-allowed version set (FR-184-CON-4 below).
+The supported execution environment is the GitHub-hosted `ubuntu-24.04` x86_64 runner, with Rust toolchain `1.98.1`,
+the workflow's checked-out Quoin commit, and a `filament-analyze` executable built from the
+`agent-ix/filament-analyze` source revision declared by the workflow. The executable SHALL run `run-package` with
+the exact FR-009 contract-package input, absolute
+`--z3`, `--cvc5`, `--producer-execute`, and `--output` paths, and the bounded reader limits and refusal behavior of
+filament-analyze FR-009. The contract-package input SHALL contain exactly one selected `analysis_claim`; its
+canonical bytes, selected claim id, and source identity SHALL be retained as validation evidence and SHALL match the
+report's package, assertion, and clause identities. The report SHALL contain exactly that one selected assertion.
+
+The `producer-execute` executable SHALL be the Engineering Assurance `v0.10.1` distribution and SHALL implement the
+FR-019/FR-029 producer-execution contract used by FR-009; the workflow SHALL record the resolved executable version
+and distribution identity. Engineering Assurance 0.8.1 is unsupported because it does not provide the required
+`signature-verify` command. Z3 and cvc5 SHALL be real executables on this runner, and their observed
+`identity.path`/`identity.version` values and configured paths SHALL be retained by the report and compared with the
+accepted FR-093 context. This definition adds no solver-version allowlist: a missing identity or any observed-context
+mismatch prevents reliance rather than being treated as a match. The workflow SHALL record the exact invocation
+arguments and non-secret effective configuration needed to reproduce the run; secrets SHALL NOT be copied into the
+report, artifact metadata, or FR-093 decision.
+
+### Validation corpus and positive reliance boundary
+
+The validation corpus SHALL be a versioned, owner-approved `filament-analyze` TC-006 artifact at an exact source
+revision. The owning ticket [VER-17](https://linear.app/agent-ix/issue/VER-17/analyze24-qa-retain-the-complete-seeded-real-engine-corpus-and-direct)
+tracks the missing retained corpus. The artifact must enumerate exact case identities and input bytes, expected
+classifications, real-engine versus controlled-failure cases, tool/configuration identities, and the reports or
+non-report outcomes that each case is expected to produce. A category list or test name without those identities is
+not a validation corpus. The validation-evidence reference SHALL identify the approved corpus artifact, source
+revision, each case identity and expected outcome, and the corresponding observed outcome. Partial or stub-only
+evidence does not satisfy this definition.
+
+The two cases in `official_z3_cvc5_differential_corpus_agrees` (`real-sat` and `real-unsat`) are only the current
+real-engine SAT/UNSAT controls. They SHALL NOT be described as the complete TC-006 corpus or as a `run-package`
+end-to-end result. The current filament-analyze test matrix states that the complete retained corpus (#24) remains
+open, and VER-17 does not yet provide exact case identities. Therefore the exact `validationCorpus` identity remains
+unresolved: no FR-093 assessment based on this definition can be accepted and no analysis obligation can qualify
+until the owning team defines and retains it. This requirement does not claim that the corpus, workflow, or any live
+run exists, and does not create a live run.
 
 ### Actor authority
 
@@ -195,7 +244,10 @@ The definition is approved, and two premises keep the result `unevaluated`, each
 - **Premise: no FR-093 assessment.** Bounded reliance on `filament-analyze` and the solvers for this positive use
   ([FR-093](./FR-093-evidence-producer-trust.md)) is open: no assessment exists. Every analysis-backed obligation
   SHALL stay `unevaluated` and uncounted until an assessment is written.
-- **Premise: no CI checkout SHA.** A result with no CI checkout SHA of the `run-package` step SHALL be `unevaluated`.
+- **Premise: no authenticated workflow association.** A result without the authenticated workflow association and
+  report-artifact identity specified above SHALL be `unevaluated`.
+- **Premise: unresolved validation corpus.** A result whose validation evidence does not identify the owner-approved
+  TC-006 corpus artifact and its exact cases SHALL remain `unevaluated` naming bounded reliance.
 
 ### Open points
 
@@ -206,15 +258,15 @@ The definition is approved, and two premises keep the result `unevaluated`, each
 
 ## Owner approval
 
-Owner approval recorded 2026-11-13 via the planner relay, confirmed by the owner in session. The FR-116 owner (Peter)
-approved this definition with these answers:
+Owner approval for version 1 was recorded 2026-11-13 via the planner relay, confirmed by the owner in session. The
+FR-116 owner (Peter) approved that definition with these answers:
 
 1. **Source revision.** The CI checkout SHA of the `run-package` step; without one the result is `unevaluated`.
-2. **CI only.** No manual runs. The workflow step needs the owner's clearance to edit, so this requirement names the
-   step and no workflow file is edited.
+2. **CI only.** No local/manual acts. The workflow step needs the owner's clearance to edit, so this requirement
+   originally named the step without editing a workflow file.
 3. **Package to obligation.** The recorder's `--discharges` plus actor authority is sufficient; FR-152 is unchanged.
    The credit is consistency evidence only, and the requirement-to-formalization link (Linear VER-75) will tighten it.
-4. **Tool and configuration.** No named version set; only the observed solver and runner versions are recorded; no pins.
+4. **Tool and configuration.** The version 1 decision named no solver version set; solver identities are observed. Version 2 names Engineering Assurance `v0.10.1` as the supported distribution because the qualification path requires its `signature-verify` command.
 5. **Actor authority.** The signer mapped to a person through the signed-records feature (PLAT-1433).
 6. **Bounded reliance (FR-093).** OPEN. No assessment exists. It is a premise that keeps every analysis-backed
    obligation `unevaluated` until an assessment is written.
@@ -228,7 +280,11 @@ approved this definition with these answers:
    The quire-rs FR-078 side still needs its own spec change from the IR and quire-rs owners; until it lands nothing is
    waivable, and this requirement edits no quire-rs requirement.
 
-Item 6 is unresolved: nothing counts as covered until the FR-093 assessment exists.
+On 2026-11-22, the owner accepted recording bounded FR-093 reliance and authorized a `workflow_dispatch`-only
+workflow job, with no live run during this effort. That acceptance does not assert a completed assessment or real
+validation evidence. Version 2 specifies the environment and evidence needed for a future assessment; no actual run
+or completed TC-006 corpus is claimed here. Until the corpus and accepted FR-093 assessment exist, nothing counts as
+covered.
 
 ## Constraints
 
@@ -237,7 +293,7 @@ Item 6 is unresolved: nothing counts as covered until the FR-093 assessment exis
 | FR-184-CON-1 | The definition SHALL add no field to the closed v2 report schema, `RunRecord` or `RunEntry` (FR-116-CON-2). | Compatibility | Inspection |
 | FR-184-CON-2 | Qualification SHALL run no solver and read only supplied observations (FR-116-CON-1; FR-153-CON-2). | Architecture | Inspection |
 | FR-184-CON-3 | The store SHALL retain only the FR-151 allowlisted projection, never the source report or its query/model/solver output, and never copy it into the run record; an older run with no companion remains unevaluated and is not migrated. | Compatibility | Inspection |
-| FR-184-CON-4 | The definition SHALL persist no checkout SHA, CI association, signer principal, commit id, ledger or version pin (FR-116-CON-2). | Architecture | Inspection |
+| FR-184-CON-4 | The workflow evidence SHALL add no field to the closed `filament.differential-report/v2` schema, `RunRecord`, `RunEntry` or FR-151 projection. Authenticated workflow, artifact and output identities are supplied to the host's FR-116/FR-093 observation boundary, not copied into those closed records (FR-116-CON-2). | Architecture | Inspection |
 
 ## Acceptance Criteria
 
@@ -246,7 +302,7 @@ The criteria describe the approved definition; none claims an implemented qualif
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-184-AC-1 | With no FR-093 assessment of `filament-analyze` and the solvers, every analysis-backed obligation is `unevaluated` naming the bounded-reliance premise and none is counted. | Test |
-| FR-184-AC-2 | A `satisfied` agreement bound by `--discharges` to an Analysis obligation, latest in its suite, with a CI checkout SHA and every other FR-116 premise admitted, yields a positive decision for that target only. | Test |
+| FR-184-AC-2 | A `satisfied` agreement bound by `--discharges` to an Analysis obligation, latest in its suite, with an authenticated `workflow_dispatch` association and checkout SHA and every other FR-116 premise admitted, yields a positive decision for that target only. | Test |
 | FR-184-AC-3 | A `refuted` agreement report bound to an Analysis obligation yields `failed` and no positive decision. | Test |
 | FR-184-AC-4 | An `inconclusive` report yields `errored` and no positive decision. | Test |
 | FR-184-AC-5 | An `unavailable` report yields `errored` and no positive decision. | Test |
@@ -254,7 +310,7 @@ The criteria describe the approved definition; none claims an implemented qualif
 | FR-184-AC-7 | A passing run followed by a later run of the suite that fails or errors on the bound symbol yields `stale` and no positive decision. | Test |
 | FR-184-AC-8 | A passing run followed by a later run of the suite that lacks the bound symbol yields `absent` and no positive decision. | Test |
 | FR-184-AC-9 | A passing report stated for an obligation whose declared method is Test yields `qualification-rejected` naming the method and act pairing premise. | Test |
-| FR-184-AC-10 | A passing report whose supplied execution association is not CI (for example a manual association) yields `qualification-rejected` naming the execution association premise (FR-116-AC-9; quire-rs FR-078-AC-7). | Test |
+| FR-184-AC-10 | A passing report whose supplied execution association is a local/manual act, an automatic workflow trigger, or an unauthenticated or mismatched GitHub workflow/job association yields no positive decision and names the execution-association premise (FR-116-AC-9; quire-rs FR-078-AC-7). A `workflow_dispatch` GitHub Actions execution is CI and is admitted only when its authenticated run, attempt, job, invocation and checkout SHA agree. | Test |
 | FR-184-AC-11 | A passing report with no supplied execution association yields `unevaluated` naming the execution association premise (FR-078-AC-7). | Test |
 | FR-184-AC-12 | A passing report whose engine record lacks the observed `identity.version`, `configuredExecutable` or a `status` and `outcome` (so it is not an observation of a solver started through `producer-execute`) yields `unevaluated` naming the tool and configuration premise and no positive decision. | Test |
 | FR-184-AC-13 | A satisfied agreement for an Analysis obligation yields a decision whose retained premises and result name the credit as consistency evidence only, and do not assert that the analysis request is relevant to the obligation's statement; the bridge adds no relevance claim. | Test |
@@ -264,6 +320,10 @@ The criteria describe the approved definition; none claims an implemented qualif
 | FR-184-AC-17 | A report qualified with expected `run_kind: formal_rule` whose projection has the same run kind and one matching `formal_rule_selection` entry with state `approved` for each selected claim may qualify; the qualifier checks the selected set. | Test |
 | FR-184-AC-18 | A formal-rule qualification whose projection lacks `run_kind: formal_rule`, whose report has no selection, whose mapping is missing, incomplete, extra, duplicate, or source-mismatched, or whose selected claim maps to state `draft` yields `qualification-rejected` with reason `draft_rule_in_judgement` and no positive decision. | Test |
 | FR-184-AC-19 | An ordinary analysis report with no `formal_rule_selection` mapping remains eligible for qualification under the existing FR-116 premises and is not rejected as `draft_rule_in_judgement`. | Test |
+| FR-184-AC-20 | A valid `workflow_dispatch` association is derived from authenticated GitHub run and job observations; a caller-supplied URL, context field, mismatched repository/workflow/event/run/attempt/job/SHA, or missing lookup cannot produce a positive decision. The exact checkout SHA is the performed revision. | Test |
+| FR-184-AC-21 | A report artifact that is absent, contains zero or multiple reports for the invocation, fails artifact digest verification, fails FR-151 validation, or whose exact report-byte SHA-256 and projection are not bound to the authenticated run evidence cannot produce a positive decision. | Test |
+| FR-184-AC-22 | An FR-093 assessment using the two `real-sat`/`real-unsat` controls alone, a category list without exact corpus identity, any stub-only corpus, or incomplete TC-006 validation evidence remains `unevaluated`; the owner-approved retained TC-006 corpus and its source revision, case identities, expected outcomes and observed results are required before analysis can qualify. | Test |
+| FR-184-AC-23 | A run on an environment other than GitHub-hosted `ubuntu-24.04` x86_64, using Engineering Assurance other than `v0.10.1`, without real Z3 and cvc5 identity observations, or with a missing/mismatched observed context cannot produce a positive decision. | Test |
 
 ## Dependencies
 
