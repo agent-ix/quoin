@@ -368,15 +368,14 @@ fn actor_observation(
     let Some(signature_verifier) = signature_verifier else {
         return (None, None);
     };
-    let actual_signature = match crate::formal_rules::verify_for_evidence(
+    let Ok(actual_signature) = crate::formal_rules::verify_for_evidence(
         &signature_verifier.executable,
         &signature_verifier.allowed_signers,
         Path::new(repo),
         &commit_id,
         signature_verifier.gitsign.as_ref(),
-    ) {
-        Ok(result) => result,
-        Err(_) => return (None, None),
+    ) else {
+        return (None, None);
     };
     if !same_signature_claim(signature, &actual_signature) {
         return (
@@ -787,6 +786,34 @@ mod tests {
         );
         assert!(actor.is_none());
         assert!(rejection.is_none());
+    }
+
+    /// FR-116-AC-18: an unsigned introducing commit is rejected even when the
+    /// host receives a result produced by the real verifier.
+    #[trace("FR-116-AC-18")]
+    #[test]
+    fn actual_verifier_refuses_an_unsigned_pair_introduction() {
+        let (repo, commit) = pair_repo();
+        let (_signed_repo, _signed_commit, _keys, verifier) = signed_pair_repo();
+        let actual_signature = crate::formal_rules::verify_for_evidence(
+            &verifier.executable,
+            &verifier.allowed_signers,
+            repo.path(),
+            &commit,
+            None,
+        )
+        .expect("the verifier returns an explicit unsigned result");
+        assert_eq!(actual_signature["status"], "unsigned");
+
+        let (actor, rejection) = actor_observation(
+            repo.path().to_str().expect("repo path"),
+            &observation(&actual_signature),
+            RUN,
+            PROJECTION,
+            Some(&verifier),
+        );
+        assert!(actor.is_none());
+        assert!(rejection.unwrap().contains("status is unsigned"));
     }
 
     /// FR-153-AC-18: every missing or wrong revision binding and every tag

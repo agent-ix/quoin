@@ -91,9 +91,9 @@ fn obligations() -> Vec<quoin_quire_types::Obligation> {
         .collect()
 }
 
-/// An FR-093 decision from the trust-decision mechanism for `producer`,
-/// permitting the positive use. Built here; no decision file exists in any
-/// store.
+/// Synthetic FR-093 decision fixture for `producer`, permitting the positive
+/// code path. Its corpus/environment labels are test-only, and no decision file
+/// exists in any store or represents an owner assessment.
 fn decision(producer: (&str, &str), limitations: &[&str]) -> TrustDecision {
     let context = ProducerContext {
         name: producer.0.to_owned(),
