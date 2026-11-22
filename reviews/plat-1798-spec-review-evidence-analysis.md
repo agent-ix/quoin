@@ -31,4 +31,4 @@ This is a focused disposition of the evidence analysis finding from the selected
 
 ## Verification record
 
-At PR head `466596fa8e90ce800bcc1483ab927dcc26cfee54`, `quoin advise --repo . --json` reports AC-2 as inconclusive with no recommendation and AC-28 with Test-class recommendations. `quire matrix --scope . --format json` reports AC-2 as `tagged` and AC-28 as `untagged`.
+At PR head `466596fa8e90ce800bcc1483ab927dcc26cfee54`, `quoin advise --repo . --json` reports AC-2 as inconclusive with no recommendation and AC-28 with Test-class recommendations. `quire matrix --scope . --format json` reports AC-2 as `tagged` and AC-28 as `untagged`. Measured with quoin 0.36.8 and quire 0.52.0 (engine 0.62.2).

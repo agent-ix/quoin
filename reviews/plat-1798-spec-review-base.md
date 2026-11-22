@@ -31,4 +31,4 @@ This is a focused disposition of the base review finding from the selected all-a
 
 ## Verification record
 
-At PR head `466596fa8e90ce800bcc1483ab927dcc26cfee54`, `quire matrix --scope . --format json` reports FR-169-AC-28 as `untagged` with no binders. The criterion remains in the specification with `Verification: Test`; its population, ordering and exact status-match expectations remain normative for the later test.
+At PR head `466596fa8e90ce800bcc1483ab927dcc26cfee54`, `quire matrix --scope . --format json` reports FR-169-AC-28 as `untagged` with no binders. The criterion remains in the specification with `Verification: Test`; its population, ordering and exact status-match expectations remain normative for the later test. Measured with quoin 0.36.8 and quire 0.52.0 (engine 0.62.2).
