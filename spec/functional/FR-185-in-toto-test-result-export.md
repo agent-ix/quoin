@@ -108,15 +108,19 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - Quoin SHALL refuse the export without creating or replacing output when the
   provenance envelope is absent, malformed, has an invalid signature, has an
   untrusted source identity, or names a revision that differs from any subject
-  descriptor. Quoin SHALL also refuse when a present run record does not match
-  its committed digest or the signed matrix payload is altered.
+  descriptor. Quoin SHALL also refuse when a run entry has a non-null digest
+  but its referenced run record is absent or its exact bytes do not match that
+  digest, or when the signed matrix payload is altered.
 - Quoin SHALL refuse the export when `spec/evidence/suites.md` is absent or its
   bytes do not match the suite-declaration digest in valid provenance.
-- When provenance is valid but a required obligation has no binding, has an
-  empty symbol set, or lacks an expected run record, Quoin SHALL include that
-  obligation in `failedTests`. These incomplete-evidence cases SHALL NOT cause
-  whole-export refusal. Quoin SHALL refuse only when provenance authenticity,
-  subject identity, or integrity cannot be established.
+- When provenance is valid and an expected run entry has a signed null digest,
+  Quoin SHALL include each obligation requiring that run in `failedTests`.
+- When provenance is valid but a required obligation has no binding or has an
+  empty symbol set, Quoin SHALL include that obligation in `failedTests`.
+- Quoin SHALL NOT refuse the export solely because an expected run entry has a
+  signed null digest or an obligation has no binding or symbols.
+- Quoin SHALL refuse when provenance authenticity, subject identity, or
+  artifact integrity cannot be established.
 - For each bound symbol that has one or more entries in its selected run,
   Quoin SHALL require at least one entry with that symbol whose `traceIds`
   contains the binding's obligation id before the symbol's outcomes can
@@ -191,7 +195,7 @@ which this requirement adopts unchanged. The predicate fields conform to the
 | FR-185-AC-9 | When a bound symbol has a passing run entry but that entry omits `traceIds` or lists only another obligation, the exporter places the bound obligation in `failedTests`, never `passedTests` or `warnedTests`, and sets `result: FAILED`; the same result applies to a legacy run record with no `traceIds`. A matching `traceIds` entry permits the existing outcome rules to classify the obligation. | Test |
 | FR-185-AC-10 | For the complete computed Test Matrix population in verified provenance, an obligation omitted from `bindings.json` is listed in `failedTests`; adding or removing unrelated bindings does not shrink or expand the matrix population. | Test |
 | FR-185-AC-11 | Quoin verifies the maintained suite-declaration file against the signed `suiteDeclarationsSha256`; a missing or changed file refuses export. A source-workflow test compares the signed Test Matrix to the complete Quire matrix at `sourceRevision` and detects an omitted active obligation even when the DSSE signature is valid. | Test |
-| FR-185-AC-12 | A valid source-workflow provenance signature, authenticated by the Engineering Assurance verifier, with matching suite-declaration digest, complete matrix, matching present run-record digests, and matching subject revision permits verdict evaluation. Missing, malformed, invalid-signature, untrusted, or subject-mismatched provenance refuses the export; a valid complete envelope with a missing expected run/binding/symbol lists only affected obligations in `failedTests`. Version-1 RunRecord values remain readable without acquiring revision fields. | Test |
+| FR-185-AC-12 | A valid source-workflow provenance signature, authenticated by the Engineering Assurance verifier, with matching suite-declaration digest, complete matrix, matching present run-record digests, and matching subject revision permits verdict evaluation. A signed null run digest lists affected obligations in `failedTests`; a non-null digest whose run record is missing or changed refuses export without output. Missing, malformed, invalid-signature, untrusted, or subject-mismatched provenance also refuses export. Version-1 RunRecord values remain readable without acquiring revision fields. | Test |
 
 ## Dependencies
 

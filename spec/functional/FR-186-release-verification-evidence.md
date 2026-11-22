@@ -109,6 +109,8 @@ a signed `FAILED` Test Result for the affected obligations.
   suite declaration, matrix, or provenance is missing.
 - The Quoin tag-attestation workflow SHALL refuse artifact upload when a
   computed digest differs from the bytes being uploaded.
+- The Quoin tag-attestation workflow SHALL refuse artifact upload when a run
+  record digest is non-null but the corresponding run record is unavailable.
 - The Quoin tag-attestation workflow SHALL compare the payload's `testMatrix`
   with the complete `quire matrix` result computed from the exact tagged
   revision and suite declarations before signing.
@@ -142,9 +144,9 @@ a signed `FAILED` Test Result for the affected obligations.
 | FR-186-AC-3 | Static inspection confirms that the OIDC-enabled attestation job consumes the evidence artifact and runs no checked-out Quoin code. | Inspection |
 | FR-186-AC-4 | After a tag-attestation run, the uploaded artifact contains the maintained suite declaration and binding registry, any available fresh run-specific bindings and run record, and no generated run-specific bindings or records are committed to the repository. | Test |
 | FR-186-AC-5 | A workflow test confirms that the artifact provenance identifies the signed tag, its resolved source commit, and the producing workflow run, and that each identifies the source and run represented by the uploaded bindings and run record. | Test |
-| FR-186-AC-6 | A consumer integration test confirms that absent evidence, invalid or untrusted provenance, a subject or revision mismatch, or evidence stale for the current signed-tag workflow produces no Test Result and no release attestation. With valid authenticated provenance, a missing required binding, symbol, or run record, or a failed required criterion produces a signed `FAILED` Test Result for the affected obligations and does not authorize a passing release attestation. | Test |
+| FR-186-AC-6 | A consumer integration test confirms that absent evidence, invalid or untrusted provenance, a subject or revision mismatch, or evidence stale for the current signed-tag workflow produces no Test Result and no release attestation. With valid authenticated provenance, a missing required binding or symbol, an expected run declared absent by signed null digest, or a failed required criterion produces a signed `FAILED` Test Result for the affected obligations and does not authorize a passing release attestation. | Test |
 | FR-186-AC-7 | A workflow test confirms that `release-evidence` contains the version-2 DSSE envelope with the exact payload type and fields, suite-declaration digest, and complete matrix from the tagged commit; a Quire matrix comparison detects an omitted active obligation even with a valid signature. | Test |
-| FR-186-AC-8 | A workflow test confirms that present run records have matching digests, an absent expected run is represented by `sha256: null`, and an altered present record is rejected. With valid provenance, absent bindings, symbols, or run records produce a signed `FAILED` Test Result for affected obligations; invalid provenance produces no Test Result. | Test |
+| FR-186-AC-8 | A workflow test confirms that an expected run with no record is represented by a signed null digest, while a non-null digest without its referenced bytes is refused as an integrity failure under Quoin FR-185. Present run records must match their digests. With valid provenance, a signed null digest and absent bindings or symbols produce a signed `FAILED` Test Result for affected obligations; invalid provenance produces no Test Result. | Test |
 
 ## Dependencies
 
