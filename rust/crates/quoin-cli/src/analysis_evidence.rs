@@ -559,6 +559,7 @@ mod tests {
 
     const RUN: &str = "runs/unit/2026-11-13T00:00:00Z.json";
     const PROJECTION: &str = "analysis-reports/unit/2026-11-13T00:00:00Z.json";
+    const SUPPORTED_TEST_EA_VERSION: &str = "engineering-assurance 0.10.1";
 
     fn git(repo: &std::path::Path, args: &[&str]) -> String {
         let output = Command::new("git")
@@ -600,6 +601,36 @@ mod tests {
         git(repo.path(), &["commit", "-q", "-m", "add paired evidence"]);
         let commit = git(repo.path(), &["rev-parse", "HEAD"]);
         (repo, commit)
+    }
+
+    fn explicit_supported_ea() -> std::path::PathBuf {
+        let executable = std::env::var_os("QUOIN_TEST_ENGINEERING_ASSURANCE")
+            .map(std::path::PathBuf::from)
+            .expect("set QUOIN_TEST_ENGINEERING_ASSURANCE to run ignored real-verifier tests");
+        assert!(
+            executable.is_absolute() && executable.is_file(),
+            "QUOIN_TEST_ENGINEERING_ASSURANCE must name an existing absolute executable"
+        );
+        let version = Command::new(&executable)
+            .arg("--version")
+            .output()
+            .expect("the supplied Engineering Assurance executable runs");
+        assert!(version.status.success(), "EA --version failed");
+        assert!(
+            String::from_utf8_lossy(&version.stdout).trim() == SUPPORTED_TEST_EA_VERSION,
+            "expected {SUPPORTED_TEST_EA_VERSION}, received: {}",
+            String::from_utf8_lossy(&version.stdout)
+        );
+        let capability = Command::new(&executable)
+            .args(["signature-verify", "--help"])
+            .output()
+            .expect("the supplied Engineering Assurance executable runs");
+        assert!(
+            capability.status.success(),
+            "the supplied EA executable does not support signature-verify: {}",
+            String::from_utf8_lossy(&capability.stderr)
+        );
+        executable
     }
 
     fn signed_pair_repo() -> (
@@ -661,10 +692,7 @@ mod tests {
         git(repo.path(), &["add", "spec/evidence"]);
         git(repo.path(), &["commit", "-q", "-m", "add paired evidence"]);
         let commit = git(repo.path(), &["rev-parse", "HEAD"]);
-        let executable = std::env::split_paths(&std::env::var_os("PATH").expect("PATH"))
-            .map(|directory| directory.join("engineering-assurance"))
-            .find(|candidate| candidate.is_file())
-            .expect("engineering-assurance is installed for this integration test");
+        let executable = explicit_supported_ea();
         let verifier = SignatureVerifier {
             executable,
             allowed_signers,
@@ -700,6 +728,7 @@ mod tests {
     /// FR-153-AC-16: actor evidence is admitted only for the commit adding the
     /// exact run/projection pair and matching both currently read byte strings.
     #[trace("FR-153-AC-16")]
+    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
     #[test]
     fn exact_pair_introduction_commit_admits_mapped_actor() {
         let (repo, commit, _keys, verifier) = signed_pair_repo();
@@ -791,6 +820,7 @@ mod tests {
     /// FR-116-AC-18: an unsigned introducing commit is rejected even when the
     /// host receives a result produced by the real verifier.
     #[trace("FR-116-AC-18")]
+    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
     #[test]
     fn actual_verifier_refuses_an_unsigned_pair_introduction() {
         let (repo, commit) = pair_repo();
@@ -819,6 +849,7 @@ mod tests {
     /// FR-153-AC-18: every missing or wrong revision binding and every tag
     /// result leaves actor authority unavailable.
     #[trace("FR-153-AC-18")]
+    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
     #[test]
     fn absent_null_malformed_mismatched_tag_and_unresolved_ids_fail_closed() {
         let (repo, _, _keys, verifier) = signed_pair_repo();
