@@ -52,12 +52,26 @@ struct Anomaly {
     source_ref: Option<String>,
 }
 
+/// A person's VEX statement for one advisory (FR-144).
+struct VexStatement {
+    advisory: String,
+    status: String,
+    justification: Option<String>,
+    impact_statement: Option<String>,
+    action_statement: Option<String>,
+    assessed_by: String,
+    assessed_at: String,
+    evidence_refs: Vec<String>,
+    stale: bool,
+}
+
 /// One row of the report.
 struct Row {
     join: RecordJoin,
     version: Option<String>,
     serves: Listed<String>,
     anomalies: Listed<Anomaly>,
+    vex_statements: Vec<VexStatement>,
     support: Evaluation,
     policy: RecordPolicy,
 }
@@ -367,14 +381,101 @@ fn row(
             ));
         }
     };
+    let mut vex_statements = vex_statements(front, &join)?;
+    let applicable = advisory::Tool::ALL
+        .into_iter()
+        .filter(|tool| tool.assesses(&join.purl))
+        .collect::<Vec<_>>();
+    for statement in &mut vex_statements {
+        let currently_reported = join
+            .advisories
+            .iter()
+            .any(|advisory| advisory.rule_id == statement.advisory);
+        statement.stale = !currently_reported
+            && !applicable.is_empty()
+            && applicable.iter().all(|tool| join.free_of.contains(tool))
+    }
     Ok(Row {
         version,
         serves,
         anomalies,
+        vex_statements,
         support: support.evaluate(&join.purl, own, as_of),
         policy,
         join,
     })
+}
+
+/// Read the authored statement list, refusing a malformed value rather than
+/// making a missing statement appear to be a VEX decision.
+fn vex_statements(
+    front: &Map<String, Value>,
+    join: &RecordJoin,
+) -> Result<Vec<VexStatement>, Stop> {
+    let Some(value) = front.get("vex_statements") else {
+        return Ok(Vec::new());
+    };
+    let Some(items) = value.as_array() else {
+        return Err(vex_field_refusal(join, "vex_statements"));
+    };
+    items
+        .iter()
+        .map(|item| {
+            let Some(object) = item.as_object() else {
+                return Err(vex_field_refusal(join, "vex_statements"));
+            };
+            let required = |field: &str| {
+                object
+                    .get(field)
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+                    .ok_or_else(|| vex_field_refusal(join, field))
+            };
+            let optional = |field: &str| match object.get(field) {
+                None | Some(Value::Null) => Ok(None),
+                Some(Value::String(value)) => Ok(Some(value.clone())),
+                Some(_) => Err(vex_field_refusal(join, field)),
+            };
+            let evidence_refs = match object.get("evidence_refs") {
+                None | Some(Value::Null) => Vec::new(),
+                Some(Value::Array(values)) => values
+                    .iter()
+                    .map(|value| {
+                        value
+                            .as_str()
+                            .map(str::to_owned)
+                            .ok_or_else(|| vex_field_refusal(join, "evidence_refs"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+                Some(_) => return Err(vex_field_refusal(join, "evidence_refs")),
+            };
+            Ok(VexStatement {
+                advisory: required("advisory")?,
+                status: required("status")?,
+                justification: optional("justification")?,
+                impact_statement: optional("impact_statement")?,
+                action_statement: optional("action_statement")?,
+                assessed_by: required("assessed_by")?,
+                assessed_at: required("assessed_at")?,
+                evidence_refs,
+                stale: false,
+            })
+        })
+        .collect()
+}
+
+fn vex_field_refusal(join: &RecordJoin, field: &str) -> Stop {
+    refuse(
+        "soup.record_field_invalid",
+        format!(
+            "{} states `{field}` in a shape the soup_record type does not allow",
+            join.path.display()
+        ),
+        &[
+            ("path", join.path.display().to_string()),
+            ("field", field.to_owned()),
+        ],
+    )
 }
 
 /// A list field of a record. A field that is not a list of the expected shape

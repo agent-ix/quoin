@@ -10,7 +10,7 @@ use std::fmt::Write as _;
 
 use serde_json::{Value, json};
 
-use super::{Anomaly, Listed, Report, Row};
+use super::{Anomaly, Listed, Report, Row, VexStatement};
 use crate::soup::advisory::{
     Attached, Resolution, ScanOutcome, ScanState, Tool, Unmatched, Unresolved,
 };
@@ -66,14 +66,63 @@ pub(super) fn resolved_text<T: Copy>(resolved: &Resolved<T>, show: impl Fn(T) ->
     }
 }
 
-fn advisory_text(advisory: &Attached) -> String {
-    finding_text(
+fn advisory_text(advisory: &Attached, row: &Row) -> String {
+    let finding = finding_text(
         advisory.tool.name(),
         (&advisory.rule_id, &advisory.package),
         advisory.severity.as_deref(),
         &advisory.scan_timestamp,
         &advisory.resolution,
+    );
+    let vex = row
+        .vex_statements
+        .iter()
+        .find(|statement| statement.advisory == advisory.rule_id);
+    format!(
+        "{finding}; VEX: {}",
+        vex.map_or_else(|| "no statement".to_owned(), vex_text)
     )
+}
+
+fn vex_text(statement: &VexStatement) -> String {
+    let mut text = format!(
+        "{} (status: {}; assessed by {}; assessed at {})",
+        if statement.stale {
+            "stale statement"
+        } else {
+            "statement"
+        },
+        statement.status,
+        one_line(&statement.assessed_by),
+        statement.assessed_at
+    );
+    if let Some(justification) = &statement.justification {
+        let _ = write!(text, "; justification: {}", one_line(justification));
+    }
+    if let Some(impact) = &statement.impact_statement {
+        let _ = write!(text, "; impact: {}", one_line(impact));
+    }
+    if let Some(action) = &statement.action_statement {
+        let _ = write!(text, "; action: {}", one_line(action));
+    }
+    if !statement.evidence_refs.is_empty() {
+        let _ = write!(text, "; evidence: {}", statement.evidence_refs.join(", "));
+    }
+    text
+}
+
+fn vex_json(statement: &VexStatement) -> Value {
+    json!({
+        "state": if statement.stale { "stale statement" } else { "statement" },
+        "advisory": statement.advisory,
+        "status": statement.status,
+        "justification": statement.justification,
+        "impact_statement": statement.impact_statement,
+        "action_statement": statement.action_statement,
+        "assessed_by": statement.assessed_by,
+        "assessed_at": statement.assessed_at,
+        "evidence_refs": statement.evidence_refs,
+    })
 }
 
 pub(super) fn policy_finding_text(finding: &PolicyFinding) -> String {
@@ -189,7 +238,7 @@ pub(super) fn tool_lines(row: &Row, tool: Tool, osv_database: Option<&str>) -> V
         .advisories
         .iter()
         .filter(|a| a.tool == tool)
-        .map(advisory_text)
+        .map(|advisory| advisory_text(advisory, row))
         .collect();
     if !found.is_empty() {
         found
@@ -256,6 +305,22 @@ pub(super) fn markdown(report: &Report) -> String {
         for tool in Tool::ALL {
             for line in tool_lines(row, tool, osv_database) {
                 let _ = writeln!(text, "  - {line}");
+            }
+        }
+        let unmatched_vex = row
+            .vex_statements
+            .iter()
+            .filter(|statement| {
+                !row.join
+                    .advisories
+                    .iter()
+                    .any(|advisory| advisory.rule_id == statement.advisory)
+            })
+            .collect::<Vec<_>>();
+        if !unmatched_vex.is_empty() {
+            let _ = writeln!(text, "- VEX statements:");
+            for statement in unmatched_vex {
+                let _ = writeln!(text, "  - {}", vex_text(statement));
             }
         }
         let _ = writeln!(text, "- Policy findings:");
@@ -455,6 +520,19 @@ fn advisory_json(advisory: &Attached) -> Value {
     })
 }
 
+fn advisory_json_for_row(advisory: &Attached, row: &Row) -> Value {
+    let mut json = advisory_json(advisory);
+    let vex = row
+        .vex_statements
+        .iter()
+        .find(|statement| statement.advisory == advisory.rule_id)
+        .map_or_else(|| json!("no statement"), vex_json);
+    if let Some(object) = json.as_object_mut() {
+        object.insert("vex_statement".to_owned(), vex);
+    }
+    json
+}
+
 fn policy_finding_json(finding: &PolicyFinding) -> Value {
     json!({
         "tool": finding.tool.name(),
@@ -512,7 +590,8 @@ pub(super) fn row_json(row: &Row) -> Value {
         "support_disagreement": row.support.support_status.disagrees()
             || row.support.end_of_support.disagrees(),
         "disposition_clause": row.join.clause,
-        "advisories": row.join.advisories.iter().map(advisory_json).collect::<Vec<_>>(),
+        "advisories": row.join.advisories.iter().map(|advisory| advisory_json_for_row(advisory, row)).collect::<Vec<_>>(),
+        "vex_statements": row.vex_statements.iter().map(vex_json).collect::<Vec<_>>(),
         "no_advisory_reported_by": free_of,
         "policy_findings": row.policy.findings.iter().map(policy_finding_json).collect::<Vec<_>>(),
         "policy_status": policy_status_json(&row.policy.status),

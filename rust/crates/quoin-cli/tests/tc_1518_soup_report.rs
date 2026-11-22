@@ -1252,7 +1252,10 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
         matched["vex_statement"]["impact_statement"],
         "synthetic impact details"
     );
-    assert_eq!(matched["vex_statement"]["assessed_by"], "synthetic reviewer");
+    assert_eq!(
+        matched["vex_statement"]["assessed_by"],
+        "synthetic reviewer"
+    );
     assert_eq!(matched["vex_statement"]["assessed_at"], "2026-08-02");
     assert_eq!(
         matched["vex_statement"]["evidence_refs"],
@@ -1268,7 +1271,10 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
     );
     let markdown = text(&repo.report(&binding, &[]).stdout);
     assert!(markdown.contains("not_affected"), "{markdown}");
-    assert!(markdown.contains("resolved: accepted_risk by reviewer-1"), "{markdown}");
+    assert!(
+        markdown.contains("resolved: accepted_risk by reviewer-1"),
+        "{markdown}"
+    );
     assert!(markdown.contains("VEX: no statement"), "{markdown}");
 }
 
