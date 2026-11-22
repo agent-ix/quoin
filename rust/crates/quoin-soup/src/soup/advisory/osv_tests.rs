@@ -7,13 +7,14 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
 use ix_trace_rs::trace;
 use std::path::PathBuf;
 
-use super::tests::{discharge, record, scan};
+use super::tests::{discharge, discharge_with, disposition, record, scan};
 use super::{ScanOutcome, Tool, UnmatchedReason, join};
 
 fn report(path: &str, id: &str) -> String {
@@ -217,6 +218,99 @@ fn osv_assesses_deb_and_supported_ecosystems_but_not_lean_or_other_types() {
         assert!(!Tool::OsvScanner.assesses(purl), "{purl}");
     }
     assert!(Tool::OsvScanner.assesses("pkg:deb/debian/name@1.0?distro=debian-12"));
+}
+
+#[trace("FR-142-AC-24")]
+#[test]
+fn osv_dispositions_resolve_only_when_attested_after_the_scan() {
+    let purl = "pkg:npm/example@1.0.0";
+    let record = record(purl, Some("C-DISP"));
+    let scan = scan_osv(purl, "GHSA-synthetic");
+
+    let current = join(
+        std::slice::from_ref(&record),
+        std::slice::from_ref(&scan),
+        &discharge(),
+    );
+    let advisory = &current.records[0].advisories[0];
+    let super::Resolution::Resolved(fact) = &advisory.resolution else {
+        panic!("disposition after the OSV scan should resolve it: {advisory:?}");
+    };
+    assert_eq!(
+        fact.decision,
+        quoin_assurance::DispositionDecision::AcceptedRisk
+    );
+    assert_eq!(fact.rationale, "no reachable path");
+    assert_eq!(fact.approval_ref, "approval://CAB-7");
+    assert_eq!(fact.attested_by, "reviewer-1");
+
+    let earlier_fact = disposition(
+        "C-DISP",
+        "2026-07-30T00:00:00.000Z",
+        "2026-09-01T00:00:00.000Z",
+    );
+    let earlier = join(&[record], &[scan], &discharge_with(&earlier_fact));
+    assert_eq!(
+        earlier.records[0].advisories[0].resolution,
+        super::Resolution::Unresolved(super::Unresolved::ScanNewerThanAttestation)
+    );
+}
+
+#[trace("FR-142-AC-25")]
+#[test]
+fn only_a_read_osv_scan_can_mark_an_assessed_record_free() {
+    let purl = "pkg:npm/example@1.0.0";
+    let raw = format!(
+        r#"{{"results":[{{"packages":[{{"package":{{"purl":"{purl}"}},"vulnerabilities":[],"groups":[]}}]}}]}}"#
+    );
+    let clean = scan("osv-scanner", "osv-suite", "2026-08-01T00:00:00.000Z", &raw);
+    let joined = join(&[record(purl, None)], &[clean], &discharge());
+    let record = &joined.records[0];
+
+    assert!(record.free_of.contains(&Tool::OsvScanner));
+    assert!(!record.free_of.contains(&Tool::CargoAudit));
+    assert!(!record.free_of.contains(&Tool::CargoDeny));
+}
+
+#[trace("FR-142-AC-27")]
+#[test]
+fn clean_osv_coverage_tracks_each_purl_type_and_missing_cargo_scan() {
+    let raw = r#"{"results":[{"packages":[{"package":{"purl":"pkg:npm/example@1.0.0"},"vulnerabilities":[],"groups":[]},{"package":{"purl":"pkg:pypi/example@1.0.0"},"vulnerabilities":[],"groups":[]}]}]}"#;
+    let osv = scan("osv-scanner", "osv-suite", "2026-08-01T00:00:00.000Z", raw);
+    let joined = join(
+        &[
+            record("pkg:npm/example@1.0.0", None),
+            record("pkg:pypi/example@1.0.0", None),
+            record("pkg:lake/example@1.0.0", None),
+            record("pkg:cargo/example@1.0.0", None),
+        ],
+        &[osv],
+        &discharge(),
+    );
+
+    for purl in ["pkg:npm/example@1.0.0", "pkg:pypi/example@1.0.0"] {
+        let record = joined
+            .records
+            .iter()
+            .find(|record| record.purl == purl)
+            .unwrap();
+        assert!(record.free_of.contains(&Tool::OsvScanner), "{purl}");
+    }
+    let lake = joined
+        .records
+        .iter()
+        .find(|record| record.purl == "pkg:lake/example@1.0.0")
+        .unwrap();
+    assert!(!lake.free_of.contains(&Tool::OsvScanner));
+    assert!(!Tool::OsvScanner.assesses(&lake.purl));
+
+    let cargo = joined
+        .records
+        .iter()
+        .find(|record| record.purl == "pkg:cargo/example@1.0.0")
+        .unwrap();
+    assert!(!cargo.free_of.contains(&Tool::CargoAudit));
+    assert!(!cargo.free_of.contains(&Tool::CargoDeny));
 }
 
 #[trace("FR-142-AC-26")]
