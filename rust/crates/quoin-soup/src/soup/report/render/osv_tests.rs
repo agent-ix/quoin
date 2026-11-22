@@ -121,6 +121,7 @@ fn synthetic_row(purl: &str, advisory: Attached) -> Row {
         version: None,
         serves: Listed::Absent,
         anomalies: Listed::Absent,
+        vex_statements: Vec::new(),
         support: Evaluation {
             support_status: Resolved::Unknown,
             end_of_support: Resolved::Unknown,
@@ -150,6 +151,7 @@ fn empty_npm_row(free_of_osv: bool) -> Row {
         version: None,
         serves: Listed::Absent,
         anomalies: Listed::Absent,
+        vex_statements: Vec::new(),
         support: Evaluation {
             support_status: Resolved::Unknown,
             end_of_support: Resolved::Unknown,
@@ -250,6 +252,7 @@ fn a_clean_osv_row_labels_the_advisory_observation_with_the_missing_database() {
         version: None,
         serves: Listed::Absent,
         anomalies: Listed::Absent,
+        vex_statements: Vec::new(),
         support: Evaluation {
             support_status: Resolved::Unknown,
             end_of_support: Resolved::Unknown,

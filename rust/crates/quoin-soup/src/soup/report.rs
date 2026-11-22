@@ -393,7 +393,7 @@ fn row(
             .any(|advisory| advisory.rule_id == statement.advisory);
         statement.stale = !currently_reported
             && !applicable.is_empty()
-            && applicable.iter().all(|tool| join.free_of.contains(tool))
+            && applicable.iter().all(|tool| join.free_of.contains(tool));
     }
     Ok(Row {
         version,
