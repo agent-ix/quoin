@@ -129,7 +129,7 @@ fn record_body() -> Value {
 /// The attestation body a caller writes, before `retained_output` is derived.
 fn attestation_body() -> Value {
     json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "record_type": "proof_attestation",
         "attestation_id": "att-1",
         "record_id": "change-1",
@@ -656,7 +656,7 @@ fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
         listed["schemas"],
         json!([
             "change-assurance-record-v2.schema.json",
-            "proof-attestation-v1.schema.json",
+            "proof-attestation-v2.schema.json",
             "verification-receipt-v2.schema.json"
         ])
     );
@@ -664,7 +664,7 @@ fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
 
     for name in [
         "change-assurance-record-v2.schema.json",
-        "proof-attestation-v1.schema.json",
+        "proof-attestation-v2.schema.json",
         "verification-receipt-v2.schema.json",
     ] {
         let payload = ok(&run("change_assurance.schema", &json!({ "name": name })));

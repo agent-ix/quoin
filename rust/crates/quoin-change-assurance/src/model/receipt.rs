@@ -69,6 +69,10 @@ pub struct ProofResult {
     pub obligation_ids: Vec<ObligationId>,
     /// The attestation selected for it, when one was.
     pub attestation_id: Option<AttestationId>,
+    /// The content commitment the retained output was verified against: set
+    /// only when the output matched it, so a receipt never cites a digest it
+    /// did not check.
+    pub content_digest: Option<String>,
     /// The findings the auditor recorded against this obligation's evidence.
     pub audit_findings: Vec<AuditFinding>,
     /// The verdict.
@@ -289,6 +293,7 @@ fn read_proofs(root: Fields<'_>) -> Result<Vec<ProofResult>, ChangeAssuranceErro
             "proof_id",
             "obligation_ids",
             "attestation_id",
+            "content_digest",
             "audit_findings",
             "outcome",
             "reasons",
@@ -309,6 +314,10 @@ fn read_proofs(root: Fields<'_>) -> Result<Vec<ProofResult>, ChangeAssuranceErro
                 "attestation_id",
             )?),
         };
+        let content_digest = match fields.value("content_digest")? {
+            JsonValue::Null => None,
+            _ => Some(fields.text("content_digest")?.to_owned()),
+        };
         let mut audit_findings = Vec::new();
         for raw in fields.array("audit_findings", false)? {
             let finding = Fields::read(raw, SUBJECT, "audit finding")?;
@@ -327,6 +336,7 @@ fn read_proofs(root: Fields<'_>) -> Result<Vec<ProofResult>, ChangeAssuranceErro
             proof_id,
             obligation_ids,
             attestation_id,
+            content_digest,
             audit_findings,
             outcome,
             reasons,
@@ -475,6 +485,13 @@ fn write_proofs(proofs: &[ProofResult]) -> JsonValue {
                             .attestation_id
                             .as_ref()
                             .map_or(JsonValue::Null, |id| JsonValue::string(id.as_str())),
+                    ),
+                    (
+                        "content_digest",
+                        proof
+                            .content_digest
+                            .as_deref()
+                            .map_or(JsonValue::Null, JsonValue::string),
                     ),
                     (
                         "audit_findings",

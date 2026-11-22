@@ -141,7 +141,7 @@ reasons! {
     ReviewRevisionRequested => "review_revision_requested", false;
     /// A selected attestation was not retained.
     AttestationMissing => "attestation_missing", true;
-    /// A retained attestation did not satisfy its v1 schema.
+    /// A retained attestation did not satisfy its v2 schema.
     AttestationSchemaInvalid => "attestation_schema_invalid", false;
     /// A retained attestation carried a different id than the one selected.
     AttestationIdMismatch => "attestation_id_mismatch", false;
@@ -149,6 +149,9 @@ reasons! {
     OutputMissing => "output_missing", true;
     /// The retained output did not have its declared size.
     OutputSizeMismatch => "output_size_mismatch", false;
+    /// The retained output, at its declared size, did not match the
+    /// attestation's content commitment.
+    OutputIntegrityMismatch => "output_integrity_mismatch", false;
     /// The attestation was bound to a different record.
     RecordBindingMismatch => "record_binding_mismatch", false;
     /// The attestation was taken at a different candidate revision.

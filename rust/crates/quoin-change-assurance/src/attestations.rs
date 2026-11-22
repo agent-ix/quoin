@@ -3,8 +3,9 @@
 //! Reading proof attestations (FR-064).
 //!
 //! An attestation is addressed by its caller-assigned `attestation_id`; it
-//! carries no digest, and the retained output is checked by its declared
-//! length alone.
+//! carries a SHA-256 content commitment over its metadata and the retained
+//! output bytes (FR-064), and the retained output is checked by length and by
+//! that commitment.
 
 use quoin_store::{JsonValue, canonical_bytes};
 
@@ -15,8 +16,7 @@ use crate::model::attestation::ProofAttestation;
 ///
 /// # Errors
 ///
-/// Every refusal of the v1 attestation schema, including an undeclared member
-/// such as a `digest`.
+/// Every refusal of the v2 attestation schema.
 pub fn read_attestation_json(value: &JsonValue) -> Result<ProofAttestation, ChangeAssuranceError> {
     ProofAttestation::from_json(value)
 }

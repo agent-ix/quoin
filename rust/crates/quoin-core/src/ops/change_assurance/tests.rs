@@ -76,7 +76,7 @@ fn record_body() -> Value {
 /// The attestation body a caller writes, before `retained_output` is derived.
 fn attestation_body() -> Value {
     json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "record_type": "proof_attestation",
         "attestation_id": "att-1",
         "record_id": "change-1",
@@ -606,7 +606,7 @@ fn tc_503_the_vocabulary_comes_back_without_an_asset() {
         payload["schemas"],
         json!([
             "change-assurance-record-v2.schema.json",
-            "proof-attestation-v1.schema.json",
+            "proof-attestation-v2.schema.json",
             "verification-receipt-v2.schema.json"
         ])
     );
@@ -622,11 +622,11 @@ fn tc_503_the_vocabulary_comes_back_without_an_asset() {
 #[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_a_named_asset_comes_back_byte_for_byte() {
-    let response = schema(&json!({ "name": "proof-attestation-v1.schema.json" }))
+    let response = schema(&json!({ "name": "proof-attestation-v2.schema.json" }))
         .expect("a known name resolves");
     assert_eq!(
         response.payload["schema"],
-        json!(quoin_change_assurance::schemas::PROOF_ATTESTATION_V1)
+        json!(quoin_change_assurance::schemas::PROOF_ATTESTATION_V2)
     );
 }
 

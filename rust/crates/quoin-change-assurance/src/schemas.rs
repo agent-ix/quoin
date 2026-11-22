@@ -30,8 +30,8 @@
 pub const CHANGE_ASSURANCE_RECORD_V2: &str =
     include_str!("../schemas/change-assurance-record-v2.schema.json");
 
-/// `proof-attestation-v1`, the FR-064 producer attestation.
-pub const PROOF_ATTESTATION_V1: &str = include_str!("../schemas/proof-attestation-v1.schema.json");
+/// `proof-attestation-v2`, the FR-064 producer attestation.
+pub const PROOF_ATTESTATION_V2: &str = include_str!("../schemas/proof-attestation-v2.schema.json");
 
 /// `verification-receipt-v2`, the FR-065 receipt.
 pub const VERIFICATION_RECEIPT_V2: &str =
@@ -45,7 +45,7 @@ pub const VERIFICATION_RECEIPT_V2: &str =
 /// step with the published one.
 pub const ASSET_NAMES: [&str; 3] = [
     "change-assurance-record-v2.schema.json",
-    "proof-attestation-v1.schema.json",
+    "proof-attestation-v2.schema.json",
     "verification-receipt-v2.schema.json",
 ];
 
@@ -58,7 +58,7 @@ pub const ASSET_NAMES: [&str; 3] = [
 pub fn asset(name: &str) -> Option<&'static str> {
     match name {
         "change-assurance-record-v2.schema.json" => Some(CHANGE_ASSURANCE_RECORD_V2),
-        "proof-attestation-v1.schema.json" => Some(PROOF_ATTESTATION_V1),
+        "proof-attestation-v2.schema.json" => Some(PROOF_ATTESTATION_V2),
         "verification-receipt-v2.schema.json" => Some(VERIFICATION_RECEIPT_V2),
         _ => None,
     }

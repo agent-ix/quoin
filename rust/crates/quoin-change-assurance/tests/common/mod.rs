@@ -15,13 +15,14 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use quoin_change_assurance::ProofAttestation;
 use quoin_change_assurance::error::Subject;
 use quoin_change_assurance::ids::{RecordId, Revision};
 use quoin_change_assurance::record_digest;
 use quoin_change_assurance::verify::input::{
     AuditReport, RetainedAttestation, RetainedAudit, Selection, VerificationInput,
 };
-use quoin_store::{JsonValue, parse_strict_json_str};
+use quoin_store::{JsonValue, canonical_bytes, parse_strict_json_str};
 
 /// The bytes the attestation's retained output holds.
 pub(crate) const OUTPUT: &[u8] = b"all tests passed\n";
@@ -62,9 +63,23 @@ pub(crate) fn record_text() -> String {
 
 /// The attestation body.
 pub(crate) fn attestation_text() -> String {
+    let unsealed = unsealed_attestation_text();
+    String::from_utf8(canonical_bytes(&sealed(&json(&unsealed), OUTPUT)).unwrap()).unwrap()
+}
+
+/// `attestation` with its content commitment recomputed over `output`, as the
+/// producer would seal an attestation after changing it.
+pub(crate) fn sealed(attestation: &JsonValue, output: &[u8]) -> JsonValue {
+    let mut read = ProofAttestation::from_json(attestation).unwrap();
+    read.content_commitment = read.commitment_over(output).unwrap();
+    read.to_json().unwrap()
+}
+
+/// The attestation body with a placeholder commitment.
+fn unsealed_attestation_text() -> String {
     format!(
         r#"{{
-      "schema_version": 1,
+      "schema_version": 2,
       "record_type": "proof_attestation",
       "attestation_id": "att-1",
       "record_id": "change-1",
@@ -77,9 +92,11 @@ pub(crate) fn attestation_text() -> String {
       "observed_at": "2026-08-31T00:00:00Z",
       "result": "passed",
       "strength": "tested",
-      "retained_output": {{"media_type": "text/plain", "size_bytes": {}}}
+      "retained_output": {{"media_type": "text/plain", "size_bytes": {}}},
+      "content_commitment": {{"algorithm": "sha-256", "digest": "sha256:{}"}}
     }}"#,
-        OUTPUT.len()
+        OUTPUT.len(),
+        "0".repeat(64)
     )
 }
 
