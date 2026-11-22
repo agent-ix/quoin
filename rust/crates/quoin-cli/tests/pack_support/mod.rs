@@ -29,9 +29,7 @@ pub(crate) fn clean_base() -> PathBuf {
                 .args(["rev-parse", "--is-inside-work-tree"])
                 .output()
             {
-                Ok(output) if output.status.success() => {
-                    String::from_utf8_lossy(&output.stdout).trim() == "false"
-                }
+                Ok(output) if output.status.success() => output.stdout.trim() == b"false",
                 Ok(output)
                     if String::from_utf8_lossy(&output.stderr).contains("not a git repository") =>
                 {
