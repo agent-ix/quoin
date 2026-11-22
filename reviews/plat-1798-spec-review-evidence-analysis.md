@@ -27,7 +27,7 @@ This is a focused disposition of the evidence analysis finding from the selected
 
 | FND | outcome | reason |
 | --- | --- | --- |
-| FND-001 | human-method-choice-recorded | `quoin advise --repo . --json` reports `inconclusive: true`, `recommended: []`, and authored method `Test` for FR-169-AC-2. The method is retained by human judgment because exact output-key equality is directly observable in a test. No catalog recommendation is claimed. FR-169-AC-28, separately, has catalog recommendations in the Test class (`bdd-spec-by-example` and `unit-testing`); its present untagged matrix state is recorded in the base disposition and remains an implementation-stage obligation. |
+| FND-001 | accepted-no-change | Retain the human-selected `Test` method: AC-2 checks exact JSON key equality, which is directly testable, and the current matrix reports AC-2 as `tagged`. `quoin advise` provides no catalog recommendation, so this records a human method choice rather than catalog advice. No requirement amendment is needed. AC-28's separate matrix disposition is recorded as deferred in the base review. |
 
 ## Verification record
 

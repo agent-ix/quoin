@@ -27,7 +27,7 @@ This is a focused disposition of the base review finding from the selected all-a
 
 | FND | outcome | reason |
 | --- | --- | --- |
-| FND-001 | open-after-spec-review; required-before-implementation-acceptance | The missing binder is expected while the change is still at the spec stage. After explicit spec review approval, the implementation stage must add a test that exercises AC-28 and carries the exact `FR-169-AC-28` trace tag. The implementation-stage matrix run must show AC-28 as `tagged` before implementation acceptance. Until that evidence exists, this finding remains open; this record does not authorize implementation before spec review approval. |
+| FND-001 | deferred | This is a spec-only PR, so the implementation test and trace tag are deferred until after explicit spec review approval. Before implementation acceptance, add a test that exercises AC-28 and carries the exact `FR-169-AC-28` trace tag, then run the matrix and confirm AC-28 is `tagged`. The current untagged result remains recorded; this deferral does not claim coverage or authorize implementation before spec review approval. |
 
 ## Verification record
 
