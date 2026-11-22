@@ -31,7 +31,8 @@ command.
 ### US-017-EX-1: A reviewed definition verifies
 
 - **Given** a record revision, a matching ix-flow approval event, and one healthy
-  selected attestation for every required proof
+  selected attestation, matching signed integrity statement, and verified exact
+  tag object for every required proof
 - **When** Quoin verifies the candidate from the retained inputs
 - **Then** the receipt is `valid` and names every input by id and revision
 
@@ -50,9 +51,14 @@ command.
 ## Constraints (Contextual)
 
 Quoin reads retained records, workflow events, attestations, outputs, and audit
-findings. It executes no proof command. Nothing it reads establishes identity,
-authorization, or non-repudiation of its own; git history is the tamper evidence. A
-decision may carry a claim that a named person's signed approval tag approved the
+findings. It executes no proof command. Git history describes repository
+revision history but does not establish the integrity of retained proof bytes.
+For each selected proof, Quoin compares the retained attestation and output
+with one purpose-bound integrity statement and its exact signed tag object,
+verified by Engineering Assurance under trust selected by the relying party.
+This establishes content integrity binding only; it does not establish proof
+correctness, identity, authorization, or non-repudiation. A decision may carry
+a claim that a named person's signed approval tag approved the
 record; Quoin retains it as the event writer's claim, with the standing of the actor
 label, and never verifies a signature. The claim shows the approver, the time the
 signer claims and the meaning together; a missing time is shown as missing and never
@@ -62,9 +68,13 @@ relying party controls; the record, which its author writes, cannot establish tr
 
 ## Dependencies (Contextual)
 
-Upstream: [FR-030](../functional/FR-030-evidence-store.md) and
-[FR-032](../functional/FR-032-evidence-auditor.md). The human decision input is
-an ix-flow FR-013 integrity-verified event produced by its human-review workflow.
+Upstream: [FR-030](../functional/FR-030-evidence-store.md),
+[FR-032](../functional/FR-032-evidence-auditor.md), and
+[FR-210](../functional/FR-210-retained-proof-integrity-statement.md). The
+proof-integrity checkpoint is verified by
+[Engineering Assurance FR-080](ix://agent-ix/engineering-assurance/FR-080).
+The human decision input is an ix-flow FR-013 integrity-verified event produced
+by its human-review workflow.
 
 ## Priority and Risk (Informative)
 
