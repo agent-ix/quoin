@@ -36,8 +36,11 @@ envelope, signed by the source release workflow, that binds that commit to the
 complete computed Test Matrix and exact run-record bytes. The shared consumer
 authenticates this envelope under
 [Engineering Assurance FR-069](ix://agent-ix/engineering-assurance/FR-069)
-before passing it to Quoin's export. It refuses to write a Test Result when
-the evidence is absent, invalid, failing, or stale.
+before passing it to Quoin's export. The consumer produces no Test Result when
+the artifact or provenance is missing, unreadable, invalid, untrusted, or does
+not match the signed tag's subject revision. When authenticated provenance
+matches the signed tag, incomplete evidence or failed or stale criteria produce
+a signed `FAILED` Test Result for the affected obligations.
 
 ## Inputs
 
@@ -65,46 +68,68 @@ the evidence is absent, invalid, failing, or stale.
   run record, and signed execution provenance as `release-evidence`.
   Run-specific bindings, matrix, provenance, and records SHALL remain only in
   that artifact and SHALL NOT be committed.
-- The version-2 DSSE payload SHALL use payload type
-  `application/vnd.agent-ix.execution-provenance.v2+json` and contain exactly
-  `version`, `sourceRevision`, `suiteDeclarationsSha256`, `testMatrix`, and
-  `runs`. `version` SHALL equal `2`; `sourceRevision` SHALL be the full resolved
-  commit for the signed tag; `suiteDeclarationsSha256` SHALL be the lowercase
-  SHA-256 of the exact `spec/evidence/suites.md` bytes; `testMatrix` SHALL be
-  the complete canonical Quire Test Matrix computed at that commit; and `runs`
-  SHALL be sorted by suite id and contain exactly `suite`, `recordPath`, and
-  `sha256`. `sha256` SHALL be lowercase SHA-256 of the exact run record bytes,
-  or `null` when that expected record was not produced. The source release
-  workflow identity SHALL sign the payload through the configured OIDC trust
-  path.
-- The `release-evidence` artifact SHALL identify the signed tag name, the
-  resolved commit checked out for that tag, and the producing workflow run;
-  those values SHALL identify the source and run represented by the uploaded
-  bindings and record without adding source identity fields to the FR-030 run
-  record.
-- The tag-attestation workflow SHALL compute the Test Matrix from the same
-  resolved source commit used to run the declared suites, and SHALL create the
-  signed provenance after the suite run attempt completes, whether or not it
-  produced a run record.
-- The workflow SHALL include each run record's exact relative path and digest
-  in the provenance, using `null` when no record exists. It SHALL refuse
-  artifact upload if the suite declaration, matrix, or provenance is missing,
-  or if a computed digest does not match the bytes being uploaded.
-- The source workflow SHALL compare the payload's `testMatrix` with the
-  complete `quire matrix` result computed from the exact tagged revision and
-  suite declarations before signing. An omitted active obligation SHALL fail
-  this completeness check even when the resulting payload is otherwise
+- The Quoin tag-attestation workflow SHALL use
+  `application/vnd.agent-ix.execution-provenance.v2+json` as the version-2 DSSE
+  payload type.
+- The Quoin tag-attestation workflow SHALL include exactly `version`,
+  `sourceRevision`, `suiteDeclarationsSha256`, `testMatrix`, and `runs` in the
+  DSSE payload.
+- The Quoin tag-attestation workflow SHALL set `version` to `2` in the DSSE
+  payload.
+- The Quoin tag-attestation workflow SHALL set `sourceRevision` to the full
+  resolved commit for the signed tag.
+- The Quoin tag-attestation workflow SHALL set `suiteDeclarationsSha256` to the
+  lowercase SHA-256 digest of the exact `spec/evidence/suites.md` bytes.
+- The Quoin tag-attestation workflow SHALL set `testMatrix` to the complete
+  canonical Quire Test Matrix computed at `sourceRevision`.
+- The Quoin tag-attestation workflow SHALL list `runs` in suite-id order with
+  exactly `suite`, `recordPath`, and `sha256` for each expected run.
+- The Quoin tag-attestation workflow SHALL set each present run's `sha256` to
+  the lowercase SHA-256 digest of the exact run-record bytes.
+- The Quoin tag-attestation workflow SHALL set an expected run's `sha256` to
+  `null` when that run record was not produced.
+- The source release workflow identity SHALL sign the DSSE payload through the
+  configured OIDC trust path.
+- The Quoin tag-attestation workflow SHALL identify the signed tag name in the
+  `release-evidence` artifact.
+- The Quoin tag-attestation workflow SHALL identify the resolved commit checked
+  out for that tag in the `release-evidence` artifact.
+- The Quoin tag-attestation workflow SHALL identify the producing workflow run
+  in the `release-evidence` artifact.
+- The Quoin tag-attestation workflow SHALL use those artifact values to
+  identify the source and run represented by the uploaded bindings and record
+  without adding source identity fields to the FR-030 run record.
+- The Quoin tag-attestation workflow SHALL compute the Test Matrix from the
+  resolved source commit used to run the declared suites.
+- The Quoin tag-attestation workflow SHALL create signed provenance after the
+  suite run attempt completes, whether or not it produced a run record.
+- The Quoin tag-attestation workflow SHALL include each expected run record's
+  exact relative path and digest in provenance.
+- The Quoin tag-attestation workflow SHALL refuse artifact upload when the
+  suite declaration, matrix, or provenance is missing.
+- The Quoin tag-attestation workflow SHALL refuse artifact upload when a
+  computed digest differs from the bytes being uploaded.
+- The Quoin tag-attestation workflow SHALL compare the payload's `testMatrix`
+  with the complete `quire matrix` result computed from the exact tagged
+  revision and suite declarations before signing.
+- The Quoin tag-attestation workflow SHALL fail completeness validation when
+  the payload omits an active obligation, even when the payload is otherwise
   syntactically valid.
 - The Quoin tag-attestation workflow SHALL pass
   `evidence_artifact: release-evidence` to the shared Engineering Assurance
   workflow.
 - The attestation job SHALL consume the uploaded artifact without checking out
   or running Quoin repository code, in accordance with NFR-011.
-- If the evidence artifact or provenance cannot be uploaded or authenticated,
-  the workflow SHALL fail before the shared attestation call. A failed suite
-  or absent run record SHALL be passed to the shared consumer as valid,
-  authenticated incomplete evidence so the affected obligations receive a
-  `FAILED` verdict.
+- The Quoin tag-attestation workflow SHALL fail before the shared attestation
+  call when it cannot upload the evidence artifact or provenance.
+- The Quoin tag-attestation workflow SHALL authenticate provenance before
+  calling the shared consumer.
+- The Quoin tag-attestation workflow SHALL pass a failed suite attempt to the
+  shared consumer as valid, authenticated incomplete evidence.
+- The Quoin tag-attestation workflow SHALL pass an absent run record to the
+  shared consumer as valid, authenticated incomplete evidence.
+- The shared consumer SHALL return a `FAILED` verdict for each obligation
+  affected by incomplete evidence.
 - The tag-attestation workflow SHALL NOT modify the committed suite or binding
   registries and SHALL NOT commit generated run records to the repository.
 
