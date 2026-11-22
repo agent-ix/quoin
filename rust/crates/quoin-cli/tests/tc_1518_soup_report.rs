@@ -1225,6 +1225,7 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
             "    status: not_affected",
             "    justification: vulnerable_code_not_present",
             "    impact_statement: synthetic impact details",
+            "    action_statement: synthetic action details",
             "    assessed_by: synthetic reviewer",
             "    assessed_at: '2026-08-02'",
             "    evidence_refs: [evidence://review/synthetic-1]",
@@ -1261,6 +1262,10 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
     assert_eq!(
         matched["vex_statement"]["impact_statement"],
         "synthetic impact details"
+    );
+    assert_eq!(
+        matched["vex_statement"]["action_statement"],
+        "synthetic action details"
     );
     assert_eq!(
         matched["vex_statement"]["assessed_by"],
