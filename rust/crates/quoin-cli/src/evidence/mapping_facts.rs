@@ -20,7 +20,7 @@ use quoin_assurance::{
     read_discharge_facts, record_discharge_facts,
 };
 use quoin_core::protocol::{Diagnostic, Response};
-use quoin_evidence::{DiskEvidence, EvidenceError, EvidenceSource};
+use quoin_evidence::{DiskEvidence, EvidenceError, EvidenceSource, StoreLock};
 use quoin_quire::ModuleSelection;
 use quoin_quire::records::{Contract, Document, read};
 use quoin_quire_types::{ClauseBindingOutcome, ClauseBindingReport};
@@ -547,6 +547,9 @@ impl EvidenceSource for DryRun<'_> {
     }
     fn remove(&mut self, _path: &str) -> Result<(), EvidenceError> {
         Ok(())
+    }
+    fn lock_store(&mut self) -> Result<StoreLock, EvidenceError> {
+        Ok(StoreLock::none())
     }
     fn source_files(&self) -> Result<Vec<String>, EvidenceError> {
         Ok(Vec::new())

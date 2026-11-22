@@ -79,7 +79,12 @@ fn path_of<T: StoredRecord>(record: &T) -> String {
     record_path(T::FAMILY, record.suite(), record.timestamp())
 }
 
-/// Write one record, last-write-wins at the same `(suite, timestamp)`.
+/// Write one record at its `(suite, timestamp)` key.
+///
+/// Append-only: replaying the identical record is a no-op, and a different
+/// record at an occupied key is refused with the original untouched. Replacing
+/// it would silently turn a recorded failure into a pass (PLAT-1791,
+/// FR-030-AC-3, 21 CFR 11.10(e)).
 ///
 /// The stored `schemaVersion` is always [`STORE_SCHEMA_VERSION`] regardless of
 /// what the caller put in the record, reproducing the retained
@@ -88,7 +93,8 @@ fn path_of<T: StoredRecord>(record: &T) -> String {
 /// # Errors
 ///
 /// [`EvidenceError::Canonicalization`] when the record has no canonical
-/// spelling, [`EvidenceError::StoreIo`] when the write cannot be completed.
+/// spelling, [`EvidenceError::RecordIntegrity`] when the key holds different
+/// bytes, [`EvidenceError::StoreIo`] when the write cannot be completed.
 pub(crate) fn write_record<S, T>(source: &mut S, record: &T) -> Result<String, EvidenceError>
 where
     S: EvidenceSource + ?Sized,
@@ -107,7 +113,7 @@ where
         );
     }
     let bytes = canonical_bytes_of(T::LABEL, &value)?;
-    source.write(&path, &bytes)?;
+    source.publish(&path, &bytes)?;
     Ok(path)
 }
 

@@ -334,7 +334,7 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
 
 #[trace("FR-030-AC-3")]
 #[test]
-fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
+fn tc_456_202_one_file_per_suite_and_timestamp_and_a_different_rewrite_is_refused() {
     let mut store = MemoryEvidence::new();
     let first_path = write_run(
         &mut store,
@@ -356,7 +356,19 @@ fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
         "two suites at one timestamp must not merge into one file"
     );
 
-    let rewritten_path = write_run(
+    // Replaying the identical record reuses its file; a different record at
+    // the same key is refused (PLAT-1791, FR-030-AC-22).
+    let replayed_path = write_run(
+        &mut store,
+        &run("SUITE-001", "2026-08-17T00:00:00Z", vec![]),
+    )
+    .unwrap();
+    assert_eq!(
+        replayed_path, first_path,
+        "same timestamp must reuse its file"
+    );
+    assert_eq!(store.paths().len(), 2, "the replay added a file");
+    write_run(
         &mut store,
         &run(
             "SUITE-001",
@@ -364,14 +376,14 @@ fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
             vec![entry("tests::later", Outcome::Pass, &[])],
         ),
     )
-    .unwrap();
-    assert_eq!(
-        rewritten_path, first_path,
-        "same timestamp must reuse its file"
+    .unwrap_err();
+    assert!(
+        !store
+            .read(&first_path)
+            .unwrap()
+            .unwrap()
+            .contains("tests::later")
     );
-    assert_eq!(store.paths().len(), 2, "the rewrite added a file");
-    let text = store.read(&first_path).unwrap().unwrap();
-    assert!(text.contains("tests::later"), "the later write did not win");
 }
 
 #[trace("FR-030-AC-4")]
@@ -433,7 +445,16 @@ fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     let wet = gc(&mut store, false).unwrap();
     assert_eq!(dry, wet, "the dry run and the real run disagree");
     assert_eq!(wet.len(), 2, "gc must delete superseded runs");
-    assert_eq!(store.paths().len(), 1, "gc must retain one run per suite");
+    // The surviving run, plus the retirement log gc now leaves (PLAT-1791).
+    assert_eq!(store.paths().len(), 2, "gc must retain one run per suite");
+    assert_eq!(
+        store
+            .paths()
+            .iter()
+            .filter(|p| p.starts_with("runs/"))
+            .count(),
+        1
+    );
     let mut skipped = Vec::new();
     let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
     assert_eq!(runs.len(), 1, "gc must leave one readable run");

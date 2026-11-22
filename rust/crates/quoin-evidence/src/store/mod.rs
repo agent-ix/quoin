@@ -37,11 +37,12 @@ macro_rules! family {
         $write:ident, $list:ident, $read_all:ident, $latest:ident, $latest_each:ident,
         $what:literal
     ) => {
-        #[doc = concat!("Write one ", $what, ". Last-write-wins at the same `(suite, timestamp)`.")]
+        #[doc = concat!("Write one ", $what, ". Append-only at a `(suite, timestamp)` key: an identical replay is a no-op, a different record there is refused.")]
         ///
         /// # Errors
         ///
-        /// [`EvidenceError::Canonicalization`] or [`EvidenceError::StoreIo`].
+        /// [`EvidenceError::Canonicalization`], [`EvidenceError::RecordIntegrity`]
+        /// or [`EvidenceError::StoreIo`].
         pub fn $write<S: EvidenceSource + ?Sized>(
             source: &mut S,
             record: &$record,

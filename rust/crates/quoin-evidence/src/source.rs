@@ -102,6 +102,19 @@ pub trait EvidenceSource {
     /// [`EvidenceError::StoreIo`] when the file exists and cannot be removed.
     fn remove(&mut self, path: &str) -> Result<(), EvidenceError>;
 
+    /// Take the store's writer lock, held until the returned guard drops.
+    ///
+    /// A read-modify-write of a shared file (`bindings.json`) must hold it from
+    /// the read to the write, or two recorders that both read before either
+    /// wrote leave only the last writer's entries (PLAT-1791). The lock is
+    /// advisory and process-wide on disk, so it also serialises recorders in
+    /// different processes.
+    ///
+    /// # Errors
+    ///
+    /// [`EvidenceError::StoreIo`] when the lock cannot be taken.
+    fn lock_store(&mut self) -> Result<StoreLock, EvidenceError>;
+
     /// Every inspectable source file in the repository, repository-relative and
     /// sorted.
     ///
@@ -116,6 +129,20 @@ pub trait EvidenceSource {
     ///
     /// [`EvidenceError::StoreIo`] when the file cannot be read.
     fn source_text(&self, path: &str) -> Result<String, EvidenceError>;
+}
+
+/// The writer lock of a store; released when dropped.
+#[derive(Debug)]
+pub struct StoreLock(
+    #[allow(dead_code, reason = "held only so its Drop releases the lock")] Option<std::fs::File>,
+);
+
+impl StoreLock {
+    /// A guard that holds nothing, for a source with no concurrent writers.
+    #[must_use]
+    pub const fn none() -> Self {
+        Self(None)
+    }
 }
 
 /// A store on disk, rooted at `<repo>/spec/evidence`.
@@ -180,6 +207,27 @@ impl DiskEvidence {
             resolved.push(segment);
         }
         resolved
+    }
+
+    /// [`Self::resolve`] for a path about to be changed: refuses any path that
+    /// is not strictly inside the store root. A `..` segment would let a
+    /// removal reach the repository (PLAT-1791, FR-030-AC-24).
+    fn resolve_inside(
+        &self,
+        operation: &'static str,
+        path: &str,
+    ) -> Result<PathBuf, EvidenceError> {
+        let escapes = path.split('/').any(|segment| segment == "..")
+            || Path::new(path).has_root()
+            || path.contains('\\');
+        if escapes {
+            return Err(EvidenceError::StoreIo {
+                operation,
+                path: path.to_owned(),
+                detail: "the path leaves the store root".to_owned(),
+            });
+        }
+        Ok(self.resolve(path))
     }
 
     fn entries(&self, directory: &str, want_directory: bool) -> Result<Vec<String>, EvidenceError> {
@@ -276,14 +324,15 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError> {
-        let destination = quoin_store::store::StorePath::Named(self.resolve(path));
+        let destination = quoin_store::store::StorePath::Named(self.resolve_inside("write", path)?);
         quoin_store::store::publish(&destination, quoin_store::store::Content::Artifact(bytes))
             .map(|_| ())
             .map_err(store_io("write", path))
     }
 
     fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, EvidenceError> {
-        let destination = quoin_store::store::StorePath::ContentAddressed(self.resolve(path));
+        let destination =
+            quoin_store::store::StorePath::ContentAddressed(self.resolve_inside("write", path)?);
         let published =
             quoin_store::store::publish(&destination, quoin_store::store::Content::Artifact(bytes));
         published
@@ -302,11 +351,26 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn remove(&mut self, path: &str) -> Result<(), EvidenceError> {
-        match std::fs::remove_file(self.resolve(path)) {
+        match std::fs::remove_file(self.resolve_inside("remove", path)?) {
             Ok(()) => Ok(()),
             Err(source) if source.kind() == std::io::ErrorKind::NotFound => Ok(()),
             Err(source) => Err(io("remove", path)(source)),
         }
+    }
+
+    fn lock_store(&mut self) -> Result<StoreLock, EvidenceError> {
+        // A file beside the records, not on `bindings.json` itself: that file
+        // is replaced by rename, which would orphan a lock held on its inode.
+        // `.lock` is not `.json`, so no listing returns it.
+        std::fs::create_dir_all(&self.root).map_err(io("create", ".lock"))?;
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(self.root.join(".lock"))
+            .map_err(io("open", ".lock"))?;
+        file.lock().map_err(io("lock", ".lock"))?;
+        Ok(StoreLock(Some(file)))
     }
 
     fn source_files(&self) -> Result<Vec<String>, EvidenceError> {
@@ -432,6 +496,11 @@ impl EvidenceSource for MemoryEvidence {
     fn remove(&mut self, path: &str) -> Result<(), EvidenceError> {
         self.store.remove(path);
         Ok(())
+    }
+
+    fn lock_store(&mut self) -> Result<StoreLock, EvidenceError> {
+        // `&mut self` already makes this holder the only writer.
+        Ok(StoreLock::none())
     }
 
     fn source_files(&self) -> Result<Vec<String>, EvidenceError> {

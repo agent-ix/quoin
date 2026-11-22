@@ -166,8 +166,8 @@ impl RunEntry {
 /// One run of ONE suite.
 ///
 /// The suite is the atomic unit of evidence: aggregation is a view, and a
-/// partial run must never be able to masquerade as a full one. Re-runs at the
-/// same timestamp are last-write-wins.
+/// partial run must never be able to masquerade as a full one. A re-run at the
+/// same timestamp must be the identical record; a different one is refused.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

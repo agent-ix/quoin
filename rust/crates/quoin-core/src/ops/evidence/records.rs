@@ -137,6 +137,9 @@ fn record_scan(
 
     let root = host.store_root(Path::new(&request.repo));
     host.with_store(Path::new(&request.repo), &mut |source| {
+        // Held to the end of the closure: the graph below is read, extended
+        // and rewritten whole (PLAT-1791).
+        let _lock = source.lock_store().map_err(|e| map_error(&e, op))?;
         let scan_path = write_scan(
             source,
             &FindingRecord {
