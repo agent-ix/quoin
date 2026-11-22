@@ -55,7 +55,114 @@ strength against another's.
 
 The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
 
+## Legacy schema v1 (read only)
+
+New intake does not accept this schema. It is retained here as the exact
+historical acceptance boundary for reading existing attestations. A legacy
+record is read byte-for-byte and is not rewritten or upgraded.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/quoin/schemas/proof-attestation-v1.schema.json",
+  "title": "ProofAttestationV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_type",
+    "attestation_id",
+    "record_id",
+    "record_revision",
+    "candidate_revision",
+    "proof_id",
+    "command",
+    "tool",
+    "environment",
+    "observed_at",
+    "result",
+    "strength",
+    "retained_output"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "record_type": { "const": "proof_attestation" },
+    "attestation_id": { "$ref": "#/$defs/identity" },
+    "record_id": { "$ref": "#/$defs/identity" },
+    "record_revision": { "type": "integer", "minimum": 1 },
+    "candidate_revision": { "type": "string", "minLength": 1 },
+    "proof_id": { "$ref": "#/$defs/identity" },
+    "command": { "$ref": "#/$defs/command" },
+    "tool": {
+      "type": "object",
+      "required": ["identity", "version", "configuration_ref"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/immutable_version" },
+        "configuration_ref": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      }
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "result": {
+      "type": "string",
+      "enum": ["passed", "failed", "unavailable", "not_computed"]
+    },
+    "strength": {
+      "type": "string",
+      "enum": ["proven", "bounded-checked", "tested", "observed"]
+    },
+    "retained_output": {
+      "type": "object",
+      "required": ["media_type", "size_bytes"],
+      "properties": {
+        "media_type": { "type": "string", "minLength": 1 },
+        "size_bytes": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
+    },
+    "immutable_version": {
+      "type": "string",
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?)$"
+    },
+    "command": {
+      "type": "object",
+      "required": ["argv", "working_directory"],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "working_directory": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+```
+
 ## Schema
+
+The schema below is the new-intake schema v2.
 
 ```json
 {
