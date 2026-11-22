@@ -68,6 +68,16 @@ fn audit_document(vulns: &[(&str, &str, &str)]) -> String {
 }
 
 fn scan_record(tool: &str, suite: &str, raw: &str, vacuous: bool) -> FindingRecord {
+    scan_record_at(tool, suite, raw, SCANNED, vacuous)
+}
+
+fn scan_record_at(
+    tool: &str,
+    suite: &str,
+    raw: &str,
+    timestamp: &str,
+    vacuous: bool,
+) -> FindingRecord {
     let adapter = select_finding_adapter(AdapterSelection {
         adapter: None,
         tool: Some(tool),
@@ -79,7 +89,7 @@ fn scan_record(tool: &str, suite: &str, raw: &str, vacuous: bool) -> FindingReco
         suite: SuiteId::new(suite),
         tool: tool.to_owned(),
         evidence_kind: None,
-        timestamp: SCANNED.to_owned(),
+        timestamp: timestamp.to_owned(),
         ruleset: parsed.ruleset,
         rules_evaluated: if vacuous {
             Some(0)
@@ -1276,6 +1286,123 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
         "{markdown}"
     );
     assert!(markdown.contains("VEX: no statement"), "{markdown}");
+}
+
+#[trace("FR-144-AC-22")]
+#[test]
+fn stale_vex_requires_every_applicable_scan_to_be_read_and_clean() {
+    let make_record = |repo: &Repo| {
+        repo.record(
+            "vex",
+            "pkg:npm/example@1.0.0",
+            &[
+                "vex_statements:",
+                "  - advisory: OSV-SYNTHETIC-1",
+                "    status: under_investigation",
+                "    assessed_by: synthetic reviewer",
+                "    assessed_at: '2026-08-02'",
+            ],
+        );
+    };
+    let raw = r#"{"results":[{"packages":[{"package":{"purl":"pkg:npm/example@1.0.0"},"vulnerabilities":[],"groups":[]}]}]}"#;
+    let report_state = |repo: &Repo, binding: &Path| {
+        report_json(repo, binding, &[])["rows"][0]["vex_statements"][0]["state"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    };
+
+    let stale = Repo::new();
+    make_record(&stale);
+    stale.store(&scan_record_at(
+        "osv-scanner",
+        "osv-clean",
+        raw,
+        "2026-08-03T00:00:00.000Z",
+        false,
+    ));
+    let stale_binding = stale.binding(&[]);
+    assert_eq!(report_state(&stale, &stale_binding), "stale statement");
+    let markdown = text(&stale.report(&stale_binding, &[]).stdout);
+    assert!(markdown.contains("stale statement"), "{markdown}");
+
+    let unavailable = Repo::new();
+    make_record(&unavailable);
+    assert_eq!(
+        report_state(&unavailable, &unavailable.binding(&[])),
+        "statement"
+    );
+
+    let unordered = Repo::new();
+    make_record(&unordered);
+    unordered.store(&scan_record_at(
+        "osv-scanner",
+        "osv-unordered",
+        raw,
+        "not-an-instant",
+        false,
+    ));
+    assert_eq!(
+        report_state(&unordered, &unordered.binding(&[])),
+        "statement"
+    );
+
+    let vacuous = Repo::new();
+    make_record(&vacuous);
+    vacuous.store(&scan_record_at(
+        "osv-scanner",
+        "osv-vacuous",
+        raw,
+        "2026-08-03T00:00:00.000Z",
+        true,
+    ));
+    assert_eq!(report_state(&vacuous, &vacuous.binding(&[])), "statement");
+}
+
+#[trace("FR-144-AC-17")]
+#[test]
+fn unsupported_purl_is_in_the_last_group_and_never_claims_clean_advisory_coverage() {
+    let repo = Repo::new();
+    repo.record("unsupported", "pkg:lake/example@1.0.0", &[]);
+    repo.record(
+        "past",
+        "pkg:cargo/past@1.0.0",
+        &["version: \"1.0.0\"", "end_of_support: \"2026-05-31\""],
+    );
+    repo.record("unresolved", "pkg:cargo/unresolved@1.0.0", &[]);
+    repo.audit(&[("RUSTSEC-SYNTHETIC-1", "unresolved", "1.0.0")]);
+    let binding = repo.binding(&[]);
+    let report = report_json(&repo, &binding, &[]);
+    let purls = report["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| row["purl"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        purls,
+        [
+            "pkg:cargo/unresolved@1.0.0",
+            "pkg:cargo/past@1.0.0",
+            "pkg:lake/example@1.0.0",
+        ]
+    );
+    let unsupported = row(&report, "pkg:lake/example@1.0.0");
+    assert_eq!(unsupported["no_advisory_reported_by"], json!([]));
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    let row = markdown
+        .split("## pkg:lake/example@1.0.0")
+        .nth(1)
+        .unwrap()
+        .split("\n## ")
+        .next()
+        .unwrap();
+    assert!(
+        row.contains("advisories not assessed: unsupported purl type"),
+        "{row}"
+    );
+    assert!(!row.contains("free of advisories"), "{row}");
 }
 
 /// An unmatched no-purl finding could belong to an evaluated record, so the row
