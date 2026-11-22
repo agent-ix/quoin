@@ -29,9 +29,13 @@ which this requirement adopts unchanged. The predicate fields conform to the
   caller-supplied digests bind the statement to artifact content; the revision
   annotation identifies the immutable candidate revision whose evidence is
   being exported. Quoin computes no digest and does not resolve the revision.
-- `--required-obligations <obligations.json>`: a non-empty JSON array of unique
-  obligation identifiers declared independently of the retained evidence
-  bindings. This is the complete population the export claims to assess.
+- `--execution-provenance <provenance.json>`: the versioned, trust-verified
+  DSSE envelope produced by the Engineering Assurance release-evidence
+  verifier under its existing trust policy. Its version-2 payload contains the
+  immutable `sourceRevision`, the complete computed Quire Test Matrix for that
+  revision, and a `runs` list of suite, record path, and SHA-256 for each exact
+  run-record byte sequence. A caller-selected obligation list is not an
+  accepted population source.
 - `--output <statement.json>`: the destination path for the statement.
 - `--evidence-dir <DIR>`: the retained evidence store to read; it defaults to
   `spec/evidence`.
@@ -46,9 +50,8 @@ which this requirement adopts unchanged. The predicate fields conform to the
 ## Behavior
 
 - When a user runs `quoin evidence export-test-result`, Quoin SHALL read only
-  the retained run records, `bindings.json`, and the caller-selected
-  required-obligations file and SHALL NOT read Git state, access the network,
-  or spawn a process.
+  the retained run records, `bindings.json`, and the execution-provenance file
+  and SHALL NOT read Git state, access the network, or spawn a process.
 - The statement SHALL contain exactly `_type`, `subject`, `predicateType` and
   `predicate`, with `_type` equal to
   `https://in-toto.io/Statement/v1` and `predicateType` equal to
@@ -62,29 +65,42 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - For each suite used in the export, `configuration` SHALL contain one entry
   with `name` equal to the suite id and annotations `tool` and `timestamp` from
   the selected run for that suite. Entries SHALL be sorted by suite id.
-- Quoin SHALL evaluate exactly the obligation identifiers in the required
-  population file. An obligation absent from `bindings.json` SHALL appear in
-  `failedTests`; an obligation whose binding has no symbols SHALL appear in
-  `failedTests` as well. Neither condition SHALL remove an obligation from the
-  export population. Quoin SHALL NOT add bindings outside the declared
-  population to the result lists.
+- Quoin SHALL derive the required population from every active obligation in
+  the computed Test Matrix for the immutable source revision identified by the
+  execution provenance and the maintained suite declarations for that
+  revision. Quoin SHALL NOT accept a caller-selected subset or infer the
+  population from `bindings.json`.
+- The trusted Engineering Assurance release-evidence verifier SHALL sign the
+  version-2 execution provenance payload as a DSSE envelope under its existing
+  trust policy. The payload SHALL commit to the source revision, complete Test
+  Matrix, and exact run-record bytes as one verified execution; its source
+  revision SHALL be the revision used to compute the matrix and execute the
+  listed suites.
+- Quoin SHALL verify the provenance signature and every committed matrix and
+  run-record digest against the trusted verifier identity from the existing
+  trust policy before using the population or run records.
+- For every required obligation, Quoin SHALL include exactly one verdict in
+  the Test Result lists. An obligation absent from `bindings.json`, or whose
+  binding has no symbols, SHALL appear in `failedTests`. An obligation SHALL
+  NOT disappear because its run, binding, or symbols are missing. Bindings
+  outside the required population SHALL NOT add obligations to result lists.
 - For each declared obligation, Quoin SHALL inspect the latest run of every
   bound suite and the symbols named by that binding.
-- Every selected run that contributes evidence to an obligation SHALL identify
-  the same revision as the `annotations.revision` value on every subject
-  descriptor. A missing or different run revision SHALL classify the
-  obligation as failed. The exporter SHALL preserve the caller's subject
-  descriptors and SHALL NOT infer, resolve, or replace their revision.
-- New run records SHALL use evidence-store schema version 2 and carry
-  a non-empty `subjectRevision` field with the immutable revision they
-  describe. The value SHALL equal the subject's `annotations.revision`.
-  Readers SHALL continue to read version-1 run records, but those records have
-  no subject-revision commitment and SHALL NOT support a `PASSED` result. A
-  version-1 record
-  selected for a required obligation SHALL cause that obligation to appear in
-  `failedTests`. Writers SHALL emit only the new schema version after the
-  transition; they SHALL NOT add a revision field while retaining the version-1
-  schema meaning.
+- Each subject descriptor SHALL carry a non-empty `annotations.revision` equal
+  to the source revision in the verified execution provenance. Quoin SHALL
+  preserve caller subject descriptors and SHALL NOT resolve or replace their
+  revision.
+- Quoin SHALL consume a new versioned execution-provenance contract. The
+  contract SHALL bind the subject revision, complete computed matrix, and
+  exact run records without changing the RunRecord schema. FR-030 SHALL
+  continue to prohibit commit, revision, content digest, CI association,
+  signer, or report fields in RunRecord.
+- Readers SHALL continue to read version-1 RunRecord values. Version-1 run
+  records without matching verified execution provenance SHALL remain
+  readable but SHALL NOT support a `PASSED` result. Missing, unverified,
+  wrong-revision, or incomplete provenance SHALL classify affected required
+  obligations as failed; if completeness or authenticity cannot be established,
+  Quoin SHALL refuse the export without creating or replacing output.
 - For each bound symbol that has one or more entries in its selected run,
   Quoin SHALL require at least one entry with that symbol whose `traceIds`
   contains the binding's obligation id before the symbol's outcomes can
@@ -126,10 +142,10 @@ which this requirement adopts unchanged. The predicate fields conform to the
   digest. Quoin SHALL validate that the array is non-empty. Quoin SHALL require
   every descriptor to have a `digest.sha256` of exactly 64 lowercase
   hexadecimal characters and the same non-empty `annotations.revision` string.
-- Quoin SHALL validate the required-obligations input as a non-empty array of
-  unique non-empty identifiers. A missing, malformed, or empty required
-  population SHALL be a usage error. Quoin SHALL NOT infer that population from
-  `bindings.json`.
+- Quoin SHALL refuse to emit `PASSED` unless the authenticated execution
+  provenance matches the subject revision and proves the complete computed
+  Test Matrix population. Missing or malformed provenance SHALL be an export
+  error and SHALL leave no output file.
 - Quoin SHALL write the canonical statement atomically by writing a temporary
   file and renaming it to the destination only after successful export.
 - The command SHALL exit 2 for usage errors or an invalid subject, exit 3 for
@@ -153,13 +169,13 @@ which this requirement adopts unchanged. The predicate fields conform to the
 | FR-185-AC-3 | The output subject equals the supplied array after canonicalization; a non-hex digest, missing `sha256`, missing or inconsistent revision annotation, empty array or non-array subject exits 2 and writes no output file. | Test |
 | FR-185-AC-4 | Repeating an export over the same store and subject yields byte-identical output, and reordering the stored runs or bindings does not change the bytes. | Test |
 | FR-185-AC-5 | The predicate has exactly the five specified members, deserializes through its closed type, and rejects a predicate with an additional member. | Test |
-| FR-185-AC-6 | An unparsable run record, unreadable runs directory, or missing `bindings.json` exits 3 with `evidence_store_invalid` and the relevant path, and leaves no output file; missing or malformed required-obligations input exits 2. | Test |
+| FR-185-AC-6 | An unparsable run record, unreadable runs directory, or missing `bindings.json` exits 3 with `evidence_store_invalid` and the relevant path, and leaves no output file; missing or malformed execution provenance leaves no output file. | Test |
 | FR-185-AC-7 | A static boundary check establishes that the export path calls no Git, network or process-spawning API. | Inspection |
 | FR-185-AC-8 | The consumer-side negative check from Engineering Assurance FR-069-AC-2 is reproducible from Quoin: an export cannot produce `result: PASSED` with a non-empty `failedTests`, including when a correctly traced passing duplicate entry precedes a failing entry for the same bound symbol. | Test |
 | FR-185-AC-9 | When a bound symbol has a passing run entry but that entry omits `traceIds` or lists only another obligation, the exporter places the bound obligation in `failedTests`, never `passedTests` or `warnedTests`, and sets `result: FAILED`; the same result applies to a legacy run record with no `traceIds`. A matching `traceIds` entry permits the existing outcome rules to classify the obligation. | Test |
-| FR-185-AC-10 | Given a required population containing an obligation omitted from `bindings.json`, the exporter lists that obligation in `failedTests`; adding or removing unrelated bindings does not shrink or expand the declared population. | Test |
-| FR-185-AC-11 | An obligation with a binding whose `symbols` array is empty is listed in `failedTests`; an empty required-population file, duplicate identifiers, or a malformed file exits 2 without creating or replacing output. | Test |
-| FR-185-AC-12 | A new-version run whose revision matches all subject annotations can support the existing verdict rules; a different or missing revision is listed in `failedTests`. A readable version-1 run remains readable but cannot support `PASSED`. | Test |
+| FR-185-AC-10 | For the complete computed Test Matrix population in verified provenance, an obligation omitted from `bindings.json` is listed in `failedTests`; adding or removing unrelated bindings does not shrink or expand the matrix population. | Test |
+| FR-185-AC-11 | An obligation whose binding has no symbols is listed in `failedTests`; provenance with an incomplete Test Matrix or run list fails signature/digest verification and cannot produce `PASSED`. | Test |
+| FR-185-AC-12 | A valid provenance signature from the trusted Engineering Assurance verifier, with matrix and run-record digests matching the supplied bytes, and a subject revision matching the signed source revision permits the existing verdict rules; missing, invalid-signature, substituted, incomplete, or mismatched provenance cannot produce `PASSED`. Existing version-1 RunRecord values remain readable without acquiring revision fields. | Test |
 
 ## Dependencies
 
