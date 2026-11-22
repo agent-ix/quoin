@@ -12,6 +12,8 @@ relationships:
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-064"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-210"
+    type: "requires"
   - target: "ix://agent-ix/ix-flow/FR-013"
     type: "requires"
   - target: "ix://agent-ix/ix-flow/FR-018"
@@ -25,7 +27,9 @@ relationships:
 When change assurance is verified, Quoin SHALL join one
 `ChangeAssuranceRecord` revision, its retained predecessor revisions, ix-flow decision history,
 one explicitly selected `ProofAttestation` per proof, the retained output bytes,
-and the FR-032 audit report into one reproducible `VerificationReceipt`.
+the purpose-bound signed `proof-integrity-statement/v1` and exact tag object for
+each proof, and the FR-032 audit report into one reproducible
+`VerificationReceipt`.
 
 The verifier SHALL run no producer or proof command. Its three outcomes mean:
 
@@ -40,6 +44,13 @@ The verifier SHALL run no producer or proof command. Its three outcomes mean:
 `invalid` SHALL dominate `incomplete`.
 
 When no invalid check exists, any incomplete check SHALL dominate `valid`.
+
+When Quoin evaluates a selected proof for validity, it SHALL verify the
+purpose-bound signed statement and exact retained content under
+[FR-210](./FR-210-retained-proof-integrity-statement.md). A local attestation
+commitment alone does not detect joint replacement of attestation metadata and
+output bytes. Missing or unavailable retention/checkpoint evidence is
+incomplete; contradictory statement or checkpoint evidence is invalid.
 
 ## Properties
 
@@ -139,6 +150,10 @@ The table declares the record's top-level fields and their cardinality. Which ke
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
     },
+    "sha256_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
     "outcome": {
       "type": "string",
       "enum": ["valid", "invalid", "incomplete"]
@@ -174,6 +189,11 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "output_size_mismatch",
         "output_integrity_mismatch",
         "output_integrity_unavailable",
+        "proof_integrity_statement_missing",
+        "proof_integrity_mismatch",
+        "proof_integrity_checkpoint_untrusted",
+        "proof_integrity_checkpoint_bad",
+        "proof_integrity_unavailable",
         "record_binding_mismatch",
         "candidate_revision_mismatch",
         "proof_id_mismatch",
@@ -321,6 +341,9 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "proof_id",
         "obligation_ids",
         "attestation_id",
+        "integrity_statement_digest",
+        "integrity_tag_object_id",
+        "integrity_checkpoint_status",
         "audit_findings",
         "outcome",
         "reasons"
@@ -334,6 +357,34 @@ The table declares the record's top-level fields and their cardinality. Which ke
         },
         "attestation_id": {
           "anyOf": [{ "$ref": "#/$defs/identity" }, { "type": "null" }]
+        },
+        "integrity_statement_digest": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256_digest" },
+            { "type": "null" }
+          ]
+        },
+        "integrity_tag_object_id": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-f0-9]{40}([a-f0-9]{24})?$" },
+            { "type": "null" }
+          ]
+        },
+        "integrity_checkpoint_status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "verified",
+                "wrong_checkpoint",
+                "untrusted_signer",
+                "signed_bad",
+                "unsigned",
+                "unverifiable"
+              ]
+            },
+            { "type": "null" }
+          ]
         },
         "audit_findings": {
           "type": "array",
@@ -372,6 +423,22 @@ For each selected attestation Quoin SHALL:
    tool identity, and configuration reference;
 3. require producer result `passed`; and
 4. join the proof's declared obligation ids to the retained FR-032 audit report.
+
+Quoin SHALL also read exactly one matching
+`proof-integrity-statement/v1` and its signed tag object from the selected
+retention service. It SHALL compare the statement's record id/revision,
+candidate revision, proof id, attestation id, attestation digest, output digest,
+output size, and output media type with the exact selected record and retained
+bytes. It SHALL ask Engineering Assurance FR-080 to verify the statement
+digest and purpose against the same exact signed tag object. The proof receipt
+SHALL retain the statement digest, tag object id, and exact FR-080 status.
+
+An absent or unavailable provider, statement, tag object, or verifier SHALL
+make the proof incomplete with `proof_integrity_statement_missing` or
+`proof_integrity_unavailable`. A statement/content mismatch, wrong checkpoint,
+untrusted signer, or bad signature SHALL make the proof invalid with its
+corresponding `proof_integrity_*` reason. `unsigned` and `unverifiable` SHALL
+remain incomplete and never support a valid proof.
 
 Each FR-032 stale or vacuous finding SHALL map to its named invalid
 reason. A failed result and every other FR-032 defect finding SHALL be invalid.
@@ -467,9 +534,9 @@ that re-verification needs and the writer's own trust input as information only;
 it is evidence that the named approver signed only after Engineering Assurance's
 `approval-verify` is re-run with trust the relying party supplies and gives the same result.
 
-The receipt schema is revised to version 2 by the `claimed_approval` member and the
-six `approval_*` reasons; version 1 receipts are not read (prerelease, no
-compatibility reader). The time members (PLAT-1592) amend the closed
+The receipt schema is version 2 and includes the `claimed_approval` member,
+the six `approval_*` reasons, and the per-proof integrity-statement fields;
+version 1 receipts are not read (prerelease, no compatibility reader). The time members (PLAT-1592) amend the closed
 `claimed_approval` of that same version 2, which is current and prerelease: the
 version does not change and no reader for a `claimed_approval` without a time is
 kept.
@@ -478,10 +545,12 @@ kept.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-065-CON-1 | Verification SHALL execute no proof, suite, tool, ix-flow command, Git command, network request, or evidence write. | Architecture | Inspection |
+| FR-065-CON-1 | Quoin SHALL execute no proof command, suite, or producer tool during verification. | Architecture | Inspection |
 | FR-065-CON-2 | Verification SHALL consume FR-032 findings without replacing or suppressing their auditor verdict. | Responsibility | Test |
 | FR-065-CON-3 | A receipt SHALL make no identity, authorization, authenticity, signature, or non-repudiation claim of its own; `claimed_approval` reports the event writer's claim, labelled as a claim. | Responsibility | Inspection |
 | FR-065-CON-4 | Existing evidence-audit and assurance reports SHALL remain readable and unchanged when change assurance is not selected. | Compatibility | Test |
+| FR-065-CON-5 | When a selected proof requires integrity verification, Quoin SHALL invoke only Engineering Assurance FR-080 as the delegated signed-tag verifier. | Architecture | Inspection |
+| FR-065-CON-6 | Quoin SHALL perform no direct Git/network operation, ix-flow command, or evidence write during receipt verification. | Architecture | Inspection |
 
 ## Acceptance Criteria
 
@@ -497,25 +566,27 @@ kept.
 | FR-065-AC-8 | Incomplete/truncated impact evidence and every non-resolved unknown remain named and force incomplete verification while preserving an advisory workflow's ability to continue. | Test |
 | FR-065-AC-9 | The receipt retains each FR-032 finding kind and obligation id byte-for-byte beside its mapped reason without changing the source auditor result (CON-2). | Integration |
 | FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts, compared byte for byte. | Property |
-| FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration |
+| FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection; when selected, the only delegated verifier is EA FR-080, and Quoin performs no direct Git/network operation or evidence write (CON-4 through CON-6). | Integration |
 | FR-065-AC-12 | Golden terminology describes actor labels only as recorded attribution, never identity, authority, authenticity, signature, or non-repudiation, and `claimed_approval` only as a claim to be re-verified (CON-3). | Analysis |
 | FR-065-AC-13 | A matching `approved` event whose `verified_approval` is `approved` and carries the record's id and the digest of the stored revision, and, under a `required` policy, a `signature_kind` in `signature_kinds` and an `approver` in `approvers` (or `approvers` empty), keeps the review check valid, and the receipt's `claimed_approval` carries the protocol, tag, digest, trust, approver, every meaning value in order, the signature kind and the claim's time exactly as the claim states it. | Integration |
 | FR-065-AC-14 | A `verified_approval` with status `wrong_record`, or `approved` with a digest that is not the digest of the stored revision (the record changed after the tag), makes the receipt `invalid` with `approval_record_mismatch` and `claimed_approval` null. | Integration |
 | FR-065-AC-15 | A `verified_approval` with status `untrusted_signer` (an unmapped signer) makes the receipt `invalid` with `approval_signer_untrusted`; `signed_bad` makes it `invalid` with `approval_signature_bad`; under a `required` policy a `signature_kind` outside `signature_kinds`, or an `approver` outside a non-empty `approvers`, also makes it `invalid` with `approval_signer_untrusted`, while a different `trust` member alone changes nothing. | Integration |
 | FR-065-AC-16 | A `verified_approval` with status `meaning_missing` makes the receipt `incomplete` with `approval_meaning_missing`; `unsigned` or `unverifiable` makes it `incomplete` with `approval_unverified`; none of them is `valid`, and `invalid` still dominates when another check is invalid. | Integration |
 | FR-065-AC-17 | Two matching `approved` events that each carry a `verified_approval` make the receipt `invalid` with `decision_mismatch`, and `claimed_approval` is null. | Integration |
-| FR-065-AC-18 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is false yields `claimed_approval` null and the same review check as before; a version 1 payload or receipt is not accepted; static boundaries prove the approval check starts no process and performs no Git, network or identity-provider operation (CON-1). | Test |
+| FR-065-AC-18 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is false yields `claimed_approval` null and the same review check as before; a version 1 payload or receipt is not accepted; static boundaries prove the human-approval check starts no process and performs no Git, network or identity-provider operation. | Test |
 | FR-065-AC-19 | An approved event with no `verified_approval` under a record whose `signed_approval.required` is true makes the receipt `incomplete` with `approval_missing`, and the same record with `required` false is not affected. | Integration |
 | FR-065-AC-20 | When a `signed_bad` claim also carries a digest that differs from the stored record, the receipt reports `approval_signature_bad` and not `approval_record_mismatch`, following the status order of Engineering Assurance FR-041. | Test |
 | FR-065-AC-21 | The receipt schema and reader require a non-null `claimed_approval` to carry exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`; a claim with both, neither, one half of the first form, an instant not of the form `YYYY-MM-DDTHH:MM:SSZ` or not a real calendar second, a `transparency_log` or other unknown source or reason, or an undeclared time member is refused, and the receipt reports a claim's time, source or missing reason unchanged. | Test |
 | FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Test |
 | FR-065-AC-23 | A v2 proof attestation whose output bytes or any committed metadata are substituted, even at equal output length, is invalid with `output_integrity_mismatch`; a legacy v1 attestation remains readable but is incomplete with `output_integrity_unavailable` and never supports a valid proof result. | Integration |
+| FR-065-AC-24 | A selected proof is valid only when its exact `proof-integrity-statement/v1`, attestation, output, and signed tag object are retained and match byte-for-byte; FR-080 parses and verifies the same fetched immutable tag object, returns its full object id, and the proof receipt reports that id, statement digest, and status. A second tag signed by the same trusted signer over the same purpose/digest/scope may verify as a distinct checkpoint with a distinct object id; without a separate trusted anchor, no prior-object-id pinning is claimed. Missing/unavailable objects or verifier evidence is incomplete; changed content, wrong scope/purpose, untrusted signer, or bad signature is invalid. | Integration |
 
 ## Dependencies
 
 - **Upstream**: [FR-032](./FR-032-evidence-auditor.md),
   [FR-063](./FR-063-change-assurance-record-integrity.md),
-  [FR-064](./FR-064-proof-attestation.md), and ix-flow FR-013/018.
+  [FR-064](./FR-064-proof-attestation.md),
+  [FR-210](./FR-210-retained-proof-integrity-statement.md), and ix-flow FR-013/018.
 - **Downstream**: advisory pilots and explicitly promoted assurance profiles may
   consume the outcome; this requirement defines no merge gate or promotion
   policy.
