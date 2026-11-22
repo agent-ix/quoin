@@ -21,6 +21,8 @@ pub struct ControlEvidence {
     pub control: String,
     /// Ids of the requirements that satisfy it.
     pub requirements: Vec<String>,
+    /// Ids of linked requirements whose exact authored status is `retired`.
+    pub retired_requirements: Vec<String>,
     /// Ids of the documents that verify it.
     pub verifications: Vec<String>,
     /// The tokens naming this control.
@@ -78,8 +80,18 @@ pub(crate) fn assumed_controls<'a>(records: &Records, estimate: &'a Estimate) ->
 
 /// A control with the requirements and verifications that link to it, and the
 /// tokens for the links that are missing (FR-147).
-pub(crate) fn control_evidence(links: &Links, control: &str) -> ControlEvidence {
+pub(crate) fn control_evidence(records: &Records, links: &Links, control: &str) -> ControlEvidence {
     let requirements = links.requirements.get(control).cloned().unwrap_or_default();
+    let retired_requirements = requirements
+        .iter()
+        .filter(|id| {
+            records
+                .others
+                .get(*id)
+                .is_some_and(|requirement| requirement.status.as_deref() == Some("retired"))
+        })
+        .cloned()
+        .collect();
     let verifications = links
         .verifications
         .get(control)
@@ -95,6 +107,7 @@ pub(crate) fn control_evidence(links: &Links, control: &str) -> ControlEvidence 
     ControlEvidence {
         control: control.to_owned(),
         requirements,
+        retired_requirements,
         verifications,
         findings,
     }
@@ -140,7 +153,7 @@ fn entry(records: &Records, links: &Links, estimate: &Estimate) -> EvidenceEntry
 
     let control_entries: Vec<ControlEvidence> = controls
         .iter()
-        .map(|control| control_evidence(links, control))
+        .map(|control| control_evidence(records, links, control))
         .collect();
 
     let mut names: BTreeSet<&str> = hazards.iter().map(String::as_str).collect();

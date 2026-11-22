@@ -143,6 +143,8 @@ pub struct ControlEntry {
     pub control: String,
     /// Ids of the `FR` and `NFR` documents that satisfy it.
     pub requirements: Vec<String>,
+    /// The linked requirements whose exact authored status is `retired`.
+    pub retired_requirements: Vec<String>,
     /// Ids of the documents that verify it.
     pub verifications: Vec<String>,
 }
@@ -350,7 +352,7 @@ impl<'a> Chain<'a> {
         }
         let mut controls = Vec::new();
         for id in &control_ids {
-            let evidence = control_evidence(self.links, id);
+            let evidence = control_evidence(self.records, self.links, id);
             for found in &evidence.findings {
                 if let Some(token) = RowToken::from_control(found.finding) {
                     add(token, vec![id.clone()]);
@@ -359,6 +361,7 @@ impl<'a> Chain<'a> {
             controls.push(ControlEntry {
                 control: evidence.control,
                 requirements: evidence.requirements,
+                retired_requirements: evidence.retired_requirements,
                 verifications: evidence.verifications,
             });
         }
@@ -469,9 +472,10 @@ fn estimate_cell(entry: &EstimateEntry) -> String {
 
 fn control_cell(entry: &ControlEntry) -> String {
     format!(
-        "control={}; requirements={}; verifications={}",
+        "control={}; requirements={}; retired_requirements={}; verifications={}",
         esc(&entry.control),
         ids(&entry.requirements),
+        ids(&entry.retired_requirements),
         ids(&entry.verifications)
     )
 }
