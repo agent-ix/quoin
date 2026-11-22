@@ -44,32 +44,27 @@ pub(crate) fn command() -> Command {
 }
 
 fn with_trust_arguments(command: Command) -> Command {
-    command
-        .arg(
-            Arg::new("engineering-assurance")
-                .long("engineering-assurance")
-                .value_name("ABSOLUTE-PATH"),
-        )
-        .arg(
-            Arg::new("allowed-signers")
-                .long("allowed-signers")
-                .value_name("ABSOLUTE-PATH"),
-        )
-        .arg(
-            Arg::new("gitsign-certificate-identity")
-                .long("gitsign-certificate-identity")
-                .value_name("IDENTITY"),
-        )
-        .arg(
-            Arg::new("gitsign-certificate-oidc-issuer")
-                .long("gitsign-certificate-oidc-issuer")
-                .value_name("ISSUER"),
-        )
-        .arg(
-            Arg::new("gitsign-principal")
-                .long("gitsign-principal")
-                .value_name("PRINCIPAL"),
-        )
+    command.args(trust_arguments())
+}
+
+pub(crate) fn trust_arguments() -> [Arg; 5] {
+    [
+        Arg::new("engineering-assurance")
+            .long("engineering-assurance")
+            .value_name("ABSOLUTE-PATH"),
+        Arg::new("allowed-signers")
+            .long("allowed-signers")
+            .value_name("ABSOLUTE-PATH"),
+        Arg::new("gitsign-certificate-identity")
+            .long("gitsign-certificate-identity")
+            .value_name("IDENTITY"),
+        Arg::new("gitsign-certificate-oidc-issuer")
+            .long("gitsign-certificate-oidc-issuer")
+            .value_name("ISSUER"),
+        Arg::new("gitsign-principal")
+            .long("gitsign-principal")
+            .value_name("PRINCIPAL"),
+    ]
 }
 
 pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
@@ -489,6 +484,17 @@ fn verify(
     Ok(value)
 }
 
+/// Verify one commit signature for the retained-evidence host boundary.
+pub(crate) fn verify_for_evidence(
+    ea: &Path,
+    allowed: &Path,
+    repo: &Path,
+    revision: &str,
+    gitsign: Option<&Value>,
+) -> Result<Value, String> {
+    verify(ea, allowed, repo, revision, gitsign).map_err(status_error_message)
+}
+
 fn signature_request(
     repo: &Path,
     revision: &str,
@@ -501,7 +507,6 @@ fn signature_request(
         ("revision".to_owned(), json!(revision)),
         ("kind".to_owned(), json!("commit")),
         ("allowed_signers".to_owned(), json!(allowed)),
-        ("trailer_keys".to_owned(), json!(["Formal-rule"])),
     ]);
     if let Some(gitsign) = gitsign {
         request.insert("gitsign".to_owned(), gitsign.clone());

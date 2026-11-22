@@ -144,12 +144,14 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     }
     let run_observations =
         crate::run_observation::read_run_observations(&values(arguments, "run-observation"))?;
+    let signature_verifier = crate::analysis_evidence::signature_verifier(arguments)?;
     let analysis = crate::analysis_evidence::compute(
         repo_text,
         &modules,
         &store.payload,
         &obligations,
         &run_observations,
+        signature_verifier.as_ref(),
     )?;
 
     let frontmatter = crate::completeness::read_frontmatter(&repo.join("spec"))?;

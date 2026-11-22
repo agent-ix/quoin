@@ -34,6 +34,7 @@ pub(crate) fn command() -> Command {
                 .num_args(1)
                 .value_name("FILE"),
         )
+        .args(crate::formal_rules::trust_arguments())
         .args(policy_args())
 }
 
@@ -43,9 +44,15 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .map(|paths| paths.cloned().collect::<Vec<_>>())
         .unwrap_or_default();
     let run_observations = crate::run_observation::read_run_observations(&run_observation_paths)?;
+    let signature_verifier = crate::analysis_evidence::signature_verifier(arguments)?;
     let repo = required(arguments, "repo")?;
     let options = AuditOptions::from_arguments(arguments);
-    let built = match build(&options, &repo, &run_observations)? {
+    let built = match build(
+        &options,
+        &repo,
+        &run_observations,
+        signature_verifier.as_ref(),
+    )? {
         Built::Matrix(built) => built,
         Built::Declined(response) => return Ok(response),
     };
@@ -95,6 +102,7 @@ pub(crate) fn build(
     options: &AuditOptions,
     repo: &str,
     run_observations: &[crate::run_observation::RunObservationFile],
+    signature_verifier: Option<&crate::analysis_evidence::SignatureVerifier>,
 ) -> Result<Built, String> {
     let audited = match assemble_for_matrix_with(options, repo)? {
         Assembly::Audited(audited) => audited,
@@ -120,6 +128,7 @@ pub(crate) fn build(
         &audited.store_inputs,
         &obligations,
         run_observations,
+        signature_verifier,
     )?;
     let evidence_report = serde_json::to_value(&analysis.report)
         .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;

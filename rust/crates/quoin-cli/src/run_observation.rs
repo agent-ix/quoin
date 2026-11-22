@@ -183,6 +183,10 @@ mod tests {
             "one.json",
             "--run-observation",
             "two.json",
+            "--engineering-assurance",
+            "/bin/engineering-assurance",
+            "--allowed-signers",
+            "/etc/ssh/allowed_signers",
         ];
         for (name, command) in [
             ("matrix", crate::matrix::command()),

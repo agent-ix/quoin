@@ -38,6 +38,7 @@ pub(crate) fn command() -> Command {
                 .value_name("FILE"),
         )
         .arg(Arg::new("as-of").long("as-of"))
+        .args(crate::formal_rules::trust_arguments())
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
 }
 
@@ -133,6 +134,7 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
+    let signature_verifier = crate::analysis_evidence::signature_verifier(arguments)?;
     let run_observations = read_run_observations(arguments)?;
     let modules = values(arguments, "module");
     let formalization_path = arguments.get_one::<String>("formalization-records");
@@ -195,6 +197,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let case_request = build_case_request(&CaseRequestInputs {
         arguments,
         repo: &repo,
+        signature_verifier: signature_verifier.as_ref(),
         modules: &modules,
         run_observations: &run_observations,
         coverage: &coverage.payload,
@@ -218,6 +221,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
 struct CaseRequestInputs<'a> {
     arguments: &'a ArgMatches,
     repo: &'a str,
+    signature_verifier: Option<&'a crate::analysis_evidence::SignatureVerifier>,
     modules: &'a [String],
     run_observations: &'a [crate::run_observation::RunObservationFile],
     coverage: &'a serde_json::Value,
@@ -232,6 +236,7 @@ fn build_case_request(input: &CaseRequestInputs<'_>) -> Result<serde_json::Value
     let CaseRequestInputs {
         arguments,
         repo,
+        signature_verifier,
         modules,
         run_observations,
         coverage,
@@ -263,6 +268,7 @@ fn build_case_request(input: &CaseRequestInputs<'_>) -> Result<serde_json::Value
         store,
         field(coverage, "obligations")?,
         run_observations,
+        *signature_verifier,
     )?;
     let mut case_request = serde_json::json!({
         "bindings": field(store, "bindings")?, "observations": observations,
@@ -338,12 +344,19 @@ fn analysis_case_inputs(
     store_inputs: &serde_json::Value,
     obligation_value: serde_json::Value,
     observations: &[crate::run_observation::RunObservationFile],
+    signature_verifier: Option<&crate::analysis_evidence::SignatureVerifier>,
 ) -> Result<(Vec<quoin_quire_types::Obligation>, serde_json::Value), String> {
     let mut obligations: Vec<quoin_quire_types::Obligation> =
         serde_json::from_value(obligation_value)
             .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
-    let analysis =
-        crate::analysis_evidence::compute(repo, modules, store_inputs, &obligations, observations)?;
+    let analysis = crate::analysis_evidence::compute(
+        repo,
+        modules,
+        store_inputs,
+        &obligations,
+        observations,
+        signature_verifier,
+    )?;
     let report = serde_json::to_value(&analysis.report)
         .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
     crate::analysis_evidence::attach_unique_target_identities(

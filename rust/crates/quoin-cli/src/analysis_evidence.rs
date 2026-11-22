@@ -4,8 +4,10 @@
 //! Host-side assembly for the read-only FR-153 analysis evidence bridge.
 
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::{Command, Output};
 
+use clap::ArgMatches;
 use quoin_evidence::EvidenceSource;
 use quoin_evidence::paths::{ANALYSIS_REPORTS_DIR, RUNS_DIR, record_path};
 use quoin_evidence::qualify::{
@@ -80,11 +82,18 @@ pub(crate) fn compute(
     audit_inputs: &serde_json::Value,
     obligations: &[Obligation],
     observations: &[RunObservationFile],
+    signature_verifier: Option<&SignatureVerifier>,
 ) -> Result<quoin_quire::evidence::Outcome, String> {
     let modules = module_selection(module_paths)?;
     let scope = ScopeRoot::open(repo).map_err(|error| error.to_string())?;
-    let host = host_observations(repo, observations);
-    let (runs, bindings) = retained_runs(repo, observations)?;
+    let canonical_repo = Path::new(repo)
+        .canonicalize()
+        .map_err(|error| format!("repository is unavailable: {error}"))?;
+    let canonical_repo = canonical_repo
+        .to_str()
+        .ok_or_else(|| "repository path is not UTF-8".to_owned())?;
+    let host = host_observations(canonical_repo, observations);
+    let (runs, bindings) = retained_runs(canonical_repo, observations, signature_verifier)?;
     let injections = decode_field::<Vec<MockInjection>>(audit_inputs, "injections")?;
     let mock_inspection_suites =
         decode_field::<Vec<String>>(audit_inputs, "mock_inspection_suites")?;
@@ -103,6 +112,62 @@ pub(crate) fn compute(
         host,
     })
     .map_err(|error| error.to_string())
+}
+
+/// Host-configured verifier and signer trust store for actor admission.
+pub(crate) struct SignatureVerifier {
+    /// Engineering-assurance executable.
+    pub(crate) executable: PathBuf,
+    /// SSH allowed-signers file used by engineering-assurance.
+    pub(crate) allowed_signers: PathBuf,
+    /// Optional Sigstore identity expectations.
+    pub(crate) gitsign: Option<serde_json::Value>,
+}
+
+/// Read the configured signature verifier and its trust inputs from the host CLI.
+pub(crate) fn signature_verifier(
+    arguments: &ArgMatches,
+) -> Result<Option<SignatureVerifier>, String> {
+    let executable = arguments.get_one::<String>("engineering-assurance");
+    let allowed_signers = arguments.get_one::<String>("allowed-signers");
+    let (Some(executable), Some(allowed_signers)) = (executable, allowed_signers) else {
+        if executable.is_none() && allowed_signers.is_none() {
+            return Ok(None);
+        }
+        return Err(
+            "--engineering-assurance and --allowed-signers must be supplied together".to_owned(),
+        );
+    };
+    let executable = absolute_existing_file(executable, "--engineering-assurance")?;
+    let allowed_signers = absolute_existing_file(allowed_signers, "--allowed-signers")?;
+    let identity = arguments.get_one::<String>("gitsign-certificate-identity");
+    let issuer = arguments.get_one::<String>("gitsign-certificate-oidc-issuer");
+    let principal = arguments.get_one::<String>("gitsign-principal");
+    let gitsign = match (identity, issuer, principal) {
+        (None, None, None) => None,
+        (Some(identity), Some(issuer), Some(principal)) => Some(serde_json::json!({
+            "certificate_identity": identity,
+            "certificate_oidc_issuer": issuer,
+            "principal": principal,
+        })),
+        _ => return Err("all three gitsign identity options must be supplied together".to_owned()),
+    };
+    Ok(Some(SignatureVerifier {
+        executable,
+        allowed_signers,
+        gitsign,
+    }))
+}
+
+fn absolute_existing_file(value: &str, flag: &str) -> Result<PathBuf, String> {
+    let path = PathBuf::from(value);
+    if value.is_empty() || value.contains('\0') || !path.is_absolute() {
+        return Err(format!("{flag} must be an absolute path"));
+    }
+    if !path.is_file() {
+        return Err(format!("{flag} is not a readable file"));
+    }
+    Ok(path)
 }
 
 pub(crate) fn module_selection(paths: &[String]) -> Result<ModuleSelection, String> {
@@ -139,6 +204,7 @@ fn decode_field<T: serde::de::DeserializeOwned>(
 fn retained_runs(
     repo: &str,
     observations: &[RunObservationFile],
+    signature_verifier: Option<&SignatureVerifier>,
 ) -> Result<(Vec<RetainedRun>, Vec<Binding>), String> {
     let source = DiskEvidence::new(repo);
     let mut skipped = Vec::new();
@@ -171,7 +237,7 @@ fn retained_runs(
                 .iter()
                 .find(|observation| observation.record == file)
                 .map_or_else(RunObservation::default, |input| {
-                    run_observation(repo, input, &file, &projection_path)
+                    run_observation(repo, input, &file, &projection_path, signature_verifier)
                 });
             runs.push(RetainedRun {
                 file,
@@ -197,6 +263,7 @@ fn run_observation(
     input: &RunObservationFile,
     run_file: &str,
     projection_file: &str,
+    signature_verifier: Option<&SignatureVerifier>,
 ) -> RunObservation {
     let performed_revision = input
         .checkout_sha
@@ -213,7 +280,8 @@ fn run_observation(
             invocation: ci.invocation.clone(),
         })
     });
-    let (actor, actor_rejection) = actor_observation(repo, input, run_file, projection_file);
+    let (actor, actor_rejection) =
+        actor_observation(repo, input, run_file, projection_file, signature_verifier);
     RunObservation {
         run_kind: input.run_kind.clone(),
         performed_revision,
@@ -265,6 +333,7 @@ fn actor_observation(
     input: &RunObservationFile,
     run_file: &str,
     projection_file: &str,
+    signature_verifier: Option<&SignatureVerifier>,
 ) -> (Option<ActorAdmission>, Option<String>) {
     let Some(authority) = input.actor_authority.as_ref() else {
         return (None, None);
@@ -296,7 +365,25 @@ fn actor_observation(
     if authority.actor.is_empty() || authority.admission_ref.is_empty() {
         return (None, None);
     }
-    let principal = match signature_signer(signature) {
+    let Some(signature_verifier) = signature_verifier else {
+        return (None, None);
+    };
+    let Ok(actual_signature) = crate::formal_rules::verify_for_evidence(
+        &signature_verifier.executable,
+        &signature_verifier.allowed_signers,
+        Path::new(repo),
+        &commit_id,
+        signature_verifier.gitsign.as_ref(),
+    ) else {
+        return (None, None);
+    };
+    if !same_signature_claim(signature, &actual_signature) {
+        return (
+            None,
+            Some("the supplied signature result does not match host verification".to_owned()),
+        );
+    }
+    let principal = match signature_signer(&actual_signature) {
         SignatureSigner::Admitted(principal) => principal,
         SignatureSigner::Rejected(reason) => return (None, Some(reason)),
         SignatureSigner::Unavailable => return (None, None),
@@ -315,6 +402,12 @@ fn actor_observation(
         }),
         None,
     )
+}
+
+fn same_signature_claim(supplied: &serde_json::Value, verified: &serde_json::Value) -> bool {
+    ["protocol", "kind", "status", "verified_commit_id", "signer"]
+        .into_iter()
+        .all(|field| supplied.get(field) == verified.get(field))
 }
 
 enum SignatureSigner {
@@ -458,7 +551,7 @@ fn valid_object_id(value: &str) -> bool {
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::{actor_observation, first_pair_introduction, host_observations};
+    use super::{SignatureVerifier, actor_observation, first_pair_introduction, host_observations};
     use crate::run_observation::RunObservationFile;
     use ix_trace_rs::trace;
     use std::fs;
@@ -466,6 +559,7 @@ mod tests {
 
     const RUN: &str = "runs/unit/2026-11-13T00:00:00Z.json";
     const PROJECTION: &str = "analysis-reports/unit/2026-11-13T00:00:00Z.json";
+    const SUPPORTED_TEST_EA_VERSION: &str = "engineering-assurance 0.10.1";
 
     fn git(repo: &std::path::Path, args: &[&str]) -> String {
         let output = Command::new("git")
@@ -509,6 +603,104 @@ mod tests {
         (repo, commit)
     }
 
+    fn explicit_supported_ea() -> std::path::PathBuf {
+        let executable = std::env::var_os("QUOIN_TEST_ENGINEERING_ASSURANCE")
+            .map(std::path::PathBuf::from)
+            .expect("set QUOIN_TEST_ENGINEERING_ASSURANCE to run ignored real-verifier tests");
+        assert!(
+            executable.is_absolute() && executable.is_file(),
+            "QUOIN_TEST_ENGINEERING_ASSURANCE must name an existing absolute executable"
+        );
+        let version = Command::new(&executable)
+            .arg("--version")
+            .output()
+            .expect("the supplied Engineering Assurance executable runs");
+        assert!(version.status.success(), "EA --version failed");
+        assert!(
+            String::from_utf8_lossy(&version.stdout).trim() == SUPPORTED_TEST_EA_VERSION,
+            "expected {SUPPORTED_TEST_EA_VERSION}, received: {}",
+            String::from_utf8_lossy(&version.stdout)
+        );
+        let capability = Command::new(&executable)
+            .args(["signature-verify", "--help"])
+            .output()
+            .expect("the supplied Engineering Assurance executable runs");
+        assert!(
+            capability.status.success(),
+            "the supplied EA executable does not support signature-verify: {}",
+            String::from_utf8_lossy(&capability.stderr)
+        );
+        executable
+    }
+
+    fn signed_pair_repo() -> (
+        tempfile::TempDir,
+        String,
+        tempfile::TempDir,
+        SignatureVerifier,
+    ) {
+        let key_dir = tempfile::tempdir().expect("temporary SSH keys");
+        let private_key = key_dir.path().join("signing_key");
+        let generated = Command::new("ssh-keygen")
+            .args(["-q", "-t", "ed25519", "-N", "", "-f"])
+            .arg(&private_key)
+            .output()
+            .expect("ssh-keygen runs");
+        assert!(generated.status.success());
+        let public = Command::new("ssh-keygen")
+            .args(["-y", "-f"])
+            .arg(&private_key)
+            .output()
+            .expect("public key derives");
+        assert!(public.status.success());
+        let public = String::from_utf8(public.stdout).expect("UTF-8 public key");
+        let allowed_signers = key_dir.path().join("allowed_signers");
+        fs::write(
+            &allowed_signers,
+            format!("alice@example.invalid namespaces=\"git\" {public}"),
+        )
+        .expect("allowed signers file");
+
+        let repo = tempfile::tempdir().expect("temporary git repository");
+        git(repo.path(), &["init", "-q"]);
+        git(repo.path(), &["config", "user.name", "VER-97 test"]);
+        git(
+            repo.path(),
+            &["config", "user.email", "ver97@example.invalid"],
+        );
+        git(repo.path(), &["config", "gpg.format", "ssh"]);
+        git(
+            repo.path(),
+            &[
+                "config",
+                "user.signingkey",
+                private_key.to_str().expect("key path"),
+            ],
+        );
+        git(repo.path(), &["config", "commit.gpgsign", "true"]);
+        let run = repo.path().join("spec/evidence").join(RUN);
+        let projection = repo.path().join("spec/evidence").join(PROJECTION);
+        fs::create_dir_all(run.parent().expect("run parent")).expect("run directory");
+        fs::create_dir_all(projection.parent().expect("projection parent"))
+            .expect("projection directory");
+        fs::write(&run, br#"{"protocol":"quoin.run/v1"}"#).expect("run bytes");
+        fs::write(
+            &projection,
+            br#"{"protocol":"quoin.analysis-report-projection/v1"}"#,
+        )
+        .expect("projection bytes");
+        git(repo.path(), &["add", "spec/evidence"]);
+        git(repo.path(), &["commit", "-q", "-m", "add paired evidence"]);
+        let commit = git(repo.path(), &["rev-parse", "HEAD"]);
+        let executable = explicit_supported_ea();
+        let verifier = SignatureVerifier {
+            executable,
+            allowed_signers,
+            gitsign: None,
+        };
+        (repo, commit, key_dir, verifier)
+    }
+
     fn observation(signature_result: &serde_json::Value) -> RunObservationFile {
         serde_json::from_value(serde_json::json!({
             "protocol": "quoin.analysis-run-observation/v1",
@@ -536,21 +728,31 @@ mod tests {
     /// FR-153-AC-16: actor evidence is admitted only for the commit adding the
     /// exact run/projection pair and matching both currently read byte strings.
     #[trace("FR-153-AC-16")]
+    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
     #[test]
     fn exact_pair_introduction_commit_admits_mapped_actor() {
-        let (repo, commit) = pair_repo();
+        let (repo, commit, _keys, verifier) = signed_pair_repo();
+        let actual_signature = crate::formal_rules::verify_for_evidence(
+            &verifier.executable,
+            &verifier.allowed_signers,
+            repo.path(),
+            &commit,
+            None,
+        )
+        .expect("the actual commit signature verifies");
         assert_eq!(
             first_pair_introduction(repo.path().to_str().expect("repo path"), RUN, PROJECTION),
             Some(commit.clone())
         );
         let (actor, rejection) = actor_observation(
             repo.path().to_str().expect("repo path"),
-            &observation(&signature(&commit)),
+            &observation(&actual_signature),
             RUN,
             PROJECTION,
+            Some(&verifier),
         );
         assert_eq!(
-            actor.expect("exact signature is admitted").actor,
+            actor.expect("verified signature is admitted").actor,
             "alice@example.invalid"
         );
         assert_eq!(rejection, None);
@@ -567,21 +769,31 @@ mod tests {
             &observation(&untrusted),
             RUN,
             PROJECTION,
+            Some(&verifier),
         );
         assert!(actor.is_none());
         assert!(rejection.is_some());
 
         git(
             repo.path(),
-            &["commit", "--allow-empty", "-q", "-m", "later commit"],
+            &["commit", "--allow-empty", "-S", "-q", "-m", "later commit"],
         );
         let later = git(repo.path(), &["rev-parse", "HEAD"]);
         assert_ne!(later, commit);
+        let later_signature = crate::formal_rules::verify_for_evidence(
+            &verifier.executable,
+            &verifier.allowed_signers,
+            repo.path(),
+            &later,
+            None,
+        )
+        .expect("later signature verifies");
         let (actor, _) = actor_observation(
             repo.path().to_str().expect("repo path"),
-            &observation(&signature(&later)),
+            &observation(&later_signature),
             RUN,
             PROJECTION,
+            Some(&verifier),
         );
         assert!(
             actor.is_none(),
@@ -589,12 +801,58 @@ mod tests {
         );
     }
 
+    /// FR-116-AC-18: copied success fields cannot substitute for host verification.
+    #[trace("FR-116-AC-18")]
+    #[test]
+    fn self_asserted_signed_valid_result_remains_unevaluated() {
+        let (repo, commit) = pair_repo();
+        let (actor, rejection) = actor_observation(
+            repo.path().to_str().expect("repo path"),
+            &observation(&signature(&commit)),
+            RUN,
+            PROJECTION,
+            None,
+        );
+        assert!(actor.is_none());
+        assert!(rejection.is_none());
+    }
+
+    /// FR-116-AC-18: an unsigned introducing commit is rejected even when the
+    /// host receives a result produced by the real verifier.
+    #[trace("FR-116-AC-18")]
+    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
+    #[test]
+    fn actual_verifier_refuses_an_unsigned_pair_introduction() {
+        let (repo, commit) = pair_repo();
+        let (_signed_repo, _signed_commit, _keys, verifier) = signed_pair_repo();
+        let actual_signature = crate::formal_rules::verify_for_evidence(
+            &verifier.executable,
+            &verifier.allowed_signers,
+            repo.path(),
+            &commit,
+            None,
+        )
+        .expect("the verifier returns an explicit unsigned result");
+        assert_eq!(actual_signature["status"], "unsigned");
+
+        let (actor, rejection) = actor_observation(
+            repo.path().to_str().expect("repo path"),
+            &observation(&actual_signature),
+            RUN,
+            PROJECTION,
+            Some(&verifier),
+        );
+        assert!(actor.is_none());
+        assert!(rejection.unwrap().contains("status is unsigned"));
+    }
+
     /// FR-153-AC-18: every missing or wrong revision binding and every tag
     /// result leaves actor authority unavailable.
     #[trace("FR-153-AC-18")]
+    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
     #[test]
     fn absent_null_malformed_mismatched_tag_and_unresolved_ids_fail_closed() {
-        let (repo, _) = pair_repo();
+        let (repo, _, _keys, verifier) = signed_pair_repo();
         let cases = vec![
             serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"commit", "status":"signed_valid"}),
             serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"commit", "status":"signed_valid", "verified_commit_id":null}),
@@ -609,6 +867,7 @@ mod tests {
                 &observation(&signature_result),
                 RUN,
                 PROJECTION,
+                Some(&verifier),
             );
             assert!(actor.is_none(), "invalid identity must not admit an actor");
             assert!(
@@ -641,6 +900,7 @@ mod tests {
             &observation(&signature("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")),
             RUN,
             PROJECTION,
+            None,
         );
         assert!(actor.is_none());
         assert!(rejection.is_none());
