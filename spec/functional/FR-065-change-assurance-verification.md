@@ -172,6 +172,8 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "attestation_id_mismatch",
         "output_missing",
         "output_size_mismatch",
+        "output_integrity_mismatch",
+        "output_integrity_unavailable",
         "record_binding_mismatch",
         "candidate_revision_mismatch",
         "proof_id_mismatch",
@@ -365,7 +367,7 @@ have no effect.
 
 For each selected attestation Quoin SHALL:
 
-1. read the attestation and its retained output and check the output's byte length equals `retained_output.size_bytes`;
+1. read the attestation and its retained output and check the output's byte length equals `retained_output.size_bytes`; for schema v2, recompute and compare FR-064's content commitment over canonical metadata and exact output bytes. A commitment mismatch is invalid with `output_integrity_mismatch`. A readable legacy schema v1 attestation has no commitment and is incomplete with `output_integrity_unavailable`;
 2. require equal record id and revision, candidate revision, proof id, command argv/cwd,
    tool identity, and configuration reference;
 3. require producer result `passed`; and
@@ -507,6 +509,7 @@ kept.
 | FR-065-AC-20 | When a `signed_bad` claim also carries a digest that differs from the stored record, the receipt reports `approval_signature_bad` and not `approval_record_mismatch`, following the status order of Engineering Assurance FR-041. | Test |
 | FR-065-AC-21 | The receipt schema and reader require a non-null `claimed_approval` to carry exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`; a claim with both, neither, one half of the first form, an instant not of the form `YYYY-MM-DDTHH:MM:SSZ` or not a real calendar second, a `transparency_log` or other unknown source or reason, or an undeclared time member is refused, and the receipt reports a claim's time, source or missing reason unchanged. | Test |
 | FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Test |
+| FR-065-AC-23 | A v2 proof attestation whose output bytes or any committed metadata are substituted, even at equal output length, is invalid with `output_integrity_mismatch`; a legacy v1 attestation remains readable but is incomplete with `output_integrity_unavailable` and never supports a valid proof result. | Integration |
 
 ## Dependencies
 
