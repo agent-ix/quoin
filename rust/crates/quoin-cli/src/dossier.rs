@@ -544,7 +544,7 @@ impl MatrixSource for CliMatrix {
             })
             .collect::<Result<Vec<_>, _>>()?;
         let options = AuditOptions::for_modules(modules);
-        let response = match crate::matrix::build(&options, repo, &[]).map_err(failure)? {
+        let response = match crate::matrix::build(&options, repo, &[], None).map_err(failure)? {
             Built::Matrix(built) => built.response,
             Built::Declined(response) => response,
         };
