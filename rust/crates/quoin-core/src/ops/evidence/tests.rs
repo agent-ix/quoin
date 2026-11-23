@@ -187,9 +187,13 @@ fn a_dry_run_gc_removes_nothing() {
         &capabilities,
     )
     .unwrap();
+    // The surviving run, and the log naming the run gc retired.
     assert_eq!(
         host.store.borrow().paths(),
-        vec!["runs/alpha/2026-02-01T00~3A00~3A00Z.json"]
+        vec![
+            "retired/runs-alpha-2026-01-01T00~3A00~3A00Z.json",
+            "runs/alpha/2026-02-01T00~3A00~3A00Z.json"
+        ]
     );
 }
 
@@ -508,17 +512,21 @@ fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
 fn tc_2900_an_audit_script_scan_records_under_each_tool_it_claims() {
     let host = TestHost::empty();
     let capabilities = Capabilities::with_evidence(&host);
-    for (tool, adapter) in [
+    // One timestamp each: a record at an occupied key is refused, not replaced.
+    for (second, (tool, adapter)) in [
         ("audit-static", None),
         ("import-linter 2.0", None),
         ("audit-static", Some("audit-script")),
         ("audit-script", Some("audit-script")),
-    ] {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let mut request = json!({
             "repo": "/somewhere",
             "suite": "audit",
             "tool": tool,
-            "timestamp": "2026-01-01T00:00:00Z",
+            "timestamp": format!("2026-01-01T00:00:0{second}Z"),
             "results": "check_a: OK\ncheck_b: FAIL - bad (FR-001-AC-1)\n",
         });
         if let Some(adapter) = adapter {

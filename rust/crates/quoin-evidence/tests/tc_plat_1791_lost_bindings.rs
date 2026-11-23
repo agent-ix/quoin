@@ -349,13 +349,16 @@ fn gc_leaves_a_retirement_record_naming_what_it_deleted() {
     write_run(&mut store, &new).unwrap();
 
     // Dry run: nothing deleted, nothing logged.
-    assert_eq!(gc(&mut store, true).unwrap(), [old_path.clone()]);
+    assert_eq!(
+        gc(&mut store, true).unwrap(),
+        std::slice::from_ref(&old_path)
+    );
     assert!(store.list_files("retired").unwrap().is_empty());
     assert!(store.read(&old_path).unwrap().is_some());
 
     let deleted = gc(&mut store, false).unwrap();
     assert!(!deleted.contains(&"retired".to_owned()));
-    assert_eq!(deleted, [old_path.clone()]);
+    assert_eq!(deleted, std::slice::from_ref(&old_path));
     assert!(store.read(&old_path).unwrap().is_none());
 
     let logs = store.list_files("retired").unwrap();
@@ -393,4 +396,21 @@ fn removal_cannot_reach_outside_the_store_root() {
     store.write("runs/SUITE-A/x.json", b"{}").unwrap();
     store.remove("runs/SUITE-A/x.json").unwrap();
     assert!(store.read("runs/SUITE-A/x.json").unwrap().is_none());
+}
+
+#[trace("FR-030-AC-23")]
+#[test]
+fn gc_keeps_a_record_it_cannot_read() {
+    let repo = tempfile::tempdir().unwrap();
+    let mut store = DiskEvidence::new(repo.path());
+    write_run(&mut store, &run("SUITE-A", "2026-11-22T00:00:09Z", vec![])).unwrap();
+    store
+        .write("runs/SUITE-A/corrupt.json", b"{ not json")
+        .unwrap();
+
+    assert!(gc(&mut store, false).unwrap().is_empty());
+    assert!(
+        store.read("runs/SUITE-A/corrupt.json").unwrap().is_some(),
+        "gc deleted a record it could not read"
+    );
 }
