@@ -63,9 +63,9 @@ One file per (suite, timestamp); aggregation is a view. A differential report
 and its run record form one logical retained pair at the same suite and
 timestamp. A partial run must never be able to masquerade as a full one — the
 `make ci` / `make ci-python` split already caused exactly that rot (quire-rs
-TC-715), where a green "CI" meant one of two suites. Re-runs at the same
-timestamp are last-write-wins for ordinary runs; a retained differential-report
-pair is immutable at its key. Flake history is analytics, not the record of
+TC-715), where a green "CI" meant one of two suites. A re-run at the same
+timestamp must be the identical record, and a different record is refused; a
+retained differential-report pair is immutable at its key. Flake history is analytics, not the record of
 record.
 
 ### Auto-bind
@@ -125,6 +125,10 @@ people to click through it.
 - The `record` verb SHALL report a trace id matching no derived obligation
   rather than dropping it. That is the quire-rs#72 class arriving from the other
   direction: a test claiming to verify something the spec does not state.
+- The store SHALL serialise recorders on a writer lock held from the run write to the graph write, so concurrent recordings never drop each other's bindings (FR-030-AC-20). A recording interrupted between those writes SHALL be completed by repeating the same request, without a second run record (FR-030-AC-21).
+- The store SHALL NOT replace a run, scan or mock-inspection record at an occupied `(suite, timestamp)` key with different content (FR-030-AC-22).
+- `gc` SHALL record what it deletes in a retirement log before deleting it, and SHALL keep a record it cannot read (FR-030-AC-23).
+- The store SHALL refuse to write or remove a path outside its root (FR-030-AC-24).
 - `gc` SHALL retain the **newest** run per suite — by `timestamp`, never by
   filename. Dir-per-suite keeps the policy local, so an expensive suite's
   retention or `.gitignore` decision touches one directory.
@@ -173,7 +177,7 @@ undischarged with the evidence sitting right there.
 |----|----------|--------------|
 | FR-030-AC-1 | The store root is `spec/evidence/`, and a run path is `runs/<SUITE-N>/<timestamp>.json`, the timestamp reduced to ASCII letters, digits and `-`. No run record carries a commit. A differential-report projection, when retained, is at `analysis-reports/<SUITE-N>/<timestamp>.json` under the same key; it contains no run-entry symbol or request digest, and the run's entry cardinality and outcome must match its disposition. Neither file adds a commit, derived content digest, CI association, signer principal or report field to `RunRecord`. | Test |
 | FR-030-AC-2 | Writes are canonical and byte-identical across repeated serialization of the same record. | Test |
-| FR-030-AC-3 | Two suites at one timestamp produce separate records. A re-run at the same timestamp is last-write-wins for ordinary runs. For a differential-report projection/run pair, identical replay is idempotent and any changed projection or run at the occupied key is refused with both files unchanged. | Test |
+| FR-030-AC-3 | Two suites at one timestamp produce separate records. A re-run at the same timestamp is idempotent when the record is identical and refused, with the stored record unchanged, when it differs (see FR-030-AC-22). For a differential-report projection/run pair, identical replay is idempotent and any changed projection or run at the occupied key is refused with both files unchanged. | Test |
 | FR-030-AC-4 | A passing symbol binds its obligation; a failing or skipped symbol binds nothing while its run is still recorded. | Test |
 | FR-030-AC-5 | Withdrawn (CR note, 2026-10-29): required a reworded statement to make a binding suspect by comparing a hash stamped at binding. The store keeps no statement hash, so nothing remains to compare. | Withdrawn |
 | FR-030-AC-6 | Withdrawn (CR note, 2026-10-29): required `evidence affirm` to move the stamped hash forward and record who affirmed. With no stamped hash there is nothing to re-affirm, and the verb is removed. | Withdrawn |
@@ -190,6 +194,11 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-17 | `evidence record` refuses a bare or mutable `--tool` identity and accepts an exact semantic version. Withdrawn: acceptance of a full source revision (a git commit id); tool identity is the exact semantic version, with no sha. First-party Vitest and mock-inspection records include the version they actually ran. | Test |
 | FR-030-AC-18 | A run entry with no `path`, whose qualified name matches symbols in more than one file, is reported ambiguous and joined to none of them, while its trace ids still bind. An entry with a `path` joins only the symbol at that path. | Test |
 | FR-030-AC-19 | Recording a differential report validates the source report before retaining only its allowlisted projection beside the matching run key; query bytes, model, solver/proof output and undeclared fields are absent, and the report's `selection` member, when present, is preserved unchanged as the projection's `selection`. A one-sided write, changed replay, wrong projection (including a `selection` that differs from the validated source report, or a `selection` retained for a report that had none) or invalid source report never yields a qualified pair, and `gc` removes both members together. | Test |
+| FR-030-AC-20 | Recording is serialised on the store's writer lock, held from the run write to the graph write. Two independent recorders that read `bindings.json` before either wrote both stay bound after the store is reopened. | Test |
+| FR-030-AC-21 | A recording interrupted after the run record is published and before the graph is written (or, for a differential report, before its projection is) leaves a complete run and no binding. Repeating the same request binds what was missing, completes a missing projection, leaves exactly one run record for the key, and a further replay changes nothing. | Test |
+| FR-030-AC-22 | A run, scan or mock-inspection record is append-only at its `(suite, timestamp)` key: an identical replay is a no-op, and a different record at an occupied key is refused with `RecordIntegrity` and the stored bytes unchanged, so a recorded failure cannot be replaced by a pass. | Test |
+| FR-030-AC-23 | Before `gc` deletes a superseded record it publishes `retired/<first retired path>.json` naming each record's path, suite, timestamp, tool and outcome (or finding) counts; a name already holding a different log gets a numeric suffix rather than blocking `gc`. `--dry-run` writes nothing, and a record that cannot be read is kept, not deleted. | Test |
+| FR-030-AC-24 | Writing or removing a store file refuses any path that leaves the store root. | Test |
 
 > **CR note (PLAT-1228, 2026-10-30):** Run, scan, mock-inspection and binding
 > records no longer carry a commit. Filenames derive from the record's

@@ -54,5 +54,5 @@ pub mod types;
 
 pub use error::{EvidenceError, EvidenceErrorCode};
 pub use ids::{ObligationId, ProfileId, SuiteId, SymbolId, TrustDecisionId};
-pub use source::{DiskEvidence, EvidenceSource, MemoryEvidence};
+pub use source::{DiskEvidence, EvidenceSource, MemoryEvidence, StoreLock};
 pub use types::{Finding, MUTATION_SCORE_METRIC, Outcome, RunEntry, STORE_SCHEMA_VERSION};

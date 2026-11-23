@@ -55,6 +55,12 @@ pub struct RecordOutcome {
 /// that is the quire-rs#72 class arriving from the other direction — a test
 /// claiming to verify something the spec does not state.
 ///
+/// **Interruption.** The run record is published first and the graph written
+/// last, so a recording interrupted between them leaves a complete run and no
+/// bindings, never bindings without a run. Repeating the same request finishes
+/// it: the identical run is a no-op and the graph write binds what was missing
+/// (FR-030-AC-21).
+///
 /// `obligations` are the obligations as quire derives them **today**. Read live
 /// rather than stored: an obligation is always re-derivable from spec and code
 /// at HEAD, so a stored copy could only ever disagree with the requirement it
@@ -63,7 +69,8 @@ pub struct RecordOutcome {
 /// # Errors
 ///
 /// [`EvidenceError::StoreRead`] when `bindings.json` is present and
-/// unparseable, otherwise [`EvidenceError::Canonicalization`] or
+/// unparseable, [`EvidenceError::RecordIntegrity`] when the run key is occupied
+/// by a different record, otherwise [`EvidenceError::Canonicalization`] or
 /// [`EvidenceError::StoreIo`].
 pub fn record_run<S: EvidenceSource + ?Sized>(
     source: &mut S,
@@ -95,6 +102,10 @@ fn record_run_inner<S: EvidenceSource + ?Sized>(
     obligations: &[Obligation],
     projection: Option<&serde_json::Value>,
 ) -> Result<RecordOutcome, EvidenceError> {
+    // From the run write to the graph write. `bindings.json` is read, extended
+    // and rewritten whole, so a second recorder that read before this one wrote
+    // would drop this recorder's bindings (PLAT-1791, FR-030-AC-20).
+    let _lock = source.lock_store()?;
     let run = RunRecord {
         schema_version: STORE_SCHEMA_VERSION,
         suite: request.suite.clone(),
