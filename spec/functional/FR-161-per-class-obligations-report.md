@@ -19,7 +19,7 @@ relationships:
 
 # FR-161: Per-class obligations report: the activities and evidence a requirement's software safety class demands
 
-Tracked by Linear PLAT-1526 (implemented by PLAT-1580).
+Tracked by Linear PLAT-1526 (implemented by PLAT-1580); the `detailed-design`, `soup-requirements` and `segregation` kinds and the gate by PLAT-1836.
 
 ## Description
 
@@ -45,16 +45,31 @@ item-level report, holds no allocation and no part rows.
 
 ### Declared as data
 
-The policy's per-class `obligations` list holds entries with an `id` and one of two kinds quoin knows:
+The policy's per-class `obligations` list holds entries with an `id` and one of five kinds quoin knows:
 
 - `design-trace`: the requirement has an FR-086 join row with `state: covered`. FR-086 emits one row per requirement per design
   relation, so a requirement can have several rows; the precedence across them is `unmet` if any row is `uncovered`, else
   `not-available` if the join is absent or empty or the requirement has no row, else `met`.
-- `evidence` with a catalog `method`: every obligation derived from the requirement has bound evidence whose run `evidence_kind`
-  equals the method's catalog `evidence_kind` (FR-160 join; methods of one kind are interchangeable).
+- `evidence` with a catalog `method`: every obligation derived from the requirement has bound **passing** evidence whose run
+  `evidence_kind` equals the method's catalog `evidence_kind` (FR-160 join, including its passing-run rule; methods of one kind are
+  interchangeable).
+- `detailed-design`, `soup-requirements` and `segregation`: each reads the same design-element join, selected by what the entry
+  declares. Quoin knows no relation name, no archetype and no meaning for any of the three beyond the reading below; the policy
+  author says which relation of the loaded modules, and which linked-element archetypes, carry the activity:
+  - `relation`: the `name` of a design relation in the join ([quire-rs FR-086](ix://agent-ix/quire-rs/FR-086)). Required for
+    `soup-requirements` and `segregation`; optional for `detailed-design`, which then reads every design relation.
+  - `element_archetypes`: archetype names a linked element must have. Required, non-empty, for `detailed-design`; optional for the
+    other two.
 
-Which activities a class demands is the policy author's data. The two kinds are the only closed vocabulary, and a new kind is a quoin
-change.
+  The requirement's rows in the selected relation are read as `design-trace` reads them, with one addition: a row counts as satisfied
+  only when it is `covered` and, if `element_archetypes` is declared, links at least one element whose `archetype` is in the list.
+  The status is `unmet` if any selected row is unsatisfied, `not-available` if the join is absent or empty, names no such relation, or
+  the requirement has no row in the selected relation, else `met`. A module that declares no relation for an activity makes its
+  rows `not-available` naming the relation; absence of a relation is not a gap in the requirement.
+
+Which activities a class demands is the policy author's data. The five kinds are the only closed vocabulary, and a new kind is a quoin
+change. The report is per requirement: a part-level reading (a unit-level design element per part, a segregation rationale on a child
+part) is expressed by the module's design relation and read here only as the requirement's own rows.
 
 ### Status
 
@@ -64,6 +79,12 @@ with `state: uncovered` is `unmet`; an absent or empty join (`{"relations": []}`
 relation, is `not-available`, because a requirement no design relation obliges has not been asked for a design element, so its
 absence is not a gap. `not-available` names the missing input. The command reports; it records nothing, and the absence of `unmet`
 rows is not an approval of the requirement.
+
+### Unmet activities can gate
+
+When the policy file sets `gate: true` ([FR-160](./FR-160-per-class-evidence-floors.md)), `quoin class obligations` exits non-zero
+(`Partial`) when any row is `unmet`. A `not-available` row never gates, and neither does a requirement listed under `unassigned` or
+`unconfigured`. Without `gate`, or with `gate: false`, the command exits as before.
 
 ## Acceptance Criteria
 
@@ -76,8 +97,12 @@ rows is not an approval of the requirement.
 | FR-161-AC-5 | A requirement whose `requirements[]` entry carries no class is listed as unassigned with no rows. | Test |
 | FR-161-AC-6 | `--format json` emits one object whose facts equal the Markdown rows, with no class key for an unassigned requirement, and the two formats agree row for row. | Test |
 | FR-161-AC-7 | A requirement's rows come from its own carried class only: the same requirement allocated to parts of other classes reports the same rows. | Test |
-| FR-161-AC-8 | A policy `obligations` entry with a kind other than `design-trace` or `evidence`, an `evidence` entry with no method or an undeclared method, or a duplicate `id` within a class is refused naming the cause. | Test |
+| FR-161-AC-8 | A policy `obligations` entry with a kind other than the five above, an `evidence` entry with no method or an undeclared method, or a duplicate `id` within a class is refused naming the cause. | Test |
 | FR-161-AC-9 | The command writes no file, record or class value, and two runs over the same inputs print identical output. | Test |
+| FR-161-AC-10 | With a `detailed-design` entry declaring `element_archetypes: [unit]`, a requirement whose `covered` row links an element of archetype `unit` reports `met`; one whose `covered` row links only an element of another archetype reports `unmet`; one whose row is `uncovered` reports `unmet`; one with no row reports `not-available`. | Test |
+| FR-161-AC-11 | With a `soup-requirements` or `segregation` entry naming `relation: R`, a requirement with a `covered` row in `R` reports `met`, one with an `uncovered` row in `R` reports `unmet`, a row in another relation is not read, and a join with no relation named `R` reports `not-available` naming `R`. | Test |
+| FR-161-AC-12 | A `detailed-design` entry with no `element_archetypes`, a `soup-requirements` or `segregation` entry with no `relation`, a relation-backed entry naming a method, a blank relation or archetype, or a `design-trace` or `evidence` entry naming a relation or archetypes is refused naming the cause. | Test |
+| FR-161-AC-13 | With `gate: true` the command exits non-zero when a row is `unmet` and zero when every row is `met` or `not-available`; without `gate`, or with `gate: false`, an `unmet` row leaves the exit status unchanged. | Test |
 
 ## Constraints
 

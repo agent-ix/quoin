@@ -19,7 +19,7 @@ relationships:
 
 # FR-160: Per-class evidence floors: required methods, mutation floor and independence configured per software safety class
 
-Tracked by Linear PLAT-1526 (implemented by PLAT-1579).
+Tracked by Linear PLAT-1526 (implemented by PLAT-1579); the passing-run rule and the gate by PLAT-1836.
 
 ## Description
 
@@ -39,12 +39,14 @@ policy declares as `class_field`. Quoin holds no field name. The ordered legal v
 
 ### The class policy is data, and no class has a built-in floor
 
-The policy file (YAML or JSON) holds `class_field` and a `classes` mapping from class value to that class's entry. An entry holds any of
+The policy file (YAML or JSON) holds `class_field`, a `classes` mapping from class value to that class's entry, and an optional
+`gate` flag (below). An entry holds any of
 `required_methods` (catalog method ids), `mutation_floor`, `independence` (FR-094 dimension names),
 `obligations` ([FR-161](./FR-161-per-class-obligations-report.md)) and a mandatory `rationale`:
 
 ```yaml
 class_field: <carried name>
+gate: false                  # optional; true makes class findings fail the audit
 classes:
   <class value>:
     required_methods: [<method id>]
@@ -69,12 +71,14 @@ This requirement reuses one existing rule, the FR-039 mutation rule. The other t
 borrow nothing else from FR-032 or FR-094, which are keyed on criticality and on exact obligation ids under a profile.
 
 - **Required methods.** An obligation of a class with `required_methods` needs, for each listed method, at least one bound evidence
-  relationship whose run or finding-shaped scan record has an `evidence_kind` equal to the `evidence_kind` the catalog declares for that
-  method. A binding records no
+  relationship whose **passing** run, or finding-shaped scan record, has an `evidence_kind` equal to the `evidence_kind` the catalog
+  declares for that method. A run **passes** when it recorded at least one entry with outcome `pass` and none with outcome `fail` or
+  `error` (skipped entries count for nothing); a run of only skipped entries, or of no entries, did not pass. A scan record states
+  findings and has no outcome of its own, so its presence satisfies the kind as before. A binding records no
   method id, so the kind is the join. Methods that share an `evidence_kind` are therefore **interchangeable** for this floor:
   evidence of one satisfies a requirement for another of the same kind, and the policy author chooses methods knowing it. Each method
-  whose kind has no bound evidence yields **`class-method-missing`** at `medium`, naming the class, the method, its kind and the
-  obligation. No store change is made.
+  whose kind has no bound passing evidence yields **`class-method-missing`** at `medium`, naming the class, the method, its kind and the
+  obligation, and saying whether no evidence of that kind is bound or the bound evidence of that kind did not pass. No store change is made.
 - **Mutation floor.** The class's ratio is evaluated by the FR-039 rule for that obligation, with its `metric: mutation-score`
   filter, worst-symbol reading and tokens (`insufficient-mutation-score`, `unmeasured-mutation-score`); the finding also names the
   class. When a criticality floor applies as well, the higher ratio is evaluated and the finding names the source that set it; when both set the same ratio, the finding names criticality.
@@ -96,7 +100,21 @@ A class has no multiplicity floor (FR-032 `multiplicity_requires` stays critical
 An obligation whose requirement carries no class is **unclassified**: no class floor applies, it is counted in the audit summary,
 and its class column shows `unassigned` in human output. In JSON the class key is omitted for it. The count and the class column
 exist only with `--class-policy`. An obligation whose class has no policy entry gets no class floor and one **`class-unconfigured`**
-finding at `medium` naming the class. Neither changes the exit status by itself.
+finding at `medium` naming the class. Neither changes the exit status unless the policy sets `gate: true` and the finding is a class
+finding; an unclassified obligation is never a finding.
+
+### Class findings can gate
+
+Every finding a class policy causes carries a `class` member naming the class: `class-method-missing`, `class-unconfigured`,
+`insufficient-independence` with `source: class`, and `insufficient-mutation-score`, `unmeasured-mutation-score` and
+`surviving-mutant` when the class set the ratio that applied. Findings the policy did not cause (criticality floors, profile
+independence, `undischarged`, and so on) carry no `class` member.
+
+With `gate: true`, `quoin evidence audit` exits non-zero (`Partial`, the status `--strict` uses) when at least one finding carries a
+`class` member, whether or not `--strict` is given. `--strict` keeps its own meaning, any finding. Without `gate`, or with `gate: false`,
+class findings report and the exit status is what it was. `gate` is a project's own switch: quoin holds no default for it, writes
+none, and a policy that never sets it gates nothing. `quoin matrix` reports class findings and gates nothing; the matrix has
+`--strict` of its own.
 
 ### `quoin matrix`
 
@@ -108,7 +126,7 @@ reports the same class findings and class column as the audit for the same input
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-160-AC-1 | Without `--class-policy`, the audit and `quoin matrix` output carry no class column, no unclassified count and no class finding; with it, the added output is exactly the class column or key, the unclassified count and the class findings. | Test |
-| FR-160-AC-2 | A policy giving `class-2` the method `mutation-testing` leaves a `class-2` obligation with no bound evidence of that method's catalog `evidence_kind` with one `class-method-missing` finding naming the class, method, kind and obligation; binding evidence of that kind, even from another method of the same kind, clears it. | Test |
+| FR-160-AC-2 | A policy giving `class-2` the method `mutation-testing` leaves a `class-2` obligation with no bound evidence of that method's catalog `evidence_kind` with one `class-method-missing` finding naming the class, method, kind and obligation; binding passing evidence of that kind, even from another method of the same kind, clears it. | Test |
 | FR-160-AC-3 | A policy giving `class-2` a `mutation_floor` of `0.8` yields `insufficient-mutation-score` for a `class-2` obligation scoring `0.6` and `unmeasured-mutation-score` for one with no mutation-score entry; each names the class and the ratio; a `class-1` obligation is unaffected. | Test |
 | FR-160-AC-4 | A policy giving `class-3` the dimensions `actor` and `technique` yields `insufficient-independence` for a `class-3` obligation whose two suites share an actor, naming the class and the shared dimension; two suites that differ on both clear it; one suite alone yields it. | Test |
 | FR-160-AC-5 | An obligation whose FR-053 criticality column is `high` and whose requirement carries no class gets only criticality floors; one whose requirement carries a class and whose column is empty gets only class floors; with both, the higher mutation ratio is evaluated and the finding names its source, and criticality when the two ratios are equal. | Test |
@@ -120,6 +138,9 @@ reports the same class findings and class column as the audit for the same input
 | FR-160-AC-11 | The class column or key appears in the human and JSON output of both `quoin matrix` and the audit under `--class-policy`, with the carried value as written, `unassigned` in human output and no key in JSON for an absent class. | Test |
 | FR-160-AC-12 | With the same store, payload and policy, two audit runs print identical findings in identical order, and the run writes no file and no store record. | Test |
 | FR-160-AC-13 | No quoin source or default file contains a class value, a default policy or a floor ratio for any class, or a carried field name. | Inspection |
+| FR-160-AC-14 | A `class-2` obligation whose bound run of the required method's kind records a `fail` or `error` entry, or only `skip` entries, or no entries, yields `class-method-missing` stating the bound evidence did not pass; the same obligation with a run recording `pass` entries and no `fail` or `error` yields none; a bound scan record of the kind yields none. | Test |
+| FR-160-AC-15 | Every finding a class policy causes carries a `class` member naming the class, and a criticality-caused finding for the same obligation carries none. | Test |
+| FR-160-AC-16 | With `gate: true`, `quoin evidence audit --class-policy` over an obligation with a class finding exits non-zero without `--strict`; over obligations with only non-class findings, or with none, it exits as without the policy; with the policy lacking `gate`, or `gate: false`, the same class finding does not change the exit status. | Test |
 
 ## Constraints
 

@@ -10,6 +10,7 @@ use quoin_evidence::types::{Binding, Outcome, RunEntry, RunRecord};
 use quoin_finding_types::{Finding, FindingKind, Severity};
 use quoin_quire_types::Obligation;
 
+use super::class::with_class;
 use super::input::AuditInput;
 
 /// Fault-detection scores among the runs bound to this obligation.
@@ -154,12 +155,18 @@ pub fn mutation_finding(
         source,
     } = floor_for(obligation, input, class_floor)?;
 
+    // A finding a class floor caused names the class, so a project that makes
+    // class findings gate can tell it from one criticality caused.
+    let named = |finding: Finding| match source {
+        FloorSource::Class(class) => with_class(finding, class),
+        FloorSource::Criticality(_) => finding,
+    };
     let scores = scores_for(bindings, runs);
     if scores.is_empty() {
         // Distinct from `undischarged`: this obligation may be thoroughly
         // tested and still have nothing saying the tests detect anything. A
         // demanded threshold that cannot be evaluated is not a threshold met.
-        return Some(Finding::new(
+        return Some(named(Finding::new(
             FindingKind::UNMEASURED_MUTATION_SCORE,
             &obligation.id,
             Severity::medium(),
@@ -169,7 +176,7 @@ pub fn mutation_finding(
                 id = obligation.id,
                 floor = number_text(floor)
             ),
-        ));
+        )));
     }
 
     // The WORST score, not the mean. Averaging lets a well-tested symbol carry
@@ -179,7 +186,7 @@ pub fn mutation_finding(
     if worst >= floor {
         return None;
     }
-    Some(Finding::new(
+    Some(named(Finding::new(
         FindingKind::INSUFFICIENT_MUTATION_SCORE,
         &obligation.id,
         Severity::medium(),
@@ -190,7 +197,7 @@ pub fn mutation_finding(
             floor = number_text(floor),
             worst = number_text(worst)
         ),
-    ))
+    )))
 }
 
 /// Who set a mutation ratio: the obligation's criticality or its software

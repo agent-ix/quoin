@@ -197,10 +197,12 @@ fn assemble_with_coverage_operation(
 
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
-    let audited = match assemble(arguments, &repo)? {
-        Assembly::Audited(audited) => audited.response,
+    let assembled = match assemble(arguments, &repo)? {
+        Assembly::Audited(assembled) => assembled,
         Assembly::Declined(response) => return Ok(response),
     };
+    let class_gate = class_gate_set(&assembled.audit_input);
+    let audited = assembled.response;
     let report = audited
         .payload
         .get("report")
@@ -239,12 +241,34 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     Ok(Response {
         payload: serde_json::json!({ "rendered": rendered }),
         diagnostics: audited.diagnostics,
-        outcome: if arguments.get_flag("strict") && (findings > 0 || unevaluated > 0) {
+        outcome: if (arguments.get_flag("strict") && (findings > 0 || unevaluated > 0))
+            || (class_gate && class_findings(reported) > 0)
+        {
             Outcome::Partial
         } else {
             audited.outcome
         },
     })
+}
+
+/// Whether the class policy the audit ran under asks for class findings to
+/// gate (FR-160). A policy that does not say so reports and gates nothing.
+pub(crate) fn class_gate_set(audit_input: &serde_json::Value) -> bool {
+    audit_input
+        .get("classPolicy")
+        .and_then(|policy| policy.get("gate"))
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+}
+
+/// How many findings a class policy caused: those naming a `class`.
+fn class_findings(findings: &serde_json::Value) -> usize {
+    findings
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|finding| finding.get("class").is_some())
+        .count()
 }
 
 fn policy(

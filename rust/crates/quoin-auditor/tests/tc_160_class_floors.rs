@@ -793,3 +793,110 @@ fn a_bound_scan_record_of_the_kind_satisfies_a_required_method() {
     input.scans = Some(vec![scan("test-run")]);
     assert_eq!(of_kind(&report(&input), "class-method-missing").len(), 1);
 }
+
+// ── FR-160-AC-14: a required method needs a passing run ──────────────────
+
+fn run_with(suite: &str, kind: &str, outcomes: &[Outcome]) -> RunRecord {
+    let mut record = run(suite, kind, None);
+    record.entries = outcomes
+        .iter()
+        .enumerate()
+        .map(|(index, outcome)| RunEntry::new(format!("{suite}::t{index}"), *outcome))
+        .collect();
+    record
+}
+
+fn unit_floor(outcomes: &[Outcome]) -> AuditReport {
+    let classes =
+        json!({ "class-2": { "required_methods": ["unit-testing"], "rationale": RATIONALE } });
+    report(&scene(
+        Some("class-2"),
+        policy(&classes),
+        vec![bind(OBLIGATION, "unit", None)],
+        vec![run_with("unit", "test-run", outcomes)],
+    ))
+}
+
+/// A run that failed, only skipped, or recorded nothing is not a passing run.
+#[trace("FR-160-AC-14")]
+#[test]
+fn a_run_that_did_not_pass_does_not_satisfy_a_required_method() {
+    for outcomes in [
+        &[Outcome::Pass, Outcome::Fail][..],
+        &[Outcome::Pass, Outcome::Error][..],
+        &[Outcome::Skip][..],
+        &[][..],
+    ] {
+        let out = unit_floor(outcomes);
+        let found = of_kind(&out, "class-method-missing");
+        assert_eq!(found.len(), 1, "{outcomes:?}: {:?}", out.findings);
+        assert!(
+            found[0].summary.contains("did not pass"),
+            "{}",
+            found[0].summary
+        );
+    }
+    for outcomes in [&[Outcome::Pass][..], &[Outcome::Pass, Outcome::Skip][..]] {
+        assert!(of_kind(&unit_floor(outcomes), "class-method-missing").is_empty());
+    }
+}
+
+/// Evidence of the kind that is not bound at all is still reported as unbound.
+#[trace("FR-160-AC-14")]
+#[test]
+fn a_missing_run_is_reported_as_unbound_not_as_failed() {
+    let classes =
+        json!({ "class-2": { "required_methods": ["unit-testing"], "rationale": RATIONALE } });
+    let out = report(&scene(Some("class-2"), policy(&classes), vec![], vec![]));
+    let found = of_kind(&out, "class-method-missing");
+    assert_eq!(found.len(), 1);
+    assert!(
+        found[0].summary.contains("no evidence"),
+        "{}",
+        found[0].summary
+    );
+}
+
+// ── FR-160-AC-15: class findings name the class ──────────────────────────
+
+fn class_member(finding: &Finding) -> Option<String> {
+    serde_json::to_value(finding).unwrap()["class"]
+        .as_str()
+        .map(ToOwned::to_owned)
+}
+
+#[trace("FR-160-AC-15")]
+#[test]
+fn every_class_caused_finding_names_the_class_and_others_do_not() {
+    // method-missing and mutation floors, caused by the class.
+    let classes = json!({ "class-2": {
+        "required_methods": ["unit-testing"], "mutation_floor": 0.9, "rationale": RATIONALE } });
+    let out = report(&scene(
+        Some("class-2"),
+        policy(&classes),
+        vec![bind(OBLIGATION, "mut", None)],
+        vec![run("mut", "mutation-run", Some(0.5))],
+    ));
+    for kind in ["class-method-missing", "insufficient-mutation-score"] {
+        let found = of_kind(&out, kind);
+        assert_eq!(found.len(), 1, "{kind}: {:?}", out.findings);
+        assert_eq!(class_member(found[0]).as_deref(), Some("class-2"), "{kind}");
+    }
+    // unconfigured.
+    let unconfigured = report(&scene(
+        Some("class-1"),
+        policy(&json!({ "class-2": { "rationale": RATIONALE } })),
+        vec![],
+        vec![],
+    ));
+    let found = of_kind(&unconfigured, "class-unconfigured");
+    assert_eq!(class_member(found[0]).as_deref(), Some("class-1"));
+    // Criticality set the ratio: the finding carries no class member.
+    let by_criticality = crit_and_class(Some("high"), Some("class-2"), 0.6, 0.9);
+    let found = of_kind(&by_criticality, "insufficient-mutation-score");
+    assert_eq!(found.len(), 1);
+    assert_eq!(class_member(found[0]), None);
+    // The undischarged finding the ladder owns carries none either.
+    let none = report(&scene(None, policy(&classes), vec![], vec![]));
+    assert!(none.findings.iter().all(|f| class_member(f).is_none()));
+}
