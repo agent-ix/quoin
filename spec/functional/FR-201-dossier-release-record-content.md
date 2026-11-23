@@ -17,6 +17,8 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/engineering-assurance/FR-047"
     type: "references"
+  - target: "ix://agent-ix/engineering-assurance/FR-041"
+    type: "references"
   - target: "ix://agent-ix/engineering-assurance/FR-052"
     type: "references"
   - target: "ix://agent-ix/quire-cli/FR-038"
@@ -64,6 +66,9 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
 - `Evidence at release` shows the snapshot's `coverage`,
   `evidence_freshness`, `open_findings`, `soup` and `anomalies` members in
   their source order and with their source status words.
+- The `Decision` section SHALL include these statements verbatim:
+  `Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.`
+  and `Verifier identity: not provided as a distinct field by the source approval contracts.`
 
 ## Behavior
 
@@ -90,11 +95,21 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   failure under FR-191 before any selected document is written.
 - The generator SHALL NOT run git, verify a signature, write a tag, choose an
   approver or decide whether release is permitted.
-- When exporting this document with an EA result supplied, the command SHALL
-  append that result once to `quire export --approval` after the user's
-  `--approval` inputs, for a single document or bundle. Quire-cli FR-038
-  needs the source-contract extension in PLAT-1761 to accept the EA release
-  result; the dossier SHALL NOT write an intermediate approval verdict file.
+- When exporting this document with an EA `release-verify` result supplied,
+  Quoin SHALL append it once to `quire export --approval` after the user's
+  `--approval` inputs. Standalone approval verdicts and the nested EA approval
+  verdict remain the source inputs they are under Quire-cli FR-038. Quoin SHALL
+  NOT compare their record ids or digests to the `DOS-REL` bytes or rewrite
+  them. Other standalone approvals in a bundle may refer to other source
+  records; Quoin SHALL pass and preserve all supplied entries in order, as
+  required by FR-191 and Quire-cli FR-038.
+- No Quoin dossier source contract produces an approval specifically for the
+  generated `DOS-REL` bytes. EA FR-041 binds a signed tag to a caller-supplied
+  change-assurance record id and digest. This requirement does not reinterpret
+  that record, compare its digest to DOS-REL, or assign it a digest format.
+  The generated statement above treats every included entry as unbound to the
+  exact DOS-REL bytes; it does not claim that any input was mismatched against
+  a DOS-REL digest.
 
 ## Acceptance Criteria
 
@@ -106,8 +121,10 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
 | FR-201-AC-4 | Version-history rows equal the snapshot's FR-168 `change_records` in source order. | Test |
 | FR-201-AC-5 | Changing the evidence store after the snapshot file was written changes no release-record evidence count or history row. | Test |
 | FR-201-AC-6 | A malformed source file gives exit 3 naming that source and writes no selected dossier file. | Test |
-| FR-201-AC-7 | An unignored integration test using fixture EA results and real export tools yields PDF and DOCX text containing the EA principal and meaning from the approval block, through PLAT-1761's public input contract. | Test |
+| FR-201-AC-7 | An unignored integration test using fixture EA results and real export tools yields PDF and DOCX text containing the EA principal and meaning from the approval block, and the generated DOS-REL text states that approval entries are unbound to its exact bytes and that the source contracts do not provide a distinct verifier identity field. | Test |
 | FR-201-AC-8 | The generator runs with `git` absent from `PATH`, renders the same bytes, and creates no tag or ref. | Test |
+| FR-201-AC-9 | An export containing `DOS-REL`, standalone approval verdicts for other source records, and an EA release result with a nested approval passes every entry to Quire in command-line order, appends the release result once, and renders every verdict entry; the generated DOS-REL text states that all entries are treated as unbound to its exact bytes. | Test |
+| FR-201-AC-10 | The `Decision` section contains both the approval-scope and verifier-identity statements exactly as specified in this requirement; the statements occur in the generated Markdown before the final `Gaps` section. | Test |
 
 ## Dependencies
 
@@ -116,6 +133,15 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   [FR-167](./FR-167-release-snapshot-format.md),
   [FR-168](./FR-168-release-snapshot-change-records.md), EA
   [FR-047](ix://agent-ix/engineering-assurance/FR-047), EA
+  [FR-041](ix://agent-ix/engineering-assurance/FR-041), EA
   [FR-052](ix://agent-ix/engineering-assurance/FR-052), and quire-cli
   [FR-038](ix://agent-ix/quire-cli/FR-038) as extended by PLAT-1761.
 - **Downstream**: PLAT-1620 implements this document.
+
+Positive binding to the exact exported DOS-REL bytes is not established by
+current Quoin dossier, EA FR-041, or Quire-cli FR-038 contracts. This spec
+therefore records the ticket's bound-content acceptance as an upstream
+blocker: an upstream-owned producer and an explicit binding contract are
+needed before Quoin can truthfully claim or check that relation. In this PR,
+the generated document explicitly treats the entries as unbound, leaves
+Quire's every-entry rendering intact, and makes no verifier-identity claim.
