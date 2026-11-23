@@ -245,3 +245,142 @@ fn tc_2606_a_stored_temporary_exception_expires_at_its_decision_boundary() {
         );
     }
 }
+
+/// `evidence approval-subject` prints the record id and the RFC 8785 digest,
+/// the digest ignores `approvalRef`, and a clause outside the binding report
+/// exits non-zero with empty stdout.
+#[trace("FR-211-AC-17", "FR-211-AC-18")]
+#[test]
+fn tc_211_approval_subject_prints_the_identity_a_person_signs() {
+    let dir = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
+    let write = |name: &str, text: &str| {
+        let path = dir.path().join(name);
+        std::fs::write(&path, text).unwrap();
+        path.to_str().unwrap().to_owned()
+    };
+    let binding = write("binding.json", BINDING);
+    let fact: serde_json::Value = serde_json::from_str(FACTS).unwrap();
+    let plain = write("plain.json", &fact[0].to_string());
+    let mut tagged = fact[0].clone();
+    tagged["approvalRef"] = "tag-1".into();
+    let tagged = write("tagged.json", &tagged.to_string());
+    let mut other = fact[0].clone();
+    other["clauseId"] = "C-9".into();
+    let other = write("other.json", &other.to_string());
+    let subject = |fact: &str| {
+        quoin(
+            home.path(),
+            &[
+                "evidence",
+                "approval-subject",
+                "--binding",
+                &binding,
+                "--fact",
+                fact,
+            ],
+        )
+    };
+
+    let plain_out = subject(&plain);
+    assert!(plain_out.status.success(), "{plain_out:?}");
+    let line = text(&plain_out);
+    assert_eq!(line.lines().count(), 1);
+    let parsed: serde_json::Value = serde_json::from_str(line.trim()).unwrap();
+    assert_eq!(parsed["record_id"], "quire/spec/1/C-1");
+    assert!(
+        parsed["record_digest"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+    assert!(line.starts_with(r#"{"record_id":"#), "{line}");
+    assert_eq!(text(&subject(&tagged)), line);
+
+    let refused = subject(&other);
+    assert!(!refused.status.success());
+    assert!(refused.stdout.is_empty());
+}
+
+/// `--facts` beside `--repo` takes the facts from the file, ignores the stored
+/// ones and resolves their refs against the store; without `--repo` the direct
+/// fact is open with `no-store`.
+#[trace("FR-211-AC-21", "FR-046-AC-6")]
+#[test]
+fn tc_211_facts_beside_repo_resolve_against_the_store_and_alone_are_no_store() {
+    let dir = tempfile::tempdir().unwrap();
+    retain_run(dir.path());
+    let home = tempfile::tempdir().unwrap();
+    let binding = dir.path().join("binding.json");
+    let facts = dir.path().join("facts.json");
+    std::fs::write(&binding, BINDING).unwrap();
+    std::fs::write(&facts, FACTS).unwrap();
+    let (binding, facts, repo) = (
+        binding.to_str().unwrap(),
+        facts.to_str().unwrap(),
+        dir.path().to_str().unwrap(),
+    );
+    let report = |extra: &[&str]| {
+        let mut arguments = vec![
+            "discharge",
+            "--binding",
+            binding,
+            "--facts",
+            facts,
+            "--as-of",
+            "2026-08-15T00:00:00Z",
+            "--json",
+        ];
+        arguments.extend_from_slice(extra);
+        let output = quoin(home.path(), &arguments);
+        assert!(output.status.success(), "{output:?}");
+        serde_json::from_str::<serde_json::Value>(&text(&output)).unwrap()
+    };
+    let with_store = report(&["--repo", repo]);
+    assert_eq!(with_store["binding"]["direct"][0]["clauseId"], "C-1");
+
+    let alone = report(&[]);
+    assert!(alone["binding"]["direct"].as_array().unwrap().is_empty());
+    let open = alone["binding"]["open"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["clauseId"] == "C-1")
+        .unwrap();
+    assert!(open["reason"].as_str().unwrap().starts_with("no-store"));
+
+    // Stored facts are not read when --facts is given.
+    let stored = quoin(
+        home.path(),
+        &[
+            "evidence",
+            "record-discharge",
+            "--repo",
+            repo,
+            "--binding",
+            binding,
+            "--facts",
+            facts,
+        ],
+    );
+    assert!(stored.status.success(), "{stored:?}");
+    let empty = dir.path().join("none.json");
+    std::fs::write(&empty, "[]").unwrap();
+    let output = quoin(
+        home.path(),
+        &[
+            "discharge",
+            "--binding",
+            binding,
+            "--facts",
+            empty.to_str().unwrap(),
+            "--repo",
+            repo,
+            "--as-of",
+            "2026-08-15T00:00:00Z",
+            "--json",
+        ],
+    );
+    let ignored: serde_json::Value = serde_json::from_str(&text(&output)).unwrap();
+    assert!(ignored["binding"]["direct"].as_array().unwrap().is_empty());
+}

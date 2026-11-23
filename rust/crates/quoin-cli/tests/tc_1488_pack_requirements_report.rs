@@ -626,6 +626,49 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     );
 }
 
+/// A trust file engineering-assurance refuses exits 2, an absent verifier
+/// exits 3, and neither writes a fact.
+#[trace("FR-211-AC-11")]
+#[test]
+fn tc_211_a_refused_trust_file_exits_two_and_an_absent_verifier_exits_three() {
+    use std::os::unix::fs::PermissionsExt as _;
+    let env = env();
+    install_approval_fixture(&env);
+    let signers = env.base.join("allowed-signers");
+    std::fs::write(&signers, "").unwrap();
+    let refusing = env.base.join("refusing-ea");
+    std::fs::write(
+        &refusing,
+        "#!/bin/sh\ncat >/dev/null\necho '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"approval_verify_allowed_signers_invalid\"}'\nexit 2\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&refusing, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let mut fact = direct("art-35(1)");
+    fact["approvalRef"] = serde_json::json!("tag-1");
+    let signers = signers.to_str().unwrap();
+    for (verifier, status) in [
+        (refusing.to_str().unwrap().to_owned(), 2),
+        ("/nonexistent/engineering-assurance".to_owned(), 3),
+    ] {
+        let output = record_output_with(
+            &env,
+            &env.repo,
+            "gdpr",
+            "1.0.0",
+            &[fact.clone()],
+            &[
+                "--engineering-assurance",
+                &verifier,
+                "--allowed-signers",
+                signers,
+            ],
+        );
+        assert_eq!(output.status.code(), Some(status), "{}", text(&output));
+        assert!(output.stdout.is_empty(), "{}", text(&output));
+    }
+    assert!(!env.repo.join("spec/evidence/discharge").exists());
+}
+
 #[trace("FR-208-AC-6")]
 #[test]
 fn tc_208_005_record_discharge_reads_approval_metadata_with_the_full_module_set() {

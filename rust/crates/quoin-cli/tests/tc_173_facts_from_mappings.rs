@@ -1376,3 +1376,127 @@ fn tc_1525_skill_output_on_the_fixture_repo_flows_to_the_matrix() {
         "{report}"
     );
 }
+
+impl World {
+    /// `facts-from-mappings` with `text` as the `--evidence` file.
+    fn facts_with_evidence_text(&self, text: &str) -> Output {
+        std::fs::write(self.path("custom-evidence.json"), text).unwrap();
+        let (binding, attestation, spec, evidence) = (
+            self.path("binding.json"),
+            self.path("attestation.json"),
+            self.spec(),
+            self.path("custom-evidence.json"),
+        );
+        self.run(
+            &[
+                "evidence",
+                "facts-from-mappings",
+                "--binding",
+                binding.to_str().unwrap(),
+                "--attestation",
+                attestation.to_str().unwrap(),
+                "--spec",
+                spec.to_str().unwrap(),
+                "--evidence",
+                evidence.to_str().unwrap(),
+            ],
+            None,
+        )
+    }
+}
+
+/// An effective control with no `--evidence` entry contributes no ref, so the
+/// clause yields no fact and an `open` line; refs of several controls union.
+#[trace("FR-173-AC-1", "FR-173-AC-2")]
+#[test]
+fn tc_211_a_control_without_an_evidence_entry_leaves_its_clause_open() {
+    let world = World::new(
+        &two_clauses(),
+        &[
+            ("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")])),
+            ("B.md", control("CTRL-B", Some("effective"), &[(SET, "C1")])),
+            ("C.md", control("CTRL-C", Some("effective"), &[(SET, "C2")])),
+        ],
+    );
+    let output = world.facts_with_evidence_text(
+        r#"{"ix://CTRL-A": ["evidence://runs/SUITE-1/b", "evidence://runs/SUITE-1/a"],
+            "ix://CTRL-B": ["evidence://runs/SUITE-1/a"]}"#,
+    );
+    let facts = parsed(&output);
+    assert_eq!(facts.len(), 1);
+    assert_eq!(
+        facts[0]["evidenceRefs"],
+        json!(["evidence://runs/SUITE-1/a", "evidence://runs/SUITE-1/b"])
+    );
+    assert!(err(&output).contains("open C2 CTRL-C"), "{}", err(&output));
+}
+
+/// A missing, malformed or empty `--evidence`, and a key naming no control,
+/// each refuse with empty stdout and a message naming the file and the key.
+#[trace("FR-173-AC-5")]
+#[test]
+fn tc_211_a_bad_evidence_file_is_refused_naming_the_file_and_the_key() {
+    let world = World::new(
+        &two_clauses(),
+        &[("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")]))],
+    );
+    for (text, needles) in [
+        ("[]", vec!["custom-evidence.json", "not a JSON object"]),
+        ("not json", vec!["custom-evidence.json"]),
+        (
+            r#"{"ix://CTRL-A": []}"#,
+            vec!["custom-evidence.json", "ix://CTRL-A"],
+        ),
+        (
+            r#"{"ix://CTRL-A": ["evidence://runs/S-1/a", 3]}"#,
+            vec!["custom-evidence.json", "ix://CTRL-A"],
+        ),
+        (
+            r#"{"ix://CTRL-Z": ["evidence://runs/S-1/a"]}"#,
+            vec!["custom-evidence.json", "ix://CTRL-Z"],
+        ),
+    ] {
+        let output = world.facts_with_evidence_text(text);
+        assert!(!output.status.success(), "{text}: {output:?}");
+        assert!(out(&output).is_empty(), "{text}");
+        for needle in needles {
+            assert!(err(&output).contains(needle), "{text}: {}", err(&output));
+        }
+    }
+    let missing = world.run(
+        &[
+            "evidence",
+            "facts-from-mappings",
+            "--binding",
+            world.path("binding.json").to_str().unwrap(),
+            "--attestation",
+            world.path("attestation.json").to_str().unwrap(),
+            "--spec",
+            world.spec().to_str().unwrap(),
+        ],
+        None,
+    );
+    assert!(!missing.status.success());
+    assert!(out(&missing).is_empty());
+}
+
+/// The facts a run proposes are refused by `record-discharge` while a ref does
+/// not resolve (FR-211-AC-15).
+#[trace("FR-173-AC-7", "FR-211-AC-15")]
+#[test]
+fn tc_211_record_discharge_refuses_facts_whose_ref_no_longer_resolves() {
+    let world = World::new(
+        &two_clauses(),
+        &[("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")]))],
+    );
+    let facts = out(&world.facts());
+    std::fs::remove_file(world.path("spec/evidence/runs/SUITE-1/one.json")).unwrap();
+    let refused = world.record(&facts);
+    assert_eq!(refused.status.code(), Some(3), "{refused:?}");
+    assert!(
+        err(&refused).contains("C1: unresolved"),
+        "{}",
+        err(&refused)
+    );
+    assert!(world.discharge_files().is_empty());
+}
