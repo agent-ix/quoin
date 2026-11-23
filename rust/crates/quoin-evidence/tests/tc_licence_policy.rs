@@ -17,7 +17,7 @@
 
 use ix_trace_rs::trace;
 use quoin_evidence::adapters::{
-    AdapterSelection, FINDING_ADAPTERS, LicenceKind, parse_licence_policy, parse_sbom,
+    AdapterSelection, DeclaredLicence, FINDING_ADAPTERS, parse_licence_policy, parse_sbom,
     read_components, select_finding_adapter,
 };
 use quoin_evidence::store::{gc, latest_scans, write_scan};
@@ -130,18 +130,22 @@ fn tc_1671_002_the_reader_exposes_declared_licences_by_kind() {
     let by_purl = |purl: &str| components.iter().find(|c| c.symbol == purl).unwrap();
     let ember = by_purl("pkg:npm/fx-ember@0.4.1");
     assert_eq!(ember.licences.len(), 1);
-    assert_eq!(ember.licences[0].kind, LicenceKind::Id);
-    assert_eq!(ember.licences[0].text, "GPL-3.0-only");
+    assert_eq!(
+        ember.licences[0],
+        DeclaredLicence::Id("GPL-3.0-only".to_owned())
+    );
     let vale = by_purl("pkg:npm/fx-vale@3.1.0");
-    assert_eq!(vale.licences[0].kind, LicenceKind::Expression);
+    assert!(matches!(vale.licences[0], DeclaredLicence::Expression(_)));
     assert!(by_purl("pkg:npm/fx-moss@0.9.0").licences.is_empty());
 
     let name = read_components(&cdx(
         r#"{"name":"n","version":"1","licenses":[{"license":{"name":"Custom Terms"}}]}"#,
     ))
     .unwrap();
-    assert_eq!(name[0].licences[0].kind, LicenceKind::Name);
-    assert_eq!(name[0].licences[0].text, "Custom Terms");
+    assert_eq!(
+        name[0].licences[0],
+        DeclaredLicence::Name("Custom Terms".to_owned())
+    );
 }
 
 /// SPDX `MIT` is an id, `MIT OR Apache-2.0` an expression, `NOASSERTION` and
@@ -156,8 +160,11 @@ fn tc_1671_003_spdx_values_are_read_by_the_same_reader() {
         {"name":"c","versionInfo":"3","licenseDeclared":"NOASSERTION"},
         {"name":"d","versionInfo":"4","licenseDeclared":"NONE"}]}"#;
     let components = read_components(spdx).unwrap();
-    assert_eq!(components[0].licences[0].kind, LicenceKind::Id);
-    assert_eq!(components[1].licences[0].kind, LicenceKind::Expression);
+    assert!(matches!(components[0].licences[0], DeclaredLicence::Id(_)));
+    assert!(matches!(
+        components[1].licences[0],
+        DeclaredLicence::Expression(_)
+    ));
     assert!(components[2].licences.is_empty() && components[3].licences.is_empty());
 
     let entries: Vec<String> = parse_sbom(spdx)
@@ -534,7 +541,43 @@ fn tc_1671_014_an_unreadable_licence_entry_is_unknown_never_allowed() {
             ("licence-unknown", "c@1")
         ]
     );
-    assert!(findings[0].2.contains("https://x"), "{}", findings[0].2);
+    assert!(!findings[0].2.contains("https://x"), "{}", findings[0].2);
+}
+
+/// An unreadable entry is classed unknown with the fixed text, after any
+/// unlisted texts, even where `allow` holds every other text.
+#[trace("FR-150-AC-17")]
+#[test]
+fn tc_1812_003_an_unreadable_entry_message_is_the_fixed_text_after_unlisted_texts() {
+    let sbom = cdx(
+        r#"{"name":"only","version":"1","licenses":[{"license":{"url":"https://x"}}]},
+           {"name":"beside","version":"1","licenses":[{"license":{"id":"MIT"}},{"expression":42}]},
+           {"name":"named","version":"1","licenses":[{"license":{"url":"u"}},{"license":{"name":"Foo"}}]}"#,
+    );
+    let policy = "format: licence-policy-v1\nallow: [MIT]\n";
+    assert_eq!(
+        run(&sbom, policy),
+        [
+            finding(
+                "licence-unknown",
+                "unknown",
+                "unreadable licence entry",
+                "only@1"
+            ),
+            finding(
+                "licence-unknown",
+                "unknown",
+                "unreadable licence entry",
+                "beside@1"
+            ),
+            finding(
+                "licence-unknown",
+                "unknown",
+                "Foo, unreadable licence entry",
+                "named@1"
+            ),
+        ]
+    );
 }
 
 /// An SPDX value with the `+` operator is an expression, not an id; several
@@ -544,10 +587,10 @@ fn tc_1671_014_an_unreadable_licence_entry_is_unknown_never_allowed() {
 fn tc_1671_015_operators_make_an_expression_and_messages_join_their_texts() {
     let spdx = r#"{"spdxVersion":"SPDX-2.3","packages":[
         {"name":"a","versionInfo":"1","licenseDeclared":"GPL-2.0+"}]}"#;
-    assert_eq!(
-        read_components(spdx).unwrap()[0].licences[0].kind,
-        LicenceKind::Expression
-    );
+    assert!(matches!(
+        read_components(spdx).unwrap()[0].licences[0],
+        DeclaredLicence::Expression(_)
+    ));
     let sbom = cdx(
         r#"{"name":"m","version":"1","licenses":[{"license":{"id":"Zlib"}},{"license":{"id":"ISC"}}]}"#,
     );
@@ -560,4 +603,48 @@ fn tc_1671_015_operators_make_an_expression_and_messages_join_their_texts() {
             "m@1"
         )]
     );
+}
+
+/// A denied or not-allowed licence beside an unreadable entry wins over
+/// `licence-unknown`; the unreadable entry never reaches that message.
+#[trace("FR-150-AC-17")]
+#[test]
+fn tc_1812_004_a_denied_or_not_allowed_licence_beats_an_unreadable_entry() {
+    let sbom = cdx(
+        r#"{"name":"d","version":"1","licenses":[{"license":{"id":"GPL-3.0-only"}},{"license":{"url":"u"}}]},
+           {"name":"n","version":"1","licenses":[{"license":{"id":"Zlib"}},{"license":{"url":"u"}}]}"#,
+    );
+    assert_eq!(
+        run(&sbom, POLICY),
+        [
+            finding("licence-denied", "denied", "GPL-3.0-only", "d@1"),
+            finding("licence-not-allowed", "not-allowed", "Zlib", "n@1"),
+        ]
+    );
+}
+
+/// Exposing the supplier changes no run entry.
+#[trace("FR-041-AC-11")]
+#[test]
+fn tc_1812_005_run_entries_are_byte_identical_after_the_supplier_is_exposed() {
+    let spdx = r#"{"spdxVersion":"SPDX-2.3","packages":[
+        {"name":"a","versionInfo":"1","supplier":"Organization: Example Corp"},
+        {"name":"b","versionInfo":"2","supplier":"NOASSERTION"}]}"#;
+    let cdx = r#"{"bomFormat":"CycloneDX","components":[
+        {"name":"a","version":"1","supplier":{"name":"Acme"}},
+        {"name":"b","version":"2","supplier":{"name":""}}]}"#;
+    for (with, without) in [
+        (spdx.to_owned(), spdx.replace("\"supplier\"", "\"ignored\"")),
+        (cdx.to_owned(), cdx.replace("\"supplier\"", "\"ignored\"")),
+    ] {
+        let render = |raw: &str| -> Vec<String> {
+            parse_sbom(raw)
+                .unwrap()
+                .entries
+                .iter()
+                .map(|e| serde_json::to_string(e).unwrap())
+                .collect()
+        };
+        assert_eq!(render(&with), render(&without));
+    }
 }

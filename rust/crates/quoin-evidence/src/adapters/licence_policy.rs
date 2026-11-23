@@ -14,7 +14,7 @@
 use serde_json::{Map, Value};
 
 use super::FindingResult;
-use super::sbom::{DeclaredLicence, LicenceKind, SbomComponent, read_components};
+use super::sbom::{DeclaredLicence, SbomComponent, read_components};
 use crate::error::EvidenceError;
 use crate::purl::PurlIdentity;
 use crate::types::Finding;
@@ -178,13 +178,25 @@ fn licence_finding(component: &SbomComponent, policy: &Policy) -> Option<Finding
     let mut denied = Vec::new();
     let mut not_allowed = Vec::new();
     let mut unknown = Vec::new();
-    for DeclaredLicence { kind, text } in &component.licences {
+    let mut unreadable = false;
+    for licence in &component.licences {
+        let (text, is_id) = match licence {
+            DeclaredLicence::Unreadable => {
+                unreadable = true;
+                continue;
+            }
+            DeclaredLicence::Id(text) => (text.as_str(), true),
+            DeclaredLicence::Name(text) | DeclaredLicence::Expression(text) => {
+                (text.as_str(), false)
+            }
+        };
         if listed(&policy.deny, text) {
-            denied.push(text.as_str());
+            denied.push(text);
         } else if !listed(&policy.allow, text) {
-            match kind {
-                LicenceKind::Id => not_allowed.push(text.as_str()),
-                LicenceKind::Name | LicenceKind::Expression => unknown.push(text.as_str()),
+            if is_id {
+                not_allowed.push(text);
+            } else {
+                unknown.push(text);
             }
         }
     }
@@ -198,7 +210,10 @@ fn licence_finding(component: &SbomComponent, policy: &Policy) -> Option<Finding
             not_allowed.join(", "),
             path,
         ))
-    } else if !unknown.is_empty() {
+    } else if !unknown.is_empty() || unreadable {
+        if unreadable {
+            unknown.push("unreadable licence entry");
+        }
         Some(finding(
             "licence-unknown",
             "unknown",

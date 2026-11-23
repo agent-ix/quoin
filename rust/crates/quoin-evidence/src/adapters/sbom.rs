@@ -28,24 +28,30 @@ fn string_member<'a>(object: &'a Value, name: &str) -> Option<&'a str> {
     object.get(name).and_then(Value::as_str)
 }
 
-/// How a declared licence is written (FR-041).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LicenceKind {
-    /// A `CycloneDX` `license.id`, or an SPDX value that is one identifier.
-    Id,
-    /// A `CycloneDX` `license.name`.
-    Name,
-    /// A `CycloneDX` `expression`, or any other SPDX value.
-    Expression,
-}
-
 /// One licence a component declares, kept as written. The reader judges none.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DeclaredLicence {
-    /// How it is written.
-    pub kind: LicenceKind,
-    /// The text as the document wrote it.
-    pub text: String,
+pub enum DeclaredLicence {
+    /// A `CycloneDX` `license.id`, or an SPDX value that is one identifier.
+    Id(String),
+    /// A `CycloneDX` `license.name`.
+    Name(String),
+    /// A `CycloneDX` `expression`, or any other SPDX value.
+    Expression(String),
+    /// A `CycloneDX` `licenses` entry with no readable `license.id`,
+    /// `license.name` or `expression` text. It has no text: the JSON of an
+    /// entry is never licence text.
+    Unreadable,
+}
+
+impl DeclaredLicence {
+    /// The text as the document wrote it; `None` for an unreadable entry.
+    #[must_use]
+    pub fn text(&self) -> Option<&str> {
+        match self {
+            Self::Id(text) | Self::Name(text) | Self::Expression(text) => Some(text),
+            Self::Unreadable => None,
+        }
+    }
 }
 
 /// One component of an inventory, as the reader returns it.
@@ -57,6 +63,10 @@ pub struct SbomComponent {
     pub purl: Option<String>,
     /// The licences it declares, in document order. Empty when it declares none.
     pub licences: Vec<DeclaredLicence>,
+    /// The supplier the document declares, as written. `None` where it is
+    /// absent, empty or whitespace-only, or an SPDX `NOASSERTION` or `NONE`
+    /// (in `CycloneDX` those words are names).
+    pub supplier: Option<String>,
 }
 
 /// Parse a `CycloneDX` or SPDX JSON inventory.
@@ -130,6 +140,11 @@ fn cyclone_dx_components(root: &Value) -> Option<Vec<SbomComponent>> {
                     symbol: symbol(purl, name, version)?,
                     purl: purl.filter(|value| !value.is_empty()).map(str::to_owned),
                     licences: cyclone_dx_licences(component),
+                    supplier: component
+                        .get("supplier")
+                        .and_then(|supplier| string_member(supplier, "name"))
+                        .filter(|name| !name.trim().is_empty())
+                        .map(str::to_owned),
                 })
             })
             .collect(),
@@ -140,9 +155,9 @@ fn cyclone_dx_components(root: &Value) -> Option<Vec<SbomComponent>> {
 ///
 /// An entry that names no readable licence (no `id` or `name`, a non-string or
 /// empty text, not an object) is still a declared licence the document made and
-/// the reader could not read. It is exposed as an expression holding the entry
-/// as written, so a policy classes it unknown and never reads the component as
-/// all-allowed because the entry vanished (FR-150: unknown is never allowed).
+/// the reader could not read. It is exposed as unreadable with no text, so a
+/// policy classes it unknown and never reads the component as all-allowed
+/// because the entry vanished (FR-150: unknown is never allowed).
 fn cyclone_dx_licences(component: &Value) -> Vec<DeclaredLicence> {
     component
         .get("licenses")
@@ -151,25 +166,19 @@ fn cyclone_dx_licences(component: &Value) -> Vec<DeclaredLicence> {
         .unwrap_or_default()
         .iter()
         .map(|entry| {
-            let readable = if let Some(license) = entry.get("license") {
+            let declared = if let Some(license) = entry.get("license") {
                 match (string_member(license, "id"), string_member(license, "name")) {
-                    (Some(id), _) => Some((LicenceKind::Id, id)),
-                    (None, Some(name)) => Some((LicenceKind::Name, name)),
+                    (Some(id), _) => Some(DeclaredLicence::Id(id.to_owned())),
+                    (None, Some(name)) => Some(DeclaredLicence::Name(name.to_owned())),
                     (None, None) => None,
                 }
             } else {
-                string_member(entry, "expression").map(|text| (LicenceKind::Expression, text))
+                string_member(entry, "expression")
+                    .map(|text| DeclaredLicence::Expression(text.to_owned()))
             };
-            match readable {
-                Some((kind, text)) if !text.is_empty() => DeclaredLicence {
-                    kind,
-                    text: text.to_owned(),
-                },
-                _ => DeclaredLicence {
-                    kind: LicenceKind::Expression,
-                    text: entry.to_string(),
-                },
-            }
+            declared
+                .filter(|licence| licence.text().is_some_and(|text| !text.is_empty()))
+                .unwrap_or(DeclaredLicence::Unreadable)
         })
         .collect()
 }
@@ -198,6 +207,11 @@ fn spdx_components(root: &Value) -> Option<Vec<SbomComponent>> {
                     symbol: symbol(locator, name, version)?,
                     purl: locator.filter(|value| !value.is_empty()).map(str::to_owned),
                     licences: spdx_licence(package).into_iter().collect(),
+                    supplier: string_member(package, "supplier")
+                        .filter(|text| {
+                            !text.trim().is_empty() && !matches!(*text, "NOASSERTION" | "NONE")
+                        })
+                        .map(str::to_owned),
                 })
             })
             .collect(),
@@ -213,13 +227,11 @@ fn spdx_licence(package: &Value) -> Option<DeclaredLicence> {
         return None;
     }
     let single = !text.contains(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '+'));
-    Some(DeclaredLicence {
-        kind: if single {
-            LicenceKind::Id
-        } else {
-            LicenceKind::Expression
-        },
-        text: text.to_owned(),
+    let text = text.to_owned();
+    Some(if single {
+        DeclaredLicence::Id(text)
+    } else {
+        DeclaredLicence::Expression(text)
     })
 }
 
@@ -291,8 +303,59 @@ fn unrecognised(root: &Value) -> EvidenceError {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::parse_sbom;
+    use super::{DeclaredLicence, parse_sbom, read_components};
     use ix_trace_rs::trace;
+
+    #[trace("FR-041-AC-11")]
+    #[test]
+    fn tc_1812_001_the_declared_supplier_is_exposed_as_written() {
+        let cdx = read_components(
+            r#"{"bomFormat":"CycloneDX","components":[
+                {"name":"a","supplier":{"name":"Acme, Inc."}},
+                {"name":"b","supplier":{"name":""}},
+                {"name":"c","supplier":{"name":"  "}},
+                {"name":"d"},
+                {"name":"e","supplier":{"name":"NONE"}}]}"#,
+        )
+        .unwrap();
+        let suppliers: Vec<_> = cdx.iter().map(|c| c.supplier.as_deref()).collect();
+        assert_eq!(
+            suppliers,
+            [Some("Acme, Inc."), None, None, None, Some("NONE")]
+        );
+        let spdx = read_components(
+            r#"{"spdxVersion":"SPDX-2.3","packages":[
+                {"name":"a","supplier":"Organization: Example Corp"},
+                {"name":"b","supplier":"NOASSERTION"},
+                {"name":"c","supplier":"NONE"}]}"#,
+        )
+        .unwrap();
+        let suppliers: Vec<_> = spdx.iter().map(|c| c.supplier.as_deref()).collect();
+        assert_eq!(suppliers, [Some("Organization: Example Corp"), None, None]);
+    }
+
+    #[trace("FR-041-AC-12")]
+    #[test]
+    fn tc_1812_002_an_unreadable_licence_entry_carries_no_text() {
+        let components = read_components(
+            r#"{"bomFormat":"CycloneDX","components":[
+                {"name":"a","licenses":[{"license":{"url":"https://example.org/l"}}]},
+                {"name":"b","licenses":[{"license":{"name":""}}]},
+                {"name":"c","licenses":[{"license":{"id":"MIT"}},{"expression":42}]}]}"#,
+        )
+        .unwrap();
+        for component in &components[..2] {
+            assert_eq!(component.licences.len(), 1);
+            assert_eq!(component.licences[0], DeclaredLicence::Unreadable);
+        }
+        assert_eq!(
+            components[2].licences,
+            [
+                DeclaredLicence::Id("MIT".to_owned()),
+                DeclaredLicence::Unreadable
+            ]
+        );
+    }
 
     /// One entry per component, keyed on the purl where the document carries
     /// one — and a component with no identity at all is dropped rather than
