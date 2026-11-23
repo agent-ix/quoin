@@ -498,6 +498,11 @@ fn snapshot_shape() -> Shape {
     use Shape::{Leaf, Optional};
     obj(vec![
         ("protocol", Leaf),
+        (
+            "tool_identity",
+            Optional(Box::new(obj(vec![("name", Leaf), ("version", Leaf)]))),
+        ),
+        ("clean_tree_precondition", Optional(Box::new(Leaf))),
         ("as_of", Leaf),
         ("baseline_commit", Leaf),
         (
@@ -612,7 +617,7 @@ fn keys(value: &Value) -> Vec<&str> {
     keys
 }
 
-#[trace("FR-166-AC-1", "FR-167-AC-1", "NFR-036-M-4")]
+#[trace("FR-166-AC-1", "FR-167-AC-1", "FR-167-AC-13", "NFR-036-M-4")]
 #[test]
 fn one_file_is_written_with_exactly_the_named_members_and_nothing_else_changes() {
     let repo = full();
@@ -638,15 +643,24 @@ fn one_file_is_written_with_exactly_the_named_members_and_nothing_else_changes()
             "as_of",
             "baseline_commit",
             "change_records",
+            "clean_tree_precondition",
             "coverage",
             "evidence_freshness",
             "open_findings",
             "previous_release",
             "protocol",
             "soup",
+            "tool_identity",
         ]
     );
     assert_eq!(snapshot["protocol"], "quoin.release-snapshot/v1");
+    assert_eq!(keys(&snapshot["tool_identity"]), ["name", "version"]);
+    assert_eq!(snapshot["tool_identity"]["name"], "quoin");
+    assert_eq!(
+        snapshot["tool_identity"]["version"],
+        text(&repo.quoin(&["--version"]).stdout).trim()
+    );
+    assert_eq!(snapshot["clean_tree_precondition"], "not_verified");
     assert_eq!(snapshot["as_of"], AS_OF);
     assert_eq!(snapshot["baseline_commit"], BASE);
     assert_eq!(keys(&snapshot["soup"]), ["not_assessed", "rows"]);
@@ -671,6 +685,63 @@ fn one_file_is_written_with_exactly_the_named_members_and_nothing_else_changes()
         Some(bytes.len() - 1),
         "one line"
     );
+}
+
+#[trace("FR-167-AC-13")]
+#[test]
+fn the_snapshot_reader_accepts_legacy_and_valid_v1_extensions_but_refuses_dirty_extensions() {
+    let legacy = json!({
+        "protocol":"quoin.release-snapshot/v1",
+        "as_of":"2026-11-01T00:00:00Z",
+        "baseline_commit":BASE,
+        "previous_release":null,
+        "coverage":[],
+        "evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},
+        "open_findings":[],
+        "soup":{"rows":[],"not_assessed":[]},
+        "anomalies":[],
+        "change_records":[]
+    });
+    let bytes = serde_json::to_vec(&legacy).unwrap();
+    let parsed = quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).unwrap();
+    assert!(parsed.tool_identity.is_none());
+    assert!(parsed.clean_tree_precondition.is_none());
+
+    let mut extended = legacy.clone();
+    extended["tool_identity"] = json!({"name":"quoin","version":"0.31.1"});
+    extended["clean_tree_precondition"] = json!("not_verified");
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    let parsed = quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).unwrap();
+    assert_eq!(parsed.tool_identity.unwrap().name, "quoin");
+    assert!(parsed.clean_tree_precondition.is_some());
+
+    extended["tool_identity"] = Value::Null;
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["tool_identity"] = json!({"name":"quoin","version":"0.31.1"});
+    extended["clean_tree_precondition"] = Value::Null;
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["clean_tree_precondition"] = json!("not_verified");
+    extended["tool_identity"]["unexpected"] = json!(true);
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["tool_identity"] = json!({"name":"quoin","version":"0.31.1"});
+    extended["clean_tree_precondition"] = json!("verified");
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["tool_identity"] = json!({"name":"another-tool","version":"0.31.1"});
+    extended["clean_tree_precondition"] = json!("not_verified");
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["tool_identity"] = json!({"name":"quoin","version":" "});
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
 }
 
 fn git(dir: &Path, arguments: &[&str]) {
@@ -1247,39 +1318,30 @@ fn two_runs_in_other_directories_and_environments_write_the_same_bytes_and_no_ve
     );
 }
 
-/// A scan whose timestamp is not an instant cannot be put in order.
+/// A malformed persisted scan timestamp must be refused, not written as new evidence.
 fn audit_scan_at(timestamp: &str) -> FindingRecord {
     let mut scan = audit_scan(&[("RUSTSEC-2026-0001", "bytes", "1.0.0")]);
     timestamp.clone_into(&mut scan.timestamp);
     scan
 }
 
-#[trace("FR-167-AC-4")]
+#[trace("FR-166-AC-10", "FR-167-AC-4", "FR-030-AC-29")]
 #[test]
-fn a_scan_that_cannot_be_ordered_is_listed_as_unordered() {
+fn a_persisted_scan_with_a_noncanonical_timestamp_refuses_the_snapshot() {
     let repo = Repo::bare();
     repo.soup_record("bytes", "pkg:cargo/bytes@1.0.0", &["version: \"1.0.0\""]);
-    write_scan(
-        &mut DiskEvidence::new(repo.path()),
-        &audit_scan_at("last tuesday"),
-    )
-    .unwrap();
-    let snapshot = repo.snapshot(&repo.run());
-    let items: Vec<(&str, &str, &str)> = snapshot["soup"]["not_assessed"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|i| {
-            (
-                i["kind"].as_str().unwrap(),
-                i["tool"].as_str().unwrap(),
-                i["detail"].as_str().unwrap(),
-            )
-        })
-        .collect();
+    let dirty = audit_scan_at("last tuesday");
+    let relative = quoin_evidence::paths::record_path("scans", &dirty.suite, &dirty.timestamp);
+    let path = repo.path().join("spec/evidence").join(relative);
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(&path, serde_json::to_vec(&dirty).unwrap()).unwrap();
+    let refused = repo.refusal(&repo.run());
+    assert_eq!(refused["code"], "release_snapshot_input_unreadable");
     assert!(
-        items.contains(&("scan_unordered", "cargo-audit", "unordered")),
-        "{items:?}"
+        refused["message"]
+            .as_str()
+            .unwrap()
+            .contains("last~20tuesday")
     );
 }
 
