@@ -32,8 +32,13 @@ digest, shaped as a projection of Engineering Assurance's `approval-verify` resu
 (its FR-041). Quoin retains the claim as data and never verifies a signature, so
 the claim has the same standing as the actor label until someone re-runs
 `approval-verify` with trust the relying party supplies (FR-068). A record revision is
-immutable once written (a new revision is a new file, never an edit), and git
-history is the tamper evidence. A record qualifies as approved only when
+immutable once written (a new revision is a new file, never an edit). What is
+checked is limited: a changed revision is caught where an approval claim names
+the stored record digest (FR-065), and a retained proof output is checked
+against the attestation's SHA-256 content commitment (FR-064). Git history
+records an edit but nothing verifies it. Someone who can rewrite both an
+attestation and its output, or a record and its claim, is not detected; that
+protection is not provided here. A record qualifies as approved only when
 FR-065 finds a matching `approved` event.
 
 ## Properties

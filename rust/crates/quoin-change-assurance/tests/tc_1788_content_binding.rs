@@ -132,7 +132,7 @@ fn tc_1788_004_missing_or_wrong_artifact_is_refused() {
     // commits to its own bytes, but cannot vouch for att-1's slot.
     let other_output = b"all tests FAILED\n".to_vec();
     assert_eq!(other_output.len(), OUTPUT.len());
-    let other = input_with(|a| a.clone(), &other_output);
+    let other = input_with(Clone::clone, &other_output);
     assert_eq!(verify(&other).proofs[0].outcome, Outcome::Valid);
     let mut wrong = base_input();
     wrong.attestations[0].output = other.attestations[0].output.clone();

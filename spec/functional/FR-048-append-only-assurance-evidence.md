@@ -56,4 +56,7 @@ separate versioned decision and migration plan.
 
 > **Change note (strict digest removal):** Record identity is an opaque UUID per
 > the FR-098 Behavior text; legacy content-derived identifiers are read as opaque strings.
-> Tamper detection by recomputing identity is withdrawn; git records any edit.
+> Tamper detection by recomputing identity is withdrawn. Retained proof output
+> is checked by length and by the FR-064 content commitment; git records an
+> edit but nothing verifies it, and someone who can rewrite both an attestation
+> and its output is not detected.
