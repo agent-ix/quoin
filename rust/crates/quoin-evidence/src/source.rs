@@ -56,7 +56,8 @@ pub trait EvidenceSource {
     ///
     /// # Errors
     ///
-    /// [`EvidenceError::StoreIo`] when the path exists and cannot be read.
+    /// [`EvidenceError::StoreIo`] when the path cannot be read, or
+    /// [`EvidenceError::StoreRead`] when its bytes are not valid UTF-8.
     fn read(&self, path: &str) -> Result<Option<String>, EvidenceError>;
 
     /// The `.json` file names directly inside a store directory, sorted.
