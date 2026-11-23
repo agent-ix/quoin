@@ -42,10 +42,10 @@ direct fact without classifying that fact as a disposition.
 | FR-046-AC-3 | Unresolved and not-binding clauses remain outside the binding partition; facts supplied for them are reported as unused. | Test |
 | FR-046-AC-4 | Expired, future-dated, or incoherent attestations leave a binding clause open with the reason visible. | Test |
 | FR-046-AC-5 | Duplicate facts and incomplete attestations are rejected rather than resolved by ordering or defaults. | Test |
-| FR-046-AC-6 | `quoin discharge` renders every population as deterministic Markdown or JSON and accepts both binding and fact inputs as files. | Test |
+| FR-046-AC-6 | `quoin discharge` renders every population as deterministic Markdown or JSON and accepts both binding and fact inputs as files; a direct fact discharges only when a store (`--repo`) is also given (FR-211). | Test |
 | FR-046-AC-7 | A disposition fact uses exactly one decision from `delegated`, `accepted_risk` or `temporary_exception`, names its owner and approval reference, and carries a valid human-supplied actor, authority and validity interval; a `temporary_exception` also carries `decisionExpiresAt` while other decisions omit it. | Test (TC-003) |
 | FR-046-AC-8 | A `temporary_exception` fact discharges its binding clause only while `asOf` is earlier than `decisionExpiresAt` and its attestation is current; when `asOf` equals or exceeds `decisionExpiresAt`, the clause is open with reason `temporary exception expired`. | Test (TC-003) |
-| FR-046-AC-9 | A direct evidence fact with a supplied `approvalRef` that is empty or consists only of whitespace is rejected; a supplied `approvalRef` containing at least one non-whitespace character is accepted and retained in the direct population without changing the clause's direct-evidence classification; a direct fact without `approvalRef` remains valid. | Test (TC-626) |
+| FR-046-AC-9 | A direct evidence fact with a supplied `approvalRef` that is empty or consists only of whitespace is rejected; a supplied `approvalRef` containing at least one non-whitespace character is accepted and retained in the direct population without changing the clause's direct-evidence classification; a direct fact without `approvalRef` remains valid. A direct fact is classified as direct only when a store (`--repo`) is given (FR-211). | Test (TC-626) |
 
 ## Constraints
 

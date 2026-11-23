@@ -54,3 +54,12 @@ Re-checked against fix commit f64ad1d.
 | FND-002 | fixed | `discharge`, `trust` and `bindings.json` are `unresolved` in both the Behavior and AC-2; AC-3 is limited to `kind-not-expected` |
 | FND-003 | fixed | The FR-208 Description and Outputs state the verified rule, and the "named human approver" qualifier is removed from the bullet and AC-2 |
 | FND-004 | fixed | The FR-046 constraint covers both checks for every report build, and the caller-data constraint names the store and engineering-assurance |
+| FND-005 | still-open | Round 2 (aaae0c3): the refusal header now exempts `--evidence` refusals (naming the file and key), and AC-5 lists the `--evidence` cases, but AC-5 still requires every listed refusal to name "the control or exclusion, set and clause", which contradicts the header for those cases; the silently ignored unknown key is now refused (see FND-006) |
+
+## New findings (disposition pass 2)
+
+Re-checked against fix commit aaae0c3.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-006 | medium | FR-173's new refusal of an `--evidence` key that names no `effective` control mapping a binding clause makes AC-2 (an ineffective control gives an `open` line), AC-3 (a non-binding mapping gives an `unused` line) and AC-9 (`stale C1` after the control turns ineffective) unreachable whenever the person's evidence map still lists that control: the whole run is refused instead | FR-173, FR-173-AC-2, FR-173-AC-3, FR-173-AC-9 | wrong-requirement |

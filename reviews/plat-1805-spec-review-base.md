@@ -78,3 +78,18 @@ Re-checked against fix commit f64ad1d.
 | FND-008 | fixed | Refs are compared in the store's folded form (AC-4) |
 | FND-009 | fixed | The FR-133 lookup citation is replaced by the quoin-evidence store reader |
 | FND-010 | fixed | The GDPR/AI-Act criterion is removed |
+| FND-011 | fixed | Round 2 (aaae0c3): FR-133 allows `--repo` beside `--facts` as the store, and FR-211-AC-21 tests it |
+| FND-012 | fixed | Round 2: FR-047 Inputs and FR-211 name the store, the engineering-assurance flags and the module set for report-document operations, with FR-211-AC-22 |
+| FND-013 | still-open | Round 2: the network and NFR-040 conflict is gone, but the `--rmm` compliance value of a row with an FR-211 reason (`unresolved`, `kind-not-expected`, `no-producer`, `approval-*`, `not-verified-offline`) is still unstated, while FR-195's gap rule keys on compliance values; the offline rule introduced FND-016 |
+| FND-014 | fixed | Round 2: `invalid-identifier` is checked before the call and never reported as unavailable (FR-211-AC-20); the wording issues are FND-017 |
+| FND-015 | fixed | Round 2: `no-producer` applies only when no entry carries `producers` (FR-211-AC-23) |
+
+## New findings (disposition pass 2)
+
+Re-checked against fix commit aaae0c3.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-016 | high | FR-195 now marks every clause that "depends on a resolved ref" `not-verified-offline`, which covers every direct fact, even though resolving a ref is a local, deterministic store read. The dossier RMM therefore never shows a direct clause compliant, and its rows differ from `quoin discharge --repo --rmm --json`, contradicting FR-195-AC-1 ("rows equal the source rows") and FR-191 (a source "gives the same result as its named source command") | FR-195, FR-195-AC-1, FR-191, FR-211 | wrong-requirement |
+| FND-017 | low | `invalid-identifier` reuses FR-133's store-refusal kind (1 to 64 bytes) for a different character rule. It applies the leading-`-` rule to every identifier, although EA checks only the start of the joined `record_id`, and it does not say whether it applies to clauses without `approvalRoles`, where no call is made | FR-211, FR-211-AC-20, FR-133 | wrong-requirement |
+| FND-018 | low | With `no-store`, `quoin discharge --facts` without `--repo` never puts a direct fact in the direct population, but FR-046-AC-9 (TC-626) and FR-046-AC-6 still describe `--facts` alone as classifying a direct fact as direct; they need `--repo` stated | FR-046-AC-9, FR-046-AC-6, FR-211-AC-21 | wrong-requirement |
