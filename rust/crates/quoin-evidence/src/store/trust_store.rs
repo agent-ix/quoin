@@ -76,8 +76,13 @@ pub fn read_trust_decisions<S: EvidenceSource + ?Sized>(
     let mut decisions = Vec::new();
     for name in source.list_files(TRUST_DIR)? {
         let path = format!("{TRUST_DIR}/{name}");
-        let Some(text) = source.read(&path)? else {
-            continue;
+        let text = match source.read(&path) {
+            Ok(Some(text)) => text,
+            Ok(None) | Err(EvidenceError::StoreRead { .. }) => {
+                skipped.push(path);
+                continue;
+            }
+            Err(other) => return Err(other),
         };
         match decode::<TrustDecision>(&path, &text)
             .and_then(|decision| validate_trust_decision(&decision).map(|()| decision))

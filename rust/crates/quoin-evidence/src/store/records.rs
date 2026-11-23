@@ -536,9 +536,13 @@ where
     let mut records: Vec<T> = Vec::new();
     for name in source.list_files(&directory)? {
         let path = format!("{directory}/{name}");
-        let Some(text) = source.read(&path)? else {
-            skipped.push(path);
-            continue;
+        let text = match source.read(&path) {
+            Ok(Some(text)) => text,
+            Ok(None) | Err(EvidenceError::StoreRead { .. }) => {
+                skipped.push(path);
+                continue;
+            }
+            Err(other) => return Err(other),
         };
         match decode::<T>(&path, &text) {
             Ok(record)

@@ -97,18 +97,30 @@ fn request(suite_name: &str, entries: Vec<RunEntry>) -> RecordRequest {
     }
 }
 
-struct DisappearingRead {
-    inner: MemoryEvidence,
-    missing_path: String,
+#[derive(Clone, Copy)]
+enum ReadFault {
+    Missing,
+    InvalidUtf8,
 }
 
-impl EvidenceSource for DisappearingRead {
+struct FaultingRead {
+    inner: MemoryEvidence,
+    fault_path: String,
+    fault: ReadFault,
+}
+
+impl EvidenceSource for FaultingRead {
     fn read(&self, path: &str) -> Result<Option<String>, quoin_evidence::EvidenceError> {
-        if path == self.missing_path {
-            Ok(None)
-        } else {
-            self.inner.read(path)
+        if path == self.fault_path {
+            return match self.fault {
+                ReadFault::Missing => Ok(None),
+                ReadFault::InvalidUtf8 => Err(quoin_evidence::EvidenceError::StoreRead {
+                    path: path.to_owned(),
+                    detail: "content is not valid UTF-8".to_owned(),
+                }),
+            };
         }
+        self.inner.read(path)
     }
 
     fn list_files(&self, directory: &str) -> Result<Vec<String>, quoin_evidence::EvidenceError> {
@@ -973,9 +985,10 @@ fn tc_plat_1794_disappeared_newest_record_is_reported_and_blocks_fallback_and_gc
         vec![entry("tests::new", Outcome::Pass, &[])],
     );
     let missing_path = write_run(&mut inner, &newest).unwrap();
-    let mut store = DisappearingRead {
+    let mut store = FaultingRead {
         inner,
-        missing_path: missing_path.clone(),
+        fault_path: missing_path.clone(),
+        fault: ReadFault::Missing,
     };
 
     let mut skipped = Vec::new();
@@ -996,6 +1009,53 @@ fn tc_plat_1794_disappeared_newest_record_is_reported_and_blocks_fallback_and_gc
             .unwrap()
             .is_some()
     );
+}
+
+#[trace("FR-030-AC-13", "FR-030-AC-23", "FR-030-AC-29")]
+#[test]
+fn tc_plat_1794_invalid_utf8_records_are_reported_and_do_not_abort_read_gc_or_trust_listing() {
+    let mut inner = MemoryEvidence::new();
+    let valid = run(
+        "SUITE-1794",
+        "2026-11-20T10:00:00Z",
+        vec![entry("tests::ok", Outcome::Pass, &[])],
+    );
+    let valid_path = write_run(&mut inner, &valid).unwrap();
+    let corrupt_path = "runs/SUITE-1794/corrupt.json";
+    inner.write(corrupt_path, br#"{"#).unwrap();
+    let mut store = FaultingRead {
+        inner,
+        fault_path: corrupt_path.to_owned(),
+        fault: ReadFault::InvalidUtf8,
+    };
+
+    let mut skipped = Vec::new();
+    assert!(
+        latest_run(&store, &suite("SUITE-1794"), &mut skipped)
+            .unwrap()
+            .is_none(),
+        "latest fell back around invalid-UTF-8 evidence"
+    );
+    assert_eq!(skipped, [corrupt_path]);
+    skipped.clear();
+    assert!(gc(&mut store, false, &mut skipped).unwrap().is_empty());
+    assert_eq!(skipped, [corrupt_path]);
+    assert!(store.inner.read(&valid_path).unwrap().is_some());
+
+    let mut trust = MemoryEvidence::new();
+    let good_decision = decision("ETD-7");
+    write_trust_decision(&mut trust, &good_decision).unwrap();
+    let bad_decision_path = trust_decision_path(&TrustDecisionId::parse("ETD-8").unwrap());
+    trust.write(&bad_decision_path, b"{}").unwrap();
+    let trust = FaultingRead {
+        inner: trust,
+        fault_path: bad_decision_path.clone(),
+        fault: ReadFault::InvalidUtf8,
+    };
+    skipped.clear();
+    let decisions = read_trust_decisions(&trust, &mut skipped).unwrap();
+    assert_eq!(decisions, [good_decision]);
+    assert_eq!(skipped, [bad_decision_path]);
 }
 
 #[trace("FR-030-AC-23", "FR-030-AC-28", "FR-030-AC-29")]
