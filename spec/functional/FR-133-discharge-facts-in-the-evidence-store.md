@@ -74,9 +74,14 @@ verified; a discharge attestation is the same kind of fact.
   construction and the caller supplies no snapshot of the obligations.
 - `quoin evidence record-discharge` stores facts. `quoin discharge --repo`
   reads the stored facts for the binding report's clause set instead of
-  `--facts`, and `--inward` (which needs `--repo`) renders the
-  inward-completeness report. A library or view caller reads the partition with
-  `discharge_report_from_store`, the single entry point.
+  `--facts`. `--repo` MAY also be given beside `--facts`: `--facts` then
+  supplies the facts, the stored facts are not read, and `--repo` supplies the
+  store against which FR-211 resolves evidence and runs engineering-assurance
+  verification. A run with no store leaves every direct-fact clause and every
+  approval-class clause open with reason `no-store`. `--inward` (which needs
+  `--repo`) renders the inward-completeness report. A library or view caller
+  reads the partition with `discharge_report_from_store`, the single entry
+  point.
 
 ## Constraints
 

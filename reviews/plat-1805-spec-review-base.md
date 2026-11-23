@@ -51,3 +51,30 @@ are named, never quoted, and are freely published law, so no paywalled text is
 reproduced; `record_digest` is a canonical identity digest binding a signature to the
 exact fact content and is never stored, so it is not a tracking antipattern.
 Version note: `quoin --version` resolved 0.36.8 and `quire` 0.52.0 (engine 0.62.2).
+
+## New findings (disposition pass 1)
+
+Re-checked against fix commit f64ad1d.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-011 | high | FR-211 requires `quoin discharge --facts` to resolve refs against the evidence store and verify approvals with `--repo` (FR-211 Inputs, FR-211-AC-13), but FR-133 says `--repo` reads stored facts "instead of `--facts`" and the CLI refuses "--facts and --repo cannot be combined"; so on the `--facts` path there is no store and no repository, and no direct fact or approval-class clause can ever discharge | FR-211-AC-13, FR-211, FR-133, FR-046-AC-6 | wrong-requirement |
+| FND-012 | medium | Re-running both checks over a report given on stdin (`render_discharge`, `build_authored_argument`) needs the evidence store, `--repo`, the engineering-assurance flags and the installed module set (for `producers`, `approvalRoles` and customer-owned clauses); none of these is an input of those operations, and FR-047 (which says the discharge report "already arrives" as input) is not amended | FR-211, FR-211-AC-13, FR-047 | missing-requirement |
+| FND-013 | medium | The dossier RMM is built from `quoin discharge --repo --rmm` (FR-195), which now calls engineering-assurance on every build. FR-191/FR-195 pass no engineering-assurance flags, so every approval-class clause renders `approval-verifier-unavailable`. With the flags, gitsign verification uses Sigstore trust services (EA FR-041-AC-26), against NFR-040's "SHALL NOT read the wall clock or the network". The RMM compliance value for the new reasons (`unresolved`, `kind-not-expected`, `no-producer`, `approval-*`) is not stated (FR-195-AC-5) | FR-211, FR-195, NFR-040, FR-195-AC-5 | missing-requirement |
+| FND-014 | low | `record-id-too-long` covers the length limit, but a clause-set authority or id with a leading `-` or a control character still yields EA `approval_verify_request_invalid`, which FR-211 maps to exit 3 / `approval-verifier-unavailable` | FR-211, FR-211-AC-10 | missing-requirement |
+| FND-015 | low | When some of a clause's `expectedOutputs` entries carry `producers` and others do not, a ref matching none of them could be reported as `no-producer` or as `kind-not-expected`; the "Until the catalog schema carries `producers`" bullet is transitional prose rather than a rule about an entry that lacks `producers` | FR-211, FR-211-AC-3, FR-211-AC-5 | wrong-requirement |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-211 "When resolution and verification run" names every report path, and AC-13 tests each; the store-path conflict on `--facts` is recorded separately as FND-011 |
+| FND-002 | fixed | Verification runs on every report build; the report shows only the current verification's approver and never labels a stored `attestedBy` verified (AC-16) |
+| FND-003 | fixed | RFC 8785 via FR-098, lowercase hex, and the `quoin evidence approval-subject` command (AC-17, AC-18) |
+| FND-004 | fixed | A missing or blank `approvalRef` gives `approval-missing` with no engineering-assurance call (AC-9) |
+| FND-005 | fixed | Refs are re-resolved on every report build, and a ref removed by gc leaves the clause open (AC-14) |
+| FND-006 | fixed | `repository` is `--repo`, refusals map as in FR-188, and `record-id-too-long` is checked before the call (AC-10, AC-11); the residual cause is recorded as FND-014 |
+| FND-007 | fixed | depends_on quire-rs FR-073 added, and a missing `producers` member gives `no-producer` (AC-5) |
+| FND-008 | fixed | Refs are compared in the store's folded form (AC-4) |
+| FND-009 | fixed | The FR-133 lookup citation is replaced by the quoin-evidence store reader |
+| FND-010 | fixed | The GDPR/AI-Act criterion is removed |

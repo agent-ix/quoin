@@ -37,3 +37,20 @@ evidence references through unchanged; TC-626 and TC-003 cover clauses with empt
 `approvalRoles`, which keep FR-046 behaviour; FR-208-CON-2 and FR-211-CON-1 agree that
 no risk score, threshold or acceptability is computed; index.md and spec.md entries
 match the new file's id and title.
+
+## New findings (disposition pass 1)
+
+Re-checked against fix commit f64ad1d.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-005 | low | FR-173 adds a refusal for a missing or malformed `--evidence`, but the refusal header requires every refusal to name "the control or exclusion, the set key and the clause id", which an `--evidence` error cannot, and FR-173-AC-5's list of refusal cases does not include it; an `--evidence` key naming no control in `--spec` is silently ignored | FR-173, FR-173-AC-5 | missing-requirement |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-173 now takes a required `--evidence` map from control id to `evidence://` refs (accepted design per lead ruling); AC-7, AC-11 and AC-12 now defer to FR-211 |
+| FND-002 | fixed | `discharge`, `trust` and `bindings.json` are `unresolved` in both the Behavior and AC-2; AC-3 is limited to `kind-not-expected` |
+| FND-003 | fixed | The FR-208 Description and Outputs state the verified rule, and the "named human approver" qualifier is removed from the bullet and AC-2 |
+| FND-004 | fixed | The FR-046 constraint covers both checks for every report build, and the caller-data constraint names the store and engineering-assurance |

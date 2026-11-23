@@ -48,6 +48,9 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 - If a row's `compliance` is `undischarged`, `attestation_not_current`, `temporary_exception_expired` or `undetermined`, the RMM SHALL record a `clause_open` gap naming the clause.
 - The detail of a `clause_open` gap SHALL be the compliance value and the row's `reason`.
 - If a row's `compliance` is `compliant`, `tailored` or `not_applicable`, the RMM SHALL NOT record a `clause_open` gap for it, whether or not it has `evidenceRefs`.
+- The RMM SHALL stay offline and deterministic (NFR-040), calling neither engineering-assurance nor the network.
+- For a clause that depends on a resolved ref or a verified approval (FR-211), the RMM SHALL show it open with reason `not-verified-offline`.
+- The reason `not-verified-offline` SHALL never mean compliant: the tool assigns no acceptability, and people accept risk.
 - The RMM SHALL NOT write the text of any clause, whatever the binding, the pack or `quire clauses` carries.
 - The RMM SHALL NOT read the rights metadata of `quire clauses`; the clause id is the only clause member it writes.
 
@@ -59,7 +62,7 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 | FR-195-AC-2 | A pack with two clause sets gives two tables in index order | Test |
 | FR-195-AC-3 | With `--doc rmm` and no `--clause-binding` and no `--pack` the document has a `no_clause_binding` gap, status `incomplete`, the command exits 1 and not 2, and no `--as-of` is needed | Test |
 | FR-195-AC-4 | A fixture whose binding and pack carry clause text and whose clauses are marked restricted in `quire clauses` renders only clause ids and the source row members; no clause text appears anywhere in the file or in a gap detail | Test |
-| FR-195-AC-5 | Rows with `compliance` `undischarged`, `attestation_not_current`, `temporary_exception_expired` and `undetermined` each produce one `clause_open` gap | Test |
+| FR-195-AC-5 | Rows with `compliance` `undischarged`, `attestation_not_current`, `temporary_exception_expired` and `undetermined` each produce one `clause_open` gap; a row with reason `not-verified-offline` is never `compliant` and produces a `clause_open` gap, and generating the RMM runs no engineering-assurance command. | Test |
 | FR-195-AC-6 | `As of` and `unusedFacts` appear in the document as the source reports them | Test |
 | FR-195-AC-7 | `--doc rmm --clause-binding <file>` without `--as-of` exits 2 and writes nothing | Test |
 | FR-195-AC-8 | Rows with `compliance` `compliant`, `tailored` and `not_applicable`, including `tailored` and `not_applicable` rows with empty `evidenceRefs`, produce no `clause_open` gap | Test |

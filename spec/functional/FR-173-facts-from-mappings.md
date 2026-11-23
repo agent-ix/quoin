@@ -52,7 +52,7 @@ report are both read, and not in Quire.
 Facts:
 
 - For each clause of the binding report that binds, the command SHALL emit one `direct` fact when at least one `control` in `--spec` maps that clause of that set and has the extracted record key `effectiveness` equal to `effective` (spec-objects-security FR-014).
-- A direct fact's `evidenceRefs` SHALL be the union of the `--evidence` refs of those effective controls, sorted and unique. An effective control with no `--evidence` entry contributes none; when no effective control of the clause contributes a ref, the command SHALL emit no fact for the clause and report it as `open`.
+- A direct fact's `evidenceRefs` SHALL be the union of the `--evidence` refs of the controls that satisfy the first rule above, sorted and unique. Such a control with no `--evidence` entry contributes none; when no such control of the clause contributes a ref, the command SHALL emit no fact for the clause and report it as `open`.
 - The command SHALL NOT resolve the refs; resolution happens when the facts are recorded or a report is built (FR-211).
 - The command SHALL copy the `--attestation` object unchanged as each fact's `attestation`.
 - The command SHALL emit no fact for a clause whose mapping controls have no `effectiveness` key or one other than `effective`.
@@ -76,9 +76,10 @@ Facts:
 - A missing, malformed or inconsistent disposition value SHALL refuse the command.
 - An absent, empty or invalid authored `decision_owner` or approval reference SHALL refuse the command and emit no fact.
 
-Refusals; each exits non-zero with empty stdout and names the control or exclusion, the set key and the clause id:
+Refusals; each exits non-zero with empty stdout and names the control or exclusion, the set key and the clause id, except an `--evidence` refusal, which names the `--evidence` file and the key:
 
-- If `--evidence` is missing, is not an object, or holds a value that is not a non-empty array of strings, then the command SHALL refuse.
+- If `--evidence` is missing, is not an object, or holds a value that is not a non-empty array of strings, then the command SHALL refuse, naming the `--evidence` file and the offending key.
+- If an `--evidence` key names no control that maps a binding clause of the binding report's set with `effectiveness` `effective`, then the command SHALL refuse, naming the key.
 - If the attestation file is missing, is not an object, or does not hold exactly the four FR-046 attestation fields, then the command SHALL refuse.
 - If `--spec` fails `quire validate`, then the command SHALL refuse.
 - If a control maps, in the binding report's set, a clause that the binding report does not list, then the command SHALL refuse.
@@ -110,7 +111,7 @@ Determinism:
 | FR-173-AC-11 | A disposition fact is emitted only with the caller-supplied FR-046 attestation; a missing/invalid actor, authority or validity interval is refused, and the command does not verify the approval reference: for a clause with empty `approvalRoles` it stays a reference, and for an approval-class clause it is verified when the report is built (FR-211). | Test |
 | FR-173-AC-12 | The successful fact array is accepted by `record-discharge` when its refs resolve and its approvals verify (FR-211), persists through the FR-133 store, and `discharge --repo --rmm` renders each of the three decisions as its exact disposition, never as direct compliance. | Test |
 | FR-173-AC-13 | The `scope_exclusion` object schema rejects an artifact missing `decision`, `decision_owner`, `approval_ref` or `rationale`, or carrying an invalid `expires_at`; `facts-from-mappings` exits non-zero with empty stdout and identifies the artifact, set and clause. | Test |
-| FR-173-AC-5 | Each refusal case above, namely a missing attestation, an attestation with an extra field, an invalid corpus, an unknown clause in the binding report's set, a duplicate row in one control, a duplicate exclusion, a mapped-and-excluded clause and an identifier that folds onto another, exits non-zero with empty stdout and a message naming the control or exclusion, set and clause. | Test |
+| FR-173-AC-5 | Each refusal case above, namely a missing attestation, an attestation with an extra field, an invalid corpus, an unknown clause in the binding report's set, a duplicate row in one control, a duplicate exclusion, a mapped-and-excluded clause and an identifier that folds onto another, a missing, malformed or empty `--evidence` file, and an `--evidence` key naming no effective control, exits non-zero with empty stdout and a message naming the control or exclusion, set and clause. | Test |
 | FR-173-AC-6 | Two runs over identical inputs, with the corpus files in different directory order, produce byte-identical stdout and stderr. | Test |
 | FR-173-AC-7 | The stdout of a successful run over resolving `--evidence` refs is accepted by `quoin evidence record-discharge --facts -` against the same binding report; with an unresolved ref `record-discharge` refuses it (FR-211). | Test |
 | FR-173-AC-8 | A run writes no file: a listing of the working directory, `--spec` and `--repo` is identical before and after. | Test |

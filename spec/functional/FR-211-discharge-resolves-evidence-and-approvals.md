@@ -73,8 +73,10 @@ people accept risk, and the tool assigns no score, class or acceptability.
   member, `producers`, from each catalog entry: a non-empty list of retained
   kinds that satisfy the output. A resolved record satisfies the clause when its
   kind is in the `producers` of at least one of the clause's `expectedOutputs`.
-  Otherwise the ref has reason `kind-not-expected`. A clause with empty
-  `expectedOutputs` accepts a resolved ref of any kind.
+  Otherwise the ref has reason `kind-not-expected`, except that when none of
+  the clause's `expectedOutputs` catalog entries carries `producers` the reason
+  is `no-producer`. A clause with empty `expectedOutputs` accepts a resolved ref
+  of any kind.
 - Until the catalog schema carries `producers` (quire-rs FR-073), no catalog
   entry has any, so a direct fact on a clause with non-empty `expectedOutputs`
   has reason `no-producer` and does not discharge.
@@ -94,8 +96,13 @@ people accept risk, and the tool assigns no score, class or acceptability.
   (as FR-098 specifies, from `quire-canonical`) of the fact with its
   `approvalRef` member removed. The approval is a signed annotated tag whose
   message carries those two values as trailers.
+- Quoin SHALL validate the characters of the clause-set authority, id, version
+  and the clause id when a fact is admitted or a report is built. An identifier
+  that engineering-assurance would refuse (empty, a control character, a leading
+  `-`) has reason `invalid-identifier`, and Quoin makes no call.
 - A `record_id` longer than 256 bytes has reason `record-id-too-long`; Quoin
-  makes no engineering-assurance call and never reports it as unavailable.
+  makes no engineering-assurance call. Neither reason is ever reported as an
+  unavailable verifier.
 - Quoin SHALL accept the approval only when the result's `status` is `approved`
   and its `meaning` array holds exactly one value that equals, byte for byte, one
   of the clause's `approvalRoles`. Any other status, or any other meaning, has
@@ -117,6 +124,20 @@ people accept risk, and the tool assigns no score, class or acceptability.
   is `delegated` and its rationale and approval reference are non-blank.
 
 ### When resolution and verification run
+
+- `--repo` supplies the store and the repository holding the approval tags, and
+  MAY be given with `--facts` (FR-133). A run without it leaves each direct-fact
+  clause and each approval-class clause open with reason `no-store`.
+- The operations that take an already-built report (`render_discharge`,
+  `build_authored_argument`, FR-047) take the store or `--repo`, the
+  engineering-assurance flags and the installed module set as explicit inputs.
+  Without them the affected clauses are open with the reason `no-store` or
+  `approval-verifier-unavailable`, never silently verified.
+- The dossier requirements mapping matrix (FR-191, FR-195) stays offline and
+  deterministic (NFR-040): it calls neither engineering-assurance nor the
+  network. Clauses it cannot verify are open with
+  reason `not-verified-offline` (FR-195). Verified discharge is produced by
+  `quoin discharge` with `--repo` and the engineering-assurance flags.
 
 - Quoin SHALL run evidence resolution and approval verification every time it
   builds or renders a discharge report from facts: `quoin discharge` with
@@ -176,6 +197,10 @@ people accept risk, and the tool assigns no score, class or acceptability.
 | FR-211-AC-17 | `quoin evidence approval-subject` prints `record_id` and the RFC 8785 `record_digest`, and a tag created with them verifies as `approved` in AC-6; a fact with a different `approvalRef`-less content yields a different digest, and a changed `approvalRef` yields the same digest. | Test |
 | FR-211-AC-18 | `approval-subject` exits non-zero with empty stdout for a clause absent from the binding report, a malformed fact, or a `record_id` over 256 bytes. | Test |
 | FR-211-AC-19 | The report never states that the tool accepted a risk, and carries no score. | Inspection |
+| FR-211-AC-20 | A clause-set id or clause id engineering-assurance would refuse, or an empty one, has reason `invalid-identifier` and is never reported as `approval-verifier-unavailable`; no call is made. | Test |
+| FR-211-AC-21 | `quoin discharge --facts F --repo R` reads facts from `F`, ignores the facts stored in `R`, and resolves refs and verifies approvals against `R`; the same run without `--repo` leaves each direct-fact and approval-class clause open with `no-store`. | Test |
+| FR-211-AC-22 | `render_discharge` and `build_authored_argument` given a report document without the store, engineering-assurance flags and module set leave the affected clauses open with a stated reason; given them, they verify as AC-6. | Test |
+| FR-211-AC-23 | A ref matching no `producers` has `no-producer` only when none of the clause's `expectedOutputs` catalog entries carries `producers`, and `kind-not-expected` otherwise. | Test |
 
 ## Dependencies
 
