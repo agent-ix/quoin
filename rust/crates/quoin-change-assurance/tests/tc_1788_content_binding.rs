@@ -17,6 +17,8 @@
 
 mod common;
 
+use std::fmt::Write as _;
+
 use ix_trace_rs::trace;
 use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::AttestationId;
@@ -29,7 +31,9 @@ use quoin_change_assurance::{
 };
 use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{OUTPUT, attestation_text, base_input, json, replacing, sealed};
+use crate::common::{
+    OUTPUT, attestation_text, base_input, json, member, names, replacing, sealed, without,
+};
 
 fn verify(input: &VerificationInput) -> VerificationReceipt {
     verify_change_assurance(input).expect("a verification always produces a receipt")
@@ -176,7 +180,7 @@ fn tc_1788_005_a_commitment_cannot_be_reused_across_records_or_revisions() {
 
 /// Two retained attestations under one id, and two selections for one proof,
 /// both refuse; a single of each is the healthy control.
-#[trace("FR-065-AC-23")]
+#[trace("FR-065-AC-5")]
 #[test]
 fn tc_1788_006_duplicate_ids_and_multiple_selections_refuse() {
     assert_eq!(verify(&base_input()).proofs[0].outcome, Outcome::Valid);
@@ -199,7 +203,7 @@ fn tc_1788_006_duplicate_ids_and_multiple_selections_refuse() {
 
 /// A zero-size output is a present, empty output; absent is not the same, and
 /// non-empty bytes against size 0 are a size mismatch.
-#[trace("FR-065-AC-23")]
+#[trace("FR-065-AC-5")]
 #[test]
 fn tc_1788_007_size_zero_differs_from_missing() {
     let zero = |output: Option<Vec<u8>>| {
@@ -226,7 +230,7 @@ fn tc_1788_007_size_zero_differs_from_missing() {
 
 /// A declared size no output can have never passes: `u64::MAX` is not a
 /// readable size, and a huge readable one is a size mismatch.
-#[trace("FR-065-AC-23")]
+#[trace("FR-065-AC-5")]
 #[test]
 fn tc_1788_008_an_unreachable_declared_size_never_passes() {
     let with_size = |size: &str| {
@@ -319,6 +323,46 @@ fn tc_1788_011_the_commitment_changes_with_any_input() {
     assert!(!attestation.commits_to(b"").unwrap());
     let digest = &attestation.content_commitment.digest;
     assert!(digest.starts_with("sha256:") && digest.len() == "sha256:".len() + 64);
+}
+
+/// A known answer: the preimage is built here byte by byte from the
+/// specification, not by the code under test, so dropping the domain
+/// separator, the length framing or the order changes the digest and fails.
+/// Member order and whitespace of the supplied JSON do not matter (RFC 8785),
+/// and duplicate member names are refused before canonicalization.
+#[trace("FR-064-AC-4")]
+#[test]
+fn tc_1788_012_the_commitment_matches_the_specified_preimage() {
+    let attestation = json(&attestation_text());
+    let metadata = canonical_bytes(&without(&attestation, "content_commitment")).unwrap();
+    let mut preimage = b"quoin-proof-attestation-content/v2\0".to_vec();
+    preimage.extend_from_slice(&u64::try_from(metadata.len()).unwrap().to_be_bytes());
+    preimage.extend_from_slice(&metadata);
+    preimage.extend_from_slice(&u64::try_from(OUTPUT.len()).unwrap().to_be_bytes());
+    preimage.extend_from_slice(OUTPUT);
+    let expected = format!("sha256:{}", quoin_store::attachment::sha256_hex(&preimage));
+    let read = ProofAttestation::from_json(&attestation).unwrap();
+    assert_eq!(read.content_commitment.digest, expected);
+
+    // Reverse the member order and pad with whitespace: same commitment.
+    let mut reversed = String::from("{ ");
+    let members: Vec<String> = names(&attestation).into_iter().rev().collect();
+    for (index, name) in members.iter().enumerate() {
+        if index > 0 {
+            reversed.push_str(" ,\n ");
+        }
+        let value =
+            String::from_utf8(canonical_bytes(member(&attestation, name)).unwrap()).unwrap();
+        write!(reversed, "\"{name}\" : {value}").unwrap();
+    }
+    reversed.push_str(" }");
+    let reread = ProofAttestation::from_json(&json(&reversed)).unwrap();
+    assert!(reread.commits_to(OUTPUT).unwrap());
+
+    let duplicated = reversed.replacen("{ ", "{ \"proof_id\": \"proof-1\", ", 1);
+    let mut store = MemoryEvidenceStore::new();
+    assert!(intake_attestation(&mut store, duplicated.as_bytes(), OUTPUT).is_err());
+    assert!(intake_attestation(&mut store, reversed.as_bytes(), OUTPUT).is_ok());
 }
 
 fn walk(dir: &std::path::Path, visit: &mut dyn FnMut(&std::path::Path)) {

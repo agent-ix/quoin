@@ -20,6 +20,7 @@ use crate::ids::{
     StatementId,
 };
 use crate::model::approval::ClaimedApproval;
+use crate::model::attestation::is_sha256_digest;
 use crate::model::decision::ReviewDecision;
 use crate::model::json::{Fields, number, object, string_values};
 use crate::model::outcome::{Check, Outcome, Reason, normalize_reasons, outcome_for_reasons};
@@ -314,9 +315,17 @@ fn read_proofs(root: Fields<'_>) -> Result<Vec<ProofResult>, ChangeAssuranceErro
                 "attestation_id",
             )?),
         };
-        let content_digest = match fields.value("content_digest")? {
-            JsonValue::Null => None,
-            _ => Some(fields.text("content_digest")?.to_owned()),
+        let content_digest = if matches!(fields.value("content_digest")?, JsonValue::Null) {
+            None
+        } else {
+            let digest = fields.text("content_digest")?;
+            if !is_sha256_digest(digest) {
+                return Err(ChangeAssuranceError::shape(
+                    SUBJECT,
+                    FieldFailure::malformed("content_digest"),
+                ));
+            }
+            Some(digest.to_owned())
         };
         let mut audit_findings = Vec::new();
         for raw in fields.array("audit_findings", false)? {

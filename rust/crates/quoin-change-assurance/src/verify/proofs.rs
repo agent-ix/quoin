@@ -153,6 +153,8 @@ fn judge_attestation(
             if attestation.retained_output.size_bytes != observed_size {
                 reasons.push(Reason::OutputSizeMismatch);
             } else if attestation.commits_to(bytes).unwrap_or(false) {
+                // Re-serialising a validated attestation cannot fail; if it
+                // ever did, the output is not verified, which is the safe side.
                 verified_digest = Some(attestation.content_commitment.digest.clone());
             } else {
                 // Length alone lets an equal-length substitute pass (PLAT-1788);

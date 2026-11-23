@@ -209,7 +209,10 @@ pub fn prepare_attestation(request: &serde_json::Value) -> Result<Response, Core
     // The commitment covers every other member, so it is computed over the
     // validated attestation; a placeholder stands in until then.
     let mut commitment = quoin_store::JsonObject::new();
-    commitment.set("algorithm", JsonValue::string("sha-256"));
+    commitment.set(
+        "algorithm",
+        JsonValue::string(quoin_change_assurance::model::attestation::COMMITMENT_ALGORITHM),
+    );
     commitment.set(
         "digest",
         JsonValue::string(format!("sha256:{}", "0".repeat(64))),

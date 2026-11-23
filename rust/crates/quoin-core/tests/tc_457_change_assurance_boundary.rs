@@ -293,6 +293,16 @@ fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
         prepared["attestation"]["retained_output"],
         json!({"media_type": "text/plain", "size_bytes": OUTPUT.len()})
     );
+    let commitment = &prepared["attestation"]["content_commitment"];
+    assert_eq!(commitment["algorithm"], "sha-256");
+    assert!(
+        commitment["digest"]
+            .as_str()
+            .is_some_and(|d| d.starts_with("sha256:")
+                && d.len() == 71
+                && !d.ends_with(&"0".repeat(64))),
+        "a derived digest, not the placeholder: {commitment}"
+    );
 
     let mut supplied = attestation_body();
     supplied["retained_output"] = json!({"media_type": "text/plain", "size_bytes": 1});
@@ -301,6 +311,21 @@ fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
             "change_assurance.prepare_attestation",
             &json!({
                 "attestation_hex": hex_json(&supplied),
+                "output_hex": hex(OUTPUT),
+                "media_type": "text/plain",
+            }),
+        ),
+        3,
+    );
+
+    let mut commitment = attestation_body();
+    commitment["content_commitment"] =
+        json!({"algorithm": "sha-256", "digest": format!("sha256:{}", "a".repeat(64))});
+    failed(
+        &run(
+            "change_assurance.prepare_attestation",
+            &json!({
+                "attestation_hex": hex_json(&commitment),
                 "output_hex": hex(OUTPUT),
                 "media_type": "text/plain",
             }),

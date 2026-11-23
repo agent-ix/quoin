@@ -387,6 +387,13 @@ fn length_prefix(len: usize) -> [u8; 8] {
     u64::try_from(len).unwrap_or(u64::MAX).to_be_bytes()
 }
 
+/// Whether `text` is `sha256:` and 64 lowercase hex digits.
+pub(crate) fn is_sha256_digest(text: &str) -> bool {
+    text.strip_prefix("sha256:").is_some_and(|hex| {
+        hex.len() == 64 && hex.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+    })
+}
+
 fn read_content_commitment(root: Fields<'_>) -> Result<ContentCommitment, ChangeAssuranceError> {
     let malformed = |field: &str| {
         ChangeAssuranceError::shape(
@@ -400,10 +407,7 @@ fn read_content_commitment(root: Fields<'_>) -> Result<ContentCommitment, Change
         return Err(malformed("algorithm"));
     }
     let digest = commitment.text("digest")?;
-    let well_formed = digest.strip_prefix("sha256:").is_some_and(|hex| {
-        hex.len() == 64 && hex.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
-    });
-    if !well_formed {
+    if !is_sha256_digest(digest) {
         return Err(malformed("digest"));
     }
     Ok(ContentCommitment {
