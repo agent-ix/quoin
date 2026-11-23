@@ -754,3 +754,138 @@ fn tc_1671_032_policy_on_any_other_adapter_is_refused() {
     }
     assert!(stored_paths(&host).is_empty());
 }
+
+fn discharge_binding() -> serde_json::Value {
+    json!({
+        "schemaVersion": "clause-binding-v1",
+        "clauseSet": {"authority": "example.invalid", "id": "rules", "version": "1"},
+        "context": {},
+        "clauses": [{"clauseId": "C-1", "force": "mandatory", "outcome": "binding",
+                     "reasons": [], "expectedOutputs": []}],
+    })
+}
+
+fn run_fact(reference: &str) -> serde_json::Value {
+    json!({
+        "kind": "direct", "clauseId": "C-1", "evidenceRefs": [reference],
+        "attestation": {"attestedBy": "alice", "authority": "lead",
+                        "attestedAt": "2026-08-01T00:00:00Z",
+                        "expiresAt": "2026-09-01T00:00:00Z"},
+    })
+}
+
+fn store_with_run() -> TestHost {
+    let mut store = MemoryEvidence::new();
+    store.write("runs/SUITE-1/one.json", b"{}").unwrap();
+    TestHost::new(store)
+}
+
+/// `--facts` beside `--repo`: the request's facts are the facts, the stored
+/// ones are ignored, and the store resolves what they cite.
+#[trace("FR-211-AC-1", "FR-211-AC-14", "FR-211-AC-21")]
+#[test]
+fn a_report_from_supplied_facts_resolves_their_refs_against_the_store() {
+    let host = store_with_run();
+    let capabilities = Capabilities::with_evidence(&host);
+    let report = |facts: serde_json::Value| {
+        discharge_report(
+            &json!({"repo": "/r", "binding": discharge_binding(),
+                    "asOf": "2026-08-15T00:00:00Z", "facts": facts}),
+            &capabilities,
+        )
+        .unwrap()
+        .payload
+    };
+    let held = report(json!([run_fact("evidence://runs/SUITE-1/one")]));
+    assert_eq!(held["binding"]["direct"][0]["clauseId"], "C-1");
+
+    let missing = report(json!([run_fact("evidence://runs/SUITE-1/gone")]));
+    assert!(missing["binding"]["direct"].as_array().unwrap().is_empty());
+    let reason = missing["binding"]["open"][0]["reason"].as_str().unwrap();
+    assert!(
+        reason.starts_with("unresolved: evidence://runs/SUITE-1/gone"),
+        "{reason}"
+    );
+
+    let none = report(json!([]));
+    assert_eq!(none["binding"]["open"][0]["reason"], "no discharge fact");
+}
+
+/// A list holding one fact whose ref does not resolve is refused whole and
+/// nothing is written.
+#[trace("FR-211-AC-15")]
+#[test]
+fn record_discharge_refuses_the_whole_list_when_a_ref_does_not_resolve() {
+    let host = store_with_run();
+    let capabilities = Capabilities::with_evidence(&host);
+    let error = record_discharge(
+        &json!({"repo": "/r", "binding": discharge_binding(),
+                "facts": [run_fact("evidence://runs/SUITE-1/gone")]}),
+        &capabilities,
+    )
+    .unwrap_err();
+    assert_eq!(error.code, CoreErrorCode::BadRequest);
+    assert_eq!(error.context["refusal"], "discharge-facts-failed");
+    assert!(error.to_string().contains("C-1: unresolved"), "{error}");
+    assert!(
+        host.store
+            .borrow()
+            .list_directories("discharge")
+            .unwrap()
+            .is_empty()
+    );
+
+    let written = record_discharge(
+        &json!({"repo": "/r", "binding": discharge_binding(),
+                "facts": [run_fact("evidence://runs/SUITE-1/one")]}),
+        &capabilities,
+    )
+    .unwrap();
+    assert_eq!(written.payload["recorded"][0]["clauseId"], "C-1");
+}
+
+/// Verification inputs without an approval host, or with a relative path, are
+/// refused rather than ignored.
+#[trace("FR-211-AC-11")]
+#[test]
+fn approval_inputs_are_validated_and_never_silently_dropped() {
+    let host = store_with_run();
+    let capabilities = Capabilities::with_evidence(&host);
+    let request = |approval: serde_json::Value| {
+        discharge_report(
+            &json!({"repo": "/r", "binding": discharge_binding(),
+                    "asOf": "2026-08-15T00:00:00Z", "approval": approval}),
+            &capabilities,
+        )
+        .unwrap_err()
+    };
+    let relative = request(json!({"engineeringAssurance": "ea", "allowedSigners": "/s"}));
+    assert_eq!(relative.code, CoreErrorCode::BadRequest);
+    let ungranted = request(json!({"engineeringAssurance": "/ea", "allowedSigners": "/s"}));
+    assert_eq!(ungranted.code, CoreErrorCode::Io);
+}
+
+/// The subject a person signs: record id and the RFC 8785 digest of the fact
+/// without its `approvalRef`.
+#[trace("FR-211-AC-17", "FR-211-AC-18")]
+#[test]
+fn approval_subject_names_the_record_and_refuses_what_it_cannot_name() {
+    let mut fact = run_fact("evidence://runs/SUITE-1/one");
+    let plain = approval_subject(&json!({"binding": discharge_binding(), "fact": fact}))
+        .unwrap()
+        .payload;
+    assert_eq!(plain["record_id"], "example.invalid/rules/1/C-1");
+    fact["approvalRef"] = "tag-1".into();
+    let tagged = approval_subject(&json!({"binding": discharge_binding(), "fact": fact}))
+        .unwrap()
+        .payload;
+    assert_eq!(tagged["record_digest"], plain["record_digest"]);
+
+    let mut absent = run_fact("evidence://runs/SUITE-1/one");
+    absent["clauseId"] = "C-9".into();
+    for bad in [absent, json!({"kind": "direct"})] {
+        let error =
+            approval_subject(&json!({"binding": discharge_binding(), "fact": bad})).unwrap_err();
+        assert_eq!(error.code, CoreErrorCode::BadRequest);
+    }
+}

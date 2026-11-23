@@ -25,10 +25,17 @@ const BINDING: &str = r#"{
 }"#;
 
 const FACTS: &str = r#"[{
-  "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://run/one"],
+  "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://runs/SUITE-1/one"],
   "attestation": {"attestedBy": "r", "authority": "lead",
     "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
 }]"#;
+
+/// Retain the run record the facts cite.
+fn retain_run(repo: &Path) {
+    let run = repo.join("spec/evidence/runs/SUITE-1");
+    std::fs::create_dir_all(&run).unwrap();
+    std::fs::write(run.join("one.json"), "{}").unwrap();
+}
 
 fn quoin(home: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
@@ -46,6 +53,7 @@ fn text(output: &Output) -> String {
 #[test]
 fn tc_3206_the_matrix_command_renders_recorded_facts_and_refuses_misuse() {
     let dir = tempfile::tempdir().unwrap();
+    retain_run(dir.path());
     let home = tempfile::tempdir().unwrap();
     let binding = dir.path().join("binding.json");
     let facts = dir.path().join("facts.json");
@@ -85,7 +93,7 @@ fn tc_3206_the_matrix_command_renders_recorded_facts_and_refuses_misuse() {
     assert!(rendered.status.success(), "{rendered:?}");
     let report = text(&rendered);
     assert!(
-        report.contains("| C-1 | Applicable | Compliant | evidence://run/one | - | - |"),
+        report.contains("| C-1 | Applicable | Compliant | evidence://runs/SUITE-1/one | - | - |"),
         "{report}"
     );
     assert!(

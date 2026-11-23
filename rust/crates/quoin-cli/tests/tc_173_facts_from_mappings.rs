@@ -109,6 +109,9 @@ fn exclusion_with(id: &str, set: &str, clause: &str, disposition: &Disposition<'
     )
 }
 
+/// The retained run record every control of the fixture cites.
+const RUN_REF: &str = "evidence://runs/SUITE-1/one";
+
 struct World {
     dir: tempfile::TempDir,
     home: tempfile::TempDir,
@@ -125,6 +128,22 @@ impl World {
             std::fs::write(world.spec().join(name), text).unwrap();
         }
         std::fs::write(world.path("binding.json"), binding.to_string()).unwrap();
+        // Every control cites the one retained run record the store holds.
+        let controls: serde_json::Map<String, Value> = files
+            .iter()
+            .filter(|(_, text)| text.contains("\ntype: control\n"))
+            .filter_map(|(_, text)| {
+                let id = text.lines().find_map(|line| line.strip_prefix("id: "))?;
+                Some((format!("ix://{id}"), serde_json::json!([RUN_REF])))
+            })
+            .collect();
+        std::fs::write(
+            world.path("evidence.json"),
+            Value::Object(controls).to_string(),
+        )
+        .unwrap();
+        std::fs::create_dir_all(world.path("spec/evidence/runs/SUITE-1")).unwrap();
+        std::fs::write(world.path("spec/evidence/runs/SUITE-1/one.json"), "{}").unwrap();
         std::fs::write(world.path("attestation.json"), attestation().to_string()).unwrap();
         synthetic_types_module(&world.path("modules"));
         world
@@ -172,6 +191,7 @@ impl World {
         let binding = self.path("binding.json");
         let attestation = self.path("attestation.json");
         let spec = self.spec();
+        let evidence = self.path("evidence.json");
         let mut arguments = vec![
             "evidence",
             "facts-from-mappings",
@@ -181,6 +201,8 @@ impl World {
             attestation.to_str().unwrap(),
             "--spec",
             spec.to_str().unwrap(),
+            "--evidence",
+            evidence.to_str().unwrap(),
         ];
         arguments.extend_from_slice(extra);
         self.run(&arguments, None)
@@ -194,6 +216,7 @@ impl World {
         let binding = self.path("binding.json");
         let attestation = self.path("attestation.json");
         let spec = self.spec();
+        let evidence = self.path("evidence.json");
         let mut arguments = vec![
             "evidence",
             "facts-from-mappings",
@@ -203,6 +226,8 @@ impl World {
             attestation.to_str().unwrap(),
             "--spec",
             spec.to_str().unwrap(),
+            "--evidence",
+            evidence.to_str().unwrap(),
         ];
         arguments.extend_from_slice(extra);
         self.run_with_installed_modules(&arguments, None, true)
@@ -225,6 +250,8 @@ impl World {
                 attestation.to_str().unwrap(),
                 "--spec",
                 spec.to_str().unwrap(),
+                "--evidence",
+                self.path("evidence.json").to_str().unwrap(),
             ])
             .env("IX_HOME", self.home.path())
             .env("IX_FILAMENT_MODULES_PATH", modules)
@@ -519,7 +546,7 @@ fn is_expected_rmm_compliance_row(line: &str) -> bool {
     let cells: Vec<_> = line.split('|').map(str::trim).collect();
     matches!(
         cells.as_slice(),
-        ["C1", "Applicable", "Compliant", "ix://CTRL-A", _, _]
+        ["C1", "Applicable", "Compliant", RUN_REF, _, _]
             | [
                 "C3",
                 "Applicable",
@@ -545,7 +572,7 @@ fn tc_173_an_effective_control_yields_a_direct_fact_with_the_supplied_attestatio
     assert_eq!(facts.len(), 1);
     assert_eq!(facts[0]["kind"], "direct");
     assert_eq!(facts[0]["clauseId"], "C1");
-    assert_eq!(facts[0]["evidenceRefs"], json!(["ix://CTRL-001"]));
+    assert_eq!(facts[0]["evidenceRefs"], json!([RUN_REF]));
     assert_eq!(facts[0]["attestation"], attestation());
     assert!(!out(&world.facts()).contains("effectiveness"));
 }
@@ -1222,7 +1249,7 @@ fn tc_174_the_chain_renders_compliant_tailored_and_undischarged_rows_without_a_s
     assert_no_compliant_count_or_clause_text(&out(&recorded));
     let report = world.rmm_installed(AS_OF);
     assert!(
-        report.contains("| C1 | Applicable | Compliant | ix://CTRL-A |"),
+        report.contains("| C1 | Applicable | Compliant | evidence://runs/SUITE-1/one |"),
         "{report}"
     );
     assert!(report.contains("| C2 | Applicable | Tailored"), "{report}");
@@ -1291,7 +1318,7 @@ fn tc_174_the_chain_uses_a_synthetic_pack_installed_in_the_temporary_ix_home() {
     assert!(recorded.status.success(), "{recorded:?}");
     let report = world.rmm_installed(AS_OF);
     assert!(
-        report.contains("| C1 | Applicable | Compliant | ix://CTRL-A |"),
+        report.contains("| C1 | Applicable | Compliant | evidence://runs/SUITE-1/one |"),
         "{report}"
     );
     assert!(report.contains("| C2 | Applicable | Tailored"), "{report}");
@@ -1335,7 +1362,7 @@ fn tc_1525_skill_output_on_the_fixture_repo_flows_to_the_matrix() {
     for clause in ["AC-3", "AC-6"] {
         assert!(
             report.contains(&format!(
-                "| {clause} | Applicable | Compliant | ix://CTRL-002 "
+                "| {clause} | Applicable | Compliant | evidence://runs/SUITE-1/one "
             )),
             "{report}"
         );

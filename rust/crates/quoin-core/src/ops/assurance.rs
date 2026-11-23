@@ -422,6 +422,7 @@ mod tests {
 
     use super::*;
     use ix_cli_kit::exit::Outcome;
+    use ix_trace_rs::trace;
 
     /// The smallest `clause-binding-v1` report the retained reader accepts.
     ///
@@ -442,11 +443,14 @@ mod tests {
     /// REQUEST, not a refusal by this process, and the two exit differently.
     #[test]
     fn tc_447_320_a_contract_failure_exits_as_a_bad_request() {
-        let error = build_discharge(&serde_json::json!({
-            "binding": binding(),
-            "facts": [],
-            "asOf": "not-an-instant",
-        }))
+        let error = build_discharge(
+            &serde_json::json!({
+                "binding": binding(),
+                "facts": [],
+                "asOf": "not-an-instant",
+            }),
+            &Capabilities::none(),
+        )
         .unwrap_err();
         assert_eq!(error.code, CoreErrorCode::BadRequest);
         assert_eq!(error.code.outcome(), Outcome::Invalid);
@@ -460,12 +464,15 @@ mod tests {
     /// the request is what stops a caller's typo reading as a default.
     #[test]
     fn tc_447_321_an_unknown_request_key_is_refused() {
-        let error = build_authored_argument(&serde_json::json!({
-            "argument": {},
-            "decisions": [],
-            "asOf": "2026-01-01T00:00:00Z",
-            "typo": true,
-        }))
+        let error = build_authored_argument(
+            &serde_json::json!({
+                "argument": {},
+                "decisions": [],
+                "asOf": "2026-01-01T00:00:00Z",
+                "typo": true,
+            }),
+            &Capabilities::none(),
+        )
         .unwrap_err();
         assert_eq!(error.code, CoreErrorCode::BadRequest);
     }
@@ -474,7 +481,11 @@ mod tests {
     #[test]
     fn tc_447_322_an_oversized_request_is_refused_before_it_is_parsed() {
         let filler = "x".repeat(MAX_BUILD_CASE_BYTES + 1);
-        let error = render_discharge(&serde_json::json!({ "filler": filler })).unwrap_err();
+        let error = render_discharge(
+            &serde_json::json!({ "filler": filler }),
+            &Capabilities::none(),
+        )
+        .unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Refused);
         assert_eq!(error.code.outcome(), Outcome::Refused);
         assert_eq!(
@@ -491,13 +502,20 @@ mod tests {
     /// break the command that chains them, not this crate.
     #[test]
     fn tc_447_323_a_built_report_is_a_renderable_report() {
-        let built = build_discharge(&serde_json::json!({
-            "binding": binding(),
-            "facts": [],
-            "asOf": "2026-01-01T00:00:00Z",
-        }))
+        let built = build_discharge(
+            &serde_json::json!({
+                "binding": binding(),
+                "facts": [],
+                "asOf": "2026-01-01T00:00:00Z",
+            }),
+            &Capabilities::none(),
+        )
         .unwrap();
-        let rendered = render_discharge(&built.payload).unwrap();
+        let rendered = render_discharge(
+            &serde_json::json!({ "report": built.payload }),
+            &Capabilities::none(),
+        )
+        .unwrap();
         assert!(
             rendered.payload["rendered"]
                 .as_str()
@@ -542,7 +560,7 @@ mod tests {
             quoin_assurance::build_authored_argument_view(&input).unwrap_err();
         // Named so the class is identified by its type rather than its message.
         let quoin_assurance::ArgumentError(_) = raised;
-        let mapped = build_authored_argument(&argument_request).unwrap_err();
+        let mapped = build_authored_argument(&argument_request, &Capabilities::none()).unwrap_err();
         assert_eq!(mapped.code, CoreErrorCode::BadRequest);
         assert_eq!(mapped.code.outcome(), Outcome::Invalid);
 
@@ -556,8 +574,54 @@ mod tests {
         let raised: quoin_assurance::DischargeError =
             quoin_assurance::build_discharge_report(&input).unwrap_err();
         let quoin_assurance::DischargeError(_) = raised;
-        let mapped = build_discharge(&discharge_request).unwrap_err();
+        let mapped = build_discharge(&discharge_request, &Capabilities::none()).unwrap_err();
         assert_eq!(mapped.code, CoreErrorCode::BadRequest);
         assert_eq!(mapped.code.outcome(), Outcome::Invalid);
+    }
+
+    /// A supplied report is re-checked: with no store a direct fact is open.
+    #[trace("FR-211-AC-13", "FR-211-AC-22")]
+    #[test]
+    fn a_supplied_report_without_a_store_leaves_a_direct_fact_open() {
+        let mut binding = binding();
+        binding["clauses"] = serde_json::json!([{
+            "clauseId": "C-1", "force": "mandatory", "outcome": "binding",
+            "reasons": [], "expectedOutputs": []
+        }]);
+        let fact = serde_json::json!({
+            "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://runs/S-1/x"],
+            "attestation": {"attestedBy": "a", "authority": "b",
+                            "attestedAt": "2026-01-01T00:00:00Z",
+                            "expiresAt": "2027-01-01T00:00:00Z"}
+        });
+        let built = build_discharge(
+            &serde_json::json!({"binding": binding, "facts": [fact], "asOf": "2026-06-01T00:00:00Z"}),
+            &Capabilities::none(),
+        )
+        .unwrap();
+        assert_eq!(built.payload["binding"]["open"][0]["clauseId"], "C-1");
+        assert!(
+            built.payload["binding"]["open"][0]["reason"]
+                .as_str()
+                .unwrap()
+                .starts_with("no-store")
+        );
+        // A report that claims the clause is direct is re-checked as well.
+        let mut forged = built.payload.clone();
+        let entry = forged["binding"]["open"][0].clone();
+        forged["binding"]["open"] = serde_json::json!([]);
+        forged["binding"]["direct"] = serde_json::json!([{
+            "clauseId": "C-1", "force": "mandatory", "state": "direct",
+            "expectedOutputs": [], "fact": entry["fact"].clone(),
+            "verifiedApprover": "mallory"
+        }]);
+        let rendered = render_discharge(
+            &serde_json::json!({ "report": forged }),
+            &Capabilities::none(),
+        )
+        .unwrap();
+        let text = rendered.payload["rendered"].as_str().unwrap();
+        assert!(text.contains("no-store"), "{text}");
+        assert!(!text.contains("mallory"), "{text}");
     }
 }

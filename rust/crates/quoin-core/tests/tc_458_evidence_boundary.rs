@@ -78,6 +78,13 @@ fn repo() -> tempfile::TempDir {
     dir
 }
 
+/// A repository whose store holds the run record `discharge_fact` cites.
+fn discharge_repo() -> tempfile::TempDir {
+    let dir = repo();
+    write_store(dir.path(), "runs/SUITE-1/one.json", "{}");
+    dir
+}
+
 fn write_store(root: &Path, relative: &str, text: &str) {
     let path = root.join("spec/evidence").join(relative);
     fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -664,7 +671,7 @@ fn discharge_fact() -> Value {
     json!({
         "kind": "direct",
         "clauseId": "C-1",
-        "evidenceRefs": ["evidence://run/one"],
+        "evidenceRefs": ["evidence://runs/SUITE-1/one"],
         "attestation": {
             "attestedBy": "reviewer-1",
             "authority": "quality-lead",
@@ -679,7 +686,7 @@ fn discharge_fact() -> Value {
 #[trace("FR-133-AC-6")]
 #[test]
 fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_report() {
-    let dir = repo();
+    let dir = discharge_repo();
     let recorded = ok(&run(
         "evidence.record_discharge",
         &json!({
@@ -739,7 +746,7 @@ fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_r
 #[trace("FR-133-AC-3")]
 #[test]
 fn tc_2602_a_refused_fact_list_exits_bad_request_and_writes_nothing() {
-    let dir = repo();
+    let dir = discharge_repo();
     let refused = run(
         "evidence.record_discharge",
         &json!({
@@ -776,7 +783,7 @@ fn tc_2604_a_binding_report_naming_a_clause_twice_is_refused_by_every_discharge_
 #[trace("FR-133-AC-3")]
 #[test]
 fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_writes_nothing() {
-    let dir = repo();
+    let dir = discharge_repo();
     let mut long = discharge_fact();
     long["clauseId"] = json!("x".repeat(120));
     let mut lower = discharge_fact();
@@ -800,7 +807,7 @@ fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_write
 #[trace("FR-135-AC-6")]
 #[test]
 fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
-    let dir = repo();
+    let dir = discharge_repo();
     ok(&run(
         "evidence.record_discharge",
         &json!({
@@ -820,7 +827,7 @@ fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
     assert_eq!(now["matrix"]["rows"][0]["compliance"], "compliant");
     assert_eq!(
         now["matrix"]["rows"][0]["evidenceRefs"],
-        json!(["evidence://run/one"])
+        json!(["evidence://runs/SUITE-1/one"])
     );
     assert_eq!(now["matrix"]["rows"][1]["compliance"], "undischarged");
     assert!(

@@ -26,7 +26,7 @@ const BINDING: &str = r#"{
 }"#;
 
 const FACTS: &str = r#"[{
-  "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://run/one"],
+  "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://runs/SUITE-1/one"],
   "attestation": {"attestedBy": "r", "authority": "lead",
     "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
 }]"#;
@@ -38,6 +38,13 @@ const TEMPORARY_EXCEPTION_FACTS: &str = r#"[{
   "attestation": {"attestedBy": "reviewer-1", "authority": "quality-lead",
     "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
 }]"#;
+
+/// Retain the run record the facts cite.
+fn retain_run(repo: &Path) {
+    let run = repo.join("spec/evidence/runs/SUITE-1");
+    std::fs::create_dir_all(&run).unwrap();
+    std::fs::write(run.join("one.json"), "{}").unwrap();
+}
 
 fn quoin(home: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
@@ -71,6 +78,7 @@ fn files_under(root: &Path) -> Vec<PathBuf> {
 #[test]
 fn tc_2606_recorded_facts_are_read_back_by_the_discharge_command() {
     let dir = tempfile::tempdir().unwrap();
+    retain_run(dir.path());
     let home = tempfile::tempdir().unwrap();
     let binding = dir.path().join("binding.json");
     let facts = dir.path().join("facts.json");
@@ -139,6 +147,7 @@ fn tc_2606_recorded_facts_are_read_back_by_the_discharge_command() {
 #[test]
 fn tc_2604_a_doubled_binding_clause_is_refused_not_counted_twice() {
     let dir = tempfile::tempdir().unwrap();
+    retain_run(dir.path());
     let home = tempfile::tempdir().unwrap();
     let mut binding: serde_json::Value = serde_json::from_str(BINDING).unwrap();
     let first = binding["clauses"][0].clone();
@@ -167,6 +176,7 @@ fn tc_2604_a_doubled_binding_clause_is_refused_not_counted_twice() {
 #[test]
 fn tc_2606_a_stored_temporary_exception_expires_at_its_decision_boundary() {
     let dir = tempfile::tempdir().unwrap();
+    retain_run(dir.path());
     let home = tempfile::tempdir().unwrap();
     let binding = dir.path().join("binding.json");
     let facts = dir.path().join("facts.json");
