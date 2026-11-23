@@ -91,6 +91,7 @@ Re-checked against fix commit f64ad1d.
 | FND-019 | fixed | Round 4: FR-191 adds "except as FR-195 states for approval-class clauses" |
 | FND-020 | fixed | Round 5 (77360f2): FR-135 lists `Not compliant - temporary exception expired` and puts it first in an explicit precedence, matching FR-174-AC-6, TC-004, FR-195 and rmm.rs |
 | FND-021 | fixed | Round 5: FR-135's precedence puts attestation currency ahead of FR-211 reasons, and AC-3 and AC-8 follow it |
+| FND-022 | fixed | Round 6 (bcf05e3): the FR-195 bullet, FR-195-AC-1 and the FR-211 matrix bullet all say approval-class rows are `undischarged`/`not-verified-offline` "subject to FR-135's precedence"; no remaining contradiction |
 
 ## New findings (disposition pass 2)
 
