@@ -25,6 +25,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-015: Emit a scoped Quire validation command](./FR-015-emit-quire-validate-command.md)
 - [FR-016: Default module set manifest schema](./FR-016-default-modules-schema.md)
 - [FR-017: Reconcile the default module set into the shared store](./FR-017-reconcile-default-modules.md)
+- [FR-211: Warn when an installed default module lags the CLI's pin](./FR-211-module-lag-warning.md)
 - [FR-018: Map plugin source arguments to typed sources](./FR-018-map-plugin-sources.md)
 - [FR-019: Install, list, and remove plugins through the registry](./FR-019-manage-plugin-registry.md)
 - [FR-020: Expose workflow launchers and resolve their skills](./FR-020-resolve-workflow-skills.md)

@@ -169,6 +169,7 @@ index; the files are authoritative.
 
 - [FR-016](./functional/FR-016-default-modules-schema.md) — default module set manifest schema (`object: data_schema`).
 - [FR-017](./functional/FR-017-reconcile-default-modules.md) — reconcile the default module set into the shared store.
+- [FR-211](./functional/FR-211-module-lag-warning.md) — warn when an installed default module lags the CLI pin.
 - [FR-018](./functional/FR-018-map-plugin-sources.md) — map plugin source arguments to typed sources.
 - [FR-019](./functional/FR-019-manage-plugin-registry.md) — install, list, and remove plugins through the registry.
 - [FR-024](./functional/FR-024-plugin-catalog-library-api.md) — expose plugin and catalog operations as a stable library API.
