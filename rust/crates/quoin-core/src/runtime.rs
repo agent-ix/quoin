@@ -9,6 +9,7 @@
 
 use std::path::{Component, Path, PathBuf};
 
+use quoin_assurance::{ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier};
 use quoin_auditor::catalog::load_method_catalog_from;
 use quoin_auditor::{
     DiskModuleCatalogSource, ModuleRoot as AuditorModuleRoot, load_method_catalog,
@@ -29,8 +30,8 @@ use quoin_semantic::{
 };
 
 use crate::capabilities::{
-    Capabilities, CatalogHost, ChangeAssuranceHost, EvidenceHost, ModuleHost, QuireHost,
-    SemanticHost,
+    ApprovalHost, ApprovalSetup, Capabilities, CatalogHost, ChangeAssuranceHost, EvidenceHost,
+    ModuleHost, QuireHost, SemanticHost,
 };
 use crate::dispatch::dispatch as dispatch_request;
 use crate::error::CoreError;
@@ -66,6 +67,7 @@ pub fn dispatch(
     let evidence = HostEvidence;
     let graph = OsGraphInputReader;
     let quire = HostQuire;
+    let approval = HostApproval;
     let capabilities = Capabilities::with_hosts(
         &modules,
         &catalog,
@@ -74,6 +76,7 @@ pub fn dispatch(
         &evidence,
         &graph,
         &quire,
+        &approval,
     );
     dispatch_request(operation, request, &capabilities)
 }
@@ -557,6 +560,116 @@ impl EvidenceHost for HostEvidence {
 
     fn store_root(&self, repo: &Path) -> PathBuf {
         DiskEvidence::new(repo).root().to_path_buf()
+    }
+}
+
+/// The production [`ApprovalHost`]: one `engineering-assurance approval-verify`
+/// process per verification, request on stdin, result on stdout.
+struct HostApproval;
+
+impl ApprovalHost for HostApproval {
+    fn verifier<'a>(&'a self, setup: &'a ApprovalSetup) -> Box<dyn ApprovalVerifier + 'a> {
+        Box::new(ProcessApprovalVerifier { setup })
+    }
+}
+
+struct ProcessApprovalVerifier<'a> {
+    setup: &'a ApprovalSetup,
+}
+
+impl ProcessApprovalVerifier<'_> {
+    fn request(&self, request: &ApprovalRequest<'_>) -> serde_json::Value {
+        let mut document = serde_json::json!({
+            "protocol": "engineering-assurance.approval-verify-request/v1",
+            "repository": self.setup.repository,
+            "tag": request.tag,
+            "record_id": request.record_id,
+            "record_digest": request.record_digest,
+            "allowed_signers": self.setup.allowed_signers,
+        });
+        if let (Some([identity, issuer, principal]), Some(object)) =
+            (&self.setup.gitsign, document.as_object_mut())
+        {
+            object.insert(
+                "gitsign".to_owned(),
+                serde_json::json!({
+                    "certificate_identity": identity,
+                    "certificate_oidc_issuer": issuer,
+                    "principal": principal,
+                }),
+            );
+        }
+        document
+    }
+}
+
+impl ApprovalVerifier for ProcessApprovalVerifier<'_> {
+    fn verify(&self, request: &ApprovalRequest<'_>) -> Result<ApprovalVerdict, ApprovalRefusal> {
+        use std::io::Write as _;
+        use std::process::{Command, Stdio};
+
+        let unavailable = |detail: String| ApprovalRefusal::Unavailable(detail);
+        let mut child = Command::new(&self.setup.engineering_assurance)
+            .args(["approval-verify", "--request", "-"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|error| unavailable(format!("engineering-assurance is unavailable: {error}")))?;
+        child
+            .stdin
+            .take()
+            .ok_or_else(|| unavailable("engineering-assurance stdin is unavailable".to_owned()))?
+            .write_all(self.request(request).to_string().as_bytes())
+            .map_err(|error| unavailable(error.to_string()))?;
+        let output = child
+            .wait_with_output()
+            .map_err(|error| unavailable(error.to_string()))?;
+        let result: serde_json::Value =
+            serde_json::from_slice(&output.stdout).unwrap_or(serde_json::Value::Null);
+        if !output.status.success() {
+            let code = result
+                .get("code")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("");
+            let detail = format!("{code}: {}", String::from_utf8_lossy(&output.stderr));
+            return Err(if code == "approval_verify_allowed_signers_invalid" {
+                ApprovalRefusal::AllowedSignersInvalid(detail)
+            } else {
+                unavailable(detail)
+            });
+        }
+        if result.get("protocol").and_then(serde_json::Value::as_str)
+            != Some("engineering-assurance.approval-verify-result/v1")
+        {
+            return Err(unavailable(
+                "engineering-assurance returned an unsupported approval result".to_owned(),
+            ));
+        }
+        let status = result
+            .get("status")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| unavailable("the approval result carries no status".to_owned()))?
+            .to_owned();
+        let meaning = result
+            .get("meaning")
+            .and_then(serde_json::Value::as_array)
+            .map(|values| {
+                values
+                    .iter()
+                    .filter_map(|value| value.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let approver = result
+            .get("approver")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
+        Ok(ApprovalVerdict {
+            status,
+            meaning,
+            approver,
+        })
     }
 }
 

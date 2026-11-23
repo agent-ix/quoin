@@ -64,6 +64,7 @@
 
 use std::path::{Path, PathBuf};
 
+use quoin_assurance::ApprovalVerifier;
 use quoin_auditor::MethodCatalog;
 use quoin_catalog::ModuleDocument;
 use quoin_change_assurance::EvidenceStore;
@@ -231,6 +232,30 @@ pub trait SemanticHost {
         identity: &SweepIdentity,
         generated_at: &str,
     ) -> Result<SweepReport, SemanticError>;
+}
+
+/// Where `approval-verify` runs and what trust it is given (FR-211).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ApprovalSetup {
+    /// The engineering-assurance executable.
+    pub engineering_assurance: PathBuf,
+    /// The allowed-signers file.
+    pub allowed_signers: PathBuf,
+    /// The repository holding the approval tags.
+    pub repository: PathBuf,
+    /// The gitsign identity mapping, when supplied: certificate identity,
+    /// certificate OIDC issuer and principal.
+    pub gitsign: Option<[String; 3]>,
+}
+
+/// Running engineering-assurance `approval-verify` (FR-211).
+///
+/// Granted rather than acquired: starting a process is a host act. Quoin adds
+/// no signature code; the verifier it returns only relays the request and the
+/// result.
+pub trait ApprovalHost {
+    /// A verifier bound to one setup.
+    fn verifier<'a>(&'a self, setup: &'a ApprovalSetup) -> Box<dyn ApprovalVerifier + 'a>;
 }
 
 /// Where change-assurance evidence is retained (quoin#457, Stage 9).
@@ -402,6 +427,8 @@ pub struct Capabilities<'a> {
     pub graph: Option<&'a dyn GraphInputReader>,
     /// The quire engine, absent when nothing granted one.
     pub quire: Option<&'a dyn QuireHost>,
+    /// The approval verifier, absent when nothing granted one.
+    pub approval: Option<&'a dyn ApprovalHost>,
 }
 
 impl<'a> Capabilities<'a> {
@@ -419,6 +446,7 @@ impl<'a> Capabilities<'a> {
             evidence: None,
             graph: None,
             quire: None,
+            approval: None,
         }
     }
 
@@ -509,6 +537,7 @@ impl<'a> Capabilities<'a> {
         evidence: &'a dyn EvidenceHost,
         graph: &'a dyn GraphInputReader,
         quire: &'a dyn QuireHost,
+        approval: &'a dyn ApprovalHost,
     ) -> Self {
         Self {
             modules: Some(modules),
@@ -518,6 +547,7 @@ impl<'a> Capabilities<'a> {
             evidence: Some(evidence),
             graph: Some(graph),
             quire: Some(quire),
+            approval: Some(approval),
         }
     }
 }

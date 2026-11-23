@@ -57,7 +57,7 @@ pub use case::{
     build_case,
 };
 pub use discharge::{
-    ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier, BuildDischargeRequest,
+    ApprovalRefusal, ApprovalRequest, ApprovalSubject, ApprovalVerdict, ApprovalVerifier, BuildDischargeRequest,
     CheckError, CheckFailure, CheckedReport, ClauseDischarge, ClauseSetPolicy,
     CompletenessSchemaVersion, DISCHARGE_DIR, DirectDischargeFact, DischargeAttestation,
     DischargeBinding, DischargeChecks, DischargeError, DischargeFact, DischargeReport,
@@ -69,8 +69,9 @@ pub use discharge::{
     RmmCompliance, RmmRow, StoreRefusal, StoredDischargeFact, StoredFactSchemaVersion,
     UnusedDischargeFact, UnusedFactReason, build_checked_discharge_report,
     build_discharge_report, build_discharge_report_with_approval_requirements,
-    build_pack_requirements_mapping, build_requirements_mapping, check_facts, check_report,
-    discharge_report_from_store, inward_completeness_from_store, read_discharge_facts,
+    build_inward_completeness,
+    approval_subject, build_pack_requirements_mapping, build_requirements_mapping, check_facts, check_report,
+    discharge_report_from_store, read_discharge_facts,
     record_digest, record_discharge_facts, record_id, render_discharge_report,
     render_inward_completeness, render_pack_requirements_mapping, render_requirements_mapping,
 };

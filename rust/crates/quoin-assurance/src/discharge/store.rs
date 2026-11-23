@@ -34,7 +34,6 @@ use quoin_quire_types::{ClauseBindingReport, ClauseSetKey, SetPolicy};
 use serde::{Deserialize, Serialize};
 
 use super::build::build_discharge_report_with_approval_requirements;
-use super::completeness::{InwardCompleteness, build_inward_completeness};
 use super::parse::parse_fact_with_approval_requirements;
 use super::report::{BuildDischargeRequest, DischargeError, DischargeFact, DischargeReport};
 use super::verify::{CheckError, CheckedReport, DischargeChecks, check_facts, check_report};
@@ -496,25 +495,6 @@ pub fn discharge_report_from_store(
         checks,
     )?
     .report)
-}
-
-/// Inward completeness for a live binding report and the stored facts.
-///
-/// Built from [`discharge_report_from_store`], so the populations add up by
-/// construction and the obligation set is always the live one.
-///
-/// # Errors
-///
-/// As [`discharge_report_from_store`].
-pub fn inward_completeness_from_store(
-    source: &dyn EvidenceSource,
-    binding: &ClauseBindingReport,
-    as_of: &str,
-    checks: &DischargeChecks<'_>,
-) -> Result<InwardCompleteness, DischargeStoreError> {
-    Ok(build_inward_completeness(&discharge_report_from_store(
-        source, binding, as_of, checks,
-    )?))
 }
 
 #[cfg(test)]

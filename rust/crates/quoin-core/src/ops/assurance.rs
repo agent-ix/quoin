@@ -10,7 +10,9 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::capabilities::Capabilities;
 use crate::error::{CoreError, CoreErrorCode};
+use crate::ops::evidence::{ApprovalInputs, check_supplied_report, policy_for_binding};
 use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
@@ -193,6 +195,47 @@ pub struct RenderAuthoredArgumentPayload {
     pub rendered: String,
 }
 
+/// The store and engineering-assurance inputs a rendering operation takes so
+/// FR-211 can re-run its checks over a report it did not build.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct VerificationInputs {
+    #[serde(default)]
+    repo: Option<String>,
+    #[serde(default)]
+    approval: Option<ApprovalInputs>,
+}
+
+impl VerificationInputs {
+    /// Remove the two members from a request object and read them.
+    fn take_from(request: &mut serde_json::Value) -> Result<Self, serde_json::Error> {
+        let mut inputs = serde_json::Map::new();
+        if let Some(object) = request.as_object_mut() {
+            for key in ["repo", "approval"] {
+                if let Some(value) = object.remove(key) {
+                    inputs.insert(key.to_owned(), value);
+                }
+            }
+        }
+        serde_json::from_value(serde_json::Value::Object(inputs))
+    }
+}
+
+/// The request accepted by `assurance.render_discharge`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct RenderDischargeRequest {
+    /// The discharge report to render.
+    pub report: quoin_assurance::DischargeReport,
+    /// The repository holding the evidence store and the approval tags.
+    #[serde(default)]
+    pub repo: Option<String>,
+    /// The engineering-assurance inputs approval verification needs.
+    #[serde(default)]
+    pub approval: Option<ApprovalInputs>,
+}
+
 /// The payload `assurance.render_discharge` writes to stdout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -212,17 +255,34 @@ pub struct RenderDischargePayload {
 ///   [`MAX_BUILD_CASE_BYTES`].
 ///
 /// [`BuildAuthoredArgumentRequest`]: quoin_assurance::BuildAuthoredArgumentRequest
-pub fn build_authored_argument(request: &serde_json::Value) -> Result<Response, CoreError> {
+pub fn build_authored_argument(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     let op = "assurance.build_authored_argument";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
         return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
-    let input: quoin_assurance::BuildAuthoredArgumentRequest =
-        serde_json::from_value(request.clone()).map_err(|e| {
-            CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
-        })?;
+    let bad = |e: serde_json::Error| {
+        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
+    };
+    // The verification inputs are this operation's own; the rest is the
+    // library's request, which refuses unknown members itself.
+    let mut remainder = request.clone();
+    let inputs = VerificationInputs::take_from(&mut remainder).map_err(bad)?;
+    let mut input: quoin_assurance::BuildAuthoredArgumentRequest =
+        serde_json::from_value(remainder).map_err(bad)?;
+    if let Some(discharge) = input.discharge.take() {
+        input.discharge = Some(check_supplied_report(
+            op,
+            discharge,
+            inputs.repo.as_deref(),
+            inputs.approval.as_ref(),
+            capabilities,
+        )?);
+    }
 
     // The retained implementation's own refusals arrive here as one error
     // class carrying the authored message. They are `BadRequest` and not
@@ -280,7 +340,10 @@ pub fn render_authored_argument(request: &serde_json::Value) -> Result<Response,
 ///   [`MAX_BUILD_CASE_BYTES`].
 ///
 /// [`BuildDischargeRequest`]: quoin_assurance::BuildDischargeRequest
-pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreError> {
+pub fn build_discharge(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     let op = "assurance.build_discharge";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
@@ -292,9 +355,18 @@ pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreErro
             CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
         })?;
 
-    let report = quoin_assurance::build_discharge_report(&input).map_err(|e| {
-        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
-    })?;
+    let policy = policy_for_binding(capabilities.modules, &input.binding.clause_set, op)?;
+    let report = quoin_assurance::build_checked_discharge_report(
+        &input,
+        None,
+        &quoin_assurance::DischargeChecks {
+            policy: &policy,
+            verifier: None,
+            offline: false,
+        },
+    )
+    .map_err(|e| CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op))?
+    .report;
 
     let payload = serde_json::to_value(report)
         .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
@@ -311,17 +383,26 @@ pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreErro
 ///   [`MAX_BUILD_CASE_BYTES`].
 ///
 /// [`DischargeReport`]: quoin_assurance::DischargeReport
-pub fn render_discharge(request: &serde_json::Value) -> Result<Response, CoreError> {
+pub fn render_discharge(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     let op = "assurance.render_discharge";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
         return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
-    let report: quoin_assurance::DischargeReport = serde_json::from_value(request.clone())
-        .map_err(|e| {
-            CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
-        })?;
+    let input: RenderDischargeRequest = serde_json::from_value(request.clone()).map_err(|e| {
+        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
+    })?;
+    let report = check_supplied_report(
+        op,
+        input.report,
+        input.repo.as_deref(),
+        input.approval.as_ref(),
+        capabilities,
+    )?;
 
     let payload = serde_json::to_value(RenderDischargePayload {
         rendered: quoin_assurance::render_discharge_report(&report),

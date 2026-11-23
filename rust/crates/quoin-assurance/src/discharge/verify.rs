@@ -530,3 +530,49 @@ fn singular_kind(family: &str) -> &'static str {
         _ => "analysis-report",
     }
 }
+
+/// The record identity and digest a person signs an approval over.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ApprovalSubject {
+    /// `<authority>/<set id>/<version>/<clauseId>`.
+    pub record_id: String,
+    /// `sha256:` and the lowercase hex of the RFC 8785 digest of the fact
+    /// without its `approvalRef`.
+    pub record_digest: String,
+}
+
+/// The approval subject of one fact against the binding report's clause set.
+///
+/// A blank `approvalRef` is admitted: the person is signing before the tag
+/// exists, and the digest ignores the member either way.
+///
+/// # Errors
+/// A description when the fact is malformed, its clause is not in the binding
+/// report, or the record id is refused.
+pub fn approval_subject(
+    binding: &quoin_quire_types::ClauseBindingReport,
+    fact: &serde_json::Value,
+) -> Result<ApprovalSubject, String> {
+    let clause_id = fact
+        .get("clauseId")
+        .and_then(serde_json::Value::as_str)
+        .ok_or("the fact carries no clauseId")?;
+    let parsed = super::parse::parse_fact_with_approval_requirements(
+        fact,
+        &std::collections::BTreeSet::from([clause_id.to_owned()]),
+    )
+    .map_err(|error| error.to_string())?;
+    if !binding
+        .clauses
+        .iter()
+        .any(|clause| clause.clause_id == clause_id)
+    {
+        return Err(format!("clause {clause_id} is not in the binding report"));
+    }
+    let set = &binding.clause_set;
+    Ok(ApprovalSubject {
+        record_id: record_id(&set.authority, &set.id, &set.version, clause_id)?,
+        record_digest: record_digest(&parsed)?,
+    })
+}

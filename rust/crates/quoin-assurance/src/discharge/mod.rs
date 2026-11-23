@@ -89,7 +89,7 @@ mod verify;
 pub use build::{build_discharge_report, build_discharge_report_with_approval_requirements};
 pub use completeness::{
     CompletenessSchemaVersion, DispositionCounts, InwardCompleteness, OpenClause,
-    render_inward_completeness,
+    build_inward_completeness, render_inward_completeness,
 };
 pub use pack_rmm::{
     ClauseSetPolicy, PackIndexEntry, PackRequirementsMapping,
@@ -111,10 +111,10 @@ pub use store::{
     DISCHARGE_DIR, DischargeStoreError, MAX_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS,
     RecordDischargeRequest, RecordedFact, StoreRefusal, StoredDischargeFact,
     StoredFactSchemaVersion, build_checked_discharge_report, discharge_report_from_store,
-    inward_completeness_from_store, read_discharge_facts, record_discharge_facts,
+    read_discharge_facts, record_discharge_facts,
 };
 pub use verify::{
-    ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier, CheckError, CheckFailure,
-    CheckedReport, DischargeChecks, MAX_RECORD_ID_BYTES, check_facts, check_report, record_digest,
-    record_id,
+    ApprovalRefusal, ApprovalRequest, ApprovalSubject, ApprovalVerdict, ApprovalVerifier, CheckError, CheckFailure,
+    CheckedReport, DischargeChecks, MAX_RECORD_ID_BYTES, approval_subject, check_facts, check_report,
+    record_digest, record_id,
 };

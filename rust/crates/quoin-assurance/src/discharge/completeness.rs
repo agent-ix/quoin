@@ -89,7 +89,7 @@ pub struct InwardCompleteness {
 /// Private to the module's store path on purpose: the report is always built
 /// from the live binding report, so the populations add up by construction.
 #[must_use]
-pub(super) fn build_inward_completeness(report: &DischargeReport) -> InwardCompleteness {
+pub fn build_inward_completeness(report: &DischargeReport) -> InwardCompleteness {
     let mut dispositions = DispositionCounts::default();
     for entry in &report.binding.dispositions {
         if let Some(DischargeFact::Disposition(fact)) = &entry.fact {
