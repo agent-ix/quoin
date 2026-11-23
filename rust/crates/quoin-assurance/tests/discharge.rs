@@ -43,7 +43,12 @@ use quoin_assurance::discharge::{
     UnusedFactReason, build_discharge_report, build_discharge_report_with_approval_requirements,
     build_requirements_mapping, render_discharge_report,
 };
-use quoin_quire_types::ClauseBindingReport;
+use quoin_assurance::{
+    ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier, DischargeChecks,
+    build_checked_discharge_report,
+};
+use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
+use quoin_quire_types::{ClauseBindingReport, ClausePolicy, SetPolicy};
 
 /// The emitted `clause-discharge-v1` document for [`every_state_report`].
 ///
@@ -154,39 +159,91 @@ fn tc_1126_every_binding_clause_lands_in_exactly_one_population_and_no_score_is_
     assert!(value.get("score").is_none());
 }
 
-#[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3")]
+/// Answers every approval with the same approver and meaning.
+struct Approves(&'static str);
+
+impl ApprovalVerifier for Approves {
+    fn verify(&self, _: &ApprovalRequest<'_>) -> Result<ApprovalVerdict, ApprovalRefusal> {
+        Ok(ApprovalVerdict {
+            status: "approved".to_owned(),
+            meaning: vec!["privacy-officer".to_owned()],
+            approver: Some(self.0.to_owned()),
+        })
+    }
+}
+
+fn checked(
+    fact: serde_json::Value,
+    verifier: Option<&dyn ApprovalVerifier>,
+) -> quoin_assurance::DischargeReport {
+    let policy = SetPolicy::from([(
+        "SYN-001".to_owned(),
+        ClausePolicy {
+            approval_roles: vec!["privacy-officer".to_owned()],
+            outputs: Vec::new(),
+        },
+    )]);
+    let mut store = MemoryEvidence::new();
+    store.write("runs/SUITE-1/one.json", b"{}").unwrap();
+    let mut fact = fact;
+    fact["evidenceRefs"] = serde_json::json!(["evidence://runs/SUITE-1/one"]);
+    build_checked_discharge_report(
+        &request(vec![fact]),
+        Some(&store),
+        &DischargeChecks {
+            policy: &policy,
+            verifier,
+            offline: false,
+        },
+    )
+    .expect("the fact is well formed")
+    .report
+}
+
+#[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3", "FR-211-AC-9")]
 #[test]
 fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
-    let required = BTreeSet::from(["SYN-001".to_owned()]);
-    let missing =
-        build_discharge_report_with_approval_requirements(&request(vec![direct()]), &required)
-            .expect("the direct fact is well formed");
+    let missing = checked(direct(), Some(&Approves("alice")));
     assert!(missing.binding.direct.is_empty());
     assert_eq!(missing.binding.open[0].clause_id, "SYN-001");
-    assert_eq!(
-        missing.binding.open[0].reason.as_deref(),
-        Some("required approval reference is missing")
+    assert!(
+        missing.binding.open[0]
+            .reason
+            .as_deref()
+            .unwrap()
+            .starts_with("approval-missing")
     );
 
     for blank_reference in ["", " \t\n"] {
         let mut blank_fact = direct();
         blank_fact["approvalRef"] = serde_json::json!(blank_reference);
-        let open = build_discharge_report_with_approval_requirements(
+        blank_fact["evidenceRefs"] = serde_json::json!(["evidence://runs/SUITE-1/one"]);
+        let required = BTreeSet::from(["SYN-001".to_owned()]);
+        let partition = build_discharge_report_with_approval_requirements(
             &request(vec![blank_fact.clone()]),
             &required,
         )
-        .expect("blank approval references leave policy-required clauses open");
-        assert!(open.binding.direct.is_empty());
-        assert_eq!(open.binding.open[0].clause_id, "SYN-001");
-        assert_eq!(
-            open.binding.open[0].reason.as_deref(),
-            Some("required approval reference is missing")
-        );
+        .expect("blank approval references reach FR-211 for policy-required clauses");
         assert!(matches!(
-            open.binding.open[0].fact.as_ref(),
+            partition.binding.direct[0].fact.as_ref(),
             Some(quoin_assurance::DischargeFact::Direct(direct))
                 if direct.approval_ref.as_deref() == Some(blank_reference)
         ));
+        let open = checked_partition(partition);
+        assert!(open.binding.direct.is_empty());
+        let entry = open
+            .binding
+            .open
+            .iter()
+            .find(|entry| entry.clause_id == "SYN-001")
+            .expect("the clause is open");
+        assert!(
+            entry
+                .reason
+                .as_deref()
+                .unwrap()
+                .starts_with("approval-missing")
+        );
 
         let generic = build_discharge_report(&request(vec![blank_fact]));
         assert!(
@@ -197,10 +254,13 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
     let mut approved_fact = direct();
     let person_reference = "person://example.invalid/people/privacy-officer";
     approved_fact["approvalRef"] = serde_json::json!(person_reference);
-    let accepted =
-        build_discharge_report_with_approval_requirements(&request(vec![approved_fact]), &required)
-            .expect("the named-person reference is preserved as caller supplied");
+    approved_fact["attestation"]["attestedBy"] = serde_json::json!("alice");
+    let accepted = checked(approved_fact, Some(&Approves("alice")));
     assert_eq!(ids(&accepted.binding.direct), ["SYN-001"]);
+    assert_eq!(
+        accepted.binding.direct[0].verified_approver.as_deref(),
+        Some("alice")
+    );
     assert_eq!(
         accepted.binding.direct[0]
             .fact
@@ -215,6 +275,32 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
     let generic = build_discharge_report(&request(vec![direct()]))
         .expect("FR-046 keeps a direct approval reference optional when no policy applies");
     assert_eq!(ids(&generic.binding.direct), ["SYN-001"]);
+}
+
+fn checked_partition(
+    partition: quoin_assurance::DischargeReport,
+) -> quoin_assurance::DischargeReport {
+    let policy = SetPolicy::from([(
+        "SYN-001".to_owned(),
+        ClausePolicy {
+            approval_roles: vec!["privacy-officer".to_owned()],
+            outputs: Vec::new(),
+        },
+    )]);
+    let mut store = MemoryEvidence::new();
+    store.write("runs/SUITE-1/one.json", b"{}").unwrap();
+    quoin_assurance::check_report(
+        partition,
+        Some(&store),
+        &DischargeChecks {
+            policy: &policy,
+            verifier: Some(&Approves("alice")),
+            offline: false,
+        },
+        None,
+    )
+    .expect("the stub verifier never refuses")
+    .report
 }
 
 /// Provenance: quoin#384, tests/discharge.test.ts

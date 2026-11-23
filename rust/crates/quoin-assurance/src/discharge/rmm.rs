@@ -458,7 +458,7 @@ mod tests {
         let matrix = matrix_for(vec![direct(), disposition("SYN-002")]);
         let first = &matrix.rows[0];
         assert_eq!(first.compliance, RmmCompliance::Compliant);
-        assert_eq!(first.evidence_refs, ["evidence://run/one"]);
+        assert_eq!(first.evidence_refs, [super::super::fixtures::RUN_REF]);
         let second = &matrix.rows[1];
         assert_eq!(second.compliance, RmmCompliance::Tailored);
         assert_ne!(second.compliance, RmmCompliance::Compliant);
@@ -636,5 +636,58 @@ mod tests {
         );
         assert_eq!(lines[10], "- x \\#\\# h (disposition): unknown_clause");
         assert_eq!(lines.len(), 11, "{text}");
+    }
+
+    /// The matrix of a request after the FR-211 checks, over an empty store.
+    fn checked_matrix(facts: Vec<serde_json::Value>, as_of: &str) -> super::RequirementsMapping {
+        let mut request = request(facts);
+        request.binding = wide_binding();
+        request.as_of = as_of.to_owned();
+        let partition = build_discharge_report(&request).unwrap();
+        let policy = quoin_quire_types::SetPolicy::new();
+        let checked = super::super::verify::check_report(
+            partition,
+            Some(&quoin_evidence::source::MemoryEvidence::new()),
+            &super::super::verify::DischargeChecks {
+                policy: &policy,
+                verifier: None,
+                offline: false,
+            },
+            Some(&request.binding.clauses),
+        )
+        .unwrap();
+        build_requirements_mapping(&request.binding, &checked.report).unwrap()
+    }
+
+    #[trace("FR-135-AC-8")]
+    #[test]
+    fn an_fr_211_reason_never_outranks_a_currency_failure_or_an_expired_exception() {
+        let current = checked_matrix(vec![direct()], "2026-08-15T00:00:00Z");
+        assert_eq!(current.rows[0].compliance, RmmCompliance::Undischarged);
+        assert!(
+            current.rows[0]
+                .reason
+                .as_deref()
+                .unwrap()
+                .starts_with("unresolved: "),
+            "{:?}",
+            current.rows[0]
+        );
+        assert!(current.rows[0].evidence_refs.is_empty());
+
+        let expired = checked_matrix(vec![direct()], "2026-10-01T00:00:00Z");
+        assert_eq!(
+            expired.rows[0].compliance,
+            RmmCompliance::AttestationNotCurrent
+        );
+
+        let mut exception = disposition("SYN-002");
+        exception["decision"] = "temporary_exception".into();
+        exception["decisionExpiresAt"] = "2026-08-10T00:00:00.000Z".into();
+        let lapsed = checked_matrix(vec![exception], "2026-08-15T00:00:00Z");
+        assert_eq!(
+            lapsed.rows[1].compliance,
+            RmmCompliance::TemporaryExceptionExpired
+        );
     }
 }

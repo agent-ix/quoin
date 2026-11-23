@@ -538,20 +538,37 @@ pub fn discharge_report_from_store(
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use std::collections::BTreeSet;
-
     use ix_trace_rs::trace;
     use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
+    use quoin_quire_types::{ClausePolicy, SetPolicy};
 
-    use super::super::fixtures::{binding, direct};
+    use super::super::fixtures::{binding, direct, plain, store as run_store};
     use super::super::report::{DischargeFact, DischargeState};
     use super::{
         DischargeStoreError, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS, RecordDischargeRequest,
-        StoreRefusal, discharge_report_from_store,
-        discharge_report_from_store_with_approval_requirements, inward_completeness_from_store,
-        read_discharge_facts, record_discharge_facts,
-        record_discharge_facts_with_approval_requirements,
+        StoreRefusal, discharge_report_from_store, read_discharge_facts,
+        record_discharge_facts as record_with,
     };
+    use crate::discharge::DischargeChecks;
+
+    fn record_discharge_facts(
+        store: &mut MemoryEvidence,
+        request: &RecordDischargeRequest,
+    ) -> Result<Vec<super::RecordedFact>, DischargeStoreError> {
+        record_with(store, request, &plain(&SetPolicy::new()))
+    }
+
+    fn read(store: &MemoryEvidence) -> Result<Vec<DischargeFact>, DischargeStoreError> {
+        read_discharge_facts(store, &binding().clause_set, &SetPolicy::new())
+    }
+
+    fn report_of(
+        store: &MemoryEvidence,
+        binding: &quoin_quire_types::ClauseBindingReport,
+        as_of: &str,
+    ) -> Result<crate::discharge::DischargeReport, DischargeStoreError> {
+        discharge_report_from_store(store, binding, as_of, &plain(&SetPolicy::new()))
+    }
 
     const AS_OF: &str = "2026-08-15T00:00:00Z";
 
@@ -584,7 +601,7 @@ mod tests {
     #[trace("FR-133-AC-1")]
     #[test]
     fn a_recorded_fact_stores_the_fact_and_clause_set_and_nothing_else() {
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         let written = record_discharge_facts(&mut store, &record(vec![direct()])).unwrap();
         assert_eq!(written.len(), 1);
         let text = store.read(&written[0].path).unwrap().unwrap();
@@ -610,7 +627,7 @@ mod tests {
         for approval_ref in ["", " \t\n"] {
             let mut fact = direct();
             fact["approvalRef"] = approval_ref.into();
-            let mut store = MemoryEvidence::new();
+            let mut store = run_store();
             let error = record_discharge_facts(&mut store, &record(vec![fact]))
                 .expect_err("empty approval references are refused");
             assert!(error.to_string().contains("approvalRef must not be empty"));
@@ -620,19 +637,19 @@ mod tests {
         let approval_ref = "  approval://synthetic/direct-1  ";
         let mut fact = direct();
         fact["approvalRef"] = approval_ref.into();
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         let written = record_discharge_facts(&mut store, &record(vec![fact])).unwrap();
         let stored_text = store.read(&written[0].path).unwrap().unwrap();
         let stored: serde_json::Value = serde_json::from_str(&stored_text).unwrap();
         assert_eq!(stored["fact"]["approvalRef"], approval_ref);
 
-        let facts = read_discharge_facts(&store, &binding().clause_set).unwrap();
+        let facts = read(&store).unwrap();
         assert_eq!(facts.len(), 1);
         assert!(matches!(
             &facts[0],
             DischargeFact::Direct(direct) if direct.approval_ref.as_deref() == Some(approval_ref)
         ));
-        let report = discharge_report_from_store(&store, &binding(), AS_OF).unwrap();
+        let report = report_of(&store, &binding(), AS_OF).unwrap();
         assert_eq!(report.binding.direct.len(), 1);
         assert!(report.binding.dispositions.is_empty());
         assert_eq!(report.binding.direct[0].state, DischargeState::Direct);
@@ -642,18 +659,17 @@ mod tests {
                 if direct.approval_ref.as_deref() == Some(approval_ref)
         ));
 
-        let mut omitted_store = MemoryEvidence::new();
+        let mut omitted_store = run_store();
         let omitted = record_discharge_facts(&mut omitted_store, &record(vec![direct()])).unwrap();
         let omitted_text = omitted_store.read(&omitted[0].path).unwrap().unwrap();
         let omitted_record: serde_json::Value = serde_json::from_str(&omitted_text).unwrap();
         assert!(omitted_record["fact"].get("approvalRef").is_none());
-        let omitted_facts = read_discharge_facts(&omitted_store, &binding().clause_set).unwrap();
+        let omitted_facts = read(&omitted_store).unwrap();
         assert!(matches!(
             &omitted_facts[0],
             DischargeFact::Direct(direct) if direct.approval_ref.is_none()
         ));
-        let omitted_report =
-            discharge_report_from_store(&omitted_store, &binding(), AS_OF).unwrap();
+        let omitted_report = report_of(&omitted_store, &binding(), AS_OF).unwrap();
         assert_eq!(omitted_report.binding.direct.len(), 1);
         assert!(omitted_report.binding.dispositions.is_empty());
         assert!(matches!(
@@ -662,48 +678,48 @@ mod tests {
         ));
     }
 
-    #[trace("FR-208-AC-1", "FR-208-AC-3")]
+    #[trace("FR-208-AC-1", "FR-208-AC-3", "FR-211-AC-9")]
     #[test]
-    fn policy_aware_store_keeps_required_blank_approval_open_and_generic_read_rejects_it() {
-        let mut store = MemoryEvidence::new();
-        let binding = binding();
-        let required = BTreeSet::from(["SYN-001".to_owned()]);
+    fn a_blank_approval_ref_on_an_approval_class_clause_is_named_not_stored() {
+        let mut store = run_store();
+        let policy = SetPolicy::from([(
+            "SYN-001".to_owned(),
+            ClausePolicy {
+                approval_roles: vec!["reviewer".to_owned()],
+                outputs: Vec::new(),
+            },
+        )]);
         let mut blank = direct();
         blank["approvalRef"] = " \t\n".into();
 
-        record_discharge_facts_with_approval_requirements(
+        let error = record_with(
             &mut store,
             &record(vec![blank]),
-            &required,
+            &DischargeChecks {
+                policy: &policy,
+                verifier: None,
+                offline: false,
+            },
         )
-        .unwrap();
-        let report = discharge_report_from_store_with_approval_requirements(
-            &store, &binding, AS_OF, &required,
-        )
-        .unwrap();
-        assert!(report.binding.direct.is_empty());
-        assert_eq!(report.binding.open[0].clause_id, "SYN-001");
-        assert_eq!(
-            report.binding.open[0].reason.as_deref(),
-            Some("required approval reference is missing")
-        );
-        assert!(read_discharge_facts(&store, &binding.clause_set).is_err());
+        .expect_err("a blank approvalRef on an approval-class clause is refused");
+        assert!(error.to_string().contains("approval-missing"), "{error}");
+        assert_eq!(files(&store), 0, "a refused list writes nothing");
+        assert!(read(&store).unwrap().is_empty());
     }
 
     #[trace("FR-133-AC-2")]
     #[test]
     fn the_report_partitions_the_live_binding_with_the_stored_facts() {
-        let mut store = MemoryEvidence::new();
-        let before = discharge_report_from_store(&store, &binding(), AS_OF).unwrap();
+        let mut store = run_store();
+        let before = report_of(&store, &binding(), AS_OF).unwrap();
         assert_eq!(before.binding.open.len(), 1);
         record_discharge_facts(&mut store, &record(vec![direct()])).unwrap();
-        let after = discharge_report_from_store(&store, &binding(), AS_OF).unwrap();
+        let after = report_of(&store, &binding(), AS_OF).unwrap();
         assert_eq!(after.binding.direct.len(), 1);
         assert!(after.binding.open.is_empty());
 
         // Currency is decided at read time from the stored attestation.
-        let expired =
-            discharge_report_from_store(&store, &binding(), "2026-10-01T00:00:00Z").unwrap();
+        let expired = report_of(&store, &binding(), "2026-10-01T00:00:00Z").unwrap();
         assert_eq!(expired.binding.open.len(), 1);
         assert!(expired.binding.direct.is_empty());
     }
@@ -711,12 +727,12 @@ mod tests {
     #[trace("FR-133-AC-3")]
     #[test]
     fn recording_again_replaces_the_fact() {
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         record_discharge_facts(&mut store, &record(vec![direct()])).unwrap();
         let mut renewed = direct();
         renewed["attestation"]["expiresAt"] = "2027-01-01T00:00:00.000Z".into();
         record_discharge_facts(&mut store, &record(vec![renewed])).unwrap();
-        let facts = read_discharge_facts(&store, &binding().clause_set).unwrap();
+        let facts = read(&store).unwrap();
         assert_eq!(facts.len(), 1);
         assert_eq!(
             facts[0].attestation().expires_at,
@@ -740,7 +756,7 @@ mod tests {
             vec![direct(), unknown_field],
         ];
         for facts in lists {
-            let mut store = MemoryEvidence::new();
+            let mut store = run_store();
             assert!(record_discharge_facts(&mut store, &record(facts)).is_err());
             assert_eq!(files(&store), 0, "a refused list must write nothing");
         }
@@ -749,7 +765,7 @@ mod tests {
     #[trace("FR-133-AC-3")]
     #[test]
     fn ids_are_bounded_and_case_collisions_are_typed_refusals() {
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         let long = "x".repeat(65);
         let error = record_discharge_facts(&mut store, &record(vec![fact_for(&long)])).unwrap_err();
         assert_eq!(refusal(&error), Some(StoreRefusal::InvalidIdentifier));
@@ -764,7 +780,7 @@ mod tests {
         record_discharge_facts(&mut store, &record(vec![fact_for("C-1")])).unwrap();
         let error = record_discharge_facts(&mut store, &record(vec![fact_for("c-1")])).unwrap_err();
         assert_eq!(refusal(&error), Some(StoreRefusal::CaseCollision));
-        let facts = read_discharge_facts(&store, &binding().clause_set).unwrap();
+        let facts = read(&store).unwrap();
         assert!(facts.iter().any(|f| f.clause_id() == "C-1"));
         assert!(facts.iter().all(|f| f.clause_id() != "c-1"));
     }
@@ -777,7 +793,7 @@ mod tests {
         value["clauses"].as_array_mut().unwrap().push(first);
         let doubled: quoin_quire_types::ClauseBindingReport =
             serde_json::from_value(value).unwrap();
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         let request = RecordDischargeRequest {
             binding: doubled.clone(),
             facts: vec![direct()],
@@ -787,12 +803,7 @@ mod tests {
             error.to_string().contains("duplicate clause SYN-001"),
             "{error}"
         );
-        let error = discharge_report_from_store(&store, &doubled, AS_OF).unwrap_err();
-        assert!(
-            error.to_string().contains("duplicate clause SYN-001"),
-            "{error}"
-        );
-        let error = inward_completeness_from_store(&store, &doubled, AS_OF).unwrap_err();
+        let error = report_of(&store, &doubled, AS_OF).unwrap_err();
         assert!(
             error.to_string().contains("duplicate clause SYN-001"),
             "{error}"
@@ -802,47 +813,47 @@ mod tests {
     #[trace("FR-133-AC-4")]
     #[test]
     fn a_misplaced_or_corrupt_stored_file_is_an_error_not_an_open_clause() {
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         let written = record_discharge_facts(&mut store, &record(vec![direct()])).unwrap();
         let text = store.read(&written[0].path).unwrap().unwrap();
         let path = &written[0].path;
 
         let moved = path.replace("syn-001", "syn-002");
         store.write(&moved, text.as_bytes()).unwrap();
-        let error = read_discharge_facts(&store, &binding().clause_set).unwrap_err();
+        let error = read(&store).unwrap_err();
         assert!(error.to_string().contains("syn-002"), "{error}");
 
-        let mut other_set = MemoryEvidence::new();
+        let mut other_set = run_store();
         let wrong_set = text.replace("synthetic-widget-rules", "another-set");
         other_set.write(path, wrong_set.as_bytes()).unwrap();
-        let error = read_discharge_facts(&other_set, &binding().clause_set).unwrap_err();
+        let error = read(&other_set).unwrap_err();
         assert!(error.to_string().contains("another clause set"), "{error}");
 
-        let mut corrupt = MemoryEvidence::new();
+        let mut corrupt = run_store();
         corrupt.write(path, b"{not json").unwrap();
-        assert!(read_discharge_facts(&corrupt, &binding().clause_set).is_err());
+        assert!(read(&corrupt).is_err());
     }
 
     #[trace("FR-133-AC-4")]
     #[test]
     fn the_stored_fact_count_and_file_size_are_bounded() {
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         let written = record_discharge_facts(&mut store, &record(vec![direct()])).unwrap();
         let dir = written[0].path.rsplit_once('/').unwrap().0.to_owned();
         let huge = vec![b' '; MAX_STORED_FACT_BYTES + 1];
         store.write(&written[0].path, &huge).unwrap();
-        let error = read_discharge_facts(&store, &binding().clause_set).unwrap_err();
+        let error = read(&store).unwrap_err();
         assert!(error.to_string().contains("bytes"), "{error}");
 
-        let mut crowded = MemoryEvidence::new();
+        let mut crowded = run_store();
         for n in 0..=MAX_STORED_FACTS {
             crowded.write(&format!("{dir}/f{n}.json"), b"{}").unwrap();
         }
-        let error = read_discharge_facts(&crowded, &binding().clause_set).unwrap_err();
+        let error = read(&crowded).unwrap_err();
         assert!(error.to_string().contains("more than"), "{error}");
 
         let many = vec![direct(); MAX_STORED_FACTS + 1];
-        let mut store = MemoryEvidence::new();
+        let mut store = run_store();
         let error = record_discharge_facts(&mut store, &record(many)).unwrap_err();
         assert_eq!(refusal(&error), Some(StoreRefusal::TooManyFacts));
     }

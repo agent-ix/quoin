@@ -579,3 +579,648 @@ pub fn approval_subject(
         record_digest: record_digest(&parsed)?,
     })
 }
+
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::unwrap_used,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use ix_trace_rs::trace;
+    use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
+    use quoin_quire_types::{ClausePolicy, OutputPolicy, SetPolicy};
+    use serde_json::json;
+
+    use super::super::build::build_discharge_report;
+    use super::super::fixtures::{StubVerifier, binding, direct, request, store};
+    use super::super::report::DischargeFact;
+    use super::{
+        ApprovalRefusal, ApprovalVerdict, ApprovalVerifier, CheckError, CheckedReport,
+        DischargeChecks, approval_subject, check_report, record_digest, record_id,
+    };
+
+    fn policy(approval_roles: &[&str], outputs: Vec<OutputPolicy>) -> SetPolicy {
+        SetPolicy::from([(
+            "SYN-001".to_owned(),
+            ClausePolicy {
+                approval_roles: approval_roles.iter().map(|r| (*r).to_owned()).collect(),
+                outputs,
+            },
+        )])
+    }
+
+    fn producing(kinds: &[&str]) -> OutputPolicy {
+        OutputPolicy {
+            procedure: false,
+            producers: kinds.iter().map(|k| (*k).to_owned()).collect(),
+        }
+    }
+
+    fn run(
+        facts: Vec<serde_json::Value>,
+        policy: &SetPolicy,
+        store: Option<&MemoryEvidence>,
+        verifier: Option<&dyn ApprovalVerifier>,
+        offline: bool,
+    ) -> Result<CheckedReport, CheckError> {
+        let partition = build_discharge_report(&request(facts)).expect("the facts are well formed");
+        check_report(
+            partition,
+            store.map(|s| s as &dyn EvidenceSource),
+            &DischargeChecks {
+                policy,
+                verifier,
+                offline,
+            },
+            Some(&binding().clauses),
+        )
+    }
+
+    fn one(
+        fact: serde_json::Value,
+        policy: &SetPolicy,
+        store: Option<&MemoryEvidence>,
+    ) -> CheckedReport {
+        run(vec![fact], policy, store, None, false).expect("no verifier is consulted")
+    }
+
+    fn reason(checked: &CheckedReport) -> String {
+        assert!(checked.report.binding.direct.is_empty(), "{checked:?}");
+        checked.report.binding.open[0]
+            .reason
+            .clone()
+            .expect("an open clause states why")
+    }
+
+    fn approved_fact(approver: &str) -> serde_json::Value {
+        let mut fact = direct();
+        fact["approvalRef"] = "approval/tag-1".into();
+        fact["attestation"]["attestedBy"] = approver.into();
+        fact
+    }
+
+    #[trace("FR-211-AC-1")]
+    #[test]
+    fn a_ref_to_a_record_of_a_producing_kind_discharges() {
+        let checked = one(
+            direct(),
+            &policy(&[], vec![producing(&["run"])]),
+            Some(&store()),
+        );
+        assert_eq!(checked.report.binding.direct.len(), 1);
+        assert!(checked.failures.is_empty());
+        // Empty expected outputs accept a record of any kind.
+        let checked = one(direct(), &policy(&[], vec![]), Some(&store()));
+        assert_eq!(checked.report.binding.direct.len(), 1);
+    }
+
+    #[trace("FR-211-AC-2")]
+    #[test]
+    fn a_ref_that_names_no_citable_record_is_unresolved_and_named() {
+        for bad in [
+            "evidence://runs/SUITE-1/missing",
+            "evidence://discharge/a/b/c",
+            "evidence://trust/x",
+            "evidence://bindings.json",
+            "evidence://unknown/SUITE-1/one",
+            "https://runs/SUITE-1/one",
+            "evidence://runs//one",
+            "evidence://runs/./one",
+            "evidence://runs/SUITE-1/../SUITE-1/one",
+            "evidence://runs/SUITE-1/one/extra",
+            "runs/SUITE-1/one",
+        ] {
+            let mut fact = direct();
+            fact["evidenceRefs"] = json!([bad]);
+            let checked = one(fact, &policy(&[], vec![]), Some(&store()));
+            let reason = reason(&checked);
+            assert!(reason.starts_with("unresolved: "), "{bad}: {reason}");
+            assert!(reason.contains(bad), "{bad}: {reason}");
+        }
+    }
+
+    #[trace("FR-211-AC-3", "FR-211-AC-23")]
+    #[test]
+    fn a_kind_no_producer_accepts_is_kind_not_expected_unless_none_declares_producers() {
+        let kinds = policy(&[], vec![producing(&["scan"])]);
+        assert!(reason(&one(direct(), &kinds, Some(&store()))).starts_with("kind-not-expected: "));
+        let none = policy(&[], vec![producing(&[])]);
+        assert!(reason(&one(direct(), &none, Some(&store()))).starts_with("no-producer: "));
+        // One entry with producers makes a mismatch kind-not-expected.
+        let mixed = policy(&[], vec![producing(&[]), producing(&["scan"])]);
+        assert!(reason(&one(direct(), &mixed, Some(&store()))).starts_with("kind-not-expected: "));
+    }
+
+    #[trace("FR-211-AC-5")]
+    #[test]
+    fn a_catalog_without_producers_leaves_a_direct_fact_undischarged() {
+        let undeclared = policy(&[], vec![OutputPolicy::default()]);
+        let checked = one(direct(), &undeclared, Some(&store()));
+        assert!(reason(&checked).starts_with("no-producer: "));
+    }
+
+    #[trace("FR-211-AC-4")]
+    #[test]
+    fn a_scenario_ref_must_be_in_the_stores_folded_form() {
+        let mut held = MemoryEvidence::new();
+        held.write("scenarios/github/login.json", b"{}").unwrap();
+        let producers = policy(&[], vec![producing(&["scenario"])]);
+        let mut fact = direct();
+        fact["evidenceRefs"] = json!(["evidence://scenarios/github/login"]);
+        assert_eq!(
+            one(fact, &producers, Some(&held))
+                .report
+                .binding
+                .direct
+                .len(),
+            1
+        );
+        for bad in [
+            "evidence://scenarios/github/Login",
+            "evidence://scenarios/GitHub/login",
+        ] {
+            let mut fact = direct();
+            fact["evidenceRefs"] = json!([bad]);
+            let checked = one(fact, &producers, Some(&held));
+            assert!(reason(&checked).starts_with("unresolved: "), "{bad}");
+        }
+    }
+
+    #[trace("FR-211-AC-1")]
+    #[test]
+    fn an_experiment_ref_takes_its_kind_from_the_subject() {
+        let mut held = MemoryEvidence::new();
+        held.write(
+            "experiments/exp-1.json",
+            br#"{"subject":{"kind":"experiment"}}"#,
+        )
+        .unwrap();
+        held.write("operational/op-1.json", br#"{"subject":{}}"#)
+            .unwrap();
+        let producers = policy(&[], vec![producing(&["experiment"])]);
+        let mut fact = direct();
+        fact["evidenceRefs"] = json!(["evidence://experiments/exp-1"]);
+        assert_eq!(
+            one(fact, &producers, Some(&held))
+                .report
+                .binding
+                .direct
+                .len(),
+            1
+        );
+        let mut fact = direct();
+        fact["evidenceRefs"] = json!(["evidence://operational/op-1"]);
+        assert!(reason(&one(fact, &producers, Some(&held))).starts_with("unresolved: "));
+    }
+
+    #[trace("FR-211-AC-21")]
+    #[test]
+    fn without_a_store_a_direct_fact_and_an_approval_class_clause_are_no_store() {
+        assert!(reason(&one(direct(), &policy(&[], vec![]), None)).starts_with("no-store: "));
+        let approval = policy(&["reviewer"], vec![]);
+        let checked = one(approved_fact("alice"), &approval, None);
+        assert!(reason(&checked).starts_with("no-store: "));
+    }
+
+    #[trace("FR-211-AC-6", "FR-211-AC-16")]
+    #[test]
+    fn a_verified_approval_discharges_and_the_report_names_the_approver() {
+        let approval = policy(&["reviewer"], vec![]);
+        let verifier = StubVerifier::approving("alice", &["reviewer"]);
+        let checked = run(
+            vec![approved_fact("alice")],
+            &approval,
+            Some(&store()),
+            Some(&verifier),
+            false,
+        )
+        .unwrap();
+        assert_eq!(checked.report.binding.direct.len(), 1);
+        assert_eq!(
+            checked.report.binding.direct[0]
+                .verified_approver
+                .as_deref(),
+            Some("alice")
+        );
+        let asked = verifier.asked.borrow();
+        let (tag, id, digest) = &asked[0];
+        assert_eq!(tag, "approval/tag-1");
+        assert_eq!(id, "example.invalid/synthetic-widget-rules/1.0.0/SYN-001");
+        assert!(
+            digest.starts_with("sha256:") && digest.len() == 71,
+            "{digest}"
+        );
+    }
+
+    #[trace("FR-211-AC-16")]
+    #[test]
+    fn a_verified_approver_in_a_supplied_report_is_never_trusted() {
+        let mut partition = build_discharge_report(&request(vec![direct()])).expect("well formed");
+        partition.binding.direct[0].verified_approver = Some("mallory".to_owned());
+        let checked = check_report(
+            partition,
+            Some(&store()),
+            &DischargeChecks {
+                policy: &policy(&[], vec![]),
+                verifier: None,
+                offline: false,
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(checked.report.binding.direct[0].verified_approver, None);
+    }
+
+    #[trace("FR-211-AC-7")]
+    #[test]
+    fn every_other_status_and_meaning_leaves_the_clause_open() {
+        let approval = policy(&["reviewer"], vec![]);
+        for status in [
+            "unsigned",
+            "signed_bad",
+            "untrusted_signer",
+            "wrong_record",
+            "meaning_missing",
+            "unverifiable",
+        ] {
+            let verifier = StubVerifier::answering(Ok(ApprovalVerdict {
+                status: status.to_owned(),
+                meaning: vec![],
+                approver: None,
+            }));
+            let checked = run(
+                vec![approved_fact("alice")],
+                &approval,
+                Some(&store()),
+                Some(&verifier),
+                false,
+            )
+            .unwrap();
+            let reason = reason(&checked);
+            assert!(
+                reason.starts_with("approval-unverified: approval/tag-1"),
+                "{reason}"
+            );
+            assert!(reason.contains(status), "{reason}");
+        }
+        for meaning in [
+            vec!["reviewer-lead"],
+            vec!["reviewer", "other"],
+            vec![],
+            vec!["Reviewer"],
+        ] {
+            let verifier = StubVerifier::approving("alice", &meaning);
+            let checked = run(
+                vec![approved_fact("alice")],
+                &approval,
+                Some(&store()),
+                Some(&verifier),
+                false,
+            )
+            .unwrap();
+            assert!(
+                reason(&checked).starts_with("approval-unverified: approval/tag-1"),
+                "{meaning:?}"
+            );
+        }
+    }
+
+    #[trace("FR-211-AC-8")]
+    #[test]
+    fn an_attester_other_than_the_verified_approver_is_refused() {
+        let approval = policy(&["reviewer"], vec![]);
+        let verifier = StubVerifier::approving("alice", &["reviewer"]);
+        let checked = run(
+            vec![approved_fact("bob")],
+            &approval,
+            Some(&store()),
+            Some(&verifier),
+            false,
+        )
+        .unwrap();
+        assert!(reason(&checked).starts_with("attester-not-approver: "));
+    }
+
+    #[trace("FR-211-AC-9")]
+    #[test]
+    fn a_missing_approval_ref_is_open_and_never_calls_the_verifier() {
+        let approval = policy(&["reviewer"], vec![]);
+        let verifier = StubVerifier::approving("alice", &["reviewer"]);
+        let mut blank = approved_fact("alice");
+        blank["approvalRef"] = "  ".into();
+        for fact in [direct(), blank] {
+            let partition = {
+                let mut partition =
+                    build_discharge_report(&request(vec![direct()])).expect("well formed");
+                partition.binding.direct[0].fact = Some(
+                    crate::discharge::parse::parse_fact_with_approval_requirements(
+                        &fact,
+                        &std::collections::BTreeSet::from(["SYN-001".to_owned()]),
+                    )
+                    .unwrap(),
+                );
+                partition
+            };
+            let checked = check_report(
+                partition,
+                Some(&store()),
+                &DischargeChecks {
+                    policy: &approval,
+                    verifier: Some(&verifier),
+                    offline: false,
+                },
+                None,
+            )
+            .unwrap();
+            assert!(reason(&checked).starts_with("approval-missing: "));
+        }
+        assert!(verifier.asked.borrow().is_empty());
+    }
+
+    #[trace("FR-211-AC-10", "FR-211-AC-20")]
+    #[test]
+    fn the_record_identity_is_checked_as_engineering_assurance_checks_it() {
+        assert!(
+            record_id("a", "b", "c", "-d").is_ok(),
+            "an inner '-' is accepted"
+        );
+        assert!(
+            record_id("-a", "b", "c", "d")
+                .unwrap_err()
+                .starts_with("invalid-record-identity")
+        );
+        assert!(
+            record_id("a", "b", "c", "d\u{7}")
+                .unwrap_err()
+                .starts_with("invalid-record-identity")
+        );
+        let long = "x".repeat(300);
+        assert!(
+            record_id("a", &long, "c", "d")
+                .unwrap_err()
+                .starts_with("record-id-too-long")
+        );
+
+        // The identity is refused before any engineering-assurance call.
+        let approval = policy(&["reviewer"], vec![]);
+        let verifier = StubVerifier::approving("alice", &["reviewer"]);
+        let mut partition =
+            build_discharge_report(&request(vec![approved_fact("alice")])).expect("well formed");
+        partition.clause_set.authority = "-leading".to_owned();
+        let checked = check_report(
+            partition,
+            Some(&store()),
+            &DischargeChecks {
+                policy: &approval,
+                verifier: Some(&verifier),
+                offline: false,
+            },
+            None,
+        )
+        .unwrap();
+        assert!(reason(&checked).starts_with("invalid-record-identity"));
+        assert!(verifier.asked.borrow().is_empty());
+        // A clause without approval roles is not checked and makes no call.
+        let checked = run(
+            vec![approved_fact("alice")],
+            &policy(&[], vec![]),
+            Some(&store()),
+            Some(&verifier),
+            false,
+        )
+        .unwrap();
+        assert_eq!(checked.report.binding.direct.len(), 1);
+        assert!(verifier.asked.borrow().is_empty());
+    }
+
+    #[trace("FR-211-AC-11")]
+    #[test]
+    fn a_refused_trust_file_stops_the_run_and_an_unavailable_verifier_leaves_the_clause_open() {
+        let approval = policy(&["reviewer"], vec![]);
+        let refusing = StubVerifier::answering(Err(ApprovalRefusal::AllowedSignersInvalid(
+            "bad file".to_owned(),
+        )));
+        let error = run(
+            vec![approved_fact("alice")],
+            &approval,
+            Some(&store()),
+            Some(&refusing),
+            false,
+        )
+        .unwrap_err();
+        assert!(matches!(error, CheckError::AllowedSignersInvalid(_)));
+        let unavailable =
+            StubVerifier::answering(Err(ApprovalRefusal::Unavailable("no git".to_owned())));
+        let checked = run(
+            vec![approved_fact("alice")],
+            &approval,
+            Some(&store()),
+            Some(&unavailable),
+            false,
+        )
+        .unwrap();
+        assert!(reason(&checked).starts_with("approval-verifier-unavailable: no git"));
+        // No verifier at all reads the same, never as verified.
+        let checked = run(
+            vec![approved_fact("alice")],
+            &approval,
+            Some(&store()),
+            None,
+            false,
+        )
+        .unwrap();
+        assert!(reason(&checked).starts_with("approval-verifier-unavailable: "));
+    }
+
+    #[trace("FR-211-AC-12")]
+    #[test]
+    fn a_customer_owned_clause_takes_only_a_delegated_disposition() {
+        let customer = policy(
+            &[],
+            vec![OutputPolicy {
+                procedure: true,
+                producers: vec![],
+            }],
+        );
+        assert!(reason(&one(direct(), &customer, Some(&store()))).starts_with("customer-owned: "));
+        let disposition = |decision: &str| {
+            json!({
+                "kind": "disposition", "clauseId": "SYN-001", "decision": decision,
+                "owner": "o", "rationale": "because", "approvalRef": "ref-1",
+                "attestation": direct()["attestation"].clone(),
+            })
+        };
+        let delegated = one(disposition("delegated"), &customer, Some(&store()));
+        assert_eq!(delegated.report.binding.dispositions.len(), 1);
+        let accepted = one(disposition("accepted_risk"), &customer, Some(&store()));
+        assert!(accepted.report.binding.dispositions.is_empty());
+        assert!(
+            accepted.report.binding.open[0]
+                .reason
+                .as_deref()
+                .unwrap()
+                .starts_with("customer-owned: ")
+        );
+    }
+
+    #[trace("FR-211-AC-13", "FR-211-AC-22")]
+    #[test]
+    fn a_disposition_on_an_approval_class_clause_is_verified_too() {
+        let approval = policy(&["reviewer"], vec![]);
+        let fact = json!({
+            "kind": "disposition", "clauseId": "SYN-001", "decision": "delegated",
+            "owner": "o", "rationale": "because", "approvalRef": "ref-1",
+            "attestation": direct()["attestation"].clone(),
+        });
+        let unverified = StubVerifier::answering(Ok(ApprovalVerdict {
+            status: "unsigned".to_owned(),
+            meaning: vec![],
+            approver: None,
+        }));
+        let checked = run(
+            vec![fact.clone()],
+            &approval,
+            Some(&store()),
+            Some(&unverified),
+            false,
+        )
+        .unwrap();
+        assert!(checked.report.binding.dispositions.is_empty());
+        let verified = StubVerifier::approving("alice", &["reviewer"]);
+        let checked = run(
+            vec![fact],
+            &approval,
+            Some(&store()),
+            Some(&verified),
+            false,
+        )
+        .unwrap();
+        assert_eq!(checked.report.binding.dispositions.len(), 1);
+    }
+
+    #[trace("FR-211-AC-13")]
+    #[test]
+    fn an_offline_run_never_calls_the_verifier_for_an_approval_class_clause() {
+        let approval = policy(&["reviewer"], vec![]);
+        let verifier = StubVerifier::approving("alice", &["reviewer"]);
+        let checked = run(
+            vec![approved_fact("alice")],
+            &approval,
+            Some(&store()),
+            Some(&verifier),
+            true,
+        )
+        .unwrap();
+        assert!(reason(&checked).starts_with("not-verified-offline: "));
+        assert!(verifier.asked.borrow().is_empty());
+        // A clause without roles resolves as online.
+        let plain = run(
+            vec![direct()],
+            &policy(&[], vec![]),
+            Some(&store()),
+            None,
+            true,
+        )
+        .unwrap();
+        assert_eq!(plain.report.binding.direct.len(), 1);
+    }
+
+    #[trace("FR-211-AC-14")]
+    #[test]
+    fn a_record_the_store_no_longer_holds_reopens_the_clause() {
+        let partition = build_discharge_report(&request(vec![direct()])).unwrap();
+        assert_eq!(partition.binding.direct.len(), 1);
+        let emptied = MemoryEvidence::new();
+        let checked = check_report(
+            partition,
+            Some(&emptied),
+            &DischargeChecks {
+                policy: &policy(&[], vec![]),
+                verifier: None,
+                offline: false,
+            },
+            Some(&binding().clauses),
+        )
+        .unwrap();
+        assert!(reason(&checked).contains("evidence://runs/SUITE-1/one"));
+        assert_eq!(checked.failures[0].clause_id, "SYN-001");
+    }
+
+    #[trace("FR-211-AC-17", "FR-211-AC-18")]
+    #[test]
+    fn the_digest_ignores_the_approval_ref_and_follows_every_other_member() {
+        let parse = |value: serde_json::Value| -> DischargeFact {
+            crate::discharge::parse::parse_fact_with_approval_requirements(
+                &value,
+                &std::collections::BTreeSet::new(),
+            )
+            .unwrap()
+        };
+        let plain = record_digest(&parse(direct())).unwrap();
+        let mut with_ref = direct();
+        with_ref["approvalRef"] = "tag-a".into();
+        let mut other_ref = direct();
+        other_ref["approvalRef"] = "tag-b".into();
+        assert_eq!(record_digest(&parse(with_ref.clone())).unwrap(), plain);
+        assert_eq!(record_digest(&parse(other_ref)).unwrap(), plain);
+        let mut changed = direct();
+        changed["attestation"]["authority"] = "someone-else".into();
+        assert_ne!(record_digest(&parse(changed)).unwrap(), plain);
+        // The digest is the SHA-256 of the RFC 8785 text, written out.
+        let expected = "{\"attestation\":{\"attestedAt\":\"2026-08-01T00:00:00.000Z\",\"attestedBy\":\"reviewer-1\",\"authority\":\"quality-lead\",\"expiresAt\":\"2026-09-01T00:00:00.000Z\"},\"clauseId\":\"SYN-001\",\"evidenceRefs\":[\"evidence://runs/SUITE-1/one\"],\"kind\":\"direct\"}";
+        assert_eq!(
+            plain,
+            format!(
+                "sha256:{}",
+                quoin_store::attachment::sha256_hex(expected.as_bytes())
+            )
+        );
+
+        let subject = approval_subject(&binding(), &with_ref).unwrap();
+        assert_eq!(
+            subject.record_id,
+            "example.invalid/synthetic-widget-rules/1.0.0/SYN-001"
+        );
+        assert_eq!(subject.record_digest, plain);
+        let mut absent = direct();
+        absent["clauseId"] = "SYN-404".into();
+        assert!(approval_subject(&binding(), &absent).is_err());
+        assert!(approval_subject(&binding(), &json!({"kind": "direct"})).is_err());
+    }
+
+    #[trace("FR-211-AC-13")]
+    #[test]
+    fn open_clauses_stay_in_binding_order_after_a_clause_moves() {
+        let mut value = serde_json::to_value(binding()).unwrap();
+        value["clauses"].as_array_mut().unwrap().insert(
+            0,
+            json!({"clauseId": "SYN-000", "force": "mandatory", "outcome": "binding",
+                   "reasons": [], "expectedOutputs": []}),
+        );
+        let wide: quoin_quire_types::ClauseBindingReport = serde_json::from_value(value).unwrap();
+        let mut input = request(vec![direct()]);
+        input.binding = wide;
+        let partition = build_discharge_report(&input).unwrap();
+        let checked = check_report(
+            partition,
+            None,
+            &DischargeChecks {
+                policy: &policy(&[], vec![]),
+                verifier: None,
+                offline: false,
+            },
+            Some(&input.binding.clauses),
+        )
+        .unwrap();
+        let open: Vec<&str> = checked
+            .report
+            .binding
+            .open
+            .iter()
+            .map(|entry| entry.clause_id.as_str())
+            .collect();
+        assert_eq!(open, ["SYN-000", "SYN-001"]);
+    }
+}
