@@ -32,3 +32,17 @@ keeps a single reader; FR-150's sentence matches the reader contract; spec/spec.
 
 FR-141 frontmatter, Description, Behavior, AC-1..AC-23, CON-1..CON-4, Dependencies; FR-041 frontmatter, supplier
 section, AC-11, Dependencies; FR-150 changed paragraph; spec/spec.md FR-141 line.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | FR-141's AC ids now run AC-22 then AC-24: removing AC-23 left a gap in the id sequence. Renumber AC-24..26 to AC-23..25 before merge (no test or trace cites them yet). | FR-141-AC-24 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fix commit 19245c58 (round 1) |
+| FND-002 | fixed | Fix commit 19245c58 (round 1) |
+| FND-003 | fixed | Fix commit 19245c58 (round 1) |

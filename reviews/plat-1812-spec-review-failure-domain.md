@@ -37,3 +37,19 @@ byte-identical files.
 FR-141 Description (supplier, licence, existing records), Behavior, AC-18..AC-23, CON-3, CON-4; FR-041 licence and
 supplier sections, AC-10, AC-11; the FR-041 reader and FR-141 planner code (context); spec-objects-security FR-009
 (context).
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | FR-150's component table was not updated for `unreadable`. The prose says an unreadable licence is classed unknown with message `unreadable licence entry`, but the table's unknown row matches only 'any name or expression not in allow, or no licence declared', and its message is 'the unlisted texts joined'. For a component with an allowed id plus an unreadable entry no table row applies; for an unreadable entry plus an unlisted name the message is undefined (joined text only, or with `unreadable licence entry`). FR-150-AC-17 covers only the sole-unreadable case, and no FR-150 Behavior statement states the rule. | FR-150 |
+| FND-006 | low | FR-141: a component with one readable and one unreadable licence counts as 'more than one declared licence', and the report lists 'its declared licence texts', but the unreadable one has no text. The spec does not say whether the report shows the unreadable entry, so the report can silently show a single licence for a multi-licence component. | FR-141 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fix commit 19245c58 (round 1) |
+| FND-002 | fixed | Fix commit 19245c58 (round 1) |
+| FND-003 | fixed | Fix commit 19245c58 (round 1) |
+| FND-004 | fixed | Fix commit 19245c58 (round 1) |

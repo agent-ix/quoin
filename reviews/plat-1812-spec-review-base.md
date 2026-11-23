@@ -44,3 +44,11 @@ FR-141 Description, Behavior, AC-1..AC-23, CON-1..CON-4, Dependencies; FR-041 De
 sections), AC-10, AC-11, CON-3; FR-150 Description change; spec/spec.md FR-141 line; NFR-030 (context);
 spec-objects-security FR-009, FR-010, NFR-001, SoupRecord.json, soup_record skeleton and manifest body_extraction
 (context).
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fix commit 19245c58 (round 1) |
+| FND-002 | fixed | Fix commit 19245c58 (round 1) |
+| FND-003 | fixed | Fix commit 19245c58 (round 1) |

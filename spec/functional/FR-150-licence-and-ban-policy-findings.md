@@ -64,7 +64,7 @@ from what the person wrote.
 Each component the FR-041 reader returns is evaluated once. The reader exposes each declared licence with a kind:
 `id` (a CycloneDX `license.id`, or an SPDX value that is a single identifier with no whitespace, parenthesis or
 operator), `name` (a CycloneDX `license.name`) or `expression` (a CycloneDX `expression`, or any other SPDX value).
-An `unreadable` licence (an entry the reader could not read text from, FR-041-AC-12) is never accepted and is classed **unknown**, with the message text `unreadable licence entry`. The SPDX values `NOASSERTION` and `NONE` are no declared licence. Matching is of the declared text against `allow`
+An `unreadable` licence (an entry the reader could not read text from, FR-041-AC-12) is never accepted and is classed **unknown**; where it is the only reason for the finding, or one reason beside unlisted `name` or `expression` texts, the finding names it with the fixed text `unreadable licence entry`. The SPDX values `NOASSERTION` and `NONE` are no declared licence. Matching is of the declared text against `allow`
 and `deny` entries, verbatim and ASCII case-insensitively, for all three kinds alike; no expression is parsed and no
 other normalisation is applied. A ban entry matches a component by purl equality as FR-142 defines it (type compared
 case-insensitively; namespace, name and version percent-decoded; qualifiers and subpath ignored); an entry without a
@@ -78,7 +78,7 @@ component then receives **at most one licence finding**, by precedence denied, t
 |---|---|---|---|
 | any declared licence denied | `licence-denied` | `denied` | the denied licence texts, joined with `, ` |
 | else any `id` licence neither denied nor in `allow` | `licence-not-allowed` | `not-allowed` | the offending texts, joined with `, ` |
-| else any `name` or `expression` not in `allow` verbatim, or no licence declared | `licence-unknown` | `unknown` | the unlisted texts joined with `, `, or `no licence declared` |
+| else any `name` or `expression` not in `allow` verbatim, any `unreadable` entry, or no licence declared | `licence-unknown` | `unknown` | the unlisted texts joined with `, ` followed by `unreadable licence entry` where an entry is unreadable, or `no licence declared` |
 | every declared licence in `allow` | none | | |
 
 A component whose purl matches one or more `ban` entries additionally receives one `package-banned` finding
@@ -109,6 +109,8 @@ traceable to the policy that produced it.
 - The adapter SHALL NOT record a clean scan for a refused policy or SBOM.
 - The adapter SHALL record a component with no declared licence, or only `NOASSERTION` or `NONE`, as `licence-unknown`.
 - The adapter SHALL record a component whose only non-accepted licences are names or expressions not in `allow` verbatim as `licence-unknown`.
+- The adapter SHALL record a component with an `unreadable` licence entry, and no denied or not-allowed licence, as `licence-unknown`.
+- The adapter SHALL end the message of that finding with the fixed text `unreadable licence entry`, after any unlisted texts joined with `, `.
 - The adapter SHALL NOT parse a licence expression.
 - The adapter SHALL set `rulesEvaluated` to the number of components evaluated.
 - The adapter SHALL record the `evaluated` symbols of every component evaluated.
@@ -139,7 +141,7 @@ traceable to the policy that produced it.
 | FR-150-AC-14 | A component with one id in `allow` and one free-text name not in `allow` is `licence-unknown`; with one id in `allow` and one id in neither list, `licence-not-allowed`; with one id in `deny` and any other licence, `licence-denied`; each component has at most one licence finding. | Test |
 | FR-150-AC-15 | The recorded scan lists, in `evaluated`, the symbol of every component of the SBOM, and its ruleset holds the policy's entries. | Test |
 | FR-150-AC-16 | The message of a `licence-unknown` finding for an unlicensed component is `no licence declared`; of a `package-banned` finding is `banned by <entry purl>` with the entry's reason where it states one; of a licence finding the joined offending texts. | Test |
-| FR-150-AC-17 | A CycloneDX component whose only licence entry is unreadable is recorded `licence-unknown` with message `unreadable licence entry`, even where `allow` holds every other text. | Test |
+| FR-150-AC-17 | A CycloneDX component whose only licence entry is unreadable is recorded `licence-unknown` with message `unreadable licence entry`, even where `allow` holds every other text; a component with an allowed id plus an unreadable entry is `licence-unknown` with the same message; a component with an unreadable entry plus an unlisted name `Foo` is `licence-unknown` with message `Foo, unreadable licence entry`. | Test |
 
 ## Constraints
 

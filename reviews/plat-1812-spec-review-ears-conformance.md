@@ -31,3 +31,10 @@ EARS defects are low only. No new statement lacks a SHALL, a subject, or a testa
 FR-141 Behavior statements added or edited by this change: supplier written / absent, licence exactly one / none /
 several (two), control character, no `license_fact_ref`, no literal `unknown`, two difference statements,
 `license_fact_ref` suppresses licence difference, report contents.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fix commit 19245c58 (round 1) |
+| FND-002 | fixed | Fix commit 19245c58 (round 1) |

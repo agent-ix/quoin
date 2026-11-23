@@ -39,7 +39,7 @@ states none, the record leaves `supplier` absent (not stated); the command does 
 one readable licence. The text is written as the document wrote it, whether the reader classed it as an `id`, a `name` or an
 `expression`; nothing is parsed, normalised or mapped. Where the component declares none, `license` is absent. Where it
 declares more than one, `license` is absent and the component is listed in the report with the declared texts, because
-joining them would state an operator the SBOM did not. Where its only licence is `unreadable` (FR-041-AC-12), `license`
+joining them would state an operator the SBOM did not. A readable licence beside an unreadable one counts as more than one; the report lists the readable texts and the placeholder `unreadable` for each unreadable entry. Where its only licence is `unreadable` (FR-041-AC-12), `license`
 is absent and the component is listed in the report, so no SBOM fragment becomes licence text. A created record never carries `license_fact_ref`, so the
 owning module's exclusivity of `license` and `license_fact_ref` (FR-009 there) holds; relating a record to an integrator
 licence fact stays a person's statement.
@@ -75,7 +75,7 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 - Where the reader exposes exactly one declared licence for a component and its kind is `id`, `name` or `expression`, the command SHALL write `license` on the record it creates as that text, as written, for each of the three kinds.
 - Where the reader exposes no declared licence for a component, the command SHALL leave `license` absent on the record it creates.
 - Where the reader exposes more than one declared licence for a component, the command SHALL leave `license` absent on the record it creates.
-- Where the reader exposes more than one declared licence for a component, the command SHALL list the component in the report with its declared licence texts.
+- Where the reader exposes more than one declared licence for a component, the command SHALL list the component in the report with its readable licence texts and the placeholder `unreadable` for each unreadable entry.
 - If a supplier text contains a control character, then the command SHALL omit `supplier` from the record it creates.
 - If a licence text contains a control character, then the command SHALL omit `license` from the record it creates.
 - If a supplier or licence text contains a control character, then the command SHALL list the component and field in the report.
@@ -135,12 +135,12 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 | FR-141-AC-17 | The file name of a purl carrying qualifiers contains neither the qualifiers nor the subpath, and a record file that is not valid UTF-8 or exceeds 1 MiB below the records directory makes the command exit non-zero naming it. | Test |
 | FR-141-AC-18 | A CycloneDX and an SPDX fixture whose components state a supplier and exactly one licence (one as an id, one as a name, one as an expression) promote to records whose own text carries a `supplier` and a `license` line equal to the stated texts exactly. | Test |
 | FR-141-AC-19 | A component with no supplier and no licence, one with an SPDX `NOASSERTION` supplier and licence, and one with an empty supplier name yield records with no `supplier` key and no `license` key, and none carries the literal `unknown`; a component whose SBOM states the supplier `unknown` yields a record carrying `supplier: unknown`. | Test |
-| FR-141-AC-20 | A component declaring two licences yields a record with no `license` key and appears in the report with both declared texts; its `supplier` is still written. | Test |
+| FR-141-AC-20 | A component declaring two licences yields a record with no `license` key and appears in the report with both declared texts; a component with one readable and one unreadable licence yields no `license` key and appears with the readable text and `unreadable`; the `supplier` is still written in both. | Test |
 | FR-141-AC-21 | A component whose supplier contains a control character yields a record whose text has no `supplier` line, and the report lists the component and field. | Test |
 | FR-141-AC-22 | Given an existing record whose `supplier` and `license` a person set to values different from the SBOM's, promoting the document leaves the file byte-identical and the report lists both fields as differences; an existing record equal to the SBOM's values is listed with no difference; an existing record carrying `license_fact_ref` yields no licence difference. | Test |
-| FR-141-AC-24 | An existing record that sets a `supplier` while the SBOM states none for its purl, and one that sets a `license` while the SBOM declares no licence, two licences, an unreadable licence or a licence containing a control character, are each listed as a difference and left byte-identical; an existing record that sets neither, for an SBOM component that states a supplier and a licence, is listed as a difference for both fields. | Test |
-| FR-141-AC-25 | A component whose supplier and licence text contain a control character yields a record whose text has neither a `supplier` nor a `license` line, and the report lists both fields; a component whose only licence entry is unreadable yields a record with no `license` line and appears in the report. | Test |
-| FR-141-AC-26 | A document listing one purl twice with different suppliers and licences yields one record carrying the first occurrence's values, and the report lists the conflict. | Test |
+| FR-141-AC-23 | An existing record that sets a `supplier` while the SBOM states none for its purl, and one that sets a `license` while the SBOM declares no licence, two licences, an unreadable licence or a licence containing a control character, are each listed as a difference and left byte-identical; an existing record that sets neither, for an SBOM component that states a supplier and a licence, is listed as a difference for both fields. | Test |
+| FR-141-AC-24 | A component whose supplier and licence text contain a control character yields a record whose text has neither a `supplier` nor a `license` line, and the report lists both fields; a component whose only licence entry is unreadable yields a record with no `license` line and appears in the report. | Test |
+| FR-141-AC-25 | A document listing one purl twice with different suppliers and licences yields one record carrying the first occurrence's values, and the report lists the conflict. | Test |
 
 ## Constraints
 
