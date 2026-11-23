@@ -446,11 +446,17 @@ fn analysis_rows(
         .unwrap_or_default()
 }
 
-/// Swap-and-refuse through the real command path (FR-116-AC-7, FR-116-AC-8):
-/// the stored projection bytes, the run record bytes, the recorded criterion
-/// and the observed revision are each changed on their own; the matrix must
-/// refuse with the exact status and premise, never `qualified-record`, and the
-/// store the refusal read must be unchanged.
+/// Swap-and-refuse through the real command path (FR-116-AC-7, FR-116-AC-8).
+///
+/// Scope, stated honestly: this fixture cannot start from a qualifying record.
+/// A positive decision needs an admitted actor, which the command only derives
+/// from a verified signature (`actor_authority`) through a real verifier, and
+/// no live positive exists (STD-717). So the baseline is already refused for
+/// the missing reliance and actor premises. The test proves what it can fail on:
+/// each swap (observed revision, stored projection bytes, recorded criterion)
+/// must change the refusal to its own distinct status, which the baseline does
+/// not have, and the refusals must not write the store. The positive-to-refused
+/// swap is covered at the library level in `analysis_counting.rs`.
 #[trace("FR-116-AC-7", "FR-116-AC-8", "FR-153-AC-8")]
 #[test]
 fn tc_plat_1790_swapped_inputs_refuse_through_the_matrix_command() {
@@ -482,9 +488,8 @@ fn tc_plat_1790_swapped_inputs_refuse_through_the_matrix_command() {
             .collect()
     };
 
-    // Healthy control: nothing is owner-qualified without owner evidence, and
-    // the refusal names the missing reliance premise, not the revision.
-    let before = evidence_tree(&store);
+    // Baseline: refused for the missing owner premises, with neither the
+    // revision nor the conflict status the swaps below must introduce.
     let rows = analysis_rows(&fixture, &observation, "FR-001-AC-1");
     assert!(
         !statuses(&rows).contains(&"qualified-record".to_owned()),
@@ -500,6 +505,12 @@ fn tc_plat_1790_swapped_inputs_refuse_through_the_matrix_command() {
         details(&rows)
             .iter()
             .all(|d| !d.starts_with("performed revision premise")),
+        "{rows:?}"
+    );
+    assert!(
+        statuses(&rows)
+            .iter()
+            .all(|s| s != "wrong-revision" && s != "record-conflict"),
         "{rows:?}"
     );
 
@@ -524,6 +535,8 @@ fn tc_plat_1790_swapped_inputs_refuse_through_the_matrix_command() {
     let mut projection: serde_json::Value = serde_json::from_slice(&original).unwrap();
     projection["agreed_status"] = serde_json::json!("refuted");
     std::fs::write(&projection_path, projection.to_string()).unwrap();
+    // The store as the command will read it, tampering included.
+    let tampered = evidence_tree(&store);
     let rows = analysis_rows(&fixture, &observation, "FR-001-AC-1");
     assert!(
         !statuses(&rows).contains(&"qualified-record".to_owned()),
@@ -538,10 +551,10 @@ fn tc_plat_1790_swapped_inputs_refuse_through_the_matrix_command() {
             == "tool and configuration premise: the supplied projection does not match the retained run"),
         "{rows:?}"
     );
-    std::fs::write(&projection_path, original).unwrap();
     assert_eq!(
         evidence_tree(&store),
-        before,
-        "refusals never write the store"
+        tampered,
+        "the command never writes or repairs the store"
     );
+    std::fs::write(&projection_path, original).unwrap();
 }

@@ -1,33 +1,32 @@
 ---
-id: SR-20261117175262
-title: "Gap analysis of Quoin PLAT-1790 actor admission"
+id: SR-20261123063610
+title: "Gap analysis of Quoin PR 1021 (PLAT-1790 owner-qualification swap coverage)"
 type: SpecReview
 analysis: gap-analysis
-scope: "agent-ix/quoin; PR #1004 changed files and actor-admission criteria FR-116-AC-18, FR-153-AC-16, FR-153-AC-18"
+scope: "agent-ix/quoin@8a4fc24f2987ea291d89d05f48a0b005cc0dd353; spec/functional/FR-116-owner-qualified-quire-evidence.md, spec/functional/FR-184-analysis-act-producer-definition.md, rust/crates/quoin-quire/tests/analysis_counting.rs, rust/crates/quoin-cli/tests/tc_ver80_differential_report_command.rs, rust/crates/quoin-evidence/src/qualify/**"
 review_set: subset
-relationships:
-  - { target: "ix://agent-ix/quoin/FR-153", type: references }
 ---
 
 ## Summary
 
-Repository-driven gap analysis for the PLAT-1790 actor-admission paths compared the relevant requirements, computed Quoin Test Matrix, tagged tests, and changed implementation. The newly added criteria are tagged, but the positive and refusal integration tests that invoke the external EA verifier cannot run reliably in the current Quoin test workflow; plan completion was not assessed.
+Ticket: PLAT-1790. This audit is scoped to the PR diff and the criteria it traces. It is planless. Plan completion: not assessed.
+
+Every id the PR traces resolves in `spec/` at the reviewed head: FR-116-AC-6/7/8/10/11/12/14/15/18, FR-184-AC-17/18 and FR-153-AC-8. A repo-wide `quoin matrix` run was not made; this was a diff-scoped audit. Semantic intent-to-test review was done inline for the traced criteria; see the code-review artifact SR-20261123063609. No stubs and no production code were added.
 
 ## Verdict
 
-**FAIL** — the changed real-verifier test path fails under the available EA 0.8.1 executable, and the Quoin test workflow does not provision the required EA CLI.
+**CONDITIONAL.** Two medium gaps.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | high | The FR-153 actor-admission test fixture discovers `engineering-assurance` from ambient PATH and runs `signature-verify`, but Quoin's test workflow does not install that CLI. With the available 0.8.1 binary, the focused unsigned-refusal test fails because the command is unknown; in a runner without any EA binary, the fixture panics at its `expect`. Make the ordinary test lane pass without the external binary and reserve real CLI integration for the authorized manual workflow, or identify a supported executable distribution. No `build-test.yml` change is authorized by this review. | rust/crates/quoin-cli/src/analysis_evidence.rs::signed_pair_repo; .github/workflows/build-test.yml |
+| FND-001 | medium | FR-116's status text still says "normative owner contract; implementation remains planned", calls the bridge "planned", and says "All criteria below describe planned implementation obligations. This contract claims no executable acceptance evidence". This contradicts the shipped `quoin_evidence::qualify` bridge and the tests this PR traces to FR-116. The ticket asked for this status fix. The PR's "no draft text" claim is literally true but leaves the stale status in place. | spec/functional/FR-116-owner-qualified-quire-evidence.md:28-32, 43-44, 206, 231-232 |
+| FND-002 | medium | The FR-116 result categories `selection-mismatch`, `invalid-target` and `ambiguous-target` (FR-116 Outputs table, AC-8 and AC-13) have no counterpart in the qualifier's `Cause` enum, so no code produces them. They are traced but unimplemented. The PR does not record this as a confirmed defect with a regression test. | rust/crates/quoin-evidence/src/qualify/mod.rs:40-59; spec/functional/FR-116-owner-qualified-quire-evidence.md:113-115 |
 
 ## Coverage
 
-- Reconciliation: `quoin matrix` (quoin 0.36.8, quire matrix embedded; no run evidence read).
-- Relevant criteria: FR-116-AC-18 tagged; FR-153-AC-16 tagged; FR-153-AC-18 tagged. The engine reports comment-only criterion IDs on some test doc comments as `unmarked-trace-id`; the corresponding tests also have `#[trace(...)]` attributes, so those are not untagged criteria.
-- Whole-matrix context: 2,214 criteria total: 1,402 tagged, 625 untagged, 146 method-without-symbol, 5 tagged only by ignored tests, and 36 retired. These repository-wide totals are not attributed to this PR; this artifact's source/test comparison is scoped to the changed actor-admission area.
-- Reverse-gap/stub inventory: inspected all nine changed files and the CLI test/config boundary; no other PR-introduced unowned user-visible behavior or stub found in that bounded surface.
+- Traced criteria in the diff: 12. All resolve. The tag-to-intent mismatches are recorded in SR-20261123063609 (FR-116-AC-8 selection clause, FR-116-AC-10 reused-name clause, FR-184-AC-17 positive case).
+- Reverse gap: none. The diff adds only tests.
+- Stubs and coverage inflation: no stubs. Vacuous assertions are recorded in SR-20261123063609 (FND-002, FND-006).
 - Plan completion: not assessed
-- Semantic review: skipped
