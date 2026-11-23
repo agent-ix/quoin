@@ -17,7 +17,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_evidence::independence::assess_lines;
 use quoin_evidence::types::{
-    Binding, IndependenceDimension, IndependenceDimensionAssessment, IndependenceStatus,
+    Binding, IndependenceDimension, IndependenceDimensionAssessment, IndependenceStatus, Outcome,
+    RunRecord,
 };
 use quoin_evidence::{ObligationId, SuiteId};
 use quoin_finding_types::{Finding, FindingKind, Severity};
@@ -45,6 +46,11 @@ pub struct ClassPolicy {
     /// The floors, keyed by class value as the requirement states it.
     #[serde(default)]
     pub classes: BTreeMap<String, ClassFloors>,
+    /// When `true`, a class finding or an unmet class activity makes the
+    /// command that reports it exit non-zero (FR-160). Off unless the project
+    /// turns it on: a class floor reports until a person makes it a gate.
+    #[serde(default)]
+    pub gate: bool,
 }
 
 /// What one class value demands. Every floor is optional; none has a built-in
@@ -241,49 +247,74 @@ impl<'a> ClassContext<'a> {
             return Vec::new();
         };
         let Some(floors) = self.policy.classes.get(class) else {
-            return vec![Finding::new(
-                FindingKind::CLASS_UNCONFIGURED,
-                &obligation.id,
-                Severity::medium(),
-                format!(
-                    "{id} is software safety class {class}, which the class policy does not \
-                     configure; no class floor applies to it.",
-                    id = obligation.id
+            return vec![with_class(
+                Finding::new(
+                    FindingKind::CLASS_UNCONFIGURED,
+                    &obligation.id,
+                    Severity::medium(),
+                    format!(
+                        "{id} is software safety class {class}, which the class policy does not \
+                         configure; no class floor applies to it.",
+                        id = obligation.id
+                    ),
                 ),
+                class,
             )];
         };
-        let bound_kinds: BTreeSet<&str> = bindings
+        // A method is met by passing evidence of its kind, or by a scan record,
+        // which states findings and has no pass/fail of its own. Only the
+        // symbols bound to this obligation are judged, as the rest of the
+        // auditor judges them. Kinds with a bound run that did not pass are
+        // kept apart so the finding can say so.
+        let mut tally: BTreeMap<&str, SymbolTally> = BTreeMap::new();
+        let mut scan_kinds: BTreeSet<&str> = BTreeSet::new();
+        for binding in bindings {
+            let suite = binding.suite.as_str();
+            if let Some(run) = indexed.runs_by_suite.get(suite)
+                && let Some(kind) = run.evidence_kind.as_deref()
+            {
+                tally.entry(kind).or_default().add(binding, run);
+            }
+            if let Some(kind) = indexed
+                .scans_by_suite
+                .get(suite)
+                .and_then(|scan| scan.evidence_kind.as_deref())
+            {
+                scan_kinds.insert(kind);
+            }
+        }
+        let passed_kinds: BTreeSet<&str> = tally
             .iter()
-            .flat_map(|binding| {
-                let suite = binding.suite.as_str();
-                let run = indexed
-                    .runs_by_suite
-                    .get(suite)
-                    .and_then(|run| run.evidence_kind.as_deref());
-                let scan = indexed
-                    .scans_by_suite
-                    .get(suite)
-                    .and_then(|scan| scan.evidence_kind.as_deref());
-                [run, scan].into_iter().flatten()
-            })
+            .filter(|(_, counts)| counts.passed())
+            .map(|(kind, _)| *kind)
+            .chain(scan_kinds)
             .collect();
+        let unpassed_kinds: BTreeSet<&str> = tally.keys().copied().collect();
         floors
             .required_methods
             .iter()
             .filter_map(|method| {
                 let kind = *self.kinds.get(method.as_str())?;
-                if bound_kinds.contains(kind) {
+                if passed_kinds.contains(kind) {
                     return None;
                 }
-                Some(Finding::new(
-                    FindingKind::CLASS_METHOD_MISSING,
-                    &obligation.id,
-                    Severity::medium(),
-                    format!(
-                        "{id} is class {class}, whose policy requires method `{method}` \
-                         (evidence kind {kind}), and no evidence of that kind is bound to it.",
-                        id = obligation.id
+                let state = if unpassed_kinds.contains(kind) {
+                    "the bound evidence of that kind did not pass"
+                } else {
+                    "no evidence of that kind is bound to it"
+                };
+                Some(with_class(
+                    Finding::new(
+                        FindingKind::CLASS_METHOD_MISSING,
+                        &obligation.id,
+                        Severity::medium(),
+                        format!(
+                            "{id} is class {class}, whose policy requires a passing run of \
+                             method `{method}` (evidence kind {kind}), and {state}.",
+                            id = obligation.id
+                        ),
                     ),
+                    class,
                 ))
             })
             .collect()
@@ -331,6 +362,46 @@ impl<'a> ClassContext<'a> {
             }
         }
         serde_json::json!({ "classes": classes, "unassigned": unassigned })
+    }
+}
+
+/// Mark a finding as caused by a class policy, naming the class, so a project
+/// that makes class findings gate can tell them from every other finding.
+pub(super) fn with_class(mut finding: Finding, class: &str) -> Finding {
+    finding
+        .other
+        .insert("class".to_owned(), serde_json::json!(class));
+    finding
+}
+
+/// What a kind's bound symbols reported across the runs bound to one obligation.
+#[derive(Default)]
+struct SymbolTally {
+    passed: bool,
+    failed: bool,
+}
+
+impl SymbolTally {
+    /// Read the outcome of each symbol the binding names. A symbol the run
+    /// skipped or never reported counts for nothing.
+    fn add(&mut self, binding: &Binding, run: &RunRecord) {
+        for symbol in &binding.symbols {
+            let outcome = run
+                .entries
+                .iter()
+                .find(|entry| entry.symbol.as_str() == symbol.as_str())
+                .map(|entry| entry.outcome);
+            match outcome {
+                Some(Outcome::Pass) => self.passed = true,
+                Some(Outcome::Fail | Outcome::Error) => self.failed = true,
+                Some(Outcome::Skip) | None => {}
+            }
+        }
+    }
+
+    /// At least one bound symbol passed and none failed or errored.
+    fn passed(&self) -> bool {
+        self.passed && !self.failed
     }
 }
 

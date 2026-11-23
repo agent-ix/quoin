@@ -68,7 +68,7 @@ different from the answer being yes.
   what to do; `stale-evidence` findings additionally carry an optional `cause`
   (`missing-run` or `failed-run`), omitted when not determined
 - The set of obligations whose evidence is healthy
-- Under `--strict`, a non-zero exit when any reported finding remains
+- Under `--strict`, a non-zero exit when any reported finding remains; and, when a class policy sets `gate: true` ([FR-160](./FR-160-per-class-evidence-floors.md)), a non-zero exit when a finding that policy caused remains
 
 ## Behavior
 
@@ -127,7 +127,7 @@ different from the answer being yes.
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) (the store it reads), [FR-031](./FR-031-catalog-driven-advisor.md) (the catalog method conformance is checked against), quire-rs [FR-053](ix://agent-ix/quire-rs/FR-053) (the obligations it compares)
-- **Downstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md) (consumes `cause` verbatim) and [FR-167](./FR-167-release-snapshot-format.md) (via FR-115); the consuming workflow decides whether a finding blocks; this command reports and, under `--strict`, exits non-zero
+- **Downstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md) (consumes `cause` verbatim) and [FR-167](./FR-167-release-snapshot-format.md) (via FR-115); the consuming workflow decides whether a finding blocks; this command reports and, under `--strict` or a class policy's `gate: true`, exits non-zero
 
 > **CR note (PLAT-1760, 2026-11-15):** `stale-evidence` folded a missing run and a
 > failed run into one kind, distinguishable only by parsing `summary`. AC-18..21

@@ -24,7 +24,7 @@ use quoin_evidence::independence::assess_independence;
 use quoin_evidence::types::{
     Binding, EvidenceLineage, FindingRecord, IndependenceDimension, IndependencePolicy,
     IndependenceRequirement, MUTATION_SCORE_METRIC, Outcome, RunEntry, RunRecord,
-    STORE_SCHEMA_VERSION,
+    STORE_SCHEMA_VERSION, Survivor,
 };
 use quoin_finding_types::{AuditReport, Finding};
 use quoin_quire_types::{CoverageMatrixCriterion, CoverageMatrixRequirement, Obligation};
@@ -792,4 +792,168 @@ fn a_bound_scan_record_of_the_kind_satisfies_a_required_method() {
     assert!(of_kind(&report(&input), "class-method-missing").is_empty());
     input.scans = Some(vec![scan("test-run")]);
     assert_eq!(of_kind(&report(&input), "class-method-missing").len(), 1);
+}
+
+// ── FR-160-AC-14: a required method needs a passing run ──────────────────
+
+/// A run whose bound symbol (`<suite>::t`, the one `bind` names) has `bound`,
+/// beside symbols the obligation is not bound to.
+fn run_with(suite: &str, kind: &str, bound: Option<Outcome>, others: &[Outcome]) -> RunRecord {
+    let mut record = run(suite, kind, None);
+    record.entries = bound
+        .map(|outcome| RunEntry::new(format!("{suite}::t"), outcome))
+        .into_iter()
+        .chain(
+            others
+                .iter()
+                .enumerate()
+                .map(|(index, outcome)| RunEntry::new(format!("{suite}::other{index}"), *outcome)),
+        )
+        .collect();
+    record
+}
+
+fn unit_floor(bound: Option<Outcome>, others: &[Outcome]) -> AuditReport {
+    let classes =
+        json!({ "class-2": { "required_methods": ["unit-testing"], "rationale": RATIONALE } });
+    report(&scene(
+        Some("class-2"),
+        policy(&classes),
+        vec![bind(OBLIGATION, "unit", None)],
+        vec![run_with("unit", "test-run", bound, others)],
+    ))
+}
+
+/// Only the obligation's own bound symbols are judged: one that failed, errored,
+/// was skipped or was never reported is not passing evidence, even while
+/// another test of the same run passes.
+#[trace("FR-160-AC-14")]
+#[test]
+fn a_bound_symbol_that_did_not_pass_does_not_satisfy_a_required_method() {
+    for (bound, others) in [
+        (Some(Outcome::Fail), &[Outcome::Pass][..]),
+        (Some(Outcome::Error), &[Outcome::Pass][..]),
+        (Some(Outcome::Skip), &[Outcome::Pass][..]),
+        (None, &[Outcome::Pass][..]),
+        (Some(Outcome::Skip), &[][..]),
+    ] {
+        let out = unit_floor(bound, others);
+        let found = of_kind(&out, "class-method-missing");
+        assert_eq!(found.len(), 1, "{bound:?}/{others:?}: {:?}", out.findings);
+        assert!(
+            found[0].summary.contains("did not pass"),
+            "{}",
+            found[0].summary
+        );
+        assert_eq!(class_member(found[0]).as_deref(), Some("class-2"));
+    }
+}
+
+/// An unrelated failing test elsewhere in the suite does not raise the finding.
+#[trace("FR-160-AC-14")]
+#[test]
+fn an_unrelated_failing_test_in_the_suite_does_not_raise_class_method_missing() {
+    for others in [&[Outcome::Fail][..], &[Outcome::Error, Outcome::Skip][..]] {
+        let out = unit_floor(Some(Outcome::Pass), others);
+        assert!(
+            of_kind(&out, "class-method-missing").is_empty(),
+            "{others:?}: {:?}",
+            out.findings
+        );
+    }
+}
+
+/// Evidence of the kind that is not bound at all is still reported as unbound.
+#[trace("FR-160-AC-14")]
+#[test]
+fn a_missing_run_is_reported_as_unbound_not_as_failed() {
+    let classes =
+        json!({ "class-2": { "required_methods": ["unit-testing"], "rationale": RATIONALE } });
+    let out = report(&scene(Some("class-2"), policy(&classes), vec![], vec![]));
+    let found = of_kind(&out, "class-method-missing");
+    assert_eq!(found.len(), 1);
+    assert!(
+        found[0].summary.contains("no evidence"),
+        "{}",
+        found[0].summary
+    );
+}
+
+// ── FR-160-AC-15: class findings name the class ──────────────────────────
+
+fn class_member(finding: &Finding) -> Option<String> {
+    serde_json::to_value(finding).unwrap()["class"]
+        .as_str()
+        .map(ToOwned::to_owned)
+}
+
+fn assert_class(out: &AuditReport, kind: &str, class: &str) {
+    let found = of_kind(out, kind);
+    assert!(!found.is_empty(), "no {kind}: {:?}", out.findings);
+    for finding in found {
+        assert_eq!(class_member(finding).as_deref(), Some(class), "{kind}");
+    }
+}
+
+/// All six finding kinds a class policy causes name the class.
+#[trace("FR-160-AC-15")]
+#[test]
+fn every_class_caused_finding_kind_names_the_class() {
+    // class-method-missing and insufficient-mutation-score.
+    let classes = json!({ "class-2": {
+        "required_methods": ["unit-testing"], "mutation_floor": 0.9, "rationale": RATIONALE } });
+    let mut scored = run("mut", "mutation-run", Some(0.5));
+    scored.entries[0].survivors = Some(vec![Survivor::new(Some(1), "replace x")]);
+    scored.entries[0].symbol = SymbolId::new("mut::t");
+    let out = report(&scene(
+        Some("class-2"),
+        policy(&classes),
+        vec![bind(OBLIGATION, "mut", None)],
+        vec![scored],
+    ));
+    for kind in [
+        "class-method-missing",
+        "insufficient-mutation-score",
+        "surviving-mutant",
+    ] {
+        assert_class(&out, kind, "class-2");
+    }
+    // unmeasured-mutation-score: the floor demands a score and none is recorded.
+    let unmeasured = report(&scene(
+        Some("class-2"),
+        policy(&classes),
+        vec![bind(OBLIGATION, "unit", None)],
+        vec![run("unit", "test-run", None)],
+    ));
+    assert_class(&unmeasured, "unmeasured-mutation-score", "class-2");
+    // class-unconfigured.
+    let unconfigured = report(&scene(
+        Some("class-1"),
+        policy(&json!({ "class-2": { "rationale": RATIONALE } })),
+        vec![],
+        vec![],
+    ));
+    assert_class(&unconfigured, "class-unconfigured", "class-1");
+    // insufficient-independence from the class (source: class).
+    let independence = report(&two_suites(
+        lineage("ann", "fuzz"),
+        lineage("ann", "review"),
+    ));
+    assert_class(&independence, "insufficient-independence", "class-3");
+}
+
+/// Findings the class policy did not cause carry no class member.
+#[trace("FR-160-AC-15")]
+#[test]
+fn findings_the_class_did_not_cause_carry_no_class_member() {
+    // Criticality set the ratio.
+    let by_criticality = crit_and_class(Some("high"), Some("class-2"), 0.6, 0.9);
+    let found = of_kind(&by_criticality, "insufficient-mutation-score");
+    assert_eq!(found.len(), 1);
+    assert_eq!(class_member(found[0]), None);
+    // The ladder's own undischarged finding.
+    let classes = json!({ "class-2": { "rationale": RATIONALE } });
+    let none = report(&scene(None, policy(&classes), vec![], vec![]));
+    assert!(!none.findings.is_empty());
+    assert!(none.findings.iter().all(|f| class_member(f).is_none()));
 }

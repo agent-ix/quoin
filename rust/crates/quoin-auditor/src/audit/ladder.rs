@@ -24,11 +24,13 @@ use quoin_evidence::types::{Binding, IndependenceStatus, Outcome, RunRecord};
 use quoin_finding_types::{Finding, FindingKind, Severity, UnevaluatedCheck};
 use quoin_quire_types::Obligation;
 
-use super::class::{SOURCE_PROFILE, independence_finding};
+use super::class::{SOURCE_PROFILE, independence_finding, with_class};
 use super::input::AuditInput;
 use super::method::{method_conformance, unknown_method_finding};
 use super::mocks::{mocked_bindings, mocked_finding};
-use super::scores::{floor_for, multiplicity_finding, mutation_finding, surviving_mutant_findings};
+use super::scores::{
+    FloorSource, floor_for, multiplicity_finding, mutation_finding, surviving_mutant_findings,
+};
 use super::stale::stale_evidence;
 use super::{ClassIndependenceAssessment, Indexed, Pass, is_insufficient};
 use crate::error::AuditorError;
@@ -138,12 +140,13 @@ pub(super) fn run(
         let missed_floor = finding.kind == FindingKind::INSUFFICIENT_MUTATION_SCORE;
         pass.findings.push(finding);
         if missed_floor && let Some(floor) = floor_for(obligation, input, class_floor) {
-            pass.findings.extend(surviving_mutant_findings(
-                obligation,
-                &run_bindings,
-                &runs,
-                floor.ratio,
-            ));
+            let survivors =
+                surviving_mutant_findings(obligation, &run_bindings, &runs, floor.ratio);
+            pass.findings
+                .extend(survivors.into_iter().map(|finding| match floor.source {
+                    FloorSource::Class(class) => with_class(finding, class),
+                    FloorSource::Criticality(_) => finding,
+                }));
         }
         return Ok(pass);
     }

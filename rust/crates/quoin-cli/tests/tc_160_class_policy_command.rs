@@ -203,7 +203,7 @@ fn enable_design_relation(fixture: &Fixture) {
         )
         .replace(
             "  carried_fields:\n",
-            "  required_relations:\n    - name: fr-has-design\n      from: FR\n      edges: [designs]\n      to: [Design]\n      direction: outgoing\n      check: fr-needs-design\n  design_relations: [fr-has-design]\n  carried_fields:\n",
+            "  required_relations:\n    - name: fr-has-design\n      from: FR\n      edges: [designs]\n      to: [Design]\n      direction: outgoing\n      check: fr-needs-design\n    - name: fr-has-soup\n      from: Design\n      edges: [designed_by]\n      to: [FR]\n      direction: outgoing\n      check: design-needs-fr\n  design_relations: [fr-has-design, fr-has-soup]\n  carried_fields:\n",
         );
     fixture.write("manifest.yaml", &module);
 }
@@ -486,7 +486,7 @@ fn tc_161_002_command_joins_covered_design_and_present_evidence() {
         r#"{"schemaVersion":1,"bindings":[{"obligation":"FR-001-AC-1","suite":"SUITE-1","symbols":["tests::classed"]},{"obligation":"FR-001-AC-2","suite":"SUITE-1","symbols":["tests::classed"]}]}"#,
     );
     fixture.write(
-        "spec/evidence/runs/SUITE-1/run.json",
+        "spec/evidence/runs/SUITE-1/2026-11-13T00~3A00~3A00Z.json",
         r#"{"schemaVersion":1,"suite":"SUITE-1","tool":"fixture","evidenceKind":"test-run","timestamp":"2026-11-13T00:00:00Z","entries":[{"symbol":"tests::classed","outcome":"pass","traceIds":["FR-001-AC-1","FR-001-AC-2"]}]}"#,
     );
 
@@ -527,4 +527,304 @@ fn tc_161_002_command_joins_covered_design_and_present_evidence() {
         markdown.contains("| unit-evidence | evidence | unit-testing | met |  |  |"),
         "{markdown}"
     );
+}
+
+const BINDINGS: &str = r#"{"schemaVersion":1,"bindings":[{"obligation":"FR-001-AC-1","suite":"SUITE-1","symbols":["tests::classed"]},{"obligation":"FR-001-AC-2","suite":"SUITE-1","symbols":["tests::classed"]}]}"#;
+
+fn run_record(outcome: &str) -> String {
+    format!(
+        r#"{{"schemaVersion":1,"suite":"SUITE-1","tool":"fixture","evidenceKind":"test-run","timestamp":"2026-11-13T00:00:00Z","entries":[{{"symbol":"tests::classed","outcome":"{outcome}","traceIds":["FR-001-AC-1","FR-001-AC-2"]}}]}}"#
+    )
+}
+
+fn with_evidence(fixture: &Fixture, outcome: &str) {
+    fixture.write("spec/evidence/bindings.json", BINDINGS);
+    fixture.write(
+        "spec/evidence/runs/SUITE-1/2026-11-13T00~3A00~3A00Z.json",
+        &run_record(outcome),
+    );
+}
+
+fn gated(fixture: &Fixture, name: &str, base: &str) {
+    fixture.write(name, &format!("gate: true\n{base}"));
+}
+
+/// A run that failed does not satisfy a required method, end to end.
+#[trace("FR-160-AC-14")]
+#[test]
+fn tc_plat1836_001_a_failing_run_does_not_satisfy_the_required_method() {
+    let fixture = repository();
+    with_evidence(&fixture, "pass");
+    let passing = audit_json(&fixture, &["--class-policy", "policy.yaml"]);
+    assert!(class_findings(&passing).is_empty(), "{passing}");
+
+    with_evidence(&fixture, "fail");
+    let failing = audit_json(&fixture, &["--class-policy", "policy.yaml"]);
+    let found = class_findings(&failing);
+    assert_eq!(found.len(), 2, "{failing}");
+    assert!(found.iter().all(|(_, kind)| kind == "class-method-missing"));
+    let class_finding = failing["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|finding| finding["kind"] == "class-method-missing")
+        .unwrap();
+    assert_eq!(class_finding["class"], "class-2");
+    assert!(
+        class_finding["summary"]
+            .as_str()
+            .unwrap()
+            .contains("did not pass")
+    );
+}
+
+/// `gate: true` turns a class finding into exit 1 (`Partial`); without it the
+/// same finding reports, the exit status is 0, and the report is the same bytes.
+#[trace("FR-160-AC-16")]
+#[test]
+fn tc_plat1836_002_class_findings_gate_only_when_the_policy_says_so() {
+    let fixture = repository();
+    let audit = |policy: &str| {
+        fixture.quoin(&[
+            "evidence",
+            "audit",
+            "--module",
+            ".",
+            "--json",
+            "--class-policy",
+            policy,
+        ])
+    };
+    gated(&fixture, "gate.yaml", POLICY);
+    fixture.write("off.yaml", &format!("gate: false\n{POLICY}"));
+    let (gate, ungated, off) = (audit("gate.yaml"), audit("policy.yaml"), audit("off.yaml"));
+    assert_eq!(gate.status.code(), Some(1));
+    assert_eq!(ungated.status.code(), Some(0));
+    assert_eq!(off.status.code(), Some(0));
+    // The class finding is present under every policy; only the exit differs.
+    assert_eq!(gate.stdout, ungated.stdout);
+    assert_eq!(off.stdout, ungated.stdout);
+    assert!(String::from_utf8_lossy(&gate.stdout).contains("class-method-missing"));
+}
+
+/// With the class floor satisfied, findings the policy did not cause (here an
+/// undischarged obligation of an unclassified requirement) leave the exit
+/// status unchanged under `gate: true`.
+#[trace("FR-160-AC-16")]
+#[test]
+fn tc_plat1836_006_non_class_findings_do_not_gate() {
+    let fixture = repository();
+    with_evidence(&fixture, "pass");
+    gated(&fixture, "gate.yaml", POLICY);
+    let output = fixture.quoin(&[
+        "evidence",
+        "audit",
+        "--module",
+        ".",
+        "--json",
+        "--class-policy",
+        "gate.yaml",
+    ]);
+    assert_eq!(output.status.code(), Some(0));
+    let audit: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(class_findings(&audit).is_empty(), "{audit}");
+    let kinds: Vec<&str> = audit["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|finding| finding["kind"].as_str().unwrap())
+        .collect();
+    assert!(kinds.contains(&"undischarged"), "{audit}");
+}
+
+fn obligations_json(fixture: &Fixture, policy: &str) -> (Option<i32>, Value) {
+    let output = fixture.quoin(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        policy,
+        "--format",
+        "json",
+    ]);
+    let report = serde_json::from_slice(&output.stdout).unwrap_or(Value::Null);
+    (output.status.code(), report)
+}
+
+fn statuses(report: &Value) -> Vec<(String, String)> {
+    report["requirements"][0]["activities"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|activity| {
+            (
+                activity["id"].as_str().unwrap().to_owned(),
+                activity["status"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect()
+}
+
+const RELATION_POLICY: &str = "class_field: class
+classes:
+  class-2:
+    obligations:
+      - id: unit-design
+        kind: detailed-design
+        element_archetypes: [Design]
+      - id: wrong-archetype
+        kind: detailed-design
+        element_archetypes: [Unit]
+      - id: segregation
+        kind: segregation
+        relation: fr-has-design
+      - id: soup
+        kind: soup-requirements
+        relation: fr-has-soup
+    rationale: recorded by the fixture's author
+";
+
+/// The relation-backed kinds read the real design join through the declared
+/// relation and archetypes.
+#[trace("FR-161-AC-10", "FR-161-AC-11")]
+#[test]
+fn tc_plat1836_003_relation_backed_kinds_read_the_design_join() {
+    let fixture = repository();
+    enable_design_relation(&fixture);
+    fixture.write("spec/FR-001-classed.md", CLASSED_WITH_DESIGN);
+    fixture.write("spec/DESIGN-001.md", DESIGN);
+    fixture.write("relations.yaml", RELATION_POLICY);
+    let (_, report) = obligations_json(&fixture, "relations.yaml");
+    assert_eq!(
+        statuses(&report),
+        [
+            ("unit-design".to_owned(), "met".to_owned()),
+            ("wrong-archetype".to_owned(), "unmet".to_owned()),
+            ("segregation".to_owned(), "met".to_owned()),
+            ("soup".to_owned(), "not-available".to_owned()),
+        ],
+        "{report}"
+    );
+    // The requirement has no row in the declared `fr-has-soup` relation: not a gap.
+    let soup = &report["requirements"][0]["activities"][3];
+    assert!(
+        soup["reason"].as_str().unwrap().contains("no row"),
+        "{report}"
+    );
+}
+
+/// An unmet activity fails the command (exit 1) only when the policy sets
+/// `gate: true`, and the report is unchanged; `not-available` never gates.
+#[trace("FR-161-AC-13")]
+#[test]
+fn tc_plat1836_004_unmet_activities_gate_only_when_the_policy_says_so() {
+    let fixture = repository();
+    enable_design_relation(&fixture);
+    fixture.write("spec/FR-001-classed.md", CLASSED_WITH_DESIGN);
+    fixture.write("spec/DESIGN-001.md", DESIGN);
+    gated(&fixture, "gate.yaml", POLICY);
+    gated(&fixture, "gate-relations.yaml", RELATION_POLICY);
+    // The `evidence` row is unmet (nothing is bound).
+    let (code, gate_report) = obligations_json(&fixture, "gate.yaml");
+    assert_eq!(code, Some(1), "{gate_report}");
+    let (code, ungated_report) = obligations_json(&fixture, "policy.yaml");
+    assert_eq!(code, Some(0));
+    assert_eq!(gate_report, ungated_report);
+    // The wrong archetype is unmet, so this one fails too.
+    let (code, _) = obligations_json(&fixture, "gate-relations.yaml");
+    assert_eq!(code, Some(1));
+    // With every row met or not-available it does not.
+    with_evidence(&fixture, "pass");
+    fixture.write(
+        "gate-ok.yaml",
+        "gate: true\nclass_field: class\nclasses:\n  class-2:\n    obligations:\n      - id: unit-design\n        kind: detailed-design\n        element_archetypes: [Design]\n      - id: soup\n        kind: soup-requirements\n        relation: fr-has-soup\n      - id: unit-evidence\n        kind: evidence\n        method: unit-testing\n    rationale: recorded by the fixture's author\n",
+    );
+    let (code, report) = obligations_json(&fixture, "gate-ok.yaml");
+    assert_eq!(code, Some(0), "{report}");
+}
+
+/// `quoin class obligations` reads the real evidence outcome and the real
+/// design join: an uncovered design row and a failing bound run are `unmet`,
+/// covered design and a passing run are `met`.
+#[trace("FR-161-AC-2")]
+#[test]
+fn tc_plat1836_005_class_obligations_reports_unmet_design_and_failing_evidence() {
+    let fixture = repository();
+    enable_design_relation(&fixture);
+    // No design document and no `designs` edge: the design row is uncovered.
+    with_evidence(&fixture, "fail");
+    let (_, report) = obligations_json(&fixture, "policy.yaml");
+    assert_eq!(
+        statuses(&report),
+        [
+            ("design".to_owned(), "unmet".to_owned()),
+            ("unit-evidence".to_owned(), "unmet".to_owned()),
+        ],
+        "{report}"
+    );
+    assert_eq!(
+        report["requirements"][0]["activities"][1]["missing"],
+        serde_json::json!(["FR-001-AC-1", "FR-001-AC-2"])
+    );
+    fixture.write("spec/FR-001-classed.md", CLASSED_WITH_DESIGN);
+    fixture.write("spec/DESIGN-001.md", DESIGN);
+    with_evidence(&fixture, "pass");
+    let (_, report) = obligations_json(&fixture, "policy.yaml");
+    assert_eq!(
+        statuses(&report),
+        [
+            ("design".to_owned(), "met".to_owned()),
+            ("unit-evidence".to_owned(), "met".to_owned()),
+        ],
+        "{report}"
+    );
+}
+
+/// A relation no loaded module declares as a design relation is refused naming
+/// it, with no report, as an undeclared method is.
+#[trace("FR-161-AC-14")]
+#[test]
+fn tc_plat1836_007_an_undeclared_relation_is_refused() {
+    let fixture = repository();
+    enable_design_relation(&fixture);
+    fixture.write(
+        "typo.yaml",
+        "class_field: class\nclasses:\n  class-2:\n    obligations:\n      - id: soup\n        kind: soup-requirements\n        relation: fr-has-sop\n    rationale: recorded by the fixture's author\n",
+    );
+    let output = fixture.quoin(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        "typo.yaml",
+        "--format",
+        "json",
+    ]);
+    assert_ne!(output.status.code(), Some(0));
+    assert!(
+        output.stdout.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("fr-has-sop"), "{stderr}");
+    // The same refusal as an undeclared method.
+    fixture.write(
+        "method.yaml",
+        "class_field: class\nclasses:\n  class-2:\n    obligations:\n      - id: u\n        kind: evidence\n        method: nope\n    rationale: recorded by the fixture's author\n",
+    );
+    let method = fixture.quoin(&[
+        "class",
+        "obligations",
+        ".",
+        "--module",
+        ".",
+        "--class-policy",
+        "method.yaml",
+    ]);
+    assert_eq!(method.status.code(), output.status.code());
 }
