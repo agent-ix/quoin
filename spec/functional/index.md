@@ -25,7 +25,6 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-015: Emit a scoped Quire validation command](./FR-015-emit-quire-validate-command.md)
 - [FR-016: Default module set manifest schema](./FR-016-default-modules-schema.md)
 - [FR-017: Reconcile the default module set into the shared store](./FR-017-reconcile-default-modules.md)
-- [FR-211: Warn when an installed default module lags the CLI's pin](./FR-211-module-lag-warning.md)
 - [FR-018: Map plugin source arguments to typed sources](./FR-018-map-plugin-sources.md)
 - [FR-019: Install, list, and remove plugins through the registry](./FR-019-manage-plugin-registry.md)
 - [FR-020: Expose workflow launchers and resolve their skills](./FR-020-resolve-workflow-skills.md)
@@ -192,3 +191,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-209: Agent design-gate workflow for boundary-crossing rules](./FR-209-agent-design-gate.md)
 - [FR-210: Retain signed proof integrity statements in independent storage](./FR-210-retained-proof-integrity-statement.md)
 - [FR-211: Clause discharge resolves its evidence and verifies its approvals](./FR-211-discharge-resolves-evidence-and-approvals.md)
+- [FR-212: Warn when an installed default module is not at the CLI's pin](./FR-212-module-lag-warning.md)

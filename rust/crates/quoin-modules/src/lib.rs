@@ -53,7 +53,7 @@ pub use error::{ModulesError, ModulesErrorCode, RollbackOutcome};
 pub use git::{GitLimits, GitResolver, GixResolver, ResolvedGitSource, Revision};
 pub use ids::{CommitSha, ModuleName};
 pub use install::{InstallOutcome, ModuleInstaller};
-pub use lag::{ModuleLag, lagging_modules};
+pub use lag::{LagKind, ModuleLag, lagging_modules};
 pub use manifest::{MarketplaceEntry, MarketplaceManifest};
 pub use module_name::read_module_name;
 pub use pack::{NoPacks, PackProbe, RestrictedSet};

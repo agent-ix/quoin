@@ -36,3 +36,4 @@ never reused.** `tc_381_202` asserts the catalogue round-trips.
 | `QM029_NPM_METADATA`                  | `NpmMetadata`                             | Registry metadata omits the requested release or its tarball URL. |
 | `QM030_NPM_ARCHIVE`                   | `NpmArchive`                              | A package archive is malformed or contains an unsupported member type. |
 | `QM031_NPM_REGISTRY_UNSUPPORTED`      | `NpmRegistryUnsupported`                  | An npm source selects a registry URL other than the public `https://registry.npmjs.org/` registry. |
+| `QM032_MODULE_LAGS_PIN`               | `ModuleLagsPin`                           | A warning-only code: an installed default module is not at the release the CLI pins. Carried on a diagnostic by `module doctor` and `catalog validate`; never raised as a `ModulesError`. |

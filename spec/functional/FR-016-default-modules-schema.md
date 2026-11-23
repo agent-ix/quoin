@@ -81,10 +81,10 @@ schema below, which is the full contract. `schemaVersion` is the constant `1`.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest. | Test (TC-014) |
-| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source, and excludes private opt-in modules. | Test (TC-014) |
-| FR-016-AC-4 | Each Git source sets `source.ref` to a release tag when one exists for its module, and uses the repository's default branch only when no release tag exists. | Test (TC-014) |
-| FR-016-AC-5 | A declared `source.ref` is a string. | Test (TC-014) |
+| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest. | Test |
+| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source, and excludes private opt-in modules. | None (the pinned set is not asserted by a test) |
+| FR-016-AC-4 | Each Git source sets `source.ref` to a release tag when one exists for its module, and uses the repository's default branch only when no release tag exists. | None (the pinned refs are not asserted by a test) |
+| FR-016-AC-5 | A declared `source.ref` is a string. | Test |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-016-AC-3 is withdrawn. It
 > required every committed copy of a module's pin to agree and the manifest's
