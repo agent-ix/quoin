@@ -190,3 +190,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-208: Apply module-specific approval requirements to clause discharge](./FR-208-module-specific-discharge-approval.md)
 - [FR-209: Agent design-gate workflow for boundary-crossing rules](./FR-209-agent-design-gate.md)
 - [FR-210: Retain signed proof integrity statements in independent storage](./FR-210-retained-proof-integrity-statement.md)
+- [FR-211: Clause discharge resolves its evidence and verifies its approvals](./FR-211-discharge-resolves-evidence-and-approvals.md)

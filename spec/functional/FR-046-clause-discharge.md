@@ -52,7 +52,7 @@ direct fact without classifying that fact as a disposition.
 - Applicability and discharge are separate decisions.
 - A disposition is evidence of an authorized decision, not evidence that the
   clause's expected output exists.
-- The decision, owner and approval reference are authored explicitly by a human. An approval reference and a `scope_exclusion` assertion are references/assertions only; neither independently proves authorization.
+- The decision, owner and approval reference are authored explicitly by a human. For a clause that declares no `approvalRoles`, an approval reference and a `scope_exclusion` assertion are references/assertions only and neither independently proves authorization. For an approval-class clause the approval reference is verified at admission (FR-211), and a direct fact's `evidenceRefs` are resolved against retained evidence (FR-211).
 - `temporary_exception` is bounded by its authored expiry and the attestation's validity interval. The authored expiry is copied to the fact's `decisionExpiresAt`; the fact remains open at that instant even if `attestation.expiresAt` is later.
 - The implementation uses only caller-provided data and an explicit `asOf`
   instant; it does not read the wall clock.
