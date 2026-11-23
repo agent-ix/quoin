@@ -32,3 +32,23 @@ The composed test of FR-191-AC-27 is realistic: quoin already runs real engineer
 ## Verdict
 
 Not mergeable as is: FND-001 makes one AC-28 case unsatisfiable as written, and FND-002 to FND-004 leave the composed test underspecified. All are small wording fixes inside FR-191. No migration, compatibility or fallback language, no pins, ledgers or hashes, no paywalled text and no machine paths were found. Consistent and clean: the exit-4 / quire-code-3 wording, the order of tag, release-verify and dossier commit, the `--out` reading (the input directory is `<DIR>`, so FR-191-AC-10 `--out other` stays consistent), the DOS-REL Decision text at `release_record.rs` (which claims no binding to the DOS-REL bytes, so a dossier committed after the tag contradicts nothing), and the Dependencies line.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-008 | medium | FR-191-AC-27 and FR-191-AC-28 disagree on the fixture: AC-27 "commits only `dossier/DOS-REL.md`", while AC-28, set "in the repository of FR-191-AC-27", requires `dossier/NOTES.md` "committed in the dossier commit"; AC-28 also modifies `README.md`, which AC-27 never places in the repository. One fixture must hold both: the AC-27 dossier commit adds `DOS-REL.md` and `NOTES.md` under `dossier/`, and the baseline holds `README.md`. | FR-191-AC-28 |
+| FND-009 | medium | FR-191-AC-28 does not say that each of the two further commits is applied alone on the dossier commit. If they are stacked, the `NOTES.md` deletion check passes only because the `README.md` commit is already in the chain, so the deletion refusal is never shown on its own. | FR-191-AC-28 |
+| FND-010 | low | The FR-191-AC-27 export command omits `--output <PATH>`, which `export` requires and which AC-28's "output file unchanged" refers to. | FR-191-AC-27 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | AC-28 now deletes the non-selected `dossier/NOTES.md`; export currency checks only selected documents (`<DIR>/<document-id>.md`), so it passes and `quire export` refuses the deletion. |
+| FND-002 | fixed | AC-28 names `README.md`, read by no source record or snapshot, and runs export with the inputs of the passing run. |
+| FND-003 | fixed | AC-27 states the baseline, Baseline file, single-child release commit, FR-047-AC-1 signed tag, `released` result, and the same `--version`, `--snapshot`, `--release-verify` on generate and export; "EA Release document" and `DOS-REL` are distinct. |
+| FND-004 | fixed | AC-27 requires Release `<TAG> (tag commit <full hash of the tagged commit>)` and the Source commit and Date of the dossier commit. |
+| FND-005 | fixed | Bullet cites the first-parent descendant rule of quire-cli FR-034 section A as the only acceptance path and adds the repository-root case. |
+| FND-006 | fixed | Duplicate `--release` bullet and workflow clause removed. |
+| FND-007 | fixed | Test-existence bullet removed. |
