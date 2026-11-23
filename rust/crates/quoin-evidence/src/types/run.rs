@@ -34,7 +34,7 @@ const SURVIVOR_HEAD_CHARS: usize = 80;
 
 /// One mutant the tests did not kill: a demonstrated gap in the suite.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Survivor {
     /// The line of the mutated code, when the tool reported one.
@@ -101,7 +101,7 @@ impl Outcome {
 
 /// One producer result, transcribed.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct RunEntry {
     /// The producer's own identity for the result.
@@ -185,7 +185,7 @@ pub struct RunRecord {
     /// true of a transcribed inspection too (agent-ix/quoin#105).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence_kind: Option<String>,
-    /// ISO-8601, supplied by the caller — never read from the clock here.
+    /// Canonical UTC timestamp, supplied by the caller — never read from the clock here.
     pub timestamp: String,
     /// One entry per symbol the producer reported.
     pub entries: Vec<RunEntry>,

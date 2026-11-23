@@ -20,6 +20,7 @@ use crate::paths::{
 };
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
+use crate::timestamp::{TimestampKey, parse_timestamp};
 use crate::types::{FindingRecord, MockInspectionRecord, RunRecord, STORE_SCHEMA_VERSION};
 
 /// What the store orders records by: the caller's timestamp, then the file name.
@@ -36,6 +37,18 @@ pub(crate) trait StoredRecord {
     fn suite(&self) -> &SuiteId;
     /// The caller-supplied ISO-8601 stamp.
     fn timestamp(&self) -> &str;
+
+    /// Refuse malformed fields before a key or bytes are published.
+    fn validate(&self) -> Result<(), EvidenceError>;
+}
+
+/// Validate a run value at a reader boundary that must retain its source bytes.
+///
+/// The analysis qualifier reads exact bytes for provenance, so it cannot route
+/// through the generic store decoder. It uses this same semantic intake check
+/// before it admits the typed record.
+pub fn validate_run_record(record: &RunRecord) -> Result<(), EvidenceError> {
+    record.validate()
 }
 
 impl StoredRecord for RunRecord {
@@ -47,6 +60,72 @@ impl StoredRecord for RunRecord {
     }
     fn timestamp(&self) -> &str {
         &self.timestamp
+    }
+
+    fn validate(&self) -> Result<(), EvidenceError> {
+        validate_envelope(
+            Self::LABEL,
+            self.schema_version,
+            &self.suite,
+            &self.tool,
+            &self.timestamp,
+        )?;
+        optional_text(Self::LABEL, "evidenceKind", self.evidence_kind.as_deref())?;
+        for (index, entry) in self.entries.iter().enumerate() {
+            identity(
+                Self::LABEL,
+                &format!("entries[{index}].symbol"),
+                entry.symbol.as_str(),
+            )?;
+            if let Some(ids) = &entry.trace_ids {
+                for (id_index, id) in ids.iter().enumerate() {
+                    identity(
+                        Self::LABEL,
+                        &format!("entries[{index}].traceIds[{id_index}]"),
+                        id,
+                    )?;
+                }
+            }
+            if entry.score.is_some_and(|score| !score.is_finite()) {
+                return Err(invalid(
+                    Self::LABEL,
+                    format!("entries[{index}].score: must be finite"),
+                ));
+            }
+            optional_text(
+                Self::LABEL,
+                &format!("entries[{index}].metric"),
+                entry.metric.as_deref(),
+            )?;
+            if let Some(config) = &entry.config {
+                for (key, value) in config {
+                    identity(Self::LABEL, &format!("entries[{index}].config key"), key)?;
+                    text(
+                        Self::LABEL,
+                        &format!("entries[{index}].config[{key}]"),
+                        value,
+                    )?;
+                }
+            }
+            if let Some(survivors) = &entry.survivors {
+                for (survivor_index, survivor) in survivors.iter().enumerate() {
+                    if survivor.line == Some(0) {
+                        return Err(invalid(
+                            Self::LABEL,
+                            format!(
+                                "entries[{index}].survivors[{survivor_index}].line: must be greater than zero"
+                            ),
+                        ));
+                    }
+                    text(
+                        Self::LABEL,
+                        &format!("entries[{index}].survivors[{survivor_index}].mutation"),
+                        &survivor.mutation,
+                    )?;
+                }
+            }
+        }
+        Ok(())
     }
 }
 
@@ -60,6 +139,61 @@ impl StoredRecord for FindingRecord {
     fn timestamp(&self) -> &str {
         &self.timestamp
     }
+
+    fn validate(&self) -> Result<(), EvidenceError> {
+        validate_envelope(
+            Self::LABEL,
+            self.schema_version,
+            &self.suite,
+            &self.tool,
+            &self.timestamp,
+        )?;
+        optional_text(Self::LABEL, "evidenceKind", self.evidence_kind.as_deref())?;
+        optional_text(Self::LABEL, "ruleset", self.ruleset.as_deref())?;
+        for (index, finding) in self.findings.iter().enumerate() {
+            identity(
+                Self::LABEL,
+                &format!("findings[{index}].ruleId"),
+                &finding.rule_id,
+            )?;
+            optional_text(
+                Self::LABEL,
+                &format!("findings[{index}].severity"),
+                finding.severity.as_deref(),
+            )?;
+            optional_text(
+                Self::LABEL,
+                &format!("findings[{index}].message"),
+                finding.message.as_deref(),
+            )?;
+            optional_text(
+                Self::LABEL,
+                &format!("findings[{index}].path"),
+                finding.path.as_deref(),
+            )?;
+            if let Some(ids) = &finding.trace_ids {
+                for (id_index, id) in ids.iter().enumerate() {
+                    identity(
+                        Self::LABEL,
+                        &format!("findings[{index}].traceIds[{id_index}]"),
+                        id,
+                    )?;
+                }
+            }
+            if finding.line == Some(0) {
+                return Err(invalid(
+                    Self::LABEL,
+                    format!("findings[{index}].line: must be greater than zero"),
+                ));
+            }
+        }
+        if let Some(evaluated) = &self.evaluated {
+            for (index, symbol) in evaluated.iter().enumerate() {
+                identity(Self::LABEL, &format!("evaluated[{index}]"), symbol)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 impl StoredRecord for MockInspectionRecord {
@@ -72,6 +206,130 @@ impl StoredRecord for MockInspectionRecord {
     fn timestamp(&self) -> &str {
         &self.timestamp
     }
+
+    fn validate(&self) -> Result<(), EvidenceError> {
+        validate_envelope(
+            Self::LABEL,
+            self.schema_version,
+            &self.suite,
+            &self.tool,
+            &self.timestamp,
+        )?;
+        for (index, injection) in self.injections.iter().enumerate() {
+            suite_id(
+                Self::LABEL,
+                &format!("injections[{index}].suite"),
+                &injection.suite,
+            )?;
+            if injection.suite != self.suite {
+                return Err(invalid(
+                    Self::LABEL,
+                    format!("injections[{index}].suite: must match the record suite"),
+                ));
+            }
+            identity(
+                Self::LABEL,
+                &format!("injections[{index}].symbol"),
+                injection.symbol.as_str(),
+            )?;
+            if injection.injects.is_empty() {
+                return Err(invalid(
+                    Self::LABEL,
+                    format!("injections[{index}].injects: must contain an identifier"),
+                ));
+            }
+            for (inject_index, injected) in injection.injects.iter().enumerate() {
+                identity(
+                    Self::LABEL,
+                    &format!("injections[{index}].injects[{inject_index}]"),
+                    injected,
+                )?;
+            }
+            if injection.line == Some(0) {
+                return Err(invalid(
+                    Self::LABEL,
+                    format!("injections[{index}].line: must be greater than zero"),
+                ));
+            }
+            if let Some(path) = injection.path.as_deref() {
+                text(Self::LABEL, &format!("injections[{index}].path"), path)?;
+                if path.starts_with('/')
+                    || path.contains('\\')
+                    || path.split('/').any(|segment| segment == "..")
+                {
+                    return Err(invalid(
+                        Self::LABEL,
+                        format!("injections[{index}].path: must be a repository-relative path"),
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+fn invalid(label: &'static str, detail: impl Into<String>) -> EvidenceError {
+    EvidenceError::invalid(label, detail)
+}
+
+fn text(label: &'static str, field: &str, value: &str) -> Result<(), EvidenceError> {
+    if value.trim().is_empty() || value != value.trim() || value.chars().any(char::is_control) {
+        return Err(invalid(
+            label,
+            format!("{field}: must be non-empty, trimmed text without control characters"),
+        ));
+    }
+    Ok(())
+}
+
+fn optional_text(
+    label: &'static str,
+    field: &str,
+    value: Option<&str>,
+) -> Result<(), EvidenceError> {
+    if let Some(value) = value {
+        text(label, field, value)?;
+    }
+    Ok(())
+}
+
+fn identity(label: &'static str, field: &str, value: &str) -> Result<(), EvidenceError> {
+    text(label, field, value)
+}
+
+fn suite_id(label: &'static str, field: &str, value: &SuiteId) -> Result<(), EvidenceError> {
+    let value = value.as_str();
+    identity(label, field, value)?;
+    if value == "." || value == ".." || value.contains('/') || value.contains('\\') {
+        return Err(invalid(
+            label,
+            format!("{field}: must be one safe path segment"),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_envelope(
+    label: &'static str,
+    schema_version: u32,
+    suite: &SuiteId,
+    tool: &str,
+    timestamp: &str,
+) -> Result<TimestampKey, EvidenceError> {
+    if schema_version != STORE_SCHEMA_VERSION {
+        return Err(invalid(
+            label,
+            format!("schemaVersion: expected {STORE_SCHEMA_VERSION}"),
+        ));
+    }
+    suite_id(label, "suite", suite)?;
+    text(label, "tool", tool)?;
+    parse_timestamp(timestamp).ok_or_else(|| {
+        invalid(
+            label,
+            "timestamp: expected canonical UTC YYYY-MM-DDTHH:MM:SS[.mmm]Z".to_owned(),
+        )
+    })
 }
 
 /// Where one record belongs, from the record itself.
@@ -98,9 +356,11 @@ fn path_of<T: StoredRecord>(record: &T) -> String {
 pub(crate) fn write_record<S, T>(source: &mut S, record: &T) -> Result<String, EvidenceError>
 where
     S: EvidenceSource + ?Sized,
-    T: StoredRecord + Serialize + Clone,
+    T: StoredRecord + Serialize + Clone + DeserializeOwned,
 {
+    record.validate()?;
     let path = path_of(record);
+    refuse_timestamp_alias::<S, T>(source, record, &path)?;
     let mut value =
         serde_json::to_value(record).map_err(|error| EvidenceError::Canonicalization {
             what: T::LABEL,
@@ -124,7 +384,9 @@ pub(crate) fn write_analysis_pair<S: EvidenceSource + ?Sized>(
     record: &RunRecord,
     projection: &serde_json::Value,
 ) -> Result<String, EvidenceError> {
+    record.validate()?;
     let run_path = path_of(record);
+    refuse_timestamp_alias::<S, RunRecord>(source, record, &run_path)?;
     let projection_path = record_path(ANALYSIS_REPORTS_DIR, &record.suite, &record.timestamp);
     let mut run_value =
         serde_json::to_value(record).map_err(|error| EvidenceError::Canonicalization {
@@ -178,6 +440,54 @@ pub(crate) fn write_analysis_pair<S: EvidenceSource + ?Sized>(
     }
 }
 
+/// A second spelling for an instant would create a second path for one suite
+/// event. Refuse it, and refuse to append when an existing record is missing or
+/// malformed because its timestamp cannot be trusted for collision checks.
+fn refuse_timestamp_alias<S, T>(
+    source: &S,
+    record: &T,
+    expected_path: &str,
+) -> Result<(), EvidenceError>
+where
+    S: EvidenceSource + ?Sized,
+    T: StoredRecord + DeserializeOwned,
+{
+    let expected = parse_timestamp(record.timestamp())
+        .ok_or_else(|| invalid(T::LABEL, "timestamp: invalid canonical UTC timestamp"))?;
+    let directory = suite_dir(T::FAMILY, record.suite());
+    for name in source.list_files(&directory)? {
+        let path = format!("{directory}/{name}");
+        let Some(text) = source.read(&path)? else {
+            return Err(existing_record_problem(&path));
+        };
+        let existing = decode::<T>(&path, &text).map_err(|_| existing_record_problem(&path))?;
+        existing
+            .validate()
+            .map_err(|_| existing_record_problem(&path))?;
+        if existing.suite() != record.suite() || path_of(&existing) != path {
+            return Err(existing_record_problem(&path));
+        }
+        let existing_key =
+            parse_timestamp(existing.timestamp()).ok_or_else(|| existing_record_problem(&path))?;
+        if path != expected_path && existing_key == expected {
+            return Err(EvidenceError::RecordIntegrity {
+                what: T::LABEL,
+                path,
+                note: "; another timestamp spelling already names this instant, and existing bytes were not changed",
+            });
+        }
+    }
+    Ok(())
+}
+
+fn existing_record_problem(path: &str) -> EvidenceError {
+    EvidenceError::RecordIntegrity {
+        what: "unreadable existing evidence record",
+        path: path.to_owned(),
+        note: "; no bytes were changed",
+    }
+}
+
 fn pair_conflict(path: &str) -> EvidenceError {
     EvidenceError::RecordIntegrity {
         what: "analysis report pair",
@@ -202,7 +512,7 @@ where
     source.list_files(&suite_dir(T::FAMILY, suite))
 }
 
-/// Every record recorded for a suite, oldest first by timestamp.
+/// Every valid record recorded for a suite, oldest first by parsed UTC instant.
 ///
 /// An unreadable file is skipped and its path pushed onto `skipped`: one
 /// corrupt record must not hide every finding in the report
@@ -226,20 +536,37 @@ where
     let mut records: Vec<T> = Vec::new();
     for name in source.list_files(&directory)? {
         let path = format!("{directory}/{name}");
-        let Some(text) = source.read(&path)? else {
-            continue;
+        let text = match source.read(&path) {
+            Ok(Some(text)) => text,
+            Ok(None) | Err(EvidenceError::StoreRead { .. }) => {
+                skipped.push(path);
+                continue;
+            }
+            Err(other) => return Err(other),
         };
         match decode::<T>(&path, &text) {
-            Ok(record) => records.push(record),
+            Ok(record)
+                if record.validate().is_ok()
+                    && record.suite() == suite
+                    && path_of(&record) == path =>
+            {
+                records.push(record);
+            }
+            Ok(_) => skipped.push(path),
             Err(EvidenceError::StoreRead { .. }) => skipped.push(path),
             Err(other) => return Err(other),
         }
     }
-    records.sort_by(|a, b| a.timestamp().cmp(b.timestamp()));
+    records.sort_by(|a, b| {
+        parse_timestamp(a.timestamp())
+            .cmp(&parse_timestamp(b.timestamp()))
+            .then_with(|| path_of(a).cmp(&path_of(b)))
+    });
     Ok(records)
 }
 
-/// The newest record of a suite by timestamp, or `None` when it has none.
+/// The newest record of a suite by parsed UTC instant, or `None` when it has none
+/// or any listed record is missing or unreadable.
 ///
 /// # Errors
 ///
@@ -253,7 +580,12 @@ where
     S: EvidenceSource + ?Sized,
     T: StoredRecord + DeserializeOwned,
 {
-    Ok(read_all::<S, T>(source, suite, skipped)?.pop())
+    let skipped_before = skipped.len();
+    let mut records = read_all::<S, T>(source, suite, skipped)?;
+    if skipped.len() != skipped_before {
+        return Ok(None);
+    }
+    Ok(records.pop())
 }
 
 /// The newest record of every recorded suite that has one.

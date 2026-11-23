@@ -17,7 +17,7 @@ use crate::ids::SuiteId;
 ///
 /// `severity` is the scanner's own word, never normalized (FR-034-CON-2).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Finding {
     /// The scanner's rule identity.
@@ -56,7 +56,7 @@ impl Finding {
 
 /// One finding-shaped scan of ONE suite.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct FindingRecord {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
@@ -68,7 +68,7 @@ pub struct FindingRecord {
     /// The declared `test_type` this scan produced, when the caller names one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence_kind: Option<String>,
-    /// ISO-8601, supplied by the caller — never read from the clock here.
+    /// Canonical UTC timestamp, supplied by the caller — never read from the clock here.
     pub timestamp: String,
     /// What the scan covered, as the tool reported it.
     ///

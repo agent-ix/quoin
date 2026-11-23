@@ -56,7 +56,8 @@ pub trait EvidenceSource {
     ///
     /// # Errors
     ///
-    /// [`EvidenceError::StoreIo`] when the path exists and cannot be read.
+    /// [`EvidenceError::StoreIo`] when the path cannot be read, or
+    /// [`EvidenceError::StoreRead`] when its bytes are not valid UTF-8.
     fn read(&self, path: &str) -> Result<Option<String>, EvidenceError>;
 
     /// The `.json` file names directly inside a store directory, sorted.
@@ -320,9 +321,14 @@ fn store_io<'a>(
 
 impl EvidenceSource for DiskEvidence {
     fn read(&self, path: &str) -> Result<Option<String>, EvidenceError> {
-        Ok(self
-            .read_bytes(path)?
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned()))
+        self.read_bytes(path)?
+            .map(|bytes| {
+                String::from_utf8(bytes).map_err(|error| EvidenceError::StoreRead {
+                    path: path.to_owned(),
+                    detail: format!("content is not valid UTF-8: {error}"),
+                })
+            })
+            .transpose()
     }
 
     fn list_files(&self, directory: &str) -> Result<Vec<String>, EvidenceError> {
@@ -334,6 +340,11 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError> {
+        std::str::from_utf8(bytes).map_err(|error| EvidenceError::StoreIo {
+            operation: "write",
+            path: path.to_owned(),
+            detail: format!("content is not valid UTF-8: {error}"),
+        })?;
         let destination = quoin_store::store::StorePath::Named(self.resolve_inside("write", path)?);
         quoin_store::store::publish(&destination, quoin_store::store::Content::Artifact(bytes))
             .map(|_| ())
@@ -341,6 +352,11 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, EvidenceError> {
+        std::str::from_utf8(bytes).map_err(|error| EvidenceError::StoreIo {
+            operation: "write",
+            path: path.to_owned(),
+            detail: format!("content is not valid UTF-8: {error}"),
+        })?;
         let destination =
             quoin_store::store::StorePath::ContentAddressed(self.resolve_inside("write", path)?);
         let published =
@@ -400,9 +416,12 @@ impl EvidenceSource for DiskEvidence {
         for segment in path.split('/').filter(|segment| !segment.is_empty()) {
             resolved.push(segment);
         }
-        std::fs::read(&resolved)
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
-            .map_err(io("read", path))
+        let bytes = std::fs::read(&resolved).map_err(io("read", path))?;
+        String::from_utf8(bytes).map_err(|error| EvidenceError::StoreIo {
+            operation: "read",
+            path: path.to_owned(),
+            detail: format!("source content is not valid UTF-8: {error}"),
+        })
     }
 }
 
@@ -486,13 +505,22 @@ impl EvidenceSource for MemoryEvidence {
     }
 
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError> {
-        self.store
-            .insert(path.to_owned(), String::from_utf8_lossy(bytes).into_owned());
+        let text = String::from_utf8(bytes.to_vec()).map_err(|error| EvidenceError::StoreIo {
+            operation: "write",
+            path: path.to_owned(),
+            detail: format!("content is not valid UTF-8: {error}"),
+        })?;
+        self.store.insert(path.to_owned(), text);
         Ok(())
     }
 
     fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, EvidenceError> {
-        let incoming = String::from_utf8_lossy(bytes).into_owned();
+        let incoming =
+            String::from_utf8(bytes.to_vec()).map_err(|error| EvidenceError::StoreIo {
+                operation: "write",
+                path: path.to_owned(),
+                detail: format!("content is not valid UTF-8: {error}"),
+            })?;
         match self.store.get(path) {
             Some(existing) if *existing == incoming => Ok(false),
             Some(_) => Err(EvidenceError::RecordIntegrity {
@@ -578,5 +606,30 @@ mod tests {
         let source = DiskEvidence::new("/repo");
         assert_eq!(source.root(), std::path::Path::new("/repo/spec/evidence"));
         assert_eq!(source.repo(), std::path::Path::new("/repo"));
+    }
+
+    #[test]
+    fn tc_plat_1794_invalid_utf8_store_and_source_content_is_refused_without_replacement() {
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path().join("spec/evidence");
+        std::fs::create_dir_all(root.join("runs/SUITE-A")).unwrap();
+        std::fs::write(root.join("runs/SUITE-A/bad.json"), [b'{', 0xff, b'}']).unwrap();
+        std::fs::write(temporary.path().join("source.rs"), [b'f', 0xff, b'n']).unwrap();
+        let mut disk = DiskEvidence::at_path(&root);
+
+        let read = disk.read("runs/SUITE-A/bad.json").unwrap_err().to_string();
+        assert!(
+            read.contains("not valid UTF-8"),
+            "unexpected read error: {read}"
+        );
+        assert!(disk.source_text("source.rs").is_err());
+
+        let write = disk.write("runs/SUITE-A/new.json", b"{\xff}").unwrap_err();
+        assert!(write.to_string().contains("not valid UTF-8"));
+        assert!(!root.join("runs/SUITE-A/new.json").exists());
+
+        let mut memory = MemoryEvidence::new();
+        assert!(memory.write("runs/SUITE-A/new.json", b"{\xff}").is_err());
+        assert_eq!(memory.read("runs/SUITE-A/new.json").unwrap(), None);
     }
 }

@@ -3,14 +3,15 @@
 
 //! What the retained runs say about one obligation (FR-153).
 //!
-//! Runs are ordered the way the store orders them (FR-030): by the run's
-//! `--timestamp`, ties broken by the record's file name, whatever order the
-//! caller supplied them in. The later run of a suite decides.
+//! Runs are ordered the way the store orders them (FR-030): by parsed UTC
+//! instant, ties broken by the record's file name, whatever order the caller
+//! supplied them in. The later run of a suite decides.
 
 use std::collections::BTreeMap;
 
 use super::{Cause, Refusal, RetainedRun, RunLocator};
 use crate::ids::SuiteId;
+use crate::parse_timestamp;
 use crate::types::{Outcome, RunEntry};
 
 /// A passing entry that is the latest word of its suite on one symbol.
@@ -42,10 +43,14 @@ fn locator(run: &RetainedRun, entry: &RunEntry) -> RunLocator {
     }
 }
 
-/// The suite's runs in the store's order (FR-030): the run's timestamp, then
-/// the record's file name, whatever order they were supplied in.
+/// The suite's runs in the store's order (FR-030): parsed UTC instant, then the
+/// record's file name, whatever order they were supplied in.
 fn ordered(mut runs: Vec<&RetainedRun>) -> Vec<&RetainedRun> {
-    runs.sort_by(|a, b| (&a.record.timestamp, &a.file).cmp(&(&b.record.timestamp, &b.file)));
+    runs.sort_by(|a, b| {
+        parse_timestamp(&a.record.timestamp)
+            .cmp(&parse_timestamp(&b.record.timestamp))
+            .then_with(|| a.file.cmp(&b.file))
+    });
     runs
 }
 
@@ -61,6 +66,22 @@ fn by_suite(runs: &[RetainedRun]) -> BTreeMap<&SuiteId, Vec<&RetainedRun>> {
 fn duplicate_record_path(runs: &[&RetainedRun]) -> bool {
     let mut paths = std::collections::BTreeSet::new();
     runs.iter().any(|run| !paths.insert(run.file.as_str()))
+}
+
+fn invalid_timestamp(runs: &[&RetainedRun]) -> bool {
+    runs.iter()
+        .any(|run| parse_timestamp(&run.record.timestamp).is_none())
+}
+
+fn duplicate_instant(runs: &[&RetainedRun]) -> bool {
+    let mut keys = std::collections::BTreeMap::new();
+    runs.iter().any(|run| {
+        let Some(key) = parse_timestamp(&run.record.timestamp) else {
+            return false;
+        };
+        keys.insert(key, run.file.as_str())
+            .is_some_and(|first_path| first_path != run.file)
+    })
 }
 
 fn duplicate_path_refusal(
@@ -87,14 +108,19 @@ fn duplicate_path_refusal(
     })
 }
 
-/// The newest run of every suite, by the store's order. The one place the
+/// The newest valid, unambiguous run of every suite, by the store's order. The one place the
 /// latest run is chosen: the FR-032 audit is given these runs and the
 /// supersession rules below read the same ones.
 #[must_use]
 pub fn latest_per_suite(runs: &[RetainedRun]) -> Vec<&RetainedRun> {
     by_suite(runs)
         .into_values()
-        .filter_map(|suite_runs| ordered(suite_runs).pop())
+        .filter_map(|suite_runs| {
+            if invalid_timestamp(&suite_runs) || duplicate_instant(&suite_runs) {
+                return None;
+            }
+            ordered(suite_runs).pop()
+        })
         .collect()
 }
 
@@ -105,6 +131,34 @@ pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Dis
     let mut stated_anywhere = false;
     for (suite, suite_runs) in by_suite(runs) {
         let suite_runs = ordered(suite_runs);
+        if invalid_timestamp(&suite_runs) {
+            let stated = suite_runs
+                .iter()
+                .flat_map(|run| &run.record.entries)
+                .any(|entry| states(entry, obligation));
+            stated_anywhere |= stated;
+            refusals.push(Refusal {
+                cause: Cause::RecordConflict,
+                premise: None,
+                locator: None,
+                detail: format!("suite {suite} has a run with an invalid timestamp"),
+            });
+            continue;
+        }
+        if duplicate_instant(&suite_runs) {
+            let stated = suite_runs
+                .iter()
+                .flat_map(|run| &run.record.entries)
+                .any(|entry| states(entry, obligation));
+            stated_anywhere |= stated;
+            refusals.push(Refusal {
+                cause: Cause::RecordConflict,
+                premise: None,
+                locator: None,
+                detail: format!("suite {suite} has multiple records for the same instant"),
+            });
+            continue;
+        }
         if let Some((stated, refusal)) = duplicate_path_refusal(suite, &suite_runs, obligation) {
             stated_anywhere |= stated;
             refusals.push(refusal);

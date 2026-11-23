@@ -686,6 +686,51 @@ fn an_observation_of_one_record_never_qualifies_another() {
     }));
 }
 
+#[trace("FR-030-AC-12", "FR-030-AC-30", "FR-116-AC-7", "FR-153-AC-2")]
+#[test]
+fn a_same_suite_newer_stale_revision_supersedes_an_older_current_pass() {
+    let mut store = Recorded::new();
+    store.record("SUITE-A", "2026-11-22T10:00:00Z", SATISFIED, &[AC1]);
+    store.record("SUITE-A", "2026-11-22T10:00:00.001Z", SATISFIED, &[AC1]);
+
+    let mut runs = store.runs();
+    assert_eq!(runs.len(), 2);
+    runs[0].observation.performed_revision = Some(HEAD.to_owned());
+    runs[1].observation.performed_revision = Some("stale-sha".to_owned());
+    let outcome = count(runs.clone(), store.bindings(), &[AC1], admitted());
+    assert_eq!(counted(&outcome), 0, "the older pass was reused");
+    let wrong_revision = outcome
+        .report
+        .evidence_results
+        .clone()
+        .unwrap()
+        .into_iter()
+        .find(|result| result.cause == CauseCode::WrongRevision)
+        .expect("newer stale revision must be reported");
+    assert_eq!(wrong_revision.locator.unwrap().record, runs[1].file);
+
+    runs[0].observation.performed_revision = Some("stale-sha".to_owned());
+    runs[1].observation.performed_revision = Some(HEAD.to_owned());
+    let reverse = count(runs, store.bindings(), &[AC1], admitted());
+    assert_eq!(
+        counted(&reverse),
+        1,
+        "the newer current pass was not selected"
+    );
+}
+
+#[trace("FR-030-AC-30", "FR-153-AC-2")]
+#[test]
+fn an_empty_run_and_empty_disagreement_never_qualify_a_candidate() {
+    let mut store = Recorded::new();
+    store.record("SUITE-A", "2026-11-22T10:00:00Z", DISAGREEMENT, &[AC1]);
+    assert!(store.runs()[0].record.entries.is_empty());
+
+    let outcome = store.count(&[AC1], admitted());
+    assert_eq!(counted(&outcome), 0);
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+}
+
 #[trace("FR-116-AC-6", "FR-116-AC-18")]
 #[test]
 fn the_actor_needs_an_admission_reference_and_authority_over_the_target() {
