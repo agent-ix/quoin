@@ -43,6 +43,29 @@ schema, reads none from the network, and hashes none.
   no caller holds an unvalidated payload, and SHALL return a violation on a JSON
   parse failure rather than panicking.
 
+- When the linked engine reports that a traceability declaration of the
+  selected modules failed to load (quire-rs
+  [FR-058](ix://agent-ix/quire-rs/FR-058) AC-47), `quoin-quire` SHALL return the
+  typed error `Error::TraceabilityDeclarationsDropped` with the stable code
+  `QQ-1022`. The error SHALL carry every dropped declaration as a typed
+  `(module, kind, item)` record, in the engine's order, and SHALL render each one
+  on its own line in its message. `quoin-quire` SHALL name a whole unreadable
+  `traceability:` section with the item `traceability_section`.
+- `QQ-1022` SHALL map to the same exit-taxonomy class as `QQ-1020`
+  (`TraceabilityModelUndeclared`), `Refused`, and its envelope SHALL carry
+  `quire_code` `QQ-1022` and the dropped declarations in its context. The engine's
+  coverage error is mapped by an exhaustive match, so a new engine variant fails
+  the build instead of falling into a catch-all.
+- Every quoin command that computes over the merged traceability model SHALL
+  refuse with `QQ-1022` when any declaration was dropped, before computing and
+  without emitting a report, matrix, export or dossier. These commands are:
+  the `quire.coverage`, `quire.design_matrix` and `quire.design_join` core
+  operations; `quoin matrix`; `quoin assurance`; `quoin formal-rules coverage`;
+  `quoin formal-rules status`; `quoin dossier generate`, `check` and `export`;
+  and the `quoin-suite-trace` annotator. A drop never degrades into the absent
+  model refusal `QQ-1020`: a model that has declarations, some dropped, is a
+  different condition from a model nobody declared.
+
 ## Constraints
 
 | ID | Constraint | Type | Validation |
@@ -68,6 +91,11 @@ schema, reads none from the network, and hashes none.
 | FR-029-AC-11 | Withdrawn: a subprocess `maxBuffer`; no subprocess exists (id not reused). | Withdrawn |
 | FR-029-AC-12 | Withdrawn: subprocess death causes; no subprocess exists (id not reused). | Withdrawn |
 | FR-029-AC-13 | Withdrawn: TypeScript interfaces against the coverage schema; the types are the engine's own Rust types (id not reused). | Withdrawn |
+| FR-029-AC-14 | A coverage run over modules where one declaration fails to load returns `TraceabilityDeclarationsDropped` with code `QQ-1022`, not `QQ-1020`, carrying one `(module, kind, item)` record per dropped declaration. | Test |
+| FR-029-AC-15 | The error message renders every dropped declaration, one per line, naming its module, kind and item; an unreadable `traceability:` section appears with the item `traceability_section`. | Test |
+| FR-029-AC-16 | `QQ-1022` maps to `Refused`, the class of `QQ-1020`, and the envelope context holds `quire_code` `QQ-1022` and each dropped declaration. | Test |
+| FR-029-AC-17 | For each of `quire.coverage`, `quire.design_matrix`, `quire.design_join`, `quoin matrix`, `quoin assurance`, `quoin formal-rules coverage`, `quoin formal-rules status`, `quoin dossier generate`, `quoin dossier check`, `quoin dossier export` and `quoin-suite-trace`, a scope with a dropped declaration is refused with `QQ-1022` naming each drop, and no output document is written. | Test |
+| FR-029-AC-18 | The same scope with no dropped declaration runs every command in AC-17 without `QQ-1022`. | Test |
 
 ## Dependencies
 
