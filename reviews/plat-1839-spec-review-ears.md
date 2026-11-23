@@ -30,3 +30,9 @@ Round 1, head 35474e19.
 | --- | --- | --- |
 | FND-001 | fixed | Replaced by three single-response statements: print the warnings, print one summary line with the count, exit zero when only warnings. |
 | FND-002 | fixed | Split into FR-212-AC-5 (module doctor) and FR-212-AC-6 (catalog validate). |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | low | FR-212-AC-7 and its Behavior statement trigger on "the installed modules cannot be read", but in that state `catalog validate` exits 1 in `modules.ensure_defaults` before the lag check runs (measured with a corrupt registry), so no warning is ever produced for that trigger. The condition the code and test actually cover is "the lag check fails after the catalog loads"; narrow the trigger to that. | spec/functional/FR-212-module-lag-warning.md:51-53, spec/functional/FR-212-module-lag-warning.md:65 |

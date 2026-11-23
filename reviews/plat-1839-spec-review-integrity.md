@@ -38,3 +38,4 @@ Round 1, head 35474e19.
 | FND-001 | fixed | Renumbered to FR-212. origin/main (86313ad5) has no FR-212, no other open quoin PR adds FR-212, and no FR-211 reference remains in rust/ or the new FR. |
 | FND-002 | fixed | `LagKind::Incomparable` warns for a branch or absent installed ref against a version pin (FR-212-AC-3), with unit and two integration tests. |
 | FND-003 | fixed | FR-212 is appended after FR-211 in index.md and spec.md. |
+| FND-004 | fixed | Round 2 (20bafb66): FR-016-AC-2 and AC-4 are withdrawn by a CR note (ids not reused); new FR-016-AC-6 "Every default module entry is a Git source with a non-empty explicit `source.ref`" is tagged in `quoin matrix` and `the_shipped_default_module_manifest_is_valid` asserts it per entry without asserting any version. |

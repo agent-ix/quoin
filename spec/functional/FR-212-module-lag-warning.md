@@ -48,9 +48,9 @@ at a release other than, and not newer than, the release the running CLI pins.
 - `quoin module doctor` SHALL exit zero when the only findings are warnings.
 - `quoin catalog validate` SHALL print the warnings and keep the exit status it
   has without them.
-- When the installed modules cannot be read to make the check, `quoin catalog
-  validate` SHALL report that as a warning and keep the exit status it has
-  without the check.
+- When the lag check fails after the catalog loads, `quoin catalog validate`
+  SHALL report that as a warning and keep the exit status it has without the
+  check.
 
 ## Acceptance Criteria
 
@@ -62,7 +62,7 @@ at a release other than, and not newer than, the release the running CLI pins.
 | FR-212-AC-4 | A module that is not installed, or whose pin is not a semantic version, yields no warning                                                                    | Test         |
 | FR-212-AC-5 | `quoin module doctor` prints the warnings and a one-line summary count, and exits zero                                                                       | Test         |
 | FR-212-AC-6 | `quoin catalog validate` prints the warnings and exits zero when the catalog is valid                                                                        | Test         |
-| FR-212-AC-7 | When the installed modules cannot be read, the check yields a warning diagnostic in place of the lag warnings and does not change the exit status of `quoin catalog validate` | Test         |
+| FR-212-AC-7 | When the lag check fails after the catalog loads, the check yields a warning diagnostic in place of the lag warnings and does not change the exit status of `quoin catalog validate` | Test         |
 
 ## Dependencies
 

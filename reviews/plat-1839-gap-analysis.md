@@ -38,3 +38,4 @@ Round 1, head 35474e19. `quoin matrix --json`: FR-212-AC-1..AC-7 all `tagged`.
 | --- | --- | --- |
 | FND-001 | fixed | The doctor statement is split into SHALLs for warnings, summary line and exit status; FR-212-AC-5 covers the summary and `doctor_warns_for_an_older_module_summarises_and_exits_zero` asserts it. |
 | FND-002 | fixed | Skip and incomparable rules now have their own criteria (AC-3, AC-4) and tests; the AC-2 test asserts only at-or-above cases. |
+| FND-003 | fixed | Round 2 (20bafb66): `validate` delegates to `with_lag_warnings(response, json, lag)`, and `a_failed_lag_check_leaves_the_validate_outcome_unchanged` asserts that a failed check leaves the outcome (`Outcome::Ok`, from which the exit status is derived) and payload equal to a clean run and adds one QM010 warning. A run-level test cannot reach this path: measured, a corrupt registry makes `catalog validate` exit 1 earlier in `modules.ensure_defaults` (QM010). |
