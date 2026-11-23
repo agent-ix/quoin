@@ -10,7 +10,8 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
-use std::path::Path;
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use filament_analyze::MAX_REPORT_BYTES;
@@ -130,6 +131,31 @@ fn stdout(output: &Output) -> String {
 
 fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
+}
+
+fn evidence_tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+    let mut paths = BTreeMap::new();
+    let mut directories = vec![root.to_path_buf()];
+    while let Some(directory) = directories.pop() {
+        for entry in std::fs::read_dir(directory).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let key = path.strip_prefix(root).unwrap().to_path_buf();
+            let kind = entry.file_type().unwrap();
+            if kind.is_dir() {
+                paths.insert(key, None);
+                directories.push(path);
+            } else {
+                assert!(
+                    kind.is_file(),
+                    "unexpected evidence entry: {}",
+                    path.display()
+                );
+                paths.insert(key, Some(std::fs::read(path).unwrap()));
+            }
+        }
+    }
+    paths
 }
 
 #[trace("FR-151-AC-3", "FR-069-AC-6")]
@@ -268,12 +294,12 @@ fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
     assert_eq!(recorded["bound"], serde_json::json!(["FR-001-AC-1"]));
     assert!(!undischarged(&audit(&fixture), "FR-001-AC-1"));
     let store = fixture.repo.path().join("spec/evidence");
-    let retained = [
-        store.join(RUN),
-        store.join("bindings.json"),
-        store.join("analysis-reports/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json"),
-    ];
-    let before = retained.each_ref().map(|path| std::fs::read(path).unwrap());
+    let before = evidence_tree(&store);
+    assert!(before.contains_key(Path::new(RUN)));
+    assert!(before.contains_key(Path::new("bindings.json")));
+    assert!(before.contains_key(Path::new(
+        "analysis-reports/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json"
+    )));
 
     let observation = fixture.home.path().join("observation.json");
     std::fs::write(
@@ -352,10 +378,7 @@ fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
         "{}",
         stderr(&output)
     );
-    assert_eq!(
-        retained.each_ref().map(|path| std::fs::read(path).unwrap()),
-        before
-    );
+    assert_eq!(evidence_tree(&store), before);
 }
 
 #[trace("FR-152-AC-6")]

@@ -597,19 +597,24 @@ fn analysis_items(
     let Some(identity) = identity else {
         return Vec::new();
     };
-    let identity_count = coverage
+    let mut matching = coverage
         .iter()
         .flat_map(|requirement| &requirement.criteria)
-        .filter(|criterion| {
-            criterion
-                .identity
-                .as_ref()
-                .is_some_and(|candidate| same_native_target(identity, candidate))
-        })
-        .count();
-    if identity_count != 1 {
+        .filter_map(|criterion| criterion.identity.as_ref())
+        .filter(|candidate| same_native_target(identity, candidate));
+    let Some(coverage_identity) = matching.next() else {
+        return Vec::new();
+    };
+    if matching.next().is_some() || !compatible_lines(identity, coverage_identity) {
         return Vec::new();
     }
+    // Either projection can supply the source line. Require it on the
+    // evidence item whenever the item also supplies a line.
+    let identity = if identity.line.is_some() {
+        identity
+    } else {
+        coverage_identity
+    };
     let mut items = Vec::new();
     for binder in &evidence.record_binders {
         if matches_analysis_target(identity, binder) {
@@ -649,12 +654,15 @@ pub(crate) fn matches_analysis_target(identity: &TargetLocus, item: &serde_json:
     item.get("target")
         .and_then(|target| serde_json::from_value::<TargetLocus>(target.clone()).ok())
         .is_some_and(|target| {
-            same_native_target(identity, &target)
-                && match (identity.line, target.line) {
-                    (Some(expected), Some(observed)) => expected == observed,
-                    _ => true,
-                }
+            same_native_target(identity, &target) && compatible_lines(identity, &target)
         })
+}
+
+fn compatible_lines(left: &TargetLocus, right: &TargetLocus) -> bool {
+    match (left.line, right.line) {
+        (Some(expected), Some(observed)) => expected == observed,
+        _ => true,
+    }
 }
 
 fn analysis_item_key(item: &serde_json::Value) -> (String, String, String, String, String) {
