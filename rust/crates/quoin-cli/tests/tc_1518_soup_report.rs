@@ -1074,9 +1074,9 @@ fn policy_findings_render_on_their_rows_apart_from_advisories() {
     assert!(markdown.contains("unresolved policy finding"), "{markdown}");
 }
 
-/// Not run, vacuous, unordered, and a record absent from `evaluated` each state
+/// Not run, vacuous, and a record absent from `evaluated` each state
 /// their own status; none states `no policy findings`; a finding for a purl with
-/// no record is appended as unmatched.
+/// no record is appended as unmatched. A non-instant scan timestamp is refused at write.
 #[trace("FR-144-AC-19", "NFR-030-AC-5")]
 #[test]
 fn a_row_states_why_it_has_no_policy_verdict_and_never_allowed() {
@@ -1154,10 +1154,25 @@ fn a_row_states_why_it_has_no_policy_verdict_and_never_allowed() {
     assert_eq!(read["unmatched_policy_findings"][0]["reason"], "no record");
     assert!(text(&repo.report(&binding, &[]).stdout).contains("## Unmatched policy findings"));
 
-    repo.licence("garbled", "not an instant", &sbom);
-    assert_eq!(
-        statuses(&report_json(&repo, &binding, &[])),
-        ["policy findings not assessed: licence-policy scan unordered"; 2]
+    // A scan whose timestamp is not an instant never reaches the store, so the
+    // report never meets an unordered scan: the write is refused and the
+    // retained scan still states its verdict.
+    let parsed = quoin_evidence::adapters::parse_licence_policy(&sbom, LICENCE_POLICY).unwrap();
+    let garbled = FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new("garbled"),
+        tool: "licence-policy".to_owned(),
+        evidence_kind: None,
+        timestamp: "not an instant".to_owned(),
+        ruleset: parsed.ruleset,
+        rules_evaluated: parsed.rules_evaluated,
+        findings: parsed.findings,
+        evaluated: parsed.evaluated,
+    };
+    let refused = write_scan(&mut DiskEvidence::new(repo.path()), &garbled).unwrap_err();
+    assert!(refused.to_string().contains("canonical UTC"), "{refused}");
+    assert!(
+        text(&repo.report(&binding, &[]).stdout).contains("no policy findings in the scan read")
     );
 }
 
@@ -1415,13 +1430,8 @@ fn stale_vex_requires_every_applicable_scan_to_be_read_and_unambiguous() {
 
     let unordered = Repo::new();
     make_record(&unordered);
-    unordered.store(&scan_record_at(
-        "osv-scanner",
-        "osv-unordered",
-        raw,
-        "not-an-instant",
-        false,
-    ));
+    let garbled = scan_record_at("osv-scanner", "osv-unordered", raw, "not-an-instant", false);
+    assert!(write_scan(&mut DiskEvidence::new(unordered.path()), &garbled).is_err());
     assert_eq!(
         report_state(&unordered, &unordered.binding(&[])),
         "statement"
