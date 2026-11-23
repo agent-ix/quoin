@@ -96,6 +96,62 @@ fn tc_1806_a_run_with_no_trace_id_exits_1_naming_the_entry_count() {
     assert!(run_written(&dir));
 }
 
+/// An empty `traceIds` array carries no id, so the run is still unbound.
+#[trace("FR-030-AC-33")]
+#[test]
+fn tc_1806_an_empty_trace_id_array_does_not_count_as_carrying_one() {
+    let results = r#"{"entries":[{"symbol":"a","outcome":"pass","traceIds":[]}]}"#;
+    let (_dir, response) = record(None, "custom", results);
+    assert_eq!(response.outcome, Outcome::Partial);
+    assert_eq!(
+        warning(&response),
+        Some("warning: no entry carries a trace id: 1 entries recorded, none can bind")
+    );
+}
+
+/// Contract-conformance rows from a legacy producer carry no `trace_ids`.
+#[trace("FR-030-AC-33")]
+#[test]
+fn tc_1806_contract_conformance_rows_without_trace_ids_exit_1() {
+    let row = r#"{"protocol":"filament.contract.conformance-jsonl/v1","corpus_id":"c","operation":"op","fixture_id":"f","status":"match"}"#;
+    let (dir, response) = record(
+        Some("contract-conformance"),
+        "filament-contract-conformance 1",
+        row,
+    );
+    assert_eq!(response.outcome, Outcome::Partial);
+    assert_eq!(
+        warning(&response),
+        Some("warning: no entry carries a trace id: 1 entries recorded, none can bind")
+    );
+    assert!(run_written(&dir));
+}
+
+/// An agent-eval scenario id is its own trace id: an id no obligation states
+/// is unmatched (AC-32), and one an obligation states exits 0.
+#[trace("FR-030-AC-32", "FR-030-AC-33")]
+#[test]
+fn tc_1806_agent_eval_scenario_ids_are_trace_ids() {
+    let (_dir, response) = record(
+        Some("agent-eval"),
+        "cli-agent-evals 1",
+        r#"{"results":[{"id":"TC-EV-1","ok":true}]}"#,
+    );
+    assert_eq!(response.outcome, Outcome::Partial);
+    assert_eq!(
+        warning(&response),
+        Some("warning: unmatched trace ids: TC-EV-1")
+    );
+
+    let (_dir, response) = record(
+        Some("agent-eval"),
+        "cli-agent-evals 1",
+        r#"{"results":[{"id":"FR-1-AC-1","ok":true}]}"#,
+    );
+    assert_eq!(response.outcome, Outcome::Ok);
+    assert_eq!(response.payload["bound"], json!(["FR-1-AC-1"]));
+}
+
 /// Failing, erroring and skipped entries with stated ids bind nothing and are
 /// not an error; a run of zero entries is not either.
 #[trace("FR-030-AC-34")]
@@ -158,6 +214,7 @@ fn tc_1806_a_pytest_case_is_stored_under_the_python_symbol() {
         ("tests.test_bolus", "test_basic", "test_basic"),
         ("tests.test_bolus.TestDose", "test_a[1]", "TestDose.test_a"),
         ("tests.TestA.Inner", "test_b", "TestA.Inner.test_b"),
+        ("t.TestA", "test_a[x[1]]", "TestA.test_a"),
         ("test_basic", "test_basic", "test_basic"),
         ("", "test_x", "test_x"),
     ];

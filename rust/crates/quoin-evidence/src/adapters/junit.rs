@@ -121,10 +121,9 @@ fn pytest_symbol(classname: &str, name: &str) -> String {
     if classname == name {
         return name.to_owned();
     }
-    let function = match name
-        .strip_suffix(']')
-        .and_then(|head| head.rsplit_once('['))
-    {
+    // A parametrize id may itself contain brackets, so the parameter list
+    // starts at the first `[`.
+    let function = match name.strip_suffix(']').and_then(|head| head.split_once('[')) {
         Some((function, _)) => function,
         None => name,
     };

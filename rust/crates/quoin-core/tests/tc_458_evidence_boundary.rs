@@ -248,7 +248,7 @@ fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
                 "timestamp": timestamp,
                 "adapter": "junit",
                 "results": junit_traced("works"),
-            "obligations": obligations(),
+                "obligations": obligations(),
             }),
         ));
     }

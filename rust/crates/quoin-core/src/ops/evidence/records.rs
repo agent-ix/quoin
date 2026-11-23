@@ -136,7 +136,9 @@ fn recording_warning(
     }
     (TEST_CASE_ADAPTERS.contains(&adapter)
         && !entries.is_empty()
-        && entries.iter().all(|entry| entry.trace_ids.is_none()))
+        && entries
+            .iter()
+            .all(|entry| entry.trace_ids.as_ref().is_none_or(Vec::is_empty)))
     .then(|| {
         format!(
             "warning: no entry carries a trace id: {} entries recorded, none can bind",
