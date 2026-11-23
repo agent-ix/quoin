@@ -13,6 +13,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 use ix_trace_rs::trace;
 use serde_json::{Value, json};
 use tempfile::TempDir;
@@ -449,7 +452,6 @@ fn tc_1792_102_runs_and_declarations_are_bound_by_digest() {
 fn tc_1792_103_a_refused_or_failed_export_leaves_existing_output_unchanged() {
     let (root, subject, evidence) = all_passing();
     let output = root.path().join("statement.json");
-    let good = write_provenance(&evidence, &["FR-1-AC-1"], &["suite-pass"], REVISION);
     fs::write(&output, b"previous statement").expect("existing output");
 
     // Refusal (stale provenance revision) leaves it alone.
@@ -464,7 +466,6 @@ fn tc_1792_103_a_refused_or_failed_export_leaves_existing_output_unchanged() {
 
     // Write failure: the destination directory is read-only.
     let good = write_provenance(&evidence, &["FR-1-AC-1"], &["suite-pass"], REVISION);
-    use std::os::unix::fs::PermissionsExt;
     let locked = root.path().join("locked");
     fs::create_dir(&locked).expect("dir");
     let target = locked.join("statement.json");

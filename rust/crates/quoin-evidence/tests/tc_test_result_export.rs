@@ -5,6 +5,7 @@
 
 #![allow(
     clippy::expect_used,
+    clippy::unwrap_used,
     clippy::indexing_slicing,
     reason = "the fixture is valid and assertions should identify malformed mapped fields"
 )]

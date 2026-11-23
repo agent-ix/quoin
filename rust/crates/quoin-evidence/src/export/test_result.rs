@@ -207,54 +207,11 @@ pub fn build_statement(
     }
 
     for (obligation, obligation_bindings) in obligations {
-        // An obligation with no binding, or a binding naming no symbol, proves
-        // nothing: it is failed, never dropped and never passed.
-        let mut is_failed = obligation_bindings.is_empty()
-            || obligation_bindings
-                .iter()
-                .any(|binding| binding.symbols.is_empty());
-        let mut is_warned = false;
-        for binding in obligation_bindings {
-            if is_failed {
-                break;
-            }
-            let Some(run) = runs.get(binding.suite.as_str()) else {
-                is_failed = true;
-                break;
-            };
-            if !failed_bound_symbols(binding, run).is_empty() {
-                is_failed = true;
-                break;
-            }
-            for symbol in &binding.symbols {
-                let mut found = false;
-                let mut trace_matches = false;
-                for entry in run.entries.iter().filter(|entry| entry.symbol == *symbol) {
-                    found = true;
-                    trace_matches |= entry.trace_ids.as_ref().is_some_and(|trace_ids| {
-                        trace_ids
-                            .iter()
-                            .any(|trace_id| trace_id == binding.obligation.as_str())
-                    });
-                    if entry.outcome == Outcome::Skip {
-                        is_warned = true;
-                    }
-                }
-                if !found {
-                    is_warned = true;
-                } else if !trace_matches {
-                    is_failed = true;
-                    break;
-                }
-            }
-        }
-        if is_failed {
-            failed.insert(obligation.to_owned());
-        } else if is_warned {
-            warned.insert(obligation.to_owned());
-        } else {
-            passed.insert(obligation.to_owned());
-        }
+        match classify(obligation, &obligation_bindings, &runs) {
+            Verdict::Failed => failed.insert(obligation.to_owned()),
+            Verdict::Warned => warned.insert(obligation.to_owned()),
+            Verdict::Passed => passed.insert(obligation.to_owned()),
+        };
     }
 
     let passed_tests: Vec<String> = passed.into_iter().collect();
@@ -282,6 +239,62 @@ pub fn build_statement(
     })
 }
 
+/// One obligation's verdict.
+enum Verdict {
+    Passed,
+    Warned,
+    Failed,
+}
+
+fn classify(
+    obligation: &str,
+    obligation_bindings: &[&Binding],
+    runs: &BTreeMap<&str, &RunRecord>,
+) -> Verdict {
+    // An obligation with no binding, or a binding naming no symbol, proves
+    // nothing: it is failed, never dropped and never passed.
+    if obligation_bindings.is_empty()
+        || obligation_bindings
+            .iter()
+            .any(|binding| binding.symbols.is_empty())
+    {
+        return Verdict::Failed;
+    }
+    let mut is_warned = false;
+    for binding in obligation_bindings {
+        let Some(run) = runs.get(binding.suite.as_str()) else {
+            return Verdict::Failed;
+        };
+        if !failed_bound_symbols(binding, run).is_empty() {
+            return Verdict::Failed;
+        }
+        for symbol in &binding.symbols {
+            let mut found = false;
+            let mut trace_matches = false;
+            for entry in run.entries.iter().filter(|entry| entry.symbol == *symbol) {
+                found = true;
+                trace_matches |= entry
+                    .trace_ids
+                    .as_ref()
+                    .is_some_and(|ids| ids.iter().any(|id| id == obligation));
+                if entry.outcome == Outcome::Skip {
+                    is_warned = true;
+                }
+            }
+            if !found {
+                is_warned = true;
+            } else if !trace_matches {
+                return Verdict::Failed;
+            }
+        }
+    }
+    if is_warned {
+        Verdict::Warned
+    } else {
+        Verdict::Passed
+    }
+}
+
 /// The one `annotations.revision` every descriptor shares.
 ///
 /// # Errors
@@ -300,7 +313,9 @@ pub fn subject_revision(subject: &[Value]) -> Result<String, SubjectError> {
             _ => revision = Some(found),
         }
     }
-    revision.map(str::to_owned).ok_or(SubjectError::MissingRevision)
+    revision
+        .map(str::to_owned)
+        .ok_or(SubjectError::MissingRevision)
 }
 
 /// Validate a caller's subject without building a statement.

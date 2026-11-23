@@ -5,6 +5,7 @@
 
 #![allow(
     clippy::expect_used,
+    clippy::indexing_slicing,
     clippy::unwrap_used,
     reason = "the fixture is valid and assertions should identify the failed step"
 )]
