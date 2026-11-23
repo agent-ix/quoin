@@ -1437,9 +1437,33 @@ fn stale_vex_requires_every_applicable_scan_to_be_read_and_unambiguous() {
         true,
     ));
     assert_eq!(report_state(&vacuous, &vacuous.binding(&[])), "statement");
+}
+
+#[trace("FR-144-AC-22")]
+#[test]
+fn stale_vex_is_not_masked_by_other_ids_and_requires_all_tools_read() {
+    let make_record = |repo: &Repo, purl: &str| {
+        repo.record(
+            "vex",
+            purl,
+            &[
+                "vex_statements:",
+                "  - advisory: OSV-SYNTHETIC-OLD",
+                "    status: under_investigation",
+                "    assessed_by: synthetic reviewer",
+                "    assessed_at: '2026-08-02'",
+            ],
+        );
+    };
+    let report_state = |repo: &Repo, binding: &Path| {
+        report_json(repo, binding, &[])["rows"][0]["vex_statements"][0]["state"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    };
 
     let other_live_advisory = Repo::new();
-    make_record(&other_live_advisory);
+    make_record(&other_live_advisory, "pkg:npm/example@1.0.0");
     let live = r#"{"results":[{"packages":[{"package":{"name":"example","version":"1.0.0","ecosystem":"npm","purl":"pkg:npm/example@1.0.0"},"vulnerabilities":[{"id":"OSV-SYNTHETIC-LIVE"}],"groups":[]}]}]}"#;
     other_live_advisory.store(&scan_record(
         "osv-scanner",
@@ -1459,7 +1483,7 @@ fn stale_vex_requires_every_applicable_scan_to_be_read_and_unambiguous() {
     );
 
     let possible_match = Repo::new();
-    make_record(&possible_match);
+    make_record(&possible_match, "pkg:npm/example@1.0.0");
     let no_purl = r#"{"results":[{"packages":[{"package":{"name":"example","version":"1.0.0","ecosystem":"npm"},"vulnerabilities":[{"id":"OSV-SYNTHETIC-AMBIGUOUS"}],"groups":[]}]}]}"#;
     possible_match.store(&scan_record(
         "osv-scanner",
@@ -1476,17 +1500,7 @@ fn stale_vex_requires_every_applicable_scan_to_be_read_and_unambiguous() {
     assert_eq!(possible_report["unmatched"][0]["reason"], "no purl");
 
     let partial_cargo_scans = Repo::new();
-    partial_cargo_scans.record(
-        "cargo",
-        "pkg:cargo/example@1.0.0",
-        &[
-            "vex_statements:",
-            "  - advisory: RUSTSEC-SYNTHETIC-OLD",
-            "    status: under_investigation",
-            "    assessed_by: synthetic reviewer",
-            "    assessed_at: '2026-08-02'",
-        ],
-    );
+    make_record(&partial_cargo_scans, "pkg:cargo/example@1.0.0");
     partial_cargo_scans.store(&scan_record(
         "cargo-audit",
         "cargo-audit-clean",
