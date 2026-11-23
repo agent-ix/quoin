@@ -49,25 +49,31 @@ answer.
     evidence that the expected output exists, so it is never `Compliant`.
     Tailoring Description names the decision and the approval reference;
     Tailoring Rationale is the disposition's rationale.
-  - `Not compliant - undischarged` - the clause binds and no fact exists, or a
-    fact exists and the clause is open for any reason other than its
-    attestation's currency, including every FR-211 reason (`unresolved`,
-    `kind-not-expected`, `no-producer`, `no-store`, `approval-missing`,
-    `approval-unverified`, `attester-not-approver`,
-    `approval-verifier-unavailable`, `invalid-record-identity`,
-    `record-id-too-long`, `customer-owned`) and `not-verified-offline`. The
-    reason is shown in the row. A current fact with an unresolved ref is
-    undischarged, not `attestation not current`.
+  - `Not compliant - temporary exception expired` - the clause binds and its
+    `temporary_exception` disposition has reached `decisionExpiresAt` (FR-174),
+    even when the attestation is still current.
   - `Not compliant - attestation not current` - the clause binds, a fact exists
-    and only its attestation's currency fails: it has expired, is not yet valid at `asOf`, or has an
-    expiry that is not after its attestation. The reason is shown in the row
-    and the fact earns no `Compliant` or `Tailored`.
+    and its attestation's currency fails: it has expired, is not yet valid at
+    `asOf`, or has an expiry that is not after its attestation. The reason is
+    shown in the row and the fact earns no `Compliant` or `Tailored`.
+  - `Not compliant - undischarged` - the clause binds and no fact exists, or a
+    fact exists and the clause is open for any other reason, including every
+    FR-211 reason (`unresolved`, `kind-not-expected`, `no-producer`,
+    `no-store`, `approval-missing`, `approval-unverified`,
+    `attester-not-approver`, `approval-verifier-unavailable`,
+    `invalid-record-identity`, `record-id-too-long`, `customer-owned`) and
+    `not-verified-offline`. The reason is shown in the row.
   - `Undetermined` - applicability is unresolved; the reason is shown.
   - `Not applicable` - the clause does not bind. Tailoring Description reads
     `Not applicable per binding derivation` and Tailoring Rationale is the
     clause's binding reasons joined with `; `, or `no reason given by the
     binding report` when it has none. A disposition recorded on a not-binding
     clause is not tailoring: it stays under Unused facts.
+- **Precedence for a binding clause that is open, first match wins:** (1)
+  `Not compliant - temporary exception expired`; (2) `Not compliant -
+  attestation not current`, even when the fact also has an FR-211 reason; (3)
+  otherwise `Not compliant - undischarged` with the reason shown. The reason
+  shown for (2) is the currency failure.
 - Evidence and tailoring cells that have nothing to show render as `-`.
 - **Facts that were not spent** (a fact for an unknown, not-binding or
   unresolved clause) are listed after the table with the reason they were not
@@ -96,12 +102,12 @@ answer.
 | --- | --- | --- |
 | FR-135-AC-1 | The matrix has exactly one row per clause of the binding report, in the report's order, with Req#, Applicability, Compliance, Evidence, Tailoring Description and Tailoring Rationale, and an empty binding report renders the header and a line stating that no clauses are named. | Test |
 | FR-135-AC-2 | A binding clause with a current direct fact is `Compliant` with the fact's evidence references; one with a current disposition is `Tailored` with the decision, approval reference and rationale, and is not `Compliant`. | Test |
-| FR-135-AC-3 | A binding clause with no fact, or whose fact is open for an FR-211 reason or `not-verified-offline` while its attestation is current, is `Not compliant - undischarged` with the reason shown and is neither `Compliant` nor `Tailored`; one whose fact has expired, is not yet valid, or has an expiry not after its attestation is `Not compliant - attestation not current` with the reason shown and is neither `Compliant` nor `Tailored`; an unresolved clause is `Undetermined`; a not-binding clause is `Not applicable` with the tailoring description and rationale stated above, whether or not a disposition was recorded on it. | Test |
+| FR-135-AC-3 | A binding clause is rendered by the first matching rule: a `temporary_exception` at or after `decisionExpiresAt` is `Not compliant - temporary exception expired`, even when its attestation is current; otherwise a fact that has expired, is not yet valid, or has an expiry not after its attestation is `Not compliant - attestation not current`, even when it also has an FR-211 reason; otherwise a clause with no fact, or open for an FR-211 reason or `not-verified-offline`, is `Not compliant - undischarged` with the reason shown; none of these is `Compliant` or `Tailored`; an unresolved clause is `Undetermined`; a not-binding clause is `Not applicable` with the tailoring description and rationale stated above, whether or not a disposition was recorded on it. | Test |
 | FR-135-AC-4 | Facts that were not spent are listed after the table with their reason, and the matrix carries no score, percentage, ratio or count of compliant rows. | Test |
 | FR-135-AC-5 | Two independent builds from the same inputs, with facts supplied in a different order, render byte-identical Markdown; and a rationale, approval reference or clause id containing an image, a link, raw HTML, a line break, a backslash, a backtick or a pipe, and a clause set key containing a line break, render as the literal text in the title, the table and the unused-facts list. | Test |
 | FR-135-AC-6 | `evidence.requirements_matrix` answers through the production runtime from the live binding report and the stored facts, refuses a request over its ceiling, and exits as a bad request when given a doubled binding clause; a stored disposition with an empty or whitespace-only rationale refuses the operation (FR-133-AC-4: a refusal naming the file) and renders no matrix. | Test |
 | FR-135-AC-7 | `quoin discharge --repo ... --rmm` renders the matrix from recorded facts and `--json` emits it; `--rmm` without `--repo`, or with `--inward`, is refused with a usage status and a message naming the conflict. | Test |
-| FR-135-AC-8 | A binding clause whose direct fact has a current attestation but an unresolved evidence ref is `Not compliant - undischarged` with reason `unresolved` shown, not `attestation not current`; a clause with the same fact and an expired attestation is `attestation not current`. | Test |
+| FR-135-AC-8 | A binding clause whose direct fact has an unresolved evidence ref and a current attestation is `Not compliant - undischarged` with reason `unresolved` shown; the same fact with an expired attestation is `Not compliant - attestation not current`; a `temporary_exception` past `decisionExpiresAt` with a current attestation and an unverifiable approval is `Not compliant - temporary exception expired`. | Test |
 
 ## Dependencies
 

@@ -87,6 +87,8 @@ Re-checked against fix commit f64ad1d.
 | FND-016 | fixed | Round 3: the RMM resolves refs locally, so direct rows equal the source rows; only approval-class rows differ (FR-195-AC-1). The FR-191 sentence is recorded as FND-019 |
 | FND-017 | fixed | Round 3: `invalid-record-identity` is distinct from FR-133's `invalid-identifier`, is tested on the joined `record_id`, and applies to approval-class clauses only (FR-211-AC-20) |
 | FND-018 | fixed | Round 3: FR-046-AC-6 and AC-9 state that a direct fact discharges only with a store (`--repo`) |
+| FND-013 | fixed | Round 4 (c0393fe): FR-135 maps every FR-211 reason and `not-verified-offline` to `Not compliant - undischarged` with the reason shown (FR-135-AC-3, AC-8), matching FR-195; the regressions that wording introduces are FND-020 and FND-021 |
+| FND-019 | fixed | Round 4: FR-191 adds "except as FR-195 states for approval-class clauses" |
 
 ## New findings (disposition pass 2)
 
@@ -105,3 +107,12 @@ Re-checked against fix commits b638e6d and 1b4687c.
 | ID | Severity | Summary | Refs | Escape Cause |
 | --- | --- | --- | --- | --- |
 | FND-019 | low | FR-191 still says a dossier source "gives the same result as its named source command", but FR-195 now makes approval-class RMM rows differ from `quoin discharge --repo --rmm --json` (`not-verified-offline`); FR-191 needs the FR-195 exception named | FR-191, FR-195-AC-1 | wrong-requirement |
+
+## New findings (disposition pass 4)
+
+Re-checked against fix commit c0393fe.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-020 | high | FR-135 now puts a clause whose fact "is open for any reason other than its attestation's currency" under `Not compliant - undischarged`. That covers an expired `temporary_exception` with a current attestation (reason `temporary exception expired`, FR-046-AC-8), which FR-174 and FR-174-AC-6, TC-004, FR-195's `temporary_exception_expired` value and `rmm.rs` `TemporaryExceptionExpired` all render as `Not compliant - temporary exception expired` | FR-135, FR-174-AC-6, FR-195, FR-046-AC-8 | wrong-requirement |
+| FND-021 | medium | FR-135 now says `attestation not current` applies only when the attestation's currency is the only failure, so a fact with an expired attestation and an unresolved ref is `undischarged`; FR-135-AC-8 says "the same fact" (the one with the unresolved ref) with an expired attestation is `attestation not current`, and AC-3 omits the "only" qualifier | FR-135-AC-8, FR-135-AC-3, FR-135 | wrong-requirement |
