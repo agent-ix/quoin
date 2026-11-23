@@ -61,6 +61,10 @@ generators. `records-of-processing` is generated directly and is excluded from t
 - Quoin SHALL NOT render a document itself.
 - Quoin SHALL NOT bypass `quire export`.
 
+### Release chain
+
+- The release tag exists before the `DOS-REL` document does, because the EA `release-verify` result that `DOS-REL` needs ([FR-201](./FR-201-dossier-release-record-content.md)) needs the tag; the resolved `HEAD` at export is therefore a descendant of the tagged commit. `export` SHALL leave acceptance of `--release` to `quire export`, which accepts a tag other than one on `HEAD` only under the first-parent descendant rule of quire-cli FR-034 section A, and SHALL report its refusal as exit 4 with the report carrying `quire` exit code 3. When the dossier directory is the repository root, `quire export` accepts only a tag on `HEAD`.
+
 ### Export currency
 
 - `export` SHALL resolve each selected exportable document at `<DIR>/<document-id>.md`, where `<DIR>` is `dossier` unless `--out` names another.
@@ -158,8 +162,10 @@ continues to allow committed, current incomplete documents.
 | FR-191-AC-24 | With the records-of-processing generator registered, `generate --doc records-of-processing` writes `dossier/DOS-ROP.md` without a version or commit check; `--doc nope` exits 2; explicit `check` or `export` selection of this kind exits 2, and unfiltered `check` or `export` excludes it. | Test |
 | FR-191-AC-25 | The full commit id resolved for `HEAD` is the same id used to read each selected committed document blob and passed to the single `quire export` invocation as `--source-rev`. | Test |
 | FR-191-AC-26 | When `--output` already contains sentinel bytes and `quire export` exits unsuccessfully, `export` returns the Quire failure and the output retains exactly the sentinel bytes. | Test |
+| FR-191-AC-27 | One composed test builds a repository with a baseline commit that holds a Baseline file and a `README.md`, and a release commit that is the single child of the baseline and adds only the EA Release document and the release snapshot file; signs and tags the release commit as in EA FR-047-AC-1 (SSH key mapped to `decision_owner`, record trailers present); runs `engineering-assurance release-verify` on the tag and obtains a `released` result; runs `quoin dossier generate --doc release-record --version V --snapshot <snapshot> --release-verify <result>` so `DOS-REL` is complete; commits only `dossier/DOS-REL.md` and a non-selected `dossier/NOTES.md` (the dossier commit); and runs `quoin dossier export --doc release-record --version V --snapshot <snapshot> --release-verify <result> --release <TAG> --to pdf --output <PATH>` with a real `quire export`. The export exits 0, and the extracted PDF text holds the Release field `<TAG> (tag commit <full hash of the tagged commit>)` of quire-cli FR-034, and the Source commit and Date of the dossier commit. | Test |
+| FR-191-AC-28 | In the repository of FR-191-AC-27, with `export` run with exactly the inputs of the passing run, including `--output <PATH>` and with `--json` as the one flag added, each of two further commits, applied on its own on top of the dossier commit as separate cases, makes `export` exit 4 with the report carrying `quire` exit code 3 and the `quire export` refusal in its `stderr` member, and leaves the file at `<PATH>` unchanged: a commit that modifies `README.md` outside `dossier/` (a file no source record or snapshot reads), and a commit that deletes `dossier/NOTES.md`. | Test |
 
 ## Dependencies
 
-- **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-033 (failed-export output preservation), FR-034, FR-038, FR-039.
+- **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-033 (failed-export output preservation), FR-034 (including the `--release` ancestor rule), FR-038, FR-039; EA FR-041 and FR-047 (release-verify needs the tag, so the dossier follows it).
 - **Downstream**: [FR-192](./FR-192-dossier-srs-content.md) through [FR-195](./FR-195-dossier-rmm-content.md) define M1 content; [FR-196](./FR-196-dossier-verification-report-content.md) through [FR-201](./FR-201-dossier-release-record-content.md) define M2 content; [FR-202](./FR-202-dossier-threat-model-content.md) defines M3 threat-model content; [FR-207](./FR-207-dossier-records-of-processing-content.md) defines records-of-processing content. Later document generators register after their own spec and archetype extension.
