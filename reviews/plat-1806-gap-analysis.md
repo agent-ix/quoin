@@ -33,3 +33,9 @@ CONDITIONAL. There are no untagged criteria and no high findings. One coverage g
 - Tests run: the 7 tests in tc_plat1806_record_exit_status and the 1 in tc_plat1806_record_exit, all passing.
 - Semantic review: performed inline by the reviewer as part of the code-review lane; not run as a separate fan-out.
 - Plan completion: not assessed
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Commit 9a96a99e adds `tc_1806_contract_conformance_rows_without_trace_ids_exit_1` (a legacy row with no `trace_ids` exits Partial with the AC-33 line, and the run is written). It also adds `tc_1806_agent_eval_scenario_ids_are_trace_ids`, which shows an agent-eval entry always carries its scenario id: an unknown id is AC-32 unmatched, a stated one binds and exits 0. All four AC-33 adapter names are now exercised. |

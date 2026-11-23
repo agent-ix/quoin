@@ -38,3 +38,12 @@ What holds:
 ## Examined
 
 FR-030-AC-32, FR-030-AC-33, FR-030-AC-34, FR-030-AC-35, FR-033-AC-16, FR-033-AC-17 (examined). FR-030 exit-status SHALL, FR-033 pytest mapping procedure, FR-041-AC-8, repo rust-style boundary contract (context only).
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Commit 9a96a99e: `recording_warning` now tests `trace_ids.as_ref().is_none_or(Vec::is_empty)`. The new `tc_1806_an_empty_trace_id_array_does_not_count_as_carrying_one` asserts Partial and the AC-33 line for `"traceIds":[]`. |
+| FND-002 | fixed | Commit 9a96a99e: `pytest_symbol` splits at the first `[` (`split_once('[')`). The AC-16 table adds `("t.TestA", "test_a[x[1]]", "TestA.test_a")`, which passes. |
+| FND-003 | accepted-no-change | FR-030-AC-32 as merged keys on the run outcome's `unmatched` list. Finding adapters report stated-but-unknown ids in the scan payload's separate `unknown` field (FR-034/FR-041), which AC-32 does not name. Exiting 1 for scans would go beyond the merged ACs. The inconsistency is real but sits outside this PR's criteria, and the coder chose to keep the separate mechanism. |
+| FND-004 | fixed | Commit 9a96a99e re-indents the `"obligations": obligations(),` line in tc_458_070 to match its siblings. |
