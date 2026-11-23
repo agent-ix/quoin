@@ -49,7 +49,7 @@ const TOPICS: &[(&str, &str)] = &[
     ),
     (
         "module",
-        "Install and manage user/community spec modules (list,\n                    install, remove, ensure-defaults).",
+        "Install and manage user/community spec modules (list,\n                    install, remove, doctor, ensure-defaults).",
     ),
     (
         "semantic",

@@ -81,10 +81,9 @@ schema below, which is the full contract. `schemaVersion` is the constant `1`.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest. | Test (TC-014) |
-| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source, and excludes private opt-in modules. | Test (TC-014) |
-| FR-016-AC-4 | Each Git source sets `source.ref` to a release tag when one exists for its module, and uses the repository's default branch only when no release tag exists. | Test (TC-014) |
-| FR-016-AC-5 | A declared `source.ref` is a string. | Test (TC-014) |
+| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest. | Test |
+| FR-016-AC-5 | A declared `source.ref` is a string. | Test |
+| FR-016-AC-6 | Every default module entry is a Git source with a non-empty explicit `source.ref`. | Test |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-016-AC-3 is withdrawn. It
 > required every committed copy of a module's pin to agree and the manifest's
@@ -93,6 +92,13 @@ schema below, which is the full contract. `schemaVersion` is the constant `1`.
 > manifest and from `MarketplaceEntry`, and its test, `tc_1032_pin_agreement.rs`,
 > is deleted. The `version` property is removed from the schema above.
 > TC-1929 is withdrawn with it. The id is not reused.
+
+> **CR note (2026-11-23, PLAT-1839):** FR-016-AC-2 and FR-016-AC-4 are
+> withdrawn. They stated which modules and which release refs the committed file
+> holds, a check over recorded versions rather than behaviour, and their test
+> asserted exact pins. The ids are not reused. FR-016-AC-6 states the checkable
+> property that [FR-212](./FR-212-module-lag-warning.md) depends on: every entry
+> carries an explicit ref, so a pin can be compared.
 
 ## Dependencies
 

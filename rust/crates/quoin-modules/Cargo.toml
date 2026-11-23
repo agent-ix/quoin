@@ -20,6 +20,7 @@ workspace = true
 # file no containment audit walks and the one file with no unit tests; that is
 # how a silently emptied population passed every gate.
 quoin-semantic = { workspace = true }
+semver = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

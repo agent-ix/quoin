@@ -191,3 +191,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-209: Agent design-gate workflow for boundary-crossing rules](./FR-209-agent-design-gate.md)
 - [FR-210: Retain signed proof integrity statements in independent storage](./FR-210-retained-proof-integrity-statement.md)
 - [FR-211: Clause discharge resolves its evidence and verifies its approvals](./FR-211-discharge-resolves-evidence-and-approvals.md)
+- [FR-212: Warn when an installed default module is not at the CLI's pin](./FR-212-module-lag-warning.md)

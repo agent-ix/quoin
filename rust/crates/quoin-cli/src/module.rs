@@ -50,6 +50,10 @@ pub(crate) fn command() -> Command {
                 .about("Show each installed module's semantic contract state and its import locks"),
         )
         .subcommand(
+            Command::new("doctor")
+                .about("Warn when installed default modules are older than this CLI's pins"),
+        )
+        .subcommand(
             Command::new("ensure-defaults")
                 .about("Idempotently install the default specification module set"),
         )
@@ -64,8 +68,103 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "install" => install(arguments),
         "remove" => remove(arguments),
         "ensure-defaults" => ensure_defaults(),
+        "doctor" => doctor(),
         _ => Err("an unknown module command reached dispatch".to_owned()),
     }
+}
+
+/// Warnings for every installed default module not at this CLI's pin
+/// (FR-212), read from the registry via `modules.list`.
+pub(crate) fn lag_diagnostics() -> Result<Vec<quoin_core::protocol::Diagnostic>, String> {
+    let listed = invoke("modules.list", &serde_json::json!({}))?;
+    if !listed.outcome.carries_payload() {
+        return Err("modules.list failed while checking installed module versions".to_owned());
+    }
+    let plugins = listed
+        .payload
+        .get("modules")
+        .cloned()
+        .ok_or_else(|| "modules.list did not return modules".to_owned())?;
+    let registry = quoin_modules::ModuleRegistry {
+        schema_version: 1,
+        plugins: serde_json::from_value(plugins).map_err(|error| error.to_string())?,
+    };
+    let manifest = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
+        .map_err(|e| e.to_string())?;
+    Ok(lag_warnings(&manifest, &registry))
+}
+
+/// The lag check as a command that must not fail on its account: a failed
+/// check becomes one warning diagnostic in place of the lag warnings.
+pub(crate) fn lag_diagnostics_or_warning(
+    check: Result<Vec<quoin_core::protocol::Diagnostic>, String>,
+) -> Vec<quoin_core::protocol::Diagnostic> {
+    check.unwrap_or_else(|detail| {
+        vec![quoin_core::protocol::Diagnostic {
+            code: quoin_modules::ModulesErrorCode::RegistryUnreadable
+                .as_str()
+                .to_owned(),
+            message: format!("could not check installed modules against this CLI's pins: {detail}"),
+            context: std::collections::BTreeMap::new(),
+        }]
+    })
+}
+
+fn lag_warnings(
+    manifest: &quoin_modules::MarketplaceManifest,
+    registry: &quoin_modules::ModuleRegistry,
+) -> Vec<quoin_core::protocol::Diagnostic> {
+    quoin_modules::lagging_modules(manifest, registry)
+        .into_iter()
+        .map(|lag| {
+            let installed = lag
+                .installed_ref
+                .as_deref()
+                .map_or_else(|| "no recorded ref".to_owned(), str::to_owned);
+            let state = match lag.kind {
+                quoin_modules::LagKind::Older => {
+                    format!("is at {installed}, older than the pinned {}", lag.pinned_ref)
+                }
+                quoin_modules::LagKind::Incomparable => format!(
+                    "is at {installed}, not at the pinned release {}",
+                    lag.pinned_ref
+                ),
+            };
+            quoin_core::protocol::Diagnostic {
+                code: quoin_modules::ModulesErrorCode::ModuleLagsPin
+                    .as_str()
+                    .to_owned(),
+                message: format!(
+                    "installed module {} {state}; run `quoin module remove {}` then `quoin module ensure-defaults` to install the pinned release",
+                    lag.name, lag.name
+                ),
+                context: std::collections::BTreeMap::from([
+                    ("module".to_owned(), lag.name.to_string()),
+                    ("installed".to_owned(), installed),
+                    ("pinned".to_owned(), lag.pinned_ref),
+                ]),
+            }
+        })
+        .collect()
+}
+
+/// `quoin module doctor` (FR-212): the lag warnings and a summary line; exit zero.
+#[implements("FR-212")]
+fn doctor() -> Result<Response, String> {
+    let diagnostics = lag_diagnostics()?;
+    let rendered = if diagnostics.is_empty() {
+        "module doctor: installed modules are at this CLI's pins".to_owned()
+    } else {
+        format!(
+            "module doctor: {} installed module(s) not at this CLI's pins",
+            diagnostics.len()
+        )
+    };
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered }),
+        diagnostics,
+        outcome: Outcome::Ok,
+    })
 }
 
 fn list() -> Result<Response, String> {
@@ -390,91 +489,13 @@ fn indent_json(value: &str, indent: usize) -> String {
 #[cfg(test)]
 #[allow(
     clippy::expect_used,
+    clippy::panic,
     clippy::unwrap_used,
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::{DEFAULT_MODULES, command, modules_json};
+    use super::{DEFAULT_MODULES, command, lag_diagnostics_or_warning, modules_json};
     use ix_trace_rs::trace;
-
-    const EXPECTED_DEFAULT_PINS: [(&str, &str, &str, &str); 10] = [
-        (
-            "engineering-assurance",
-            "agent-ix/engineering-assurance",
-            "engineering_assurance",
-            "v0.10.1",
-        ),
-        (
-            "spec-artifacts-iso",
-            "agent-ix/spec-artifacts-iso",
-            "spec_artifacts_iso",
-            "v0.27.0",
-        ),
-        (
-            "spec-artifacts-app",
-            "agent-ix/spec-artifacts-app",
-            "spec_artifacts_app",
-            "v0.10.1",
-        ),
-        (
-            "spec-artifacts-process",
-            "agent-ix/spec-artifacts-process",
-            "spec_artifacts_process",
-            "v0.36.0",
-        ),
-        (
-            "spec-objects-business",
-            "agent-ix/spec-objects-business",
-            "spec_objects_business",
-            "v0.10.0",
-        ),
-        (
-            "spec-objects-architecture",
-            "agent-ix/spec-objects-architecture",
-            "spec_objects_architecture",
-            "v0.14.0",
-        ),
-        (
-            "spec-objects-enterprise",
-            "agent-ix/spec-objects-enterprise",
-            "spec_objects_enterprise",
-            "v0.9.0",
-        ),
-        (
-            "spec-objects-operational",
-            "agent-ix/spec-objects-operational",
-            "spec_objects_operational",
-            "v0.10.0",
-        ),
-        (
-            "spec-objects-security",
-            "agent-ix/spec-objects-security",
-            "spec_objects_security",
-            "v0.18.0",
-        ),
-        (
-            "spec-objects-safety",
-            "agent-ix/spec-objects-safety",
-            "spec_objects_safety",
-            "v0.8.2",
-        ),
-    ];
-
-    fn source_pin(entry: &quoin_modules::MarketplaceEntry) -> Option<(&str, &str, &str, &str)> {
-        match &entry.source {
-            quoin_modules::Source::GitSubdir {
-                url,
-                path,
-                r#ref: Some(r#ref),
-            } => Some((
-                entry.name.as_str(),
-                url.as_str(),
-                path.as_str(),
-                r#ref.as_str(),
-            )),
-            _ => None,
-        }
-    }
 
     #[trace("FR-017")]
     #[test]
@@ -535,40 +556,37 @@ mod tests {
         );
     }
 
-    #[trace("FR-016-AC-1", "FR-016-AC-2", "FR-016-AC-4", "FR-016-AC-5", "TC-014")]
+    #[trace("FR-016-AC-1", "FR-016-AC-5", "FR-016-AC-6")]
     #[test]
-    fn default_modules_use_the_expected_public_release_pins() {
-        let defaults = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
+    fn the_shipped_default_module_manifest_is_valid() {
+        let manifest = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
             .expect("the shipped default-module manifest is valid");
+        for entry in &manifest.entries {
+            let explicit_ref = match &entry.source {
+                quoin_modules::Source::GitSubdir { r#ref, .. } => r#ref.as_deref(),
+                _ => None,
+            };
+            assert!(
+                explicit_ref.is_some_and(|reference| !reference.is_empty()),
+                "{} must be a Git source with a non-empty explicit ref",
+                entry.name
+            );
+        }
+    }
+
+    #[trace("FR-212-AC-7")]
+    #[test]
+    fn a_failed_lag_check_becomes_one_warning_not_an_error() {
+        let diagnostics =
+            lag_diagnostics_or_warning(Err("modules.list did not return modules".to_owned()));
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("expected one diagnostic, got {diagnostics:?}");
+        };
+        assert_eq!(diagnostic.code, "QM010_REGISTRY_UNREADABLE");
         assert!(
-            defaults
-                .entries
-                .iter()
-                .all(quoin_modules::MarketplaceEntry::is_enabled),
-            "all ten public module entries remain enabled"
+            diagnostic
+                .message
+                .contains("modules.list did not return modules")
         );
-        let source_pins: Vec<_> = defaults.entries.iter().filter_map(source_pin).collect();
-        assert_eq!(
-            source_pins.len(),
-            defaults.entries.len(),
-            "every default module has a Git source and explicit ref"
-        );
-        assert_eq!(
-            source_pins, EXPECTED_DEFAULT_PINS,
-            "all ten public modules must stay pinned to their expected release refs"
-        );
-        let process = defaults
-            .entries
-            .iter()
-            .find(|entry| entry.name.as_str() == "spec-artifacts-process")
-            .expect("the process module is in the default set");
-        assert!(process.is_enabled(), "the process module stays enabled");
-        assert!(matches!(
-            &process.source,
-            quoin_modules::Source::GitSubdir { url, path, r#ref: Some(r#ref) }
-                if url == "agent-ix/spec-artifacts-process"
-                    && path == "spec_artifacts_process"
-                    && r#ref == "v0.36.0"
-        ));
     }
 }

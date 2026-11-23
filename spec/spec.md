@@ -211,6 +211,7 @@ index; the files are authoritative.
 - [FR-045](./functional/FR-045-portfolio-measurement-report.md) — report measurement portfolios across repositories.
 - [FR-210](./functional/FR-210-retained-proof-integrity-statement.md) — retain signed proof integrity statements in independent storage.
 - [FR-211](./functional/FR-211-discharge-resolves-evidence-and-approvals.md) — resolve discharge evidence and verify discharge approvals.
+- [FR-212](./functional/FR-212-module-lag-warning.md) — warn when an installed default module is not at the CLI pin.
 
 **Semantic-module architecture**
 

@@ -27,7 +27,6 @@ relationships:
 
 | Test ID | Title | Type | Traces To | Status |
 |---------|-------|------|-----------|--------|
-| TC-014 | Default module manifest pins all ten public modules to release refs | Unit | FR-016-AC-1, FR-016-AC-2, FR-016-AC-4, FR-016-AC-5 | ✅ |
 | TC-601 | FR-202 AC-1 threat-model dossier behavior | Integration | FR-202-AC-1 | ✅ |
 | TC-602 | FR-202 AC-2 threat-model dossier behavior | Integration | FR-202-AC-2 | ✅ |
 | TC-603 | FR-202 AC-3 threat-model dossier behavior | Integration | FR-202-AC-3 | ✅ |
