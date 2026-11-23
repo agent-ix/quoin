@@ -607,7 +607,9 @@ fn promoted(sbom: &Value) -> (tempfile::TempDir, PathBuf, Output) {
 fn record_of(out: &Path, purl: &str) -> PathBuf {
     out.join(format!(
         "{}.md",
-        purl.replace(':', "%3A").replace('/', "%2F").replace('@', "%40")
+        purl.replace(':', "%3A")
+            .replace('/', "%2F")
+            .replace('@', "%40")
     ))
 }
 
@@ -713,7 +715,10 @@ fn an_unstated_supplier_or_licence_is_absent_and_never_the_word_unknown() {
     let out = work.path().join("soup");
     assert!(with_module(&spdx, &out, &[]).status.success());
     let text = std::fs::read_to_string(record_of(&out, "pkg:npm/a@1")).unwrap();
-    assert!(!text.contains("supplier:") && !text.contains("license:"), "{text}");
+    assert!(
+        !text.contains("supplier:") && !text.contains("license:"),
+        "{text}"
+    );
     assert!(!text.contains("unknown"), "{text}");
 }
 
@@ -732,14 +737,23 @@ fn several_licences_leave_the_licence_absent_and_are_listed_with_their_texts() {
             &json!({"supplier": {"name": "Mixed Corp"}, "licenses": [{"license": {"id": "MIT"}}, {"license": {"url": "https://x"}}]}),
         ),
     ]));
-    for (purl, supplier) in [("pkg:npm/two@1", "Two Corp"), ("pkg:npm/mixed@1", "Mixed Corp")] {
+    for (purl, supplier) in [
+        ("pkg:npm/two@1", "Two Corp"),
+        ("pkg:npm/mixed@1", "Mixed Corp"),
+    ] {
         let record = record_of(&out, purl);
         assert_eq!(field(&record, "license"), None);
         assert_eq!(field(&record, "supplier").as_deref(), Some(supplier));
     }
     let report = stdout(&run);
-    assert!(has_line(&report, "multiple or unreadable licences: 2"), "{report}");
-    assert!(has_line(&report, "  pkg:npm/mixed@1 MIT, unreadable"), "{report}");
+    assert!(
+        has_line(&report, "multiple or unreadable licences: 2"),
+        "{report}"
+    );
+    assert!(
+        has_line(&report, "  pkg:npm/mixed@1 MIT, unreadable"),
+        "{report}"
+    );
     assert!(has_line(&report, "  pkg:npm/two@1 MIT, ISC"), "{report}");
 }
 
@@ -765,9 +779,15 @@ fn control_characters_and_unreadable_licences_omit_the_field_and_are_listed() {
     ]));
     let sup = std::fs::read_to_string(record_of(&out, "pkg:npm/sup@1")).unwrap();
     assert!(!sup.contains("supplier:"), "{sup}");
-    assert_eq!(field(&record_of(&out, "pkg:npm/sup@1"), "license").as_deref(), Some("MIT"));
+    assert_eq!(
+        field(&record_of(&out, "pkg:npm/sup@1"), "license").as_deref(),
+        Some("MIT")
+    );
     let both = std::fs::read_to_string(record_of(&out, "pkg:npm/both@1")).unwrap();
-    assert!(!both.contains("supplier:") && !both.contains("license:"), "{both}");
+    assert!(
+        !both.contains("supplier:") && !both.contains("license:"),
+        "{both}"
+    );
     let unreadable = std::fs::read_to_string(record_of(&out, "pkg:npm/unreadable@1")).unwrap();
     assert!(!unreadable.contains("license:"), "{unreadable}");
     assert!(!unreadable.contains("example.org"), "{unreadable}");
@@ -780,8 +800,14 @@ fn control_characters_and_unreadable_licences_omit_the_field_and_are_listed() {
     ] {
         assert!(has_line(&report, line), "{line}\n{report}");
     }
-    assert!(has_line(&report, "multiple or unreadable licences: 1"), "{report}");
-    assert!(has_line(&report, "  pkg:npm/unreadable@1 unreadable"), "{report}");
+    assert!(
+        has_line(&report, "multiple or unreadable licences: 1"),
+        "{report}"
+    );
+    assert!(
+        has_line(&report, "  pkg:npm/unreadable@1 unreadable"),
+        "{report}"
+    );
 }
 
 /// Replace `key` in the frontmatter of `record` with `value`, or drop it.
@@ -829,10 +855,22 @@ fn an_existing_record_is_never_rewritten_and_its_differing_fields_are_reported()
         ),
     ]);
     let (work, out, _) = promoted(&sbom);
-    set_field(&record_of(&out, "pkg:npm/edited@1"), "supplier", Some("Person Edited"));
-    set_field(&record_of(&out, "pkg:npm/edited@1"), "license", Some("Apache-2.0"));
+    set_field(
+        &record_of(&out, "pkg:npm/edited@1"),
+        "supplier",
+        Some("Person Edited"),
+    );
+    set_field(
+        &record_of(&out, "pkg:npm/edited@1"),
+        "license",
+        Some("Apache-2.0"),
+    );
     set_field(&record_of(&out, "pkg:npm/ref@1"), "license", None);
-    set_field(&record_of(&out, "pkg:npm/ref@1"), "license_fact_ref", Some("LF-1"));
+    set_field(
+        &record_of(&out, "pkg:npm/ref@1"),
+        "license_fact_ref",
+        Some("LF-1"),
+    );
     let before = snapshot(&out);
     let again = with_module(&work.path().join("bom.json"), &out, &[]);
     assert!(again.status.success());
@@ -841,7 +879,10 @@ fn an_existing_record_is_never_rewritten_and_its_differing_fields_are_reported()
     let lines = difference_lines(&report);
     assert!(has_line(&report, "field differences: 2"), "{report}");
     assert_eq!(lines.len(), 2, "{report}");
-    assert!(lines.iter().all(|l| l.contains("pkg:npm/edited@1")), "{report}");
+    assert!(
+        lines.iter().all(|l| l.contains("pkg:npm/edited@1")),
+        "{report}"
+    );
     assert!(lines.iter().any(|l| l.ends_with(" supplier")), "{report}");
     assert!(lines.iter().any(|l| l.ends_with(" license")), "{report}");
 }
@@ -873,8 +914,17 @@ fn a_field_set_where_the_sbom_states_none_and_the_reverse_are_differences() {
         ),
     ]);
     let (work, out, _) = promoted(&sbom);
-    set_field(&record_of(&out, "pkg:npm/bare@1"), "supplier", Some("Set By Person"));
-    for purl in ["pkg:npm/bare@1", "pkg:npm/two@1", "pkg:npm/unreadable@1", "pkg:npm/ctrl@1"] {
+    set_field(
+        &record_of(&out, "pkg:npm/bare@1"),
+        "supplier",
+        Some("Set By Person"),
+    );
+    for purl in [
+        "pkg:npm/bare@1",
+        "pkg:npm/two@1",
+        "pkg:npm/unreadable@1",
+        "pkg:npm/ctrl@1",
+    ] {
         set_field(&record_of(&out, purl), "license", Some("MIT"));
     }
     set_field(&record_of(&out, "pkg:npm/stated@1"), "supplier", None);
@@ -886,11 +936,8 @@ fn a_field_set_where_the_sbom_states_none_and_the_reverse_are_differences() {
     let report = stdout(&again);
     assert!(has_line(&report, "field differences: 7"), "{report}");
     let lines = difference_lines(&report);
-    let named = |purl: &str, field: &str| {
-        lines
-            .iter()
-            .any(|l| l.contains(&format!("{purl} {field}")))
-    };
+    let named =
+        |purl: &str, field: &str| lines.iter().any(|l| l.contains(&format!("{purl} {field}")));
     assert!(named("pkg:npm/bare@1", "supplier"), "{report}");
     assert!(named("pkg:npm/bare@1", "license"), "{report}");
     assert!(named("pkg:npm/two@1", "license"), "{report}");

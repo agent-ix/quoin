@@ -24,7 +24,7 @@ use crate::{SoupError, SoupErrorCode};
 use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::{Diagnostic, Response};
-use quoin_evidence::adapters::parse_sbom;
+use quoin_evidence::adapters::read_components;
 
 use plan::{Existing, NewRecord, Plan};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
@@ -231,18 +231,13 @@ fn run_promote(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Res
     let source = arg(arguments, "sbom").ok_or_else(|| "<SBOM> is required".to_owned())?;
     let raw = std::fs::read_to_string(source)
         .map_err(|error| format!("cannot read {source}: {error}"))?;
-    let parsed = parse_sbom(&raw).map_err(|error| {
+    let components = read_components(&raw).map_err(|error| {
         refuse(
             "soup.sbom_refused",
             error.to_string(),
             &[("path", source.to_owned())],
         )
     })?;
-    let symbols: Vec<String> = parsed
-        .entries
-        .into_iter()
-        .map(|e| e.symbol.as_str().to_owned())
-        .collect();
 
     let existing = read_records(&records)?;
     if let Some((first, second)) = plan::duplicate_records(&existing) {
@@ -280,9 +275,17 @@ fn run_promote(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Res
         }
     };
 
-    let planned = plan::plan(&symbols, &existing);
+    let mut planned = plan::plan(&components, &existing);
     let first_id = plan::next_id_number(ids);
     let adopted = check_destinations(&planned, &out)?;
+    for record in &planned.created {
+        if let Some(existing) = adopted.get(&record.purl) {
+            let found = plan::differences(&record.stated, existing);
+            planned.differences.extend(found);
+        }
+    }
+    planned.differences.sort();
+    let adopted: BTreeSet<String> = adopted.into_keys().collect();
     let written = write_new(
         &planned,
         &skeleton,
@@ -464,10 +467,10 @@ fn read_record(path: &Path, require_purl: bool) -> Result<Option<Existing>, Stop
     }))
 }
 
-/// Check every destination before anything is written. Returns the purls whose
-/// destination already holds their own record, which are unchanged.
-fn check_destinations(planned: &Plan, out: &Path) -> Result<BTreeSet<String>, Stop> {
-    let mut adopted = BTreeSet::new();
+/// Check every destination before anything is written. Returns the records
+/// already at their purl's destination, which are unchanged.
+fn check_destinations(planned: &Plan, out: &Path) -> Result<BTreeMap<String, Existing>, Stop> {
+    let mut adopted = BTreeMap::new();
     let mut claimed: BTreeMap<&str, &str> = BTreeMap::new();
     for record in &planned.created {
         let path = out.join(&record.file);
@@ -487,7 +490,7 @@ fn check_destinations(planned: &Plan, out: &Path) -> Result<BTreeSet<String>, St
         if path.exists() {
             match read_record(&path, false)? {
                 Some(existing) if existing.purl == record.purl => {
-                    adopted.insert(record.purl.clone());
+                    adopted.insert(record.purl.clone(), existing);
                 }
                 _ => return Err(occupied(&path, "is not the soup_record for the purl")),
             }
@@ -593,6 +596,37 @@ fn report(planned: &Plan, written: &BTreeMap<String, PathBuf>, unmatched: Option
     let _ = writeln!(text, "components skipped: {}", planned.skipped.len());
     for symbol in &planned.skipped {
         let _ = writeln!(text, "  {symbol}");
+    }
+    let _ = writeln!(text, "field differences: {}", planned.differences.len());
+    for difference in &planned.differences {
+        let _ = writeln!(
+            text,
+            "  {} {} {}",
+            difference.path.display(),
+            difference.purl,
+            difference.field
+        );
+    }
+    let _ = writeln!(
+        text,
+        "multiple or unreadable licences: {}",
+        planned.unrecorded.len()
+    );
+    for component in &planned.unrecorded {
+        let texts: Vec<String> = component
+            .texts
+            .iter()
+            .map(|text| text.escape_debug().to_string())
+            .collect();
+        let _ = writeln!(text, "  {} {}", component.symbol, texts.join(", "));
+    }
+    let _ = writeln!(text, "duplicate conflicts: {}", planned.conflicts.len());
+    for (purl, field) in &planned.conflicts {
+        let _ = writeln!(text, "  {purl} {field}");
+    }
+    let _ = writeln!(text, "omitted fields: {}", planned.omitted.len());
+    for (symbol, field) in &planned.omitted {
+        let _ = writeln!(text, "  {symbol} {field}");
     }
     if let Some(id) = unmatched {
         let _ = writeln!(text, "unmatched: {id}");

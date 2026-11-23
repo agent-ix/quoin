@@ -9,6 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+use quoin_evidence::adapters::{DeclaredLicence, SbomComponent};
+
 /// The segments of a purl that a record states (FR-141).
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct Purl {
@@ -91,6 +93,14 @@ pub(super) fn duplicate_records(existing: &[Existing]) -> Option<(&Existing, &Ex
     None
 }
 
+/// The supplier and licence the SBOM states for one purl, after the omissions
+/// FR-141 requires. A created record carries exactly these.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(super) struct Stated {
+    pub(super) supplier: Option<String>,
+    pub(super) license: Option<String>,
+}
+
 /// A record to write.
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct NewRecord {
@@ -98,6 +108,7 @@ pub(super) struct NewRecord {
     pub(super) name: String,
     pub(super) version: Option<String>,
     pub(super) file: String,
+    pub(super) stated: Stated,
 }
 
 /// An existing record whose purl differs from a new one only in version.
@@ -106,6 +117,22 @@ pub(super) struct Superseded {
     pub(super) path: PathBuf,
     pub(super) purl: String,
     pub(super) by: String,
+}
+
+/// A field of an existing record that differs from what the SBOM states.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(super) struct Difference {
+    pub(super) purl: String,
+    pub(super) path: PathBuf,
+    pub(super) field: &'static str,
+}
+
+/// A component whose licences do not become the record's single `license`:
+/// the declared texts, with `unreadable` for an entry that has none.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(super) struct Unrecorded {
+    pub(super) symbol: String,
+    pub(super) texts: Vec<String>,
 }
 
 /// What promoting one document does, before any file is touched.
@@ -117,6 +144,14 @@ pub(super) struct Plan {
     pub(super) superseded: Vec<Superseded>,
     pub(super) merged: Vec<String>,
     pub(super) skipped: Vec<String>,
+    /// Fields of existing records that differ from the SBOM.
+    pub(super) differences: Vec<Difference>,
+    /// Components declaring several licences or only an unreadable one.
+    pub(super) unrecorded: Vec<Unrecorded>,
+    /// Purl and field where a later occurrence states other than the first.
+    pub(super) conflicts: Vec<(String, &'static str)>,
+    /// Symbol and field left off a record because its text holds a control character.
+    pub(super) omitted: Vec<(String, &'static str)>,
 }
 
 /// An unchanged record: the purl and the file that already holds it.
@@ -126,20 +161,95 @@ pub(super) struct Unchanged {
     pub(super) path: PathBuf,
 }
 
-/// Classify every component symbol. Each one lands in exactly one of
-/// `created`, `unchanged`, `merged` or `skipped`, so the four counts sum to
-/// `read`. Every list is sorted, so the report is deterministic.
-pub(super) fn plan(symbols: &[String], existing: &[Existing]) -> Plan {
+/// What `component` states for its record, with the fields it omits and the
+/// licence texts to list when no single licence can be written.
+fn state(component: &SbomComponent) -> (Stated, Vec<&'static str>, Option<Vec<String>>) {
+    let mut omitted = Vec::new();
+    let supplier = component.supplier.clone().filter(|text| {
+        let clean = !text.chars().any(char::is_control);
+        if !clean {
+            omitted.push("supplier");
+        }
+        clean
+    });
+    let (license, unrecorded) = match component.licences.as_slice() {
+        [] => (None, None),
+        [
+            DeclaredLicence {
+                text: Some(text), ..
+            },
+        ] => {
+            if text.chars().any(char::is_control) {
+                omitted.push("license");
+                (None, None)
+            } else {
+                (Some(text.clone()), None)
+            }
+        }
+        licences => (
+            None,
+            Some(
+                licences
+                    .iter()
+                    .map(|licence| {
+                        licence
+                            .text
+                            .clone()
+                            .unwrap_or_else(|| "unreadable".to_owned())
+                    })
+                    .collect(),
+            ),
+        ),
+    };
+    (Stated { supplier, license }, omitted, unrecorded)
+}
+
+/// The fields of `existing` that differ from `stated`: set where the SBOM
+/// states none, unset where it states one, or set to another value. A record
+/// carrying `license_fact_ref` states its licence another way and is not
+/// compared on `license`.
+pub(super) fn differences(stated: &Stated, existing: &Existing) -> Vec<Difference> {
+    let mut found = Vec::new();
+    let mut compare = |field: &'static str, stated: Option<&str>| {
+        let record = existing.front.get(field).filter(|value| !value.is_null());
+        let same = match (record, stated) {
+            (None, None) => true,
+            (Some(value), Some(text)) => value.as_str() == Some(text),
+            _ => false,
+        };
+        if !same {
+            found.push(Difference {
+                purl: existing.purl.clone(),
+                path: existing.path.clone(),
+                field,
+            });
+        }
+    };
+    compare("supplier", stated.supplier.as_deref());
+    if !existing.front.contains_key("license_fact_ref") {
+        compare("license", stated.license.as_deref());
+    }
+    found
+}
+
+/// Classify every component. Each one lands in exactly one of `created`,
+/// `unchanged`, `merged` or `skipped`, so the four counts sum to `read`. A
+/// purl's supplier and licence are its first occurrence's; a later occurrence
+/// that states other than that is listed as a conflict. Every list is sorted,
+/// so the report is deterministic.
+pub(super) fn plan(components: &[SbomComponent], existing: &[Existing]) -> Plan {
     let by_purl: BTreeMap<&str, &Existing> = existing
         .iter()
         .map(|record| (record.purl.as_str(), record))
         .collect();
     let mut result = Plan {
-        read: symbols.len(),
+        read: components.len(),
         ..Plan::default()
     };
-    let mut seen = BTreeSet::new();
-    for symbol in symbols {
+    let mut seen: BTreeMap<&str, &SbomComponent> = BTreeMap::new();
+    let mut conflicts = BTreeSet::new();
+    for component in components {
+        let symbol = &component.symbol;
         let Some(purl) = parse_purl(symbol) else {
             result.skipped.push(symbol.clone());
             continue;
@@ -151,14 +261,34 @@ pub(super) fn plan(symbols: &[String], existing: &[Existing]) -> Plan {
             .any(char::is_control)
         {
             result.skipped.push(symbol.clone());
-        } else if !seen.insert(symbol.as_str()) {
+        } else if let Some(first) = seen.get(symbol.as_str()) {
             result.merged.push(symbol.clone());
-        } else if let Some(record) = by_purl.get(symbol.as_str()) {
-            result.unchanged.push(Unchanged {
-                purl: symbol.clone(),
-                path: record.path.clone(),
-            });
+            if first.supplier != component.supplier {
+                conflicts.insert((symbol.clone(), "supplier"));
+            }
+            if first.licences != component.licences {
+                conflicts.insert((symbol.clone(), "license"));
+            }
         } else {
+            seen.insert(symbol.as_str(), component);
+            let (stated, omitted, unrecorded) = state(component);
+            result
+                .omitted
+                .extend(omitted.into_iter().map(|field| (symbol.clone(), field)));
+            if let Some(texts) = unrecorded {
+                result.unrecorded.push(Unrecorded {
+                    symbol: symbol.clone(),
+                    texts,
+                });
+            }
+            if let Some(record) = by_purl.get(symbol.as_str()) {
+                result.differences.extend(differences(&stated, record));
+                result.unchanged.push(Unchanged {
+                    purl: symbol.clone(),
+                    path: record.path.clone(),
+                });
+                continue;
+            }
             for old in existing {
                 let same_component = parse_purl(&old.purl).is_some_and(|other| {
                     other.base == purl.base && other.raw_version != purl.raw_version
@@ -176,6 +306,7 @@ pub(super) fn plan(symbols: &[String], existing: &[Existing]) -> Plan {
                 name: purl.name,
                 version: purl.version,
                 file: file_name(symbol),
+                stated,
             });
         }
     }
@@ -186,6 +317,10 @@ pub(super) fn plan(symbols: &[String], existing: &[Existing]) -> Plan {
         .sort_by(|a, b| (&a.purl, &a.by).cmp(&(&b.purl, &b.by)));
     result.merged.sort();
     result.skipped.sort();
+    result.differences.sort();
+    result.unrecorded.sort();
+    result.omitted.sort();
+    result.conflicts = conflicts.into_iter().collect();
     result
 }
 
@@ -198,7 +333,8 @@ pub(super) fn next_id_number<'a>(ids: impl IntoIterator<Item = &'a str>) -> u32 
 }
 
 /// Render one record from the module's own skeleton: the frontmatter states
-/// only what the SBOM states, and the body is the skeleton's with its
+/// only what the SBOM states (and, for `supplier` and `license`, only where it
+/// states one usable value), and the body is the skeleton's with its
 /// authoring comment removed and its heading naming the record.
 pub(super) fn render(
     skeleton: &str,
@@ -220,6 +356,12 @@ pub(super) fn render(
     );
     if let Some(version) = &record.version {
         let _ = writeln!(text, "version: {}", quote(version));
+    }
+    if let Some(supplier) = &record.stated.supplier {
+        let _ = writeln!(text, "supplier: {}", quote(supplier));
+    }
+    if let Some(license) = &record.stated.license {
+        let _ = writeln!(text, "license: {}", quote(license));
     }
     if let Some(clause) = disposition_clause {
         let _ = writeln!(text, "disposition_clause: {}", quote(clause));
@@ -261,7 +403,27 @@ fn body(skeleton: &str) -> &str {
 mod tests {
     use super::{Existing, file_name, next_id_number, parse_purl, plan};
     use ix_trace_rs::trace;
+    use quoin_evidence::adapters::{DeclaredLicence, LicenceKind, SbomComponent};
     use std::path::PathBuf;
+
+    fn component(symbol: &str, supplier: Option<&str>, licences: &[Option<&str>]) -> SbomComponent {
+        SbomComponent {
+            symbol: symbol.to_owned(),
+            purl: Some(symbol.to_owned()),
+            licences: licences
+                .iter()
+                .map(|text| DeclaredLicence {
+                    kind: if text.is_some() {
+                        LicenceKind::Id
+                    } else {
+                        LicenceKind::Unreadable
+                    },
+                    text: text.map(str::to_owned),
+                })
+                .collect(),
+            supplier: supplier.map(str::to_owned),
+        }
+    }
 
     #[trace("FR-141-AC-1")]
     #[test]
@@ -303,8 +465,8 @@ mod tests {
                 front: serde_json::Map::new(),
             },
         ];
-        let symbols: Vec<String> = ["pkg:npm/a@1", "pkg:npm/b@2", "pkg:npm/b@2", "c@3"]
-            .map(str::to_owned)
+        let symbols: Vec<SbomComponent> = ["pkg:npm/a@1", "pkg:npm/b@2", "pkg:npm/b@2", "c@3"]
+            .map(|symbol| component(symbol, None, &[]))
             .to_vec();
         let planned = plan(&symbols, &existing);
         assert_eq!(planned.read, 4);
@@ -321,5 +483,63 @@ mod tests {
     fn tc_1515_004_ids_continue_after_the_highest_existing() {
         assert_eq!(next_id_number(["SOUP-001", "SOUP-007", "other"]), 8);
         assert_eq!(next_id_number([]), 1);
+    }
+
+    #[trace("FR-141-AC-25")]
+    #[test]
+    fn tc_1812_001_the_first_occurrence_supplies_the_record_and_a_later_one_conflicts() {
+        let components = [
+            component("pkg:npm/a@1", Some("First"), &[Some("MIT")]),
+            component("pkg:npm/a@1", Some("Second"), &[Some("MIT")]),
+        ];
+        let planned = plan(&components, &[]);
+        assert_eq!(planned.created.len(), 1);
+        assert_eq!(planned.created[0].stated.supplier.as_deref(), Some("First"));
+        assert_eq!(planned.conflicts, [("pkg:npm/a@1".to_owned(), "supplier")]);
+    }
+
+    #[trace("FR-141-AC-20", "FR-141-AC-21", "FR-141-AC-24")]
+    #[test]
+    fn tc_1812_002_only_one_readable_clean_licence_is_written() {
+        let components = [
+            component("pkg:npm/one@1", None, &[Some("MIT")]),
+            component("pkg:npm/two@1", None, &[Some("MIT"), None]),
+            component("pkg:npm/none@1", None, &[None]),
+            component("pkg:npm/ctrl@1", Some("A\u{7}"), &[Some("M\nT")]),
+        ];
+        let planned = plan(&components, &[]);
+        let license = |purl: &str| {
+            planned
+                .created
+                .iter()
+                .find(|r| r.purl == purl)
+                .unwrap()
+                .stated
+                .license
+                .clone()
+        };
+        assert_eq!(license("pkg:npm/one@1").as_deref(), Some("MIT"));
+        assert_eq!(license("pkg:npm/two@1"), None);
+        assert_eq!(license("pkg:npm/none@1"), None);
+        assert_eq!(license("pkg:npm/ctrl@1"), None);
+        let listed: Vec<_> = planned
+            .unrecorded
+            .iter()
+            .map(|u| (u.symbol.as_str(), u.texts.join("|")))
+            .collect();
+        assert_eq!(
+            listed,
+            [
+                ("pkg:npm/none@1", "unreadable".to_owned()),
+                ("pkg:npm/two@1", "MIT|unreadable".to_owned())
+            ]
+        );
+        assert_eq!(
+            planned.omitted,
+            [
+                ("pkg:npm/ctrl@1".to_owned(), "license"),
+                ("pkg:npm/ctrl@1".to_owned(), "supplier")
+            ]
+        );
     }
 }

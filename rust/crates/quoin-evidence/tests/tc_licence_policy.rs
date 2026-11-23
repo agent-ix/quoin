@@ -131,7 +131,7 @@ fn tc_1671_002_the_reader_exposes_declared_licences_by_kind() {
     let ember = by_purl("pkg:npm/fx-ember@0.4.1");
     assert_eq!(ember.licences.len(), 1);
     assert_eq!(ember.licences[0].kind, LicenceKind::Id);
-    assert_eq!(ember.licences[0].text, "GPL-3.0-only");
+    assert_eq!(ember.licences[0].text.as_deref(), Some("GPL-3.0-only"));
     let vale = by_purl("pkg:npm/fx-vale@3.1.0");
     assert_eq!(vale.licences[0].kind, LicenceKind::Expression);
     assert!(by_purl("pkg:npm/fx-moss@0.9.0").licences.is_empty());
@@ -141,7 +141,7 @@ fn tc_1671_002_the_reader_exposes_declared_licences_by_kind() {
     ))
     .unwrap();
     assert_eq!(name[0].licences[0].kind, LicenceKind::Name);
-    assert_eq!(name[0].licences[0].text, "Custom Terms");
+    assert_eq!(name[0].licences[0].text.as_deref(), Some("Custom Terms"));
 }
 
 /// SPDX `MIT` is an id, `MIT OR Apache-2.0` an expression, `NOASSERTION` and
@@ -534,7 +534,43 @@ fn tc_1671_014_an_unreadable_licence_entry_is_unknown_never_allowed() {
             ("licence-unknown", "c@1")
         ]
     );
-    assert!(findings[0].2.contains("https://x"), "{}", findings[0].2);
+    assert!(!findings[0].2.contains("https://x"), "{}", findings[0].2);
+}
+
+/// An unreadable entry is classed unknown with the fixed text, after any
+/// unlisted texts, even where `allow` holds every other text.
+#[trace("FR-150-AC-17")]
+#[test]
+fn tc_1812_003_an_unreadable_entry_message_is_the_fixed_text_after_unlisted_texts() {
+    let sbom = cdx(
+        r#"{"name":"only","version":"1","licenses":[{"license":{"url":"https://x"}}]},
+           {"name":"beside","version":"1","licenses":[{"license":{"id":"MIT"}},{"expression":42}]},
+           {"name":"named","version":"1","licenses":[{"license":{"url":"u"}},{"license":{"name":"Foo"}}]}"#,
+    );
+    let policy = "format: licence-policy-v1\nallow: [MIT]\n";
+    assert_eq!(
+        run(&sbom, policy),
+        [
+            finding(
+                "licence-unknown",
+                "unknown",
+                "unreadable licence entry",
+                "only@1"
+            ),
+            finding(
+                "licence-unknown",
+                "unknown",
+                "unreadable licence entry",
+                "beside@1"
+            ),
+            finding(
+                "licence-unknown",
+                "unknown",
+                "Foo, unreadable licence entry",
+                "named@1"
+            ),
+        ]
+    );
 }
 
 /// An SPDX value with the `+` operator is an expression, not an id; several

@@ -178,13 +178,19 @@ fn licence_finding(component: &SbomComponent, policy: &Policy) -> Option<Finding
     let mut denied = Vec::new();
     let mut not_allowed = Vec::new();
     let mut unknown = Vec::new();
+    let mut unreadable = false;
     for DeclaredLicence { kind, text } in &component.licences {
+        let Some(text) = text else {
+            unreadable = true;
+            continue;
+        };
         if listed(&policy.deny, text) {
             denied.push(text.as_str());
         } else if !listed(&policy.allow, text) {
             match kind {
                 LicenceKind::Id => not_allowed.push(text.as_str()),
                 LicenceKind::Name | LicenceKind::Expression => unknown.push(text.as_str()),
+                LicenceKind::Unreadable => unreadable = true,
             }
         }
     }
@@ -198,7 +204,10 @@ fn licence_finding(component: &SbomComponent, policy: &Policy) -> Option<Finding
             not_allowed.join(", "),
             path,
         ))
-    } else if !unknown.is_empty() {
+    } else if !unknown.is_empty() || unreadable {
+        if unreadable {
+            unknown.push("unreadable licence entry");
+        }
         Some(finding(
             "licence-unknown",
             "unknown",
