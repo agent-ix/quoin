@@ -391,9 +391,12 @@ fn row(
             .advisories
             .iter()
             .any(|advisory| advisory.rule_id == statement.advisory);
-        statement.stale = !currently_reported
-            && !applicable.is_empty()
-            && applicable.iter().all(|tool| join.free_of.contains(tool));
+        let every_scan_read =
+            !applicable.is_empty() && applicable.iter().all(|tool| join.read.contains(tool));
+        let no_possible_match = applicable
+            .iter()
+            .all(|tool| !join.could_belong.contains(tool));
+        statement.stale = !currently_reported && every_scan_read && no_possible_match;
     }
     Ok(Row {
         version,

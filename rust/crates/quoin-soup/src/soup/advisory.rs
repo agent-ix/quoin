@@ -242,6 +242,11 @@ pub(super) struct RecordJoin {
     /// crate without a version, or with no path). The only way a
     /// record is reported free of a tool's advisories.
     pub(super) free_of: Vec<Tool>,
+    /// Applicable tools whose newest retained scan was read and ordered.
+    pub(super) read: Vec<Tool>,
+    /// Applicable tools with an unmatched finding that could belong to this
+    /// record.
+    pub(super) could_belong: Vec<Tool>,
 }
 
 /// Why a finding is listed instead of attached.
@@ -456,6 +461,17 @@ fn record_joins(
                         && !could_belong.contains(&(*tool, position))
                 })
                 .collect();
+            let read = read_tools
+                .iter()
+                .copied()
+                .filter(|tool| tool.assesses(&record.purl))
+                .collect();
+            let could_belong = could_belong
+                .iter()
+                .filter_map(|(tool, candidate)| {
+                    (*candidate == position && tool.assesses(&record.purl)).then_some(*tool)
+                })
+                .collect();
             RecordJoin {
                 path: record.path.clone(),
                 id: record.id.clone(),
@@ -463,6 +479,8 @@ fn record_joins(
                 clause: record.disposition_clause.clone(),
                 advisories,
                 free_of,
+                read,
+                could_belong,
             }
         })
         .collect()

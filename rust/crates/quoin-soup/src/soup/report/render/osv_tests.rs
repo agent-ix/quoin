@@ -117,6 +117,8 @@ fn synthetic_row(purl: &str, advisory: Attached) -> Row {
             clause: None,
             advisories: vec![advisory],
             free_of: Vec::new(),
+            read: Vec::new(),
+            could_belong: Vec::new(),
         },
         version: None,
         serves: Listed::Absent,
@@ -147,6 +149,12 @@ fn empty_npm_row(free_of_osv: bool) -> Row {
             } else {
                 Vec::new()
             },
+            read: if free_of_osv {
+                vec![Tool::OsvScanner]
+            } else {
+                Vec::new()
+            },
+            could_belong: Vec::new(),
         },
         version: None,
         serves: Listed::Absent,
@@ -248,6 +256,8 @@ fn a_clean_osv_row_labels_the_advisory_observation_with_the_missing_database() {
             clause: None,
             advisories: Vec::new(),
             free_of: vec![Tool::OsvScanner],
+            read: vec![Tool::OsvScanner],
+            could_belong: Vec::new(),
         },
         version: None,
         serves: Listed::Absent,
