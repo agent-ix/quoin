@@ -34,7 +34,7 @@ fn format_arg() -> Arg {
         .help("Output format")
 }
 
-fn module_arg() -> Arg {
+pub(crate) fn module_arg() -> Arg {
     Arg::new("module")
         .long("module")
         .value_name("DIR")

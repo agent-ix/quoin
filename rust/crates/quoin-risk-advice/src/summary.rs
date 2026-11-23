@@ -11,6 +11,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
+use std::path::PathBuf;
 
 use serde::Serialize;
 
@@ -64,7 +65,9 @@ impl RowToken {
         )
     }
 
-    fn as_str(self) -> &'static str {
+    /// The token as FR-170 spells it.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
         match self {
             Self::HazardWithoutSituation => "hazard-without-situation",
             Self::SituationWithoutHazard => "situation-without-hazard",
@@ -191,6 +194,20 @@ pub struct Summary {
     /// The files the reader could not load, each as `path: reason`.
     #[serde(skip)]
     pub unreadable: Vec<String>,
+    /// The files that cannot be read, or whose frontmatter block is not valid
+    /// YAML, in path order. A file with a valid block that names no `type` is
+    /// not listed.
+    #[serde(skip)]
+    pub unusable: Vec<PathBuf>,
+}
+
+impl Summary {
+    /// Each distinct finding of the rows, once, in token then names order. A
+    /// finding FR-170 places on several rows is one item.
+    #[must_use]
+    pub fn distinct_findings(&self) -> BTreeSet<&RowFinding> {
+        self.rows.iter().flat_map(|row| &row.findings).collect()
+    }
 }
 
 /// Residual-risk findings by residual-risk id, and the estimates with no

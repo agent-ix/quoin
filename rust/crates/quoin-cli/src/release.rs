@@ -7,8 +7,10 @@
 //! The command is a view of views. The coverage, freshness and findings come
 //! from the code path `quoin matrix` uses, the SOUP section from the one
 //! `quoin soup report` uses, the anomalies from the selection and record
-//! reading of the anomaly crate, and the change records from the
-//! release-history file, taken as data. It runs no git, reads no clock, and
+//! reading of the anomaly crate, the risk-completeness findings from the
+//! code `quoin risk-summary` uses, the anomaly-gate failures from the gate
+//! `quoin anomaly report` uses (over the carried anomalies, with no git), and
+//! the change records from the release-history file, taken as data. It runs no git, reads no clock, and
 //! computes no digest: every instant is `--as-of` and every commit is the
 //! caller's.
 
@@ -175,6 +177,7 @@ pub(crate) fn command() -> Command {
                         .value_name("FILE")
                         .help("JSON file of public support statements, as `quoin soup report` takes it"),
                 )
+                .arg(crate::risk::module_arg())
                 .arg(
                     Arg::new("out")
                         .long("out")
@@ -215,6 +218,7 @@ struct Inputs {
     as_of: String,
     records: PathBuf,
     support: Option<PathBuf>,
+    modules: Vec<String>,
     out: PathBuf,
 }
 
@@ -236,6 +240,10 @@ impl Inputs {
             binding: PathBuf::from(text("binding")?),
             as_of: text("as-of")?,
             support: arguments.get_one::<String>("support").map(PathBuf::from),
+            modules: arguments
+                .get_many::<String>("module")
+                .map(|roots| roots.cloned().collect())
+                .unwrap_or_default(),
             out: PathBuf::from(text("out")?),
             records,
             repo,
@@ -324,7 +332,11 @@ fn write_snapshot(inputs: &Inputs) -> Result<PathBuf, Stop> {
         SoupFailure::Failed(message) => Stop::Failed(message),
     })?;
     let matrix = snapshot::matrix_sections(&AuditOptions::default(), &inputs.repo)?;
-    let anomalies = snapshot::anomalies(&inputs.repo)?;
+    let (anomalies, anomaly_findings) = snapshot::anomalies(&inputs.repo)?;
+    let mut open_findings = matrix.findings;
+    open_findings.extend(snapshot::risk_findings(&inputs.repo, &inputs.modules)?);
+    open_findings.extend(anomaly_findings);
+    open_findings.sort_by(|a, b| a.order_key().cmp(&b.order_key()));
 
     let snapshot = quoin_dossier::release_snapshot::ReleaseSnapshot {
         protocol: quoin_dossier::release_snapshot::RELEASE_SNAPSHOT_PROTOCOL.to_owned(),
@@ -339,7 +351,7 @@ fn write_snapshot(inputs: &Inputs) -> Result<PathBuf, Stop> {
         previous_release: history.previous_release,
         coverage: matrix.coverage,
         evidence_freshness: matrix.freshness,
-        open_findings: matrix.findings,
+        open_findings,
         soup,
         anomalies,
         change_records: history.records,

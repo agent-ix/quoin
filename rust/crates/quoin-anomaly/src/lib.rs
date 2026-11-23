@@ -36,6 +36,6 @@ pub use refs::{
     CorpusIds, RefEntry, acceptance_criteria, anomaly_documents, corpus_ids, is_hazard,
     references_to, test_case_ids,
 };
-pub use report::{Gate, GateMode, Report, build_report};
+pub use report::{Failure, Gate, GateMode, Report, build_report, gate_carried};
 pub use status::Status;
 pub use verification::{FixResult, Verification, evaluates_criteria};
