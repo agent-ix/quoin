@@ -40,13 +40,24 @@ struct Run {
 }
 
 /// Invoke the runtime with the operation and request.
+/// An empty IX home, so the installed modules of the machine running the test
+/// never take part in an operation that reads the module set.
+fn empty_home() -> PathBuf {
+    let home = std::env::temp_dir().join(format!("quoin-core-empty-home-{}", std::process::id()));
+    std::fs::create_dir_all(&home).expect("the empty home is created");
+    home
+}
+
 fn run(op: &str, request: &Value) -> Run {
-    let response =
-        dispatch(op, request, &RuntimeSettings::default()).unwrap_or_else(|error| Response {
-            payload: Value::Null,
-            diagnostics: vec![Diagnostic::from(&error)],
-            outcome: error.outcome(),
-        });
+    let settings = RuntimeSettings {
+        ix_home: Some(empty_home()),
+        ..RuntimeSettings::default()
+    };
+    let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
+        payload: Value::Null,
+        diagnostics: vec![Diagnostic::from(&error)],
+        outcome: error.outcome(),
+    });
     let stdout = if response.outcome.carries_payload() {
         canonical_json(&response.payload).unwrap()
     } else {
@@ -927,4 +938,37 @@ fn tc_3205_a_stored_disposition_with_a_blank_rationale_refuses_the_matrix() {
         "{}",
         refused.stderr
     );
+}
+
+/// `evidence.approval_subject` answers through the wire: the record id and
+/// digest of the fact, whatever its `approvalRef`.
+#[trace("FR-211-AC-17", "FR-211-AC-18")]
+#[test]
+fn tc_211_the_approval_subject_operation_names_the_record_and_its_digest() {
+    let subject = ok(&run(
+        "evidence.approval_subject",
+        &json!({"binding": discharge_binding(), "fact": discharge_fact()}),
+    ));
+    assert_eq!(subject["record_id"], "quire/spec/1/C-1");
+    let digest = subject["record_digest"].as_str().unwrap();
+    assert!(
+        digest.starts_with("sha256:") && digest.len() == 71,
+        "{digest}"
+    );
+    let mut tagged = discharge_fact();
+    tagged["approvalRef"] = json!("tag-1");
+    let again = ok(&run(
+        "evidence.approval_subject",
+        &json!({"binding": discharge_binding(), "fact": tagged}),
+    ));
+    assert_eq!(again["record_digest"], subject["record_digest"]);
+
+    let mut absent = discharge_fact();
+    absent["clauseId"] = json!("C-9");
+    let refused = run(
+        "evidence.approval_subject",
+        &json!({"binding": discharge_binding(), "fact": absent}),
+    );
+    assert_eq!(refused.status, 3, "{}", refused.stderr);
+    assert!(refused.stdout.is_empty());
 }

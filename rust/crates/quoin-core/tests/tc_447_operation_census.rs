@@ -67,13 +67,21 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
+/// An empty IX home, so the installed modules of the machine running the test
+/// never take part in an operation that reads the module set.
+fn empty_home() -> PathBuf {
+    let home = std::env::temp_dir().join(format!("quoin-core-empty-home-{}", std::process::id()));
+    std::fs::create_dir_all(&home).expect("the empty home is created");
+    home
+}
+
 fn run(op: &str, stdin: &str) -> Run {
     let request: Value = serde_json::from_str(stdin).expect("census request is JSON");
     let response = dispatch(
         op,
         &request,
         &RuntimeSettings {
-            ix_home: None,
+            ix_home: Some(empty_home()),
             semantic_root: Some(semantic_root()),
         },
     );
