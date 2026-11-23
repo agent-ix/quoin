@@ -24,3 +24,17 @@ omission path and one unstated input remain.
 ## Verdict
 
 FND-001 should be fixed before merge; FND-002 is a wording gap.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-166 now refuses with `release_snapshot_input_unreadable` when a file `quoin risk-summary` reads cannot be read, and FR-166-AC-14 tests it; the remaining gaps in that rule are FND-003 and FND-004 below. |
+| FND-002 | fixed | NFR-036 now names the installed module set (the `--module` roots, or the installed modules) as an input in its statement and metric. |
+
+## New findings (disposition pass 1)
+
+| ID      | Severity | Summary | Refs |
+| ------- | -------- | ------- | ---- |
+| FND-003 | medium | The new refusal is broader than its AC. `quoin risk-summary` reads every non-ignored `.md` file below scope (the quire walker reads all markdown before it knows a type), and a file that is not valid UTF-8 or cannot be opened is unreadable whatever it holds. So the FR-166 behavior refuses a repository with no risk records because of, for example, a Windows-1252 `docs/notes.md`; before this PR that snapshot was written. FR-166-AC-14 tests only "a risk record file", which the reader cannot tell apart. State the rule as any markdown file below `--repo` the reader cannot read, and have AC-14 cover a non-risk file, or narrow the rule. | FR-166, FR-166-AC-14, FR-169 |
+| FND-004 | medium | A risk record whose frontmatter does not parse is still dropped silently. `summarize` reads the corpus with `refuse_unreadable` false and ignores `corpus.malformed`; such a file is not "unreadable", so the new refusal does not cover it. A `residual_risk` with broken YAML frontmatter vanishes, and its accepted-outside-acceptable-region finding becomes post-control-estimate-without-decision with exit 0. `quoin risk discrepancies` already refuses both cases (`refuse_unreadable` true, `document_unparseable`). Extend the refusal and AC-14 to a file whose frontmatter does not parse. | FR-166, FR-166-AC-14, FR-169 |

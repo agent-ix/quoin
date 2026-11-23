@@ -36,3 +36,11 @@ anomaly-gate `path` mapping also yields an absolute path under an absolute `--re
 
 Not mergeable until FND-001 is fixed; FND-002 should be fixed in the same round. The rest of the change is sound
 and consistent with the code it describes.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-167 behavior, AC-7 and AC-19 now exempt the stem "accept" inside the three named FR-170 finding tokens and inside values copied from a record, matching FR-169's exception; the three tokens listed are exactly the FR-170 tokens carrying the stem. |
+| FND-002 | fixed | The mapping row and the behavior now state the anomaly-gate `path` as repository-relative (never absolute), consistent with NFR-036. |
+| FND-003 | fixed | Downstream now states that a snapshot written before this change lacks the added items and that the command never rewrites an existing snapshot (an existing `--out` is refused, as the code does with `create_new`). |

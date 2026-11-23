@@ -24,3 +24,10 @@ with the new `depends_on` edges; AC ids are unique and in sequence. Two low gaps
 ## Verdict
 
 Low findings only; neither blocks merge on its own.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The refusal names the failing root (`--repo` or the `--module DIR`) and FR-166-AC-13 adds a `--module DIR` that does not load. |
+| FND-002 | fixed | FR-166-AC-12 and FR-167-AC-15 now require a control that a post-control estimate assumes; the AC's cross-check against `quoin risk-summary` over the same fixture forces that estimate to estimate a situation, so the fixture is unambiguous. |

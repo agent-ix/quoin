@@ -22,3 +22,9 @@ statement has one actor. Two statements carry a rationale clause inside the requ
 ## Verdict
 
 Conformant apart from one low wording finding.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Both `because` clauses moved to the Description; the two statements are now plain unwanted-behavior EARS. |
