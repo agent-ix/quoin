@@ -261,30 +261,35 @@ impl<'a> ClassContext<'a> {
                 class,
             )];
         };
-        // A method is met by a run that passed, or by a scan record, which
-        // states findings and has no pass/fail of its own. Kinds seen only on
-        // runs that did not pass are kept apart so the finding can say so.
-        let mut passed_kinds: BTreeSet<&str> = BTreeSet::new();
-        let mut unpassed_kinds: BTreeSet<&str> = BTreeSet::new();
+        // A method is met by passing evidence of its kind, or by a scan record,
+        // which states findings and has no pass/fail of its own. Only the
+        // symbols bound to this obligation are judged, as the rest of the
+        // auditor judges them. Kinds with a bound run that did not pass are
+        // kept apart so the finding can say so.
+        let mut tally: BTreeMap<&str, SymbolTally> = BTreeMap::new();
+        let mut scan_kinds: BTreeSet<&str> = BTreeSet::new();
         for binding in bindings {
             let suite = binding.suite.as_str();
             if let Some(run) = indexed.runs_by_suite.get(suite)
                 && let Some(kind) = run.evidence_kind.as_deref()
             {
-                if run_passed(run) {
-                    passed_kinds.insert(kind);
-                } else {
-                    unpassed_kinds.insert(kind);
-                }
+                tally.entry(kind).or_default().add(binding, run);
             }
             if let Some(kind) = indexed
                 .scans_by_suite
                 .get(suite)
                 .and_then(|scan| scan.evidence_kind.as_deref())
             {
-                passed_kinds.insert(kind);
+                scan_kinds.insert(kind);
             }
         }
+        let passed_kinds: BTreeSet<&str> = tally
+            .iter()
+            .filter(|(_, counts)| counts.passed())
+            .map(|(kind, _)| *kind)
+            .chain(scan_kinds)
+            .collect();
+        let unpassed_kinds: BTreeSet<&str> = tally.keys().copied().collect();
         floors
             .required_methods
             .iter()
@@ -369,18 +374,35 @@ pub(super) fn with_class(mut finding: Finding, class: &str) -> Finding {
     finding
 }
 
-/// A run passed when it recorded at least one `pass` and no `fail` or `error`.
-/// A run of only skips, or of nothing, is not a passing run.
-fn run_passed(run: &RunRecord) -> bool {
-    let mut passed = false;
-    for entry in &run.entries {
-        match entry.outcome {
-            Outcome::Pass => passed = true,
-            Outcome::Fail | Outcome::Error => return false,
-            Outcome::Skip => {}
+/// What a kind's bound symbols reported across the runs bound to one obligation.
+#[derive(Default)]
+struct SymbolTally {
+    passed: bool,
+    failed: bool,
+}
+
+impl SymbolTally {
+    /// Read the outcome of each symbol the binding names. A symbol the run
+    /// skipped or never reported counts for nothing.
+    fn add(&mut self, binding: &Binding, run: &RunRecord) {
+        for symbol in &binding.symbols {
+            let outcome = run
+                .entries
+                .iter()
+                .find(|entry| entry.symbol.as_str() == symbol.as_str())
+                .map(|entry| entry.outcome);
+            match outcome {
+                Some(Outcome::Pass) => self.passed = true,
+                Some(Outcome::Fail | Outcome::Error) => self.failed = true,
+                Some(Outcome::Skip) | None => {}
+            }
         }
     }
-    passed
+
+    /// At least one bound symbol passed and none failed or errored.
+    fn passed(&self) -> bool {
+        self.passed && !self.failed
+    }
 }
 
 /// The finding for an insufficient class independence assessment.
