@@ -89,6 +89,13 @@ workflow-test: rust-build workflow-test-runtime
 	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_refuses_runner_without_host_api_before_run_creation -- --ignored --exact
 	cd $(RUST_DIR) && QUOIN_BINARY=$(CARGO_TARGET)/debug/quoin IX_FLOW_RUNNER=$(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js QUOIN_PLUGIN_ROOT=$(CURDIR) cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check smoke::tests::design_gate_refuses_incompatible_host_api_before_run_creation -- --ignored --exact
 
+# Real engineering-assurance, git and ssh-keygen against throwaway repositories
+# and keys (PLAT-1789). Fails, never skips, when no verifier is named.
+.PHONY: e2e-signing
+e2e-signing:
+	@test -n "$$QUOIN_E2E_EA" || { echo "e2e-signing: set QUOIN_E2E_EA to an engineering-assurance executable" >&2; exit 1; }
+	cd $(RUST_DIR) && cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-cli --test tc_plat_1789_signed_approval_chain -- --ignored
+
 .PHONY: skill-test
 skill-test:
 	python3 tests/scripts/check_gap_analysis.py

@@ -225,7 +225,21 @@ fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusErr
         .canonicalize()
         .map_err(|error| format!("repository is unavailable: {error}"))?;
     let ea = absolute_file(args, "engineering-assurance")?;
-    let allowed = absolute_file(args, "allowed-signers")?;
+    let allowed_source = absolute_file(args, "allowed-signers")?;
+    // Read the trust bytes once, hash exactly those bytes, and hand
+    // engineering-assurance a private copy of exactly those bytes, so the
+    // digest in the report names the file every verification used and not a
+    // file that changed in between (FR-188-AC-24).
+    let trust_bytes = std::fs::read(&allowed_source)
+        .map_err(|error| format!("--allowed-signers is not readable: {error}"))?;
+    let trust_dir = tempfile::tempdir().map_err(|error| error.to_string())?;
+    let allowed = trust_dir.path().join("allowed-signers");
+    std::fs::write(&allowed, &trust_bytes).map_err(|error| error.to_string())?;
+    let verification = json!({
+        "quoin_version": env!("CARGO_PKG_VERSION"),
+        "engineering_assurance_version": tool_version(&ea)?,
+        "allowed_signers_sha256": format!("sha256:{}", quoin_store::attachment::sha256_hex(&trust_bytes)),
+    });
     let gitsign_values = [
         args.get_one::<String>("gitsign-certificate-identity"),
         args.get_one::<String>("gitsign-certificate-oidc-issuer"),
@@ -308,7 +322,9 @@ fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusErr
                 b.get("label").and_then(Value::as_str),
             ))
     });
-    Ok(json!({"protocol":"quoin.formal-rule-status/v1", "rules":rules}))
+    Ok(
+        json!({"protocol":"quoin.formal-rule-status/v1", "verification": verification, "rules":rules}),
+    )
 }
 
 struct Decision {
@@ -417,6 +433,23 @@ fn decide(
     Ok(draft(most_recent_reason.unwrap_or("approval_unverifiable")))
 }
 
+/// The version engineering-assurance reports for itself: the verifier whose
+/// verdicts the report relies on (21 CFR 11.50, 11.70).
+fn tool_version(ea: &Path) -> Result<String, StatusError> {
+    let output = ProcessCommand::new(ea)
+        .arg("--version")
+        .output()
+        .map_err(|error| format!("engineering-assurance is unavailable: {error}"))?;
+    let text = String::from_utf8_lossy(&output.stdout);
+    let version = text.trim().rsplit(' ').next().unwrap_or("");
+    if !output.status.success() || version.is_empty() {
+        return Err(StatusError::Unavailable(
+            "engineering-assurance did not report a version".to_owned(),
+        ));
+    }
+    Ok(version.to_owned())
+}
+
 fn draft(reason: &'static str) -> Decision {
     Decision {
         state: "draft",
@@ -507,6 +540,10 @@ fn signature_request(
         ("revision".to_owned(), json!(revision)),
         ("kind".to_owned(), json!("commit")),
         ("allowed_signers".to_owned(), json!(allowed)),
+        // The trailers come from engineering-assurance and only from it
+        // (FR-188). Without this member the result carries none, and every
+        // rule reads as `no_approval` (PLAT-1789).
+        ("trailer_keys".to_owned(), json!(["Formal-rule"])),
     ]);
     if let Some(gitsign) = gitsign {
         request.insert("gitsign".to_owned(), gitsign.clone());
@@ -618,7 +655,10 @@ mod tests {
     fn executable(directory: &Path, name: &str, body: &str) -> std::path::PathBuf {
         use std::os::unix::fs::PermissionsExt;
         let path = directory.join(name);
-        fs::write(&path, format!("#!/bin/sh\n{body}\n")).expect("write executable");
+        // A stand-in verifier still answers `--version`: the report names it.
+        let version =
+            "if [ \"$1\" = --version ]; then echo 'engineering-assurance 0.0.0-test'; exit 0; fi";
+        fs::write(&path, format!("#!/bin/sh\n{version}\n{body}\n")).expect("write executable");
         let mut permissions = fs::metadata(&path).expect("metadata").permissions();
         permissions.set_mode(0o755);
         fs::set_permissions(&path, permissions).expect("executable permissions");
@@ -1212,5 +1252,28 @@ mod tests {
             .expect_err("other refusal must not produce a report");
         assert_eq!(error.exit, 3);
         assert!(error.message.contains("signature_verify_request_invalid"));
+    }
+
+    /// A verifier that reports no version yields no report: the version in the
+    /// report is the evidence of what verified it.
+    #[trace("FR-188-AC-24")]
+    #[test]
+    fn a_verifier_that_reports_no_version_is_unavailable() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().expect("directory");
+        let ea = dir.path().join("engineering-assurance");
+        fs::write(&ea, "#!/bin/sh\nexit 0\n").expect("write");
+        let mut permissions = fs::metadata(&ea).expect("metadata").permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&ea, permissions).expect("permissions");
+        assert!(matches!(
+            super::tool_version(&ea),
+            Err(super::StatusError::Unavailable(_))
+        ));
+        let healthy = executable(dir.path(), "healthy", "exit 0");
+        assert_eq!(
+            super::tool_version(&healthy).ok().as_deref(),
+            Some("0.0.0-test")
+        );
     }
 }
