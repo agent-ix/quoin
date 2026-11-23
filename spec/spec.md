@@ -210,6 +210,7 @@ index; the files are authoritative.
 - [FR-044](./functional/FR-044-plan-governed-measurements.md) — store and report plan-governed measurements.
 - [FR-045](./functional/FR-045-portfolio-measurement-report.md) — report measurement portfolios across repositories.
 - [FR-210](./functional/FR-210-retained-proof-integrity-statement.md) — retain signed proof integrity statements in independent storage.
+- [FR-211](./functional/FR-211-discharge-resolves-evidence-and-approvals.md) — resolve discharge evidence and verify discharge approvals.
 
 **Semantic-module architecture**
 

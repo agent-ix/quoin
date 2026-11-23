@@ -48,6 +48,10 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 - If a row's `compliance` is `undischarged`, `attestation_not_current`, `temporary_exception_expired` or `undetermined`, the RMM SHALL record a `clause_open` gap naming the clause.
 - The detail of a `clause_open` gap SHALL be the compliance value and the row's `reason`.
 - If a row's `compliance` is `compliant`, `tailored` or `not_applicable`, the RMM SHALL NOT record a `clause_open` gap for it, whether or not it has `evidenceRefs`.
+- The RMM SHALL stay offline and deterministic (NFR-040), calling neither engineering-assurance nor the network.
+- The RMM SHALL resolve each `evidenceRefs` entry by a local, deterministic read of the evidence store at `--repo` (FR-211), so its rows equal the rows of `quoin discharge --repo --rmm --json` except those of approval-class clauses.
+- The RMM SHALL show an approval-class clause with `compliance` `undischarged` and reason `not-verified-offline`, subject to FR-135's precedence; verified discharge comes from `quoin discharge --repo` with the engineering-assurance flags (FR-211).
+- Every FR-211 reason (`unresolved`, `kind-not-expected`, `no-producer`, `no-store`, `approval-missing`, `approval-unverified`, `attester-not-approver`, `approval-verifier-unavailable`, `invalid-record-identity`, `record-id-too-long`, `customer-owned`) and `not-verified-offline` SHALL carry `compliance` `undischarged` unless FR-135's precedence selects `temporary_exception_expired` or `attestation_not_current` first; none is `compliant`, because the tool assigns no acceptability and people accept risk.
 - The RMM SHALL NOT write the text of any clause, whatever the binding, the pack or `quire clauses` carries.
 - The RMM SHALL NOT read the rights metadata of `quire clauses`; the clause id is the only clause member it writes.
 
@@ -55,11 +59,11 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-195-AC-1 | The rows equal the `quoin discharge --rmm --json` rows for the fixture binding, in the source's order | Test |
+| FR-195-AC-1 | The rows equal the `quoin discharge --rmm --json` rows for the fixture binding, in the source's order, except that an approval-class clause row is `undischarged` with reason `not-verified-offline`, subject to FR-135's precedence | Test |
 | FR-195-AC-2 | A pack with two clause sets gives two tables in index order | Test |
 | FR-195-AC-3 | With `--doc rmm` and no `--clause-binding` and no `--pack` the document has a `no_clause_binding` gap, status `incomplete`, the command exits 1 and not 2, and no `--as-of` is needed | Test |
 | FR-195-AC-4 | A fixture whose binding and pack carry clause text and whose clauses are marked restricted in `quire clauses` renders only clause ids and the source row members; no clause text appears anywhere in the file or in a gap detail | Test |
-| FR-195-AC-5 | Rows with `compliance` `undischarged`, `attestation_not_current`, `temporary_exception_expired` and `undetermined` each produce one `clause_open` gap | Test |
+| FR-195-AC-5 | Rows with `compliance` `undischarged`, `attestation_not_current`, `temporary_exception_expired` and `undetermined` each produce one `clause_open` gap; a row carrying any FR-211 reason or `not-verified-offline` has `compliance` `undischarged` (or the value FR-135's precedence selects first), is never `compliant`, and produces a `clause_open` gap whose detail names the reason; a direct fact with resolving refs gives the same row as the source command; generating the RMM runs no engineering-assurance command. | Test |
 | FR-195-AC-6 | `As of` and `unusedFacts` appear in the document as the source reports them | Test |
 | FR-195-AC-7 | `--doc rmm --clause-binding <file>` without `--as-of` exits 2 and writes nothing | Test |
 | FR-195-AC-8 | Rows with `compliance` `compliant`, `tailored` and `not_applicable`, including `tailored` and `not_applicable` rows with empty `evidenceRefs`, produce no `clause_open` gap | Test |

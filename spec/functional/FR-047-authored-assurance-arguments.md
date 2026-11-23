@@ -32,6 +32,15 @@ states, `quoin_finding_types::FindingKind`) SHALL keep the top claim open,
 with one reason per failing reference, in authored order, naming the
 reference and which condition failed.
 
+## Inputs
+
+An operation that renders an already-built discharge report document
+(`render_discharge`, `build_authored_argument`) takes the store or `--repo`, the
+engineering-assurance flags and the installed module set as explicit inputs, so
+FR-211 can re-run evidence resolution and approval verification. Without them a
+clause that needs either is open with a stated reason and is never reported as
+verified.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
