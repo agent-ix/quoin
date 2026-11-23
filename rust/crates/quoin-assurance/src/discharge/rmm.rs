@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use quoin_quire_types::{ClauseBinding, ClauseBindingReport, ClauseForce, ClauseSetKey};
 use serde::{Deserialize, Serialize};
 
-use super::parse::{instant, temporary_exception_expired};
+use super::parse::{current_attestation, instant, temporary_exception_expired};
 use super::report::{
     ClauseDischarge, DischargeError, DischargeFact, DischargeReport, DischargeState,
     UnusedDischargeFact,
@@ -190,6 +190,14 @@ fn row(
     } else {
         false
     };
+    // First match wins: an expired exception, then a currency failure even
+    // when the clause also fails an FR-211 check, then any other open reason.
+    let attestation_not_current = match (&entry.state, &entry.fact) {
+        (DischargeState::Open, Some(fact)) => {
+            current_attestation(fact.attestation(), as_of)?.is_some()
+        }
+        _ => false,
+    };
     let (applicability, compliance) = match entry.state {
         DischargeState::Direct => (RmmApplicability::Applicable, RmmCompliance::Compliant),
         DischargeState::Disposition => (RmmApplicability::Applicable, RmmCompliance::Tailored),
@@ -197,12 +205,7 @@ fn row(
             RmmApplicability::Applicable,
             RmmCompliance::TemporaryExceptionExpired,
         ),
-        DischargeState::Open
-            if entry.reason.as_deref() == Some("required approval reference is missing") =>
-        {
-            (RmmApplicability::Applicable, RmmCompliance::Undischarged)
-        }
-        DischargeState::Open if entry.fact.is_some() => (
+        DischargeState::Open if attestation_not_current => (
             RmmApplicability::Applicable,
             RmmCompliance::AttestationNotCurrent,
         ),

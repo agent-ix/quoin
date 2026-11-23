@@ -73,8 +73,12 @@ fn section(lines: &mut Vec<String>, title: &str, entries: &[ClauseDischarge]) {
             Some(reason) => format!("; {reason}"),
             None => String::new(),
         };
+        let approver = match &item.verified_approver {
+            Some(approver) => format!("; approver verified by engineering-assurance: {approver}"),
+            None => String::new(),
+        };
         lines.push(format!(
-            "- `{}` — {}; {outputs}{reason}",
+            "- `{}` — {}; {outputs}{reason}{approver}",
             item.clause_id,
             item.force.as_str()
         ));

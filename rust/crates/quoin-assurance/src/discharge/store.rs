@@ -30,13 +30,14 @@ use std::collections::{BTreeMap, BTreeSet};
 use quoin_evidence::EvidenceError;
 use quoin_evidence::paths::record_stem;
 use quoin_evidence::source::EvidenceSource;
-use quoin_quire_types::{ClauseBindingReport, ClauseSetKey};
+use quoin_quire_types::{ClauseBindingReport, ClauseSetKey, SetPolicy};
 use serde::{Deserialize, Serialize};
 
-use super::build::{build_discharge_report, build_discharge_report_with_approval_requirements};
+use super::build::build_discharge_report_with_approval_requirements;
 use super::completeness::{InwardCompleteness, build_inward_completeness};
 use super::parse::parse_fact_with_approval_requirements;
 use super::report::{BuildDischargeRequest, DischargeError, DischargeFact, DischargeReport};
+use super::verify::{CheckError, CheckedReport, DischargeChecks, check_facts, check_report};
 
 /// Where discharge facts live, under the store root.
 pub const DISCHARGE_DIR: &str = "discharge";
@@ -148,6 +149,11 @@ pub enum DischargeStoreError {
     },
     /// The store could not be read or written.
     Evidence(EvidenceError),
+    /// engineering-assurance refused the allowed-signers file.
+    Check(CheckError),
+    /// The list holds a fact whose evidence or approval does not hold, so none
+    /// of it was written. Each entry names the clause and the reason.
+    FactsFailed(Vec<super::verify::CheckFailure>),
 }
 
 impl std::fmt::Display for DischargeStoreError {
@@ -156,6 +162,15 @@ impl std::fmt::Display for DischargeStoreError {
             Self::Discharge(error) => error.fmt(f),
             Self::Refused { kind, detail } => write!(f, "{} ({detail})", kind.as_str()),
             Self::Evidence(error) => error.fmt(f),
+            Self::Check(error) => error.fmt(f),
+            Self::FactsFailed(failures) => {
+                let listed = failures
+                    .iter()
+                    .map(|failure| format!("{}: {}", failure.clause_id, failure.reason))
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                write!(f, "no fact was written: {listed}")
+            }
         }
     }
 }
@@ -165,6 +180,12 @@ impl std::error::Error for DischargeStoreError {}
 impl From<DischargeError> for DischargeStoreError {
     fn from(error: DischargeError) -> Self {
         Self::Discharge(error)
+    }
+}
+
+impl From<CheckError> for DischargeStoreError {
+    fn from(error: CheckError) -> Self {
+        Self::Check(error)
     }
 }
 
@@ -235,41 +256,40 @@ fn unique_clauses(binding: &ClauseBindingReport) -> Result<(), DischargeStoreErr
     Ok(())
 }
 
+/// The clause ids whose policy declares approval roles.
+fn approval_clause_ids(policy: &SetPolicy) -> BTreeSet<String> {
+    policy
+        .iter()
+        .filter(|(_, clause)| clause.approval_class())
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
 /// Persist discharge facts for the binding report's clause set.
 ///
 /// Every fact is validated before the first file is written: the FR-046
 /// predicates (malformed fact, duplicate clause, duplicate clause in the
-/// binding report), the id bound, and case collisions both inside the list and
-/// against facts already stored. A refused list writes nothing. A fact for a
-/// clause that does not currently bind is stored and reported as unused when
-/// read, because applicability can change with the declared context.
+/// binding report), the id bound, case collisions both inside the list and
+/// against facts already stored, and the FR-211 checks of its evidence and
+/// approval. A refused list writes nothing. A fact for a clause that does not
+/// currently bind is stored and reported as unused when read, because
+/// applicability can change with the declared context.
+///
+/// `checks.policy` is the policy of the exact installed clause set: it admits a
+/// blank `approvalRef` only for approval-class clauses, so FR-211 can name it.
 ///
 /// # Errors
 ///
-/// [`DischargeStoreError::Discharge`] or [`DischargeStoreError::Refused`] when
+/// [`DischargeStoreError::Discharge`], [`DischargeStoreError::Refused`],
+/// [`DischargeStoreError::FactsFailed`] or [`DischargeStoreError::Check`] when
 /// the list is refused; [`DischargeStoreError::Evidence`] when a file cannot be
 /// read or written.
-pub fn record_discharge_facts<S: EvidenceSource + ?Sized>(
-    source: &mut S,
+pub fn record_discharge_facts(
+    source: &mut dyn EvidenceSource,
     request: &RecordDischargeRequest,
+    checks: &DischargeChecks<'_>,
 ) -> Result<Vec<RecordedFact>, DischargeStoreError> {
-    record_discharge_facts_with_approval_requirements(source, request, &BTreeSet::new())
-}
-
-/// Persist facts while allowing blank approval references only for clause ids
-/// whose exact installed clause set requires approval.
-///
-/// The caller resolves `required_approval_clauses` from the unique installed
-/// owner of `request.binding.clause_set`. Generic FR-046 callers should use
-/// [`record_discharge_facts`], which rejects blank approval references.
-///
-/// # Errors
-/// As [`record_discharge_facts`].
-pub fn record_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Sized>(
-    source: &mut S,
-    request: &RecordDischargeRequest,
-    required_approval_clauses: &BTreeSet<String>,
-) -> Result<Vec<RecordedFact>, DischargeStoreError> {
+    let required_approval_clauses = approval_clause_ids(checks.policy);
     unique_clauses(&request.binding)?;
     if request.facts.len() > MAX_STORED_FACTS {
         return refuse(
@@ -281,8 +301,9 @@ pub fn record_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Si
     let mut seen_ids = BTreeSet::new();
     let mut seen_paths = BTreeMap::new();
     let mut staged = Vec::with_capacity(request.facts.len());
+    let mut parsed = Vec::with_capacity(request.facts.len());
     for value in &request.facts {
-        let fact = fact_for_approval_policy(value, required_approval_clauses)?;
+        let fact = fact_for_approval_policy(value, &required_approval_clauses)?;
         if !seen_ids.insert(fact.clause_id().to_owned()) {
             return Err(DischargeError(format!(
                 "duplicate discharge fact for clause {}",
@@ -306,7 +327,7 @@ pub fn record_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Si
                     path: path.clone(),
                     detail: e.to_string(),
                 })?;
-            let held_fact = fact_for_approval_policy(&held.fact, required_approval_clauses)
+            let held_fact = fact_for_approval_policy(&held.fact, &required_approval_clauses)
                 .map_err(|error| EvidenceError::StoreRead {
                     path: path.clone(),
                     detail: error.to_string(),
@@ -328,6 +349,11 @@ pub fn record_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Si
         };
         let bytes = canonical(&record)?;
         staged.push((path, record.fact.clause_id().to_owned(), bytes));
+        parsed.push(record.fact);
+    }
+    let failures = check_facts(set, &parsed, Some(&*source), checks)?;
+    if !failures.is_empty() {
+        return Err(DischargeStoreError::FactsFailed(failures));
     }
     let mut recorded = Vec::with_capacity(staged.len());
     for (path, clause_id, bytes) in staged {
@@ -353,7 +379,8 @@ fn fact_for_approval_policy(
 /// of this set, or sits at the path of another clause, is an error naming the
 /// file: skipping it would report its clause as open and hide that a fact was
 /// lost. More than [`MAX_STORED_FACTS`] files, or a file over
-/// [`MAX_STORED_FACT_BYTES`], is refused rather than read.
+/// [`MAX_STORED_FACT_BYTES`], is refused rather than read. `policy` admits a
+/// blank `approvalRef` on approval-class clauses only.
 ///
 /// # Errors
 ///
@@ -363,20 +390,9 @@ fn fact_for_approval_policy(
 pub fn read_discharge_facts<S: EvidenceSource + ?Sized>(
     source: &S,
     set: &ClauseSetKey,
+    policy: &SetPolicy,
 ) -> Result<Vec<DischargeFact>, DischargeStoreError> {
-    read_discharge_facts_with_approval_requirements(source, set, &BTreeSet::new())
-}
-
-/// Read facts while permitting blank approval references for required clause
-/// ids from the unique installed owner of `set`.
-///
-/// # Errors
-/// As [`read_discharge_facts`].
-pub fn read_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Sized>(
-    source: &S,
-    set: &ClauseSetKey,
-    required_approval_clauses: &BTreeSet<String>,
-) -> Result<Vec<DischargeFact>, DischargeStoreError> {
+    let required_approval_clauses = approval_clause_ids(policy);
     let directory = clause_set_dir(set)?;
     let names = source.list_files(&directory)?;
     if names.len() > MAX_STORED_FACTS {
@@ -401,7 +417,7 @@ pub fn read_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Size
         }
         let record: StoredDischargeFactValue =
             serde_json::from_str(&text).map_err(|e| unreadable(e.to_string()))?;
-        let fact = fact_for_approval_policy(&record.fact, required_approval_clauses)
+        let fact = fact_for_approval_policy(&record.fact, &required_approval_clauses)
             .map_err(|error| unreadable(error.to_string()))?;
         if &record.clause_set != set || fact_path(set, fact.clause_id())? != path {
             return Err(unreadable(
@@ -415,68 +431,71 @@ pub fn read_discharge_facts_with_approval_requirements<S: EvidenceSource + ?Size
     Ok(facts)
 }
 
+/// Partition the request's facts and apply the FR-211 checks against `store`.
+///
+/// `store` is `None` when no repository was supplied: every direct fact and
+/// every approval-class clause is then open with `no-store`.
+///
+/// # Errors
+///
+/// [`DischargeStoreError::Discharge`] when `asOf`, a fact or the binding report
+/// is refused; [`DischargeStoreError::Check`] when the verifier refuses its
+/// trust file.
+pub fn build_checked_discharge_report(
+    request: &BuildDischargeRequest,
+    store: Option<&dyn EvidenceSource>,
+    checks: &DischargeChecks<'_>,
+) -> Result<CheckedReport, DischargeStoreError> {
+    let partition = build_discharge_report_with_approval_requirements(
+        request,
+        &approval_clause_ids(checks.policy),
+    )?;
+    Ok(check_report(
+        partition,
+        store,
+        checks,
+        Some(&request.binding.clauses),
+    )?)
+}
+
 /// The discharge report for a live binding report, with the stored facts for
-/// its clause set as the facts.
+/// its clause set as the facts and the store as the evidence the facts cite.
 ///
 /// This is the one read a view takes: the binding report is the live
-/// obligation set, the store supplies only facts. A fact for a clause that does
-/// not bind comes back only as an unused `{clauseId, kind, reason}`; a caller
-/// that needs such a fact's content reads it with [`read_discharge_facts`].
+/// obligation set, the store supplies the facts and the records they cite. A
+/// fact for a clause that does not bind comes back only as an unused
+/// `{clauseId, kind, reason}`; a caller that needs such a fact's content reads
+/// it with [`read_discharge_facts`].
 ///
 /// # Errors
 ///
 /// [`DischargeStoreError::Evidence`] when the store cannot be read;
 /// [`DischargeStoreError::Discharge`] when `as_of` or the binding report is
-/// refused.
-pub fn discharge_report_from_store<S: EvidenceSource + ?Sized>(
-    source: &S,
+/// refused; [`DischargeStoreError::Check`] when the verifier refuses its trust
+/// file.
+pub fn discharge_report_from_store(
+    source: &dyn EvidenceSource,
     binding: &ClauseBindingReport,
     as_of: &str,
+    checks: &DischargeChecks<'_>,
 ) -> Result<DischargeReport, DischargeStoreError> {
-    let facts = read_discharge_facts(source, &binding.clause_set)?
+    let facts = read_discharge_facts(source, &binding.clause_set, checks.policy)?
         .iter()
         .map(|fact| {
             serde_json::to_value(fact)
                 .map_err(|e| DischargeError(format!("stored fact cannot be re-read: {e}")))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(build_discharge_report(&BuildDischargeRequest {
-        binding: binding.clone(),
-        facts,
-        as_of: as_of.to_owned(),
-    })?)
-}
-
-/// The discharge report for a live binding report and stored facts, applying
-/// clause-specific approval requirements from the exact installed clause set.
-///
-/// # Errors
-/// As [`discharge_report_from_store`].
-pub fn discharge_report_from_store_with_approval_requirements<S: EvidenceSource + ?Sized>(
-    source: &S,
-    binding: &ClauseBindingReport,
-    as_of: &str,
-    required_approval_clauses: &BTreeSet<String>,
-) -> Result<DischargeReport, DischargeStoreError> {
-    let facts = read_discharge_facts_with_approval_requirements(
-        source,
-        &binding.clause_set,
-        required_approval_clauses,
-    )?
-    .iter()
-    .map(|fact| {
-        serde_json::to_value(fact)
-            .map_err(|e| DischargeError(format!("stored fact cannot be re-read: {e}")))
-    })
-    .collect::<Result<Vec<_>, _>>()?;
-    Ok(build_discharge_report_with_approval_requirements(
+    Ok(build_checked_discharge_report(
         &BuildDischargeRequest {
             binding: binding.clone(),
             facts,
             as_of: as_of.to_owned(),
         },
-        required_approval_clauses,
-    )?)
+        Some(source),
+        checks,
+    )?
+    .report)
 }
 
 /// Inward completeness for a live binding report and the stored facts.
@@ -487,35 +506,15 @@ pub fn discharge_report_from_store_with_approval_requirements<S: EvidenceSource 
 /// # Errors
 ///
 /// As [`discharge_report_from_store`].
-pub fn inward_completeness_from_store<S: EvidenceSource + ?Sized>(
-    source: &S,
+pub fn inward_completeness_from_store(
+    source: &dyn EvidenceSource,
     binding: &ClauseBindingReport,
     as_of: &str,
+    checks: &DischargeChecks<'_>,
 ) -> Result<InwardCompleteness, DischargeStoreError> {
     Ok(build_inward_completeness(&discharge_report_from_store(
-        source, binding, as_of,
+        source, binding, as_of, checks,
     )?))
-}
-
-/// Inward completeness from stored facts with the unique installed clause-set
-/// owner's approval requirements applied.
-///
-/// # Errors
-/// As [`inward_completeness_from_store`].
-pub fn inward_completeness_from_store_with_approval_requirements<S: EvidenceSource + ?Sized>(
-    source: &S,
-    binding: &ClauseBindingReport,
-    as_of: &str,
-    required_approval_clauses: &BTreeSet<String>,
-) -> Result<InwardCompleteness, DischargeStoreError> {
-    Ok(build_inward_completeness(
-        &discharge_report_from_store_with_approval_requirements(
-            source,
-            binding,
-            as_of,
-            required_approval_clauses,
-        )?,
-    ))
 }
 
 #[cfg(test)]

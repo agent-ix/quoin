@@ -348,6 +348,11 @@ pub struct ClauseDischarge {
     /// The fact that decided it, when one did. Absent, not null, otherwise.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fact: Option<DischargeFact>,
+    /// The approver engineering-assurance verified for the fact's approval in
+    /// this run. Absent unless verification just succeeded; a stored
+    /// `attestedBy` is never shown here.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verified_approver: Option<String>,
 }
 
 /// Why a supplied fact was not spent.

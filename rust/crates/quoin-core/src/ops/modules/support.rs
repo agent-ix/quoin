@@ -102,12 +102,12 @@ impl ModuleHost for FakeHost {
             .map_or_else(|| Ok(Vec::new()), |error| Err(error.to_owned()))
     }
 
-    fn clause_approval_requirements(
+    fn clause_policies(
         &self,
         _module: &InstalledModule,
         _installed_modules: &[InstalledModule],
     ) -> Result<
-        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, quoin_quire_types::SetPolicy>,
         String,
     > {
         self.evaluation_error.map_or_else(

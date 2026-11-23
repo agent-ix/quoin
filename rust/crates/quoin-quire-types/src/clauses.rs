@@ -40,6 +40,46 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+/// What one clause's discharge needs from its loaded clause set (FR-211).
+///
+/// Read from the clause and the clause set's output catalog, never from the
+/// binding report, which carries neither the approval roles nor the catalog.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ClausePolicy {
+    /// The roles whose approval the clause needs; empty for a clause that
+    /// needs none.
+    pub approval_roles: Vec<String>,
+    /// One entry per `expectedOutputs` name of the clause, in order.
+    pub outputs: Vec<OutputPolicy>,
+}
+
+/// One expected output of a clause, as its catalog entry declares it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct OutputPolicy {
+    /// The catalog entry's `kind` is `procedure`.
+    pub procedure: bool,
+    /// The retained evidence kinds that satisfy the output; empty when the
+    /// catalog entry names none.
+    pub producers: Vec<String>,
+}
+
+impl ClausePolicy {
+    /// Whether the clause declares approval roles.
+    #[must_use]
+    pub fn approval_class(&self) -> bool {
+        !self.approval_roles.is_empty()
+    }
+
+    /// Whether the clause's outputs are all procedures the customer performs.
+    #[must_use]
+    pub fn customer_owned(&self) -> bool {
+        !self.outputs.is_empty() && self.outputs.iter().all(|output| output.procedure)
+    }
+}
+
+/// The policies of one clause set's clauses, by clause id.
+pub type SetPolicy = BTreeMap<String, ClausePolicy>;
+
 /// Exact identity of a module-supplied clause set (quire-rs FR-067).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

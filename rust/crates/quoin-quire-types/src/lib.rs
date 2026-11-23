@@ -60,7 +60,8 @@ pub mod clauses;
 
 pub use clauses::{
     ClauseBinding, ClauseBindingOutcome, ClauseBindingReason, ClauseBindingReport,
-    ClauseBindingSchemaVersion, ClauseForce, ClauseSetKey, EngineProvenance,
+    ClauseBindingSchemaVersion, ClauseForce, ClausePolicy, ClauseSetKey, EngineProvenance,
+    OutputPolicy, SetPolicy,
 };
 
 use serde::{Deserialize, Serialize};

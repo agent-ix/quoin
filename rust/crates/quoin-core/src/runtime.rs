@@ -368,17 +368,17 @@ impl ModuleHost for HostModules {
             .collect()
     }
 
-    fn clause_approval_requirements(
+    fn clause_policies(
         &self,
         module: &InstalledModule,
         installed_modules: &[InstalledModule],
     ) -> Result<
-        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, quoin_quire_types::SetPolicy>,
         String,
     > {
         let root = module_root(module)?;
         let roots = installed_module_roots(installed_modules)?;
-        quoin_quire::clauses::approval_required_clauses_in_module_set(&root, &roots)
+        quoin_quire::clauses::clause_policies_in_module_set(&root, &roots)
             .map_err(|error| error.to_string())
     }
 

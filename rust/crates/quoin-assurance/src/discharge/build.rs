@@ -10,7 +10,6 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::argument::js_trim_is_empty;
 use quoin_quire_types::{ClauseBinding, ClauseBindingOutcome};
 
 use super::parse::{
@@ -22,7 +21,11 @@ use super::report::{
     reject,
 };
 
-/// Build a complete, non-scored discharge partition.
+/// Build a complete, non-scored discharge partition by attestation currency.
+///
+/// Nothing is resolved or verified here: a clause this partition calls direct
+/// is discharged only once [`super::check_report`] has resolved its evidence
+/// and verified its approval (FR-211).
 ///
 /// # Errors
 ///
@@ -33,13 +36,11 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
     build_discharge_report_with_approval_requirements(request, &BTreeSet::new())
 }
 
-/// Build a discharge report while applying the approval requirements loaded
-/// from the installed clause set.
+/// Build the partition, admitting a blank `approvalRef` on the clause ids
+/// whose set declares approval roles so that FR-211 can leave them open.
 ///
-/// `required_approval_clauses` contains only clause ids whose set declares one
-/// or more approval roles. The caller resolves the exact clause-set identity
-/// before calling this function; the binding report does not carry that
-/// metadata.
+/// The caller resolves the exact clause-set identity before calling this
+/// function; the binding report does not carry that metadata.
 ///
 /// # Errors
 /// As [`build_discharge_report`].
@@ -61,12 +62,7 @@ pub fn build_discharge_report_with_approval_requirements(
         )?);
     }
     let facts = index_facts(&parsed_facts)?;
-    let mut partition = classify_binding_clauses(
-        &request.binding.clauses,
-        &facts,
-        as_of,
-        required_approval_clauses,
-    )?;
+    let mut partition = classify_binding_clauses(&request.binding.clauses, &facts, as_of)?;
     append_unknown_facts(&mut partition, &parsed_facts);
 
     Ok(DischargeReport {
@@ -114,7 +110,6 @@ fn classify_binding_clauses(
     clauses: &[ClauseBinding],
     facts: &BTreeMap<&str, &DischargeFact>,
     as_of: i64,
-    required_approval_clauses: &BTreeSet<String>,
 ) -> Checked<DischargePartition> {
     let mut seen = std::collections::BTreeSet::new();
     let mut partition = DischargePartition::default();
@@ -130,7 +125,6 @@ fn classify_binding_clauses(
             clause,
             facts.get(clause.clause_id.as_str()).copied(),
             as_of,
-            required_approval_clauses,
             &mut partition,
         )?;
     }
@@ -141,7 +135,6 @@ fn classify_clause(
     clause: &ClauseBinding,
     fact: Option<&DischargeFact>,
     as_of: i64,
-    required_approval_clauses: &BTreeSet<String>,
     partition: &mut DischargePartition,
 ) -> Checked<()> {
     match clause.outcome {
@@ -173,7 +166,7 @@ fn classify_clause(
             }
         }
         ClauseBindingOutcome::Binding => {
-            classify_binding_clause(clause, fact, as_of, required_approval_clauses, partition)?;
+            classify_binding_clause(clause, fact, as_of, partition)?;
         }
     }
     Ok(())
@@ -183,7 +176,6 @@ fn classify_binding_clause(
     clause: &ClauseBinding,
     fact: Option<&DischargeFact>,
     as_of: i64,
-    required_approval_clauses: &BTreeSet<String>,
     partition: &mut DischargePartition,
 ) -> Checked<()> {
     let Some(fact) = fact else {
@@ -216,17 +208,6 @@ fn classify_binding_clause(
         return Ok(());
     }
     match fact {
-        DischargeFact::Direct(direct)
-            if required_approval_clauses.contains(&direct.clause_id)
-                && direct.approval_ref.as_deref().is_none_or(js_trim_is_empty) =>
-        {
-            partition.open.push(entry(
-                clause,
-                DischargeState::Open,
-                Some("required approval reference is missing".to_owned()),
-                Some(fact),
-            ));
-        }
         DischargeFact::Direct(_) => {
             partition
                 .direct
@@ -276,6 +257,7 @@ fn entry(
         // the binder gave carries an empty message.
         reason: reason.filter(|reason| !reason.is_empty()),
         fact: fact.cloned(),
+        verified_approver: None,
     }
 }
 
