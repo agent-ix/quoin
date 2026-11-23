@@ -83,6 +83,10 @@ Re-checked against fix commit f64ad1d.
 | FND-013 | still-open | Round 2: the network and NFR-040 conflict is gone, but the `--rmm` compliance value of a row with an FR-211 reason (`unresolved`, `kind-not-expected`, `no-producer`, `approval-*`, `not-verified-offline`) is still unstated, while FR-195's gap rule keys on compliance values; the offline rule introduced FND-016 |
 | FND-014 | fixed | Round 2: `invalid-identifier` is checked before the call and never reported as unavailable (FR-211-AC-20); the wording issues are FND-017 |
 | FND-015 | fixed | Round 2: `no-producer` applies only when no entry carries `producers` (FR-211-AC-23) |
+| FND-013 | still-open | Round 3 (1b4687c): FR-195 now gives every FR-211 reason `compliance` `undischarged`, but FR-135 (the `quoin discharge --rmm` view that FR-195 says its rows equal) is not amended. FR-135 defines `Not compliant - undischarged` as "no fact exists" and `attestation not current` as "a fact exists and its attestation has expired...", and `rmm.rs` maps every open clause that has a fact to `AttestationNotCurrent`. So the source command renders a current fact with an unresolved ref as "attestation not current", while FR-195 requires `undischarged` and equal rows. FR-135 needs the FR-211 reasons mapped to `undischarged` |
+| FND-016 | fixed | Round 3: the RMM resolves refs locally, so direct rows equal the source rows; only approval-class rows differ (FR-195-AC-1). The FR-191 sentence is recorded as FND-019 |
+| FND-017 | fixed | Round 3: `invalid-record-identity` is distinct from FR-133's `invalid-identifier`, is tested on the joined `record_id`, and applies to approval-class clauses only (FR-211-AC-20) |
+| FND-018 | fixed | Round 3: FR-046-AC-6 and AC-9 state that a direct fact discharges only with a store (`--repo`) |
 
 ## New findings (disposition pass 2)
 
@@ -93,3 +97,11 @@ Re-checked against fix commit aaae0c3.
 | FND-016 | high | FR-195 now marks every clause that "depends on a resolved ref" `not-verified-offline`, which covers every direct fact, even though resolving a ref is a local, deterministic store read. The dossier RMM therefore never shows a direct clause compliant, and its rows differ from `quoin discharge --repo --rmm --json`, contradicting FR-195-AC-1 ("rows equal the source rows") and FR-191 (a source "gives the same result as its named source command") | FR-195, FR-195-AC-1, FR-191, FR-211 | wrong-requirement |
 | FND-017 | low | `invalid-identifier` reuses FR-133's store-refusal kind (1 to 64 bytes) for a different character rule. It applies the leading-`-` rule to every identifier, although EA checks only the start of the joined `record_id`, and it does not say whether it applies to clauses without `approvalRoles`, where no call is made | FR-211, FR-211-AC-20, FR-133 | wrong-requirement |
 | FND-018 | low | With `no-store`, `quoin discharge --facts` without `--repo` never puts a direct fact in the direct population, but FR-046-AC-9 (TC-626) and FR-046-AC-6 still describe `--facts` alone as classifying a direct fact as direct; they need `--repo` stated | FR-046-AC-9, FR-046-AC-6, FR-211-AC-21 | wrong-requirement |
+
+## New findings (disposition pass 3)
+
+Re-checked against fix commits b638e6d and 1b4687c.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-019 | low | FR-191 still says a dossier source "gives the same result as its named source command", but FR-195 now makes approval-class RMM rows differ from `quoin discharge --repo --rmm --json` (`not-verified-offline`); FR-191 needs the FR-195 exception named | FR-191, FR-195-AC-1 | wrong-requirement |

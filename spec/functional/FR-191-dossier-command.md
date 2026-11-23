@@ -81,7 +81,7 @@ generators. `records-of-processing` is generated directly and is excluded from t
 
 ### Sources and failure
 
-- A source is one of the record readers named in FR-192 to FR-207: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix`, `discharge`, `soup-report`, `anomaly-report`, `risk-summary`, `risk-advise`, `acceptability-policy`, `release-snapshot`, `release-verify`, `threat-model-records`, `flow-findings` and `processing-activities`. A source is a library operation of the Quoin workspace or an explicitly supplied EA result and gives the same result as its named source command.
+- A source is one of the record readers named in FR-192 to FR-207: `requirements`, `design-join`, `design-matrix`, `systems-records`, `matrix`, `discharge`, `soup-report`, `anomaly-report`, `risk-summary`, `risk-advise`, `acceptability-policy`, `release-snapshot`, `release-verify`, `threat-model-records`, `flow-findings` and `processing-activities`. A source is a library operation of the Quoin workspace or an explicitly supplied EA result and gives the same result as its named source command, except as FR-195 states for approval-class clauses.
 - `generate`, `check` and `export` SHALL compute every selected document in memory before they write or compare anything.
 - If a source fails, the command SHALL exit 3, SHALL name the failed source and its error in `source_failure`, and SHALL write nothing.
 - If `generate` exits 2 or 3, `generate` SHALL leave every existing file under `<DIR>` unmodified.

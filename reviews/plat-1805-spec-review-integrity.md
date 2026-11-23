@@ -55,6 +55,8 @@ Re-checked against fix commit f64ad1d.
 | FND-003 | fixed | The FR-208 Description and Outputs state the verified rule, and the "named human approver" qualifier is removed from the bullet and AC-2 |
 | FND-004 | fixed | The FR-046 constraint covers both checks for every report build, and the caller-data constraint names the store and engineering-assurance |
 | FND-005 | still-open | Round 2 (aaae0c3): the refusal header now exempts `--evidence` refusals (naming the file and key), and AC-5 lists the `--evidence` cases, but AC-5 still requires every listed refusal to name "the control or exclusion, set and clause", which contradicts the header for those cases; the silently ignored unknown key is now refused (see FND-006) |
+| FND-005 | fixed | Round 3 (1b4687c): FR-173-AC-5 gives `--evidence` refusals their own message (the `--evidence` file and the key), matching the refusal header |
+| FND-006 | fixed | Round 3: only an `--evidence` key naming no control in `--spec` refuses; a key for an ineffective or non-binding control is accepted and contributes nothing, so AC-2, AC-3 and AC-9 are reachable |
 
 ## New findings (disposition pass 2)
 
