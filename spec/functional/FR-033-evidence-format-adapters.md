@@ -84,17 +84,23 @@ bind to no obligation until a requirement→production-code relation exists
 
 The Python extractor names a test `Class.method` under a class and the bare function
 name at module level; the module is never a prefix and only a class is a scope
-(FR-120). The JUnit adapter's `::` rewriting is the Rust rule and is not applied to
-a Python case. A pytest case's symbol is built in this order:
+(FR-120). The pytest mapping applies when the run is recorded with the suite's
+declared `--tool pytest`, the tool identifier the `junit` adapter claims (FR-033-AC-1),
+and is never chosen by inspecting the report's attributes: pytest's default JUnit
+output carries no `file` attribute. Any other tool uses the `::` rule above. For a
+pytest case the symbol is built in this order:
 
-1. `name` with a trailing `[...]` removed.
-2. `classname` split on `.`. When the case has a `file` attribute, the segments
-   that spell that file's path without `.py` (`tests/test_bolus.py` is
-   `tests.test_bolus`) are removed from the front; what remains are the enclosing
-   classes, joined to the name with `.`. A case with no `file` attribute whose
-   `classname` equals `name` is taken as written.
-3. The result carries the case's `file` as its entry path, so the evidence store
-   joins it to the symbol at that path (FR-030-AC-18).
+1. When `classname` equals `name`, the name is taken as written, with no further
+   rewriting. This is the form a FR-120 emitter writes.
+2. Otherwise `name` loses a trailing `[...]`, and `classname` is split on `.`. The
+   first segment beginning with `Test` and every segment after it are the enclosing
+   classes, joined to the name with `.`. The segments before it are the module path
+   and never appear in the symbol.
+3. When no segment begins with `Test`, or `classname` is empty, the symbol is the
+   name alone: a module-level function.
+
+A project that sets non-default `python_classes` is out of scope: its classes are not
+recognised, and its cases are recorded as module-level functions.
 
 A pytest case obtains trace ids from the `trace` property that the FR-120 emitter
 writes from the `trace` marker on the test. A case without the property has none.
@@ -134,8 +140,8 @@ record every run as bound to nothing.
 | FR-033-AC-13 | `quoin evidence record` selects the adapter from `--tool` when none is named. | Test |
 | FR-033-AC-14 | `quoin evidence record` still accepts the normalized shape with no adapter at all. | Test |
 | FR-033-AC-15 | Interim, removed when the PLAT-333 Rust emitter lands (ADR-100): a cargo-nextest JUnit report annotated by `quoin-suite-trace` carries, on each tagged test case, a `trace` property naming that test's acceptance criteria, so `quoin evidence record --adapter junit` binds the run to them. | Test |
-| FR-033-AC-16 | A pytest case is recorded under the symbol the Python extractor emits: `name` with any trailing `[...]` parametrization removed, preceded by the enclosing classes joined with `.`, and never preceded by the module. For `classname="tests.test_bolus" name="test_basic" file="tests/test_bolus.py"` the symbol is `test_basic`; for `classname="tests.test_bolus.TestDose" name="test_a[1]"` with the same `file` it is `TestDose.test_a`. A pytest case with `classname` equal to `name`, as FR-120 emitters write, is recorded unchanged. | Test |
-| FR-033-AC-17 | A pytest case that carries no `trace` property is recorded with its outcome and no `traceIds`; the run it belongs to is an error under FR-030-AC-33 when no case carries one, and a case whose id no obligation states is listed as unmatched under FR-030-AC-32. | Test |
+| FR-033-AC-16 | A case recorded with `--tool pytest` is stored under the symbol the Python extractor emits. `classname="tests.test_bolus" name="test_basic"` is `test_basic`; `classname="tests.test_bolus.TestDose" name="test_a[1]"` is `TestDose.test_a`; `classname="tests.TestA.Inner" name="test_b"` is `TestA.Inner.test_b`; `classname="test_basic" name="test_basic"` is `test_basic`, not `test_basic.test_basic`; an empty `classname` gives the name alone. The same case recorded under another tool is stored by the `::` rule. | Test |
+| FR-033-AC-17 | A pytest case that carries no `trace` property is recorded with its outcome and no `traceIds`. The run it belongs to is an error under FR-030-AC-33 when no case carries one, and a case whose id no obligation states is listed as unmatched under FR-030-AC-32. | Test |
 
 ## Constraints
 
