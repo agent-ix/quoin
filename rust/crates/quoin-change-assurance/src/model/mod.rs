@@ -23,7 +23,8 @@ pub use approval::{
 };
 pub use approval_time::{ClaimedTime, SignedAt, TimeMissing, TimeSource};
 pub use attestation::{
-    EnvironmentValue, ProducerResult, ProofAttestation, RetainedOutput, ToolBinding,
+    ContentCommitment, EnvironmentValue, ProducerResult, ProofAttestation, RetainedOutput,
+    ToolBinding,
 };
 pub use decision::{
     ActorKind, DecisionHistory, DecisionPayload, RetainedDecisionEvent, ReviewDecision, ReviewEvent,

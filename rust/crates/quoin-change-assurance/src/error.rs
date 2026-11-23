@@ -273,6 +273,11 @@ pub enum ChangeAssuranceError {
         observed_size: u64,
     },
 
+    /// The output, at its declared size, did not match the attestation's
+    /// content commitment.
+    #[error("retained output does not match the attestation's content commitment")]
+    OutputCommitment,
+
     /// An identity-named path already held different content.
     #[error("{what} collision: {id} already holds different bytes")]
     ContentCollision {
@@ -332,7 +337,9 @@ impl ChangeAssuranceError {
             Self::Lineage { .. } | Self::LineageParent { .. } => {
                 ChangeAssuranceErrorCode::LineageInvalid
             }
-            Self::OutputIntegrity { .. } => ChangeAssuranceErrorCode::OutputIntegrityMismatch,
+            Self::OutputIntegrity { .. } | Self::OutputCommitment => {
+                ChangeAssuranceErrorCode::OutputIntegrityMismatch
+            }
             Self::ContentCollision { .. } => ChangeAssuranceErrorCode::ContentCollision,
             Self::PathIdentityMismatch { .. } => ChangeAssuranceErrorCode::PathIdentityMismatch,
             Self::ReceiptMismatch => ChangeAssuranceErrorCode::ReceiptMismatch,

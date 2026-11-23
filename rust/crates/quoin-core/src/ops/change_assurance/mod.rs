@@ -161,9 +161,9 @@ pub fn record_digest(
 
 /// Answer a `change_assurance.prepare_attestation`.
 ///
-/// The ONLY field derived here is `retained_output.size_bytes`, read from the
-/// output bytes the caller sent, plus the `media_type` the caller declares.
-/// Everything else is the caller's.
+/// The ONLY fields derived here are `retained_output.size_bytes` and
+/// `content_commitment`, both computed from the output bytes the caller sent,
+/// plus the `media_type` the caller declares. Everything else is the caller's.
 ///
 /// It needs no capability: the attestation is emitted, not retained, and
 /// `change_assurance.intake` is the retention step.
@@ -186,7 +186,7 @@ pub fn prepare_attestation(request: &serde_json::Value) -> Result<Response, Core
     check_bound(OP, "media_type", &request.media_type, MAX_SCALAR_BYTES)?;
 
     let body = strict_document(&request.attestation_hex, OP, "attestation_hex")?;
-    refuse_supplied(&body, &["retained_output"], OP)?;
+    refuse_supplied(&body, &["retained_output", "content_commitment"], OP)?;
     let output = decode_hex(&request.output_hex, OP, "output_hex")?;
 
     // The size is read off the bytes and attached before the schema is
@@ -206,7 +206,23 @@ pub fn prepare_attestation(request: &serde_json::Value) -> Result<Response, Core
     );
     object.set("retained_output", JsonValue::Object(retained));
 
-    let attestation = attestations::read_attestation_json(&JsonValue::Object(object))
+    // The commitment covers every other member, so it is computed over the
+    // validated attestation; a placeholder stands in until then.
+    let mut commitment = quoin_store::JsonObject::new();
+    commitment.set(
+        "algorithm",
+        JsonValue::string(quoin_change_assurance::model::attestation::COMMITMENT_ALGORITHM),
+    );
+    commitment.set(
+        "digest",
+        JsonValue::string(format!("sha256:{}", "0".repeat(64))),
+    );
+    object.set("content_commitment", JsonValue::Object(commitment));
+
+    let mut attestation = attestations::read_attestation_json(&JsonValue::Object(object))
+        .map_err(|e| map_error(&e, OP))?;
+    attestation.content_commitment = attestation
+        .commitment_over(&output)
         .map_err(|e| map_error(&e, OP))?;
     ok(&PrepareAttestationPayload {
         attestation: to_serde(&attestation.to_json().map_err(|e| map_error(&e, OP))?, OP)?,

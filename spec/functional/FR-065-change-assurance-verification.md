@@ -189,7 +189,6 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "output_missing",
         "output_size_mismatch",
         "output_integrity_mismatch",
-        "output_integrity_unavailable",
         "proof_integrity_statement_missing",
         "proof_integrity_mismatch",
         "proof_integrity_checkpoint_untrusted",
@@ -342,6 +341,7 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "proof_id",
         "obligation_ids",
         "attestation_id",
+        "content_digest",
         "integrity_statement_digest",
         "integrity_tag_object_id",
         "integrity_checkpoint_status",
@@ -358,6 +358,12 @@ The table declares the record's top-level fields and their cardinality. Which ke
         },
         "attestation_id": {
           "anyOf": [{ "$ref": "#/$defs/identity" }, { "type": "null" }]
+        },
+        "content_digest": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256_digest" },
+            { "type": "null" }
+          ]
         },
         "integrity_statement_digest": {
           "anyOf": [
@@ -419,7 +425,7 @@ have no effect.
 
 For each selected attestation Quoin SHALL:
 
-1. read the attestation and its retained output and check the output's byte length equals `retained_output.size_bytes`; for schema v2, recompute and compare FR-064's content commitment over canonical metadata and exact output bytes. A commitment mismatch is invalid with `output_integrity_mismatch`. A readable legacy schema v1 attestation has no commitment and is incomplete with `output_integrity_unavailable`;
+1. read the attestation and its retained output and check the output's byte length equals `retained_output.size_bytes`; for schema v2, recompute and compare FR-064's content commitment over canonical metadata and exact output bytes. A commitment mismatch is invalid with `output_integrity_mismatch`, and a matching one is cited in the proof receipt as `content_digest`;
 2. require equal record id and revision, candidate revision, proof id, command argv/cwd,
    tool identity, and configuration reference;
 3. require producer result `passed`; and
@@ -600,7 +606,7 @@ kept.
 | FR-065-AC-20 | When a `signed_bad` claim also carries a digest that differs from the stored record, the receipt reports `approval_signature_bad` and not `approval_record_mismatch`, following the status order of Engineering Assurance FR-041. | Test |
 | FR-065-AC-21 | The receipt schema and reader require a non-null `claimed_approval` to carry exactly one of `signed_at` with `signed_at_source`, or `signed_at_missing`; a claim with both, neither, one half of the first form, an instant not of the form `YYYY-MM-DDTHH:MM:SSZ` or not a real calendar second, a `transparency_log` or other unknown source or reason, or an undeclared time member is refused, and the receipt reports a claim's time, source or missing reason unchanged. | Test |
 | FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Test |
-| FR-065-AC-23 | A v2 proof attestation whose output bytes or any committed metadata are substituted, even at equal output length, is invalid with `output_integrity_mismatch`; a legacy v1 attestation remains readable but is incomplete with `output_integrity_unavailable` and never supports a valid proof result. | Integration |
+| FR-065-AC-23 | A v2 proof attestation whose output bytes or any committed metadata are substituted, even at equal output length, is invalid with `output_integrity_mismatch`; the proof receipt carries `content_digest` only when the commitment matched. | Integration |
 | FR-065-AC-24 | A selected proof is valid only when its exact `proof-integrity-statement/v1`, attestation, output, and signed tag object are retained and match byte-for-byte; FR-080 parses and verifies the same fetched immutable tag object, returns its full object id, and the proof receipt reports that id, statement digest, and status. A second tag signed by the same trusted signer over the same purpose/digest/scope may verify as a distinct checkpoint with a distinct object id; without a separate trusted anchor, no prior-object-id pinning is claimed. Missing/unavailable objects or verifier evidence is incomplete; changed content, wrong scope/purpose, untrusted signer, or bad signature is invalid. | Integration |
 | FR-065-AC-25 | Given a verified same-record predecessor chain, each adjacent `required: true` to `false` transition, or each widening of `signature_kinds` or of a non-empty `approvers` set to empty or a wider set while both policies require approval, makes review invalid with `policy_weakened` and null `claimed_approval`, including when the latest approved event carries no claim; an empty `approvers` set followed by an empty set is unchanged. Moving from optional to required is permitted strengthening, but with no `verified_approval` the result remains incomplete with `approval_missing`. A three-revision chain of required, optional, required remains invalid with `policy_weakened` and null `claimed_approval` even though the latest policy restores the original, proving every adjacent pair is checked. The test fails when the predecessor-policy comparison is deliberately removed. | Test |
 

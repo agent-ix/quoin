@@ -30,7 +30,7 @@ use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_store::{JsonValue, canonical_bytes};
 
 use crate::common::{
-    OUTPUT, attestation_text, base_input, history, json, member, record_text, replacing,
+    OUTPUT, attestation_text, base_input, history, json, member, record_text, replacing, sealed,
 };
 
 const KIND: &str = "change_assurance.review_decided";
@@ -76,7 +76,8 @@ fn with_decision(events: &[String]) -> VerificationInput {
 /// The scenario's attestation with one top-level member replaced.
 fn attestation_with(name: &str, value: JsonValue) -> VerificationInput {
     let mut input = base_input();
-    input.attestations[0].attestation = replacing(&json(&attestation_text()), name, value);
+    input.attestations[0].attestation =
+        sealed(&replacing(&json(&attestation_text()), name, value), OUTPUT);
     input
 }
 
@@ -111,14 +112,17 @@ fn two_proofs() -> VerificationInput {
     );
     input.record = replacing(&record, "definition", definition);
 
-    let attestation = replacing(
+    let attestation = sealed(
         &replacing(
-            &json(&attestation_text()),
-            "attestation_id",
-            JsonValue::string("att-2"),
+            &replacing(
+                &json(&attestation_text()),
+                "attestation_id",
+                JsonValue::string("att-2"),
+            ),
+            "proof_id",
+            JsonValue::string("proof-0"),
         ),
-        "proof_id",
-        JsonValue::string("proof-0"),
+        OUTPUT,
     );
     input.attestations.push(RetainedAttestation {
         filed_as: "att-2".to_owned(),

@@ -35,7 +35,7 @@ scheduler for the work an attestation describes.
 - `write-record`: one JSON change-assurance record body, from a
   named file or `-` for standard input.
 - `prepare-attestation`: one JSON proof-attestation body without
-   `retained_output`, plus `--output`, the path of the retained result
+   `retained_output` and `content_commitment`, plus `--output`, the path of the retained result
   file the attestation describes, and `--media-type`, its declared media type.
 - `intake`: `--attestation`, an exact attestation JSON file, and
   `--output`, the exact retained result file it names.
@@ -75,8 +75,8 @@ re-serialization would no longer be the file consumers validate against.
 
 ## Behavior
 
-- `prepare-attestation` SHALL derive `retained_output.size_bytes` from the bytes of the named output file and take
-  `media_type` from the caller. It SHALL NOT derive any other field.
+- `prepare-attestation` SHALL derive `retained_output.size_bytes` and `content_commitment` from the bytes of the named
+  output file and take `media_type` from the caller. It SHALL NOT derive any other field.
 - `intake` SHALL retain the exact canonical attestation bytes and the exact
   output bytes as one atomic pair, and SHALL refuse an attestation whose
   recorded output size does not match the supplied bytes.
@@ -127,7 +127,7 @@ re-serialization would no longer be the file consumers validate against.
 
 A missing, unreadable, or non-JSON input, an input carrying a `digest` member (the schemas have none), an unknown schema name, a `--select` mapping naming an
 unstored attestation, a record id and revision naming no stored record, and an output
-whose bytes contradict the attestation each fail with exit status `2` and a
+whose bytes contradict the attestation's size or content commitment each fail with exit status `2` and a
 message naming the offending input. No partial record, attestation, output, or
 receipt is retained on any of these paths.
 
@@ -145,8 +145,8 @@ receipt is retained on any of these paths.
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-068-AC-1 | `write-record` writes an explicit record body, retains it at its `(record_id, revision)` path, and reports id, revision and path; a body carrying an undeclared field is refused with exit 2 and nothing is retained. | Test |
-| FR-068-AC-2 | `prepare-attestation` derives only media type and size for the retained output from the named file and the caller's flag, and refuses a body that supplies `retained_output`. | Test |
-| FR-068-AC-3 | `intake` retains exact attestation and output bytes atomically; a contradicting size is refused, an identical re-intake is idempotent, and an `attestation_id` collision with differing bytes is refused. | Test |
+| FR-068-AC-2 | `prepare-attestation` derives only the retained output's media type and size and the content commitment from the named file and the caller's flag, and refuses a body that supplies `retained_output` or `content_commitment`. | Test |
+| FR-068-AC-3 | `intake` retains exact attestation and output bytes atomically; a contradicting size or content commitment is refused, an identical re-intake is idempotent, and an `attestation_id` collision with differing bytes is refused. | Test |
 | FR-068-AC-4 | `receipt` builds its verification input only from the named record, parents, explicit selections, decision history, and audits; an unselected stored attestation changes no receipt field. | Test |
 | FR-068-AC-5 | `unavailable`, `not_computed`, and missing evidence appear as their own receipt outcomes and reasons and are never converted to a pass or a failure. | Property |
 | FR-068-AC-6 | Exit status is 0 for `valid`, 1 for `invalid` and `incomplete`, and 2 for usage, parse, and integrity errors, with the receipt still emitted for the first two. | Test |

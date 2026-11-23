@@ -26,7 +26,7 @@ use std::path::Path;
 use quoin_change_assurance::attestations::read_attestation_json;
 use quoin_change_assurance::records::prepare_change_record;
 use quoin_change_assurance::schemas::{
-    ASSET_NAMES, CHANGE_ASSURANCE_RECORD_V2, PROOF_ATTESTATION_V1, VERIFICATION_RECEIPT_V2, asset,
+    ASSET_NAMES, CHANGE_ASSURANCE_RECORD_V2, PROOF_ATTESTATION_V2, VERIFICATION_RECEIPT_V2, asset,
 };
 use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_jsonschema::SchemaValidator;
@@ -168,7 +168,7 @@ fn tc_503_012_written_documents_satisfy_their_schemas() {
 #[test]
 fn tc_503_015_the_named_constants_and_the_lookup_agree() {
     assert_eq!(asset(ASSET_NAMES[0]), Some(CHANGE_ASSURANCE_RECORD_V2));
-    assert_eq!(asset(ASSET_NAMES[1]), Some(PROOF_ATTESTATION_V1));
+    assert_eq!(asset(ASSET_NAMES[1]), Some(PROOF_ATTESTATION_V2));
     assert_eq!(asset(ASSET_NAMES[2]), Some(VERIFICATION_RECEIPT_V2));
 }
 

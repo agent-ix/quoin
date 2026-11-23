@@ -67,8 +67,9 @@ pub fn judge(context: &ProofContext<'_>) -> ProofResult {
             Err(_) => reasons.push(Reason::AttestationSchemaInvalid),
         }
     }
+    let mut content_digest = None;
     if let (Some(pair), Some(attestation)) = (pair, verified.as_ref()) {
-        judge_attestation(context, pair, attestation, &mut reasons);
+        content_digest = judge_attestation(context, pair, attestation, &mut reasons);
     }
 
     let audit_findings = judge_audits(context, &mut reasons);
@@ -101,19 +102,22 @@ pub fn judge(context: &ProofContext<'_>) -> ProofResult {
             )
             .ok()
         }),
+        content_digest,
         audit_findings,
         outcome: outcome_for_reasons(&ordered),
         reasons: ordered,
     }
 }
 
-/// The nine comparisons a retained attestation must survive.
+/// The comparisons a retained attestation must survive, returning the content
+/// commitment the output was verified against when it matched.
 fn judge_attestation(
     context: &ProofContext<'_>,
     pair: &RetainedAttestation,
     attestation: &ProofAttestation,
     reasons: &mut Vec<Reason>,
-) {
+) -> Option<String> {
+    let mut verified_digest = None;
     let obligation = context.obligation;
     if let [only] = context.selected.as_slice()
         && attestation.attestation_id.as_str() != only.attestation_id
@@ -148,6 +152,14 @@ fn judge_attestation(
             let observed_size = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
             if attestation.retained_output.size_bytes != observed_size {
                 reasons.push(Reason::OutputSizeMismatch);
+            } else if attestation.commits_to(bytes).unwrap_or(false) {
+                // Re-serialising a validated attestation cannot fail; if it
+                // ever did, the output is not verified, which is the safe side.
+                verified_digest = Some(attestation.content_commitment.digest.clone());
+            } else {
+                // Length alone lets an equal-length substitute pass (PLAT-1788);
+                // the commitment binds the exact bytes and the metadata.
+                reasons.push(Reason::OutputIntegrityMismatch);
             }
         }
     }
@@ -157,6 +169,7 @@ fn judge_attestation(
         ProducerResult::NotComputed => reasons.push(Reason::ResultNotComputed),
         ProducerResult::Passed => {}
     }
+    verified_digest
 }
 
 /// The audit half of a proof's verdict.

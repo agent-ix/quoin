@@ -76,7 +76,7 @@ fn record_body() -> Value {
 /// The attestation body a caller writes, before `retained_output` is derived.
 fn attestation_body() -> Value {
     json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "record_type": "proof_attestation",
         "attestation_id": "att-1",
         "record_id": "change-1",
@@ -392,11 +392,32 @@ fn prepare_attestation_derives_the_retained_output_size_from_the_bytes() {
         prepared["attestation"]["retained_output"],
         json!({"media_type": "text/plain", "size_bytes": OUTPUT.len()})
     );
+    let commitment = &prepared["attestation"]["content_commitment"];
+    assert_eq!(commitment["algorithm"], "sha-256");
+    assert!(
+        commitment["digest"]
+            .as_str()
+            .is_some_and(|d| d.starts_with("sha256:")
+                && d.len() == 71
+                && !d.ends_with(&"0".repeat(64))),
+        "a derived digest, not the placeholder: {commitment}"
+    );
 
     let mut supplied = attestation_body();
     supplied["retained_output"] = json!({"media_type": "text/plain", "size_bytes": 1});
     let error = prepare_attestation(&json!({
         "attestation_hex": hex_json(&supplied),
+        "output_hex": hex(OUTPUT),
+        "media_type": "text/plain",
+    }))
+    .unwrap_err();
+    assert_eq!(error.code, CoreErrorCode::BadRequest);
+
+    let mut commitment = attestation_body();
+    commitment["content_commitment"] =
+        json!({"algorithm": "sha-256", "digest": format!("sha256:{}", "a".repeat(64))});
+    let error = prepare_attestation(&json!({
+        "attestation_hex": hex_json(&commitment),
         "output_hex": hex(OUTPUT),
         "media_type": "text/plain",
     }))
@@ -606,7 +627,7 @@ fn tc_503_the_vocabulary_comes_back_without_an_asset() {
         payload["schemas"],
         json!([
             "change-assurance-record-v2.schema.json",
-            "proof-attestation-v1.schema.json",
+            "proof-attestation-v2.schema.json",
             "verification-receipt-v2.schema.json"
         ])
     );
@@ -622,11 +643,11 @@ fn tc_503_the_vocabulary_comes_back_without_an_asset() {
 #[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_a_named_asset_comes_back_byte_for_byte() {
-    let response = schema(&json!({ "name": "proof-attestation-v1.schema.json" }))
+    let response = schema(&json!({ "name": "proof-attestation-v2.schema.json" }))
         .expect("a known name resolves");
     assert_eq!(
         response.payload["schema"],
-        json!(quoin_change_assurance::schemas::PROOF_ATTESTATION_V1)
+        json!(quoin_change_assurance::schemas::PROOF_ATTESTATION_V2)
     );
 }
 

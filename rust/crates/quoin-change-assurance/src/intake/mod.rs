@@ -185,7 +185,7 @@ pub fn read_change_record_with_digest<S: EvidenceStore + ?Sized>(
 
 /// Take in an attestation and the output it attests to.
 ///
-/// The output length is checked against the attestation **before** anything is
+/// The output length and content commitment are checked against the attestation **before** anything is
 /// retained: a pair whose output does not have the declared size is refused
 /// rather than filed, because retaining it would put evidence in the store that
 /// verification could only ever reject.
@@ -207,7 +207,7 @@ pub fn intake_attestation<S: EvidenceStore + ?Sized>(
 ) -> Result<Published, ChangeAssuranceError> {
     let attestation = read_attestation_json(&parse_strict_json(raw_attestation)?)?;
     let expected = attestation_bytes(&attestation)?;
-    check_output_size(&attestation, output)?;
+    check_output(&attestation, output)?;
     store.publish_attestation(
         &attestation.attestation_id,
         &RetainedPair {
@@ -219,7 +219,7 @@ pub fn intake_attestation<S: EvidenceStore + ?Sized>(
 
 /// Read the attestation retained under `attestation_id`, with its output.
 ///
-/// Re-checks the output length on the way out: retained evidence that has
+/// Re-checks the output length and content commitment on the way out: retained evidence that has
 /// drifted is refused rather than returned.
 ///
 /// # Errors
@@ -243,17 +243,18 @@ pub fn read_attestation<S: EvidenceStore + ?Sized>(
             found: attestation.attestation_id.as_str().to_owned(),
         });
     }
-    check_output_size(&attestation, &pair.output)?;
+    check_output(&attestation, &pair.output)?;
     Ok(Some((attestation, pair.output)))
 }
 
-fn check_output_size(
-    attestation: &ProofAttestation,
-    output: &[u8],
-) -> Result<(), ChangeAssuranceError> {
+fn check_output(attestation: &ProofAttestation, output: &[u8]) -> Result<(), ChangeAssuranceError> {
     let observed_size = u64::try_from(output.len()).unwrap_or(u64::MAX);
     if attestation.retained_output.size_bytes == observed_size {
-        Ok(())
+        if attestation.commits_to(output)? {
+            Ok(())
+        } else {
+            Err(ChangeAssuranceError::OutputCommitment)
+        }
     } else {
         Err(ChangeAssuranceError::OutputIntegrity {
             declared_size: attestation.retained_output.size_bytes,

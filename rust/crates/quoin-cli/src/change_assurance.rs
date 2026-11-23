@@ -534,7 +534,7 @@ mod tests {
                     "change-assurance",
                     "schema",
                     "--name",
-                    "proof-attestation-v1.schema.json",
+                    "proof-attestation-v2.schema.json",
                     "--json",
                 ])
                 .is_ok()

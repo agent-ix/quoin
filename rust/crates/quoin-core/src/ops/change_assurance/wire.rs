@@ -165,7 +165,7 @@ pub struct RecordDigestPayload {
 #[serde(deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct PrepareAttestationRequest {
-    /// The attestation body, without `retained_output`,
+    /// The attestation body, without `retained_output` and `content_commitment`,
     /// as hex of the exact input bytes.
     pub attestation_hex: String,
     /// The retained result file's exact bytes, as hex.

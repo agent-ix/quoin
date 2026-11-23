@@ -55,114 +55,9 @@ strength against another's.
 
 The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
 
-## Legacy schema v1 (read only)
-
-New intake does not accept this schema. It is retained here as the exact
-historical acceptance boundary for reading existing attestations. A legacy
-record is read byte-for-byte and is not rewritten or upgraded.
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://agent-ix.github.io/quoin/schemas/proof-attestation-v1.schema.json",
-  "title": "ProofAttestationV1",
-  "type": "object",
-  "required": [
-    "schema_version",
-    "record_type",
-    "attestation_id",
-    "record_id",
-    "record_revision",
-    "candidate_revision",
-    "proof_id",
-    "command",
-    "tool",
-    "environment",
-    "observed_at",
-    "result",
-    "strength",
-    "retained_output"
-  ],
-  "properties": {
-    "schema_version": { "const": 1 },
-    "record_type": { "const": "proof_attestation" },
-    "attestation_id": { "$ref": "#/$defs/identity" },
-    "record_id": { "$ref": "#/$defs/identity" },
-    "record_revision": { "type": "integer", "minimum": 1 },
-    "candidate_revision": { "type": "string", "minLength": 1 },
-    "proof_id": { "$ref": "#/$defs/identity" },
-    "command": { "$ref": "#/$defs/command" },
-    "tool": {
-      "type": "object",
-      "required": ["identity", "version", "configuration_ref"],
-      "properties": {
-        "identity": { "type": "string", "minLength": 1 },
-        "version": { "$ref": "#/$defs/immutable_version" },
-        "configuration_ref": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
-    "environment": {
-      "type": "object",
-      "minProperties": 1,
-      "additionalProperties": {
-        "anyOf": [
-          { "type": "string" },
-          { "type": "number" },
-          { "type": "boolean" },
-          { "type": "null" }
-        ]
-      }
-    },
-    "observed_at": { "type": "string", "format": "date-time" },
-    "result": {
-      "type": "string",
-      "enum": ["passed", "failed", "unavailable", "not_computed"]
-    },
-    "strength": {
-      "type": "string",
-      "enum": ["proven", "bounded-checked", "tested", "observed"]
-    },
-    "retained_output": {
-      "type": "object",
-      "required": ["media_type", "size_bytes"],
-      "properties": {
-        "media_type": { "type": "string", "minLength": 1 },
-        "size_bytes": { "type": "integer", "minimum": 0 }
-      },
-      "additionalProperties": false
-    }
-  },
-  "$defs": {
-    "identity": {
-      "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
-    },
-    "immutable_version": {
-      "type": "string",
-      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?)$"
-    },
-    "command": {
-      "type": "object",
-      "required": ["argv", "working_directory"],
-      "properties": {
-        "argv": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "string" }
-        },
-        "working_directory": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    }
-  },
-  "additionalProperties": false
-}
-```
-
 ## Schema
 
-The schema below is the new-intake schema v2.
+The schema below is schema v2, the only schema. Pre-release, no earlier schema is read.
 
 ```json
 {
@@ -273,12 +168,6 @@ The schema below is the new-intake schema v2.
 }
 ```
 
-Schema v1 remains a legacy read format with its original fields and no
-`content_commitment`; it is never rewritten or upgraded during read. New intake
-accepts only schema v2. A v1 attestation remains inspectable as historical
-producer evidence but cannot support a valid FR-065 proof result because its
-retained bytes have no content commitment.
-
 For v2, `content_commitment.digest` is SHA-256 over the following unambiguous
 preimage, with unsigned 64-bit big-endian byte lengths:
 
@@ -294,14 +183,19 @@ hexadecimal prefixed by `sha256:`. Thus changing any attestation metadata or any
 retained output byte changes the commitment; the digest field does not commit to
 itself.
 
+The commitment is a computed identity digest binding the retained output to its
+attestation. It detects an output or metadata change made without recomputing
+it, including an equal-length substitution. It is not a signature and not
+independent retention: someone who can rewrite both the attestation and the
+output can recompute it, and that protection is not provided here.
+
 ## Intake
 
 The intake operation SHALL receive the attestation's exact UTF-8 JSON bytes plus
 the exact retained output bytes. It SHALL use FR-063's duplicate-preserving raw
 JSON boundary and SHALL check the schema, the retained output's byte length
 against `retained_output.size_bytes`, and the v2 content commitment against the
-canonical metadata and output bytes. A v1 attestation is accepted only by the
-legacy read path, never by new intake. `attestation_id` is assigned by
+canonical metadata and output bytes. `attestation_id` is assigned by
 the caller (a UUID or caller-chosen identity), never derived from content.
 
 It SHALL stage `attestation.json` and the output bytes together in a new
@@ -330,7 +224,7 @@ discharges a proof until FR-065 checks all bindings and FR-032 findings.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-064-AC-1 | New intake requires schema v2 with the attestation identity, reviewed record id and revision, candidate revision, proof id, exact argv/cwd, immutable tool identity/version/configuration reference, environment, timestamp, result, retained-output media type and size, and SHA-256 content commitment; undeclared fields are refused. Legacy schema v1 remains readable with its original shape and no digest, but is never rewritten as v2. | Test |
+| FR-064-AC-1 | New intake requires schema v2 with the attestation identity, reviewed record id and revision, candidate revision, proof id, exact argv/cwd, immutable tool identity/version/configuration reference, environment, timestamp, result, retained-output media type and size, and SHA-256 content commitment; undeclared fields are refused. | Test |
 | FR-064-AC-2 | Passed, failed, unavailable, and not-computed results remain four distinct producer states and none is converted into a verification outcome during intake. | Test |
 | FR-064-AC-3 | The retained bytes have the declared size and match the v2 content commitment; an equal-length byte substitution, metadata substitution, absent or extra bytes is refused and leaves neither a new attestation nor output artifact. | Property |
 | FR-064-AC-4 | The v2 commitment is byte-reproducible for equivalent metadata under RFC 8785 canonicalization, changes when any committed metadata or output byte changes, rejects duplicate JSON names, and uses the specified domain separator and length framing. | Test |
@@ -340,7 +234,6 @@ discharges a proof until FR-065 checks all bindings and FR-032 findings.
 | FR-064-AC-8 | Existing FR-030 run evidence remains readable and unchanged; proof attestations occupy a distinct versioned store family. | Integration |
 | FR-064-AC-9 | Static boundaries and golden terminology prove intake runs nothing and reports only producer facts, never an audit, approval, identity, authorization, or non-repudiation conclusion (CON-1, CON-3). | Analysis |
 | FR-064-AC-10 | Each of Engineering Assurance's four claim strengths (FR-022) is written and reads back as itself; an attestation with no `strength` is refused by name rather than defaulted, and a `strength` outside the four wire names is refused as malformed. | Test |
-| FR-064-AC-11 | Historical v1 attestations remain readable without adding a commitment or changing their bytes; FR-065 never treats a v1 attestation as content-integrity-verified. | Integration |
 
 ## Dependencies
 

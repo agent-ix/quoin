@@ -23,7 +23,7 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use engineering_assurance::claim_strength::ClaimStrength;
-use quoin_store::JsonValue;
+use quoin_store::{JsonValue, canonical_bytes};
 
 use crate::error::{ChangeAssuranceError, FieldFailure, Subject};
 use crate::ids::{AttestationId, NonEmptyText, ProofId, RecordId, Revision};
@@ -35,7 +35,13 @@ use crate::model::record::CommandBinding;
 pub const RECORD_TYPE: &str = "proof_attestation";
 
 /// The schema version every attestation in this family carries.
-pub const SCHEMA_VERSION: u64 = 1;
+pub const SCHEMA_VERSION: u64 = 2;
+
+/// The one commitment algorithm's wire name.
+pub const COMMITMENT_ALGORITHM: &str = "sha-256";
+
+/// Domain separator opening the commitment preimage.
+const COMMITMENT_DOMAIN: &[u8] = b"quoin-proof-attestation-content/v2\0";
 
 const SUBJECT: Subject = Subject::Attestation;
 
@@ -147,6 +153,17 @@ pub struct RetainedOutput {
     pub size_bytes: u64,
 }
 
+/// The SHA-256 commitment over an attestation's metadata and retained output.
+///
+/// A computed identity binding the output bytes to the attestation that names
+/// them (FR-064). It is not a signature: anyone able to rewrite both the
+/// attestation and the output can recompute it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ContentCommitment {
+    /// `sha256:` and 64 lowercase hex digits.
+    pub digest: String,
+}
+
 /// A proof attestation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProofAttestation {
@@ -174,6 +191,8 @@ pub struct ProofAttestation {
     pub strength: ClaimStrength,
     /// The output retained alongside it.
     pub retained_output: RetainedOutput,
+    /// The commitment over every other member and the output bytes.
+    pub content_commitment: ContentCommitment,
 }
 
 impl ProofAttestation {
@@ -194,7 +213,42 @@ impl ProofAttestation {
     /// Never in practice: only [`JsonValue::number`]'s non-finite refusal,
     /// which no value of this type can hold.
     pub fn to_json(&self) -> Result<JsonValue, ChangeAssuranceError> {
-        write_attestation(self)
+        write_attestation(self, true)
+    }
+
+    /// The commitment this attestation's metadata and `output` produce.
+    ///
+    /// SHA-256 over the domain separator, then the length-prefixed canonical
+    /// metadata (every member except `content_commitment`), then the
+    /// length-prefixed output bytes, with unsigned 64-bit big-endian lengths.
+    ///
+    /// # Errors
+    ///
+    /// As [`ProofAttestation::to_json`].
+    pub fn commitment_over(
+        &self,
+        output: &[u8],
+    ) -> Result<ContentCommitment, ChangeAssuranceError> {
+        let metadata = canonical_bytes(&write_attestation(self, false)?)?;
+        let mut preimage =
+            Vec::with_capacity(COMMITMENT_DOMAIN.len() + metadata.len() + output.len() + 16);
+        preimage.extend_from_slice(COMMITMENT_DOMAIN);
+        preimage.extend_from_slice(&length_prefix(metadata.len()));
+        preimage.extend_from_slice(&metadata);
+        preimage.extend_from_slice(&length_prefix(output.len()));
+        preimage.extend_from_slice(output);
+        Ok(ContentCommitment {
+            digest: format!("sha256:{}", quoin_store::attachment::sha256_hex(&preimage)),
+        })
+    }
+
+    /// Whether the stored commitment matches `output` and this metadata.
+    ///
+    /// # Errors
+    ///
+    /// As [`ProofAttestation::commitment_over`].
+    pub fn commits_to(&self, output: &[u8]) -> Result<bool, ChangeAssuranceError> {
+        Ok(self.commitment_over(output)? == self.content_commitment)
     }
 }
 
@@ -215,6 +269,7 @@ fn read_attestation(value: &JsonValue) -> Result<ProofAttestation, ChangeAssuran
         "result",
         "strength",
         "retained_output",
+        "content_commitment",
     ])?;
     root.equals("schema_version", &number(SCHEMA_VERSION)?)?;
     root.equals("record_type", &JsonValue::string(RECORD_TYPE))?;
@@ -248,6 +303,7 @@ fn read_attestation(value: &JsonValue) -> Result<ProofAttestation, ChangeAssuran
     let strength = ClaimStrength::from_str(root.text("strength")?)
         .map_err(|_| ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("strength")))?;
     let retained_output = read_retained_output(root)?;
+    let content_commitment = read_content_commitment(root)?;
 
     Ok(ProofAttestation {
         attestation_id,
@@ -262,6 +318,7 @@ fn read_attestation(value: &JsonValue) -> Result<ProofAttestation, ChangeAssuran
         result,
         strength,
         retained_output,
+        content_commitment,
     })
 }
 
@@ -325,12 +382,48 @@ fn read_retained_output(root: Fields<'_>) -> Result<RetainedOutput, ChangeAssura
     })
 }
 
-fn write_attestation(attestation: &ProofAttestation) -> Result<JsonValue, ChangeAssuranceError> {
+/// An unsigned 64-bit big-endian length, as the commitment preimage frames it.
+fn length_prefix(len: usize) -> [u8; 8] {
+    u64::try_from(len).unwrap_or(u64::MAX).to_be_bytes()
+}
+
+/// Whether `text` is `sha256:` and 64 lowercase hex digits.
+pub(crate) fn is_sha256_digest(text: &str) -> bool {
+    text.strip_prefix("sha256:").is_some_and(|hex| {
+        hex.len() == 64 && hex.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+    })
+}
+
+fn read_content_commitment(root: Fields<'_>) -> Result<ContentCommitment, ChangeAssuranceError> {
+    let malformed = |field: &str| {
+        ChangeAssuranceError::shape(
+            SUBJECT,
+            FieldFailure::malformed(format!("content_commitment.{field}")),
+        )
+    };
+    let commitment = root.nested("content_commitment")?;
+    commitment.exact(&["algorithm", "digest"])?;
+    if commitment.text("algorithm")? != COMMITMENT_ALGORITHM {
+        return Err(malformed("algorithm"));
+    }
+    let digest = commitment.text("digest")?;
+    if !is_sha256_digest(digest) {
+        return Err(malformed("digest"));
+    }
+    Ok(ContentCommitment {
+        digest: digest.to_owned(),
+    })
+}
+
+fn write_attestation(
+    attestation: &ProofAttestation,
+    with_commitment: bool,
+) -> Result<JsonValue, ChangeAssuranceError> {
     let mut environment = quoin_store::JsonObject::new();
     for (name, value) in &attestation.environment {
         environment.set(name.clone(), value.to_json()?);
     }
-    Ok(object(vec![
+    let mut members = vec![
         ("schema_version", number(SCHEMA_VERSION)?),
         ("record_type", JsonValue::string(RECORD_TYPE)),
         (
@@ -391,5 +484,18 @@ fn write_attestation(attestation: &ProofAttestation) -> Result<JsonValue, Change
                 ),
             ]),
         ),
-    ]))
+    ];
+    if with_commitment {
+        members.push((
+            "content_commitment",
+            object(vec![
+                ("algorithm", JsonValue::string(COMMITMENT_ALGORITHM)),
+                (
+                    "digest",
+                    JsonValue::string(&attestation.content_commitment.digest),
+                ),
+            ]),
+        ));
+    }
+    Ok(object(members))
 }
