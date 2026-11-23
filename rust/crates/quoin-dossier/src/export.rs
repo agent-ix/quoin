@@ -63,17 +63,69 @@ pub fn export(
     options: &ExportOptions,
 ) -> Result<Report, DossierError> {
     let rendered = render_for(registry, kinds, out, inputs, Operation::Export)?;
+    let source_rev = resolve_head(inputs.scope.as_path()).ok();
     let mut report = report_with_comparison(&rendered);
+    if let Some(source_rev) = source_rev.as_deref() {
+        for (entry, document) in report.documents.iter_mut().zip(&rendered) {
+            if committed_blob(inputs.scope.as_path(), source_rev, &document.path)
+                .is_none_or(|blob| blob != document.text.as_bytes())
+            {
+                entry.comparison = Some(crate::report::Comparison::Differs);
+            }
+        }
+    } else {
+        for entry in &mut report.documents {
+            entry.comparison = Some(crate::report::Comparison::Differs);
+        }
+    }
     if !report.differing().is_empty() {
         return Ok(report);
     }
-    report.quire = run_quire(&rendered, options).err();
+    let Some(source_rev) = source_rev else {
+        return Ok(report);
+    };
+    report.quire = run_quire(&rendered, options, &source_rev).err();
     Ok(report)
+}
+
+fn git(scope: &Path, args: &[&str]) -> Option<Vec<u8>> {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(scope)
+        .stdin(Stdio::null())
+        .output()
+        .ok()?;
+    output.status.success().then_some(output.stdout)
+}
+
+fn resolve_head(scope: &Path) -> Option<String> {
+    let output = git(scope, &["rev-parse", "--verify", "HEAD^{commit}"])?;
+    let revision = String::from_utf8(output).ok()?;
+    let revision = revision.trim();
+    (revision.len() == 40 && revision.bytes().all(|byte| byte.is_ascii_hexdigit()))
+        .then(|| revision.to_owned())
+}
+
+fn committed_blob(scope: &Path, revision: &str, path: &Path) -> Option<Vec<u8>> {
+    let scope = scope.canonicalize().ok()?;
+    let path = if path.is_absolute() {
+        path.canonicalize().ok()?
+    } else {
+        std::env::current_dir().ok()?.join(path).canonicalize().ok()?
+    };
+    let relative = path.strip_prefix(scope).ok()?;
+    let relative = relative.to_str()?;
+    let spec = format!("{revision}:{relative}");
+    git(&scope, &["cat-file", "blob", &spec])
 }
 
 /// The arguments of the one `quire export` call, in order.
 #[must_use]
-pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec<String> {
+pub(crate) fn quire_args(
+    documents: &[Rendered],
+    options: &ExportOptions,
+    source_rev: &str,
+) -> Vec<String> {
     let mut args = vec!["export".to_owned()];
     args.extend(
         documents
@@ -86,7 +138,7 @@ pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec
         "--output".to_owned(),
         options.output.display().to_string(),
         "--source-rev".to_owned(),
-        "HEAD".to_owned(),
+        source_rev.to_owned(),
     ]);
     if let Some(release) = &options.release {
         args.extend(["--release".to_owned(), release.clone()]);
@@ -113,10 +165,14 @@ pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec
     args
 }
 
-fn run_quire(documents: &[Rendered], options: &ExportOptions) -> Result<(), QuireFailure> {
-    let had_output = fs::symlink_metadata(&options.output).is_ok();
+fn run_quire(
+    documents: &[Rendered],
+    options: &ExportOptions,
+    source_rev: &str,
+) -> Result<(), QuireFailure> {
+    let previous_output = fs::read(&options.output).ok();
     let mut result = Command::new(&options.quire)
-        .args(quire_args(documents, options))
+        .args(quire_args(documents, options, source_rev))
         .stdin(Stdio::null())
         .output()
         .map_err(|error| QuireFailure {
@@ -133,9 +189,20 @@ fn run_quire(documents: &[Rendered], options: &ExportOptions) -> Result<(), Quir
                 })
             }
         });
-    if let Err(failure) = &mut result
-        && !had_output
-    {
+    if let Err(failure) = &mut result {
+        if let Some(bytes) = previous_output {
+            if let Err(error) = fs::write(&options.output, bytes) {
+                if !failure.stderr.is_empty() && !failure.stderr.ends_with('\n') {
+                    failure.stderr.push('\n');
+                }
+                let _ = write!(
+                    failure.stderr,
+                    "could not restore the pre-existing output {}: {error}",
+                    options.output.display()
+                );
+            }
+            return result;
+        }
         // quire writes `--output` only on success; remove a partial one a
         // failed run might still have left, so a refusal leaves nothing. A
         // pre-existing output is not ours to remove, and an output that is
@@ -193,6 +260,23 @@ mod tests {
         render(&two(), &kinds, Path::new("dossier"), &inputs()).unwrap()
     }
 
+    fn commit_docs(work: &Path) {
+        for args in [
+            & ["init", "-q"][..],
+            &["config", "user.name", "Dossier test"],
+            &["config", "user.email", "dossier@example.invalid"],
+            &["add", "dossier"],
+            &["commit", "-qm", "dossier fixtures"],
+        ] {
+            let output = Command::new("git")
+                .args(args)
+                .current_dir(work)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        }
+    }
+
     /// A `quire` that runs `body` with `$out` set to its `--output`.
     #[cfg(unix)]
     fn script(work: &Path, body: &str) -> PathBuf {
@@ -214,15 +298,18 @@ mod tests {
     fn export_with(work: &Path, quire: &Path) -> Report {
         let out = work.join("dossier");
         crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
+        commit_docs(work);
         let mut options = options(quire.to_str().unwrap());
         options.output = work.join("out.pdf");
-        export(&two(), &[], &out, &inputs(), &options).unwrap()
+        let mut input = inputs();
+        input.scope = work.to_owned();
+        export(&two(), &[], &out, &input, &options).unwrap()
     }
 
     #[trace("FR-191-AC-8")]
     #[test]
     fn a_bundle_passes_files_in_registry_order_with_bundle_arguments_and_options_unchanged() {
-        let args = quire_args(&rendered(&["b", "a"]), &options("quire"));
+        let args = quire_args(&rendered(&["b", "a"]), &options("quire"), "0123456789012345678901234567890123456789");
         assert_eq!(
             args,
             [
@@ -234,7 +321,7 @@ mod tests {
                 "--output",
                 "out.pdf",
                 "--source-rev",
-                "HEAD",
+                "0123456789012345678901234567890123456789",
                 "--release",
                 "v1",
                 "--approval",
@@ -254,7 +341,7 @@ mod tests {
     #[trace("FR-191-AC-9")]
     #[test]
     fn one_document_is_exported_without_bundle_arguments() {
-        let args = quire_args(&rendered(&["a"]), &options("quire"));
+        let args = quire_args(&rendered(&["a"]), &options("quire"), "0123456789012345678901234567890123456789");
         assert!(args.contains(&"dossier/DOS-A.md".to_owned()));
         assert!(!args.iter().any(|arg| arg.starts_with("--bundle")));
         assert_eq!(args.iter().filter(|arg| arg.contains("DOS-")).count(), 1);
@@ -268,7 +355,7 @@ mod tests {
             PathBuf::from("process-module"),
             PathBuf::from("other-module"),
         ];
-        let args = quire_args(&rendered(&["a"]), &options);
+        let args = quire_args(&rendered(&["a"]), &options, "0123456789012345678901234567890123456789");
         let module_args: Vec<_> = args
             .windows(2)
             .filter(|pair| pair[0] == "--module")
@@ -283,9 +370,12 @@ mod tests {
         let work = tempfile::tempdir().unwrap();
         let out = work.path().join("dossier");
         crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
+        commit_docs(work.path());
         let mut options = options("/nonexistent/quire");
         options.output = work.path().join("out.pdf");
-        let report = export(&two(), &[], &out, &inputs(), &options).unwrap();
+        let mut input = inputs();
+        input.scope = work.path().to_owned();
+        let report = export(&two(), &[], &out, &input, &options).unwrap();
         let quire = report.quire.unwrap();
         assert_eq!(quire.exit_code, None);
         assert!(
@@ -301,6 +391,7 @@ mod tests {
         let work = tempfile::tempdir().unwrap();
         let out = work.path().join("dossier");
         crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
+        commit_docs(work.path());
         fs::write(out.join("DOS-B.md"), "edited").unwrap();
         fs::remove_file(out.join("DOS-A.md")).unwrap();
         let mut options = options("/nonexistent/quire");
@@ -308,13 +399,12 @@ mod tests {
         let report = export(&two(), &[], &out, &inputs(), &options).unwrap();
         assert_eq!(report.differing(), ["DOS-A", "DOS-B"]);
         assert!(report.quire.is_none(), "quire was started");
-        let elsewhere =
-            export(&two(), &[], &work.path().join("other"), &inputs(), &options).unwrap();
+        let elsewhere = export(&two(), &[], &work.path().join("other"), &input, &options).unwrap();
         assert_eq!(elsewhere.differing(), ["DOS-A", "DOS-B"]);
     }
 
     #[cfg(unix)]
-    #[trace("FR-191-AC-7")]
+    #[trace("FR-191-AC-26")]
     #[test]
     fn a_partial_output_from_a_failed_quire_is_removed() {
         let work = tempfile::tempdir().unwrap();
@@ -344,11 +434,11 @@ mod tests {
     #[test]
     fn an_output_that_existed_before_a_failed_quire_is_preserved() {
         let work = tempfile::tempdir().unwrap();
-        fs::write(work.path().join("out.pdf"), "earlier").unwrap();
+        fs::write(work.path().join("out.pdf"), b"sentinel bytes\0\xff").unwrap();
         let quire = script(work.path(), "echo partial > \"$out\"; exit 7");
         let failure = export_with(work.path(), &quire).quire.unwrap();
         assert!(!failure.stderr.contains("could not remove"));
-        assert!(work.path().join("out.pdf").exists());
+        assert_eq!(fs::read(work.path().join("out.pdf")).unwrap(), b"sentinel bytes\0\xff");
     }
 
     #[cfg(unix)]

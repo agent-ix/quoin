@@ -526,7 +526,7 @@ fn a_quire_refusal_exits_4_passes_through_its_status_and_stderr_and_leaves_no_ou
     );
 }
 
-#[trace("FR-191-AC-8", "FR-191-AC-9")]
+#[trace("FR-191-AC-8", "FR-191-AC-9", "FR-191-AC-25")]
 #[test]
 fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
     let work = tempfile::tempdir().unwrap();
@@ -566,6 +566,12 @@ fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
         "stub-b is incomplete: {}",
         stderr(&bundle)
     );
+    let revision = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(work.path())
+        .output()
+        .unwrap();
+    let revision = String::from_utf8(revision.stdout).unwrap().trim().to_owned();
     assert_eq!(
         recorded_args(work.path()),
         [
@@ -577,7 +583,7 @@ fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
             "--output",
             "out.docx",
             "--source-rev",
-            "HEAD",
+            revision.as_str(),
             "--release",
             "v1",
             "--approval",
@@ -613,7 +619,7 @@ fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
     assert_eq!(code(&single), 0, "{}", stderr(&single));
     let args = recorded_args(work.path());
     assert_eq!(args[..2], ["export", "dossier/DOS-STUB-A.md"]);
-    assert!(args.contains(&"--source-rev".to_owned()) && args.contains(&"HEAD".to_owned()));
+    assert!(args.contains(&"--source-rev".to_owned()) && args.contains(&revision));
     assert!(
         !args.iter().any(|arg| arg.starts_with("--bundle")),
         "{args:?}"
@@ -635,6 +641,16 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
         r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
     )
     .unwrap();
+    for (file, principal, meaning) in [
+        ("approval-one.json", "Rae One", "approve synthetic source one"),
+        ("approval-two.json", "Rae Two", "approve synthetic source two"),
+    ] {
+        fs::write(
+            work.path().join(file),
+            format!(r#"{{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"{file}","approver":"{principal}","meaning":["{meaning}"],"signed_at":"2026-11-02T03:04:05Z","signature":{{"status":"signed_valid","kind":"tag"}}}}"#),
+        )
+        .unwrap();
+    }
     let quire = fake_quire(work.path(), 0, "");
     let generated = quoin(
         work.path(),
@@ -651,6 +667,9 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
         ],
     );
     assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    let generated_text = read(&work.path().join("dossier/DOS-REL.md"));
+    assert!(generated_text.contains("Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document"));
+    assert!(generated_text.contains("Verifier identity: not provided as a distinct field by the source approval contracts."));
     let exported = quoin(
         work.path(),
         &[
@@ -664,7 +683,9 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
             "--release-verify",
             verify.to_str().unwrap(),
             "--approval",
-            "user-approval.json",
+            "approval-one.json",
+            "--approval",
+            "approval-two.json",
             "--approval",
             verify.to_str().unwrap(),
             "--to",
@@ -682,7 +703,10 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
         .filter(|pair| pair[0] == "--approval")
         .map(|pair| pair[1].as_str())
         .collect();
-    assert_eq!(approvals, ["user-approval.json", verify.to_str().unwrap()]);
+    assert_eq!(approvals, ["approval-one.json", "approval-two.json", verify.to_str().unwrap()]);
+    let document = read(&work.path().join("dossier/DOS-REL.md"));
+    assert!(document.contains("Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document"));
+    assert!(document.contains("Verifier identity: not provided as a distinct field by the source approval contracts."));
 }
 
 #[trace("FR-201-AC-3")]
@@ -808,6 +832,10 @@ fn release_record_generation_needs_no_git_and_is_repeatable() {
                 snapshot.to_str().unwrap(),
                 "--release-verify",
                 verify.to_str().unwrap(),
+                "--approval",
+                "approval-one.json",
+                "--approval",
+                "approval-two.json",
             ])
             .env("PATH", &empty_path)
             .current_dir(work.path())
@@ -833,16 +861,10 @@ fn release_record_generation_needs_no_git_and_is_repeatable() {
     assert_eq!(fs::read(document).unwrap(), first_bytes);
 }
 
-#[trace("FR-201-AC-7")]
+#[trace("FR-201-AC-7", "FR-201-AC-9")]
 #[test]
-#[ignore = "requires quire, pandoc, pdftotext and SPEC_ARTIFACTS_PROCESS_DIR"]
 fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     let work = tempfile::tempdir().unwrap();
-    let module = std::env::var_os("SPEC_ARTIFACTS_PROCESS_DIR")
-        .map(PathBuf::from)
-        .expect("set SPEC_ARTIFACTS_PROCESS_DIR to the spec_artifacts_process module directory");
-    let module = fs::canonicalize(&module).unwrap();
-    let module_arg = module.to_str().unwrap();
     let git = |args: &[&str]| {
         let result = Command::new("git")
             .args(args)
@@ -870,6 +892,16 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
         r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
     )
     .unwrap();
+    for (file, principal, meaning) in [
+        ("approval-one.json", "Rae One", "approve synthetic source one"),
+        ("approval-two.json", "Rae Two", "approve synthetic source two"),
+    ] {
+        fs::write(
+            work.path().join(file),
+            format!(r#"{{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"{file}","approver":"{principal}","meaning":["{meaning}"],"signed_at":"2026-11-02T03:04:05Z","signature":{{"status":"signed_valid","kind":"tag"}}}}"#),
+        )
+        .unwrap();
+    }
     let generated = quoin(
         work.path(),
         &[
@@ -878,8 +910,6 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
             "1.0",
             "--doc",
             "release-record",
-            "--module",
-            module_arg,
             "--snapshot",
             snapshot.to_str().unwrap(),
             "--release-verify",
@@ -899,12 +929,14 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
                 "1.0",
                 "--doc",
                 "release-record",
-                "--module",
-                module_arg,
                 "--snapshot",
                 snapshot.to_str().unwrap(),
                 "--release-verify",
                 verify.to_str().unwrap(),
+                "--approval",
+                "approval-one.json",
+                "--approval",
+                "approval-two.json",
                 "--to",
                 format,
                 "--output",
@@ -935,6 +967,12 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
         let text = String::from_utf8_lossy(&extracted.stdout);
         assert!(text.contains("Ada Example"), "{text}");
         assert!(text.contains("release authorization"), "{text}");
+        assert!(text.contains("Rae One"), "{text}");
+        assert!(text.contains("approve synthetic source one"), "{text}");
+        assert!(text.contains("Rae Two"), "{text}");
+        assert!(text.contains("approve synthetic source two"), "{text}");
+        assert!(text.contains("unbound to the exact bytes"), "{text}");
+        assert!(text.contains("Verifier identity"), "{text}");
     }
 }
 
