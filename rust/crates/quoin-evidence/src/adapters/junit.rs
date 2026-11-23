@@ -104,6 +104,38 @@ pub fn qualified_name(classname: &str, name: &str) -> String {
     format!("{}::{member}", container.replace('.', "::"))
 }
 
+/// Whether the declared tool selects the pytest symbol mapping: the same
+/// lower-cased substring claim adapter selection makes.
+fn is_pytest(tool: &str) -> bool {
+    tool.to_lowercase().contains("pytest")
+}
+
+/// A pytest case's symbol as the Python extractor emits it: `Class.method`
+/// under a class, the bare function name at module level.
+///
+/// The module path is never a prefix, and pytest's default report carries no
+/// `file` attribute, so a class is recognised by its `Test` prefix alone.
+fn pytest_symbol(classname: &str, name: &str) -> String {
+    let classname = classname.trim();
+    let name = name.trim();
+    if classname == name {
+        return name.to_owned();
+    }
+    let function = match name
+        .strip_suffix(']')
+        .and_then(|head| head.rsplit_once('['))
+    {
+        Some((function, _)) => function,
+        None => name,
+    };
+    let mut classes = classname
+        .split('.')
+        .skip_while(|segment| !segment.starts_with("Test"))
+        .collect::<Vec<_>>();
+    classes.push(function);
+    classes.join(".")
+}
+
 /// Trace ids named in a `<testcase>`'s own properties, if any.
 fn trace_ids(body: &str) -> Option<Vec<String>> {
     let mut ids: Vec<String> = Vec::new();
@@ -151,6 +183,19 @@ fn outcome(body: &str) -> Outcome {
 ///
 /// Refuses input holding no `<testcase>` element with a non-empty symbol.
 pub fn parse_junit(raw: &str) -> Result<AdapterResult, EvidenceError> {
+    parse_junit_for_tool(raw, "")
+}
+
+/// Parse `JUnit` XML recorded under the declared `--tool`.
+///
+/// A tool that claims `pytest` stores each case under the Python extractor's
+/// symbol; any other tool uses the `::` rule of [`qualified_name`].
+///
+/// # Errors
+///
+/// Refuses input holding no `<testcase>` element with a non-empty symbol.
+pub fn parse_junit_for_tool(raw: &str, tool: &str) -> Result<AdapterResult, EvidenceError> {
+    let pytest = is_pytest(tool);
     let mut entries: Vec<RunEntry> = Vec::new();
     for capture in TESTCASE.captures_iter(raw) {
         let attrs = capture
@@ -158,10 +203,13 @@ pub fn parse_junit(raw: &str) -> Result<AdapterResult, EvidenceError> {
             .map_or_else(BTreeMap::new, |m| attributes(m.as_str()));
         let body = capture.get(2).map_or("", |m| m.as_str());
         let empty = String::new();
-        let symbol = qualified_name(
-            attrs.get("classname").unwrap_or(&empty),
-            attrs.get("name").unwrap_or(&empty),
-        );
+        let classname = attrs.get("classname").unwrap_or(&empty);
+        let name = attrs.get("name").unwrap_or(&empty);
+        let symbol = if pytest {
+            pytest_symbol(classname, name)
+        } else {
+            qualified_name(classname, name)
+        };
         if symbol.is_empty() {
             continue;
         }

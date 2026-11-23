@@ -39,7 +39,7 @@ pub use differential_report::{
     parse_differential_report, parse_differential_report_for_run,
 };
 pub use entries::parse_entries;
-pub use junit::{parse_junit, qualified_name};
+pub use junit::{parse_junit, parse_junit_for_tool, qualified_name};
 pub use licence_policy::parse_licence_policy;
 pub use osv_scanner::parse_osv_scanner;
 pub use registry::{

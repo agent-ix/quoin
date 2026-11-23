@@ -458,8 +458,15 @@ fn render(
     if !response.outcome.carries_payload() {
         return Ok(response);
     }
+    // The warning rides beside the rendering: `emit` writes it to stderr.
+    let mut payload = serde_json::json!({ "rendered": text(&response.payload)? });
+    if let (Some(warning), Some(fields)) =
+        (response.payload.get("warning"), payload.as_object_mut())
+    {
+        fields.insert("warning".to_owned(), warning.clone());
+    }
     Ok(Response {
-        payload: serde_json::json!({ "rendered": text(&response.payload)? }),
+        payload,
         diagnostics: response.diagnostics,
         outcome: response.outcome,
     })
