@@ -22,8 +22,8 @@ relationships:
 The release snapshot written by `quoin release snapshot` ([FR-166](./FR-166-release-snapshot-command.md)) is one
 canonical JSON document (`protocol::canonical_json`, as [FR-115](./FR-115-evidence-backed-test-matrix.md) uses)
 with the protocol `quoin.release-snapshot/v1`. Its schema is closed: every object admits only the members named
-here. The optional `tool_identity` and `clean_tree_precondition` members are backward-compatible v1 extensions:
-new snapshots include them, while readers continue to accept older v1 snapshots without either member. The dossier
+here. The `tool_identity` and `clean_tree_precondition` members are required in every snapshot; a reader refuses a
+snapshot that omits either. The dossier
 documents read the same file that the release commit carries; the dossier export that
 [FR-162](./FR-162-anomaly-report.md) feeds reads the snapshot's `anomalies` and the other sections without
 running Quoin again.
@@ -34,8 +34,8 @@ source and restates no vocabulary.
 | Member | Content | Source |
 |--------|---------|--------|
 | `protocol` | the string `quoin.release-snapshot/v1` | this requirement |
-| `tool_identity` | optional `{ name, version }` identifying the Quoin executable that wrote this snapshot | FR-166 / this requirement |
-| `clean_tree_precondition` | optional string `not_verified`, stating that Quoin did not verify the caller's clean-tree precondition | FR-166 / this requirement |
+| `tool_identity` | `{ name, version }` identifying the Quoin executable that wrote this snapshot | FR-166 / this requirement |
+| `clean_tree_precondition` | string `not_verified`, stating that Quoin did not verify the caller's clean-tree precondition | FR-166 / this requirement |
 | `as_of` | the `--as-of` instant, as supplied | FR-166 |
 | `baseline_commit` | the `--baseline-commit` hash, as supplied | FR-166 |
 | `previous_release` | `{ tag, commit }` of the previous release, or `null` for a first release | FR-168 |
@@ -49,27 +49,28 @@ source and restates no vocabulary.
 `group` is not a member of FR-144's JSON; it is the row's FR-144 ordering group, and `unassessed` is the FR-162 row flag
 (true exactly when `safety_impact` is `unassessed`). `group` is one of `unresolved_advisory`, `past_end_of_support`, `other`, the three ordering groups of FR-144.
 `kind` of a `not_assessed` item is one of `unmatched_advisory`, `unmatched_policy_finding`, `scan_not_run`,
-`scan_vacuous`, `scan_unordered`; `scan_unordered` is retained for reading older v1 snapshots and is not emitted
-by the current command because an invalid retained timestamp refuses the snapshot; `tool` names the scanner (`osv-scanner`, `cargo-audit`, `cargo-deny`,
+`scan_vacuous`; a scan with an invalid retained timestamp refuses the snapshot rather than appearing as a kind,
+and a reader refuses any other `kind`; `tool` names the scanner (`osv-scanner`, `cargo-audit`, `cargo-deny`,
 `licence-policy`); `detail` is defined per `kind`: for `unmatched_advisory`, the advisory id as the scan reports it, a `|`, and the purl the
 advisory names (empty when it names none); for `unmatched_policy_finding`, the rule id, a `|`, and the purl the
-finding names (empty when it names none); for the three `scan_` kinds, the state word `not run`, `vacuous`
-or `unordered` that FR-144 and FR-142 use for that state. FR-144 renders a scan log refused at recording as `not run`, so no separate refused kind exists. `evidence_freshness` has exactly the five keys `bound`, `stale`, `suspect`, `undischarged`, `no run evidence`.
+finding names (empty when it names none); for the two `scan_` kinds, the state word `not run` or `vacuous`
+that FR-144 and FR-142 use for that state. FR-144 renders a scan log refused at recording as `not run`, so no separate refused kind exists. `evidence_freshness` has exactly the five keys `bound`, `stale`, `suspect`, `undischarged`, `no run evidence`.
 `release_rationale` is the list of `{ author, rationale }` entries of FR-163 as authored. The snapshot carries
 neither `fixingChange` (FR-136) nor `rationaleChange` (FR-163), because both derive from git history and the command
 runs no git ([FR-166](./FR-166-release-snapshot-command.md)).
-When present, `tool_identity.name` is `quoin` and `tool_identity.version` is the exact version string printed by the
-running executable for `quoin --version`. A newly written snapshot includes this member. A newly written snapshot
-also includes `clean_tree_precondition` with the literal value `not_verified`; Quoin does not inspect git state and
+`tool_identity.name` is `quoin` and `tool_identity.version` is the exact version string printed by the
+running executable for `quoin --version`. Every snapshot includes this member and
+also `clean_tree_precondition` with the literal value `not_verified`; Quoin does not inspect git state and
 does not claim the caller's clean-tree precondition was met.
 
 ## Behavior
 
-- The snapshot SHALL carry exactly the members of the table, each once, with `null` for an absent source value unless
-  the table marks that member optional, in which case the absent member is omitted.
-- A reader SHALL accept an older v1 snapshot that omits `tool_identity` or `clean_tree_precondition`; when either
-  member is present, it SHALL validate the member's closed shape and allowed values, including refusing `null`.
-- The command SHALL include `tool_identity` and `clean_tree_precondition` in every newly written snapshot.
+- The snapshot SHALL carry exactly the members of the table, each once, with `null` for an absent source value.
+- A reader SHALL refuse a snapshot that omits `tool_identity` or `clean_tree_precondition`.
+- A reader SHALL validate the closed shape and allowed values of each of those members, including refusing `null`.
+- A reader SHALL refuse a `soup.not_assessed` item whose `kind` is not one of `unmatched_advisory`,
+  `unmatched_policy_finding`, `scan_not_run` or `scan_vacuous`.
+- The command SHALL include `tool_identity` and `clean_tree_precondition` in every snapshot.
 - The command SHALL set `tool_identity.name` to `quoin` and `tool_identity.version` to the version string its own
   executable prints for `quoin --version`.
 - The command SHALL set `clean_tree_precondition` to `not_verified`.
@@ -110,7 +111,7 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-10 | A fixture with a `missing-run` and a `failed-run` `stale-evidence` finding yields `open_findings` items whose `cause` equals each, byte for byte, as FR-115 supplies it. | Test |
 | FR-167-AC-11 | An `open_findings` item of any kind other than `stale-evidence` has no `cause` key. | Test |
 | FR-167-AC-12 | A `stale-evidence` finding that FR-115 supplies without `cause` yields an `open_findings` item with no `cause` key, not `null`. | Test |
-| FR-167-AC-13 | A newly written snapshot has `tool_identity` with exactly `name` and `version`, where the name is `quoin` and version equals the running executable's `--version` output, and has `clean_tree_precondition: "not_verified"`; the closed snapshot reader accepts an older v1 snapshot with neither extension member and refuses `null`, unknown members in `tool_identity`, a different tool name, a blank version, or any clean-tree value other than `not_verified`. | Test |
+| FR-167-AC-13 | A newly written snapshot has `tool_identity` with exactly `name` and `version`, where the name is `quoin` and version equals the running executable's `--version` output, and has `clean_tree_precondition: "not_verified"`; the closed snapshot reader accepts a full snapshot and refuses a snapshot missing `tool_identity`, a snapshot missing `clean_tree_precondition`, a `scan_unordered` item, `null`, unknown members in `tool_identity`, a different tool name, a blank version, or any clean-tree value other than `not_verified`. | Test |
 
 ## Dependencies
 

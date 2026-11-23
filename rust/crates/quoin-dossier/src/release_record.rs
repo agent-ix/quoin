@@ -330,6 +330,8 @@ mod tests {
         ReleaseSnapshot::parse(
             br#"{
               "protocol":"quoin.release-snapshot/v1",
+              "tool_identity":{"name":"quoin","version":"0.0.0"},
+              "clean_tree_precondition":"not_verified",
               "as_of":"2026-11-01T00:00:00Z",
               "baseline_commit":"snapshot-commit",
               "previous_release":null,

@@ -232,7 +232,7 @@ pub fn soup_section(
 fn section(report: &Report) -> Result<SoupSection, SoupFailure> {
     Ok(SoupSection {
         rows: report.rows.iter().map(row).collect::<Result<Vec<_>, _>>()?,
-        not_assessed: not_assessed(report),
+        not_assessed: not_assessed(report)?,
     })
 }
 
@@ -264,22 +264,37 @@ fn row(row: &Row) -> Result<SoupRow, SoupFailure> {
 
 /// The `kind` and state word of a scan that taught nothing, or `None` for a
 /// scan that was read.
-fn scan_state(outcome: &ScanOutcome) -> Option<(&'static str, &'static str)> {
+///
+/// # Errors
+/// A scan whose retained timestamps are not instants has no snapshot kind; the
+/// snapshot is refused rather than stating it.
+fn scan_state(
+    tool: &str,
+    outcome: &ScanOutcome,
+) -> Result<Option<(&'static str, &'static str)>, SoupFailure> {
     match outcome {
-        ScanOutcome::NotRun => Some(("scan_not_run", "not run")),
-        ScanOutcome::Vacuous { .. } => Some(("scan_vacuous", "vacuous")),
-        ScanOutcome::Unordered { .. } => Some(("scan_unordered", "unordered")),
-        ScanOutcome::Read { .. } => None,
+        ScanOutcome::NotRun => Ok(Some(("scan_not_run", "not run"))),
+        ScanOutcome::Vacuous { .. } => Ok(Some(("scan_vacuous", "vacuous"))),
+        ScanOutcome::Unordered { .. } => Err(unordered(tool)),
+        ScanOutcome::Read { .. } => Ok(None),
     }
 }
 
-fn licence_state(outcome: &LicenceOutcome) -> Option<(&'static str, &'static str)> {
+fn licence_state(
+    outcome: &LicenceOutcome,
+) -> Result<Option<(&'static str, &'static str)>, SoupFailure> {
     match outcome {
-        LicenceOutcome::NotRun => Some(("scan_not_run", "not run")),
-        LicenceOutcome::Vacuous { .. } => Some(("scan_vacuous", "vacuous")),
-        LicenceOutcome::Unordered { .. } => Some(("scan_unordered", "unordered")),
-        LicenceOutcome::Read { .. } => None,
+        LicenceOutcome::NotRun => Ok(Some(("scan_not_run", "not run"))),
+        LicenceOutcome::Vacuous { .. } => Ok(Some(("scan_vacuous", "vacuous"))),
+        LicenceOutcome::Unordered { .. } => Err(unordered("licence-policy")),
+        LicenceOutcome::Read { .. } => Ok(None),
     }
+}
+
+fn unordered(tool: &str) -> SoupFailure {
+    SoupFailure::Failed(format!(
+        "the retained {tool} scans have a timestamp that is not an instant"
+    ))
 }
 
 /// The purl a finding names, or empty when it names none.
@@ -312,7 +327,7 @@ fn purl_of(tool: &str, path: Option<&str>) -> String {
 }
 
 /// The items after the rows, ordered by `kind`, `tool` and `detail` bytewise.
-fn not_assessed(report: &Report) -> Vec<NotAssessed> {
+fn not_assessed(report: &Report) -> Result<Vec<NotAssessed>, SoupFailure> {
     let mut items = Vec::new();
     let mut push = |kind: &str, tool: &str, detail: String| {
         items.push(NotAssessed {
@@ -344,15 +359,15 @@ fn not_assessed(report: &Report) -> Vec<NotAssessed> {
         );
     }
     for state in &report.scans {
-        if let Some((kind, word)) = scan_state(&state.outcome) {
+        if let Some((kind, word)) = scan_state(state.tool.name(), &state.outcome)? {
             push(kind, state.tool.name(), word.to_owned());
         }
     }
-    if let Some((kind, word)) = licence_state(&report.licence.outcome) {
+    if let Some((kind, word)) = licence_state(&report.licence.outcome)? {
         push(kind, "licence-policy", word.to_owned());
     }
     items.sort_by(|a, b| (&a.kind, &a.tool, &a.detail).cmp(&(&b.kind, &b.tool, &b.detail)));
-    items
+    Ok(items)
 }
 
 #[cfg(test)]
