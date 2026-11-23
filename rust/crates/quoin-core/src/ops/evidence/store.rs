@@ -51,7 +51,9 @@ pub fn gc(
     let root = host.store_root(Path::new(&request.repo));
     let dry_run = request.dry_run;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let relative = quoin_evidence::store::gc(source, dry_run).map_err(|e| map_error(&e, op))?;
+        let mut unreadable = Vec::new();
+        let relative = quoin_evidence::store::gc(source, dry_run, &mut unreadable)
+            .map_err(|e| map_error(&e, op))?;
         // `gc` returns store-relative paths because it names no host
         // capability; the caller prints them for a person to act on, and a
         // relative path there is a wrong path.
@@ -59,7 +61,12 @@ pub fn gc(
             .into_iter()
             .map(|path| absolute(&root, path))
             .collect();
-        value(&GcPayload { deleted })
+        // Named, not hidden: `gc` kept these because it could not read them.
+        let skipped = unreadable
+            .into_iter()
+            .map(|path| absolute(&root, path))
+            .collect();
+        value(&GcPayload { deleted, skipped })
     })?;
     Ok(Response::ok(payload))
 }

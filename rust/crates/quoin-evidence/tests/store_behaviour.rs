@@ -153,7 +153,7 @@ fn differential_report_pair_replays_identically_and_refuses_changed_replay() {
     let mut newer = request.clone();
     newer.timestamp = "2026-08-18T00:00:00Z".to_owned();
     record_run_with_analysis_projection(&mut source, &newer, &[], &projection).unwrap();
-    let collected = gc(&mut source, false).unwrap();
+    let collected = gc(&mut source, false, &mut Vec::new()).unwrap();
     assert!(collected.contains(&"runs/ANALYSIS-1/2026-08-17T00~3A00~3A00Z.json".to_owned()));
     assert!(
         collected.contains(&"analysis-reports/ANALYSIS-1/2026-08-17T00~3A00~3A00Z.json".to_owned())
@@ -440,9 +440,9 @@ fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     }
 
     let before = store.paths().len();
-    let dry = gc(&mut store, true).unwrap();
+    let dry = gc(&mut store, true, &mut Vec::new()).unwrap();
     assert_eq!(store.paths().len(), before, "--dry-run deleted something");
-    let wet = gc(&mut store, false).unwrap();
+    let wet = gc(&mut store, false, &mut Vec::new()).unwrap();
     assert_eq!(dry, wet, "the dry run and the real run disagree");
     assert_eq!(wet.len(), 2, "gc must delete superseded runs");
     // The surviving run, plus the retirement log gc now leaves (PLAT-1791).
@@ -857,6 +857,29 @@ fn tc_456_264_valid_decisions_round_trip_and_an_invalid_file_is_reported_not_hid
     assert_eq!(decisions.len(), 1);
     assert_eq!(decisions[0].id.as_str(), "ETD-1");
     assert_eq!(skipped, vec!["trust/ETD-2.json".to_owned()]);
+}
+
+#[trace("FR-093-AC-8")]
+#[test]
+fn a_different_decision_under_an_occupied_id_is_refused_and_the_original_kept() {
+    let mut store = MemoryEvidence::new();
+    let original = decision("ETD-1");
+    let path = write_trust_decision(&mut store, &original).unwrap();
+    let stored = store.read(&path).unwrap().unwrap();
+
+    let mut rejected = original.clone();
+    rejected.owner = "someone-else".to_owned();
+    let error = write_trust_decision(&mut store, &rejected).unwrap_err();
+    assert_eq!(
+        error.code(),
+        quoin_evidence::EvidenceErrorCode::RecordIntegrity
+    );
+    assert_eq!(store.read(&path).unwrap().unwrap(), stored);
+
+    // Healthy control: an identical replay and a new id both succeed.
+    write_trust_decision(&mut store, &original).unwrap();
+    write_trust_decision(&mut store, &decision("ETD-2")).unwrap();
+    assert_eq!(store.read(&path).unwrap().unwrap(), stored);
 }
 
 #[trace("FR-093-CON-3")]

@@ -489,7 +489,7 @@ fn tc_1671_013_an_evaluated_list_is_kept_and_its_absence_claims_nothing() {
     other.suite = SuiteId::new("SUITE-2");
     let path = write_scan(&mut store, &other).unwrap();
 
-    gc(&mut store, false).unwrap();
+    gc(&mut store, false, &mut Vec::new()).unwrap();
     let mut skipped = Vec::new();
     let scans = latest_scans(&store, &mut skipped).unwrap();
     let with = scans

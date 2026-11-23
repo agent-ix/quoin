@@ -64,7 +64,10 @@ impl Retire for FindingRecord {
 /// and is keyed on its first retired path (suffixed when that name already holds a
 /// different log), so a `gc` interrupted mid-delete and repeated completes. A record that cannot be
 /// read is kept: `gc` does not delete what it cannot
-/// characterise. `gc` holds the store lock while it runs.
+/// characterise, and it names the file in `skipped`. A suite with any record it
+/// cannot read has nothing collected from that family: the unreadable file may
+/// be the newest, and deleting the readable ones around it could leave no
+/// evidence of the suite at all. `gc` holds the store lock while it runs.
 ///
 /// Mock inspections are deliberately **not** collected, matching the retained
 /// behaviour: an inspection record is the only evidence anybody looked, and
@@ -77,14 +80,14 @@ impl Retire for FindingRecord {
 pub fn gc<S: EvidenceSource + ?Sized>(
     source: &mut S,
     dry_run: bool,
+    skipped: &mut Vec<String>,
 ) -> Result<Vec<String>, EvidenceError> {
     let _lock = source.lock_store()?;
     let mut deleted = Vec::new();
     let mut retired = Vec::new();
-    let mut skipped = Vec::new();
     for suite in list_recorded_suites(source)? {
         let before_runs = deleted.len();
-        collect::<S, RunRecord>(source, &suite, &mut skipped, &mut deleted, &mut retired)?;
+        collect::<S, RunRecord>(source, &suite, skipped, &mut deleted, &mut retired)?;
         let removed_runs = deleted.get(before_runs..).unwrap_or_default().to_vec();
         for run in &removed_runs {
             if let Some(suffix) = run.strip_prefix("runs/") {
@@ -94,7 +97,7 @@ pub fn gc<S: EvidenceSource + ?Sized>(
                 }
             }
         }
-        collect::<S, FindingRecord>(source, &suite, &mut skipped, &mut deleted, &mut retired)?;
+        collect::<S, FindingRecord>(source, &suite, skipped, &mut deleted, &mut retired)?;
     }
     if !dry_run {
         publish_retirement_log(source, &mut deleted, &retired)?;
@@ -167,6 +170,7 @@ where
     // The newest record is chosen by the timestamp read from each file, never
     // by its name, so a file under any older naming scheme is still weighed.
     let directory = suite_dir(T::FAMILY, suite);
+    let skipped_before = skipped.len();
     let mut readable: Vec<(String, String, T)> = Vec::new();
     for name in &names {
         let path = format!("{directory}/{name}");
@@ -178,6 +182,9 @@ where
             Err(EvidenceError::StoreRead { .. }) => skipped.push(path),
             Err(other) => return Err(other),
         }
+    }
+    if skipped.len() > skipped_before {
+        return Ok(());
     }
     let mut keep: Option<(&str, &str)> = None;
     for (name, stamp, _) in &readable {

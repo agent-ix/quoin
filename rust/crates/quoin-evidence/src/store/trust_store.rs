@@ -13,13 +13,19 @@ use crate::types::{STORE_SCHEMA_VERSION, TrustDecision};
 
 /// Write one validated trust decision. Returns the store-relative path.
 ///
+/// Append-only: replaying the identical decision is a no-op, and a different
+/// decision under an occupied id is refused with the original untouched. A
+/// changed reliance judgement is a new decision with a new id; replacing one in
+/// place would erase the judgement it superseded (PLAT-1791, FR-093-AC-8).
+///
 /// The decision is validated **before** it is written: a record that would be
 /// refused on the way back in has no business being on disk.
 ///
 /// # Errors
 ///
 /// [`EvidenceError::InvalidRecord`] when the decision fails the FR-093
-/// boundary, otherwise [`EvidenceError::Canonicalization`] or
+/// boundary, [`EvidenceError::RecordIntegrity`] when the id holds a different
+/// decision, otherwise [`EvidenceError::Canonicalization`] or
 /// [`EvidenceError::StoreIo`].
 pub fn write_trust_decision<S: EvidenceSource + ?Sized>(
     source: &mut S,
@@ -30,7 +36,7 @@ pub fn write_trust_decision<S: EvidenceSource + ?Sized>(
     stored.schema_version = STORE_SCHEMA_VERSION;
     let path = trust_decision_path(&stored.id);
     let bytes = canonical_bytes_of("trust decision", &stored)?;
-    source.write(&path, &bytes)?;
+    source.publish(&path, &bytes)?;
     Ok(path)
 }
 

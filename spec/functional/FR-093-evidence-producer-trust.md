@@ -42,6 +42,7 @@ assessment does not turn any claim into a supported claim.
 | FR-093-AC-5 | Quoin permits two uses of one producer to carry different reliance decisions. | Test |
 | FR-093-AC-6 | Quoin stores valid decisions canonically and reports unreadable or invalid stored decisions without hiding the remaining decisions. | Test |
 | FR-093-AC-7 | Quoin renders trust assessments as assurance context without altering any claim status. | Test |
+| FR-093-AC-8 | A trust decision is append-only under its id: an identical replay is a no-op, and a different decision under an occupied id is refused with `RecordIntegrity` and the stored decision unchanged. A changed judgement is a new decision with a new id. | Test |
 
 ## Constraints
 
