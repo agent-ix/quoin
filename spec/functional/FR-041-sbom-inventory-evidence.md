@@ -97,6 +97,13 @@ any other SPDX value). An SPDX value of `NOASSERTION` or `NONE` is exposed as no
 none is declared. This is data for callers ([FR-150](./FR-150-licence-and-ban-policy-findings.md)); the run entries it
 emits are unchanged, and the reader judges no licence (FR-041-CON-3).
 
+### The reader exposes the declared supplier, and judges none
+
+The reader also exposes, for each component it returns, the supplier the document declares, kept as written: a
+CycloneDX component's `supplier.name`, or an SPDX package's `supplier` value. An absent value, an empty or
+whitespace-only value, and an SPDX value of `NOASSERTION` or `NONE` are exposed as no supplier. This is data for
+callers ([FR-141](./FR-141-promote-sbom-components-to-soup-records.md)); the run entries it emits are unchanged.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -111,6 +118,7 @@ emits are unchanged, and the reader judges no licence (FR-041-CON-3).
 | FR-041-AC-8 | A `--discharges` id that no obligation states is reported `unmatched` and binds nothing, including when the inventory lists no component. | Test |
 | FR-041-AC-9 | `--discharges` on a run adapter other than sbom and differential-report is refused with an error naming the adapter, and records nothing. | Test |
 | FR-041-AC-10 | For a CycloneDX component with a `license.id`, one with a `license.name`, one with an `expression` and one with no `licenses`, the reader exposes the declared text as written for the first three and nothing for the last; an SPDX package declaring `MIT`, one declaring `MIT OR Apache-2.0` and one declaring `NOASSERTION` expose an `id`, an `expression` and nothing respectively; the run entries emitted for the same documents are byte-identical to those emitted before the licences were exposed. | Test |
+| FR-041-AC-11 | For a CycloneDX component with a `supplier.name`, one with an empty `supplier.name` and one with no `supplier`, the reader exposes the name as written for the first and nothing for the others; an SPDX package declaring `Organization: Example Corp`, one declaring `NOASSERTION` and one declaring `NONE` expose the first value as written and nothing for the other two; the run entries emitted for the same documents are byte-identical to those emitted before the supplier was exposed. | Test |
 
 ## Constraints
 

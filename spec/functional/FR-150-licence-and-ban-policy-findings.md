@@ -42,7 +42,7 @@ FR-033 registry beside `osv-scanner` (FR-149): it runs no subprocess, opens no n
 new producer request is added. The one engineering-assurance change is a licence-bearing fixture for its tests
 (`ix://agent-ix/engineering-assurance/FR-039-AC-8`), because the existing FR-039 fixtures give Syft no licence to
 record. The SBOM is read through the FR-041 reader, which is amended to expose each component's declared licences
-(FR-041-AC-10); FR-150 contains no SBOM reader of its own (FR-150-CON-1).
+(FR-041-AC-10), and also exposes each component's supplier (FR-041-AC-11), which FR-150 does not use; FR-150 contains no SBOM reader of its own (FR-150-CON-1).
 
 **The policy is authored by a person and none is shipped.** It is a file of format `licence-policy-v1`:
 
