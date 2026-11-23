@@ -84,7 +84,8 @@ and any digest, hash, manifest or pin of the snapshot or of what it covers.
 - If a gate failure exists, then the command SHALL still write the snapshot.
 - If `quoin risk-summary` would exit 2 over `--repo` and the `--module` roots, then the command SHALL refuse with `release_snapshot_input_invalid` naming the failing root (`--repo` or the `--module DIR`) and the record or module reason.
 - If a markdown file below `--repo` cannot be read, or its frontmatter block is not valid YAML, then the command SHALL refuse with `release_snapshot_input_unreadable` naming `--repo` and the file. The reader cannot tell a risk record from another file before reading it, so every such file refuses, as an unreadable scan file does.
-- The command SHALL NOT refuse a markdown file whose frontmatter is valid YAML but names no `type` or `id` (an ADR page, or a `SKILL.md` holding only `name` and `description`), and SHALL NOT report such a file as unreadable.
+- The command SHALL NOT refuse a markdown file whose frontmatter is valid YAML but names no `type` or `id` (an ADR page, or a `SKILL.md` holding only `name` and `description`).
+- The command SHALL NOT report a markdown file with valid YAML frontmatter and no `type` or `id` as unreadable.
 - The command SHALL NOT derive `fixingChange` or `rationaleChange`.
 - The command SHALL NOT call the code of `quoin anomaly report` that reads git history.
 - The command SHALL NOT run git.
