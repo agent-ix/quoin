@@ -46,3 +46,4 @@ section, AC-11, Dependencies; FR-150 changed paragraph; spec/spec.md FR-141 line
 | FND-001 | fixed | Fix commit 19245c58 (round 1) |
 | FND-002 | fixed | Fix commit 19245c58 (round 1) |
 | FND-003 | fixed | Fix commit 19245c58 (round 1) |
+| FND-004 | fixed | Fix commit 13961284 (round 2) |

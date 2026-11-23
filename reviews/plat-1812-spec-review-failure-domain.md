@@ -53,3 +53,5 @@ supplier sections, AC-10, AC-11; the FR-041 reader and FR-141 planner code (cont
 | FND-002 | fixed | Fix commit 19245c58 (round 1) |
 | FND-003 | fixed | Fix commit 19245c58 (round 1) |
 | FND-004 | fixed | Fix commit 19245c58 (round 1) |
+| FND-005 | fixed | Fix commit 13961284 (round 2) |
+| FND-006 | fixed | Fix commit 13961284 (round 2) |
