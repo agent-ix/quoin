@@ -1285,7 +1285,27 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
         "no statement"
     );
     let markdown = text(&repo.report(&binding, &[]).stdout);
-    assert!(markdown.contains("not_affected"), "{markdown}");
+    let matched_markdown = markdown
+        .split("## pkg:cargo/matched@1.0.0")
+        .nth(1)
+        .unwrap()
+        .split("\n## ")
+        .next()
+        .unwrap();
+    let matched_advisory = matched_markdown
+        .lines()
+        .find(|line| line.contains("RUSTSEC-SYNTHETIC-1"))
+        .unwrap();
+    for field in [
+        "VEX: statement (status: not_affected; assessed by synthetic reviewer; assessed at 2026-08-02)",
+        "justification: vulnerable_code_not_present",
+        "impact: synthetic impact details",
+        "action: synthetic action details",
+        "evidence: evidence://review/synthetic-1",
+    ] {
+        assert!(matched_advisory.contains(field), "{matched_advisory}");
+    }
+    assert!(matched_advisory.starts_with("  - cargo-audit RUSTSEC-SYNTHETIC-1 "));
     assert!(
         markdown.contains("resolved: accepted_risk by reviewer-1"),
         "{markdown}"
@@ -1293,9 +1313,64 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
     assert!(markdown.contains("VEX: no statement"), "{markdown}");
 }
 
+#[trace("FR-144-AC-23")]
+#[test]
+fn an_affected_vex_statement_does_not_resolve_an_unresolved_advisory() {
+    let repo = Repo::new();
+    repo.record(
+        "affected",
+        "pkg:cargo/affected@1.0.0",
+        &[
+            "vex_statements:",
+            "  - advisory: RUSTSEC-SYNTHETIC-AFFECTED",
+            "    status: affected",
+            "    justification: synthetic_affected_reason",
+            "    impact_statement: synthetic affected impact",
+            "    action_statement: synthetic mitigation",
+            "    assessed_by: synthetic assessor",
+            "    assessed_at: '2026-08-02'",
+            "    evidence_refs: [evidence://synthetic/affected]",
+        ],
+    );
+    repo.audit(&[("RUSTSEC-SYNTHETIC-AFFECTED", "affected", "1.0.0")]);
+    let binding = repo.binding(&[]);
+    let report = report_json(&repo, &binding, &[]);
+    let row = row(&report, "pkg:cargo/affected@1.0.0");
+    let advisory = &row["advisories"][0];
+
+    assert_eq!(advisory["rule_id"], "RUSTSEC-SYNTHETIC-AFFECTED");
+    assert_eq!(advisory["resolution"]["state"], "unresolved");
+    assert_eq!(advisory["resolution"]["reason"], "no disposition clause");
+    assert_eq!(advisory["vex_statement"]["status"], "affected");
+    assert_eq!(advisory["vex_statement"]["state"], "statement");
+    assert!(advisory["resolution"].get("status").is_none());
+    assert_eq!(row["unresolved_advisory"], true);
+
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    let affected_row = markdown
+        .split("## pkg:cargo/affected@1.0.0")
+        .nth(1)
+        .unwrap()
+        .split("\n## ")
+        .next()
+        .unwrap();
+    let advisory_line = affected_row
+        .lines()
+        .find(|line| line.contains("RUSTSEC-SYNTHETIC-AFFECTED"))
+        .unwrap();
+    assert!(
+        advisory_line
+            .contains("unresolved: no disposition clause; VEX: statement (status: affected"),
+        "{advisory_line}"
+    );
+    assert!(advisory_line.contains("synthetic affected impact"));
+    assert!(advisory_line.contains("synthetic mitigation"));
+    assert!(advisory_line.contains("evidence://synthetic/affected"));
+}
+
 #[trace("FR-144-AC-22")]
 #[test]
-fn stale_vex_requires_every_applicable_scan_to_be_read_and_clean() {
+fn stale_vex_requires_every_applicable_scan_to_be_read_and_unambiguous() {
     let make_record = |repo: &Repo| {
         repo.record(
             "vex",
@@ -1362,6 +1437,72 @@ fn stale_vex_requires_every_applicable_scan_to_be_read_and_clean() {
         true,
     ));
     assert_eq!(report_state(&vacuous, &vacuous.binding(&[])), "statement");
+
+    let other_live_advisory = Repo::new();
+    make_record(&other_live_advisory);
+    let live = r#"{"results":[{"packages":[{"package":{"name":"example","version":"1.0.0","ecosystem":"npm","purl":"pkg:npm/example@1.0.0"},"vulnerabilities":[{"id":"OSV-SYNTHETIC-LIVE"}],"groups":[]}]}]}"#;
+    other_live_advisory.store(&scan_record(
+        "osv-scanner",
+        "osv-live-advisory",
+        live,
+        false,
+    ));
+    let other_binding = other_live_advisory.binding(&[]);
+    let other_report = report_json(&other_live_advisory, &other_binding, &[]);
+    assert_eq!(
+        report_state(&other_live_advisory, &other_binding),
+        "stale statement"
+    );
+    assert_eq!(
+        row(&other_report, "pkg:npm/example@1.0.0")["advisories"][0]["rule_id"],
+        "OSV-SYNTHETIC-LIVE"
+    );
+
+    let possible_match = Repo::new();
+    make_record(&possible_match);
+    let no_purl = r#"{"results":[{"packages":[{"package":{"name":"example","version":"1.0.0","ecosystem":"npm"},"vulnerabilities":[{"id":"OSV-SYNTHETIC-AMBIGUOUS"}],"groups":[]}]}]}"#;
+    possible_match.store(&scan_record(
+        "osv-scanner",
+        "osv-possible-match",
+        no_purl,
+        false,
+    ));
+    let possible_binding = possible_match.binding(&[]);
+    let possible_report = report_json(&possible_match, &possible_binding, &[]);
+    assert_eq!(
+        report_state(&possible_match, &possible_binding),
+        "statement"
+    );
+    assert_eq!(possible_report["unmatched"][0]["reason"], "no purl");
+
+    let partial_cargo_scans = Repo::new();
+    partial_cargo_scans.record(
+        "cargo",
+        "pkg:cargo/example@1.0.0",
+        &[
+            "vex_statements:",
+            "  - advisory: RUSTSEC-SYNTHETIC-OLD",
+            "    status: under_investigation",
+            "    assessed_by: synthetic reviewer",
+            "    assessed_at: '2026-08-02'",
+        ],
+    );
+    partial_cargo_scans.store(&scan_record(
+        "cargo-audit",
+        "cargo-audit-clean",
+        &audit_document(&[]),
+        false,
+    ));
+    let partial_binding = partial_cargo_scans.binding(&[]);
+    let partial_report = report_json(&partial_cargo_scans, &partial_binding, &[]);
+    assert_eq!(
+        report_state(&partial_cargo_scans, &partial_binding),
+        "statement"
+    );
+    assert_eq!(partial_report["scans"][0]["tool"], "cargo-audit");
+    assert_eq!(partial_report["scans"][0]["state"], "read");
+    assert_eq!(partial_report["scans"][1]["tool"], "cargo-deny");
+    assert_eq!(partial_report["scans"][1]["state"], "not run");
 }
 
 #[trace("FR-144-AC-17")]
