@@ -227,6 +227,20 @@ fn show(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn validate(arguments: &ArgMatches) -> Result<Response, String> {
     let response = invoke("catalog.load", &serde_json::json!({}))?;
+    with_lag_warnings(
+        response,
+        arguments.get_flag("json"),
+        crate::module::lag_diagnostics(),
+    )
+}
+
+/// Build the `validate` response from a loaded catalog and the lag check. The
+/// check can add diagnostics but never changes the outcome.
+fn with_lag_warnings(
+    response: Response,
+    json: bool,
+    lag: Result<Vec<quoin_core::protocol::Diagnostic>, String>,
+) -> Result<Response, String> {
     if !response.outcome.carries_payload() {
         return Ok(response);
     }
@@ -247,15 +261,13 @@ fn validate(arguments: &ArgMatches) -> Result<Response, String> {
         "duplicates": duplicates,
         "modules": modules,
     });
-    let rendered = if arguments.get_flag("json") || !ok {
+    let rendered = if json || !ok {
         serde_json::to_string_pretty(&payload).map_err(|error| error.to_string())?
     } else {
         format!("catalog ok ({modules})")
     };
     let mut diagnostics = response.diagnostics;
-    diagnostics.extend(crate::module::lag_diagnostics_or_warning(
-        crate::module::lag_diagnostics(),
-    ));
+    diagnostics.extend(crate::module::lag_diagnostics_or_warning(lag));
     Ok(Response {
         payload: serde_json::json!({
             "rendered": rendered,
@@ -293,11 +305,36 @@ fn render_catalog(
 #[cfg(test)]
 #[allow(
     clippy::expect_used,
+    clippy::panic,
     clippy::unwrap_used,
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::command;
+    use super::{command, with_lag_warnings};
+    use ix_cli_kit::exit::Outcome;
+    use ix_trace_rs::trace;
+    use quoin_core::protocol::Response;
+
+    #[trace("FR-212-AC-7")]
+    #[test]
+    fn a_failed_lag_check_leaves_the_validate_outcome_unchanged() {
+        let loaded = || {
+            Response::ok(serde_json::json!({
+                "duplicates": [],
+                "modules": [{"name": "m"}],
+            }))
+        };
+        let clean = with_lag_warnings(loaded(), false, Ok(Vec::new())).expect("validates");
+        let failed = with_lag_warnings(loaded(), false, Err("unreadable".to_owned()))
+            .expect("a failed lag check is not an error");
+        assert_eq!(failed.outcome, clean.outcome);
+        assert_eq!(failed.outcome, Outcome::Ok);
+        assert_eq!(failed.payload, clean.payload);
+        let [warning] = failed.diagnostics.as_slice() else {
+            panic!("expected one warning, got {:?}", failed.diagnostics);
+        };
+        assert_eq!(warning.code, "QM010_REGISTRY_UNREADABLE");
+    }
 
     #[test]
     fn tc_373_catalog_default_and_named_list_preserve_the_retained_grammar() {

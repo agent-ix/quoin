@@ -22,3 +22,19 @@ Ticket: PLAT-1839. Integrity review of the new FR and its index entries, measure
 ## Verdict
 
 Not mergeable until the id collision is resolved. Relationships (traces_to StR-005, references FR-017) resolve and the FR is otherwise structurally complete.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | medium | Deleting the pin-tracking test is right, but FR-016-AC-2 and AC-4 are left live with Verification "None (... not asserted by a test)" (matrix: untagged, method None), an AC nothing can fail kept as informational text. Withdraw them with a CR note as AC-3 was, or restate a checkable behaviour; the dropped assertion that every default entry is a Git source with an explicit ref was real behaviour FR-212 depends on (a non-version pin silently disables the lag check per FR-212-AC-4) and belongs in `the_shipped_default_module_manifest_is_valid`. | spec/functional/FR-016-default-modules-schema.md:85-86, rust/crates/quoin-cli/src/module.rs:559-563 |
+
+## Dispositions
+
+Round 1, head 35474e19.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Renumbered to FR-212. origin/main (86313ad5) has no FR-212, no other open quoin PR adds FR-212, and no FR-211 reference remains in rust/ or the new FR. |
+| FND-002 | fixed | `LagKind::Incomparable` warns for a branch or absent installed ref against a version pin (FR-212-AC-3), with unit and two integration tests. |
+| FND-003 | fixed | FR-212 is appended after FR-211 in index.md and spec.md. |

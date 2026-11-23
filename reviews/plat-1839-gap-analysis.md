@@ -23,3 +23,18 @@ Ticket: PLAT-1839. Planless gap analysis scoped to the PR diff. Plan completion:
 ## Verdict
 
 Coverage of the three stated criteria is complete and the bindings are correct. The two findings are traceability gaps in Behavior statements that have no criterion.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | low | FR-212-AC-7 claims a failed check "does not change the exit status of `quoin catalog validate`", but its only binder is the unit test of `lag_diagnostics_or_warning`; no test drives `catalog validate` with an unreadable module listing and asserts the exit status. | rust/crates/quoin-cli/src/module.rs:566-580, spec/functional/FR-212-module-lag-warning.md |
+
+## Dispositions
+
+Round 1, head 35474e19. `quoin matrix --json`: FR-212-AC-1..AC-7 all `tagged`.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The doctor statement is split into SHALLs for warnings, summary line and exit status; FR-212-AC-5 covers the summary and `doctor_warns_for_an_older_module_summarises_and_exits_zero` asserts it. |
+| FND-002 | fixed | Skip and incomparable rules now have their own criteria (AC-3, AC-4) and tests; the AC-2 test asserts only at-or-above cases. |

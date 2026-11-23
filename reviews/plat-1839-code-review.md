@@ -31,3 +31,16 @@ Measured on terra (read-only `quoin module list`): spec-artifacts-iso is install
 Gate results (locked-build lane 2, shared CARGO_HOME, debug=0): `cargo test -p quoin-modules --lib lag` 3 passed; `-p quoin-cli --test tc_1839_module_lag` 3 passed; `-p quoin-core --lib the_error_mapping` 8 passed; `-p quoin-cli --bin quoin module` 10 passed; `-p quoin-cli --bin quoin help` 5 passed; `-p quoin-modules --lib tc_381_202` FAILED (panicked at error.rs:595, QM032 undocumented); `cargo clippy -p quoin-modules -p quoin-cli --all-targets` exit 0 but 3 warnings in PR code (lag.rs:84-86), all other warnings are in files outside the diff. Running the branch binary against a copy of terra's module home: `module doctor` and `catalog validate` (still `catalog ok (11)`, exit 0) both report spec-artifacts-iso 0.25.0 vs 0.27.0 and engineering-assurance 0.8.2 vs 0.10.1.
 
 Not mergeable as is: FND-001 is a failing existing test, FND-006 fails the `-D warnings` clippy gate, and the spec-side FR id collision (SR-17095) must be fixed in the same round. The core comparison in `lag.rs` is correct and panic-free: it borrows inputs, uses `Option` chaining for absence, strips only a single leading `v`, filters disabled entries, and returns typed `ModuleLag` values. The wire round-trip of `modules.list` back into `ModuleRegistry` works because `InstalledModule` does not deny unknown fields (`pack`, `loadError` are ignored). Diagnostics go to stderr as canonical JSON and do not alter the success outcome of `module doctor`.
+
+## Dispositions
+
+Round 1, head 35474e191294b55269e6af6aa4b4b3e21efb45a9. Gates (locked-build, focused): `cargo test -p quoin-modules --lib` 47 passed (includes tc_381_202); `-p quoin-cli --test tc_1839_module_lag` 5 passed; `-p quoin-core --lib the_error_mapping` 8 passed; `-p quoin-cli --bin quoin module` 11 passed; `-p quoin-cli --bin quoin help` 5 passed; `cargo clippy -p quoin-modules -p quoin-cli --all-targets` exit 0 with no warning in any file of the diff.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | ERROR_CODES.md documents `QM032_MODULE_LAGS_PIN`; the whole quoin-modules lib suite passes. |
+| FND-006 | fixed | `lags[0]` replaced by `let [lag] = lags.as_slice() else { panic!(..) }`; clippy reports nothing in lag.rs. |
+| FND-002 | fixed | catalog validate now calls `lag_diagnostics_or_warning`, turning a failed check into one QM010 warning diagnostic. |
+| FND-003 | accepted-no-change | The Refused mapping remains because the taxonomy match is exhaustive; ERROR_CODES.md now states QM032 is diagnostic-only and never raised as a `ModulesError`, so the class is never surfaced. |
+| FND-004 | fixed | The integration test reads the pin from default-modules.yaml via `pinned_ref()`; no literal pin remains. |
+| FND-005 | fixed | Warnings name `quoin module remove <name>` then `quoin module ensure-defaults`; both commands exist, remove deletes the registry row and target dir, and lazy reconcile then installs the manifest entry at its pin. Measured in a scratch IX_HOME copied from terra: remove spec-artifacts-iso then ensure-defaults reinstalled it at v0.27.0 and doctor dropped to one warning (engineering-assurance). |

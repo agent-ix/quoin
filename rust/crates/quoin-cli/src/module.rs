@@ -556,11 +556,22 @@ mod tests {
         );
     }
 
-    #[trace("FR-016-AC-1", "FR-016-AC-5")]
+    #[trace("FR-016-AC-1", "FR-016-AC-5", "FR-016-AC-6")]
     #[test]
     fn the_shipped_default_module_manifest_is_valid() {
-        quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
+        let manifest = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
             .expect("the shipped default-module manifest is valid");
+        for entry in &manifest.entries {
+            let explicit_ref = match &entry.source {
+                quoin_modules::Source::GitSubdir { r#ref, .. } => r#ref.as_deref(),
+                _ => None,
+            };
+            assert!(
+                explicit_ref.is_some_and(|reference| !reference.is_empty()),
+                "{} must be a Git source with a non-empty explicit ref",
+                entry.name
+            );
+        }
     }
 
     #[trace("FR-212-AC-7")]

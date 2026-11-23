@@ -21,3 +21,12 @@ Ticket: PLAT-1839. EARS review of the requirement statements added in FR-211 (br
 ## Verdict
 
 One ambiguous compound statement and one compound AC; the headline requirement conforms.
+
+## Dispositions
+
+Round 1, head 35474e19.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Replaced by three single-response statements: print the warnings, print one summary line with the count, exit zero when only warnings. |
+| FND-002 | fixed | Split into FR-212-AC-5 (module doctor) and FR-212-AC-6 (catalog validate). |
