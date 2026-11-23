@@ -3196,6 +3196,7 @@ dependencies = [
 name = "quoin-cli"
 version = "0.31.1"
 dependencies = [
+ "base64 0.22.1",
  "clap",
  "engineering-assurance",
  "filament-analyze",
@@ -3350,6 +3351,7 @@ dependencies = [
 name = "quoin-evidence"
 version = "0.31.1"
 dependencies = [
+ "base64 0.22.1",
  "filament-analyze",
  "ix-trace-rs",
  "quoin-quire-types",

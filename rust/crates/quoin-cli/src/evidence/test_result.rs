@@ -12,9 +12,13 @@ use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use ix_trace_rs::implements;
 use quoin_core::protocol::{Diagnostic, Response};
-use quoin_evidence::export::test_result::build_statement;
+use quoin_evidence::export::provenance::{Provenance, read_provenance};
+use quoin_evidence::export::test_result::{
+    ExportError, ExportScope, build_statement, check_subject,
+};
 use quoin_evidence::source::DiskEvidence;
 use quoin_evidence::store::{latest_runs, read_bindings};
+use quoin_evidence::types::RunRecord;
 use quoin_store::store::{Content, StorePath, publish};
 use serde_json::Value;
 
@@ -24,6 +28,11 @@ pub(super) fn command() -> Command {
     Command::new("export-test-result")
         .about("Export retained test evidence as an in-toto Test Result statement")
         .arg(Arg::new("subject").long("subject").required(true))
+        .arg(
+            Arg::new("execution-provenance")
+                .long("execution-provenance")
+                .required(true),
+        )
         .arg(Arg::new("output").long("output").required(true))
         .arg(
             Arg::new("evidence-dir")
@@ -60,9 +69,16 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             ));
         }
     };
-    if let Err(error) = build_statement(subject.clone(), &[], &[]) {
+    if let Err(error) = check_subject(subject.clone()) {
         return Ok(refused("evidence_subject_invalid", error.to_string()));
     }
+
+    let provenance_path = required(arguments, "execution-provenance")?;
+    let suites_path = evidence_path.join("suites.md");
+    let provenance = match read_provenance_files(&provenance_path, &suites_path) {
+        Ok(provenance) => provenance,
+        Err(message) => return Ok(refused("evidence_provenance_invalid", message)),
+    };
 
     let source = DiskEvidence::at_path(&evidence_path);
     let bindings_path = evidence_path.join("bindings.json");
@@ -82,15 +98,17 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         }
     };
     let mut skipped = Vec::new();
-    let runs = match latest_runs(&source, &mut skipped) {
-        Ok(runs) => runs,
+    // Read only to refuse an unreadable store; the runs the statement rests on
+    // are the ones the provenance binds by digest, read below.
+    match latest_runs(&source, &mut skipped) {
+        Ok(_) => (),
         Err(error) => {
             return Ok(store_invalid(format!(
                 "{}: {error}",
                 evidence_path.display()
             )));
         }
-    };
+    }
     if let Some(path) = skipped.first() {
         return Ok(store_invalid(format!(
             "{}: invalid run record",
@@ -98,9 +116,20 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         )));
     }
 
-    let statement = match build_statement(subject, &bindings, &runs) {
+    let runs = match bound_runs(&evidence_path, &provenance) {
+        Ok(runs) => runs,
+        Err(message) => return Ok(store_invalid(message)),
+    };
+    let scope = ExportScope {
+        source_revision: &provenance.source_revision,
+        required: &provenance.required,
+    };
+    let statement = match build_statement(subject, &bindings, &runs, scope) {
         Ok(statement) => statement,
-        Err(error) => return Ok(refused("evidence_subject_invalid", error.to_string())),
+        Err(error @ ExportError::Subject(_)) => {
+            return Ok(refused("evidence_subject_invalid", error.to_string()));
+        }
+        Err(error) => return Ok(refused("evidence_provenance_invalid", error.to_string())),
     };
     let serialized = serde_json::to_string(&statement).map_err(|error| error.to_string())?;
     let value =
@@ -112,6 +141,51 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     Ok(Response::ok(serde_json::json!({
         "rendered": format!("Exported in-toto Test Result statement to {}", output_path.display())
     })))
+}
+
+fn read_provenance_files(provenance_path: &str, suites_path: &Path) -> Result<Provenance, String> {
+    let envelope = fs::read(provenance_path)
+        .map_err(|error| format!("cannot read {provenance_path}: {error}"))?;
+    let suites = fs::read(suites_path)
+        .map_err(|error| format!("cannot read {}: {error}", suites_path.display()))?;
+    read_provenance(&envelope, &suites).map_err(|error| format!("{provenance_path}: {error}"))
+}
+
+/// The run records the provenance binds, each read from its recorded path and
+/// compared with its signed digest. A suite whose signed digest is `null`, or
+/// that the provenance does not list, has no run.
+fn bound_runs(evidence: &Path, provenance: &Provenance) -> Result<Vec<RunRecord>, String> {
+    let mut runs = Vec::new();
+    for expected in &provenance.runs {
+        let Some(digest) = &expected.sha256 else {
+            continue;
+        };
+        let path = evidence.join(&expected.record_path);
+        let bytes = fs::read(&path).map_err(|error| {
+            format!(
+                "{}: run record named by the provenance is unreadable: {error}",
+                path.display()
+            )
+        })?;
+        if quoin_store::attachment::sha256_hex(&bytes) != *digest {
+            return Err(format!(
+                "{}: run record does not match its signed digest",
+                path.display()
+            ));
+        }
+        let run: RunRecord = serde_json::from_slice(&bytes)
+            .map_err(|error| format!("{}: invalid run record: {error}", path.display()))?;
+        if run.suite.as_str() != expected.suite {
+            return Err(format!(
+                "{}: run record is for suite {}, provenance names {}",
+                path.display(),
+                run.suite.as_str(),
+                expected.suite
+            ));
+        }
+        runs.push(run);
+    }
+    Ok(runs)
 }
 
 fn publish_output(path: &Path, bytes: &[u8]) -> Result<(), String> {

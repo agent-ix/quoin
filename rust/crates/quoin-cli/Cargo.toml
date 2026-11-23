@@ -61,6 +61,7 @@ tempfile = { workspace = true }
 [dev-dependencies]
 # The stub generators the dossier command tests drive (PLAT-1614); the feature
 # reaches the `quoin` binary these tests spawn through feature unification.
+base64 = { workspace = true }
 quoin-dossier = { workspace = true, features = ["test-stubs"] }
 # FR-140-AC-11 validates the pack report against the schema derived from its
 # own type, which only exists under the `schema` feature.

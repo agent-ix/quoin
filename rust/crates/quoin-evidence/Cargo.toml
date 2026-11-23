@@ -30,6 +30,7 @@ workspace = true
 ix-trace-rs = { workspace = true }
 filament-analyze = { workspace = true }
 quoin-quire-types = { workspace = true }
+base64 = { workspace = true }
 quoin-store = { workspace = true }
 quoin-yaml = { workspace = true }
 regex = "=1.13.1"

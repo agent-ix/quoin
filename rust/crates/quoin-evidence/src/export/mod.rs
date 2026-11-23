@@ -3,4 +3,5 @@
 
 //! Pure exports from retained evidence into consumer statement formats (FR-185).
 
+pub mod provenance;
 pub mod test_result;
