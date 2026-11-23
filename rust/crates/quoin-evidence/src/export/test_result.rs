@@ -207,7 +207,12 @@ pub fn build_statement(
     }
 
     for (obligation, obligation_bindings) in obligations {
-        match classify(obligation, &obligation_bindings, &runs) {
+        let verdict = if failing_trace(obligation, latest_runs) {
+            Verdict::Failed
+        } else {
+            classify(obligation, &obligation_bindings, &runs)
+        };
+        match verdict {
             Verdict::Failed => failed.insert(obligation.to_owned()),
             Verdict::Warned => warned.insert(obligation.to_owned()),
             Verdict::Passed => passed.insert(obligation.to_owned()),
@@ -236,6 +241,21 @@ pub fn build_statement(
             warned_tests,
             failed_tests,
         },
+    })
+}
+
+/// Whether any retained entry traced to `obligation` failed or errored.
+///
+/// `bindings.json` is not covered by the provenance, so a binding that drops a
+/// failing symbol, or re-points the obligation at another suite, must not turn
+/// a digest-bound failure into a pass.
+fn failing_trace(obligation: &str, runs: &[RunRecord]) -> bool {
+    runs.iter().flat_map(|run| &run.entries).any(|entry| {
+        matches!(entry.outcome, Outcome::Fail | Outcome::Error)
+            && entry
+                .trace_ids
+                .as_ref()
+                .is_some_and(|ids| ids.iter().any(|id| id == obligation))
     })
 }
 

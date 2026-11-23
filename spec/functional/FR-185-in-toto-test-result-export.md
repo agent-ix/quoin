@@ -61,9 +61,8 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - The predicate SHALL contain exactly `result`, `configuration`,
   `passedTests`, `warnedTests` and `failedTests`. Its closed deserialization
   type SHALL reject unknown members.
-- Quoin SHALL select the latest run for each suite by greatest lexical
-  `timestamp`; when timestamps tie, Quoin SHALL select the record with the
-  lexicographically greatest store path.
+- Quoin SHALL select each suite's run only by the provenance's `recordPath`
+  for that suite; a newer record in the store is not selected.
 - For each suite used in the export, `configuration` SHALL contain one entry
   with `name` equal to the suite id and annotations `tool` and `timestamp` from
   the selected run for that suite. Entries SHALL be sorted by suite id.
@@ -91,9 +90,19 @@ which this requirement adopts unchanged. The predicate fields conform to the
   ran that verifier. Quoin checks the envelope's shape (payload type, a
   non-empty `signatures` list, the closed payload fields) and refuses a
   malformed one.
-- The required population SHALL be the set of non-empty string `criterion`
-  members of the `testMatrix` rows. A matrix with no such row SHALL refuse the
-  export; an empty population SHALL NOT yield `PASSED`.
+- The `testMatrix` SHALL be the Quire coverage matrix rows
+  `{document, id, criteria: [{id, status, ...}]}`. The required population SHALL
+  be the `id` of every criterion whose `status` is not `retired`. A row or
+  criterion of another shape, or a matrix with no active criterion, SHALL
+  refuse the export; an empty population SHALL NOT yield `PASSED`.
+- Quoin SHALL require `sourceRevision` and every subject revision to be a full
+  lowercase hexadecimal commit id (40 or 64 digits).
+- `bindings.json` is not covered by the provenance. Quoin SHALL place an
+  obligation in `failedTests` when any retained entry in a provenance-bound
+  run has that obligation in its `traceIds` and outcome `fail` or `error`,
+  whatever the bindings say.
+- Quoin SHALL refuse a run record whose `suite` differs from the suite the
+  provenance lists it under.
 - Quoin SHALL take a suite's run only from the record the provenance names for
   that suite by `recordPath`, after its bytes match the signed digest. A suite
   the provenance does not list has no run. `recordPath` SHALL be a relative
@@ -118,8 +127,7 @@ which this requirement adopts unchanged. The predicate fields conform to the
   a version-1 record to support a verdict only when valid execution provenance
   binds its exact bytes.
 - Quoin SHALL refuse the export without creating or replacing output when the
-  provenance envelope is absent, malformed, has an invalid signature, has an
-  untrusted source identity, or names a revision that differs from any subject
+  provenance envelope is absent, malformed, or names a revision that differs from any subject
   descriptor. Quoin SHALL also refuse when a run entry has a non-null digest
   but its referenced run record is absent or its exact bytes do not match that
   digest, or when the signed matrix payload is altered.
@@ -131,8 +139,10 @@ which this requirement adopts unchanged. The predicate fields conform to the
   empty symbol set, Quoin SHALL include that obligation in `failedTests`.
 - Quoin SHALL NOT refuse the export solely because an expected run entry has a
   signed null digest or an obligation has no binding or symbols.
-- Quoin SHALL refuse when provenance authenticity, subject identity, or
-  artifact integrity cannot be established.
+- Quoin SHALL refuse when subject identity or artifact integrity cannot be
+  established. Signature validity and source-identity trust are established by
+  the Engineering Assurance verifier before Quoin runs and are not re-checked
+  here.
 - For each bound symbol that has one or more entries in its selected run,
   Quoin SHALL require at least one entry with that symbol whose `traceIds`
   contains the binding's obligation id before the symbol's outcomes can
@@ -174,7 +184,7 @@ which this requirement adopts unchanged. The predicate fields conform to the
   digest. Quoin SHALL validate that the array is non-empty. Quoin SHALL require
   every descriptor to have a `digest.sha256` of exactly 64 lowercase
   hexadecimal characters and the same non-empty `annotations.revision` string.
-- Quoin SHALL refuse to emit `PASSED` unless the authenticated execution
+- Quoin SHALL refuse to emit `PASSED` unless the execution
   provenance matches the subject revision and proves the complete computed
   Test Matrix population. Missing or malformed provenance SHALL be an export
   error and SHALL leave no output file.
@@ -182,7 +192,7 @@ which this requirement adopts unchanged. The predicate fields conform to the
   file and renaming it to the destination only after successful export.
 - The command SHALL exit 2 for usage errors or an invalid subject, exit 3 for
   an unreadable or invalid evidence store with diagnostic code
-  `evidence_store_invalid` and the relevant path, and exit 4 when the output
+  `evidence_store_invalid` and the relevant path, exit 2 with diagnostic code `evidence_provenance_invalid` for unusable provenance or a subject/provenance revision mismatch, and exit 4 when the output
   cannot be written. It SHALL leave no output file on every error.
 
 ## Constraints
@@ -206,8 +216,8 @@ which this requirement adopts unchanged. The predicate fields conform to the
 | FR-185-AC-8 | The consumer-side negative check from Engineering Assurance FR-069-AC-2 is reproducible from Quoin: an export cannot produce `result: PASSED` with a non-empty `failedTests`, including when a correctly traced passing duplicate entry precedes a failing entry for the same bound symbol. | Test |
 | FR-185-AC-9 | When a bound symbol has a passing run entry but that entry omits `traceIds` or lists only another obligation, the exporter places the bound obligation in `failedTests`, never `passedTests` or `warnedTests`, and sets `result: FAILED`; the same result applies to a legacy run record with no `traceIds`. A matching `traceIds` entry permits the existing outcome rules to classify the obligation. | Test |
 | FR-185-AC-10 | For the complete computed Test Matrix population in verified provenance, an obligation omitted from `bindings.json` is listed in `failedTests`; adding or removing unrelated bindings does not shrink or expand the matrix population. | Test |
-| FR-185-AC-11 | Quoin verifies the maintained suite-declaration file against the signed `suiteDeclarationsSha256`; a missing or changed file refuses export. A source-workflow test compares the signed Test Matrix to the complete Quire matrix at `sourceRevision` and detects an omitted active obligation even when the DSSE signature is valid. | Test |
-| FR-185-AC-12 | A valid source-workflow provenance signature, authenticated by the Engineering Assurance verifier, with matching suite-declaration digest, complete matrix, matching present run-record digests, and matching subject revision permits verdict evaluation. A signed null run digest lists affected obligations in `failedTests`; a non-null digest whose run record is missing or changed refuses export without output. Missing, malformed, invalid-signature, untrusted, or subject-mismatched provenance also refuses export. Version-1 RunRecord values remain readable without acquiring revision fields. | Test |
+| FR-185-AC-11 | Quoin verifies the maintained suite-declaration file against the signed `suiteDeclarationsSha256`; a missing or changed file refuses export. | Test |
+| FR-185-AC-12 | A valid source-workflow provenance signature, authenticated by the Engineering Assurance verifier, with matching suite-declaration digest, complete matrix, matching present run-record digests, and matching subject revision permits verdict evaluation. A signed null run digest lists affected obligations in `failedTests`; a non-null digest whose run record is missing or changed refuses export without output. Missing, malformed, or subject-mismatched provenance, a run record for the wrong suite, and a non-hex or empty matrix also refuse export. Signature and trust failures are the Engineering Assurance verifier's refusals (FR-069). Version-1 RunRecord values remain readable without acquiring revision fields. | Test |
 
 ## Dependencies
 

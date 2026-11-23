@@ -63,7 +63,14 @@ fn write_provenance(
         "version": 2,
         "sourceRevision": revision,
         "suiteDeclarationsSha256": quoin_store::attachment::sha256_hex(suites_md),
-        "testMatrix": required.iter().map(|id| json!({"criterion": id})).collect::<Vec<_>>(),
+        "testMatrix": [{
+            "document": "spec/functional/FR-1.md",
+            "id": "FR-1",
+            "criteria": required
+                .iter()
+                .map(|id| json!({"id": id, "status": "tagged"}))
+                .collect::<Vec<_>>(),
+        }],
         "runs": runs,
     });
     let envelope = json!({
@@ -336,12 +343,7 @@ fn tc_1792_101_subject_and_provenance_revision_must_agree() {
     );
     fs::remove_file(&output).expect("remove");
 
-    let old = write_provenance(
-        &evidence,
-        &["FR-1-AC-1"],
-        &["suite-pass"],
-        "ffffffffffffffffffffffffffffffffffffffff",
-    );
+    let old = write_provenance(&evidence, &["FR-1-AC-1"], &["suite-pass"], &"f".repeat(40));
     let refused = invoke_with(&subject, &output, &evidence, &old);
     assert_eq!(refused.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&refused.stderr).contains("evidence_provenance_invalid"));
@@ -447,7 +449,7 @@ fn tc_1792_102_runs_and_declarations_are_bound_by_digest() {
 
 /// A failed write leaves an existing output byte-for-byte unchanged.
 #[cfg(unix)]
-#[trace("FR-185-AC-3")]
+#[trace("FR-185-AC-6")]
 #[test]
 fn tc_1792_103_a_refused_or_failed_export_leaves_existing_output_unchanged() {
     let (root, subject, evidence) = all_passing();
@@ -455,7 +457,7 @@ fn tc_1792_103_a_refused_or_failed_export_leaves_existing_output_unchanged() {
     fs::write(&output, b"previous statement").expect("existing output");
 
     // Refusal (stale provenance revision) leaves it alone.
-    let old = write_provenance(&evidence, &["FR-1-AC-1"], &["suite-pass"], "bad");
+    let old = write_provenance(&evidence, &["FR-1-AC-1"], &["suite-pass"], &"e".repeat(40));
     assert_eq!(
         invoke_with(&subject, &output, &evidence, &old)
             .status
@@ -756,4 +758,97 @@ fn tc_185_cli_export_path_has_no_git_network_or_process_api() {
             "export path contains {forbidden}"
         );
     }
+}
+
+/// A record for another suite cannot stand in for the suite the provenance
+/// names: another suite's bytes listed under a suite refuse, rather than
+/// overriding that suite's signed absence.
+#[trace("FR-185-AC-12")]
+#[test]
+fn tc_1792_104_a_run_record_must_be_for_the_suite_that_names_it() {
+    let (root, subject, evidence) = fixture();
+    let output = root.path().join("statement.json");
+    let pass_path = "runs/suite-pass/2026-11-13T12~3A00~3A00Z.json";
+    let pass_digest =
+        quoin_store::attachment::sha256_hex(&fs::read(evidence.join(pass_path)).expect("record"));
+    let suites_md = b"# suites\n";
+    fs::write(evidence.join("suites.md"), suites_md).expect("suites");
+    let envelope = |runs: Value| {
+        let payload = json!({
+            "version": 2,
+            "sourceRevision": REVISION,
+            "suiteDeclarationsSha256": quoin_store::attachment::sha256_hex(suites_md),
+            "testMatrix": [{"document": "d", "id": "FR-1",
+                "criteria": [{"id": "FR-1-AC-1", "status": "tagged"}]}],
+            "runs": runs,
+        });
+        let path = root.path().join("lying.json");
+        fs::write(
+            &path,
+            json!({
+                "payloadType": "application/vnd.agent-ix.execution-provenance.v2+json",
+                "payload": base64::Engine::encode(
+                    &base64::engine::general_purpose::STANDARD,
+                    payload.to_string(),
+                ),
+                "signatures": [{"sig": "AAAA"}],
+            })
+            .to_string(),
+        )
+        .expect("envelope");
+        path
+    };
+    // Control: the record listed under its own suite exports.
+    let honest = envelope(json!([
+        {"suite": "suite-pass", "recordPath": pass_path, "sha256": pass_digest}
+    ]));
+    assert_eq!(
+        invoke_with(&subject, &output, &evidence, &honest)
+            .status
+            .code(),
+        Some(0)
+    );
+    fs::remove_file(&output).expect("remove");
+
+    // suite-pass's bytes filed under suite-fail's name.
+    let lying = envelope(json!([
+        {"suite": "suite-fail", "recordPath": pass_path, "sha256": pass_digest}
+    ]));
+    let refused = invoke_with(&subject, &output, &evidence, &lying);
+    assert_eq!(refused.status.code(), Some(3));
+    assert!(!output.exists());
+}
+
+/// `bindings.json` is not signed: re-pointing an obligation at a passing suite
+/// cannot hide a digest-bound failure traced to that obligation.
+#[trace("FR-185-AC-8")]
+#[test]
+fn tc_1792_105_edited_bindings_cannot_hide_a_bound_failure() {
+    let (root, subject, evidence) = fixture();
+    let output = root.path().join("statement.json");
+    let provenance = write_provenance(
+        &evidence,
+        &["FR-1-AC-1", "FR-1-AC-2"],
+        &["suite-pass", "suite-fail"],
+        REVISION,
+    );
+    fs::write(
+        evidence.join("bindings.json"),
+        json!({"schemaVersion": 1, "bindings": [
+            {"obligation": "FR-1-AC-1", "suite": "suite-pass", "symbols": ["pass"]},
+            {"obligation": "FR-1-AC-2", "suite": "suite-pass", "symbols": ["pass"]}
+        ]})
+        .to_string(),
+    )
+    .expect("edited bindings");
+    assert_eq!(
+        invoke_with(&subject, &output, &evidence, &provenance)
+            .status
+            .code(),
+        Some(0)
+    );
+    let (result, passed, _, failed) = lists(&output);
+    assert_eq!(result, "FAILED");
+    assert_eq!(passed, json!(["FR-1-AC-1"]));
+    assert_eq!(failed, json!(["FR-1-AC-2"]));
 }

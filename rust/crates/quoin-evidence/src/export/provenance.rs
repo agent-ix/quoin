@@ -69,6 +69,10 @@ struct Envelope {
     #[serde(rename = "payloadType")]
     payload_type: String,
     payload: String,
+    #[allow(
+        dead_code,
+        reason = "the member must be present; authenticating it is the Engineering Assurance verifier's"
+    )]
     signatures: Vec<Value>,
 }
 
@@ -104,9 +108,6 @@ pub fn read_provenance(envelope: &[u8], suites_md: &[u8]) -> Result<Provenance, 
             envelope.payload_type
         )));
     }
-    if envelope.signatures.is_empty() {
-        return Err(ProvenanceError::Envelope("no signatures".to_owned()));
-    }
     let decoded = STANDARD
         .decode(envelope.payload.as_bytes())
         .map_err(|error| ProvenanceError::Envelope(format!("payload is not base64: {error}")))?;
@@ -115,9 +116,9 @@ pub fn read_provenance(envelope: &[u8], suites_md: &[u8]) -> Result<Provenance, 
     if payload.version != 2 {
         return Err(ProvenanceError::Payload("version must be 2".to_owned()));
     }
-    if payload.source_revision.is_empty() {
+    if !is_commit(&payload.source_revision) {
         return Err(ProvenanceError::Payload(
-            "sourceRevision is empty".to_owned(),
+            "sourceRevision is not a full lowercase hex commit".to_owned(),
         ));
     }
     if !is_sha256(&payload.suite_declarations_sha256) {
@@ -128,17 +129,7 @@ pub fn read_provenance(envelope: &[u8], suites_md: &[u8]) -> Result<Provenance, 
     if quoin_store::attachment::sha256_hex(suites_md) != payload.suite_declarations_sha256 {
         return Err(ProvenanceError::SuiteDeclarationsMismatch);
     }
-    let mut required = BTreeSet::new();
-    for row in &payload.test_matrix {
-        let criterion = row
-            .get("criterion")
-            .and_then(Value::as_str)
-            .filter(|id| !id.is_empty())
-            .ok_or_else(|| {
-                ProvenanceError::Payload("a testMatrix row has no criterion".to_owned())
-            })?;
-        required.insert(criterion.to_owned());
-    }
+    let required = active_criteria(&payload.test_matrix)?;
     if required.is_empty() {
         return Err(ProvenanceError::EmptyMatrix);
     }
@@ -178,6 +169,42 @@ pub fn read_provenance(envelope: &[u8], suites_md: &[u8]) -> Result<Provenance, 
         required,
         runs,
     })
+}
+
+/// The active criteria of a Quire coverage matrix: every `criteria[].id` whose
+/// `status` is not `retired`. A row or criterion of another shape refuses.
+fn active_criteria(rows: &[Value]) -> Result<BTreeSet<String>, ProvenanceError> {
+    let malformed = |what: &str| ProvenanceError::Payload(format!("testMatrix: {what}"));
+    let mut required = BTreeSet::new();
+    for row in rows {
+        let criteria = row
+            .get("criteria")
+            .and_then(Value::as_array)
+            .ok_or_else(|| malformed("a row has no criteria array"))?;
+        for criterion in criteria {
+            let id = criterion
+                .get("id")
+                .and_then(Value::as_str)
+                .filter(|id| !id.is_empty())
+                .ok_or_else(|| malformed("a criterion has no id"))?;
+            let status = criterion
+                .get("status")
+                .and_then(Value::as_str)
+                .ok_or_else(|| malformed("a criterion has no status"))?;
+            if status != "retired" {
+                required.insert(id.to_owned());
+            }
+        }
+    }
+    Ok(required)
+}
+
+/// A full lowercase hex commit id (SHA-1 or SHA-256 object format).
+fn is_commit(text: &str) -> bool {
+    matches!(text.len(), 40 | 64)
+        && text
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 fn is_sha256(text: &str) -> bool {
