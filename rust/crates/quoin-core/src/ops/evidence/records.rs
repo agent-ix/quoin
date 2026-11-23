@@ -30,6 +30,8 @@ use quoin_evidence::{ObligationId, SuiteId};
 
 use crate::capabilities::{Capabilities, EvidenceHost};
 use crate::error::{CoreError, CoreErrorCode};
+use ix_cli_kit::exit::Outcome;
+
 use crate::protocol::Response;
 
 use super::documents::{tool_name, unrepresented_views};
@@ -102,7 +104,47 @@ pub fn record(
             op,
         )?
     };
-    Ok(Response::ok(payload))
+    let outcome = if payload.get("warning").is_some() {
+        Outcome::Partial
+    } else {
+        Outcome::Ok
+    };
+    Ok(Response {
+        payload,
+        diagnostics: Vec::new(),
+        outcome,
+    })
+}
+
+/// Adapters whose entries are test cases, each of which can carry a trace id.
+const TEST_CASE_ADAPTERS: [&str; 4] = ["entries", "junit", "agent-eval", "contract-conformance"];
+
+/// The one stderr line that makes a recording exit 1, if any.
+///
+/// An unmatched id and a run no entry of which carries an id are never both
+/// true: an unmatched id is carried by an entry.
+fn recording_warning(
+    adapter: &str,
+    entries: &[quoin_evidence::types::RunEntry],
+    unmatched: &[String],
+) -> Option<String> {
+    if !unmatched.is_empty() {
+        return Some(format!(
+            "warning: unmatched trace ids: {}",
+            unmatched.join(", ")
+        ));
+    }
+    (TEST_CASE_ADAPTERS.contains(&adapter)
+        && !entries.is_empty()
+        && entries
+            .iter()
+            .all(|entry| entry.trace_ids.as_ref().is_none_or(Vec::is_empty)))
+    .then(|| {
+        format!(
+            "warning: no entry carries a trace id: {} entries recorded, none can bind",
+            entries.len()
+        )
+    })
 }
 
 /// The finding-shaped half of [`record`]: write the scan, then bind what it
@@ -242,7 +284,12 @@ fn record_entries(
         )
         .map_err(|error| map_error(&error, op))?
     } else {
-        (adapter.parse)(&request.results).map_err(|e| map_error(&e, op))?
+        if adapter.name == "junit" {
+            quoin_evidence::adapters::parse_junit_for_tool(&request.results, &request.tool)
+        } else {
+            (adapter.parse)(&request.results)
+        }
+        .map_err(|e| map_error(&e, op))?
     };
     let unrepresented = result.unrepresented.as_deref().map(unrepresented_views);
     let analysis_projection = result.analysis_projection;
@@ -310,16 +357,15 @@ fn record_entries(
             record_run(source, &store_request, &request.obligations)
         }
         .map_err(|e| map_error(&e, op))?;
+        let mut unmatched = outcome.unmatched;
+        unmatched.extend(unknown.iter().cloned());
+        unmatched.sort();
+        unmatched.dedup();
         value(&RecordPayload::Run {
             run_path: absolute(&root, &outcome.run_path),
             bound: outcome.bound,
-            unmatched: {
-                let mut unmatched = outcome.unmatched;
-                unmatched.extend(unknown.iter().cloned());
-                unmatched.sort();
-                unmatched.dedup();
-                unmatched
-            },
+            warning: recording_warning(adapter.name, &entries, &unmatched),
+            unmatched,
             unrepresented: unrepresented.clone(),
         })
     })

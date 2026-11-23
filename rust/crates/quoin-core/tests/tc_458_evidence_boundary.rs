@@ -130,6 +130,18 @@ fn junit(case: &str) -> String {
     format!(r#"<testsuite name="unit"><testcase name="{case}"/></testsuite>"#)
 }
 
+/// A passing case naming an obligation, so a recording of it binds and exits 0.
+fn junit_traced(case: &str) -> String {
+    format!(
+        r#"<testsuite name="unit"><testcase name="{case}"><properties><property name="trace" value="FR-1-AC-1"/></properties></testcase></testsuite>"#
+    )
+}
+
+/// The obligation `junit_traced` names.
+fn obligations() -> Value {
+    json!([{"id": "FR-1-AC-1", "statement": "s"}])
+}
+
 ///
 /// `store_facts` is the only operation that answers `mutation_score_metric`,
 /// and the only one that takes no arguments at all.
@@ -206,7 +218,8 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
-            "results": junit("works"),
+            "results": junit_traced("works"),
+            "obligations": obligations(),
         }),
     ));
     assert_eq!(payload["kind"], "run");
@@ -234,7 +247,8 @@ fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
                 "tool": "vitest 1.0.0",
                 "timestamp": timestamp,
                 "adapter": "junit",
-                "results": junit("works"),
+                "results": junit_traced("works"),
+                "obligations": obligations(),
             }),
         ));
     }
@@ -481,7 +495,8 @@ fn tc_458_120_audit_inputs_answers_everything_the_pure_auditor_reads() {
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
-            "results": junit("works"),
+            "results": junit_traced("works"),
+            "obligations": obligations(),
         }),
     ));
     let payload = ok(&run("evidence.audit_inputs", &json!({"repo": dir.path()})));
@@ -575,7 +590,8 @@ fn tc_458_160_a_malformed_record_is_skipped_and_named_through_the_binary() {
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
-            "results": junit("works"),
+            "results": junit_traced("works"),
+            "obligations": obligations(),
         }),
     ));
     // Well-formed JSON, and not a run record: no `entries`.

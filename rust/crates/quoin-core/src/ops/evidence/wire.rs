@@ -373,6 +373,10 @@ pub enum RecordPayload {
         bound: Vec<ObligationId>,
         /// Trace ids matching no derived obligation, sorted.
         unmatched: Vec<String>,
+        /// The stderr line when the recording is exit 1: an unmatched trace id,
+        /// or a test run whose entries carry no trace id at all.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        warning: Option<String>,
         /// Results no run outcome represents.
         #[serde(skip_serializing_if = "Option::is_none")]
         unrepresented: Option<Vec<UnrepresentedView>>,
