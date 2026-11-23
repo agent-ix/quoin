@@ -590,6 +590,52 @@ fn failed_quire_preserves_preexisting_output_bytes() {
     assert_eq!(fs::read(work.path().join("out.pdf")).unwrap(), sentinel);
 }
 
+#[trace("FR-191-AC-7")]
+#[test]
+fn failed_quire_does_not_recursively_delete_a_nonempty_output_directory() {
+    let work = tempfile::tempdir().unwrap();
+    generate_stubs(work.path(), &["stub-a"]);
+    let quire = work.path().join("quire-directory-output");
+    fs::write(
+        &quire,
+        "#!/bin/sh\nout=\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = --output ]; then out=$2; fi\n  shift\ndone\nmkdir -p \"$out/inner\"\nprintf 'keep this file' > \"$out/inner/keep\"\nprintf 'refused' >&2\nexit 7\n",
+    )
+    .unwrap();
+    fs::set_permissions(&quire, fs::Permissions::from_mode(0o755)).unwrap();
+
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+            "--json",
+        ],
+    );
+
+    assert_eq!(code(&output), 4, "{}", stderr(&output));
+    let failure = &json(&output)["quire"];
+    assert_eq!(failure["exit_code"], 7);
+    let failure_stderr = failure["stderr"].as_str().unwrap();
+    assert!(failure_stderr.contains("refused"), "{failure_stderr}");
+    assert!(
+        failure_stderr.contains("could not remove the partial output"),
+        "{failure_stderr}"
+    );
+    assert_eq!(
+        fs::read(work.path().join("out.pdf/inner/keep")).unwrap(),
+        b"keep this file"
+    );
+}
+
 #[trace("FR-191-AC-8", "FR-191-AC-9", "FR-191-AC-25")]
 #[test]
 fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
@@ -1323,7 +1369,7 @@ fn export_accepts_a_healthy_committed_document_from_a_non_root_scope() {
     );
 }
 
-#[trace("FR-191-AC-7")]
+#[trace("FR-191-AC-7", "FR-191-AC-25")]
 #[test]
 fn export_uses_a_full_sha256_revision_for_sha256_repositories() {
     let work = tempfile::tempdir().unwrap();

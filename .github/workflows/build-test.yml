@@ -68,6 +68,22 @@ jobs:
         run: make rust-build
       - name: Install default spec modules for Rust integration tests
         run: rust/target/debug/quoin module ensure-defaults
+      - name: Install Quire for dossier PDF and DOCX integration tests
+        run: |
+          npm install --prefix "$RUNNER_TEMP/quoin-quire" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/quire-cli@0.52.0
+          echo "$RUNNER_TEMP/quoin-quire/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Install Pandoc for dossier PDF and DOCX integration tests
+        uses: pandoc/actions/setup@v1
+        with:
+          version: 3.14
+      - name: Install Typst for dossier PDF integration tests
+        uses: typst-community/setup-typst@v5
+        with:
+          typst-version: 0.15.1
+      - name: Install pdftotext for dossier PDF integration tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes poppler-utils=24.02.0-1ubuntu9.11
       - name: Test
         env:
           SPEC_OBJECTS_SAFETY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-safety

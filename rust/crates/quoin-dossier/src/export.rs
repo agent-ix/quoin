@@ -249,7 +249,7 @@ fn run_quire(
                 append_failure(
                     &mut failure,
                     &format!(
-                        "could not remove partial output {}: {error}",
+                        "could not remove the partial output {}: {error}",
                         options.output.display()
                     ),
                 );
@@ -321,7 +321,7 @@ fn remove_partial_output(output: &Path) -> std::io::Result<()> {
     match fs::symlink_metadata(output) {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(error),
-        Ok(metadata) if metadata.file_type().is_dir() => fs::remove_dir_all(output),
+        Ok(metadata) if metadata.file_type().is_dir() => fs::remove_dir(output),
         Ok(_) => fs::remove_file(output),
     }
 }
