@@ -104,9 +104,14 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   checks. A verdict that fails any check is unbound and SHALL NOT appear in a
   rendered approval block. This binding rule applies to the existing approval
   input; it does not define a new approval format or consumer interface.
-- Each approval block in a successful PDF or DOCX export of `DOS-REL` SHALL
-  show the verifier identity from the supplied verdict's `signature_kind`
-  (`ssh` or `gitsign`) alongside its approver and meaning.
+- The existing EA approval result has `signature_kind` (`ssh` or `gitsign`),
+  which identifies the signature family and is not the verifier's identity.
+  Until the EA result supplies a dedicated verifier identity and Quire-cli
+  FR-038 carries that field into its approval block, an approval block for
+  `DOS-REL` SHALL display `Verifier identity: not provided by approval
+  result`. It SHALL NOT present `signature_kind` or `protocol` as verifier
+  identity. This fails closed on an identity claim while preserving the
+  existing PDF/DOCX output and approval input interfaces.
 
 ## Acceptance Criteria
 
@@ -121,7 +126,7 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
 | FR-201-AC-7 | An unignored integration test using fixture EA results and real export tools yields PDF and DOCX text containing the EA principal and meaning from the approval block, through PLAT-1761's public input contract. | Test |
 | FR-201-AC-8 | The generator runs with `git` absent from `PATH`, renders the same bytes, and creates no tag or ref. | Test |
 | FR-201-AC-9 | For a committed `DOS-REL.md`, an approval verdict with `record_id` `DOS-REL`, matching lowercase SHA-256 `record_digest`, and both binding statuses `match` is passed to Quire; changing one digest character or either binding status causes export to fail before Quire starts and leaves the output untouched. | Test |
-| FR-201-AC-10 | A successful PDF and DOCX export of `DOS-REL` shows the approval block's approver, meaning, and `signature_kind` verifier identity from the same verdict. | Test |
+| FR-201-AC-10 | A successful PDF and DOCX export of `DOS-REL` shows `Verifier identity: not provided by approval result` in the approval block and does not label `signature_kind` or `protocol` as verifier identity. | Test |
 
 ## Dependencies
 
@@ -133,3 +138,8 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   [FR-052](ix://agent-ix/engineering-assurance/FR-052), and quire-cli
   [FR-038](ix://agent-ix/quire-cli/FR-038) as extended by PLAT-1761.
 - **Downstream**: PLAT-1620 implements this document.
+
+Displaying a positive verifier identity requires a dedicated identity field
+in EA FR-041's result and pass-through support in quire-cli FR-038; neither is
+part of the current source contract. Until both upstream contracts add that
+field, this requirement displays the explicit absence text above.
