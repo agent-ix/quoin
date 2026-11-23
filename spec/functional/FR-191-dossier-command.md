@@ -61,6 +61,12 @@ generators. `records-of-processing` is generated directly and is excluded from t
 - Quoin SHALL NOT render a document itself.
 - Quoin SHALL NOT bypass `quire export`.
 
+### Release chain
+
+- `export` SHALL pass `--release <TAG>` to `quire export` unchanged and SHALL NOT rewrite, resolve or verify the tag; the release commit is the commit the tag names, and the dossier is committed after it.
+- The dossier is committed after the tag because the `DOS-REL` document needs the EA `release-verify` result ([FR-201](./FR-201-dossier-release-record-content.md)), which needs the tag to exist. The resolved `HEAD` is therefore a descendant of the tagged release commit. It satisfies `quire export --release` when the commits between the tag and `HEAD` add or modify only files under the exported dossier's directory (quire-cli FR-034 section A); `export` SHALL leave that decision to `quire export` and report its refusal as exit 4.
+- The repository SHALL hold a test that runs the whole chain once: an EA release-verify over a real tag, `quoin dossier generate` with its `--release-verify` result, a commit of the dossier files, and `quoin dossier export --release <TAG>` through a real `quire export`.
+
 ### Export currency
 
 - `export` SHALL resolve each selected exportable document at `<DIR>/<document-id>.md`, where `<DIR>` is `dossier` unless `--out` names another.
@@ -158,8 +164,10 @@ continues to allow committed, current incomplete documents.
 | FR-191-AC-24 | With the records-of-processing generator registered, `generate --doc records-of-processing` writes `dossier/DOS-ROP.md` without a version or commit check; `--doc nope` exits 2; explicit `check` or `export` selection of this kind exits 2, and unfiltered `check` or `export` excludes it. | Test |
 | FR-191-AC-25 | The full commit id resolved for `HEAD` is the same id used to read each selected committed document blob and passed to the single `quire export` invocation as `--source-rev`. | Test |
 | FR-191-AC-26 | When `--output` already contains sentinel bytes and `quire export` exits unsuccessfully, `export` returns the Quire failure and the output retains exactly the sentinel bytes. | Test |
+| FR-191-AC-27 | One composed test creates a repository with a baseline and a release commit that adds the release record and snapshot, tags it, runs `engineering-assurance release-verify` on the tag, runs `quoin dossier generate --doc release-record` with that result, commits only the files under `dossier/`, and runs `quoin dossier export --release <TAG>` with real `quire export`: the export exits 0, and the PDF text holds the tag as the Release field and the dossier commit as the source commit. | Test |
+| FR-191-AC-28 | In the repository of FR-191-AC-27, adding a commit after the dossier commit that modifies a file outside `dossier/`, or a commit that deletes a file under `dossier/`, makes `export --release <TAG>` exit 4 with the `quire export` refusal in the `stderr` member of `quire` in the `--json` report, and the output file is unchanged. | Test |
 
 ## Dependencies
 
-- **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-033 (failed-export output preservation), FR-034, FR-038, FR-039.
+- **Upstream**: spec-artifacts-process FR-018 (the `DossierDocument` archetype); quire-cli FR-031 (`quire export`), FR-033 (failed-export output preservation), FR-034 (including the `--release` ancestor rule), FR-038, FR-039; EA FR-041 and FR-047 (release-verify needs the tag, so the dossier follows it).
 - **Downstream**: [FR-192](./FR-192-dossier-srs-content.md) through [FR-195](./FR-195-dossier-rmm-content.md) define M1 content; [FR-196](./FR-196-dossier-verification-report-content.md) through [FR-201](./FR-201-dossier-release-record-content.md) define M2 content; [FR-202](./FR-202-dossier-threat-model-content.md) defines M3 threat-model content; [FR-207](./FR-207-dossier-records-of-processing-content.md) defines records-of-processing content. Later document generators register after their own spec and archetype extension.
