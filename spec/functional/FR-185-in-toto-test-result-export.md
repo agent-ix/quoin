@@ -83,9 +83,21 @@ which this requirement adopts unchanged. The predicate fields conform to the
 - The Engineering Assurance verifier SHALL authenticate the envelope's source
   workflow identity and validate its revision and artifact provenance under
   the FR-069 trust policy before passing the envelope to Quoin. Quoin SHALL
-  verify the envelope signature and each run-record digest locally before
-  using its population or run records. The signature SHALL cover the complete
-  `testMatrix` payload bytes.
+  verify each run-record digest locally before using its population or run
+  records. The signature SHALL cover the complete `testMatrix` payload bytes.
+  Quoin does not itself verify the DSSE signature: authentication is the
+  Engineering Assurance verifier's, performed before the envelope reaches
+  Quoin, so Quoin's population is authenticated only to the extent the caller
+  ran that verifier. Quoin checks the envelope's shape (payload type, a
+  non-empty `signatures` list, the closed payload fields) and refuses a
+  malformed one.
+- The required population SHALL be the set of non-empty string `criterion`
+  members of the `testMatrix` rows. A matrix with no such row SHALL refuse the
+  export; an empty population SHALL NOT yield `PASSED`.
+- Quoin SHALL take a suite's run only from the record the provenance names for
+  that suite by `recordPath`, after its bytes match the signed digest. A suite
+  the provenance does not list has no run. `recordPath` SHALL be a relative
+  path with no root or parent components.
 - For every required obligation, Quoin SHALL include exactly one verdict in
   the Test Result lists. An obligation absent from `bindings.json`, or whose
   binding has no symbols, SHALL appear in `failedTests`. An obligation SHALL
