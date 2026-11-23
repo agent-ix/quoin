@@ -30,3 +30,9 @@ One low finding. The grammar does not block the PR. The merge decision rests on 
 ## Examined
 
 FR-029 Behavior bullets 1 to 4 (the first is unchanged) and FR-029-AC-14..18 wording.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | dec7dd14: Behavior is split into one SHALL per obligation. The refusal and the QQ-1020 non-degradation are each unwanted-behaviour "If any declaration was dropped, then … SHALL" requirements, and the rationale sentence is gone. |

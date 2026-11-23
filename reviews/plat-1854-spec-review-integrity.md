@@ -50,3 +50,20 @@ FR-029 Behavior and AC-14..18. Context read:
 - quoin-core `ops/quire/taxonomy.rs` and `dispatch.rs`.
 - quoin-cli `matrix.rs`, `assurance.rs`, `formal_rules.rs`, `formal_rules_coverage.rs`, `dossier.rs`, `advise.rs`, `anomaly.rs`, `evidence.rs`, `evidence/audit.rs`, `class_obligations.rs`, `release/snapshot.rs` and `completeness.rs`.
 - quoin-soup `soup.rs`, quoin-dossier `architecture.rs` and quoin-suite-trace `main.rs`.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | low | The "reads the merged model directly, without calling a `quoin-quire` compute function" bullet lists "the evidence compute" among its examples. `quoin_quire::evidence::compute` is itself a quoin-quire compute, and it calls `coverage::walk`. The classification is inconsistent, though behaviour is unaffected: AC-20 and AC-22 test the evidence compute either way. | spec/functional/FR-029-consume-the-quire-json-contract.md:80-86; rust/crates/quoin-quire/src/evidence.rs:236-239 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | dec7dd14: Behavior and AC-17 give a whole unreadable section as kind `traceability_section` and item `traceability`, exactly as the engine records it (quire-rs loader/manifest.rs:680). |
+| FND-002 | fixed | dec7dd14: the governing rule is now general (any command reaching the model through the named computes). The illustrative list adds advise, anomaly check, evidence record, evidence audit, class obligations, soup promote --discharges and release snapshot, and states why completeness and validate are excluded. |
+| FND-003 | fixed | dec7dd14: Behavior maps both the coverage and relation-report drop errors to QQ-1022 and never to QQ-1110. AC-19 tests design_join and flow-report, and the direct model readers must check drops first (AC-22). |
+| FND-004 | fixed | dec7dd14: Behavior requires QQ-1022 even when every declaration is dropped and the model is empty, with the drop check before any absent-model check. AC-20 tests the coverage, evidence, flow-report and assurance-export computes and formal-rules status. |
+| FND-005 | fixed | dec7dd14: Behavior and AC-22 require `quoin_quire::assurance::build` to refuse with QQ-1022 on a drop. |
+| FND-006 | fixed | dec7dd14: `ix://agent-ix/quire-rs/FR-058` is added to relationships and to the Dependencies Upstream line. |

@@ -37,3 +37,12 @@ Test binding: quoin has no `spec/tests.md`. Tests bind to criteria through `#[tr
 ## Examined
 
 FR-029 Description, Behavior (all four bullets), Constraints CON-1..3, AC-1..AC-18 and Dependencies; FR-096 exit taxonomy (AC-3, AC-4); FR-037-AC-2; quoin-core `ops/quire/taxonomy.rs` and `error.rs`; quoin-quire `error.rs`; `reviews/plat-1403-code-review.md` and `reviews/plat-1405-spec-review.md` (AC-14 history).
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | dec7dd14: AC-23 requires each listed command to exit 0 on the clean scope and produce its normal report, matrix, export, record or dossier. |
+| FND-002 | fixed | dec7dd14: Behavior and AC-18 name the context key `dropped_declarations`, with one `module=<module> kind=<kind> item=<item>` line per declaration in engine order. |
+| FND-003 | fixed | dec7dd14: Behavior and AC-21 require the Refused exit status, `QQ-1022` and each drop on stderr, and nothing on stdout. This matches the 0/1/2/3/4 taxonomy and the stdout-only-with-payload discipline. |
+| FND-004 | fixed | dec7dd14: the new rows are numbered FR-029-AC-15..23, and FR-029-AC-14 is no longer used. |

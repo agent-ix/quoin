@@ -77,10 +77,10 @@ schema, reads none from the network, and hashes none.
 - A command that refuses with `QQ-1022` SHALL exit with the `Refused` exit
   status, SHALL write the code `QQ-1022` and each dropped declaration to stderr,
   and SHALL write nothing to stdout.
-- Each code path that reads the merged model directly, without calling a
-  `quoin-quire` compute function (the trace-tag walk behind `quoin-suite-trace`,
-  `quoin formal-rules status`, the formal-rules declaration read behind
-  `quoin assurance`, and the evidence compute), SHALL ask the engine whether
+- Each code path that reads the merged model itself (the trace-tag walk behind
+  `quoin-suite-trace`, `quoin formal-rules status`, the formal-rules declaration
+  read behind `quoin assurance`, and the `quoin-quire` evidence compute, which
+  re-reads the model after the shared walk) SHALL ask the engine whether
   declarations were dropped before it reads the model, and SHALL do so before
   any absent-model check.
 - If any declaration was dropped, then `quoin_quire::assurance::build` SHALL
