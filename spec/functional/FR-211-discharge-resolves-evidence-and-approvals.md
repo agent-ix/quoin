@@ -138,10 +138,10 @@ people accept risk, and the tool assigns no score, class or acceptability.
   `approval-verifier-unavailable`, never silently verified.
 - The dossier requirements mapping matrix (FR-191, FR-195) stays offline and
   deterministic (NFR-040): it reads the store locally, so its rows equal those of
-  `quoin discharge --repo --rmm --json`, and calls neither engineering-assurance
-  nor the network. An approval-class clause uses an explicitly supplied
-  engineering-assurance result when one is passed (FR-191) and otherwise is open
-  with reason `not-verified-offline` (FR-195).
+  `quoin discharge --repo --rmm --json` except approval-class rows, and calls
+  neither engineering-assurance nor the network. An approval-class clause is
+  always open with reason `not-verified-offline` (FR-195); verified discharge
+  comes from `quoin discharge --repo` with the engineering-assurance flags.
 
 - Quoin SHALL run evidence resolution and approval verification every time it
   builds or renders a discharge report from facts: `quoin discharge` with

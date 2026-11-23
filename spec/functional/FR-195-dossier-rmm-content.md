@@ -49,9 +49,8 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 - The detail of a `clause_open` gap SHALL be the compliance value and the row's `reason`.
 - If a row's `compliance` is `compliant`, `tailored` or `not_applicable`, the RMM SHALL NOT record a `clause_open` gap for it, whether or not it has `evidenceRefs`.
 - The RMM SHALL stay offline and deterministic (NFR-040), calling neither engineering-assurance nor the network.
-- The RMM SHALL resolve each `evidenceRefs` entry by a local, deterministic read of the evidence store at `--repo` (FR-211), so its rows equal the rows of `quoin discharge --repo --rmm --json`.
-- When an explicitly supplied engineering-assurance verification result (FR-191) is passed, the RMM SHALL use it for an approval-class clause.
-- When no such result is passed, the RMM SHALL show an approval-class clause with `compliance` `undischarged` and reason `not-verified-offline`.
+- The RMM SHALL resolve each `evidenceRefs` entry by a local, deterministic read of the evidence store at `--repo` (FR-211), so its rows equal the rows of `quoin discharge --repo --rmm --json` except those of approval-class clauses.
+- The RMM SHALL always show an approval-class clause with `compliance` `undischarged` and reason `not-verified-offline`; verified discharge comes from `quoin discharge --repo` with the engineering-assurance flags (FR-211).
 - Every FR-211 reason (`unresolved`, `kind-not-expected`, `no-producer`, `no-store`, `approval-missing`, `approval-unverified`, `attester-not-approver`, `approval-verifier-unavailable`, `invalid-record-identity`, `record-id-too-long`, `customer-owned`) and `not-verified-offline` SHALL carry `compliance` `undischarged`; none is `compliant`, because the tool assigns no acceptability and people accept risk.
 - The RMM SHALL NOT write the text of any clause, whatever the binding, the pack or `quire clauses` carries.
 - The RMM SHALL NOT read the rights metadata of `quire clauses`; the clause id is the only clause member it writes.
@@ -60,7 +59,7 @@ form `requirements-mapping-pack-v1`, with every row member, `As of`, and
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-195-AC-1 | The rows equal the `quoin discharge --rmm --json` rows for the fixture binding, in the source's order | Test |
+| FR-195-AC-1 | The rows equal the `quoin discharge --rmm --json` rows for the fixture binding, in the source's order, except that an approval-class clause row is `undischarged` with reason `not-verified-offline` | Test |
 | FR-195-AC-2 | A pack with two clause sets gives two tables in index order | Test |
 | FR-195-AC-3 | With `--doc rmm` and no `--clause-binding` and no `--pack` the document has a `no_clause_binding` gap, status `incomplete`, the command exits 1 and not 2, and no `--as-of` is needed | Test |
 | FR-195-AC-4 | A fixture whose binding and pack carry clause text and whose clauses are marked restricted in `quire clauses` renders only clause ids and the source row members; no clause text appears anywhere in the file or in a gap detail | Test |
