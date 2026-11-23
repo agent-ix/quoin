@@ -125,6 +125,11 @@ people to click through it.
 - The `record` verb SHALL report a trace id matching no derived obligation
   rather than dropping it. That is the quire-rs#72 class arriving from the other
   direction: a test claiming to verify something the spec does not state.
+- The `record` verb SHALL exit non-zero, after the run record and any bindings are
+  published, when a trace id is unmatched, and when the run has at least one entry
+  and no entry carries a trace id (FR-030-AC-32, FR-030-AC-33). A run that carries
+  trace ids and binds nothing only because every entry failed or was skipped exits
+  zero (FR-030-AC-4, FR-030-AC-34).
 - The store SHALL serialise recorders on a writer lock held from the run write to the graph write, so concurrent recordings never drop each other's bindings (FR-030-AC-20). A recording interrupted between those writes SHALL be completed by repeating the same request, without a second run record (FR-030-AC-21).
 - The store SHALL NOT replace a run, scan or mock-inspection record at an occupied `(suite, timestamp)` key with different content (FR-030-AC-22).
 - `gc` SHALL record what it deletes in a retirement log before deleting it (FR-030-AC-23).
@@ -254,6 +259,9 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-29 | Unreadable or invalid-UTF-8 store records and adapter source files are refused without replacement decoding or publication. A listed record that disappears or cannot be decoded is reported; the store's `latest` operation returns no record for that suite and `gc` retains that family rather than selecting or collecting around an older record. Stored records with non-canonical or invalid timestamps are treated the same way. | Test |
 | FR-030-AC-30 | A zero-entry run cannot positively qualify any candidate; the empty report-backed disagreement form remains readable as a disagreement and never becomes a passing candidate. | Test |
 | FR-030-AC-31 | Within a suite and record family, only one accepted timestamp spelling may represent an instant. A new record whose parsed instant equals an existing record's instant but whose timestamp spelling differs is refused before publication, with all existing bytes unchanged. | Test |
+| FR-030-AC-32 | `quoin evidence record` exits non-zero when the outcome lists any unmatched trace id, including one carried only by a failing or skipped entry, and writes to stderr one line `unmatched trace ids: <id>[, <id>...]` in byte order. The run record and the bindings of the matched ids are published before the exit, and stdout still carries the `unmatched` list. | Test |
+| FR-030-AC-33 | `quoin evidence record` exits non-zero when the run has at least one entry and no entry carries a trace id, and writes to stderr `no entry carries a trace id: <n> entries recorded, none can bind`. The run record is published before the exit. | Test |
+| FR-030-AC-34 | `quoin evidence record` exits zero for a run whose entries carry trace ids that every obligation states and every one of those entries failed, errored or skipped: the outcome has no bound obligation and no unmatched id. A run of zero entries is governed by FR-030-AC-30, not this criterion. | Test |
 
 > **CR note (PLAT-1794, 2026-11-22):** Evidence records are validated in full
 > before publication. Record timestamps use canonical UTC spelling, identities

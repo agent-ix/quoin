@@ -80,6 +80,28 @@ entries name **production** functions (`src/path.rs::function`), so they record 
 bind to no obligation until a requirement→production-code relation exists
 (`agent-ix/quire-rs#171`). That is the honest state, not a convenient one.
 
+### A pytest case maps to the Python extractor's symbol
+
+The Python extractor names a test `Class.method` under a class and the bare function
+name at module level; the module is never a prefix and only a class is a scope
+(FR-120). The JUnit adapter's `::` rewriting is the Rust rule and is not applied to
+a Python case. A pytest case's symbol is built in this order:
+
+1. `name` with a trailing `[...]` removed.
+2. `classname` split on `.`. When the case has a `file` attribute, the segments
+   that spell that file's path without `.py` (`tests/test_bolus.py` is
+   `tests.test_bolus`) are removed from the front; what remains are the enclosing
+   classes, joined to the name with `.`. A case with no `file` attribute whose
+   `classname` equals `name` is taken as written.
+3. The result carries the case's `file` as its entry path, so the evidence store
+   joins it to the symbol at that path (FR-030-AC-18).
+
+A pytest case obtains trace ids from the `trace` property that the FR-120 emitter
+writes from the `trace` marker on the test. A case without the property has none.
+The store therefore detects an unbound run from the entries alone: a case whose
+ids no obligation states is unmatched, and a run in which no case has an id binds
+nothing and is an error (FR-030-AC-32, FR-030-AC-33).
+
 ### A nextest report names tests, not criteria (interim)
 
 **Interim.** [ADR-100](../adrs/ADR-100-execution-evidence-is-emitted-by-the-run.md) supersedes this annotator: ids are emitted by the run ([FR-120](./FR-120-trace-marks-in-test-result-output.md)), not derived afterward. It is removed when the PLAT-333 Rust emitter lands.
@@ -112,6 +134,8 @@ record every run as bound to nothing.
 | FR-033-AC-13 | `quoin evidence record` selects the adapter from `--tool` when none is named. | Test |
 | FR-033-AC-14 | `quoin evidence record` still accepts the normalized shape with no adapter at all. | Test |
 | FR-033-AC-15 | Interim, removed when the PLAT-333 Rust emitter lands (ADR-100): a cargo-nextest JUnit report annotated by `quoin-suite-trace` carries, on each tagged test case, a `trace` property naming that test's acceptance criteria, so `quoin evidence record --adapter junit` binds the run to them. | Test |
+| FR-033-AC-16 | A pytest case is recorded under the symbol the Python extractor emits: `name` with any trailing `[...]` parametrization removed, preceded by the enclosing classes joined with `.`, and never preceded by the module. For `classname="tests.test_bolus" name="test_basic" file="tests/test_bolus.py"` the symbol is `test_basic`; for `classname="tests.test_bolus.TestDose" name="test_a[1]"` with the same `file` it is `TestDose.test_a`. A pytest case with `classname` equal to `name`, as FR-120 emitters write, is recorded unchanged. | Test |
+| FR-033-AC-17 | A pytest case that carries no `trace` property is recorded with its outcome and no `traceIds`; the run it belongs to is an error under FR-030-AC-33 when no case carries one, and a case whose id no obligation states is listed as unmatched under FR-030-AC-32. | Test |
 
 ## Constraints
 
