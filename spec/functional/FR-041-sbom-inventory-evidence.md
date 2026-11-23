@@ -11,6 +11,8 @@ relationships:
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-150"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-141"
+    type: "references"
 ---
 
 # FR-041: SBOM inventories as run evidence
@@ -92,8 +94,10 @@ The consumer's CI produces it (ADR-0011 invariant 1). This reads what was produc
 
 The reader also exposes, for each component it returns, the licences the document declares, each kept as written with
 a kind: `id` (a CycloneDX `license.id`, or an SPDX declared-licence value that is a single identifier with no
-whitespace, parenthesis or operator), `name` (a CycloneDX `license.name`) or `expression` (a CycloneDX `expression`, or
-any other SPDX value). An SPDX value of `NOASSERTION` or `NONE` is exposed as no declared licence. Nothing is exposed where
+whitespace, parenthesis or operator), `name` (a CycloneDX `license.name`), `expression` (a CycloneDX `expression`, or
+any other SPDX value) or `unreadable` (a CycloneDX `licenses` entry with no readable `license.id`, `license.name` or
+`expression` text, because each is absent, empty or not a string). An `unreadable` licence carries no text: the reader
+never exposes the JSON of an entry as licence text. An SPDX value of `NOASSERTION` or `NONE` is exposed as no declared licence. Nothing is exposed where
 none is declared. This is data for callers ([FR-150](./FR-150-licence-and-ban-policy-findings.md)); the run entries it
 emits are unchanged, and the reader judges no licence (FR-041-CON-3).
 
@@ -119,6 +123,7 @@ callers ([FR-141](./FR-141-promote-sbom-components-to-soup-records.md)); the run
 | FR-041-AC-9 | `--discharges` on a run adapter other than sbom and differential-report is refused with an error naming the adapter, and records nothing. | Test |
 | FR-041-AC-10 | For a CycloneDX component with a `license.id`, one with a `license.name`, one with an `expression` and one with no `licenses`, the reader exposes the declared text as written for the first three and nothing for the last; an SPDX package declaring `MIT`, one declaring `MIT OR Apache-2.0` and one declaring `NOASSERTION` expose an `id`, an `expression` and nothing respectively; the run entries emitted for the same documents are byte-identical to those emitted before the licences were exposed. | Test |
 | FR-041-AC-11 | For a CycloneDX component with a `supplier.name`, one with an empty `supplier.name` and one with no `supplier`, the reader exposes the name as written for the first and nothing for the others; an SPDX package declaring `Organization: Example Corp`, one declaring `NOASSERTION` and one declaring `NONE` expose the first value as written and nothing for the other two; the run entries emitted for the same documents are byte-identical to those emitted before the supplier was exposed. | Test |
+| FR-041-AC-12 | A CycloneDX component whose `licenses` entry is `{"license":{"url":"https://example.org/l"}}`, and one whose entry is `{"license":{"name":""}}`, each expose one licence of kind `unreadable` with no text, and a component with one readable and one unreadable entry exposes both, in document order. | Test |
 
 ## Constraints
 
@@ -132,4 +137,4 @@ callers ([FR-141](./FR-141-promote-sbom-components-to-soup-records.md)); the run
 ## Dependencies
 
 - **Upstream**: [FR-033](./FR-033-evidence-format-adapters.md) (the registry), [FR-040](./FR-040-assurance-case-view.md) (the consumer whose rendering settled the record shape), [FR-034](./FR-034-finding-shaped-evidence.md) (where advisory findings land)
-- **Downstream**: none. This closes the adapter family opened by `agent-ix/quoin#91`.
+- **Downstream**: [FR-141](./FR-141-promote-sbom-components-to-soup-records.md), [FR-150](./FR-150-licence-and-ban-policy-findings.md). This closes the adapter family opened by `agent-ix/quoin#91`.

@@ -26,26 +26,33 @@ The `soup_record` object type belongs to `agent-ix/spec-objects-security` (FR-00
 the other module's record from the components the FR-041 reader already returns. `quoin` does not parse an
 SBOM a second time and does not generate one. The command uses the component symbol, which is the purl where the
 SBOM states one and `name@version` otherwise, and the supplier and declared licences that the reader exposes
-(FR-041-AC-10, FR-041-AC-11).
+(FR-041-AC-10, FR-041-AC-11, FR-041-AC-12).
 
 A record's `name` and `version` are the percent-decoded name and version segments of its purl. Its `supplier` and
 `license` are what the SBOM states, as written. They are facts the SBOM supplies, not reviewer statements, so a
 created record carries them and a person amends them afterwards.
 
 **Supplier.** The record's `supplier` is the component's declared supplier as the reader exposes it. Where the SBOM
-states none, the record leaves `supplier` absent (not stated), and does not write the literal `unknown`.
+states none, the record leaves `supplier` absent (not stated); the command does not invent the literal `unknown`. Where the SBOM itself states `unknown`, that is a stated value and is written as written.
 
 **Licence.** The record's `license` is a single string, so it carries a licence only where the component declares exactly
-one. The text is written as the document wrote it, whether the reader classed it as an `id`, a `name` or an
+one readable licence. The text is written as the document wrote it, whether the reader classed it as an `id`, a `name` or an
 `expression`; nothing is parsed, normalised or mapped. Where the component declares none, `license` is absent. Where it
 declares more than one, `license` is absent and the component is listed in the report with the declared texts, because
-joining them would state an operator the SBOM did not. A created record never carries `license_fact_ref`, so the
+joining them would state an operator the SBOM did not. Where its only licence is `unreadable` (FR-041-AC-12), `license`
+is absent and the component is listed in the report, so no SBOM fragment becomes licence text. A created record never carries `license_fact_ref`, so the
 owning module's exclusivity of `license` and `license_fact_ref` (FR-009 there) holds; relating a record to an integrator
 licence fact stays a person's statement.
 
-**Existing records.** Promotion never overwrites a field of an existing record. Where an existing record's `supplier`
-or `license` differs from what the SBOM states, including where the record states none, the command reports the
-difference and leaves the file untouched.
+**Duplicates.** Where two components of one document carry one purl, the record carries the supplier and licence of the
+first occurrence in document order. Where a later occurrence states a different supplier or licence, the report lists the
+conflict.
+
+**Existing records.** Promotion never overwrites a field of an existing record. The supplier the SBOM states for a purl is
+the exposed supplier, or none; the licence it states is the single readable licence, or none (where the component
+declares none, several, an unreadable licence or a licence with a control character). Where an existing record's
+`supplier` or `license` differs from that, including a field the record sets while the SBOM states none and a field the
+SBOM states while the record sets none, the command reports the difference and leaves the file untouched.
 
 Promotion does not hold that the record count equals the SBOM component count. A component
 with no purl is skipped and a repeated purl is one record, so the count that holds is the accounting of FR-141-AC-2.
@@ -65,13 +72,19 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 - The command SHALL give each new record the id `SOUP-<n>`, with `<n>` of at least three digits, numbering on from the highest `SOUP-` id among the records in the `--records` and `--out` directories, in ascending purl order.
 - The command SHALL write `supplier` on a record it creates as the declared supplier text the FR-041 reader exposes, as written.
 - Where the reader exposes no supplier for a component, the command SHALL leave `supplier` absent on the record it creates.
-- Where the reader exposes exactly one declared licence for a component, the command SHALL write `license` on the record it creates as that text, as written, for every licence kind.
+- Where the reader exposes exactly one declared licence for a component and its kind is `id`, `name` or `expression`, the command SHALL write `license` on the record it creates as that text, as written, for each of the three kinds.
 - Where the reader exposes no declared licence for a component, the command SHALL leave `license` absent on the record it creates.
 - Where the reader exposes more than one declared licence for a component, the command SHALL leave `license` absent on the record it creates.
 - Where the reader exposes more than one declared licence for a component, the command SHALL list the component in the report with its declared licence texts.
-- If a supplier or licence text contains a control character, then the command SHALL omit that field from the record it creates and list the component and field in the report.
+- If a supplier text contains a control character, then the command SHALL omit `supplier` from the record it creates.
+- If a licence text contains a control character, then the command SHALL omit `license` from the record it creates.
+- If a supplier or licence text contains a control character, then the command SHALL list the component and field in the report.
+- Where the only licence a component declares is `unreadable`, the command SHALL leave `license` absent on the record it creates.
+- Where the only licence a component declares is `unreadable`, the command SHALL list the component in the report.
+- If two components of one document carry one purl, then the record SHALL carry the supplier and licence of the first occurrence in document order.
+- If a later occurrence of a purl states a supplier or licence different from the first occurrence's, then the command SHALL list the conflict in the report.
 - The command SHALL NOT write `license_fact_ref` on a record it creates.
-- The command SHALL NOT write the literal `unknown` as `supplier` or `license`.
+- Where the SBOM states no supplier or licence, the command SHALL NOT write the literal `unknown` for it.
 - The command SHALL NOT write `serves`, `known_anomalies`, `support_status` or `end_of_support` on a record it creates.
 - Where `--discharges <obligation-id>` is not given, the command SHALL NOT write `disposition_clause` on a record it creates.
 - Where `--discharges <obligation-id>` is given and an obligation states that id, the command SHALL write the id verbatim as `disposition_clause`.
@@ -85,15 +98,19 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 - If a `.md` file below the records directory cannot be read in full or exceeds 1 MiB, then the command SHALL exit non-zero naming the file and write nothing.
 - The command SHALL look up existing records in `--records <dir>` (default: the `--out` directory), reading every `soup_record` below it.
 - When a record for the purl exists in the records directory, the command SHALL NOT modify that file.
-- Where an existing record's `supplier` differs from the supplier the SBOM states for its purl, or the SBOM states one and the record states none, the command SHALL list the record and field in the report as a difference.
-- Where an existing record's `license` differs from the single licence the SBOM states for its purl, or the SBOM states one and the record states none, the command SHALL list the record and field in the report as a difference.
+- Where an existing record's `supplier` differs from the supplier the SBOM states for its purl, the command SHALL list the record and field in the report as a difference.
+- Where an existing record states a `supplier` and the SBOM states none for its purl, the command SHALL list the record and field in the report as a difference.
+- Where the SBOM states a supplier for a purl and the existing record states none, the command SHALL list the record and field in the report as a difference.
+- Where an existing record's `license` differs from the licence the SBOM states for its purl, the command SHALL list the record and field in the report as a difference.
+- Where an existing record states a `license` and the SBOM states none for its purl, the command SHALL list the record and field in the report as a difference.
+- Where the SBOM states a licence for a purl and the existing record states none, the command SHALL list the record and field in the report as a difference.
 - Where an existing record carries `license_fact_ref`, the command SHALL NOT report a licence difference for it.
 - If two records in the records directory carry one purl, then the command SHALL exit non-zero naming both files.
 - When the same document is promoted twice, the second run SHALL change no file.
 - Where a new record's purl, without version, qualifiers and subpath, equals that of an existing record whose version segment differs as written, the command SHALL report the existing record in the records directory as a superseded candidate.
 - The command SHALL NOT delete or edit a superseded candidate.
 - Where `--module <dir>` is given, the command SHALL look up the owning module only in the given module roots.
-- The command SHALL print a deterministic report listing records created, records unchanged, superseded candidates, merged duplicates, components skipped, field differences, components with multiple licences and omitted fields.
+- The command SHALL print a deterministic report listing records created, records unchanged, superseded candidates, merged duplicates, components skipped, field differences, components with multiple or unreadable licences, duplicate conflicts and omitted fields.
 
 ## Acceptance Criteria
 
@@ -116,12 +133,14 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 | FR-141-AC-15 | A file already at the destination of a new record that is not the `soup_record` of that purl makes the command exit non-zero naming the file and write no record. | Test |
 | FR-141-AC-16 | A component whose decoded name contains a control character is skipped, listed in the report, and writes no record. | Test |
 | FR-141-AC-17 | The file name of a purl carrying qualifiers contains neither the qualifiers nor the subpath, and a record file that is not valid UTF-8 or exceeds 1 MiB below the records directory makes the command exit non-zero naming it. | Test |
-| FR-141-AC-18 | A CycloneDX and an SPDX fixture whose components state a supplier and exactly one licence (one as an id, one as a name, one as an expression) promote to records whose `supplier` and `license` equal the stated texts exactly, and each record validates against the owning schema. | Test |
-| FR-141-AC-19 | A component with no supplier and no licence, one with an SPDX `NOASSERTION` supplier and licence, and one with an empty supplier name yield records with no `supplier` key and no `license` key, and none carries the literal `unknown`. | Test |
+| FR-141-AC-18 | A CycloneDX and an SPDX fixture whose components state a supplier and exactly one licence (one as an id, one as a name, one as an expression) promote to records whose own text carries a `supplier` and a `license` line equal to the stated texts exactly. | Test |
+| FR-141-AC-19 | A component with no supplier and no licence, one with an SPDX `NOASSERTION` supplier and licence, and one with an empty supplier name yield records with no `supplier` key and no `license` key, and none carries the literal `unknown`; a component whose SBOM states the supplier `unknown` yields a record carrying `supplier: unknown`. | Test |
 | FR-141-AC-20 | A component declaring two licences yields a record with no `license` key and appears in the report with both declared texts; its `supplier` is still written. | Test |
-| FR-141-AC-21 | A component whose supplier contains a control character yields a record without `supplier`, the report lists the component and field, and the record still validates. | Test |
+| FR-141-AC-21 | A component whose supplier contains a control character yields a record whose text has no `supplier` line, and the report lists the component and field. | Test |
 | FR-141-AC-22 | Given an existing record whose `supplier` and `license` a person set to values different from the SBOM's, promoting the document leaves the file byte-identical and the report lists both fields as differences; an existing record equal to the SBOM's values is listed with no difference; an existing record carrying `license_fact_ref` yields no licence difference. | Test |
-| FR-141-AC-23 | No created record carries `license_fact_ref` or both `license` and `license_fact_ref`, for a fixture in which every component states a licence. | Test |
+| FR-141-AC-24 | An existing record that sets a `supplier` while the SBOM states none for its purl, and one that sets a `license` while the SBOM declares no licence, two licences, an unreadable licence or a licence containing a control character, are each listed as a difference and left byte-identical; an existing record that sets neither, for an SBOM component that states a supplier and a licence, is listed as a difference for both fields. | Test |
+| FR-141-AC-25 | A component whose supplier and licence text contain a control character yields a record whose text has neither a `supplier` nor a `license` line, and the report lists both fields; a component whose only licence entry is unreadable yields a record with no `license` line and appears in the report. | Test |
+| FR-141-AC-26 | A document listing one purl twice with different suppliers and licences yields one record carrying the first occurrence's values, and the report lists the conflict. | Test |
 
 ## Constraints
 
@@ -134,5 +153,5 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 
 ## Dependencies
 
-- **Upstream**: [FR-041](./FR-041-sbom-inventory-evidence.md) (reader, supplier and licences), [FR-150](./FR-150-licence-and-ban-policy-findings.md), [FR-046](./FR-046-clause-discharge.md); `agent-ix/spec-objects-security` FR-009, FR-010, FR-011.
+- **Upstream**: [FR-041](./FR-041-sbom-inventory-evidence.md) (reader, supplier and licences), [FR-046](./FR-046-clause-discharge.md); `agent-ix/spec-objects-security` FR-009, FR-010, FR-011.
 - **Downstream**: [FR-142](./FR-142-advisory-join-onto-soup-records.md), [FR-144](./FR-144-soup-report.md)

@@ -64,7 +64,7 @@ from what the person wrote.
 Each component the FR-041 reader returns is evaluated once. The reader exposes each declared licence with a kind:
 `id` (a CycloneDX `license.id`, or an SPDX value that is a single identifier with no whitespace, parenthesis or
 operator), `name` (a CycloneDX `license.name`) or `expression` (a CycloneDX `expression`, or any other SPDX value).
-The SPDX values `NOASSERTION` and `NONE` are no declared licence. Matching is of the declared text against `allow`
+An `unreadable` licence (an entry the reader could not read text from, FR-041-AC-12) is never accepted and is classed **unknown**, with the message text `unreadable licence entry`. The SPDX values `NOASSERTION` and `NONE` are no declared licence. Matching is of the declared text against `allow`
 and `deny` entries, verbatim and ASCII case-insensitively, for all three kinds alike; no expression is parsed and no
 other normalisation is applied. A ban entry matches a component by purl equality as FR-142 defines it (type compared
 case-insensitively; namespace, name and version percent-decoded; qualifiers and subpath ignored); an entry without a
@@ -139,6 +139,7 @@ traceable to the policy that produced it.
 | FR-150-AC-14 | A component with one id in `allow` and one free-text name not in `allow` is `licence-unknown`; with one id in `allow` and one id in neither list, `licence-not-allowed`; with one id in `deny` and any other licence, `licence-denied`; each component has at most one licence finding. | Test |
 | FR-150-AC-15 | The recorded scan lists, in `evaluated`, the symbol of every component of the SBOM, and its ruleset holds the policy's entries. | Test |
 | FR-150-AC-16 | The message of a `licence-unknown` finding for an unlicensed component is `no licence declared`; of a `package-banned` finding is `banned by <entry purl>` with the entry's reason where it states one; of a licence finding the joined offending texts. | Test |
+| FR-150-AC-17 | A CycloneDX component whose only licence entry is unreadable is recorded `licence-unknown` with message `unreadable licence entry`, even where `allow` holds every other text. | Test |
 
 ## Constraints
 
