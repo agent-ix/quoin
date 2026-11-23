@@ -51,3 +51,14 @@ scope:
 - {id: FR-041-AC-12, role: examined, test: tc_1812_002_an_unreadable_licence_entry_carries_no_text}
 - {id: FR-150-AC-17, role: examined, test: tc_1812_003_an_unreadable_entry_message_is_the_fixed_text_after_unlisted_texts}
 ```
+
+## Dispositions
+
+Round 1 was checked at 323a26f9. All tagged tests pass. Removing the adopted-record difference loop (a temporary mutation, then reverted) fails the new `--out` test.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The AC-18 test now validates `pkg:npm/c@1` from the SPDX fixture and asserts `supplier: Person: Gamma` and `license: MIT OR Apache-2.0`. |
+| FND-002 | fixed | `tc_1812_005_run_entries_are_byte_identical_after_the_supplier_is_exposed` compares `parse_sbom` run entries with and without the supplier field, for SPDX and for CycloneDX. |
+| FND-003 | fixed | `a_record_already_at_the_destination_is_compared_when_records_names_another_directory` covers the adopted-record difference loop. It fails when that loop is removed. |
+| FND-004 | fixed | `tc_1812_004_a_denied_or_not_allowed_licence_beats_an_unreadable_entry` shows that `licence-denied` and `licence-not-allowed` win over an unreadable entry. |

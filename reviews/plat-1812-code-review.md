@@ -53,3 +53,17 @@ scope:
 - {id: FR-141-CON-3, path: spec/functional/FR-141-promote-sbom-components-to-soup-records.md, role: examined, excerpt: "no parse, normalise, map or join of licence text"}
 - {id: FR-141-CON-4, path: spec/functional/FR-141-promote-sbom-components-to-soup-records.md, role: examined, excerpt: "never overwrite a field of an existing record"}
 ```
+
+## Dispositions
+
+Round 1 was checked at 323a26f9 (fix commits 901d9254 and 323a26f9). Focused tests passed: `tc_1515_soup_promote` 26/26, `tc_licence_policy` 18/18, quoin-evidence lib 75/75, quoin-soup lib 57 passed and 1 ignored. `cargo fmt --all --check` passed. Clippy is still blocked by the pre-existing errors in untouched quoin-evidence files. Each fix was checked by a mutation that put back the pre-fix behaviour, run on a temporary working-tree edit that was then reverted:
+
+- Dropping a control-character supplier from `Stated` again fails `a_supplier_with_a_control_character_is_omitted_but_still_compared`.
+- Filtering CycloneDX `NONE`/`NOASSERTION` again fails `tc_1812_001_the_declared_supplier_is_exposed_as_written`.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | `Stated.supplier` is now the exposed supplier, and `render` alone omits a control-character supplier, so `differences()` compares the exposed supplier as FR-141 states. The test `a_supplier_with_a_control_character_is_omitted_but_still_compared` asserts both the omission and the difference, and it fails under the pre-fix mutation. |
+| FND-002 | fixed | CycloneDX `supplier.name` is filtered only for empty or whitespace-only values. `NOASSERTION`/`NONE` stay an SPDX-only rule, and `tc_1812_001` asserts that a CycloneDX `NONE` is exposed. The test fails under the pre-fix mutation. |
+| FND-003 | fixed | Each declared text is printed as written on its own indented line. Only control characters are spelled out (`visible`), so quotes and backslashes pass through, and the `, ` join is gone. `a_declared_text_is_listed_as_written_on_its_own_line` asserts this. |
+| FND-004 | fixed | `DeclaredLicence` is now an enum `Id(String) / Name(String) / Expression(String) / Unreadable`, and `LicenceKind` is removed. The licence policy and `state()` match on the variants, and no unreachable arm remains. No other consumer exists in the quoin workspace; the only users are quoin-evidence and quoin-soup, and both are updated. |
