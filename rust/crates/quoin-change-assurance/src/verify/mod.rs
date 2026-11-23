@@ -30,8 +30,11 @@ use crate::model::json::compare_utf16;
 use crate::model::outcome::{Check, Outcome, Reason, normalize_reasons, outcome_for_reasons};
 use crate::model::receipt::{ReceiptChecks, ReceiptUnknown, VerificationReceipt};
 use crate::model::record::{ChangeAssuranceRecord, Completeness, Disposition};
-use crate::records::{read_change_record_json, validate_decision, verify_lineage};
+use crate::records::{
+    predecessor_policies, read_change_record_json, validate_decision_with_policy_check,
+};
 use crate::verify::apparatus::ApparatusContext;
+use crate::verify::approval::policy_weakened;
 use crate::verify::input::VerificationInput;
 use crate::verify::lineage::lineage_reason;
 use crate::verify::proofs::{ProofContext, judge, ordered_obligations, retained_under};
@@ -60,16 +63,22 @@ pub fn verify_change_assurance(
     }
     let record_check = Check::from_reasons(&record_reasons, Outcome::Invalid);
 
-    let mut lineage_reasons: Vec<Reason> = Vec::new();
-    if let Err(error) = verify_lineage(&record, &input.parents) {
-        lineage_reasons.push(lineage_reason(&error));
-    }
-    let lineage_check = Check::from_reasons(&lineage_reasons, Outcome::Invalid);
+    let (lineage_check, policy_weakened) = match predecessor_policies(&record, &input.parents) {
+        Ok(policies) => (
+            Check::valid(),
+            policy_weakened(&policies, &record.review_workflow.signed_approval),
+        ),
+        Err(error) => (
+            Check::from_reasons(&[lineage_reason(&error)], Outcome::Invalid),
+            false,
+        ),
+    };
 
-    let decision = validate_decision(
+    let decision = validate_decision_with_policy_check(
         &record,
         &input.record_digest,
         input.decision_history.as_ref(),
+        policy_weakened,
     );
     let review_check = Check {
         outcome: decision.outcome,

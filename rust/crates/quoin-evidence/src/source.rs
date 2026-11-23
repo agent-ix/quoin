@@ -201,6 +201,19 @@ impl DiskEvidence {
         &self.root
     }
 
+    /// Read exact bytes for a consumer that authenticates retained content.
+    ///
+    /// # Errors
+    ///
+    /// [`EvidenceError::StoreIo`] when a present path cannot be read.
+    pub fn read_bytes(&self, path: &str) -> Result<Option<Vec<u8>>, EvidenceError> {
+        match std::fs::read(self.resolve(path)) {
+            Ok(bytes) => Ok(Some(bytes)),
+            Err(source) if source.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(source) => Err(io("read", path)(source)),
+        }
+    }
+
     fn resolve(&self, path: &str) -> PathBuf {
         let mut resolved = self.root.clone();
         for segment in path.split('/').filter(|segment| !segment.is_empty()) {
@@ -307,12 +320,9 @@ fn store_io<'a>(
 
 impl EvidenceSource for DiskEvidence {
     fn read(&self, path: &str) -> Result<Option<String>, EvidenceError> {
-        let resolved = self.resolve(path);
-        match std::fs::read(&resolved) {
-            Ok(bytes) => Ok(Some(String::from_utf8_lossy(&bytes).into_owned())),
-            Err(source) if source.kind() == std::io::ErrorKind::NotFound => Ok(None),
-            Err(source) => Err(io("read", path)(source)),
-        }
+        Ok(self
+            .read_bytes(path)?
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned()))
     }
 
     fn list_files(&self, directory: &str) -> Result<Vec<String>, EvidenceError> {

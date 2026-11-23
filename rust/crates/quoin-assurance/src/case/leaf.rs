@@ -7,12 +7,14 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_finding_types::{Finding, UnevaluatedCheck};
-use quoin_quire_types::{Obligation, TargetLocus};
+use quoin_quire_types::Obligation;
 use quoin_store::instant::{Instant, InstantGrammar};
 use serde::{Deserialize, Serialize};
 
 use super::{CaseInput, CaseNode, NodeKind, NodeStatus};
-use crate::matrix::{EvidenceStatus, bucket, status_of};
+use crate::matrix::{
+    EvidenceStatus, bucket, matches_analysis_target, same_native_target, status_of,
+};
 
 /// One suite bound to a leaf, with the newest run or scan the store holds for it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -213,7 +215,12 @@ fn analysis_items(
     };
     if all_obligations
         .iter()
-        .filter(|candidate| candidate.identity.as_ref() == Some(identity))
+        .filter(|candidate| {
+            candidate
+                .identity
+                .as_ref()
+                .is_some_and(|candidate| same_native_target(identity, candidate))
+        })
         .count()
         != 1
     {
@@ -221,7 +228,7 @@ fn analysis_items(
     }
     let mut items = Vec::new();
     for binder in &evidence.record_binders {
-        if binder.get("target").and_then(target_locus) == Some(identity.clone()) {
+        if matches_analysis_target(identity, binder) {
             items.push(serde_json::json!({
                 "status": "qualified-record",
                 "record_binder": binder,
@@ -229,7 +236,7 @@ fn analysis_items(
         }
     }
     for result in &evidence.evidence_results {
-        if result.get("target").and_then(target_locus) == Some(identity.clone())
+        if matches_analysis_target(identity, result)
             && let Some(cause) = result.get("cause")
         {
             items.push(serde_json::json!({ "status": cause, "result": result }));
@@ -237,10 +244,6 @@ fn analysis_items(
     }
     items.sort_by_key(serde_json::Value::to_string);
     items
-}
-
-fn target_locus(value: &serde_json::Value) -> Option<TargetLocus> {
-    serde_json::from_value(value.clone()).ok()
 }
 
 /// The leaf's bound suites and the auditor's verdict, when anything is bound.

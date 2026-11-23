@@ -18,19 +18,27 @@
 mod common;
 
 use ix_trace_rs::trace;
+use std::path::Path;
 
+use quoin_change_assurance::error::Subject;
+use quoin_change_assurance::ids::Revision;
 use quoin_change_assurance::model::outcome::Outcome;
 use quoin_change_assurance::model::receipt::VerificationReceipt;
+use quoin_change_assurance::schemas::VERIFICATION_RECEIPT_V2;
 use quoin_change_assurance::verify::input::VerificationInput;
 use quoin_change_assurance::verify::verify_change_assurance;
-use quoin_store::JsonValue;
+use quoin_jsonschema::SchemaValidator;
+use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{base_input, digest_of, history, json, member, record_text};
+use crate::common::{base_input, digest_of, history, json, member, record_text, replacing};
 
 const KIND: &str = "change_assurance.review_decided";
 const POLICY_OFF: &str = r#"{"required": false, "signature_kinds": [], "approvers": []}"#;
 const POLICY_SSH: &str = r#"{"required": true, "signature_kinds": ["ssh"], "approvers": []}"#;
 const POLICY_NAMED: &str = r#"{"required": true, "signature_kinds": ["gitsign", "ssh"], "approvers": ["reviewer@example.test"]}"#;
+const POLICY_NAMED_SSH: &str =
+    r#"{"required": true, "signature_kinds": ["ssh"], "approvers": ["reviewer@example.test"]}"#;
+const POLICY_EXTRA_APPROVER: &str = r#"{"required": true, "signature_kinds": ["ssh"], "approvers": ["other@example.test", "reviewer@example.test"]}"#;
 
 /// The scenario record with `policy` as its `signed_approval`.
 fn record_with(policy: &str) -> JsonValue {
@@ -75,6 +83,36 @@ fn input(policy: &str, claim: Option<&str>) -> VerificationInput {
     input
 }
 
+fn policy_history(policies: &[&str]) -> VerificationInput {
+    let mut input = base_input();
+    let mut records: Vec<_> = (1_u8..)
+        .zip(policies)
+        .map(|(revision, policy)| {
+            replacing(
+                &record_with(policy),
+                "revision",
+                JsonValue::number(f64::from(revision)).unwrap(),
+            )
+        })
+        .collect();
+    input.record = records.pop().expect("at least one record");
+    let revision = member(&input.record, "revision");
+    let revision_number = u64::try_from(policies.len()).unwrap();
+    input.record_revision = Revision::new(revision_number, Subject::Record, "revision").unwrap();
+    input.record_digest = digest_of(&input.record);
+    input.parents = records;
+    input.attestations[0].attestation = replacing(
+        &input.attestations[0].attestation,
+        "record_revision",
+        revision.clone(),
+    );
+    input.decision_history = Some(history(&[event("event-1", 1, None).replace(
+        r#""revision": 1,"#,
+        &format!(r#""revision": {revision_number},"#),
+    )]));
+    input
+}
+
 fn verify(input: &VerificationInput) -> VerificationReceipt {
     verify_change_assurance(input).expect("a verification always produces a receipt")
 }
@@ -100,6 +138,60 @@ fn assert_refused(receipt: &VerificationReceipt, outcome: Outcome, expected: &[&
     assert_eq!(receipt.outcome, outcome, "{:?}", reasons(receipt));
     assert_eq!(reasons(receipt), expected);
     assert_eq!(claimed(receipt), JsonValue::Null);
+}
+
+#[trace("FR-065-AC-25")]
+#[test]
+fn tc_1511_policy_history_refuses_weakened_approval() {
+    let schema = serde_json::from_str(VERIFICATION_RECEIPT_V2).unwrap();
+    let validator = SchemaValidator::compile_vendored(
+        Path::new("verification-receipt-v2.schema.json"),
+        &schema,
+        &[],
+    )
+    .unwrap();
+    for policies in [
+        &[POLICY_NAMED, POLICY_OFF][..],
+        &[POLICY_NAMED_SSH, POLICY_NAMED][..],
+        &[POLICY_NAMED_SSH, POLICY_SSH][..],
+        &[POLICY_NAMED_SSH, POLICY_EXTRA_APPROVER][..],
+        &[POLICY_NAMED, POLICY_OFF, POLICY_NAMED][..],
+    ] {
+        let mut input = policy_history(policies);
+        input.parents.reverse();
+        let receipt = verify(&input);
+        assert_eq!(receipt.checks.lineage.outcome, Outcome::Valid);
+        assert_eq!(receipt.checks.review.outcome, Outcome::Invalid);
+        assert_refused(&receipt, Outcome::Invalid, &["policy_weakened"]);
+        let bytes = canonical_bytes(&receipt.to_json().unwrap()).unwrap();
+        assert!(validator.is_valid(&serde_json::from_slice(&bytes).unwrap()));
+    }
+}
+
+#[trace("FR-065-AC-25")]
+#[test]
+fn tc_1511_policy_history_uses_normal_claim_rules_after_an_allowed_transition() {
+    for policies in [
+        [POLICY_OFF, POLICY_NAMED_SSH],
+        [POLICY_NAMED, POLICY_NAMED_SSH],
+        [POLICY_SSH, POLICY_NAMED_SSH],
+        [POLICY_SSH, POLICY_SSH],
+    ] {
+        let mut input = policy_history(&policies);
+        let receipt = verify(&input);
+        assert_eq!(receipt.checks.lineage.outcome, Outcome::Valid);
+        assert_eq!(receipt.checks.review.outcome, Outcome::Incomplete);
+        assert_refused(&receipt, Outcome::Incomplete, &["approval_missing"]);
+
+        let claim = claim("approved", &input.record_digest);
+        input.decision_history = Some(history(&[
+            event("event-1", 1, Some(&claim)).replace(r#""revision": 1,"#, r#""revision": 2,"#)
+        ]));
+        let receipt = verify(&input);
+        assert_eq!(receipt.checks.review.outcome, Outcome::Valid);
+        assert_eq!(receipt.outcome, Outcome::Valid);
+        assert_ne!(claimed(&receipt), JsonValue::Null);
+    }
 }
 
 /// An approved claim bound to the stored revision keeps the review check valid

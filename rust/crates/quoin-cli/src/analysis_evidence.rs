@@ -9,14 +9,14 @@ use std::process::{Command, Output};
 
 use clap::ArgMatches;
 use quoin_evidence::EvidenceSource;
-use quoin_evidence::paths::{ANALYSIS_REPORTS_DIR, RUNS_DIR, record_path};
+use quoin_evidence::paths::{ANALYSIS_REPORTS_DIR, RUNS_DIR, record_path, suite_dir};
 use quoin_evidence::qualify::{
     ActorAdmission, CiAssociation as EvidenceCiAssociation, ExecutionAssociation, HostObservations,
     RetainedRun, RunObservation,
 };
 use quoin_evidence::source::DiskEvidence;
-use quoin_evidence::store::{list_recorded_suites, read_runs, read_trust_decisions};
-use quoin_evidence::types::{Binding, MockInjection};
+use quoin_evidence::store::{list_recorded_suites, list_runs, read_trust_decisions};
+use quoin_evidence::types::{Binding, MockInjection, RunRecord};
 use quoin_quire::coverage::Request as ScopeRequest;
 use quoin_quire::ids::{ModuleRoot, ScopeRoot};
 use quoin_quire::modules::ModuleSelection;
@@ -84,6 +84,48 @@ pub(crate) fn compute(
     observations: &[RunObservationFile],
     signature_verifier: Option<&SignatureVerifier>,
 ) -> Result<quoin_quire::evidence::Outcome, String> {
+    quoin_quire::evidence::compute(&request(
+        repo,
+        module_paths,
+        audit_inputs,
+        obligations,
+        observations,
+        signature_verifier,
+    )?)
+    .map_err(|error| error.to_string())
+}
+
+/// Render design rows with the exact native identities used for qualification.
+pub(crate) fn compute_for_matrix(
+    repo: &str,
+    module_paths: &[String],
+    audit_inputs: &serde_json::Value,
+    obligations: &[Obligation],
+    observations: &[RunObservationFile],
+    signature_verifier: Option<&SignatureVerifier>,
+) -> Result<(quoin_quire::evidence::Outcome, serde_json::Value), String> {
+    let (outcome, design) = quoin_quire::evidence::compute_for_matrix(&request(
+        repo,
+        module_paths,
+        audit_inputs,
+        obligations,
+        observations,
+        signature_verifier,
+    )?)
+    .map_err(|error| error.to_string())?;
+    let design = serde_json::to_value(design)
+        .map_err(|error| format!("analysis design matrix is malformed: {error}"))?;
+    Ok((outcome, design))
+}
+
+fn request(
+    repo: &str,
+    module_paths: &[String],
+    audit_inputs: &serde_json::Value,
+    obligations: &[Obligation],
+    observations: &[RunObservationFile],
+    signature_verifier: Option<&SignatureVerifier>,
+) -> Result<quoin_quire::evidence::Request, String> {
     let modules = module_selection(module_paths)?;
     let scope = ScopeRoot::open(repo).map_err(|error| error.to_string())?;
     let canonical_repo = Path::new(repo)
@@ -102,7 +144,7 @@ pub(crate) fn compute(
         .filter(|obligation| obligation.method.as_deref() == Some("Analysis"))
         .map(|obligation| obligation.id.clone())
         .collect();
-    quoin_quire::evidence::compute(&quoin_quire::evidence::Request {
+    Ok(quoin_quire::evidence::Request {
         scope: ScopeRequest { scope, modules },
         requested,
         runs,
@@ -111,7 +153,6 @@ pub(crate) fn compute(
         mock_inspection_suites,
         host,
     })
-    .map_err(|error| error.to_string())
 }
 
 /// Host-configured verifier and signer trust store for actor admission.
@@ -207,7 +248,6 @@ fn retained_runs(
     signature_verifier: Option<&SignatureVerifier>,
 ) -> Result<(Vec<RetainedRun>, Vec<Binding>), String> {
     let source = DiskEvidence::new(repo);
-    let mut skipped = Vec::new();
     let bindings_text = source
         .read("bindings.json")
         .map_err(|error| error.to_string())?;
@@ -221,30 +261,15 @@ fn retained_runs(
     };
     let mut runs = Vec::new();
     for suite in list_recorded_suites(&source).map_err(|error| error.to_string())? {
-        for record in read_runs(&source, &suite, &mut skipped).map_err(|error| error.to_string())? {
-            let file = record_path(RUNS_DIR, &record.suite, &record.timestamp);
-            let projection_path =
-                record_path(ANALYSIS_REPORTS_DIR, &record.suite, &record.timestamp);
-            let report = source
-                .read(&projection_path)
-                .map_err(|error| error.to_string())?
-                .map(|text| {
-                    serde_json::from_str(&text)
-                        .map_err(|error| format!("{projection_path} is malformed: {error}"))
-                })
-                .transpose()?;
-            let observation = observations
+        let directory = suite_dir(RUNS_DIR, &suite);
+        for name in list_runs(&source, &suite).map_err(|error| error.to_string())? {
+            let Some(snapshot) = RunSnapshot::read(&source, format!("{directory}/{name}"))? else {
+                continue;
+            };
+            let observed = observations
                 .iter()
-                .find(|observation| observation.record == file)
-                .map_or_else(RunObservation::default, |input| {
-                    run_observation(repo, input, &file, &projection_path, signature_verifier)
-                });
-            runs.push(RetainedRun {
-                file,
-                record,
-                report,
-                observation,
-            });
+                .find(|observation| observation.record == snapshot.run.path);
+            runs.push(snapshot.into_run(repo, observed, signature_verifier));
         }
     }
     for observation in observations {
@@ -258,11 +283,95 @@ fn retained_runs(
     Ok((runs, bindings))
 }
 
+struct ParsedFile<T> {
+    path: String,
+    bytes: Vec<u8>,
+    value: T,
+}
+
+struct RunSnapshot {
+    run: ParsedFile<RunRecord>,
+    projection: Option<ParsedFile<serde_json::Value>>,
+}
+
+impl RunSnapshot {
+    fn read(source: &DiskEvidence, path: String) -> Result<Option<Self>, String> {
+        let Some(bytes) = source
+            .read_bytes(&path)
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(None);
+        };
+        let Ok(record) = serde_json::from_slice::<RunRecord>(&bytes) else {
+            return Ok(None);
+        };
+        if record_path(RUNS_DIR, &record.suite, &record.timestamp) != path {
+            return Ok(None);
+        }
+        let projection_path = record_path(ANALYSIS_REPORTS_DIR, &record.suite, &record.timestamp);
+        let projection = if let Some(bytes) = source
+            .read_bytes(&projection_path)
+            .map_err(|error| error.to_string())?
+        {
+            let value = serde_json::from_slice(&bytes)
+                .map_err(|error| format!("{projection_path} is malformed: {error}"))?;
+            Some(ParsedFile {
+                path: projection_path,
+                bytes,
+                value,
+            })
+        } else {
+            None
+        };
+        Ok(Some(Self {
+            run: ParsedFile {
+                path,
+                bytes,
+                value: record,
+            },
+            projection,
+        }))
+    }
+
+    fn pair(&self) -> Option<EvidencePair<'_>> {
+        self.projection.as_ref().map(|projection| EvidencePair {
+            run_path: &self.run.path,
+            run_bytes: &self.run.bytes,
+            projection_path: &projection.path,
+            projection_bytes: &projection.bytes,
+        })
+    }
+
+    fn into_run(
+        self,
+        repo: &str,
+        input: Option<&RunObservationFile>,
+        signature_verifier: Option<&SignatureVerifier>,
+    ) -> RetainedRun {
+        let observation = input.map_or_else(RunObservation::default, |input| {
+            run_observation(repo, input, self.pair(), signature_verifier)
+        });
+        RetainedRun {
+            file: self.run.path,
+            record: self.run.value,
+            report: self.projection.map(|projection| projection.value),
+            observation,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct EvidencePair<'a> {
+    run_path: &'a str,
+    run_bytes: &'a [u8],
+    projection_path: &'a str,
+    projection_bytes: &'a [u8],
+}
+
 fn run_observation(
     repo: &str,
     input: &RunObservationFile,
-    run_file: &str,
-    projection_file: &str,
+    pair: Option<EvidencePair<'_>>,
     signature_verifier: Option<&SignatureVerifier>,
 ) -> RunObservation {
     let performed_revision = input
@@ -280,8 +389,9 @@ fn run_observation(
             invocation: ci.invocation.clone(),
         })
     });
-    let (actor, actor_rejection) =
-        actor_observation(repo, input, run_file, projection_file, signature_verifier);
+    let (actor, actor_rejection) = pair.map_or((None, None), |pair| {
+        actor_observation(repo, input, pair, signature_verifier)
+    });
     RunObservation {
         run_kind: input.run_kind.clone(),
         performed_revision,
@@ -331,8 +441,7 @@ fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObs
 fn actor_observation(
     repo: &str,
     input: &RunObservationFile,
-    run_file: &str,
-    projection_file: &str,
+    pair: EvidencePair<'_>,
     signature_verifier: Option<&SignatureVerifier>,
 ) -> (Option<ActorAdmission>, Option<String>) {
     let Some(authority) = input.actor_authority.as_ref() else {
@@ -349,7 +458,7 @@ fn actor_observation(
     {
         return (None, None);
     }
-    let Some(commit_id) = first_pair_introduction(repo, run_file, projection_file) else {
+    let Some(commit_id) = first_pair_introduction(repo, pair) else {
         return (None, None);
     };
     let Some(verified_commit_id) = signature
@@ -469,9 +578,9 @@ fn signature_signer(signature: &serde_json::Value) -> SignatureSigner {
     SignatureSigner::Admitted(principal.to_owned())
 }
 
-fn first_pair_introduction(repo: &str, run_file: &str, projection_file: &str) -> Option<String> {
-    let run_path = format!("spec/evidence/{run_file}");
-    let projection_path = format!("spec/evidence/{projection_file}");
+fn first_pair_introduction(repo: &str, pair: EvidencePair<'_>) -> Option<String> {
+    let run_path = format!("spec/evidence/{}", pair.run_path);
+    let projection_path = format!("spec/evidence/{}", pair.projection_path);
     let output = git(
         repo,
         &[
@@ -496,8 +605,7 @@ fn first_pair_introduction(repo: &str, run_file: &str, projection_file: &str) ->
     for line in String::from_utf8(output.stdout).ok()?.lines() {
         if let Some(id) = line.strip_prefix("commit ") {
             if additions.contains(&run_path) && additions.contains(&projection_path) {
-                return pair_bytes_match(repo, id, &run_path, &projection_path)
-                    .then(|| id.to_owned());
+                break;
             }
             commit = Some(id.to_owned());
             additions.clear();
@@ -508,20 +616,12 @@ fn first_pair_introduction(repo: &str, run_file: &str, projection_file: &str) ->
         }
     }
     let id = commit?;
-    (additions.contains(&run_path) && additions.contains(&projection_path))
-        .then(|| pair_bytes_match(repo, &id, &run_path, &projection_path).then_some(id))
-        .flatten()
-}
-
-fn pair_bytes_match(repo: &str, commit: &str, run_path: &str, projection_path: &str) -> bool {
-    let Some(run_current) = std::fs::read(Path::new(repo).join(run_path)).ok() else {
-        return false;
-    };
-    let Some(projection_current) = std::fs::read(Path::new(repo).join(projection_path)).ok() else {
-        return false;
-    };
-    git_show(repo, commit, run_path).as_deref() == Some(run_current.as_slice())
-        && git_show(repo, commit, projection_path).as_deref() == Some(projection_current.as_slice())
+    if !additions.contains(&run_path) || !additions.contains(&projection_path) {
+        return None;
+    }
+    (git_show(repo, &id, &run_path).as_deref() == Some(pair.run_bytes)
+        && git_show(repo, &id, &projection_path).as_deref() == Some(pair.projection_bytes))
+    .then_some(id)
 }
 
 fn git_show(repo: &str, commit: &str, path: &str) -> Option<Vec<u8>> {
@@ -551,14 +651,18 @@ fn valid_object_id(value: &str) -> bool {
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::{SignatureVerifier, actor_observation, first_pair_introduction, host_observations};
+    use super::{RunSnapshot, SignatureVerifier, first_pair_introduction, host_observations};
     use crate::run_observation::RunObservationFile;
     use ix_trace_rs::trace;
+    use quoin_evidence::qualify::RetainedRun;
+    use quoin_evidence::source::DiskEvidence;
     use std::fs;
     use std::process::Command;
 
-    const RUN: &str = "runs/unit/2026-11-13T00:00:00Z.json";
-    const PROJECTION: &str = "analysis-reports/unit/2026-11-13T00:00:00Z.json";
+    const RUN: &str = "runs/unit/2026-11-13T00~3A00~3A00Z.json";
+    const PROJECTION: &str = "analysis-reports/unit/2026-11-13T00~3A00~3A00Z.json";
+    const RUN_BYTES: &[u8] = br#"{"schemaVersion":1,"suite":"unit","tool":"fixture","timestamp":"2026-11-13T00:00:00Z","entries":[{"symbol":"analysis-result","outcome":"pass","traceIds":["FR-001-AC-1"]}]}"#;
+    const PROJECTION_BYTES: &[u8] = br#"{"protocol":"quoin.analysis-report-projection/v1"}"#;
     const SUPPORTED_TEST_EA_VERSION: &str = "engineering-assurance 0.10.1";
 
     fn git(repo: &std::path::Path, args: &[&str]) -> String {
@@ -591,16 +695,35 @@ mod tests {
         fs::create_dir_all(run.parent().expect("run parent")).expect("run directory");
         fs::create_dir_all(projection.parent().expect("projection parent"))
             .expect("projection directory");
-        fs::write(&run, br#"{"protocol":"quoin.run/v1"}"#).expect("run bytes");
-        fs::write(
-            &projection,
-            br#"{"protocol":"quoin.analysis-report-projection/v1"}"#,
-        )
-        .expect("projection bytes");
+        fs::write(&run, RUN_BYTES).expect("run bytes");
+        fs::write(&projection, PROJECTION_BYTES).expect("projection bytes");
         git(repo.path(), &["add", "spec/evidence"]);
         git(repo.path(), &["commit", "-q", "-m", "add paired evidence"]);
         let commit = git(repo.path(), &["rev-parse", "HEAD"]);
         (repo, commit)
+    }
+
+    fn snapshot(repo: &std::path::Path) -> RunSnapshot {
+        RunSnapshot::read(&DiskEvidence::new(repo), RUN.to_owned())
+            .expect("retained run is readable")
+            .expect("retained run is canonical")
+    }
+
+    fn observed_run(
+        repo: &std::path::Path,
+        input: &RunObservationFile,
+        verifier: Option<&SignatureVerifier>,
+    ) -> RetainedRun {
+        snapshot(repo).into_run(repo.to_str().expect("repo path"), Some(input), verifier)
+    }
+
+    fn observe_actor(
+        repo: &std::path::Path,
+        input: &RunObservationFile,
+        verifier: Option<&SignatureVerifier>,
+    ) -> (Option<super::ActorAdmission>, Option<String>) {
+        let observation = observed_run(repo, input, verifier).observation;
+        (observation.actor, observation.actor_rejection)
     }
 
     fn explicit_supported_ea() -> std::path::PathBuf {
@@ -683,12 +806,8 @@ mod tests {
         fs::create_dir_all(run.parent().expect("run parent")).expect("run directory");
         fs::create_dir_all(projection.parent().expect("projection parent"))
             .expect("projection directory");
-        fs::write(&run, br#"{"protocol":"quoin.run/v1"}"#).expect("run bytes");
-        fs::write(
-            &projection,
-            br#"{"protocol":"quoin.analysis-report-projection/v1"}"#,
-        )
-        .expect("projection bytes");
+        fs::write(&run, RUN_BYTES).expect("run bytes");
+        fs::write(&projection, PROJECTION_BYTES).expect("projection bytes");
         git(repo.path(), &["add", "spec/evidence"]);
         git(repo.path(), &["commit", "-q", "-m", "add paired evidence"]);
         let commit = git(repo.path(), &["rev-parse", "HEAD"]);
@@ -741,14 +860,15 @@ mod tests {
         )
         .expect("the actual commit signature verifies");
         assert_eq!(
-            first_pair_introduction(repo.path().to_str().expect("repo path"), RUN, PROJECTION),
+            first_pair_introduction(
+                repo.path().to_str().expect("repo path"),
+                snapshot(repo.path()).pair().expect("projection present"),
+            ),
             Some(commit.clone())
         );
-        let (actor, rejection) = actor_observation(
-            repo.path().to_str().expect("repo path"),
+        let (actor, rejection) = observe_actor(
+            repo.path(),
             &observation(&actual_signature),
-            RUN,
-            PROJECTION,
             Some(&verifier),
         );
         assert_eq!(
@@ -764,13 +884,8 @@ mod tests {
             "verified_commit_id": commit,
             "signer": {"mapping": "unmapped"},
         });
-        let (actor, rejection) = actor_observation(
-            repo.path().to_str().expect("repo path"),
-            &observation(&untrusted),
-            RUN,
-            PROJECTION,
-            Some(&verifier),
-        );
+        let (actor, rejection) =
+            observe_actor(repo.path(), &observation(&untrusted), Some(&verifier));
         assert!(actor.is_none());
         assert!(rejection.is_some());
 
@@ -788,16 +903,86 @@ mod tests {
             None,
         )
         .expect("later signature verifies");
-        let (actor, _) = actor_observation(
-            repo.path().to_str().expect("repo path"),
-            &observation(&later_signature),
-            RUN,
-            PROJECTION,
-            Some(&verifier),
-        );
+        let (actor, _) =
+            observe_actor(repo.path(), &observation(&later_signature), Some(&verifier));
         assert!(
             actor.is_none(),
             "later tree-equivalent signature is not pair-bound"
+        );
+    }
+
+    #[trace("FR-153-AC-16")]
+    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
+    #[test]
+    fn actor_admission_uses_the_parsed_pair_and_mapped_actor() {
+        use quoin_evidence::qualify::{
+            self, Cause, HostObservations, Premise, Qualification, Request,
+        };
+
+        let (repo, commit, _keys, verifier) = signed_pair_repo();
+        let signature = crate::formal_rules::verify_for_evidence(
+            &verifier.executable,
+            &verifier.allowed_signers,
+            repo.path(),
+            &commit,
+            None,
+        )
+        .expect("the actual signature verifies");
+        let observed = observation(&signature);
+        let control = observed_run(repo.path(), &observed, Some(&verifier));
+        let admitted = control
+            .observation
+            .actor
+            .expect("healthy signed pair is admitted");
+        assert_eq!(admitted.actor, "alice@example.invalid");
+        assert_eq!(control.observation.actor_rejection, None);
+
+        let mut other_actor = observed.clone();
+        other_actor
+            .actor_authority
+            .as_mut()
+            .expect("actor authority")
+            .actor = "another@example.invalid".to_owned();
+        let (actor, rejection) = observe_actor(repo.path(), &other_actor, Some(&verifier));
+        assert!(actor.is_none());
+        assert_eq!(
+            rejection.as_deref(),
+            Some("actor authority does not match the mapped signer principal"),
+        );
+
+        let captured = snapshot(repo.path());
+        fs::write(
+            repo.path().join("spec/evidence").join(PROJECTION),
+            [PROJECTION_BYTES, b"\n"].concat(),
+        )
+        .expect("store a byte-distinct projection with the same parsed value");
+        let replay = captured.into_run(
+            repo.path().to_str().expect("repo path"),
+            Some(&observed),
+            Some(&verifier),
+        );
+        assert_eq!(replay.report, control.report);
+        assert_eq!(replay.observation.actor, Some(admitted));
+        assert_eq!(replay.observation.actor_rejection, None);
+
+        let current = observed_run(repo.path(), &observed, Some(&verifier));
+        assert_eq!(current.report, control.report);
+        assert!(current.observation.actor.is_none());
+        assert_eq!(current.observation.actor_rejection, None);
+        let answer = qualify::qualify(&Request {
+            obligation: "FR-001-AC-1",
+            declared_method: Some("Analysis"),
+            runs: &[current],
+            audit: None,
+            host: &HostObservations::default(),
+        });
+        assert!(
+            matches!(&answer, Qualification::NotQualified(refusals) if refusals.iter().any(|refusal| {
+                refusal.cause == Cause::Unevaluated
+                    && refusal.premise == Some(Premise::ActorAuthority)
+                    && refusal.detail == "actor authority premise: no signer admitted for the record"
+            })),
+            "{answer:?}"
         );
     }
 
@@ -806,13 +991,8 @@ mod tests {
     #[test]
     fn self_asserted_signed_valid_result_remains_unevaluated() {
         let (repo, commit) = pair_repo();
-        let (actor, rejection) = actor_observation(
-            repo.path().to_str().expect("repo path"),
-            &observation(&signature(&commit)),
-            RUN,
-            PROJECTION,
-            None,
-        );
+        let (actor, rejection) =
+            observe_actor(repo.path(), &observation(&signature(&commit)), None);
         assert!(actor.is_none());
         assert!(rejection.is_none());
     }
@@ -833,13 +1013,16 @@ mod tests {
             None,
         )
         .expect("the verifier returns an explicit unsigned result");
-        assert_eq!(actual_signature["status"], "unsigned");
+        assert_eq!(
+            actual_signature
+                .get("status")
+                .and_then(serde_json::Value::as_str),
+            Some("unsigned"),
+        );
 
-        let (actor, rejection) = actor_observation(
-            repo.path().to_str().expect("repo path"),
+        let (actor, rejection) = observe_actor(
+            repo.path(),
             &observation(&actual_signature),
-            RUN,
-            PROJECTION,
             Some(&verifier),
         );
         assert!(actor.is_none());
@@ -862,11 +1045,9 @@ mod tests {
             serde_json::json!({"protocol":"engineering-assurance.signature-verify-result/v1", "kind":"commit", "status":"unverifiable", "reason":"revision_unresolved", "verified_commit_id":null}),
         ];
         for signature_result in cases {
-            let (actor, rejection) = actor_observation(
-                repo.path().to_str().expect("repo path"),
+            let (actor, rejection) = observe_actor(
+                repo.path(),
                 &observation(&signature_result),
-                RUN,
-                PROJECTION,
                 Some(&verifier),
             );
             assert!(actor.is_none(), "invalid identity must not admit an actor");
@@ -889,17 +1070,11 @@ mod tests {
         fs::create_dir_all(run.parent().expect("run parent")).expect("run directory");
         fs::create_dir_all(projection.parent().expect("projection parent"))
             .expect("projection directory");
-        fs::write(run, br#"{"protocol":"quoin.run/v1"}"#).expect("uncommitted run bytes");
-        fs::write(
-            projection,
-            br#"{"protocol":"quoin.analysis-report-projection/v1"}"#,
-        )
-        .expect("uncommitted projection bytes");
-        let (actor, rejection) = actor_observation(
-            repo.path().to_str().expect("repo path"),
+        fs::write(run, RUN_BYTES).expect("uncommitted run bytes");
+        fs::write(projection, PROJECTION_BYTES).expect("uncommitted projection bytes");
+        let (actor, rejection) = observe_actor(
+            repo.path(),
             &observation(&signature("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")),
-            RUN,
-            PROJECTION,
             None,
         );
         assert!(actor.is_none());
