@@ -33,3 +33,9 @@ PASS WITH ONE LOW FINDING. No contradiction with other spec text was found; "id 
 - FR-200 Description, Plan-record decision, Inputs, Outputs, Behavior, AC-1..AC-11 (examined)
 - FR-191 gap-subject line, exit-status prose, AC-22 (examined)
 - US-024 scenario (context_only)
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 76cf9c5b: FR-200-AC-9 states the policy-present precondition (exactly one gap) and the no-policy case (exactly two, document-level first); the matching Behavior bullet says the same. The missing test for the second clause is gap-analysis FND-004. |

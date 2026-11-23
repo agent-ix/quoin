@@ -31,3 +31,10 @@ PASS WITH LOW FINDINGS. The new conditional statements ("If a plan record exists
 
 - FR-200 Description and Behavior (examined)
 - FR-191 lines 109, 126-127, AC-22 (examined)
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 76cf9c5b splits each compound Behavior bullet into one SHALL per statement; `quire validate --scope .` on FR-200 and FR-191 reports no warning. |
+| FND-002 | fixed | 76cf9c5b: Description now ends "When no plan record exists, the document SHALL state the absence of a plan record."; no EARS warning remains. |

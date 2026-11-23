@@ -133,7 +133,7 @@ fn an_unusable_plan_makes_generate_exit_3_name_the_plan_and_write_nothing() {
         );
         let report: Value = serde_json::from_slice(&output.stdout).unwrap();
         let source = report["source_failure"]["source"].as_str().unwrap();
-        assert!(source.contains("risk management plan"), "{source}");
+        assert_eq!(source, "risk management plan");
         assert!(!work.path().join("dossier").exists());
     }
 }

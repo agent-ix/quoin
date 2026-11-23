@@ -595,4 +595,22 @@ mod tests {
         let subjects: Vec<_> = gaps.iter().map(|gap| gap.subject.as_str()).collect();
         assert_eq!(subjects, ["RMP-2", "RMP-10"]);
     }
+
+    #[trace("FR-200-AC-9")]
+    #[test]
+    fn a_plan_with_no_policy_in_scope_has_the_document_gap_then_the_plan_gap() {
+        let output = generated_with(&[], &[plan("RMP-1", &[])]).unwrap();
+        let gaps: Vec<_> = output
+            .gaps
+            .iter()
+            .map(|gap| (gap.gap_kind, gap.subject.as_str()))
+            .collect();
+        assert_eq!(
+            gaps,
+            [
+                (GapKind::NoAcceptabilityPolicy, "this document"),
+                (GapKind::NoAcceptabilityPolicy, "RMP-1"),
+            ]
+        );
+    }
 }

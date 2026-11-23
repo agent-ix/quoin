@@ -49,3 +49,18 @@ CHANGES REQUESTED (FND-001). FR-200 coverage is otherwise complete and the tests
 
 - FR-200-AC-1..FR-200-AC-11 (examined)
 - FR-191-AC-22 (examined)
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | medium | FR-200-AC-9 now states that with no policy in scope a plan with no reference yields exactly two `no_acceptability_policy` gaps (document-level, then the plan's), but no test exercises that case: the AC-9 unit test and tc_1834 both include a policy, and AC-2's test has no plan. Add the zero-policy, one-plan case asserting the two gaps, their order and subjects. | rust/crates/quoin-dossier/src/risk_plan.rs:521-536 |
+| FND-005 | low | The FR-200-AC-14 end-to-end test asserts `source.contains("risk management plan")`, which the combined fallback name `acceptability policy and risk management plan` also satisfies, so a regression of `unusable_source` to always-combined passes. Assert equality with `risk management plan`. | rust/crates/quoin-cli/tests/tc_1834_dossier_risk_plan.rs:134-135 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 76cf9c5b: tc_1834_dossier_risk_plan.rs `the_plan_document_makes_generate_exit_1_only_while_no_plan_record_exists`, tagged FR-191-AC-22, runs `quoin dossier generate` without a plan (exit 1, `no_plan_record`, file written) and with the skeleton-filled plan (exit 0, RMP-001 rendered). Passed at 76cf9c5b against spec-objects-safety 5f116b0. |
+| FND-002 | fixed | 76cf9c5b: FR-200-AC-14 test drives blank cell, missing table and empty table through `quoin dossier generate`, asserting exit 3, a plan-naming source and no `dossier/` directory. Passed. |
+| FND-003 | fixed | 76cf9c5b: tc_1834_risk_management_plan.rs `an_ix_relationship_target_is_read_as_a_reference_to_its_last_segment` (FR-200-AC-12) authors `ix://owner/repo/POL-1` through the real reader. Passed. |

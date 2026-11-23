@@ -139,11 +139,17 @@ fn plan_document(target: &str) -> String {
 }
 
 fn generate_with(plan: &str) -> (quoin_dossier::Report, String) {
+    generate_in(Some(POLICY), plan)
+}
+
+fn generate_in(policy: Option<&str>, plan: &str) -> (quoin_dossier::Report, String) {
     let scope = tempfile::tempdir().unwrap();
     let out = scope.path().join("dossier");
     let records = scope.path().join("spec");
     fs::create_dir_all(&records).unwrap();
-    fs::write(records.join("policy.md"), POLICY).unwrap();
+    if let Some(policy) = policy {
+        fs::write(records.join("policy.md"), policy).unwrap();
+    }
     fs::write(records.join("plan.md"), plan).unwrap();
     let report = quoin_dossier::generate(
         &registry(),
@@ -186,4 +192,25 @@ fn an_ix_relationship_target_is_read_as_a_reference_to_its_last_segment() {
     let (report, markdown) = generate_with(&plan_document("ix://owner/repo/POL-1"));
     assert!(report.documents[0].gaps.is_empty());
     assert!(markdown.contains("Plan RMP-001 references the acceptability criteria POL-1."));
+}
+
+#[trace("FR-200-AC-9")]
+#[test]
+fn with_no_policy_in_scope_the_plan_has_the_document_gap_then_its_own() {
+    let (report, _) = generate_in(None, &plan_document("POL-1"));
+    let gaps: Vec<_> = report.documents[0]
+        .gaps
+        .iter()
+        .map(|gap| (gap.gap_kind, gap.subject.as_str()))
+        .collect();
+    assert_eq!(
+        gaps,
+        [
+            (
+                quoin_dossier::GapKind::NoAcceptabilityPolicy,
+                "this document"
+            ),
+            (quoin_dossier::GapKind::NoAcceptabilityPolicy, "RMP-001"),
+        ]
+    );
 }

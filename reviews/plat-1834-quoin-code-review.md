@@ -38,3 +38,10 @@ Gates run through locked-build.sh (debug=0, incremental=0, shared CARGO_HOME), S
 - rust/crates/quoin-dossier/tests/tc_1834_risk_management_plan.rs (examined)
 - rust/crates/quoin-quire/src/records.rs relationships() (context_only)
 - rust/crates/quoin-dossier/src/order.rs (context_only)
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 76cf9c5b: policies and plans sort with `dossier_cmp` (risk_plan.rs:106-108); plan-level gaps follow plan order. New test `plans_and_policies_sort_in_dossier_order_not_byte_order` (FR-200-AC-13) uses RMP-2/RMP-10, POL-2/POL-10 and asserts gap subjects `["RMP-2", "RMP-10"]`; under byte order `RMP-10` sorts first, so every assertion fails (checked by reasoning, not by mutating the branch). |
+| FND-002 | fixed | 76cf9c5b: `invalid_record` names `risk management plan` for a plan and `acceptability policy` for a policy; `unusable_source` names the one kind whose contract failed, else the combined name; CLI read failures use the combined name. tc_1656 unchanged and still passes on `acceptability policy`. |
