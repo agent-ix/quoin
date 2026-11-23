@@ -33,6 +33,8 @@ FND-001 should be fixed before merge; FND-002 is a wording gap.
 | FND-002 | fixed | NFR-036 now names the installed module set (the `--module` roots, or the installed modules) as an input in its statement and metric. |
 | FND-003 | fixed | Round 2: the rule now covers every markdown file below `--repo` (or a `--module DIR`) that cannot be read, states why, and FR-166-AC-14 tests a non-risk markdown file that is not valid UTF-8. |
 | FND-004 | fixed | Round 2: the rule now also refuses a markdown file whose YAML frontmatter does not parse, and FR-166-AC-14 tests it; the meaning of "does not parse" is FND-005 below. |
+| FND-005 | fixed | Round 3: FR-166 now refuses only a frontmatter block that is not valid YAML, adds SHALL NOT statements that a file with valid YAML frontmatter and no `type` or `id` is neither refused nor reported unreadable, and FR-166-AC-14 adds that negative case (a `SKILL.md` with only `name` and `description` is read and the snapshot is written). |
+| FND-006 | fixed | Round 3: the `--module DIR` clause is dropped; the unreadable rule and AC-14 name `--repo` only, and a module that does not load stays `release_snapshot_input_invalid` under AC-13, so no condition maps to two codes. |
 
 ## New findings (disposition pass 1)
 
