@@ -30,6 +30,7 @@ Round 1, head 35474e19.
 | --- | --- | --- |
 | FND-001 | fixed | Replaced by three single-response statements: print the warnings, print one summary line with the count, exit zero when only warnings. |
 | FND-002 | fixed | Split into FR-212-AC-5 (module doctor) and FR-212-AC-6 (catalog validate). |
+| FND-003 | fixed | Round 3 (7ee99165): the Behavior statement and FR-212-AC-7 now trigger on "the lag check fails after the catalog loads", the condition the code and `a_failed_lag_check_leaves_the_validate_outcome_unchanged` cover; `quire validate` on FR-212 prints nothing. |
 
 ## New findings (disposition pass 2)
 
