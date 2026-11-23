@@ -89,6 +89,8 @@ Re-checked against fix commit f64ad1d.
 | FND-018 | fixed | Round 3: FR-046-AC-6 and AC-9 state that a direct fact discharges only with a store (`--repo`) |
 | FND-013 | fixed | Round 4 (c0393fe): FR-135 maps every FR-211 reason and `not-verified-offline` to `Not compliant - undischarged` with the reason shown (FR-135-AC-3, AC-8), matching FR-195; the regressions that wording introduces are FND-020 and FND-021 |
 | FND-019 | fixed | Round 4: FR-191 adds "except as FR-195 states for approval-class clauses" |
+| FND-020 | fixed | Round 5 (77360f2): FR-135 lists `Not compliant - temporary exception expired` and puts it first in an explicit precedence, matching FR-174-AC-6, TC-004, FR-195 and rmm.rs |
+| FND-021 | fixed | Round 5: FR-135's precedence puts attestation currency ahead of FR-211 reasons, and AC-3 and AC-8 follow it |
 
 ## New findings (disposition pass 2)
 
@@ -116,3 +118,11 @@ Re-checked against fix commit c0393fe.
 | --- | --- | --- | --- | --- |
 | FND-020 | high | FR-135 now puts a clause whose fact "is open for any reason other than its attestation's currency" under `Not compliant - undischarged`. That covers an expired `temporary_exception` with a current attestation (reason `temporary exception expired`, FR-046-AC-8), which FR-174 and FR-174-AC-6, TC-004, FR-195's `temporary_exception_expired` value and `rmm.rs` `TemporaryExceptionExpired` all render as `Not compliant - temporary exception expired` | FR-135, FR-174-AC-6, FR-195, FR-046-AC-8 | wrong-requirement |
 | FND-021 | medium | FR-135 now says `attestation not current` applies only when the attestation's currency is the only failure, so a fact with an expired attestation and an unresolved ref is `undischarged`; FR-135-AC-8 says "the same fact" (the one with the unresolved ref) with an expired attestation is `attestation not current`, and AC-3 omits the "only" qualifier | FR-135-AC-8, FR-135-AC-3, FR-135 | wrong-requirement |
+
+## New findings (disposition pass 5)
+
+Re-checked against fix commit 77360f2.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-022 | low | FR-195 still says the RMM "SHALL always show an approval-class clause with `compliance` `undischarged` and reason `not-verified-offline`" (and FR-195-AC-1 repeats it), while FR-195's next bullet and AC-5 now defer to FR-135's precedence. An approval-class clause with an expired attestation, or an expired temporary exception, is therefore both `undischarged` and `attestation_not_current`/`temporary_exception_expired`. Either value is open and gets a `clause_open` gap; only the label differs | FR-195, FR-195-AC-1, FR-195-AC-5, FR-135 | wrong-requirement |
