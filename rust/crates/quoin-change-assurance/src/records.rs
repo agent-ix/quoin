@@ -15,7 +15,9 @@ use crate::error::{ChangeAssuranceError, LineageFailure};
 use crate::model::decision::{DecisionHistory, ReviewDecision, read_review_event};
 use crate::model::outcome::{Outcome, Reason};
 use crate::model::receipt::ReceiptDecisionEvent;
-use crate::model::record::{ChangeAssuranceRecord, DECISION_EVENT_KIND, normalize_record};
+use crate::model::record::{
+    ChangeAssuranceRecord, DECISION_EVENT_KIND, SignedApprovalPolicy, normalize_record,
+};
 use crate::verify::approval::judge_approval;
 
 /// Normalize a record body's collections and validate it.
@@ -83,6 +85,14 @@ pub fn verify_lineage(
     record: &ChangeAssuranceRecord,
     parents: &[JsonValue],
 ) -> Result<(), ChangeAssuranceError> {
+    predecessor_policies(record, parents).map(drop)
+}
+
+/// Verify the same-record chain and return its policies in revision order.
+pub(crate) fn predecessor_policies(
+    record: &ChangeAssuranceRecord,
+    parents: &[JsonValue],
+) -> Result<Vec<SignedApprovalPolicy>, ChangeAssuranceError> {
     let mut ordered: Vec<&JsonValue> = parents.iter().collect();
     // A parent whose `revision` is not a number has no place in the order. It
     // sorts to the front here; see `DIVERGENCE.md` for why the verdict does
@@ -91,7 +101,7 @@ pub fn verify_lineage(
 
     if record.revision.is_genesis() {
         if ordered.is_empty() {
-            return Ok(());
+            return Ok(Vec::new());
         }
         return Err(ChangeAssuranceError::Lineage {
             failure: LineageFailure::GenesisHasAParent,
@@ -103,6 +113,7 @@ pub fn verify_lineage(
             failure: LineageFailure::RevisionGap,
         });
     }
+    let mut policies = Vec::with_capacity(ordered.len());
     for (index, raw) in ordered.iter().enumerate() {
         let parent =
             read_change_record_json(raw).map_err(|source| ChangeAssuranceError::LineageParent {
@@ -119,8 +130,9 @@ pub fn verify_lineage(
                 failure: LineageFailure::RevisionGap,
             });
         }
+        policies.push(parent.review_workflow.signed_approval);
     }
-    Ok(())
+    Ok(policies)
 }
 
 /// The `revision` a retained parent declares, or zero when it declares none.
@@ -154,7 +166,10 @@ impl DecisionCheck {
     }
 }
 
-/// Check the retained decision history against a record.
+/// Check the retained decision history against a single record revision.
+///
+/// Use [`crate::verify::verify_change_assurance`] to also check its lineage and
+/// compare the signing policies of successive revisions.
 ///
 /// Takes the history as JSON rather than as a parsed value because
 /// verification distinguishes *absent* (`event_chain_missing`, incomplete) from *present
@@ -168,6 +183,15 @@ pub fn validate_decision(
     record: &ChangeAssuranceRecord,
     record_digest: &str,
     history: Option<&JsonValue>,
+) -> DecisionCheck {
+    validate_decision_with_policy_check(record, record_digest, history, false)
+}
+
+pub(crate) fn validate_decision_with_policy_check(
+    record: &ChangeAssuranceRecord,
+    record_digest: &str,
+    history: Option<&JsonValue>,
+    policy_weakened: bool,
 ) -> DecisionCheck {
     let Some(history) = history else {
         return DecisionCheck::refusing(Outcome::Incomplete, Reason::EventChainMissing);
@@ -228,6 +252,11 @@ pub fn validate_decision(
         ReviewDecision::Revise => DecisionCheck {
             outcome: Outcome::Invalid,
             reasons: vec![Reason::ReviewRevisionRequested],
+            event: Some(event),
+        },
+        ReviewDecision::Approved if policy_weakened => DecisionCheck {
+            outcome: Outcome::Invalid,
+            reasons: vec![Reason::PolicyWeakened],
             event: Some(event),
         },
         ReviewDecision::Approved => {

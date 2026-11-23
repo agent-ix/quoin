@@ -124,6 +124,8 @@ reasons! {
     /// The claimed approval names another record, or a digest other than the
     /// reviewed revision's stored bytes.
     ApprovalRecordMismatch => "approval_record_mismatch", false;
+    /// A revision weakened the approval policy of its verified predecessor.
+    PolicyWeakened => "policy_weakened", false;
     /// The claimed approval's signer is untrusted, or falls outside the
     /// record's narrowing policy.
     ApprovalSignerUntrusted => "approval_signer_untrusted", false;

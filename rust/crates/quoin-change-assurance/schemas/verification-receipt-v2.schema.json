@@ -94,6 +94,7 @@
         "event_chain_invalid",
         "decision_mismatch",
         "approval_record_mismatch",
+        "policy_weakened",
         "approval_signer_untrusted",
         "approval_signature_bad",
         "approval_unverified",

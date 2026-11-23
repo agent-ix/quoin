@@ -73,20 +73,26 @@ fn fixture() -> Fixture {
 }
 
 impl Fixture {
+    fn quoin(&self) -> Command {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+        command
+            .current_dir(self.repo.path())
+            .env("IX_HOME", self.home.path())
+            .env(
+                "GIT_CEILING_DIRECTORIES",
+                self.repo.path().parent().unwrap(),
+            );
+        command
+    }
+
     fn record(&self, results: &Path, extra: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_quoin"))
+        self.quoin()
             .args(["evidence", "record", "--repo", ".", "--module", "."])
             .args(["--suite", "SUITE-SMT", "--tool", "filament-analyze 0.1.0"])
             .args(["--run-kind", "analysis"])
             .args(["--timestamp", "2026-01-01T00:00:00Z", "--results"])
             .arg(results)
             .args(extra)
-            .current_dir(self.repo.path())
-            .env("IX_HOME", self.home.path())
-            .env(
-                "GIT_CEILING_DIRECTORIES",
-                self.repo.path().parent().unwrap(),
-            )
             .output()
             .unwrap()
     }
@@ -193,16 +199,11 @@ fn tc_001_the_command_applies_the_report_limit_not_a_lower_request_limit() {
 }
 
 fn audit(fixture: &Fixture) -> serde_json::Value {
-    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+    let output = fixture
+        .quoin()
         .args([
             "evidence", "audit", "--repo", ".", "--module", ".", "--json",
         ])
-        .current_dir(fixture.repo.path())
-        .env("IX_HOME", fixture.home.path())
-        .env(
-            "GIT_CEILING_DIRECTORIES",
-            fixture.repo.path().parent().unwrap(),
-        )
         .output()
         .unwrap();
     serde_json::from_str(&stdout(&output)).unwrap()
@@ -232,6 +233,81 @@ fn tc_002_audit_reports_the_obligation_undischarged_until_it_is_stated() {
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     let after = audit(&stated);
     assert!(!undischarged(&after, "FR-001-AC-1"), "{after}");
+}
+
+#[trace("FR-153-AC-8")]
+#[test]
+fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
+    const RUN: &str = "runs/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json";
+    let fixture = fixture();
+    let spec = SPEC.replace("|  |\n", "| Analysis |\n")
+        + "| FR-001-AC-2 | The reader shall report the refused field. | Analysis |\n";
+    std::fs::write(fixture.repo.path().join("spec/FR-001-example.md"), spec).unwrap();
+    let results = fixture.results(SATISFIED.as_bytes());
+    let output = fixture.record(&results, &["--discharges", "FR-001-AC-1", "--json"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let recorded: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(recorded["bound"], serde_json::json!(["FR-001-AC-1"]));
+    assert!(!undischarged(&audit(&fixture), "FR-001-AC-1"));
+    let store = fixture.repo.path().join("spec/evidence");
+    let retained = [
+        store.join(RUN),
+        store.join("bindings.json"),
+        store.join("analysis-reports/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json"),
+    ];
+    let before = retained.each_ref().map(|path| std::fs::read(path).unwrap());
+
+    let observation = fixture.home.path().join("observation.json");
+    std::fs::write(
+        &observation,
+        serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": RUN,
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let output = fixture
+        .quoin()
+        .args([
+            "matrix",
+            "--repo",
+            ".",
+            "--module",
+            ".",
+            "--json",
+            "--run-observation",
+        ])
+        .arg(observation)
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let matrix: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let criteria = matrix["requirements"][0]["criteria"].as_array().unwrap();
+    assert_eq!(criteria.len(), 2);
+    assert_eq!(criteria[0]["id"], "FR-001-AC-1");
+    let analysis = criteria[0]["analysis_evidence"].as_array().unwrap();
+    assert!(!analysis.is_empty());
+    assert!(
+        analysis.iter().all(|item| item["status"] == "unevaluated"),
+        "{analysis:?}"
+    );
+    assert!(analysis.iter().any(|item| {
+        let result = &item["result"];
+        result["locator"]["record"] == RUN
+            && result["detail"].as_str().is_some_and(|detail| {
+                detail == "bounded reliance premise: no FR-093 assessment of filament-analyze and the solvers exists for this positive use"
+            })
+    }), "{analysis:?}");
+
+    assert_eq!(criteria[1]["id"], "FR-001-AC-2");
+    let sibling = criteria[1]["analysis_evidence"].as_array().unwrap();
+    assert_eq!(sibling.len(), 1, "{sibling:?}");
+    assert_eq!(sibling[0]["status"], "absent");
+    assert_eq!(
+        retained.each_ref().map(|path| std::fs::read(path).unwrap()),
+        before
+    );
 }
 
 #[trace("FR-152-AC-6")]
