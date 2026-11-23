@@ -18,12 +18,7 @@ use quoin_core::protocol::Response;
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 
-fn record(
-    adapter: Option<&str>,
-    tool: &str,
-    results: &str,
-    extra: Value,
-) -> (tempfile::TempDir, Response) {
+fn record(adapter: Option<&str>, tool: &str, results: &str) -> (tempfile::TempDir, Response) {
     let dir = tempfile::tempdir().unwrap();
     fs::create_dir_all(dir.path().join("spec/evidence")).unwrap();
     let mut request = json!({
@@ -36,9 +31,6 @@ fn record(
     });
     if let Some(adapter) = adapter {
         request["adapter"] = json!(adapter);
-    }
-    for (key, value) in extra.as_object().unwrap() {
-        request[key] = value.clone();
     }
     let response = dispatch("evidence.record", &request, &RuntimeSettings::default()).unwrap();
     (dir, response)
@@ -63,7 +55,7 @@ fn run_written(dir: &tempfile::TempDir) -> bool {
 fn tc_1806_an_unmatched_trace_id_exits_1_after_publishing() {
     let results = r#"{"entries":[
         {"symbol":"a","outcome":"pass","traceIds":["FR-1-AC-1","ZZ-1","AA-1"]}]}"#;
-    let (dir, response) = record(None, "custom", results, json!({}));
+    let (dir, response) = record(None, "custom", results);
     assert_eq!(response.outcome, Outcome::Partial);
     assert_eq!(
         warning(&response),
@@ -80,7 +72,7 @@ fn tc_1806_an_unmatched_trace_id_exits_1_after_publishing() {
 #[test]
 fn tc_1806_an_unmatched_id_on_a_failing_entry_exits_1() {
     let results = r#"{"entries":[{"symbol":"a","outcome":"fail","traceIds":["ZZ-1"]}]}"#;
-    let (_dir, response) = record(None, "custom", results, json!({}));
+    let (_dir, response) = record(None, "custom", results);
     assert_eq!(response.outcome, Outcome::Partial);
     assert_eq!(
         warning(&response),
@@ -95,7 +87,7 @@ fn tc_1806_an_unmatched_id_on_a_failing_entry_exits_1() {
 fn tc_1806_a_run_with_no_trace_id_exits_1_naming_the_entry_count() {
     let results =
         r#"{"entries":[{"symbol":"a","outcome":"pass"},{"symbol":"b","outcome":"pass"}]}"#;
-    let (dir, response) = record(None, "custom", results, json!({}));
+    let (dir, response) = record(None, "custom", results);
     assert_eq!(response.outcome, Outcome::Partial);
     assert_eq!(
         warning(&response),
@@ -113,12 +105,12 @@ fn tc_1806_a_run_whose_stated_ids_all_failed_exits_0() {
         {"symbol":"a","outcome":"fail","traceIds":["FR-1-AC-1"]},
         {"symbol":"b","outcome":"error","traceIds":["FR-1-AC-1"]},
         {"symbol":"c","outcome":"skip","traceIds":["FR-1-AC-1"]}]}"#;
-    let (_dir, response) = record(None, "custom", results, json!({}));
+    let (_dir, response) = record(None, "custom", results);
     assert_eq!(response.outcome, Outcome::Ok);
     assert_eq!(response.payload["bound"], json!([]));
     assert_eq!(warning(&response), None);
 
-    let (_dir, response) = record(None, "custom", r#"{"entries":[]}"#, json!({}));
+    let (_dir, response) = record(None, "custom", r#"{"entries":[]}"#);
     assert_eq!(response.outcome, Outcome::Ok);
     assert_eq!(warning(&response), None);
 }
@@ -128,11 +120,11 @@ fn tc_1806_a_run_whose_stated_ids_all_failed_exits_0() {
 #[test]
 fn tc_1806_cargo_mutants_and_an_undischarging_sbom_exit_0() {
     let sbom = r#"{"bomFormat":"CycloneDX","components":[{"name":"a"}]}"#;
-    let (_dir, response) = record(Some("sbom"), "syft 1.0.0", sbom, json!({}));
+    let (_dir, response) = record(Some("sbom"), "syft 1.0.0", sbom);
     assert_eq!(response.outcome, Outcome::Ok, "{:?}", response.payload);
 
     let mutants = r#"{"outcomes":[{"scenario":{"Mutant":{"name":"x","file":"src/a.rs","function":{"function_name":"f"}}},"summary":"CaughtMutant"},{"scenario":"Baseline","summary":"Success"}]}"#;
-    let (_dir, response) = record(Some("cargo-mutants"), "cargo-mutants 1", mutants, json!({}));
+    let (_dir, response) = record(Some("cargo-mutants"), "cargo-mutants 1", mutants);
     assert_eq!(response.outcome, Outcome::Ok, "{:?}", response.payload);
 }
 
@@ -170,19 +162,13 @@ fn tc_1806_a_pytest_case_is_stored_under_the_python_symbol() {
         ("", "test_x", "test_x"),
     ];
     for (classname, name, symbol) in cases {
-        let (dir, _) = record(
-            None,
-            "Pytest 8.3.2",
-            &junit(classname, name, None),
-            json!({}),
-        );
+        let (dir, _) = record(None, "Pytest 8.3.2", &junit(classname, name, None));
         assert_eq!(stored_symbols(&dir), [symbol], "{classname} {name}");
     }
     let (dir, _) = record(
         None,
         "junit",
         &junit("tests.test_bolus.TestDose", "test_a", None),
-        json!({}),
     );
     assert_eq!(
         stored_symbols(&dir),
@@ -195,12 +181,7 @@ fn tc_1806_a_pytest_case_is_stored_under_the_python_symbol() {
 #[trace("FR-033-AC-17")]
 #[test]
 fn tc_1806_a_pytest_case_without_a_trace_property_records_no_ids() {
-    let (dir, response) = record(
-        None,
-        "pytest 8",
-        &junit("t.TestA", "test_a", None),
-        json!({}),
-    );
+    let (dir, response) = record(None, "pytest 8", &junit("t.TestA", "test_a", None));
     assert_eq!(response.outcome, Outcome::Partial);
     assert_eq!(
         warning(&response),
@@ -214,7 +195,6 @@ fn tc_1806_a_pytest_case_without_a_trace_property_records_no_ids() {
         None,
         "pytest 8",
         &junit("t.TestA", "test_a", Some("NOPE-1")),
-        json!({}),
     );
     assert_eq!(response.payload["unmatched"], json!(["NOPE-1"]));
     assert_eq!(

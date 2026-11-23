@@ -387,7 +387,8 @@ fn tc_002_the_comma_separated_form_binds_both_and_reports_the_unknown_id() {
     let fixture = fixture();
     let results = fixture.results(SATISFIED.as_bytes());
     let output = fixture.record(&results, &["--discharges", "FR-001-AC-1,NOPE-1", "--json"]);
-    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    // The unknown id makes the recording exit 1; the payload is still complete.
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
     let payload: serde_json::Value = serde_json::from_str(&stdout(&output)).unwrap();
     assert_eq!(payload["bound"], serde_json::json!(["FR-001-AC-1"]));
     assert_eq!(payload["unmatched"], serde_json::json!(["NOPE-1"]));
