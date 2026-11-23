@@ -3478,6 +3478,7 @@ dependencies = [
  "quoin-semantic",
  "reqwest 0.13.5",
  "schemars 1.2.2",
+ "semver",
  "serde",
  "serde_json",
  "tar",

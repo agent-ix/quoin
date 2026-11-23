@@ -79,6 +79,9 @@ pub enum ModulesErrorCode {
     NpmArchive,
     /// An npm source named a registry URL other than the public npm registry.
     NpmRegistryUnsupported,
+    /// An installed default module is older than the release the CLI pins.
+    /// A warning, never a failure.
+    ModuleLagsPin,
 }
 
 impl ModulesErrorCode {
@@ -117,6 +120,7 @@ impl ModulesErrorCode {
             Self::NpmMetadata => "QM029_NPM_METADATA",
             Self::NpmArchive => "QM030_NPM_ARCHIVE",
             Self::NpmRegistryUnsupported => "QM031_NPM_REGISTRY_UNSUPPORTED",
+            Self::ModuleLagsPin => "QM032_MODULE_LAGS_PIN",
         }
     }
 
@@ -155,6 +159,7 @@ impl ModulesErrorCode {
             Self::NpmMetadata,
             Self::NpmArchive,
             Self::NpmRegistryUnsupported,
+            Self::ModuleLagsPin,
         ]
     }
 

@@ -50,6 +50,10 @@ pub(crate) fn command() -> Command {
                 .about("Show each installed module's semantic contract state and its import locks"),
         )
         .subcommand(
+            Command::new("doctor")
+                .about("Warn when installed default modules are older than this CLI's pins"),
+        )
+        .subcommand(
             Command::new("ensure-defaults")
                 .about("Idempotently install the default specification module set"),
         )
@@ -64,8 +68,72 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "install" => install(arguments),
         "remove" => remove(arguments),
         "ensure-defaults" => ensure_defaults(),
+        "doctor" => doctor(),
         _ => Err("an unknown module command reached dispatch".to_owned()),
     }
+}
+
+/// Warnings for every installed default module older than this CLI's pin
+/// (FR-211), read from the registry via `modules.list`.
+pub(crate) fn lag_diagnostics() -> Result<Vec<quoin_core::protocol::Diagnostic>, String> {
+    let listed = invoke("modules.list", &serde_json::json!({}))?;
+    if !listed.outcome.carries_payload() {
+        return Err("modules.list failed while checking installed module versions".to_owned());
+    }
+    let plugins = listed
+        .payload
+        .get("modules")
+        .cloned()
+        .ok_or_else(|| "modules.list did not return modules".to_owned())?;
+    let registry = quoin_modules::ModuleRegistry {
+        schema_version: 1,
+        plugins: serde_json::from_value(plugins).map_err(|error| error.to_string())?,
+    };
+    let manifest = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES)
+        .map_err(|e| e.to_string())?;
+    Ok(lag_warnings(&manifest, &registry))
+}
+
+fn lag_warnings(
+    manifest: &quoin_modules::MarketplaceManifest,
+    registry: &quoin_modules::ModuleRegistry,
+) -> Vec<quoin_core::protocol::Diagnostic> {
+    quoin_modules::lagging_modules(manifest, registry)
+        .into_iter()
+        .map(|lag| quoin_core::protocol::Diagnostic {
+            code: quoin_modules::ModulesErrorCode::ModuleLagsPin
+                .as_str()
+                .to_owned(),
+            message: format!(
+                "installed module {} is {} but this CLI pins {}",
+                lag.name, lag.installed, lag.pinned
+            ),
+            context: std::collections::BTreeMap::from([
+                ("module".to_owned(), lag.name.to_string()),
+                ("installed".to_owned(), lag.installed.to_string()),
+                ("pinned".to_owned(), lag.pinned.to_string()),
+            ]),
+        })
+        .collect()
+}
+
+/// `quoin module doctor` (FR-211): lag warnings only; exit zero.
+#[implements("FR-211")]
+fn doctor() -> Result<Response, String> {
+    let diagnostics = lag_diagnostics()?;
+    let rendered = if diagnostics.is_empty() {
+        "module doctor: installed modules match this CLI's pins".to_owned()
+    } else {
+        format!(
+            "module doctor: {} installed module(s) lag this CLI's pins",
+            diagnostics.len()
+        )
+    };
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered }),
+        diagnostics,
+        outcome: Outcome::Ok,
+    })
 }
 
 fn list() -> Result<Response, String> {

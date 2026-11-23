@@ -82,7 +82,8 @@ const fn core_code(code: ModulesErrorCode) -> Option<CoreErrorCode> {
         | ModulesErrorCode::PackSourceRefused
         | ModulesErrorCode::PackLoadFailed
         | ModulesErrorCode::NpmMetadata
-        | ModulesErrorCode::NpmArchive => CoreErrorCode::Refused,
+        | ModulesErrorCode::NpmArchive
+        | ModulesErrorCode::ModuleLagsPin => CoreErrorCode::Refused,
 
         ModulesErrorCode::RegistryUnreadable
         | ModulesErrorCode::RegistryUnwritable
@@ -149,6 +150,7 @@ mod tests {
             ModulesErrorCode::PackLoadFailed,
             ModulesErrorCode::NpmMetadata,
             ModulesErrorCode::NpmArchive,
+            ModulesErrorCode::ModuleLagsPin,
         ];
         let internal = [
             ModulesErrorCode::RegistryUnreadable,

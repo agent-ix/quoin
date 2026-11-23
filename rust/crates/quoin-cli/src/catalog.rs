@@ -252,12 +252,14 @@ fn validate(arguments: &ArgMatches) -> Result<Response, String> {
     } else {
         format!("catalog ok ({modules})")
     };
+    let mut diagnostics = response.diagnostics;
+    diagnostics.extend(crate::module::lag_diagnostics()?);
     Ok(Response {
         payload: serde_json::json!({
             "rendered": rendered,
             "renderedStream": if ok { "stdout" } else { "stderr" },
         }),
-        diagnostics: response.diagnostics,
+        diagnostics,
         outcome: if ok {
             response.outcome
         } else {
