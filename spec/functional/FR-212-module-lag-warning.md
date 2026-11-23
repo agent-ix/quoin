@@ -48,9 +48,9 @@ at a release other than, and not newer than, the release the running CLI pins.
 - `quoin module doctor` SHALL exit zero when the only findings are warnings.
 - `quoin catalog validate` SHALL print the warnings and keep the exit status it
   has without them.
-- When the lag check fails after the catalog loads, `quoin catalog validate`
-  SHALL report that as a warning and keep the exit status it has without the
-  check.
+- When the lag check fails after the catalog loads,
+  `quoin catalog validate` SHALL report that as a warning and keep the exit
+  status it has without the check.
 
 ## Acceptance Criteria
 
