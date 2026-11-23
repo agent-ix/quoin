@@ -17,6 +17,8 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/engineering-assurance/FR-047"
     type: "references"
+  - target: "ix://agent-ix/engineering-assurance/FR-041"
+    type: "references"
   - target: "ix://agent-ix/engineering-assurance/FR-052"
     type: "references"
   - target: "ix://agent-ix/quire-cli/FR-038"
@@ -135,6 +137,7 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   [FR-167](./FR-167-release-snapshot-format.md),
   [FR-168](./FR-168-release-snapshot-change-records.md), EA
   [FR-047](ix://agent-ix/engineering-assurance/FR-047), EA
+  [FR-041](ix://agent-ix/engineering-assurance/FR-041), EA
   [FR-052](ix://agent-ix/engineering-assurance/FR-052), and quire-cli
   [FR-038](ix://agent-ix/quire-cli/FR-038) as extended by PLAT-1761.
 - **Downstream**: PLAT-1620 implements this document.
