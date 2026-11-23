@@ -43,7 +43,7 @@ of `quoin risk-summary` without assigning a new risk value or decision.
   `## <hazard id>` section per source hazard in source order,
   `## Undecided decisions` from the source queue, then `## Gaps`.
 - Under each situation, tables show `Phase | Severity | Probability | Region`
-  and `Control | Implementing requirements | Verifications`, followed by
+  and `Control | Implementing requirements | Retired requirements | Verifications`, followed by
   residual-risk decision, decider and row findings.
 
 ## Behavior

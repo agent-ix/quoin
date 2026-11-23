@@ -256,13 +256,14 @@ fn render_controls(body: &mut String, controls: &[quoin_risk_advice::ControlEntr
     if controls.is_empty() {
         return;
     }
-    body.push_str("| Control | Implementing requirements | Verifications |\n| --- | --- | --- |\n");
+    body.push_str("| Control | Implementing requirements | Retired requirements | Verifications |\n| --- | --- | --- | --- |\n");
     for control in controls {
         let _ = writeln!(
             body,
-            "| {} | {} | {} |",
+            "| {} | {} | {} | {} |",
             cell_text(&control.control),
             list_cell(&control.requirements),
+            list_cell(&control.retired_requirements),
             list_cell(&control.verifications)
         );
     }
@@ -414,6 +415,7 @@ mod tests {
             controls: vec![ControlEntry {
                 control: "CTRL-1".to_owned(),
                 requirements: vec!["FR-9".to_owned()],
+                retired_requirements: Vec::new(),
                 verifications: vec!["TC-9".to_owned()],
             }],
             post_control: vec![EstimateEntry {
@@ -455,11 +457,32 @@ mod tests {
                 .body
                 .contains("| EST-POST | post_control | minor | unlikely | low |  |")
         );
-        assert!(first.body.contains("| CTRL-1 | FR-9 | TC-9 |"));
+        assert!(first.body.contains("| CTRL-1 | FR-9 | none | TC-9 |"));
         assert!(first.body.contains("| RR-1 | accepted | A. Person |"));
         assert!(first.gaps.is_empty());
         assert!(!first.body.to_ascii_lowercase().contains("score"));
         assert!(!first.body.to_ascii_lowercase().contains("rank"));
+    }
+
+    #[trace("FR-199-AC-1")]
+    #[test]
+    fn retired_requirements_render_only_for_the_control_that_has_them() {
+        let mut row = complete_row();
+        row.controls[0].retired_requirements = vec!["FR-9".to_owned()];
+        row.controls.push(ControlEntry {
+            control: "CTRL-2".to_owned(),
+            requirements: vec!["FR-10".to_owned()],
+            retired_requirements: Vec::new(),
+            verifications: vec!["TC-10".to_owned()],
+        });
+        let summary = Summary {
+            attribution: quoin_risk_advice::ATTRIBUTION,
+            rows: vec![row],
+            unreadable: Vec::new(),
+        };
+        let out = render(&summary, &advice());
+        assert!(out.body.contains("| CTRL-1 | FR-9 | FR-9 | TC-9 |"));
+        assert!(out.body.contains("| CTRL-2 | FR-10 | none | TC-10 |"));
     }
 
     #[trace("FR-199-AC-2", "FR-199-AC-3", "FR-199-AC-4")]
