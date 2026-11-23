@@ -715,6 +715,16 @@ fn the_snapshot_reader_accepts_legacy_and_valid_v1_extensions_but_refuses_dirty_
     assert_eq!(parsed.tool_identity.unwrap().name, "quoin");
     assert!(parsed.clean_tree_precondition.is_some());
 
+    extended["tool_identity"] = Value::Null;
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["tool_identity"] = json!({"name":"quoin","version":"0.31.1"});
+    extended["clean_tree_precondition"] = Value::Null;
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["clean_tree_precondition"] = json!("not_verified");
     extended["tool_identity"]["unexpected"] = json!(true);
     let bytes = serde_json::to_vec(&extended).unwrap();
     assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());

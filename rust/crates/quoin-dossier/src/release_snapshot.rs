@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 
 /// The only supported release snapshot protocol.
 pub const RELEASE_SNAPSHOT_PROTOCOL: &str = "quoin.release-snapshot/v1";
+/// The executable name that writes release snapshots.
+pub const QUOIN_TOOL_NAME: &str = "quoin";
 
 /// A release evidence snapshot as written by `quoin release snapshot`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -18,10 +20,18 @@ pub struct ReleaseSnapshot {
     /// Protocol identifier.
     pub protocol: String,
     /// Quoin executable identity, when written by a version that includes it.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_non_null_option",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub tool_identity: Option<ToolIdentity>,
     /// State of the clean-tree precondition, when written by a version that includes it.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_non_null_option",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub clean_tree_precondition: Option<CleanTreePrecondition>,
     /// Evaluation instant supplied to the snapshot command.
     pub as_of: String,
@@ -61,6 +71,14 @@ pub enum CleanTreePrecondition {
     NotVerified,
 }
 
+fn deserialize_non_null_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    T::deserialize(deserializer).map(Some)
+}
+
 impl ReleaseSnapshot {
     /// Parse and validate a closed release snapshot.
     ///
@@ -75,14 +93,12 @@ impl ReleaseSnapshot {
                 "protocol must be {RELEASE_SNAPSHOT_PROTOCOL}"
             )));
         }
-        if snapshot
-            .tool_identity
-            .as_ref()
-            .is_some_and(|identity| identity.name != "quoin" || identity.version.trim().is_empty())
-        {
-            return Err(<serde_json::Error as serde::de::Error>::custom(
-                "tool_identity must name quoin and carry a non-empty version",
-            ));
+        if snapshot.tool_identity.as_ref().is_some_and(|identity| {
+            identity.name != QUOIN_TOOL_NAME || identity.version.trim().is_empty()
+        }) {
+            return Err(<serde_json::Error as serde::de::Error>::custom(format!(
+                "tool_identity must name {QUOIN_TOOL_NAME} and carry a non-empty version"
+            )));
         }
         Ok(snapshot)
     }
