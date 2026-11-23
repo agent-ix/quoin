@@ -423,3 +423,138 @@ fn tc_002_a_refused_report_with_stated_ids_exits_non_zero_and_writes_no_run() {
         assert!(!fixture.runs_exist());
     }
 }
+
+/// The matrix `analysis_evidence` rows for `criterion` after `observation`.
+fn analysis_rows(
+    fixture: &Fixture,
+    observation: &serde_json::Value,
+    criterion: &str,
+) -> Vec<serde_json::Value> {
+    let path = fixture.home.path().join("swap-observation.json");
+    std::fs::write(&path, observation.to_string()).unwrap();
+    let output = fixture.matrix(&path);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let matrix: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    matrix["requirements"][0]["criteria"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["id"] == criterion)
+        .unwrap()["analysis_evidence"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// Swap-and-refuse through the real command path (FR-116-AC-7, FR-116-AC-8).
+///
+/// Scope, stated honestly: this fixture cannot start from a qualifying record.
+/// A positive decision needs an admitted actor, which the command only derives
+/// from a verified signature (`actor_authority`) through a real verifier, and
+/// no live positive exists (STD-717). So the baseline is already refused for
+/// the missing reliance and actor premises. The test proves what it can fail on:
+/// each swap (observed revision, stored projection bytes, recorded criterion)
+/// must change the refusal to its own distinct status, which the baseline does
+/// not have, and the refusals must not write the store. The positive-to-refused
+/// swap is covered at the library level in `analysis_counting.rs`.
+#[trace("FR-116-AC-7", "FR-116-AC-8", "FR-153-AC-8")]
+#[test]
+fn tc_plat_1790_swapped_inputs_refuse_through_the_matrix_command() {
+    const RUN: &str = "runs/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json";
+    const PROJECTION: &str = "analysis-reports/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json";
+    const HEAD: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    let fixture = fixture();
+    let spec = SPEC.replace("|  |\n", "| Analysis |\n")
+        + "| FR-001-AC-2 | The reader shall report the refused field. | Analysis |\n";
+    std::fs::write(fixture.repo.path().join("spec/FR-001-example.md"), spec).unwrap();
+    let results = fixture.results(SATISFIED.as_bytes());
+    let output = fixture.record(&results, &["--discharges", "FR-001-AC-1", "--json"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let store = fixture.repo.path().join("spec/evidence");
+    let observation = serde_json::json!({
+        "protocol": "quoin.analysis-run-observation/v1",
+        "record": RUN,
+        "selected_head": HEAD,
+        "checkout_sha": HEAD,
+    });
+    let statuses = |rows: &[serde_json::Value]| -> Vec<String> {
+        rows.iter()
+            .map(|row| row["status"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    let details = |rows: &[serde_json::Value]| -> Vec<String> {
+        rows.iter()
+            .filter_map(|row| row["result"]["detail"].as_str().map(ToOwned::to_owned))
+            .collect()
+    };
+
+    // Baseline: refused for the missing owner premises, with neither the
+    // revision nor the conflict status the swaps below must introduce.
+    let rows = analysis_rows(&fixture, &observation, "FR-001-AC-1");
+    assert!(
+        !statuses(&rows).contains(&"qualified-record".to_owned()),
+        "{rows:?}"
+    );
+    assert!(
+        details(&rows)
+            .iter()
+            .any(|d| d.starts_with("bounded reliance premise")),
+        "{rows:?}"
+    );
+    assert!(
+        details(&rows)
+            .iter()
+            .all(|d| !d.starts_with("performed revision premise")),
+        "{rows:?}"
+    );
+    assert!(
+        statuses(&rows)
+            .iter()
+            .all(|s| s != "wrong-revision" && s != "record-conflict"),
+        "{rows:?}"
+    );
+
+    // Revision swapped: the performed revision differs from the selected HEAD.
+    let mut swapped = observation.clone();
+    swapped["checkout_sha"] = serde_json::json!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    let rows = analysis_rows(&fixture, &swapped, "FR-001-AC-1");
+    assert!(
+        statuses(&rows).contains(&"wrong-revision".to_owned()),
+        "{rows:?}"
+    );
+    assert!(!statuses(&rows).contains(&"qualified-record".to_owned()));
+
+    // Criterion swapped: the report discharges AC-1 only; AC-2 has no record.
+    let rows = analysis_rows(&fixture, &observation, "FR-001-AC-2");
+    assert_eq!(statuses(&rows), vec!["absent".to_owned()], "{rows:?}");
+
+    // Report bytes swapped: the stored projection now claims a refuted verdict
+    // while the run record still says pass.
+    let projection_path = store.join(PROJECTION);
+    let original = std::fs::read(&projection_path).unwrap();
+    let mut projection: serde_json::Value = serde_json::from_slice(&original).unwrap();
+    projection["agreed_status"] = serde_json::json!("refuted");
+    std::fs::write(&projection_path, projection.to_string()).unwrap();
+    // The store as the command will read it, tampering included.
+    let tampered = evidence_tree(&store);
+    let rows = analysis_rows(&fixture, &observation, "FR-001-AC-1");
+    assert!(
+        !statuses(&rows).contains(&"qualified-record".to_owned()),
+        "{rows:?}"
+    );
+    assert!(
+        statuses(&rows).contains(&"record-conflict".to_owned()),
+        "{rows:?}"
+    );
+    assert!(
+        details(&rows).iter().any(|d| d
+            == "tool and configuration premise: the supplied projection does not match the retained run"),
+        "{rows:?}"
+    );
+    assert_eq!(
+        evidence_tree(&store),
+        tampered,
+        "the command never writes or repairs the store"
+    );
+    std::fs::write(&projection_path, original).unwrap();
+}

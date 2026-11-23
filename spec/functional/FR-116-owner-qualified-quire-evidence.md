@@ -25,10 +25,15 @@ verification act supplies positive evidence for one exact selected obligation
 and its declared method. Inspection, Analysis, an executed gate and an executed
 doctest can qualify without being source-symbol declarations.
 
-This is the **normative owner contract; implementation remains planned**. It supplies the
-missing positive qualification premises identified by PLAT-1196; it does not
-claim an implemented API, a published qualification capability, a performed
-verification act or a discharged downstream criterion. PLAT-1162's apparatus
+This is the **normative owner contract; the Analysis-act qualifier is implemented**. It supplies the
+missing positive qualification premises identified by PLAT-1196. The shipped
+`quoin_evidence::qualify` computation qualifies analysis acts and is exercised
+by swap-and-refuse tests (PLAT-1790). Not yet implemented: Inspection, gate and
+doctest qualification, and the `selection-mismatch`, `invalid-target` and
+`ambiguous-target` causes, which the qualifier cannot yet produce. No live
+positive qualification has been performed (an admitted actor needs a real
+signature verifier; STD-717), so this contract claims no performed
+verification act or discharged downstream criterion. PLAT-1162's apparatus
 intake is a separate concern and does not establish these premises.
 
 The contract uses [FR-030](./FR-030-evidence-store.md)'s canonical store,
@@ -40,8 +45,8 @@ establishes that an act occurred.
 
 ### Scope and existing record boundary
 
-The planned qualification boundary is the Quoin-owned check consumed by the
-planned `quoin_quire::evidence::qualify` bridge in quire-rs FR-078. Its premises below are
+The qualification boundary is the Quoin-owned check consumed by the
+`quoin_quire::evidence::qualify` bridge in quire-rs FR-078. Its premises below are
 a typed owner input contract, **not new fields asserted to exist in
 `RunRecord`, a new retained-record wire schema, or a second evidence store**.
 The bridge consumes the same owner decision rather than implementing another
@@ -60,7 +65,7 @@ verification only; it does not decide that pending policy.
 ## Inputs
 
 The Quoin qualification boundary SHALL receive these original owner inputs for
-each requested act. The table specifies semantic members of the planned typed
+each requested act. The table specifies semantic members of the typed
 input, not an existing JSON envelope or permission to place arbitrary keys in
 `RunEntry.config`.
 
@@ -203,7 +208,7 @@ pass.
 
 ### Consumer and waiver boundary
 
-Only Quoin's evaluated owner result supplies these premises to the planned
+Only Quoin's evaluated owner result supplies these premises to the
 quire-rs FR-078 bridge; a Quire-local configuration map, source tag or reconstructed
 pass list cannot stand in for it. The bridge's owner-neutral projection retains
 the original selected target and locators without manufacturing a
@@ -228,8 +233,12 @@ can be reviewed independently of that unresolved waiver policy.
 
 ## Acceptance Criteria
 
-All criteria below describe planned implementation obligations. This contract
-claims no executable acceptance evidence or current downstream discharge.
+The criteria below are obligations. Tests tagged to them exercise the
+Analysis-act qualifier only; the `selection-mismatch`, `invalid-target` and
+`ambiguous-target` clauses of FR-116-AC-8 and AC-13 and the reused
+configuration-name clause of FR-116-AC-10 have no implementation yet. This
+contract claims no live positive qualification and no current downstream
+discharge.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|

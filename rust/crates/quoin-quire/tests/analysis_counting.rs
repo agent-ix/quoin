@@ -1190,3 +1190,570 @@ fn one_report_stating_two_obligations_qualifies_neither() {
         .count();
     assert_eq!(scoped, 2, "each obligation is unevaluated on its own");
 }
+
+// ---------------------------------------------------------------------------
+// Swap-and-refuse (PLAT-1790). Each case starts from a record that qualifies,
+// changes exactly one input, and expects the owner qualifier to refuse with the
+// exact cause category and premise the FR-116 contract names for that change.
+// The `(cause, premise)` pairs come from the FR-116 and FR-184 text. The one
+// exception is `RELIANCE_CASCADE`, which is the implementation's evaluation
+// order, not contract text; it is named separately below. Every case is
+// bracketed by the healthy control so the refusal is shown to come from the
+// swapped input.
+//
+// Confirmed implementation gap (PLAT-1790): FR-116 names `selection-mismatch`,
+// `invalid-target` and `ambiguous-target`, but `quoin_evidence::qualify::Cause`
+// has no such variants, so no test here can assert them. Nothing below claims
+// them.
+// ---------------------------------------------------------------------------
+
+/// Not FR-116 contract text: `qualify::evaluate` still evaluates reliance after
+/// the report premises fail, and with no producer to compare it reports reliance
+/// as unevaluated. Cases whose report premises fail include this pair so the
+/// exact-set comparison stays honest; it is the code's cascade, not a rule.
+const RELIANCE_CASCADE: (CauseCode, &str) = RELIANCE_PREMISE;
+
+/// FR-116: missing reliance is `unevaluated` on the bounded-reliance premise.
+const RELIANCE_PREMISE: (CauseCode, &str) = (CauseCode::Unevaluated, "bounded reliance");
+
+/// The premise a refusal names: the text before " premise".
+fn premise_of(detail: &str) -> &str {
+    detail
+        .split_once(" premise")
+        .map_or(detail, |(name, _)| name)
+}
+
+/// The sorted multiset of `(cause, premise)` pairs the outcome retains.
+fn refusal_set(outcome: &Counted) -> Vec<(CauseCode, String)> {
+    let mut found: Vec<(CauseCode, String)> = causes(outcome)
+        .into_iter()
+        .map(|(cause, detail)| (cause, premise_of(&detail).to_owned()))
+        .collect();
+    // A multiset: a duplicated refusal for one premise is a difference.
+    found.sort();
+    found
+}
+
+/// The obligation `id` is not owner-qualified and the refusal is exactly
+/// `expected`: no record binder, no qualified status, strict decision refuses.
+fn assert_refused_exactly(outcome: &Counted, id: &str, expected: &[(CauseCode, &str)]) {
+    assert_eq!(counted(outcome), 0, "{:?}", causes(outcome));
+    assert_ne!(status(outcome, id), CoverageMatrixStatus::QualifiedRecord);
+    assert!(unbacked(outcome).contains(&id.to_owned()));
+    assert!(strict_decision(&outcome.report, &[]).is_err());
+    let mut want: Vec<(CauseCode, String)> = expected
+        .iter()
+        .map(|(cause, premise)| (*cause, (*premise).to_owned()))
+        .collect();
+    want.sort();
+    assert_eq!(refusal_set(outcome), want);
+}
+
+/// The healthy control: the untouched store still qualifies AC1 and only AC1.
+fn assert_healthy_control(store: &Recorded) {
+    let outcome = store.count(&[AC1], admitted());
+    assert_eq!(counted(&outcome), 1);
+    assert_eq!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+}
+
+/// Count with the retained runs changed by `tweak`.
+fn count_runs(
+    store: &Recorded,
+    host: HostObservations,
+    tweak: impl Fn(&mut RetainedRun),
+) -> Counted {
+    let mut runs = store.runs();
+    for run in &mut runs {
+        tweak(run);
+    }
+    count(runs, store.bindings(), &[AC1], host)
+}
+
+/// One edit of a retained projection.
+type ReportEdit = fn(&mut Value);
+
+/// A premise removal: label, host facts, run-observation edit, premise named.
+type PremiseCase<'a> = (&'a str, HostObservations, fn(&mut RunObservation), &'a str);
+
+const OTHER_HEAD: &str = "fedcba9876543210fedcba9876543210fedcba98";
+
+#[trace("FR-116-AC-6", "FR-116-AC-18")]
+#[test]
+fn swapping_the_actor_refuses_with_the_actor_authority_cause() {
+    let store = satisfied_store(&[AC1]);
+    assert_healthy_control(&store);
+    let authority = [(CauseCode::QualificationRejected, "actor authority")];
+    let unevaluated = [(CauseCode::Unevaluated, "actor authority")];
+
+    // A rejected signer result keeps its own reason and is a rejection.
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.actor = None;
+        observation.actor_rejection = Some("signer is not in the allowed signers".to_owned());
+    });
+    assert_refused_exactly(&outcome, AC1, &authority);
+    assert!(
+        causes(&outcome)
+            .iter()
+            .any(|(_, detail)| detail.contains("signer is not in the allowed signers")),
+        "{:?}",
+        causes(&outcome)
+    );
+    // An admitted actor with no authority over this obligation.
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.actor = Some(ActorAdmission {
+            actor: "signer-2".to_owned(),
+            admission_ref: "admission-9".to_owned(),
+            authorized: vec![AC2.to_owned()],
+        });
+    });
+    assert_refused_exactly(&outcome, AC1, &authority);
+    // No actor, an unnamed actor, and an actor without an admission reference.
+    for actor in [None, Some(("", "admission-7")), Some(("signer-1", ""))] {
+        let outcome = store.count_with(&[AC1], admitted(), |observation| {
+            observation.actor = actor.map(|(name, reference)| ActorAdmission {
+                actor: name.to_owned(),
+                admission_ref: reference.to_owned(),
+                authorized: vec![AC1.to_owned()],
+            });
+        });
+        assert_refused_exactly(&outcome, AC1, &unevaluated);
+    }
+    // A different actor who is admitted for the target is the asserting actor:
+    // the qualified record names the swapped identity, never the original one.
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.actor = Some(ActorAdmission {
+            actor: "signer-2".to_owned(),
+            admission_ref: "admission-9".to_owned(),
+            authorized: vec![AC1.to_owned()],
+        });
+    });
+    let binder = &outcome.report.record_binders.as_ref().unwrap()[0];
+    assert_eq!(binder.actor, "signer-2");
+    assert!(
+        binder
+            .provenance
+            .contains(&"actor-authority:signer-2:admission-9".to_owned())
+    );
+    assert_healthy_control(&store);
+}
+
+#[trace("FR-116-AC-8", "FR-116-AC-10")]
+#[test]
+fn swapping_the_report_bytes_refuses_as_a_record_conflict() {
+    let store = satisfied_store(&[AC1]);
+    assert_healthy_control(&store);
+    let conflict = [
+        (CauseCode::RecordConflict, "tool and configuration"),
+        RELIANCE_CASCADE,
+    ];
+    let edits: [(&str, ReportEdit); 5] = [
+        ("verdict flipped", |report| {
+            report["agreed_status"] = Value::from("refuted");
+        }),
+        ("disposition flipped", |report| {
+            report["disposition"] = Value::from("disagreement");
+        }),
+        ("member added", |report| {
+            report["note"] = Value::from("added after the run");
+        }),
+        ("protocol changed", |report| {
+            report["protocol"] = Value::from("quoin.analysis-report-projection/v2");
+        }),
+        ("engine reordered", |report| {
+            report["engines"].as_array_mut().unwrap().reverse();
+        }),
+    ];
+    for (label, edit) in edits {
+        let outcome = count_runs(&store, admitted(), |run| {
+            edit(run.report.as_mut().unwrap());
+        });
+        assert_refused_exactly(&outcome, AC1, &conflict);
+        assert!(
+            causes(&outcome).iter().any(|(_, detail)| detail
+                .contains("the supplied projection does not match the retained run")),
+            "{label}: {:?}",
+            causes(&outcome)
+        );
+    }
+    // Retained bytes changed under the same projection: the entry now fails.
+    let outcome = count_runs(&store, admitted(), |run| {
+        run.record.entries[0].outcome = Outcome::Fail;
+    });
+    assert_eq!(counted(&outcome), 0);
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+    assert_eq!(
+        refusal_set(&outcome),
+        vec![(
+            CauseCode::Failed,
+            "consistency in suite SUITE-A reported failure".to_owned()
+        )]
+    );
+    // The report names another producer version than the relied-upon one.
+    let outcome = count_runs(&store, admitted(), |run| {
+        run.report.as_mut().unwrap()["producer"]["version"] = Value::from("9.9.9");
+    });
+    assert_refused_exactly(
+        &outcome,
+        AC1,
+        &[(CauseCode::QualificationRejected, "bounded reliance")],
+    );
+    // No report observation at all is unevaluated, not a pass by omission.
+    let outcome = count_runs(&store, admitted(), |run| run.report = None);
+    assert_refused_exactly(
+        &outcome,
+        AC1,
+        &[
+            (CauseCode::Unevaluated, "tool and configuration"),
+            RELIANCE_CASCADE,
+        ],
+    );
+    assert_healthy_control(&store);
+}
+
+#[trace("FR-116-AC-8", "FR-116-AC-14")]
+#[test]
+fn swapping_the_candidate_record_refuses_and_names_no_other_record() {
+    let store = satisfied_store(&[AC1]);
+    assert_healthy_control(&store);
+    let conflict = [
+        (CauseCode::RecordConflict, "tool and configuration"),
+        RELIANCE_CASCADE,
+    ];
+    // The record file is another record's path than the run it is supplied as.
+    let outcome = count_runs(&store, admitted(), |run| {
+        run.file = "runs/SUITE-B/2026-11-13T10~3A00~3A00Z.json".to_owned();
+    });
+    assert_refused_exactly(&outcome, AC1, &conflict);
+    // The run's own suite is not the one its path names.
+    let outcome = count_runs(&store, admitted(), |run| {
+        run.record.suite = SuiteId::new("SUITE-B");
+    });
+    // The FR-032 audit pair is the implementation's cascade (the audit finds no
+    // run under the swapped suite), not FR-116 text.
+    assert_refused_exactly(
+        &outcome,
+        AC1,
+        &[
+            (CauseCode::RecordConflict, "tool and configuration"),
+            (CauseCode::Unevaluated, "FR-032 audit"),
+            RELIANCE_CASCADE,
+        ],
+    );
+    // A second entry stating a second obligation qualifies neither.
+    let outcome = count_runs(&store, admitted(), |run| {
+        run.record.entries[0].trace_ids = Some(vec![AC1.to_owned(), AC2.to_owned()]);
+    });
+    assert_eq!(counted(&outcome), 0);
+    assert!(
+        causes(&outcome)
+            .iter()
+            .any(|(cause, detail)| *cause == CauseCode::Unevaluated
+                && detail.starts_with("act scope premise"))
+    );
+    assert_healthy_control(&store);
+}
+
+#[trace("FR-116-AC-8", "FR-116-AC-14")]
+#[test]
+fn swapping_the_criterion_never_credits_the_requested_one() {
+    // The report discharges AC2; AC1 is asked for.
+    let store = satisfied_store(&[AC2]);
+    let outcome = store.count(&[AC1], admitted());
+    assert_eq!(counted(&outcome), 0);
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+    assert!(unbacked(&outcome).contains(&AC1.to_owned()));
+    let results = outcome.report.evidence_results.clone().unwrap();
+    assert!(
+        results
+            .iter()
+            .all(|result| result.cause == CauseCode::Absent && result.locator.is_none()),
+        "{results:?}"
+    );
+    // The same retained run does qualify AC2 for its own criterion only.
+    let own = store.count(&[AC1, AC2], admitted());
+    assert_eq!(counted(&own), 1);
+    assert_eq!(status(&own, AC2), CoverageMatrixStatus::QualifiedRecord);
+    assert_ne!(status(&own, AC1), CoverageMatrixStatus::QualifiedRecord);
+    // An actor admitted for the claimed criterion is not admitted for the other.
+    let outcome = store.count_with(&[AC2], admitted(), |observation| {
+        if let Some(actor) = &mut observation.actor {
+            actor.authorized = vec![AC1.to_owned()];
+        }
+    });
+    assert_refused_exactly(
+        &outcome,
+        AC2,
+        &[(CauseCode::QualificationRejected, "actor authority")],
+    );
+}
+
+#[trace("FR-116-AC-11")]
+#[test]
+fn swapping_the_method_refuses_on_the_method_pairing() {
+    // AC3 declares Test; the analysis act discharges Analysis only.
+    let store = satisfied_store(&[AC3]);
+    let outcome = store.count(&[AC3], admitted());
+    assert_refused_exactly(
+        &outcome,
+        AC3,
+        &[(CauseCode::QualificationRejected, "method and act pairing")],
+    );
+    assert!(
+        causes(&outcome).iter().any(|(_, detail)| detail
+            .contains("the analysis act discharges Analysis; the obligation declares Test")),
+        "{:?}",
+        causes(&outcome)
+    );
+}
+
+#[trace("FR-116-AC-7", "FR-116-AC-12")]
+#[test]
+fn swapping_the_snapshot_or_revision_refuses_with_the_revision_cause() {
+    let store = satisfied_store(&[AC1]);
+    assert_healthy_control(&store);
+    let wrong = [(CauseCode::WrongRevision, "performed revision")];
+    let unevaluated = [(CauseCode::Unevaluated, "performed revision")];
+    // The selected HEAD is another snapshot than the one the run performed on.
+    let other_head = HostObservations {
+        selected_head: Some(OTHER_HEAD.to_owned()),
+        ..admitted()
+    };
+    assert_refused_exactly(&store.count(&[AC1], other_head), AC1, &wrong);
+    // The performed revision is another revision than the selected HEAD.
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.performed_revision = Some(OTHER_HEAD.to_owned());
+    });
+    assert_refused_exactly(&outcome, AC1, &wrong);
+    // An unavailable revision is unevaluated, never matched by omission.
+    for head in [None, Some(String::new())] {
+        let host = HostObservations {
+            selected_head: head,
+            ..admitted()
+        };
+        assert_refused_exactly(&store.count(&[AC1], host), AC1, &unevaluated);
+    }
+    for performed in [None, Some(String::new())] {
+        let outcome = store.count_with(&[AC1], admitted(), |observation| {
+            observation.performed_revision = performed.clone();
+        });
+        assert_refused_exactly(&outcome, AC1, &unevaluated);
+    }
+    assert_healthy_control(&store);
+}
+
+// FR-116-AC-10 also asks that a reused configuration name with different
+// required arguments or features be rejected. The reliance context carries one
+// `configuration` string and no argument or feature set, so that clause cannot
+// be exercised here and is not claimed; the swapped name below is FR-093
+// invalidation (FR-116-AC-12).
+#[trace("FR-116-AC-12")]
+#[test]
+fn swapping_the_configuration_or_reliance_refuses_with_the_reliance_cause() {
+    let store = satisfied_store(&[AC1]);
+    assert_healthy_control(&store);
+    let with = |change: &dyn Fn(&mut TrustDecision)| {
+        let mut changed = decision(("filament-analyze", "0.1.0"), &[]);
+        change(&mut changed);
+        HostObservations {
+            reliance: Some(changed),
+            ..admitted()
+        }
+    };
+    // The observed configuration moved away from the accepted one: stale.
+    let host = with(&|d| {
+        d.observed_context.as_mut().unwrap().configuration = "run-package-other".to_owned();
+    });
+    assert_refused_exactly(
+        &store.count(&[AC1], host),
+        AC1,
+        &[(CauseCode::Stale, "bounded reliance")],
+    );
+    // The assessed use does not permit the positive decision.
+    let host = with(&|d| d.r#use.permitted_decisions = vec!["other-use".to_owned()]);
+    assert_refused_exactly(
+        &store.count(&[AC1], host),
+        AC1,
+        &[(CauseCode::QualificationRejected, "bounded reliance")],
+    );
+    // The producer is not relied upon.
+    let host = with(&|d| d.decision = TrustDecisionKind::NotReliedUpon);
+    assert_refused_exactly(
+        &store.count(&[AC1], host),
+        AC1,
+        &[(CauseCode::QualificationRejected, "bounded reliance")],
+    );
+    // Nothing was observed to compare with the accepted context.
+    let host = with(&|d| d.observed_context = None);
+    assert_refused_exactly(
+        &store.count(&[AC1], host),
+        AC1,
+        &[(CauseCode::Unevaluated, "bounded reliance")],
+    );
+    assert_healthy_control(&store);
+}
+
+// What this asserts: a malformed claim selection, or a run kind that disagrees
+// with the host's expectation, is refused as `record-conflict`; a formal-rule
+// expectation with no approved selection is `qualification-rejected` with
+// `draft_rule_in_judgement` (FR-184-AC-18). FR-116-AC-8's `selection-mismatch`
+// for "a different selection" is NOT asserted: the qualifier has no such cause
+// (confirmed gap, PLAT-1790). FR-184-AC-17's positive case is traced by
+// `a_formal_rule_report_qualifies_only_when_every_selected_rule_is_approved`.
+#[trace("FR-184-AC-18")]
+#[test]
+fn a_malformed_or_unapproved_selection_refuses_as_conflict_or_draft_rule() {
+    let store = satisfied_store(&[AC1]);
+    assert_healthy_control(&store);
+    let conflict = [
+        (CauseCode::RecordConflict, "tool and configuration"),
+        RELIANCE_CASCADE,
+    ];
+    // An empty selection and a selection whose halves overlap are malformed.
+    for selection in [
+        serde_json::json!({"selected": [], "excluded": ["claim-1"]}),
+        serde_json::json!({"selected": ["claim-0"], "excluded": ["claim-0"]}),
+        serde_json::json!({"selected": ["claim-0"]}),
+    ] {
+        let outcome = count_runs(&store, admitted(), |run| {
+            run.report.as_mut().unwrap()["selection"] = selection.clone();
+        });
+        assert_refused_exactly(&outcome, AC1, &conflict);
+    }
+    // The projection says formal_rule where the host expected an analysis run.
+    let outcome = count_runs(&store, admitted(), |run| {
+        run.report.as_mut().unwrap()["run_kind"] = Value::from("formal_rule");
+    });
+    assert_refused_exactly(&outcome, AC1, &conflict);
+    // The host expected a formal-rule selection that the projection lacks.
+    let outcome = store.count_with(&[AC1], admitted(), |observation| {
+        observation.run_kind = Some("formal_rule".to_owned());
+    });
+    assert_refused_exactly(
+        &outcome,
+        AC1,
+        &[
+            (
+                CauseCode::QualificationRejected,
+                "approved formal-rule selection",
+            ),
+            RELIANCE_CASCADE,
+        ],
+    );
+    assert!(
+        causes(&outcome)
+            .iter()
+            .any(|(_, detail)| detail.contains("draft_rule_in_judgement")),
+        "{:?}",
+        causes(&outcome)
+    );
+    assert_healthy_control(&store);
+}
+
+// Each premise removed alone is named by its own unevaluated refusal.
+#[trace("FR-116-AC-6", "FR-116-AC-8", "FR-116-AC-15")]
+#[test]
+fn removing_any_single_premise_refuses_naming_that_premise() {
+    let store = satisfied_store(&[AC1]);
+    assert_healthy_control(&store);
+
+    let cases: [PremiseCase; 5] = [
+        (
+            "reliance",
+            HostObservations {
+                reliance: None,
+                ..admitted()
+            },
+            |_| {},
+            "bounded reliance",
+        ),
+        (
+            "selected head",
+            HostObservations {
+                selected_head: None,
+                ..admitted()
+            },
+            |_| {},
+            "performed revision",
+        ),
+        (
+            "performed revision",
+            admitted(),
+            |o| o.performed_revision = None,
+            "performed revision",
+        ),
+        (
+            "execution",
+            admitted(),
+            |o| o.execution = None,
+            "execution association",
+        ),
+        ("actor", admitted(), |o| o.actor = None, "actor authority"),
+    ];
+    for (label, host, tweak, premise) in cases {
+        let outcome = store.count_with(&[AC1], host, tweak);
+        assert_refused_exactly(&outcome, AC1, &[(CauseCode::Unevaluated, premise)]);
+        assert!(!causes(&outcome).is_empty(), "{label} left a named cause");
+    }
+    assert_healthy_control(&store);
+}
+
+#[trace("FR-116-AC-15", "FR-116-AC-18")]
+#[test]
+fn a_single_supplied_component_alone_never_qualifies() {
+    let store = satisfied_store(&[AC1]);
+    let only_host = |host: HostObservations| {
+        count_runs(&store, host, |run| {
+            run.observation = RunObservation::default();
+        })
+    };
+    // With the run observations absent, each host-only supply leaves exactly
+    // the premises it does not supply unevaluated.
+    let run_side = [
+        (CauseCode::Unevaluated, "performed revision"),
+        (CauseCode::Unevaluated, "execution association"),
+        (CauseCode::Unevaluated, "actor authority"),
+    ];
+    let reliance_only = HostObservations {
+        reliance: admitted().reliance,
+        ..HostObservations::default()
+    };
+    // Reliance alone supplies no revision, execution or actor.
+    assert_refused_exactly(&only_host(reliance_only), AC1, &run_side);
+    // The selected head alone also leaves reliance unevaluated.
+    let head_only = HostObservations {
+        selected_head: Some(HEAD.to_owned()),
+        ..HostObservations::default()
+    };
+    let mut with_reliance = run_side.to_vec();
+    with_reliance.push(RELIANCE_PREMISE);
+    assert_refused_exactly(&only_host(head_only), AC1, &with_reliance);
+    // Every host fact together still lacks the run's own observations.
+    assert_refused_exactly(&only_host(admitted()), AC1, &run_side);
+    // The run observations alone, with no host facts: no reliance, no head.
+    let outcome = store.count(&[AC1], HostObservations::default());
+    assert_refused_exactly(
+        &outcome,
+        AC1,
+        &[
+            RELIANCE_PREMISE,
+            (CauseCode::Unevaluated, "performed revision"),
+        ],
+    );
+    // A healthy audit and a retained passing run with neither is not counted
+    // either: the observation without its retained run is absent.
+    let outcome = Recorded::new().count(&[AC1], admitted());
+    assert_eq!(counted(&outcome), 0);
+    assert_all_absent(&outcome);
+    assert_healthy_control(&store);
+}
+
+fn assert_all_absent(outcome: &Counted) {
+    assert!(!causes(outcome).is_empty(), "absence must be reported");
+    assert!(
+        causes(outcome)
+            .iter()
+            .all(|(cause, _)| *cause == CauseCode::Absent),
+        "{:?}",
+        causes(outcome)
+    );
+}
