@@ -184,6 +184,9 @@ pub struct GcPayload {
     /// cannot know the root. The join is [`super::absolute`], against the root
     /// [`crate::capabilities::EvidenceHost::store_root`] reports.
     pub deleted: Vec<String>,
+    /// Records `gc` could not read and therefore kept, as absolute paths. A
+    /// suite with one of these has nothing collected.
+    pub skipped: Vec<String>,
 }
 
 /// The request accepted by `evidence.parse_lineage`.

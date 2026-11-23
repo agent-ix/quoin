@@ -369,17 +369,21 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn lock_store(&mut self) -> Result<StoreLock, EvidenceError> {
-        // A file beside the records, not on `bindings.json` itself: that file
-        // is replaced by rename, which would orphan a lock held on its inode.
-        // `.lock` is not `.json`, so no listing returns it.
-        std::fs::create_dir_all(&self.root).map_err(io("create", ".lock"))?;
+        // Unix locks the store directory itself, so nothing is created in a
+        // consumer's tree for git to report as untracked. Elsewhere a directory
+        // cannot be opened, so a `.lock` file stands in. Never `bindings.json`:
+        // it is replaced by rename, which would orphan a lock on its inode.
+        std::fs::create_dir_all(&self.root).map_err(io("create", "."))?;
+        #[cfg(unix)]
+        let file = std::fs::File::open(&self.root).map_err(io("open", "."))?;
+        #[cfg(not(unix))]
         let file = std::fs::OpenOptions::new()
             .create(true)
             .truncate(false)
             .write(true)
             .open(self.root.join(".lock"))
             .map_err(io("open", ".lock"))?;
-        file.lock().map_err(io("lock", ".lock"))?;
+        file.lock().map_err(io("lock", "store"))?;
         Ok(StoreLock(Some(file)))
     }
 

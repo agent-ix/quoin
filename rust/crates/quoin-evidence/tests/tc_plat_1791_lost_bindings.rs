@@ -352,13 +352,13 @@ fn gc_leaves_a_retirement_record_naming_what_it_deleted() {
 
     // Dry run: nothing deleted, nothing logged.
     assert_eq!(
-        gc(&mut store, true).unwrap(),
+        gc(&mut store, true, &mut Vec::new()).unwrap(),
         std::slice::from_ref(&old_path)
     );
     assert!(store.list_files("retired").unwrap().is_empty());
     assert!(store.read(&old_path).unwrap().is_some());
 
-    let deleted = gc(&mut store, false).unwrap();
+    let deleted = gc(&mut store, false, &mut Vec::new()).unwrap();
     assert!(!deleted.contains(&"retired".to_owned()));
     assert_eq!(deleted, std::slice::from_ref(&old_path));
     assert!(store.read(&old_path).unwrap().is_none());
@@ -378,7 +378,7 @@ fn gc_leaves_a_retirement_record_naming_what_it_deleted() {
     assert_eq!(retired["passed"], 0);
 
     // Nothing left to collect: no second log, and the first is untouched.
-    assert!(gc(&mut store, false).unwrap().is_empty());
+    assert!(gc(&mut store, false, &mut Vec::new()).unwrap().is_empty());
     assert_eq!(store.list_files("retired").unwrap().len(), 1);
 }
 
@@ -410,7 +410,7 @@ fn gc_keeps_a_record_it_cannot_read() {
         .write("runs/SUITE-A/corrupt.json", b"{ not json")
         .unwrap();
 
-    assert!(gc(&mut store, false).unwrap().is_empty());
+    assert!(gc(&mut store, false, &mut Vec::new()).unwrap().is_empty());
     assert!(
         store.read("runs/SUITE-A/corrupt.json").unwrap().is_some(),
         "gc deleted a record it could not read"
@@ -460,12 +460,12 @@ fn a_repeated_gc_that_retires_a_different_set_under_the_same_first_path_still_co
     for second in [0, 1] {
         write_run(&mut store, &at(second)).unwrap();
     }
-    gc(&mut store, false).unwrap();
+    gc(&mut store, false, &mut Vec::new()).unwrap();
     // The key is recorded again and a newer run supersedes it: the first
     // retired path, and so the log's name, is the same as before.
     write_run(&mut store, &at(0)).unwrap();
     write_run(&mut store, &at(2)).unwrap();
-    let deleted = gc(&mut store, false).unwrap();
+    let deleted = gc(&mut store, false, &mut Vec::new()).unwrap();
     assert_eq!(deleted.len(), 2, "gc was blocked by its own earlier log");
     assert_eq!(store.list_files("retired").unwrap().len(), 2);
 }
@@ -505,4 +505,48 @@ fn a_retry_completes_a_differential_pair_whose_projection_was_not_written() {
     // A different projection at the occupied key is still refused.
     let other = serde_json::json!({ "disposition": "different" });
     record_run_with_analysis_projection(&mut store, &req, &[], &other).unwrap_err();
+}
+
+#[trace("FR-030-AC-23")]
+#[test]
+fn gc_names_an_unreadable_record_and_collects_nothing_around_it() {
+    let repo = tempfile::tempdir().unwrap();
+    let mut store = DiskEvidence::new(repo.path());
+    write_run(&mut store, &run("SUITE-A", "2026-11-22T00:00:01Z", vec![])).unwrap();
+    write_run(&mut store, &run("SUITE-A", "2026-11-22T00:00:02Z", vec![])).unwrap();
+    store
+        .write("runs/SUITE-A/z-corrupt.json", b"{ not json")
+        .unwrap();
+
+    let mut skipped = Vec::new();
+    let deleted = gc(&mut store, false, &mut skipped).unwrap();
+    assert!(
+        deleted.is_empty(),
+        "gc deleted readable evidence around an unreadable record"
+    );
+    assert_eq!(skipped, ["runs/SUITE-A/z-corrupt.json"]);
+    assert_eq!(store.list_files("runs/SUITE-A").unwrap().len(), 3);
+
+    // Healthy control: another suite with no unreadable record is collected.
+    write_run(&mut store, &run("SUITE-B", "2026-11-22T00:00:01Z", vec![])).unwrap();
+    write_run(&mut store, &run("SUITE-B", "2026-11-22T00:00:02Z", vec![])).unwrap();
+    let mut skipped = Vec::new();
+    assert_eq!(gc(&mut store, false, &mut skipped).unwrap().len(), 1);
+}
+
+#[trace("FR-030-AC-25")]
+#[test]
+fn taking_the_store_lock_leaves_no_file_in_the_store_on_unix() {
+    let repo = tempfile::tempdir().unwrap();
+    let mut store = DiskEvidence::new(repo.path());
+    store.write("runs/SUITE-A/x.json", b"{}").unwrap();
+    let before = store.list_files("").unwrap();
+    let _lock = store.lock_store().unwrap();
+    if cfg!(unix) {
+        let entries = std::fs::read_dir(repo.path().join("spec/evidence"))
+            .unwrap()
+            .count();
+        assert_eq!(entries, 1, "the lock created a file in the store");
+        assert_eq!(store.list_files("").unwrap(), before);
+    }
 }

@@ -25,7 +25,7 @@ pub(crate) fn command() -> Command {
         .about("Record and maintain verification evidence")
         .subcommand(
             Command::new("gc")
-                .about("Drop unreferenced run records")
+                .about("Drop superseded run and scan records, naming any unreadable record it keeps")
                 .arg(repo_arg())
                 .arg(
                     Arg::new("dry-run")
@@ -36,7 +36,7 @@ pub(crate) fn command() -> Command {
         )
         .subcommand(
             Command::new("trust")
-                .about("Record a use-specific evidence-producer trust decision")
+                .about("Record a use-specific evidence-producer trust decision; a changed decision needs a new id and an id already holding a different decision is refused")
                 .arg(Arg::new("decision").long("decision").required(true))
                 .arg(repo_arg())
                 .arg(json_arg()),
@@ -302,16 +302,17 @@ fn gc(arguments: &ArgMatches) -> Result<Response, String> {
             .get("deleted")
             .and_then(serde_json::Value::as_array)
             .ok_or_else(|| "evidence.gc did not return deleted".to_owned())?;
+        let skipped = payload
+            .get("skipped")
+            .and_then(serde_json::Value::as_array)
+            .ok_or_else(|| "evidence.gc did not return skipped".to_owned())?;
         if arguments.get_flag("json") {
             return serde_json::to_string_pretty(
-                &serde_json::json!({ "deleted": deleted, "dryRun": dry_run }),
+                &serde_json::json!({ "deleted": deleted, "skipped": skipped, "dryRun": dry_run }),
             )
             .map_err(|error| error.to_string());
         }
-        if deleted.is_empty() {
-            return Ok("nothing to collect".to_owned());
-        }
-        Ok(deleted
+        let mut lines: Vec<String> = deleted
             .iter()
             .filter_map(serde_json::Value::as_str)
             .map(|path| {
@@ -320,8 +321,17 @@ fn gc(arguments: &ArgMatches) -> Result<Response, String> {
                     if dry_run { "would delete" } else { "deleted" }
                 )
             })
-            .collect::<Vec<_>>()
-            .join("\n"))
+            .collect();
+        lines.extend(
+            skipped
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .map(|path| format!("kept unreadable {path}")),
+        );
+        if lines.is_empty() {
+            return Ok("nothing to collect".to_owned());
+        }
+        Ok(lines.join("\n"))
     })
 }
 

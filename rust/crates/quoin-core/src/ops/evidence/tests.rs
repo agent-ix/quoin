@@ -161,6 +161,26 @@ fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
     );
 }
 
+#[trace("FR-030-AC-23")]
+#[test]
+fn gc_reports_an_unreadable_record_as_skipped_with_an_absolute_path() {
+    let store = MemoryEvidence::new()
+        .with_file(
+            "runs/alpha/2026-01-01T00~3A00~3A00Z.json",
+            run_record("alpha", "2026-01-01T00:00:00Z"),
+        )
+        .with_file("runs/alpha/2026-02-01T00~3A00~3A00Z.json", "{ not json");
+    let host = TestHost::new(store);
+    let capabilities = Capabilities::with_evidence(&host);
+
+    let response = gc(&json!({"repo": "/somewhere"}), &capabilities).unwrap();
+    assert_eq!(response.payload["deleted"], json!([]));
+    assert_eq!(
+        response.payload["skipped"],
+        json!(["/somewhere/spec/evidence/runs/alpha/2026-02-01T00~3A00~3A00Z.json"])
+    );
+}
+
 #[test]
 fn a_dry_run_gc_removes_nothing() {
     let store = MemoryEvidence::new()
