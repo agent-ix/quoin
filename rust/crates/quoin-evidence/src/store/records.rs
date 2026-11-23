@@ -147,6 +147,15 @@ pub(crate) fn write_analysis_pair<S: EvidenceSource + ?Sized>(
         {
             return Ok(run_path);
         }
+        // The process died after the run was published and before the
+        // projection was: the identical retry completes the pair (FR-030-AC-21).
+        (Some(run), None) if run.as_bytes() == run_bytes => {
+            return if source.publish(&projection_path, &projection_bytes)? {
+                Ok(run_path)
+            } else {
+                Err(pair_conflict(&run_path))
+            };
+        }
         (Some(_) | None, Some(_)) | (Some(_), None) => {
             return Err(pair_conflict(&run_path));
         }

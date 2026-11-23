@@ -15,6 +15,9 @@ use crate::types::{FindingRecord, Outcome, RunRecord, STORE_SCHEMA_VERSION};
 /// Where `gc` records what it retired (FR-030-AC-23).
 const RETIRED_DIR: &str = "retired";
 
+/// How many same-named retirement logs `gc` will tell apart before refusing.
+const MAX_LOG_NAMES: u32 = 1000;
+
 /// What a retired record said, kept after the record itself is gone.
 trait Retire: StoredRecord {
     /// The record's own counts, beside its path, suite and timestamp.
@@ -58,10 +61,10 @@ impl Retire for FindingRecord {
 /// naming every record it is about to delete, with its suite, timestamp, tool
 /// and outcome counts. Deleting a superseded failure used to leave no trace
 /// that it had existed (PLAT-1791; 21 CFR 11.10(e)). The log is written first
-/// and is keyed on its first retired path, so a `gc` interrupted mid-delete and
-/// repeated reproduces identical bytes and completes. A record that cannot be
-/// read is reported as skipped and kept: `gc` does not delete what it cannot
-/// characterise.
+/// and is keyed on its first retired path (suffixed when that name already holds a
+/// different log), so a `gc` interrupted mid-delete and repeated completes. A record that cannot be
+/// read is kept: `gc` does not delete what it cannot
+/// characterise. `gc` holds the store lock while it runs.
 ///
 /// Mock inspections are deliberately **not** collected, matching the retained
 /// behaviour: an inspection record is the only evidence anybody looked, and
@@ -75,6 +78,7 @@ pub fn gc<S: EvidenceSource + ?Sized>(
     source: &mut S,
     dry_run: bool,
 ) -> Result<Vec<String>, EvidenceError> {
+    let _lock = source.lock_store()?;
     let mut deleted = Vec::new();
     let mut retired = Vec::new();
     let mut skipped = Vec::new();
@@ -124,8 +128,28 @@ fn publish_retirement_log<S: EvidenceSource + ?Sized>(
     });
     let bytes = canonical_bytes_of("retirement log", &log)?;
     let name = first.trim_end_matches(".json").replace('/', "-");
-    source.publish(&format!("{RETIRED_DIR}/{name}.json"), &bytes)?;
-    Ok(())
+    // The first retired path names the log. A later `gc` can retire a different
+    // set under the same first path (an interrupted gc, or a key recorded again
+    // after being collected); that is a new log, never a refusal that would
+    // block collection for good. Identical bytes are the interrupted-and-
+    // repeated case and publish as a no-op.
+    for attempt in 0..MAX_LOG_NAMES {
+        let suffix = if attempt == 0 {
+            String::new()
+        } else {
+            format!("-{attempt}")
+        };
+        match source.publish(&format!("{RETIRED_DIR}/{name}{suffix}.json"), &bytes) {
+            Ok(_) => return Ok(()),
+            Err(EvidenceError::RecordIntegrity { .. }) => {}
+            Err(other) => return Err(other),
+        }
+    }
+    Err(EvidenceError::RecordIntegrity {
+        what: "retirement log names exhausted",
+        path: format!("{RETIRED_DIR}/{name}.json"),
+        note: "",
+    })
 }
 
 fn collect<S, T>(

@@ -20,8 +20,10 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 use ix_trace_rs::trace;
-use quoin_evidence::record::{RecordRequest, record_run};
-use quoin_evidence::store::{gc, read_bindings, read_runs, write_run};
+use quoin_evidence::record::{RecordRequest, record_run, record_run_with_analysis_projection};
+use quoin_evidence::store::{
+    gc, read_bindings, read_runs, write_mock_inspection, write_run, write_scan,
+};
 use quoin_evidence::types::{Outcome, RunEntry, RunRecord, STORE_SCHEMA_VERSION};
 use quoin_evidence::{
     DiskEvidence, EvidenceError, EvidenceErrorCode, EvidenceSource, StoreLock, SuiteId, SymbolId,
@@ -413,4 +415,94 @@ fn gc_keeps_a_record_it_cannot_read() {
         store.read("runs/SUITE-A/corrupt.json").unwrap().is_some(),
         "gc deleted a record it could not read"
     );
+}
+
+#[trace("FR-030-AC-22")]
+#[test]
+fn scan_and_mock_inspection_rewrites_with_different_content_are_refused() {
+    use quoin_evidence::types::{FindingRecord, MockInspectionRecord};
+    let repo = tempfile::tempdir().unwrap();
+    let mut store = DiskEvidence::new(repo.path());
+    let scan = |ruleset: &str| FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new("SUITE-A"),
+        tool: "scanner".to_owned(),
+        evidence_kind: None,
+        timestamp: "2026-11-22T00:00:00Z".to_owned(),
+        ruleset: Some(ruleset.to_owned()),
+        rules_evaluated: Some(1),
+        findings: Vec::new(),
+        evaluated: None,
+    };
+    write_scan(&mut store, &scan("one")).unwrap();
+    write_scan(&mut store, &scan("one")).unwrap();
+    let error = write_scan(&mut store, &scan("two")).unwrap_err();
+    assert_eq!(error.code(), EvidenceErrorCode::RecordIntegrity);
+
+    let inspection = |tool: &str| MockInspectionRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new("SUITE-A"),
+        tool: tool.to_owned(),
+        timestamp: "2026-11-22T00:00:00Z".to_owned(),
+        injections: Vec::new(),
+    };
+    write_mock_inspection(&mut store, &inspection("inspector 1.0.0")).unwrap();
+    let error = write_mock_inspection(&mut store, &inspection("inspector 2.0.0")).unwrap_err();
+    assert_eq!(error.code(), EvidenceErrorCode::RecordIntegrity);
+}
+
+#[trace("FR-030-AC-23")]
+#[test]
+fn a_repeated_gc_that_retires_a_different_set_under_the_same_first_path_still_collects() {
+    let repo = tempfile::tempdir().unwrap();
+    let mut store = DiskEvidence::new(repo.path());
+    let at = |second: u32| run("SUITE-A", &format!("2026-11-22T00:00:0{second}Z"), vec![]);
+    for second in [0, 1] {
+        write_run(&mut store, &at(second)).unwrap();
+    }
+    gc(&mut store, false).unwrap();
+    // The key is recorded again and a newer run supersedes it: the first
+    // retired path, and so the log's name, is the same as before.
+    write_run(&mut store, &at(0)).unwrap();
+    write_run(&mut store, &at(2)).unwrap();
+    let deleted = gc(&mut store, false).unwrap();
+    assert_eq!(deleted.len(), 2, "gc was blocked by its own earlier log");
+    assert_eq!(store.list_files("retired").unwrap().len(), 2);
+}
+
+#[trace("FR-030-AC-24")]
+#[test]
+fn writes_and_publishes_cannot_reach_outside_the_store_root() {
+    let repo = tempfile::tempdir().unwrap();
+    let mut store = DiskEvidence::new(repo.path());
+    assert_eq!(
+        store.write("../escaped.json", b"{}").unwrap_err().code(),
+        EvidenceErrorCode::StoreIo
+    );
+    assert_eq!(
+        store.publish("../escaped.json", b"{}").unwrap_err().code(),
+        EvidenceErrorCode::StoreIo
+    );
+    assert!(!repo.path().join("spec/escaped.json").exists());
+    assert!(store.publish("inside.json", b"{}").unwrap());
+}
+
+#[trace("FR-030-AC-21")]
+#[test]
+fn a_retry_completes_a_differential_pair_whose_projection_was_not_written() {
+    let repo = tempfile::tempdir().unwrap();
+    let mut store = DiskEvidence::new(repo.path());
+    let entries = vec![entry("tests::a", Outcome::Pass, &[])];
+    let req = request("SUITE-A", "2026-11-22T00:00:00Z", entries.clone());
+    // The run alone, as a process killed before the projection leaves it.
+    write_run(&mut store, &run("SUITE-A", "2026-11-22T00:00:00Z", entries)).unwrap();
+    let projection = serde_json::json!({ "disposition": "same" });
+    record_run_with_analysis_projection(&mut store, &req, &[], &projection).unwrap();
+    assert_eq!(
+        store.list_files("analysis-reports/SUITE-A").unwrap().len(),
+        1
+    );
+    // A different projection at the occupied key is still refused.
+    let other = serde_json::json!({ "disposition": "different" });
+    record_run_with_analysis_projection(&mut store, &req, &[], &other).unwrap_err();
 }
