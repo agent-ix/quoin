@@ -309,7 +309,10 @@ fn tc_447_603_a_discharge_is_built_and_then_rendered() {
     assert_eq!(report["binding"]["open"][0]["clauseId"], "C-1");
     assert_eq!(report["binding"]["open"][0]["reason"], "no discharge fact");
 
-    let rendered = ok(&run("assurance.render_discharge", &report.to_string()));
+    let rendered = ok(&run(
+        "assurance.render_discharge",
+        &json!({"report": report}).to_string(),
+    ));
     let markdown = rendered["rendered"].as_str().unwrap();
     assert!(
         markdown.starts_with("# Clause discharge: quire/spec@1"),

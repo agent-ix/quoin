@@ -11,7 +11,7 @@
 use std::path::Path;
 
 use quoin_assurance::{
-    BuildDischargeRequest, ClauseSetPolicy, DischargeChecks, DischargeStoreError,
+    BuildDischargeRequest, ClauseSetPolicy, DischargeChecks, DischargeStoreError, PackChecks,
     RecordDischargeRequest, build_checked_discharge_report, build_pack_requirements_mapping,
     build_requirements_mapping, discharge_report_from_store, record_discharge_facts,
     render_inward_completeness, render_pack_requirements_mapping, render_requirements_mapping,
@@ -531,9 +531,11 @@ pub fn pack_matrix(
             &request.as_of,
             context.as_map(),
             &bindings,
-            &approval_policies,
-            verifier.as_deref(),
-            request.offline,
+            &PackChecks {
+                policies: &approval_policies,
+                verifier: verifier.as_deref(),
+                offline: request.offline,
+            },
         )
         .map_err(|e| map_store_error(e, op))?;
         value(&PackRequirementsMatrixPayload {

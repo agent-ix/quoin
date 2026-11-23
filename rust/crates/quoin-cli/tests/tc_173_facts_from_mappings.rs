@@ -1356,6 +1356,11 @@ fn tc_1525_skill_output_on_the_fixture_repo_flows_to_the_matrix() {
     let path = world.spec().join("CTRL-002-request-authorization.md");
     let text = std::fs::read_to_string(&path).unwrap();
     std::fs::write(&path, text.replace("`not_assessed`", "`effective`")).unwrap();
+    std::fs::write(
+        world.path("evidence.json"),
+        json!({"ix://CTRL-002": [RUN_REF]}).to_string(),
+    )
+    .unwrap();
 
     chain(&world);
     let report = world.rmm(AS_OF);

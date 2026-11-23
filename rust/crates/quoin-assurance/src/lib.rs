@@ -64,7 +64,7 @@ pub use discharge::{
     DischargeReport, DischargeSchemaVersion, DischargeState, DischargeStoreError,
     DispositionCounts, DispositionDecision, DispositionFact, FactKind, InwardCompleteness,
     MAX_ID_BYTES, MAX_RECORD_ID_BYTES, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS, OpenClause,
-    PackIndexEntry, PackRequirementsMapping, PackRequirementsMappingSchemaVersion,
+    PackChecks, PackIndexEntry, PackRequirementsMapping, PackRequirementsMappingSchemaVersion,
     RecordDischargeRequest, RecordedFact, RequirementsMapping, RequirementsMappingSchemaVersion,
     RmmApplicability, RmmCompliance, RmmRow, StoreRefusal, StoredDischargeFact,
     StoredFactSchemaVersion, UnusedDischargeFact, UnusedFactReason, approval_subject,

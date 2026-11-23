@@ -79,6 +79,16 @@ fn key_text(set: &ClauseSetKey) -> String {
     format!("{}/{}@{}", set.authority, set.id, set.version)
 }
 
+/// What every set of a pack report is checked against.
+pub struct PackChecks<'a> {
+    /// The clause policies of the sets, matched to each binding by key.
+    pub policies: &'a [ClauseSetPolicy],
+    /// Verifies approval references; `None` when none is configured.
+    pub verifier: Option<&'a dyn ApprovalVerifier>,
+    /// Whether a report is built without reaching an approval verifier.
+    pub offline: bool,
+}
+
 /// Build the pack report from each set's live binding report and the facts
 /// stored for that set's key.
 ///
@@ -96,9 +106,7 @@ pub fn build_pack_requirements_mapping(
     as_of: &str,
     context: &BTreeMap<String, String>,
     bindings: &[ClauseBindingReport],
-    approval_policies: &[ClauseSetPolicy],
-    verifier: Option<&dyn ApprovalVerifier>,
-    offline: bool,
+    checks: &PackChecks<'_>,
 ) -> Result<PackRequirementsMapping, DischargeStoreError> {
     let mut ordered: Vec<(String, &ClauseBindingReport)> = bindings
         .iter()
@@ -108,7 +116,7 @@ pub fn build_pack_requirements_mapping(
     let mut index = Vec::with_capacity(ordered.len());
     let mut matrices = Vec::with_capacity(ordered.len());
     for (_, binding) in ordered {
-        let policies = approval_policies.iter().filter(|policy| {
+        let policies = checks.policies.iter().filter(|policy| {
             policy.authority == binding.clause_set.authority
                 && policy.id == binding.clause_set.id
                 && policy.version == binding.clause_set.version
@@ -130,8 +138,8 @@ pub fn build_pack_requirements_mapping(
             as_of,
             &DischargeChecks {
                 policy: policy.map_or(&no_policy, |policy| &policy.policy),
-                verifier,
-                offline,
+                verifier: checks.verifier,
+                offline: checks.offline,
             },
         )?;
         let matrix = build_requirements_mapping(binding, &report)?;

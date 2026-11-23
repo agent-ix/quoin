@@ -277,14 +277,16 @@ fn record_output(
     record_output_with(env, repo, set, version, facts, &[])
 }
 
-/// A verifier that approves every request as `r` with the meaning
-/// `privacy-officer`, standing in for engineering-assurance.
-fn stub_verifier(env: &Env) -> (String, String) {
+/// A verifier that approves every request as `r` with the given meaning,
+/// standing in for engineering-assurance.
+fn stub_verifier(env: &Env, meaning: &str) -> (String, String) {
     use std::os::unix::fs::PermissionsExt as _;
     let script = env.base.join("stub-ea");
     std::fs::write(
         &script,
-        "#!/bin/sh\ncat >/dev/null\necho '{\"protocol\":\"engineering-assurance.approval-verify-result/v1\",\"status\":\"approved\",\"meaning\":[\"privacy-officer\"],\"approver\":\"r\"}'\n",
+        format!(
+            "#!/bin/sh\ncat >/dev/null\necho '{{\"protocol\":\"engineering-assurance.approval-verify-result/v1\",\"status\":\"approved\",\"meaning\":[\"{meaning}\"],\"approver\":\"r\"}}'\n"
+        ),
     )
     .unwrap();
     std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
@@ -586,7 +588,7 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
 
     // With a verifier the approval is verified at record time and again when
     // the report is built.
-    let (verifier, signers) = stub_verifier(&env);
+    let (verifier, signers) = stub_verifier(&env, "risk-approver");
     let flags = [
         "--engineering-assurance",
         &verifier,
@@ -742,7 +744,7 @@ edge_types:
         text(&missing_approval)
     );
 
-    let (verifier, signers) = stub_verifier(&env);
+    let (verifier, signers) = stub_verifier(&env, "privacy-officer");
     let flags = [
         "--engineering-assurance",
         &verifier,

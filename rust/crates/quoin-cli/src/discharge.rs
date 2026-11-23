@@ -388,15 +388,20 @@ pub(crate) fn approval_inputs(arguments: &ArgMatches) -> Result<Option<serde_jso
             );
         }
     };
-    let mut inputs = serde_json::json!({ "engineeringAssurance": ea, "allowedSigners": signers });
+    let mut inputs = serde_json::Map::new();
+    inputs.insert("engineeringAssurance".to_owned(), ea.into());
+    inputs.insert("allowedSigners".to_owned(), signers.into());
     if let [Some(identity), Some(issuer), Some(principal)] = gitsign {
-        inputs["gitsign"] = serde_json::json!({
-            "certificateIdentity": identity,
-            "certificateOidcIssuer": issuer,
-            "principal": principal,
-        });
+        inputs.insert(
+            "gitsign".to_owned(),
+            serde_json::json!({
+                "certificateIdentity": identity,
+                "certificateOidcIssuer": issuer,
+                "principal": principal,
+            }),
+        );
     }
-    Ok(Some(inputs))
+    Ok(Some(serde_json::Value::Object(inputs)))
 }
 
 fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {

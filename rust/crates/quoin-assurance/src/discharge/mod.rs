@@ -92,8 +92,9 @@ pub use completeness::{
     build_inward_completeness, render_inward_completeness,
 };
 pub use pack_rmm::{
-    ClauseSetPolicy, PackIndexEntry, PackRequirementsMapping, PackRequirementsMappingSchemaVersion,
-    build_pack_requirements_mapping, render_pack_requirements_mapping,
+    ClauseSetPolicy, PackChecks, PackIndexEntry, PackRequirementsMapping,
+    PackRequirementsMappingSchemaVersion, build_pack_requirements_mapping,
+    render_pack_requirements_mapping,
 };
 pub use render::render_discharge_report;
 pub use report::{
