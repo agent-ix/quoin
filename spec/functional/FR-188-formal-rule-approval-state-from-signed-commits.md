@@ -56,9 +56,10 @@ With `--json` it is:
 {"protocol":"quoin.formal-rule-status/v1","verification":{"quoin_version":"…","engineering_assurance_version":"…","allowed_signers_sha256":"sha256:…"},"rules":[{"symbol":"qsl:<path>::<label>","path":"…","label":"…","declaration_range":{"start":120,"end":340},"formalizes":["FR-012"],"state":"approved","reason":null,"approval":{"commit":"<sha>","principal":"…"}}]}
 ```
 
-`verification` names what produced the verdicts: `quoin_version` (the Quoin that
-ran), `engineering_assurance_version` (the version the verifier executable
-reports for itself) and `allowed_signers_sha256` (the SHA-256 of the exact
+`verification` names what produced the verdicts: `quoin_version` (the version `quoin --version` prints, including any
+git-describe suffix of a build ahead of its tag), `engineering_assurance_version` (the single token after
+`engineering-assurance ` on the one line the verifier executable prints for
+`--version`; any other output is refused as unavailable) and `allowed_signers_sha256` (the SHA-256 of the exact
 allowed-signers bytes every verification in the run used; Quoin reads the file
 once, hashes those bytes and hands engineering-assurance a private copy of the
 same bytes). A report whose verifier does not report a version is refused as
@@ -166,7 +167,7 @@ stderr.
 | FR-188-AC-22 | Given any fixture, every `declaration_range` in the report has `start` below `end`, for `approved` and `draft` declarations alike | Test |
 | FR-188-AC-23 | Given none of the gitsign mapping flags, the `signature-verify` request omits `gitsign`; given all three valid flags, the request carries their exact values in `gitsign`; given only one or two flags, the command exits `2` without invoking engineering-assurance | Test |
 | FR-188-AC-24 | Given any fixture, the report's `verification` carries the running Quoin version, the version engineering-assurance reports for itself, and `allowed_signers_sha256` equal to the SHA-256 of the allowed-signers file bytes; changing those bytes changes the digest. Given a verifier that reports no version, the command exits `3` with no report. | Test |
-| FR-188-AC-25 | The `signature-verify` request carries `trailer_keys: ["Formal-rule"]`, and against the real engineering-assurance, git and ssh-keygen a throwaway repository whose approval commit is signed by an allowed key with meaning `formal-rule-approved` reports `approved`; each single change of signer (key not allowed, or removed from the allowed-signers file after signing), meaning, declaration bytes, or approval object (a signed tag over an unsigned commit) reports `draft` with the reason of FR-188-AC-3, AC-5, AC-9 and AC-10. | Test |
+| FR-188-AC-25 | The status path's `signature-verify` request carries `trailer_keys: ["Formal-rule"]`, and against the real engineering-assurance, git and ssh-keygen a throwaway repository whose approval commit is signed by an allowed key with meaning `formal-rule-approved` reports `approved`; each single change of signer (key not allowed, or removed from the allowed-signers file after signing), meaning, declaration bytes, or approval object (a signed tag over an unsigned commit) reports `draft` with the reason of FR-188-AC-3, AC-5, AC-9 and AC-10. | Test |
 
 ## Dependencies
 

@@ -49,6 +49,9 @@ fn ea() -> PathBuf {
 fn run(program: &str, dir: &Path, args: &[&str], env: &[(&str, &str)]) -> String {
     let output = Command::new(program)
         .current_dir(dir)
+        // Nothing from the developer's own git configuration.
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
         .args(args)
         .envs(env.iter().copied())
         .output()
@@ -199,7 +202,7 @@ fn a_signed_approval_with_the_permitted_meaning_is_approved_end_to_end() {
     assert_eq!(rule["approval"]["principal"], "alice@example.invalid");
 }
 
-#[trace("FR-188-AC-5")]
+#[trace("FR-188-AC-5", "FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_valid_signature_by_a_key_the_allowed_signers_do_not_name_is_untrusted() {
@@ -211,7 +214,7 @@ fn a_valid_signature_by_a_key_the_allowed_signers_do_not_name_is_untrusted() {
     assert_eq!(rule["reason"], "approval_untrusted");
 }
 
-#[trace("FR-188-AC-5")]
+#[trace("FR-188-AC-5", "FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_signer_removed_from_the_allowed_signers_after_signing_no_longer_approves() {
@@ -226,7 +229,7 @@ fn a_signer_removed_from_the_allowed_signers_after_signing_no_longer_approves() 
     assert_eq!(rule["reason"], "approval_untrusted");
 }
 
-#[trace("FR-188-AC-9")]
+#[trace("FR-188-AC-9", "FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_different_meaning_is_a_mismatch_not_an_approval() {
@@ -237,7 +240,7 @@ fn a_different_meaning_is_a_mismatch_not_an_approval() {
     assert_eq!(rule["reason"], "meaning_mismatch");
 }
 
-#[trace("FR-188-AC-10")]
+#[trace("FR-188-AC-10", "FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_declaration_edited_after_approval_is_changed_since_approval() {
@@ -260,7 +263,7 @@ fn a_declaration_edited_after_approval_is_changed_since_approval() {
     assert_eq!(rule["reason"], "changed_since_approval");
 }
 
-#[trace("FR-188-AC-3", "FR-188-AC-19")]
+#[trace("FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_signed_tag_over_an_unsigned_commit_is_not_an_approval() {
@@ -312,7 +315,17 @@ fn the_report_names_the_tool_the_verifier_and_the_trust_bytes_it_used() {
         |fixture: &Fixture| -> Value { serde_json::from_slice(&fixture.status().stdout).unwrap() };
     let first = report(&fixture);
     let verification = &first["verification"];
-    assert_eq!(verification["quoin_version"], env!("CARGO_PKG_VERSION"));
+    // The oracle is what the binary says about itself, not the package manifest.
+    let printed = run(
+        env!("CARGO_BIN_EXE_quoin"),
+        fixture.root.path(),
+        &["--version"],
+        &[],
+    );
+    assert!(
+        printed.ends_with(verification["quoin_version"].as_str().unwrap()),
+        "{printed} vs {verification}"
+    );
     let ea_version = run(
         ea().to_str().unwrap(),
         fixture.root.path(),
@@ -426,7 +439,8 @@ fn record_digest(store: &Path) -> String {
     report["record_digest"].as_str().unwrap().to_owned()
 }
 
-#[trace("FR-041-AC-1", "FR-041-AC-2")]
+/// Provenance: engineering-assurance FR-041-AC-1, FR-041-AC-2
+#[trace("FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_tag_binds_exactly_the_digest_quoin_computed_and_one_changed_character_refuses() {
@@ -454,7 +468,7 @@ fn a_tag_binds_exactly_the_digest_quoin_computed_and_one_changed_character_refus
     assert!(refused.get("approver").is_none());
 }
 
-#[trace("FR-065-AC-12", "FR-068-AC-13")]
+#[trace("FR-065-AC-12", "FR-068-AC-13", "FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_forged_claimed_approval_stays_a_claim_and_the_real_verifier_refuses_it() {
@@ -544,7 +558,8 @@ fn a_forged_claimed_approval_stays_a_claim_and_the_real_verifier_refuses_it() {
     assert_eq!(genuine["status"], "approved", "{genuine}");
 }
 
-#[trace("FR-037-AC-9")]
+/// Provenance: engineering-assurance FR-037-AC-9
+#[trace("FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn an_expired_key_does_not_approve_whatever_date_the_tagger_claims() {
@@ -569,9 +584,9 @@ fn an_expired_key_does_not_approve_whatever_date_the_tagger_claims() {
         &[("GIT_COMMITTER_DATE", "2019-06-01T00:00:00Z")],
     );
     let result = approval_verify(&fixture, "approval-1", "change-1", &digest);
-    assert_ne!(
-        result["status"], "approved",
-        "an expired key approved because the tagger claimed an earlier date: {result}"
+    assert_eq!(
+        result["status"], "untrusted_signer",
+        "an expired key was not refused as untrusted: {result}"
     );
 
     // Healthy control: the same backdated tag, the same key, an entry that has
