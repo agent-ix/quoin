@@ -176,7 +176,11 @@ fn analysis_evidence_joins_only_the_exact_target_and_renders_every_item() {
         "cause":"unevaluated",
         "detail":"actor authority premise: no admission"
     });
-    let request_value = json!({
+    let mut matrix_target = target;
+    matrix_target["line"] = json!(14);
+    let mut wrong_line_result = result.clone();
+    wrong_line_result["target"]["line"] = json!(15);
+    let mut request_value = json!({
         "coverage": [{
             "document": "spec/FR-001.md",
             "criteria": [{
@@ -184,17 +188,17 @@ fn analysis_evidence_joins_only_the_exact_target_and_renders_every_item() {
                 "method": "Analysis",
                 "binders": [],
                 "status": "tagged",
-                "identity": target
+                "identity": matrix_target
             }]
         }],
         "bindings": {"schemaVersion": 1, "bindings": [binding("FR-001-AC-1", "unit")]},
         "audit": audit(&[], &["FR-001-AC-1"], &[]),
         "analysis_evidence": {
             "record_binders": [record_binder, wrong_target_binder],
-            "evidence_results": [result]
+            "evidence_results": [result, wrong_line_result]
         }
     });
-    let request = serde_json::from_value(request_value).unwrap();
+    let request = serde_json::from_value(request_value.clone()).unwrap();
 
     let output = build(&request).unwrap();
     let criterion = &output.requirements[0].criteria[0];
@@ -211,6 +215,21 @@ fn analysis_evidence_joins_only_the_exact_target_and_renders_every_item() {
     let rendered = render_markdown(&output);
     assert!(rendered.contains("test-signer"));
     assert!(rendered.contains("actor authority premise: no admission"));
+
+    let rows = request_value["coverage"][0]["criteria"]
+        .as_array_mut()
+        .unwrap();
+    let mut duplicate = rows[0].clone();
+    duplicate["identity"]["line"] = json!(15);
+    rows.push(duplicate);
+    let ambiguous = build(&serde_json::from_value(request_value).unwrap()).unwrap();
+    let criteria = &ambiguous.requirements[0].criteria;
+    assert_eq!(criteria.len(), 2);
+    assert!(
+        criteria
+            .iter()
+            .all(|row| row.analysis_evidence.as_ref().is_some_and(Vec::is_empty))
+    );
 }
 
 /// An empty binding graph reads `no run evidence` for every criterion,

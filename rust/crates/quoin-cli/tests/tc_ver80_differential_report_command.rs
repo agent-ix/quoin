@@ -103,6 +103,22 @@ impl Fixture {
         path
     }
 
+    fn matrix(&self, observation: &Path) -> Output {
+        self.quoin()
+            .args([
+                "matrix",
+                "--repo",
+                ".",
+                "--module",
+                ".",
+                "--json",
+                "--run-observation",
+            ])
+            .arg(observation)
+            .output()
+            .unwrap()
+    }
+
     fn runs_exist(&self) -> bool {
         self.repo.path().join("spec/evidence/runs").exists()
     }
@@ -239,6 +255,8 @@ fn tc_002_audit_reports_the_obligation_undischarged_until_it_is_stated() {
 #[test]
 fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
     const RUN: &str = "runs/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json";
+    const SELECTED: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const PERFORMED: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
     let fixture = fixture();
     let spec = SPEC.replace("|  |\n", "| Analysis |\n")
         + "| FR-001-AC-2 | The reader shall report the refused field. | Analysis |\n";
@@ -267,20 +285,7 @@ fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
         .to_string(),
     )
     .unwrap();
-    let output = fixture
-        .quoin()
-        .args([
-            "matrix",
-            "--repo",
-            ".",
-            "--module",
-            ".",
-            "--json",
-            "--run-observation",
-        ])
-        .arg(observation)
-        .output()
-        .unwrap();
+    let output = fixture.matrix(&observation);
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     let matrix: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     let criteria = matrix["requirements"][0]["criteria"].as_array().unwrap();
@@ -304,6 +309,49 @@ fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
     let sibling = criteria[1]["analysis_evidence"].as_array().unwrap();
     assert_eq!(sibling.len(), 1, "{sibling:?}");
     assert_eq!(sibling[0]["status"], "absent");
+
+    let mut observation_data = serde_json::json!({
+        "protocol": "quoin.analysis-run-observation/v1",
+        "record": RUN,
+        "selected_head": SELECTED,
+        "checkout_sha": PERFORMED
+    });
+    std::fs::write(&observation, observation_data.to_string()).unwrap();
+    let output = fixture.matrix(&observation);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let matrix: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let analysis = matrix["requirements"][0]["criteria"][0]["analysis_evidence"]
+        .as_array()
+        .unwrap();
+    assert!(
+        analysis
+            .iter()
+            .all(|item| item["status"] != "qualified-record")
+    );
+    let detail = format!(
+        "performed revision premise: performed revision {PERFORMED} is not the selected HEAD {SELECTED}"
+    );
+    assert!(
+        analysis.iter().any(|item| {
+            item["status"] == "wrong-revision"
+                && item["result"]["locator"]["record"] == RUN
+                && item["result"]["detail"] == detail
+        }),
+        "{analysis:?}"
+    );
+
+    observation_data["record"] = serde_json::json!("runs/OTHER-SUITE/other.json");
+    std::fs::write(&observation, observation_data.to_string()).unwrap();
+    let output = fixture.matrix(&observation);
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(
+        stderr(&output).contains(
+            "run observation names no readable selected record: runs/OTHER-SUITE/other.json"
+        ),
+        "{}",
+        stderr(&output)
+    );
     assert_eq!(
         retained.each_ref().map(|path| std::fs::read(path).unwrap()),
         before

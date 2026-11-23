@@ -122,7 +122,7 @@ pub(crate) fn build(
             .ok_or_else(|| "quire.coverage did not return obligations".to_owned())?,
     )
     .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
-    let analysis = crate::analysis_evidence::compute(
+    let (analysis, design_coverage) = crate::analysis_evidence::compute_for_matrix(
         repo,
         options.module_paths(),
         &audited.store_inputs,
@@ -144,11 +144,8 @@ pub(crate) fn build(
     if let Some(coverage) = evidence_report.get("coverage_matrix") {
         request.insert("coverage".to_owned(), coverage.clone());
     }
-    // Preserve the design-bearing entries quire-rs emitted, including an
-    // absent matrix when the engine found no entries.
-    if let Some(coverage) = audited.coverage.get("coverage_matrix") {
-        request.insert("design_coverage".to_owned(), coverage.clone());
-    }
+    // Display the design rows from the same Quire result as the analysis items.
+    request.insert("design_coverage".to_owned(), design_coverage);
     request.insert(
         "analysis_evidence".to_owned(),
         serde_json::json!({

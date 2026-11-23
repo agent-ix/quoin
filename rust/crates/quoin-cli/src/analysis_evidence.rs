@@ -84,6 +84,48 @@ pub(crate) fn compute(
     observations: &[RunObservationFile],
     signature_verifier: Option<&SignatureVerifier>,
 ) -> Result<quoin_quire::evidence::Outcome, String> {
+    quoin_quire::evidence::compute(&request(
+        repo,
+        module_paths,
+        audit_inputs,
+        obligations,
+        observations,
+        signature_verifier,
+    )?)
+    .map_err(|error| error.to_string())
+}
+
+/// Render design rows with the exact native identities used for qualification.
+pub(crate) fn compute_for_matrix(
+    repo: &str,
+    module_paths: &[String],
+    audit_inputs: &serde_json::Value,
+    obligations: &[Obligation],
+    observations: &[RunObservationFile],
+    signature_verifier: Option<&SignatureVerifier>,
+) -> Result<(quoin_quire::evidence::Outcome, serde_json::Value), String> {
+    let (outcome, design) = quoin_quire::evidence::compute_for_matrix(&request(
+        repo,
+        module_paths,
+        audit_inputs,
+        obligations,
+        observations,
+        signature_verifier,
+    )?)
+    .map_err(|error| error.to_string())?;
+    let design = serde_json::to_value(design)
+        .map_err(|error| format!("analysis design matrix is malformed: {error}"))?;
+    Ok((outcome, design))
+}
+
+fn request(
+    repo: &str,
+    module_paths: &[String],
+    audit_inputs: &serde_json::Value,
+    obligations: &[Obligation],
+    observations: &[RunObservationFile],
+    signature_verifier: Option<&SignatureVerifier>,
+) -> Result<quoin_quire::evidence::Request, String> {
     let modules = module_selection(module_paths)?;
     let scope = ScopeRoot::open(repo).map_err(|error| error.to_string())?;
     let canonical_repo = Path::new(repo)
@@ -102,7 +144,7 @@ pub(crate) fn compute(
         .filter(|obligation| obligation.method.as_deref() == Some("Analysis"))
         .map(|obligation| obligation.id.clone())
         .collect();
-    quoin_quire::evidence::compute(&quoin_quire::evidence::Request {
+    Ok(quoin_quire::evidence::Request {
         scope: ScopeRequest { scope, modules },
         requested,
         runs,
@@ -111,7 +153,6 @@ pub(crate) fn compute(
         mock_inspection_suites,
         host,
     })
-    .map_err(|error| error.to_string())
 }
 
 /// Host-configured verifier and signer trust store for actor admission.
