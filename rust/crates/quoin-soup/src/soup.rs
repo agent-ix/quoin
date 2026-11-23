@@ -613,12 +613,13 @@ fn report(planned: &Plan, written: &BTreeMap<String, PathBuf>, unmatched: Option
         planned.unrecorded.len()
     );
     for component in &planned.unrecorded {
-        let texts: Vec<String> = component
-            .texts
-            .iter()
-            .map(|text| text.escape_debug().to_string())
-            .collect();
-        let _ = writeln!(text, "  {} {}", component.symbol, texts.join(", "));
+        let _ = writeln!(text, "  {}", component.symbol);
+        for declared in &component.texts {
+            let shown = declared
+                .as_deref()
+                .map_or_else(|| "unreadable".to_owned(), visible);
+            let _ = writeln!(text, "    {shown}");
+        }
     }
     let _ = writeln!(text, "duplicate conflicts: {}", planned.conflicts.len());
     for (purl, field) in &planned.conflicts {
@@ -632,6 +633,20 @@ fn report(planned: &Plan, written: &BTreeMap<String, PathBuf>, unmatched: Option
         let _ = writeln!(text, "unmatched: {id}");
     }
     text.trim_end().to_owned()
+}
+
+/// A declared text as written, except that a control character is spelled out
+/// so one text stays on one line.
+fn visible(text: &str) -> String {
+    text.chars()
+        .flat_map(|c| {
+            if c.is_control() {
+                c.escape_default().collect::<Vec<_>>()
+            } else {
+                vec![c]
+            }
+        })
+        .collect()
 }
 
 fn invoke(

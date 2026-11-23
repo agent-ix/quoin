@@ -47,7 +47,7 @@ pub use registry::{
     adapter_names, refuse_policy, select_adapter, select_finding_adapter,
 };
 pub use sarif::{parse_cargo_audit, parse_sarif};
-pub use sbom::{DeclaredLicence, LicenceKind, SbomComponent, parse_sbom, read_components};
+pub use sbom::{DeclaredLicence, SbomComponent, parse_sbom, read_components};
 
 use crate::types::RunEntry;
 

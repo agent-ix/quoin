@@ -613,6 +613,18 @@ fn record_of(out: &Path, purl: &str) -> PathBuf {
     ))
 }
 
+/// The declared texts listed for `symbol` under the multiple-licence heading,
+/// one per line.
+fn listed_texts<'a>(report: &'a str, symbol: &str) -> Vec<&'a str> {
+    report
+        .lines()
+        .skip_while(|line| *line != format!("  {symbol}"))
+        .skip(1)
+        .take_while(|line| line.starts_with("    "))
+        .map(|line| &line[4..])
+        .collect()
+}
+
 fn has_line(report: &str, wanted: &str) -> bool {
     report.lines().any(|line| line == wanted)
 }
@@ -674,6 +686,83 @@ fn a_stated_supplier_and_one_licence_are_written_as_stated_for_each_licence_kind
         Some("Organization: Acme, Inc.")
     );
     assert_eq!(field(&record, "license").as_deref(), Some("MIT"));
+    let record = record_of(&out, "pkg:npm/c@1");
+    validates(&record);
+    assert_eq!(field(&record, "supplier").as_deref(), Some("Person: Gamma"));
+    assert_eq!(
+        field(&record, "license").as_deref(),
+        Some("MIT OR Apache-2.0")
+    );
+}
+
+#[trace("FR-141-AC-20")]
+#[test]
+fn a_declared_text_is_listed_as_written_on_its_own_line() {
+    let odd = "Terms, \"v2\" \\ ISC";
+    let (_work, _out, run) = promoted(&bom(&[with(
+        "pkg:npm/odd@1",
+        "odd",
+        &json!({"licenses": [{"license": {"name": odd}}, {"license": {"id": "MIT"}}, {"license": {"name": "line\nbreak"}}]}),
+    )]));
+    let report = stdout(&run);
+    assert_eq!(
+        listed_texts(&report, "pkg:npm/odd@1"),
+        [odd, "MIT", "line\\nbreak"]
+    );
+}
+
+#[trace("FR-141-AC-21", "FR-141-AC-23")]
+#[test]
+fn a_supplier_with_a_control_character_is_omitted_but_still_compared() {
+    let sbom = bom(&[with(
+        "pkg:npm/ctrl@1",
+        "ctrl",
+        &json!({"supplier": {"name": "Acme\u{7}Corp"}}),
+    )]);
+    let (work, out, _) = promoted(&sbom);
+    let record = record_of(&out, "pkg:npm/ctrl@1");
+    assert_eq!(field(&record, "supplier"), None);
+    let before = snapshot(&out);
+    let again = with_module(&work.path().join("bom.json"), &out, &[]);
+    assert_eq!(snapshot(&out), before);
+    let report = stdout(&again);
+    assert!(has_line(&report, "field differences: 1"), "{report}");
+    assert!(
+        difference_lines(&report)[0].ends_with("pkg:npm/ctrl@1 supplier"),
+        "{report}"
+    );
+}
+
+#[trace("FR-141-AC-22")]
+#[test]
+fn a_record_already_at_the_destination_is_compared_when_records_names_another_directory() {
+    let sbom = bom(&[with(
+        "pkg:npm/here@1",
+        "here",
+        &json!({"supplier": {"name": "Acme"}}),
+    )]);
+    let (work, out, _) = promoted(&sbom);
+    set_field(
+        &record_of(&out, "pkg:npm/here@1"),
+        "supplier",
+        Some("Person"),
+    );
+    let before = snapshot(&out);
+    let elsewhere = work.path().join("elsewhere");
+    let again = with_module(
+        &work.path().join("bom.json"),
+        &out,
+        &["--records", elsewhere.to_str().unwrap()],
+    );
+    assert!(again.status.success());
+    assert_eq!(snapshot(&out), before);
+    let report = stdout(&again);
+    assert!(has_line(&report, "records unchanged: 1"), "{report}");
+    assert!(has_line(&report, "field differences: 1"), "{report}");
+    assert!(
+        difference_lines(&report)[0].ends_with("pkg:npm/here@1 supplier"),
+        "{report}"
+    );
 }
 
 #[trace("FR-141-AC-19")]
@@ -750,11 +839,11 @@ fn several_licences_leave_the_licence_absent_and_are_listed_with_their_texts() {
         has_line(&report, "multiple or unreadable licences: 2"),
         "{report}"
     );
-    assert!(
-        has_line(&report, "  pkg:npm/mixed@1 MIT, unreadable"),
-        "{report}"
+    assert_eq!(
+        listed_texts(&report, "pkg:npm/mixed@1"),
+        ["MIT", "unreadable"]
     );
-    assert!(has_line(&report, "  pkg:npm/two@1 MIT, ISC"), "{report}");
+    assert_eq!(listed_texts(&report, "pkg:npm/two@1"), ["MIT", "ISC"]);
 }
 
 #[trace("FR-141-AC-21", "FR-141-AC-24")]
@@ -804,9 +893,9 @@ fn control_characters_and_unreadable_licences_omit_the_field_and_are_listed() {
         has_line(&report, "multiple or unreadable licences: 1"),
         "{report}"
     );
-    assert!(
-        has_line(&report, "  pkg:npm/unreadable@1 unreadable"),
-        "{report}"
+    assert_eq!(
+        listed_texts(&report, "pkg:npm/unreadable@1"),
+        ["unreadable"]
     );
 }
 

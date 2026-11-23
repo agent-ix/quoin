@@ -93,8 +93,9 @@ pub(super) fn duplicate_records(existing: &[Existing]) -> Option<(&Existing, &Ex
     None
 }
 
-/// The supplier and licence the SBOM states for one purl, after the omissions
-/// FR-141 requires. A created record carries exactly these.
+/// The supplier and licence the SBOM states for one purl: the supplier the
+/// reader exposes, and the single readable licence without a control character.
+/// A created record carries these, except a supplier holding a control character.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(super) struct Stated {
     pub(super) supplier: Option<String>,
@@ -128,11 +129,11 @@ pub(super) struct Difference {
 }
 
 /// A component whose licences do not become the record's single `license`:
-/// the declared texts, with `unreadable` for an entry that has none.
+/// the declared texts in document order, `None` for an unreadable entry.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct Unrecorded {
     pub(super) symbol: String,
-    pub(super) texts: Vec<String>,
+    pub(super) texts: Vec<Option<String>>,
 }
 
 /// What promoting one document does, before any file is touched.
@@ -163,23 +164,20 @@ pub(super) struct Unchanged {
 
 /// What `component` states for its record, with the fields it omits and the
 /// licence texts to list when no single licence can be written.
-fn state(component: &SbomComponent) -> (Stated, Vec<&'static str>, Option<Vec<String>>) {
+fn state(component: &SbomComponent) -> (Stated, Vec<&'static str>, Option<Vec<Option<String>>>) {
     let mut omitted = Vec::new();
-    let supplier = component.supplier.clone().filter(|text| {
-        let clean = !text.chars().any(char::is_control);
-        if !clean {
-            omitted.push("supplier");
-        }
-        clean
-    });
+    let supplier = component.supplier.clone();
+    if supplier.as_deref().is_some_and(has_control) {
+        omitted.push("supplier");
+    }
     let (license, unrecorded) = match component.licences.as_slice() {
         [] => (None, None),
         [
-            DeclaredLicence {
-                text: Some(text), ..
-            },
+            DeclaredLicence::Id(text)
+            | DeclaredLicence::Name(text)
+            | DeclaredLicence::Expression(text),
         ] => {
-            if text.chars().any(char::is_control) {
+            if has_control(text) {
                 omitted.push("license");
                 (None, None)
             } else {
@@ -191,17 +189,16 @@ fn state(component: &SbomComponent) -> (Stated, Vec<&'static str>, Option<Vec<St
             Some(
                 licences
                     .iter()
-                    .map(|licence| {
-                        licence
-                            .text
-                            .clone()
-                            .unwrap_or_else(|| "unreadable".to_owned())
-                    })
+                    .map(|licence| licence.text().map(str::to_owned))
                     .collect(),
             ),
         ),
     };
     (Stated { supplier, license }, omitted, unrecorded)
+}
+
+fn has_control(text: &str) -> bool {
+    text.chars().any(char::is_control)
 }
 
 /// The fields of `existing` that differ from `stated`: set where the SBOM
@@ -357,7 +354,12 @@ pub(super) fn render(
     if let Some(version) = &record.version {
         let _ = writeln!(text, "version: {}", quote(version));
     }
-    if let Some(supplier) = &record.stated.supplier {
+    if let Some(supplier) = record
+        .stated
+        .supplier
+        .as_deref()
+        .filter(|s| !has_control(s))
+    {
         let _ = writeln!(text, "supplier: {}", quote(supplier));
     }
     if let Some(license) = &record.stated.license {
@@ -403,7 +405,7 @@ fn body(skeleton: &str) -> &str {
 mod tests {
     use super::{Existing, file_name, next_id_number, parse_purl, plan};
     use ix_trace_rs::trace;
-    use quoin_evidence::adapters::{DeclaredLicence, LicenceKind, SbomComponent};
+    use quoin_evidence::adapters::{DeclaredLicence, SbomComponent};
     use std::path::PathBuf;
 
     fn component(symbol: &str, supplier: Option<&str>, licences: &[Option<&str>]) -> SbomComponent {
@@ -412,13 +414,10 @@ mod tests {
             purl: Some(symbol.to_owned()),
             licences: licences
                 .iter()
-                .map(|text| DeclaredLicence {
-                    kind: if text.is_some() {
-                        LicenceKind::Id
-                    } else {
-                        LicenceKind::Unreadable
-                    },
-                    text: text.map(str::to_owned),
+                .map(|text| {
+                    text.map_or(DeclaredLicence::Unreadable, |text| {
+                        DeclaredLicence::Id(text.to_owned())
+                    })
                 })
                 .collect(),
             supplier: supplier.map(str::to_owned),
@@ -525,13 +524,13 @@ mod tests {
         let listed: Vec<_> = planned
             .unrecorded
             .iter()
-            .map(|u| (u.symbol.as_str(), u.texts.join("|")))
+            .map(|u| (u.symbol.as_str(), u.texts.clone()))
             .collect();
         assert_eq!(
             listed,
             [
-                ("pkg:npm/none@1", "unreadable".to_owned()),
-                ("pkg:npm/two@1", "MIT|unreadable".to_owned())
+                ("pkg:npm/none@1", vec![None]),
+                ("pkg:npm/two@1", vec![Some("MIT".to_owned()), None])
             ]
         );
         assert_eq!(
