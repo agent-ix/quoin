@@ -95,6 +95,17 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   `--approval` inputs, for a single document or bundle. Quire-cli FR-038
   needs the source-contract extension in PLAT-1761 to accept the EA release
   result; the dossier SHALL NOT write an intermediate approval verdict file.
+- For an export containing `DOS-REL`, each approval verdict supplied to
+  `quire export --approval` SHALL be bound to the exact committed
+  `DOS-REL.md` bytes: its `record_id` SHALL be `DOS-REL`, its
+  `record_digest` SHALL equal the lowercase SHA-256 hex digest of those bytes,
+  and its binding status for both fields SHALL be `match`. Quoin SHALL refuse
+  the export before starting Quire if any supplied verdict fails these
+  checks. This binding rule applies to the existing approval input; it does
+  not define a new approval format.
+- Each approval block in a successful PDF or DOCX export of `DOS-REL` SHALL
+  show the verifier identity from the supplied verdict's `signature_kind`
+  (`ssh` or `gitsign`) alongside its approver and meaning.
 
 ## Acceptance Criteria
 
@@ -108,6 +119,8 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
 | FR-201-AC-6 | A malformed source file gives exit 3 naming that source and writes no selected dossier file. | Test |
 | FR-201-AC-7 | An unignored integration test using fixture EA results and real export tools yields PDF and DOCX text containing the EA principal and meaning from the approval block, through PLAT-1761's public input contract. | Test |
 | FR-201-AC-8 | The generator runs with `git` absent from `PATH`, renders the same bytes, and creates no tag or ref. | Test |
+| FR-201-AC-9 | For a committed `DOS-REL.md`, an approval verdict with `record_id` `DOS-REL`, matching lowercase SHA-256 `record_digest`, and both binding statuses `match` is passed to Quire; changing one digest character or either binding status causes export to fail before Quire starts and leaves the output untouched. | Test |
+| FR-201-AC-10 | A successful PDF and DOCX export of `DOS-REL` shows the approval block's approver, meaning, and `signature_kind` verifier identity from the same verdict. | Test |
 
 ## Dependencies
 
