@@ -53,3 +53,5 @@ FR-030 SHALL (exit status), FR-030-AC-32, FR-030-AC-33, FR-030-AC-34, FR-033 pyt
 | FND-006 | fixed | AC-34 reads "trace ids that obligations state", and the SHALL includes errored |
 | FND-007 | fixed | AC-32 and AC-33 lines are `warning: ...` through the CLI's existing warning mechanism |
 | FND-008 | fixed | The file/path step was removed; the mapping no longer depends on RunEntry.path or FR-030-AC-18 |
+| FND-009 | fixed | The out-of-scope sentence now names any class collected through `unittest.TestCase` whatever its name, alongside non-default `python_classes`; their cases are recorded as module-level functions (accepted limitation, stated) |
+| FND-010 | fixed | The mapping uses the adapter-selection match (lower-cased tool contains `pytest`, so `pytest 8.3.2` selects it), the JUnit parser receives the declared tool, and FR-033-AC-16 carries the versioned example; no other registry claim is a substring of a pytest tool value |
