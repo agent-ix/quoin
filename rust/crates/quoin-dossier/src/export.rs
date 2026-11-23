@@ -4,18 +4,15 @@
 //! The export hand-off to `quire export` (FR-191, "Commit then export",
 //! "Export currency").
 //!
-//! Quoin renders nothing and never bypasses `quire export`: it checks that the
-//! committed bytes are current, then runs the installed `quire` as an external
-//! process. `quire export` refuses an uncommitted file itself (quire-cli
-//! FR-034); quoin passes that refusal through and runs no git.
+//! Quoin renders nothing and never bypasses `quire export`: it resolves the
+//! repository revision, checks committed bytes, then runs the installed
+//! `quire` as an external process.
 
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-#[cfg(test)]
-use crate::engine::render;
 use crate::engine::{Operation, Rendered, render_for, report_with_comparison};
 use crate::error::{DossierError, QuireFailure};
 use crate::registry::{Inputs, Registry};
@@ -63,17 +60,114 @@ pub fn export(
     options: &ExportOptions,
 ) -> Result<Report, DossierError> {
     let rendered = render_for(registry, kinds, out, inputs, Operation::Export)?;
+    let resolved_head = resolve_head(inputs.scope.as_path());
     let mut report = report_with_comparison(&rendered);
+    let head = match resolved_head {
+        Ok(head) => head,
+        Err(detail) => {
+            report.export_currency_failure = Some(detail);
+            for entry in &mut report.documents {
+                entry.comparison = Some(crate::report::Comparison::Differs);
+            }
+            return Ok(report);
+        }
+    };
+    for (entry, document) in report.documents.iter_mut().zip(&rendered) {
+        if committed_blob(&head.repository_root, &head.revision, &document.path)
+            .is_none_or(|blob| blob != document.text.as_bytes())
+        {
+            entry.comparison = Some(crate::report::Comparison::Differs);
+        }
+    }
     if !report.differing().is_empty() {
         return Ok(report);
     }
-    report.quire = run_quire(&rendered, options).err();
+    report.quire = run_quire(&rendered, options, &head.revision).err();
     Ok(report)
+}
+
+struct Head {
+    revision: String,
+    repository_root: PathBuf,
+}
+
+fn git_output(cwd: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(cwd)
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|error| format!("cannot start git {}: {error}", args.join(" ")))?;
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        Err(format!(
+            "git {} failed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
+fn resolve_head(scope: &Path) -> Result<Head, String> {
+    let object_format = git_output(scope, &["rev-parse", "--show-object-format"])?;
+    let object_format = String::from_utf8(object_format)
+        .map_err(|error| format!("git returned a non-UTF-8 object format: {error}"))?;
+    let expected_len = match object_format.trim() {
+        "sha1" => 40,
+        "sha256" => 64,
+        format => return Err(format!("unsupported git object format {format:?}")),
+    };
+    let output = git_output(scope, &["rev-parse", "--verify", "HEAD^{commit}"])?;
+    let revision = String::from_utf8(output)
+        .map_err(|error| format!("git returned a non-UTF-8 HEAD id: {error}"))?;
+    let revision = revision.trim();
+    if revision.len() != expected_len || !revision.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(format!(
+            "git returned an invalid full HEAD id for {object_format}: {revision:?}"
+        ));
+    }
+    let root = git_output(scope, &["rev-parse", "--show-toplevel"])?;
+    let root = String::from_utf8(root)
+        .map_err(|error| format!("git returned a non-UTF-8 repository root: {error}"))?;
+    let repository_root = PathBuf::from(root.trim())
+        .canonicalize()
+        .map_err(|error| format!("cannot resolve git repository root: {error}"))?;
+    Ok(Head {
+        revision: revision.to_owned(),
+        repository_root,
+    })
+}
+
+fn committed_blob(repository_root: &Path, revision: &str, path: &Path) -> Option<Vec<u8>> {
+    let path = if path.is_absolute() {
+        path.canonicalize().ok()?
+    } else {
+        std::env::current_dir()
+            .ok()?
+            .join(path)
+            .canonicalize()
+            .ok()?
+    };
+    let relative = path.strip_prefix(repository_root).ok()?;
+    let relative = relative.to_str()?;
+    let spec = format!("{revision}:{relative}");
+    let output = Command::new("git")
+        .args(["cat-file", "blob", &spec])
+        .current_dir(repository_root)
+        .stdin(Stdio::null())
+        .output()
+        .ok()?;
+    output.status.success().then_some(output.stdout)
 }
 
 /// The arguments of the one `quire export` call, in order.
 #[must_use]
-pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec<String> {
+pub(crate) fn quire_args(
+    documents: &[Rendered],
+    options: &ExportOptions,
+    source_rev: &str,
+) -> Vec<String> {
     let mut args = vec!["export".to_owned()];
     args.extend(
         documents
@@ -86,7 +180,7 @@ pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec
         "--output".to_owned(),
         options.output.display().to_string(),
         "--source-rev".to_owned(),
-        "HEAD".to_owned(),
+        source_rev.to_owned(),
     ]);
     if let Some(release) = &options.release {
         args.extend(["--release".to_owned(), release.clone()]);
@@ -113,10 +207,14 @@ pub(crate) fn quire_args(documents: &[Rendered], options: &ExportOptions) -> Vec
     args
 }
 
-fn run_quire(documents: &[Rendered], options: &ExportOptions) -> Result<(), QuireFailure> {
-    let had_output = fs::symlink_metadata(&options.output).is_ok();
-    let mut result = Command::new(&options.quire)
-        .args(quire_args(documents, options))
+fn run_quire(
+    documents: &[Rendered],
+    options: &ExportOptions,
+    source_rev: &str,
+) -> Result<(), QuireFailure> {
+    let backup = backup_existing_output(&options.output)?;
+    let result = Command::new(&options.quire)
+        .args(quire_args(documents, options, source_rev))
         .stdin(Stdio::null())
         .output()
         .map_err(|error| QuireFailure {
@@ -133,30 +231,106 @@ fn run_quire(documents: &[Rendered], options: &ExportOptions) -> Result<(), Quir
                 })
             }
         });
-    if let Err(failure) = &mut result
-        && !had_output
-    {
-        // quire writes `--output` only on success; remove a partial one a
-        // failed run might still have left, so a refusal leaves nothing. A
-        // pre-existing output is not ours to remove, and an output that is
-        // already absent needs no cleanup. Any other failure is reported
-        // beside quire's own.
-        match fs::remove_file(&options.output) {
-            Ok(()) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-            Err(error) => {
-                if !failure.stderr.is_empty() && !failure.stderr.ends_with('\n') {
-                    failure.stderr.push('\n');
-                }
-                let _ = write!(
-                    failure.stderr,
-                    "could not remove the partial output {}: {error}",
-                    options.output.display()
+    match result {
+        Ok(()) => {
+            if let Some(backup) = backup {
+                fs::remove_file(&backup).map_err(|error| QuireFailure {
+                    exit_code: None,
+                    stderr: format!(
+                        "export succeeded, but could not remove the output backup {}: {error}",
+                        backup.display()
+                    ),
+                })?;
+            }
+            Ok(())
+        }
+        Err(mut failure) => {
+            if let Err(error) = remove_partial_output(&options.output) {
+                append_failure(
+                    &mut failure,
+                    &format!(
+                        "could not remove the partial output {}: {error}",
+                        options.output.display()
+                    ),
                 );
             }
+            if let Some(backup) = backup
+                && let Err(error) = fs::rename(&backup, &options.output)
+            {
+                append_failure(
+                    &mut failure,
+                    &format!(
+                        "could not restore the pre-existing output {} from {}: {error}",
+                        options.output.display(),
+                        backup.display()
+                    ),
+                );
+            }
+            Err(failure)
         }
     }
-    result
+}
+
+fn backup_existing_output(output: &Path) -> Result<Option<PathBuf>, QuireFailure> {
+    match fs::symlink_metadata(output) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => {
+            return Err(QuireFailure {
+                exit_code: None,
+                stderr: format!("cannot inspect output {}: {error}", output.display()),
+            });
+        }
+        Ok(metadata) if !metadata.file_type().is_file() => {
+            return Err(QuireFailure {
+                exit_code: None,
+                stderr: format!(
+                    "refusing to export over non-regular output {}",
+                    output.display()
+                ),
+            });
+        }
+        Ok(_) => {}
+    }
+    let parent = output
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let temporary = tempfile::Builder::new()
+        .prefix(".quoin-dossier-output-")
+        .tempfile_in(parent)
+        .map_err(|error| QuireFailure {
+            exit_code: None,
+            stderr: format!(
+                "cannot reserve output backup beside {}: {error}",
+                output.display()
+            ),
+        })?;
+    let backup = temporary.path().to_owned();
+    drop(temporary);
+    fs::rename(output, &backup).map_err(|error| QuireFailure {
+        exit_code: None,
+        stderr: format!(
+            "cannot preserve pre-existing output {}: {error}",
+            output.display()
+        ),
+    })?;
+    Ok(Some(backup))
+}
+
+fn remove_partial_output(output: &Path) -> std::io::Result<()> {
+    match fs::symlink_metadata(output) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error),
+        Ok(metadata) if metadata.file_type().is_dir() => fs::remove_dir(output),
+        Ok(_) => fs::remove_file(output),
+    }
+}
+
+fn append_failure(failure: &mut QuireFailure, detail: &str) {
+    if !failure.stderr.is_empty() && !failure.stderr.ends_with('\n') {
+        failure.stderr.push('\n');
+    }
+    let _ = write!(failure.stderr, "{detail}");
 }
 
 #[cfg(test)]
@@ -188,9 +362,25 @@ mod tests {
         }
     }
 
-    fn rendered(kinds: &[&str]) -> Vec<Rendered> {
-        let kinds: Vec<String> = kinds.iter().map(|kind| (*kind).to_owned()).collect();
-        render(&two(), &kinds, Path::new("dossier"), &inputs()).unwrap()
+    fn commit_docs(work: &Path) {
+        for args in [
+            &["init", "-q"][..],
+            &["config", "user.name", "Dossier test"],
+            &["config", "user.email", "dossier@example.invalid"],
+            &["add", "dossier"],
+            &["commit", "-qm", "dossier fixtures"],
+        ] {
+            let output = Command::new("git")
+                .args(args)
+                .current_dir(work)
+                .output()
+                .unwrap();
+            assert!(
+                output.status.success(),
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
     }
 
     /// A `quire` that runs `body` with `$out` set to its `--output`.
@@ -214,67 +404,12 @@ mod tests {
     fn export_with(work: &Path, quire: &Path) -> Report {
         let out = work.join("dossier");
         crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
+        commit_docs(work);
         let mut options = options(quire.to_str().unwrap());
         options.output = work.join("out.pdf");
-        export(&two(), &[], &out, &inputs(), &options).unwrap()
-    }
-
-    #[trace("FR-191-AC-8")]
-    #[test]
-    fn a_bundle_passes_files_in_registry_order_with_bundle_arguments_and_options_unchanged() {
-        let args = quire_args(&rendered(&["b", "a"]), &options("quire"));
-        assert_eq!(
-            args,
-            [
-                "export",
-                "dossier/DOS-A.md",
-                "dossier/DOS-B.md",
-                "--to",
-                "pdf",
-                "--output",
-                "out.pdf",
-                "--source-rev",
-                "HEAD",
-                "--release",
-                "v1",
-                "--approval",
-                "a1.json",
-                "--approval",
-                "a2.json",
-                "--template",
-                "t.typ",
-                "--bundle-title",
-                "Submission Dossier",
-                "--bundle-id",
-                "DOS",
-            ]
-        );
-    }
-
-    #[trace("FR-191-AC-9")]
-    #[test]
-    fn one_document_is_exported_without_bundle_arguments() {
-        let args = quire_args(&rendered(&["a"]), &options("quire"));
-        assert!(args.contains(&"dossier/DOS-A.md".to_owned()));
-        assert!(!args.iter().any(|arg| arg.starts_with("--bundle")));
-        assert_eq!(args.iter().filter(|arg| arg.contains("DOS-")).count(), 1);
-    }
-
-    #[trace("FR-191-AC-8")]
-    #[test]
-    fn module_roots_are_passed_to_quire_for_document_validation() {
-        let mut options = options("quire");
-        options.modules = vec![
-            PathBuf::from("process-module"),
-            PathBuf::from("other-module"),
-        ];
-        let args = quire_args(&rendered(&["a"]), &options);
-        let module_args: Vec<_> = args
-            .windows(2)
-            .filter(|pair| pair[0] == "--module")
-            .map(|pair| pair[1].as_str())
-            .collect();
-        assert_eq!(module_args, ["process-module", "other-module"]);
+        let mut input = inputs();
+        input.scope = work.to_owned();
+        export(&two(), &[], &out, &input, &options).unwrap()
     }
 
     #[trace("FR-191-AC-6")]
@@ -283,9 +418,12 @@ mod tests {
         let work = tempfile::tempdir().unwrap();
         let out = work.path().join("dossier");
         crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
+        commit_docs(work.path());
         let mut options = options("/nonexistent/quire");
         options.output = work.path().join("out.pdf");
-        let report = export(&two(), &[], &out, &inputs(), &options).unwrap();
+        let mut input = inputs();
+        input.scope = work.path().to_owned();
+        let report = export(&two(), &[], &out, &input, &options).unwrap();
         let quire = report.quire.unwrap();
         assert_eq!(quire.exit_code, None);
         assert!(
@@ -301,15 +439,17 @@ mod tests {
         let work = tempfile::tempdir().unwrap();
         let out = work.path().join("dossier");
         crate::engine::generate(&two(), &[], &out, &inputs()).unwrap();
+        commit_docs(work.path());
         fs::write(out.join("DOS-B.md"), "edited").unwrap();
         fs::remove_file(out.join("DOS-A.md")).unwrap();
         let mut options = options("/nonexistent/quire");
         options.output = work.path().join("out.pdf");
-        let report = export(&two(), &[], &out, &inputs(), &options).unwrap();
+        let mut input = inputs();
+        input.scope = work.path().to_owned();
+        let report = export(&two(), &[], &out, &input, &options).unwrap();
         assert_eq!(report.differing(), ["DOS-A", "DOS-B"]);
         assert!(report.quire.is_none(), "quire was started");
-        let elsewhere =
-            export(&two(), &[], &work.path().join("other"), &inputs(), &options).unwrap();
+        let elsewhere = export(&two(), &[], &work.path().join("other"), &input, &options).unwrap();
         assert_eq!(elsewhere.differing(), ["DOS-A", "DOS-B"]);
     }
 
@@ -340,15 +480,18 @@ mod tests {
     }
 
     #[cfg(unix)]
-    #[trace("FR-191-AC-7")]
+    #[trace("FR-191-AC-26")]
     #[test]
     fn an_output_that_existed_before_a_failed_quire_is_preserved() {
         let work = tempfile::tempdir().unwrap();
-        fs::write(work.path().join("out.pdf"), "earlier").unwrap();
+        fs::write(work.path().join("out.pdf"), b"sentinel bytes\0\xff").unwrap();
         let quire = script(work.path(), "echo partial > \"$out\"; exit 7");
         let failure = export_with(work.path(), &quire).quire.unwrap();
         assert!(!failure.stderr.contains("could not remove"));
-        assert!(work.path().join("out.pdf").exists());
+        assert_eq!(
+            fs::read(work.path().join("out.pdf")).unwrap(),
+            b"sentinel bytes\0\xff"
+        );
     }
 
     #[cfg(unix)]

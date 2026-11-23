@@ -500,6 +500,11 @@ fn finish(
 
 fn render_text(mode: Mode, report: &Report) -> String {
     let mut lines = Vec::new();
+    if let Some(failure) = &report.export_currency_failure {
+        lines.push(format!(
+            "export currency check could not resolve HEAD: {failure}"
+        ));
+    }
     for document in &report.documents {
         let status = match document.status {
             Status::Complete => "complete".to_owned(),
