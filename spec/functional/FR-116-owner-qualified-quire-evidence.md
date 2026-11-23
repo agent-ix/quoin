@@ -25,7 +25,7 @@ verification act supplies positive evidence for one exact selected obligation
 and its declared method. Inspection, Analysis, an executed gate and an executed
 doctest can qualify without being source-symbol declarations.
 
-This is a **draft owner contract, with implementation planned**. It supplies the
+This is the **normative owner contract; implementation remains planned**. It supplies the
 missing positive qualification premises identified by PLAT-1196; it does not
 claim an implemented API, a published qualification capability, a performed
 verification act or a discharged downstream criterion. PLAT-1162's apparatus
@@ -228,7 +228,7 @@ can be reviewed independently of that unresolved waiver policy.
 
 ## Acceptance Criteria
 
-All criteria below describe planned implementation obligations. This draft
+All criteria below describe planned implementation obligations. This contract
 claims no executable acceptance evidence or current downstream discharge.
 
 | ID | Criteria | Verification |

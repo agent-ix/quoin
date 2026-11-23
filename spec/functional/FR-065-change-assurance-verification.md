@@ -175,6 +175,7 @@ The table declares the record's top-level fields and their cardinality. Which ke
         "event_chain_invalid",
         "decision_mismatch",
         "approval_record_mismatch",
+        "policy_weakened",
         "approval_signer_untrusted",
         "approval_signature_bad",
         "approval_unverified",
@@ -466,6 +467,27 @@ it with the record and the policy and never verifies the signature. The receipt
 reports it as `claimed_approval`, to be re-verified (FR-068) before anyone relies
 on the approver.
 
+Before judging the approved event, Quoin SHALL compare the `signed_approval`
+policy of each adjacent pair of retained revisions from revision 1 through the
+reviewed revision. The compared revisions SHALL have the same `record_id` and
+form the verified, contiguous predecessor chain required by FR-063; the lineage
+check's existing missing, unreadable, mismatched, or discontinuous outcomes
+remain authoritative when that chain is unavailable or invalid. For a pair in
+which both policies have `required: true`, the later policy SHALL keep
+`required` true, its `signature_kinds` SHALL be a subset of the preceding set,
+and its `approvers` SHALL remain non-empty and a subset when the preceding
+`approvers` set is non-empty. An empty preceding `approvers` set means any
+principal and may be narrowed to a non-empty set. A transition from
+`required: false` to `true` strengthens the policy and is permitted; FR-063
+requires both lists to be empty when `required` is false. Any other movement
+from required to optional, or any widening of the accepted signing kinds or
+principals while approval is required, SHALL make the review check `invalid`
+with the stable reason `policy_weakened`, and `claimed_approval` SHALL be null.
+This refusal applies even when the later policy makes approval optional and the
+approved event carries no claim. Policy strengthening and narrowing remain
+permitted. This comparison neither verifies signatures nor establishes signer
+trust.
+
 When `signed_approval.required` is false and the matching `approved` event carries
 no `verified_approval`, the review check is judged as above and `claimed_approval`
 is `null`. When `required` is true and the event carries none, the review check is
@@ -580,6 +602,7 @@ kept.
 | FR-065-AC-22 | The plain receipt output shows, for a non-null `claimed_approval`, the approver, the time labelled as claimed by the signer with its source, and the meaning together; a missing time shows `time missing` with its reason and no other instant, the receipt's own verification not being a time source. | Test |
 | FR-065-AC-23 | A v2 proof attestation whose output bytes or any committed metadata are substituted, even at equal output length, is invalid with `output_integrity_mismatch`; a legacy v1 attestation remains readable but is incomplete with `output_integrity_unavailable` and never supports a valid proof result. | Integration |
 | FR-065-AC-24 | A selected proof is valid only when its exact `proof-integrity-statement/v1`, attestation, output, and signed tag object are retained and match byte-for-byte; FR-080 parses and verifies the same fetched immutable tag object, returns its full object id, and the proof receipt reports that id, statement digest, and status. A second tag signed by the same trusted signer over the same purpose/digest/scope may verify as a distinct checkpoint with a distinct object id; without a separate trusted anchor, no prior-object-id pinning is claimed. Missing/unavailable objects or verifier evidence is incomplete; changed content, wrong scope/purpose, untrusted signer, or bad signature is invalid. | Integration |
+| FR-065-AC-25 | Given a verified same-record predecessor chain, a required policy followed by `required: false`, broader `signature_kinds`, or an empty or wider `approvers` set produces an invalid review with `policy_weakened` and null `claimed_approval`, including when the approved event carries no claim; moving from optional to required or narrowing either set remains valid. The test fails when the predecessor-policy comparison is deliberately removed. | Test |
 
 ## Dependencies
 
