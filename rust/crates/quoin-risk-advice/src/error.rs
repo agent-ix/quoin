@@ -3,7 +3,7 @@
 
 //! The crate's failure envelope.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// A stable, `Copy` classification of an operational failure.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,6 +31,8 @@ pub struct AdviceError {
     pub code: ErrorCode,
     /// The human-readable detail; never branched on.
     pub message: String,
+    /// The module root that failed to load, as the engine resolved it.
+    pub module: Option<PathBuf>,
 }
 
 impl ErrorCode {
@@ -55,6 +57,10 @@ impl AdviceError {
             Engine::ModuleLoad | Engine::ModuleSetEmpty => Self {
                 code: ErrorCode::Modules,
                 message: error.to_string(),
+                module: match error {
+                    quoin_quire::Error::ModuleLoad { path, .. } => Some(path.clone()),
+                    _ => None,
+                },
             },
             Engine::ArchetypeUnknown => Self {
                 code: ErrorCode::TypeUndeclared,
@@ -63,10 +69,12 @@ impl AdviceError {
                      --module DIR for a module root whose version includes the residual_risk, \
                      benefit_risk and acceptability_policy types"
                 ),
+                module: None,
             },
             _ => Self {
                 code: ErrorCode::Scope,
                 message: error.to_string(),
+                module: None,
             },
         }
     }
@@ -78,6 +86,7 @@ impl AdviceError {
                 "{} ({id}) breaks its type's contract: {reason}",
                 path.display()
             ),
+            module: None,
         }
     }
 
@@ -88,6 +97,7 @@ impl AdviceError {
                 "cannot read or parse {}; a decision in it would go unreported",
                 files.join("; ")
             ),
+            module: None,
         }
     }
 
@@ -95,6 +105,7 @@ impl AdviceError {
         Self {
             code: ErrorCode::Render,
             message: error.to_string(),
+            module: None,
         }
     }
 }

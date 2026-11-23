@@ -8,7 +8,7 @@
 //! so reading a snapshot back through these types is the check that it is
 //! closed. No type here holds a digest, hash, score or verdict.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::{Code, Refusal, Stop};
 use crate::evidence::audit::AuditOptions;
@@ -104,28 +104,34 @@ pub(super) fn sections(matrix: MatrixOutput) -> MatrixSections {
 /// is a file below `repo` that cannot be read or whose frontmatter is not valid
 /// YAML, because a record in it would go unreported.
 pub(super) fn risk_findings(repo: &Path, modules: &[String]) -> Result<Vec<OpenFinding>, Stop> {
-    let selection = if modules.is_empty() {
+    let mut roots = Vec::new();
+    for dir in modules {
+        roots.push(ModuleRoot::open(dir).map_err(|error| module_invalid(dir, &error.to_string()))?);
+    }
+    let resolved: Vec<PathBuf> = roots
+        .iter()
+        .map(|root| root.as_path().to_path_buf())
+        .collect();
+    let selection = if roots.is_empty() {
         ModuleSelection::Ambient
     } else {
-        let roots = modules
-            .iter()
-            .map(|dir| {
-                ModuleRoot::open(dir).map_err(|error| module_invalid(dir, &error.to_string()))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
         ModuleSelection::Closed(roots)
     };
-    let summary = summarize(repo, &selection).map_err(|error| advice_refusal(modules, &error))?;
+    let summary =
+        summarize(repo, &selection).map_err(|error| advice_refusal(modules, &resolved, &error))?;
     if let Some(path) = summary.unusable.first() {
+        // The reader works on the canonical scope, so its paths are made
+        // relative to that, never to the spelling of `--repo`.
+        let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
         let shown = path
-            .strip_prefix(repo)
+            .strip_prefix(&root)
             .unwrap_or(path)
             .display()
             .to_string();
         return Err(Refusal::new(
             Code::InputUnreadable,
             format!(
-                "--repo holds {shown}, which cannot be read or whose frontmatter is not valid YAML"
+                "--repo holds {shown}, which cannot be read or whose frontmatter is not a YAML mapping"
             ),
             &[("input", "--repo"), ("path", &shown)],
         )
@@ -154,20 +160,26 @@ fn module_invalid(dir: &str, message: &str) -> Refusal {
     )
 }
 
-/// The refusal for a failure `quoin risk-summary` reports with exit status 2:
-/// a module root that does not load names that `--module DIR`, anything else
-/// names `--repo` and carries the record's own message.
-fn advice_refusal(modules: &[String], error: &AdviceError) -> Stop {
+/// The refusal for a failure `quoin risk-summary` reports with exit status 2.
+///
+/// A module root that failed to load names its own `--module DIR`. A set of
+/// roots that declares no safety record type names every `--module DIR`, and
+/// the installed modules when none was given. Anything else names `--repo` and
+/// carries the record's own message.
+fn advice_refusal(modules: &[String], resolved: &[PathBuf], error: &AdviceError) -> Stop {
     match error.code {
         ErrorCode::Modules | ErrorCode::TypeUndeclared => {
-            let named = modules
-                .iter()
-                .find(|dir| error.message.contains(dir.as_str()))
-                .or(modules.first());
-            match named {
-                Some(dir) => module_invalid(dir, &error.message).into(),
-                None => Refusal::invalid("--repo", error.code.as_str(), &error.message).into(),
-            }
+            let failed = error
+                .module
+                .as_ref()
+                .and_then(|path| resolved.iter().position(|root| root == path))
+                .and_then(|index| modules.get(index));
+            let named = match (failed, modules) {
+                (Some(dir), _) => dir.clone(),
+                (None, []) => "installed modules".to_owned(),
+                (None, all) => all.join(", "),
+            };
+            module_invalid(&named, &error.message).into()
         }
         ErrorCode::Render => Stop::Failed(error.message.clone()),
         ErrorCode::Scope | ErrorCode::Record | ErrorCode::Unparseable => {

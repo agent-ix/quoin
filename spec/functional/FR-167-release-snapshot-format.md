@@ -61,8 +61,8 @@ Open findings come from three sources, told apart by `kind`; the three sets of k
 The risk-completeness findings are those that `quoin risk-summary` (FR-169) places in the `findings` of its rows,
 computed by the same code. A finding that FR-170 places on several rows is one item, identified by its token and its
 `names`. The anomaly-gate findings are the failures that `quoin anomaly report --fail-on unassessed --fail-on
-unjustified-impacting` (FR-164) states in `gate.failures`, evaluated over the anomalies the snapshot carries; an
-anomaly that fails both modes yields two items. A finding states that a link, a record or a rationale is missing. It
+unjustified-impacting` (FR-164) states in `gate.failures`, evaluated over the anomalies the snapshot carries; each
+gate failure is one item, and an anomaly fails at most one mode. A finding states that a link, a record or a rationale is missing. It
 does not say that a risk or an anomaly is acceptable: people decide that, and the snapshot never does. An `open_findings` list holding
 none of these three sources states that no finding exists in them and is not an acceptance.
 
@@ -142,7 +142,7 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-15 | A fixture whose `control` is assumed by a post-control estimate and has no incoming `verifies` edge yields an `open_findings` item with `kind` `control-without-verification`, `obligation` the control id, `summary` the control id, `path`, `line` and `symbol` `null` and no `cause`, and `quoin risk-summary` over the same fixture carries the same token naming the same control. | Test |
 | FR-167-AC-16 | The same fixture with an incoming `verifies` edge added to the control yields no `control-without-verification` item, and a complete chain yields no item of any FR-170 token. | Test |
 | FR-167-AC-17 | A control with no incoming `verifies` edge that appears on two rows of `quoin risk-summary` yields exactly one `control-without-verification` item; a fixture with an `accepted-outside-acceptable-region` finding naming a residual risk and its covering benefit-risk ids yields one item whose `obligation` is the residual-risk id and whose `summary` lists every name in `names` order. | Test |
-| FR-167-AC-18 | A fixture with an `unassessed` anomaly and an `impacting` anomaly with no release rationale yields one `anomaly-unassessed` item and one `anomaly-unjustified-impacting` item, each with the anomaly's id and path; an anomaly that fails both modes yields both items; a closed `fixed` anomaly and an `impacting` anomaly with a rationale yield none, as FR-164-AC-5 and FR-164-AC-4 state. | Test |
+| FR-167-AC-18 | A fixture with an `unassessed` anomaly and an `impacting` anomaly with no release rationale yields one `anomaly-unassessed` item and one `anomaly-unjustified-impacting` item, each with the anomaly's id and path; a closed `fixed` anomaly and an `impacting` anomaly with a rationale yield none, as FR-164-AC-5 and FR-164-AC-4 state. | Test |
 | FR-167-AC-19 | A fixture holding auditor, risk-completeness and anomaly-gate findings yields `open_findings` in `obligation`, `kind`, `path`, `line`, `symbol`, `cause`, `summary` order whatever order the sources produce them, and no item carries a key outside the closed shape or a severity, score or acceptance word, the stem "accept" occurring only inside a finding token. | Test |
 | FR-167-AC-14 | A scan with an invalid retained timestamp refuses the snapshot section under FR-166-AC-11, so the snapshot never contains a `scan_unordered` item. | Test |
 
