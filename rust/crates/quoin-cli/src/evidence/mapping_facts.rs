@@ -23,7 +23,7 @@ use quoin_core::protocol::{Diagnostic, Response};
 use quoin_evidence::{DiskEvidence, EvidenceError, EvidenceSource, StoreLock};
 use quoin_quire::ModuleSelection;
 use quoin_quire::records::{Contract, Document, read};
-use quoin_quire_types::{ClauseBindingOutcome, ClauseBindingReport, SetPolicy};
+use quoin_quire_types::{ClauseBindingOutcome, ClauseBindingReport};
 use quoin_store::instant::{Instant, InstantGrammar};
 use serde_json::{Value, json};
 
@@ -161,7 +161,11 @@ fn read_evidence(source: &str, corpus: &Corpus) -> Result<EvidenceRefs, String> 
     };
     let mut refs = EvidenceRefs::new();
     for (key, entry) in object {
-        let control = key.strip_prefix("ix://").unwrap_or(key);
+        let Some(control) = key.strip_prefix("ix://") else {
+            return Err(format!(
+                "--evidence {source}: key {key} is not an ix:// control id"
+            ));
+        };
         if !corpus
             .controls
             .iter()
@@ -560,7 +564,7 @@ fn stale(
     store: &DiskEvidence,
     report: &mut Vec<String>,
 ) -> Result<(), String> {
-    let held = read_discharge_facts(store, &binding.clause_set, &SetPolicy::new())
+    let held = read_discharge_facts(store, &binding.clause_set, None)
         .map_err(|error| format!("the stored facts cannot be read: {error}"))?;
     for fact in held {
         if let DischargeFact::Direct(direct) = fact {

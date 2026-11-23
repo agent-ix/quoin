@@ -628,6 +628,229 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     );
 }
 
+/// An engineering-assurance stand-in that writes the request it reads to
+/// `request.json` and then runs `body`. Returns the script and an
+/// allowed-signers file.
+fn scripted_verifier(env: &Env, body: &str) -> (String, String) {
+    use std::os::unix::fs::PermissionsExt as _;
+    let script = env.base.join("scripted-ea");
+    let log = env.base.join("request.json");
+    std::fs::write(
+        &script,
+        format!("#!/bin/sh\ncat > '{}'\n{body}\n", log.display()),
+    )
+    .unwrap();
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let signers = env.base.join("allowed-signers");
+    std::fs::write(&signers, "").unwrap();
+    (
+        script.to_str().unwrap().to_owned(),
+        signers.to_str().unwrap().to_owned(),
+    )
+}
+
+fn approved_art_35() -> serde_json::Value {
+    let mut fact = direct("art-35(1)");
+    fact["approvalRef"] = serde_json::json!("approval-1");
+    fact
+}
+
+/// The request the production verifier writes carries exactly the members
+/// engineering-assurance reads, and its `record_digest` is the one
+/// `approval-subject` prints (FR-211-AC-6, AC-17).
+#[trace("FR-211-AC-6", "FR-211-AC-17")]
+#[test]
+fn tc_211_the_verifier_is_sent_the_request_engineering_assurance_reads() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = scripted_verifier(
+        &env,
+        r#"echo '{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","meaning":["risk-approver"],"approver":"r"}'"#,
+    );
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+        "--gitsign-certificate-identity",
+        "id@example.invalid",
+        "--gitsign-certificate-oidc-issuer",
+        "https://issuer.example.invalid",
+        "--gitsign-principal",
+        "principal@example.invalid",
+    ];
+    let recorded = record_output_with(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[approved_art_35()],
+        &flags,
+    );
+    assert!(recorded.status.success(), "{}", text(&recorded));
+    let request: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(env.base.join("request.json")).unwrap()).unwrap();
+
+    // The identity and digest a person signs, from the dedicated command.
+    let binding = env.base.join("subject-binding.json");
+    let fact = env.base.join("subject-fact.json");
+    let mut report = one_clause_binding("gdpr");
+    report["clauseSet"]["version"] = serde_json::json!("1.0.0");
+    report["clauses"][0]["clauseId"] = serde_json::json!("art-35(1)");
+    std::fs::write(&binding, report.to_string()).unwrap();
+    std::fs::write(&fact, approved_art_35().to_string()).unwrap();
+    let subject = json(&env.run(&[
+        "evidence",
+        "approval-subject",
+        "--binding",
+        binding.to_str().unwrap(),
+        "--fact",
+        fact.to_str().unwrap(),
+    ]));
+
+    assert_eq!(
+        request,
+        serde_json::json!({
+            "protocol": "engineering-assurance.approval-verify-request/v1",
+            "repository": env.repo.to_str().unwrap(),
+            "tag": "approval-1",
+            "record_id": subject["record_id"],
+            "record_digest": subject["record_digest"],
+            "allowed_signers": signers,
+            "gitsign": {
+                "certificate_identity": "id@example.invalid",
+                "certificate_oidc_issuer": "https://issuer.example.invalid",
+                "principal": "principal@example.invalid",
+            },
+        })
+    );
+    assert_eq!(subject["record_id"], "example.invalid/gdpr/1.0.0/art-35(1)");
+    assert!(
+        subject["record_digest"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+}
+
+/// A result whose `meaning` holds a non-string value is not read as a single
+/// role: the verifier is unavailable, exit 3 (FR-211-AC-7).
+#[trace("FR-211-AC-7", "FR-211-AC-11")]
+#[test]
+fn tc_211_a_non_string_meaning_is_not_a_role() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = scripted_verifier(
+        &env,
+        r#"echo '{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","meaning":["risk-approver",1],"approver":"r"}'"#,
+    );
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
+    let refused = record_output_with(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[approved_art_35()],
+        &flags,
+    );
+    assert_eq!(refused.status.code(), Some(3), "{}", text(&refused));
+    assert!(
+        stderr(&refused).contains("non-string"),
+        "{}",
+        text(&refused)
+    );
+}
+
+/// An engineering-assurance refusal reaches the user with its own message,
+/// which it writes on stdout (FR-211-AC-11).
+#[trace("FR-211-AC-11")]
+#[test]
+fn tc_211_a_refusal_names_the_message_engineering_assurance_gave() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = scripted_verifier(
+        &env,
+        r#"echo '{"protocol":"engineering-assurance.error/v1","code":"approval_verify_request_invalid","message":"the tag is not a plain revision"}'; exit 1"#,
+    );
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
+    let refused = record_output_with(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[approved_art_35()],
+        &flags,
+    );
+    assert_eq!(refused.status.code(), Some(3), "{}", text(&refused));
+    let message = stderr(&refused);
+    assert!(
+        message.contains("approval_verify_request_invalid"),
+        "{message}"
+    );
+    assert!(
+        message.contains("the tag is not a plain revision"),
+        "{message}"
+    );
+}
+
+/// The dossier RMM never reaches engineering-assurance: an approval-class
+/// clause reads `not-verified-offline`, not an unavailable verifier.
+#[trace("FR-195-AC-1", "FR-195-AC-5", "FR-211-AC-13")]
+#[test]
+fn tc_211_the_dossier_rmm_leaves_an_approval_class_clause_not_verified_offline() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = stub_verifier(&env, "risk-approver");
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
+    let mut approved = direct("art-35(1)");
+    approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
+    let recorded = record_output_with(&env, &env.repo, "gdpr", "1.0.0", &[approved], &flags);
+    assert!(recorded.status.success(), "{}", text(&recorded));
+
+    let out = env.base.join("dossier");
+    let generated = env.run(&[
+        "dossier",
+        "generate",
+        "--doc",
+        "rmm",
+        "--version",
+        "1",
+        "--pack",
+        PACK,
+        "--scope",
+        env.repo.to_str().unwrap(),
+        "--as-of",
+        AS_OF,
+        "--out",
+        out.to_str().unwrap(),
+        "--json",
+    ]);
+    let rmm = std::fs::read_to_string(out.join("DOS-RMM.md"));
+    assert!(rmm.is_ok(), "{}", text(&generated));
+    let rmm = rmm.unwrap();
+    let row = rmm
+        .lines()
+        .find(|line| line.starts_with("| art-35(1)"))
+        .expect("the RMM has an art-35(1) row");
+    assert!(row.contains("not-verified-offline"), "{row}");
+    assert!(!row.contains("approval-verifier-unavailable"), "{row}");
+}
+
 /// A trust file engineering-assurance refuses exits 2, an absent verifier
 /// exits 3, and neither writes a fact.
 #[trace("FR-211-AC-11")]

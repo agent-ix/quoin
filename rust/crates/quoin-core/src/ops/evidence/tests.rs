@@ -774,6 +774,24 @@ fn run_fact(reference: &str) -> serde_json::Value {
     })
 }
 
+/// An installed module declaring the clause set of [`discharge_binding`]:
+/// `C-1` expects nothing and needs no approval.
+fn module_declaring_the_rules() -> crate::ops::modules::FakeHost {
+    let mut modules = crate::ops::modules::FakeHost::with_module("rules-pack");
+    modules.policies = vec![(
+        quoin_quire::ClauseSetRef {
+            authority: quoin_quire::ClauseSetAuthority::new("example.invalid").unwrap(),
+            id: quoin_quire::ClauseSetId::new("rules").unwrap(),
+            version: quoin_quire::ClauseSetVersion::new("1").unwrap(),
+        },
+        quoin_quire_types::SetPolicy::from([(
+            "C-1".to_owned(),
+            quoin_quire_types::ClausePolicy::default(),
+        )]),
+    )];
+    modules
+}
+
 fn store_with_run() -> TestHost {
     let mut store = MemoryEvidence::new();
     store.write("runs/SUITE-1/one.json", b"{}").unwrap();
@@ -786,7 +804,12 @@ fn store_with_run() -> TestHost {
 #[test]
 fn a_report_from_supplied_facts_resolves_their_refs_against_the_store() {
     let host = store_with_run();
-    let capabilities = Capabilities::with_evidence(&host);
+    let modules = module_declaring_the_rules();
+    let capabilities = Capabilities {
+        evidence: Some(&host),
+        modules: Some(&modules),
+        ..Capabilities::none()
+    };
     let report = |facts: serde_json::Value| {
         discharge_report(
             &json!({"repo": "/r", "binding": discharge_binding(),
@@ -817,7 +840,12 @@ fn a_report_from_supplied_facts_resolves_their_refs_against_the_store() {
 #[test]
 fn record_discharge_refuses_the_whole_list_when_a_ref_does_not_resolve() {
     let host = store_with_run();
-    let capabilities = Capabilities::with_evidence(&host);
+    let modules = module_declaring_the_rules();
+    let capabilities = Capabilities {
+        evidence: Some(&host),
+        modules: Some(&modules),
+        ..Capabilities::none()
+    };
     let error = record_discharge(
         &json!({"repo": "/r", "binding": discharge_binding(),
                 "facts": [run_fact("evidence://runs/SUITE-1/gone")]}),

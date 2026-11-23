@@ -131,13 +131,12 @@ pub fn build_pack_requirements_mapping(
                 )),
             ));
         }
-        let no_policy = SetPolicy::new();
         let report = discharge_report_from_store(
             source,
             binding,
             as_of,
             &DischargeChecks {
-                policy: policy.map_or(&no_policy, |policy| &policy.policy),
+                policy: policy.map(|policy| &policy.policy),
                 verifier: checks.verifier,
                 offline: checks.offline,
             },

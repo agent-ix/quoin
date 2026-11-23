@@ -644,12 +644,28 @@ mod tests {
         request.binding = wide_binding();
         request.as_of = as_of.to_owned();
         let partition = build_discharge_report(&request).unwrap();
-        let policy = quoin_quire_types::SetPolicy::new();
+        // SYN-002 needs an approval and no verifier is available, so its
+        // approval cannot be verified.
+        let mut policy: quoin_quire_types::SetPolicy = (1..=7)
+            .map(|n| {
+                (
+                    format!("SYN-00{n}"),
+                    quoin_quire_types::ClausePolicy::default(),
+                )
+            })
+            .collect();
+        policy.insert(
+            "SYN-002".to_owned(),
+            quoin_quire_types::ClausePolicy {
+                approval_roles: vec!["reviewer".to_owned()],
+                outputs: Vec::new(),
+            },
+        );
         let checked = super::super::verify::check_report(
             partition,
             Some(&quoin_evidence::source::MemoryEvidence::new()),
             &super::super::verify::DischargeChecks {
-                policy: &policy,
+                policy: Some(&policy),
                 verifier: None,
                 offline: false,
             },
@@ -684,6 +700,18 @@ mod tests {
         let mut exception = disposition("SYN-002");
         exception["decision"] = "temporary_exception".into();
         exception["decisionExpiresAt"] = "2026-08-10T00:00:00.000Z".into();
+        // The unexpired exception shows its approval is unverifiable.
+        let open = checked_matrix(vec![exception.clone()], "2026-08-05T00:00:00Z");
+        assert_eq!(open.rows[1].compliance, RmmCompliance::Undischarged);
+        assert!(
+            open.rows[1]
+                .reason
+                .as_deref()
+                .unwrap()
+                .starts_with("approval-verifier-unavailable"),
+            "{:?}",
+            open.rows[1]
+        );
         let lapsed = checked_matrix(vec![exception], "2026-08-15T00:00:00Z");
         assert_eq!(
             lapsed.rows[1].compliance,

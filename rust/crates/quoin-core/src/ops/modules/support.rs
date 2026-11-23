@@ -51,6 +51,8 @@ pub(crate) struct FakeHost {
     pub(crate) packs: Vec<(&'static str, Result<bool, &'static str>)>,
     /// When set, `evaluate_clause_sets` fails with this load error.
     pub(crate) evaluation_error: Option<&'static str>,
+    /// The clause policies every installed module declares.
+    pub(crate) policies: Vec<(quoin_quire::ClauseSetRef, quoin_quire_types::SetPolicy)>,
     pub(crate) calls: RefCell<Vec<String>>,
 }
 
@@ -111,7 +113,7 @@ impl ModuleHost for FakeHost {
         String,
     > {
         self.evaluation_error.map_or_else(
-            || Ok(std::collections::BTreeMap::new()),
+            || Ok(self.policies.iter().cloned().collect()),
             |error| Err(error.to_owned()),
         )
     }

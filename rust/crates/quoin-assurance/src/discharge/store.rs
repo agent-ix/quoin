@@ -256,9 +256,10 @@ fn unique_clauses(binding: &ClauseBindingReport) -> Result<(), DischargeStoreErr
 }
 
 /// The clause ids whose policy declares approval roles.
-fn approval_clause_ids(policy: &SetPolicy) -> BTreeSet<String> {
+fn approval_clause_ids(policy: Option<&SetPolicy>) -> BTreeSet<String> {
     policy
-        .iter()
+        .into_iter()
+        .flatten()
         .filter(|(_, clause)| clause.approval_class())
         .map(|(id, _)| id.clone())
         .collect()
@@ -422,7 +423,7 @@ fn fact_for_approval_policy(
 pub fn read_discharge_facts<S: EvidenceSource + ?Sized>(
     source: &S,
     set: &ClauseSetKey,
-    policy: &SetPolicy,
+    policy: Option<&SetPolicy>,
 ) -> Result<Vec<DischargeFact>, DischargeStoreError> {
     let required_approval_clauses = approval_clause_ids(policy);
     let directory = clause_set_dir(set)?;
@@ -542,7 +543,7 @@ mod tests {
     use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
     use quoin_quire_types::{ClausePolicy, SetPolicy};
 
-    use super::super::fixtures::{binding, direct, plain, store as run_store};
+    use super::super::fixtures::{binding, direct, plain, policy, store as run_store};
     use super::super::report::{DischargeFact, DischargeState};
     use super::{
         DischargeStoreError, MAX_STORED_FACT_BYTES, MAX_STORED_FACTS, RecordDischargeRequest,
@@ -555,11 +556,11 @@ mod tests {
         store: &mut MemoryEvidence,
         request: &RecordDischargeRequest,
     ) -> Result<Vec<super::RecordedFact>, DischargeStoreError> {
-        record_with(store, request, &plain(&SetPolicy::new()))
+        record_with(store, request, &plain(&policy()))
     }
 
     fn read(store: &MemoryEvidence) -> Result<Vec<DischargeFact>, DischargeStoreError> {
-        read_discharge_facts(store, &binding().clause_set, &SetPolicy::new())
+        read_discharge_facts(store, &binding().clause_set, Some(&policy()))
     }
 
     fn report_of(
@@ -567,7 +568,7 @@ mod tests {
         binding: &quoin_quire_types::ClauseBindingReport,
         as_of: &str,
     ) -> Result<crate::discharge::DischargeReport, DischargeStoreError> {
-        discharge_report_from_store(store, binding, as_of, &plain(&SetPolicy::new()))
+        discharge_report_from_store(store, binding, as_of, &plain(&policy()))
     }
 
     const AS_OF: &str = "2026-08-15T00:00:00Z";
@@ -696,7 +697,7 @@ mod tests {
             &mut store,
             &record(vec![blank]),
             &DischargeChecks {
-                policy: &policy,
+                policy: Some(&policy),
                 verifier: None,
                 offline: false,
             },
@@ -765,20 +766,28 @@ mod tests {
     #[trace("FR-133-AC-3")]
     #[test]
     fn ids_are_bounded_and_case_collisions_are_typed_refusals() {
+        let exact = "x".repeat(64);
+        // The clause set declares the clauses these facts name.
+        let mut declared = policy();
+        for id in [exact.as_str(), "C-1", "c-1"] {
+            declared.insert(id.to_owned(), quoin_quire_types::ClausePolicy::default());
+        }
+        let record_declared = |store: &mut MemoryEvidence, facts: Vec<serde_json::Value>| {
+            record_with(store, &record(facts), &plain(&declared))
+        };
+
         let mut store = run_store();
         let long = "x".repeat(65);
-        let error = record_discharge_facts(&mut store, &record(vec![fact_for(&long)])).unwrap_err();
+        let error = record_declared(&mut store, vec![fact_for(&long)]).unwrap_err();
         assert_eq!(refusal(&error), Some(StoreRefusal::InvalidIdentifier));
-        let exact = "x".repeat(64);
-        record_discharge_facts(&mut store, &record(vec![fact_for(&exact)])).unwrap();
+        record_declared(&mut store, vec![fact_for(&exact)]).unwrap();
 
         let error =
-            record_discharge_facts(&mut store, &record(vec![fact_for("C-1"), fact_for("c-1")]))
-                .unwrap_err();
+            record_declared(&mut store, vec![fact_for("C-1"), fact_for("c-1")]).unwrap_err();
         assert_eq!(refusal(&error), Some(StoreRefusal::CaseCollision));
 
-        record_discharge_facts(&mut store, &record(vec![fact_for("C-1")])).unwrap();
-        let error = record_discharge_facts(&mut store, &record(vec![fact_for("c-1")])).unwrap_err();
+        record_declared(&mut store, vec![fact_for("C-1")]).unwrap();
+        let error = record_declared(&mut store, vec![fact_for("c-1")]).unwrap_err();
         assert_eq!(refusal(&error), Some(StoreRefusal::CaseCollision));
         let facts = read(&store).unwrap();
         assert!(facts.iter().any(|f| f.clause_id() == "C-1"));

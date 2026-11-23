@@ -263,7 +263,46 @@ impl World {
             .unwrap()
     }
 
+    /// Install a module declaring the clause set and clauses of
+    /// `binding.json`, once, so a discharge resolves their policies.
+    fn ensure_clause_set(&self) {
+        let marker = self.home.path().join("filament/modules/binding-clause-set");
+        if marker.exists() {
+            return;
+        }
+        let binding: Value =
+            serde_json::from_str(&std::fs::read_to_string(self.path("binding.json")).unwrap())
+                .unwrap();
+        let set = &binding["clauseSet"];
+        let clauses: Vec<&str> = binding["clauses"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|clause| clause["clauseId"].as_str().unwrap())
+            .collect();
+        let source = tempfile::tempdir().unwrap();
+        let dir = source.path().join("binding-clause-set");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("manifest.yaml"),
+            "name: binding-clause-set\nversion: 0.1.0\nclause_sets:\n  - set.yaml\n",
+        )
+        .unwrap();
+        let mut yaml = format!(
+            "schemaVersion: clause-set-v1\nauthority: {}\nid: {}\ntitle: Binding set\nversion: \"{}\"\nrights:\n  structure: original\n  text: none\nclauses:\n",
+            set["authority"].as_str().unwrap(),
+            set["id"].as_str().unwrap(),
+            set["version"].as_str().unwrap(),
+        );
+        for clause in clauses {
+            writeln!(yaml, "  - id: {clause}\n    force: mandatory").unwrap();
+        }
+        std::fs::write(dir.join("set.yaml"), yaml).unwrap();
+        self.install_pack(&dir);
+    }
+
     fn record(&self, facts: &str) -> Output {
+        self.ensure_clause_set();
         let binding = self.path("binding.json");
         self.run(
             &[
@@ -299,6 +338,7 @@ impl World {
     }
 
     fn rmm(&self, as_of: &str) -> String {
+        self.ensure_clause_set();
         let binding = self.path("binding.json");
         let output = self.run(
             &[
@@ -1459,6 +1499,10 @@ fn tc_211_a_bad_evidence_file_is_refused_naming_the_file_and_the_key() {
         (
             r#"{"ix://CTRL-Z": ["evidence://runs/S-1/a"]}"#,
             vec!["custom-evidence.json", "ix://CTRL-Z"],
+        ),
+        (
+            r#"{"CTRL-A": ["evidence://runs/S-1/a"]}"#,
+            vec!["custom-evidence.json", "CTRL-A", "not an ix:// control id"],
         ),
     ] {
         let output = world.facts_with_evidence_text(text);

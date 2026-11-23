@@ -573,6 +573,35 @@ impl ApprovalHost for HostApproval {
     }
 }
 
+/// Run one `engineering-assurance` subcommand with `request` on stdin and
+/// return its finished output, whatever its exit status.
+///
+/// # Errors
+/// A description of why the process could not be started, fed or awaited.
+pub fn engineering_assurance_call(
+    executable: &Path,
+    subcommand: &str,
+    request: &serde_json::Value,
+) -> Result<std::process::Output, String> {
+    use std::io::Write as _;
+    use std::process::{Command, Stdio};
+
+    let mut child = Command::new(executable)
+        .args([subcommand, "--request", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("engineering-assurance is unavailable: {error}"))?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| "engineering-assurance stdin is unavailable".to_owned())?
+        .write_all(request.to_string().as_bytes())
+        .map_err(|error| error.to_string())?;
+    child.wait_with_output().map_err(|error| error.to_string())
+}
+
 struct ProcessApprovalVerifier<'a> {
     setup: &'a ApprovalSetup,
 }
@@ -605,36 +634,28 @@ impl ProcessApprovalVerifier<'_> {
 
 impl ApprovalVerifier for ProcessApprovalVerifier<'_> {
     fn verify(&self, request: &ApprovalRequest<'_>) -> Result<ApprovalVerdict, ApprovalRefusal> {
-        use std::io::Write as _;
-        use std::process::{Command, Stdio};
-
         let unavailable = |detail: String| ApprovalRefusal::Unavailable(detail);
-        let mut child = Command::new(&self.setup.engineering_assurance)
-            .args(["approval-verify", "--request", "-"])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|error| {
-                unavailable(format!("engineering-assurance is unavailable: {error}"))
-            })?;
-        child
-            .stdin
-            .take()
-            .ok_or_else(|| unavailable("engineering-assurance stdin is unavailable".to_owned()))?
-            .write_all(self.request(request).to_string().as_bytes())
-            .map_err(|error| unavailable(error.to_string()))?;
-        let output = child
-            .wait_with_output()
-            .map_err(|error| unavailable(error.to_string()))?;
+        let output = engineering_assurance_call(
+            &self.setup.engineering_assurance,
+            "approval-verify",
+            &self.request(request),
+        )
+        .map_err(unavailable)?;
         let result: serde_json::Value =
             serde_json::from_slice(&output.stdout).unwrap_or(serde_json::Value::Null);
         if !output.status.success() {
-            let code = result
-                .get("code")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("");
-            let detail = format!("{code}: {}", String::from_utf8_lossy(&output.stderr));
+            let text = |member: &str| {
+                result
+                    .get(member)
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("")
+            };
+            let code = text("code");
+            let detail = format!(
+                "{code}: {}; {}",
+                text("message"),
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
             return Err(if code == "approval_verify_allowed_signers_invalid" {
                 ApprovalRefusal::AllowedSignersInvalid(detail)
             } else {
@@ -653,16 +674,16 @@ impl ApprovalVerifier for ProcessApprovalVerifier<'_> {
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| unavailable("the approval result carries no status".to_owned()))?
             .to_owned();
-        let meaning = result
-            .get("meaning")
-            .and_then(serde_json::Value::as_array)
-            .map(|values| {
-                values
-                    .iter()
-                    .filter_map(|value| value.as_str().map(str::to_owned))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let meaning = match result.get("meaning").and_then(serde_json::Value::as_array) {
+            None => Vec::new(),
+            Some(values) => values
+                .iter()
+                .map(|value| value.as_str().map(str::to_owned))
+                .collect::<Option<Vec<_>>>()
+                .ok_or_else(|| {
+                    unavailable("the approval result's meaning holds a non-string value".to_owned())
+                })?,
+        };
         let approver = result
             .get("approver")
             .and_then(serde_json::Value::as_str)

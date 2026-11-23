@@ -360,7 +360,7 @@ pub fn build_discharge(
         &input,
         None,
         &quoin_assurance::DischargeChecks {
-            policy: &policy,
+            policy: policy.as_ref(),
             verifier: None,
             offline: false,
         },
@@ -571,16 +571,32 @@ mod tests {
         });
         let input: quoin_assurance::BuildDischargeRequest =
             serde_json::from_value(discharge_request.clone()).unwrap();
-        let raised: quoin_assurance::DischargeError =
-            quoin_assurance::build_discharge_report(&input).unwrap_err();
-        let quoin_assurance::DischargeError(_) = raised;
+        let raised = quoin_assurance::build_checked_discharge_report(
+            &input,
+            None,
+            &quoin_assurance::DischargeChecks {
+                policy: None,
+                verifier: None,
+                offline: false,
+            },
+        )
+        .unwrap_err();
+        // Named so the class is identified by its type rather than its message.
+        assert!(
+            matches!(
+                raised,
+                quoin_assurance::DischargeStoreError::Discharge(quoin_assurance::DischargeError(_))
+            ),
+            "a bad asOf is a discharge error, not {raised:?}"
+        );
         let mapped = build_discharge(&discharge_request, &Capabilities::none()).unwrap_err();
         assert_eq!(mapped.code, CoreErrorCode::BadRequest);
         assert_eq!(mapped.code.outcome(), Outcome::Invalid);
     }
 
-    /// A supplied report is re-checked: with no store a direct fact is open.
-    #[trace("FR-211-AC-13", "FR-211-AC-22")]
+    /// A supplied report is re-checked: with no store a direct fact is open,
+    /// and with no installed module declaring its clause set it is open too.
+    #[trace("FR-211-AC-13", "FR-211-AC-22", "FR-211-AC-24")]
     #[test]
     fn a_supplied_report_without_a_store_leaves_a_direct_fact_open() {
         let mut binding = binding();
@@ -594,11 +610,37 @@ mod tests {
                             "attestedAt": "2026-01-01T00:00:00Z",
                             "expiresAt": "2027-01-01T00:00:00Z"}
         });
-        let built = build_discharge(
-            &serde_json::json!({"binding": binding, "facts": [fact], "asOf": "2026-06-01T00:00:00Z"}),
-            &Capabilities::none(),
-        )
-        .unwrap();
+        let request = serde_json::json!(
+            {"binding": binding, "facts": [fact], "asOf": "2026-06-01T00:00:00Z"}
+        );
+
+        // No installed module declares the clause set.
+        let built = build_discharge(&request, &Capabilities::none()).unwrap();
+        assert!(
+            built.payload["binding"]["open"][0]["reason"]
+                .as_str()
+                .unwrap()
+                .starts_with("no-clause-policy")
+        );
+
+        // The clause set is declared, so only the missing store holds it open.
+        let mut modules = crate::ops::modules::FakeHost::with_module("spec-pack");
+        modules.policies = vec![(
+            quoin_quire::ClauseSetRef {
+                authority: quoin_quire::ClauseSetAuthority::new("quire").unwrap(),
+                id: quoin_quire::ClauseSetId::new("spec").unwrap(),
+                version: quoin_quire::ClauseSetVersion::new("1").unwrap(),
+            },
+            quoin_quire_types::SetPolicy::from([(
+                "C-1".to_owned(),
+                quoin_quire_types::ClausePolicy::default(),
+            )]),
+        )];
+        let capabilities = Capabilities {
+            modules: Some(&modules),
+            ..Capabilities::none()
+        };
+        let built = build_discharge(&request, &capabilities).unwrap();
         assert_eq!(built.payload["binding"]["open"][0]["clauseId"], "C-1");
         assert!(
             built.payload["binding"]["open"][0]["reason"]
@@ -615,13 +657,22 @@ mod tests {
             "expectedOutputs": [], "fact": entry["fact"].clone(),
             "verifiedApprover": "mallory"
         }]);
-        let rendered = render_discharge(
-            &serde_json::json!({ "report": forged }),
-            &Capabilities::none(),
-        )
-        .unwrap();
+        let rendered =
+            render_discharge(&serde_json::json!({ "report": forged }), &capabilities).unwrap();
         let text = rendered.payload["rendered"].as_str().unwrap();
         assert!(text.contains("no-store"), "{text}");
         assert!(!text.contains("mallory"), "{text}");
+
+        // An entry with no fact is open, not discharged.
+        let mut factless = built.payload;
+        let mut entry = factless["binding"]["open"][0].clone();
+        entry["state"] = "direct".into();
+        entry.as_object_mut().unwrap().remove("fact");
+        factless["binding"]["open"] = serde_json::json!([]);
+        factless["binding"]["direct"] = serde_json::json!([entry]);
+        let rendered =
+            render_discharge(&serde_json::json!({ "report": factless }), &capabilities).unwrap();
+        let text = rendered.payload["rendered"].as_str().unwrap();
+        assert!(text.contains("no-fact"), "{text}");
     }
 }

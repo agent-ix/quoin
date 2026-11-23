@@ -32,7 +32,8 @@ use super::report::{
 /// [`crate::DischargeError`] when `asOf` is not an instant, when any supplied fact
 /// fails `parseFact`/`parseAttestation`, or when two facts name the same
 /// clause. FR-046-AC-5: a duplicate is rejected, never resolved by ordering.
-pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<DischargeReport> {
+#[cfg(test)]
+pub(crate) fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<DischargeReport> {
     build_discharge_report_with_approval_requirements(request, &BTreeSet::new())
 }
 
@@ -44,7 +45,7 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
 ///
 /// # Errors
 /// As [`build_discharge_report`].
-pub fn build_discharge_report_with_approval_requirements(
+pub(crate) fn build_discharge_report_with_approval_requirements(
     request: &BuildDischargeRequest,
     required_approval_clauses: &BTreeSet<String>,
 ) -> Checked<DischargeReport> {

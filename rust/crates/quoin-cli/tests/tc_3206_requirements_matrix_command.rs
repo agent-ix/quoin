@@ -14,6 +14,8 @@ use ix_trace_rs::trace;
 use std::path::Path;
 use std::process::{Command, Output};
 
+mod pack_support;
+
 const BINDING: &str = r#"{
   "schemaVersion": "clause-binding-v1",
   "clauseSet": {"authority": "quire", "id": "spec", "version": "1"},
@@ -37,6 +39,11 @@ fn retain_run(repo: &Path) {
     std::fs::write(run.join("one.json"), "{}").unwrap();
 }
 
+/// An IX home with the clause set of [`BINDING`] installed.
+fn installed_home() -> tempfile::TempDir {
+    pack_support::home_with_clause_set("quire", "spec", "1", &["C-1", "C-2"])
+}
+
 fn quoin(home: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .args(arguments)
@@ -54,7 +61,7 @@ fn text(output: &Output) -> String {
 fn tc_3206_the_matrix_command_renders_recorded_facts_and_refuses_misuse() {
     let dir = tempfile::tempdir().unwrap();
     retain_run(dir.path());
-    let home = tempfile::tempdir().unwrap();
+    let home = installed_home();
     let binding = dir.path().join("binding.json");
     let facts = dir.path().join("facts.json");
     std::fs::write(&binding, BINDING).unwrap();

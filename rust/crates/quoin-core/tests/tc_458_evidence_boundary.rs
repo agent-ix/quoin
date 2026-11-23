@@ -39,13 +39,43 @@ struct Run {
     status: i32,
 }
 
-/// Invoke the runtime with the operation and request.
-/// An empty IX home, so the installed modules of the machine running the test
-/// never take part in an operation that reads the module set.
+/// An IX home with no installed module but one declaring the clause set of
+/// [`discharge_binding`], so the installed modules of the machine running the
+/// test never take part and a discharge still finds its clause policies.
 fn empty_home() -> PathBuf {
-    let home = std::env::temp_dir().join(format!("quoin-core-empty-home-{}", std::process::id()));
-    std::fs::create_dir_all(&home).expect("the empty home is created");
-    home
+    static HOME: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    HOME.get_or_init(|| {
+        let home =
+            std::env::temp_dir().join(format!("quoin-core-empty-home-{}", std::process::id()));
+        std::fs::create_dir_all(&home).expect("the empty home is created");
+        let source =
+            std::env::temp_dir().join(format!("quoin-core-clause-source-{}", std::process::id()));
+        std::fs::create_dir_all(&source).expect("the module source is created");
+        std::fs::write(
+            source.join("manifest.yaml"),
+            "name: quire-spec\nversion: 0.1.0\nclause_sets:\n  - set.yaml\n",
+        )
+        .expect("the manifest is written");
+        std::fs::write(
+            source.join("set.yaml"),
+            "schemaVersion: clause-set-v1\nauthority: quire\nid: spec\ntitle: Spec\nversion: \"1\"\nrights:\n  structure: original\n  text: none\nclauses:\n  - id: C-1\n    force: mandatory\n  - id: C-2\n    force: mandatory\n",
+        )
+        .expect("the clause set is written");
+        let settings = RuntimeSettings {
+            ix_home: Some(home.clone()),
+            semantic_root: Some(semantic_root()),
+        };
+        let installed = dispatch(
+            "modules.install",
+            &json!({ "source": format!("path:{}", source.display()) }),
+            &settings,
+        )
+        .expect("the clause set installs");
+        assert_eq!(installed.outcome.code(), 0, "{:?}", installed.diagnostics);
+        let _ = std::fs::remove_dir_all(&source);
+        home
+    })
+    .clone()
 }
 
 /// The embedded semantic contract, written once per process beside the home
@@ -66,7 +96,6 @@ fn run(op: &str, request: &Value) -> Run {
     let settings = RuntimeSettings {
         ix_home: Some(empty_home()),
         semantic_root: Some(semantic_root()),
-        ..RuntimeSettings::default()
     };
     let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
         payload: Value::Null,

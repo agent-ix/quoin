@@ -8,7 +8,7 @@
 //! they stood in `discharge.rs` before the split.
 
 use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
-use quoin_quire_types::SetPolicy;
+use quoin_quire_types::{ClausePolicy, OutputPolicy, SetPolicy};
 
 use super::{
     ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier, BuildDischargeRequest,
@@ -27,10 +27,28 @@ pub(super) fn store() -> MemoryEvidence {
     store
 }
 
-/// Checks over a clause set whose clauses declare nothing.
+/// The policy of [`binding`]'s clause set: `SYN-001` expects a run, `SYN-005`
+/// expects nothing, and neither needs an approval.
+pub(super) fn policy() -> SetPolicy {
+    SetPolicy::from([
+        (
+            "SYN-001".to_owned(),
+            ClausePolicy {
+                approval_roles: Vec::new(),
+                outputs: vec![OutputPolicy {
+                    procedure: false,
+                    producers: vec!["run".to_owned()],
+                }],
+            },
+        ),
+        ("SYN-005".to_owned(), ClausePolicy::default()),
+    ])
+}
+
+/// Checks over a clause set whose clauses need no approval.
 pub(super) fn plain(policy: &SetPolicy) -> DischargeChecks<'_> {
     DischargeChecks {
-        policy,
+        policy: Some(policy),
         verifier: None,
         offline: false,
     }

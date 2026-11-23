@@ -129,7 +129,7 @@ fn prepare(
     repo: &str,
     binding: &ClauseBindingReport,
     approval: Option<&ApprovalInputs>,
-) -> Result<(quoin_quire_types::SetPolicy, Option<ApprovalSetup>), CoreError> {
+) -> Result<(Option<quoin_quire_types::SetPolicy>, Option<ApprovalSetup>), CoreError> {
     let policy = policy_for_binding(capabilities.modules, &binding.clause_set, op)?;
     let setup = approval
         .map(|inputs| approval_setup(op, repo, inputs))
@@ -224,7 +224,7 @@ pub fn record_discharge(
             source,
             &record,
             &DischargeChecks {
-                policy: &policy,
+                policy: policy.as_ref(),
                 verifier: verifier.as_deref(),
                 offline: false,
             },
@@ -275,7 +275,7 @@ pub fn discharge_report(
             &*source,
             &request,
             &DischargeChecks {
-                policy: &policy,
+                policy: policy.as_ref(),
                 verifier: verifier.as_deref(),
                 offline: request.offline,
             },
@@ -329,7 +329,7 @@ pub fn inward_completeness(
             &*source,
             &request,
             &DischargeChecks {
-                policy: &policy,
+                policy: policy.as_ref(),
                 verifier: verifier.as_deref(),
                 offline: request.offline,
             },
@@ -383,7 +383,7 @@ pub fn requirements_matrix(
             &*source,
             &request,
             &DischargeChecks {
-                policy: &policy,
+                policy: policy.as_ref(),
                 verifier: verifier.as_deref(),
                 offline: request.offline,
             },

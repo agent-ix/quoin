@@ -324,6 +324,72 @@ fn tc_447_603_a_discharge_is_built_and_then_rendered() {
     );
 }
 
+/// A discharge report handed to `assurance.build_authored_argument` is
+/// re-checked: a clause it lists as direct, with an approver it names, is open
+/// when no installed module declares its clause set, and the view carries the
+/// checked report (FR-211-AC-13, AC-16, AC-22).
+#[trace("FR-211-AC-13", "FR-211-AC-16", "FR-211-AC-22")]
+#[test]
+fn tc_211_an_authored_argument_rechecks_the_discharge_report_it_is_given() {
+    let binding = json!({
+        "schemaVersion": "clause-binding-v1",
+        "clauseSet": { "authority": "quire", "id": "spec", "version": "1" },
+        "context": {},
+        "clauses": [{
+            "clauseId": "C-1", "force": "mandatory", "outcome": "binding",
+            "reasons": [], "expectedOutputs": [],
+        }],
+    });
+    let report = ok(&run(
+        "assurance.build_discharge",
+        &json!({"binding": binding, "facts": [], "asOf": "2026-01-01T00:00:00Z"}).to_string(),
+    ));
+    // A report that claims the clause is discharged by a fact, as a forger
+    // would write it.
+    let mut forged = report;
+    forged["binding"]["open"] = json!([]);
+    forged["binding"]["direct"] = json!([{
+        "clauseId": "C-1", "force": "mandatory", "state": "direct",
+        "expectedOutputs": [],
+        "fact": {
+            "kind": "direct", "clauseId": "C-1",
+            "evidenceRefs": ["evidence://runs/SUITE-1/one"],
+            "attestation": {"attestedBy": "a", "authority": "b",
+                            "attestedAt": "2026-01-01T00:00:00Z",
+                            "expiresAt": "2027-01-01T00:00:00Z"},
+        },
+        "verifiedApprover": "mallory",
+    }]);
+    let repo = tempfile::tempdir().unwrap();
+    let view = ok(&run(
+        "assurance.build_authored_argument",
+        &json!({
+            "argument": argument(),
+            "decisions": [],
+            "asOf": "2026-01-01T00:00:00Z",
+            "discharge": forged,
+            "repo": repo.path(),
+        })
+        .to_string(),
+    ));
+    let discharge = &view["discharge"]["binding"];
+    assert_eq!(discharge["direct"], json!([]), "{view}");
+    assert!(
+        discharge["open"][0]["reason"]
+            .as_str()
+            .unwrap()
+            .starts_with("no-clause-policy"),
+        "{view}"
+    );
+    assert!(discharge["open"][0].get("verifiedApprover").is_none());
+    assert!(
+        view["topClaim"]["reasons"]
+            .to_string()
+            .contains("open binding clauses"),
+        "{view}"
+    );
+}
+
 /// `completeness.schema_refs` names the frontmatter schemas a manifest reaches
 /// for, so the shell knows what to read.
 ///

@@ -73,8 +73,11 @@ pub trait ApprovalVerifier {
 
 /// What a check run is given besides the report and the store.
 pub struct DischargeChecks<'a> {
-    /// The policy of each clause of the report's clause set.
-    pub policy: &'a SetPolicy,
+    /// The policy of each clause of the report's clause set, from the
+    /// installed module that declares it; `None` when no installed module
+    /// does. A clause without a policy is never discharged: nothing says
+    /// which outputs or approval it needs.
+    pub policy: Option<&'a SetPolicy>,
     /// The approval verifier; `None` leaves an approval-class clause open with
     /// `approval-verifier-unavailable`.
     pub verifier: Option<&'a dyn ApprovalVerifier>,
@@ -195,11 +198,11 @@ fn settle(
     let mut kept = Vec::with_capacity(entries.len());
     for mut entry in entries {
         entry.verified_approver = None;
-        let Some(fact) = entry.fact.clone() else {
-            kept.push(entry);
-            continue;
+        let verdict = match entry.fact.clone() {
+            Some(fact) => check_one(set, store, checks, &fact)?,
+            None => Err("no-fact: the entry carries no fact to check".to_owned()),
         };
-        match check_one(set, store, checks, &fact)? {
+        match verdict {
             Ok(approver) => {
                 entry.verified_approver = approver;
                 kept.push(entry);
@@ -247,8 +250,21 @@ fn check_one(
     checks: &DischargeChecks<'_>,
     fact: &DischargeFact,
 ) -> Verdict {
-    let fallback = ClausePolicy::default();
-    let policy = checks.policy.get(fact.clause_id()).unwrap_or(&fallback);
+    let Some(set_policy) = checks.policy else {
+        return Ok(Err(format!(
+            "no-clause-policy: no installed module declares clause set {}/{}/{}",
+            set.authority, set.id, set.version
+        )));
+    };
+    let Some(policy) = set_policy.get(fact.clause_id()) else {
+        return Ok(Err(format!(
+            "no-clause-policy: clause set {}/{}/{} declares no clause {}",
+            set.authority,
+            set.id,
+            set.version,
+            fact.clause_id()
+        )));
+    };
     check_fact(
         &Context {
             set,
@@ -495,13 +511,12 @@ fn resolve_reference(store: &dyn EvidenceSource, reference: &str) -> Result<Stri
             _,
         ] => (*family, Some(singular_kind(family))),
         [family @ ("experiments" | "operational"), _] => (*family, None),
-        ["scenarios", integration, scenario]
-            if integration.to_ascii_lowercase() == *integration
-                && scenario.to_ascii_lowercase() == *scenario =>
-        {
+        ["scenarios", _, scenario] if scenario.to_ascii_lowercase() == *scenario => {
             ("scenarios", Some("scenario"))
         }
-        ["scenarios", _, _] => return Err("a scenarios segment is not in the store's folded form"),
+        ["scenarios", _, _] => {
+            return Err("the scenario segment is not in the store's folded form");
+        }
         _ => return Err("the path names no citable record family"),
     };
     let text = store
@@ -630,7 +645,7 @@ mod tests {
             partition,
             store.map(|s| s as &dyn EvidenceSource),
             &DischargeChecks {
-                policy,
+                policy: Some(policy),
                 verifier,
                 offline,
             },
@@ -723,12 +738,15 @@ mod tests {
 
     #[trace("FR-211-AC-4")]
     #[test]
-    fn a_scenario_ref_must_be_in_the_stores_folded_form() {
+    fn a_scenario_ref_folds_the_scenario_segment_only() {
+        // The store keeps the integration segment as written and folds only
+        // the scenario file name.
         let mut held = MemoryEvidence::new();
-        held.write("scenarios/github/login.json", b"{}").unwrap();
+        held.write("scenarios/IT-002/it-002-sc-07a.json", b"{}")
+            .unwrap();
         let producers = policy(&[], vec![producing(&["scenario"])]);
         let mut fact = direct();
-        fact["evidenceRefs"] = json!(["evidence://scenarios/github/login"]);
+        fact["evidenceRefs"] = json!(["evidence://scenarios/IT-002/it-002-sc-07a"]);
         assert_eq!(
             one(fact, &producers, Some(&held))
                 .report
@@ -738,8 +756,8 @@ mod tests {
             1
         );
         for bad in [
-            "evidence://scenarios/github/Login",
-            "evidence://scenarios/GitHub/login",
+            "evidence://scenarios/IT-002/It-002-sc-07a",
+            "evidence://scenarios/it-002/it-002-sc-07a",
         ] {
             let mut fact = direct();
             fact["evidenceRefs"] = json!([bad]);
@@ -823,7 +841,7 @@ mod tests {
             partition,
             Some(&store()),
             &DischargeChecks {
-                policy: &policy(&[], vec![]),
+                policy: Some(&policy(&[], vec![])),
                 verifier: None,
                 offline: false,
             },
@@ -927,7 +945,7 @@ mod tests {
                 partition,
                 Some(&store()),
                 &DischargeChecks {
-                    policy: &approval,
+                    policy: Some(&approval),
                     verifier: Some(&verifier),
                     offline: false,
                 },
@@ -973,7 +991,7 @@ mod tests {
             partition,
             Some(&store()),
             &DischargeChecks {
-                policy: &approval,
+                policy: Some(&approval),
                 verifier: Some(&verifier),
                 offline: false,
             },
@@ -1137,7 +1155,7 @@ mod tests {
             partition,
             Some(&emptied),
             &DischargeChecks {
-                policy: &policy(&[], vec![]),
+                policy: Some(&policy(&[], vec![])),
                 verifier: None,
                 offline: false,
             },
@@ -1207,7 +1225,7 @@ mod tests {
             partition,
             None,
             &DischargeChecks {
-                policy: &policy(&[], vec![]),
+                policy: Some(&policy(&[], vec![])),
                 verifier: None,
                 offline: false,
             },
@@ -1222,5 +1240,104 @@ mod tests {
             .map(|entry| entry.clause_id.as_str())
             .collect();
         assert_eq!(open, ["SYN-000", "SYN-001"]);
+    }
+
+    #[trace("FR-211-AC-24")]
+    #[test]
+    fn a_clause_without_a_declared_policy_is_never_discharged() {
+        let partition = build_discharge_report(&request(vec![direct()])).unwrap();
+        // No installed module declares the clause set.
+        let checked = check_report(
+            partition.clone(),
+            Some(&store()),
+            &DischargeChecks {
+                policy: None,
+                verifier: None,
+                offline: false,
+            },
+            Some(&binding().clauses),
+        )
+        .unwrap();
+        assert!(
+            reason(&checked).starts_with("no-clause-policy: no installed module declares"),
+            "{checked:?}"
+        );
+        // The clause set is declared but lists no such clause.
+        let other = SetPolicy::from([("SYN-009".to_owned(), ClausePolicy::default())]);
+        let checked = one(direct(), &other, Some(&store()));
+        assert!(
+            reason(&checked).starts_with("no-clause-policy: clause set"),
+            "{checked:?}"
+        );
+        // Facts are checked the same way where no report is built.
+        let facts = [
+            crate::discharge::parse::parse_fact_with_approval_requirements(
+                &direct(),
+                &std::collections::BTreeSet::new(),
+            )
+            .unwrap(),
+        ];
+        let failures = super::check_facts(
+            &binding().clause_set,
+            &facts,
+            Some(&store()),
+            &DischargeChecks {
+                policy: None,
+                verifier: None,
+                offline: false,
+            },
+        )
+        .unwrap();
+        assert_eq!(failures.len(), 1);
+    }
+
+    #[trace("FR-211-AC-24")]
+    #[test]
+    fn an_entry_without_a_fact_is_not_discharged() {
+        let mut partition = build_discharge_report(&request(vec![direct()])).unwrap();
+        partition.binding.direct[0].fact = None;
+        let checked = check_report(
+            partition,
+            Some(&store()),
+            &DischargeChecks {
+                policy: Some(&policy(&[], vec![])),
+                verifier: None,
+                offline: false,
+            },
+            Some(&binding().clauses),
+        )
+        .unwrap();
+        assert!(reason(&checked).starts_with("no-fact: "), "{checked:?}");
+        assert_eq!(checked.failures[0].clause_id, "SYN-001");
+    }
+
+    #[trace("FR-211-AC-16")]
+    #[test]
+    fn a_supplied_approver_is_cleared_from_an_entry_that_then_fails() {
+        let mut partition = build_discharge_report(&request(vec![direct()])).unwrap();
+        partition.binding.direct[0].verified_approver = Some("mallory".to_owned());
+        // No store: the direct fact fails with no-store and moves to open.
+        let checked = check_report(
+            partition,
+            None,
+            &DischargeChecks {
+                policy: Some(&policy(&[], vec![])),
+                verifier: None,
+                offline: false,
+            },
+            Some(&binding().clauses),
+        )
+        .unwrap();
+        assert!(reason(&checked).starts_with("no-store: "), "{checked:?}");
+        assert_eq!(checked.report.binding.open[0].verified_approver, None);
+    }
+
+    #[trace("FR-211-AC-18")]
+    #[test]
+    fn a_record_id_over_the_bound_has_no_subject() {
+        let mut long = serde_json::to_value(binding()).unwrap();
+        long["clauseSet"]["authority"] = "a".repeat(300).into();
+        let long: quoin_quire_types::ClauseBindingReport = serde_json::from_value(long).unwrap();
+        assert!(approval_subject(&long, &direct()).is_err());
     }
 }

@@ -80,13 +80,21 @@ mod completeness;
 mod fixtures;
 mod pack_rmm;
 mod parse;
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    clippy::unwrap_used,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod partition_tests;
 mod render;
 mod report;
 mod rmm;
 mod store;
 mod verify;
 
-pub use build::{build_discharge_report, build_discharge_report_with_approval_requirements};
 pub use completeness::{
     CompletenessSchemaVersion, DispositionCounts, InwardCompleteness, OpenClause,
     build_inward_completeness, render_inward_completeness,

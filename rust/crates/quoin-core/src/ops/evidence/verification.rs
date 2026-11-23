@@ -124,8 +124,9 @@ pub(super) fn verifier_for<'a>(
 }
 
 /// The policy of every clause of a clause set, from the
-/// unique installed module that declares it. Empty when no module host was
-/// granted or no installed module declares the set.
+/// unique installed module that declares it. `None` when no module host was
+/// granted or no installed module declares the set; the clauses of such a set
+/// are never discharged.
 ///
 /// # Errors
 /// [`CoreErrorCode::Refused`] when a module fails to load or two installed
@@ -134,9 +135,9 @@ pub(crate) fn policy_for_binding(
     modules: Option<&dyn ModuleHost>,
     set_key: &ClauseSetKey,
     op: &'static str,
-) -> Result<SetPolicy, CoreError> {
+) -> Result<Option<SetPolicy>, CoreError> {
     let Some(modules) = modules else {
-        return Ok(SetPolicy::new());
+        return Ok(None);
     };
     let refused =
         |detail: String| CoreError::new(CoreErrorCode::Refused, detail).with_context("op", op);
@@ -168,7 +169,7 @@ pub(crate) fn policy_for_binding(
             }
         }
     }
-    Ok(owner.unwrap_or_default())
+    Ok(owner)
 }
 
 /// The refusal name a caller maps to an exit status: the allowed-signers file
@@ -221,7 +222,7 @@ pub fn check_supplied_report(
     };
     let verifier = verifier_for(capabilities, setup.as_ref(), op)?;
     let checks = DischargeChecks {
-        policy: &policy,
+        policy: policy.as_ref(),
         verifier: verifier.as_deref(),
         offline: false,
     };

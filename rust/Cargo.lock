@@ -3553,6 +3553,7 @@ dependencies = [
  "quoin-core",
  "quoin-evidence",
  "quoin-quire",
+ "quoin-quire-types",
  "quoin-store",
  "serde",
  "serde_json",

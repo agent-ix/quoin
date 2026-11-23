@@ -27,26 +27,16 @@
 //! strings, and the complete rendered Markdown byte for byte — never a second
 //! call to the code under test.
 
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::indexing_slicing,
-    reason = "in a test, a panic IS the failure report; the production lints stand"
-)]
-
 use std::collections::BTreeSet;
 
+use super::build::{build_discharge_report, build_discharge_report_with_approval_requirements};
+use super::{
+    ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier, BuildDischargeRequest,
+    DischargeChecks, DischargeState, DispositionDecision, FactKind, RmmCompliance,
+    UnusedFactReason, build_checked_discharge_report, build_requirements_mapping,
+    render_discharge_report,
+};
 use ix_trace_rs::trace;
-use quoin_assurance::discharge::{
-    BuildDischargeRequest, DischargeState, DispositionDecision, FactKind, RmmCompliance,
-    UnusedFactReason, build_discharge_report, build_discharge_report_with_approval_requirements,
-    build_requirements_mapping, render_discharge_report,
-};
-use quoin_assurance::{
-    ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier, DischargeChecks,
-    build_checked_discharge_report,
-};
 use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
 use quoin_quire_types::{ClauseBindingReport, ClausePolicy, SetPolicy};
 
@@ -122,7 +112,7 @@ fn request(facts: Vec<serde_json::Value>) -> BuildDischargeRequest {
     }
 }
 
-fn ids(entries: &[quoin_assurance::discharge::ClauseDischarge]) -> Vec<&str> {
+fn ids(entries: &[crate::discharge::ClauseDischarge]) -> Vec<&str> {
     entries
         .iter()
         .map(|entry| entry.clause_id.as_str())
@@ -175,7 +165,7 @@ impl ApprovalVerifier for Approves {
 fn checked(
     fact: serde_json::Value,
     verifier: Option<&dyn ApprovalVerifier>,
-) -> quoin_assurance::DischargeReport {
+) -> crate::DischargeReport {
     let policy = SetPolicy::from([(
         "SYN-001".to_owned(),
         ClausePolicy {
@@ -191,7 +181,7 @@ fn checked(
         &request(vec![fact]),
         Some(&store),
         &DischargeChecks {
-            policy: &policy,
+            policy: Some(&policy),
             verifier,
             offline: false,
         },
@@ -226,7 +216,7 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
         .expect("blank approval references reach FR-211 for policy-required clauses");
         assert!(matches!(
             partition.binding.direct[0].fact.as_ref(),
-            Some(quoin_assurance::DischargeFact::Direct(direct))
+            Some(crate::DischargeFact::Direct(direct))
                 if direct.approval_ref.as_deref() == Some(blank_reference)
         ));
         let open = checked_partition(partition);
@@ -266,8 +256,8 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
             .fact
             .as_ref()
             .and_then(|fact| match fact {
-                quoin_assurance::DischargeFact::Direct(direct) => direct.approval_ref.as_deref(),
-                quoin_assurance::DischargeFact::Disposition(_) => None,
+                crate::DischargeFact::Direct(direct) => direct.approval_ref.as_deref(),
+                crate::DischargeFact::Disposition(_) => None,
             }),
         Some(person_reference)
     );
@@ -277,9 +267,7 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
     assert_eq!(ids(&generic.binding.direct), ["SYN-001"]);
 }
 
-fn checked_partition(
-    partition: quoin_assurance::DischargeReport,
-) -> quoin_assurance::DischargeReport {
+fn checked_partition(partition: crate::DischargeReport) -> crate::DischargeReport {
     let policy = SetPolicy::from([(
         "SYN-001".to_owned(),
         ClausePolicy {
@@ -289,11 +277,11 @@ fn checked_partition(
     )]);
     let mut store = MemoryEvidence::new();
     store.write("runs/SUITE-1/one.json", b"{}").unwrap();
-    quoin_assurance::check_report(
+    crate::check_report(
         partition,
         Some(&store),
         &DischargeChecks {
-            policy: &policy,
+            policy: Some(&policy),
             verifier: Some(&Approves("alice")),
             offline: false,
         },
@@ -574,7 +562,7 @@ fn tc_447_451_a_computed_discharge_report_round_trips_through_the_validating_doo
     let report = build_discharge_report(&request(vec![direct(), disposition()]))
         .expect("both facts are well formed");
     let payload = serde_json::to_value(&report).expect("it serialises");
-    let read_back: quoin_assurance::DischargeReport =
+    let read_back: crate::DischargeReport =
         serde_json::from_value(payload).expect("the emitted document reads back");
     assert_eq!(read_back, report);
 }
@@ -835,7 +823,7 @@ fn disposition_of(clause_id: &str, decision: &str) -> serde_json::Value {
 }
 
 /// The report every state, decision and unused reason appears in.
-fn every_state_report() -> quoin_assurance::DischargeReport {
+fn every_state_report() -> crate::DischargeReport {
     let mut unresolved_fact = direct();
     unresolved_fact["clauseId"] = serde_json::json!("SYN-004");
     let mut not_binding_fact = direct();
@@ -881,7 +869,7 @@ fn tc_447_453_the_emitted_json_document_is_pinned_byte_for_byte() {
     // The pinned bytes are also what the validating door accepts back, so the
     // literal is a statement about the document a consumer receives and not
     // only about this process's output.
-    let read_back: quoin_assurance::DischargeReport =
+    let read_back: crate::DischargeReport =
         serde_json::from_str(EVERY_STATE_DOCUMENT).expect("the pinned document reads back");
     assert_eq!(read_back, report);
 }
@@ -930,7 +918,7 @@ fn tc_447_442_every_reachable_discharge_type_refuses_an_unknown_field() {
             .insert("inventedField".to_owned(), serde_json::json!(1));
 
         assert!(
-            serde_json::from_value::<quoin_assurance::DischargeReport>(forged).is_err(),
+            serde_json::from_value::<crate::DischargeReport>(forged).is_err(),
             "an unknown field at {pointer} must be refused"
         );
     }
@@ -943,7 +931,7 @@ fn tc_447_442_every_reachable_discharge_type_refuses_an_unknown_field() {
 #[test]
 fn tc_447_450_a_forged_discharge_report_is_refused_by_the_deserialiser() {
     assert!(
-        serde_json::from_value::<quoin_assurance::DischargeReport>(forged_report()).is_err(),
+        serde_json::from_value::<crate::DischargeReport>(forged_report()).is_err(),
         "a report whose fact never went through parseFact must not deserialise"
     );
 }

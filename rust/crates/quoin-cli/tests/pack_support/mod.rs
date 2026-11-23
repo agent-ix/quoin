@@ -12,6 +12,7 @@
     reason = "each test binary uses a different subset; in a test, a panic IS the failure report"
 )]
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -71,6 +72,52 @@ pub(crate) fn write_module(parent: &Path, name: &str, text_rights: &str) -> Path
     )
     .expect("clause set");
     dir
+}
+
+/// Install into `home` a module declaring the clause set
+/// `authority/id@version` with one mandatory clause per id of `clauses`, so a
+/// discharge against that set resolves each clause's policy.
+pub(crate) fn install_clause_set(
+    home: &Path,
+    authority: &str,
+    id: &str,
+    version: &str,
+    clauses: &[&str],
+) {
+    let source = tempfile::tempdir().expect("module source");
+    let name = format!("{id}-clause-set");
+    let dir = source.path().join(&name);
+    std::fs::create_dir_all(&dir).expect("module dir");
+    std::fs::write(
+        dir.join("manifest.yaml"),
+        format!("name: {name}\nversion: 0.1.0\nclause_sets:\n  - set.yaml\n"),
+    )
+    .expect("manifest");
+    let mut set = format!(
+        "schemaVersion: clause-set-v1\nauthority: {authority}\nid: {id}\ntitle: Synthetic set {id}\nversion: \"{version}\"\nrights:\n  structure: original\n  text: none\nclauses:\n"
+    );
+    for clause in clauses {
+        writeln!(set, "  - id: {clause}\n    force: mandatory").unwrap();
+    }
+    std::fs::write(dir.join("set.yaml"), set).expect("clause set");
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["module", "install", &format!("path:{}", dir.display())])
+        .env("IX_HOME", home)
+        .output()
+        .expect("the native quoin binary runs");
+    assert!(output.status.success(), "{}", text(&output));
+}
+
+/// A fresh IX home with the clause set `authority/id@version` installed.
+pub(crate) fn home_with_clause_set(
+    authority: &str,
+    id: &str,
+    version: &str,
+    clauses: &[&str],
+) -> tempfile::TempDir {
+    let home = tempfile::tempdir().expect("ix home");
+    install_clause_set(home.path(), authority, id, version, clauses);
+    home
 }
 
 /// A real, on-disk semantic contract root beside `home`, inside the test's own

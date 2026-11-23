@@ -230,6 +230,12 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     }
     let approval = approval_inputs(arguments)?;
     let repo = arguments.get_one::<String>("repo");
+    if approval.is_some() && repo.is_none() {
+        return Err(
+            "--engineering-assurance, --allowed-signers and the gitsign flags need --repo: the approval tags live in that repository"
+                .to_owned(),
+        );
+    }
     let facts = facts_input(arguments, &binding_source)?;
     let built = match (repo, &facts) {
         (Some(repo), _) => invoke_verifying(
