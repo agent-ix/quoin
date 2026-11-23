@@ -41,6 +41,12 @@ Not mergeable as is: FND-001 makes one AC-28 case unsatisfiable as written, and 
 | FND-009 | medium | FR-191-AC-28 does not say that each of the two further commits is applied alone on the dossier commit. If they are stacked, the `NOTES.md` deletion check passes only because the `README.md` commit is already in the chain, so the deletion refusal is never shown on its own. | FR-191-AC-28 |
 | FND-010 | low | The FR-191-AC-27 export command omits `--output <PATH>`, which `export` requires and which AC-28's "output file unchanged" refers to. | FR-191-AC-27 |
 
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-011 | low | FR-191-AC-28 runs `export` "with exactly the inputs of the passing run" and reads the quire exit code and `stderr` from the report, but the passing run of FR-191-AC-27 has no `--json`, and `export` emits the report only with `--json` (FR-191 Outputs; `report_response` in the `quoin-cli` dossier module returns no payload otherwise). Name `--json` as the one added flag. | FR-191-AC-28 |
+
 ## Dispositions
 
 | FND | outcome | reason |
@@ -52,3 +58,6 @@ Not mergeable as is: FND-001 makes one AC-28 case unsatisfiable as written, and 
 | FND-005 | fixed | Bullet cites the first-parent descendant rule of quire-cli FR-034 section A as the only acceptance path and adds the repository-root case. |
 | FND-006 | fixed | Duplicate `--release` bullet and workflow clause removed. |
 | FND-007 | fixed | Test-existence bullet removed. |
+| FND-008 | fixed | AC-27 baseline now holds a Baseline file and `README.md`, and the dossier commit adds `dossier/DOS-REL.md` and the non-selected `dossier/NOTES.md`; AC-28 uses that same fixture. |
+| FND-009 | fixed | AC-28 applies each further commit "on its own on top of the dossier commit as separate cases". |
+| FND-010 | fixed | AC-27 export command carries `--output <PATH>` and AC-28 checks the file at `<PATH>` is unchanged. |
