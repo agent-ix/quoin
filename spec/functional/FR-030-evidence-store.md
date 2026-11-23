@@ -127,7 +127,9 @@ people to click through it.
   direction: a test claiming to verify something the spec does not state.
 - The store SHALL serialise recorders on a writer lock held from the run write to the graph write, so concurrent recordings never drop each other's bindings (FR-030-AC-20). A recording interrupted between those writes SHALL be completed by repeating the same request, without a second run record (FR-030-AC-21).
 - The store SHALL NOT replace a run, scan or mock-inspection record at an occupied `(suite, timestamp)` key with different content (FR-030-AC-22).
-- `gc` SHALL record what it deletes in a retirement log before deleting it, and SHALL keep and report a record it cannot read, collecting nothing from that suite's family (FR-030-AC-23). Taking the writer lock SHALL NOT create a file in the consumer's repository tree on Unix (FR-030-AC-25).
+- `gc` SHALL record what it deletes in a retirement log before deleting it (FR-030-AC-23).
+- `gc` SHALL keep and report a record it cannot read, collecting nothing from that suite's family (FR-030-AC-23).
+- Taking the writer lock SHALL NOT create a file in the consumer's repository tree on Unix (FR-030-AC-25).
 - The store SHALL refuse to write or remove a path outside its root (FR-030-AC-24).
 - `gc` SHALL retain the **newest** run per suite — by `timestamp`, never by
   filename. Dir-per-suite keeps the policy local, so an expensive suite's
@@ -137,6 +139,28 @@ people to click through it.
   bare name or mutable label is refused before evidence intake, and a
   finding-format payload naming a different tool is refused rather than
   silently replacing the caller's attested identity.
+- When an evidence record is submitted, the store SHALL validate every required
+  and optional field against the declared record contract, including field
+  types, identities, collection members and content encoding, before writing.
+- The store SHALL reject malformed evidence before publishing any file and
+  leave all existing bytes unchanged.
+- The store SHALL preserve submitted values without trimming, normalizing or
+  repairing them.
+- The store SHALL accept record timestamps only in the canonical UTC form
+  `YYYY-MM-DDTHH:MM:SS[.fraction]Z`, with a valid calendar date and time, no
+  offset spelling, and no trailing zero in a fractional part.
+- The store SHALL reject an offset timestamp, non-canonical spelling or invalid
+  date/time before using the value in a path or ordering decision.
+- The store SHALL decode store and source content as strict UTF-8.
+- The store SHALL reject unreadable or invalid-UTF-8 content at intake without
+  replacement-character decoding.
+- The reader or collector SHALL report a listed record that disappears or
+  cannot be decoded.
+- The reader SHALL NOT choose an older passing record in place of a listed
+  record that disappears or cannot be decoded.
+- The qualification reader SHALL refuse to qualify a run with no entries.
+- The qualification reader SHALL preserve an empty report-backed disagreement
+  as a disagreement that cannot qualify positively.
 
 ## Constraints
 
@@ -200,6 +224,20 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-23 | Before `gc` deletes a superseded record it publishes `retired/<first retired path>.json` naming each record's path, suite, timestamp, tool and outcome (or finding) counts; a name already holding a different log gets a numeric suffix rather than blocking `gc`. `--dry-run` writes nothing. A record that cannot be read is kept and named in the result as skipped, and a suite with one has nothing collected from that family, since the unreadable file may be the newest. | Test |
 | FR-030-AC-24 | Writing or removing a store file refuses any path that leaves the store root. | Test |
 | FR-030-AC-25 | On Unix, taking the writer lock creates no file in the store or the repository: the store directory holds exactly what it held before. | Test |
+| FR-030-AC-26 | Each run, scan, mock-inspection and differential-report intake is validated in full before any file is published: required fields are present with their declared types, optional fields have their declared types when present, unknown fields and malformed collection members are refused, and a healthy complete value writes and reads back unchanged. Every refusal leaves all bytes unchanged. | Test |
+| FR-030-AC-27 | Empty or malformed suite, symbol, obligation, trace, rule and evaluated-symbol identifiers are refused before publication according to their owning registry or upstream identity contract. Refusal tests cover each identity class used by the record being written; a healthy identifier control is accepted. | Test |
+| FR-030-AC-28 | Run, scan, mock-inspection and differential-report record timestamps are valid canonical UTC `YYYY-MM-DDTHH:MM:SS[.fraction]Z`; offsets, invalid calendar values, malformed text and fractional values ending in zero are refused before path creation. Refusal leaves the store unchanged. | Test |
+| FR-030-AC-29 | Unreadable or invalid-UTF-8 record/source content is refused without replacement decoding or publication. A record listed and then missing or unreadable is reported and cannot cause a reader or collector to silently fall back to an older pass. | Test |
+| FR-030-AC-30 | A zero-entry run cannot positively qualify any candidate; the empty report-backed disagreement form remains readable as a disagreement and never becomes a passing candidate. | Test |
+
+> **CR note (PLAT-1794, 2026-11-22):** Evidence records are validated in full
+> before publication. Record timestamps use canonical UTC spelling, identities
+> and content are validated at intake, and unreadable or invalid-UTF-8 content
+> is refused. A listed record that disappears or cannot be decoded is reported
+> rather than replaced by an older passing record. Empty run records cannot
+> qualify candidates; the intentional empty differential-report disagreement
+> remains a non-positive record. FR-030-AC-26 through FR-030-AC-30 state the
+> new acceptance tests.
 
 > **CR note (PLAT-1228, 2026-10-30):** Run, scan, mock-inspection and binding
 > records no longer carry a commit. Filenames derive from the record's
