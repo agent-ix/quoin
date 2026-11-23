@@ -48,9 +48,24 @@ fn empty_home() -> PathBuf {
     home
 }
 
+/// The embedded semantic contract, written once per process beside the home
+/// so operations that read the module set find it.
+fn semantic_root() -> PathBuf {
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root =
+            std::env::temp_dir().join(format!("quoin-core-tc-458-semantic-{}", std::process::id()));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
+    .clone()
+}
+
 fn run(op: &str, request: &Value) -> Run {
     let settings = RuntimeSettings {
         ix_home: Some(empty_home()),
+        semantic_root: Some(semantic_root()),
         ..RuntimeSettings::default()
     };
     let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
