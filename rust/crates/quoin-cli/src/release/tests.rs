@@ -235,6 +235,8 @@ fn a_stale_finding_without_a_cause_has_no_cause_key_and_one_with_a_cause_keeps_i
 fn sample() -> Value {
     json!({
         "protocol": "quoin.release-snapshot/v1",
+        "tool_identity": { "name": "quoin", "version": "0.0.0" },
+        "clean_tree_precondition": "not_verified",
         "as_of": "2026-08-15T00:00:00Z",
         "baseline_commit": "a".repeat(40),
         "previous_release": { "tag": "v1", "commit": "b".repeat(40) },

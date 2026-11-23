@@ -19,20 +19,10 @@ pub const QUOIN_TOOL_NAME: &str = "quoin";
 pub struct ReleaseSnapshot {
     /// Protocol identifier.
     pub protocol: String,
-    /// Quoin executable identity, when written by a version that includes it.
-    #[serde(
-        default,
-        deserialize_with = "deserialize_non_null_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub tool_identity: Option<ToolIdentity>,
-    /// State of the clean-tree precondition, when written by a version that includes it.
-    #[serde(
-        default,
-        deserialize_with = "deserialize_non_null_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub clean_tree_precondition: Option<CleanTreePrecondition>,
+    /// Quoin executable identity.
+    pub tool_identity: ToolIdentity,
+    /// State of the clean-tree precondition.
+    pub clean_tree_precondition: CleanTreePrecondition,
     /// Evaluation instant supplied to the snapshot command.
     pub as_of: String,
     /// Baseline commit supplied to the snapshot command.
@@ -71,21 +61,15 @@ pub enum CleanTreePrecondition {
     NotVerified,
 }
 
-fn deserialize_non_null_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-    T: Deserialize<'de>,
-{
-    T::deserialize(deserializer).map(Some)
-}
-
 impl ReleaseSnapshot {
     /// Parse and validate a closed release snapshot.
     ///
     /// # Errors
     ///
     /// Returns a JSON error if the bytes are malformed, the record is not
-    /// closed, or its protocol identifier is unsupported.
+    /// closed, its protocol identifier is unsupported, `tool_identity` does
+    /// not name `quoin` with a non-empty version, or a `soup.not_assessed`
+    /// item has an unknown `kind`.
     pub fn parse(bytes: &[u8]) -> Result<Self, serde_json::Error> {
         let snapshot: Self = serde_json::from_slice(bytes)?;
         if snapshot.protocol != RELEASE_SNAPSHOT_PROTOCOL {
@@ -93,16 +77,35 @@ impl ReleaseSnapshot {
                 "protocol must be {RELEASE_SNAPSHOT_PROTOCOL}"
             )));
         }
-        if snapshot.tool_identity.as_ref().is_some_and(|identity| {
-            identity.name != QUOIN_TOOL_NAME || identity.version.trim().is_empty()
-        }) {
+        if snapshot.tool_identity.name != QUOIN_TOOL_NAME
+            || snapshot.tool_identity.version.trim().is_empty()
+        {
             return Err(<serde_json::Error as serde::de::Error>::custom(format!(
                 "tool_identity must name {QUOIN_TOOL_NAME} and carry a non-empty version"
             )));
         }
+        if snapshot
+            .soup
+            .not_assessed
+            .iter()
+            .any(|item| !NOT_ASSESSED_KINDS.contains(&item.kind.as_str()))
+        {
+            return Err(<serde_json::Error as serde::de::Error>::custom(
+                "soup.not_assessed kind must be one of unmatched_advisory, \
+                 unmatched_policy_finding, scan_not_run, scan_vacuous",
+            ));
+        }
         Ok(snapshot)
     }
 }
+
+/// The `soup.not_assessed` kinds a snapshot may carry.
+const NOT_ASSESSED_KINDS: [&str; 4] = [
+    "unmatched_advisory",
+    "unmatched_policy_finding",
+    "scan_not_run",
+    "scan_vacuous",
+];
 
 /// One requirement's criteria.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -797,7 +797,7 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     let snapshot = work.path().join("snapshot.json");
     fs::write(
         &snapshot,
-        r#"{"protocol":"quoin.release-snapshot/v1","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
+        r#"{"protocol":"quoin.release-snapshot/v1","tool_identity":{"name":"quoin","version":"0.0.0"},"clean_tree_precondition":"not_verified","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
     )
     .unwrap();
     let verify = work.path().join("release-verify.json");
@@ -994,7 +994,7 @@ fn release_record_generation_needs_no_git_and_is_repeatable() {
     let snapshot = work.path().join("snapshot.json");
     fs::write(
         &snapshot,
-        r#"{"protocol":"quoin.release-snapshot/v1","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
+        r#"{"protocol":"quoin.release-snapshot/v1","tool_identity":{"name":"quoin","version":"0.0.0"},"clean_tree_precondition":"not_verified","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
     )
     .unwrap();
     let verify = work.path().join("release-verify.json");
@@ -1063,7 +1063,7 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     let snapshot = work.path().join("snapshot.json");
     fs::write(
         &snapshot,
-        r#"{"protocol":"quoin.release-snapshot/v1","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
+        r#"{"protocol":"quoin.release-snapshot/v1","tool_identity":{"name":"quoin","version":"0.0.0"},"clean_tree_precondition":"not_verified","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"anomalies":[],"change_records":[]}"#,
     )
     .unwrap();
     let verify = work.path().join("release-verify.json");

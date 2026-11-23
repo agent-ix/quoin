@@ -500,9 +500,9 @@ fn snapshot_shape() -> Shape {
         ("protocol", Leaf),
         (
             "tool_identity",
-            Optional(Box::new(obj(vec![("name", Leaf), ("version", Leaf)]))),
+            obj(vec![("name", Leaf), ("version", Leaf)]),
         ),
-        ("clean_tree_precondition", Optional(Box::new(Leaf))),
+        ("clean_tree_precondition", Leaf),
         ("as_of", Leaf),
         ("baseline_commit", Leaf),
         (
@@ -689,9 +689,14 @@ fn one_file_is_written_with_exactly_the_named_members_and_nothing_else_changes()
 
 #[trace("FR-167-AC-13")]
 #[test]
-fn the_snapshot_reader_accepts_legacy_and_valid_v1_extensions_but_refuses_dirty_extensions() {
-    let legacy = json!({
+fn the_snapshot_reader_requires_both_members_and_refuses_dirty_or_unordered_values() {
+    use quoin_dossier::release_snapshot::ReleaseSnapshot;
+    let parse = |document: &Value| ReleaseSnapshot::parse(&serde_json::to_vec(document).unwrap());
+    let refusal = |document: &Value| parse(document).unwrap_err().to_string();
+    let full = json!({
         "protocol":"quoin.release-snapshot/v1",
+        "tool_identity":{"name":"quoin","version":"0.31.1"},
+        "clean_tree_precondition":"not_verified",
         "as_of":"2026-11-01T00:00:00Z",
         "baseline_commit":BASE,
         "previous_release":null,
@@ -702,46 +707,56 @@ fn the_snapshot_reader_accepts_legacy_and_valid_v1_extensions_but_refuses_dirty_
         "anomalies":[],
         "change_records":[]
     });
-    let bytes = serde_json::to_vec(&legacy).unwrap();
-    let parsed = quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).unwrap();
-    assert!(parsed.tool_identity.is_none());
-    assert!(parsed.clean_tree_precondition.is_none());
+    let parsed = parse(&full).unwrap();
+    assert_eq!(parsed.tool_identity.name, "quoin");
 
-    let mut extended = legacy.clone();
-    extended["tool_identity"] = json!({"name":"quoin","version":"0.31.1"});
-    extended["clean_tree_precondition"] = json!("not_verified");
-    let bytes = serde_json::to_vec(&extended).unwrap();
-    let parsed = quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).unwrap();
-    assert_eq!(parsed.tool_identity.unwrap().name, "quoin");
-    assert!(parsed.clean_tree_precondition.is_some());
+    let mut healthy_kind = full.clone();
+    healthy_kind["soup"]["not_assessed"] =
+        json!([{"kind":"scan_not_run","tool":"osv-scanner","detail":"not run"}]);
+    assert_eq!(parse(&healthy_kind).unwrap().soup.not_assessed.len(), 1);
 
-    extended["tool_identity"] = Value::Null;
-    let bytes = serde_json::to_vec(&extended).unwrap();
-    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+    let mut missing_identity = full.clone();
+    missing_identity
+        .as_object_mut()
+        .unwrap()
+        .remove("tool_identity");
+    assert!(refusal(&missing_identity).contains("tool_identity"));
 
-    extended["tool_identity"] = json!({"name":"quoin","version":"0.31.1"});
-    extended["clean_tree_precondition"] = Value::Null;
-    let bytes = serde_json::to_vec(&extended).unwrap();
-    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+    let mut missing_clean_tree = full.clone();
+    missing_clean_tree
+        .as_object_mut()
+        .unwrap()
+        .remove("clean_tree_precondition");
+    assert!(refusal(&missing_clean_tree).contains("clean_tree_precondition"));
 
-    extended["clean_tree_precondition"] = json!("not_verified");
-    extended["tool_identity"]["unexpected"] = json!(true);
-    let bytes = serde_json::to_vec(&extended).unwrap();
-    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+    let mut unordered = full.clone();
+    unordered["soup"]["not_assessed"] =
+        json!([{"kind":"scan_unordered","tool":"osv-scanner","detail":"unordered"}]);
+    assert!(refusal(&unordered).contains("soup.not_assessed kind"));
 
-    extended["tool_identity"] = json!({"name":"quoin","version":"0.31.1"});
-    extended["clean_tree_precondition"] = json!("verified");
-    let bytes = serde_json::to_vec(&extended).unwrap();
-    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+    let mut dirty = full.clone();
+    dirty["tool_identity"] = Value::Null;
+    assert!(refusal(&dirty).contains("invalid type: null"));
 
-    extended["tool_identity"] = json!({"name":"another-tool","version":"0.31.1"});
-    extended["clean_tree_precondition"] = json!("not_verified");
-    let bytes = serde_json::to_vec(&extended).unwrap();
-    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+    let mut dirty = full.clone();
+    dirty["clean_tree_precondition"] = Value::Null;
+    assert!(refusal(&dirty).contains("expected value"));
 
-    extended["tool_identity"] = json!({"name":"quoin","version":" "});
-    let bytes = serde_json::to_vec(&extended).unwrap();
-    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+    let mut dirty = full.clone();
+    dirty["tool_identity"]["unexpected"] = json!(true);
+    assert!(refusal(&dirty).contains("unknown field `unexpected`"));
+
+    let mut dirty = full.clone();
+    dirty["clean_tree_precondition"] = json!("verified");
+    assert!(refusal(&dirty).contains("unknown variant `verified`"));
+
+    let mut dirty = full.clone();
+    dirty["tool_identity"]["name"] = json!("another-tool");
+    assert!(refusal(&dirty).contains("tool_identity must name quoin"));
+
+    let mut dirty = full;
+    dirty["tool_identity"]["version"] = json!(" ");
+    assert!(refusal(&dirty).contains("tool_identity must name quoin"));
 }
 
 fn git(dir: &Path, arguments: &[&str]) {
