@@ -17,6 +17,12 @@ pub const RELEASE_SNAPSHOT_PROTOCOL: &str = "quoin.release-snapshot/v1";
 pub struct ReleaseSnapshot {
     /// Protocol identifier.
     pub protocol: String,
+    /// Quoin executable identity, when written by a version that includes it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_identity: Option<ToolIdentity>,
+    /// State of the clean-tree precondition, when written by a version that includes it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clean_tree_precondition: Option<CleanTreePrecondition>,
     /// Evaluation instant supplied to the snapshot command.
     pub as_of: String,
     /// Baseline commit supplied to the snapshot command.
@@ -35,6 +41,24 @@ pub struct ReleaseSnapshot {
     pub anomalies: Vec<SnapshotAnomaly>,
     /// Change records in FR-168 source order.
     pub change_records: Vec<SnapshotChangeRecord>,
+}
+
+/// Identity of the Quoin executable that wrote a snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ToolIdentity {
+    /// Executable name.
+    pub name: String,
+    /// Version printed by the executable's `--version` flag.
+    pub version: String,
+}
+
+/// Whether Quoin checked the caller's clean-tree precondition.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CleanTreePrecondition {
+    /// Quoin does not inspect git state and could not verify this condition.
+    NotVerified,
 }
 
 impl ReleaseSnapshot {

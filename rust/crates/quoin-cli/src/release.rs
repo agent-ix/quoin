@@ -328,6 +328,13 @@ fn write_snapshot(inputs: &Inputs) -> Result<PathBuf, Stop> {
 
     let snapshot = quoin_dossier::release_snapshot::ReleaseSnapshot {
         protocol: quoin_dossier::release_snapshot::RELEASE_SNAPSHOT_PROTOCOL.to_owned(),
+        tool_identity: Some(quoin_dossier::release_snapshot::ToolIdentity {
+            name: "quoin".to_owned(),
+            version: env!("QUOIN_VERSION").to_owned(),
+        }),
+        clean_tree_precondition: Some(
+            quoin_dossier::release_snapshot::CleanTreePrecondition::NotVerified,
+        ),
         as_of: inputs.as_of.clone(),
         baseline_commit: inputs.baseline_commit.clone(),
         previous_release: history.previous_release,
