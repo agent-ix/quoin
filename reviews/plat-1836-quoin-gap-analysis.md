@@ -49,3 +49,11 @@ APPROVE WITH LOW FINDINGS for coverage; every new criterion is tagged and each h
 
 - FR-160-AC-2, FR-160-AC-13, FR-160-AC-14, FR-160-AC-15, FR-160-AC-16 (examined)
 - FR-161-AC-2, FR-161-AC-8, FR-161-AC-10, FR-161-AC-11, FR-161-AC-12, FR-161-AC-13 (examined)
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | a102c716: `every_class_caused_finding_kind_names_the_class` asserts the `class` member on all six kinds (class-method-missing, insufficient-mutation-score, surviving-mutant, unmeasured-mutation-score, class-unconfigured, insufficient-independence with source class); `findings_the_class_did_not_cause_carry_no_class_member` covers the negative side. Passed. |
+| FND-002 | fixed | a102c716: `tc_plat1836_006_non_class_findings_do_not_gate` runs `gate: true` with an `undischarged` finding present and no class finding and asserts exit 0. Passed. |
+| FND-003 | fixed | a102c716: tc_plat1836_001 now tagged `FR-160-AC-14` only; new `tc_plat1836_005_class_obligations_reports_unmet_design_and_failing_evidence` runs `quoin class obligations` and asserts design-trace `unmet` on an uncovered row and `evidence` `unmet` listing FR-001-AC-1, FR-001-AC-2, then both `met`. `quoin matrix` shows FR-161-AC-2 tagged by it. Passed. |

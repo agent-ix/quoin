@@ -63,8 +63,9 @@ The policy's per-class `obligations` list holds entries with an `id` and one of 
 
   The requirement's rows in the selected relation are read as `design-trace` reads them, with one addition: a row counts as satisfied
   only when it is `covered` and, if `element_archetypes` is declared, links at least one element whose `archetype` is in the list.
-  The status is `unmet` if any selected row is unsatisfied, `not-available` if the join is absent or empty or
-  the requirement has no row in the selected relation, else `met`. A `relation` that no loaded module declares as a design relation (a typo, or a module that is not loaded) is a
+  The status is `unmet` if any selected row is unsatisfied, `not-available` if the requirement has no row in the selected relation
+  or, for a `detailed-design` entry that names no `relation`, if the join is absent or empty (a named relation is refused below when the
+  join does not declare it, and an empty join declares none), else `met`. A `relation` that no loaded module declares as a design relation (a typo, or a module that is not loaded) is a
   configuration error: the command **SHALL** refuse the policy naming the class, the entry and the relation, and produce no report,
   exactly as it refuses an `evidence` entry naming an undeclared method. A requirement that has no row in a declared relation is not
   a gap and reads `not-available`.

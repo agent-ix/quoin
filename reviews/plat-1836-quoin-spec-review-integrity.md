@@ -38,3 +38,19 @@ CHANGES REQUESTED (FND-001, FND-002, FND-003). The passing-run definition is int
 - FR-161 sections "Declared as data", "Unmet activities can gate" (examined)
 - FR-161-AC-8, FR-161-AC-10, FR-161-AC-11, FR-161-AC-12, FR-161-AC-13 (examined)
 - FR-032 Outputs and Downstream, FR-115-AC-11 (context_only)
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | low | The relation-backed status sentence still says `not-available` "if the join is absent or empty", but the next sentence (and `check_relations_declared`) refuses any named `relation` the join does not declare, which an empty join never does. The empty-join clause now applies only to a `detailed-design` entry without `relation`; say so, so the two sentences do not read as conflicting outcomes for the same input. | spec/functional/FR-161-per-class-obligations-report.md:66-70 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | a102c716: FR-160 now reads "`quoin matrix` reports class findings and gates nothing; it has no `--strict` flag (FR-115)". |
+| FND-002 | fixed | a102c716: FR-032 Outputs and Downstream name `gate: true` as a second non-zero exit beside `--strict`; FR-115-AC-11 says the `Partial` arm fires on `--strict` "and also when a class policy given by `--class-policy` sets `gate: true` and a finding it caused remains". `quire validate` passes on FR-032, FR-115, FR-160, FR-161. |
+| FND-003 | fixed | a102c716: `check_relations_declared` refuses a `relation` absent from the design join's declared relations with an `Err` naming class, entry and relation, the same path and exit status as an undeclared method (tc_plat1836_007 compares the two exit codes; empty stdout). quire-rs v0.62.2 `design_join` emits a section for every declared design relation even with no rows, so a declared relation is never refused. A requirement with no row in a declared relation stays `not-available` (a_named_relation_reads_only_its_own_rows, tc_plat1836_003). New FR-161-AC-14, FR-161-AC-11 updated. Passed. |
+| FND-004 | fixed | a102c716: FR-160 now reads "Quoin SHALL NOT write a `gate` value: the policy author sets it, and an absent `gate` means off." |
+| FND-005 | still-open | New in this pass (low); no fix yet. Does not block merge. |

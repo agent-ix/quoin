@@ -45,3 +45,12 @@ CHANGES REQUESTED (FND-001). The gate is implemented as an exit-status-only swit
 - rust/crates/quoin-auditor/tests/tc_160_class_floors.rs (examined)
 - rust/crates/quoin-cli/tests/tc_160_class_policy_command.rs (examined)
 - rust/crates/quoin-evidence/src/stale.rs, rust/crates/quoin-evidence/src/store/records.rs, PLAT-1806 commit 42fd3658 (context_only)
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | a102c716: `run_passed` replaced by `SymbolTally`, which reads only the entries for `binding.symbols` (pass sets passed, fail/error sets failed, skip or unreported counts for nothing; passing = passed and not failed), matching `stale::failed_bound_symbols` and `vacuous_run`. All-skipped or unreported bound symbols raise `class-method-missing` ("did not pass") with the `class` member, so `gate: true` catches it; an unrelated failing test no longer raises it. FR-160 and FR-160-AC-14 reworded. All-skipped also yields the ladder's `vacuous-evidence`; that is two distinct facts (vacuity, class floor), consistent with the existing "asked whatever the ladder found" design, not double reporting of one finding. Re-run on a102c716 via locked-build: tc_160_class_floors 27 passed. |
+| FND-002 | fixed | a102c716: tc_plat1836_002 asserts exit `Some(1)` gated and `Some(0)` ungated/off, and `gate.stdout == ungated.stdout == off.stdout` with `class-method-missing` present; tc_plat1836_004 asserts `Some(1)` twice and equal gated/ungated JSON reports. Passed. |
+| FND-003 | fixed | a102c716: `enum Kind` (serde kebab-case) with exhaustive matches in `parse_activities` and `build_rows`; the catch-all arm is gone and an unknown kind is refused by serde (`unknown variant`), asserted by `policy_activity_kinds_and_method_declarations_are_closed`. Passed. |
+| FND-004 | fixed | a102c716: `design_status` and `relation_status` both fold rows through one `fold_rows`; `design_trace_and_relation_kinds_read_row_states_identically` asserts agreement over covered/uncovered/mixed/other states. quire-rs v0.62.2 `RowState` has only Covered and Uncovered. Passed. |

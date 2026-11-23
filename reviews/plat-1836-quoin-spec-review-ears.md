@@ -35,3 +35,10 @@ APPROVE WITH LOW FINDINGS. Statements conform; the new gate behaviour should be 
 - FR-161 statement (examined)
 - FR-160-AC-14, FR-160-AC-15, FR-160-AC-16 (examined)
 - FR-161-AC-10, FR-161-AC-11, FR-161-AC-12, FR-161-AC-13 (examined)
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | a102c716: FR-160 adds "Quoin SHALL exit `quoin evidence audit` with `Partial` (exit 1) when the policy sets `gate: true` and at least one finding carries a `class` member" and a SHALL NOT for the ungated case; FR-161 "Unmet activities can gate" now states "`quoin class obligations` SHALL exit `Partial` (exit 1) when any row is `unmet`, and SHALL NOT change its report". |
+| FND-002 | fixed | a102c716: FR-160-AC-16 and FR-161-AC-13 now say "exits `Partial` (exit 1) ... with the report unchanged"; the tests assert `Some(1)` and byte-identical output. |
