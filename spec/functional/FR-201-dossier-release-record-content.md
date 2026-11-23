@@ -101,8 +101,9 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   `record_digest` SHALL equal the lowercase SHA-256 hex digest of those bytes,
   and its binding status for both fields SHALL be `match`. Quoin SHALL refuse
   the export before starting Quire if any supplied verdict fails these
-  checks. This binding rule applies to the existing approval input; it does
-  not define a new approval format.
+  checks. A verdict that fails any check is unbound and SHALL NOT appear in a
+  rendered approval block. This binding rule applies to the existing approval
+  input; it does not define a new approval format or consumer interface.
 - Each approval block in a successful PDF or DOCX export of `DOS-REL` SHALL
   show the verifier identity from the supplied verdict's `signature_kind`
   (`ssh` or `gitsign`) alongside its approver and meaning.
