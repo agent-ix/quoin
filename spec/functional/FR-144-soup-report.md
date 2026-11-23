@@ -46,11 +46,11 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 - The command SHALL NOT state a record `allowed`.
 - The command SHALL render an `unknown` licence as a policy finding with its disposition, never as absent.
 - Each row SHALL state its advisory status as `free of advisories` (as FR-142 defines it), `advisories not assessed: unsupported purl type`, or the attached advisories and the state of each blocking scan.
-- For each attached advisory, the row SHALL show the matching person-authored VEX statement's status, justification when present, impact statement, action statement when present, assessor, assessment date and evidence references.
+- For each attached advisory, the row SHALL report every person-authored VEX statement in the record whose advisory identifier matches that advisory. It SHALL preserve each matching statement as a separate entry, in source-list order, in both JSON and Markdown, showing that statement's status, justification when present, impact statement, action statement when present, assessor, assessment date and evidence references. The report SHALL NOT select one matching statement, merge statements, reject the report, or suppress a statement because multiple statements match or their fields conflict.
 - When no VEX statement matches an attached advisory, the row SHALL state `no statement`.
 - A VEX statement SHALL remain distinct from the advisory disposition.
 - A VEX statement SHALL NOT resolve, suppress or replace the advisory or its person-owned disposition.
-- When the current read of every applicable advisory scan reports no matching advisory for a record, the row SHALL retain the corresponding VEX statement as `stale statement`.
+- When the current read of every applicable advisory scan reports no matching advisory for a record, the row SHALL retain every corresponding VEX statement as `stale statement`.
 - An unavailable, unordered or vacuous applicable scan SHALL NOT be treated as evidence that a statement is stale.
 - If a record is `unsupported` under FR-142, its row SHALL NOT state `free of advisories`.
 - The command SHALL place an `unsupported` record in the group of rows that are neither unresolved nor past end of support, ordered by purl.
@@ -98,6 +98,7 @@ the matrix of FR-135 is: it persists nothing and adds no record type.
 | FR-144-AC-21 | A fixture with a joined advisory and a matching VEX statement renders the stored status, justification, impact statement, assessor, assessment date and evidence references on that advisory; an advisory without a statement renders `no statement`, and neither rendering changes the advisory's disposition state. | Test |
 | FR-144-AC-22 | A record with a statement whose advisory is absent from every current applicable scan renders `stale statement`; when an applicable scan is missing, unordered or vacuous, the statement is not labelled stale on that basis. | Test |
 | FR-144-AC-23 | An advisory with an `affected` VEX statement and an unresolved advisory disposition renders both facts independently, and no VEX status is rendered as an advisory disposition. | Test |
+| FR-144-AC-24 | A record has two distinct VEX statements with the same advisory identifier, one `affected` and one `not_affected`, and the advisory is attached to the record. JSON and Markdown report both statements separately in source-list order with each statement's own fields; neither is selected, merged, suppressed, or rejected because their statuses conflict, and the advisory disposition remains unchanged. | Test |
 
 ## Dependencies
 
