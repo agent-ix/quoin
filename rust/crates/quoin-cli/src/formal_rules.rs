@@ -226,19 +226,12 @@ fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusErr
         .map_err(|error| format!("repository is unavailable: {error}"))?;
     let ea = absolute_file(args, "engineering-assurance")?;
     let allowed_source = absolute_file(args, "allowed-signers")?;
-    // Read the trust bytes once, hash exactly those bytes, and hand
-    // engineering-assurance a private copy of exactly those bytes, so the
-    // digest in the report names the file every verification used and not a
-    // file that changed in between (FR-188-AC-24).
-    let trust_bytes = std::fs::read(&allowed_source)
-        .map_err(|error| format!("--allowed-signers is not readable: {error}"))?;
-    let trust_dir = tempfile::tempdir().map_err(|error| error.to_string())?;
-    let allowed = trust_dir.path().join("allowed-signers");
-    std::fs::write(&allowed, &trust_bytes).map_err(|error| error.to_string())?;
+    let (trust_dir, allowed, trust_digest) = capture_trust_bytes(&allowed_source)?;
+    let _keep_trust_copy = &trust_dir;
     let verification = json!({
         "quoin_version": env!("CARGO_PKG_VERSION"),
         "engineering_assurance_version": tool_version(&ea)?,
-        "allowed_signers_sha256": format!("sha256:{}", quoin_store::attachment::sha256_hex(&trust_bytes)),
+        "allowed_signers_sha256": trust_digest,
     });
     let gitsign_values = [
         args.get_one::<String>("gitsign-certificate-identity"),
@@ -431,6 +424,20 @@ fn decide(
         }
     }
     Ok(draft(most_recent_reason.unwrap_or("approval_unverifiable")))
+}
+
+/// Read the trust bytes once, hash exactly those bytes, and write a private
+/// copy of exactly those bytes for engineering-assurance, so the digest in the
+/// report names the file every verification used and not a file that changed
+/// in between (FR-188-AC-24). The directory guard must outlive the verifications.
+fn capture_trust_bytes(source: &Path) -> Result<(tempfile::TempDir, PathBuf, String), StatusError> {
+    let bytes = std::fs::read(source)
+        .map_err(|error| format!("--allowed-signers is not readable: {error}"))?;
+    let directory = tempfile::tempdir().map_err(|error| error.to_string())?;
+    let copy = directory.path().join("allowed-signers");
+    std::fs::write(&copy, &bytes).map_err(|error| error.to_string())?;
+    let digest = format!("sha256:{}", quoin_store::attachment::sha256_hex(&bytes));
+    Ok((directory, copy, digest))
 }
 
 /// The version engineering-assurance reports for itself: the verifier whose
