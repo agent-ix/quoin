@@ -109,6 +109,52 @@ fn an_empty_scope_exits_zero_and_markdown_is_the_default() {
     assert!(String::from_utf8_lossy(&plain.stdout).contains("| HAZ-1 | SIT-1 |"));
 }
 
+#[trace("FR-169-AC-28")]
+#[test]
+fn retired_requirements_remain_linked_and_are_reported_by_exact_status() {
+    let dir = tempfile::tempdir().unwrap();
+    chain(dir.path());
+    put(dir.path(), "CTRL-1", "control", "", "");
+    for (id, status) in [
+        ("FR-001", Some("retired")),
+        ("FR-002", Some("draft")),
+        ("FR-003", None),
+        ("FR-004", Some("Retired")),
+    ] {
+        let status = status.map_or_else(String::new, |status| format!("status: {status}\n"));
+        put(
+            dir.path(),
+            id,
+            "FR",
+            &format!("{status}relationships:\n  - target: CTRL-1\n    type: satisfies\n"),
+            &format!("| ID | Criteria |\n|---|---|\n| {id}-AC-1 | synthetic requirement |\n"),
+        );
+    }
+    put(
+        dir.path(),
+        "EST-1",
+        "risk_estimate",
+        "phase: post_control\nrelationships:\n  - target: SIT-1\n    type: estimates\n  - target: CTRL-1\n    type: assumes\n",
+        "## Judgement\n\n| Severity | Probability | Rationale |\n| --- | --- | --- |\n| Serious | Likely | why |\n\n\
+         ## Provenance\n\n| Asserted by | Asserted at |\n| --- | --- |\n| Pat | 2026-01-01 |\n",
+    );
+
+    let output = summary(dir.path(), &["--format", "json"]);
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let control = &report["rows"][0]["controls"][0];
+    assert_eq!(
+        control["requirements"],
+        serde_json::json!(["FR-001", "FR-002", "FR-003", "FR-004"])
+    );
+    assert_eq!(
+        control["retired_requirements"],
+        serde_json::json!(["FR-001"])
+    );
+    assert!(control.get("status").is_none());
+    assert!(control.get("decision").is_none());
+}
+
 #[trace("FR-169-AC-18")]
 #[test]
 fn an_unknown_format_exits_2_with_no_report() {

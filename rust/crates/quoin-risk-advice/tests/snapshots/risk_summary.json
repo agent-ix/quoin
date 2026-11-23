@@ -21,6 +21,7 @@
           "requirements": [
             "FR-9"
           ],
+          "retired_requirements": [],
           "verifications": [
             "TC-9"
           ]
@@ -52,6 +53,7 @@
         {
           "control": "CTRL-2",
           "requirements": [],
+          "retired_requirements": [],
           "verifications": []
         }
       ],
@@ -151,6 +153,7 @@
           "requirements": [
             "FR-9"
           ],
+          "retired_requirements": [],
           "verifications": [
             "TC-9"
           ]

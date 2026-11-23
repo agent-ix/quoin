@@ -79,6 +79,8 @@ pub(crate) struct Choice {
 pub(crate) struct Plain {
     pub(crate) id: String,
     pub(crate) kind: String,
+    /// The exact authored status, when one is present.
+    pub(crate) status: Option<String>,
     pub(crate) hazard: bool,
     pub(crate) arises_from: Vec<String>,
     pub(crate) satisfies: Vec<String>,
@@ -253,6 +255,11 @@ fn plain(doc: &Document) -> Plain {
     Plain {
         id: doc.id.clone(),
         kind: doc.kind.clone(),
+        status: doc
+            .frontmatter
+            .get("status")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned),
         hazard: is_hazard(&doc.frontmatter),
         arises_from: edges(doc, "arises_from"),
         satisfies: edges(doc, "satisfies"),
