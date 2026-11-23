@@ -166,7 +166,7 @@ fn field(record: &Path, key: &str) -> Option<String> {
 
 #[trace("FR-141-AC-1", "FR-141-AC-4")]
 #[test]
-fn a_cyclonedx_and_an_spdx_inventory_promote_to_valid_records_without_a_supplier() {
+fn a_cyclonedx_and_an_spdx_inventory_promote_to_valid_records_with_no_fact_reference() {
     let work = tempfile::tempdir().unwrap();
     let cdx = write(work.path(), "bom.json", &cyclonedx(&three()));
     let spdx = write(
@@ -190,7 +190,7 @@ fn a_cyclonedx_and_an_spdx_inventory_promote_to_valid_records_without_a_supplier
         assert_eq!(written.len(), 3);
         for record in &written {
             validates(record);
-            assert_eq!(field(record, "supplier"), None);
+            assert_eq!(field(record, "license_fact_ref"), None);
             assert_eq!(field(record, "disposition_clause"), None);
             assert_eq!(field(record, "type").as_deref(), Some("soup_record"));
         }
@@ -575,4 +575,352 @@ fn a_record_with_crlf_line_endings_is_still_found_and_ids_continue_after_it() {
         .map(|p| field(p, "id").unwrap())
         .collect();
     assert_eq!(ids, ["SOUP-008", "SOUP-009"]);
+}
+
+/// A minimal `CycloneDX` document of exactly these components.
+fn bom(components: &[Value]) -> Value {
+    json!({ "bomFormat": "CycloneDX", "specVersion": "1.6", "components": components })
+}
+
+/// A purl-bearing `CycloneDX` component carrying the given extra members.
+fn with(purl: &str, name: &str, extra: &Value) -> Value {
+    let mut value = component(name, "1", Some(purl));
+    for (key, member) in extra.as_object().unwrap() {
+        value[key] = member.clone();
+    }
+    value
+}
+
+fn promoted(sbom: &Value) -> (tempfile::TempDir, PathBuf, Output) {
+    let work = tempfile::tempdir().unwrap();
+    let path = write(work.path(), "bom.json", sbom);
+    let out = work.path().join("soup");
+    let run = with_module(&path, &out, &[]);
+    assert!(
+        run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    (work, out, run)
+}
+
+fn record_of(out: &Path, purl: &str) -> PathBuf {
+    out.join(format!(
+        "{}.md",
+        purl.replace(':', "%3A").replace('/', "%2F").replace('@', "%40")
+    ))
+}
+
+fn has_line(report: &str, wanted: &str) -> bool {
+    report.lines().any(|line| line == wanted)
+}
+
+#[trace("FR-141-AC-18")]
+#[test]
+fn a_stated_supplier_and_one_licence_are_written_as_stated_for_each_licence_kind() {
+    let work = tempfile::tempdir().unwrap();
+    let cdx = write(
+        work.path(),
+        "bom.json",
+        &bom(&[
+            with(
+                "pkg:npm/a@1",
+                "a",
+                &json!({"supplier": {"name": "Acme, Inc."}, "licenses": [{"license": {"id": "MIT"}}]}),
+            ),
+            with(
+                "pkg:npm/b@1",
+                "b",
+                &json!({"supplier": {"name": "Beta"}, "licenses": [{"license": {"name": "Custom Terms 2"}}]}),
+            ),
+            with(
+                "pkg:npm/c@1",
+                "c",
+                &json!({"supplier": {"name": "Gamma"}, "licenses": [{"expression": "MIT OR Apache-2.0"}]}),
+            ),
+        ]),
+    );
+    let spdx = write(
+        work.path(),
+        "spdx.json",
+        &json!({"spdxVersion": "SPDX-2.3", "packages": [
+            {"name": "a", "versionInfo": "1", "supplier": "Organization: Acme, Inc.", "licenseDeclared": "MIT",
+             "externalRefs": [{"referenceType": "purl", "referenceLocator": "pkg:npm/a@1"}]},
+            {"name": "c", "versionInfo": "1", "supplier": "Person: Gamma", "licenseDeclared": "MIT OR Apache-2.0",
+             "externalRefs": [{"referenceType": "purl", "referenceLocator": "pkg:npm/c@1"}]},
+        ]}),
+    );
+    let out = work.path().join("cdx");
+    assert!(with_module(&cdx, &out, &[]).status.success());
+    let expected = [
+        ("pkg:npm/a@1", "Acme, Inc.", "MIT"),
+        ("pkg:npm/b@1", "Beta", "Custom Terms 2"),
+        ("pkg:npm/c@1", "Gamma", "MIT OR Apache-2.0"),
+    ];
+    for (purl, supplier, license) in expected {
+        let record = record_of(&out, purl);
+        validates(&record);
+        assert_eq!(field(&record, "supplier").as_deref(), Some(supplier));
+        assert_eq!(field(&record, "license").as_deref(), Some(license));
+    }
+    let out = work.path().join("spdx");
+    assert!(with_module(&spdx, &out, &[]).status.success());
+    let record = record_of(&out, "pkg:npm/a@1");
+    validates(&record);
+    assert_eq!(
+        field(&record, "supplier").as_deref(),
+        Some("Organization: Acme, Inc.")
+    );
+    assert_eq!(field(&record, "license").as_deref(), Some("MIT"));
+}
+
+#[trace("FR-141-AC-19")]
+#[test]
+fn an_unstated_supplier_or_licence_is_absent_and_never_the_word_unknown() {
+    let (_work, out, _) = promoted(&bom(&[
+        with("pkg:npm/none@1", "none", &json!({})),
+        with(
+            "pkg:npm/empty@1",
+            "empty",
+            &json!({"supplier": {"name": ""}}),
+        ),
+        with(
+            "pkg:npm/stated@1",
+            "stated",
+            &json!({"supplier": {"name": "unknown"}}),
+        ),
+    ]));
+    for purl in ["pkg:npm/none@1", "pkg:npm/empty@1"] {
+        let text = std::fs::read_to_string(record_of(&out, purl)).unwrap();
+        assert!(!text.contains("supplier:"), "{text}");
+        assert!(!text.contains("license:"), "{text}");
+        assert!(!text.contains("unknown"), "{text}");
+    }
+    assert_eq!(
+        field(&record_of(&out, "pkg:npm/stated@1"), "supplier").as_deref(),
+        Some("unknown")
+    );
+
+    let work = tempfile::tempdir().unwrap();
+    let spdx = write(
+        work.path(),
+        "spdx.json",
+        &json!({"spdxVersion": "SPDX-2.3", "packages": [
+            {"name": "a", "versionInfo": "1", "supplier": "NOASSERTION", "licenseDeclared": "NOASSERTION",
+             "externalRefs": [{"referenceType": "purl", "referenceLocator": "pkg:npm/a@1"}]},
+        ]}),
+    );
+    let out = work.path().join("soup");
+    assert!(with_module(&spdx, &out, &[]).status.success());
+    let text = std::fs::read_to_string(record_of(&out, "pkg:npm/a@1")).unwrap();
+    assert!(!text.contains("supplier:") && !text.contains("license:"), "{text}");
+    assert!(!text.contains("unknown"), "{text}");
+}
+
+#[trace("FR-141-AC-20")]
+#[test]
+fn several_licences_leave_the_licence_absent_and_are_listed_with_their_texts() {
+    let (_work, out, run) = promoted(&bom(&[
+        with(
+            "pkg:npm/two@1",
+            "two",
+            &json!({"supplier": {"name": "Two Corp"}, "licenses": [{"license": {"id": "MIT"}}, {"license": {"id": "ISC"}}]}),
+        ),
+        with(
+            "pkg:npm/mixed@1",
+            "mixed",
+            &json!({"supplier": {"name": "Mixed Corp"}, "licenses": [{"license": {"id": "MIT"}}, {"license": {"url": "https://x"}}]}),
+        ),
+    ]));
+    for (purl, supplier) in [("pkg:npm/two@1", "Two Corp"), ("pkg:npm/mixed@1", "Mixed Corp")] {
+        let record = record_of(&out, purl);
+        assert_eq!(field(&record, "license"), None);
+        assert_eq!(field(&record, "supplier").as_deref(), Some(supplier));
+    }
+    let report = stdout(&run);
+    assert!(has_line(&report, "multiple or unreadable licences: 2"), "{report}");
+    assert!(has_line(&report, "  pkg:npm/mixed@1 MIT, unreadable"), "{report}");
+    assert!(has_line(&report, "  pkg:npm/two@1 MIT, ISC"), "{report}");
+}
+
+#[trace("FR-141-AC-21", "FR-141-AC-24")]
+#[test]
+fn control_characters_and_unreadable_licences_omit_the_field_and_are_listed() {
+    let (_work, out, run) = promoted(&bom(&[
+        with(
+            "pkg:npm/sup@1",
+            "sup",
+            &json!({"supplier": {"name": "Acme\u{7}Corp"}, "licenses": [{"license": {"id": "MIT"}}]}),
+        ),
+        with(
+            "pkg:npm/both@1",
+            "both",
+            &json!({"supplier": {"name": "Acme\nCorp"}, "licenses": [{"license": {"name": "Own\u{1b}Terms"}}]}),
+        ),
+        with(
+            "pkg:npm/unreadable@1",
+            "unreadable",
+            &json!({"licenses": [{"license": {"url": "https://example.org/l"}}]}),
+        ),
+    ]));
+    let sup = std::fs::read_to_string(record_of(&out, "pkg:npm/sup@1")).unwrap();
+    assert!(!sup.contains("supplier:"), "{sup}");
+    assert_eq!(field(&record_of(&out, "pkg:npm/sup@1"), "license").as_deref(), Some("MIT"));
+    let both = std::fs::read_to_string(record_of(&out, "pkg:npm/both@1")).unwrap();
+    assert!(!both.contains("supplier:") && !both.contains("license:"), "{both}");
+    let unreadable = std::fs::read_to_string(record_of(&out, "pkg:npm/unreadable@1")).unwrap();
+    assert!(!unreadable.contains("license:"), "{unreadable}");
+    assert!(!unreadable.contains("example.org"), "{unreadable}");
+    let report = stdout(&run);
+    assert!(has_line(&report, "omitted fields: 3"), "{report}");
+    for line in [
+        "  pkg:npm/sup@1 supplier",
+        "  pkg:npm/both@1 license",
+        "  pkg:npm/both@1 supplier",
+    ] {
+        assert!(has_line(&report, line), "{line}\n{report}");
+    }
+    assert!(has_line(&report, "multiple or unreadable licences: 1"), "{report}");
+    assert!(has_line(&report, "  pkg:npm/unreadable@1 unreadable"), "{report}");
+}
+
+/// Replace `key` in the frontmatter of `record` with `value`, or drop it.
+fn set_field(record: &Path, key: &str, value: Option<&str>) {
+    let text = std::fs::read_to_string(record).unwrap();
+    let mut lines: Vec<String> = text
+        .lines()
+        .filter(|line| !line.starts_with(&format!("{key}: ")))
+        .map(str::to_owned)
+        .collect();
+    if let Some(value) = value {
+        let at = lines.iter().position(|l| l.starts_with("purl: ")).unwrap() + 1;
+        lines.insert(at, format!("{key}: {}", json!(value)));
+    }
+    std::fs::write(record, lines.join("\n") + "\n").unwrap();
+}
+
+fn difference_lines(report: &str) -> Vec<&str> {
+    report
+        .lines()
+        .skip_while(|line| !line.starts_with("field differences:"))
+        .skip(1)
+        .take_while(|line| line.starts_with("  "))
+        .collect()
+}
+
+#[trace("FR-141-AC-22", "FR-141-CON-4")]
+#[test]
+fn an_existing_record_is_never_rewritten_and_its_differing_fields_are_reported() {
+    let sbom = bom(&[
+        with(
+            "pkg:npm/edited@1",
+            "edited",
+            &json!({"supplier": {"name": "Acme"}, "licenses": [{"license": {"id": "MIT"}}]}),
+        ),
+        with(
+            "pkg:npm/equal@1",
+            "equal",
+            &json!({"supplier": {"name": "Acme"}, "licenses": [{"license": {"id": "MIT"}}]}),
+        ),
+        with(
+            "pkg:npm/ref@1",
+            "ref",
+            &json!({"supplier": {"name": "Acme"}, "licenses": [{"license": {"id": "MIT"}}]}),
+        ),
+    ]);
+    let (work, out, _) = promoted(&sbom);
+    set_field(&record_of(&out, "pkg:npm/edited@1"), "supplier", Some("Person Edited"));
+    set_field(&record_of(&out, "pkg:npm/edited@1"), "license", Some("Apache-2.0"));
+    set_field(&record_of(&out, "pkg:npm/ref@1"), "license", None);
+    set_field(&record_of(&out, "pkg:npm/ref@1"), "license_fact_ref", Some("LF-1"));
+    let before = snapshot(&out);
+    let again = with_module(&work.path().join("bom.json"), &out, &[]);
+    assert!(again.status.success());
+    assert_eq!(snapshot(&out), before);
+    let report = stdout(&again);
+    let lines = difference_lines(&report);
+    assert!(has_line(&report, "field differences: 2"), "{report}");
+    assert_eq!(lines.len(), 2, "{report}");
+    assert!(lines.iter().all(|l| l.contains("pkg:npm/edited@1")), "{report}");
+    assert!(lines.iter().any(|l| l.ends_with(" supplier")), "{report}");
+    assert!(lines.iter().any(|l| l.ends_with(" license")), "{report}");
+}
+
+#[trace("FR-141-AC-23")]
+#[test]
+fn a_field_set_where_the_sbom_states_none_and_the_reverse_are_differences() {
+    let sbom = bom(&[
+        with("pkg:npm/bare@1", "bare", &json!({})),
+        with(
+            "pkg:npm/two@1",
+            "two",
+            &json!({"licenses": [{"license": {"id": "MIT"}}, {"license": {"id": "ISC"}}]}),
+        ),
+        with(
+            "pkg:npm/unreadable@1",
+            "unreadable",
+            &json!({"licenses": [{"license": {"url": "https://x"}}]}),
+        ),
+        with(
+            "pkg:npm/ctrl@1",
+            "ctrl",
+            &json!({"licenses": [{"license": {"name": "A\u{7}B"}}]}),
+        ),
+        with(
+            "pkg:npm/stated@1",
+            "stated",
+            &json!({"supplier": {"name": "Acme"}, "licenses": [{"license": {"id": "MIT"}}]}),
+        ),
+    ]);
+    let (work, out, _) = promoted(&sbom);
+    set_field(&record_of(&out, "pkg:npm/bare@1"), "supplier", Some("Set By Person"));
+    for purl in ["pkg:npm/bare@1", "pkg:npm/two@1", "pkg:npm/unreadable@1", "pkg:npm/ctrl@1"] {
+        set_field(&record_of(&out, purl), "license", Some("MIT"));
+    }
+    set_field(&record_of(&out, "pkg:npm/stated@1"), "supplier", None);
+    set_field(&record_of(&out, "pkg:npm/stated@1"), "license", None);
+    let before = snapshot(&out);
+    let again = with_module(&work.path().join("bom.json"), &out, &[]);
+    assert!(again.status.success());
+    assert_eq!(snapshot(&out), before);
+    let report = stdout(&again);
+    assert!(has_line(&report, "field differences: 7"), "{report}");
+    let lines = difference_lines(&report);
+    let named = |purl: &str, field: &str| {
+        lines
+            .iter()
+            .any(|l| l.contains(&format!("{purl} {field}")))
+    };
+    assert!(named("pkg:npm/bare@1", "supplier"), "{report}");
+    assert!(named("pkg:npm/bare@1", "license"), "{report}");
+    assert!(named("pkg:npm/two@1", "license"), "{report}");
+    assert!(named("pkg:npm/unreadable@1", "license"), "{report}");
+    assert!(named("pkg:npm/ctrl@1", "license"), "{report}");
+    assert!(named("pkg:npm/stated@1", "supplier"), "{report}");
+    assert!(named("pkg:npm/stated@1", "license"), "{report}");
+}
+
+#[trace("FR-141-AC-25")]
+#[test]
+fn a_repeated_purl_carries_the_first_occurrences_values_and_lists_the_conflict() {
+    let (_work, out, run) = promoted(&bom(&[
+        with(
+            "pkg:npm/dup@1",
+            "dup",
+            &json!({"supplier": {"name": "First"}, "licenses": [{"license": {"id": "MIT"}}]}),
+        ),
+        with(
+            "pkg:npm/dup@1",
+            "dup",
+            &json!({"supplier": {"name": "Second"}, "licenses": [{"license": {"id": "ISC"}}]}),
+        ),
+    ]));
+    assert_eq!(files(&out).len(), 1);
+    let record = record_of(&out, "pkg:npm/dup@1");
+    assert_eq!(field(&record, "supplier").as_deref(), Some("First"));
+    assert_eq!(field(&record, "license").as_deref(), Some("MIT"));
+    let report = stdout(&run);
+    assert!(has_line(&report, "duplicate conflicts: 2"), "{report}");
+    assert!(has_line(&report, "  pkg:npm/dup@1 license"), "{report}");
+    assert!(has_line(&report, "  pkg:npm/dup@1 supplier"), "{report}");
 }
