@@ -723,6 +723,15 @@ fn the_snapshot_reader_accepts_legacy_and_valid_v1_extensions_but_refuses_dirty_
     extended["clean_tree_precondition"] = json!("verified");
     let bytes = serde_json::to_vec(&extended).unwrap();
     assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["tool_identity"] = json!({"name":"another-tool","version":"0.31.1"});
+    extended["clean_tree_precondition"] = json!("not_verified");
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
+
+    extended["tool_identity"] = json!({"name":"quoin","version":" "});
+    let bytes = serde_json::to_vec(&extended).unwrap();
+    assert!(quoin_dossier::release_snapshot::ReleaseSnapshot::parse(&bytes).is_err());
 }
 
 fn git(dir: &Path, arguments: &[&str]) {

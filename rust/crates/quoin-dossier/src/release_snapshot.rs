@@ -75,6 +75,15 @@ impl ReleaseSnapshot {
                 "protocol must be {RELEASE_SNAPSHOT_PROTOCOL}"
             )));
         }
+        if snapshot
+            .tool_identity
+            .as_ref()
+            .is_some_and(|identity| identity.name != "quoin" || identity.version.trim().is_empty())
+        {
+            return Err(<serde_json::Error as serde::de::Error>::custom(
+                "tool_identity must name quoin and carry a non-empty version",
+            ));
+        }
         Ok(snapshot)
     }
 }
