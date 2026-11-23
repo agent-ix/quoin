@@ -188,7 +188,7 @@ fn policy_source(
         .map(quoin_quire::ids::ModuleRoot::open)
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| quoin_dossier::SourceFailure {
-            source: "acceptability policy".to_owned(),
+            source: "acceptability policy and risk management plan".to_owned(),
             detail: format!("failed to open module: {error}"),
         })?;
     let selection = if modules.is_empty() {
@@ -196,12 +196,15 @@ fn policy_source(
     } else {
         quoin_quire::ModuleSelection::Closed(modules)
     };
-    quoin_quire::records::read(&inputs.scope, &selection, &["acceptability_policy"]).map_err(
-        |error| quoin_dossier::SourceFailure {
-            source: "acceptability policy".to_owned(),
-            detail: format!("failed to read policy records: {error}"),
-        },
+    quoin_quire::records::read(
+        &inputs.scope,
+        &selection,
+        &["acceptability_policy", "risk_management_plan"],
     )
+    .map_err(|error| quoin_dossier::SourceFailure {
+        source: "acceptability policy and risk management plan".to_owned(),
+        detail: format!("failed to read policy and plan records: {error}"),
+    })
 }
 
 fn threat_model_source(
