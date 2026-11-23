@@ -166,21 +166,19 @@ fn cyclone_dx_licences(component: &Value) -> Vec<DeclaredLicence> {
         .unwrap_or_default()
         .iter()
         .map(|entry| {
-            let readable: Option<(fn(String) -> DeclaredLicence, &str)> =
-                if let Some(license) = entry.get("license") {
-                    match (string_member(license, "id"), string_member(license, "name")) {
-                        (Some(id), _) => Some((DeclaredLicence::Id, id)),
-                        (None, Some(name)) => Some((DeclaredLicence::Name, name)),
-                        (None, None) => None,
-                    }
-                } else {
-                    string_member(entry, "expression")
-                        .map(|text| (DeclaredLicence::Expression as fn(String) -> _, text))
-                };
-            match readable {
-                Some((make, text)) if !text.is_empty() => make(text.to_owned()),
-                _ => DeclaredLicence::Unreadable,
-            }
+            let declared = if let Some(license) = entry.get("license") {
+                match (string_member(license, "id"), string_member(license, "name")) {
+                    (Some(id), _) => Some(DeclaredLicence::Id(id.to_owned())),
+                    (None, Some(name)) => Some(DeclaredLicence::Name(name.to_owned())),
+                    (None, None) => None,
+                }
+            } else {
+                string_member(entry, "expression")
+                    .map(|text| DeclaredLicence::Expression(text.to_owned()))
+            };
+            declared
+                .filter(|licence| licence.text().is_some_and(|text| !text.is_empty()))
+                .unwrap_or(DeclaredLicence::Unreadable)
         })
         .collect()
 }
