@@ -225,7 +225,13 @@ fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusErr
         .canonicalize()
         .map_err(|error| format!("repository is unavailable: {error}"))?;
     let ea = absolute_file(args, "engineering-assurance")?;
-    let allowed = absolute_file(args, "allowed-signers")?;
+    let allowed_source = absolute_file(args, "allowed-signers")?;
+    let (_trust_dir, allowed, trust_digest) = capture_trust_bytes(&allowed_source)?;
+    let verification = json!({
+        "quoin_version": env!("QUOIN_VERSION"),
+        "engineering_assurance_version": tool_version(&ea)?,
+        "allowed_signers_sha256": trust_digest,
+    });
     let gitsign_values = [
         args.get_one::<String>("gitsign-certificate-identity"),
         args.get_one::<String>("gitsign-certificate-oidc-issuer"),
@@ -270,7 +276,7 @@ fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusErr
         .map_err(|_| "git returned non-UTF-8 commit ids".to_owned())?;
     let mut verdicts = Vec::new();
     for commit in commits.lines().filter(|line| !line.is_empty()) {
-        let result = verify(&ea, &allowed, &repo, commit, gitsign.as_ref())?;
+        let result = verify_with_trailers(&ea, &allowed, &repo, commit, gitsign.as_ref())?;
         verdicts.push((commit.to_owned(), result));
     }
     let mut rules = Vec::with_capacity(current.len());
@@ -308,7 +314,9 @@ fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusErr
                 b.get("label").and_then(Value::as_str),
             ))
     });
-    Ok(json!({"protocol":"quoin.formal-rule-status/v1", "rules":rules}))
+    Ok(
+        json!({"protocol":"quoin.formal-rule-status/v1", "verification": verification, "rules":rules}),
+    )
 }
 
 struct Decision {
@@ -417,6 +425,48 @@ fn decide(
     Ok(draft(most_recent_reason.unwrap_or("approval_unverifiable")))
 }
 
+/// Read the trust bytes once, hash exactly those bytes, and write a private
+/// copy of exactly those bytes for engineering-assurance, so the digest in the
+/// report names the file every verification used and not a file that changed
+/// in between (FR-188-AC-24). The directory guard must outlive the verifications.
+fn capture_trust_bytes(source: &Path) -> Result<(tempfile::TempDir, PathBuf, String), StatusError> {
+    let bytes = std::fs::read(source)
+        .map_err(|error| format!("--allowed-signers is not readable: {error}"))?;
+    let directory = tempfile::tempdir().map_err(|error| error.to_string())?;
+    let copy = directory.path().join("allowed-signers");
+    std::fs::write(&copy, &bytes).map_err(|error| error.to_string())?;
+    let digest = format!("sha256:{}", quoin_store::attachment::sha256_hex(&bytes));
+    Ok((directory, copy, digest))
+}
+
+/// The version engineering-assurance reports for itself: the verifier whose
+/// verdicts the report relies on (21 CFR 11.50, 11.70).
+fn tool_version(ea: &Path) -> Result<String, StatusError> {
+    let output = ProcessCommand::new(ea)
+        .arg("--version")
+        .output()
+        .map_err(|error| format!("engineering-assurance is unavailable: {error}"))?;
+    let text = String::from_utf8_lossy(&output.stdout);
+    // Exactly one line, `engineering-assurance <version>`: anything else is
+    // not a verifier that identifies itself.
+    let version = text
+        .trim_end()
+        .strip_prefix("engineering-assurance ")
+        .filter(|version| {
+            !version.is_empty()
+                && version.len() <= 64
+                && version
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'+'))
+        });
+    match version {
+        Some(version) if output.status.success() => Ok(version.to_owned()),
+        _ => Err(StatusError::Unavailable(
+            "engineering-assurance did not report a version".to_owned(),
+        )),
+    }
+}
+
 fn draft(reason: &'static str) -> Decision {
     Decision {
         state: "draft",
@@ -432,7 +482,31 @@ fn verify(
     revision: &str,
     gitsign: Option<&Value>,
 ) -> Result<Value, StatusError> {
-    let request = signature_request(repo, revision, allowed, gitsign);
+    verify_requesting(ea, allowed, repo, revision, gitsign, false)
+}
+
+/// `verify`, also asking engineering-assurance for the `Formal-rule` trailers
+/// the status decision reads. Only the status path asks: a verifier that
+/// predates `trailer_keys` refuses the member outright.
+fn verify_with_trailers(
+    ea: &Path,
+    allowed: &Path,
+    repo: &Path,
+    revision: &str,
+    gitsign: Option<&Value>,
+) -> Result<Value, StatusError> {
+    verify_requesting(ea, allowed, repo, revision, gitsign, true)
+}
+
+fn verify_requesting(
+    ea: &Path,
+    allowed: &Path,
+    repo: &Path,
+    revision: &str,
+    gitsign: Option<&Value>,
+    trailers: bool,
+) -> Result<Value, StatusError> {
+    let request = signature_request(repo, revision, allowed, gitsign, trailers);
     let mut child = ProcessCommand::new(ea)
         .args(["signature-verify", "--request", "-"])
         .stdin(Stdio::piped())
@@ -500,6 +574,7 @@ fn signature_request(
     revision: &str,
     allowed: &Path,
     gitsign: Option<&Value>,
+    trailers: bool,
 ) -> Value {
     let mut request = serde_json::Map::from_iter([
         ("protocol".to_owned(), json!(REQUEST_PROTOCOL)),
@@ -508,6 +583,12 @@ fn signature_request(
         ("kind".to_owned(), json!("commit")),
         ("allowed_signers".to_owned(), json!(allowed)),
     ]);
+    if trailers {
+        // The trailers come from engineering-assurance and only from it
+        // (FR-188). Without this member the result carries none, and every
+        // rule reads as `no_approval` (PLAT-1789).
+        request.insert("trailer_keys".to_owned(), json!(["Formal-rule"]));
+    }
     if let Some(gitsign) = gitsign {
         request.insert("gitsign".to_owned(), gitsign.clone());
     }
@@ -618,7 +699,10 @@ mod tests {
     fn executable(directory: &Path, name: &str, body: &str) -> std::path::PathBuf {
         use std::os::unix::fs::PermissionsExt;
         let path = directory.join(name);
-        fs::write(&path, format!("#!/bin/sh\n{body}\n")).expect("write executable");
+        // A stand-in verifier still answers `--version`: the report names it.
+        let version =
+            "if [ \"$1\" = --version ]; then echo 'engineering-assurance 0.0.0-test'; exit 0; fi";
+        fs::write(&path, format!("#!/bin/sh\n{version}\n{body}\n")).expect("write executable");
         let mut permissions = fs::metadata(&path).expect("metadata").permissions();
         permissions.set_mode(0o755);
         fs::set_permissions(&path, permissions).expect("executable permissions");
@@ -1109,14 +1193,14 @@ mod tests {
     fn signature_request_omits_or_forwards_exact_gitsign_values() {
         let repo = Path::new("/repo");
         let allowed = Path::new("/allowed-signers");
-        let without = signature_request(repo, "HEAD", allowed, None);
+        let without = signature_request(repo, "HEAD", allowed, None, false);
         assert!(without.get("gitsign").is_none());
         let gitsign = json!({
             "certificate_identity":"identity",
             "certificate_oidc_issuer":"issuer",
             "principal":"alice"
         });
-        let with = signature_request(repo, "HEAD", allowed, Some(&gitsign));
+        let with = signature_request(repo, "HEAD", allowed, Some(&gitsign), false);
         assert_eq!(with["gitsign"], gitsign);
 
         let partial = command()
@@ -1212,5 +1296,56 @@ mod tests {
             .expect_err("other refusal must not produce a report");
         assert_eq!(error.exit, 3);
         assert!(error.message.contains("signature_verify_request_invalid"));
+    }
+
+    /// A verifier that reports no version yields no report: the version in the
+    /// report is the evidence of what verified it.
+    #[trace("FR-188-AC-24")]
+    #[test]
+    fn a_verifier_that_reports_no_version_is_unavailable() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().expect("directory");
+        for (index, line) in [
+            "",
+            "engineering-assurance",
+            "something-else 1.0.0",
+            "engineering-assurance 1.0.0 extra",
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let ea = dir.path().join(format!("ea-{index}"));
+            fs::write(&ea, format!("#!/bin/sh\necho '{line}'\n")).expect("write");
+            let mut permissions = fs::metadata(&ea).expect("metadata").permissions();
+            permissions.set_mode(0o755);
+            fs::set_permissions(&ea, permissions).expect("permissions");
+            assert!(
+                matches!(
+                    super::tool_version(&ea),
+                    Err(super::StatusError::Unavailable(_))
+                ),
+                "{line:?} was accepted as a version"
+            );
+        }
+        let healthy = executable(dir.path(), "healthy", "exit 0");
+        assert_eq!(
+            super::tool_version(&healthy).ok().as_deref(),
+            Some("0.0.0-test")
+        );
+    }
+
+    /// Only the status path asks for trailers; the evidence path's request is
+    /// unchanged so a verifier that predates `trailer_keys` still serves it.
+    #[trace("FR-188-AC-25")]
+    #[test]
+    fn only_the_status_request_carries_trailer_keys() {
+        let (repo, allowed) = (Path::new("/repo"), Path::new("/allowed"));
+        let with = signature_request(repo, "HEAD", allowed, None, true);
+        assert_eq!(with["trailer_keys"], json!(["Formal-rule"]));
+        assert!(
+            signature_request(repo, "HEAD", allowed, None, false)
+                .get("trailer_keys")
+                .is_none()
+        );
     }
 }

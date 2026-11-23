@@ -53,8 +53,17 @@ is stored. Origin: VER-98.
 With `--json` it is:
 
 ```json
-{"protocol":"quoin.formal-rule-status/v1","rules":[{"symbol":"qsl:<path>::<label>","path":"…","label":"…","declaration_range":{"start":120,"end":340},"formalizes":["FR-012"],"state":"approved","reason":null,"approval":{"commit":"<sha>","principal":"…"}}]}
+{"protocol":"quoin.formal-rule-status/v1","verification":{"quoin_version":"…","engineering_assurance_version":"…","allowed_signers_sha256":"sha256:…"},"rules":[{"symbol":"qsl:<path>::<label>","path":"…","label":"…","declaration_range":{"start":120,"end":340},"formalizes":["FR-012"],"state":"approved","reason":null,"approval":{"commit":"<sha>","principal":"…"}}]}
 ```
+
+`verification` names what produced the verdicts: `quoin_version` (the version `quoin --version` prints, including any
+git-describe suffix of a build ahead of its tag), `engineering_assurance_version` (the single token after
+`engineering-assurance ` on the one line the verifier executable prints for
+`--version`; any other output is refused as unavailable) and `allowed_signers_sha256` (the SHA-256 of the exact
+allowed-signers bytes every verification in the run used; Quoin reads the file
+once, hashes those bytes and hands engineering-assurance a private copy of the
+same bytes). A report whose verifier does not report a version is refused as
+unavailable.
 
 `declaration_range` is the half-open interval `[start, end)` of UTF-8 byte offsets,
 into the file content at HEAD, of the declaration span the `qsl` adapter reports
@@ -126,7 +135,7 @@ stderr.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-188-CON-1 | Quoin SHALL contain no signature or cryptography code and add no cryptography dependency; verification is engineering-assurance `signature-verify` only | Security | Inspection |
+| FR-188-CON-1 | Quoin SHALL contain no signature verification or key handling and add no cryptography dependency; verification is engineering-assurance `signature-verify` only. The only hash is the content digest of the trust bytes, computed with `quoin-store`'s existing `sha256_hex` | Security | Inspection |
 | FR-188-CON-2 | Quoin SHALL write no state, digest or approval list to the repository | Integrity | Test |
 | FR-188-CON-3 | Quoin SHALL list candidate commits with `git log --format=%H -E --grep='^Formal-rule: '` | Behavior | Test |
 
@@ -157,6 +166,8 @@ stderr.
 | FR-188-AC-21 | Given a declaration after a multi-byte character (for example `é`) in its file, `declaration_range` counts UTF-8 bytes, so slicing the file bytes at `[start, end)` yields exactly the declaration span, whether the declaration is `approved` or `draft` | Test |
 | FR-188-AC-22 | Given any fixture, every `declaration_range` in the report has `start` below `end`, for `approved` and `draft` declarations alike | Test |
 | FR-188-AC-23 | Given none of the gitsign mapping flags, the `signature-verify` request omits `gitsign`; given all three valid flags, the request carries their exact values in `gitsign`; given only one or two flags, the command exits `2` without invoking engineering-assurance | Test |
+| FR-188-AC-24 | Given any fixture, the report's `verification` carries the running Quoin version, the version engineering-assurance reports for itself, and `allowed_signers_sha256` equal to the SHA-256 of the allowed-signers file bytes; changing those bytes changes the digest. Given a verifier that reports no version, the command exits `3` with no report. | Test |
+| FR-188-AC-25 | The status path's `signature-verify` request carries `trailer_keys: ["Formal-rule"]`, and against the real engineering-assurance, git and ssh-keygen a throwaway repository whose approval commit is signed by an allowed key with meaning `formal-rule-approved` reports `approved`; each single change of signer (key not allowed, or removed from the allowed-signers file after signing), meaning, declaration bytes, or approval object (a signed tag over an unsigned commit) reports `draft` with the reason of FR-188-AC-3, AC-5, AC-9 and AC-10. | Test |
 
 ## Dependencies
 
