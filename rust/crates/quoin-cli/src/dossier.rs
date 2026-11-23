@@ -597,7 +597,7 @@ fn rmm_source(inputs: &Inputs) -> Result<quoin_dossier::RmmSource, quoin_dossier
         if let Some(pack) = &inputs.pack {
             let report = read(
                 "evidence.pack_requirements_matrix",
-                &serde_json::json!({"pack": pack, "repo": repo, "asOf": as_of}),
+                &serde_json::json!({"pack": pack, "repo": repo, "asOf": as_of, "offline": true}),
                 "report",
             )?;
             return serde_json::from_value(report)
@@ -610,7 +610,7 @@ fn rmm_source(inputs: &Inputs) -> Result<quoin_dossier::RmmSource, quoin_dossier
                 crate::discharge::json_input(&path.display().to_string(), "clause binding")?;
             let matrix = read(
                 "evidence.requirements_matrix",
-                &serde_json::json!({"repo": repo, "binding": binding, "asOf": as_of}),
+                &serde_json::json!({"repo": repo, "binding": binding, "asOf": as_of, "offline": true}),
                 "matrix",
             )?;
             matrices.push(serde_json::from_value(matrix).map_err(|error| error.to_string())?);

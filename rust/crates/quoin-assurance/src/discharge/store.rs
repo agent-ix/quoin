@@ -288,7 +288,47 @@ pub fn record_discharge_facts(
     request: &RecordDischargeRequest,
     checks: &DischargeChecks<'_>,
 ) -> Result<Vec<RecordedFact>, DischargeStoreError> {
-    let required_approval_clauses = approval_clause_ids(checks.policy);
+    let staged = stage_facts(&*source, request, &approval_clause_ids(checks.policy))?;
+    let facts: Vec<DischargeFact> = staged.iter().map(|fact| fact.fact.clone()).collect();
+    let failures = check_facts(&request.binding.clause_set, &facts, Some(&*source), checks)?;
+    if !failures.is_empty() {
+        return Err(DischargeStoreError::FactsFailed(failures));
+    }
+    let mut recorded = Vec::with_capacity(staged.len());
+    for fact in staged {
+        source.write(&fact.path, &fact.bytes)?;
+        recorded.push(RecordedFact {
+            clause_id: fact.fact.clause_id().to_owned(),
+            path: fact.path,
+        });
+    }
+    Ok(recorded)
+}
+
+/// Admit a list of facts exactly as [`record_discharge_facts`] does, short of
+/// the FR-211 checks, and write nothing.
+///
+/// # Errors
+/// As [`record_discharge_facts`], without the FR-211 refusals.
+pub fn validate_discharge_facts(
+    source: &dyn EvidenceSource,
+    request: &RecordDischargeRequest,
+) -> Result<(), DischargeStoreError> {
+    stage_facts(source, request, &BTreeSet::new()).map(|_| ())
+}
+
+/// A fact that passed admission, with the file it would be written to.
+struct StagedFact {
+    path: String,
+    bytes: Vec<u8>,
+    fact: DischargeFact,
+}
+
+fn stage_facts(
+    source: &dyn EvidenceSource,
+    request: &RecordDischargeRequest,
+    required_approval_clauses: &BTreeSet<String>,
+) -> Result<Vec<StagedFact>, DischargeStoreError> {
     unique_clauses(&request.binding)?;
     if request.facts.len() > MAX_STORED_FACTS {
         return refuse(
@@ -300,9 +340,8 @@ pub fn record_discharge_facts(
     let mut seen_ids = BTreeSet::new();
     let mut seen_paths = BTreeMap::new();
     let mut staged = Vec::with_capacity(request.facts.len());
-    let mut parsed = Vec::with_capacity(request.facts.len());
     for value in &request.facts {
-        let fact = fact_for_approval_policy(value, &required_approval_clauses)?;
+        let fact = fact_for_approval_policy(value, required_approval_clauses)?;
         if !seen_ids.insert(fact.clause_id().to_owned()) {
             return Err(DischargeError(format!(
                 "duplicate discharge fact for clause {}",
@@ -326,7 +365,7 @@ pub fn record_discharge_facts(
                     path: path.clone(),
                     detail: e.to_string(),
                 })?;
-            let held_fact = fact_for_approval_policy(&held.fact, &required_approval_clauses)
+            let held_fact = fact_for_approval_policy(&held.fact, required_approval_clauses)
                 .map_err(|error| EvidenceError::StoreRead {
                     path: path.clone(),
                     detail: error.to_string(),
@@ -347,19 +386,13 @@ pub fn record_discharge_facts(
             fact,
         };
         let bytes = canonical(&record)?;
-        staged.push((path, record.fact.clause_id().to_owned(), bytes));
-        parsed.push(record.fact);
+        staged.push(StagedFact {
+            path,
+            bytes,
+            fact: record.fact,
+        });
     }
-    let failures = check_facts(set, &parsed, Some(&*source), checks)?;
-    if !failures.is_empty() {
-        return Err(DischargeStoreError::FactsFailed(failures));
-    }
-    let mut recorded = Vec::with_capacity(staged.len());
-    for (path, clause_id, bytes) in staged {
-        source.write(&path, &bytes)?;
-        recorded.push(RecordedFact { clause_id, path });
-    }
-    Ok(recorded)
+    Ok(staged)
 }
 
 fn fact_for_approval_policy(

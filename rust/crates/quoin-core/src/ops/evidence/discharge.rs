@@ -13,9 +13,8 @@ use std::path::Path;
 use quoin_assurance::{
     BuildDischargeRequest, ClauseSetPolicy, DischargeChecks, DischargeStoreError,
     RecordDischargeRequest, build_checked_discharge_report, build_pack_requirements_mapping,
-    build_requirements_mapping, discharge_report_from_store,
-    record_discharge_facts, render_inward_completeness, render_pack_requirements_mapping,
-    render_requirements_mapping,
+    build_requirements_mapping, discharge_report_from_store, record_discharge_facts,
+    render_inward_completeness, render_pack_requirements_mapping, render_requirements_mapping,
 };
 use quoin_evidence::EvidenceSource;
 use quoin_quire_types::ClauseBindingReport;

@@ -134,8 +134,12 @@ pub fn dispatch(
         "assurance.render_authored_argument" => {
             crate::ops::assurance::render_authored_argument(request)
         }
-        "assurance.build_discharge" => crate::ops::assurance::build_discharge(request, capabilities),
-        "assurance.render_discharge" => crate::ops::assurance::render_discharge(request, capabilities),
+        "assurance.build_discharge" => {
+            crate::ops::assurance::build_discharge(request, capabilities)
+        }
+        "assurance.render_discharge" => {
+            crate::ops::assurance::render_discharge(request, capabilities)
+        }
         "change_assurance.intake" => crate::ops::change_assurance::intake(request, capabilities),
         "change_assurance.prepare_attestation" => {
             crate::ops::change_assurance::prepare_attestation(request)

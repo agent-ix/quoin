@@ -277,7 +277,11 @@ fn check_fact(context: &Context<'_>, fact: &DischargeFact) -> Verdict {
     }
 }
 
-fn check_direct(context: &Context<'_>, direct: &DirectDischargeFact, fact: &DischargeFact) -> Verdict {
+fn check_direct(
+    context: &Context<'_>,
+    direct: &DirectDischargeFact,
+    fact: &DischargeFact,
+) -> Verdict {
     if context.policy.customer_owned() {
         return Ok(Err(
             "customer-owned: the clause's outputs are procedures the customer performs".to_owned(),
@@ -348,15 +352,12 @@ fn verify_approval(
     approval_ref: Option<&str>,
 ) -> Result<Result<String, String>, CheckError> {
     let Some(tag) = approval_ref.filter(|tag| !js_trim_is_empty(tag)) else {
-        return Ok(Err("approval-missing: the fact carries no approvalRef".to_owned()));
+        return Ok(Err(
+            "approval-missing: the fact carries no approvalRef".to_owned()
+        ));
     };
     let key = context.set;
-    let record_id = match record_id(
-        &key.authority,
-        &key.id,
-        &key.version,
-        fact.clause_id(),
-    ) {
+    let record_id = match record_id(&key.authority, &key.id, &key.version, fact.clause_id()) {
         Ok(record_id) => record_id,
         Err(reason) => return Ok(Err(reason)),
     };
@@ -368,7 +369,7 @@ fn verify_approval(
     };
     let Ok(record_digest) = record_digest(fact) else {
         return Ok(Err(
-            "approval-unverified: the fact has no canonical form to digest".to_owned()
+            "approval-unverified: the fact has no canonical form to digest".to_owned(),
         ));
     };
     let verdict = match verifier.verify(&ApprovalRequest {
@@ -488,9 +489,11 @@ fn resolve_reference(store: &dyn EvidenceSource, reference: &str) -> Result<Stri
         return Err("the path has an empty, '.' or '..' segment");
     }
     let (family, singular) = match segments.as_slice() {
-        [family @ ("runs" | "scans" | "mock-inspections" | "analysis-reports"), _, _] => {
-            (*family, Some(singular_kind(family)))
-        }
+        [
+            family @ ("runs" | "scans" | "mock-inspections" | "analysis-reports"),
+            _,
+            _,
+        ] => (*family, Some(singular_kind(family))),
         [family @ ("experiments" | "operational"), _] => (*family, None),
         ["scenarios", integration, scenario]
             if integration.to_ascii_lowercase() == *integration

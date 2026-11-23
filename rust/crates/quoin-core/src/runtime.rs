@@ -615,7 +615,9 @@ impl ApprovalVerifier for ProcessApprovalVerifier<'_> {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|error| unavailable(format!("engineering-assurance is unavailable: {error}")))?;
+            .map_err(|error| {
+                unavailable(format!("engineering-assurance is unavailable: {error}"))
+            })?;
         child
             .stdin
             .take()

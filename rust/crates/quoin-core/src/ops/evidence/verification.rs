@@ -8,7 +8,8 @@
 use std::path::Path;
 
 use quoin_assurance::{
-    ApprovalVerifier, CheckError, DischargeChecks, DischargeReport, DischargeStoreError, check_report,
+    ApprovalVerifier, CheckError, DischargeChecks, DischargeReport, DischargeStoreError,
+    check_report,
 };
 use quoin_quire_types::{ClauseSetKey, SetPolicy};
 use serde::Deserialize;
@@ -74,17 +75,23 @@ pub(super) fn approval_setup(
                 mapping.certificate_oidc_issuer.clone(),
                 mapping.principal.clone(),
             ];
-            if values
-                .iter()
-                .any(|value| value.is_empty() || value.len() > 256 || value.chars().any(char::is_control))
-            {
-                return Err(bad(op, "a gitsign value is empty, too long or holds a control character"));
+            if values.iter().any(|value| {
+                value.is_empty() || value.len() > 256 || value.chars().any(char::is_control)
+            }) {
+                return Err(bad(
+                    op,
+                    "a gitsign value is empty, too long or holds a control character",
+                ));
             }
             Ok(values)
         })
         .transpose()?;
-    let repository = std::path::absolute(repo)
-        .map_err(|error| bad(op, format!("the repository path cannot be made absolute: {error}")))?;
+    let repository = std::path::absolute(repo).map_err(|error| {
+        bad(
+            op,
+            format!("the repository path cannot be made absolute: {error}"),
+        )
+    })?;
     Ok(ApprovalSetup {
         engineering_assurance: inputs.engineering_assurance.clone().into(),
         allowed_signers: inputs.allowed_signers.clone().into(),
@@ -138,12 +145,14 @@ pub(crate) fn policy_for_binding(
         .map_err(|error| refused(format!("installed modules cannot be listed: {error}")))?;
     let mut owner = None;
     for module in &installed {
-        let policies = modules.clause_policies(module, &installed).map_err(|error| {
-            refused(format!(
-                "module {} failed to load clause policies: {error}",
-                module.name
-            ))
-        })?;
+        let policies = modules
+            .clause_policies(module, &installed)
+            .map_err(|error| {
+                refused(format!(
+                    "module {} failed to load clause policies: {error}",
+                    module.name
+                ))
+            })?;
         for (set, policy) in policies {
             if set.authority.as_str() == set_key.authority
                 && set.id.as_str() == set_key.id
@@ -152,9 +161,7 @@ pub(crate) fn policy_for_binding(
                 if owner.is_some() {
                     return Err(refused(format!(
                         "multiple installed modules declare clause set {}/{}/{}",
-                        set_key.authority,
-                        set_key.id,
-                        set_key.version
+                        set_key.authority, set_key.id, set_key.version
                     )));
                 }
                 owner = Some(policy);
@@ -231,10 +238,9 @@ pub fn check_supplied_report(
     match outcome {
         Some(Ok(checked)) => Ok(checked.report),
         Some(Err(error)) => Err(check_error(op, &error)),
-        None => Err(CoreError::new(
-            CoreErrorCode::Io,
-            "the evidence host did not run the check",
-        )
-        .with_context("op", op)),
+        None => Err(
+            CoreError::new(CoreErrorCode::Io, "the evidence host did not run the check")
+                .with_context("op", op),
+        ),
     }
 }

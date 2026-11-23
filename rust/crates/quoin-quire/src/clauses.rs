@@ -611,8 +611,8 @@ mod tests {
             );
         std::fs::write(path, yaml).expect("approval role is written");
 
-        let policies = clause_policies(&module)
-            .expect("approval roles are read from loaded module data");
+        let policies =
+            clause_policies(&module).expect("approval roles are read from loaded module data");
         assert_eq!(policies.len(), 2);
         let policy = |id: &str| {
             policies
