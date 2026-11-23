@@ -49,10 +49,12 @@ pub mod scenario;
 pub mod source;
 pub mod stale;
 pub mod store;
+mod timestamp;
 pub mod trust;
 pub mod types;
 
 pub use error::{EvidenceError, EvidenceErrorCode};
 pub use ids::{ObligationId, ProfileId, SuiteId, SymbolId, TrustDecisionId};
 pub use source::{DiskEvidence, EvidenceSource, MemoryEvidence, StoreLock};
+pub use timestamp::{TimestampKey, parse_timestamp};
 pub use types::{Finding, MUTATION_SCORE_METRIC, Outcome, RunEntry, STORE_SCHEMA_VERSION};

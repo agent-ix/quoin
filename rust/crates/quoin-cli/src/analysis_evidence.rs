@@ -15,7 +15,9 @@ use quoin_evidence::qualify::{
     RetainedRun, RunObservation,
 };
 use quoin_evidence::source::DiskEvidence;
-use quoin_evidence::store::{list_recorded_suites, list_runs, read_trust_decisions};
+use quoin_evidence::store::{
+    list_recorded_suites, list_runs, read_trust_decisions, validate_run_record,
+};
 use quoin_evidence::types::{Binding, MockInjection, RunRecord};
 use quoin_quire::coverage::Request as ScopeRequest;
 use quoin_quire::ids::{ModuleRoot, ScopeRoot};
@@ -300,13 +302,15 @@ impl RunSnapshot {
             .read_bytes(&path)
             .map_err(|error| error.to_string())?
         else {
-            return Ok(None);
+            return Err(format!("listed evidence record disappeared: {path}"));
         };
-        let Ok(record) = serde_json::from_slice::<RunRecord>(&bytes) else {
-            return Ok(None);
-        };
+        let record = serde_json::from_slice::<RunRecord>(&bytes)
+            .map_err(|error| format!("{path} is unreadable: {error}"))?;
+        validate_run_record(&record).map_err(|error| format!("{path} is invalid: {error}"))?;
         if record_path(RUNS_DIR, &record.suite, &record.timestamp) != path {
-            return Ok(None);
+            return Err(format!(
+                "{path} does not match its record suite and timestamp"
+            ));
         }
         let projection_path = record_path(ANALYSIS_REPORTS_DIR, &record.suite, &record.timestamp);
         let projection = if let Some(bytes) = source
@@ -714,6 +718,38 @@ mod tests {
         RunSnapshot::read(&DiskEvidence::new(repo), RUN.to_owned())
             .expect("retained run is readable")
             .expect("retained run is canonical")
+    }
+
+    #[trace("FR-030-AC-29")]
+    #[test]
+    fn tc_plat_1794_run_snapshot_refuses_invalid_utf8_instead_of_dropping_record() {
+        let repo = tempfile::tempdir().expect("temporary repository");
+        let path = repo.path().join("spec/evidence").join(RUN);
+        fs::create_dir_all(path.parent().expect("run parent")).expect("run directory");
+        fs::write(&path, [b'{', 0xff, b'}']).expect("invalid UTF-8 record bytes");
+
+        let result = RunSnapshot::read(&DiskEvidence::new(repo.path()), RUN.to_owned());
+        let Err(error) = result else {
+            panic!("invalid UTF-8 evidence was silently dropped");
+        };
+        assert!(error.contains("unreadable"), "{error}");
+    }
+
+    #[trace("FR-030-AC-13", "FR-030-AC-29")]
+    #[test]
+    fn tc_plat_1794_run_snapshot_reports_a_listed_record_that_disappeared() {
+        let repo = tempfile::tempdir().expect("temporary repository");
+        let path = repo.path().join("spec/evidence").join(RUN);
+        fs::create_dir_all(path.parent().expect("run parent")).expect("run directory");
+        fs::write(&path, RUN_BYTES).expect("valid run bytes");
+        let source = DiskEvidence::new(repo.path());
+        fs::remove_file(path).expect("record disappeared after listing");
+
+        let result = RunSnapshot::read(&source, RUN.to_owned());
+        let Err(error) = result else {
+            panic!("missing retained evidence was silently dropped");
+        };
+        assert!(error.contains("disappeared"), "{error}");
     }
 
     fn observed_run(

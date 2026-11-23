@@ -10,6 +10,7 @@ use crate::paths::{ANALYSIS_REPORTS_DIR, RUNS_DIR, SCANS_DIR, suite_dir};
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
 use crate::store::records::{StoredRecord, list, list_recorded_suites};
+use crate::timestamp::parse_timestamp;
 use crate::types::{FindingRecord, Outcome, RunRecord, STORE_SCHEMA_VERSION};
 
 /// Where `gc` records what it retired (FR-030-AC-23).
@@ -50,8 +51,8 @@ impl Retire for FindingRecord {
 
 /// Delete every run and scan that is not the suite's latest. Returns the deleted store-relative paths, sorted.
 ///
-/// "Latest" is the newest by **timestamp** read from the record, whatever the
-/// file is called, so a store written under an older naming scheme is safe.
+/// "Latest" is the newest by parsed UTC instant read from the record, whatever
+/// the file is called, so a store written under an older naming scheme is safe.
 ///
 /// Scans are collected on the same rule. Walking only `runs/` left every scan
 /// record on disk forever, so a store with scan suites grew without bound while
@@ -171,14 +172,27 @@ where
     // by its name, so a file under any older naming scheme is still weighed.
     let directory = suite_dir(T::FAMILY, suite);
     let skipped_before = skipped.len();
-    let mut readable: Vec<(String, String, T)> = Vec::new();
+    let mut readable: Vec<(String, crate::timestamp::TimestampKey, T)> = Vec::new();
     for name in &names {
         let path = format!("{directory}/{name}");
         let Some(text) = source.read(&path)? else {
+            skipped.push(path);
             continue;
         };
         match decode::<T>(&path, &text) {
-            Ok(record) => readable.push((name.clone(), record.timestamp().to_owned(), record)),
+            Ok(record)
+                if record.validate().is_ok()
+                    && record.suite() == suite
+                    && crate::paths::record_path(T::FAMILY, record.suite(), record.timestamp())
+                        == path =>
+            {
+                if let Some(timestamp) = parse_timestamp(record.timestamp()) {
+                    readable.push((name.clone(), timestamp, record));
+                } else {
+                    skipped.push(path);
+                }
+            }
+            Ok(_) => skipped.push(path),
             Err(EvidenceError::StoreRead { .. }) => skipped.push(path),
             Err(other) => return Err(other),
         }
@@ -186,15 +200,16 @@ where
     if skipped.len() > skipped_before {
         return Ok(());
     }
-    let mut keep: Option<(&str, &str)> = None;
-    for (name, stamp, _) in &readable {
-        if keep.is_none_or(|(best, _)| stamp.as_str() >= best) {
-            keep = Some((stamp.as_str(), name.as_str()));
-        }
-    }
-    let keep = keep.map(|(_, name)| name.to_owned());
+    let keep = readable
+        .iter()
+        .max_by(|(left_name, left_stamp, _), (right_name, right_stamp, _)| {
+            left_stamp
+                .cmp(right_stamp)
+                .then_with(|| left_name.cmp(right_name))
+        })
+        .map(|(name, _, _)| name.as_str());
     for (name, _, record) in &readable {
-        if keep.as_deref() == Some(name.as_str()) {
+        if keep == Some(name.as_str()) {
             continue;
         }
         let path = format!("{directory}/{name}");

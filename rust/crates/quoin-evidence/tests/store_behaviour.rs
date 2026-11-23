@@ -26,19 +26,20 @@ use quoin_evidence::mock_inspection::{inspect_mock_injections, mock_inspection_i
 use quoin_evidence::paths::{bindings_path, record_path, trust_decision_path};
 use quoin_evidence::record::{RecordRequest, record_run, record_run_with_analysis_projection};
 use quoin_evidence::store::{
-    gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions, write_bindings,
-    write_mock_inspection, write_run, write_trust_decision,
+    gc, latest_run, list_recorded_suites, read_bindings, read_mock_inspections, read_runs,
+    read_scans, read_trust_decisions, write_bindings, write_mock_inspection, write_run, write_scan,
+    write_trust_decision,
 };
 use quoin_evidence::trust::{assess_trust, validate_trust_decision};
 use quoin_evidence::types::{
-    Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy, IndependenceRequirement,
-    IndependenceStatus, MockInspectionRecord, Outcome, ProducerContext, RunEntry, RunRecord,
-    STORE_SCHEMA_VERSION, TrustAdapter, TrustDecision, TrustDecisionKind, TrustEvidenceReference,
-    TrustStatus, TrustTrigger, TrustUse,
+    Binding, EvidenceLineage, Finding, FindingRecord, IndependenceDimension, IndependencePolicy,
+    IndependenceRequirement, IndependenceStatus, MockInjection, MockInspectionRecord, Outcome,
+    ProducerContext, RunEntry, RunRecord, STORE_SCHEMA_VERSION, TrustAdapter, TrustDecision,
+    TrustDecisionKind, TrustEvidenceReference, TrustStatus, TrustTrigger, TrustUse,
 };
 use quoin_evidence::{
-    DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, SuiteId, SymbolId,
-    TrustDecisionId,
+    DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, StoreLock, SuiteId,
+    SymbolId, TrustDecisionId,
 };
 use quoin_quire_types::Obligation;
 use serde_json::json;
@@ -93,6 +94,56 @@ fn request(suite_name: &str, entries: Vec<RunEntry>) -> RecordRequest {
         lineage: None,
         timestamp: "2026-08-17T00:00:00Z".to_owned(),
         entries,
+    }
+}
+
+struct DisappearingRead {
+    inner: MemoryEvidence,
+    missing_path: String,
+}
+
+impl EvidenceSource for DisappearingRead {
+    fn read(&self, path: &str) -> Result<Option<String>, quoin_evidence::EvidenceError> {
+        if path == self.missing_path {
+            Ok(None)
+        } else {
+            self.inner.read(path)
+        }
+    }
+
+    fn list_files(&self, directory: &str) -> Result<Vec<String>, quoin_evidence::EvidenceError> {
+        self.inner.list_files(directory)
+    }
+
+    fn list_directories(
+        &self,
+        directory: &str,
+    ) -> Result<Vec<String>, quoin_evidence::EvidenceError> {
+        self.inner.list_directories(directory)
+    }
+
+    fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), quoin_evidence::EvidenceError> {
+        self.inner.write(path, bytes)
+    }
+
+    fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, quoin_evidence::EvidenceError> {
+        self.inner.publish(path, bytes)
+    }
+
+    fn remove(&mut self, path: &str) -> Result<(), quoin_evidence::EvidenceError> {
+        self.inner.remove(path)
+    }
+
+    fn lock_store(&mut self) -> Result<StoreLock, quoin_evidence::EvidenceError> {
+        self.inner.lock_store()
+    }
+
+    fn source_files(&self) -> Result<Vec<String>, quoin_evidence::EvidenceError> {
+        self.inner.source_files()
+    }
+
+    fn source_text(&self, path: &str) -> Result<String, quoin_evidence::EvidenceError> {
+        self.inner.source_text(path)
     }
 }
 
@@ -622,6 +673,355 @@ fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
         "records are not ordered by timestamp"
     );
     assert_eq!(skipped.len(), 0);
+}
+
+#[trace("FR-030-AC-28")]
+#[test]
+fn tc_plat_1794_record_intake_refuses_noncanonical_timestamps_and_accepts_a_healthy_record() {
+    let invalid = [
+        "2026-11-22T10:00:00+02:00",
+        "zzzz",
+        "2026-02-29T10:00:00Z",
+        "2026-11-22t10:00:00Z",
+        "2026-11-22T23:59:60Z",
+        "2026-11-22T10:00:00.94Z",
+    ];
+    let mut store = MemoryEvidence::new();
+    for timestamp in invalid {
+        let error = write_run(
+            &mut store,
+            &run(
+                "SUITE-1794",
+                timestamp,
+                vec![entry("tests::healthy", Outcome::Pass, &[])],
+            ),
+        )
+        .unwrap_err();
+        assert!(
+            error.to_string().contains("timestamp"),
+            "{timestamp}: {error}"
+        );
+        assert!(store.paths().is_empty(), "{timestamp} was published");
+    }
+
+    let healthy = run(
+        "SUITE-1794",
+        "2024-02-29T10:00:00.940Z",
+        vec![entry("tests::healthy", Outcome::Pass, &[])],
+    );
+    let path = write_run(&mut store, &healthy).unwrap();
+    assert!(store.read(&path).unwrap().is_some());
+}
+
+#[trace("FR-030-AC-27", "FR-030-AC-26")]
+#[test]
+fn tc_plat_1794_record_intake_refuses_dirty_ids_and_writes_healthy_run_scan_and_mock_records() {
+    let timestamp = "2026-11-22T10:00:00Z";
+    let invalid_runs = [
+        run(
+            "../escape",
+            timestamp,
+            vec![entry("tests::ok", Outcome::Pass, &[])],
+        ),
+        run("SUITE-1794", timestamp, vec![entry("", Outcome::Pass, &[])]),
+        run(
+            "SUITE-1794",
+            timestamp,
+            vec![entry("tests::ok", Outcome::Pass, &[" "])],
+        ),
+    ];
+    for record in invalid_runs {
+        let mut store = MemoryEvidence::new();
+        assert!(write_run(&mut store, &record).is_err());
+        assert!(store.paths().is_empty(), "a malformed run id was published");
+    }
+
+    let invalid_scan = FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: suite("SUITE-1794"),
+        tool: "scanner 1.0.0".to_owned(),
+        evidence_kind: None,
+        timestamp: timestamp.to_owned(),
+        ruleset: None,
+        rules_evaluated: Some(1),
+        findings: vec![Finding::new("")],
+        evaluated: None,
+    };
+    let mut store = MemoryEvidence::new();
+    assert!(write_scan(&mut store, &invalid_scan).is_err());
+    assert!(store.paths().is_empty());
+
+    let invalid_mock = MockInspectionRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: suite("SUITE-1794"),
+        tool: "mock inspector 1.0.0".to_owned(),
+        timestamp: timestamp.to_owned(),
+        injections: vec![MockInjection {
+            suite: suite("SUITE-1794"),
+            symbol: SymbolId::new("tests::ok"),
+            injects: vec!["".to_owned()],
+            path: None,
+            line: Some(1),
+        }],
+    };
+    assert!(write_mock_inspection(&mut store, &invalid_mock).is_err());
+    assert!(store.paths().is_empty());
+
+    let valid_run = run(
+        "SUITE-1794",
+        timestamp,
+        vec![entry("tests::ok", Outcome::Pass, &[])],
+    );
+    let valid_scan = FindingRecord {
+        findings: vec![Finding::new("lint/no-eval")],
+        ..invalid_scan
+    };
+    let valid_mock = MockInspectionRecord {
+        injections: Vec::new(),
+        ..invalid_mock
+    };
+    write_run(&mut store, &valid_run).unwrap();
+    write_scan(&mut store, &valid_scan).unwrap();
+    write_mock_inspection(&mut store, &valid_mock).unwrap();
+    assert_eq!(
+        store.paths().len(),
+        3,
+        "healthy records were not all written"
+    );
+}
+
+#[trace("FR-030-AC-26")]
+#[test]
+fn tc_plat_1794_every_run_field_is_checked_before_publication() {
+    let timestamp = "2026-11-22T10:00:00Z";
+    let good = run(
+        "SUITE-1794",
+        timestamp,
+        vec![entry("tests::ok", Outcome::Pass, &[])],
+    );
+    let mut malformed = Vec::new();
+
+    let mut bad_schema = good.clone();
+    bad_schema.schema_version = 99;
+    malformed.push(bad_schema);
+
+    let mut bad_tool = good.clone();
+    bad_tool.tool = " ".to_owned();
+    malformed.push(bad_tool);
+
+    let mut bad_kind = good.clone();
+    bad_kind.evidence_kind = Some(String::new());
+    malformed.push(bad_kind);
+
+    let mut bad_score = good.clone();
+    bad_score.entries[0].score = Some(f64::NAN);
+    malformed.push(bad_score);
+
+    let mut bad_metric = good.clone();
+    bad_metric.entries[0].metric = Some(" ".to_owned());
+    malformed.push(bad_metric);
+
+    let mut bad_config = good.clone();
+    bad_config.entries[0].config = Some(std::collections::BTreeMap::from([(
+        String::new(),
+        "value".to_owned(),
+    )]));
+    malformed.push(bad_config);
+
+    let mut bad_survivor = good.clone();
+    bad_survivor.entries[0].survivors = Some(vec![quoin_evidence::types::Survivor {
+        line: Some(1),
+        mutation: String::new(),
+    }]);
+    malformed.push(bad_survivor);
+
+    for record in malformed {
+        let mut store = MemoryEvidence::new();
+        assert!(write_run(&mut store, &record).is_err());
+        assert!(
+            store.paths().is_empty(),
+            "an invalid run field was published"
+        );
+    }
+
+    let mut store = MemoryEvidence::new();
+    assert!(
+        write_run(&mut store, &good).is_ok(),
+        "healthy field control failed"
+    );
+}
+
+#[trace("FR-030-AC-26", "FR-030-AC-27")]
+#[test]
+fn tc_plat_1794_scan_and_mock_readers_refuse_extra_fields_and_wrong_types() {
+    let mut store = MemoryEvidence::new();
+    store
+        .write(
+            "scans/SUITE-1794/scan.json",
+            br#"{"schemaVersion":1,"suite":"SUITE-1794","tool":"scanner 1.0.0","timestamp":"2026-11-22T10:00:00Z","findings":[{"ruleId":"lint/no-eval","unexpected":true}]}"#,
+        )
+        .unwrap();
+    store
+        .write(
+            "mock-inspections/SUITE-1794/mock.json",
+            br#"{"schemaVersion":1,"suite":"SUITE-1794","tool":"mock inspector 1.0.0","timestamp":"2026-11-22T10:00:00Z","injections":[{"suite":"SUITE-1794","symbol":"tests::ok","injects":[],"line":"one"}]}"#,
+        )
+        .unwrap();
+
+    let mut skipped = Vec::new();
+    assert!(
+        read_scans(&store, &suite("SUITE-1794"), &mut skipped)
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(skipped.len(), 1);
+    skipped.clear();
+    assert!(
+        read_mock_inspections(&store, &suite("SUITE-1794"), &mut skipped)
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(skipped.len(), 1);
+}
+
+#[trace("FR-030-AC-26", "FR-030-AC-31")]
+#[test]
+fn tc_plat_1794_same_suite_instant_cannot_be_written_under_two_timestamp_spellings() {
+    let mut store = MemoryEvidence::new();
+    let first = run("SUITE-1794", "2026-11-22T10:00:00Z", vec![]);
+    let path = write_run(&mut store, &first).unwrap();
+    let bytes = store.read(&path).unwrap().unwrap();
+    let alias = run("SUITE-1794", "2026-11-22T10:00:00.000Z", vec![]);
+    let error = write_run(&mut store, &alias).unwrap_err().to_string();
+    assert!(error.contains("instant"), "{error}");
+    assert_eq!(store.paths(), [path.as_str()]);
+    assert_eq!(store.read(&path).unwrap().as_deref(), Some(bytes.as_str()));
+}
+
+#[trace("FR-030-AC-12", "FR-030-AC-28")]
+#[test]
+fn tc_plat_1794_mixed_precision_latest_and_gc_follow_the_parsed_instant() {
+    let mut store = MemoryEvidence::new();
+    let later = run("SUITE-1794", "2026-11-22T10:00:00.001Z", vec![]);
+    let earlier = run("SUITE-1794", "2026-11-22T10:00:00Z", vec![]);
+    let later_path = write_run(&mut store, &later).unwrap();
+    let earlier_path = write_run(&mut store, &earlier).unwrap();
+
+    let mut skipped = Vec::new();
+    assert_eq!(
+        latest_run(&store, &suite("SUITE-1794"), &mut skipped)
+            .unwrap()
+            .unwrap()
+            .timestamp,
+        later.timestamp
+    );
+    assert!(skipped.is_empty());
+
+    let deleted = gc(&mut store, false, &mut skipped).unwrap();
+    assert_eq!(deleted, [earlier_path]);
+    assert!(store.read(&later_path).unwrap().is_some());
+}
+
+#[trace("FR-030-AC-26", "FR-030-AC-13", "FR-030-AC-29")]
+#[test]
+fn tc_plat_1794_reader_reports_malformed_and_missing_latest_without_falling_back() {
+    let mut store = MemoryEvidence::new();
+    write_run(
+        &mut store,
+        &run(
+            "SUITE-1794",
+            "2026-11-20T10:00:00Z",
+            vec![entry("tests::ok", Outcome::Pass, &[])],
+        ),
+    )
+    .unwrap();
+    store
+        .write(
+            "runs/SUITE-1794/2026-11-21T10~3A00~3A00Z.json",
+            br#"{"schemaVersion":1,"suite":"SUITE-1794","tool":"runner 1.0.0","timestamp":"2026-11-21T10:00:00Z","entries":[{"symbol":"tests::bad","outcome":"pass","extra":true}]}"#,
+        )
+        .unwrap();
+    store
+        .write(
+            "runs/SUITE-1794/2026-11-22T10~3A00~3A00Z.json",
+            br#"{"schemaVersion":1,"suite":"SUITE-1794","tool":"runner 1.0.0","timestamp":"2026-11-22T10:00:00Z","entries":{}}"#,
+        )
+        .unwrap();
+    let mut skipped = Vec::new();
+    let latest = latest_run(&store, &suite("SUITE-1794"), &mut skipped).unwrap();
+    assert!(latest.is_none(), "the older pass was selected");
+    assert_eq!(skipped.len(), 2);
+    assert!(skipped[0].contains("2026-11-21"));
+}
+
+#[trace("FR-030-AC-13", "FR-030-AC-23", "FR-030-AC-29")]
+#[test]
+fn tc_plat_1794_disappeared_newest_record_is_reported_and_blocks_fallback_and_gc() {
+    let mut inner = MemoryEvidence::new();
+    write_run(
+        &mut inner,
+        &run(
+            "SUITE-1794",
+            "2026-11-20T10:00:00Z",
+            vec![entry("tests::old", Outcome::Pass, &[])],
+        ),
+    )
+    .unwrap();
+    let newest = run(
+        "SUITE-1794",
+        "2026-11-21T10:00:00Z",
+        vec![entry("tests::new", Outcome::Pass, &[])],
+    );
+    let missing_path = write_run(&mut inner, &newest).unwrap();
+    let mut store = DisappearingRead {
+        inner,
+        missing_path: missing_path.clone(),
+    };
+
+    let mut skipped = Vec::new();
+    assert!(
+        latest_run(&store, &suite("SUITE-1794"), &mut skipped)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(skipped, [missing_path.clone()]);
+
+    skipped.clear();
+    assert!(gc(&mut store, false, &mut skipped).unwrap().is_empty());
+    assert_eq!(skipped, [missing_path]);
+    assert!(
+        store
+            .inner
+            .read("runs/SUITE-1794/2026-11-20T10~3A00~3A00Z.json")
+            .unwrap()
+            .is_some()
+    );
+}
+
+#[trace("FR-030-AC-23", "FR-030-AC-28", "FR-030-AC-29")]
+#[test]
+fn tc_plat_1794_gc_keeps_genuine_runs_when_a_dirty_timestamp_is_present() {
+    let mut store = MemoryEvidence::new();
+    let good = run(
+        "SUITE-1794",
+        "2026-11-20T10:00:00Z",
+        vec![entry("tests::ok", Outcome::Pass, &[])],
+    );
+    let good_path = write_run(&mut store, &good).unwrap();
+    let dirty = run("SUITE-1794", "2026-11-21T10:00:00Z", vec![]);
+    let mut dirty_json = serde_json::to_value(dirty).unwrap();
+    dirty_json["timestamp"] = json!("zzzz");
+    let bytes = serde_json::to_vec(&dirty_json).unwrap();
+    store.write("runs/SUITE-1794/zzzz.json", &bytes).unwrap();
+
+    let mut skipped = Vec::new();
+    let deleted = gc(&mut store, false, &mut skipped).unwrap();
+    assert!(
+        deleted.is_empty(),
+        "gc deleted genuine evidence: {deleted:?}"
+    );
+    assert_eq!(skipped, ["runs/SUITE-1794/zzzz.json"]);
+    assert!(store.read(&good_path).unwrap().is_some());
 }
 
 #[trace("FR-030-AC-13")]

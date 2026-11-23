@@ -9,7 +9,7 @@ use crate::ids::{SuiteId, SymbolId};
 
 /// One test symbol observed substituting a stand-in for real behaviour.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MockInjection {
     /// The suite whose source was inspected.
@@ -32,7 +32,7 @@ pub struct MockInjection {
 /// an empty completed inspection means "looked and found none", no record at
 /// all means "nobody looked" (agent-ix/quoin#204).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MockInspectionRecord {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
@@ -41,7 +41,7 @@ pub struct MockInspectionRecord {
     pub suite: SuiteId,
     /// The inspecting tool and its version.
     pub tool: String,
-    /// ISO-8601, supplied by the caller.
+    /// Canonical UTC timestamp, supplied by the caller.
     pub timestamp: String,
     /// One entry per substituting symbol, sorted.
     pub injections: Vec<MockInjection>,

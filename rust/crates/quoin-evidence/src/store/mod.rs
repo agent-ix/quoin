@@ -23,7 +23,7 @@ mod trust_store;
 
 pub use gc::{COLLECTED_FAMILIES, gc};
 pub use graph::{BindOutcome, bind, read_bindings, write_bindings};
-pub use records::{list_recorded_suites, scan_is_vacuous};
+pub use records::{list_recorded_suites, scan_is_vacuous, validate_run_record};
 pub use trust_store::{read_trust_decision, read_trust_decisions, write_trust_decision};
 
 use crate::error::EvidenceError;

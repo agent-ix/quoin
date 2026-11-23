@@ -30,8 +30,8 @@ pub struct RecordRequest {
     pub evidence_kind: Option<String>,
     /// Separation facts for each binding this run creates.
     pub lineage: Option<EvidenceLineage>,
-    /// ISO-8601. Passed in rather than read from the clock, so a record is
-    /// reproducible.
+    /// Canonical UTC timestamp. Passed in rather than read from the clock, so
+    /// a record is reproducible.
     pub timestamp: String,
     /// The transcribed producer results.
     pub entries: Vec<RunEntry>,
