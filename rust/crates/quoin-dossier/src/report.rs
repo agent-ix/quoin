@@ -58,6 +58,10 @@ pub struct Report {
     /// Present on exit 4.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quire: Option<QuireFailure>,
+    /// Why export could not resolve the repository revision before checking
+    /// committed document currency. Documents are still reported as `differs`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub export_currency_failure: Option<String>,
 }
 
 impl Report {

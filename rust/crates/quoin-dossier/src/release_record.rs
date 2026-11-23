@@ -129,13 +129,21 @@ fn read_verify(path: &std::path::Path) -> Result<Value, SourceFailure> {
 }
 
 fn render(snapshot: Option<&ReleaseSnapshot>, verify: Option<&Value>) -> Generated {
-    let mut body = String::from(
-        "# Release record\n\n## Release\n\n## Baseline\n\n## Decision\n\n## Evidence at release\n\n## Version history\n\n",
-    );
+    let mut body = String::from("# Release record\n\n## Release\n\n");
     let mut gaps = Vec::new();
     if let Some(verify) = verify {
         render_release(&mut body, verify);
+    } else {
+        body.push_str("not stated\n\n");
+    }
+    body.push_str("## Baseline\n\n");
+    if let Some(verify) = verify {
         render_baseline(&mut body, snapshot, verify);
+    } else {
+        body.push_str("Baseline commit: not stated\nBaseline name: not stated\nBaseline items: not stated\n\n");
+    }
+    body.push_str("## Decision\n\n");
+    if let Some(verify) = verify {
         render_decision(&mut body, verify, &mut gaps);
     } else {
         body.push_str("Status: not stated\n\n");
@@ -147,15 +155,19 @@ fn render(snapshot: Option<&ReleaseSnapshot>, verify: Option<&Value>) -> Generat
     }
     render_approval_disclosure(&mut body);
 
+    body.push_str("## Evidence at release\n\n");
     if let Some(snapshot) = snapshot {
         render_evidence(&mut body, snapshot);
-        render_history(&mut body, snapshot);
     } else {
         gaps.push(Gap::new(
             GapKind::NoSnapshot,
             "DOS-REL",
             "no --snapshot file was supplied",
         ));
+    }
+    body.push_str("## Version history\n\n");
+    if let Some(snapshot) = snapshot {
+        render_history(&mut body, snapshot);
     }
     let document_version = verify
         .filter(|value| value.get("status").and_then(Value::as_str) == Some("released"))

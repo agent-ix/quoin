@@ -14,8 +14,8 @@
 //! The documents are the test-only stub generators of `quoin-dossier`, which
 //! reach the spawned `quoin` binary through its `test-stubs` feature. The
 //! `quire` the export tests run is a recording script written into the test's
-//! temporary directory; the tests marked `#[ignore]` use the installed `quire`
-//! and run with an explicit `-- --ignored`.
+//! temporary directory; the release-record integration test uses installed
+//! Quire and the real PDF and DOCX exporters.
 //!
 //! Provenance: PLAT-1614, PLAT-1436.
 
@@ -87,51 +87,47 @@ fn recorded_args(work: &Path) -> Vec<String> {
         .collect()
 }
 
+fn run_git(work: &Path, args: &[&str]) {
+    let result = Command::new("git")
+        .args(args)
+        .current_dir(work)
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
+fn init_temp_git(work: &Path) {
+    run_git(work, &["init", "-q"]);
+    run_git(work, &["config", "user.name", "Dossier test"]);
+    run_git(work, &["config", "user.email", "dossier@example.invalid"]);
+}
+
+fn init_temp_git_sha256(work: &Path) {
+    run_git(work, &["init", "-q", "--object-format=sha256"]);
+    run_git(work, &["config", "user.name", "Dossier test"]);
+    run_git(work, &["config", "user.email", "dossier@example.invalid"]);
+}
+
+fn commit_paths(work: &Path, message: &str, paths: &[&str]) {
+    let mut add = vec!["add"];
+    add.extend_from_slice(paths);
+    run_git(work, &add);
+    run_git(work, &["commit", "-qm", message]);
+}
+
 fn generate_stubs(work: &Path, docs: &[&str]) {
+    init_temp_git(work);
     let mut args = vec!["generate", "--version", "1.0"];
     for doc in docs {
         args.extend(["--doc", doc]);
     }
     let output = quoin(work, &args);
     assert!(matches!(code(&output), 0 | 1), "{}", stderr(&output));
-    let has_git = Command::new("git")
-        .args(["rev-parse", "--is-inside-work-tree"])
-        .current_dir(work)
-        .output()
-        .is_ok_and(|output| output.status.success());
-    if !has_git {
-        for args in [
-            &["init", "-q"][..],
-            &["config", "user.name", "Dossier test"],
-            &["config", "user.email", "dossier@example.invalid"],
-        ] {
-            let result = Command::new("git")
-                .args(args)
-                .current_dir(work)
-                .output()
-                .unwrap();
-            assert!(
-                result.status.success(),
-                "{}",
-                String::from_utf8_lossy(&result.stderr)
-            );
-        }
-    }
-    for args in [
-        &["add", "dossier"][..],
-        &["commit", "-qm", "dossier fixtures"],
-    ] {
-        let result = Command::new("git")
-            .args(args)
-            .current_dir(work)
-            .output()
-            .unwrap();
-        assert!(
-            result.status.success(),
-            "{}",
-            String::from_utf8_lossy(&result.stderr)
-        );
-    }
+    commit_paths(work, "dossier fixtures", &["dossier"]);
 }
 
 /// Another command's failure still prints nothing on stdout: the dossier
@@ -697,6 +693,42 @@ fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
     );
 }
 
+#[trace("FR-191-AC-8")]
+#[test]
+fn export_passes_module_roots_to_quire_in_the_supplied_order() {
+    let work = tempfile::tempdir().unwrap();
+    generate_stubs(work.path(), &["stub-a"]);
+    let quire = fake_quire(work.path(), 0, "");
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--module",
+            "module-one",
+            "--module",
+            "module-two",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code(&output), 0, "{}", stderr(&output));
+    let args = recorded_args(work.path());
+    let modules = args
+        .windows(2)
+        .filter(|pair| pair[0] == "--module")
+        .map(|pair| pair[1].as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(modules, ["module-one", "module-two"]);
+}
+
 #[trace("FR-201-AC-9", "FR-201-AC-10")]
 #[test]
 fn release_verify_result_is_appended_after_user_approvals_once() {
@@ -725,20 +757,12 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     let verify = work.path().join("release-verify.json");
     fs::write(
         &verify,
-        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["NestedReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["ReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
     )
     .unwrap();
     for (file, principal, meaning) in [
-        (
-            "approval-one.json",
-            "Rae One",
-            "approve synthetic source one",
-        ),
-        (
-            "approval-two.json",
-            "Rae Two",
-            "approve synthetic source two",
-        ),
+        ("approval-one.json", "Rae One", "StandaloneMeaningOne"),
+        ("approval-two.json", "Rae Two", "StandaloneMeaningTwo"),
     ] {
         fs::write(
             work.path().join(file),
@@ -768,14 +792,15 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     const APPROVAL_SCOPE: &str = "Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.";
     const VERIFIER_IDENTITY: &str =
         "Verifier identity: not provided as a distinct field by the source approval contracts.";
+    let decision_at = generated_text.find("## Decision").unwrap();
+    let evidence_at = generated_text.find("## Evidence at release").unwrap();
+    let approval_at = generated_text.find(APPROVAL_SCOPE).unwrap();
+    let identity_at = generated_text.find(VERIFIER_IDENTITY).unwrap();
+    assert!(decision_at < approval_at);
+    assert!(approval_at < identity_at);
+    assert!(identity_at < evidence_at);
     assert!(generated_text.contains(APPROVAL_SCOPE));
     assert!(generated_text.contains(VERIFIER_IDENTITY));
-    assert!(
-        generated_text.find(APPROVAL_SCOPE).unwrap() < generated_text.rfind("## Gaps").unwrap()
-    );
-    assert!(
-        generated_text.find(VERIFIER_IDENTITY).unwrap() < generated_text.rfind("## Gaps").unwrap()
-    );
     let exported = quoin(
         work.path(),
         &[
@@ -792,8 +817,6 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
             "approval-one.json",
             "--approval",
             "approval-two.json",
-            "--approval",
-            verify.to_str().unwrap(),
             "--to",
             "pdf",
             "--output",
@@ -947,10 +970,6 @@ fn release_record_generation_needs_no_git_and_is_repeatable() {
                 snapshot.to_str().unwrap(),
                 "--release-verify",
                 verify.to_str().unwrap(),
-                "--approval",
-                "approval-one.json",
-                "--approval",
-                "approval-two.json",
             ])
             .env("PATH", &empty_path)
             .current_dir(work.path())
@@ -1004,20 +1023,12 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     let verify = work.path().join("release-verify.json");
     fs::write(
         &verify,
-        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["release authorization"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["NestedReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["ReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
     )
     .unwrap();
     for (file, principal, meaning) in [
-        (
-            "approval-one.json",
-            "Rae One",
-            "approve synthetic source one",
-        ),
-        (
-            "approval-two.json",
-            "Rae Two",
-            "approve synthetic source two",
-        ),
+        ("approval-one.json", "Rae One", "StandaloneMeaningOne"),
+        ("approval-two.json", "Rae Two", "StandaloneMeaningTwo"),
     ] {
         fs::write(
             work.path().join(file),
@@ -1089,17 +1100,17 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
         );
         let text = String::from_utf8_lossy(&extracted.stdout);
         let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
-        assert!(normalized.contains("Ada Example"), "{normalized}");
-        assert!(normalized.contains("release"), "{normalized}");
-        assert!(normalized.contains("authorization"), "{normalized}");
-        assert!(normalized.contains("Rae One"), "{normalized}");
-        for word in ["approve", "synthetic", "source", "one"] {
-            assert!(normalized.contains(word), "{normalized}");
-        }
-        assert!(normalized.contains("Rae Two"), "{normalized}");
-        for word in ["approve", "synthetic", "source", "two"] {
-            assert!(normalized.contains(word), "{normalized}");
-        }
+        let compact = text
+            .chars()
+            .filter(|character| character.is_alphanumeric())
+            .collect::<String>();
+        assert!(compact.contains("AdaExample"), "{normalized}");
+        assert!(compact.contains("ReleaseMeaning"), "{normalized}");
+        assert!(compact.contains("NestedReleaseMeaning"), "{normalized}");
+        assert!(compact.contains("RaeOne"), "{normalized}");
+        assert!(compact.contains("StandaloneMeaningOne"), "{normalized}");
+        assert!(compact.contains("RaeTwo"), "{normalized}");
+        assert!(compact.contains("StandaloneMeaningTwo"), "{normalized}");
         assert!(
             normalized.contains("unbound to the exact bytes"),
             "{normalized}"
@@ -1112,6 +1123,7 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
 #[test]
 fn export_looks_where_out_says_and_names_the_document_missing_under_the_default() {
     let work = tempfile::tempdir().unwrap();
+    init_temp_git(work.path());
     let generated = quoin(
         work.path(),
         &[
@@ -1125,6 +1137,7 @@ fn export_looks_where_out_says_and_names_the_document_missing_under_the_default(
         ],
     );
     assert_eq!(code(&generated), 0);
+    commit_paths(work.path(), "current dossier in other", &["other"]);
     let quire = fake_quire(work.path(), 0, "");
     let quire = quire.to_str().unwrap();
     let base = [
@@ -1191,6 +1204,214 @@ fn export_of_a_stale_file_exits_1_names_it_and_never_starts_quire() {
     );
 }
 
+fn assert_currency_refusal(work: &Path, output: &Output) {
+    const SENTINEL: &[u8] = b"currency sentinel\0\xff";
+    assert_eq!(code(output), 1, "{}", stderr(output));
+    let report = json(output);
+    assert_eq!(report["documents"][0]["comparison"], "differs");
+    assert!(report["quire"].is_null(), "Quire was reported: {report}");
+    assert!(!work.join("quire-args").exists(), "Quire was started");
+    assert_eq!(fs::read(work.join("out.pdf")).unwrap(), SENTINEL);
+}
+
+#[trace("FR-191-AC-7")]
+#[test]
+fn export_refuses_a_committed_stale_blob_when_the_working_document_is_current() {
+    let work = tempfile::tempdir().unwrap();
+    init_temp_git(work.path());
+    fs::create_dir(work.path().join("dossier")).unwrap();
+    fs::write(
+        work.path().join("dossier/DOS-STUB-A.md"),
+        "committed old bytes\n",
+    )
+    .unwrap();
+    commit_paths(work.path(), "stale dossier document", &["dossier"]);
+    let generated = quoin(
+        work.path(),
+        &["generate", "--version", "1.0", "--doc", "stub-a"],
+    );
+    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    fs::write(work.path().join("out.pdf"), b"currency sentinel\0\xff").unwrap();
+    let quire = fake_quire(work.path(), 0, "");
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_currency_refusal(work.path(), &output);
+}
+
+#[trace("FR-191-AC-7")]
+#[test]
+fn export_refuses_a_current_untracked_document_without_starting_quire() {
+    let work = tempfile::tempdir().unwrap();
+    init_temp_git(work.path());
+    run_git(
+        work.path(),
+        &["commit", "-q", "--allow-empty", "-m", "base"],
+    );
+    let generated = quoin(
+        work.path(),
+        &["generate", "--version", "1.0", "--doc", "stub-a"],
+    );
+    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    fs::write(work.path().join("out.pdf"), b"currency sentinel\0\xff").unwrap();
+    let quire = fake_quire(work.path(), 0, "");
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_currency_refusal(work.path(), &output);
+}
+
+#[trace("FR-191-AC-7")]
+#[test]
+fn export_accepts_a_healthy_committed_document_from_a_non_root_scope() {
+    let work = tempfile::tempdir().unwrap();
+    generate_stubs(work.path(), &["stub-a"]);
+    fs::create_dir(work.path().join("nested-scope")).unwrap();
+    let quire = fake_quire(work.path(), 0, "");
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--scope",
+            "nested-scope",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 0, "{}", stderr(&output));
+    assert_eq!(json(&output)["documents"][0]["comparison"], "matches");
+    assert!(
+        work.path().join("quire-args").exists(),
+        "Quire was not started"
+    );
+}
+
+#[trace("FR-191-AC-7")]
+#[test]
+fn export_uses_a_full_sha256_revision_for_sha256_repositories() {
+    let work = tempfile::tempdir().unwrap();
+    init_temp_git_sha256(work.path());
+    let generated = quoin(
+        work.path(),
+        &["generate", "--version", "1.0", "--doc", "stub-a"],
+    );
+    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    commit_paths(work.path(), "current dossier document", &["dossier"]);
+    let quire = fake_quire(work.path(), 0, "");
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code(&output), 0, "{}", stderr(&output));
+    let revision = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(work.path())
+        .output()
+        .unwrap();
+    let revision = String::from_utf8(revision.stdout)
+        .unwrap()
+        .trim()
+        .to_owned();
+    assert_eq!(revision.len(), 64);
+    let args = recorded_args(work.path());
+    let source_rev = args
+        .windows(2)
+        .find(|pair| pair[0] == "--source-rev")
+        .unwrap();
+    assert_eq!(source_rev[1], revision);
+}
+
+#[trace("FR-191-AC-7")]
+#[test]
+fn export_reports_head_resolution_failure_separately_from_document_currency() {
+    let work = tempfile::tempdir().unwrap();
+    let generated = quoin(
+        work.path(),
+        &["generate", "--version", "1.0", "--doc", "stub-a"],
+    );
+    assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    let quire = fake_quire(work.path(), 0, "");
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 1, "{}", stderr(&output));
+    let report = json(&output);
+    assert_eq!(report["documents"][0]["comparison"], "differs");
+    assert!(
+        report["export_currency_failure"]
+            .as_str()
+            .unwrap()
+            .contains("git rev-parse")
+    );
+    assert!(
+        !work.path().join("quire-args").exists(),
+        "Quire was started"
+    );
+}
+
 #[trace("FR-191-AC-16")]
 #[test]
 fn an_incomplete_current_document_is_exported_not_refused() {
@@ -1226,52 +1447,6 @@ fn an_incomplete_current_document_is_exported_not_refused() {
         "quire was not started"
     );
     assert!(work.path().join("o.pdf").exists());
-}
-
-/// Needs the installed `quire` and a `git`. A generated file that is not
-/// committed is refused by quire's own FR-034 section A check, which quoin
-/// passes through.
-///
-/// Provenance: PLAT-1614 acceptance 7.
-#[trace("FR-191-AC-7")]
-#[test]
-#[ignore = "needs the installed quire; run with -- --ignored"]
-fn real_quire_refuses_an_uncommitted_generated_file() {
-    let work = tempfile::tempdir().unwrap();
-    for args in [
-        &["init", "-q"][..],
-        &["config", "user.email", "t@example.com"][..],
-        &["config", "user.name", "t"][..],
-        &["commit", "-q", "--allow-empty", "-m", "base"][..],
-    ] {
-        assert!(
-            Command::new("git")
-                .args(args)
-                .current_dir(work.path())
-                .status()
-                .unwrap()
-                .success()
-        );
-    }
-    generate_stubs(work.path(), &["stub-a"]);
-    let output = quoin(
-        work.path(),
-        &[
-            "export",
-            "--version",
-            "1.0",
-            "--doc",
-            "stub-a",
-            "--to",
-            "pdf",
-            "--output",
-            "out.pdf",
-            "--json",
-        ],
-    );
-    assert_eq!(code(&output), 4, "{}", stderr(&output));
-    assert!(json(&output)["quire"]["exit_code"].is_number());
-    assert!(!work.path().join("out.pdf").exists());
 }
 
 /// A generator the test registers itself, so the files validated below are
