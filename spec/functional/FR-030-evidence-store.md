@@ -141,26 +141,46 @@ people to click through it.
   silently replacing the caller's attested identity.
 - When an evidence record is submitted, the store SHALL validate every required
   and optional field against the declared record contract, including field
-  types, identities, collection members and content encoding, before writing.
+  types, identities, collection members and content encoding, before writing
+  (FR-030-AC-26, FR-030-AC-27).
 - The store SHALL reject malformed evidence before publishing any file and
-  leave all existing bytes unchanged.
+  leave all existing bytes unchanged (FR-030-AC-26, FR-030-AC-27).
 - The store SHALL preserve submitted values without trimming, normalizing or
-  repairing them.
+  repairing them (FR-030-AC-26).
 - The store SHALL accept record timestamps only in the canonical UTC form
-  `YYYY-MM-DDTHH:MM:SS[.fraction]Z`, with a valid calendar date and time, no
-  offset spelling, and no trailing zero in a fractional part.
-- The store SHALL reject an offset timestamp, non-canonical spelling or invalid
-  date/time before using the value in a path or ordering decision.
-- The store SHALL decode store and source content as strict UTF-8.
-- The store SHALL reject unreadable or invalid-UTF-8 content at intake without
-  replacement-character decoding.
-- The reader or collector SHALL report a listed record that disappears or
-  cannot be decoded.
-- The reader SHALL NOT choose an older passing record in place of a listed
-  record that disappears or cannot be decoded.
-- The qualification reader SHALL refuse to qualify a run with no entries.
-- The qualification reader SHALL preserve an empty report-backed disagreement
-  as a disagreement that cannot qualify positively.
+  `YYYY-MM-DDTHH:MM:SS[.mmm]Z`, where the year is 0001 through 9999, the date
+  and time are valid Gregorian values, and `.mmm` is either absent or exactly
+  three ASCII millisecond digits. Seconds are 00 through 59, and `T` and `Z`
+  are uppercase (FR-030-AC-28).
+- The store SHALL reject offset timestamps, non-canonical spelling and invalid
+  dates or times before using a timestamp in a path or ordering decision
+  (FR-030-AC-28).
+- The store SHALL order accepted timestamps by their parsed UTC instants, with
+  the record path as the deterministic tie-break when two accepted timestamps
+  denote the same instant (FR-030-AC-12, FR-030-AC-28).
+- The reader SHALL treat a stored record with an invalid or non-canonical
+  timestamp as unreadable, report it and retain its file (FR-030-AC-29).
+- The reader SHALL NOT use a stored record with an invalid or non-canonical
+  timestamp to select a latest record (FR-030-AC-29).
+- The collector SHALL retain valid records from a suite family when any record
+  has an invalid or non-canonical timestamp (FR-030-AC-23, FR-030-AC-29).
+- The store SHALL decode store and source content as strict UTF-8
+  (FR-030-AC-29).
+- The store SHALL reject unreadable or invalid-UTF-8 store records and adapter
+  source files before publishing any record, without replacement-character
+  decoding (FR-030-AC-29).
+- The store reader SHALL report a listed record that disappears or cannot be
+  decoded (FR-030-AC-13, FR-030-AC-29).
+- The store reader SHALL return no latest record for a suite when any listed
+  record is missing or unreadable, rather than choosing an older record
+  (FR-030-AC-13, FR-030-AC-29).
+- The collector SHALL report and retain a suite family when any listed record
+  is missing or unreadable (FR-030-AC-23, FR-030-AC-29).
+- The run qualification path SHALL refuse to qualify a run with no entries
+  (FR-030-AC-30).
+- The differential-report reader SHALL preserve an empty report-backed
+  disagreement as a disagreement that cannot qualify positively
+  (FR-030-AC-30).
 
 ## Constraints
 
@@ -210,8 +230,8 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-9 | An absent store reads as an empty binding graph, an empty run list and an empty collection. | Test |
 | FR-030-AC-10 | No obligation statement, document or method appears anywhere in the written store — only the id (CON-2). | Test |
 | FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, and re-discharging the same suite merges into its own binding. `bindings.json` contains both suite bindings for the obligation. | Test |
-| FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename. `gc` retains that run, and the auditor reads it. Withdrawn: ordering of two runs that share a timestamp by their commit; a shared timestamp names one file and the last write wins. | Test |
-| FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged. | Test |
+| FR-030-AC-12 | The **latest** run of a suite is the newest by parsed UTC instant, never by filename or bytewise timestamp order. When two timestamps denote the same instant, the record path breaks the tie deterministically. `gc` retains the latest run, and the auditor reads it. A shared timestamp key is immutable under AC-22. | Test |
+| FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and cause, never a bare `SyntaxError`. An unreadable run file is reported and omitted from list output; when any listed run is unreadable or missing, the latest-record reader returns no run for that suite rather than an older one. The binding graph is not skipped, because reading an empty graph would report every obligation as undischarged. | Test |
 | FR-030-AC-14 | Store ordering is locale-independent: written bytes are fixed by test, so a runtime's collation data cannot change the diff of a checked-in file. | Test |
 | FR-030-AC-15 | A run's trace id binds through an obligation's declared test cases as well as its own id, so a tool keyed on the Test Matrix discharges the criteria that name it. A direct obligation id wins over the indirect route, and an id no obligation states by either route is still reported unmatched. | Test |
 | FR-030-AC-16 | A completed source-level mock inspection is recorded at `mock-inspections/<SUITE-N>/<timestamp>.json`, including an empty result. Readers select the newest record of each suite: an empty record means the suite was inspected and no stand-in was observed; no record means the check was not evaluated. Withdrawn: selection by exact full commit. | Test |
@@ -226,18 +246,18 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-25 | On Unix, taking the writer lock creates no file in the store or the repository: the store directory holds exactly what it held before. | Test |
 | FR-030-AC-26 | Each run, scan, mock-inspection and differential-report intake is validated in full before any file is published: required fields are present with their declared types, optional fields have their declared types when present, unknown fields and malformed collection members are refused, and a healthy complete value writes and reads back unchanged. Every refusal leaves all bytes unchanged. | Test |
 | FR-030-AC-27 | Empty or malformed suite, symbol, obligation, trace, rule and evaluated-symbol identifiers are refused before publication according to their owning registry or upstream identity contract. Refusal tests cover each identity class used by the record being written; a healthy identifier control is accepted. | Test |
-| FR-030-AC-28 | Run, scan, mock-inspection and differential-report record timestamps are valid canonical UTC `YYYY-MM-DDTHH:MM:SS[.fraction]Z`; offsets, invalid calendar values, malformed text and fractional values ending in zero are refused before path creation. Refusal leaves the store unchanged. | Test |
-| FR-030-AC-29 | Unreadable or invalid-UTF-8 record/source content is refused without replacement decoding or publication. A record listed and then missing or unreadable is reported and cannot cause a reader or collector to silently fall back to an older pass. | Test |
+| FR-030-AC-28 | Run, scan, mock-inspection and differential-report record timestamps use canonical UTC `YYYY-MM-DDTHH:MM:SS[.mmm]Z` (year 0001–9999, valid Gregorian date/time, seconds 00–59, uppercase `T`/`Z`, and either no fraction or exactly three ASCII digits). Offsets and non-canonical or invalid values are refused before path creation. Accepted timestamps are ordered by parsed instant; equal instants use the record path as a stable tie-break. | Test |
+| FR-030-AC-29 | Unreadable or invalid-UTF-8 store records and adapter source files are refused without replacement decoding or publication. A listed record that disappears or cannot be decoded is reported; the latest reader returns no record for that suite and the collector retains that family rather than selecting or retaining around an older record. Stored records with non-canonical or invalid timestamps are treated the same way. | Test |
 | FR-030-AC-30 | A zero-entry run cannot positively qualify any candidate; the empty report-backed disagreement form remains readable as a disagreement and never becomes a passing candidate. | Test |
 
 > **CR note (PLAT-1794, 2026-11-22):** Evidence records are validated in full
 > before publication. Record timestamps use canonical UTC spelling, identities
 > and content are validated at intake, and unreadable or invalid-UTF-8 content
-> is refused. A listed record that disappears or cannot be decoded is reported
-> rather than replaced by an older passing record. Empty run records cannot
-> qualify candidates; the intentional empty differential-report disagreement
-> remains a non-positive record. FR-030-AC-26 through FR-030-AC-30 state the
-> new acceptance tests.
+> is refused. Accepted timestamps order by instant; invalid stored records are
+> reported and prevent latest-record selection or collection from falling back
+> to older evidence. Empty run records cannot qualify candidates; the
+> intentional empty differential-report disagreement remains non-positive.
+> FR-030-AC-26 through FR-030-AC-30 state the new acceptance tests.
 
 > **CR note (PLAT-1228, 2026-10-30):** Run, scan, mock-inspection and binding
 > records no longer carry a commit. Filenames derive from the record's
