@@ -21,8 +21,8 @@ relationships:
 
 When `quoin dossier generate` selects `risk-management-plan` (document id
 `DOS-RMP`), the risk management plan document SHALL render each authored
-`risk_management_plan` record and each authored `acceptability_policy`, and
-SHALL state the absence of a plan record when none exists.
+`risk_management_plan` record and each authored `acceptability_policy`. When
+no plan record exists, the document SHALL state the absence of a plan record.
 
 ## Plan-record decision
 
@@ -65,13 +65,18 @@ dossier never assigns a score, a class or an acceptability.
 
 ## Behavior
 
-- The document SHALL render each plan's four tables exactly as authored, in plan id order when more than one exists, and SHALL NOT select one of several plans as in force.
-- The document SHALL render each policy's levels, regions, flags and cells exactly as authored, in policy id order when more than one exists, and SHALL NOT select one of several policies as in force.
-- The document SHALL show, for each plan, the policies in scope that its `references` edges name, and SHALL NOT copy the criteria into the plan or choose a policy for it.
-- If no plan record exists, then the document SHALL produce one document-level `no_plan_record` gap and the four plan sections SHALL state the same missing-source condition.
+- The document SHALL render each plan's four tables exactly as authored, in plan id order when more than one exists.
+- The document SHALL NOT select one of several plans as in force.
+- The document SHALL render each policy's levels, regions, flags and cells exactly as authored, in policy id order when more than one exists.
+- The document SHALL NOT select one of several policies as in force.
+- The document SHALL show, for each plan, the policies in scope that its `references` edges name.
+- The document SHALL NOT copy the criteria into the plan or choose a policy for it.
+- If no plan record exists, then the document SHALL produce one document-level `no_plan_record` gap.
+- If no plan record exists, then the four plan sections SHALL state the same missing-source condition.
 - If a plan record exists, then the document SHALL NOT produce `no_plan_record`.
-- If a plan references no policy in scope, then the document SHALL produce a `no_acceptability_policy` gap naming that plan.
-- If no policy exists, the document SHALL produce a document-level `no_acceptability_policy` gap and SHALL show no example or default levels.
+- If a plan references no policy in scope, then the document SHALL produce a `no_acceptability_policy` gap naming that plan, in addition to the document-level gap when no policy exists at all.
+- If no policy exists, the document SHALL produce a document-level `no_acceptability_policy` gap.
+- If no policy exists, the document SHALL show no example or default levels.
 - The document SHALL be `incomplete` when it has any gap. Unfiltered `generate` then exits 1 by FR-191.
 - When the reader reports an invalid record, including a policy region with no `outside_acceptable`, or a plan table that is missing, has no row or has a blank cell, the dossier SHALL surface source exit 3 and write no selected document.
 - The dossier SHALL NOT fill in a missing policy flag or a missing plan cell.
@@ -89,9 +94,12 @@ dossier never assigns a score, a class or an acceptability.
 | FR-200-AC-6 | Two runs over the same policy records produce byte-identical Markdown, and no line asserts that a particular residual risk is acceptable. | Test |
 | FR-200-AC-7 | A fixture with one plan and the policy it references renders the plan's scope, responsibilities, control verification and production and post-production rows byte-equal to the record, has no `no_plan_record` gap and no gap at all, and is `complete`. | Test |
 | FR-200-AC-8 | With two policies, a plan that references one names only that one, and both policies still render in id order. | Test |
-| FR-200-AC-9 | A plan that references no policy in scope yields one `no_acceptability_policy` gap whose subject is the plan, and no `no_plan_record` gap. | Test |
+| FR-200-AC-9 | A plan that references no policy, with a policy present in scope, yields exactly one `no_acceptability_policy` gap, whose subject is the plan, and no `no_plan_record` gap. With no policy in scope the same plan yields exactly two `no_acceptability_policy` gaps: the document-level one, then the plan's. | Test |
 | FR-200-AC-10 | A plan with a missing table, a table with no row, or a blank cell causes dossier source exit 3 without a rendered row. | Test |
 | FR-200-AC-11 | Two plans appear in id order, neither labelled in force, byte-identically across runs, with no approval or acceptance wording. | Test |
+| FR-200-AC-12 | A plan whose `references` target is `ix://owner/repo/POL-1` is read as a reference to policy `POL-1`. | Test |
+| FR-200-AC-13 | Plans and policies whose ids differ only in a numeric segment (`RMP-2`, `RMP-10`; `POL-2`, `POL-10`) appear in dossier order, the numeric segment compared as a number. | Test |
+| FR-200-AC-14 | A plan with a missing table, an empty table or a blank cell makes `quoin dossier generate` exit 3, name the risk management plan as the failing source and write no file. | Test |
 
 ## Dependencies
 

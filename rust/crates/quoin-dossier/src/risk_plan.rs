@@ -6,12 +6,37 @@
 
 use std::fmt::Write as _;
 
-use quoin_quire::records::{Corpus, Document, Table};
+use quoin_quire::records::{Contract, Corpus, Document, Table};
 
 use crate::error::SourceFailure;
 use crate::gap::{Gap, GapKind};
 use crate::markdown::{cell, unusable_input};
+use crate::order::dossier_cmp;
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
+
+/// The source named when a plan or policy record is unusable.
+const SOURCE: &str = "acceptability policy and risk management plan";
+
+/// The source to name for an unusable corpus: the one kind whose documents
+/// broke their contract, or both kinds when files are unreadable or both fail.
+fn unusable_source(corpus: &Corpus) -> &'static str {
+    if !corpus.unreadable.is_empty() || !corpus.malformed.is_empty() {
+        return SOURCE;
+    }
+    let mut kinds = corpus
+        .documents
+        .iter()
+        .filter(|document| matches!(document.contract, Contract::Violated(_)))
+        .map(|document| document.kind.as_str())
+        .collect::<Vec<_>>();
+    kinds.sort_unstable();
+    kinds.dedup();
+    match kinds.as_slice() {
+        ["risk_management_plan"] => "risk management plan",
+        ["acceptability_policy"] => "acceptability policy",
+        _ => SOURCE,
+    }
+}
 
 /// Reads every selected acceptability policy and risk management plan record.
 pub(crate) struct RiskPlanGenerator(pub(crate) fn(&Inputs) -> Result<Corpus, SourceFailure>);
@@ -28,7 +53,7 @@ impl Generator for RiskPlanGenerator {
 
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
         let corpus = (self.0)(inputs)?;
-        if let Some(failure) = unusable_input("acceptability policy", &corpus) {
+        if let Some(failure) = unusable_input(unusable_source(&corpus), &corpus) {
             return Err(failure);
         }
         let of_kind = |kind: &str| -> Vec<&Document> {
@@ -78,9 +103,9 @@ const PLAN_SECTIONS: [PlanSection; 4] = [
 
 fn render(policies: &[&Document], plans: &[&Document]) -> Result<Generated, SourceFailure> {
     let mut policies = policies.to_vec();
-    policies.sort_by(|left, right| left.id.cmp(&right.id));
+    policies.sort_by(|left, right| dossier_cmp(&left.id, &right.id));
     let mut plans = plans.to_vec();
-    plans.sort_by(|left, right| left.id.cmp(&right.id));
+    plans.sort_by(|left, right| dossier_cmp(&left.id, &right.id));
     let mut body = String::from("# Risk management plan\n");
     let mut gaps = Vec::new();
     for section in &PLAN_SECTIONS {
@@ -238,8 +263,13 @@ fn validate_table(
 }
 
 fn invalid_record(document: &Document, detail: &str) -> SourceFailure {
+    let source = if document.kind == "risk_management_plan" {
+        "risk management plan"
+    } else {
+        "acceptability policy"
+    };
     SourceFailure {
-        source: "acceptability policy".to_owned(),
+        source: source.to_owned(),
         detail: format!("{}: {detail}", document.path.display()),
     }
 }
@@ -518,6 +548,7 @@ mod tests {
         );
         let error = generated_with(&[policy("POL-1", "true")], &[blank]).unwrap_err();
         assert!(error.detail.contains("Responsibilities"));
+        assert_eq!(error.source, "risk management plan");
         let mut missing = plan("RMP-1", &["POL-1"]);
         missing.tables.remove("Scope");
         assert!(generated_with(&[policy("POL-1", "true")], &[missing]).is_err());
@@ -545,5 +576,23 @@ mod tests {
         ] {
             assert!(!first.body.contains(phrase), "{phrase}");
         }
+    }
+
+    #[trace("FR-200-AC-13")]
+    #[test]
+    fn plans_and_policies_sort_in_dossier_order_not_byte_order() {
+        let policies = [policy("POL-10", "false"), policy("POL-2", "false")];
+        let plans = [plan("RMP-10", &["POL-2"]), plan("RMP-2", &["POL-10"])];
+        let output = generated_with(&policies, &plans).unwrap();
+        assert!(output.body.find("### RMP-2").unwrap() < output.body.find("### RMP-10").unwrap());
+        assert!(output.body.find("### POL-2").unwrap() < output.body.find("### POL-10").unwrap());
+        assert!(
+            output.body.find("Plan RMP-2 references").unwrap()
+                < output.body.find("Plan RMP-10 references").unwrap()
+        );
+        let unreferenced = [plan("RMP-10", &[]), plan("RMP-2", &[])];
+        let gaps = generated_with(&policies, &unreferenced).unwrap().gaps;
+        let subjects: Vec<_> = gaps.iter().map(|gap| gap.subject.as_str()).collect();
+        assert_eq!(subjects, ["RMP-2", "RMP-10"]);
     }
 }
