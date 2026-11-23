@@ -15,9 +15,9 @@ relationships:
 
 Quoin SHALL apply approval requirements declared by the installed clause set
 when it discharges facts against a validated binding report. The clause set's
-`approvalRoles` metadata is authoritative for whether a direct fact requires
-an approval reference; FR-046 continues to allow a direct fact without one
-when no module-specific requirement applies.
+`approvalRoles` metadata is authoritative for whether a fact requires a
+verified approval (FR-211); FR-046 continues to allow a direct fact without an
+approval reference when the clause declares no `approvalRoles`.
 
 ## Inputs
 
@@ -28,9 +28,10 @@ when no module-specific requirement applies.
 
 ## Outputs
 
-- The FR-046 discharge report with approval-required clauses classified as
-  direct evidence only when the required approval reference is present.
-- Open work with a reason when a required approval reference is missing.
+- The FR-046 discharge report with approval-class clauses classified as direct
+  evidence only when the approval reference is present and verified under FR-211.
+- Open work with a reason when the approval reference is missing or fails
+  verification.
 
 ## Behavior
 
@@ -48,11 +49,12 @@ when no module-specific requirement applies.
 - For each binding clause, Quoin SHALL read its `approvalRoles` metadata from
   the uniquely resolved clause set.
 - When a binding clause declares one or more `approvalRoles`, Quoin SHALL
-  classify its direct fact as open work when the fact has no `approvalRef` or
-  its reference is empty or whitespace-only.
-- When the declared approval requirement calls for a named human approver, the
-  `approvalRef` on a fact SHALL resolve to a signed approval verified under
-  FR-211, and the verified approver is that person.
+  classify its direct fact as open work when the fact has no `approvalRef`, its
+  reference is empty or whitespace-only, or the reference fails FR-211
+  verification.
+- A clause with non-empty `approvalRoles` is direct only when its fact's
+  `approvalRef` verifies under FR-211; the approver is the signer
+  engineering-assurance verified.
 - When a binding clause declares no `approvalRoles`, Quoin SHALL retain the
   FR-046 behavior for a direct fact without `approvalRef`.
 - When a direct fact satisfies a declared approval requirement, Quoin SHALL
@@ -74,7 +76,7 @@ when no module-specific requirement applies.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-208-AC-1 | A binding clause with non-empty `approvalRoles` remains open when its direct fact has no `approvalRef`, or has an empty or whitespace-only reference. | Test |
-| FR-208-AC-2 | A binding clause with non-empty `approvalRoles` that require a named human approver is direct only when its direct fact has a non-blank `approvalRef` that FR-211 verifies as that person's approval; the report retains the reference without changing the direct classification. | Test |
+| FR-208-AC-2 | A binding clause with non-empty `approvalRoles` is direct only when its direct fact has a non-blank `approvalRef` that FR-211 verifies; the report retains the reference and shows the verified approver. | Test |
 | FR-208-AC-3 | A binding clause with empty `approvalRoles` continues to accept a direct fact without `approvalRef` as specified by FR-046. | Test |
 | FR-208-AC-4 | When multiple installed modules declare the same exact clause-set identity, discharge fails without selecting either module's approval policy. | Test |
 | FR-208-AC-5 | For an approval-class clause the report shows the approver verified under FR-211; for a clause with empty `approvalRoles` it preserves the supplied reference and does not claim to authenticate the approver, role, or authorization it represents. | Test |

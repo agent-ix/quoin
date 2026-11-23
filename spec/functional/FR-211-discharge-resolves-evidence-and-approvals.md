@@ -11,7 +11,13 @@ relationships:
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-030"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-098"
+    type: "requires"
+  - target: "ix://agent-ix/quoin/FR-188"
+    type: "requires"
   - target: "ix://agent-ix/engineering-assurance/FR-041"
+    type: "depends_on"
+  - target: "ix://agent-ix/quire-rs/FR-073"
     type: "depends_on"
 ---
 
@@ -19,83 +25,126 @@ relationships:
 
 ## Description
 
-Quoin SHALL admit a discharge fact only when the evidence and the approval it
-names are real. Quoin SHALL resolve each `evidenceRefs` entry of a direct fact
-to a retained record in the evidence store whose kind satisfies one of the
-clause's `expectedOutputs`. For a clause that declares `approvalRoles` (an
-approval-class clause), Quoin SHALL resolve the fact's `approvalRef` to a signed
-approval that engineering-assurance verifies. When a clause declares none,
-Quoin SHALL keep `approvalRef` as a caller-supplied reference (FR-046).
+Quoin SHALL discharge a clause only on evidence and approval that resolve at the
+moment a discharge report is built or rendered. Quoin SHALL resolve each
+`evidenceRefs` entry of a direct fact to a retained record in the evidence store
+whose kind satisfies one of the clause's `expectedOutputs`. For a clause that
+declares `approvalRoles` (an approval-class clause), Quoin SHALL resolve the
+fact's `approvalRef` to a signed approval that engineering-assurance verifies.
+When a clause declares no `approvalRoles`, Quoin SHALL keep `approvalRef` as a
+caller-supplied reference (FR-046).
 
-Quoin records who verifiably approved. It does not decide that a risk is
-acceptable: people accept risk, and the tool assigns no score, class or
-acceptability.
+Quoin records who verifiably approved. It does not decide risk acceptance:
+people accept risk, and the tool assigns no score, class or acceptability.
 
 ## Inputs
 
 - A discharge fact, the validated `clause-binding-v1` report and the installed
   modules that declare its clause set (FR-208).
 - The evidence store of the repository (FR-030).
-- For an approval-class clause: `--engineering-assurance <abs path>`,
+- For an approval-class clause: `--repo <dir>`, `--engineering-assurance <abs path>`,
   `--allowed-signers <abs path>` and the optional gitsign trio, with the
   meaning and validation FR-188 gives them.
 
 ## Behavior
 
+### Evidence references
+
 - An `evidenceRefs` entry is `evidence://<path>`, where `<path>` is the
   store-relative path of one retained record without its `.json` suffix:
-  `<family>/<SUITE-N>/<stem>` for the `runs`, `scans`, `mock-inspections` and
-  `analysis-reports` families; `experiments/<record-id>` and
-  `operational/<record-id>` for the assurance record families; and
-  `scenarios/<integration>/<scenario>`. Any other family, an empty segment, a
-  `.` or `..` segment, or a path that leaves the store root is unresolved.
-  Discharge facts, the binding graph and trust decisions are not evidence a
+  `<family>/<SUITE-N>/<stem>` for `runs`, `scans`, `mock-inspections` and
+  `analysis-reports`; `experiments/<record-id>` and `operational/<record-id>`;
+  and `scenarios/<integration>/<scenario>`. These families are the only ones a
   fact may cite.
+- Any other ref is `unresolved`: an unknown or non-citable family (including
+  `discharge`, `trust` and `bindings.json`), another scheme, an empty segment, a
+  `.` or `..` segment, or a path leaving the store root.
+- Segments are matched exactly as written. The `integration` and `scenario`
+  segments are compared in the store's own folded (lowercase) form, so a ref
+  whose scenario segment is not in that form does not resolve; no two spellings
+  alias one record.
+- A ref resolves when the store holds a readable record at that path. Quoin
+  reads the record file through the evidence store reader of `quoin-evidence`.
 - The retained kind of a record is its `subject.kind` for an experiment or
   operational record, and otherwise the family's singular name: `run`, `scan`,
   `mock-inspection`, `analysis-report`, `scenario`.
-- When a direct fact is admitted, Quoin SHALL resolve every `evidenceRefs`
-  entry against the store (FR-030, FR-133 lookup), reading only retained
-  records. A ref that does not resolve, or whose retained kind is not in the `producers` of any of
-  the clause's `expectedOutputs`, refuses the whole fact: nothing is
-  recorded, the exit status is non-zero, and the message names the ref and the
-  reason (`unresolved` or `kind-not-expected`). A clause whose `expectedOutputs`
-  is empty accepts a resolved ref of any kind.
 - Each `expectedOutputs` entry is a name in the `outputCatalog` of the uniquely
-  resolved clause set that defines the clause (FR-208), not of the fact. Quoin
-  reads one catalog member, `producers`, from each catalog entry: a non-empty
-  list of retained kinds that satisfy the output. A retained record satisfies
-  the clause when its kind is in the `producers` of at least one of the
-  clause's `expectedOutputs`. A catalog entry with no `producers` is satisfied
-  by no record, so a ref cannot discharge that output. Quoin applies no other
-  mapping between output names and store kinds.
-- When a fact on an approval-class clause is admitted, Quoin SHALL invoke the
-  engineering-assurance `approval-verify` capability (its FR-041) with
-  `tag` set to the fact's `approvalRef`, `record_id` set to
-  `<authority>/<set id>/<version>/<clauseId>`, and `record_digest` set to
-  `sha256:` followed by the SHA-256 of the canonical JSON of the fact with its
-  `approvalRef` member removed. The `approvalRef` of a direct or disposition
-  fact on such a clause is therefore the name of an annotated tag whose
-  message carries those two trailers.
-- Quoin SHALL accept the approval only when the result's `status` is
-  `approved` and its `meaning` array holds exactly one value and that value equals, byte for byte, one of
-  the clause's `approvalRoles`. Any other status, or a meaning that is not exactly one of
-  the roles, refuses the fact; the message names the `approvalRef`, the
-  engineering-assurance status or the missing role, and nothing is recorded.
-- The verified `approver` is the named person. For a direct fact on an
-  approval-class clause, `attestation.attestedBy` SHALL equal it, and the
-  report SHALL show the verified approver beside the retained `approvalRef`.
-- When engineering-assurance cannot be run or refuses the request, Quoin SHALL
-  fail with the FR-188 unavailable exit status and write no fact. Quoin SHALL
-  NOT substitute a syntactic check for the verification.
+  resolved clause set that defines the clause (FR-208). Quoin reads one catalog
+  member, `producers`, from each catalog entry: a non-empty list of retained
+  kinds that satisfy the output. A resolved record satisfies the clause when its
+  kind is in the `producers` of at least one of the clause's `expectedOutputs`.
+  Otherwise the ref has reason `kind-not-expected`. A clause with empty
+  `expectedOutputs` accepts a resolved ref of any kind.
+- Until the catalog schema carries `producers` (quire-rs FR-073), no catalog
+  entry has any, so a direct fact on a clause with non-empty `expectedOutputs`
+  has reason `no-producer` and does not discharge.
+
+### Approval verification
+
+- A fact on an approval-class clause with no `approvalRef`, or a blank one,
+  leaves the clause open with reason `approval-missing`, and Quoin makes no
+  engineering-assurance call.
+- Otherwise Quoin SHALL invoke engineering-assurance `approval-verify` (its
+  FR-041) with the request members `protocol`
+  (`engineering-assurance.approval-verify-request/v1`), `repository` (the
+  absolute path of `--repo`), `tag` (the fact's `approvalRef`), `record_id`,
+  `record_digest`, `allowed_signers` and, when supplied, `gitsign`.
+- `record_id` is `<authority>/<set id>/<version>/<clauseId>`. `record_digest` is
+  `sha256:` followed by the lowercase hex SHA-256 of the RFC 8785 canonical JSON
+  (as FR-098 specifies, from `quire-canonical`) of the fact with its
+  `approvalRef` member removed. The approval is a signed annotated tag whose
+  message carries those two values as trailers.
+- A `record_id` longer than 256 bytes has reason `record-id-too-long`; Quoin
+  makes no engineering-assurance call and never reports it as unavailable.
+- Quoin SHALL accept the approval only when the result's `status` is `approved`
+  and its `meaning` array holds exactly one value that equals, byte for byte, one
+  of the clause's `approvalRoles`. Any other status, or any other meaning, has
+  reason `approval-unverified` naming the status or the roles.
+- The verified approver is the `approver` of the result. For a direct fact on an
+  approval-class clause, `attestation.attestedBy` SHALL equal it, or the reason
+  is `attester-not-approver`.
+- Refusals map as FR-188 maps them: an allowed-signers file engineering-assurance
+  refuses is a usage error with exit 2; engineering-assurance or git unavailable,
+  or any other refusal, has exit 3 where a command exits and reason
+  `approval-verifier-unavailable` where a report is built. Quoin SHALL NOT
+  substitute a syntactic check for the verification.
+
+### Customer-owned clauses
+
 - A clause is customer-owned when its `expectedOutputs` is non-empty and every
-  entry has `kind: procedure` in the clause set's output catalog. Quoin SHALL
-  refuse a direct fact for a customer-owned clause, and SHALL accept a
-  disposition for it only when its decision is `delegated` and its rationale
-  and approval reference are non-blank.
-- Verification and resolution happen when a fact is admitted. A stored fact is
-  not re-verified when it is read; the store keeps no verification result
-  (FR-133).
+  entry has `kind: procedure` in the output catalog. A direct fact for it has
+  reason `customer-owned`; a disposition for it discharges only when its decision
+  is `delegated` and its rationale and approval reference are non-blank.
+
+### When resolution and verification run
+
+- Quoin SHALL run evidence resolution and approval verification every time it
+  builds or renders a discharge report from facts: `quoin discharge` with
+  `--facts` or `--repo`, `--inward`, the library report builders, and `quoin
+  evidence record-discharge`.
+- A rendering operation given an already-built report (including a report
+  document on stdin, as `render_discharge` and `build_authored_argument` take)
+  SHALL re-run both checks over every direct fact's refs and every approval-class
+  approval it carries, and report a failing clause as open.
+- A clause whose check fails, whatever the cause, including a ref whose record
+  `quoin evidence gc` has since removed, is not discharged in that report: it is
+  open with the reason above, and the report names the ref or `approvalRef`.
+  Facts read from committed files under `discharge/` are checked the same way.
+- The report shows the approver verified by the current verification. The
+  store keeps no verification result and no approver (FR-133), and a stored
+  `attestedBy` is never labelled verified.
+- `quoin evidence record-discharge` additionally refuses the whole list, writes
+  nothing and exits non-zero when any fact fails these checks; an unavailable
+  verifier exits 3.
+
+### Approval subject
+
+- `quoin evidence approval-subject --binding <path|-> --fact <path|->` SHALL print
+  one JSON line `{"record_id":"…","record_digest":"sha256:…"}` for the fact,
+  computed as above against the binding report's clause set, so a person can
+  create the matching approval tag. It writes no file and exits 0. A fact whose
+  clause is not in the binding report, a malformed fact, or a `record_id` over
+  256 bytes exits non-zero with no stdout.
 
 ## Constraints
 
@@ -108,20 +157,32 @@ acceptability.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-211-AC-1 | A direct fact whose every `evidenceRefs` entry resolves to a retained record of a kind in the `producers` of one of the clause's `expectedOutputs` is admitted; a clause with empty `expectedOutputs` admits a resolved ref of any kind. | Test |
-| FR-211-AC-2 | A direct fact with a ref naming no retained record, an unknown family, an empty or `..` segment, or a path outside the store is refused with a non-zero exit, a message naming the ref and `unresolved`, and nothing recorded. | Test |
-| FR-211-AC-3 | A direct fact citing a resolved record whose retained kind is not in the `producers` of any of the clause's `expectedOutputs`, or a discharge-fact or trust-decision path, is refused with a message naming the ref and `kind-not-expected`, and nothing is recorded; a list with one bad ref among good ones records none of them. | Test |
-| FR-211-AC-4 | A fact on an approval-class clause whose `approvalRef` engineering-assurance verifies as `approved`, with a meaning equal to one of the clause's `approvalRoles` and a matching digest, is admitted and its report row carries the verified approver. | Test |
-| FR-211-AC-5 | A fact on an approval-class clause is refused, naming the `approvalRef` and the reason, when the status is `unsigned`, `signed_bad`, `untrusted_signer`, `wrong_record`, `meaning_missing` or `unverifiable`, when the meaning is not exactly one of the roles (a value that merely contains a role, or an additional value, is refused), or when the fact's content differs from the one the tag approved. | Test |
-| FR-211-AC-6 | A direct fact on an approval-class clause whose `attestation.attestedBy` differs from the verified approver, including a bare person-shaped reference never verified, is refused. | Test |
-| FR-211-AC-7 | When engineering-assurance is absent or refuses the request, an approval-class fact fails with the unavailable exit status and nothing is recorded; a fact on a clause with empty `approvalRoles` keeps its `approvalRef` as an unverified reference and never invokes engineering-assurance. | Test |
-| FR-211-AC-8 | A direct fact for a customer-owned clause is refused; a `delegated` disposition with a non-blank rationale and approval reference is accepted; a disposition with another decision or a blank rationale is refused. | Test |
-| FR-211-AC-9 | A GDPR data-protection-impact-assessment clause and an AI-Act human-oversight clause that declare `approvalRoles` are discharged only through the verified path of AC-4 to AC-6: a fact carrying an unverifiable named-person reference is refused and the clause stays open. | Test |
-| FR-211-AC-10 | The discharge report, with the approval-class fact admitted, never states that the tool accepted a risk, and reports no score. | Inspection |
+| FR-211-AC-1 | A direct fact whose every `evidenceRefs` entry resolves to a retained record of a kind in the `producers` of one of the clause's `expectedOutputs` discharges; a clause with empty `expectedOutputs` discharges on a resolved ref of any kind. | Test |
+| FR-211-AC-2 | A ref naming no retained record, a non-citable family (`discharge`, `trust`, `bindings.json`), an unknown family, another scheme, an empty, `.` or `..` segment, or a path outside the store is `unresolved`, and the clause is open naming the ref. | Test |
+| FR-211-AC-3 | A ref that resolves to a record whose kind is in no `producers` of the clause's `expectedOutputs` has reason `kind-not-expected`, and the clause is open. | Test |
+| FR-211-AC-4 | A `scenarios/` ref whose scenario segment is not in the store's folded form is `unresolved`. | Test |
+| FR-211-AC-5 | A direct fact on a clause with non-empty `expectedOutputs` whose catalog entries lack `producers` has reason `no-producer` and does not discharge. | Test |
+| FR-211-AC-6 | A fact on an approval-class clause whose tag `approval-verify` reports `approved`, whose single `meaning` equals one of the clause's `approvalRoles` and whose digest matches, discharges, and its report row carries the verified approver. | Test |
+| FR-211-AC-7 | A fact on an approval-class clause is open, naming the `approvalRef` and the reason, when the status is `unsigned`, `signed_bad`, `untrusted_signer`, `wrong_record`, `meaning_missing` or `unverifiable`; when the `meaning` is not exactly one value equal to a role (a value merely containing a role, or an extra value, fails); or when the fact's content differs from the one the tag approved. | Test |
+| FR-211-AC-8 | A direct fact on an approval-class clause whose `attestation.attestedBy` differs from the verified approver is open with reason `attester-not-approver`. | Test |
+| FR-211-AC-9 | A fact on an approval-class clause with a missing or blank `approvalRef` is open with reason `approval-missing` and engineering-assurance is not invoked. | Test |
+| FR-211-AC-10 | A `record_id` over 256 bytes has reason `record-id-too-long`, engineering-assurance is not invoked, and the reason is never `approval-verifier-unavailable`. | Test |
+| FR-211-AC-11 | An allowed-signers file engineering-assurance refuses exits 2; an absent or failing engineering-assurance exits 3 from `record-discharge` and leaves the clause open with `approval-verifier-unavailable` in a report; neither writes a fact. A fact on a clause with empty `approvalRoles` keeps `approvalRef` as an unverified reference and never invokes engineering-assurance. | Test |
+| FR-211-AC-12 | A direct fact for a customer-owned clause has reason `customer-owned`; a `delegated` disposition with non-blank rationale and approval reference discharges; another decision or a blank rationale does not. | Test |
+| FR-211-AC-13 | `quoin discharge --facts`, `--repo`, `--inward`, a report document given to render or authored-argument building, and a fact file committed under `discharge/` each run both checks: an approval-class fact with an unverified non-blank `approvalRef` is open on every one of those paths. | Test |
+| FR-211-AC-14 | After `quoin evidence gc` removes a record a stored fact cites, the next report has that clause open with `unresolved` naming the ref; the stored fact file is unchanged. | Test |
+| FR-211-AC-15 | `record-discharge` over a list holding one failing fact refuses the whole list, writes nothing and exits non-zero naming the clause and reason. | Test |
+| FR-211-AC-16 | The report shows the approver from the current verification; a stored `attestedBy` that was not verified is not labelled verified. | Test |
+| FR-211-AC-17 | `quoin evidence approval-subject` prints `record_id` and the RFC 8785 `record_digest`, and a tag created with them verifies as `approved` in AC-6; a fact with a different `approvalRef`-less content yields a different digest, and a changed `approvalRef` yields the same digest. | Test |
+| FR-211-AC-18 | `approval-subject` exits non-zero with empty stdout for a clause absent from the binding report, a malformed fact, or a `record_id` over 256 bytes. | Test |
+| FR-211-AC-19 | The report never states that the tool accepted a risk, and carries no score. | Inspection |
 
 ## Dependencies
 
 - FR-046 supplies the facts; FR-208 supplies `approvalRoles` and the clause-set
   resolution; FR-030 and FR-133 supply the store; FR-188 supplies the
-  engineering-assurance invocation inputs.
+  engineering-assurance invocation inputs and refusal mapping; FR-098 supplies
+  RFC 8785 canonicalisation.
 - Engineering Assurance FR-041 supplies the `approval-verify` result.
+- quire-rs FR-073 supplies the clause-set catalog and gains the `producers`
+  member.
