@@ -33,3 +33,23 @@ Not mergeable as written. FND-001 and FND-002 are spec contradictions that a cod
 ## Examined
 
 FR-030 SHALL (exit status), FR-030-AC-32, FR-030-AC-33, FR-030-AC-34, FR-033 pytest procedure section, FR-033-AC-16, FR-033-AC-17 (examined). FR-030-AC-4, FR-030-AC-7, FR-030-AC-15, FR-030-AC-18, FR-030-AC-30, FR-033-AC-12, FR-041-AC-7, FR-041-AC-8, FR-120 (context only).
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-009 | medium | The pytest Test-prefix rule misses `unittest.TestCase` subclasses, which pytest collects whatever their name. `classname="tests.test_bolus.BolusTests" name="test_x"` is recorded as `test_x`, but the Python extractor emits `BolusTests.test_x`. The out-of-scope sentence covers only non-default `python_classes` | spec/functional/FR-033-evidence-format-adapters.md:95-103 |
+| FND-010 | low | "recorded with the suite's declared `--tool pytest`" does not say how the tool is matched. `--tool` carries tool and version (for example `pytest 8.3.2`), and adapter selection matches a claim as a case-insensitive substring (registry.rs:30-33). State that the mapping uses that same match, so an exact-match reading does not leave every real pytest run on the `::` rule | spec/functional/FR-033-evidence-format-adapters.md:87-90,143; rust/crates/quoin-evidence/src/adapters/registry.rs:30-33,276-284 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The SHALL and FR-030-AC-33 are scoped to the entries, junit, agent-eval and contract-conformance adapters. FR-030-AC-35 gives cargo-mutants, and sbom without --discharges, exit 0 |
+| FND-002 | fixed | Step 1 now takes classname == name as written before any rewriting, whether or not file is present. FR-033-AC-16 has the `test_basic`/`test_basic` example |
+| FND-003 | fixed | The SHALL, AC-32 and AC-33 state exit 1 (Partial) |
+| FND-004 | fixed | Per the lead's ruling, the mapping is keyed to `--tool pytest` and never to report attributes, and the no-`file` default output is named |
+| FND-005 | fixed | AC-32 says `--json` stdout carries `unmatched` and plain text does not; the stderr line is the report there |
+| FND-006 | fixed | AC-34 reads "trace ids that obligations state", and the SHALL includes errored |
+| FND-007 | fixed | AC-32 and AC-33 lines are `warning: ...` through the CLI's existing warning mechanism |
+| FND-008 | fixed | The file/path step was removed; the mapping no longer depends on RunEntry.path or FR-030-AC-18 |

@@ -28,3 +28,11 @@ These are edge gaps that can be closed with one sentence each in the same PR. No
 ## Examined
 
 FR-030-AC-32, FR-030-AC-33, FR-030-AC-34, FR-033 pytest procedure section, FR-033-AC-16 (examined). FR-030-AC-30, FR-041-AC-8 (context only).
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | AC-34 states a zero-entry run exits 0 and writes no AC-33 line |
+| FND-002 | fixed | AC-33 is limited to adapters that refuse --discharges, so an unmatched id is always carried by an entry. AC-33 states the two never both apply and that exactly one line is written |
+| FND-003 | fixed | The file-prefix rule was replaced by the Test-prefix rule (steps 2-3), which has no prefix-mismatch case |
