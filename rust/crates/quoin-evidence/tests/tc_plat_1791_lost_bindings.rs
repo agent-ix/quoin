@@ -534,16 +534,19 @@ fn gc_names_an_unreadable_record_and_collects_nothing_around_it() {
     assert_eq!(gc(&mut store, false, &mut skipped).unwrap().len(), 1);
 }
 
-#[trace("FR-030-AC-20")]
+#[trace("FR-030-AC-25")]
 #[test]
 fn taking_the_store_lock_leaves_no_file_in_the_store_on_unix() {
     let repo = tempfile::tempdir().unwrap();
     let mut store = DiskEvidence::new(repo.path());
+    store.write("runs/SUITE-A/x.json", b"{}").unwrap();
+    let before = store.list_files("").unwrap();
     let _lock = store.lock_store().unwrap();
     if cfg!(unix) {
-        assert!(
-            !repo.path().join("spec/evidence/.lock").exists(),
-            "the lock created a file git would report as untracked"
-        );
+        let entries = std::fs::read_dir(repo.path().join("spec/evidence"))
+            .unwrap()
+            .count();
+        assert_eq!(entries, 1, "the lock created a file in the store");
+        assert_eq!(store.list_files("").unwrap(), before);
     }
 }

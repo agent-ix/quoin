@@ -421,15 +421,22 @@ fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObs
     let reliance = read_trust_decisions(&store, &mut skipped)
         .ok()
         .and_then(|decisions| {
-            let matches = decisions
+            // Trust decisions are append-only, so a revalidation is a new
+            // decision: the one with the latest `decided_at` governs the use.
+            // Two distinct decisions sharing that instant are ambiguous, and an
+            // ambiguous reliance is no reliance (FR-093-AC-9).
+            let mut matches = decisions
                 .into_iter()
                 .filter(|decision| {
                     decision.r#use.id == quoin_evidence::qualify::POSITIVE_USE_DECISION
                 })
                 .collect::<Vec<_>>();
-            (matches.len() == 1)
-                .then(|| matches.into_iter().next())
-                .flatten()
+            matches.sort_by(|a, b| a.decided_at.cmp(&b.decided_at));
+            let latest = matches.pop()?;
+            let tied = matches
+                .last()
+                .is_some_and(|previous| previous.decided_at == latest.decided_at);
+            (!tied).then_some(latest)
         });
     HostObservations {
         reliance,
@@ -1115,5 +1122,76 @@ mod tests {
         let host = host_observations(repo.path().to_str().expect("repo path"), &malformed);
         assert!(!host.selected_head_conflict);
         assert!(host.selected_head.is_none());
+    }
+
+    fn trust_decision(
+        id: &str,
+        decided_at: &str,
+        relied: bool,
+    ) -> quoin_evidence::types::TrustDecision {
+        let context = serde_json::json!({
+            "name": "quire", "version": "1.0", "configuration": "c",
+            "validationCorpus": "v", "inputContract": "i", "environment": "e",
+        });
+        serde_json::from_value(serde_json::json!({
+            "schemaVersion": 1,
+            "id": id,
+            "use": {
+                "id": quoin_evidence::qualify::POSITIVE_USE_DECISION,
+                "intendedFunction": "qualify an analysis act",
+                "permittedDecisions": [quoin_evidence::qualify::POSITIVE_USE_DECISION],
+            },
+            "decision": if relied { "relied-upon" } else { "not-relied-upon" },
+            "acceptedContext": context,
+            "observedContext": context,
+            "revalidateOn": [
+                "producer-version", "configuration", "validation-corpus",
+                "input-contract", "environment",
+            ],
+            "validationEvidence": [{"id": "V-1", "reference": "evidence/v-1"}],
+            "limitations": [],
+            "owner": "owner",
+            "decidedAt": decided_at,
+        }))
+        .expect("typed trust decision")
+    }
+
+    /// The decision with the latest `decidedAt` governs; a tie is no reliance.
+    #[trace("FR-093-AC-9")]
+    #[test]
+    fn the_latest_trust_decision_for_the_use_governs() {
+        let repo = tempfile::tempdir().expect("repository");
+        let path = repo.path().to_str().expect("repo path");
+        let mut store = quoin_evidence::DiskEvidence::new(repo.path());
+        quoin_evidence::store::write_trust_decision(
+            &mut store,
+            &trust_decision("ETD-1", "2026-01-01T00:00:00Z", true),
+        )
+        .expect("first decision");
+        assert_eq!(
+            host_observations(path, &[])
+                .reliance
+                .expect("reliance")
+                .id
+                .as_str(),
+            "ETD-1"
+        );
+
+        // A revocation is a new decision, and it governs.
+        quoin_evidence::store::write_trust_decision(
+            &mut store,
+            &trust_decision("ETD-2", "2026-02-01T00:00:00Z", false),
+        )
+        .expect("revocation");
+        let governing = host_observations(path, &[]).reliance.expect("reliance");
+        assert_eq!(governing.id.as_str(), "ETD-2");
+
+        // Two distinct decisions at the latest instant are ambiguous.
+        quoin_evidence::store::write_trust_decision(
+            &mut store,
+            &trust_decision("ETD-3", "2026-02-01T00:00:00Z", true),
+        )
+        .expect("tied decision");
+        assert!(host_observations(path, &[]).reliance.is_none());
     }
 }

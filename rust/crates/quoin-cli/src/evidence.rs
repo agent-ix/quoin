@@ -25,7 +25,7 @@ pub(crate) fn command() -> Command {
         .about("Record and maintain verification evidence")
         .subcommand(
             Command::new("gc")
-                .about("Drop unreferenced run records")
+                .about("Drop superseded run and scan records, naming any unreadable record it keeps")
                 .arg(repo_arg())
                 .arg(
                     Arg::new("dry-run")
@@ -36,7 +36,7 @@ pub(crate) fn command() -> Command {
         )
         .subcommand(
             Command::new("trust")
-                .about("Record a use-specific evidence-producer trust decision")
+                .about("Record a use-specific evidence-producer trust decision; a changed decision needs a new id and an id already holding a different decision is refused")
                 .arg(Arg::new("decision").long("decision").required(true))
                 .arg(repo_arg())
                 .arg(json_arg()),
