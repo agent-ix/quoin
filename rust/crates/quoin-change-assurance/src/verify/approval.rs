@@ -37,6 +37,37 @@ impl ApprovalJudgment {
     }
 }
 
+/// Whether any adjacent revision widens the previous approval policy (FR-065).
+pub(crate) fn policy_weakened(
+    predecessors: &[SignedApprovalPolicy],
+    current: &SignedApprovalPolicy,
+) -> bool {
+    predecessors
+        .iter()
+        .zip(predecessors.iter().skip(1).chain(std::iter::once(current)))
+        .any(|(previous, next)| widens_policy(previous, next))
+}
+
+fn widens_policy(previous: &SignedApprovalPolicy, next: &SignedApprovalPolicy) -> bool {
+    if !previous.required {
+        return false;
+    }
+    if !next.required {
+        return true;
+    }
+    let widens_signature_kinds = next
+        .signature_kinds
+        .iter()
+        .any(|kind| !previous.signature_kinds.contains(kind));
+    let widens_approvers = !previous.approvers.is_empty()
+        && (next.approvers.is_empty()
+            || next
+                .approvers
+                .iter()
+                .any(|approver| !previous.approvers.contains(approver)));
+    widens_signature_kinds || widens_approvers
+}
+
 /// Judge the claim an `approved` event carries, or its absence, against the
 /// record and the digest of the reviewed revision's stored bytes.
 #[must_use]

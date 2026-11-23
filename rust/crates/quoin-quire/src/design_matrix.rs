@@ -32,11 +32,30 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         request.scope.as_path(),
     )
     .map_err(coverage::coverage_error)?;
-    let matrix = quire_rs::design_matrix(
+    let matrix = for_coverage(
+        request.scope.as_path(),
         &walked.spec,
         &walked.registry,
+        &report,
+    )?;
+    Ok(Outcome {
+        report,
+        design_matrix: matrix,
+        notices: walked.notices,
+    })
+}
+
+pub(crate) fn for_coverage(
+    root: &std::path::Path,
+    spec: &quire_rs::Spec,
+    registry: &quire_rs::Registry,
+    report: &quire_rs::CoverageReport,
+) -> Result<Vec<quire_rs::DesignMatrixEntry>> {
+    quire_rs::design_matrix(
+        spec,
+        registry,
         &[quire_rs::RelationReportMember {
-            root: request.scope.as_path(),
+            root,
             matrix: &report.coverage_matrix,
         }],
     )
@@ -47,10 +66,5 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         other => Error::DesignJoin {
             reason: other.to_string(),
         },
-    })?;
-    Ok(Outcome {
-        report,
-        design_matrix: matrix,
-        notices: walked.notices,
     })
 }

@@ -209,6 +209,25 @@ fn audit_outcome(report: &quoin_finding_types::AuditReport, id: &str) -> AuditOu
 /// of the retained runs cannot be built.
 #[implements("FR-153")]
 pub fn compute(request: &Request) -> Result<Outcome> {
+    compute_with(request, |_, _, _| Ok(())).map(|(outcome, ())| outcome)
+}
+
+/// Count the requested obligations and derive design rows from the same coverage.
+///
+/// # Errors
+/// As [`compute`], plus errors in the declared design relations.
+pub fn compute_for_matrix(
+    request: &Request,
+) -> Result<(Outcome, Vec<quire_rs::DesignMatrixEntry>)> {
+    compute_with(request, |spec, registry, report| {
+        crate::design_matrix::for_coverage(request.scope.scope.as_path(), spec, registry, report)
+    })
+}
+
+fn compute_with<T>(
+    request: &Request,
+    finish: impl FnOnce(&quire_rs::Spec, &quire_rs::Registry, &quire_rs::CoverageReport) -> Result<T>,
+) -> Result<(Outcome, T)> {
     let Walked {
         registry,
         spec,
@@ -293,12 +312,16 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         .map_err(coverage::coverage_error)
     })?;
     drop(entries);
-    Ok(Outcome {
-        report,
-        notices,
-        inventory: selected,
-        accepted,
-    })
+    let extra = finish(&spec, &registry, &report)?;
+    Ok((
+        Outcome {
+            report,
+            notices,
+            inventory: selected,
+            accepted,
+        },
+        extra,
+    ))
 }
 
 /// Build the engine's input over borrowed views and run `use_backing` on it.

@@ -582,7 +582,7 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, MatrixRefusal> {
 }
 
 fn analysis_evidence_for(
-    identity: Option<&quoin_quire_types::TargetLocus>,
+    identity: Option<&TargetLocus>,
     evidence: Option<&AnalysisEvidenceInput>,
     coverage: &[MatrixCoverageRequirement],
 ) -> Option<Vec<serde_json::Value>> {
@@ -590,27 +590,34 @@ fn analysis_evidence_for(
 }
 
 fn analysis_items(
-    identity: Option<&quoin_quire_types::TargetLocus>,
+    identity: Option<&TargetLocus>,
     evidence: &AnalysisEvidenceInput,
     coverage: &[MatrixCoverageRequirement],
 ) -> Vec<serde_json::Value> {
     let Some(identity) = identity else {
         return Vec::new();
     };
-    let identity_count = coverage
+    let mut matching = coverage
         .iter()
         .flat_map(|requirement| &requirement.criteria)
-        .filter(|criterion| criterion.identity.as_ref() == Some(identity))
-        .count();
-    if identity_count != 1 {
+        .filter_map(|criterion| criterion.identity.as_ref())
+        .filter(|candidate| same_native_target(identity, candidate));
+    let Some(coverage_identity) = matching.next() else {
+        return Vec::new();
+    };
+    if matching.next().is_some() || !compatible_lines(identity, coverage_identity) {
         return Vec::new();
     }
+    // Either projection can supply the source line. Require it on the
+    // evidence item whenever the item also supplies a line.
+    let identity = if identity.line.is_some() {
+        identity
+    } else {
+        coverage_identity
+    };
     let mut items = Vec::new();
     for binder in &evidence.record_binders {
-        if binder.get("target").and_then(|target| {
-            serde_json::from_value::<quoin_quire_types::TargetLocus>(target.clone()).ok()
-        }) == Some(identity.clone())
-        {
+        if matches_analysis_target(identity, binder) {
             items.push(serde_json::json!({
                 "status": "qualified-record",
                 "record_binder": binder,
@@ -618,9 +625,7 @@ fn analysis_items(
         }
     }
     for result in &evidence.evidence_results {
-        if result.get("target").and_then(|target| {
-            serde_json::from_value::<quoin_quire_types::TargetLocus>(target.clone()).ok()
-        }) == Some(identity.clone())
+        if matches_analysis_target(identity, result)
             && let Some(status) = result.get("cause")
         {
             items.push(serde_json::json!({ "status": status, "result": result }));
@@ -628,6 +633,36 @@ fn analysis_items(
     }
     items.sort_by_key(analysis_item_key);
     items
+}
+
+/// Quire carries a line hint on the matrix row but can omit it on an analysis
+/// result for the same native criterion. The lookup still needs one unique
+/// source, document, origin, id and rendered row.
+pub(crate) fn same_native_target(left: &TargetLocus, right: &TargetLocus) -> bool {
+    left == right
+        || (matches!(
+            left.origin.as_str(),
+            "authored-row" | "rendered-row" | "combinatorial-table"
+        ) && left.origin == right.origin
+            && left.source == right.source
+            && left.document == right.document
+            && left.id == right.id
+            && left.row == right.row)
+}
+
+pub(crate) fn matches_analysis_target(identity: &TargetLocus, item: &serde_json::Value) -> bool {
+    item.get("target")
+        .and_then(|target| serde_json::from_value::<TargetLocus>(target.clone()).ok())
+        .is_some_and(|target| {
+            same_native_target(identity, &target) && compatible_lines(identity, &target)
+        })
+}
+
+fn compatible_lines(left: &TargetLocus, right: &TargetLocus) -> bool {
+    match (left.line, right.line) {
+        (Some(expected), Some(observed)) => expected == observed,
+        _ => true,
+    }
 }
 
 fn analysis_item_key(item: &serde_json::Value) -> (String, String, String, String, String) {
