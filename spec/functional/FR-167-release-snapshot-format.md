@@ -70,6 +70,8 @@ does not claim the caller's clean-tree precondition was met.
 - A reader SHALL validate the closed shape and allowed values of each of those members, including refusing `null`.
 - A reader SHALL refuse a `soup.not_assessed` item whose `kind` is not one of `unmatched_advisory`,
   `unmatched_policy_finding`, `scan_not_run` or `scan_vacuous`.
+- If a retained scan has a timestamp that is not an instant, then the command SHALL refuse the snapshot, as FR-166
+  states, and SHALL NOT write a `scan_unordered` item.
 - The command SHALL include `tool_identity` and `clean_tree_precondition` in every snapshot.
 - The command SHALL set `tool_identity.name` to `quoin` and `tool_identity.version` to the version string its own
   executable prints for `quoin --version`.
@@ -111,7 +113,8 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-10 | A fixture with a `missing-run` and a `failed-run` `stale-evidence` finding yields `open_findings` items whose `cause` equals each, byte for byte, as FR-115 supplies it. | Test |
 | FR-167-AC-11 | An `open_findings` item of any kind other than `stale-evidence` has no `cause` key. | Test |
 | FR-167-AC-12 | A `stale-evidence` finding that FR-115 supplies without `cause` yields an `open_findings` item with no `cause` key, not `null`. | Test |
-| FR-167-AC-13 | A newly written snapshot has `tool_identity` with exactly `name` and `version`, where the name is `quoin` and version equals the running executable's `--version` output, and has `clean_tree_precondition: "not_verified"`; the closed snapshot reader accepts a full snapshot and refuses a snapshot missing `tool_identity`, a snapshot missing `clean_tree_precondition`, a `scan_unordered` item, `null`, unknown members in `tool_identity`, a different tool name, a blank version, or any clean-tree value other than `not_verified`. | Test |
+| FR-167-AC-13 | A newly written snapshot has `tool_identity` with exactly `name` and `version`, where the name is `quoin` and version equals the running executable's `--version` output, and has `clean_tree_precondition: "not_verified"`; the closed snapshot reader accepts a full snapshot and refuses a snapshot missing `tool_identity`, a snapshot missing `clean_tree_precondition`, a `scan_unordered` item, `null`, unknown members in `tool_identity`, a different tool name, a blank version, a `soup.not_assessed` item of an unknown kind, or any clean-tree value other than `not_verified`, and accepts a `soup.not_assessed` item of kind `scan_not_run`. | Test |
+| FR-167-AC-14 | A scan with an invalid retained timestamp refuses the snapshot section under FR-166-AC-11, so the snapshot never contains a `scan_unordered` item. | Test |
 
 ## Dependencies
 

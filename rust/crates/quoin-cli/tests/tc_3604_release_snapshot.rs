@@ -692,6 +692,7 @@ fn one_file_is_written_with_exactly_the_named_members_and_nothing_else_changes()
 fn the_snapshot_reader_requires_both_members_and_refuses_dirty_or_unordered_values() {
     use quoin_dossier::release_snapshot::ReleaseSnapshot;
     let parse = |document: &Value| ReleaseSnapshot::parse(&serde_json::to_vec(document).unwrap());
+    let refusal = |document: &Value| parse(document).unwrap_err().to_string();
     let full = json!({
         "protocol":"quoin.release-snapshot/v1",
         "tool_identity":{"name":"quoin","version":"0.31.1"},
@@ -709,48 +710,53 @@ fn the_snapshot_reader_requires_both_members_and_refuses_dirty_or_unordered_valu
     let parsed = parse(&full).unwrap();
     assert_eq!(parsed.tool_identity.name, "quoin");
 
+    let mut healthy_kind = full.clone();
+    healthy_kind["soup"]["not_assessed"] =
+        json!([{"kind":"scan_not_run","tool":"osv-scanner","detail":"not run"}]);
+    assert_eq!(parse(&healthy_kind).unwrap().soup.not_assessed.len(), 1);
+
     let mut missing_identity = full.clone();
     missing_identity
         .as_object_mut()
         .unwrap()
         .remove("tool_identity");
-    assert!(parse(&missing_identity).is_err());
+    assert!(refusal(&missing_identity).contains("tool_identity"));
 
     let mut missing_clean_tree = full.clone();
     missing_clean_tree
         .as_object_mut()
         .unwrap()
         .remove("clean_tree_precondition");
-    assert!(parse(&missing_clean_tree).is_err());
+    assert!(refusal(&missing_clean_tree).contains("clean_tree_precondition"));
 
     let mut unordered = full.clone();
     unordered["soup"]["not_assessed"] =
         json!([{"kind":"scan_unordered","tool":"osv-scanner","detail":"unordered"}]);
-    assert!(parse(&unordered).is_err());
+    assert!(refusal(&unordered).contains("soup.not_assessed kind"));
 
     let mut dirty = full.clone();
     dirty["tool_identity"] = Value::Null;
-    assert!(parse(&dirty).is_err());
+    assert!(refusal(&dirty).contains("invalid type: null"));
 
     let mut dirty = full.clone();
     dirty["clean_tree_precondition"] = Value::Null;
-    assert!(parse(&dirty).is_err());
+    assert!(refusal(&dirty).contains("expected value"));
 
     let mut dirty = full.clone();
     dirty["tool_identity"]["unexpected"] = json!(true);
-    assert!(parse(&dirty).is_err());
+    assert!(refusal(&dirty).contains("unknown field `unexpected`"));
 
     let mut dirty = full.clone();
     dirty["clean_tree_precondition"] = json!("verified");
-    assert!(parse(&dirty).is_err());
+    assert!(refusal(&dirty).contains("unknown variant `verified`"));
 
     let mut dirty = full.clone();
     dirty["tool_identity"]["name"] = json!("another-tool");
-    assert!(parse(&dirty).is_err());
+    assert!(refusal(&dirty).contains("tool_identity must name quoin"));
 
     let mut dirty = full;
     dirty["tool_identity"]["version"] = json!(" ");
-    assert!(parse(&dirty).is_err());
+    assert!(refusal(&dirty).contains("tool_identity must name quoin"));
 }
 
 fn git(dir: &Path, arguments: &[&str]) {

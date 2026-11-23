@@ -67,7 +67,9 @@ impl ReleaseSnapshot {
     /// # Errors
     ///
     /// Returns a JSON error if the bytes are malformed, the record is not
-    /// closed, or its protocol identifier is unsupported.
+    /// closed, its protocol identifier is unsupported, `tool_identity` does
+    /// not name `quoin` with a non-empty version, or a `soup.not_assessed`
+    /// item has an unknown `kind`.
     pub fn parse(bytes: &[u8]) -> Result<Self, serde_json::Error> {
         let snapshot: Self = serde_json::from_slice(bytes)?;
         if snapshot.protocol != RELEASE_SNAPSHOT_PROTOCOL {

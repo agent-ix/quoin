@@ -131,6 +131,7 @@ pub struct NotAssessed {
 }
 
 /// Why the section could not be built.
+#[derive(Debug)]
 pub enum SoupFailure {
     /// An input was refused; `input` is the flag that supplied it.
     Refused {
@@ -292,9 +293,11 @@ fn licence_state(
 }
 
 fn unordered(tool: &str) -> SoupFailure {
-    SoupFailure::Failed(format!(
-        "the retained {tool} scans have a timestamp that is not an instant"
-    ))
+    SoupFailure::Refused {
+        input: "--repo",
+        code: "scan_timestamp_invalid".to_owned(),
+        message: format!("the retained {tool} scans have a timestamp that is not an instant"),
+    }
 }
 
 /// The purl a finding names, or empty when it names none.
@@ -381,7 +384,9 @@ fn not_assessed(report: &Report) -> Result<Vec<NotAssessed>, SoupFailure> {
 mod tests {
     use ix_trace_rs::trace;
 
-    use super::purl_of;
+    use super::{SoupFailure, licence_state, purl_of, scan_state};
+    use crate::soup::advisory::ScanOutcome;
+    use crate::soup::policy::LicenceOutcome;
 
     #[trace("FR-167-AC-4", "NFR-036-M-2")]
     #[test]
@@ -401,5 +406,41 @@ mod tests {
             ""
         );
         assert_eq!(purl_of("cargo-audit", Some("src/lib.rs@1")), "");
+    }
+
+    #[trace("FR-166-AC-11", "FR-167-AC-14")]
+    #[test]
+    fn a_scan_whose_timestamp_is_not_an_instant_refuses_the_snapshot_section() {
+        // Healthy controls: a scan that was not run is stated, not refused.
+        assert_eq!(
+            scan_state("cargo-audit", &ScanOutcome::NotRun).unwrap(),
+            Some(("scan_not_run", "not run"))
+        );
+        assert_eq!(
+            licence_state(&LicenceOutcome::NotRun).unwrap(),
+            Some(("scan_not_run", "not run"))
+        );
+        let suites = vec!["bad".to_owned()];
+        let advisory = scan_state(
+            "cargo-audit",
+            &ScanOutcome::Unordered {
+                suites: suites.clone(),
+            },
+        );
+        let licence = licence_state(&LicenceOutcome::Unordered { suites });
+        for (failure, tool) in [(advisory, "cargo-audit"), (licence, "licence-policy")] {
+            match failure {
+                Err(SoupFailure::Refused {
+                    input,
+                    code,
+                    message,
+                }) => {
+                    assert_eq!(input, "--repo");
+                    assert_eq!(code, "scan_timestamp_invalid");
+                    assert!(message.contains(tool), "{message}");
+                }
+                _ => panic!("expected a refusal for {tool}"),
+            }
+        }
     }
 }
