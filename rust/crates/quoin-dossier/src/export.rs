@@ -63,7 +63,7 @@ pub fn export(
     options: &ExportOptions,
 ) -> Result<Report, DossierError> {
     let rendered = render_for(registry, kinds, out, inputs, Operation::Export)?;
-    let source_rev = resolve_head(inputs.scope.as_path()).ok();
+    let source_rev = resolve_head(inputs.scope.as_path());
     let mut report = report_with_comparison(&rendered);
     if let Some(source_rev) = source_rev.as_deref() {
         for (entry, document) in report.documents.iter_mut().zip(&rendered) {
@@ -111,9 +111,13 @@ fn committed_blob(scope: &Path, revision: &str, path: &Path) -> Option<Vec<u8>> 
     let path = if path.is_absolute() {
         path.canonicalize().ok()?
     } else {
-        std::env::current_dir().ok()?.join(path).canonicalize().ok()?
+        std::env::current_dir()
+            .ok()?
+            .join(path)
+            .canonicalize()
+            .ok()?
     };
-    let relative = path.strip_prefix(scope).ok()?;
+    let relative = path.strip_prefix(&scope).ok()?;
     let relative = relative.to_str()?;
     let spec = format!("{revision}:{relative}");
     git(&scope, &["cat-file", "blob", &spec])
@@ -262,7 +266,7 @@ mod tests {
 
     fn commit_docs(work: &Path) {
         for args in [
-            & ["init", "-q"][..],
+            &["init", "-q"][..],
             &["config", "user.name", "Dossier test"],
             &["config", "user.email", "dossier@example.invalid"],
             &["add", "dossier"],
@@ -273,7 +277,11 @@ mod tests {
                 .current_dir(work)
                 .output()
                 .unwrap();
-            assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+            assert!(
+                output.status.success(),
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
         }
     }
 
@@ -309,7 +317,11 @@ mod tests {
     #[trace("FR-191-AC-8")]
     #[test]
     fn a_bundle_passes_files_in_registry_order_with_bundle_arguments_and_options_unchanged() {
-        let args = quire_args(&rendered(&["b", "a"]), &options("quire"), "0123456789012345678901234567890123456789");
+        let args = quire_args(
+            &rendered(&["b", "a"]),
+            &options("quire"),
+            "0123456789012345678901234567890123456789",
+        );
         assert_eq!(
             args,
             [
@@ -341,7 +353,11 @@ mod tests {
     #[trace("FR-191-AC-9")]
     #[test]
     fn one_document_is_exported_without_bundle_arguments() {
-        let args = quire_args(&rendered(&["a"]), &options("quire"), "0123456789012345678901234567890123456789");
+        let args = quire_args(
+            &rendered(&["a"]),
+            &options("quire"),
+            "0123456789012345678901234567890123456789",
+        );
         assert!(args.contains(&"dossier/DOS-A.md".to_owned()));
         assert!(!args.iter().any(|arg| arg.starts_with("--bundle")));
         assert_eq!(args.iter().filter(|arg| arg.contains("DOS-")).count(), 1);
@@ -355,7 +371,11 @@ mod tests {
             PathBuf::from("process-module"),
             PathBuf::from("other-module"),
         ];
-        let args = quire_args(&rendered(&["a"]), &options, "0123456789012345678901234567890123456789");
+        let args = quire_args(
+            &rendered(&["a"]),
+            &options,
+            "0123456789012345678901234567890123456789",
+        );
         let module_args: Vec<_> = args
             .windows(2)
             .filter(|pair| pair[0] == "--module")
@@ -396,7 +416,9 @@ mod tests {
         fs::remove_file(out.join("DOS-A.md")).unwrap();
         let mut options = options("/nonexistent/quire");
         options.output = work.path().join("out.pdf");
-        let report = export(&two(), &[], &out, &inputs(), &options).unwrap();
+        let mut input = inputs();
+        input.scope = work.path().to_owned();
+        let report = export(&two(), &[], &out, &input, &options).unwrap();
         assert_eq!(report.differing(), ["DOS-A", "DOS-B"]);
         assert!(report.quire.is_none(), "quire was started");
         let elsewhere = export(&two(), &[], &work.path().join("other"), &input, &options).unwrap();
@@ -438,7 +460,10 @@ mod tests {
         let quire = script(work.path(), "echo partial > \"$out\"; exit 7");
         let failure = export_with(work.path(), &quire).quire.unwrap();
         assert!(!failure.stderr.contains("could not remove"));
-        assert_eq!(fs::read(work.path().join("out.pdf")).unwrap(), b"sentinel bytes\0\xff");
+        assert_eq!(
+            fs::read(work.path().join("out.pdf")).unwrap(),
+            b"sentinel bytes\0\xff"
+        );
     }
 
     #[cfg(unix)]

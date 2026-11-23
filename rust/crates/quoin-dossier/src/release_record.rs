@@ -145,6 +145,7 @@ fn render(snapshot: Option<&ReleaseSnapshot>, verify: Option<&Value>) -> Generat
             "no --release-verify result was supplied",
         ));
     }
+    render_approval_disclosure(&mut body);
 
     if let Some(snapshot) = snapshot {
         render_evidence(&mut body, snapshot);
@@ -222,7 +223,6 @@ fn render_decision(body: &mut String, verify: &Value, gaps: &mut Vec<Gap>) {
     field(body, "Signed at", verify.get("signed_at"));
     field(body, "Signed at source", verify.get("signed_at_source"));
     field(body, "Accepted anomalies", verify.get("accepted_anomalies"));
-    body.push_str("\nApproval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.\n\nVerifier identity: not provided as a distinct field by the source approval contracts.\n\n");
     if status == "not_released" {
         let reasons = verify.get("reasons").and_then(Value::as_array);
         body.push_str("Reasons:\n");
@@ -243,6 +243,10 @@ fn render_decision(body: &mut String, verify: &Value, gaps: &mut Vec<Gap>) {
             ),
         ));
     }
+}
+
+fn render_approval_disclosure(body: &mut String) {
+    body.push_str("Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.\n\nVerifier identity: not provided as a distinct field by the source approval contracts.\n\n");
 }
 
 fn render_evidence(body: &mut String, snapshot: &ReleaseSnapshot) {
@@ -365,25 +369,6 @@ mod tests {
             assert!(generated.body.contains(source), "missing {source}");
         }
         assert!(generated.body.contains("Baseline commit: snapshot-commit"));
-    }
-
-    #[trace("FR-201-AC-10")]
-    #[test]
-    fn decision_discloses_unbound_approval_scope_and_unavailable_identity_before_gaps() {
-        let generated = render(None, None);
-        let approval = "Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.";
-        let identity = "Verifier identity: not provided as a distinct field by the source approval contracts.";
-        let output = crate::writer::compose(
-            &ReleaseRecordGenerator.spec(),
-            None,
-            None,
-            &generated.body,
-            &generated.gaps,
-        );
-        let approval_at = output.find(approval).unwrap();
-        let identity_at = output.find(identity).unwrap();
-        assert!(approval_at < identity_at);
-        assert!(identity_at < output.rfind("## Gaps").unwrap());
     }
 
     #[trace("FR-201-AC-2", "FR-201-AC-3")]

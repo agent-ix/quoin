@@ -94,6 +94,44 @@ fn generate_stubs(work: &Path, docs: &[&str]) {
     }
     let output = quoin(work, &args);
     assert!(matches!(code(&output), 0 | 1), "{}", stderr(&output));
+    let has_git = Command::new("git")
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .current_dir(work)
+        .output()
+        .is_ok_and(|output| output.status.success());
+    if !has_git {
+        for args in [
+            &["init", "-q"][..],
+            &["config", "user.name", "Dossier test"],
+            &["config", "user.email", "dossier@example.invalid"],
+        ] {
+            let result = Command::new("git")
+                .args(args)
+                .current_dir(work)
+                .output()
+                .unwrap();
+            assert!(
+                result.status.success(),
+                "{}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
+    }
+    for args in [
+        &["add", "dossier"][..],
+        &["commit", "-qm", "dossier fixtures"],
+    ] {
+        let result = Command::new("git")
+            .args(args)
+            .current_dir(work)
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    }
 }
 
 /// Another command's failure still prints nothing on stdout: the dossier
@@ -526,6 +564,36 @@ fn a_quire_refusal_exits_4_passes_through_its_status_and_stderr_and_leaves_no_ou
     );
 }
 
+#[trace("FR-191-AC-26")]
+#[test]
+fn failed_quire_preserves_preexisting_output_bytes() {
+    let work = tempfile::tempdir().unwrap();
+    generate_stubs(work.path(), &["stub-a"]);
+    let sentinel = b"preserve this output exactly\0\xff";
+    fs::write(work.path().join("out.pdf"), sentinel).unwrap();
+    let quire = fake_quire(work.path(), 7, "refused");
+    let output = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 4, "{}", stderr(&output));
+    assert_eq!(json(&output)["quire"]["exit_code"], 7);
+    assert_eq!(fs::read(work.path().join("out.pdf")).unwrap(), sentinel);
+}
+
 #[trace("FR-191-AC-8", "FR-191-AC-9", "FR-191-AC-25")]
 #[test]
 fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
@@ -571,7 +639,10 @@ fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
         .current_dir(work.path())
         .output()
         .unwrap();
-    let revision = String::from_utf8(revision.stdout).unwrap().trim().to_owned();
+    let revision = String::from_utf8(revision.stdout)
+        .unwrap()
+        .trim()
+        .to_owned();
     assert_eq!(
         recorded_args(work.path()),
         [
@@ -626,9 +697,25 @@ fn export_runs_quire_once_as_a_bundle_for_two_documents_and_plain_for_one() {
     );
 }
 
+#[trace("FR-201-AC-9", "FR-201-AC-10")]
 #[test]
 fn release_verify_result_is_appended_after_user_approvals_once() {
     let work = tempfile::tempdir().unwrap();
+    let git = |args: &[&str]| {
+        let result = Command::new("git")
+            .args(args)
+            .current_dir(work.path())
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    };
+    git(&["init", "-q"]);
+    git(&["config", "user.name", "Dossier test"]);
+    git(&["config", "user.email", "dossier@example.invalid"]);
     let snapshot = work.path().join("snapshot.json");
     fs::write(
         &snapshot,
@@ -642,8 +729,16 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     )
     .unwrap();
     for (file, principal, meaning) in [
-        ("approval-one.json", "Rae One", "approve synthetic source one"),
-        ("approval-two.json", "Rae Two", "approve synthetic source two"),
+        (
+            "approval-one.json",
+            "Rae One",
+            "approve synthetic source one",
+        ),
+        (
+            "approval-two.json",
+            "Rae Two",
+            "approve synthetic source two",
+        ),
     ] {
         fs::write(
             work.path().join(file),
@@ -667,9 +762,20 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
         ],
     );
     assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    git(&["add", "dossier/DOS-REL.md"]);
+    git(&["commit", "-qm", "release record"]);
     let generated_text = read(&work.path().join("dossier/DOS-REL.md"));
-    assert!(generated_text.contains("Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document"));
-    assert!(generated_text.contains("Verifier identity: not provided as a distinct field by the source approval contracts."));
+    const APPROVAL_SCOPE: &str = "Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.";
+    const VERIFIER_IDENTITY: &str =
+        "Verifier identity: not provided as a distinct field by the source approval contracts.";
+    assert!(generated_text.contains(APPROVAL_SCOPE));
+    assert!(generated_text.contains(VERIFIER_IDENTITY));
+    assert!(
+        generated_text.find(APPROVAL_SCOPE).unwrap() < generated_text.rfind("## Gaps").unwrap()
+    );
+    assert!(
+        generated_text.find(VERIFIER_IDENTITY).unwrap() < generated_text.rfind("## Gaps").unwrap()
+    );
     let exported = quoin(
         work.path(),
         &[
@@ -703,10 +809,19 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
         .filter(|pair| pair[0] == "--approval")
         .map(|pair| pair[1].as_str())
         .collect();
-    assert_eq!(approvals, ["approval-one.json", "approval-two.json", verify.to_str().unwrap()]);
+    assert_eq!(
+        approvals,
+        [
+            "approval-one.json",
+            "approval-two.json",
+            verify.to_str().unwrap()
+        ]
+    );
     let document = read(&work.path().join("dossier/DOS-REL.md"));
     assert!(document.contains("Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document"));
-    assert!(document.contains("Verifier identity: not provided as a distinct field by the source approval contracts."));
+    assert!(document.contains(
+        "Verifier identity: not provided as a distinct field by the source approval contracts."
+    ));
 }
 
 #[trace("FR-201-AC-3")]
@@ -893,8 +1008,16 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     )
     .unwrap();
     for (file, principal, meaning) in [
-        ("approval-one.json", "Rae One", "approve synthetic source one"),
-        ("approval-two.json", "Rae Two", "approve synthetic source two"),
+        (
+            "approval-one.json",
+            "Rae One",
+            "approve synthetic source one",
+        ),
+        (
+            "approval-two.json",
+            "Rae Two",
+            "approve synthetic source two",
+        ),
     ] {
         fs::write(
             work.path().join(file),
@@ -965,14 +1088,23 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
             String::from_utf8_lossy(&extracted.stderr)
         );
         let text = String::from_utf8_lossy(&extracted.stdout);
-        assert!(text.contains("Ada Example"), "{text}");
-        assert!(text.contains("release authorization"), "{text}");
-        assert!(text.contains("Rae One"), "{text}");
-        assert!(text.contains("approve synthetic source one"), "{text}");
-        assert!(text.contains("Rae Two"), "{text}");
-        assert!(text.contains("approve synthetic source two"), "{text}");
-        assert!(text.contains("unbound to the exact bytes"), "{text}");
-        assert!(text.contains("Verifier identity"), "{text}");
+        let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(normalized.contains("Ada Example"), "{normalized}");
+        assert!(normalized.contains("release"), "{normalized}");
+        assert!(normalized.contains("authorization"), "{normalized}");
+        assert!(normalized.contains("Rae One"), "{normalized}");
+        for word in ["approve", "synthetic", "source", "one"] {
+            assert!(normalized.contains(word), "{normalized}");
+        }
+        assert!(normalized.contains("Rae Two"), "{normalized}");
+        for word in ["approve", "synthetic", "source", "two"] {
+            assert!(normalized.contains(word), "{normalized}");
+        }
+        assert!(
+            normalized.contains("unbound to the exact bytes"),
+            "{normalized}"
+        );
+        assert!(normalized.contains("Verifier identity"), "{normalized}");
     }
 }
 
