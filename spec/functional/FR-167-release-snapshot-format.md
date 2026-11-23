@@ -13,6 +13,10 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-163"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-164"
+    type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-170"
+    type: "depends_on"
 ---
 
 # FR-167: Release snapshot format: a closed, ordered JSON document the dossier documents read
@@ -41,10 +45,26 @@ source and restates no vocabulary.
 | `previous_release` | `{ tag, commit }` of the previous release, or `null` for a first release | FR-168 |
 | `coverage` | per requirement: `id` and `criteria`, a list holding for each criterion `id`, `static_status` and `evidence_status` | FR-115 |
 | `evidence_freshness` | the count of criteria at each of the five evidence statuses | FR-115 |
-| `open_findings` | each auditor finding of every criterion: `obligation`, `kind`, `summary`, `path`, `line`, `symbol`, and for a `stale-evidence` finding the optional `cause` (`missing-run` or `failed-run` when present), omitted when absent and omitted on every other kind | FR-115 `evidence_detail.findings` |
+| `open_findings` | each open finding, as one item of the closed shape `obligation`, `kind`, `summary`, `path`, `line`, `symbol`, and for a `stale-evidence` finding the optional `cause` (`missing-run` or `failed-run` when present), omitted when absent and omitted on every other kind. Three sources contribute items: the auditor findings of every criterion, the risk-completeness findings, and the anomaly-gate findings, each mapped as stated below | FR-115 `evidence_detail.findings`; FR-170; FR-164 |
 | `soup` | `rows`: per record `purl`, `version`, `group`, `support_status`, `end_of_support`; and `not_assessed`: each item FR-144 appends after its rows, as `{ kind, tool, detail }` | FR-144 |
 | `anomalies` | each carried anomaly: `id`, `title`, `status`, `resolution`, `severity`, `safety_impact`, `unassessed`, `release_rationale` | FR-162, FR-163 |
 | `change_records` | the change-assurance records since the previous release | FR-168 |
+
+Open findings come from three sources, told apart by `kind`; the three sets of kinds are disjoint.
+
+| Source | `kind` | `obligation` | `summary` | `path` | `line`, `symbol`, `cause` |
+|--------|--------|--------------|-----------|--------|---------------------------|
+| auditor finding (FR-115) | the auditor kind | the criterion's obligation | the finding's summary | as FR-115 supplies | as FR-115 supplies |
+| risk-completeness finding (FR-170) | the FR-170 `finding` token, one of the thirteen tokens FR-170 defines | the first element of the finding's `names` | the finding's `names` joined by `, ` | `null` | `null`, `null`, omitted |
+| anomaly-gate finding (FR-164) | `anomaly-unassessed` for a failure of mode `unassessed`, `anomaly-unjustified-impacting` for mode `unjustified-impacting` | the anomaly id | the mode word of the failure | the failure's `path`, repository-relative | `null`, `null`, omitted |
+
+The risk-completeness findings are those that `quoin risk-summary` (FR-169) places in the `findings` of its rows,
+computed by the same code. A finding that FR-170 places on several rows is one item, identified by its token and its
+`names`. The anomaly-gate findings are the failures that `quoin anomaly report --fail-on unassessed --fail-on
+unjustified-impacting` (FR-164) states in `gate.failures`, evaluated over the anomalies the snapshot carries; an
+anomaly that fails both modes yields two items. A finding states that a link, a record or a rationale is missing. It
+does not say that a risk or an anomaly is acceptable: people decide that, and the snapshot never does. An `open_findings` list holding
+none of these three sources states that no finding exists in them and is not an acceptance.
 
 `group` is not a member of FR-144's JSON; it is the row's FR-144 ordering group, and `unassessed` is the FR-162 row flag
 (true exactly when `safety_impact` is `unassessed`). `group` is one of `unresolved_advisory`, `past_end_of_support`, `other`, the three ordering groups of FR-144.
@@ -77,6 +97,11 @@ does not claim the caller's clean-tree precondition was met.
   executable prints for `quoin --version`.
 - The command SHALL set `clean_tree_precondition` to `not_verified`.
 - The command SHALL NOT inspect git state to verify the clean-tree precondition.
+- The command SHALL add to `open_findings` one item for each distinct risk-completeness finding of `quoin risk-summary` over `--repo`, with `obligation` the first element of `names`, `kind` the finding token, `summary` the `names` joined by `, `, `path`, `line` and `symbol` `null` and no `cause`.
+- The command SHALL add to `open_findings` one item for each failure of FR-164's `unassessed` and `unjustified-impacting` modes over the carried anomalies, with `obligation` the anomaly id, `kind` `anomaly-unassessed` or `anomaly-unjustified-impacting`, `summary` the mode word, `path` the failure's path as a repository-relative path (never absolute), `line` and `symbol` `null` and no `cause`.
+- The command SHALL NOT add to `open_findings` an item for a hazard, situation, control, estimate or residual risk that has the link or record the FR-170 rule asks for, or for an anomaly that passes both gate modes.
+- The command SHALL NOT assign a severity, score, class or acceptability to any `open_findings` item.
+- The command SHALL NOT omit an `open_findings` item because a person accepted the risk it names.
 - WHEN serializing `open_findings`, the command SHALL omit the `cause` member when it is absent.
 - The command SHALL NOT serialize absent `cause` as `null`.
 - The snapshot SHALL NOT carry a member that the table does not name, at any depth.
@@ -96,7 +121,7 @@ does not claim the caller's clean-tree precondition was met.
 - The command SHALL NOT include a digest, hash, manifest, file listing or version counter of the snapshot or of
   any item it describes. The `baseline_commit` and the commits in `change_records` are the identifiers git gave the
   caller, not values Quoin computed.
-- The command SHALL NOT include a score, percentage, rank, verdict or the word accepted, ready or releasable.
+- The command SHALL NOT include a score, percentage, rank, verdict or the word accepted, ready or releasable; the stem "accept" inside a finding token of `open_findings` (`accepted-outside-acceptable-region`, `benefit-risk-not-accepted`, `not-accepted-inside-acceptable-region`) and inside a value copied from a record is not counted.
 
 ## Acceptance Criteria
 
@@ -108,17 +133,26 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-4 | A fixture with an unresolved-advisory record, a past-end-of-support record and a clean record yields `soup.rows` in that group order with `group` set to `unresolved_advisory`, `past_end_of_support` and `other`, and a scan reported not run, an advisory matching no record and a policy finding matching no record each appear in `soup.not_assessed` with `kind`, `tool` and `detail`, in `kind`, `tool`, `detail` order. A retained scan with an invalid timestamp refuses the snapshot under FR-166-AC-10 and FR-030-AC-29. | Test |
 | FR-167-AC-5 | A fixture with an open anomaly carrying a two-row release rationale, a `closed` `wont-fix` one and an `unassessed` one lists all three by id, with `release_rationale` byte-equal to the record's entries, and no snapshot member named `rationaleChange`. | Test |
 | FR-167-AC-6 | An empty evidence store yields `coverage` with every criterion `no run evidence` and `open_findings` holding one `undischarged` finding for each criterion, as FR-032-AC-5 reports and FR-115-AC-3 keeps in `evidence_detail`; the other sections are present, never absent. | Test |
-| FR-167-AC-7 | A scan of the snapshot's keys and values finds no digest, hash, manifest or score member, and no sentence stating a release accepted, ready or releasable. | Inspection |
+| FR-167-AC-7 | A scan of the snapshot's keys and values finds no digest, hash, manifest or score member, and no sentence stating a release accepted, ready or releasable; the stem "accept" appears only inside a finding token of `open_findings` and inside values copied from a record. | Inspection |
 | FR-167-AC-9 | A fixture anomaly file with git history that would give `fixingChange` and `rationaleChange` yields an anomaly row with neither member. | Test |
 | FR-167-AC-10 | A fixture with a `missing-run` and a `failed-run` `stale-evidence` finding yields `open_findings` items whose `cause` equals each, byte for byte, as FR-115 supplies it. | Test |
 | FR-167-AC-11 | An `open_findings` item of any kind other than `stale-evidence` has no `cause` key. | Test |
 | FR-167-AC-12 | A `stale-evidence` finding that FR-115 supplies without `cause` yields an `open_findings` item with no `cause` key, not `null`. | Test |
 | FR-167-AC-13 | A newly written snapshot has `tool_identity` with exactly `name` and `version`, where the name is `quoin` and version equals the running executable's `--version` output, and has `clean_tree_precondition: "not_verified"`; the closed snapshot reader accepts a full snapshot and refuses a snapshot missing `tool_identity`, a snapshot missing `clean_tree_precondition`, a `scan_unordered` item, `null`, unknown members in `tool_identity`, a different tool name, a blank version, a `soup.not_assessed` item of an unknown kind, or any clean-tree value other than `not_verified`, and accepts a `soup.not_assessed` item of kind `scan_not_run`. | Test |
+| FR-167-AC-15 | A fixture whose `control` is assumed by a post-control estimate and has no incoming `verifies` edge yields an `open_findings` item with `kind` `control-without-verification`, `obligation` the control id, `summary` the control id, `path`, `line` and `symbol` `null` and no `cause`, and `quoin risk-summary` over the same fixture carries the same token naming the same control. | Test |
+| FR-167-AC-16 | The same fixture with an incoming `verifies` edge added to the control yields no `control-without-verification` item, and a complete chain yields no item of any FR-170 token. | Test |
+| FR-167-AC-17 | A control with no incoming `verifies` edge that appears on two rows of `quoin risk-summary` yields exactly one `control-without-verification` item; a fixture with an `accepted-outside-acceptable-region` finding naming a residual risk and its covering benefit-risk ids yields one item whose `obligation` is the residual-risk id and whose `summary` lists every name in `names` order. | Test |
+| FR-167-AC-18 | A fixture with an `unassessed` anomaly and an `impacting` anomaly with no release rationale yields one `anomaly-unassessed` item and one `anomaly-unjustified-impacting` item, each with the anomaly's id and path; an anomaly that fails both modes yields both items; a closed `fixed` anomaly and an `impacting` anomaly with a rationale yield none, as FR-164-AC-5 and FR-164-AC-4 state. | Test |
+| FR-167-AC-19 | A fixture holding auditor, risk-completeness and anomaly-gate findings yields `open_findings` in `obligation`, `kind`, `path`, `line`, `symbol`, `cause`, `summary` order whatever order the sources produce them, and no item carries a key outside the closed shape or a severity, score or acceptance word, the stem "accept" occurring only inside a finding token. | Test |
 | FR-167-AC-14 | A scan with an invalid retained timestamp refuses the snapshot section under FR-166-AC-11, so the snapshot never contains a `scan_unordered` item. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md) (including the typed `cause` of FR-032-AC-18..21), [FR-144](./FR-144-soup-report.md),
-  [FR-162](./FR-162-anomaly-report.md), [FR-163](./FR-163-anomaly-report-release-rationale.md),
+  [FR-162](./FR-162-anomaly-report.md), [FR-163](./FR-163-anomaly-report-release-rationale.md), [FR-164](./FR-164-anomaly-report-gate.md),
+  [FR-169](./FR-169-risk-summary-command.md), [FR-170](./FR-170-risk-summary-row-findings.md),
   [FR-166](./FR-166-release-snapshot-command.md), [FR-168](./FR-168-release-snapshot-change-records.md).
-- **Downstream**: the dossier documents, which read the snapshot.
+- **Downstream**: the dossier documents, which read the snapshot. The closed shape of an `open_findings` item does
+  not change and `kind` is an open string for the reader, so the release record of FR-201 renders the added items
+  in their source order with no change of its own; the format version stays `quoin.release-snapshot/v1` and no
+  reader accepts a second shape. A snapshot written before this change simply lacks the added items; this command never rewrites an existing snapshot (an existing `--out` is refused), so a tagged release's snapshot stays as written and regenerating one is the caller's act.
