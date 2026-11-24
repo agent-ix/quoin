@@ -48,7 +48,7 @@ The wording is generic and the safety module's own.
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | NFR-031-AC-1 | Over every fixture of FR-145 to FR-148, every file's bytes are identical before and after a run, and no file is created. | Test |
-| NFR-031-AC-2 | In the Markdown over every fixture, the stem "accept" appears only in the attribution statement, in the policy-flag wording of FR-146, and in values copied from a record, and every region line matches "the policy marks this cell as <region>". | Test |
+| NFR-031-AC-2 | In the Markdown over every fixture, the stem "accept" appears only in the attribution statement, in the policy-flag wording of FR-146, in the finding token `evaluation-accepted-with-open-risk` of FR-213, and in values copied from a record, and every region line matches "the policy marks this cell as <region>". | Test |
 | NFR-031-AC-3 | The JSON of every section holds no key named or typed as a score, weight, total, rank, verdict, recommendation, proposal or priority. | Test |
 | NFR-031-AC-4 | Over a fixture with every optional input absent, each printed value is `null`, an epistemic marker, a finding token or copied from a named record. | Test |
 | NFR-031-AC-5 | Over a fixture with an all-acceptable policy and an `undecided` residual risk, no output states or implies the risk is accepted. | Test |

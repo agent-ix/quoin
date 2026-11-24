@@ -30,16 +30,16 @@ It is separate from `quoin risk-summary` (`agent-ix/spec-objects-safety` FR-305)
 hazard and situation and shows each estimate's `policy_region`. This report is organised per estimate and per
 undecided record, and it adds what FR-305 does not carry: the policy cell with the region's flag and the reason
 a region is missing (FR-146), the evidence gaps and open anomalies behind each post-control estimate (FR-147),
-and the queue of undecided decisions (FR-148). Where this report and FR-305 both show a value, the value is the
+the queue of undecided decisions (FR-148), the overall-evaluation checks of FR-107 (FR-213) and the git attribution of each decision (FR-214). Where this report and FR-305 both show a value, the value is the
 same, because both read the same links and the same policy.
 
 Acceptance of a residual risk is a human decision (`agent-ix/spec-objects-safety` FR-104). The report names the
 policy as the source of every region and the named person as the source of every decision, and it offers no
-verdict. The wording and no-verdict rules that bind all three sections are NFR-031.
+verdict. The wording and no-verdict rules that bind every section are NFR-031.
 
 ## Behavior
 
-- When a user runs `quoin risk advise <scope> [--format markdown|json] [--module DIR]...`, the command SHALL print the three sections `policy_cells`, `evidence_gaps` and `decision_queue`, in that order.
+- When a user runs `quoin risk advise <scope> [--format markdown|json] [--module DIR]...`, the command SHALL print the five sections `policy_cells`, `evidence_gaps`, `decision_queue`, `overall_evaluation_checks` (FR-213) and `decision_attribution` (FR-214), in that order.
 - The command SHALL read only the safety-module records below `<scope>` (hazards, hazardous situations, risk estimates, controls, residual risks, benefit-risk records, overall evaluations), the `acceptability_policy` documents they reference, the requirement and test documents that link to a control, and the anomaly documents of FR-136.
 - The command SHALL read the documents with the quire engine's reader and SHALL check each `risk_estimate`, `acceptability_policy`, `residual_risk`, `benefit_risk` and `overall_residual_risk_evaluation` against the `body_extraction` its type's module declares, taking the module from each `--module` root or, with none given, from the installed modules.
 - If a type it must check is declared by no loaded module, then the command SHALL exit 2 naming the document and the type, and the message SHALL name `--module DIR` and say that the module version must include the `residual_risk`, `benefit_risk` and `acceptability_policy` types.
@@ -51,10 +51,10 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 - The command SHALL NOT write any file or any record.
 - The command SHALL store no score, region, finding or verdict.
 - The command SHALL render Markdown by default and one JSON object with `--format json`.
-- The JSON object SHALL have exactly the keys `attribution`, `policy_cells`, `evidence_gaps` and `decision_queue`.
+- The JSON object SHALL have exactly the keys `attribution`, `policy_cells`, `evidence_gaps`, `decision_queue`, `overall_evaluation_checks` and `decision_attribution`.
 - Every `findings` array in the JSON SHALL hold objects with exactly the keys `finding` (the token) and `names` (the ids or values the token names, `[]` when it names none).
 - The `attribution` string SHALL state that regions come from the project's policy and that decisions come from the named person.
-- If `<scope>` contains no risk record, then the command SHALL print the three sections empty and the attribution, and exit zero.
+- If `<scope>` contains no risk record, then the command SHALL print the five sections empty and the attribution, and exit zero.
 - The command SHALL exit zero whenever it renders, whatever the sections contain.
 - For identical inputs, each format SHALL render byte-identical output.
 
@@ -62,16 +62,16 @@ verdict. The wording and no-verdict rules that bind all three sections are NFR-0
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-145-AC-1 | Over a fixture chain, `--format json` parses as one object whose keys equal `attribution`, `policy_cells`, `evidence_gaps` and `decision_queue` exactly. | Test |
+| FR-145-AC-1 | Over a fixture chain, `--format json` parses as one object whose keys equal `attribution`, `policy_cells`, `evidence_gaps`, `decision_queue`, `overall_evaluation_checks` and `decision_attribution` exactly. | Test |
 | FR-145-AC-2 | After the command runs over a fixture repository, no file is created, changed or removed, including under the evidence store. | Test |
 | FR-145-AC-3 | Two runs over the same inputs give byte-identical Markdown and byte-identical JSON. | Test |
-| FR-145-AC-4 | Over an empty scope the command exits zero and prints the three sections empty with the attribution. | Test |
+| FR-145-AC-4 | Over an empty scope the command exits zero and prints the five sections empty with the attribution. | Test |
 | FR-145-AC-5 | The attribution string names the policy as the source of regions and the named person as the source of decisions. | Test |
-| FR-145-AC-6 | The JSON holds no `hazard`/`situation` row-per-pairing structure and no `harms` key; the only chain ids are those named by the key tables of FR-146 to FR-148. | Test |
+| FR-145-AC-6 | The JSON holds no `hazard`/`situation` row-per-pairing structure and no `harms` key; the only chain ids are those named by the key tables of FR-146 to FR-148, FR-213 and FR-214. | Test |
 | FR-145-AC-7 | A `residual_risk` whose Determination table has an unknown decision word, a `benefit_risk` whose header is not the declared one, and an `acceptability_policy` with an unfilled placeholder level each make the command exit 2 naming the record, and print no report. A `risk_estimate` with a `phase` outside the two members, and one with no judgement table, are skipped and exit zero. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-102](ix://agent-ix/spec-objects-safety/FR-102), [FR-104](ix://agent-ix/spec-objects-safety/FR-104); [FR-136](./FR-136-anomaly-record-mapping.md).
 - **Context only**: [FR-144](./FR-144-soup-report.md), whose report conventions this follows; [FR-305](ix://agent-ix/spec-objects-safety/FR-305).
-- **Downstream**: [FR-146](./FR-146-risk-advise-policy-cells.md), [FR-147](./FR-147-risk-advise-evidence-gaps.md), [FR-148](./FR-148-risk-advise-decision-queue.md), [NFR-031](../non-functional/NFR-031-risk-advice-states-and-never-decides.md).
+- **Downstream**: [FR-146](./FR-146-risk-advise-policy-cells.md), [FR-147](./FR-147-risk-advise-evidence-gaps.md), [FR-148](./FR-148-risk-advise-decision-queue.md), [FR-213](./FR-213-risk-advise-overall-evaluation-checks.md), [FR-214](./FR-214-risk-decision-signer-attribution.md), [NFR-031](../non-functional/NFR-031-risk-advice-states-and-never-decides.md).

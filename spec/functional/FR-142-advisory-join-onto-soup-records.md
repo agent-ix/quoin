@@ -122,6 +122,13 @@ on a record is resolved only when a current approved disposition fact under that
 at or after the newest retained scan, of any tool, that reports that advisory on that record. A later scan that reports a further
 advisory therefore leaves that advisory unresolved until a person attests again.
 
+A disposition is a decision about one component. Tracked by Linear PLAT-1815: a clause that more than one record names
+would let one attested fact resolve every finding of every one of those components, which is one disposition accepting
+a whole SBOM. The join therefore resolves a record's findings only through a clause that no other record in the join
+names. Where two or more records name one `disposition_clause`, every finding of each of them is unresolved with the
+reason `disposition clause shared by N records`, naming the other records' purls; each record needs its own clause and its
+own fact.
+
 ## Behavior
 
 - When a SOUP report is generated, the join SHALL read, for each of `cargo-audit`, `cargo-deny` and `osv-scanner`, the retained `FindingRecord` of that tool with the newest `timestamp` (FR-034-CON-4).
@@ -154,6 +161,7 @@ advisory therefore leaves that advisory unresolved until a person attests again.
 - The join SHALL NOT read the `vulnerability` object.
 - When an advisory is attached, the join SHALL look up the fact stored under the record's `disposition_clause` in the clause set of the `--binding` report, as FR-133 does.
 - If the record has no `disposition_clause`, then the join SHALL list the advisory as unresolved with the reason `no disposition clause`.
+- If the record's `disposition_clause` is also named by one or more other records in the join, then the join SHALL list each finding of the record as unresolved with the reason `disposition clause shared by N records`, where N counts every record naming that clause, whatever the fact under the clause says.
 - If the `disposition_clause` is not a clause of the binding report, or the clause does not bind, then the join SHALL list the advisory as unresolved with that reason.
 - If no fact is stored under the clause, or the fact is not an approved disposition, or its attestation has expired or is not yet valid at `asOf`, then the join SHALL list the advisory as unresolved with the matching reason.
 - If the fact's `attestedAt` is earlier than the `timestamp` of the newest retained scan, of any tool, that reports the advisory on that record, then the join SHALL list the advisory as unresolved with the reason `scan newer than attestation`.
@@ -215,6 +223,7 @@ advisory therefore leaves that advisory unresolved until a person attests again.
 | FR-142-AC-34 | The joined output carries a policy finding in a list separate from advisories, and no counter or field merges the two. | Test |
 | FR-142-AC-35 | A record promoted after the `licence-policy` scan, or from another SBOM, is absent from `evaluated` and is stated not evaluated, never `no policy findings`. | Test |
 | FR-142-AC-36 | A record with a disposition attested after an advisory scan but before a later `licence-policy` scan that reports a ban finding on it shows the advisory resolved and the ban finding unresolved with `scan newer than attestation`; attesting again after the later scan resolves both. | Test |
+| FR-142-AC-37 | Two records carrying the same `disposition_clause`, each with an advisory and a current approved disposition under that clause attested after the scan, each show the advisory unresolved with `disposition clause shared by 2 records`; giving each record its own clause with its own fact resolves each advisory, and one fact never resolves the advisory of the record that does not name its clause. | Test |
 
 ## Constraints
 

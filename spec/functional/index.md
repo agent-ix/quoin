@@ -192,3 +192,5 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-210: Retain signed proof integrity statements in independent storage](./FR-210-retained-proof-integrity-statement.md)
 - [FR-211: Clause discharge resolves its evidence and verifies its approvals](./FR-211-discharge-resolves-evidence-and-approvals.md)
 - [FR-212: Warn when an installed default module is not at the CLI's pin](./FR-212-module-lag-warning.md)
+- [FR-213: Risk advice overall-evaluation checks: residual risks not considered, and an evaluation decided over an open risk](./FR-213-risk-advise-overall-evaluation-checks.md)
+- [FR-214: Risk decision attribution: the signature state of the commit that last set each decision, and its mismatch with the named decider](./FR-214-risk-decision-signer-attribution.md)
