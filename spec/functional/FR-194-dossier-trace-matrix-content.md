@@ -13,6 +13,12 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/quoin/FR-165"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-160"
+    type: "references"
+  - target: "ix://agent-ix/quire-rs/FR-090"
+    type: "references"
+  - target: "ix://agent-ix/spec-artifacts-iso/FR-009"
+    type: "references"
 ---
 
 # FR-194: The dossier trace matrix renders the evidence-backed matrix per requirement
@@ -28,7 +34,7 @@ method, static status and evidence status read from `MatrixOutput`.
 ## Inputs
 
 - The `matrix` source: the output of `quoin matrix --json` over the scope. It supplies, per criterion, `id`, the design cell (`design_elements`), `method`, `static_status` and `evidence_status`, and, when the matrix is empty, `reason`. It does not supply the criterion text or the criticality.
-- The `requirements` source of FR-192: the criterion `statement`, the requirement `criticality` and the requirement's recorded `software_safety_class` (FR-192), joined to the matrix rows by criterion id and requirement id.
+- The `requirements` source of FR-192: the criterion `statement`, the requirement `criticality` and the requirement's recorded software safety class (FR-192), joined to the matrix rows by criterion id and requirement id.
 
 ## Outputs
 
@@ -39,8 +45,8 @@ method, static status and evidence status read from `MatrixOutput`.
 - The trace matrix SHALL have one row for each criterion of `quoin matrix --json`, and no other row.
 - The trace matrix SHALL group rows by requirement id and order them in dossier order (FR-191), which can differ from the byte order of `MatrixOutput`.
 - The trace matrix SHALL show for each row the criterion id, its statement, the design cell, the method, the static status, the evidence status, the criticality and the software safety class of its requirement exactly as recorded.
-- If a requirement records no `software_safety_class`, the trace matrix SHALL show `unassigned` on each of its rows and record one `safety_class_unassigned` gap naming the requirement.
-- The trace matrix SHALL NOT infer, default or inherit a class ([NFR-034](../non-functional/NFR-034-class-reports-state-and-never-assign.md)).
+- If a requirement records no software safety class, the trace matrix SHALL show `unassigned` on each of its rows and record one `safety_class_unassigned` gap naming the requirement.
+- The trace matrix SHALL NOT infer, default or inherit a class.
 - The trace matrix SHALL take the design cell, method, static status and evidence status from `MatrixOutput` as it reports them.
 - The trace matrix SHALL take the statement and the criticality from the requirement documents.
 - If a requirement has no `criticality`, the trace matrix SHALL show `unassigned`.

@@ -9,6 +9,12 @@ relationships:
     type: "implements"
   - target: "ix://agent-ix/quoin/FR-191"
     type: "extends"
+  - target: "ix://agent-ix/quoin/FR-160"
+    type: "references"
+  - target: "ix://agent-ix/quire-rs/FR-090"
+    type: "references"
+  - target: "ix://agent-ix/spec-objects-architecture/FR-012"
+    type: "references"
 ---
 
 # FR-193: The dossier architecture document lists parts, ports, connections, allocations, ADRs and the requirements each part serves
@@ -25,7 +31,7 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 - The `design-join` source (`quire_rs::design_join`) and the `design-matrix` source (quire-rs FR-092), which `quoin-quire` exposes as `rust/crates/quoin-quire/src/design_join.rs` and `design_matrix.rs`.
 - The `systems-records` source: the systems records `PartRecord`, `PortRecord`, `ConnectionRecord` and allocation of quire-rs `src/semantic/systems.rs`, and the objects `Part`, `Port`, `Connection` and `Allocation` of spec-objects-architecture.
 - Documents of the `ADR` archetype.
-- Source contract: the `systems-records` source SHALL expose each part's recorded `software_safety_class` as written, omitted when the part records none.
+- Source contract: the class of a part is a frontmatter field of its `part` document (spec-objects-architecture FR-012), which the quire engine extracts as the part record key `softwareSafetyClass`. The `systems-records` source (`PartRecord` of quire-rs, wrapped by `quoin-quire`) carries no frontmatter, so `quoin-quire` SHALL expose that record key, as written and omitted when absent, beside each `Part`, matched to the `PartRecord` by the part document's id.
 
 ## Outputs
 
@@ -34,9 +40,9 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 ## Behavior
 
 - The architecture document SHALL list elements in dossier order (FR-191) by element id.
-- The architecture document SHALL show for each part and each other item that records a `software_safety_class` that class exactly as recorded.
-- If a part records no `software_safety_class`, the document SHALL show `unassigned` and record one `safety_class_unassigned` gap naming the part.
-- The document SHALL NOT infer, default or inherit a class, from a parent part, an allocated requirement or elsewhere ([NFR-034](../non-functional/NFR-034-class-reports-state-and-never-assign.md)).
+- The architecture document SHALL show for each part the software safety class recorded in its `part` document, exactly as recorded.
+- If a part records no software safety class, the document SHALL show `unassigned` and record one `safety_class_unassigned` gap naming the part.
+- The document SHALL NOT infer, default or inherit a class, from a parent part, an allocated requirement or elsewhere.
 - The architecture document SHALL show for each connection its flow direction and both ends.
 - The architecture document SHALL list for each part the requirements allocated to or realized by it, from the join.
 - If the join reports a requirement in the `uncovered` state, the document SHALL record a `no_design_element` gap naming it.

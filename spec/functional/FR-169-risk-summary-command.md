@@ -27,6 +27,8 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-170"
     type: "references"
+  - target: "ix://agent-ix/spec-objects-safety/FR-107"
+    type: "depends_on"
 ---
 
 # FR-169: quoin risk-summary: a read-only report of the hazard-to-decision chain, one row per hazard and situation
@@ -51,7 +53,9 @@ situation that has no link. This command is the chain view, and it carries exact
 - one row for every hazard and situation pairing, including a hazard with no situation and a situation with no hazard;
 - the harms of each situation;
 - the controls the post-control estimates assume, with the ids of the requirements that implement them and of the verifications that verify them;
-- the residual-risk decision and its decider as recorded;
+- the residual-risk decision, its decider and its rationale as recorded;
+- the authored title and text of each hazard, situation and harm, as recorded;
+- every `benefit_risk` record and every `overall_residual_risk_evaluation` record with its decision, decider, rationale and the records it references, as recorded;
 - the completeness findings of the chain, placed against the row they name ([FR-170](./FR-170-risk-summary-row-findings.md)).
 
 It does not repeat what those reports carry. The policy cell, the cell's `outside_acceptable` flag and the reason a
@@ -73,7 +77,7 @@ implementation as `quoin risk advise`. This requirement states no second lookup 
 - When a user runs `quoin risk-summary <scope> [--format markdown|json] [--module DIR]...`, the command SHALL print the report described below.
 - The command SHALL render `markdown` when `--format` is not given.
 - The command SHALL read the records below `<scope>` and check them against the safety module exactly as FR-145 does: the quire engine's reader, the `body_extraction` of each type's declaring module, taken from each `--module` root or, with none given, from the installed modules.
-- The command SHALL read these record kinds: `hazard`, `harm`, `hazardous_situation`, `risk_estimate`, `control`, `residual_risk`, `benefit_risk`, the `acceptability_policy` documents they reference, and every document of any type that has a `satisfies` or `verifies` edge to a control, because a retained-evidence record owned by another repository verifies a control as a test does ([FR-302](ix://agent-ix/spec-objects-safety/FR-302)).
+- The command SHALL read these record kinds: `hazard`, `harm`, `hazardous_situation`, `risk_estimate`, `control`, `residual_risk`, `benefit_risk`, `overall_residual_risk_evaluation`, the `acceptability_policy` documents they reference, and every document of any type that has a `satisfies` or `verifies` edge to a control, because a retained-evidence record owned by another repository verifies a control as a test does ([FR-302](ix://agent-ix/spec-objects-safety/FR-302)).
 - The command SHALL take the edges of a record from the frontmatter `relationships` only; a link in a table cell or elsewhere in the body is no edge.
 - A `risk_estimate` that has no `estimates` edge to a hazardous situation belongs to no row. The command SHALL show that estimate, and the residual risks that reference only such estimates, in no row, and `quoin risk advise` lists them ([FR-147](./FR-147-risk-advise-evidence-gaps.md), `estimate-without-situation`; [FR-148](./FR-148-risk-advise-decision-queue.md)).
 - The command SHALL skip a `risk_estimate` whose `phase` is not `pre_control` or `post_control`, or that breaks the contract of its type, as FR-145 does, and SHALL be silent about it.
@@ -81,15 +85,15 @@ implementation as `quoin risk advise`. This requirement states no second lookup 
 ### Exit codes and diagnostics
 
 - The command SHALL exit zero whenever it renders, whatever the rows contain.
-- If `<scope>` does not exist or is unreadable, a module does not load, a type it must check is declared by no loaded module, or a `residual_risk`, `benefit_risk` or `acceptability_policy` breaks the contract of its type, then the command SHALL exit 2, name the path or the record and the reason, and print no report. Each failure SHALL use the diagnostic code that `quoin risk advise` uses for the same failure, and the "type declared by no loaded module" message SHALL name `--module DIR`.
+- If `<scope>` does not exist or is unreadable, a module does not load, a type it must check is declared by no loaded module, or a `residual_risk`, `benefit_risk`, `overall_residual_risk_evaluation` or `acceptability_policy` breaks the contract of its type, then the command SHALL exit 2, name the path or the record and the reason, and print no report. Each failure SHALL use the diagnostic code that `quoin risk advise` uses for the same failure, and the "type declared by no loaded module" message SHALL name `--module DIR`.
 - If the reader cannot load a file below `<scope>`, then the command SHALL name the file and the reason on stderr and still render, and the file is absent from the report.
 - If `--format` has any value but `markdown` or `json`, then the command SHALL exit 2 as a usage error and print no report.
-- If `<scope>` contains no hazard and no hazardous situation, then the command SHALL print the attribution and an empty `rows` list, and exit zero.
+- If `<scope>` contains no hazard and no hazardous situation, then the command SHALL print the attribution and an empty `rows` list, and exit zero; its `benefit_risks` and `overall_evaluations` lists hold the records of those kinds in scope, and are empty when there are none.
 
 ### Output contract
 
-- `--format json` SHALL write one JSON object with exactly the keys `attribution` (a string) and `rows` (an array).
-- `--format markdown` SHALL write the attribution statement, then one table whose columns are the row keys below, in the order of the table, then nothing else.
+- `--format json` SHALL write one JSON object with exactly the keys `attribution` (a string), `rows` (an array), `benefit_risks` (an array) and `overall_evaluations` (an array).
+- `--format markdown` SHALL write the attribution statement, then one table whose columns are the row keys below, in the order of the table, then one table whose columns are the `benefit_risks` entry keys below, then one table whose columns are the `overall_evaluations` entry keys below, then nothing else. Each table holds its header row and one line per entry, and only its header row when the list is empty.
 - In a Markdown cell, a list of ids SHALL render as its elements joined by `, `, an empty list as `[]`, and an absent value as `null`.
 - In a Markdown cell, a list of entries SHALL render as its entries joined by `<br>`, and one entry SHALL render as its `key=value` pairs in key-table order joined by `; `, with a list value rendered as above.
 - In a Markdown cell, an estimate entry with a region SHALL render its last pair as "the policy marks this cell as <region>" in place of `policy_region=<region>`, and one without a region SHALL render `policy_region=null`.
@@ -101,8 +105,13 @@ implementation as `quoin risk advise`. This requirement states no second lookup 
 | Key | Content |
 |---|---|
 | `hazard` | the hazard id, or `null` |
+| `hazard_title` | the hazard's frontmatter `title`, or `null` |
+| `hazard_text` | the hazard's `## Condition` section text as written, or `null` |
 | `situation` | the situation id, or `null` |
+| `situation_title` | the situation's frontmatter `title`, or `null` |
+| `situation_text` | the situation's `## Description` section text as written, or `null` |
 | `harms` | ids of the harms that `arises_from` the situation, ascending |
+| `harm_texts` | harm-text entries for those harms |
 | `pre_control` | estimate entries for the `pre_control` estimates that `estimates` the situation |
 | `controls` | control entries for each control that a `post_control` estimate of the situation `assumes` |
 | `post_control` | estimate entries for the `post_control` estimates that `estimates` the situation |
@@ -111,7 +120,10 @@ implementation as `quoin risk advise`. This requirement states no second lookup 
 
 - Every estimate entry SHALL have exactly the keys `estimate`, `severity`, `probability` and `policy_region`. `severity` and `probability` are as entered, including the markers `unknown`, `not_assessed` and `not_applicable`. `policy_region` is the policy's own region name for those levels, or `null` where the FR-146 rules yield no region; it is a key of the entry and not of the row.
 - Every control entry SHALL have exactly the keys `control`, `requirements`, `retired_requirements` and `verifications`. `requirements` SHALL hold the ids of all `FR` and `NFR` documents with a `satisfies` edge to the control. `retired_requirements` SHALL hold the subset whose linked document has `status: retired` in its frontmatter, using an exact lowercase value match; it SHALL NOT be inferred from body text or a matrix `static_status`. A missing status or any status value other than exactly `retired` SHALL not place an id in this subset. Each list SHALL be ascending, and `[]` when empty. The complete `requirements` list SHALL retain every id in `retired_requirements`. This field reports status only and SHALL NOT imply discharge, satisfaction, acceptance, or a change to verification or decision state. `verifications` SHALL hold the ids of the documents of any type with a `verifies` edge to the control.
-- Every residual-risk entry SHALL have exactly the keys `residual_risk`, `decision` and `decided_by`. `decision` SHALL be `undecided`, `accepted` or `not_accepted` as the record wrote it. `decided_by` SHALL be as the record wrote it, `null` where the record has none.
+- Every harm-text entry SHALL have exactly the keys `harm`, `title` and `text`: the harm id, its frontmatter `title` and its `## Description` section text as written, each `null` when the record has none, ascending by `harm`.
+- Every residual-risk entry SHALL have exactly the keys `residual_risk`, `decision`, `decided_by` and `rationale`. `decision` SHALL be `undecided`, `accepted` or `not_accepted` as the record wrote it. `decided_by` SHALL be as the record wrote it, `null` where the record has none. `rationale` SHALL be the `Rationale` cell of the record's `Determination` table as written, `null` where it is empty.
+- Every `benefit_risks` entry SHALL have exactly the keys `benefit_risk`, `benefit`, `decision`, `decided_by`, `rationale` and `residual_risks`: the record id, its `Benefit` cell, its decision word, its `Decided by` cell and its `Rationale` cell as written (each `null` where empty), and the ids of the `residual_risk` documents it `references`, ascending. The list SHALL hold every `benefit_risk` in scope, ascending by `benefit_risk`.
+- Every `overall_evaluations` entry SHALL have exactly the keys `evaluation`, `product`, `decision`, `decided_by`, `rationale` and `references`: the record id, its `Product` cell, its decision word, its `Decided by` cell and its `Rationale` cell as written (each `null` where empty), and the ids of the `residual_risk` and `benefit_risk` documents it `references`, ascending. The list SHALL hold every `overall_residual_risk_evaluation` in scope, ascending by `evaluation`.
 - When two or more estimates of a phase exist for one situation, the command SHALL list all of them and SHALL mark none as in force (the choice among them belongs to the people who authored them, [FR-203](ix://agent-ix/spec-objects-safety/FR-203)).
 - A control assumed by several post-control estimates of one situation SHALL appear once in that row.
 
@@ -141,8 +153,8 @@ These rules bind this command itself. NFR-031 binds `quoin risk advise` only and
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-169-AC-1 | Over a complete fixture chain, `--format json` parses as one object whose keys equal `attribution` and `rows` exactly, and has one row per hazard and situation pairing. | Test |
-| FR-169-AC-2 | The keys of every row equal the row key table exactly; the keys of every estimate entry equal `estimate`, `severity`, `probability`, `policy_region` exactly; of every control entry `control`, `requirements`, `retired_requirements`, `verifications` exactly; of every residual-risk entry `residual_risk`, `decision`, `decided_by` exactly. | Test |
+| FR-169-AC-1 | Over a complete fixture chain, `--format json` parses as one object whose keys equal `attribution`, `rows`, `benefit_risks` and `overall_evaluations` exactly, and has one row per hazard and situation pairing. | Test |
+| FR-169-AC-2 | The keys of every row equal the row key table exactly, including `hazard_title`, `hazard_text`, `situation_title`, `situation_text` and `harm_texts`; the keys of every estimate entry equal `estimate`, `severity`, `probability`, `policy_region` exactly; of every control entry `control`, `requirements`, `retired_requirements`, `verifications` exactly; of every residual-risk entry `residual_risk`, `decision`, `decided_by`, `rationale` exactly; of every harm-text entry `harm`, `title`, `text` exactly; of every `benefit_risks` entry `benefit_risk`, `benefit`, `decision`, `decided_by`, `rationale`, `residual_risks` exactly; of every `overall_evaluations` entry `evaluation`, `product`, `decision`, `decided_by`, `rationale`, `references` exactly. | Test |
 | FR-169-AC-3 | A hazard with no situation yields one row with `situation: null` and empty lists; a situation with no hazard yields one row with `hazard: null`; a situation arising from two hazards appears in two rows with equal situation content. | Test |
 | FR-169-AC-4 | A fixture estimate with `probability: not_assessed` shows `not_assessed` and `policy_region: null`, while another estimate in the same row keeps its own region name. | Test |
 | FR-169-AC-5 | A fixture residual risk with `decision: undecided` shows `undecided` and `decided_by: null`, and no row shows `accepted` that a record did not write; a hazard with `status: accepted` changes no residual-risk entry. | Test |
@@ -169,6 +181,12 @@ These rules bind this command itself. NFR-031 binds `quoin risk advise` only and
 | FR-169-AC-17 | A `risk_estimate` with a `phase` outside the two members, and one with no judgement table, are skipped silently and the command exits zero. | Test |
 | FR-169-AC-18 | `--format xml` exits 2 and prints no report; omitting `--format` renders Markdown. | Test |
 | FR-169-AC-19 | Over a snapshot fixture corpus holding one complete chain and one chain with each gap of FR-170, the Markdown and the JSON each equal their checked-in snapshots byte for byte. | Test |
+| FR-169-AC-29 | A fixture hazard, situation and two harms with titles and bodies give `hazard_title`, `hazard_text` (its `## Condition`), `situation_title`, `situation_text` (its `## Description`) and `harm_texts` entries (`## Description`) equal to what the records wrote, ascending by harm id; a record with no such text gives `null`. | Test |
+| FR-169-AC-30 | A residual risk whose `Rationale` cell holds text gives that text in `rationale`; an empty cell gives `null`. | Test |
+| FR-169-AC-31 | A fixture `benefit_risk` gives `benefit`, `decision`, `decided_by`, `rationale` and the ascending ids of the residual risks it references, and appears whatever its decision; two records are ascending by id. | Test |
+| FR-169-AC-32 | A fixture `overall_residual_risk_evaluation` gives `product`, `decision`, `decided_by`, `rationale` and the ascending ids of the residual-risk and benefit-risk records it references, and appears whatever its decision; with none in scope `overall_evaluations` is `[]`. | Test |
+| FR-169-AC-33 | The Markdown holds the rows table, then a `benefit_risks` table and an `overall_evaluations` table, each with its header row and one line per entry, and only its header row when empty. | Test |
+| FR-169-AC-34 | An `overall_residual_risk_evaluation` that breaks the contract of its type exits 2 naming the record, prints no report, and uses the diagnostic code of the same failure in `quoin risk advise`. | Test |
 
 ## Dependencies
 

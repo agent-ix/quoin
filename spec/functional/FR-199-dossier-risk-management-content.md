@@ -36,15 +36,11 @@ of `quoin risk-summary` without assigning a new risk value or decision.
   and the undecided decision queue. The common dossier `--scope` and
   `--module` select the same safety corpus for both source operations. The
   generator does not repeat region lookup or chain-completeness rules.
-- Source contract: the `risk-summary` source SHALL expose, per row, the authored
-  text of each hazard, hazardous situation and harm, and, per residual-risk
-  record, its authored rationale and decider. Rows, situations, harms and
-  residual risks carry these as optional text fields, omitted when the record
-  states none. The source SHALL also expose every `benefit_risk` record (id,
-  authored decision, decider, rationale, referenced residual-risk ids) and
-  every `overall_residual_risk_evaluation` record (id, authored decision,
-  decider, rationale), whether decided or not. The source exposes the text a
-  person wrote and nothing it derived.
+- The `risk-summary` JSON as FR-169 defines it, including its `hazard_title`,
+  `hazard_text`, `situation_title`, `situation_text` and `harm_texts` row keys,
+  the `rationale` key of each residual-risk entry, and its `benefit_risks` and
+  `overall_evaluations` lists. The generator reads these authored values from
+  that source and from no other, and never from the record files.
 
 ## Outputs
 
@@ -52,16 +48,16 @@ of `quoin risk-summary` without assigning a new risk value or decision.
   `## <hazard id>` section per source hazard in source order,
   `## Benefit-risk records`, `## Overall residual risk evaluation`,
   `## Undecided decisions` from the source queue, then `## Gaps`.
-- Each hazard section shows the hazard's authored text under its id. Under each
-  situation, the situation's authored text and each harm's authored text appear
-  under their ids; tables show `Phase | Severity | Probability | Region`
+- Each hazard section shows the hazard's authored title and `## Condition` text under its id. Under each situation, the situation's authored title and `## Description` text and each harm's id, title and `## Description` text appear under their ids; tables show `Phase | Severity | Probability | Region`
   and `Control | Implementing requirements | Retired requirements | Verifications`, followed by
   each residual-risk record's decision, decider and authored rationale, and row findings.
-- `## Benefit-risk records` has one entry per source `benefit_risk` record with
-  its id, authored decision, decider, rationale and referenced residual risks.
+- `## Benefit-risk records` has one entry per source `benefit_risks` entry, in
+  dossier id order, showing its id, `benefit`, decision, decider, rationale and
+  referenced residual risks, and the line `none` when the list is empty.
 - `## Overall residual risk evaluation` has one entry per source
-  `overall_residual_risk_evaluation` record with its authored decision, decider
-  and rationale.
+  `overall_evaluations` entry, in dossier id order, showing its id, `product`,
+  decision, decider, rationale and referenced records, and the line `none`
+  when the list is empty.
 
 ## Behavior
 
@@ -71,12 +67,13 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 - Each estimate's region SHALL equal the source `policy_region`; an absent
   region SHALL read `not stated` and show any matching source
   `Advice.policy_cells.findings` by estimate id, not a guessed cell.
-- The document SHALL render the authored text of each hazard, hazardous situation and harm, and each residual-risk record's authored rationale, verbatim under the record's id.
-- An absent authored text SHALL read `not stated`.
+- The document SHALL render the authored title and text of each hazard, hazardous situation and harm, and each residual-risk record's authored rationale, verbatim under the record's id.
+- An absent authored title, text or rationale SHALL read `not stated`.
 - The document SHALL NOT invent, summarise or derive a title or text.
-- The document SHALL render every `benefit_risk` record, decided or not, with id, authored decision, decider, rationale and referenced residual risks, and every `overall_residual_risk_evaluation` record with authored decision, decider and rationale, and an absent field reads `not stated`.
+- The document SHALL render every `benefit_risks` entry, decided or not, and every `overall_evaluations` entry, decided or not, with the values named under Outputs; an absent field reads `not stated`.
 - When the corpus holds no `overall_residual_risk_evaluation` record, the document SHALL produce one document-level `no_overall_evaluation` gap.
-- The document SHALL NOT report a residual-risk, benefit-risk or overall record as accepted or approved, shows the recorded decision and decider only, and assigns no score, class or acceptability value.
+- When an `overall_evaluations` entry has decision `undecided`, the document SHALL produce one `overall_evaluation_undecided` gap naming that evaluation, so an open overall decision never reads as complete.
+- The document SHALL add no acceptance state or label of its own to any residual-risk, benefit-risk or overall record: authored decision values and texts are shown verbatim, and the document assigns no score, class or acceptability value.
 - The document SHALL keep each FR-170 finding against its source row.
 - For a `control-without-verification` finding, the document SHALL produce
   one `control_unverified` gap naming the control.
@@ -88,7 +85,7 @@ of `quoin risk-summary` without assigning a new risk value or decision.
   produce one document-level `no_acceptability_policy` gap.
 - The `Undecided decisions` section SHALL show the source
   `Advice.decision_queue` entries for residual and benefit-risk records
-  without adding a decision; a decided record appears in its own section above and not in the queue.
+  without adding a decision; a decided record is not in the queue, and an undecided benefit-risk record appears both in its own section and in the queue.
 - The document SHALL NOT claim to contain estimates or records that neither
   source report exposes.
 - If a source reader reports an unreadable safety record, the command SHALL
@@ -99,7 +96,7 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-199-AC-1 | A fixture with a complete hazard, situation, harm, pre/post estimates, control, requirement, verification and decided residual risk renders each source value and no `risk_chain_incomplete` gap; the hazard heading uses its id and texts are shown verbatim, not invented. | Test |
+| FR-199-AC-1 | A fixture with a complete hazard, situation, harm, pre/post estimates, control, requirement, verification, decided residual risk and decided overall residual risk evaluation renders each source value and no gap, and status `complete`; the hazard heading uses its id and the authored title and texts are shown verbatim, not invented. | Test |
 | FR-199-AC-2 | Removing a control verification yields `control_unverified` naming that control; no source row is lost. | Test |
 | FR-199-AC-3 | Removing a residual-risk decider yields `residual_risk_undecided`, a `not stated` decider cell and no invented person or accepted decision. | Test |
 | FR-199-AC-4 | A hazard with no situation remains listed with its FR-170 finding and `risk_chain_incomplete` gap; a `control-without-verification` or `residual-risk-undecided` finding yields only its dedicated gap kind. | Test |
@@ -107,12 +104,14 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 | FR-199-AC-6 | A benefit-risk entry from `Advice.decision_queue` appears under `Undecided decisions`; an absent policy reported by `policy-not-found` yields `no_acceptability_policy`, while no unexposed record is invented. | Test |
 | FR-199-AC-7 | Two runs over the same source data produce byte-identical Markdown, and no generated field computes a score, rank or acceptability. | Test |
 | FR-199-AC-8 | An unreadable safety record causes exit 3 with the source error and leaves no selected output file. | Test |
-| FR-199-AC-9 | A hazard, hazardous situation and harm that each carry authored text render that text verbatim under their ids; one with no text reads `not stated` and no title or text appears that the source does not hold. | Test |
+| FR-199-AC-9 | A hazard, hazardous situation and harm that each carry an authored title and text render them verbatim under their ids, from the FR-169 `hazard_title`, `hazard_text`, `situation_title`, `situation_text` and `harm_texts` values; one with none reads `not stated` and no title or text appears that the source does not hold. | Test |
 | FR-199-AC-10 | A decided residual risk renders its authored rationale and decider; one with no rationale reads `not stated` for it. | Test |
-| FR-199-AC-11 | A decided `benefit_risk` record renders in `Benefit-risk records` with its id, authored decision, decider, rationale and referenced residual risks, and does not appear in `Undecided decisions`. | Test |
-| FR-199-AC-12 | A corpus with an `overall_residual_risk_evaluation` record renders its authored decision, decider and rationale, and produces no `no_overall_evaluation` gap. | Test |
+| FR-199-AC-11 | A decided `benefit_risk` record renders in `Benefit-risk records` with its id, `benefit`, authored decision, decider, rationale and referenced residual risks, and does not appear in `Undecided decisions`; an undecided one appears in both. | Test |
+| FR-199-AC-12 | A corpus with a decided `overall_residual_risk_evaluation` record renders its id, `product`, authored decision, decider, rationale and referenced records, and produces neither `no_overall_evaluation` nor `overall_evaluation_undecided`. | Test |
 | FR-199-AC-13 | A corpus with no `overall_residual_risk_evaluation` record produces exactly one document-level `no_overall_evaluation` gap, status `incomplete`, and the gap appears in the JSON report in gap order. | Test |
-| FR-199-AC-14 | Over a fixture whose residual-risk, benefit-risk and overall records are all decided, no output text states `accepted` or `approved` that the records' authored decision text does not itself contain, and no score, class or acceptability value appears. | Test |
+| FR-199-AC-14 | Changing only a residual-risk, benefit-risk or overall record's authored decision from `undecided` to `accepted` changes that record's decision and decider cells and the gap or queue entries that decision governs, and nothing else; no heading, column label or gap detail that the tool writes names acceptance, approval or acceptability, and no score, class or acceptability value appears. | Test |
+| FR-199-AC-15 | An overall evaluation with decision `undecided` renders with that decision and produces one `overall_evaluation_undecided` gap naming it, status `incomplete`, and no `no_overall_evaluation` gap. | Test |
+| FR-199-AC-16 | With two benefit-risk records and two overall evaluations in scope, each section lists them in dossier id order; with none of a kind, its section reads `none`. | Test |
 
 ## Dependencies
 

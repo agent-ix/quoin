@@ -67,7 +67,7 @@ For a `processing_activity`, an explicit security-owned `scopes` edge selects a 
 - Every scoped sink SHALL include a `transfer_region_unstated` gap because the model's location labels cannot establish a third-country transfer. The report MAY separately show whether a sink's location label is outside the activity's exact `home_regions` labels.
 - Every scoped sink SHALL include a `transfer_safeguards_unstated` gap because the model does not identify which movements are third-country transfers. A control's safeguards may still be listed as general security measures.
 - A scoped connection or sink without any protecting control with a stated `safeguards` value SHALL include a `security_measures_unstated` gap naming that element.
-- `quoin dossier check` and `quoin dossier export` SHALL include `records-of-processing` as [FR-191](./FR-191-dossier-command.md) states; the document uses no version, so neither command requires `--version` for it and its output carries none.
+- `quoin dossier check` and `quoin dossier export` SHALL include `records-of-processing` as [FR-191](./FR-191-dossier-command.md) states. The document carries no version, so `check` needs no `--version` for it and its output carries none; `export` takes its identity from `--release` (FR-191).
 - Every gap SHALL appear in the document's final `Gaps` section and in the JSON report. The document SHALL have `status: incomplete` when any gap exists, following FR-191.
 
 ### Source boundary
@@ -90,7 +90,7 @@ For a `processing_activity`, an explicit security-owned `scopes` edge selects a 
 | FR-207-AC-7 | Missing facts in `quire.flow-report/v1` produce an explicit gap; changing only an unlisted source such as runtime data or an artifact name does not change any entry. | Test |
 | FR-207-AC-8 | Two runs over the same authored records and flow report produce byte-identical Markdown and JSON; generation requires no commit, version, check, or byte-comparison step. | Test |
 | FR-207-AC-9 | With two scoped sink facts sharing an artifact id across different repositories and a classified scoped connection whose only `delivers_to` fact names the repo-a sink, the report retains both sinks as distinct `(repository, id)` entries, associates the classification only with repo-a, and contains no `personal_data_categories_unstated` gap for repo-a and exactly one such gap naming repo-b. The result uses only those listed flow-report facts and report output, without legal inference. | Test |
-| FR-207-AC-10 | Over a records-of-processing fixture, `check` with no `--doc` reports `DOS-ROP.md` as `matches` after `generate` and `differs` after a hand edit, with its gaps in the report and no `--version`; `export --doc records-of-processing` over the committed file runs `quire export` once without `--version`. | Test |
+| FR-207-AC-10 | Over a records-of-processing fixture, `check` with no `--doc` reports `DOS-ROP.md` as `matches` after `generate` and `differs` after a hand edit, with its gaps in the report and no `--version`; `export --doc records-of-processing --release <TAG>` over the committed file runs `quire export` once with no `--version`, and the same export without `--release` exits 4 with `quire` exit code 3. | Test |
 
 ## Dependencies
 

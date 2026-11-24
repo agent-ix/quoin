@@ -9,6 +9,12 @@ relationships:
     type: "implements"
   - target: "ix://agent-ix/quoin/FR-191"
     type: "extends"
+  - target: "ix://agent-ix/quoin/FR-160"
+    type: "references"
+  - target: "ix://agent-ix/quire-rs/FR-090"
+    type: "references"
+  - target: "ix://agent-ix/spec-artifacts-iso/FR-009"
+    type: "references"
 ---
 
 # FR-192: The dossier SRS lists every requirement in scope with its criteria and recorded criticality
@@ -24,7 +30,7 @@ When `quoin dossier generate` selects the SRS (`--doc srs`, document id `DOS-SRS
 - For an StR, the criteria are the rows of its `Validation Criteria` table.
 - The statement is the text of the `Description` section of an FR, the `Statement` section of an NFR and the `Stakeholder Need` section of an StR.
 - The optional `criticality` key of each requirement (quire-rs FR-082), read from frontmatter.
-- The software safety class of each requirement: the `software_safety_class` entry of the requirement's `carried` object in the Quire coverage matrix (quire-rs FR-090), joined to the requirement as [FR-160](./FR-160-per-class-evidence-floors.md) joins it, with its legal values from `carried_vocabulary`. No class policy file is needed to read it.
+- The software safety class of each requirement: the entry of the requirement's `carried` object in the Quire coverage matrix (quire-rs FR-090) under the carried name that the ISO module declares for the class (spec-artifacts-iso FR-009), joined to the requirement as [FR-160](./FR-160-per-class-evidence-floors.md) joins it, with its legal values from `carried_vocabulary`. FR-160 takes that name from a class policy file because it applies floors; the dossier applies none, so it reads the ISO-declared name and needs no policy file.
 
 ## Outputs
 
@@ -37,8 +43,8 @@ When `quoin dossier generate` selects the SRS (`--doc srs`, document id `DOS-SRS
 - If a requirement has no `criticality`, the SRS SHALL show `unassigned` for it.
 - If a requirement has no `criticality`, the SRS SHALL record a `criticality_unassigned` gap naming it.
 - The SRS SHALL show each software safety class exactly as recorded, as a line separate from criticality.
-- If a requirement records no `software_safety_class`, the SRS SHALL show `unassigned` for it and record one `safety_class_unassigned` gap naming it.
-- The SRS SHALL NOT infer, default, inherit or raise a software safety class, from criticality, an allocated part or any other requirement ([NFR-034](../non-functional/NFR-034-class-reports-state-and-never-assign.md)).
+- If a requirement records no software safety class, the SRS SHALL show `unassigned` for it and record one `safety_class_unassigned` gap naming it.
+- The SRS SHALL NOT infer, default, inherit or raise a software safety class, from criticality, an allocated part or any other requirement, as FR-160 reads the class only from the requirement's own carried entry.
 - If a requirement has zero criteria in its criteria table, the SRS SHALL record a `no_acceptance_criteria` gap naming it.
 - The SRS SHALL list the Validation Criteria of an StR as its criteria.
 - If the scope holds no requirement, the SRS SHALL record a `no_requirements` gap.
