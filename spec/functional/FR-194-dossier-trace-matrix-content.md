@@ -33,7 +33,7 @@ method, static status and evidence status read from `MatrixOutput`.
 
 ## Inputs
 
-- The `matrix` source: the output of `quoin matrix --json` over the scope. It supplies, per criterion, `id`, the design cell (`design_elements`), `method`, `static_status` and `evidence_status`, and, when the matrix is empty, `reason`. It does not supply the criterion text or the criticality.
+- The `matrix` source: the output of `quoin matrix --json` over the scope. It supplies, per criterion, `id`, the design cell (`design_elements`), `method`, `static_status` and `evidence_status`; per requirement, the `design` blocks ([FR-165](./FR-165-matrix-design-column.md) Outputs), each with its relation's `check` token and state; and, when the matrix is empty, `reason`. It does not supply the criterion text or the criticality.
 - The `requirements` source of FR-192: the criterion `statement`, the requirement `criticality` and the requirement's recorded software safety class (FR-192), joined to the matrix rows by criterion id and requirement id.
 
 ## Outputs

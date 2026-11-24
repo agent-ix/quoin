@@ -55,6 +55,12 @@ CHANGES REQUESTED (medium). The spec is consistent with the engine and with toda
 | --- | --- | --- | --- |
 | FND-006 | medium | The dossier trace matrix generator (DOS-TM, FR-194) also emits a `no_design_element` gap with the detail "has no design element", once per requirement with any `uncovered` block. FR-194 specifies no design gap at all, and this PR leaves FR-194 untouched, so after FR-030 and FR-016 load, DOS-TM states "has no design element" for a requirement that has a realizing element but lacks the SOUP or segregation edge. That is the defect FR-193 now forbids, left in FR-194's generator. The new FR-161 bullet names FR-193 only. State FR-194's rule here as FR-193's (one gap per `uncovered` block carrying its `check` token, never "no design element" when one exists under another relation) or have the code step drop the gap from DOS-TM. | rust/crates/quoin-dossier/src/trace_matrix.rs:100-112; spec/functional/FR-194-dossier-trace-matrix-content.md:48-57 |
 
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | low | FR-194's new gap rule reads the requirement's `design` blocks (`state` and the relation's `check`), but FR-194 Inputs still says the `matrix` source supplies, per criterion, the design cell (`design_elements`), and does not name the requirement-level `design` array of `MatrixOutput` (FR-165 Outputs). The data exists, and the generator already reads `requirement.design` (`trace_matrix.rs:100`). Add the `design` blocks to the Inputs bullet. | spec/functional/FR-194-dossier-trace-matrix-content.md:36 |
+
 ## Dispositions
 
 | FND | Outcome | Reason |
@@ -64,3 +70,5 @@ CHANGES REQUESTED (medium). The spec is consistent with the engine and with toda
 | FND-003 | fixed | 17892164: FR-161 now says the engine decides the population from "the `from`, `where`, `when_any` and `exclude` of the relation (quire-rs FR-058)" and that quoin cannot see the scope. It states the quire-cli FR-043 `when_any` wording gap as upstream and does not edit it. FR-165 says `matrix.build` sees only emitted blocks. |
 | FND-004 | fixed | 17892164: the `element_archetypes` sub-bullet reads "optional for `soup-requirements` and `segregation`; not accepted on `design-trace`", and the `design-trace` paragraph states the refusal. |
 | FND-005 | fixed | 17892164: an `unmet` `design-trace` row lists in `missing` each relation with an `uncovered` row, in join order (a pinned entry lists only its own relation). The change is stated as affecting only `unmet` rows, and AC-15 and AC-16 assert it. The code emits `missing` from `Status.missing` (`class_obligations.rs:214`), so the code step only has to keep relation names when collecting rows. |
+| FND-001 | fixed | ed00a6c4: Status now reads "a join row it reads with `state: covered` is `met`; a join row it reads with `state: uncovered` is `unmet`", and the `not-available` clause is qualified for a pinned entry. No other unqualified row rule remains in the section. |
+| FND-006 | fixed | ed00a6c4: FR-194 adds one `no_design_element` gap per `uncovered` block naming the requirement and that block's `check` token, a SHALL to state that the relation's check found no element, and a SHALL NOT against claiming no design element when one exists under another relation. FR-194-AC-9 mirrors FR-193-AC-9. FR-161's effect section now says the code step changes both dossier generators. The rule is consistent with FR-165, whose blocks carry `relation`, `check` and `state` verbatim. |
