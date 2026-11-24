@@ -53,6 +53,9 @@ method, static status and evidence status read from `MatrixOutput`.
 - If a requirement has no `criticality`, the trace matrix SHALL record a `criticality_unassigned` gap naming the requirement.
 - If a criterion has no test tag (`static_status` is not `tagged`), the trace matrix SHALL record an `unbacked_criterion` gap naming the criterion.
 - If the `evidence_status` of a criterion is not `bound`, the trace matrix SHALL record a `no_evidence` gap naming the criterion and the status.
+- If a requirement has an `uncovered` design block, the trace matrix SHALL record one `no_design_element` gap per `uncovered` block, naming the requirement and the `check` token of that block's relation.
+- A `no_design_element` gap in the trace matrix SHALL state that the relation's check found no element.
+- A `no_design_element` gap in the trace matrix SHALL NOT state that the requirement has no design element at all when it has an element under another relation.
 - If the matrix has no criteria, the trace matrix SHALL render the matrix's `reason` text.
 - If the matrix has no criteria, the trace matrix SHALL record a `no_requirements` gap whose detail is that text.
 - The trace matrix SHALL NOT use the static-only `quire matrix` (quire-cli FR-043) as its source.
@@ -69,6 +72,7 @@ method, static status and evidence status read from `MatrixOutput`.
 | FR-194-AC-6 | A requirement with no `criticality` shows `unassigned` on each of its rows and one `criticality_unassigned` gap | Test |
 | FR-194-AC-7 | Each row shows its requirement's recorded software safety class as written, in a column separate from criticality. | Test |
 | FR-194-AC-8 | A requirement with no recorded class shows `unassigned` on each of its rows and one `safety_class_unassigned` gap; no class value appears on those rows. | Test |
+| FR-194-AC-9 | A requirement with a `covered` block of one relation and an `uncovered` block of a second records one `no_design_element` gap carrying the second relation's `check` token and none for the first; a requirement with `uncovered` blocks of two relations records two gaps with their two `check` tokens. | Test |
 
 ## Dependencies
 

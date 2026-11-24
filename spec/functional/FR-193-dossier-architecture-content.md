@@ -45,7 +45,10 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 - The document SHALL NOT infer, default or inherit a class, from a parent part, an allocated requirement or elsewhere.
 - The architecture document SHALL show for each connection its flow direction and both ends.
 - The architecture document SHALL list for each part the requirements allocated to or realized by it, from the join.
-- If the join reports a requirement in the `uncovered` state in a design relation, the document SHALL record one `no_design_element` gap per `uncovered` row, naming the requirement and the `check` token of that row's relation. The gap states that the relation's check found no element, and SHALL NOT state that the requirement has no design element at all when it has an element under another relation. A requirement with `uncovered` rows in two relations has two gaps, told apart by the `check` token.
+- If the join reports a requirement in the `uncovered` state in a design relation, the document SHALL record one `no_design_element` gap per `uncovered` row, naming the requirement and the `check` token of that row's relation.
+- A `no_design_element` gap SHALL state that the relation's check found no element.
+- A `no_design_element` gap SHALL NOT state that the requirement has no design element at all when it has an element under another relation.
+- A requirement with `uncovered` rows in two relations has two gaps, told apart by the `check` token.
 - If a design reference resolves to no element, the document SHALL show the reference.
 - If a design reference resolves to no element, the document SHALL record a `dangling_design_reference` gap naming it.
 - If the join lists a design element of a kind the relation does not accept (`kind_mismatch`), the document SHALL show the element.

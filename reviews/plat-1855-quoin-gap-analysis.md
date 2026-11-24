@@ -43,3 +43,9 @@ Plan completion: not assessed
 ## Verdict
 
 No blocking gap for a spec-only PR. The code step's test list is above; FND-001 is a known divergence it must close.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | deferred | Code-step work under PLAT-1855. The spec now states the accepted case (FR-161-AC-12), the blank-`relation` and `element_archetypes` refusals, and the pinned reading (AC-15). The code PR must flip the `relation_backed_entries_are_refused_when_malformed` assertion at `class_obligations.rs:956-958` and the refusal at `:252-257`. Until it does, AC-12 is tagged by a test that asserts the opposite. |

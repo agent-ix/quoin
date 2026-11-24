@@ -99,7 +99,7 @@ reads the join rows as the engine emitted them and cannot see which requirements
   requirements it covers and does not name `when_any`; that wording gap is upstream in quire-cli and is not corrected here.
 - The `quoin matrix` design column (FR-165) carries each added relation's block verbatim with its `check` token, with no quoin code change. The dossier
   reads the same join, and [FR-193](./FR-193-dossier-architecture-content.md) states how a dossier design gap names the relation whose block is
-  `uncovered`; that is a change to the dossier generator, which the code step implements. Output over a corpus whose modules add no design relation, or
+  `uncovered`, and [FR-194](./FR-194-dossier-trace-matrix-content.md) states the same rule for the trace matrix; the code step changes both dossier generators. Output over a corpus whose modules add no design relation, or
   whose requirements have no row in an added relation, is unchanged.
 
 Which activities a class demands is the policy author's data. The five kinds are the only closed vocabulary, and a new kind is a quoin
@@ -109,7 +109,7 @@ part) is expressed by the module's design relation and read here only as the req
 ### Status
 
 Each (requirement, obligation entry) row has a status: `met`, `unmet` (the row lists the obligations lacking evidence for `evidence`, and the uncovered relations for `design-trace`),
-or `not-available` when the input the kind reads is absent. For `design-trace`: a join row with `state: covered` is `met`; a join row
+or `not-available` when the input the kind reads is absent. For `design-trace`: a join row it reads with `state: covered` is `met`; a join row it reads
 with `state: uncovered` is `unmet`; an absent or empty join (`{"relations": []}`), or a requirement with no row in any design
 relation (for an entry pinning `relation`, no row in that relation), is `not-available`, because a requirement no design relation obliges has not been asked for a design element, so its
 absence is not a gap. `not-available` names the missing input. The command reports; it records nothing, and the absence of `unmet`
@@ -136,7 +136,7 @@ When the policy file sets `gate: true` ([FR-160](./FR-160-per-class-evidence-flo
 | FR-161-AC-9 | The command writes no file, record or class value, and two runs over the same inputs print identical output. | Test |
 | FR-161-AC-10 | With a `detailed-design` entry declaring `element_archetypes: [unit]`, a requirement whose `covered` row links an element of archetype `unit` reports `met`; one whose `covered` row links only an element of another archetype reports `unmet`; one whose row is `uncovered` reports `unmet`; one with no row reports `not-available`. | Test |
 | FR-161-AC-11 | With a `soup-requirements` or `segregation` entry naming `relation: R` that a loaded module declares, a requirement with a `covered` row in `R` reports `met`, one with an `uncovered` row in `R` reports `unmet`, a row in another relation is not read, and one with no row in `R` reports `not-available`. | Test |
-| FR-161-AC-12 | A `detailed-design` entry with no `element_archetypes`, a `soup-requirements` or `segregation` entry with no `relation`, a relation-backed entry naming a method, a blank relation or archetype, a `design-trace` entry naming `element_archetypes` or a blank `relation`, or an `evidence` entry naming a relation or archetypes is refused naming the cause. A `design-trace` entry naming a non-blank `relation` that a loaded module declares is accepted, so the existing test that refuses a `design-trace` entry with `relation` is superseded by this and AC-15. | Test |
+| FR-161-AC-12 | A `detailed-design` entry with no `element_archetypes`, a `soup-requirements` or `segregation` entry with no `relation`, a relation-backed entry naming a method, a blank relation or archetype, a `design-trace` entry naming `element_archetypes` or a blank `relation`, or an `evidence` entry naming a relation or archetypes is refused naming the cause. A `design-trace` entry naming a non-blank `relation` that a loaded module declares is accepted. | Test |
 | FR-161-AC-13 | With `gate: true` the command exits `Partial` (exit 1) when a row is `unmet`, with the report unchanged, and 0 when every row is `met` or `not-available`; without `gate`, or with `gate: false`, an `unmet` row leaves the exit status unchanged. | Test |
 | FR-161-AC-14 | A `relation` that no loaded module declares as a design relation is refused naming the class, the entry and the relation, with no report and the same exit status as an undeclared method; the same name declared by a loaded module is not refused. | Test |
 | FR-161-AC-15 | A `design-trace` entry naming `relation: R` reads only the requirement's rows in `R`: `covered` is `met`, `uncovered` is `unmet`, no row in `R` is `not-available`, and an `uncovered` row in another relation does not change the status; an `unmet` row lists `R` in `missing`. An `R` no loaded module declares as a design relation is refused as in AC-14. | Test |

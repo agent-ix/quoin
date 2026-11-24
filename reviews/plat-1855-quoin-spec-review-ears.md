@@ -38,3 +38,18 @@ CHANGES REQUESTED (medium). Statements conform; FR-161-AC-16 and FR-165-AC-20 ne
 - FR-161 section "Effect of design relations a module adds" (examined; descriptive, no SHALL)
 - FR-165 statement and the added paragraph after "Rendering" (examined)
 - FR-165-AC-1, FR-165-AC-20 (examined)
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | FR-161-AC-12 now ends with a sentence about a test, not about behaviour: "so the existing test that refuses a `design-trace` entry with `relation` is superseded by this and AC-15". A criterion states what the command does; which test changes is code-step work. The behavioural half ("A `design-trace` entry naming a non-blank `relation` that a loaded module declares is accepted") is enough; drop the clause about the test. | spec/functional/FR-161-per-class-obligations-report.md:139 |
+| FND-005 | low | The amended FR-193 bullet carries two requirements in one item (SHALL record one gap per `uncovered` row naming the check token, and SHALL NOT state no design element at all), while the neighbouring bullets split each SHALL into its own item (the dangling and kind-mismatch rules are each two bullets). Split it so each clause is one testable statement. | spec/functional/FR-193-dossier-architecture-content.md:48 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 17892164: FR-161-AC-16 now names X and Y over one corpus, adds an `uncovered` row of S for X only, and states the oracle: X turns `met` to `unmet` with `missing` listing S, and Y's status and `missing` equal those over the join without S. This is measurable over a join fixture and consistent with one engine row per requirement per relation. |
+| FND-002 | fixed | 17892164: FR-161-AC-17 drops "satisfiable", names S and G declared by loaded modules, and asserts `met`, `unmet` and `not-available` per entry. |
+| FND-003 | fixed | 17892164: FR-165-AC-20 drops the `when_any` precondition and states observable blocks: A with `uncovered` P and Q gives two `Design gap:` lines, B with no P block and `uncovered` Q gives one, C with only `covered` blocks gives none. This matches FR-165's one-line-per-`uncovered`-block rendering. |
