@@ -19,7 +19,7 @@ not the thing running it.
 
 ## The artifact
 
-A `SpecReview` with `analysis: evidence`, at `reviews/YY-MM-DD-<slug>.md`. One findings row
+A `SpecReview` with `analysis: evidence`, at `reviews/YYYY-MM-DD-<slug>-evidence.md`. One findings row
 per obligation **not served**, and none for the ones that were — a review listing every
 success is a review nobody reads to the end.
 

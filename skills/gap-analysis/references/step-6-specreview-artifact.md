@@ -1,7 +1,8 @@
 # SpecReview Artifact
 
 **Goal**: Emit the findings from the preceding steps as a single **quire-validated
-`SpecReview`** document with a Verdict, at `reviews/YY-MM-DD-<slug>.md`.
+`SpecReview`** document with a Verdict, at
+`reviews/YYYY-MM-DD-<slug>-gap-analysis.md`.
 
 The artifact must make the mode unambiguous. A reader who sees only this document has to be
 able to tell whether plan completion was assessed or skipped, and must not be able to read a
@@ -156,9 +157,8 @@ before reporting completion. Then tell the user the artifact path and the Verdic
 
 ## Notes
 
-- File name: `reviews/<YYYY-MM-DD>-<short-slug>.md` (today's real date; slug from the
-  component or area audited, e.g. `2026-06-22-observation-gap-analysis`, or from the plan in
-  plan-assisted mode, e.g. `2026-06-22-plan-002-packaging`).
+- File name: `reviews/YYYY-MM-DD-<slug>-gap-analysis.md` (today's date; slug from the
+  component or area audited, or from the plan in plan-assisted mode).
 - `reviews/` is **repo root** for this skill (deliberate); validation is path-agnostic.
 - One run → one SpecReview doc (the `analysis: gap-analysis` lens), matching the one-doc-per-
   analysis model used by `quoin:spec-review`.

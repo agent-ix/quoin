@@ -6,7 +6,8 @@ description: >-
   find criteria no test is tagged with, finds code with no owning requirement, and catches stubs and coverage inflation, reporting
   "Plan completion: not assessed". An explicitly supplied plan adds optional
   plan-completeness bookkeeping only. Optional semantic review checks whether intent, test
-  and code agree. Emits a quire-validated SpecReview artifact to reviews/YY-MM-DD-<slug>.md.
+  and code agree. Emits a quire-validated SpecReview artifact to
+  reviews/YYYY-MM-DD-<slug>-gap-analysis.md.
 ---
 
 # Gap Analysis
@@ -45,7 +46,7 @@ caller explicitly hands it a plan:
    task status.
 
 The result is a single **quire-validated `SpecReview`** document (`analysis: gap-analysis`)
-written to `reviews/YY-MM-DD-<slug>.md`, with a **Verdict** (PASS / CONDITIONAL / FAIL)
+written to `reviews/YYYY-MM-DD-<slug>-gap-analysis.md`, with a **Verdict** (PASS / CONDITIONAL / FAIL)
 and a validated **Findings** table.
 
 ## Modes
@@ -86,7 +87,7 @@ finding for sitting outside its tasks.
 - To audit drift between spec, tests, and code for any existing component — including one
   whose work predates planning, or whose scope was never organized as a plan.
 - As a release/merge gate that produces a durable, traceable review artifact.
-- After `implement-plan`, with `--plan <Plan-id>`, to additionally confirm that plan is
+- After implementing a plan, with `--plan <Plan-id>`, to additionally confirm that plan is
   genuinely complete.
 
 This skill is **read-only over the codebase** — it inspects and reports; it does not fix
@@ -129,7 +130,7 @@ checkboxes against task status. This is bookkeeping added to the audit, not a ga
 of it.
 
 **Always — [SpecReview artifact](references/step-6-specreview-artifact.md).** Write and
-validate the `SpecReview` to `reviews/YY-MM-DD-<slug>.md`.
+validate the `SpecReview` to `reviews/YYYY-MM-DD-<slug>-gap-analysis.md`.
 
 > **`--scope` is the repository root, and must be passed explicitly.** The command derives **two roots** from it and never
 > interchanges them: spec documents are read from `<repo>/spec` only, trace tags from
@@ -155,7 +156,8 @@ the SpecReview's Coverage section that semantic review was skipped.
 
 ## Output
 
-A `SpecReview` (`spec-artifacts-process` archetype) at `<project_root>/reviews/YY-MM-DD-<slug>.md`:
+A `SpecReview` (`spec-artifacts-process` archetype) at
+`<project_root>/reviews/YYYY-MM-DD-<slug>-gap-analysis.md`:
 
 - Frontmatter `type: SpecReview`, `analysis: gap-analysis`, `id: SR-NNN`, `scope`,
   `review_set: subset`, and `relationships:` (`references` → the spec root; plus `reviews`

@@ -70,7 +70,7 @@ the tasks-done/total count.
 ## Notes
 
 - Do not edit task files or `plan.md` — gap-analysis only reports. If the user wants the
-  plan reconciled, that's `spec-to-plan` (update flow) or `implement-plan`.
+plan reconciled, that's `spec-to-plan` (update flow) or your coding agent's implementation workflow.
 - A plan-assisted PASS still means the repository checks passed *and* the plan's books
   balance. The two claims stay separate in the artifact; do not merge them into one
   sentence that implies either proves the other.

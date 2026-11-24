@@ -57,12 +57,12 @@ tags on the tests, and `quoin matrix` adds the run evidence.
 > /spec-to-plan prep the spice tracking app for coding
 ```
 
-#### 4. Implement!
+#### 4. Implement the plan
 
-Call `/implement-plan` to trigger your coding agent to begin work on the plan.
+Use your coding agent's implementation workflow to complete the plan.
 
 ```
-> /implement-plan build the spice tracking app
+> implement the spice tracking app from Plan-001
 ```
 
 #### 5. Gap review
@@ -231,8 +231,8 @@ Inspect the spec vocabulary and manage installed modules:
 quoin catalog list
 quoin catalog show FR
 quoin catalog validate
-quoin plugin install path:../spec-objects-business
-quoin plugin list
+quoin module install path:../spec-objects-business
+quoin module list
 ```
 
 Quoin also provides rights-safe, project-owned assurance workflows: evaluate a

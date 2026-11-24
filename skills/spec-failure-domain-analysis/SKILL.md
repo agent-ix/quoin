@@ -47,7 +47,7 @@ Document any missing constraints as proposed additions:
 
 ## Output contract
 
-This skill emits one **`SpecReview`** under `reviews/YY-MM-DD-<slug>.md` with
+This skill emits one **`SpecReview`** under `reviews/YYYY-MM-DD-<slug>-failure-domain.md` with
 `analysis: failure-domain` in its frontmatter.
 
 Stated here because nothing checked it. The module declares an `analysis`

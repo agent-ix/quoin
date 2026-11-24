@@ -138,7 +138,7 @@ precisely the habit this skill was rebuilt to end.
 
 ## Deliverable
 
-A `SpecReview` with `analysis: evidence`, under `reviews/YY-MM-DD-<slug>.md`.
+A `SpecReview` with `analysis: evidence`, under `reviews/YYYY-MM-DD-<slug>-evidence.md`.
 
 The `Findings` table carries one row per obligation whose method needs
 attention — a mismatch, or an inconclusive recommendation the author must

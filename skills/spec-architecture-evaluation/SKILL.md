@@ -19,7 +19,8 @@ Evaluate the architecture that exists, including its specifications and code. Do
 
 ## Output contract
 
-Write one Quire-validated `SpecReview` under `reviews/YY-MM-DD-<slug>.md` with:
+Write one Quire-validated `SpecReview` under
+`reviews/YYYY-MM-DD-<slug>-architecture-evaluation.md` with:
 
 - `type: SpecReview`
 - `analysis: architecture-evaluation`
