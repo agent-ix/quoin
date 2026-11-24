@@ -50,6 +50,12 @@ The policy's per-class `obligations` list holds entries with an `id` and one of 
 - `design-trace`: the requirement has an FR-086 join row with `state: covered`. FR-086 emits one row per requirement per design
   relation, so a requirement can have several rows; the precedence across them is `unmet` if any row is `uncovered`, else
   `not-available` if the join is absent or empty or the requirement has no row, else `met`.
+  A `design-trace` entry MAY declare `relation`, the `name` of one design relation in the join. The entry then reads only the
+  requirement's rows in that relation, by the rule below for a named relation: `unmet` if its row is `uncovered`, `not-available` if the
+  requirement has no row in it, else `met`. A policy that wants the design-trace of a requirement kind to mean one relation (for example the
+  realization relation of `agent-ix/spec-objects-architecture` FR-010) pins it this way; a policy that wants it for both `FR` and `NFR` lists two
+  `design-trace` entries with distinct `id`s, each pinned, because one `relation` names one `from` archetype. A `design-trace` entry
+  with no `relation` keeps the reading above and reads every design relation.
 - `evidence` with a catalog `method`: every obligation derived from the requirement has bound **passing** evidence whose run
   `evidence_kind` equals the method's catalog `evidence_kind` (FR-160 join, including its passing-run rule; methods of one kind are
   interchangeable).
@@ -57,7 +63,7 @@ The policy's per-class `obligations` list holds entries with an `id` and one of 
   declares. Quoin knows no relation name, no archetype and no meaning for any of the three beyond the reading below; the policy
   author says which relation of the loaded modules, and which linked-element archetypes, carry the activity:
   - `relation`: the `name` of a design relation in the join ([quire-rs FR-086](ix://agent-ix/quire-rs/FR-086)). Required for
-    `soup-requirements` and `segregation`; optional for `detailed-design`, which then reads every design relation.
+    `soup-requirements` and `segregation`; optional for `detailed-design` and `design-trace`, which then read every design relation.
   - `element_archetypes`: archetype names a linked element must have. Required, non-empty, for `detailed-design`; optional for the
     other two.
 
@@ -69,6 +75,25 @@ The policy's per-class `obligations` list holds entries with an `id` and one of 
   configuration error: the command **SHALL** refuse the policy naming the class, the entry and the relation, and produce no report,
   exactly as it refuses an `evidence` entry naming an undeclared method. A requirement that has no row in a declared relation is not
   a gap and reads `not-available`.
+
+### Effect of design relations a module adds
+
+Every relation a loaded module names in `design_relations` is read by an unpinned `design-trace` entry, so a module that adds a design
+relation widens what that entry reads. The relations of `agent-ix/spec-objects-security` FR-030 (SOUP requirements) and
+`agent-ix/spec-objects-architecture` FR-016 (segregation) are such additions. Quoin applies one rule to them and adds none of its own:
+
+- An added relation puts a requirement in the `design-trace` reading only when the relation has a row for it, and the engine gives a row only to a
+  requirement in the relation's `when_any` scope ([quire-rs FR-058](ix://agent-ix/quire-rs/FR-058)). A requirement outside the scope has no row in
+  the relation, and its unpinned `design-trace` reads as before.
+- A requirement inside the scope with no stating edge has an `uncovered` row, so its unpinned `design-trace` is `unmet`, where it was `met` when
+  only the realization relations were loaded. This is the declared consequence of loading the module, not a change in quoin: a policy that does not
+  want the activity folded into `design-trace` pins `relation` as above.
+- `quire matrix --strict` ([quire-cli FR-043](ix://agent-ix/quire-cli/FR-043)) fails on a live requirement with an `uncovered` block, and the
+  block is one per relation. A missing SOUP-requirements or segregation edge is therefore a design gap under `--strict` only for a requirement in that relation's
+  `when_any` scope, exactly as for any relation, and for no other requirement. Quoin adds no scope, filter or exemption.
+- The `quoin matrix` design column (FR-165) and the dossier ([FR-193](./FR-193-dossier-architecture-content.md),
+  [FR-194](./FR-194-dossier-trace-matrix-content.md)) read the join verbatim, so each added relation's block appears there with its `check` token and
+  no quoin code changes. Output over a corpus whose modules add no design relation, or whose requirements are all outside the added scopes, is unchanged.
 
 Which activities a class demands is the policy author's data. The five kinds are the only closed vocabulary, and a new kind is a quoin
 change. The report is per requirement: a part-level reading (a unit-level design element per part, a segregation rationale on a child
@@ -104,9 +129,12 @@ When the policy file sets `gate: true` ([FR-160](./FR-160-per-class-evidence-flo
 | FR-161-AC-9 | The command writes no file, record or class value, and two runs over the same inputs print identical output. | Test |
 | FR-161-AC-10 | With a `detailed-design` entry declaring `element_archetypes: [unit]`, a requirement whose `covered` row links an element of archetype `unit` reports `met`; one whose `covered` row links only an element of another archetype reports `unmet`; one whose row is `uncovered` reports `unmet`; one with no row reports `not-available`. | Test |
 | FR-161-AC-11 | With a `soup-requirements` or `segregation` entry naming `relation: R` that a loaded module declares, a requirement with a `covered` row in `R` reports `met`, one with an `uncovered` row in `R` reports `unmet`, a row in another relation is not read, and one with no row in `R` reports `not-available`. | Test |
-| FR-161-AC-12 | A `detailed-design` entry with no `element_archetypes`, a `soup-requirements` or `segregation` entry with no `relation`, a relation-backed entry naming a method, a blank relation or archetype, or a `design-trace` or `evidence` entry naming a relation or archetypes is refused naming the cause. | Test |
+| FR-161-AC-12 | A `detailed-design` entry with no `element_archetypes`, a `soup-requirements` or `segregation` entry with no `relation`, a relation-backed entry naming a method, a blank relation or archetype, a `design-trace` entry naming `element_archetypes` or a blank `relation`, or an `evidence` entry naming a relation or archetypes is refused naming the cause. | Test |
 | FR-161-AC-13 | With `gate: true` the command exits `Partial` (exit 1) when a row is `unmet`, with the report unchanged, and 0 when every row is `met` or `not-available`; without `gate`, or with `gate: false`, an `unmet` row leaves the exit status unchanged. | Test |
 | FR-161-AC-14 | A `relation` that no loaded module declares as a design relation is refused naming the class, the entry and the relation, with no report and the same exit status as an undeclared method; the same name declared by a loaded module is not refused. | Test |
+| FR-161-AC-15 | A `design-trace` entry naming `relation: R` reads only the requirement's rows in `R`: `covered` is `met`, `uncovered` is `unmet`, no row in `R` is `not-available`, and an `uncovered` row in another relation does not change the status. An `R` no loaded module declares as a design relation is refused as in AC-14. | Test |
+| FR-161-AC-16 | An unpinned `design-trace` entry over a loaded design relation with a `when_any` scope reads `unmet` for an in-scope requirement whose row is `uncovered` and as before for a requirement outside the scope. | Test |
+| FR-161-AC-17 | With `design-trace`, `soup-requirements` and `segregation` each satisfiable by a loaded relation, a policy naming all three with their relations reports a row for each and is not refused. | Test |
 
 ## Constraints
 

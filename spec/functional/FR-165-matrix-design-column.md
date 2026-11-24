@@ -95,6 +95,10 @@ SHALL show it as a gap in markdown by the rendering below, and a gap SHALL NOT c
 - `--json` carries `design` and `design_elements` as above in the canonical `MatrixOutput`, with each
   element's `kind` where quire-rs supplies one.
 
+A relation a module adds to `design_relations` after this requirement, such as the SOUP-requirements and segregation relations of
+`agent-ix/spec-objects-security` FR-030 and `agent-ix/spec-objects-architecture` FR-016, is carried like any other: `quoin matrix`
+adds no per-relation code, and a requirement outside such a relation's `when_any` scope has no block for it and shows no gap for it.
+
 `quoin matrix` has no `--strict` flag (FR-115-AC-11); the design gate is `quire matrix --strict`
 ([quire-cli FR-043](ix://agent-ix/quire-cli/FR-043)), and quoin adds no third gate.
 
@@ -121,6 +125,7 @@ SHALL show it as a gap in markdown by the rendering below, and a gap SHALL NOT c
 | FR-165-AC-17 | A `design_relations` entry naming no declared relation makes `quire.design_matrix` return `Refused` with `context.reason` `design-matrix-failed`, and `quoin matrix` exits 2 naming the entry and prints no matrix. | Test |
 | FR-165-AC-18 | `quire.design_matrix` is in `quoin-core`'s `OPERATIONS` list and dispatched by an exhaustive arm, and `quire.coverage` output is unchanged. | Test |
 | FR-165-AC-19 | A `quire.design_matrix` failure other than an undeclared design relation, such as an oversized request, an engine refusal or a missing quire host, gives the error code and exit code `quire.coverage` gives for the same cause, not `design-matrix-failed`, and `quoin matrix` prints no matrix. | Test |
+| FR-165-AC-20 | Given a `coverage` whose requirement carries an `uncovered` block of a relation scoped by `when_any` and another requirement outside that scope with no block of it, `matrix.build` carries the first block verbatim, the second requirement has no block of that relation, and markdown shows `Design gap:` only under the first. | Test |
 
 ## Constraints
 
