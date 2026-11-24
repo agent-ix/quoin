@@ -198,13 +198,12 @@ fn build_rows(
             .iter()
             .filter_map(|criterion| criterion.get("id").and_then(Value::as_str))
             .collect::<Vec<_>>();
-        let relation_rows = design_rows(relations, document);
         let activity_rows = activities.iter().map(|activity| {
             let status = match activity.kind {
-                Kind::DesignTrace => design_status(relations, &relation_rows),
-                Kind::DetailedDesign | Kind::SoupRequirements | Kind::Segregation => {
-                    relation_status(relations, document, activity)
-                }
+                Kind::DesignTrace
+                | Kind::DetailedDesign
+                | Kind::SoupRequirements
+                | Kind::Segregation => relation_status(relations, document, activity),
                 Kind::Evidence => evidence_status(activity, &class_text, &obligation_ids, missing_methods),
             };
             let mut row = serde_json::json!({"id": activity.id, "kind": activity.kind.as_str(), "status": status.value});
@@ -249,12 +248,24 @@ fn parse_activities(
         let has_relation_keys =
             activity.relation.is_some() || !activity.element_archetypes.is_empty();
         match kind {
-            Kind::DesignTrace if activity.method.is_some() || has_relation_keys => {
+            Kind::DesignTrace
+                if activity.method.is_some() || !activity.element_archetypes.is_empty() =>
+            {
                 return Err(format!(
-                    "class `{class}` design-trace `{id}` must not name a method, relation or element archetypes"
+                    "class `{class}` design-trace `{id}` must not name a method or element archetypes"
                 ));
             }
-            Kind::DesignTrace => (),
+            Kind::DesignTrace => {
+                if activity
+                    .relation
+                    .as_deref()
+                    .is_some_and(|relation| relation.trim().is_empty())
+                {
+                    return Err(format!(
+                        "class `{class}` design-trace `{id}` has a blank relation"
+                    ));
+                }
+            }
             Kind::Evidence => {
                 let Some(method) = activity.method.as_deref() else {
                     return Err(format!("class `{class}` evidence `{id}` is missing method"));
@@ -313,6 +324,7 @@ struct Status {
     reason: Option<String>,
 }
 
+#[cfg(test)]
 fn design_status(relations: Option<&Vec<Value>>, rows: &[&Value]) -> Status {
     if relations.is_none_or(Vec::is_empty) {
         return not_available("design join has no relations".to_owned());
@@ -382,27 +394,46 @@ fn relation_status(relations: Option<&Vec<Value>>, document: &str, activity: &Ac
         return not_available("design join has no relations".to_owned());
     }
     let named = activity.relation.as_deref();
-    let rows = relations
-        .iter()
-        .filter(|relation| {
-            named.is_none_or(|name| relation.get("name").and_then(Value::as_str) == Some(name))
-        })
-        .flat_map(|relation| {
-            relation
-                .get("rows")
-                .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
-        })
-        .filter(|row| row_is_of(row, document))
-        .collect::<Vec<_>>();
-    match fold_rows(&rows, &activity.element_archetypes) {
-        Some(value) => Status {
-            value,
-            missing: vec![],
+    let mut read = false;
+    let mut unmet = false;
+    let mut missing = Vec::new();
+    for relation in relations.iter().filter(|relation| {
+        named.is_none_or(|name| relation.get("name").and_then(Value::as_str) == Some(name))
+    }) {
+        let rows = relation
+            .get("rows")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|row| row_is_of(row, document))
+            .collect::<Vec<_>>();
+        match fold_rows(&rows, &activity.element_archetypes) {
+            Some("met") => read = true,
+            Some("unmet") => {
+                read = true;
+                unmet = true;
+                if let Some(name) = relation.get("name").and_then(Value::as_str) {
+                    missing.push(name.to_owned());
+                }
+            }
+            Some(_) | None => {}
+        }
+    }
+    if !read {
+        return not_available("requirement has no row in the design relation".to_owned());
+    }
+    if !unmet {
+        Status {
+            value: "met",
+            missing,
             reason: None,
-        },
-        None => not_available("requirement has no row in the design relation".to_owned()),
+        }
+    } else {
+        Status {
+            value: "unmet",
+            missing,
+            reason: None,
+        }
     }
 }
 
@@ -446,21 +477,6 @@ fn row_is_of(row: &Value, document: &str) -> bool {
             == Some(document)
     };
     named("path") || named("id")
-}
-
-fn design_rows<'a>(relations: Option<&'a Vec<Value>>, document: &str) -> Vec<&'a Value> {
-    relations
-        .into_iter()
-        .flatten()
-        .flat_map(|relation| {
-            relation
-                .get("rows")
-                .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
-        })
-        .filter(|row| row_is_of(row, document))
-        .collect()
 }
 
 fn evidence_status(
@@ -871,6 +887,100 @@ mod tests {
         assert_eq!(no_row.value, "not-available");
     }
 
+    #[trace("FR-161-AC-15")]
+    #[test]
+    fn a_pinned_design_trace_reads_only_its_relation_and_lists_it_missing() {
+        let pinned = activity(json!({"id":"d","kind":"design-trace","relation":"r"}));
+        let covered = json!([{"document":{"path":"spec/FR-1.md"},"state":"covered"}]);
+        let uncovered = json!([{"document":{"path":"spec/FR-1.md"},"state":"uncovered"}]);
+        let elsewhere = json!([{"document":{"path":"spec/FR-2.md"},"state":"covered"}]);
+        let status = |relations: Vec<serde_json::Value>| {
+            relation_status(Some(&relations), "spec/FR-1.md", &pinned)
+        };
+        assert_eq!(
+            status(vec![relation("r", &covered), relation("s", &uncovered)]).value,
+            "met"
+        );
+        let unmet = status(vec![relation("r", &uncovered), relation("s", &uncovered)]);
+        assert_eq!(
+            (unmet.value, unmet.missing),
+            ("unmet", vec!["r".to_owned()])
+        );
+        assert_eq!(
+            status(vec![relation("r", &elsewhere), relation("s", &uncovered)]).value,
+            "not-available"
+        );
+    }
+
+    #[trace("FR-161-AC-16")]
+    #[test]
+    fn an_added_relation_only_changes_unpinned_design_trace_rows_it_carries() {
+        let unpinned = activity(json!({"id":"d","kind":"design-trace"}));
+        let row = |path: &str, state: &str| json!({"document":{"path":path},"state":state});
+        let realization = relation(
+            "realized-by",
+            &json!([row("spec/X.md", "covered"), row("spec/Y.md", "covered")]),
+        );
+        let without = vec![realization.clone()];
+        let with = vec![
+            realization,
+            relation("soup", &json!([row("spec/X.md", "uncovered")])),
+        ];
+        let read = |relations: &[serde_json::Value], document: &str| {
+            let status = relation_status(Some(&relations.to_vec()), document, &unpinned);
+            (status.value, status.missing)
+        };
+        assert_eq!(read(&without, "spec/X.md"), ("met", vec![]));
+        assert_eq!(read(&with, "spec/X.md"), ("unmet", vec!["soup".to_owned()]));
+        assert_eq!(read(&with, "spec/Y.md"), read(&without, "spec/Y.md"));
+    }
+
+    #[trace("FR-161-AC-17")]
+    #[test]
+    fn unpinned_and_relation_backed_activities_are_each_reported() {
+        let policy = ClassPolicy {
+            class_field: "class".to_owned(),
+            classes: BTreeMap::from([(
+                "class-3".to_owned(),
+                floors(vec![
+                    json!({"id":"trace","kind":"design-trace"}),
+                    json!({"id":"soup","kind":"soup-requirements","relation":"S"}),
+                    json!({"id":"seg","kind":"segregation","relation":"G"}),
+                ]),
+            )]),
+            gate: false,
+        };
+        let row = |path: &str, state: &str| json!({"document":{"path":path},"state":state});
+        let design = json!({"relations":[
+            {"name":"real","rows":[row("spec/FR-1.md", "covered"), row("spec/FR-2.md", "covered")]},
+            {"name":"S","rows":[row("spec/FR-1.md", "uncovered"), row("spec/FR-2.md", "covered")]},
+            {"name":"G","rows":[row("spec/FR-2.md", "covered"), row("spec/FR-3.md", "uncovered")]}
+        ]});
+        check_relations_declared(&policy, &design, &BTreeMap::new()).unwrap();
+        let matrix = ["spec/FR-1.md", "spec/FR-2.md", "spec/FR-3.md"].map(
+            |document| json!({"document":document,"carried":{"class":"class-3"},"criteria":[]}),
+        );
+        let rows = build_rows(
+            &matrix,
+            &design,
+            &policy,
+            &BTreeMap::new(),
+            &BTreeMap::new(),
+        )
+        .unwrap();
+        assert_eq!(rows.requirements[0]["activities"][0]["status"], "unmet");
+        assert_eq!(
+            rows.requirements[0]["activities"][0]["missing"],
+            json!(["S"])
+        );
+        assert_eq!(rows.requirements[0]["activities"][1]["status"], "unmet");
+        assert_eq!(rows.requirements[1]["activities"][0]["status"], "met");
+        assert_eq!(rows.requirements[1]["activities"][1]["status"], "met");
+        assert_eq!(rows.requirements[1]["activities"][2]["status"], "met");
+        assert_eq!(rows.requirements[2]["activities"][0]["status"], "unmet");
+        assert_eq!(rows.requirements[2]["activities"][2]["status"], "unmet");
+    }
+
     #[trace("FR-161-AC-14")]
     #[test]
     fn a_relation_no_loaded_module_declares_is_refused_naming_it() {
@@ -954,7 +1064,12 @@ mod tests {
                 .contains("blank")
         );
         assert!(
-            refused(json!({"id":"x","kind":"design-trace","relation":"r"})).contains("must not")
+            refused(json!({"id":"x","kind":"design-trace","relation":" "}))
+                .contains("blank relation")
+        );
+        assert!(
+            refused(json!({"id":"x","kind":"design-trace","element_archetypes":["u"]}))
+                .contains("must not")
         );
         assert!(
             refused(json!({"id":"x","kind":"evidence","method":"unit-testing","element_archetypes":["u"]}))
@@ -966,10 +1081,11 @@ mod tests {
                 json!({"id":"a","kind":"detailed-design","element_archetypes":["unit"]}),
                 json!({"id":"b","kind":"soup-requirements","relation":"r"}),
                 json!({"id":"c","kind":"segregation","relation":"r","element_archetypes":["part"]}),
+                json!({"id":"d","kind":"design-trace","relation":"r"}),
             ]),
             &methods,
         );
-        assert_eq!(ok.unwrap().len(), 3);
+        assert_eq!(ok.unwrap().len(), 4);
     }
 
     #[trace("FR-161-AC-13")]

@@ -477,6 +477,10 @@ fn decision_gaps(advice: &Advice) -> Vec<Gap> {
                     GapKind::DecisionSignerMismatch,
                     "the typed decider differs from the author of the commit that set the decision",
                 ),
+                Token::DecidedByDiffersFromVerifiedSigner => (
+                    GapKind::DecisionSignerMismatch,
+                    "the typed decider differs from the verified signer of the commit that set the decision",
+                ),
                 Token::DecisionCommitNotSigned => (
                     GapKind::DecisionCommitUnsigned,
                     "the commit that set the decision carries no valid signature",
@@ -831,6 +835,19 @@ mod tests {
                 record: "BR-1".to_owned(),
                 ..attribution_entry(Vec::new(), Derived::Pending)
             },
+            quoin_risk_advice::Attribution {
+                record: "ORE-1".to_owned(),
+                findings: vec![finding(
+                    Token::DecidedByDiffersFromVerifiedSigner,
+                    &["Lee", "Morgan"],
+                )],
+                ..attribution_entry(Vec::new(), present(Signature::Signed))
+            },
+            quoin_risk_advice::Attribution {
+                record: "RR-2".to_owned(),
+                findings: Vec::new(),
+                ..attribution_entry(Vec::new(), present(Signature::Signed))
+            },
         ];
         let out = render(&summary_with_evaluation(), &advice);
         assert!(out.body.contains(
@@ -840,6 +857,9 @@ mod tests {
             out.body
                 .contains("| BR-1 | residual_risk | accepted | Lee | not stated | not stated |  |")
         );
+        assert!(out.body.contains(
+            "| ORE-1 | residual_risk | accepted | Lee | Pat | signed | decided-by-differs-from-verified-signer |"
+        ));
         let kinds: Vec<_> = out.gaps.iter().map(|gap| gap.gap_kind).collect();
         assert_eq!(
             kinds,
@@ -848,7 +868,10 @@ mod tests {
                 GapKind::DecisionCommitUnsigned
             ]
         );
-        assert!(out.gaps.iter().all(|gap| gap.subject == "RR-1"));
+        assert_eq!(out.gaps[0].subject, "RR-1");
+        assert_eq!(out.gaps[1].subject, "RR-1");
+        assert_eq!(out.gaps[2].subject, "ORE-1");
+        assert!(!out.gaps.iter().any(|gap| gap.subject == "RR-2"));
         let lower = out.body.to_ascii_lowercase();
         assert!(!lower.contains("approv"));
     }

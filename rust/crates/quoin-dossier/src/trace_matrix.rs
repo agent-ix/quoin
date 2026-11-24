@@ -101,19 +101,19 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
         if class.is_none() {
             gaps.push(safety_class_gap(&requirement.id));
         }
-        if requirement.design.as_ref().is_some_and(|blocks| {
-            blocks.iter().any(|block| {
-                block.get("state").and_then(serde_json::Value::as_str) == Some("uncovered")
-            })
+        for block in requirement.design.iter().flatten().filter(|block| {
+            block.get("state").and_then(serde_json::Value::as_str) == Some("uncovered")
         }) {
-            gaps.push(
-                Gap::new(
-                    GapKind::NoDesignElement,
-                    &requirement.id,
-                    "has no design element",
-                )
-                .for_requirement(&requirement.id),
-            );
+            if let Some(check) = block.get("check").and_then(serde_json::Value::as_str) {
+                gaps.push(
+                    Gap::new(
+                        GapKind::NoDesignElement,
+                        &requirement.id,
+                        format!("design relation check `{check}` found no element"),
+                    )
+                    .for_requirement(&requirement.id),
+                );
+            }
         }
         if requirement.criteria.is_empty() {
             continue;
@@ -323,6 +323,36 @@ mod tests {
                 "no selected criteria"
             )]
         );
+    }
+
+    #[trace("FR-194-AC-9")]
+    #[test]
+    fn one_typed_no_design_element_gap_per_uncovered_block() {
+        let mut source = matrix();
+        source.requirements[0].design = Some(vec![
+            json!({"check":"soup","state":"uncovered","elements":[]}),
+            json!({"check":"segregation","state":"uncovered","elements":[]}),
+        ]);
+        let generated = render(&source, &[]);
+        let gaps: Vec<_> = generated
+            .gaps
+            .iter()
+            .filter(|gap| gap.gap_kind == GapKind::NoDesignElement)
+            .map(|gap| (gap.subject.as_str(), gap.detail.as_str()))
+            .collect();
+        assert_eq!(
+            gaps,
+            [
+                ("FR-10", "design relation check `soup` found no element"),
+                (
+                    "FR-10",
+                    "design relation check `segregation` found no element"
+                )
+            ]
+        );
+        let rendered = generated.body;
+        assert!(rendered.contains("Design gap: no design element (soup)"));
+        assert!(rendered.contains("Design gap: no design element (segregation)"));
     }
 
     #[trace("FR-194-AC-1")]

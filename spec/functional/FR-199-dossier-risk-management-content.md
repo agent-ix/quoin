@@ -94,7 +94,9 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 - The `Retired requirements` column SHALL state only a status, without stating discharge or satisfaction.
 - For each source `overall_evaluation_checks` finding `residual-risk-not-considered`, the document SHALL produce one `residual_risk_not_considered` gap naming the evaluation and the residual risks the finding names.
 - For each source `overall_evaluation_checks` finding `evaluation-accepted-with-open-risk`, the document SHALL produce one `evaluation_accepted_with_open_risk` gap naming the evaluation and the residual risks the finding names.
-- For each source `decision_attribution` finding `decided-by-differs-from-commit-author`, the document SHALL produce one `decision_signer_mismatch` gap naming the record; for each `decision-commit-not-signed`, one `decision_commit_unsigned` gap naming the record.
+- For each source `decision_attribution` finding `decided-by-differs-from-commit-author`, the document SHALL produce one `decision_signer_mismatch` gap naming the record.
+- For each source `decision_attribution` finding `decided-by-differs-from-verified-signer`, the document SHALL produce one `decision_signer_mismatch` gap naming the record.
+- For each source `decision_attribution` finding `decision-commit-not-signed`, the document SHALL produce one `decision_commit_unsigned` gap naming the record.
 - The document SHALL NOT compute these findings itself.
 - A gap of these four kinds SHALL NOT replace `no_overall_evaluation`.
 - A gap of these four kinds SHALL NOT replace `overall_evaluation_undecided`.
@@ -139,7 +141,7 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 | FR-199-AC-16 | With two benefit-risk records and two overall evaluations in scope, each section lists them in dossier id order; with none of a kind, its section reads `none`. | Test |
 | FR-199-AC-17 | A control with `retired_requirements` `[FR-9]` and `requirements` `[FR-9]` renders `FR-9` in both columns of its row, and a control with an empty `retired_requirements` list renders `none` in the `Retired requirements` column; the retired id stays in `Implementing requirements`. | Test |
 | FR-199-AC-18 | An accepted overall evaluation over a considered undecided or not-accepted residual risk produces one `evaluation_accepted_with_open_risk` gap naming the evaluation and the risk, and a residual risk missing from the considered list produces one `residual_risk_not_considered` gap; an evaluation with neither finding produces neither gap. | Test |
-| FR-199-AC-19 | A decision whose source attribution finding is `decided-by-differs-from-commit-author` produces one `decision_signer_mismatch` gap naming the record, and `decision-commit-not-signed` produces one `decision_commit_unsigned` gap; a clean entry produces neither, and no wording of these gaps names acceptance or approval by the tool. | Test |
+| FR-199-AC-19 | A decision whose source attribution finding is `decided-by-differs-from-commit-author` or `decided-by-differs-from-verified-signer` produces one `decision_signer_mismatch` gap naming the record; `decision-commit-not-signed` produces one `decision_commit_unsigned` gap; a clean entry produces neither gap, and no wording of these gaps names acceptance or approval by the tool. | Test |
 | FR-199-AC-20 | `## Decision attribution` lists each source attribution entry with its decider, commit author and signature, reads `not stated` for a pending or not-applicable change, reads `none` when the source list is empty, and orders rows by dossier id. | Test |
 
 ## Dependencies

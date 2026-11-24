@@ -40,6 +40,7 @@ say the decision is valid or invalid.
 
 - The command SHALL list one entry for every `residual_risk`, `benefit_risk` and `overall_residual_risk_evaluation` in scope whose `decision` is `accepted` or `not_accepted`, ordered by kind (in that order) then record id.
 - Each entry SHALL have exactly the keys `record`, `kind`, `decision`, `decided_by` (the `Decided by` cell as written, `null` when empty), `decision_change`, `signer_principal` and `findings`.
+- The `findings` list SHALL preserve `decided-by-differs-from-verified-signer` when the mapped-principal mismatch condition below applies.
 - `decision_change` SHALL be the object FR-163 defines for `rationaleChange` (`state`, `commit`, `author`, `authoredAt`, `signature`, `signatureCode`), derived from the most recent commit on the first-parent history of the default branch, following renames, that changed the text of the record's `Decision` cell. Its state is `present` only where the working-tree decision equals the decision at the branch tip, `pending` where it differs, and `not-applicable` where the file is not under git.
 - `signature` and `signatureCode` SHALL be derived as FR-136 derives them.
 - `quoin risk advise` SHALL accept `--engineering-assurance` and `--allowed-signers` together or neither; each supplied value SHALL be an absolute path.
