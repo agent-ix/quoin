@@ -45,14 +45,16 @@ revision identity or source-tree digest is produced.
   repository-relative location. The timestamp SHALL NOT participate in the
   Artifact id.
 - Each solution's ArtifactReference SHALL point to the Artifact whose content
-  identity matches its selected run record. A missing run record SHALL remain
-  visible as undischarged evidence and SHALL NOT be replaced with a timestamp
-  or an invented Artifact.
+  identity matches its selected run record.
+- When a run record is missing, the exporter SHALL retain that solution as
+  undischarged evidence and SHALL NOT replace it with a timestamp or invented
+  Artifact.
 - The exporter SHALL NOT copy run contents into XMI, emit an absolute host
   path, inspect Git, or emit any additional digest or revision identifier.
-- For verdicts `stale`, `suspect`, or `undischarged`, the evidence relation
-  SHALL remain explicitly non-supporting and its Claim SHALL remain in need of
-  support. It SHALL NOT convert the recorded verdict into an acceptance
+- For verdicts `stale`, `suspect`, or `undischarged`, the exporter SHALL mark
+  the evidence relation as non-supporting.
+- For those same verdicts, the exporter SHALL mark the Claim as needing
+  support and SHALL NOT convert the recorded verdict into an acceptance
   decision.
 
 ## Acceptance Criteria
@@ -61,9 +63,11 @@ revision identity or source-tree digest is produced.
 |----|----------|--------------|
 | FR-228-AC-1 | Two solutions with identical run-record bytes share one Artifact; a third solution with different bytes gets a distinct Artifact even if its suite id matches. | Test |
 | FR-228-AC-2 | Each Artifact exposes the selected content identity, suite id, verdict, relative run-record path, and timestamp as metadata only; its XMI id depends on content identity and not timestamp. | Test |
-| FR-228-AC-3 | Stale, suspect, and undischarged evidence stays non-supporting and its Claim needs support; a solution with no run remains visible as undischarged without an invented Artifact. | Test |
-| FR-228-AC-4 | The XMI contains no absolute host path, Git revision id, or digest other than the declared evidence content identities; no run-record bytes are embedded. | Test |
-| FR-228-AC-5 | Re-export with unchanged evidence content produces byte-identical XMI and stable content-derived Artifact ids. | Test |
+| FR-228-AC-3 | Stale, suspect, and undischarged evidence stays non-supporting and its Claim needs support. | Test |
+| FR-228-AC-4 | A solution with no run remains visible as undischarged evidence and has no invented Artifact. | Test |
+| FR-228-AC-5 | The XMI contains no absolute host path or Git revision id, and it contains no digest other than the declared content identities. | Test |
+| FR-228-AC-6 | The XMI does not embed any run-record bytes. | Test |
+| FR-228-AC-7 | Re-export with unchanged evidence content produces byte-identical XMI and stable content-derived Artifact ids. | Test |
 
 ## Dependencies
 

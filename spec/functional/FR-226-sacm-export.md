@@ -44,9 +44,10 @@ build a second, independent mapping from the corpus.
 
 - `--sacm` SHALL be mutually exclusive with `--json`, `--gsn`, and
   `--gsn-diagram`; an invalid combination is a usage error and writes no XMI.
-- A goal SHALL map to a SACM Claim with an asserted declaration only when its
-  source GSN node is not open; an undeveloped or open goal SHALL be marked as
-  needing support and SHALL NOT be asserted.
+- The exporter SHALL map a goal to a SACM Claim with an asserted declaration
+  only when its source GSN node is not open.
+- When a goal is undeveloped or open, the exporter SHALL mark its SACM Claim
+  as needing support and SHALL NOT assert that Claim.
 - A strategy SHALL map to ArgumentReasoning. A `supported_by` relation through
   a strategy SHALL map to an AssertedInference connecting the source and
   target Claims and identifying that reasoning. A direct goal-to-goal support
@@ -63,14 +64,16 @@ build a second, independent mapping from the corpus.
   AssertedInference with `isCounter=true` from that Claim to the challenged
   Claim. It SHALL NOT map as contextual evidence or support. The associated
   top claim remains open.
-- Signed acceptance SHALL be exported as the separate metadata record defined
-  by [FR-225](./FR-225-signed-acceptance-of-case-content.md), as a distinct
-  Artifact linked to the AssuranceCasePackage by AssertedContext, without
-  changing the assertion declarations of the case claims.
-- SACM elements SHALL be ordered deterministically from their source GSN node
-  and edge order. XMI ids SHALL derive from source GSN ids with a stable role
-  suffix for generated relationship elements. Every reference SHALL resolve
-  to one id in the document.
+- The exporter SHALL encode signed acceptance as the distinct Artifact
+  specified by [FR-225](./FR-225-signed-acceptance-of-case-content.md) and link
+  it to the AssuranceCasePackage by AssertedContext.
+- The exporter SHALL leave every case Claim's assertion declaration unchanged
+  when it adds signed-acceptance metadata.
+- The exporter SHALL order SACM elements deterministically from their source
+  GSN node and edge order.
+- The exporter SHALL derive XMI ids from source GSN ids with a stable role
+  suffix for generated relationship elements.
+- The exporter SHALL make every reference resolve to one id in the document.
 - The repository SHALL NOT contain a copied SACM metamodel. Unit tests SHALL
   validate against closed local expectations; a separate metamodel check MAY
   load the normative SACM 2.3 machine-readable model from an explicit
@@ -97,7 +100,7 @@ build a second, independent mapping from the corpus.
 |----|----------|--------------|
 | FR-226-AC-1 | A fixture containing each GSN node kind produces the stated SACM elements and relationships under an AssuranceCasePackage root, and all references resolve to an existing XMI id. | Test |
 | FR-226-AC-2 | An open or undeveloped goal maps to a claim needing support; it is never asserted, including when the source is a counter-claim. | Test |
-| FR-226-AC-3 | A direct goal support and a strategy-mediated support produce their distinct AssertedInference structures with stable source ids. | Test |
+| FR-226-AC-3 | A direct goal-to-goal edge and a strategy-mediated edge produce their distinct AssertedInference structures with stable source ids. | Test |
 | FR-226-AC-4 | Re-export of unchanged GSN input produces byte-identical UTF-8 XMI with stable element and relationship ordering. | Test |
 | FR-226-AC-5 | Combining `--sacm` with any incompatible output flag returns a usage error and writes no XMI. | Test |
 | FR-226-AC-6 | A well-formedness failure in the GSN input writes no XMI and preserves the named WF rule and node ids in the error report. | Test |

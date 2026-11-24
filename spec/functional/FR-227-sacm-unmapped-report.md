@@ -35,8 +35,9 @@ decide acceptance, risk, or compliance.
   ordering, and include every reported item exactly once.
 - The SACM XMI SHALL contain no element invented to stand in for an unreachable
   or unmapped item.
-- A report-write failure SHALL be an error; the command SHALL NOT claim that
-  the report was retained.
+- If the report write fails, then the command SHALL return an error.
+- When the report write fails, the command SHALL NOT claim that the report was
+  retained.
 
 ## Acceptance Criteria
 

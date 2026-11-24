@@ -53,15 +53,16 @@ acceptability.
   remain available without positive acceptance metadata and SHALL report the
   reason. It SHALL NOT infer acceptance from the presence of a signer name or
   tag file.
-- Verification of signatures and signer authorization SHALL be delegated to
-  EA. Quoin SHALL NOT inspect Git or implement a second signer-verification
+- The exporter SHALL invoke EA to verify signatures and signer authorization.
+  Quoin SHALL NOT inspect Git or implement a second signer-verification
   policy.
 - GSN and SACM output SHALL carry the same signed-acceptance content identity
   for the same input case. GSN output SHALL carry the acceptance as explicit
   metadata. SACM output SHALL carry it as a distinct Artifact record linked to
-  the AssuranceCasePackage as context, not as supporting evidence. Neither
-  representation SHALL be mistaken for evidence supporting a safety or risk
-  claim.
+  the AssuranceCasePackage as context, not as supporting evidence.
+- The exporter SHALL label acceptance metadata as the human acceptance of the
+  case content and SHALL NOT present it as evidence that establishes product
+  safety or risk acceptability.
 
 ## Acceptance Criteria
 

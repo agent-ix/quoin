@@ -14,10 +14,13 @@ relationships:
 ## Description
 
 The assurance-case model SHALL represent context, assumption, justification,
-and counter-claim nodes separately from goals, strategies, and solutions. It
-SHALL derive these nodes only from the source records and relationships below;
-it SHALL NOT invent assumptions or justifications to make a case appear
-complete.
+and counter-claim nodes separately from goals, strategies, and solutions.
+
+When building the case model, `quoin assurance` SHALL derive these nodes only
+from the source records and relationships below.
+
+If an authored source record is absent, then `quoin assurance` SHALL NOT
+invent an assumption or justification to make a case appear complete.
 
 ## Inputs
 
@@ -37,9 +40,9 @@ complete.
   or nested context.
 - In derived mode, each `mitigates` relation from a goal's source requirement
   to a corpus object of type hazard, threat, risk, vulnerability, or
-  failure-mode SHALL produce one context node. Nodes SHALL be ordered by
-  target id. A target absent from the loaded corpus SHALL produce an open
-  context node naming that target and SHALL NOT be omitted.
+  failure-mode SHALL produce one context node. `quoin assurance` SHALL order
+  those nodes by target id. If a target is absent from the loaded corpus, then
+  `quoin assurance` SHALL produce an open context node naming that target.
 - In authored mode, each source assumption SHALL produce an assumption node
   attached to the top claim, preserving its id, statement, owner, status, and
   review instant.
@@ -54,8 +57,8 @@ complete.
 - Authored participants and authority SHALL produce context nodes attached to
   the top claim. They SHALL remain descriptive facts and SHALL NOT support or
   decide the top claim.
-- When no source exists for an assumption or justification, the derived case
-  SHALL contain none of that kind.
+- If no authored source exists for an assumption or justification, then
+  `quoin assurance` SHALL omit nodes of that kind from the derived case.
 - The existing JSON representation SHALL omit an empty context collection so
   cases without context retain their existing bytes.
 - Rendering SHALL show context, assumption, justification, and counter-claim
@@ -70,7 +73,8 @@ complete.
 | FR-223-AC-3 | An authored argument with two assumptions, one resolved challenge, one open challenge, and participants produces two assumptions, one justification, one counter-claim, and context for the participants with all declared source fields preserved. | Test |
 | FR-223-AC-4 | An open challenge is represented only as a counter-claim; it is never a Context node or a supporting node, and its top claim remains open. | Test |
 | FR-223-AC-5 | A case-model constructor rejects a context, assumption, justification, or counter-claim node that contains children, evidence, or nested context. | Test |
-| FR-223-AC-6 | Markdown and Mermaid render context nodes under their owning goal or strategy, and the derived case contains no assumption or justification without an authored source. | Test |
+| FR-223-AC-6 | Markdown and Mermaid render each context node under its owning goal or strategy. | Test |
+| FR-223-AC-7 | The derived case contains no assumption or justification node without an authored source record. | Test |
 
 ## Dependencies
 

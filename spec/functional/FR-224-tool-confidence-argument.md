@@ -58,9 +58,10 @@ compliance verdict.
   [FR-163](./FR-163-anomaly-report-release-rationale.md); it SHALL NOT define
   a parallel anomaly record type. It SHALL NOT read or calculate the
   Git-derived change-attribution fields from those reports.
-- A missing intended-use record, self-test run, validation-report reference,
-  or anomaly inventory SHALL be stated as an open sub-goal. Absence SHALL NOT
-  be interpreted as a passing result or as absence of anomalies.
+- When an intended-use record, self-test run, validation-report reference, or
+  anomaly inventory is missing, `quoin assurance` SHALL state that absence as
+  an open sub-goal. `Quoin assurance` SHALL NOT interpret absence as a passing
+  result or as evidence that no anomalies exist.
 - The strategy SHALL show recorded status and anomaly facts as source-owned
   values. It SHALL NOT infer trustworthiness from them, assign a confidence
   level, or change the assurance case's existing auditor verdict.
