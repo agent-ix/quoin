@@ -744,6 +744,44 @@ fn tc_1080_012_gaps_render_with_the_check_token() {
     );
 }
 
+/// Every relation's block is carried verbatim and each uncovered block is its own gap line.
+#[trace("FR-165-AC-20")]
+#[test]
+fn tc_1080_012b_each_uncovered_block_is_its_own_design_gap_line() {
+    let entry = |id: &str, blocks: Value| {
+        design_entry(
+            &format!("spec/{id}.md"),
+            Some(id),
+            vec![design_criterion(&format!("{id}-AC-1"), Some(json!([])))],
+            Some(blocks),
+        )
+    };
+    let a = json!([uncovered_block("p"), uncovered_block("q")]);
+    let b = json!([uncovered_block("q")]);
+    let c = json!([covered_block(json!([])), covered_block(json!([]))]);
+    let output = build(&design_input(&[
+        entry("FR-A", a.clone()),
+        entry("FR-B", b.clone()),
+        entry("FR-C", c.clone()),
+    ]))
+    .unwrap();
+    let value = serde_json::to_value(&output).unwrap();
+    assert_eq!(value["requirements"][0]["design"], a);
+    assert_eq!(value["requirements"][1]["design"], b);
+    assert_eq!(value["requirements"][2]["design"], c);
+    let rendered = render_markdown(&output);
+    let section = |id: &str| {
+        let start = rendered.find(&format!("## {id}\n")).unwrap();
+        let rest = &rendered[start + 1..];
+        let end = rest.find("\n## ").unwrap_or(rest.len());
+        rest[..end].matches("Design gap:").count()
+    };
+    assert_eq!(section("FR-A"), 2, "{rendered}");
+    assert!(rendered.contains("Design gap: no design element (p)"), "{rendered}");
+    assert_eq!(section("FR-B"), 1, "{rendered}");
+    assert_eq!(section("FR-C"), 0, "{rendered}");
+}
+
 /// Missing design stays absent in JSON and renders n/a; an empty reference list is none.
 ///
 /// Provenance: PLAT-1590

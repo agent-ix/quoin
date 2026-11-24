@@ -101,16 +101,19 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
         if class.is_none() {
             gaps.push(safety_class_gap(&requirement.id));
         }
-        if requirement.design.as_ref().is_some_and(|blocks| {
-            blocks.iter().any(|block| {
-                block.get("state").and_then(serde_json::Value::as_str) == Some("uncovered")
-            })
-        }) {
+        for block in requirement.design.iter().flatten() {
+            if block.get("state").and_then(serde_json::Value::as_str) != Some("uncovered") {
+                continue;
+            }
+            let check = block
+                .get("check")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unnamed");
             gaps.push(
                 Gap::new(
                     GapKind::NoDesignElement,
                     &requirement.id,
-                    "has no design element",
+                    format!("design relation check `{check}` found no element"),
                 )
                 .for_requirement(&requirement.id),
             );
@@ -300,6 +303,42 @@ mod tests {
         assert_eq!(
             (&*gap.subject, &*gap.detail),
             ("FR-10-AC-1", "undischarged")
+        );
+    }
+
+    #[trace("FR-194-AC-9")]
+    #[test]
+    fn one_no_design_element_gap_per_uncovered_block_naming_its_check() {
+        let block = |check: &str, state: &str| json!({"check": check, "state": state, "elements": []});
+        let input: MatrixInput = serde_json::from_value(json!({
+            "design_coverage": [
+                {"document": "FR-1.md", "id": "FR-1", "criteria": [
+                    {"id": "FR-1-AC-1", "status": "untagged", "binders": [], "method": "Test"}],
+                 "design": [block("realized", "covered"), block("soup", "uncovered")]},
+                {"document": "FR-2.md", "id": "FR-2", "criteria": [
+                    {"id": "FR-2-AC-1", "status": "untagged", "binders": [], "method": "Test"}],
+                 "design": [block("soup", "uncovered"), block("segregation", "uncovered")]}
+            ],
+            "bindings": {"schemaVersion": 1, "bindings": []},
+            "audit": {"findings":[], "healthy":[], "unevaluated":[]}
+        })).unwrap();
+        let generated = render(
+            &build(&input).unwrap(),
+            &[requirement("FR-1", Some("high")), requirement("FR-2", Some("high"))],
+        );
+        let gaps: Vec<_> = generated
+            .gaps
+            .iter()
+            .filter(|gap| gap.gap_kind == GapKind::NoDesignElement)
+            .map(|gap| (gap.subject.as_str(), gap.detail.as_str()))
+            .collect();
+        assert_eq!(
+            gaps,
+            [
+                ("FR-1", "design relation check `soup` found no element"),
+                ("FR-2", "design relation check `soup` found no element"),
+                ("FR-2", "design relation check `segregation` found no element"),
+            ]
         );
     }
 
