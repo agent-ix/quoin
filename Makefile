@@ -6,10 +6,10 @@
 # The published executable needs no source checkout or Node CLI shell.
 
 RUST_DIR := $(CURDIR)/rust
-CARGO_TARGET := $(RUST_DIR)/target
+CARGO_TARGET := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(RUST_DIR)/target)
 CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
 
-.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test mutation-test wave2-validation
 
 build: rust-build
 
@@ -71,6 +71,21 @@ evidence: build-inputs
 		--tool "cargo-nextest $$(cargo nextest --version | sed -n '1s/^cargo-nextest //;1s/ .*//p')" \
 		--results $(EVIDENCE_DIR)/junit-traced.xml || exit 1; \
 	exit $$status
+
+# Focused Wave 2 verification: replay the ignored real-tool checks and the
+# behavioral mutation kernels, then transcribe each result into Quoin's own
+# evidence store. Run through locked-build.sh; the script retains raw outputs
+# under target/wave2-evidence-mutation/.
+real-tool-test:
+	python3 tests/scripts/real_tool_test.py
+
+mutation-test:
+	python3 tests/scripts/behavioral_mutation_test.py
+
+wave2-validation: build-inputs
+	cd $(RUST_DIR) && cargo build --locked --package quoin-cli --bin quoin $(CARGO_TARGET_FLAG)
+	@set +e; $(MAKE) real-tool-test; real_status=$$?; $(MAKE) mutation-test; mutation_status=$$?; \
+	  set -e; test $$real_status -eq 0 && test $$mutation_status -eq 0
 
 # Set IX_FLOW_PACKAGE to a built local ix-flow package when testing a host API
 # change before its npmjs release; dependencies still resolve from npmjs.
