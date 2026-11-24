@@ -8,7 +8,7 @@
 
 use std::fmt;
 
-use quoin_store::{JsonNumber, JsonObject, JsonValue, canonical_bytes};
+use quoin_store::{JsonNumber, JsonObject, JsonValue, canonical_bytes, parse_strict_json};
 use thiserror::Error;
 
 use crate::ids::{ProofId, RecordId, Revision};
@@ -23,29 +23,115 @@ const MAX_EXACT_JSON_INTEGER: u64 = 9_007_199_254_740_991;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProofIntegrityStatement {
     /// The record identity.
-    pub record_id: String,
+    record_id: String,
     /// The selected record revision.
-    pub record_revision: u64,
+    record_revision: u64,
     /// The candidate revision.
-    pub candidate_revision: String,
+    candidate_revision: String,
     /// The selected proof identity.
-    pub proof_id: String,
+    proof_id: String,
     /// The selected attestation identity.
-    pub attestation_id: String,
+    attestation_id: String,
     /// SHA-256 of the exact accepted attestation bytes.
-    pub attestation_sha256: String,
+    attestation_sha256: String,
     /// SHA-256 of the exact retained output bytes.
-    pub output_sha256: String,
+    output_sha256: String,
     /// Exact retained output length in bytes.
-    pub output_size_bytes: u64,
+    output_size_bytes: u64,
     /// Media type recorded by the accepted attestation.
-    pub output_media_type: String,
+    output_media_type: String,
     /// SHA-256 of the domain-separated canonical statement preimage.
-    pub statement_digest: String,
+    statement_digest: String,
     canonical_bytes: Vec<u8>,
 }
 
 impl ProofIntegrityStatement {
+    /// Read one stored statement, requiring its exact canonical bytes and digest.
+    ///
+    /// # Errors
+    ///
+    /// Refuses duplicate names, unknown/missing fields, noncanonical JSON,
+    /// malformed values, or a statement digest that does not match its fields.
+    pub fn from_canonical_bytes(bytes: &[u8]) -> Result<Self, ProofIntegrityError> {
+        let value = parse_strict_json(bytes).map_err(|_| ProofIntegrityError::StatementInvalid)?;
+        let object = value
+            .as_object()
+            .map_err(|_| ProofIntegrityError::StatementInvalid)?;
+        let expected_names = [
+            "schema_version",
+            "purpose",
+            "record_id",
+            "record_revision",
+            "candidate_revision",
+            "proof_id",
+            "attestation_id",
+            "attestation_sha256",
+            "output_sha256",
+            "output_size_bytes",
+            "output_media_type",
+            "statement_digest",
+        ];
+        if object.len() != expected_names.len()
+            || object.names().any(|name| !expected_names.contains(&name))
+            || integer_field(object, "schema_version")? != 1
+            || text_field(object, "purpose")? != STATEMENT_PURPOSE
+        {
+            return Err(ProofIntegrityError::StatementInvalid);
+        }
+        let record_id = text_field(object, "record_id")?.to_owned();
+        let proof_id = text_field(object, "proof_id")?.to_owned();
+        let attestation_id = text_field(object, "attestation_id")?.to_owned();
+        let candidate_revision = text_field(object, "candidate_revision")?.to_owned();
+        let output_media_type = text_field(object, "output_media_type")?.to_owned();
+        if !crate::ids::Identity::is_valid(&record_id)
+            || !crate::ids::Identity::is_valid(&proof_id)
+            || !crate::ids::Identity::is_valid(&attestation_id)
+            || candidate_revision.is_empty()
+            || output_media_type.is_empty()
+        {
+            return Err(ProofIntegrityError::StatementInvalid);
+        }
+        let record_revision = integer_field(object, "record_revision")?;
+        let output_size_bytes = integer_field(object, "output_size_bytes")?;
+        if record_revision == 0 || output_size_bytes > MAX_EXACT_JSON_INTEGER {
+            return Err(ProofIntegrityError::StatementInvalid);
+        }
+        let attestation_sha256 = text_field(object, "attestation_sha256")?.to_owned();
+        let output_sha256 = text_field(object, "output_sha256")?.to_owned();
+        let statement_digest = text_field(object, "statement_digest")?.to_owned();
+        if !is_digest(&attestation_sha256)
+            || !is_digest(&output_sha256)
+            || !is_digest(&statement_digest)
+        {
+            return Err(ProofIntegrityError::StatementInvalid);
+        }
+        let canonical =
+            canonical_bytes(&value).map_err(|_| ProofIntegrityError::StatementInvalid)?;
+        if canonical != bytes {
+            return Err(ProofIntegrityError::StatementInvalid);
+        }
+        let mut unsigned = object.clone();
+        unsigned.remove("statement_digest");
+        let unsigned_bytes = canonical_bytes(&JsonValue::Object(unsigned))
+            .map_err(|_| ProofIntegrityError::StatementInvalid)?;
+        if statement_digest_for(&unsigned_bytes)? != statement_digest {
+            return Err(ProofIntegrityError::StatementInvalid);
+        }
+        Ok(Self {
+            record_id,
+            record_revision,
+            candidate_revision,
+            proof_id,
+            attestation_id,
+            attestation_sha256,
+            output_sha256,
+            output_size_bytes,
+            output_media_type,
+            statement_digest,
+            canonical_bytes: canonical,
+        })
+    }
+
     /// Build the statement from the selected binding and exact retained bytes.
     ///
     /// The output is checked against the attestation before it can be bound.
@@ -98,13 +184,7 @@ impl ProofIntegrityStatement {
         let unsigned = fields.json()?;
         let unsigned_bytes = canonical_bytes(&JsonValue::Object(unsigned))
             .map_err(|_| ProofIntegrityError::Canonicalization)?;
-        let preimage_len = u64::try_from(unsigned_bytes.len())
-            .map_err(|_| ProofIntegrityError::UnrepresentableSize)?;
-        let mut preimage = Vec::with_capacity(DIGEST_DOMAIN.len() + 8 + unsigned_bytes.len());
-        preimage.extend_from_slice(DIGEST_DOMAIN);
-        preimage.extend_from_slice(&preimage_len.to_be_bytes());
-        preimage.extend_from_slice(&unsigned_bytes);
-        let statement_digest = digest(&preimage);
+        let statement_digest = statement_digest_for(&unsigned_bytes)?;
         let mut complete = fields.json()?;
         insert(
             &mut complete,
@@ -132,6 +212,57 @@ impl ProofIntegrityStatement {
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         &self.canonical_bytes
+    }
+
+    /// Record identity bound by this statement.
+    #[must_use]
+    pub fn record_id(&self) -> &str {
+        &self.record_id
+    }
+    /// Record revision bound by this statement.
+    #[must_use]
+    pub const fn record_revision(&self) -> u64 {
+        self.record_revision
+    }
+    /// Candidate revision bound by this statement.
+    #[must_use]
+    pub fn candidate_revision(&self) -> &str {
+        &self.candidate_revision
+    }
+    /// Proof identity bound by this statement.
+    #[must_use]
+    pub fn proof_id(&self) -> &str {
+        &self.proof_id
+    }
+    /// Attestation identity bound by this statement.
+    #[must_use]
+    pub fn attestation_id(&self) -> &str {
+        &self.attestation_id
+    }
+    /// Digest of exact accepted attestation bytes.
+    #[must_use]
+    pub fn attestation_sha256(&self) -> &str {
+        &self.attestation_sha256
+    }
+    /// Digest of exact output bytes.
+    #[must_use]
+    pub fn output_sha256(&self) -> &str {
+        &self.output_sha256
+    }
+    /// Exact output byte length.
+    #[must_use]
+    pub const fn output_size_bytes(&self) -> u64 {
+        self.output_size_bytes
+    }
+    /// Output media type.
+    #[must_use]
+    pub fn output_media_type(&self) -> &str {
+        &self.output_media_type
+    }
+    /// Digest of the unsigned canonical statement preimage.
+    #[must_use]
+    pub fn statement_digest(&self) -> &str {
+        &self.statement_digest
     }
 }
 
@@ -242,19 +373,123 @@ pub enum RetainedObject<'a> {
     Output(&'a [u8]),
 }
 
-/// A provider result used only after exact FR-080 checkpoint verification.
+/// Signature outcome returned by Engineering Assurance FR-080 for one tag object.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CheckpointSignature {
+    /// A configured trusted signer verified the signature.
+    Verified,
+    /// The signed tag's signature is malformed or cryptographically bad.
+    BadSignature,
+    /// The signature is valid but the signer is not in configured trust.
+    UntrustedSigner,
+    /// The tag object carries no signature.
+    Unsigned,
+    /// The signature could not be evaluated.
+    Unverifiable,
+}
+
+/// Raw FR-080 result paired with the exact tag bytes supplied to it.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct VerifiedCheckpoint {
+pub struct Fr080CheckpointResult {
     /// Purpose parsed from the verified immutable tag object.
     pub purpose: String,
     /// Statement digest parsed from that same object.
     pub statement_digest: String,
     /// Proof scope parsed from that same object.
     pub scope: ProofScope,
-    /// Full object id for the exact immutable tag object verified.
+    /// Full object id returned for the exact immutable tag object verified.
     pub tag_object_id: String,
-    /// Whether FR-080 verified the tag signature under configured trust.
-    pub signature_verified: bool,
+    /// SHA-256 of exact tag object bytes FR-080 parsed and verified.
+    pub verified_tag_bytes_sha256: String,
+    /// Signature outcome FR-080 returned for this same immutable object.
+    pub signature: CheckpointSignature,
+}
+
+/// Checkpoint evidence accepted only when tied to the exact signed-tag bytes.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct VerifiedCheckpoint {
+    purpose: String,
+    statement_digest: String,
+    scope: ProofScope,
+    tag_object_id: String,
+    tag_bytes_sha256: String,
+}
+
+impl VerifiedCheckpoint {
+    /// Bind an FR-080 result to the exact signed-tag bytes passed for verification.
+    ///
+    /// # Errors
+    ///
+    /// Returns a typed invalid condition for a bad signature, untrusted signer,
+    /// object-byte mismatch, malformed result or wrong protocol binding. Missing
+    /// and unevaluable signatures remain typed incomplete conditions.
+    pub fn from_fr080_result(
+        exact_tag_bytes: &[u8],
+        result: Fr080CheckpointResult,
+        expected_scope: &ProofScope,
+        expected_statement_digest: &str,
+    ) -> Result<Self, CheckpointFailure> {
+        if result.verified_tag_bytes_sha256 != digest(exact_tag_bytes) {
+            return Err(CheckpointFailure::ObjectBytesMismatch);
+        }
+        if result.tag_object_id.is_empty()
+            || result.purpose != STATEMENT_PURPOSE
+            || result.statement_digest != expected_statement_digest
+            || result.scope != *expected_scope
+        {
+            return Err(CheckpointFailure::BindingMismatch);
+        }
+        match result.signature {
+            CheckpointSignature::Verified => Ok(Self {
+                purpose: result.purpose,
+                statement_digest: result.statement_digest,
+                scope: result.scope,
+                tag_object_id: result.tag_object_id,
+                tag_bytes_sha256: result.verified_tag_bytes_sha256,
+            }),
+            CheckpointSignature::BadSignature => Err(CheckpointFailure::BadSignature),
+            CheckpointSignature::UntrustedSigner => Err(CheckpointFailure::UntrustedSigner),
+            CheckpointSignature::Unsigned => Err(CheckpointFailure::SignatureMissing),
+            CheckpointSignature::Unverifiable => Err(CheckpointFailure::SignatureUnverifiable),
+        }
+    }
+
+    /// Full immutable tag object id returned by FR-080.
+    #[must_use]
+    pub fn tag_object_id(&self) -> &str {
+        &self.tag_object_id
+    }
+    /// Statement digest verified by FR-080 from this exact tag object.
+    #[must_use]
+    pub fn statement_digest(&self) -> &str {
+        &self.statement_digest
+    }
+}
+
+/// Typed FR-080 checkpoint failure, preserving invalid versus incomplete evidence.
+#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+pub enum CheckpointFailure {
+    /// The configured verifier is not available.
+    #[error("checkpoint verifier is unavailable")]
+    VerifierUnavailable,
+    /// No signature was present.
+    #[error("checkpoint signature is missing")]
+    SignatureMissing,
+    /// The signature could not be evaluated.
+    #[error("checkpoint signature is unverifiable")]
+    SignatureUnverifiable,
+    /// The signature is bad.
+    #[error("checkpoint signature is bad")]
+    BadSignature,
+    /// The signature is valid, but signer trust does not include this signer.
+    #[error("checkpoint signer is untrusted")]
+    UntrustedSigner,
+    /// Parsed statement purpose, digest or proof scope does not match the request.
+    #[error("checkpoint binding does not match the requested proof")]
+    BindingMismatch,
+    /// The verifier result does not name the exact tag bytes supplied for verification.
+    #[error("checkpoint result refers to different tag bytes")]
+    ObjectBytesMismatch,
 }
 
 /// Why qualification stopped before a proof could be valid.
@@ -268,6 +503,12 @@ pub enum Qualification {
     Verified {
         /// Provider identifiers returned for the four retained exact objects.
         object_ids: Vec<String>,
+        /// Statement digest qualified by the exact checkpoint.
+        statement_digest: String,
+        /// Exact tag object id returned by FR-080.
+        tag_object_id: String,
+        /// Signature status returned by FR-080 for that object.
+        checkpoint_signature: CheckpointSignature,
     },
 }
 
@@ -285,7 +526,7 @@ pub fn qualify(
     scope: &ProofScope,
     statement: &ProofIntegrityStatement,
     tag_object: Option<&[u8]>,
-    checkpoint: Option<&VerifiedCheckpoint>,
+    checkpoint: Result<Option<&VerifiedCheckpoint>, CheckpointFailure>,
     attestation: &[u8],
     output: &[u8],
 ) -> Qualification {
@@ -295,13 +536,31 @@ pub fn qualify(
     let Some(tag_object) = tag_object else {
         return Qualification::Incomplete("signed_tag_object_missing");
     };
-    let Some(checkpoint) = checkpoint else {
-        return Qualification::Incomplete("checkpoint_unavailable");
+    let checkpoint = match checkpoint {
+        Ok(Some(checkpoint)) => checkpoint,
+        Ok(None)
+        | Err(
+            CheckpointFailure::VerifierUnavailable
+            | CheckpointFailure::SignatureMissing
+            | CheckpointFailure::SignatureUnverifiable,
+        ) => {
+            return Qualification::Incomplete("checkpoint_unavailable");
+        }
+        Err(CheckpointFailure::BadSignature) => {
+            return Qualification::Invalid("checkpoint_signature_bad");
+        }
+        Err(CheckpointFailure::UntrustedSigner) => {
+            return Qualification::Invalid("checkpoint_signer_untrusted");
+        }
+        Err(CheckpointFailure::BindingMismatch | CheckpointFailure::ObjectBytesMismatch) => {
+            return Qualification::Invalid("checkpoint_binding_mismatch");
+        }
     };
     if checkpoint.purpose != STATEMENT_PURPOSE
         || checkpoint.statement_digest != statement.statement_digest
         || checkpoint.scope != *scope
         || checkpoint.tag_object_id.is_empty()
+        || checkpoint.tag_bytes_sha256 != digest(tag_object)
     {
         return Qualification::Invalid("checkpoint_binding_mismatch");
     }
@@ -315,9 +574,6 @@ pub fn qualify(
         || statement.output_size_bytes != u64::try_from(output.len()).unwrap_or(u64::MAX)
     {
         return Qualification::Invalid("statement_content_mismatch");
-    }
-    if !checkpoint.signature_verified {
-        return Qualification::Incomplete("checkpoint_signature_unverified");
     }
     let objects = [
         RetainedObject::Statement(statement.as_bytes()),
@@ -355,7 +611,12 @@ pub fn qualify(
             }
         }
     }
-    Qualification::Verified { object_ids }
+    Qualification::Verified {
+        object_ids,
+        statement_digest: statement.statement_digest.clone(),
+        tag_object_id: checkpoint.tag_object_id.clone(),
+        checkpoint_signature: CheckpointSignature::Verified,
+    }
 }
 
 /// A provider refusal, classified without consulting display text.
@@ -390,6 +651,9 @@ pub enum ProofIntegrityError {
     /// Shared JCS encoding refused a statement.
     #[error("proof-integrity statement canonicalization failed")]
     Canonicalization,
+    /// A stored statement was malformed, noncanonical or digest-mismatched.
+    #[error("proof-integrity statement is invalid")]
+    StatementInvalid,
 }
 
 impl RetainedObject<'_> {
@@ -448,6 +712,46 @@ fn digest(bytes: &[u8]) -> String {
     format!("sha256:{}", quoin_store::attachment::sha256_hex(bytes))
 }
 
+fn statement_digest_for(unsigned_bytes: &[u8]) -> Result<String, ProofIntegrityError> {
+    let length = u64::try_from(unsigned_bytes.len())
+        .map_err(|_| ProofIntegrityError::UnrepresentableSize)?;
+    let mut preimage = Vec::with_capacity(DIGEST_DOMAIN.len() + 8 + unsigned_bytes.len());
+    preimage.extend_from_slice(DIGEST_DOMAIN);
+    preimage.extend_from_slice(&length.to_be_bytes());
+    preimage.extend_from_slice(unsigned_bytes);
+    Ok(digest(&preimage))
+}
+
+fn text_field<'a>(object: &'a JsonObject, name: &str) -> Result<&'a str, ProofIntegrityError> {
+    object
+        .get(name)
+        .and_then(JsonValue::as_str)
+        .ok_or(ProofIntegrityError::StatementInvalid)
+}
+
+fn integer_field(object: &JsonObject, name: &str) -> Result<u64, ProofIntegrityError> {
+    let value = object
+        .get(name)
+        .and_then(JsonValue::as_f64)
+        .ok_or(ProofIntegrityError::StatementInvalid)?;
+    if !value.is_finite() || value < 0.0 || value > 9_007_199_254_740_991.0 || value.fract() != 0.0
+    {
+        return Err(ProofIntegrityError::StatementInvalid);
+    }
+    format!("{value:.0}")
+        .parse()
+        .map_err(|_| ProofIntegrityError::StatementInvalid)
+}
+
+fn is_digest(value: &str) -> bool {
+    value.strip_prefix("sha256:").is_some_and(|hex| {
+        hex.len() == 64
+            && hex
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    })
+}
+
 #[cfg(test)]
 #[allow(
     clippy::unwrap_used,
@@ -462,13 +766,18 @@ mod tests {
     use ix_trace_rs::trace;
 
     use super::{
-        ProofIntegrityStatement, ProofRetention, ProofScope, Qualification, RetainedObject,
-        RetentionFailure, STATEMENT_PURPOSE, VerifiedCheckpoint, qualify,
+        CheckpointFailure, CheckpointSignature, Fr080CheckpointResult, ProofIntegrityStatement,
+        ProofRetention, ProofScope, Qualification, RetainedObject, RetentionFailure,
+        STATEMENT_PURPOSE, VerifiedCheckpoint, qualify,
     };
 
     /// Test double only: this in-memory map is not a durability or immutability claim.
     #[derive(Default)]
-    struct TestDoubleRetention(BTreeMap<String, Vec<u8>>);
+    struct TestDoubleRetention {
+        objects: BTreeMap<String, Vec<u8>>,
+        missing_readback: bool,
+        retain_failure: Option<RetentionFailure>,
+    }
 
     impl ProofRetention for TestDoubleRetention {
         fn retain(
@@ -476,20 +785,27 @@ mod tests {
             _scope: &ProofScope,
             object: &RetainedObject<'_>,
         ) -> Result<String, RetentionFailure> {
+            if let Some(failure) = self.retain_failure {
+                return Err(failure);
+            }
             let bytes = object.bytes();
             let id = super::digest(bytes);
-            match self.0.get(&id) {
+            match self.objects.get(&id) {
                 Some(existing) if existing != bytes => Err(RetentionFailure::DigestMismatch),
                 Some(_) => Ok(id),
                 None => {
-                    self.0.insert(id.clone(), bytes.to_vec());
+                    self.objects.insert(id.clone(), bytes.to_vec());
                     Ok(id)
                 }
             }
         }
 
         fn retrieve(&self, object_id: &str) -> Result<Option<Vec<u8>>, RetentionFailure> {
-            Ok(self.0.get(object_id).cloned())
+            if self.missing_readback {
+                Ok(None)
+            } else {
+                Ok(self.objects.get(object_id).cloned())
+            }
         }
 
         fn attempt_replace(
@@ -531,13 +847,31 @@ mod tests {
         }
     }
 
-    fn checkpoint() -> VerifiedCheckpoint {
-        VerifiedCheckpoint {
+    fn checkpoint(tag_bytes: &[u8], tag_object_id: &str) -> VerifiedCheckpoint {
+        VerifiedCheckpoint::from_fr080_result(
+            tag_bytes,
+            Fr080CheckpointResult {
+                purpose: STATEMENT_PURPOSE.to_owned(),
+                statement_digest: statement().statement_digest,
+                scope: scope(),
+                tag_object_id: tag_object_id.to_owned(),
+                verified_tag_bytes_sha256: super::digest(tag_bytes),
+                signature: CheckpointSignature::Verified,
+            },
+            &scope(),
+            &statement().statement_digest,
+        )
+        .unwrap()
+    }
+
+    fn checkpoint_result(tag_bytes: &[u8], tag_object_id: &str) -> Fr080CheckpointResult {
+        Fr080CheckpointResult {
             purpose: STATEMENT_PURPOSE.to_owned(),
             statement_digest: statement().statement_digest,
             scope: scope(),
-            tag_object_id: "immutable-tag-object-id".to_owned(),
-            signature_verified: true,
+            tag_object_id: tag_object_id.to_owned(),
+            verified_tag_bytes_sha256: super::digest(tag_bytes),
+            signature: CheckpointSignature::Verified,
         }
     }
 
@@ -550,7 +884,7 @@ mod tests {
             &scope(),
             &statement(),
             Some(b"tag"),
-            Some(&checkpoint()),
+            Ok(Some(&checkpoint(b"tag", "immutable-tag-object-id"))),
             b"attestation",
             b"output",
         );
@@ -564,15 +898,21 @@ mod tests {
     #[trace("FR-210-AC-2")]
     #[test]
     fn checkpoint_with_wrong_scope_is_invalid() {
-        let mut wrong = checkpoint();
+        let mut wrong = checkpoint_result(b"tag", "immutable-tag-object-id");
         wrong.scope.proof_id = "other-proof".to_owned();
         let mut provider = TestDoubleRetention::default();
+        let wrong = VerifiedCheckpoint::from_fr080_result(
+            b"tag",
+            wrong,
+            &scope(),
+            &statement().statement_digest,
+        );
         let result = qualify(
             Some(&mut provider),
             &scope(),
             &statement(),
             Some(b"tag"),
-            Some(&wrong),
+            wrong.as_ref().map(Some).map_err(|error| *error),
             b"attestation",
             b"output",
         );
@@ -581,13 +921,14 @@ mod tests {
             Qualification::Invalid("checkpoint_binding_mismatch")
         );
         assert!(
-            provider.0.is_empty(),
+            provider.objects.is_empty(),
             "a failed checkpoint must not write retention objects"
         );
     }
 
     /// Provenance: PLAT-1801
     #[trace("FR-210-AC-3")]
+    #[trace("FR-210-AC-6")]
     #[test]
     fn test_double_round_trips_exact_objects_and_refuses_mutation_without_claiming_durability() {
         let mut provider = TestDoubleRetention::default();
@@ -596,13 +937,15 @@ mod tests {
             &scope(),
             &statement(),
             Some(b"tag"),
-            Some(&checkpoint()),
+            Ok(Some(&checkpoint(b"tag", "immutable-tag-object-id"))),
             b"attestation",
             b"output",
         );
-        assert!(matches!(result, Qualification::Verified { object_ids } if object_ids.len() == 4));
+        assert!(
+            matches!(result, Qualification::Verified { object_ids, .. } if object_ids.len() == 4)
+        );
         assert_eq!(
-            provider.0.len(),
+            provider.objects.len(),
             4,
             "the four statement and source objects are read back"
         );
@@ -622,6 +965,54 @@ mod tests {
     }
 
     /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-6")]
+    #[test]
+    fn test_double_missing_readback_is_incomplete_and_digest_or_scope_refusal_is_invalid() {
+        let checkpoint = checkpoint(b"tag", "tag-object");
+        let mut missing = TestDoubleRetention {
+            missing_readback: true,
+            ..TestDoubleRetention::default()
+        };
+        let missing_result = qualify(
+            Some(&mut missing),
+            &scope(),
+            &statement(),
+            Some(b"tag"),
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            missing_result,
+            Qualification::Incomplete("retained_object_missing")
+        );
+
+        for failure in [
+            RetentionFailure::DigestMismatch,
+            RetentionFailure::ScopeMismatch,
+        ] {
+            let mut refusing = TestDoubleRetention {
+                retain_failure: Some(failure),
+                ..TestDoubleRetention::default()
+            };
+            let result = qualify(
+                Some(&mut refusing),
+                &scope(),
+                &statement(),
+                Some(b"tag"),
+                Ok(Some(&checkpoint)),
+                b"attestation",
+                b"output",
+            );
+            assert_eq!(
+                result,
+                Qualification::Invalid("retention_binding_mismatch"),
+                "{failure:?}"
+            );
+        }
+    }
+
+    /// Provenance: PLAT-1801
     #[trace("FR-210-AC-5")]
     #[test]
     fn changed_source_bytes_are_invalid_even_with_a_verified_checkpoint() {
@@ -631,14 +1022,206 @@ mod tests {
             &scope(),
             &statement(),
             Some(b"tag"),
-            Some(&checkpoint()),
+            Ok(Some(&checkpoint(b"tag", "immutable-tag-object-id"))),
             b"changed attestation",
             b"output",
         );
         assert_eq!(result, Qualification::Invalid("statement_content_mismatch"));
         assert!(
-            provider.0.is_empty(),
+            provider.objects.is_empty(),
             "mismatched bytes must be refused before provider writes"
         );
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-5")]
+    #[test]
+    fn output_substitution_replay_and_missing_checkpoint_never_qualify() {
+        let checkpoint = checkpoint(b"tag", "tag-object");
+        let mut provider = TestDoubleRetention::default();
+        let changed_output = qualify(
+            Some(&mut provider),
+            &scope(),
+            &statement(),
+            Some(b"tag"),
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"mutant",
+        );
+        assert_eq!(
+            changed_output,
+            Qualification::Invalid("statement_content_mismatch")
+        );
+        assert!(
+            provider.objects.is_empty(),
+            "mutated output cannot reach retention"
+        );
+
+        let missing_checkpoint = qualify(
+            Some(&mut provider),
+            &scope(),
+            &statement(),
+            Some(b"tag"),
+            Ok(None),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            missing_checkpoint,
+            Qualification::Incomplete("checkpoint_unavailable")
+        );
+        let missing_tag = qualify(
+            Some(&mut provider),
+            &scope(),
+            &statement(),
+            None,
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            missing_tag,
+            Qualification::Incomplete("signed_tag_object_missing")
+        );
+
+        let mut replayed_scope = scope();
+        replayed_scope.record_revision += 1;
+        let replay = qualify(
+            Some(&mut provider),
+            &replayed_scope,
+            &statement(),
+            Some(b"tag"),
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            replay,
+            Qualification::Invalid("checkpoint_binding_mismatch")
+        );
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-6")]
+    #[test]
+    fn substituted_tag_bytes_do_not_match_the_exact_object_fr080_verified() {
+        let checkpoint = checkpoint(b"tag object A", "tag-object-A");
+        let mut provider = TestDoubleRetention::default();
+        let result = qualify(
+            Some(&mut provider),
+            &scope(),
+            &statement(),
+            Some(b"tag object B"),
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            result,
+            Qualification::Invalid("checkpoint_binding_mismatch")
+        );
+        assert!(
+            provider.objects.is_empty(),
+            "substituted tag bytes must be refused before retention"
+        );
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-7")]
+    #[test]
+    fn bad_or_untrusted_signatures_are_invalid_and_missing_verification_is_incomplete() {
+        for (signature, expected) in [
+            (
+                CheckpointSignature::BadSignature,
+                Qualification::Invalid("checkpoint_signature_bad"),
+            ),
+            (
+                CheckpointSignature::UntrustedSigner,
+                Qualification::Invalid("checkpoint_signer_untrusted"),
+            ),
+            (
+                CheckpointSignature::Unsigned,
+                Qualification::Incomplete("checkpoint_unavailable"),
+            ),
+            (
+                CheckpointSignature::Unverifiable,
+                Qualification::Incomplete("checkpoint_unavailable"),
+            ),
+        ] {
+            let raw = Fr080CheckpointResult {
+                signature,
+                ..checkpoint_result(b"tag", "tag-object").clone()
+            };
+            let checkpoint = VerifiedCheckpoint::from_fr080_result(
+                b"tag",
+                raw,
+                &scope(),
+                &statement().statement_digest,
+            );
+            let result = qualify(
+                Some(&mut TestDoubleRetention::default()),
+                &scope(),
+                &statement(),
+                Some(b"tag"),
+                checkpoint.as_ref().map(Some).map_err(|error| *error),
+                b"attestation",
+                b"output",
+            );
+            assert_eq!(result, expected, "signature result {signature:?}");
+        }
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-7")]
+    #[test]
+    fn qualification_preserves_integrity_facts_without_claiming_approval_or_correctness() {
+        let checkpoint = checkpoint(b"tag", "full-immutable-object-id");
+        let result = qualify(
+            Some(&mut TestDoubleRetention::default()),
+            &scope(),
+            &statement(),
+            Some(b"tag"),
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            result,
+            Qualification::Verified {
+                object_ids: vec![
+                    super::digest(b"statement"),
+                    super::digest(b"tag"),
+                    super::digest(b"attestation"),
+                    super::digest(b"output"),
+                ],
+                statement_digest: statement().statement_digest,
+                tag_object_id: "full-immutable-object-id".to_owned(),
+                checkpoint_signature: CheckpointSignature::Verified,
+            }
+        );
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-8")]
+    #[test]
+    fn separate_valid_tag_objects_for_the_same_checkpoint_keep_distinct_ids() {
+        for (tag_bytes, object_id) in [
+            (b"tag object one".as_slice(), "tag-object-one"),
+            (b"tag object two".as_slice(), "tag-object-two"),
+        ] {
+            let checkpoint = checkpoint(tag_bytes, object_id);
+            let result = qualify(
+                Some(&mut TestDoubleRetention::default()),
+                &scope(),
+                &statement(),
+                Some(tag_bytes),
+                Ok(Some(&checkpoint)),
+                b"attestation",
+                b"output",
+            );
+            assert!(
+                matches!(result, Qualification::Verified { tag_object_id, .. } if tag_object_id == object_id)
+            );
+        }
     }
 }
