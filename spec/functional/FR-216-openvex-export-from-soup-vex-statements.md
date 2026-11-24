@@ -38,9 +38,9 @@ reconciling it with advisory scans, vulnerability lifecycle records, or other an
 - The document SHALL contain `@context` set to `https://openvex.dev/ns/v0.2.0`, the caller-supplied `@id`,
   `author`, `timestamp`, and `version`, the supplied `role` when present, and a `statements` list.
 - The command SHALL emit one OpenVEX statement for each entry in each selected record's `vex_statements` field.
-- Before mapping a source entry, the command SHALL validate it against the `vex_statements` source contract in
-  spec-objects-security FR-022, including its required assessor and assessment date, allowed fields, and
-  `evidence_refs` SemanticId values.
+- When the command maps each selected `vex_statements` entry, it SHALL first validate the entry against the
+  source contract defined by spec-objects-security FR-022, including its required assessor and assessment date,
+  allowed fields, and `evidence_refs` SemanticId values.
 - The command SHALL set each statement's `vulnerability.name` to the entry's `advisory` value, its `status` to the
   entry's `status`, and its `products` to one product whose `@id` is the record's canonical package URL.
 - For each selected SOUP record, the command SHALL refuse two or more structurally valid `vex_statements` entries
