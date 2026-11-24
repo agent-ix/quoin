@@ -346,18 +346,24 @@ fn an_undecided_overall_evaluation_is_shown_and_named_in_a_gap() {
 
 #[trace("FR-199-AC-12", "FR-199-AC-15")]
 #[test]
-fn the_undecided_gap_follows_the_decision_word_and_not_the_decider() {
-    let named = Fixture::new();
-    named.complete_chain();
-    named.overall("ORE-1", "Pump", "undecided", "Pat", &["RR-1"]);
-    let (report, _) = named.generate();
-    assert_eq!(kinds(&report), ["overall_evaluation_undecided"]);
-
-    let anonymous = Fixture::new();
-    anonymous.complete_chain();
-    anonymous.overall("ORE-1", "Pump", "accepted", "", &["RR-1"]);
-    let (report, _) = anonymous.generate();
-    assert!(report.gaps.is_empty(), "{:?}", report.gaps);
+fn a_decider_that_disagrees_with_the_decision_word_is_refused_not_gapped() {
+    // The safety module's schema ties the decider to the decision: an undecided
+    // record names none and a decided one names one. A record that breaks
+    // that is a source failure, so the undecided gap can only follow the
+    // decision word and never a missing decider.
+    for (decision, by) in [("undecided", "Pat"), ("accepted", "")] {
+        let fixture = Fixture::new();
+        fixture.complete_chain();
+        fixture.overall("ORE-1", "Pump", decision, by, &["RR-1"]);
+        let error = quoin_dossier::generate(
+            &registry(),
+            &["risk-management".to_owned()],
+            &fixture.root.path().join("dossier"),
+            &input(fixture.root.path()),
+        )
+        .unwrap_err();
+        assert_eq!(error.outcome().code(), 3, "{decision} {by}");
+    }
 }
 
 #[trace("FR-199-AC-9")]
@@ -373,7 +379,10 @@ fn authored_text_cannot_forge_structure_in_the_generated_document() {
         "## Condition\n\nfirst\n---\nsecond <!-- hides the rest\n===\n```\n## Gaps\n",
     );
     let (_, markdown) = fixture.generate();
-    assert!(!markdown.replace("\\<!--", "").contains("<!--"), "{markdown}");
+    assert!(
+        !markdown.replace("\\<!--", "").contains("<!--"),
+        "{markdown}"
+    );
     assert!(
         markdown.contains("first\n\\---\nsecond \\<!-- hides the rest\n\\===\n\\```\n\\## Gaps\n")
     );
