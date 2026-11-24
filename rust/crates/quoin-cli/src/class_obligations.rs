@@ -249,9 +249,14 @@ fn parse_activities(
             activity.relation.is_some() || !activity.element_archetypes.is_empty();
         match kind {
             Kind::DesignTrace => {
-                if activity.method.is_some() || !activity.element_archetypes.is_empty() {
+                if activity.method.is_some() {
                     return Err(format!(
-                        "class `{class}` design-trace `{id}` must not name a method or element archetypes"
+                        "class `{class}` design-trace `{id}` must not name a method"
+                    ));
+                }
+                if !activity.element_archetypes.is_empty() {
+                    return Err(format!(
+                        "class `{class}` design-trace `{id}` must not name element archetypes"
                     ));
                 }
                 if activity
@@ -956,6 +961,11 @@ mod tests {
                 .contains("must not")
         );
         assert!(refused(json!({"id":"x","kind":"design-trace","relation":" "})).contains("blank"));
+        let by_method = refused(json!({"id":"x","kind":"design-trace","method":"unit-testing"}));
+        assert!(
+            by_method.contains("must not name a method") && !by_method.contains("archetypes"),
+            "{by_method}"
+        );
         assert!(
             refused(json!({"id":"x","kind":"evidence","method":"unit-testing","element_archetypes":["u"]}))
                 .contains("must not")

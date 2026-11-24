@@ -326,8 +326,10 @@ fn findings_sections(body: &mut String, gaps: &mut Vec<Gap>, join: &Join) {
     if join.uncovered.is_empty() {
         body.push_str("None.\n\n");
     } else {
-        for (requirement, checks) in &join.uncovered {
-            for check in checks {
+        let mut requirements: Vec<&String> = join.uncovered.keys().collect();
+        requirements.sort_by(|a, b| dossier_cmp(a, b));
+        for requirement in requirements {
+            for check in join.uncovered.get(requirement).into_iter().flatten() {
                 let _ = writeln!(body, "- {} (check `{}`)", cell(requirement), cell(check));
                 gaps.push(
                     Gap::new(
@@ -718,6 +720,23 @@ mod tests {
                 .gaps
                 .iter()
                 .all(|gap| !gap.detail.contains("no realizing"))
+        );
+    }
+
+    #[trace("FR-191-AC-14")]
+    #[test]
+    fn uncovered_requirements_are_listed_in_dossier_order() {
+        let generated = render(
+            &[uncovered("FR-10"), uncovered("FR-2")],
+            &Systems::default(),
+            &[],
+        );
+        assert!(
+            generated
+                .body
+                .contains("- FR-2 (check `fr-needs-design`)\n- FR-10 (check `fr-needs-design`)\n"),
+            "{}",
+            generated.body
         );
     }
 

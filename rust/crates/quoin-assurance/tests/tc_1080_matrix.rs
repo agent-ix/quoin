@@ -774,15 +774,26 @@ fn tc_1080_012b_each_uncovered_block_is_its_own_design_gap_line() {
         let start = rendered.find(&format!("## {id}\n")).unwrap();
         let rest = &rendered[start + 1..];
         let end = rest.find("\n## ").unwrap_or(rest.len());
-        rest[..end].matches("Design gap:").count()
+        rest[..end]
+            .lines()
+            .filter(|line| line.starts_with("Design gap:"))
+            .map(str::to_owned)
+            .collect::<Vec<_>>()
     };
-    assert_eq!(section("FR-101"), 2, "{rendered}");
-    assert!(
-        rendered.contains("Design gap: no design element (p)"),
+    assert_eq!(
+        section("FR-101"),
+        [
+            "Design gap: no design element (p)",
+            "Design gap: no design element (q)"
+        ],
         "{rendered}"
     );
-    assert_eq!(section("FR-102"), 1, "{rendered}");
-    assert_eq!(section("FR-103"), 0, "{rendered}");
+    assert_eq!(
+        section("FR-102"),
+        ["Design gap: no design element (q)"],
+        "{rendered}"
+    );
+    assert!(section("FR-103").is_empty(), "{rendered}");
 }
 
 /// Missing design stays absent in JSON and renders n/a; an empty reference list is none.
