@@ -49,7 +49,7 @@ Otherwise medium or low.
 
 ## Deliverable template
 
-Record output in `spec/analysis/risk-register.md`.
+Include the risk analysis in the SpecReview described below.
 
 ```markdown
 # Risk Register
@@ -80,7 +80,7 @@ See `spec-failure-domain-analysis` deliverable. Open gaps: none / list FR IDs.
 
 ## Output contract
 
-This skill emits one **`SpecReview`** under `reviews/YY-MM-DD-<slug>.md` with
+This skill emits one **`SpecReview`** under `reviews/YYYY-MM-DD-<slug>-risk-complexity.md` with
 `analysis: risk-complexity` in its frontmatter.
 
 Stated here because nothing checked it. The module declares an `analysis`

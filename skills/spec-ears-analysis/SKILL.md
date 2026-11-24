@@ -62,7 +62,7 @@ form the lens.
     quoin write . --types SpecReview
     ```
 
-    Write one document to `spec/reviews/ears-conformance.md` with
+    Write one document to `reviews/YYYY-MM-DD-<slug>-ears-conformance.md` with
     `analysis: ears-conformance` in the frontmatter, a `## Summary` (one or two
     sentences: how many statements, how many clean, the dominant defect), and a
     validated `## Findings` table:
@@ -84,7 +84,7 @@ form the lens.
 4.  **Validate + record.**
 
     ```bash
-    quire validate --scope . "spec/reviews/ears-conformance.md"
+    quire validate --scope . "reviews/YYYY-MM-DD-<slug>-ears-conformance.md"
     ```
 
     Fix any structural errors in the review doc.

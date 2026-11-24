@@ -35,7 +35,7 @@ Define what the system owns, what it consumes from outside, and which component 
 
 ## Deliverable template
 
-Record output in `spec/analysis/scope-boundary.md`.
+Include the scope and boundary analysis in the SpecReview described below.
 
 ```markdown
 # Scope & Boundary Analysis
@@ -89,7 +89,7 @@ flowchart LR
 
 ## Output contract
 
-This skill emits one **`SpecReview`** under `reviews/YY-MM-DD-<slug>.md` with
+This skill emits one **`SpecReview`** under `reviews/YYYY-MM-DD-<slug>-scope-boundary.md` with
 `analysis: scope-boundary` in its frontmatter.
 
 Stated here because nothing checked it. The module declares an `analysis`

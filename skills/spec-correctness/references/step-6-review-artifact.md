@@ -9,7 +9,7 @@ run declined to test. That, and only that, is what this artifact is for.
 
 ## Where it lives
 
-`reviews/YY-MM-DD-<slug>.md` at the repo root — the same location and archetype
+`reviews/YYYY-MM-DD-<slug>-spec-correctness.md` at the repo root — the same location and archetype
 `gap-analysis` uses. It is a **`SpecReview`** with `analysis: spec-correctness`.
 
 > Earlier versions of this skill wrote `tests/props/QUEUE.md` instead, because
@@ -126,7 +126,7 @@ headers/ids/severity — before reporting completion. Then tell the user the art
 
 ## Notes
 
-- File name: `reviews/<YYYY-MM-DD>-<short-slug>.md`, today's real date.
+- File name: `reviews/YYYY-MM-DD-<slug>-spec-correctness.md`, today's date and the review subject's slug.
 - One run → one `SpecReview`, matching the one-doc-per-analysis model.
 - A re-run reads the previous artifact's findings so it does not re-propose a criterion a
   reviewer already rejected; a criterion whose `statement` has changed is proposed again.
