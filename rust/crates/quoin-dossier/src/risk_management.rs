@@ -576,6 +576,9 @@ fn finding_name(token: quoin_risk_advice::Token) -> &'static str {
         quoin_risk_advice::Token::DecidedByDiffersFromCommitAuthor => {
             "decided-by-differs-from-commit-author"
         }
+        quoin_risk_advice::Token::DecidedByDiffersFromVerifiedSigner => {
+            "decided-by-differs-from-verified-signer"
+        }
         quoin_risk_advice::Token::DecisionCommitNotSigned => "decision-commit-not-signed",
     }
 }
@@ -803,6 +806,7 @@ mod tests {
             decision: "accepted".to_owned(),
             decided_by: Some("Lee".to_owned()),
             decision_change: change,
+            signer_principal: None,
             findings,
         }
     }
