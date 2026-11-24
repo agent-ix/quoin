@@ -82,3 +82,12 @@ Round 1 covers fix commits 35e762f6, d530c084, 67069dac and 0b51bb70 on top of 4
 | FND-009 | fixed | `run_identity_unrecorded` is deleted (gap kind, generator code and the FR-191 list), and FR-196 states that the store refuses an empty tool or a non-canonical timestamp |
 | FND-010 | still-open | FR-193 is unchanged, so its part-class statements still conflict with spec-objects-architecture FR-012. The code no longer reads the part class, but the spec still requires it; see FND-012 |
 | FND-011 | fixed | FR-207-AC-10 is amended: explicit `check --doc records-of-processing` needs no `--version`, and an unfiltered `check` includes DOS-ROP beside versioned kinds that do require it |
+
+## Dispositions (round 2)
+
+Round 2 covers fix commit c7f409d0 after merge 628c76b3 (origin/main #1042), head c7f409d0. `quire matrix` was computed at the head and at origin/main ca4b756f. Non-tagged FR-191..196/207 criteria at the head are FR-191-AC-18/19/20/21/23/27/28, FR-193-AC-9 and FR-194-AC-9, and every one of them is also untagged on origin/main. This PR introduces no untagged criterion and leaves 14 previously untagged ones tagged. The coder's list omitted FR-194-AC-9, which is also untagged on main.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-010 | fixed | FR-193 drops the part-class source contract, statements and AC-7/AC-8. It now says the architecture document shows no part-level class and records no part `safety_class_unassigned` gap, citing spec-objects-architecture FR-012, so the conflict with FR-012 is gone |
+| FND-012 | fixed | FR-193-AC-7/AC-8 are removed, so there are no untagged part-class criteria. FR-191 (`safety_class_unassigned` names a requirement) and FR-193 (no part gap) now agree, and no other FR-19x/20x text gives the gap a part subject |

@@ -57,3 +57,17 @@ Round 1 covers fix commits 35e762f6, d530c084, 67069dac and 0b51bb70 on top of 4
 | FND-003 | fixed | FR-192 is amended to read the requirement's own record key `softwareSafetyClass` and states why the `carried` entry is not used. `SOFTWARE_SAFETY_CLASS_KEY` is gone, so no quoin source names a carried field (FR-160-AC-13 holds) |
 | FND-004 | fixed | `MatrixRun::from(&RetainedRun)` takes `observation.performed_revision`, FR-196 and AC-10 are amended to name the FR-116 observation, and `tc_1080_211_the_matrix_carries_the_run_identity_the_store_retains` drives it end to end through `--run-observation` |
 | FND-005 | fixed | `MatrixRun` and `MatrixRunEntry` derive `Serialize`, and the host builds them through `From<&RetainedRun>` and `bounded_runs`. The `json!` literal is deleted, leaving one wire shape |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | low | The amended FR-192 says "no quoin source names a carried field", and FR-160-AC-13 says no quoin source contains a carried field name. But `Document::software_safety_class` now reads the literal `software_safety_class`, which is both the frontmatter key and the ISO module's `traceability.carried_fields` name. The behaviour is right; the two spec sentences are false by string identity. Reword FR-192 to say it reads the frontmatter field `software_safety_class`, and scope FR-160-AC-13 to the carried name used to apply class floors | rust/crates/quoin-quire/src/records.rs:74-86; spec/functional/FR-192-dossier-srs-content.md:33 |
+
+## Dispositions (round 2)
+
+Round 2 covers fix commit c7f409d0 after merge 628c76b3 (origin/main #1042), head c7f409d0, checked by inspection. The focused tests were not run by me (the coder's were still queued).
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-006 | fixed | `record_member` and its camelCase-to-snake_case guess are deleted. `software_safety_class()` reads the frontmatter field `software_safety_class` directly (null treated as absent), which is the field spec-artifacts-iso FR-009 defines and maps to `softwareSafetyClass` |

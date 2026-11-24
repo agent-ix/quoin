@@ -30,7 +30,7 @@ When `quoin dossier generate` selects the SRS (`--doc srs`, document id `DOS-SRS
 - For an StR, the criteria are the rows of its `Validation Criteria` table.
 - The statement is the text of the `Description` section of an FR, the `Statement` section of an NFR and the `Stakeholder Need` section of an StR.
 - The optional `criticality` key of each requirement (quire-rs FR-082), read from frontmatter.
-- The software safety class of each requirement: the value the requirement's own document records under its record key `softwareSafetyClass` (spec-artifacts-iso FR-009), read through `quoin-quire`. The dossier does not read the Quire coverage matrix's `carried` object for it, because that matrix has an entry only for a requirement with at least one criterion, so a requirement with none would lose its class. The dossier applies no floor, so it reads no class policy file, and no quoin source names a carried field.
+- The software safety class of each requirement: the value the requirement's own document records under its record key `softwareSafetyClass` (spec-artifacts-iso FR-009), read through `quoin-quire`. The dossier does not read the Quire coverage matrix's `carried` object for it, because that matrix has an entry only for a requirement with at least one criterion, so a requirement with none would lose its class. The dossier applies no floor, so it reads no class policy file. The code reads the frontmatter field `software_safety_class` of the requirement's document directly, and uses no carried-field name to apply a class floor.
 
 ## Outputs
 
