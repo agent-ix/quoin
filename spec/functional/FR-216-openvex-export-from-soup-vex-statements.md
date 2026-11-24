@@ -30,6 +30,7 @@ reconciling it with advisory scans, vulnerability lifecycle records, or other an
 - A UTF-8 JSON OpenVEX 0.2.0 document at the selected output path.
 - A located error naming the SOUP record and source field when a selected statement cannot be serialized.
 - An actionable validation error when no selected SOUP record has a `vex_statements` entry.
+- An actionable duplicate-advisory error when one selected SOUP record contains more than one statement for the same advisory.
 
 ## Behavior
 
@@ -39,6 +40,11 @@ reconciling it with advisory scans, vulnerability lifecycle records, or other an
 - The command SHALL emit one OpenVEX statement for each entry in each selected record's `vex_statements` field.
 - The command SHALL set each statement's `vulnerability.name` to the entry's `advisory` value, its `status` to the
   entry's `status`, and its `products` to one product whose `@id` is the record's canonical package URL.
+- For each selected SOUP record, the command SHALL refuse two or more structurally valid `vex_statements` entries
+  with the same exact `advisory` identifier before creating or replacing the output document. The `SoupRecord`
+  schema validates statement structure and does not enforce uniqueness by advisory property.
+- When duplicate advisories are found, the command SHALL report the SOUP record, the `vex_statements` field, and
+  the duplicated advisory identifier.
 - The command SHALL copy `justification`, `impact_statement`, and `action_statement` to the correspondingly named
   OpenVEX statement fields when those source fields are present.
 - The command SHALL NOT emit a statement from a vulnerability lifecycle record, advisory scan, scanner finding,
@@ -51,6 +57,8 @@ reconciling it with advisory scans, vulnerability lifecycle records, or other an
   byte-unchanged.
 - When a selected statement cannot be represented or fails an OpenVEX-required condition, the command SHALL report
   the record and field and SHALL NOT write a partial document or change an existing output file.
+- When a selected record contains duplicate advisories, the command SHALL NOT write a new document or change an
+  existing output file.
 - The command SHALL write deterministic JSON for identical records and document metadata.
 - The output SHALL conform to the published [OpenVEX 0.2.0 specification](https://github.com/openvex/spec/blob/main/OPENVEX-SPEC.md)
   and its [JSON schema](https://github.com/openvex/spec/blob/main/openvex_json_schema.json).
@@ -74,7 +82,7 @@ derive a document timestamp from a source record; document metadata is supplied 
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-216-AC-1 | A selected record with two authored VEX statements emits exactly two OpenVEX statements, each with the exact advisory identifier, source status, and canonical package URL. | Test |
+| FR-216-AC-1 | A selected record with two authored VEX statements having distinct advisory identifiers emits exactly two OpenVEX statements, each with the exact advisory identifier, source status, and canonical package URL. | Test |
 | FR-216-AC-2 | Each present source justification, impact statement, and action statement is copied unchanged to the correspondingly named OpenVEX field; absent optional fields remain absent. | Test |
 | FR-216-AC-3 | The document contains the OpenVEX 0.2.0 context and the caller-supplied `@id`, author, timestamp, and version, and contains role only when supplied. | Test |
 | FR-216-AC-4 | When no selected SOUP record has a VEX statement, the command reports that OpenVEX 0.2.0 requires at least one statement and directs the caller to add an authored entry or select records that contain one; it writes no new document and leaves any existing output byte-unchanged, even if scans or vulnerability lifecycle records contain entries. | Test |
@@ -82,6 +90,8 @@ derive a document timestamp from a source record; document metadata is supplied 
 | FR-216-AC-6 | A malformed source statement reports its SOUP record and field, writes no partial output, and leaves any existing output byte-unchanged. | Test |
 | FR-216-AC-7 | Repeating the export with identical records and document metadata produces byte-identical JSON. | Test |
 | FR-216-AC-8 | Every generated document validates against the published OpenVEX 0.2.0 schema, and no generated document has an empty `statements` list. | Test |
+| FR-216-AC-9 | When the same selected SOUP record contains two structurally valid statements with the same exact advisory identifier, export fails with an actionable error naming the record, `vex_statements`, and the duplicate identifier; it writes no new document and leaves any existing output byte-unchanged. | Test |
+| FR-216-AC-10 | The same advisory identifier in statements attached to two different selected SOUP records is allowed and produces one OpenVEX statement for each record. | Test |
 
 ## Dependencies
 
