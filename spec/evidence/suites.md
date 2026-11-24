@@ -23,6 +23,7 @@ FR-006).
 | SUITE-001 | Unit and integration suite | `make evidence` | cargo-nextest | Unit |
 | SUITE-002 | Spec validation gate | `make validate` | quire-cli | Static |
 | SUITE-003 | Agent evals | `make evals` | cli-agent-evals | Eval |
+| SUITE-004 | Real-tool integration checks | `make real-tool-test` | real-tool-test lane | Integration |
 
 For the Quoin tag-attestation release-verification result, `SUITE-001` is the
 declared suite. Its required release bindings are `FR-186-AC-1` through
@@ -34,6 +35,14 @@ generated facts with the maintained declarations and tag/run provenance as the
 `release-evidence` artifact. It does not commit run-specific bindings or
 tag-run records. `SUITE-002` and `SUITE-003` remain separate evidence suites
 and are not claimed by the release Test Result.
+
+`SUITE-004` runs the repository's ignored tests against the real tools that
+compose its verification path. The local target records every attempted tool
+check, including a failed or unavailable tool, in one retained run record. Each
+entry identifies the tool version and any result-affecting input in its
+`config`; an OSV-Scanner entry includes `osv_mirror_date`. An unavailable tool
+has `outcome: error` and `config.execution_state: not-executed`; it never has a
+passing outcome. This local suite is independent of release CI.
 
 ## What the store discharges
 
