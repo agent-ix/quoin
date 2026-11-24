@@ -107,29 +107,82 @@ fn decision_repo(author: &str, decider: &str) -> (tempfile::TempDir, String) {
     (dir, commit)
 }
 
-fn run_with_verifier(
-    scope: &Path,
-    module: &Path,
-    ea: &Path,
-    allowed: &Path,
-    request_capture: &Path,
-    result_file: &Path,
-    verify_exit_code: &str,
-) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_quoin"))
-        .args(["risk", "advise"])
-        .arg(scope)
-        .arg("--module")
-        .arg(module)
-        .args(["--format", "json", "--engineering-assurance"])
-        .arg(ea)
-        .arg("--allowed-signers")
-        .arg(allowed)
-        .env("SIGNATURE_VERIFY_REQUEST", request_capture)
-        .env("SIGNATURE_VERIFY_RESULT", result_file)
-        .env("SIGNATURE_VERIFY_EXIT_CODE", verify_exit_code)
-        .output()
-        .unwrap()
+struct SignatureVerifier {
+    _tools: tempfile::TempDir,
+    ea: PathBuf,
+    allowed_signers: PathBuf,
+    request_capture: PathBuf,
+    result_file: PathBuf,
+}
+
+impl SignatureVerifier {
+    fn new() -> Self {
+        let tools = tempfile::tempdir().unwrap();
+        let ea = tools.path().join("engineering-assurance");
+        let allowed_signers = tools.path().join("allowed-signers");
+        let request_capture = tools.path().join("request.json");
+        let result_file = tools.path().join("result.json");
+        std::fs::write(
+            &allowed_signers,
+            "fixture@example.invalid ssh-ed25519 AAAA\n",
+        )
+        .unwrap();
+        std::fs::write(
+            &ea,
+            "#!/bin/sh\ncat > \"$SIGNATURE_VERIFY_REQUEST\"\ncat \"$SIGNATURE_VERIFY_RESULT\"\nexit \"$SIGNATURE_VERIFY_EXIT_CODE\"\n",
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&ea, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        Self {
+            _tools: tools,
+            ea,
+            allowed_signers,
+            request_capture,
+            result_file,
+        }
+    }
+
+    fn write_result(&self, status: &str, principal: Option<&str>, verified_commit: &str) {
+        let signer = principal.map_or_else(
+            || serde_json::json!({"source": "allowed_signers", "mapping": "unmapped"}),
+            |principal| {
+                serde_json::json!({
+                    "source": "allowed_signers",
+                    "mapping": "mapped",
+                    "principal": principal
+                })
+            },
+        );
+        let result = serde_json::json!({
+            "protocol": "engineering-assurance.signature-verify-result/v1",
+            "kind": "commit",
+            "status": status,
+            "verified_commit_id": verified_commit,
+            "signer": signer
+        });
+        std::fs::write(&self.result_file, serde_json::to_vec(&result).unwrap()).unwrap();
+    }
+
+    fn run(&self, scope: &Path, module: &Path, verify_exit_code: &str) -> Output {
+        Command::new(env!("CARGO_BIN_EXE_quoin"))
+            .args(["risk", "advise"])
+            .arg(scope)
+            .arg("--module")
+            .arg(module)
+            .args(["--format", "json", "--engineering-assurance"])
+            .arg(&self.ea)
+            .arg("--allowed-signers")
+            .arg(&self.allowed_signers)
+            .env("SIGNATURE_VERIFY_REQUEST", &self.request_capture)
+            .env("SIGNATURE_VERIFY_RESULT", &self.result_file)
+            .env("SIGNATURE_VERIFY_EXIT_CODE", verify_exit_code)
+            .output()
+            .unwrap()
+    }
 }
 
 #[trace("FR-145-AC-1", "FR-145-AC-4", "FR-213-AC-6", "FR-214-AC-7")]
@@ -272,57 +325,12 @@ fn each_failure_exits_2_with_its_own_diagnostic_code_and_an_unreadable_file_is_n
 
 #[trace("FR-214-AC-8", "FR-214-AC-9")]
 #[test]
-fn risk_advice_uses_only_the_mapped_principal_from_signature_verify() {
+fn risk_advice_uses_mapped_principal_and_passes_signature_verify_inputs() {
     let (repo, commit) = decision_repo("Pat", "Lee");
     let module = safety_module_root();
-    let tools = tempfile::tempdir().unwrap();
-    let ea = tools.path().join("engineering-assurance");
-    let allowed = tools.path().join("allowed-signers");
-    let request_capture = tools.path().join("request.json");
-    let result_file = tools.path().join("result.json");
-    std::fs::write(&allowed, "fixture@example.invalid ssh-ed25519 AAAA\n").unwrap();
-    std::fs::write(
-        &ea,
-        "#!/bin/sh\ncat > \"$SIGNATURE_VERIFY_REQUEST\"\ncat \"$SIGNATURE_VERIFY_RESULT\"\nexit \"$SIGNATURE_VERIFY_EXIT_CODE\"\n",
-    )
-    .unwrap();
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&ea, std::fs::Permissions::from_mode(0o755)).unwrap();
-    }
-
-    let write_result = |status: &str, principal: Option<&str>, verified_commit: &str| {
-        let signer = principal.map_or_else(
-            || serde_json::json!({"source": "allowed_signers", "mapping": "unmapped"}),
-            |principal| {
-                serde_json::json!({
-                    "source": "allowed_signers",
-                    "mapping": "mapped",
-                    "principal": principal
-                })
-            },
-        );
-        let result = serde_json::json!({
-            "protocol": "engineering-assurance.signature-verify-result/v1",
-            "kind": "commit",
-            "status": status,
-            "verified_commit_id": verified_commit,
-            "signer": signer
-        });
-        std::fs::write(&result_file, serde_json::to_vec(&result).unwrap()).unwrap();
-    };
-
-    write_result("signed_valid", Some("Lee"), &commit);
-    let out = run_with_verifier(
-        repo.path(),
-        &module,
-        &ea,
-        &allowed,
-        &request_capture,
-        &result_file,
-        "0",
-    );
+    let verifier = SignatureVerifier::new();
+    verifier.write_result("signed_valid", Some("Lee"), &commit);
+    let out = verifier.run(repo.path(), &module, "0");
     assert!(
         out.status.success(),
         "{}",
@@ -340,7 +348,7 @@ fn risk_advice_uses_only_the_mapped_principal_from_signature_verify() {
     assert!(!findings.contains(&"decided-by-differs-from-commit-author"));
     assert!(!findings.contains(&"decided-by-differs-from-verified-signer"));
     let request: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(&request_capture).unwrap()).unwrap();
+        serde_json::from_slice(&std::fs::read(&verifier.request_capture).unwrap()).unwrap();
     assert_eq!(request["kind"], "commit");
     assert_eq!(
         request["repository"],
@@ -353,19 +361,18 @@ fn risk_advice_uses_only_the_mapped_principal_from_signature_verify() {
     assert_eq!(request["revision"], commit);
     assert_eq!(
         request["allowed_signers"],
-        allowed.to_string_lossy().as_ref()
+        verifier.allowed_signers.to_string_lossy().as_ref()
     );
+}
 
-    write_result("signed_valid", Some("Morgan"), &commit);
-    let out = run_with_verifier(
-        repo.path(),
-        &module,
-        &ea,
-        &allowed,
-        &request_capture,
-        &result_file,
-        "0",
-    );
+#[trace("FR-214-AC-8", "FR-214-AC-9")]
+#[test]
+fn risk_advice_reports_a_mapped_signer_mismatch() {
+    let (repo, commit) = decision_repo("Pat", "Lee");
+    let module = safety_module_root();
+    let verifier = SignatureVerifier::new();
+    verifier.write_result("signed_valid", Some("Morgan"), &commit);
+    let out = verifier.run(repo.path(), &module, "0");
     assert!(
         out.status.success(),
         "{}",
@@ -385,17 +392,16 @@ fn risk_advice_uses_only_the_mapped_principal_from_signature_verify() {
             .iter()
             .any(|finding| finding["finding"] == "decided-by-differs-from-commit-author")
     );
+}
 
-    write_result("signed_untrusted", None, &commit);
-    let out = run_with_verifier(
-        repo.path(),
-        &module,
-        &ea,
-        &allowed,
-        &request_capture,
-        &result_file,
-        "0",
-    );
+#[trace("FR-214-AC-8", "FR-214-AC-9")]
+#[test]
+fn risk_advice_does_not_infer_a_principal_from_an_unmapped_signer() {
+    let (repo, commit) = decision_repo("Pat", "Lee");
+    let module = safety_module_root();
+    let verifier = SignatureVerifier::new();
+    verifier.write_result("signed_untrusted", None, &commit);
+    let out = verifier.run(repo.path(), &module, "0");
     assert!(
         out.status.success(),
         "{}",
@@ -410,57 +416,58 @@ fn risk_advice_uses_only_the_mapped_principal_from_signature_verify() {
                 || finding["finding"] == "decided-by-differs-from-verified-signer"
         })
     );
+}
 
-    write_result("signed_valid", Some("Lee"), "another-commit");
-    let out = run_with_verifier(
-        repo.path(),
-        &module,
-        &ea,
-        &allowed,
-        &request_capture,
-        &result_file,
-        "0",
-    );
+#[trace("FR-214-AC-8", "FR-214-AC-9")]
+#[test]
+fn risk_advice_rejects_a_signature_result_for_another_commit() {
+    let (repo, _commit) = decision_repo("Pat", "Lee");
+    let module = safety_module_root();
+    let verifier = SignatureVerifier::new();
+    verifier.write_result("signed_valid", Some("Lee"), "another-commit");
+    let out = verifier.run(repo.path(), &module, "0");
     assert_eq!(out.status.code(), Some(3));
     assert!(out.stdout.is_empty());
     assert!(
         String::from_utf8_lossy(&out.stderr).contains("risk.signature_verification_result_invalid")
     );
+}
 
+#[trace("FR-214-AC-8", "FR-214-AC-9")]
+#[test]
+fn risk_advice_reports_an_invalid_allowed_signers_input() {
+    let (repo, _commit) = decision_repo("Pat", "Lee");
+    let module = safety_module_root();
+    let verifier = SignatureVerifier::new();
     let refused = serde_json::json!({
         "protocol": "engineering-assurance.error/v1",
         "code": "signature_verify_allowed_signers_invalid",
         "message": "bad allowed-signers file"
     });
-    std::fs::write(&result_file, serde_json::to_vec(&refused).unwrap()).unwrap();
-    let out = run_with_verifier(
-        repo.path(),
-        &module,
-        &ea,
-        &allowed,
-        &request_capture,
-        &result_file,
-        "2",
-    );
+    std::fs::write(&verifier.result_file, serde_json::to_vec(&refused).unwrap()).unwrap();
+    let out = verifier.run(repo.path(), &module, "2");
     assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty());
     assert!(String::from_utf8_lossy(&out.stderr).contains("risk.allowed_signers_invalid"));
+}
 
+#[trace("FR-214-AC-8", "FR-214-AC-9")]
+#[test]
+fn risk_advice_reports_signature_verifier_unavailability() {
+    let (repo, _commit) = decision_repo("Pat", "Lee");
+    let module = safety_module_root();
+    let verifier = SignatureVerifier::new();
     let unavailable = serde_json::json!({
         "protocol": "engineering-assurance.error/v1",
         "code": "signature_verify_unavailable",
         "message": "verification unavailable"
     });
-    std::fs::write(&result_file, serde_json::to_vec(&unavailable).unwrap()).unwrap();
-    let out = run_with_verifier(
-        repo.path(),
-        &module,
-        &ea,
-        &allowed,
-        &request_capture,
-        &result_file,
-        "1",
-    );
+    std::fs::write(
+        &verifier.result_file,
+        serde_json::to_vec(&unavailable).unwrap(),
+    )
+    .unwrap();
+    let out = verifier.run(repo.path(), &module, "1");
     assert_eq!(out.status.code(), Some(3));
     assert!(out.stdout.is_empty());
     assert!(String::from_utf8_lossy(&out.stderr).contains("risk.signature_verification_failed"));
