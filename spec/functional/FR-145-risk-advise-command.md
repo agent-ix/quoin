@@ -39,7 +39,7 @@ verdict. The wording and no-verdict rules that bind every section are NFR-031.
 
 ## Behavior
 
-- When a user runs `quoin risk advise <scope> [--format markdown|json] [--module DIR]...`, the command SHALL print the five sections `policy_cells`, `evidence_gaps`, `decision_queue`, `overall_evaluation_checks` (FR-213) and `decision_attribution` (FR-214), in that order.
+- When a user runs `quoin risk advise <scope> [--format markdown|json] [--module DIR]... [--engineering-assurance ABSOLUTE-PATH --allowed-signers ABSOLUTE-PATH]`, the command SHALL print the five sections `policy_cells`, `evidence_gaps`, `decision_queue`, `overall_evaluation_checks` (FR-213) and `decision_attribution` (FR-214), in that order.
 - The command SHALL read only the safety-module records below `<scope>` (hazards, hazardous situations, risk estimates, controls, residual risks, benefit-risk records, overall evaluations), the `acceptability_policy` documents they reference, the requirement and test documents that link to a control, and the anomaly documents of FR-136.
 - The command SHALL read the documents with the quire engine's reader and SHALL check each `risk_estimate`, `acceptability_policy`, `residual_risk`, `benefit_risk` and `overall_residual_risk_evaluation` against the `body_extraction` its type's module declares, taking the module from each `--module` root or, with none given, from the installed modules.
 - If a type it must check is declared by no loaded module, then the command SHALL exit 2 naming the document and the type, and the message SHALL name `--module DIR` and say that the module version must include the `residual_risk`, `benefit_risk` and `acceptability_policy` types.

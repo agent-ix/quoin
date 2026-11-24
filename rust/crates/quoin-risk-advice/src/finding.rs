@@ -7,7 +7,8 @@ use serde::Serialize;
 
 /// A finding token. Those of `spec-objects-safety` FR-102, FR-203, FR-204,
 /// FR-301, FR-302, FR-303 and FR-107 keep its spelling; `cell-not-in-policy`,
-/// `policy-not-found` and `policy-ambiguous` are quoin FR-146's own, and the two decision-attribution tokens are FR-214's.
+/// `policy-not-found` and `policy-ambiguous` are quoin FR-146's own; the
+/// decision-attribution tokens are quoin FR-214's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Token {
@@ -43,6 +44,9 @@ pub enum Token {
     /// The typed decider differs from the author of the commit that set the
     /// decision (quoin FR-214).
     DecidedByDiffersFromCommitAuthor,
+    /// The typed decider differs from the mapped signer principal of the
+    /// commit that set the decision (quoin FR-214).
+    DecidedByDiffersFromVerifiedSigner,
     /// The commit that set the decision carries no valid signature (quoin
     /// FR-214).
     DecisionCommitNotSigned,

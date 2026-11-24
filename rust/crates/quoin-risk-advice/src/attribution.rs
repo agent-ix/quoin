@@ -30,10 +30,24 @@ pub struct Attribution {
     pub decision: String,
     /// The `Decided by` cell as written, or `null`.
     pub decided_by: Option<String>,
+    /// The principal returned by engineering-assurance when the caller
+    /// configured signature verification and the signer mapped to a name.
+    pub signer_principal: Option<String>,
     /// The commit that last set the decision.
     pub decision_change: Derived,
     /// The mismatch findings.
     pub findings: Vec<Finding>,
+}
+
+impl Attribution {
+    /// The commit that set this decision, when the change is present in git.
+    #[must_use]
+    pub fn decision_commit(&self) -> Option<&str> {
+        match &self.decision_change {
+            Derived::Present(change) => Some(&change.commit),
+            Derived::Absent | Derived::Pending | Derived::NotApplicable => None,
+        }
+    }
 }
 
 /// The `Decision` cell of the first data row of the `Determination` table in a
@@ -86,6 +100,7 @@ fn entry(record: &Choice, kind: &'static str) -> Result<Attribution, AdviceError
         kind,
         decision: record.decision.clone(),
         decided_by: record.decided_by.clone(),
+        signer_principal: None,
         decision_change,
         findings,
     })

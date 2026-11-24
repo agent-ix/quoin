@@ -7,13 +7,14 @@
 //! The reports are built by `quoin-risk-advice`; this module is argv, a refusal
 //! for a missing scope, and the choice of format. It writes no file.
 
-use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_quire::{ModuleRoot, ModuleSelection};
+use serde_json::Value;
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
 pub(crate) const ABOUT: &str = "Advise on risk decisions without making them.";
@@ -51,7 +52,19 @@ pub(crate) fn command() -> Command {
                 .about("Print the policy cell of each estimate, its evidence gaps and the undecided decisions")
                 .arg(scope_arg())
                 .arg(format_arg())
-                .arg(module_arg()),
+                .arg(module_arg())
+                .arg(
+                    Arg::new("engineering-assurance")
+                        .long("engineering-assurance")
+                        .value_name("ABSOLUTE-PATH")
+                        .help("Engineering Assurance executable used to resolve decision signers"),
+                )
+                .arg(
+                    Arg::new("allowed-signers")
+                        .long("allowed-signers")
+                        .value_name("ABSOLUTE-PATH")
+                        .help("Allowed-signers file passed to signature-verify"),
+                ),
         )
         .subcommand(
             Command::new("discrepancies")
@@ -130,7 +143,7 @@ fn run_advise(arguments: &ArgMatches) -> Result<Response, String> {
         Ok(inputs) => inputs,
         Err(refusal) => return Ok(refusal),
     };
-    let advice = match quoin_risk_advice::advise(&scope, &modules) {
+    let mut advice = match quoin_risk_advice::advise(&scope, &modules) {
         Ok(advice) => advice,
         Err(error) => {
             return Ok(refused(
@@ -139,16 +152,153 @@ fn run_advise(arguments: &ArgMatches) -> Result<Response, String> {
             ));
         }
     };
-    let diagnostics = unreadable_diagnostics(&advice.unreadable);
-    let rendered = match arguments.get_one::<String>("format").map(String::as_str) {
-        Some("json") => advice.to_json().map_err(|error| error.to_string())?,
-        _ => advice.to_markdown(),
+    let verifier_paths = match verifier_paths(arguments) {
+        Ok(paths) => paths,
+        Err(refusal) => return Ok(refusal),
     };
+    let Some((ea, allowed_signers)) = verifier_paths else {
+        let diagnostics = unreadable_diagnostics(&advice.unreadable);
+        let rendered = render_advice(arguments, &advice)?;
+        return Ok(Response {
+            payload: serde_json::json!({ "rendered": rendered.trim_end() }),
+            diagnostics,
+            outcome: Outcome::Ok,
+        });
+    };
+
+    let repository = match scope.canonicalize() {
+        Ok(repository) => repository,
+        Err(error) => {
+            return Ok(refused(
+                "risk.scope_unreadable",
+                &format!("cannot resolve scope {}: {error}", scope.display()),
+            ));
+        }
+    };
+    let commits: BTreeSet<String> = advice
+        .decision_attribution
+        .iter()
+        .filter_map(|entry| entry.decision_commit().map(str::to_owned))
+        .collect();
+    let mut signer_principals = BTreeMap::new();
+    for commit in commits {
+        let result =
+            match crate::formal_rules::verify_for_risk(&ea, &allowed_signers, &repository, &commit)
+            {
+                Ok(result) => result,
+                Err(crate::formal_rules::StatusError::Invalid(message)) => {
+                    return Ok(refused("risk.allowed_signers_invalid", &message));
+                }
+                Err(crate::formal_rules::StatusError::Unavailable(message)) => {
+                    return Ok(invalid("risk.signature_verification_failed", &message));
+                }
+            };
+        let principal = match verified_signer_principal(&result, &commit) {
+            Ok(principal) => principal,
+            Err(message) => {
+                return Ok(invalid(
+                    "risk.signature_verification_result_invalid",
+                    &message,
+                ));
+            }
+        };
+        signer_principals.insert(commit, principal);
+    }
+    quoin_risk_advice::apply_verified_signers(&mut advice, &signer_principals);
+    let diagnostics = unreadable_diagnostics(&advice.unreadable);
+    let rendered = render_advice(arguments, &advice)?;
     Ok(Response {
         payload: serde_json::json!({ "rendered": rendered.trim_end() }),
         diagnostics,
         outcome: Outcome::Ok,
     })
+}
+
+fn render_advice(
+    arguments: &ArgMatches,
+    advice: &quoin_risk_advice::Advice,
+) -> Result<String, String> {
+    match arguments.get_one::<String>("format").map(String::as_str) {
+        Some("json") => advice.to_json().map_err(|error| error.to_string()),
+        _ => Ok(advice.to_markdown()),
+    }
+}
+
+fn verifier_paths(arguments: &ArgMatches) -> Result<Option<(PathBuf, PathBuf)>, Response> {
+    let ea = arguments.get_one::<String>("engineering-assurance");
+    let allowed = arguments.get_one::<String>("allowed-signers");
+    let (Some(ea), Some(allowed)) = (ea, allowed) else {
+        return if ea.is_none() && allowed.is_none() {
+            Ok(None)
+        } else {
+            Err(refused(
+                "risk.signature_options_incomplete",
+                "--engineering-assurance and --allowed-signers must be supplied together",
+            ))
+        };
+    };
+    let ea = Path::new(ea);
+    if !ea.is_absolute() || !ea.is_file() {
+        return Err(refused(
+            "risk.engineering_assurance_invalid",
+            "--engineering-assurance must name an existing absolute file",
+        ));
+    }
+    let allowed = Path::new(allowed);
+    if !allowed.is_absolute() || !allowed.is_file() {
+        return Err(refused(
+            "risk.allowed_signers_invalid",
+            "--allowed-signers must name an existing absolute file",
+        ));
+    }
+    Ok(Some((ea.to_path_buf(), allowed.to_path_buf())))
+}
+
+fn verified_signer_principal(result: &Value, commit: &str) -> Result<Option<String>, String> {
+    if result.get("protocol").and_then(Value::as_str)
+        != Some("engineering-assurance.signature-verify-result/v1")
+        || result.get("kind").and_then(Value::as_str) != Some("commit")
+    {
+        return Err("engineering-assurance returned an unsupported signature result".to_owned());
+    }
+    let status = result
+        .get("status")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "engineering-assurance signature result has no status".to_owned())?;
+    if !matches!(
+        status,
+        "signed_valid" | "signed_untrusted" | "signed_bad" | "unsigned" | "unverifiable"
+    ) {
+        return Err("engineering-assurance returned an unknown signature status".to_owned());
+    }
+    if let Some(verified_commit) = result.get("verified_commit_id").and_then(Value::as_str)
+        && verified_commit != commit
+    {
+        return Err(format!(
+            "engineering-assurance verified {verified_commit}, expected decision commit {commit}"
+        ));
+    }
+    if status != "signed_valid" {
+        return Ok(None);
+    }
+    if result.get("verified_commit_id").and_then(Value::as_str) != Some(commit) {
+        return Err(
+            "engineering-assurance did not identify the verified decision commit".to_owned(),
+        );
+    }
+    let signer = result
+        .get("signer")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "signed_valid result has no signer".to_owned())?;
+    if signer.get("mapping").and_then(Value::as_str) != Some("mapped") {
+        return Err("signed_valid result has no mapped signer".to_owned());
+    }
+    signer
+        .get("principal")
+        .and_then(Value::as_str)
+        .filter(|principal| !principal.trim().is_empty())
+        .map(|principal| Some(principal.to_owned()))
+        .ok_or_else(|| "mapped signer result has no principal".to_owned())
 }
 
 pub(crate) fn run_summary(arguments: &ArgMatches) -> Result<Response, String> {
@@ -217,5 +367,18 @@ fn refused(code: &str, message: &str) -> Response {
             context: BTreeMap::new(),
         }],
         outcome: Outcome::Refused,
+    }
+}
+
+/// An invalid verifier result: exit status 3 and no report.
+fn invalid(code: &str, message: &str) -> Response {
+    Response {
+        payload: serde_json::Value::Null,
+        diagnostics: vec![Diagnostic {
+            code: code.to_owned(),
+            message: message.to_owned(),
+            context: BTreeMap::new(),
+        }],
+        outcome: Outcome::Invalid,
     }
 }

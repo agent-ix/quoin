@@ -12,6 +12,7 @@
 //! The overall-evaluation checks of `spec-objects-safety` FR-107 (FR-213) and
 //! the git attribution of each decision (FR-214), over authored fixtures.
 
+use std::collections::BTreeMap;
 use std::process::Command;
 
 use ix_trace_rs::trace;
@@ -355,8 +356,58 @@ fn every_decided_kind_is_attributed_and_undecided_records_are_absent() {
                 "decision_change",
                 "findings",
                 "kind",
-                "record"
+                "record",
+                "signer_principal"
             ]
         );
+        assert!(entry["signer_principal"].is_null());
     }
+}
+
+#[trace("FR-214-AC-8")]
+#[test]
+fn verified_principal_replaces_author_comparison_and_unmapped_signer_has_no_fallback() {
+    let c = corpus();
+    base(&c);
+    repo(&c);
+    residual_by(&c, "RR-1", "accepted", "Lee", "r");
+    let commit_id = commit(&c, "Pat");
+
+    let mut advice = advise(c.dir.path(), &modules()).unwrap();
+    let mapped = BTreeMap::from([(commit_id.clone(), Some("Lee".to_owned()))]);
+    quoin_risk_advice::apply_verified_signers(&mut advice, &mapped);
+    let entry = &advice.decision_attribution[0];
+    assert_eq!(entry.signer_principal.as_deref(), Some("Lee"));
+    assert!(!entry.findings.iter().any(
+        |finding| finding.finding == quoin_risk_advice::Token::DecidedByDiffersFromCommitAuthor
+    ));
+    assert!(
+        !entry.findings.iter().any(|finding| finding.finding
+            == quoin_risk_advice::Token::DecidedByDiffersFromVerifiedSigner)
+    );
+
+    let mut advice = advise(c.dir.path(), &modules()).unwrap();
+    let different = BTreeMap::from([(commit_id.clone(), Some("Morgan".to_owned()))]);
+    quoin_risk_advice::apply_verified_signers(&mut advice, &different);
+    let entry = &advice.decision_attribution[0];
+    let finding = entry
+        .findings
+        .iter()
+        .find(|finding| {
+            finding.finding == quoin_risk_advice::Token::DecidedByDiffersFromVerifiedSigner
+        })
+        .unwrap();
+    assert_eq!(finding.names, ["Lee", "Morgan"]);
+    assert!(!entry.findings.iter().any(
+        |finding| finding.finding == quoin_risk_advice::Token::DecidedByDiffersFromCommitAuthor
+    ));
+
+    let mut advice = advise(c.dir.path(), &modules()).unwrap();
+    let unmapped = BTreeMap::from([(commit_id, None)]);
+    quoin_risk_advice::apply_verified_signers(&mut advice, &unmapped);
+    let entry = &advice.decision_attribution[0];
+    assert!(entry.signer_principal.is_none());
+    assert!(!entry.findings.iter().any(
+        |finding| finding.finding == quoin_risk_advice::Token::DecidedByDiffersFromCommitAuthor
+    ));
 }

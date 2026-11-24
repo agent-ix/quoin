@@ -156,6 +156,9 @@ fn attribution_line(entry: &Attribution) -> String {
         "- {} ({}): decision {}, decided by {decider}",
         entry.record, entry.kind, entry.decision
     );
+    if let Some(principal) = entry.signer_principal.as_deref() {
+        let _ = write!(line, "; verified signer {principal}");
+    }
     match &entry.decision_change {
         Derived::Present(change) => {
             let _ = write!(

@@ -28,6 +28,7 @@ mod records;
 mod render;
 mod summary;
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use quoin_quire::ModuleSelection;
@@ -72,6 +73,55 @@ pub struct Advice {
     /// the rendered output.
     #[serde(skip)]
     pub unreadable: Vec<String>,
+}
+
+/// Attach the mapped signer principal for each verified decision commit.
+///
+/// The map key is the exact commit id from `decision_change`. A present key
+/// with `None` means signature verification ran but found no mapped principal;
+/// such an entry must not fall back to comparing `decided_by` with the git
+/// author. A missing key means verification was not requested for that entry.
+pub fn apply_verified_signers(
+    advice: &mut Advice,
+    signer_principals: &BTreeMap<String, Option<String>>,
+) {
+    for attribution in &mut advice.decision_attribution {
+        let Some(commit) = attribution.decision_commit() else {
+            continue;
+        };
+        let Some(principal) = signer_principals.get(commit) else {
+            continue;
+        };
+
+        attribution.signer_principal = principal.clone();
+        attribution
+            .findings
+            .retain(|finding| finding.finding != Token::DecidedByDiffersFromCommitAuthor);
+
+        let Some(principal) = principal.as_deref() else {
+            continue;
+        };
+        let Some(decider) = attribution
+            .decided_by
+            .as_deref()
+            .filter(|decider| !decider.trim().is_empty())
+        else {
+            continue;
+        };
+        if decider.trim().eq_ignore_ascii_case(principal.trim()) {
+            continue;
+        }
+        let finding = Finding::naming(
+            Token::DecidedByDiffersFromVerifiedSigner,
+            vec![decider.to_owned(), principal.to_owned()],
+        );
+        let index = attribution
+            .findings
+            .iter()
+            .position(|finding| finding.finding == Token::DecisionCommitNotSigned)
+            .unwrap_or(attribution.findings.len());
+        attribution.findings.insert(index, finding);
+    }
 }
 
 /// Read the records below `scope`, with the record types of the modules
