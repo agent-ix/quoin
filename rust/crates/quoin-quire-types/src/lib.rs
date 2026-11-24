@@ -87,6 +87,11 @@ pub struct Obligation {
     /// inventory. Ordinary coverage and auditor inputs leave it absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<TargetLocus>,
+    /// Scope-relative path of the document that states the obligation, as the
+    /// engine reports it. Absent on an obligation built outside the coverage
+    /// projection.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub document: Option<String>,
     /// The criterion's statement, in the spec's own words.
     pub statement: String,
     /// Test-case ids the criterion's method cell names, when it names any.

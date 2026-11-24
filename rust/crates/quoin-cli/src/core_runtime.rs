@@ -8,7 +8,7 @@
 //! Rust-to-Rust subprocess and its JSON reparse.
 
 use quoin_core::error::{CoreError, CoreErrorCode};
-use quoin_core::protocol::{Diagnostic, Response};
+use quoin_core::protocol::Response;
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 use crate::invocation;
@@ -103,11 +103,7 @@ pub(crate) fn invoke_refusable(
         Err(error)
             if error.code == CoreErrorCode::Refused && error.context.contains_key("pack") =>
         {
-            Ok(Response {
-                payload: serde_json::Value::Null,
-                diagnostics: vec![Diagnostic::from(&error)],
-                outcome: error.outcome(),
-            })
+            Ok(Response::refusal(&error))
         }
         Err(error) => Err(failed(operation, &error)),
         Ok(response) => Ok(response),
@@ -132,11 +128,7 @@ pub(crate) fn invoke_verifying(
                 )
             ) =>
         {
-            Ok(Response {
-                payload: serde_json::Value::Null,
-                diagnostics: vec![Diagnostic::from(&error)],
-                outcome: error.outcome(),
-            })
+            Ok(Response::refusal(&error))
         }
         Err(error) => Err(failed(operation, &error)),
         Ok(response) => Ok(response),
@@ -149,11 +141,7 @@ pub(crate) fn invoke_declining(
     request: &serde_json::Value,
 ) -> Result<Response, String> {
     match dispatch(operation, request, &settings()) {
-        Err(error) if error.code == CoreErrorCode::Refused => Ok(Response {
-            payload: serde_json::Value::Null,
-            diagnostics: vec![Diagnostic::from(&error)],
-            outcome: error.outcome(),
-        }),
+        Err(error) if error.code == CoreErrorCode::Refused => Ok(Response::refusal(&error)),
         Err(error) => Err(failed(operation, &error)),
         Ok(response) => Ok(response),
     }

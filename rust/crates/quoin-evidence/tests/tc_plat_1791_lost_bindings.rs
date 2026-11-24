@@ -34,6 +34,7 @@ fn obligation(id: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
         identity: None,
+        document: None,
         statement: format!("the system shall {id}"),
         target_ids: None,
         method: None,

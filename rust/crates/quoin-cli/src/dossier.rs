@@ -187,9 +187,10 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 ///
 /// The model is read by several sources (the matrix, the design matrix, the
 /// flow report), so the one question is put once, up front, over the same scope
-/// and module selection they use. Any other failure to resolve the modules is
-/// not this refusal and is left to the source that needs the modules to report
-/// it; a document kind that reads no model still generates.
+/// and module selection they use, and every dossier command is refused when a
+/// declaration was dropped, whichever document kinds it selects. Any other
+/// failure to resolve the modules is not this refusal and is left to the
+/// source that needs the modules to report it.
 fn dropped_declarations(arguments: &ArgMatches) -> Option<Response> {
     let (_, selected) = arguments.subcommand()?;
     let scope = quoin_quire::ids::ScopeRoot::open(

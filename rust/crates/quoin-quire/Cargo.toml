@@ -18,10 +18,10 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# THE RELEASE CONTRACT. This consumer links quire-rs at the commit that carries
-# the dropped-declaration refusal (quire-rs #715, PLAT-1804), consumed by
-# PLAT-1854. The exact package version and `rev` keep Cargo resolution tied to
-# that contract.
+# The quire engine, at a quire-rs `main` commit that contains the
+# dropped-declaration refusal (quire-rs #715, PLAT-1804). That commit is past the
+# v0.62.3 tag and its package still reads 0.62.3; the dependency moves to a
+# release tag at the next batched release.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject

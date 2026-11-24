@@ -28,6 +28,7 @@ fn an_obligation(id: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
         identity: None,
+        document: None,
         statement: "the system SHALL do the thing".to_owned(),
         target_ids: None,
         method: None,

@@ -328,9 +328,7 @@ fn anomaly_check_runs_without_the_dropped_declaration() {
     let scope = anomaly_scope(false);
     let output = run(&scope, ANOMALY);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(
-        matches!(output.status.code(), Some(0 | 1)),
-        "anomaly check: {stderr}"
-    );
+    assert_eq!(output.status.code(), Some(0), "anomaly check: {stderr}");
+    assert!(!output.stdout.is_empty(), "anomaly check printed nothing");
     assert!(!stderr.contains("QQ-1022"), "{stderr}");
 }

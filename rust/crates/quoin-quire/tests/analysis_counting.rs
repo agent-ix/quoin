@@ -82,6 +82,7 @@ fn obligations() -> Vec<quoin_quire_types::Obligation> {
         .map(|(id, method)| quoin_quire_types::Obligation {
             id: id.to_owned(),
             identity: None,
+            document: None,
             statement: "stated".to_owned(),
             target_ids: None,
             method: Some(method.to_owned()),

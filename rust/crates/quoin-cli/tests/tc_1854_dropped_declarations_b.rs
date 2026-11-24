@@ -113,6 +113,16 @@ impl Scope {
         path
     }
 
+    /// The same scope with its whole `traceability:` section unreadable, so
+    /// every declaration is dropped and the merged model is empty.
+    fn drop_every_declaration(&self) {
+        let head = MANIFEST.split("traceability:").next().unwrap();
+        self.write(
+            "manifest.yaml",
+            &format!("{head}traceability:\n  required_relations: 5\n"),
+        );
+    }
+
     /// The same scope, now declaring a flow rule that cannot load.
     fn drop_a_declaration(&self) {
         self.write("manifest.yaml", &format!("{MANIFEST}{BAD_FLOW_RULE}"));
@@ -561,4 +571,41 @@ fn formal_rules_status_without_a_dropped_declaration_reports() {
     assert_eq!(status.status.code(), Some(0), "{}", text(&status.stderr));
     let report: Value = serde_json::from_slice(&status.stdout).unwrap();
     assert_eq!(report["protocol"], "quoin.formal-rule-status/v1");
+}
+
+/// With every declaration dropped the model is empty and reads as absent; the
+/// command still names the drop, not the absent-model code QQ-1020.
+#[trace("FR-029-AC-20")]
+#[test]
+fn formal_rules_status_over_an_all_dropped_model_is_qq_1022_not_qq_1020() {
+    let formal = Formal::new();
+    formal.scope.drop_every_declaration();
+    let output = formal.run("status");
+    let stderr = text(&output.stderr);
+    assert_eq!(output.status.code(), Some(2), "{stderr}");
+    assert!(output.stdout.is_empty(), "{}", text(&output.stdout));
+    assert!(stderr.contains("QQ-1022"), "{stderr}");
+    assert!(!stderr.contains("QQ-1020"), "{stderr}");
+    assert!(
+        stderr.contains(
+            "module=quoin-cli-dropped-fixture kind=traceability_section item=traceability"
+        ),
+        "{stderr}"
+    );
+}
+
+#[trace("FR-029-AC-23")]
+#[test]
+fn formal_rules_coverage_without_a_dropped_declaration_reports() {
+    let formal = Formal::new();
+    let coverage = formal.run("coverage");
+    assert_eq!(
+        coverage.status.code(),
+        Some(0),
+        "{}",
+        text(&coverage.stderr)
+    );
+    assert!(!coverage.stdout.is_empty());
+    let report: Value = serde_json::from_slice(&coverage.stdout).unwrap();
+    assert!(report.is_object(), "{report}");
 }

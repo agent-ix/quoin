@@ -36,6 +36,7 @@ fn obligation(id: &str, criticality: Option<&str>) -> Obligation {
     Obligation {
         id: id.to_owned(),
         identity: None,
+        document: None,
         statement: "the system SHALL do the thing".to_owned(),
         target_ids: None,
         method: None,
@@ -100,6 +101,7 @@ fn entry(obligation: &str, carried: &Value) -> CoverageMatrixRequirement {
             method: None,
             binders: Vec::new(),
             identity: None,
+            document: None,
             unbacked_claims: Vec::new(),
             status: "tagged".to_owned(),
         }],

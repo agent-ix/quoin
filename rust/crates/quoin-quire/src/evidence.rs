@@ -148,6 +148,7 @@ fn audit_report(
                     quoin_quire_types::Obligation {
                         id: source.id.clone(),
                         identity: None,
+                        document: None,
                         statement: source.statement.clone(),
                         target_ids: None,
                         method: source.method.clone(),
