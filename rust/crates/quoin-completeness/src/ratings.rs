@@ -131,7 +131,7 @@ mod tests {
     use ix_trace_rs::trace;
     use serde_json::json;
 
-    fn document(id: &str, frontmatter: Value) -> BundleDocument {
+    fn document(id: &str, frontmatter: &Value) -> BundleDocument {
         BundleDocument {
             path: format!("{id}.md"),
             frontmatter: frontmatter.as_object().cloned().unwrap_or_default(),
@@ -142,7 +142,7 @@ mod tests {
     fn rating(id: &str, scope: &str, feature: &str) -> BundleDocument {
         document(
             id,
-            json!({
+            &json!({
                 "id": id,
                 "type": "FeatureRiskRating",
                 "scope": scope,
@@ -155,9 +155,9 @@ mod tests {
     #[test]
     fn tc_1636_supplier_rating_states_exclude_adopter_reratings() {
         let docs = vec![
-            document("FR-001", json!({"id":"FR-001", "type":"FR"})),
-            document("FR-002", json!({"id":"FR-002", "type":"FR"})),
-            document("FR-003", json!({"id":"FR-003", "type":"FR"})),
+            document("FR-001", &json!({"id":"FR-001", "type":"FR"})),
+            document("FR-002", &json!({"id":"FR-002", "type":"FR"})),
+            document("FR-003", &json!({"id":"FR-003", "type":"FR"})),
             rating("RR-001", "supplier", "FR-002"),
             rating("RR-002", "supplier", "FR-002"),
             rating("RR-003", "adopter", "FR-001"),
@@ -166,13 +166,16 @@ mod tests {
 
         let states = assess_feature_ratings(&docs);
         assert_eq!(states.len(), 3);
-        assert_eq!(states[0].feature_id, "FR-001");
-        assert_eq!(states[0].status, RatingStatus::Unrated);
-        assert!(states[0].rating_ids.is_empty());
-        assert_eq!(states[1].feature_id, "FR-002");
-        assert_eq!(states[1].status, RatingStatus::RatedMoreThanOnce);
-        assert_eq!(states[1].rating_ids, ["RR-001", "RR-002"]);
-        assert_eq!(states[2].feature_id, "FR-003");
-        assert_eq!(states[2].status, RatingStatus::Unrated);
+        let first = states.first().expect("first feature is present");
+        assert_eq!(first.feature_id, "FR-001");
+        assert_eq!(first.status, RatingStatus::Unrated);
+        assert!(first.rating_ids.is_empty());
+        let second = states.get(1).expect("second feature is present");
+        assert_eq!(second.feature_id, "FR-002");
+        assert_eq!(second.status, RatingStatus::RatedMoreThanOnce);
+        assert_eq!(second.rating_ids, ["RR-001", "RR-002"]);
+        let third = states.get(2).expect("third feature is present");
+        assert_eq!(third.feature_id, "FR-003");
+        assert_eq!(third.status, RatingStatus::Unrated);
     }
 }
