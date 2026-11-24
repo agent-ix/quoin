@@ -39,31 +39,12 @@ fn snapshot(path: &Path, root: &Path, result: &mut BTreeMap<String, Vec<u8>>) {
     }
 }
 
-fn initialize_repo(root: &Path) {
-    let init = Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(["init", "--quiet"])
-        .status()
-        .expect("git initializes fixture repository");
-    assert!(init.success());
-    let remote = Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args([
-            "remote",
-            "add",
-            "origin",
-            "git@github.com:agent-ix/quoin.git",
-        ])
-        .status()
-        .expect("git configures fixture origin");
-    assert!(remote.success());
-}
-
 fn invoke(root: &Path, json: bool) -> std::process::Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
-    command.args(["validation", "ratings", "--repo"]).arg(root);
+    command
+        .args(["validation", "ratings", "--repo"])
+        .arg(root)
+        .args(["--repo-id", "agent-ix/quoin"]);
     if json {
         command.arg("--json");
     }
@@ -75,7 +56,7 @@ fn invoke(root: &Path, json: bool) -> std::process::Output {
 #[test]
 fn tc_1636_ratings_reports_each_status_and_is_read_only() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
-    initialize_repo(scratch.path());
+    assert!(!scratch.path().join(".git").exists());
     write(
         scratch.path(),
         "spec/functional/FR-001-a.md",
@@ -163,7 +144,7 @@ fn tc_1636_ratings_reports_each_status_and_is_read_only() {
 #[test]
 fn tc_1636_unreadable_input_is_reported_in_json_and_human_output() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
-    initialize_repo(scratch.path());
+    assert!(!scratch.path().join(".git").exists());
     write(
         scratch.path(),
         "spec/functional/FR-001-a.md",

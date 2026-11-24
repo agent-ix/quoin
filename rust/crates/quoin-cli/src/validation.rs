@@ -4,7 +4,6 @@
 //! Supplier feature-rating validation command (PLAT-1636).
 
 use std::path::Path;
-use std::process::Command as ProcessCommand;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_completeness::{FeatureRatingState, RatingStatus, read_bundle_frontmatter};
@@ -18,11 +17,13 @@ pub(crate) fn command() -> Command {
         .subcommand(
             Command::new("ratings")
                 .about("Report supplier feature ratings for each functional requirement")
+                .arg(Arg::new("repo").long("repo").default_value("."))
                 .arg(
-                    Arg::new("repo")
-                        .long("repo")
-                        .default_value(".")
-                        .help("Repository whose origin URI defines local requirement identity"),
+                    Arg::new("repo_id")
+                        .long("repo-id")
+                        .value_name("ORG/REPO")
+                        .required(true)
+                        .help("Repository namespace used to match ix:// requirement targets"),
                 )
                 .arg(Arg::new("json").long("json").action(ArgAction::SetTrue)),
         )
@@ -43,10 +44,14 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             bundle.display()
         ));
     }
-    let repository_namespace = repository_namespace(Path::new(repo))?;
+    let repository_namespace = ratings
+        .get_one::<String>("repo_id")
+        .map(String::as_str)
+        .ok_or_else(|| "--repo-id is required".to_owned())?;
+    validate_repository_namespace(repository_namespace)?;
     let parsed = read_bundle_frontmatter(&bundle);
     let features =
-        quoin_completeness::assess_feature_ratings(&parsed.documents, &repository_namespace);
+        quoin_completeness::assess_feature_ratings(&parsed.documents, repository_namespace);
     let unreadable = parsed
         .unreadable
         .iter()
@@ -81,43 +86,25 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     })
 }
 
-fn repository_namespace(repo: &Path) -> Result<String, String> {
-    let output = ProcessCommand::new("git")
-        .arg("-C")
-        .arg(repo)
-        .args(["remote", "get-url", "origin"])
-        .output()
-        .map_err(|error| format!("could not read repository origin: {error}"))?;
-    if !output.status.success() {
-        return Err(
-            "could not determine repository identity: origin remote is unavailable".to_owned(),
-        );
-    }
-    let remote = std::str::from_utf8(&output.stdout)
-        .map_err(|_| "repository origin URL is not UTF-8".to_owned())?
-        .trim();
-    let path = if let Some((_, path)) = remote
-        .rsplit_once(':')
-        .filter(|(prefix, _)| prefix.contains('@') && !prefix.contains("://"))
-    {
-        path
-    } else if let Some((_, rest)) = remote.split_once("://") {
-        rest.split_once('/').map_or("", |(_, path)| path)
-    } else {
-        return Err("repository origin URL has no supported URI form".to_owned());
+fn validate_repository_namespace(namespace: &str) -> Result<(), String> {
+    let mut segments = namespace.split('/');
+    let valid_segment = |segment: &str| {
+        !segment.is_empty()
+            && segment != "."
+            && segment != ".."
+            && segment
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || "-_.".contains(character))
     };
-    let namespace = path
-        .trim_matches('/')
-        .strip_suffix(".git")
-        .unwrap_or(path.trim_matches('/'));
-    if namespace.is_empty()
-        || namespace
-            .split('/')
-            .any(|segment| segment.is_empty() || matches!(segment, "." | ".."))
+    if let (Some(organization), Some(repository), None) =
+        (segments.next(), segments.next(), segments.next())
+        && valid_segment(organization)
+        && valid_segment(repository)
     {
-        return Err("repository origin URL has no valid namespace path".to_owned());
+        Ok(())
+    } else {
+        Err("--repo-id must be an ORG/REPO namespace".to_owned())
     }
-    Ok(namespace.to_owned())
 }
 
 fn render(
