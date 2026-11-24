@@ -46,3 +46,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-042: Behavioral mutation evidence for decision and binding kernels](./NFR-042-behavioral-mutation-evidence-for-decision-kernels.md)
 - [NFR-043: Self-test fixtures are repository-owned](./NFR-043-selftest-fixtures-are-repository-owned.md)
 - [NFR-044: Self-tests run offline](./NFR-044-selftest-is-offline-and-isolated.md)
+- [NFR-045: Assurance exports run offline without a copied SACM metamodel](./NFR-045-assurance-exports-run-offline.md)

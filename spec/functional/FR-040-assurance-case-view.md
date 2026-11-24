@@ -24,12 +24,15 @@ The internal structured argument view does: a **claim** is supported by explicit
 sub-claims, whose leaves are **evidence**. *"StR-004 holds because these
 requirements refine it, each verified by a stated method, with evidence that is fresh."*
 
-This is a project-owned representation. It borrows the vocabulary of a goal-structured argument
-(goal, strategy, solution) and nothing more: a **goal** is a claim or sub-claim, a **strategy** is the
-node that names how a goal is decomposed, and a **solution** is an obligation leaf. It is not GSN. It
-does not conform to the GSN standard's node set (no context, assumption, justification or module
-nodes), does not read or write GSN interchange, and does not claim that a rendered case is a GSN
-diagram. Its markdown and mermaid output are quoin's own formats.
+This internal view is a project-owned representation. It borrows the vocabulary of a
+goal-structured argument (goal, strategy, solution): a **goal** is a claim or sub-claim, a
+**strategy** is the node that names how a goal is decomposed, and a **solution** is an obligation
+leaf. The view itself is not an interchange format. When the caller explicitly
+supplies `--gsn`, the command exports this derived case as the GSN model
+specified by [FR-221](./FR-221-gsn-model-export.md). When the caller supplies
+`--sacm`, the command exports the same case as SACM XMI under
+[FR-226](./FR-226-sacm-export.md). Its default markdown, mermaid, and `--json`
+output remain Quoin formats.
 
 `quoin assurance` renders that from data the program already holds — the trace graph, the obligations
 `quire` mints, and the auditor's verdict on each binding. It is **strictly a view**: it runs nothing,
@@ -161,6 +164,7 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-18 | A leaf the audit does not list healthy is open even with no finding, and shows the unevaluated check's reason or that the audit reached no verdict. | Test |
 | FR-040-AC-19 | "Newest" run or scan is the later instant: fractional seconds and zone offsets order by the instant they name, not by string. | Test |
 | FR-040-AC-20 | A derived Analysis solution node carries the FR-153/FR-078 result items for its exact target, including `qualified-record` claims and every non-qualified cause with its category, locator and unmet-premise detail. The field is present even without a binding; JSON and text show identical items; non-Analysis nodes omit it, and these results do not override the auditor's verdict or alone support a claim. | Test |
+| FR-040-AC-21 | In derived-case mode, `--gsn` exports the case according to [FR-221](./FR-221-gsn-model-export.md) and `--sacm` exports the same case as SACM XMI according to [FR-226](./FR-226-sacm-export.md); without either flag the existing Markdown, Mermaid, and JSON output is unchanged. | Test |
 
 ## Constraints
 
