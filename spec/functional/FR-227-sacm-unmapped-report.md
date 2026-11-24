@@ -29,8 +29,10 @@ decide acceptance, risk, or compliance.
 
 ## Behavior
 
-- An unmapped item SHALL be reported as `unmapped: <source>: <reason>`.
-- An unreachable requirement SHALL be reported as `unreachable: <id>`.
+- The SACM exporter SHALL write an unmapped item to stderr as
+  `unmapped: <source>: <reason>`.
+- The SACM exporter SHALL write an unreachable requirement to stderr as
+  `unreachable: <id>`.
 - The JSON report SHALL preserve source ids and reasons, use deterministic
   ordering, and include every reported item exactly once.
 - The SACM XMI SHALL contain no element invented to stand in for an unreachable

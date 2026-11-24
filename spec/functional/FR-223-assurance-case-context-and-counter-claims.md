@@ -54,9 +54,12 @@ invent an assumption or justification to make a case appear complete.
   justification, or supporting node. The counter-claim SHALL preserve the
   challenge id, statement, owner, open reason, declared status, resolution
   references, and expiry when present. The top claim remains open.
-- Authored participants and authority SHALL produce context nodes attached to
-  the top claim. They SHALL remain descriptive facts and SHALL NOT support or
-  decide the top claim.
+- The case builder SHALL produce context nodes attached to the top claim for
+  authored participants and authority.
+- The case builder SHALL retain participant and authority context as
+  descriptive facts.
+- The case builder SHALL NOT create a `supported_by` edge from a participant
+  or authority context node.
 - If no authored source exists for an assumption or justification, then
   `quoin assurance` SHALL omit nodes of that kind from the derived case.
 - The existing JSON representation SHALL omit an empty context collection so

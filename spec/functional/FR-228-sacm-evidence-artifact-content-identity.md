@@ -63,7 +63,7 @@ revision identity or source-tree digest is produced.
 |----|----------|--------------|
 | FR-228-AC-1 | Two solutions with identical run-record bytes share one Artifact; a third solution with different bytes gets a distinct Artifact even if its suite id matches. | Test |
 | FR-228-AC-2 | Each Artifact exposes the selected content identity, suite id, verdict, relative run-record path, and timestamp as metadata only; its XMI id depends on content identity and not timestamp. | Test |
-| FR-228-AC-3 | Stale, suspect, and undischarged evidence stays non-supporting and its Claim needs support. | Test |
+| FR-228-AC-3 | For stale, suspect, and undischarged evidence, the AssertedEvidence has `isCounter=false` and the linked Claim has `needsSupport=true`. | Test |
 | FR-228-AC-4 | A solution with no run remains visible as undischarged evidence and has no invented Artifact. | Test |
 | FR-228-AC-5 | The XMI contains no absolute host path or Git revision id, and it contains no digest other than the declared content identities. | Test |
 | FR-228-AC-6 | The XMI does not embed any run-record bytes. | Test |
