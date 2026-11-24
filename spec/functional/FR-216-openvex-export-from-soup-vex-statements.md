@@ -38,6 +38,9 @@ reconciling it with advisory scans, vulnerability lifecycle records, or other an
 - The document SHALL contain `@context` set to `https://openvex.dev/ns/v0.2.0`, the caller-supplied `@id`,
   `author`, `timestamp`, and `version`, the supplied `role` when present, and a `statements` list.
 - The command SHALL emit one OpenVEX statement for each entry in each selected record's `vex_statements` field.
+- Before mapping a source entry, the command SHALL validate it against the `vex_statements` source contract in
+  spec-objects-security FR-022, including its required assessor and assessment date, allowed fields, and
+  `evidence_refs` SemanticId values.
 - The command SHALL set each statement's `vulnerability.name` to the entry's `advisory` value, its `status` to the
   entry's `status`, and its `products` to one product whose `@id` is the record's canonical package URL.
 - For each selected SOUP record, the command SHALL refuse two or more structurally valid `vex_statements` entries
@@ -87,7 +90,7 @@ derive a document timestamp from a source record; document metadata is supplied 
 | FR-216-AC-3 | The document contains the OpenVEX 0.2.0 context and the caller-supplied `@id`, author, timestamp, and version, and contains role only when supplied. | Test |
 | FR-216-AC-4 | When no selected SOUP record has a VEX statement, the command reports that OpenVEX 0.2.0 requires at least one statement and directs the caller to add an authored entry or select records that contain one; it writes no new document and leaves any existing output byte-unchanged, even if scans or vulnerability lifecycle records contain entries. | Test |
 | FR-216-AC-5 | Given a source VEX statement and conflicting advisory scan or vulnerability lifecycle data, the output retains only the authored VEX statement's values and does not add statements from those other sources. | Test |
-| FR-216-AC-6 | A malformed source statement reports its SOUP record and field, writes no partial output, and leaves any existing output byte-unchanged. | Test |
+| FR-216-AC-6 | A malformed source statement, including a missing assessor or assessment date, an impossible calendar date, an invalid `evidence_refs` SemanticId, or an unknown field, reports its SOUP record and field, writes no partial output, and leaves any existing output byte-unchanged. | Test |
 | FR-216-AC-7 | Repeating the export with identical records and document metadata produces byte-identical JSON. | Test |
 | FR-216-AC-8 | Every generated document validates against the published OpenVEX 0.2.0 schema, and no generated document has an empty `statements` list. | Test |
 | FR-216-AC-9 | When the same selected SOUP record contains two structurally valid statements with the same exact advisory identifier, export fails with an actionable error naming the record, `vex_statements`, and the duplicate identifier; it writes no new document and leaves any existing output byte-unchanged. | Test |

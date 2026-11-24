@@ -454,7 +454,7 @@ mod vulnerability_tests {
             document("VULN-2", "in_remediation"),
             document("VULN-1", "open"),
         ])
-        .unwrap();
+        .unwrap_or_else(|_| panic!("valid vulnerability fixtures should render"));
 
         let ids: Vec<&str> = rendered.iter().map(|item| item.id.as_str()).collect();
         assert_eq!(ids, ["VULN-1", "VULN-2"]);
@@ -479,7 +479,7 @@ mod vulnerability_tests {
                 document("VULN-1", "remediated"),
                 document("VULN-2", "closed"),
             ])
-            .unwrap()
+            .unwrap_or_else(|_| panic!("terminal vulnerability fixtures should render"))
             .is_empty()
         );
     }

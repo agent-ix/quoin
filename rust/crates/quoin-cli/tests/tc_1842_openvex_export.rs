@@ -153,7 +153,7 @@ fn export_copies_authored_values_with_caller_metadata_and_stays_deterministic() 
                 "assessed_at":"2026-11-23",
                 "impact_statement":"Impact as authored.",
                 "action_statement":"Use release 1.0.229.",
-                "evidence_refs":["EVIDENCE-1"]
+                "evidence_refs":["ix://agent-ix/quoin/EVIDENCE-1"]
             },
             {
                 "advisory":"CVE-2026-0002",
@@ -329,6 +329,51 @@ fn malformed_statement_names_record_and_field_and_preserves_output() {
     assert!(diagnostic.contains("SOUP-BAD.md"));
     assert!(diagnostic.contains("status"));
     assert_eq!(std::fs::read(output).unwrap(), b"preserve\n");
+}
+
+#[trace("FR-216-AC-6")]
+#[test]
+fn malformed_source_contract_fields_refuse_without_replacing_output() {
+    let mut missing_assessor = statement("CVE-2026-1001", "fixed");
+    missing_assessor
+        .as_object_mut()
+        .unwrap()
+        .remove("assessed_by");
+    let mut missing_date = statement("CVE-2026-1002", "fixed");
+    missing_date.as_object_mut().unwrap().remove("assessed_at");
+    let mut invalid_date = statement("CVE-2026-1003", "fixed");
+    invalid_date["assessed_at"] = json!("2026-02-30");
+    let mut invalid_evidence = statement("CVE-2026-1004", "fixed");
+    invalid_evidence["evidence_refs"] = json!(["not-a-semantic-id"]);
+    let mut unknown_field = statement("CVE-2026-1005", "fixed");
+    unknown_field["unexpected"] = json!("value");
+    let mut missing_justification = statement("CVE-2026-1006", "not_affected");
+    missing_justification
+        .as_object_mut()
+        .unwrap()
+        .remove("justification");
+    missing_justification["impact_statement"] = json!("The component is not affected.");
+
+    for (source, field) in [
+        (missing_assessor, "assessed_by"),
+        (missing_date, "assessed_at"),
+        (invalid_date, "assessed_at"),
+        (invalid_evidence, "evidence_refs"),
+        (unknown_field, "unexpected"),
+        (missing_justification, "justification"),
+    ] {
+        let fixture = Fixture::new();
+        fixture.record("SOUP-BAD", PURL_A, Some(json!([source])));
+        let output = fixture.path().join("existing.json");
+        std::fs::write(&output, b"preserve\n").unwrap();
+
+        let refused = fixture.command(&output);
+        assert_eq!(refused.status.code(), Some(2), "{}", stderr(&refused));
+        let diagnostic = format!("{}{}", stdout(&refused), stderr(&refused));
+        assert!(diagnostic.contains("SOUP-BAD.md"), "{diagnostic}");
+        assert!(diagnostic.contains(field), "{diagnostic}");
+        assert_eq!(std::fs::read(output).unwrap(), b"preserve\n");
+    }
 }
 
 #[trace("FR-216-AC-9")]

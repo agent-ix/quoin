@@ -116,6 +116,7 @@ does not claim the caller's clean-tree precondition was met.
 - The command SHALL omit `cause` from a `stale-evidence` finding when FR-115 supplies that finding without `cause`.
 - The command SHALL NOT derive `cause` from `summary`.
 - The command SHALL include in `vulnerabilities` each selected vulnerability record whose `status` is `open` or `in_remediation`, with every field in the table copied from its authored record without deriving or defaulting a value.
+- A reader SHALL interpret a missing `vulnerabilities` member in a `quoin.release-snapshot/v1` document as an empty list. This covers snapshots written before the member was added; a present member SHALL still have the declared list shape.
 - The command SHALL omit a selected vulnerability record whose `status` is `remediated` or `closed`.
 - The command SHALL carry each included vulnerability's `status` as `open` or `in_remediation`, using the vocabulary defined by spec-objects-security FR-032.
 - The command SHALL order `vulnerabilities` by record id.
@@ -155,6 +156,7 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-14 | A scan with an invalid retained timestamp refuses the snapshot section under FR-166-AC-11, so the snapshot never contains a `scan_unordered` item. | Test |
 | FR-167-AC-20 | A fixture with `open`, `in_remediation`, `remediated`, and `closed` vulnerability records carries only the first two into `vulnerabilities`, copies each listed source field unchanged, orders included records by id, and emits an empty list when neither open status is present. | Test |
 | FR-167-AC-21 | A fixture with an included vulnerability record whose status or disposition conflicts with advisory scan, VEX, or anomaly data carries the authored values unchanged; a record with status `remediated` or `closed` remains absent. | Test |
+| FR-167-AC-22 | A valid `quoin.release-snapshot/v1` written before the `vulnerabilities` member was added is accepted by the reader and exposes `vulnerabilities` as an empty list; an invalid present value is still refused. | Test |
 
 ## Dependencies
 

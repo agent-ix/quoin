@@ -37,7 +37,9 @@ pub struct ReleaseSnapshot {
     pub open_findings: Vec<OpenFinding>,
     /// SOUP state captured in the snapshot.
     pub soup: quoin_soup::SoupSection,
-    /// Open vulnerability lifecycle records captured from the selected scope.
+    /// Open vulnerability lifecycle records captured from the selected scope;
+    /// empty when an earlier v1 snapshot omitted this section.
+    #[serde(default)]
     pub vulnerabilities: Vec<SnapshotVulnerability>,
     /// Carried anomalies in snapshot order.
     pub anomalies: Vec<SnapshotAnomaly>,

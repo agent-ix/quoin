@@ -222,6 +222,26 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
             "entries must be objects",
         ));
     };
+    const SOURCE_FIELDS: [&str; 8] = [
+        "advisory",
+        "status",
+        "assessed_by",
+        "assessed_at",
+        "justification",
+        "action_statement",
+        "impact_statement",
+        "evidence_refs",
+    ];
+    if let Some(field) = object
+        .keys()
+        .find(|field| !SOURCE_FIELDS.contains(&field.as_str()))
+    {
+        return Err(source_invalid(
+            record,
+            field,
+            "is not a supported vex_statements field",
+        ));
+    }
     let required = |field: &str| -> Result<String, Stop> {
         match object.get(field) {
             Some(Value::String(value)) if !value.trim().is_empty() => Ok(value.clone()),
@@ -237,6 +257,19 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
     };
     let advisory = required("advisory")?;
     let status = required("status")?;
+    let _assessed_by = required("assessed_by")?;
+    let assessed_at = required("assessed_at")?;
+    let date_format = time::format_description::parse_borrowed::<3>("[year]-[month]-[day]")
+        .map_err(|error| {
+            Stop::Fail(format!("cannot configure assessed_at date parser: {error}"))
+        })?;
+    if time::Date::parse(&assessed_at, &date_format).is_err() {
+        return Err(source_invalid(
+            record,
+            "assessed_at",
+            "must be a valid YYYY-MM-DD calendar date",
+        ));
+    }
     if !STATUSES.contains(&status.as_str()) {
         return Err(source_invalid(record, "status", "is not an OpenVEX status"));
     }
@@ -252,11 +285,39 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
     }
     let impact_statement = optional("impact_statement")?;
     let action_statement = optional("action_statement")?;
-    if status == "not_affected" && justification.is_none() && impact_statement.is_none() {
+    if let Some(value) = &action_statement
+        && value.trim().is_empty()
+    {
+        return Err(source_invalid(
+            record,
+            "action_statement",
+            "must be non-blank text",
+        ));
+    }
+    if let Some(evidence_refs) = object.get("evidence_refs") {
+        let Some(evidence_refs) = evidence_refs.as_array() else {
+            return Err(source_invalid(
+                record,
+                "evidence_refs",
+                "must be a list of SemanticIds",
+            ));
+        };
+        if evidence_refs
+            .iter()
+            .any(|reference| !reference.as_str().is_some_and(is_semantic_id))
+        {
+            return Err(source_invalid(
+                record,
+                "evidence_refs",
+                "entries must be SemanticIds",
+            ));
+        }
+    }
+    if status == "not_affected" && justification.is_none() {
         return Err(source_invalid(
             record,
             "justification",
-            "not_affected requires justification or impact_statement",
+            "not_affected source statements require justification",
         ));
     }
     if status == "affected" && action_statement.is_none() {
@@ -273,6 +334,30 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
         impact_statement,
         action_statement,
     })
+}
+
+fn is_semantic_id(value: &str) -> bool {
+    let Some(rest) = value.strip_prefix("ix://") else {
+        return false;
+    };
+    let Some((authority, identity)) = rest.split_once('/') else {
+        return false;
+    };
+    let mut authority_chars = authority.chars();
+    let Some(first_authority) = authority_chars.next() else {
+        return false;
+    };
+    (first_authority.is_ascii_lowercase() || first_authority.is_ascii_digit())
+        && authority_chars.all(|ch| {
+            ch.is_ascii_lowercase() || ch.is_ascii_digit() || matches!(ch, '.' | '_' | '-')
+        })
+        && identity
+            .chars()
+            .next()
+            .is_some_and(|ch| ch.is_ascii_alphanumeric())
+        && identity
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '~' | ':' | '/' | '-'))
 }
 
 fn source_invalid(record: &Existing, field: &str, reason: &str) -> Stop {
