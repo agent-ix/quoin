@@ -1074,7 +1074,11 @@ fn tc_3501_the_customer_artifact_operation_files_one_record_or_refuses_by_taxono
     );
     assert_eq!(collision.status, 3, "{}", collision.stderr);
     assert!(collision.stderr.contains("QE-E011"), "{}", collision.stderr);
-    assert!(collision.stderr.contains("case-collision"), "{}", collision.stderr);
+    assert!(
+        collision.stderr.contains("case-collision"),
+        "{}",
+        collision.stderr
+    );
 
     let mut changed = customer_artifact("Complaint-001");
     changed["title"] = json!("Another");
@@ -1090,7 +1094,11 @@ fn tc_3501_the_customer_artifact_operation_files_one_record_or_refuses_by_taxono
         &json!({"repo": dir.path(), "document": customer_artifact("a b")}),
     );
     assert_eq!(bad_id.status, 3, "{}", bad_id.stderr);
-    assert!(bad_id.stderr.contains("invalid-identifier"), "{}", bad_id.stderr);
+    assert!(
+        bad_id.stderr.contains("invalid-identifier"),
+        "{}",
+        bad_id.stderr
+    );
 
     let mut unknown = customer_artifact("other");
     unknown["digest"] = json!("sha256:00");
@@ -1126,7 +1134,13 @@ fn tc_3502_a_fact_citing_a_customer_artifact_holds_only_the_ref() {
     let before = fs::read(&path).unwrap();
     let text = String::from_utf8(before.clone()).unwrap();
     assert!(text.contains("evidence://customer-artifacts/complaint-001"));
-    for member in ["Complaint record", "nonexistent", "Quality manager", "sha256", "digest"] {
+    for member in [
+        "Complaint record",
+        "nonexistent",
+        "Quality manager",
+        "sha256",
+        "digest",
+    ] {
         assert!(!text.contains(member), "{member} in {text}");
     }
 

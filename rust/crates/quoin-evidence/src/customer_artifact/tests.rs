@@ -12,9 +12,7 @@
 use ix_trace_rs::trace;
 use serde_json::{Value, json};
 
-use super::{
-    CustomerArtifactRefusal, read_customer_artifact, write_customer_artifact,
-};
+use super::{CustomerArtifactRefusal, read_customer_artifact, write_customer_artifact};
 use crate::error::{EvidenceError, EvidenceErrorCode};
 use crate::source::{DiskEvidence, EvidenceSource, MemoryEvidence};
 use crate::store::gc;
@@ -69,7 +67,13 @@ fn a_document_is_filed_canonical_under_a_lowercased_name_and_reads_back() {
 #[trace("FR-030-AC-37")]
 fn an_invalid_document_is_refused_before_any_file_is_written() {
     let mut cases: Vec<(&str, Value)> = Vec::new();
-    for member in ["artifactId", "title", "location", "suppliedBy", "suppliedAt"] {
+    for member in [
+        "artifactId",
+        "title",
+        "location",
+        "suppliedBy",
+        "suppliedAt",
+    ] {
         let mut missing = document();
         missing.as_object_mut().unwrap().remove(member);
         cases.push((member, missing));
@@ -109,7 +113,16 @@ fn an_invalid_document_is_refused_before_any_file_is_written() {
         assert_eq!(error.code(), EvidenceErrorCode::InvalidRecord, "{member}");
         assert!(store.paths().is_empty(), "{member} wrote a file");
     }
-    for id in ["", " ", "has space", "under_score", "a/b", "..", "é", &"a".repeat(65)] {
+    for id in [
+        "",
+        " ",
+        "has space",
+        "under_score",
+        "a/b",
+        "..",
+        "é",
+        &"a".repeat(65),
+    ] {
         let mut bad = document();
         bad["artifactId"] = json!(id);
         let mut store = MemoryEvidence::new();
@@ -158,7 +171,10 @@ fn the_store_is_append_only_at_a_file_name() {
 fn the_record_holds_only_the_submitted_members_and_never_touches_the_location() {
     let repo = tempfile::tempdir().unwrap();
     let mut store = DiskEvidence::new(repo.path());
-    for location in ["/nonexistent/path/to/the/artifact.pdf", "https://unreachable.invalid/a"] {
+    for location in [
+        "/nonexistent/path/to/the/artifact.pdf",
+        "https://unreachable.invalid/a",
+    ] {
         let mut submitted = document();
         submitted["location"] = json!(location);
         submitted["artifactId"] = json!(format!("a-{}", location.len()));
@@ -184,12 +200,23 @@ fn gc_never_collects_a_customer_artifact() {
     for dry_run in [true, false] {
         let mut skipped = Vec::new();
         let deleted = gc(&mut store, dry_run, &mut skipped).unwrap();
-        assert!(deleted.iter().all(|path| !path.starts_with("customer-artifacts")));
+        assert!(
+            deleted
+                .iter()
+                .all(|path| !path.starts_with("customer-artifacts"))
+        );
     }
-    assert!(read_customer_artifact(&store, "complaint-2026-001").unwrap().is_some());
+    assert!(
+        read_customer_artifact(&store, "complaint-2026-001")
+            .unwrap()
+            .is_some()
+    );
     assert!(read_customer_artifact(&store, "second").unwrap().is_some());
     assert!(
-        store.paths().iter().all(|path| !path.starts_with("retired/")),
+        store
+            .paths()
+            .iter()
+            .all(|path| !path.starts_with("retired/")),
         "the retirement log names no customer artifact: {:?}",
         store.paths()
     );
@@ -207,15 +234,27 @@ fn an_invalid_stored_file_is_an_error_naming_it_never_an_absent_record() {
 
     // A mixed-case artifactId in a lowercase file name is valid.
     let valid = MemoryEvidence::new().with_file(path, good.clone());
-    assert!(read_customer_artifact(&valid, "complaint-2026-001").unwrap().is_some());
+    assert!(
+        read_customer_artifact(&valid, "complaint-2026-001")
+            .unwrap()
+            .is_some()
+    );
 
     let renamed = good.replace("Complaint-2026-001", "Complaint-2026-002");
     let unknown_member = good.replace("\"title\"", "\"extra\": 1,\n  \"title\"");
     let blank_title = good.replace("Complaint record 001", " ");
     let broken: [(&str, String, EvidenceErrorCode); 4] = [
-        ("not json", "<<<<<<< HEAD".to_owned(), EvidenceErrorCode::StoreRead),
+        (
+            "not json",
+            "<<<<<<< HEAD".to_owned(),
+            EvidenceErrorCode::StoreRead,
+        ),
         ("id differs", renamed, EvidenceErrorCode::RecordIntegrity),
-        ("unknown member", unknown_member, EvidenceErrorCode::InvalidRecord),
+        (
+            "unknown member",
+            unknown_member,
+            EvidenceErrorCode::InvalidRecord,
+        ),
         ("blank title", blank_title, EvidenceErrorCode::InvalidRecord),
     ];
     for (what, text, code) in broken {
@@ -225,6 +264,9 @@ fn an_invalid_stored_file_is_an_error_naming_it_never_an_absent_record() {
         assert!(error.to_string().contains(path), "{what}: {error}");
         // Recording over it is refused too, not treated as a free name.
         let mut store = store;
-        assert!(write_customer_artifact(&mut store, &document()).is_err(), "{what}");
+        assert!(
+            write_customer_artifact(&mut store, &document()).is_err(),
+            "{what}"
+        );
     }
 }

@@ -877,14 +877,22 @@ mod tests {
         held.write(fact_path, b"{\"stored\":\"fact\"}").unwrap();
         let fact = cites("evidence://customer-artifacts/complaint-001");
         assert_eq!(
-            one(fact.clone(), &producers, Some(&held)).report.binding.direct.len(),
+            one(fact.clone(), &producers, Some(&held))
+                .report
+                .binding
+                .direct
+                .len(),
             1
         );
         let stored_fact = held.read(fact_path).unwrap();
         gc(&mut held, false, &mut Vec::new()).unwrap();
         assert_eq!(held.read(fact_path).unwrap(), stored_fact);
         assert_eq!(
-            one(fact, &producers, Some(&held)).report.binding.direct.len(),
+            one(fact, &producers, Some(&held))
+                .report
+                .binding
+                .direct
+                .len(),
             1
         );
     }
