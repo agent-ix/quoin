@@ -404,6 +404,7 @@ fn mitigated_risks_are_sorted_context_and_missing_targets_stay_open() {
         .find(|document| document["frontmatter"]["id"] == "FR-001")
         .expect("fixture has FR-001");
     source["frontmatter"]["relationships"] = serde_json::json!([
+        {"target":"ix://agent-ix/quoin/StR-001", "type":"traces_to"},
         {"target":"ix://agent-ix/quoin/HZ-002", "type":"mitigates"},
         {"target":"ix://agent-ix/quoin/HZ-001", "type":"mitigates"},
         {"target":"ix://agent-ix/quoin/HZ-MISSING", "type":"mitigates"}
@@ -417,7 +418,7 @@ fn mitigated_risks_are_sorted_context_and_missing_targets_stay_open() {
         vec![obligation("FR-001-AC-1", "It holds.")],
         vec![],
     ));
-    let context = &result.claims[0].context;
+    let context = &sub_goals(&result.claims[0])[0].context;
     assert_eq!(
         context
             .iter()
