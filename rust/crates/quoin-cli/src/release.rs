@@ -333,6 +333,7 @@ fn write_snapshot(inputs: &Inputs) -> Result<PathBuf, Stop> {
     })?;
     let matrix = snapshot::matrix_sections(&AuditOptions::default(), &inputs.repo)?;
     let (anomalies, anomaly_findings) = snapshot::anomalies(&inputs.repo)?;
+    let vulnerabilities = snapshot::vulnerabilities(&inputs.repo, &inputs.modules)?;
     let mut open_findings = matrix.findings;
     open_findings.extend(snapshot::risk_findings(&inputs.repo, &inputs.modules)?);
     open_findings.extend(anomaly_findings);
@@ -353,6 +354,7 @@ fn write_snapshot(inputs: &Inputs) -> Result<PathBuf, Stop> {
         evidence_freshness: matrix.freshness,
         open_findings,
         soup,
+        vulnerabilities,
         anomalies,
         change_records: history.records,
     };

@@ -339,6 +339,7 @@ mod tests {
               "evidence_freshness":{"bound":1,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},
               "open_findings":[],
               "soup":{"rows":[],"not_assessed":[]},
+              "vulnerabilities":[],
               "anomalies":[],
               "change_records":[{"record_id":"REC-2","revision":2,"path":"records/2.md","commit":"commit-2"},{"record_id":"REC-1","revision":1,"path":"records/1.md","commit":"commit-1"}]
             }"#,
@@ -489,6 +490,7 @@ mod tests {
             "evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},
             "open_findings":[],
             "soup":{"rows":[],"not_assessed":[]},
+            "vulnerabilities":[],
             "anomalies":[],
             "change_records":[],
             "unexpected":true
