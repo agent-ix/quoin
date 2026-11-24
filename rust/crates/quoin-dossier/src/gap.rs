@@ -23,7 +23,7 @@ pub enum GapKind {
     NoAcceptanceCriteria,
     /// A requirement has no criticality.
     CriticalityUnassigned,
-    /// A requirement or architecture part records no software safety class.
+    /// A requirement records no software safety class.
     SafetyClassUnassigned,
     /// The design relations could not be read.
     DesignRelationsUnavailable,
@@ -410,7 +410,7 @@ mod tests {
 
     #[trace("FR-191-AC-15")]
     #[test]
-    fn a_part_class_gap_sorts_by_its_element_id_and_a_requirement_one_by_its_requirement() {
+    fn an_element_gap_sorts_by_its_element_id_and_a_requirement_one_by_its_requirement() {
         let mut gaps = vec![
             Gap::new(GapKind::SafetyClassUnassigned, "FR-2", "none").for_requirement("FR-2"),
             Gap::new(GapKind::SafetyClassUnassigned, "PART-B", "none").for_element("PART-B"),

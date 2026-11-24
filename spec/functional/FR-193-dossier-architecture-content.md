@@ -50,8 +50,6 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 - If a design reference resolves to no element, the document SHALL record a `dangling_design_reference` gap naming it.
 - If the join lists a design element of a kind the relation does not accept (`kind_mismatch`), the document SHALL show the element.
 - If the join lists a design element of a kind the relation does not accept (`kind_mismatch`), the document SHALL record a `design_kind_mismatch` gap naming the requirement and the element.
-- The architecture document SHALL show `not a part` in the class column for a design element that no `part` document declares (a component, or an element of another repository).
-- The architecture document SHALL NOT record a `safety_class_unassigned` gap for a design element that is not a part, because only a part document records a class.
 - If a part has no allocated requirement, the document SHALL record a `no_allocation` gap naming the part.
 - If the loaded modules declare no `design_relations`, the document SHALL record a `design_relations_unavailable` gap that states the cause.
 - A dangling design reference or a kind mismatch SHALL NOT be dropped.
@@ -67,8 +65,7 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 | FR-193-AC-5 | A connection shows its flow direction and both ends | Test |
 | FR-193-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
 | FR-193-AC-7 | A part that records class `class-3` shows `class-3` as recorded. | Test |
-| FR-193-AC-8 | A part with no recorded class shows `unassigned` and one `safety_class_unassigned` gap naming the part, even when its parent part, which is itself a part recording a class, and an allocated requirement record a class. | Test |
-| FR-193-AC-9 | A design element that is not a part shows `not a part` in the class column and produces no `safety_class_unassigned` gap. | Test |
+| FR-193-AC-8 | A part with no recorded class shows `unassigned` and one `safety_class_unassigned` gap naming the part, even when its parent part and an allocated requirement record a class. | Test |
 
 ## Dependencies
 

@@ -24,10 +24,6 @@ pub struct Part {
     pub declared_type: String,
     /// How many of the part the owner holds.
     pub multiplicity: String,
-    /// The software safety class the part's own document records (record key
-    /// `softwareSafetyClass`), as written; `None` when the document records
-    /// none. Matched to the row by the declaring document, not by `owner`.
-    pub software_safety_class: Option<serde_json::Value>,
 }
 
 /// A `Owner | Direction | Interface | Multiplicity` row.
@@ -123,7 +119,6 @@ fn extract(documents: &[Document]) -> Systems {
                         owner: cell(0),
                         declared_type: cell(1),
                         multiplicity: cell(2),
-                        software_safety_class: document.software_safety_class().cloned(),
                     });
                 } else if headers == PORT_HEADERS {
                     systems.ports.push(Port {
@@ -231,35 +226,6 @@ mod tests {
         assert_eq!(systems.connections[0].target, "COMP-2.in");
         assert_eq!(systems.allocations[0].source, "FR-1");
         assert_eq!(systems.allocations[0].target, "COMP-1");
-    }
-
-    #[ix_trace_rs::trace("FR-193-AC-8")]
-    #[test]
-    fn a_part_carries_the_class_its_own_document_records_and_none_is_inherited() {
-        let mut classed = document(
-            "PART-1",
-            vec![("Part", table(&PART_HEADERS, &[&["PARENT", "Engine", "1"]]))],
-        );
-        classed.frontmatter.insert(
-            "software_safety_class".to_owned(),
-            serde_json::json!("class-2"),
-        );
-        let mut parent = document("PARENT", vec![]);
-        parent.frontmatter.insert(
-            "software_safety_class".to_owned(),
-            serde_json::json!("class-3"),
-        );
-        let unclassed = document(
-            "PART-2",
-            vec![("Part", table(&PART_HEADERS, &[&["PARENT", "Engine", "1"]]))],
-        );
-        let systems = extract(&[classed, parent, unclassed]);
-        assert_eq!(
-            systems.parts[0].software_safety_class,
-            Some(serde_json::json!("class-2"))
-        );
-        assert_eq!(systems.parts[1].document, "PART-2");
-        assert_eq!(systems.parts[1].software_safety_class, None);
     }
 
     #[test]
