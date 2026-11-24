@@ -1032,3 +1032,107 @@ fn tc_211_the_approval_subject_operation_names_the_record_and_its_digest() {
     assert_eq!(refused.status, 3, "{}", refused.stderr);
     assert!(refused.stdout.is_empty());
 }
+
+fn customer_artifact(id: &str) -> Value {
+    json!({
+        "artifactId": id,
+        "title": "Complaint record",
+        "location": "/nonexistent/path/complaint.pdf",
+        "suppliedBy": "Quality manager",
+        "suppliedAt": "2026-11-20T09:30:00Z"
+    })
+}
+
+/// `evidence.record_customer_artifact` answers the stored record, files it under
+/// the lowercased name, and exits with the taxonomy for each refusal.
+#[trace("FR-030-AC-36", "FR-030-AC-37", "FR-030-AC-38")]
+#[test]
+fn tc_3501_the_customer_artifact_operation_files_one_record_or_refuses_by_taxonomy() {
+    let dir = repo();
+    let payload = ok(&run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": customer_artifact("Complaint-001")}),
+    ));
+    assert_eq!(payload["created"], true);
+    assert_eq!(payload["record"]["artifactId"], "Complaint-001");
+    assert_eq!(payload["record"]["schemaVersion"], 1);
+    reported_store_path(
+        dir.path(),
+        payload["path"].as_str().unwrap(),
+        "customer-artifacts/complaint-001.json",
+    );
+
+    let replay = ok(&run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": customer_artifact("Complaint-001")}),
+    ));
+    assert_eq!(replay["created"], false);
+
+    let collision = run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": customer_artifact("complaint-001")}),
+    );
+    assert_eq!(collision.status, 3, "{}", collision.stderr);
+    assert!(collision.stderr.contains("QE-E011"), "{}", collision.stderr);
+    assert!(collision.stderr.contains("case-collision"), "{}", collision.stderr);
+
+    let mut changed = customer_artifact("Complaint-001");
+    changed["title"] = json!("Another");
+    let integrity = run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": changed}),
+    );
+    assert_eq!(integrity.status, 2, "{}", integrity.stderr);
+    assert!(integrity.stderr.contains("QE-E008"), "{}", integrity.stderr);
+
+    let bad_id = run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": customer_artifact("a b")}),
+    );
+    assert_eq!(bad_id.status, 3, "{}", bad_id.stderr);
+    assert!(bad_id.stderr.contains("invalid-identifier"), "{}", bad_id.stderr);
+
+    let mut unknown = customer_artifact("other");
+    unknown["digest"] = json!("sha256:00");
+    let refused = run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": unknown}),
+    );
+    assert_eq!(refused.status, 3, "{}", refused.stderr);
+    assert!(!store_path(dir.path(), "customer-artifacts/other.json").exists());
+}
+
+/// A stored fact holds the ref string only, and recording another customer
+/// artifact leaves its bytes untouched.
+#[trace("FR-133-AC-8")]
+#[test]
+fn tc_3502_a_fact_citing_a_customer_artifact_holds_only_the_ref() {
+    let dir = repo();
+    ok(&run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": customer_artifact("complaint-001")}),
+    ));
+    let mut fact = discharge_fact();
+    fact["evidenceRefs"] = json!(["evidence://customer-artifacts/complaint-001"]);
+    let recorded = ok(&run(
+        "evidence.record_discharge",
+        &json!({"repo": dir.path(), "binding": discharge_binding(), "facts": [fact]}),
+    ));
+    let path = reported_store_family(
+        dir.path(),
+        recorded["recorded"][0]["path"].as_str().unwrap(),
+        "discharge",
+    );
+    let before = fs::read(&path).unwrap();
+    let text = String::from_utf8(before.clone()).unwrap();
+    assert!(text.contains("evidence://customer-artifacts/complaint-001"));
+    for member in ["Complaint record", "nonexistent", "Quality manager", "sha256", "digest"] {
+        assert!(!text.contains(member), "{member} in {text}");
+    }
+
+    ok(&run(
+        "evidence.record_customer_artifact",
+        &json!({"repo": dir.path(), "document": customer_artifact("complaint-002")}),
+    ));
+    assert_eq!(fs::read(&path).unwrap(), before);
+}

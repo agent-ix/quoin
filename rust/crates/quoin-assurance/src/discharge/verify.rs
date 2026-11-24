@@ -517,6 +517,12 @@ fn resolve_reference(store: &dyn EvidenceSource, reference: &str) -> Result<Stri
         ["scenarios", _, _] => {
             return Err("the scenario segment is not in the store's folded form");
         }
+        ["customer-artifacts", id] if id.to_ascii_lowercase() == *id => {
+            ("customer-artifacts", Some("customer-artifact"))
+        }
+        ["customer-artifacts", _] => {
+            return Err("the artifact-id segment is not in the store's folded form");
+        }
         _ => return Err("the path names no citable record family"),
     };
     let text = store
@@ -604,7 +610,9 @@ pub fn approval_subject(
 )]
 mod tests {
     use ix_trace_rs::trace;
+    use quoin_evidence::customer_artifact::write_customer_artifact;
     use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
+    use quoin_evidence::store::gc;
     use quoin_quire_types::{ClausePolicy, OutputPolicy, SetPolicy};
     use serde_json::json;
 
@@ -764,6 +772,121 @@ mod tests {
             let checked = one(fact, &producers, Some(&held));
             assert!(reason(&checked).starts_with("unresolved: "), "{bad}");
         }
+    }
+
+    fn customer_store() -> MemoryEvidence {
+        let mut held = MemoryEvidence::new();
+        write_customer_artifact(
+            &mut held,
+            &json!({
+                "artifactId": "Complaint-001",
+                "title": "Complaint record",
+                "location": "/nonexistent/unreadable/path or https://unreachable.invalid/x",
+                "suppliedBy": "Quality manager",
+                "suppliedAt": "2026-11-20T09:30:00Z"
+            }),
+        )
+        .unwrap();
+        held
+    }
+
+    fn cites(reference: &str) -> serde_json::Value {
+        let mut fact = direct();
+        fact["evidenceRefs"] = json!([reference]);
+        fact
+    }
+
+    #[trace("FR-211-AC-25")]
+    #[test]
+    fn a_customer_artifact_ref_discharges_a_clause_whose_producers_name_the_kind() {
+        let producers = policy(&[], vec![producing(&["customer-artifact"])]);
+        let checked = one(
+            cites("evidence://customer-artifacts/complaint-001"),
+            &producers,
+            Some(&customer_store()),
+        );
+        assert_eq!(checked.report.binding.direct.len(), 1, "{checked:?}");
+        assert!(checked.failures.is_empty());
+    }
+
+    #[trace("FR-211-AC-26")]
+    #[test]
+    fn without_a_retained_customer_artifact_of_the_kind_the_clause_stays_open() {
+        let producers = policy(&[], vec![producing(&["customer-artifact"])]);
+        let held = customer_store();
+        let missing = one(
+            cites("evidence://customer-artifacts/not-retained"),
+            &producers,
+            Some(&held),
+        );
+        assert!(reason(&missing).starts_with("unresolved: "));
+        // A retained record of another kind is not a customer artifact.
+        let wrong_kind = one(direct(), &producers, Some(&store()));
+        assert!(reason(&wrong_kind).starts_with("kind-not-expected: "));
+        // And a customer artifact is not accepted where only runs are produced.
+        let runs_only = policy(&[], vec![producing(&["run"])]);
+        let checked = one(
+            cites("evidence://customer-artifacts/complaint-001"),
+            &runs_only,
+            Some(&held),
+        );
+        assert!(reason(&checked).starts_with("kind-not-expected: "));
+    }
+
+    #[trace("FR-211-AC-28")]
+    #[test]
+    fn a_customer_artifact_ref_is_citable_only_as_a_lowercase_single_segment() {
+        let producers = policy(&[], vec![producing(&["customer-artifact"])]);
+        let held = customer_store();
+        for bad in [
+            "evidence://customer-artifacts/Complaint-001",
+            "evidence://customer-artifacts/",
+            "evidence://customer-artifacts",
+            "evidence://customer-artifacts/.",
+            "evidence://customer-artifacts/..",
+            "evidence://customer-artifacts/../customer-artifacts/complaint-001",
+            "evidence://customer-artifacts/complaint-001/extra",
+        ] {
+            let checked = one(cites(bad), &producers, Some(&held));
+            assert!(reason(&checked).starts_with("unresolved: "), "{bad}");
+        }
+    }
+
+    #[trace("FR-211-AC-29")]
+    #[test]
+    fn resolving_a_customer_artifact_reads_only_the_record_and_reports_no_digest() {
+        let producers = policy(&[], vec![producing(&["customer-artifact"])]);
+        let checked = one(
+            cites("evidence://customer-artifacts/complaint-001"),
+            &producers,
+            Some(&customer_store()),
+        );
+        assert_eq!(checked.report.binding.direct.len(), 1);
+        let report = serde_json::to_string(&checked.report).unwrap();
+        for forbidden in ["sha256", "digest", "hash", "size", "adequate", "unreadable"] {
+            assert!(!report.contains(forbidden), "{forbidden} in {report}");
+        }
+    }
+
+    #[trace("FR-211-AC-30")]
+    #[test]
+    fn a_customer_artifact_survives_gc_and_keeps_its_clause_discharged() {
+        let producers = policy(&[], vec![producing(&["customer-artifact"])]);
+        let mut held = customer_store();
+        let fact_path = "discharge/quire/spec/1/SYN-001.json";
+        held.write(fact_path, b"{\"stored\":\"fact\"}").unwrap();
+        let fact = cites("evidence://customer-artifacts/complaint-001");
+        assert_eq!(
+            one(fact.clone(), &producers, Some(&held)).report.binding.direct.len(),
+            1
+        );
+        let stored_fact = held.read(fact_path).unwrap();
+        gc(&mut held, false, &mut Vec::new()).unwrap();
+        assert_eq!(held.read(fact_path).unwrap(), stored_fact);
+        assert_eq!(
+            one(fact, &producers, Some(&held)).report.binding.direct.len(),
+            1
+        );
     }
 
     #[trace("FR-211-AC-1")]

@@ -71,6 +71,11 @@ pub const MAX_PARSE_POLICY_BYTES: usize = 8 * 1024 * 1024;
 /// One assurance record as its producer published it.
 pub const MAX_ASSURANCE_RECORD_BYTES: usize = 4 * 1024 * 1024;
 
+/// The largest `evidence.record_customer_artifact` request, in bytes.
+///
+/// One document of five bounded strings (the longest is 2 KiB) plus the repo path.
+pub const MAX_CUSTOMER_ARTIFACT_BYTES: usize = 16 * 1024;
+
 /// The largest `evidence.record_scenario` request, in bytes.
 ///
 /// One scenario-evidence document: bounded manifests, owners, claims and budget
@@ -516,6 +521,30 @@ pub struct ScenarioRecordPayload {
     pub created: bool,
     /// The accepted record.
     pub record: quoin_evidence::scenario::ScenarioEvidence,
+}
+
+/// The request accepted by `evidence.record_customer_artifact`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct CustomerArtifactRequest {
+    /// The repository root.
+    pub repo: String,
+    /// The customer artifact document: `artifactId`, `title`, `location`,
+    /// `suppliedBy` and `suppliedAt`.
+    pub document: serde_json::Value,
+}
+
+/// The result of an accepted `evidence.record_customer_artifact`.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct CustomerArtifactPayload {
+    /// Where the record was filed, as an **absolute** path.
+    pub path: String,
+    /// Whether this call created it, or found identical bytes already there.
+    pub created: bool,
+    /// The stored record.
+    pub record: quoin_evidence::customer_artifact::CustomerArtifact,
 }
 
 /// The request accepted by `evidence.audit_inputs`.

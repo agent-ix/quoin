@@ -43,6 +43,21 @@ pub const OPERATIONAL_EVIDENCE_DIR: &str = "operational";
 /// Where Quire Protocol scenario evidence records live (FR-130).
 pub const SCENARIOS_DIR: &str = "scenarios";
 
+/// Where retained customer artifacts live (FR-030).
+pub const CUSTOMER_ARTIFACTS_DIR: &str = "customer-artifacts";
+
+/// One customer artifact, `customer-artifacts/<artifact-id>.json`.
+///
+/// The id is validated to `[A-Za-z0-9-]` before a path is formed. The file name
+/// is ASCII-lowercased so a case-insensitive filesystem cannot alias two ids.
+#[must_use]
+pub fn customer_artifact_path(artifact_id: &str) -> String {
+    format!(
+        "{CUSTOMER_ARTIFACTS_DIR}/{}.json",
+        artifact_id.to_ascii_lowercase()
+    )
+}
+
 /// The authored suite registry.
 #[must_use]
 pub fn suites_path() -> String {

@@ -16,6 +16,7 @@ use quoin_evidence::adapters::{
 use quoin_evidence::assurance_records::{
     write_experiment_record, write_operational_evidence_record,
 };
+use quoin_evidence::customer_artifact::write_customer_artifact;
 use quoin_evidence::mock_inspection::inspect_mock_injections;
 use quoin_evidence::record::{RecordRequest as StoreRecordRequest, record_run};
 use quoin_evidence::scenario::{INTAKE_CONTRACT, INTAKE_OWNER, write_scenario_evidence};
@@ -37,8 +38,9 @@ use crate::protocol::Response;
 use super::documents::{tool_name, unrepresented_views};
 use super::taxonomy::map_error;
 use super::wire::{
-    AssuranceRecordPayload, AssuranceRecordRequest, InspectMocksPayload, InspectMocksRequest,
-    MAX_ASSURANCE_RECORD_BYTES, MAX_INSPECT_MOCKS_BYTES, MAX_RECORD_BYTES,
+    AssuranceRecordPayload, AssuranceRecordRequest, CustomerArtifactPayload,
+    CustomerArtifactRequest, InspectMocksPayload, InspectMocksRequest, MAX_ASSURANCE_RECORD_BYTES,
+    MAX_CUSTOMER_ARTIFACT_BYTES, MAX_INSPECT_MOCKS_BYTES, MAX_RECORD_BYTES,
     MAX_SCENARIO_RECORD_BYTES, MAX_TRUST_DECISION_BYTES, RecordPayload, RecordRequest,
     ScenarioRecordPayload, ScenarioRecordRequest, TrustDecisionPayload, TrustDecisionRequest,
 };
@@ -522,6 +524,41 @@ pub fn record_scenario(
         value(&ScenarioRecordPayload {
             contract: INTAKE_CONTRACT.to_owned(),
             owner: INTAKE_OWNER.to_owned(),
+            path: absolute(&root, &stored.path),
+            created: stored.created,
+            record: stored.record,
+        })
+    })?;
+    Ok(Response::ok(payload))
+}
+
+/// Answer an `evidence.record_customer_artifact`: retain one record or document
+/// the customer supplied, as a description and a locator (FR-030).
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::Refused`] when the request exceeds
+///   [`MAX_CUSTOMER_ARTIFACT_BYTES`], or when the file name already holds a
+///   different document or the store cannot be written.
+/// - [`CoreErrorCode::BadRequest`] when the document does not validate; an
+///   inadmissible id carries `evidence_code` `QE-E011` and `refusal` naming
+///   `invalid-identifier` or `case-collision`.
+/// - [`CoreErrorCode::Io`] when no evidence host was granted.
+pub fn record_customer_artifact(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    let op = "evidence.record_customer_artifact";
+    bound(request, op, MAX_CUSTOMER_ARTIFACT_BYTES)?;
+    let request: CustomerArtifactRequest = parse(request, op)?;
+    check_scalar(op, "repo", &request.repo)?;
+
+    let host = host(capabilities, op)?;
+    let root = host.store_root(Path::new(&request.repo));
+    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
+        let stored =
+            write_customer_artifact(source, &request.document).map_err(|e| map_error(&e, op))?;
+        value(&CustomerArtifactPayload {
             path: absolute(&root, &stored.path),
             created: stored.created,
             record: stored.record,

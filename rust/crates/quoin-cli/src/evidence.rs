@@ -16,7 +16,7 @@ pub(crate) mod audit;
 mod mapping_facts;
 mod test_result;
 
-const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> evidence\n  runs/<SUITE-N>/<timestamp>.json  one file = one run of one suite\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n  discharge/<authority>/<set>/<version>/<clause>.json  attested discharge facts\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence record-discharge  store attested clause-discharge facts\n  quoin evidence approval-subject  print the record id and digest an approval tag signs\n  quoin evidence facts-from-mappings  propose discharge facts from effective controls
+const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> evidence\n  runs/<SUITE-N>/<timestamp>.json  one file = one run of one suite\n  customer-artifacts/<artifact-id>.json  customer-supplied record or document\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n  discharge/<authority>/<set>/<version>/<clause>.json  attested discharge facts\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence record-customer-artifact  retain a record or document the customer supplied\n  quoin evidence record-discharge  store attested clause-discharge facts\n  quoin evidence approval-subject  print the record id and digest an approval tag signs\n  quoin evidence facts-from-mappings  propose discharge facts from effective controls
   quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records superseded by a newer one\n  quoin evidence export-test-result  export runs as an in-toto Test Result statement";
 
 /// The evidence commands whose inputs need no Quire-derived obligation set.
@@ -49,6 +49,18 @@ pub(crate) fn command() -> Command {
             "record-operational",
             "operational-evidence-record-v1 JSON path",
         ))
+        .subcommand(
+            Command::new("record-customer-artifact")
+                .about("Retain one record or document the customer supplied, as a description and a locator; the artifact itself is never read")
+                .arg(
+                    Arg::new("artifact")
+                        .long("artifact")
+                        .help("customer artifact JSON path, or - for stdin")
+                        .required(true),
+                )
+                .arg(repo_arg())
+                .arg(json_arg()),
+        )
         .subcommand(
             Command::new("inspect-mocks")
                 .about("Inspect test source and record explicit mock substitutions")
@@ -109,6 +121,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "trust" => trust(arguments),
         "record-experiment" => record(arguments, "evidence.record_experiment"),
         "record-operational" => record(arguments, "evidence.record_operational"),
+        "record-customer-artifact" => record_customer_artifact(arguments),
         "inspect-mocks" => inspect_mocks(arguments),
         "record" => record_run(arguments),
         "record-discharge" => crate::discharge::record(arguments),
@@ -406,6 +419,37 @@ fn record(arguments: &ArgMatches, operation: &str) -> Result<Response, String> {
     })
 }
 
+fn record_customer_artifact(arguments: &ArgMatches) -> Result<Response, String> {
+    let operation = "evidence.record_customer_artifact";
+    let document = json_input(&required(arguments, "artifact")?)?;
+    let response = invoke(
+        operation,
+        &serde_json::json!({ "repo": required(arguments, "repo")?, "document": document }),
+    )?;
+    render(response, |payload| {
+        if arguments.get_flag("json") {
+            return serde_json::to_string_pretty(payload).map_err(|error| error.to_string());
+        }
+        let text = |value: Option<&serde_json::Value>| {
+            value
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("")
+                .to_owned()
+        };
+        let id = text(payload.pointer("/record/artifactId"));
+        let state = if payload
+            .get("created")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+        {
+            "created"
+        } else {
+            "exists"
+        };
+        Ok(format!("{id} {state} {}", text(payload.get("path"))))
+    })
+}
+
 pub(crate) fn repo_arg() -> Arg {
     Arg::new("repo").long("repo").default_value(".")
 }
@@ -500,7 +544,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-030")]
+    #[trace("FR-030", "FR-030-AC-36")]
     #[test]
     fn tc_373_evidence_store_command_grammar_is_retained() {
         assert!(
@@ -517,6 +561,29 @@ mod tests {
             command()
                 .try_get_matches_from(["evidence", "record-experiment", "--input", "record.json"])
                 .is_ok()
+        );
+        let artifact = command()
+            .try_get_matches_from([
+                "evidence",
+                "record-customer-artifact",
+                "--repo",
+                "r",
+                "--artifact",
+                "-",
+            ])
+            .unwrap();
+        assert_eq!(
+            artifact
+                .subcommand_matches("record-customer-artifact")
+                .and_then(|m| m.get_one::<String>("artifact"))
+                .map(String::as_str),
+            Some("-")
+        );
+        assert!(
+            command()
+                .try_get_matches_from(["evidence", "record-customer-artifact"])
+                .is_err(),
+            "--artifact is required"
         );
         assert!(
             command()

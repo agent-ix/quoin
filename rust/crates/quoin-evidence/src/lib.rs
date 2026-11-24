@@ -36,6 +36,7 @@
 
 pub mod adapters;
 pub mod assurance_records;
+pub mod customer_artifact;
 pub mod error;
 pub mod export;
 pub mod ids;
