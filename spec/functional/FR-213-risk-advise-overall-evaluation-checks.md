@@ -36,7 +36,8 @@ creates none and reports no accepted state. The dossier's `no_overall_evaluation
 - The command SHALL take the considered list of an evaluation from its frontmatter `references` edges to `residual_risk` and `benefit_risk` documents; a link in the body is no edge.
 - If a `residual_risk` in scope is not in the considered list of an evaluation, then the entry SHALL carry one `residual-risk-not-considered` finding naming every such residual risk in ascending order.
 - If an evaluation's decision is `accepted` and a considered `residual_risk` has decision `undecided` or `not_accepted`, then the entry SHALL carry one `evaluation-accepted-with-open-risk` finding naming those residual risks in ascending order.
-- The command SHALL NOT raise `evaluation-accepted-with-open-risk` for an evaluation whose decision is `undecided` or `not_accepted`, and SHALL NOT read a benefit-risk record's decision for it.
+- The command SHALL NOT raise `evaluation-accepted-with-open-risk` for an evaluation whose decision is `undecided` or `not_accepted`.
+- For an evaluation whose decision is `undecided` or `not_accepted`, the command SHALL NOT read a benefit-risk record's decision.
 - The command SHALL order the findings of an entry `residual-risk-not-considered` first.
 - The command SHALL NOT derive an evaluation decision, create an evaluation, or state an accepted state from the considered records.
 - If the scope holds no evaluation, then the section SHALL be `[]`.

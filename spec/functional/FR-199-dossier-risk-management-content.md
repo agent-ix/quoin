@@ -88,11 +88,16 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 - The document SHALL render every `benefit_risks` entry, decided or not, and every `overall_evaluations` entry, decided or not, with the values named under Outputs; an absent field reads `not stated`.
 - When the corpus holds no `overall_residual_risk_evaluation` record, the document SHALL produce one document-level `no_overall_evaluation` gap.
 - When an `overall_evaluations` entry has decision `undecided`, the document SHALL produce one `overall_evaluation_undecided` gap naming that evaluation, so an open overall decision never reads as complete.
-- The `Retired requirements` column of each control table SHALL list the ids of the control's `retired_requirements` source entry, joined by `, `, and SHALL read `none` when that list is empty; the ids stay in `Implementing requirements` as well, and the column states a status only, never discharge or satisfaction.
+- The `Retired requirements` column of each control table SHALL list the ids of the control's `retired_requirements` source entry, joined by `, `.
+- When a control's `retired_requirements` source list is empty, its `Retired requirements` column SHALL read `none`.
+- The document SHALL retain retired requirement ids in the `Implementing requirements` column as well as the `Retired requirements` column.
+- The `Retired requirements` column SHALL state only a status, without stating discharge or satisfaction.
 - For each source `overall_evaluation_checks` finding `residual-risk-not-considered`, the document SHALL produce one `residual_risk_not_considered` gap naming the evaluation and the residual risks the finding names.
 - For each source `overall_evaluation_checks` finding `evaluation-accepted-with-open-risk`, the document SHALL produce one `evaluation_accepted_with_open_risk` gap naming the evaluation and the residual risks the finding names.
 - For each source `decision_attribution` finding `decided-by-differs-from-commit-author`, the document SHALL produce one `decision_signer_mismatch` gap naming the record; for each `decision-commit-not-signed`, one `decision_commit_unsigned` gap naming the record.
-- The document SHALL NOT compute these findings itself, and a gap of these four kinds SHALL NOT replace `no_overall_evaluation` or `overall_evaluation_undecided`, which keep their own rules.
+- The document SHALL NOT compute these findings itself.
+- A gap of these four kinds SHALL NOT replace `no_overall_evaluation`.
+- A gap of these four kinds SHALL NOT replace `overall_evaluation_undecided`.
 - The document SHALL add no acceptance state or label of its own to any residual-risk, benefit-risk or overall record: authored decision values and texts are shown verbatim, and the document assigns no score, class or acceptability value.
 - The document SHALL keep each FR-170 finding against its source row.
 - For a `control-without-verification` finding, the document SHALL produce

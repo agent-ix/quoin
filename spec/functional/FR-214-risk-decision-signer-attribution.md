@@ -40,7 +40,9 @@ decision. It does not say the decision is valid or invalid.
 - `signature` and `signatureCode` SHALL be derived as FR-136 derives them.
 - If `decision_change` is `present` and `decided_by` is non-empty and differs from the commit `author` after trimming and ASCII case folding, then the entry SHALL carry one `decided-by-differs-from-commit-author` finding naming `decided_by` then the author.
 - If `decision_change` is `present` and its `signature` is not `signed`, then the entry SHALL carry one `decision-commit-not-signed` finding naming the commit.
-- The command SHALL NOT emit a finding for a `pending` or `not-applicable` change, and SHALL NOT read a hazard's `status` or any date typed into a record.
+- For a `pending` decision change, the command SHALL NOT emit a finding.
+- For a `not-applicable` decision change, the command SHALL NOT emit a finding.
+- The command SHALL NOT read a hazard's `status` or any date typed into a record.
 - The command SHALL NOT state a decision valid, invalid, authorised or accepted by its own words; the finding tokens are the only wording it adds.
 - If git cannot be run for a file under a repository, then the command SHALL exit 2 naming the file.
 
