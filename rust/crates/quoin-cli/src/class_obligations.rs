@@ -635,7 +635,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        Activity, ClassFloors, ClassPolicy, build_rows, check_relations_declared, has_unmet, parse_activities, relation_status, render_markdown,
+        Activity, ClassFloors, ClassPolicy, build_rows, check_relations_declared, has_unmet,
+        parse_activities, relation_status, render_markdown,
     };
     use std::collections::BTreeMap;
 
@@ -987,7 +988,10 @@ mod tests {
             "met"
         );
         let unmet = status(vec![relation("r", &uncovered), relation("s", &uncovered)]);
-        assert_eq!((unmet.value, unmet.missing), ("unmet", vec!["r".to_owned()]));
+        assert_eq!(
+            (unmet.value, unmet.missing),
+            ("unmet", vec!["r".to_owned()])
+        );
         assert_eq!(
             status(vec![relation("r", &elsewhere), relation("s", &uncovered)]).value,
             "not-available"
@@ -996,13 +1000,18 @@ mod tests {
             class_field: "class".to_owned(),
             classes: BTreeMap::from([(
                 "class-3".to_owned(),
-                floors(vec![json!({"id":"d","kind":"design-trace","relation":"typo"})]),
+                floors(vec![
+                    json!({"id":"d","kind":"design-trace","relation":"typo"}),
+                ]),
             )]),
             gate: false,
         };
         let join = json!({"relations":[{"name":"r","rows":[]}]});
         let error = check_relations_declared(&policy, &join, &BTreeMap::new()).unwrap_err();
-        assert!(error.contains("`typo`") && error.contains("design-trace"), "{error}");
+        assert!(
+            error.contains("`typo`") && error.contains("design-trace"),
+            "{error}"
+        );
     }
 
     #[trace("FR-161-AC-16")]
@@ -1049,7 +1058,8 @@ mod tests {
             {"name":"G","rows":[]}
         ]});
         check_relations_declared(&policy, &join, &BTreeMap::new()).unwrap();
-        let matrix = vec![json!({"document":"spec/FR-1.md","carried":{"class":"class-3"},"criteria":[]})];
+        let matrix =
+            vec![json!({"document":"spec/FR-1.md","carried":{"class":"class-3"},"criteria":[]})];
         let rows = build_rows(&matrix, &join, &policy, &BTreeMap::new(), &BTreeMap::new()).unwrap();
         let statuses = rows.requirements[0]["activities"]
             .as_array()
@@ -1058,7 +1068,10 @@ mod tests {
             .map(|row| row["status"].as_str().unwrap())
             .collect::<Vec<_>>();
         assert_eq!(statuses, ["unmet", "unmet", "not-available"]);
-        assert_eq!(rows.requirements[0]["activities"][0]["missing"], json!(["S"]));
+        assert_eq!(
+            rows.requirements[0]["activities"][0]["missing"],
+            json!(["S"])
+        );
     }
 
     #[trace("FR-161-AC-13")]

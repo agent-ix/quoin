@@ -309,7 +309,8 @@ mod tests {
     #[trace("FR-194-AC-9")]
     #[test]
     fn one_no_design_element_gap_per_uncovered_block_naming_its_check() {
-        let block = |check: &str, state: &str| json!({"check": check, "state": state, "elements": []});
+        let block =
+            |check: &str, state: &str| json!({"check": check, "state": state, "elements": []});
         let input: MatrixInput = serde_json::from_value(json!({
             "design_coverage": [
                 {"document": "FR-1.md", "id": "FR-1", "criteria": [
@@ -321,10 +322,14 @@ mod tests {
             ],
             "bindings": {"schemaVersion": 1, "bindings": []},
             "audit": {"findings":[], "healthy":[], "unevaluated":[]}
-        })).unwrap();
+        }))
+        .unwrap();
         let generated = render(
             &build(&input).unwrap(),
-            &[requirement("FR-1", Some("high")), requirement("FR-2", Some("high"))],
+            &[
+                requirement("FR-1", Some("high")),
+                requirement("FR-2", Some("high")),
+            ],
         );
         let gaps: Vec<_> = generated
             .gaps
@@ -337,7 +342,10 @@ mod tests {
             [
                 ("FR-1", "design relation check `soup` found no element"),
                 ("FR-2", "design relation check `soup` found no element"),
-                ("FR-2", "design relation check `segregation` found no element"),
+                (
+                    "FR-2",
+                    "design relation check `segregation` found no element"
+                ),
             ]
         );
     }

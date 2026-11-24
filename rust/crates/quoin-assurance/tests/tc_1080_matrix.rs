@@ -760,9 +760,9 @@ fn tc_1080_012b_each_uncovered_block_is_its_own_design_gap_line() {
     let b = json!([uncovered_block("q")]);
     let c = json!([covered_block(json!([])), covered_block(json!([]))]);
     let output = build(&design_input(&[
-        entry("FR-A", a.clone()),
-        entry("FR-B", b.clone()),
-        entry("FR-C", c.clone()),
+        entry("FR-101", a.clone()),
+        entry("FR-102", b.clone()),
+        entry("FR-103", c.clone()),
     ]))
     .unwrap();
     let value = serde_json::to_value(&output).unwrap();
@@ -776,10 +776,13 @@ fn tc_1080_012b_each_uncovered_block_is_its_own_design_gap_line() {
         let end = rest.find("\n## ").unwrap_or(rest.len());
         rest[..end].matches("Design gap:").count()
     };
-    assert_eq!(section("FR-A"), 2, "{rendered}");
-    assert!(rendered.contains("Design gap: no design element (p)"), "{rendered}");
-    assert_eq!(section("FR-B"), 1, "{rendered}");
-    assert_eq!(section("FR-C"), 0, "{rendered}");
+    assert_eq!(section("FR-101"), 2, "{rendered}");
+    assert!(
+        rendered.contains("Design gap: no design element (p)"),
+        "{rendered}"
+    );
+    assert_eq!(section("FR-102"), 1, "{rendered}");
+    assert_eq!(section("FR-103"), 0, "{rendered}");
 }
 
 /// Missing design stays absent in JSON and renders n/a; an empty reference list is none.

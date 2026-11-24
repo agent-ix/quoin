@@ -707,7 +707,10 @@ mod tests {
             [
                 ("FR-1", "design relation check `soup` found no element"),
                 ("FR-2", "design relation check `soup` found no element"),
-                ("FR-2", "design relation check `segregation` found no element"),
+                (
+                    "FR-2",
+                    "design relation check `segregation` found no element"
+                ),
             ]
         );
         assert!(
