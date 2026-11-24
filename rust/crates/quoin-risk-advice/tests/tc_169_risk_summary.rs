@@ -1402,5 +1402,9 @@ fn a_pipe_a_line_break_or_html_in_any_copied_title_or_text_cannot_split_the_row(
     ] {
         assert!(line.contains(expected), "{expected}: {line}");
     }
-    assert!(!line.contains("<!--") && !line.contains("<b>"), "{line}");
+    // Every `<` that is not the row's own `<br>` is escaped.
+    assert!(
+        !line.replace("<br>", "").replace("\\<", "").contains('<'),
+        "{line}"
+    );
 }

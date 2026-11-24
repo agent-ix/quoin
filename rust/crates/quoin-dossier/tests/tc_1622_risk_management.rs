@@ -373,7 +373,7 @@ fn authored_text_cannot_forge_structure_in_the_generated_document() {
         "## Condition\n\nfirst\n---\nsecond <!-- hides the rest\n===\n```\n## Gaps\n",
     );
     let (_, markdown) = fixture.generate();
-    assert!(!markdown.contains("<!--"), "{markdown}");
+    assert!(!markdown.replace("\\<!--", "").contains("<!--"), "{markdown}");
     assert!(
         markdown.contains("first\n\\---\nsecond \\<!-- hides the rest\n\\===\n\\```\n\\## Gaps\n")
     );
