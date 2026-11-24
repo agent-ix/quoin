@@ -114,10 +114,7 @@ mod tests {
         assert_eq!(prose("Title\n---\t"), "Title\n\\---\t");
         assert_eq!(prose("Title\n=== \t "), "Title\n\\=== \t ");
         for indent in [" ", "  ", "   "] {
-            assert_eq!(
-                prose(&format!("Title\n{indent}---")),
-                "Title\n\\---"
-            );
+            assert_eq!(prose(&format!("Title\n{indent}---")), "Title\n\\---");
         }
         assert_eq!(prose("```\ncode"), "\\```\ncode");
         assert_eq!(prose("a <!-- hide"), "a \\<!-- hide");
