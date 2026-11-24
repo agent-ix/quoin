@@ -15,6 +15,7 @@ mod targets;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
+use ix_cli_kit::exit::Outcome;
 use quoin_quire::coverage::{self, Request};
 use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot};
 
@@ -28,7 +29,11 @@ fn main() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("quoin-suite-trace: {error}");
-            ExitCode::FAILURE
+            match error {
+                // The refused status of the exit taxonomy (FR-029).
+                Error::Refused(_) => ExitCode::from(Outcome::Refused.code()),
+                _ => ExitCode::FAILURE,
+            }
         }
     }
 }
@@ -97,8 +102,12 @@ fn run(args: Vec<String>) -> Result<(), Error> {
         scope: ScopeRoot::open(&repo).map_err(|error| Error::Engine(error.to_string()))?,
         modules,
     };
-    let (traces, notices) =
-        coverage::test_traces(&request).map_err(|error| Error::Engine(error.to_string()))?;
+    let (traces, notices) = coverage::test_traces(&request).map_err(|error| match error {
+        quoin_quire::Error::TraceabilityDeclarationsDropped { .. } => {
+            Error::Refused(error.to_string())
+        }
+        other => Error::Engine(other.to_string()),
+    })?;
     for notice in notices {
         eprintln!("quoin-suite-trace: notice: {}", notice.message);
     }

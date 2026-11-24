@@ -654,6 +654,13 @@ fn invoke(
     request: &serde_json::Value,
     settings: &RuntimeSettings,
 ) -> Result<Response, String> {
-    dispatch(operation, request, settings)
-        .map_err(|error| format!("native runtime {operation} failed: {error}"))
+    match dispatch(operation, request, settings) {
+        // FR-029: a dropped declaration is a refusal the caller states as
+        // Quire stated it, not an operational failure.
+        Err(error) if quoin_core::ops::quire::declarations_dropped(&error) => {
+            Ok(Response::refusal(&error))
+        }
+        Err(error) => Err(format!("native runtime {operation} failed: {error}")),
+        Ok(response) => Ok(response),
+    }
 }

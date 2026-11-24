@@ -234,6 +234,9 @@ fn compute_with<T>(
         graph,
         notices,
     } = coverage::walk(&request.scope)?;
+    // The shared walk checked this registry already; the model is read again
+    // here, so ask again before reading it (FR-029).
+    crate::modules::require_complete_model(&registry)?;
     let model = registry
         .traceability()
         .ok_or(Error::TraceabilityModelUndeclared)?;

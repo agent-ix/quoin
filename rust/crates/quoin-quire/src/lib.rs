@@ -71,7 +71,7 @@ pub mod validate;
 #[cfg(test)]
 mod testing;
 
-pub use error::{Error, ErrorCode, Result};
+pub use error::{DroppedDeclaration, Error, ErrorCode, Result};
 pub use ids::{
     ClauseSetAuthority, ClauseSetId, ClauseSetRef, ClauseSetVersion, DocumentPath, ModuleRoot,
     ScopeRoot,

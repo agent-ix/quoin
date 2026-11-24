@@ -71,7 +71,7 @@ use crate::error::{CoreError, CoreErrorCode};
 use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
-use self::taxonomy::map_error;
+pub use self::taxonomy::{declarations_dropped, map_error};
 pub use self::wire::{
     CoveragePayload, CoverageRequest, DesignJoinRequest, DesignMatrixPayload, DesignMatrixRequest,
     FormalizationIdentity, MAX_REQUEST_BYTES, MAX_SCALAR_BYTES, PropertiesPayload,

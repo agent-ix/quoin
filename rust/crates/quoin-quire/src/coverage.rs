@@ -47,8 +47,10 @@ pub struct Outcome {
 /// # Errors
 /// [`Error::DocumentRootMissing`] when `<scope>/spec` does not exist,
 /// [`Error::ModuleLoad`] / [`Error::ModuleSetEmpty`] when the module set does
-/// not resolve, and [`Error::TraceabilityModelUndeclared`] when no active
-/// module declares a `traceability:` model.
+/// not resolve, [`Error::TraceabilityDeclarationsDropped`] when a declaration
+/// of the selected modules failed to load, and
+/// [`Error::TraceabilityModelUndeclared`] when no active module declares a
+/// `traceability:` model.
 ///
 /// That last one is the diagnostic agent-ix/quoin#106 was filed about: the
 /// subprocess printed it to stderr, the stderr was discarded, and the operator
@@ -77,6 +79,11 @@ pub(crate) struct Walked {
 pub(crate) fn walk(request: &Request) -> Result<Walked> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
+
+    // Dropped declarations first, and before the absent-model check: when every
+    // declaration was dropped the merged model is empty and reads as absent,
+    // which must be reported as the drop, not as QQ-1020 (FR-029-AC-20).
+    crate::modules::require_complete_model(&registry)?;
 
     // Checked before any walk: without a model there is nothing to reconcile
     // against, and guessing would be exactly the agent-grep behaviour this
@@ -123,6 +130,7 @@ pub(crate) fn walk(request: &Request) -> Result<Walked> {
 pub(crate) fn coverage_error(error: quire_rs::CoverageError) -> Error {
     match error {
         quire_rs::CoverageError::ModelUndeclared => Error::TraceabilityModelUndeclared,
+        quire_rs::CoverageError::DeclarationsDropped(dropped) => dropped.into(),
         quire_rs::CoverageError::ExtractionUnavailable(unavailable) => unavailable.into(),
     }
 }
@@ -147,13 +155,16 @@ pub struct TestTrace {
 ///
 /// # Errors
 /// [`Error::ModuleLoad`] / [`Error::ModuleSetEmpty`] when the module set does
-/// not resolve, and [`Error::TraceabilityModelUndeclared`] when no active
+/// not resolve, [`Error::TraceabilityDeclarationsDropped`] when a declaration
+/// of the selected modules failed to load, and
+/// [`Error::TraceabilityModelUndeclared`] when no active
 /// module declares a `traceability:` model, and
 /// [`Error::ExtractionUnavailable`] when the build cannot extract a language
 /// the tree holds.
 pub fn test_traces(request: &Request) -> Result<(Vec<TestTrace>, Vec<Notice>)> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
+    crate::modules::require_complete_model(&registry)?;
     let Some(model) = registry.traceability() else {
         return Err(Error::TraceabilityModelUndeclared);
     };
@@ -197,6 +208,36 @@ pub fn test_traces(request: &Request) -> Result<(Vec<TestTrace>, Vec<Notice>)> {
 mod tests {
     use super::*;
     use ix_trace_rs::trace;
+
+    /// FR-029-AC-15: the engine's coverage drop error is the typed `QQ-1022`
+    /// refusal carrying the engine's records, in the engine's kind tokens.
+    #[trace("FR-029-AC-15")]
+    #[test]
+    fn a_coverage_drop_error_maps_to_the_typed_qq_1022_refusal() {
+        use quire_rs::traceability::{DeclarationKind, DroppedDeclarationRef, DroppedDeclarations};
+        let error = coverage_error(quire_rs::CoverageError::DeclarationsDropped(
+            DroppedDeclarations(vec![
+                DroppedDeclarationRef {
+                    module: "m1".to_owned(),
+                    kind: DeclarationKind::TraceabilitySection,
+                    item: "traceability".to_owned(),
+                },
+                DroppedDeclarationRef {
+                    module: "m2".to_owned(),
+                    kind: DeclarationKind::FlowRule,
+                    item: "bad".to_owned(),
+                },
+            ]),
+        ));
+        assert_eq!(error.code().as_str(), "QQ-1022");
+        assert_eq!(
+            error.dropped_declarations_lines().as_deref(),
+            Some(
+                "module=m1 kind=traceability_section item=traceability\n\
+                 module=m2 kind=flow_rule item=bad"
+            )
+        );
+    }
 
     #[trace("FR-099")]
     #[test]

@@ -18,10 +18,10 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# THE RELEASE CONTRACT. This consumer uses the public quire-rs v0.62.2 release,
-# which carries the direct-marker fix required by PLAT-1767. The
-# release tag and exact package version keep Cargo resolution tied to that
-# published contract without a hand-selected commit revision.
+# THE RELEASE CONTRACT. This consumer links quire-rs at the commit that carries
+# the dropped-declaration refusal (quire-rs #715, PLAT-1804), consumed by
+# PLAT-1854. The exact package version and `rev` keep Cargo resolution tied to
+# that contract.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject
@@ -38,7 +38,7 @@ quoin-quire-types = { workspace = true }
 ix-trace-rs = { workspace = true }
 quoin-jsonschema = { workspace = true }
 quoin-yaml = { workspace = true }
-quire-rs = { version = "=0.62.2", git = "https://github.com/agent-ix/quire-rs", tag = "v0.62.2" }
+quire-rs = { version = "=0.62.3", git = "https://github.com/agent-ix/quire-rs", rev = "b6beef4df8326fdd4323dfeb803075563ccdc350" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
