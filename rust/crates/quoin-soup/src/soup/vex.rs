@@ -165,7 +165,7 @@ fn render(records: &[Existing], metadata: &Metadata) -> Result<Value, Stop> {
     if statements.is_empty() {
         return Err(refuse(
             "soup.vex_empty_statements",
-            "OpenVEX 0.2.0 requires at least one statement; add an authored vex_statements entry or select records that contain one",
+            "OpenVEX 0.2.0 requires at least one statement; add an authored vex_statements entry or select records that contain one".to_owned(),
             &[("field", "vex_statements".to_owned())],
         ));
     }
