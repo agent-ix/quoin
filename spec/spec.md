@@ -138,6 +138,8 @@ index; the files are authoritative.
 - [US-020](./usecase/US-020-declare-a-semantic-module-contract-once.md) — declare a module's semantic contract once against the shared grammar.
 - [US-022](./usecase/US-022-measure-the-corpus-against-completed-modules.md) — measure the governed corpus against the completed module schemas before promotion. ⛔ **Withdrawn** (#388)
 - [US-023](./usecase/US-023-record-a-run-that-names-its-own-requirements.md) — record a run whose result file names the requirements it verified.
+- [US-024](./usecase/US-024-hand-a-reviewer-dossier-documents-generated-from-records.md) — hand a reviewer dossier documents generated from the repository's records.
+- [US-025](./usecase/US-025-report-a-quoin-security-vulnerability.md) — privately report a security vulnerability in quoin.
 
 ### Functional Requirements
 
@@ -212,6 +214,7 @@ index; the files are authoritative.
 - [FR-210](./functional/FR-210-retained-proof-integrity-statement.md) — retain signed proof integrity statements in independent storage.
 - [FR-211](./functional/FR-211-discharge-resolves-evidence-and-approvals.md) — resolve discharge evidence and verify discharge approvals.
 - [FR-212](./functional/FR-212-module-lag-warning.md) — warn when an installed default module is not at the CLI pin.
+- [FR-221](./functional/FR-221-quoin-vulnerability-reporting-policy.md) — document the private vulnerability reporting route for quoin.
 
 **Semantic-module architecture**
 
