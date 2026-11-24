@@ -135,7 +135,9 @@ a winner silently.
 through **the same code path `quoin evidence audit` already uses** — not a
 second, parallel assembly. The mock-inspection, catalog, and independence
 inputs are the identical values `quoin evidence audit` would supply for the
-same working tree. No commit is resolved or supplied.
+same working tree. Before invoking the auditor, `quoin matrix` adds the
+in-memory trace associations defined by AC-26. `quoin evidence audit` continues
+to use only the persisted binding graph. No commit is resolved or supplied.
 
 ### Grouping diverges deliberately from quire's own grouping
 
@@ -176,9 +178,11 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
   **absent** when the module declares no `obligations:` source and the field
   is omitted entirely (FR-050-AC-51). Absent is the only zero-criteria form
   the engine emits (CR-003).
-- `bindings`: the evidence store's binding graph **exactly as persisted** —
-  `quoin-evidence`'s `BindingsFile` shape (`{schema_version, bindings:
-  Vec<Binding>}`, [FR-030](./FR-030-evidence-store.md)), not a bare array.
+- `bindings`: the `BindingsFile` assembled by `quoin matrix` from the
+  evidence store's persisted graph plus the in-memory trace associations in
+  AC-26 (`{schema_version, bindings: Vec<Binding>}`), not a bare array. The
+  persisted graph remains unchanged; `matrix.build` receives the complete
+  per-invocation view.
 - `audit`: the `quoin-auditor` `AuditReport` (`findings`, `healthy`,
   `unevaluated`, [FR-032](./FR-032-evidence-auditor.md)) computed over the
   same `bindings` and the same obligations.
@@ -348,6 +352,7 @@ does not change quire-rs FR-078 or its `CoverageReport` schema.
 | FR-115-AC-23 | An `audit` finding of a kind other than `stale-evidence` that carries a `cause` is refused with `Refused` and `context.reason` `invalid-stale-cause` naming the obligation id. | Test |
 | FR-115-AC-24 | An obligation with a `missing-run` and a `failed-run` `stale-evidence` finding lists both in `evidence_detail.findings`, `failed-run` first, whatever order `audit.findings` supplies them, and is `stale`. | Test |
 | FR-115-AC-25 | Two `matrix.build` calls over one fixture that differ only in whether the `stale-evidence` findings carry `cause` produce identical `evidence_status` values, `summary` text, `bindings` lists and `unevaluated` lists. | Test |
+| FR-115-AC-26 | `quoin matrix` adds an in-memory binding for each `traceId` on the latest retained run entries that names an id in the selected coverage population, merging symbols into an existing `(obligation, suite)` binding while preserving its lineage. Unknown trace ids are ignored; no binding or run record is written or changed, and `quoin evidence audit` continues to use only the persisted graph. | Test |
 
 ## Dependencies
 
