@@ -86,7 +86,7 @@ people accept risk, and the tool assigns no score, class or acceptability.
   (FR-030), and stays open with `no-producer` or `kind-not-expected` otherwise.
   Quoin reads the retained record's existence and kind only: it does not open the
   artifact the record's `location` names, computes no content identity or digest
-  of it, and does not judge that it is adequate (people accept risk).
+  of the artifact, and does not judge that the artifact is adequate (people accept risk).
 - Until the catalog schema carries `producers` (quire-rs FR-073), no catalog
   entry has any, so a direct fact on a clause with non-empty `expectedOutputs`
   has reason `no-producer` and does not discharge.
@@ -134,11 +134,14 @@ people accept risk, and the tool assigns no score, class or acceptability.
   entry has `kind: procedure` in the output catalog. A direct fact for it has
   reason `customer-owned`; a disposition for it discharges only when its decision
   is `delegated` and its rationale and approval reference are non-blank.
-- An output of `kind: record` or `kind: document` is not customer-owned, however
-  the customer supplies it. A clause with such an output is satisfied by a direct
-  fact citing a retained customer artifact and is never discharged by a
-  `delegated` disposition; "the customer supplied X" and "the customer owns the
-  procedure" are distinct and a disposition only expresses the second.
+- Quoin SHALL discharge a `delegated` disposition only on a customer-owned
+  clause; `quoin evidence record-discharge` SHALL refuse a `delegated`
+  disposition on a clause that is not customer-owned, with reason
+  `customer-owned`, the reason this section already uses for the customer-owned
+  rule. A clause with an output of `kind: record` or `kind: document` is not
+  customer-owned however the customer supplies the artifact, so "the customer
+  supplied X" (a direct fact citing a retained customer artifact) stays distinct
+  from "the customer owns the procedure" (a `delegated` disposition).
 
 ### When resolution and verification run
 
@@ -227,10 +230,9 @@ people accept risk, and the tool assigns no score, class or acceptability.
 | FR-211-AC-22 | `render_discharge` and `build_authored_argument` given a report document without the store, engineering-assurance flags and module set leave the affected clauses open with a stated reason; given them, they verify as AC-6. | Test |
 | FR-211-AC-23 | A ref matching no `producers` has `no-producer` only when none of the clause's `expectedOutputs` catalog entries carries `producers`, and `kind-not-expected` otherwise. | Test |
 | FR-211-AC-24 | A direct fact or disposition on a clause whose clause set no installed module declares, or that the declared set does not list, is open with reason `no-clause-policy`, and `record-discharge` refuses it; a discharged entry with no fact is open with reason `no-fact`. | Test |
-
 | FR-211-AC-25 | A clause whose every `expectedOutputs` entry is `kind: record` or `kind: document` with `producers` of `[customer-artifact]` is discharged by a direct fact whose `evidenceRefs` is `evidence://customer-artifacts/<artifact-id>` naming a retained customer artifact (FR-030). | Test |
-| FR-211-AC-26 | The same clause with no `evidenceRefs` entry resolving to a retained customer artifact stays open: a ref naming no customer artifact is `unresolved`, a ref to a retained run or other kind outside the `producers` is `kind-not-expected`, and a fact on a clause whose output catalog entry lists no `producers` is `no-producer`. | Test |
-| FR-211-AC-27 | A `delegated` disposition with non-blank rationale and approval reference does not discharge a clause whose outputs are `kind: record` or `kind: document`; the clause is open, because it is not customer-owned. | Test |
+| FR-211-AC-26 | The same clause with no `evidenceRefs` entry resolving to a retained customer artifact stays open: a ref naming no customer artifact is `unresolved`, and a ref to a retained run or other kind outside the `producers` is `kind-not-expected`. | Test |
+| FR-211-AC-27 | `quoin evidence record-discharge` refuses a `delegated` disposition, even with non-blank rationale and approval reference, on a clause that is not customer-owned (for example one whose outputs are `kind: record` or `kind: document`) with reason `customer-owned`, and writes nothing; the same disposition on a customer-owned clause is accepted. | Test |
 | FR-211-AC-28 | A ref `evidence://customer-artifacts/<artifact-id>` whose `artifact-id` segment is not lowercase, is empty, or holds a `.` or `..` segment is `unresolved`; the family is citable only as `customer-artifacts/<artifact-id>`. | Test |
 | FR-211-AC-29 | Resolving a ref to a customer artifact reads only the retained record: with the record's `location` naming an unreadable path and an unreachable URL the clause still discharges, and the report carries no digest, hash or size of the artifact and no statement that the artifact is adequate. | Test |
 | FR-211-AC-30 | A customer artifact that `quoin evidence gc` leaves in place keeps its clause discharged on the next report, and a stored fact citing it is unchanged. | Test |
