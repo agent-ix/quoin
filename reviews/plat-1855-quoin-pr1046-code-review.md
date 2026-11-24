@@ -55,3 +55,37 @@ For FND-002, I grepped every `missing` assertion in the class_obligations unit t
 ## Verdict
 
 CONDITIONAL. The design-trace routing, the pinned reading, the refusals and the per-block dossier gaps are implemented as FR-161, FR-193 and FR-194 state. The labels are truthful: no gap claims a requirement has no design element. FND-001 is an ordering regression in the architecture document body and should be fixed in this PR. FND-002 is a missing negative assertion.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | low | The new test `uncovered_requirements_are_listed_in_dossier_order` is tagged `FR-191-AC-14`. That criterion is about the `Gaps` section: two bullets in gap order, the same order in `--json`, and `Gaps: none`. Dossier order of requirement ids is `FR-191-AC-15` ("lists them in dossier order"). Retag the test `FR-191-AC-15`. | rust/crates/quoin-dossier/src/architecture.rs:726-741 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | a4b8680f: `findings_sections` collects `join.uncovered.keys()` and sorts them with `dossier_cmp`. `uncovered_requirements_are_listed_in_dossier_order` renders FR-10 and FR-2. Mutation run: deleting the `sort_by` line makes that test fail (architecture.rs:733). |
+| FND-002 | still-open | At a4b8680f there is no test named `only_design_trace_rows_list_missing_relations`, and no test asserts that a non-design-trace row lacks `missing`. The fix commit's message claims "missing only on design-trace", but the commit does not touch `relation_status` or its tests. Mutation run: `if value == "unmet" && activity.kind == Kind::DesignTrace` changed to `if value == "unmet"` leaves `class_obligations` passing (13 passed, mutant survives). Add the negative assertion. |
+| FND-002 | fixed | FR-1 has an uncovered S row. The test checks that design trace lists S and the unmet soup activity omits the missing field. FR-3 makes the same check for unmet segregation. |
+| FND-003 | fixed | The dossier-order test now carries FR-191-AC-15. The computed matrix binds this test to the ordering criterion, and its assertion still requires FR-2 before FR-10. |
+
+### Disposition pass 2 evidence
+
+Reviewed commit `de205cd1b04584e11bc8e0518da8f46b1b419d5a`.
+
+FND-002 after_excerpt (rust/crates/quoin-cli/src/class_obligations.rs, lines 1091–1092)
+
+```rust
+        assert_eq!(activities(0)[0]["missing"], json!(["S"]));
+        assert!(activities(0)[1].get("missing").is_none());
+```
+
+FND-003 after_excerpt (rust/crates/quoin-dossier/src/architecture.rs, lines 726–728)
+
+```rust
+    #[trace("FR-191-AC-15")]
+    #[test]
+    fn uncovered_requirements_are_listed_in_dossier_order() {
+```

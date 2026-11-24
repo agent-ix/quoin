@@ -67,3 +67,25 @@ Semantic review: not run (reviewer subagent; mutation reasoning above stands in 
 ## Verdict
 
 CONDITIONAL. Every touched criterion is tagged by a test that fails under the main mutations. The three findings are weak or missing assertions, with no untested behaviour on the main path.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | a4b8680f: a design-trace entry naming a method is refused with "must not name a method", and element archetypes get their own message. The test asserts that the method message does not mention archetypes. Mutation run: restoring the combined message "must not name a method or element archetypes" makes `relation_backed_entries_are_refused_when_malformed` fail (class_obligations.rs:965). |
+| FND-002 | fixed | a4b8680f: the AC-20 test asserts the exact `Design gap:` lines per section: FR-101 `(p)` then `(q)`, FR-102 `(q)` only, FR-103 none. Mutation run: hard-coding the rendered check token to `p` in `render_markdown` makes tc_1080_012b fail (tc_1080_matrix.rs:783). The fixture still gives both blocks relation `realized-by`. The renderer keys on `check`, so the oracle no longer depends on it. |
+| FND-003 | still-open | At a4b8680f `design_trace_soup_and_segregation_entries_report_one_row_each` is unchanged. It still asserts only `["unmet", "unmet", "not-available"]`, and no test runs the three-entry policy over an all-covered join to get `met`. The fix commit's message claims "AC-17 tests", but no AC-17 change is in the diff. |
+| FND-003 | fixed | FR-2 has a covered row in each of real, S and G. One call to build_rows applies the three-entry policy and the assertion checks the identity, status and count of its three activities. |
+
+### Disposition pass 2 evidence
+
+Reviewed commit `de205cd1b04584e11bc8e0518da8f46b1b419d5a`.
+
+FND-003 after_excerpt (rust/crates/quoin-cli/src/class_obligations.rs, lines 1093–1096)
+
+```rust
+        assert_eq!(
+            statuses(1),
+            [("trace", "met"), ("soup", "met"), ("seg", "met")]
+        );
+```
