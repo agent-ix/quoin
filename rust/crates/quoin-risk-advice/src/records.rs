@@ -4,6 +4,7 @@
 //! The safety-module records the report reads, as their authors wrote them.
 
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 use quoin_anomaly::{Record as Anomaly, acceptance_criteria, is_hazard, parse_record};
 use quoin_quire::records::{Contract, Document, Table};
@@ -65,6 +66,8 @@ pub(crate) struct Policy {
 /// A record that holds a decision: residual risk, benefit-risk or evaluation.
 pub(crate) struct Choice {
     pub(crate) id: String,
+    /// The file the record was read from.
+    pub(crate) path: PathBuf,
     pub(crate) decision: String,
     /// The `Decided by` cell as written; `None` when empty or absent.
     pub(crate) decided_by: Option<String>,
@@ -258,6 +261,7 @@ fn choice(doc: &Document) -> Choice {
     let decision = decided("Decision").unwrap_or_default();
     Choice {
         id: doc.id.clone(),
+        path: doc.path.clone(),
         decision,
         decided_by: decided("Decided by").and_then(non_blank),
         rationale: decided("Rationale").and_then(non_blank),

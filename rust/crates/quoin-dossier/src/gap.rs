@@ -67,6 +67,15 @@ pub enum GapKind {
     NoOverallEvaluation,
     /// An overall residual risk evaluation is undecided.
     OverallEvaluationUndecided,
+    /// An overall evaluation does not consider a residual risk in scope.
+    ResidualRiskNotConsidered,
+    /// An overall evaluation is decided over a considered open residual risk.
+    EvaluationAcceptedWithOpenRisk,
+    /// A decision's typed decider differs from the author of the commit that
+    /// set it.
+    DecisionSignerMismatch,
+    /// The commit that set a decision carries no valid signature.
+    DecisionCommitUnsigned,
     /// A control has no verification.
     ControlUnverified,
     /// No acceptability policy is present for a risk estimate.
@@ -106,7 +115,7 @@ pub enum GapKind {
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 42] = [
+    pub(crate) const ALL: [Self; 46] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -132,6 +141,10 @@ impl GapKind {
         Self::ResidualRiskUndecided,
         Self::NoOverallEvaluation,
         Self::OverallEvaluationUndecided,
+        Self::ResidualRiskNotConsidered,
+        Self::EvaluationAcceptedWithOpenRisk,
+        Self::DecisionSignerMismatch,
+        Self::DecisionCommitUnsigned,
         Self::ControlUnverified,
         Self::NoAcceptabilityPolicy,
         Self::NoPlanRecord,
@@ -180,6 +193,10 @@ impl GapKind {
             Self::ResidualRiskUndecided => "residual_risk_undecided",
             Self::NoOverallEvaluation => "no_overall_evaluation",
             Self::OverallEvaluationUndecided => "overall_evaluation_undecided",
+            Self::ResidualRiskNotConsidered => "residual_risk_not_considered",
+            Self::EvaluationAcceptedWithOpenRisk => "evaluation_accepted_with_open_risk",
+            Self::DecisionSignerMismatch => "decision_signer_mismatch",
+            Self::DecisionCommitUnsigned => "decision_commit_unsigned",
             Self::ControlUnverified => "control_unverified",
             Self::NoAcceptabilityPolicy => "no_acceptability_policy",
             Self::NoPlanRecord => "no_plan_record",
@@ -355,6 +372,10 @@ mod tests {
                 "residual_risk_undecided",
                 "no_overall_evaluation",
                 "overall_evaluation_undecided",
+                "residual_risk_not_considered",
+                "evaluation_accepted_with_open_risk",
+                "decision_signer_mismatch",
+                "decision_commit_unsigned",
                 "control_unverified",
                 "no_acceptability_policy",
                 "no_plan_record",

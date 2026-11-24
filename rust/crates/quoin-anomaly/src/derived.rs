@@ -204,6 +204,50 @@ pub(crate) fn rationale_in(located: Option<&Located>, record: &Record) -> Derive
     }
 }
 
+/// The most recent commit on the first-parent history of the default branch,
+/// following renames, after which `value_of` of the file's text equals its
+/// value at the tip (FR-214): the commit that last set the value.
+///
+/// `working` is the value in the working tree. It is [`Derived::Pending`]
+/// where it differs from the value at the tip, [`Derived::Absent`] where no
+/// commit holds a value, and [`Derived::NotApplicable`] outside git.
+///
+/// # Errors
+///
+/// Returns an error when `git` cannot be run or cannot answer a history query.
+pub fn value_change(
+    file: &Path,
+    working: &str,
+    value_of: impl Fn(&str) -> Option<String>,
+) -> Result<Derived, AnomalyError> {
+    Ok(value_in(locate(file)?.as_ref(), working, value_of))
+}
+
+/// [`value_change`] over an already-read history.
+fn value_in(
+    located: Option<&Located>,
+    working: &str,
+    value_of: impl Fn(&str) -> Option<String>,
+) -> Derived {
+    let Some(located) = located else {
+        return Derived::NotApplicable;
+    };
+    let mut previous: Option<String> = None;
+    let mut changed: Option<&Commit> = None;
+    for (commit, text) in located.commits.iter().zip(&located.texts) {
+        let value = text.as_deref().and_then(&value_of);
+        if value != previous {
+            changed = Some(commit);
+        }
+        previous = value;
+    }
+    match (changed, previous) {
+        (Some(commit), Some(tip)) if tip == working => Derived::Present(Change::of_commit(commit)),
+        (None, _) => Derived::Absent,
+        _ => Derived::Pending,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(

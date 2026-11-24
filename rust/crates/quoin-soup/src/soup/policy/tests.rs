@@ -189,7 +189,13 @@ fn tc_1671_022_licence_unknown_is_resolved_only_by_a_disposition_after_its_scan(
         Resolution::Unresolved(Unresolved::NoDispositionClause)
     );
 
-    let with = npm_records(Some("C-DISP"));
+    // A disposition is a decision about one component: only moss names the clause.
+    let mut with = npm_records(None);
+    for record in &mut with {
+        if record.purl == "pkg:npm/fx-moss@0.9.0" {
+            record.disposition_clause = Some("C-DISP".to_owned());
+        }
+    }
     let resolved = join(
         &with,
         &[licence_scan("lic", BEFORE, SYFT, POLICY)],
@@ -388,7 +394,7 @@ fn tc_1671_027_a_later_policy_scan_is_not_covered_by_an_earlier_attestation() {
     // The advisory is matched by crate name, so give it a cargo record too.
     let records = [
         records,
-        vec![record("pkg:cargo/fx-vale@3.1.0", Some("C-DISP"))],
+        vec![record("pkg:cargo/fx-vale@3.1.0", Some("C-DISP2"))],
     ]
     .concat();
     let scans = [advisory_scan, licence_scan("lic", AFTER, SYFT, POLICY)];

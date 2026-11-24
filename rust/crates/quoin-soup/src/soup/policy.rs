@@ -21,7 +21,7 @@ use quoin_evidence::store::scan_is_vacuous;
 use quoin_evidence::types::{Finding, FindingRecord};
 
 use super::advisory::{
-    Hit, Newest, RecordIndex, RecordRef, Resolution, Tool, UnmatchedReason, newest, resolve,
+    Hit, Newest, RecordIndex, RecordRef, Resolution, Tool, UnmatchedReason, newest, resolve_for,
 };
 use super::plan::Existing;
 
@@ -371,11 +371,7 @@ fn attach(
                 message: item.finding.message,
                 package: item.finding.path.unwrap_or_default(),
                 scan_timestamp: item.scan_timestamp,
-                resolution: resolve(
-                    record.disposition_clause.as_deref(),
-                    discharge,
-                    item.scan_millis,
-                ),
+                resolution: resolve_for(record, records, discharge, item.scan_millis),
             });
     }
     attached

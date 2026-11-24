@@ -276,7 +276,9 @@ fn a_complete_corpus_renders_authored_texts_verbatim_and_has_no_gap() {
     );
     assert!(markdown.contains("| RR-1 | accepted | Pat | recorded |"));
     assert!(markdown.contains("| ORE-1 | Pump | accepted | Pat | overall why | RR-1 |"));
-    assert!(!markdown.contains("not stated"), "{markdown}");
+    // Outside a not-yet-committed decision's signer cells, nothing is unstated.
+    let content = &markdown[..markdown.find("## Decision attribution").unwrap()];
+    assert!(!content.contains("not stated"), "{markdown}");
 }
 
 #[trace("FR-199-AC-9", "FR-199-AC-10")]
@@ -397,7 +399,7 @@ fn benefit_risk_and_overall_records_list_in_dossier_order_and_queue_only_when_un
     fixture.complete_chain();
     fixture.benefit("BR-10", "ten", "undecided", "", &["RR-1"]);
     fixture.benefit("BR-9", "nine", "accepted", "Pat", &["RR-1"]);
-    fixture.overall("ORE-10", "Pump ten", "accepted", "Pat", &["BR-9"]);
+    fixture.overall("ORE-10", "Pump ten", "accepted", "Pat", &["BR-9", "RR-1"]);
     let (_, markdown) = fixture.generate();
     let nine = markdown
         .find("| BR-9 | nine | accepted | Pat | benefit why | RR-1 |")
@@ -409,7 +411,8 @@ fn benefit_risk_and_overall_records_list_in_dossier_order_and_queue_only_when_un
     let first = markdown.find("| ORE-1 | Pump |").unwrap();
     let second = markdown.find("| ORE-10 | Pump ten |").unwrap();
     assert!(first < second);
-    let queue = &markdown[markdown.find("## Undecided decisions").unwrap()..];
+    let queue = &markdown[markdown.find("## Undecided decisions").unwrap()
+        ..markdown.find("## Decision attribution").unwrap()];
     assert!(queue.contains("| BR-10 | benefit_risk |"), "{queue}");
     assert!(!queue.contains("| BR-9 |"), "{queue}");
 
@@ -459,6 +462,10 @@ fn changing_only_a_decision_changes_only_what_it_governs_and_the_tool_names_no_a
         [
             "| RR-1 | accepted | Pat | recorded |",
             "| ORE-1 | Pump | accepted | Pat | overall why | RR-1 |",
+            "| Record | Kind | Decision | Decider | Commit author | Signature | Findings |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+            "| ORE-1 | overall_residual_risk_evaluation | accepted | Pat | not stated | not stated |  |",
+            "| RR-1 | residual_risk | accepted | Pat | not stated | not stated |  |",
             "Gaps: none"
         ]
     );
@@ -475,6 +482,55 @@ fn changing_only_a_decision_changes_only_what_it_governs_and_the_tool_names_no_a
             .iter()
             .any(|line| line.contains("ORE-1 | Pump | accepted | Pat"))
     );
+}
+
+#[trace("FR-199-AC-18")]
+#[test]
+fn an_evaluation_that_skips_a_risk_and_one_accepted_over_an_open_risk_each_gap_once() {
+    let fixture = Fixture::new();
+    fixture.complete_chain();
+    for (id, decision, by) in [("RR-2", "not_accepted", "Pat"), ("RR-3", "undecided", "")] {
+        fixture.put(
+            id,
+            "residual_risk",
+            &format!(
+                "relationships:\n{}{}",
+                Fixture::link("EST-POST", "estimate"),
+                Fixture::link("POL-1", "references")
+            ),
+            &format!(
+                "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| {decision} | r | {by} |\n"
+            ),
+        );
+    }
+    // ORE-1 considers RR-1 only: RR-2 and RR-3 are not considered.
+    let (report, _) = fixture.generate();
+    let named: Vec<_> = report
+        .gaps
+        .iter()
+        .filter(|gap| gap.gap_kind.as_str() == "residual_risk_not_considered")
+        .collect();
+    assert_eq!(named.len(), 1, "{:?}", report.gaps);
+    assert!(named[0].detail.contains("RR-2, RR-3"), "{:?}", named[0]);
+    assert!(!kinds(&report).contains(&"evaluation_accepted_with_open_risk"));
+    // Considering both open risks moves the finding to the open-risk gap.
+    fixture.overall(
+        "ORE-1",
+        "Pump",
+        "accepted",
+        "Pat",
+        &["RR-1", "RR-2", "RR-3"],
+    );
+    let (report, _) = fixture.generate();
+    let open: Vec<_> = report
+        .gaps
+        .iter()
+        .filter(|gap| gap.gap_kind.as_str() == "evaluation_accepted_with_open_risk")
+        .collect();
+    assert_eq!(open.len(), 1, "{:?}", report.gaps);
+    assert_eq!(open[0].subject, "ORE-1");
+    assert!(open[0].detail.contains("RR-2, RR-3"));
+    assert!(!kinds(&report).contains(&"residual_risk_not_considered"));
 }
 
 #[trace("FR-199-AC-5")]

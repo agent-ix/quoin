@@ -15,11 +15,13 @@
 
 #![forbid(unsafe_code)]
 
+mod attribution;
 mod discrepancies;
 mod error;
 mod evidence;
 mod finding;
 mod links;
+mod overall;
 mod policy;
 mod queue;
 mod records;
@@ -33,10 +35,12 @@ use quoin_quire::records::read;
 
 use serde::Serialize;
 
+pub use attribution::Attribution;
 pub use discrepancies::{Discrepancies, Discrepancy, DiscrepancyToken, Refs};
 pub use error::{AdviceError, ErrorCode};
 pub use evidence::{AnomalyRef, ControlEvidence, EvidenceEntry};
 pub use finding::{Finding, Token};
+pub use overall::OverallCheck;
 pub use policy::{CellKey, PolicyCell};
 pub use queue::{NoRecord, Queue, QueueEntry};
 pub use summary::{
@@ -59,6 +63,10 @@ pub struct Advice {
     pub evidence_gaps: Vec<EvidenceEntry>,
     /// The undecided decisions (FR-148).
     pub decision_queue: Queue,
+    /// The overall-evaluation checks of FR-107 (FR-213).
+    pub overall_evaluation_checks: Vec<OverallCheck>,
+    /// The git attribution of each decided record (FR-214).
+    pub decision_attribution: Vec<Attribution>,
     /// The files the reader could not load, each as `path: reason`. They are
     /// absent from the report, so the caller says so; they are not part of
     /// the rendered output.
@@ -73,7 +81,8 @@ pub struct Advice {
 ///
 /// Returns an error when `scope` or the modules cannot be read, or when a
 /// residual-risk, benefit-risk, overall-evaluation or policy record breaks the
-/// contract its type declares.
+/// contract its type declares, or when `git` cannot answer a history query
+/// for a record under a repository.
 pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceError> {
     let loaded = load(scope, modules, &records::CHECKED, false)?;
     let (records, unreadable) = (loaded.records, loaded.unreadable);
@@ -83,6 +92,8 @@ pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceE
         policy_cells: policy::cells(&records, &links),
         evidence_gaps: evidence::gaps(&records, &links),
         decision_queue: queue::build(&records, &links),
+        overall_evaluation_checks: overall::build(&records),
+        decision_attribution: attribution::build(&records)?,
         unreadable,
     })
 }
