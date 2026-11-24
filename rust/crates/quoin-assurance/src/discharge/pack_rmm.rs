@@ -9,19 +9,17 @@
 //! cannot disagree with the single-set view. The report names clauses by id
 //! and sets by key; nothing here reads a clause's text or title.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use quoin_evidence::source::EvidenceSource;
-use quoin_quire_types::{ClauseBindingReport, ClauseSetKey};
+use quoin_quire_types::{ClauseBindingReport, ClauseSetKey, SetPolicy};
 use serde::{Deserialize, Serialize};
 
 use super::rmm::{
     RequirementsMapping, build_requirements_mapping, escape, render_requirements_mapping,
 };
-use super::store::{
-    DischargeStoreError, discharge_report_from_store,
-    discharge_report_from_store_with_approval_requirements,
-};
+use super::store::{DischargeStoreError, discharge_report_from_store};
+use super::verify::{ApprovalVerifier, DischargeChecks};
 
 /// The one accepted `schemaVersion` of a pack report.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -32,18 +30,18 @@ pub enum PackRequirementsMappingSchemaVersion {
     V1,
 }
 
-/// Approval-required clauses for one exact clause set, loaded from the module
-/// that owns it.
+/// The clause policies of one exact clause set, loaded from the module that
+/// owns it.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ClauseApprovalPolicy {
+pub struct ClauseSetPolicy {
     /// The clause-set authority.
     pub authority: String,
     /// The clause-set identifier.
     pub id: String,
     /// The exact clause-set version.
     pub version: String,
-    /// Clause ids whose metadata declares one or more approval roles.
-    pub required_clause_ids: BTreeSet<String>,
+    /// The policy of each clause of the set.
+    pub policy: SetPolicy,
 }
 
 /// One index entry: a set and the number of rows of its matrix, nothing else.
@@ -81,6 +79,16 @@ fn key_text(set: &ClauseSetKey) -> String {
     format!("{}/{}@{}", set.authority, set.id, set.version)
 }
 
+/// What every set of a pack report is checked against.
+pub struct PackChecks<'a> {
+    /// The clause policies of the sets, matched to each binding by key.
+    pub policies: &'a [ClauseSetPolicy],
+    /// Verifies approval references; `None` when none is configured.
+    pub verifier: Option<&'a dyn ApprovalVerifier>,
+    /// Whether a report is built without reaching an approval verifier.
+    pub offline: bool,
+}
+
 /// Build the pack report from each set's live binding report and the facts
 /// stored for that set's key.
 ///
@@ -92,13 +100,13 @@ fn key_text(set: &ClauseSetKey) -> String {
 /// [`DischargeStoreError`] as [`discharge_report_from_store`] and
 /// [`build_requirements_mapping`] return it; the first failure refuses the
 /// whole report.
-pub fn build_pack_requirements_mapping<S: EvidenceSource + ?Sized>(
-    source: &S,
+pub fn build_pack_requirements_mapping(
+    source: &dyn EvidenceSource,
     pack: &str,
     as_of: &str,
     context: &BTreeMap<String, String>,
     bindings: &[ClauseBindingReport],
-    approval_policies: &[ClauseApprovalPolicy],
+    checks: &PackChecks<'_>,
 ) -> Result<PackRequirementsMapping, DischargeStoreError> {
     let mut ordered: Vec<(String, &ClauseBindingReport)> = bindings
         .iter()
@@ -108,7 +116,7 @@ pub fn build_pack_requirements_mapping<S: EvidenceSource + ?Sized>(
     let mut index = Vec::with_capacity(ordered.len());
     let mut matrices = Vec::with_capacity(ordered.len());
     for (_, binding) in ordered {
-        let policies = approval_policies.iter().filter(|policy| {
+        let policies = checks.policies.iter().filter(|policy| {
             policy.authority == binding.clause_set.authority
                 && policy.id == binding.clause_set.id
                 && policy.version == binding.clause_set.version
@@ -123,16 +131,16 @@ pub fn build_pack_requirements_mapping<S: EvidenceSource + ?Sized>(
                 )),
             ));
         }
-        let report = if let Some(policy) = policy {
-            discharge_report_from_store_with_approval_requirements(
-                source,
-                binding,
-                as_of,
-                &policy.required_clause_ids,
-            )?
-        } else {
-            discharge_report_from_store(source, binding, as_of)?
-        };
+        let report = discharge_report_from_store(
+            source,
+            binding,
+            as_of,
+            &DischargeChecks {
+                policy: policy.map(|policy| &policy.policy),
+                verifier: checks.verifier,
+                offline: checks.offline,
+            },
+        )?;
         let matrix = build_requirements_mapping(binding, &report)?;
         index.push(PackIndexEntry {
             clause_set: binding.clause_set.clone(),

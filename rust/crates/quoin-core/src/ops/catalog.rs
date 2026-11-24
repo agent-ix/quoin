@@ -365,6 +365,7 @@ mod tests {
                 evidence: None,
                 graph: None,
                 quire: None,
+                approval: None,
             },
         )
         .expect("catalog loads");
@@ -392,6 +393,7 @@ mod tests {
                 evidence: None,
                 graph: None,
                 quire: None,
+                approval: None,
             },
         )
         .expect("the duplicate module is ignored before semantic reading");

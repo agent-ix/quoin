@@ -14,6 +14,8 @@ use ix_trace_rs::trace;
 use std::path::Path;
 use std::process::{Command, Output};
 
+mod pack_support;
+
 const BINDING: &str = r#"{
   "schemaVersion": "clause-binding-v1",
   "clauseSet": {"authority": "quire", "id": "spec", "version": "1"},
@@ -25,10 +27,22 @@ const BINDING: &str = r#"{
 }"#;
 
 const FACTS: &str = r#"[{
-  "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://run/one"],
+  "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://runs/SUITE-1/one"],
   "attestation": {"attestedBy": "r", "authority": "lead",
     "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
 }]"#;
+
+/// Retain the run record the facts cite.
+fn retain_run(repo: &Path) {
+    let run = repo.join("spec/evidence/runs/SUITE-1");
+    std::fs::create_dir_all(&run).unwrap();
+    std::fs::write(run.join("one.json"), "{}").unwrap();
+}
+
+/// An IX home with the clause set of [`BINDING`] installed.
+fn installed_home() -> tempfile::TempDir {
+    pack_support::home_with_clause_set("quire", "spec", "1", &["C-1", "C-2"])
+}
 
 fn quoin(home: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
@@ -46,7 +60,8 @@ fn text(output: &Output) -> String {
 #[test]
 fn tc_3206_the_matrix_command_renders_recorded_facts_and_refuses_misuse() {
     let dir = tempfile::tempdir().unwrap();
-    let home = tempfile::tempdir().unwrap();
+    retain_run(dir.path());
+    let home = installed_home();
     let binding = dir.path().join("binding.json");
     let facts = dir.path().join("facts.json");
     std::fs::write(&binding, BINDING).unwrap();
@@ -85,7 +100,7 @@ fn tc_3206_the_matrix_command_renders_recorded_facts_and_refuses_misuse() {
     assert!(rendered.status.success(), "{rendered:?}");
     let report = text(&rendered);
     assert!(
-        report.contains("| C-1 | Applicable | Compliant | evidence://run/one | - | - |"),
+        report.contains("| C-1 | Applicable | Compliant | evidence://runs/SUITE-1/one | - | - |"),
         "{report}"
     );
     assert!(

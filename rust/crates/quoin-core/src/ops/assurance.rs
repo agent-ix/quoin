@@ -10,7 +10,9 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::capabilities::Capabilities;
 use crate::error::{CoreError, CoreErrorCode};
+use crate::ops::evidence::{ApprovalInputs, check_supplied_report, policy_for_binding};
 use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
@@ -193,6 +195,47 @@ pub struct RenderAuthoredArgumentPayload {
     pub rendered: String,
 }
 
+/// The store and engineering-assurance inputs a rendering operation takes so
+/// FR-211 can re-run its checks over a report it did not build.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct VerificationInputs {
+    #[serde(default)]
+    repo: Option<String>,
+    #[serde(default)]
+    approval: Option<ApprovalInputs>,
+}
+
+impl VerificationInputs {
+    /// Remove the two members from a request object and read them.
+    fn take_from(request: &mut serde_json::Value) -> Result<Self, serde_json::Error> {
+        let mut inputs = serde_json::Map::new();
+        if let Some(object) = request.as_object_mut() {
+            for key in ["repo", "approval"] {
+                if let Some(value) = object.remove(key) {
+                    inputs.insert(key.to_owned(), value);
+                }
+            }
+        }
+        serde_json::from_value(serde_json::Value::Object(inputs))
+    }
+}
+
+/// The request accepted by `assurance.render_discharge`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct RenderDischargeRequest {
+    /// The discharge report to render.
+    pub report: quoin_assurance::DischargeReport,
+    /// The repository holding the evidence store and the approval tags.
+    #[serde(default)]
+    pub repo: Option<String>,
+    /// The engineering-assurance inputs approval verification needs.
+    #[serde(default)]
+    pub approval: Option<ApprovalInputs>,
+}
+
 /// The payload `assurance.render_discharge` writes to stdout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -212,17 +255,34 @@ pub struct RenderDischargePayload {
 ///   [`MAX_BUILD_CASE_BYTES`].
 ///
 /// [`BuildAuthoredArgumentRequest`]: quoin_assurance::BuildAuthoredArgumentRequest
-pub fn build_authored_argument(request: &serde_json::Value) -> Result<Response, CoreError> {
+pub fn build_authored_argument(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     let op = "assurance.build_authored_argument";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
         return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
-    let input: quoin_assurance::BuildAuthoredArgumentRequest =
-        serde_json::from_value(request.clone()).map_err(|e| {
-            CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
-        })?;
+    let bad = |e: serde_json::Error| {
+        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
+    };
+    // The verification inputs are this operation's own; the rest is the
+    // library's request, which refuses unknown members itself.
+    let mut remainder = request.clone();
+    let inputs = VerificationInputs::take_from(&mut remainder).map_err(bad)?;
+    let mut input: quoin_assurance::BuildAuthoredArgumentRequest =
+        serde_json::from_value(remainder).map_err(bad)?;
+    if let Some(discharge) = input.discharge.take() {
+        input.discharge = Some(check_supplied_report(
+            op,
+            discharge,
+            inputs.repo.as_deref(),
+            inputs.approval.as_ref(),
+            capabilities,
+        )?);
+    }
 
     // The retained implementation's own refusals arrive here as one error
     // class carrying the authored message. They are `BadRequest` and not
@@ -280,7 +340,10 @@ pub fn render_authored_argument(request: &serde_json::Value) -> Result<Response,
 ///   [`MAX_BUILD_CASE_BYTES`].
 ///
 /// [`BuildDischargeRequest`]: quoin_assurance::BuildDischargeRequest
-pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreError> {
+pub fn build_discharge(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     let op = "assurance.build_discharge";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
@@ -292,9 +355,18 @@ pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreErro
             CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
         })?;
 
-    let report = quoin_assurance::build_discharge_report(&input).map_err(|e| {
-        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
-    })?;
+    let policy = policy_for_binding(capabilities.modules, &input.binding.clause_set, op)?;
+    let report = quoin_assurance::build_checked_discharge_report(
+        &input,
+        None,
+        &quoin_assurance::DischargeChecks {
+            policy: policy.as_ref(),
+            verifier: None,
+            offline: false,
+        },
+    )
+    .map_err(|e| CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op))?
+    .report;
 
     let payload = serde_json::to_value(report)
         .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
@@ -311,17 +383,26 @@ pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreErro
 ///   [`MAX_BUILD_CASE_BYTES`].
 ///
 /// [`DischargeReport`]: quoin_assurance::DischargeReport
-pub fn render_discharge(request: &serde_json::Value) -> Result<Response, CoreError> {
+pub fn render_discharge(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     let op = "assurance.render_discharge";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
         return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
-    let report: quoin_assurance::DischargeReport = serde_json::from_value(request.clone())
-        .map_err(|e| {
-            CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
-        })?;
+    let input: RenderDischargeRequest = serde_json::from_value(request.clone()).map_err(|e| {
+        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
+    })?;
+    let report = check_supplied_report(
+        op,
+        input.report,
+        input.repo.as_deref(),
+        input.approval.as_ref(),
+        capabilities,
+    )?;
 
     let payload = serde_json::to_value(RenderDischargePayload {
         rendered: quoin_assurance::render_discharge_report(&report),
@@ -341,6 +422,7 @@ mod tests {
 
     use super::*;
     use ix_cli_kit::exit::Outcome;
+    use ix_trace_rs::trace;
 
     /// The smallest `clause-binding-v1` report the retained reader accepts.
     ///
@@ -361,11 +443,14 @@ mod tests {
     /// REQUEST, not a refusal by this process, and the two exit differently.
     #[test]
     fn tc_447_320_a_contract_failure_exits_as_a_bad_request() {
-        let error = build_discharge(&serde_json::json!({
-            "binding": binding(),
-            "facts": [],
-            "asOf": "not-an-instant",
-        }))
+        let error = build_discharge(
+            &serde_json::json!({
+                "binding": binding(),
+                "facts": [],
+                "asOf": "not-an-instant",
+            }),
+            &Capabilities::none(),
+        )
         .unwrap_err();
         assert_eq!(error.code, CoreErrorCode::BadRequest);
         assert_eq!(error.code.outcome(), Outcome::Invalid);
@@ -379,12 +464,15 @@ mod tests {
     /// the request is what stops a caller's typo reading as a default.
     #[test]
     fn tc_447_321_an_unknown_request_key_is_refused() {
-        let error = build_authored_argument(&serde_json::json!({
-            "argument": {},
-            "decisions": [],
-            "asOf": "2026-01-01T00:00:00Z",
-            "typo": true,
-        }))
+        let error = build_authored_argument(
+            &serde_json::json!({
+                "argument": {},
+                "decisions": [],
+                "asOf": "2026-01-01T00:00:00Z",
+                "typo": true,
+            }),
+            &Capabilities::none(),
+        )
         .unwrap_err();
         assert_eq!(error.code, CoreErrorCode::BadRequest);
     }
@@ -393,7 +481,11 @@ mod tests {
     #[test]
     fn tc_447_322_an_oversized_request_is_refused_before_it_is_parsed() {
         let filler = "x".repeat(MAX_BUILD_CASE_BYTES + 1);
-        let error = render_discharge(&serde_json::json!({ "filler": filler })).unwrap_err();
+        let error = render_discharge(
+            &serde_json::json!({ "filler": filler }),
+            &Capabilities::none(),
+        )
+        .unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Refused);
         assert_eq!(error.code.outcome(), Outcome::Refused);
         assert_eq!(
@@ -410,13 +502,20 @@ mod tests {
     /// break the command that chains them, not this crate.
     #[test]
     fn tc_447_323_a_built_report_is_a_renderable_report() {
-        let built = build_discharge(&serde_json::json!({
-            "binding": binding(),
-            "facts": [],
-            "asOf": "2026-01-01T00:00:00Z",
-        }))
+        let built = build_discharge(
+            &serde_json::json!({
+                "binding": binding(),
+                "facts": [],
+                "asOf": "2026-01-01T00:00:00Z",
+            }),
+            &Capabilities::none(),
+        )
         .unwrap();
-        let rendered = render_discharge(&built.payload).unwrap();
+        let rendered = render_discharge(
+            &serde_json::json!({ "report": built.payload }),
+            &Capabilities::none(),
+        )
+        .unwrap();
         assert!(
             rendered.payload["rendered"]
                 .as_str()
@@ -461,7 +560,7 @@ mod tests {
             quoin_assurance::build_authored_argument_view(&input).unwrap_err();
         // Named so the class is identified by its type rather than its message.
         let quoin_assurance::ArgumentError(_) = raised;
-        let mapped = build_authored_argument(&argument_request).unwrap_err();
+        let mapped = build_authored_argument(&argument_request, &Capabilities::none()).unwrap_err();
         assert_eq!(mapped.code, CoreErrorCode::BadRequest);
         assert_eq!(mapped.code.outcome(), Outcome::Invalid);
 
@@ -472,11 +571,108 @@ mod tests {
         });
         let input: quoin_assurance::BuildDischargeRequest =
             serde_json::from_value(discharge_request.clone()).unwrap();
-        let raised: quoin_assurance::DischargeError =
-            quoin_assurance::build_discharge_report(&input).unwrap_err();
-        let quoin_assurance::DischargeError(_) = raised;
-        let mapped = build_discharge(&discharge_request).unwrap_err();
+        let raised = quoin_assurance::build_checked_discharge_report(
+            &input,
+            None,
+            &quoin_assurance::DischargeChecks {
+                policy: None,
+                verifier: None,
+                offline: false,
+            },
+        )
+        .unwrap_err();
+        // Named so the class is identified by its type rather than its message.
+        assert!(
+            matches!(
+                raised,
+                quoin_assurance::DischargeStoreError::Discharge(quoin_assurance::DischargeError(_))
+            ),
+            "a bad asOf is a discharge error, not {raised:?}"
+        );
+        let mapped = build_discharge(&discharge_request, &Capabilities::none()).unwrap_err();
         assert_eq!(mapped.code, CoreErrorCode::BadRequest);
         assert_eq!(mapped.code.outcome(), Outcome::Invalid);
+    }
+
+    /// A supplied report is re-checked: with no store a direct fact is open,
+    /// and with no installed module declaring its clause set it is open too.
+    #[trace("FR-211-AC-13", "FR-211-AC-22", "FR-211-AC-24")]
+    #[test]
+    fn a_supplied_report_without_a_store_leaves_a_direct_fact_open() {
+        let mut binding = binding();
+        binding["clauses"] = serde_json::json!([{
+            "clauseId": "C-1", "force": "mandatory", "outcome": "binding",
+            "reasons": [], "expectedOutputs": []
+        }]);
+        let fact = serde_json::json!({
+            "kind": "direct", "clauseId": "C-1", "evidenceRefs": ["evidence://runs/S-1/x"],
+            "attestation": {"attestedBy": "a", "authority": "b",
+                            "attestedAt": "2026-01-01T00:00:00Z",
+                            "expiresAt": "2027-01-01T00:00:00Z"}
+        });
+        let request = serde_json::json!(
+            {"binding": binding, "facts": [fact], "asOf": "2026-06-01T00:00:00Z"}
+        );
+
+        // No installed module declares the clause set.
+        let built = build_discharge(&request, &Capabilities::none()).unwrap();
+        assert!(
+            built.payload["binding"]["open"][0]["reason"]
+                .as_str()
+                .unwrap()
+                .starts_with("no-clause-policy")
+        );
+
+        // The clause set is declared, so only the missing store holds it open.
+        let mut modules = crate::ops::modules::FakeHost::with_module("spec-pack");
+        modules.policies = vec![(
+            quoin_quire::ClauseSetRef {
+                authority: quoin_quire::ClauseSetAuthority::new("quire").unwrap(),
+                id: quoin_quire::ClauseSetId::new("spec").unwrap(),
+                version: quoin_quire::ClauseSetVersion::new("1").unwrap(),
+            },
+            quoin_quire_types::SetPolicy::from([(
+                "C-1".to_owned(),
+                quoin_quire_types::ClausePolicy::default(),
+            )]),
+        )];
+        let capabilities = Capabilities {
+            modules: Some(&modules),
+            ..Capabilities::none()
+        };
+        let built = build_discharge(&request, &capabilities).unwrap();
+        assert_eq!(built.payload["binding"]["open"][0]["clauseId"], "C-1");
+        assert!(
+            built.payload["binding"]["open"][0]["reason"]
+                .as_str()
+                .unwrap()
+                .starts_with("no-store")
+        );
+        // A report that claims the clause is direct is re-checked as well.
+        let mut forged = built.payload.clone();
+        let entry = forged["binding"]["open"][0].clone();
+        forged["binding"]["open"] = serde_json::json!([]);
+        forged["binding"]["direct"] = serde_json::json!([{
+            "clauseId": "C-1", "force": "mandatory", "state": "direct",
+            "expectedOutputs": [], "fact": entry["fact"].clone(),
+            "verifiedApprover": "mallory"
+        }]);
+        let rendered =
+            render_discharge(&serde_json::json!({ "report": forged }), &capabilities).unwrap();
+        let text = rendered.payload["rendered"].as_str().unwrap();
+        assert!(text.contains("no-store"), "{text}");
+        assert!(!text.contains("mallory"), "{text}");
+
+        // An entry with no fact is open, not discharged.
+        let mut factless = built.payload;
+        let mut entry = factless["binding"]["open"][0].clone();
+        entry["state"] = "direct".into();
+        entry.as_object_mut().unwrap().remove("fact");
+        factless["binding"]["open"] = serde_json::json!([]);
+        factless["binding"]["direct"] = serde_json::json!([entry]);
+        let rendered =
+            render_discharge(&serde_json::json!({ "report": factless }), &capabilities).unwrap();
+        let text = rendered.payload["rendered"].as_str().unwrap();
+        assert!(text.contains("no-fact"), "{text}");
     }
 }

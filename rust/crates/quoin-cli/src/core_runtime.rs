@@ -64,6 +64,35 @@ pub(crate) fn invoke_refusable(
     }
 }
 
+/// Invoke an operation that verifies approvals. A rejected allowed-signers file
+/// (exit 2) and an unavailable verifier or a failing fact (exit 3) are returned
+/// as payload-free responses so the shell exits with that status.
+pub(crate) fn invoke_verifying(
+    operation: &str,
+    request: &serde_json::Value,
+) -> Result<Response, String> {
+    match dispatch(operation, request, &settings()) {
+        Err(error)
+            if matches!(
+                error.context.get("refusal").map(String::as_str),
+                Some(
+                    "allowed-signers-invalid"
+                        | "approval-verifier-unavailable"
+                        | "discharge-facts-failed"
+                )
+            ) =>
+        {
+            Ok(Response {
+                payload: serde_json::Value::Null,
+                diagnostics: vec![Diagnostic::from(&error)],
+                outcome: error.outcome(),
+            })
+        }
+        Err(error) => Err(failed(operation, &error)),
+        Ok(response) => Ok(response),
+    }
+}
+
 /// Invoke an operation whose repository refusal is the command's own status.
 pub(crate) fn invoke_declining(
     operation: &str,

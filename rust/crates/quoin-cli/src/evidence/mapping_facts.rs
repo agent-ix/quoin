@@ -17,7 +17,7 @@ use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_assurance::{
     DischargeAttestation, DischargeFact, DispositionDecision, RecordDischargeRequest,
-    read_discharge_facts, record_discharge_facts,
+    read_discharge_facts, validate_discharge_facts,
 };
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_evidence::{DiskEvidence, EvidenceError, EvidenceSource, StoreLock};
@@ -89,6 +89,9 @@ pub(super) fn command() -> Command {
                 .required(true)
                 .help("JSON object with attestedBy, authority, attestedAt and expiresAt, written by a person."),
         )
+        .arg(Arg::new("evidence").long("evidence").required(true).help(
+            "JSON object mapping a control's ix:// id to a non-empty array of evidence:// refs, written by a person.",
+        ))
         .arg(
             Arg::new("spec")
                 .long("spec")
@@ -139,8 +142,56 @@ fn propose_from(arguments: &ArgMatches) -> Result<Proposal, String> {
         .get_one::<String>("spec")
         .map_or_else(|| PathBuf::from("spec"), PathBuf::from);
     let corpus = read_corpus(&spec)?;
+    let evidence_source = required(arguments, "evidence")?;
+    let evidence = read_evidence(&evidence_source, &corpus)?;
     let stored = arguments.get_one::<String>("repo").map(DiskEvidence::new);
-    propose(&binding, &attestation, &corpus, stored.as_ref())
+    propose(&binding, &attestation, &corpus, &evidence, stored.as_ref())
+}
+
+/// The `--evidence` refs of each control, by control id.
+type EvidenceRefs = BTreeMap<String, Vec<String>>;
+
+/// Read `--evidence`: an object mapping a control's `ix://` id to a non-empty
+/// array of strings. Every refusal names the file and the key.
+fn read_evidence(source: &str, corpus: &Corpus) -> Result<EvidenceRefs, String> {
+    let value = crate::discharge::json_input(source, "--evidence")
+        .map_err(|error| format!("--evidence {source}: {error}"))?;
+    let Some(object) = value.as_object() else {
+        return Err(format!("--evidence {source} is not a JSON object"));
+    };
+    let mut refs = EvidenceRefs::new();
+    for (key, entry) in object {
+        let Some(control) = key.strip_prefix("ix://") else {
+            return Err(format!(
+                "--evidence {source}: key {key} is not an ix:// control id"
+            ));
+        };
+        if !corpus
+            .controls
+            .iter()
+            .any(|candidate| candidate.id == control)
+        {
+            return Err(format!(
+                "--evidence {source}: key {key} names no control in --spec"
+            ));
+        }
+        let list: Option<Vec<String>> =
+            entry
+                .as_array()
+                .filter(|list| !list.is_empty())
+                .and_then(|list| {
+                    list.iter()
+                        .map(|item| item.as_str().map(str::to_owned))
+                        .collect()
+                });
+        let Some(list) = list else {
+            return Err(format!(
+                "--evidence {source}: key {key} is not a non-empty array of strings"
+            ));
+        };
+        refs.insert(control.to_owned(), list);
+    }
+    Ok(refs)
 }
 
 /// A refusal: exit status 2, one diagnostic and nothing on stdout.
@@ -410,6 +461,7 @@ fn propose(
     binding: &ClauseBindingReport,
     attestation: &Value,
     corpus: &Corpus,
+    evidence: &EvidenceRefs,
     store: Option<&DiskEvidence>,
 ) -> Result<Proposal, String> {
     let attestation_contract = serde_json::from_value::<DischargeAttestation>(attestation.clone())
@@ -437,13 +489,17 @@ fn propose(
             .collect();
         effective.sort_unstable();
         effective.dedup();
-        if effective.is_empty() {
+        let refs: BTreeSet<&String> = effective
+            .iter()
+            .filter_map(|id| evidence.get(*id))
+            .flatten()
+            .collect();
+        if refs.is_empty() {
             let mut ids: Vec<&str> = controls.iter().map(|(id, _)| *id).collect();
             ids.sort_unstable();
             ids.dedup();
             report.push(format!("open {clause} {}", ids.join(" ")));
         } else {
-            let refs: Vec<String> = effective.iter().map(|id| format!("ix://{id}")).collect();
             facts.insert(
                 clause,
                 json!({
@@ -508,7 +564,7 @@ fn stale(
     store: &DiskEvidence,
     report: &mut Vec<String>,
 ) -> Result<(), String> {
-    let held = read_discharge_facts(store, &binding.clause_set)
+    let held = read_discharge_facts(store, &binding.clause_set, None)
         .map_err(|error| format!("the stored facts cannot be read: {error}"))?;
     for fact in held {
         if let DischargeFact::Direct(direct) = fact {
@@ -568,14 +624,12 @@ fn check_identifiers(
     store: Option<&DiskEvidence>,
     set: &str,
 ) -> Result<(), String> {
-    let mut sink = DryRun(store);
-    record_discharge_facts(
-        &mut sink,
+    validate_discharge_facts(
+        &DryRun(store),
         &RecordDischargeRequest {
             binding: binding.clone(),
             facts: facts.to_vec(),
         },
     )
-    .map(|_| ())
     .map_err(|error| format!("set {set}: {error}"))
 }

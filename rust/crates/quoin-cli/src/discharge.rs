@@ -8,7 +8,7 @@ use std::io::Read as _;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
-use crate::core_runtime::{invoke, invoke_refusable};
+use crate::core_runtime::{invoke, invoke_refusable, invoke_verifying};
 use crate::evidence::{json_arg, repo_arg};
 
 /// Maximum size of one JSON file or stdin input accepted by discharge adapters.
@@ -30,9 +30,11 @@ pub(crate) fn command() -> Command {
                 .help("JSON array of discharge facts."),
         )
         .arg(Arg::new("repo").long("repo").help(
-            "Read the facts stored for the binding report's clause set in this \
-             repository's evidence store, instead of --facts.",
+            "The repository whose evidence store is read. Without --facts it supplies \
+             the facts stored for the binding report's clause set; with --facts it \
+             supplies only the store that resolves their evidence and approvals.",
         ))
+        .args(crate::formal_rules::trust_arguments())
         .arg(
             Arg::new("as-of")
                 .long("as-of")
@@ -83,7 +85,58 @@ pub(crate) fn record_command() -> Command {
                 .help("JSON array of discharge facts, or - for stdin."),
         )
         .arg(repo_arg().help("Repository root. Defaults to the working directory."))
+        .args(crate::formal_rules::trust_arguments())
         .arg(json_arg().help("Emit the written paths as JSON."))
+}
+
+pub(crate) fn approval_subject_command() -> Command {
+    Command::new("approval-subject")
+        .about("Print the record id and digest an approval tag over a discharge fact signs")
+        .arg(
+            Arg::new("binding")
+                .long("binding")
+                .required(true)
+                .help("Quire clause-binding-v1 JSON path, or - for stdin."),
+        )
+        .arg(
+            Arg::new("fact")
+                .long("fact")
+                .required(true)
+                .help("One discharge fact as JSON, path or - for stdin."),
+        )
+}
+
+pub(crate) fn approval_subject(arguments: &ArgMatches) -> Result<Response, String> {
+    let binding_source = required(arguments, "binding")?;
+    let fact_source = required(arguments, "fact")?;
+    if binding_source == "-" && fact_source == "-" {
+        return Err("--binding and --fact cannot both read stdin".to_owned());
+    }
+    let response = invoke(
+        "evidence.approval_subject",
+        &serde_json::json!({
+            "binding": json_input(&binding_source, "clause binding")?,
+            "fact": json_input(&fact_source, "discharge fact")?,
+        }),
+    )?;
+    if !response.outcome.carries_payload() {
+        return Ok(response);
+    }
+    let field = |name: &str| {
+        response
+            .payload
+            .get(name)
+            .and_then(serde_json::Value::as_str)
+            .map(|value| serde_json::Value::String(value.to_owned()).to_string())
+            .ok_or_else(|| format!("evidence.approval_subject did not return {name}"))
+    };
+    Ok(Response::ok(serde_json::json!({
+        "rendered": format!(
+            "{{\"record_id\":{},\"record_digest\":{}}}",
+            field("record_id")?,
+            field("record_digest")?
+        )
+    })))
 }
 
 pub(crate) fn record(arguments: &ArgMatches) -> Result<Response, String> {
@@ -96,12 +149,13 @@ pub(crate) fn record(arguments: &ArgMatches) -> Result<Response, String> {
     if !facts.is_array() {
         return Err("discharge facts must be a JSON array".to_owned());
     }
-    let response = invoke(
+    let response = invoke_verifying(
         "evidence.record_discharge",
         &serde_json::json!({
             "repo": required(arguments, "repo")?,
             "binding": json_input(&binding_source, "clause binding")?,
             "facts": facts,
+            "approval": approval_inputs(arguments)?,
         }),
     )?;
     if !response.outcome.carries_payload() {
@@ -142,9 +196,6 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     if arguments.contains_id("context") {
         return Err("--context needs --pack: the context is evaluated against a pack".to_owned());
     }
-    if arguments.contains_id("facts") && arguments.contains_id("repo") {
-        return Err("--facts and --repo cannot be combined".to_owned());
-    }
     let binding_source = required(arguments, "binding")?;
     let binding = json_input(&binding_source, "clause binding")?;
     let as_of = required(arguments, "as-of")?;
@@ -156,9 +207,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             .get_one::<String>("repo")
             .ok_or_else(|| "--inward needs --repo: the obligations are derived from the binding report and the facts from the store".to_owned())?;
         return view(
-            &invoke(
+            &invoke_verifying(
                 "evidence.inward_completeness",
-                &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of }),
+                &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of, "facts": facts_input(arguments, &binding_source)?, "approval": approval_inputs(arguments)? }),
             )?,
             arguments.get_flag("json"),
             ("completeness", "evidence.inward_completeness"),
@@ -169,32 +220,33 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             "--rmm needs --repo: the facts are read from the evidence store".to_owned()
         })?;
         return view(
-            &invoke(
+            &invoke_verifying(
                 "evidence.requirements_matrix",
-                &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of }),
+                &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of, "facts": facts_input(arguments, &binding_source)?, "approval": approval_inputs(arguments)? }),
             )?,
             arguments.get_flag("json"),
             ("matrix", "evidence.requirements_matrix"),
         );
     }
-    let built = if let Some(repo) = arguments.get_one::<String>("repo") {
-        invoke(
+    let approval = approval_inputs(arguments)?;
+    let repo = arguments.get_one::<String>("repo");
+    if approval.is_some() && repo.is_none() {
+        return Err(
+            "--engineering-assurance, --allowed-signers and the gitsign flags need --repo: the approval tags live in that repository"
+                .to_owned(),
+        );
+    }
+    let facts = facts_input(arguments, &binding_source)?;
+    let built = match (repo, &facts) {
+        (Some(repo), _) => invoke_verifying(
             "evidence.discharge_report",
-            &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of }),
-        )?
-    } else {
-        let facts_source = required(arguments, "facts")?;
-        if binding_source == "-" && facts_source == "-" {
-            return Err("--binding and --facts cannot both read stdin".to_owned());
-        }
-        let facts = json_input(&facts_source, "discharge facts")?;
-        if !facts.is_array() {
-            return Err("discharge facts must be a JSON array".to_owned());
-        }
-        invoke(
+            &serde_json::json!({ "repo": repo, "binding": binding, "asOf": as_of, "facts": facts, "approval": approval }),
+        )?,
+        (None, Some(facts)) => invoke(
             "assurance.build_discharge",
             &serde_json::json!({ "binding": binding, "facts": facts, "asOf": as_of }),
-        )?
+        )?,
+        (None, None) => return Err("--facts or --repo is required".to_owned()),
     };
     if !built.outcome.carries_payload() {
         return Ok(built);
@@ -203,7 +255,10 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     if arguments.get_flag("json") {
         return Ok(render_json(built));
     }
-    let rendered = invoke("assurance.render_discharge", &built.payload)?;
+    let rendered = invoke_verifying(
+        "assurance.render_discharge",
+        &serde_json::json!({ "report": built.payload, "repo": repo, "approval": approval }),
+    )?;
     if !rendered.outcome.carries_payload() {
         return Ok(rendered);
     }
@@ -252,6 +307,7 @@ fn pack_report(arguments: &ArgMatches, pack: &str) -> Result<Response, String> {
                 "repo": repo,
                 "asOf": required(arguments, "as-of")?,
                 "context": context,
+                "approval": approval_inputs(arguments)?,
             }),
         )?,
         arguments.get_flag("json"),
@@ -293,6 +349,65 @@ fn render_json(response: Response) -> Response {
         },
         Err(_) => response,
     }
+}
+
+/// The `--facts` array, when given; `-` reads stdin and cannot share it with
+/// the binding.
+fn facts_input(
+    arguments: &ArgMatches,
+    binding_source: &str,
+) -> Result<Option<serde_json::Value>, String> {
+    let Some(source) = arguments.get_one::<String>("facts") else {
+        return Ok(None);
+    };
+    if binding_source == "-" && source == "-" {
+        return Err("--binding and --facts cannot both read stdin".to_owned());
+    }
+    let facts = json_input(source, "discharge facts")?;
+    if !facts.is_array() {
+        return Err("discharge facts must be a JSON array".to_owned());
+    }
+    Ok(Some(facts))
+}
+
+/// The engineering-assurance inputs of FR-188 as a request member: absent when
+/// no flag was given, an error for a partial set.
+pub(crate) fn approval_inputs(arguments: &ArgMatches) -> Result<Option<serde_json::Value>, String> {
+    let flag = |name: &str| arguments.get_one::<String>(name).cloned();
+    let (ea, signers) = (flag("engineering-assurance"), flag("allowed-signers"));
+    let gitsign = [
+        flag("gitsign-certificate-identity"),
+        flag("gitsign-certificate-oidc-issuer"),
+        flag("gitsign-principal"),
+    ];
+    let supplied = gitsign.iter().flatten().count();
+    if supplied != 0 && supplied != 3 {
+        return Err("the gitsign flags must be supplied together".to_owned());
+    }
+    let (ea, signers) = match (ea, signers) {
+        (None, None) if supplied == 0 => return Ok(None),
+        (Some(ea), Some(signers)) => (ea, signers),
+        _ => {
+            return Err(
+                "--engineering-assurance and --allowed-signers must be supplied together"
+                    .to_owned(),
+            );
+        }
+    };
+    let mut inputs = serde_json::Map::new();
+    inputs.insert("engineeringAssurance".to_owned(), ea.into());
+    inputs.insert("allowedSigners".to_owned(), signers.into());
+    if let [Some(identity), Some(issuer), Some(principal)] = gitsign {
+        inputs.insert(
+            "gitsign".to_owned(),
+            serde_json::json!({
+                "certificateIdentity": identity,
+                "certificateOidcIssuer": issuer,
+                "principal": principal,
+            }),
+        );
+    }
+    Ok(Some(serde_json::Value::Object(inputs)))
 }
 
 fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {

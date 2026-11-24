@@ -67,13 +67,21 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
+/// An empty IX home, so the installed modules of the machine running the test
+/// never take part in an operation that reads the module set.
+fn empty_home() -> PathBuf {
+    let home = std::env::temp_dir().join(format!("quoin-core-empty-home-{}", std::process::id()));
+    std::fs::create_dir_all(&home).expect("the empty home is created");
+    home
+}
+
 fn run(op: &str, stdin: &str) -> Run {
     let request: Value = serde_json::from_str(stdin).expect("census request is JSON");
     let response = dispatch(
         op,
         &request,
         &RuntimeSettings {
-            ix_home: None,
+            ix_home: Some(empty_home()),
             semantic_root: Some(semantic_root()),
         },
     );
@@ -301,7 +309,10 @@ fn tc_447_603_a_discharge_is_built_and_then_rendered() {
     assert_eq!(report["binding"]["open"][0]["clauseId"], "C-1");
     assert_eq!(report["binding"]["open"][0]["reason"], "no discharge fact");
 
-    let rendered = ok(&run("assurance.render_discharge", &report.to_string()));
+    let rendered = ok(&run(
+        "assurance.render_discharge",
+        &json!({"report": report}).to_string(),
+    ));
     let markdown = rendered["rendered"].as_str().unwrap();
     assert!(
         markdown.starts_with("# Clause discharge: quire/spec@1"),
@@ -310,6 +321,72 @@ fn tc_447_603_a_discharge_is_built_and_then_rendered() {
     assert!(
         markdown.contains("- `C-1` — mandatory; no declared outputs; no discharge fact"),
         "{markdown}"
+    );
+}
+
+/// A discharge report handed to `assurance.build_authored_argument` is
+/// re-checked: a clause it lists as direct, with an approver it names, is open
+/// when no installed module declares its clause set, and the view carries the
+/// checked report (FR-211-AC-13, AC-16, AC-22).
+#[trace("FR-211-AC-13", "FR-211-AC-16", "FR-211-AC-22")]
+#[test]
+fn tc_211_an_authored_argument_rechecks_the_discharge_report_it_is_given() {
+    let binding = json!({
+        "schemaVersion": "clause-binding-v1",
+        "clauseSet": { "authority": "quire", "id": "spec", "version": "1" },
+        "context": {},
+        "clauses": [{
+            "clauseId": "C-1", "force": "mandatory", "outcome": "binding",
+            "reasons": [], "expectedOutputs": [],
+        }],
+    });
+    let report = ok(&run(
+        "assurance.build_discharge",
+        &json!({"binding": binding, "facts": [], "asOf": "2026-01-01T00:00:00Z"}).to_string(),
+    ));
+    // A report that claims the clause is discharged by a fact, as a forger
+    // would write it.
+    let mut forged = report;
+    forged["binding"]["open"] = json!([]);
+    forged["binding"]["direct"] = json!([{
+        "clauseId": "C-1", "force": "mandatory", "state": "direct",
+        "expectedOutputs": [],
+        "fact": {
+            "kind": "direct", "clauseId": "C-1",
+            "evidenceRefs": ["evidence://runs/SUITE-1/one"],
+            "attestation": {"attestedBy": "a", "authority": "b",
+                            "attestedAt": "2026-01-01T00:00:00Z",
+                            "expiresAt": "2027-01-01T00:00:00Z"},
+        },
+        "verifiedApprover": "mallory",
+    }]);
+    let repo = tempfile::tempdir().unwrap();
+    let view = ok(&run(
+        "assurance.build_authored_argument",
+        &json!({
+            "argument": argument(),
+            "decisions": [],
+            "asOf": "2026-01-01T00:00:00Z",
+            "discharge": forged,
+            "repo": repo.path(),
+        })
+        .to_string(),
+    ));
+    let discharge = &view["discharge"]["binding"];
+    assert_eq!(discharge["direct"], json!([]), "{view}");
+    assert!(
+        discharge["open"][0]["reason"]
+            .as_str()
+            .unwrap()
+            .starts_with("no-clause-policy"),
+        "{view}"
+    );
+    assert!(discharge["open"][0].get("verifiedApprover").is_none());
+    assert!(
+        view["topClaim"]["reasons"]
+            .to_string()
+            .contains("open binding clauses"),
+        "{view}"
     );
 }
 

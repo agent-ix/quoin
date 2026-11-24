@@ -121,6 +121,11 @@ const OPS_SOURCES: &[(&str, &str, &str)] = &[
     ),
     (
         "evidence",
+        "evidence/verification.rs",
+        include_str!("../ops/evidence/verification.rs"),
+    ),
+    (
+        "evidence",
         "evidence/wire.rs",
         include_str!("../ops/evidence/wire.rs"),
     ),

@@ -9,6 +9,7 @@
 
 use std::path::{Component, Path, PathBuf};
 
+use quoin_assurance::{ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier};
 use quoin_auditor::catalog::load_method_catalog_from;
 use quoin_auditor::{
     DiskModuleCatalogSource, ModuleRoot as AuditorModuleRoot, load_method_catalog,
@@ -29,8 +30,8 @@ use quoin_semantic::{
 };
 
 use crate::capabilities::{
-    Capabilities, CatalogHost, ChangeAssuranceHost, EvidenceHost, ModuleHost, QuireHost,
-    SemanticHost,
+    ApprovalHost, ApprovalSetup, Capabilities, CatalogHost, ChangeAssuranceHost, EvidenceHost,
+    ModuleHost, QuireHost, SemanticHost,
 };
 use crate::dispatch::dispatch as dispatch_request;
 use crate::error::CoreError;
@@ -66,6 +67,7 @@ pub fn dispatch(
     let evidence = HostEvidence;
     let graph = OsGraphInputReader;
     let quire = HostQuire;
+    let approval = HostApproval;
     let capabilities = Capabilities::with_hosts(
         &modules,
         &catalog,
@@ -74,6 +76,7 @@ pub fn dispatch(
         &evidence,
         &graph,
         &quire,
+        &approval,
     );
     dispatch_request(operation, request, &capabilities)
 }
@@ -368,17 +371,17 @@ impl ModuleHost for HostModules {
             .collect()
     }
 
-    fn clause_approval_requirements(
+    fn clause_policies(
         &self,
         module: &InstalledModule,
         installed_modules: &[InstalledModule],
     ) -> Result<
-        std::collections::BTreeMap<quoin_quire::ClauseSetRef, std::collections::BTreeSet<String>>,
+        std::collections::BTreeMap<quoin_quire::ClauseSetRef, quoin_quire_types::SetPolicy>,
         String,
     > {
         let root = module_root(module)?;
         let roots = installed_module_roots(installed_modules)?;
-        quoin_quire::clauses::approval_required_clauses_in_module_set(&root, &roots)
+        quoin_quire::clauses::clause_policies_in_module_set(&root, &roots)
             .map_err(|error| error.to_string())
     }
 
@@ -557,6 +560,139 @@ impl EvidenceHost for HostEvidence {
 
     fn store_root(&self, repo: &Path) -> PathBuf {
         DiskEvidence::new(repo).root().to_path_buf()
+    }
+}
+
+/// The production [`ApprovalHost`]: one `engineering-assurance approval-verify`
+/// process per verification, request on stdin, result on stdout.
+struct HostApproval;
+
+impl ApprovalHost for HostApproval {
+    fn verifier<'a>(&'a self, setup: &'a ApprovalSetup) -> Box<dyn ApprovalVerifier + 'a> {
+        Box::new(ProcessApprovalVerifier { setup })
+    }
+}
+
+/// Run one `engineering-assurance` subcommand with `request` on stdin and
+/// return its finished output, whatever its exit status.
+///
+/// # Errors
+/// A description of why the process could not be started, fed or awaited.
+pub fn engineering_assurance_call(
+    executable: &Path,
+    subcommand: &str,
+    request: &serde_json::Value,
+) -> Result<std::process::Output, String> {
+    use std::io::Write as _;
+    use std::process::{Command, Stdio};
+
+    let mut child = Command::new(executable)
+        .args([subcommand, "--request", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("engineering-assurance is unavailable: {error}"))?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| "engineering-assurance stdin is unavailable".to_owned())?
+        .write_all(request.to_string().as_bytes())
+        .map_err(|error| error.to_string())?;
+    child.wait_with_output().map_err(|error| error.to_string())
+}
+
+struct ProcessApprovalVerifier<'a> {
+    setup: &'a ApprovalSetup,
+}
+
+impl ProcessApprovalVerifier<'_> {
+    fn request(&self, request: &ApprovalRequest<'_>) -> serde_json::Value {
+        let mut document = serde_json::json!({
+            "protocol": "engineering-assurance.approval-verify-request/v1",
+            "repository": self.setup.repository,
+            "tag": request.tag,
+            "record_id": request.record_id,
+            "record_digest": request.record_digest,
+            "allowed_signers": self.setup.allowed_signers,
+        });
+        if let (Some([identity, issuer, principal]), Some(object)) =
+            (&self.setup.gitsign, document.as_object_mut())
+        {
+            object.insert(
+                "gitsign".to_owned(),
+                serde_json::json!({
+                    "certificate_identity": identity,
+                    "certificate_oidc_issuer": issuer,
+                    "principal": principal,
+                }),
+            );
+        }
+        document
+    }
+}
+
+impl ApprovalVerifier for ProcessApprovalVerifier<'_> {
+    fn verify(&self, request: &ApprovalRequest<'_>) -> Result<ApprovalVerdict, ApprovalRefusal> {
+        let unavailable = |detail: String| ApprovalRefusal::Unavailable(detail);
+        let output = engineering_assurance_call(
+            &self.setup.engineering_assurance,
+            "approval-verify",
+            &self.request(request),
+        )
+        .map_err(unavailable)?;
+        let result: serde_json::Value =
+            serde_json::from_slice(&output.stdout).unwrap_or(serde_json::Value::Null);
+        if !output.status.success() {
+            let text = |member: &str| {
+                result
+                    .get(member)
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("")
+            };
+            let code = text("code");
+            let detail = format!(
+                "{code}: {}; {}",
+                text("message"),
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+            return Err(if code == "approval_verify_allowed_signers_invalid" {
+                ApprovalRefusal::AllowedSignersInvalid(detail)
+            } else {
+                unavailable(detail)
+            });
+        }
+        if result.get("protocol").and_then(serde_json::Value::as_str)
+            != Some("engineering-assurance.approval-verify-result/v1")
+        {
+            return Err(unavailable(
+                "engineering-assurance returned an unsupported approval result".to_owned(),
+            ));
+        }
+        let status = result
+            .get("status")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| unavailable("the approval result carries no status".to_owned()))?
+            .to_owned();
+        let meaning = match result.get("meaning").and_then(serde_json::Value::as_array) {
+            None => Vec::new(),
+            Some(values) => values
+                .iter()
+                .map(|value| value.as_str().map(str::to_owned))
+                .collect::<Option<Vec<_>>>()
+                .ok_or_else(|| {
+                    unavailable("the approval result's meaning holds a non-string value".to_owned())
+                })?,
+        };
+        let approver = result
+            .get("approver")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
+        Ok(ApprovalVerdict {
+            status,
+            meaning,
+            approver,
+        })
     }
 }
 

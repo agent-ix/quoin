@@ -13,11 +13,14 @@ use std::path::{Path, PathBuf};
 
 use ix_trace_rs::trace;
 use quoin_assurance::{
-    BuildDischargeRequest, DischargeReport, DispositionDecision, build_discharge_report,
+    BuildDischargeRequest, DischargeChecks, DischargeReport, DispositionDecision,
+    build_checked_discharge_report,
 };
 use quoin_evidence::adapters::{AdapterSelection, parse_cargo_deny, select_finding_adapter};
+use quoin_evidence::source::{EvidenceSource, MemoryEvidence};
 use quoin_evidence::types::FindingRecord;
 use quoin_evidence::{STORE_SCHEMA_VERSION, SuiteId};
+use quoin_quire_types::{ClausePolicy, SetPolicy};
 use serde_json::{Value, json};
 
 use super::{
@@ -181,14 +184,34 @@ pub(in crate::soup) fn discharge_with(fact: &Value) -> DischargeReport {
             disposition("C-OLD", "2026-01-01T00:00:00.000Z", "2026-02-01T00:00:00.000Z"),
             {
                 "kind": "direct", "clauseId": "C-DIRECT",
-                "evidenceRefs": ["evidence://run/one"],
+                "evidenceRefs": ["evidence://runs/SUITE-1/one"],
                 "attestation": attestation("2026-08-01T00:00:00.000Z", "2026-09-01T00:00:00.000Z")
             }
         ],
         "asOf": "2026-08-15T00:00:00.000Z"
     }))
     .unwrap();
-    build_discharge_report(&request).unwrap()
+    // Every clause of the set declares nothing, and the one run the direct
+    // fact cites is retained.
+    let policy: SetPolicy = request
+        .binding
+        .clauses
+        .iter()
+        .map(|clause| (clause.clause_id.clone(), ClausePolicy::default()))
+        .collect();
+    let mut store = MemoryEvidence::new();
+    store.write("runs/SUITE-1/one.json", b"{}").unwrap();
+    build_checked_discharge_report(
+        &request,
+        Some(&store),
+        &DischargeChecks {
+            policy: Some(&policy),
+            verifier: None,
+            offline: false,
+        },
+    )
+    .unwrap()
+    .report
 }
 
 fn anyhow_audit(timestamp: &str) -> FindingRecord {

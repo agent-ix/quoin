@@ -29,4 +29,5 @@ serde_json = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
 
 [dev-dependencies]
+quoin-quire-types = { workspace = true }
 tempfile = { workspace = true }

@@ -11,17 +11,21 @@
 use std::path::Path;
 
 use quoin_assurance::{
-    ClauseApprovalPolicy, DischargeStoreError, RecordDischargeRequest,
-    build_pack_requirements_mapping, build_requirements_mapping,
-    discharge_report_from_store_with_approval_requirements,
-    inward_completeness_from_store_with_approval_requirements,
-    record_discharge_facts_with_approval_requirements, render_inward_completeness,
-    render_pack_requirements_mapping, render_requirements_mapping,
+    BuildDischargeRequest, ClauseSetPolicy, DischargeChecks, DischargeStoreError, PackChecks,
+    RecordDischargeRequest, build_checked_discharge_report, build_pack_requirements_mapping,
+    build_requirements_mapping, discharge_report_from_store, record_discharge_facts,
+    render_inward_completeness, render_pack_requirements_mapping, render_requirements_mapping,
 };
+use quoin_evidence::EvidenceSource;
 use quoin_quire_types::ClauseBindingReport;
+
+use crate::capabilities::ApprovalSetup;
 use serde::{Deserialize, Serialize};
 
 use super::taxonomy::map_error;
+use super::verification::{
+    ApprovalInputs, approval_setup, policy_for_binding, store_error_context, verifier_for,
+};
 use super::{absolute, bound, check_scalar, host, parse, value};
 use crate::capabilities::Capabilities;
 use crate::error::{CoreError, CoreErrorCode};
@@ -42,6 +46,17 @@ pub struct DischargeReportRequest {
     pub binding: ClauseBindingReport,
     /// The explicit evaluation instant.
     pub as_of: String,
+    /// Discharge facts that replace the stored ones; the store still supplies
+    /// the records they cite.
+    #[serde(default)]
+    pub facts: Option<Vec<serde_json::Value>>,
+    /// The engineering-assurance inputs approval verification needs.
+    #[serde(default)]
+    pub approval: Option<ApprovalInputs>,
+    /// Never call engineering-assurance: an approval-class clause is open with
+    /// `not-verified-offline`.
+    #[serde(default)]
+    pub offline: bool,
 }
 
 /// The request accepted by `evidence.record_discharge`.
@@ -55,6 +70,9 @@ pub struct RecordDischargeOpRequest {
     pub binding: ClauseBindingReport,
     /// Unvalidated discharge facts.
     pub facts: Vec<serde_json::Value>,
+    /// The engineering-assurance inputs approval verification needs.
+    #[serde(default)]
+    pub approval: Option<ApprovalInputs>,
 }
 
 /// The result of an accepted `evidence.record_discharge`.
@@ -87,50 +105,86 @@ fn map_store_error(error: DischargeStoreError, op: &'static str) -> CoreError {
                 .with_context("refusal", kind.as_str())
         }
         DischargeStoreError::Evidence(error) => map_error(&error, op),
+        DischargeStoreError::Check(error) => {
+            CoreError::new(CoreErrorCode::Refused, error.to_string())
+                .with_context("op", op)
+                .with_context("refusal", "allowed-signers-invalid")
+        }
+        failed @ DischargeStoreError::FactsFailed(_) => {
+            CoreError::new(CoreErrorCode::BadRequest, failed.to_string())
+                .with_context("op", op)
+                .with_context(
+                    "refusal",
+                    store_error_context(&failed).unwrap_or("discharge-facts-failed"),
+                )
+        }
     }
 }
 
-fn approval_requirements_for_binding(
-    modules: Option<&dyn crate::capabilities::ModuleHost>,
-    binding: &ClauseBindingReport,
+/// The clause policy of the binding report's set and the verification setup
+/// for the supplied engineering-assurance inputs.
+fn prepare(
     op: &'static str,
-) -> Result<std::collections::BTreeSet<String>, CoreError> {
-    let Some(modules) = modules else {
-        return Ok(std::collections::BTreeSet::new());
-    };
-    let refused =
-        |detail: String| CoreError::new(CoreErrorCode::Refused, detail).with_context("op", op);
-    let installed = modules
-        .list(None)
-        .map_err(|error| refused(format!("installed modules cannot be listed: {error}")))?;
-    let mut owner = None;
-    for module in &installed {
-        let policies = modules
-            .clause_approval_requirements(module, &installed)
-            .map_err(|error| {
-                refused(format!(
-                    "module {} failed to load approval metadata: {error}",
-                    module.name
-                ))
-            })?;
-        for (set, required_clause_ids) in policies {
-            if set.authority.as_str() == binding.clause_set.authority
-                && set.id.as_str() == binding.clause_set.id
-                && set.version.as_str() == binding.clause_set.version
-            {
-                if owner.is_some() {
-                    return Err(refused(format!(
-                        "multiple installed modules declare clause set {}/{}/{}",
-                        binding.clause_set.authority,
-                        binding.clause_set.id,
-                        binding.clause_set.version
-                    )));
-                }
-                owner = Some(required_clause_ids);
-            }
-        }
+    capabilities: &Capabilities<'_>,
+    repo: &str,
+    binding: &ClauseBindingReport,
+    approval: Option<&ApprovalInputs>,
+) -> Result<(Option<quoin_quire_types::SetPolicy>, Option<ApprovalSetup>), CoreError> {
+    let policy = policy_for_binding(capabilities.modules, &binding.clause_set, op)?;
+    let setup = approval
+        .map(|inputs| approval_setup(op, repo, inputs))
+        .transpose()?;
+    Ok((policy, setup))
+}
+
+/// The checked report: from the request's facts when it carries them, else
+/// from the facts stored for the clause set.
+fn report_for(
+    source: &dyn EvidenceSource,
+    request: &DischargeReportRequest,
+    checks: &DischargeChecks<'_>,
+) -> Result<quoin_assurance::DischargeReport, DischargeStoreError> {
+    match &request.facts {
+        Some(facts) => Ok(build_checked_discharge_report(
+            &BuildDischargeRequest {
+                binding: request.binding.clone(),
+                facts: facts.clone(),
+                as_of: request.as_of.clone(),
+            },
+            Some(source),
+            checks,
+        )?
+        .report),
+        None => discharge_report_from_store(source, &request.binding, &request.as_of, checks),
     }
-    Ok(owner.unwrap_or_default())
+}
+
+/// The request accepted by `evidence.approval_subject`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ApprovalSubjectRequest {
+    /// The `clause-binding-v1` report the fact is made against.
+    pub binding: ClauseBindingReport,
+    /// The unvalidated discharge fact.
+    pub fact: serde_json::Value,
+}
+
+/// Answer an `evidence.approval_subject`: the record id and digest a person
+/// signs an approval tag over. Writes nothing.
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::Refused`] when the request exceeds [`MAX_DISCHARGE_BYTES`].
+/// - [`CoreErrorCode::BadRequest`] for a malformed fact, a clause not in the
+///   binding report or a record id over the bound.
+pub fn approval_subject(request: &serde_json::Value) -> Result<Response, CoreError> {
+    let op = "evidence.approval_subject";
+    bound(request, op, MAX_DISCHARGE_BYTES)?;
+    let request: ApprovalSubjectRequest = parse(request, op)?;
+    let subject = quoin_assurance::approval_subject(&request.binding, &request.fact)
+        .map_err(|e| CoreError::new(CoreErrorCode::BadRequest, e).with_context("op", op))?;
+    Ok(Response::ok(value(&subject)?))
 }
 
 /// Answer an `evidence.record_discharge`.
@@ -154,16 +208,26 @@ pub fn record_discharge(
         binding: request.binding,
         facts: request.facts,
     };
-    let required_approval_clauses =
-        approval_requirements_for_binding(capabilities.modules, &record.binding, op)?;
+    let (policy, setup) = prepare(
+        op,
+        capabilities,
+        &request.repo,
+        &record.binding,
+        request.approval.as_ref(),
+    )?;
+    let verifier = verifier_for(capabilities, setup.as_ref(), op)?;
 
     let host = host(capabilities, op)?;
     let root = host.store_root(Path::new(&request.repo));
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let recorded = record_discharge_facts_with_approval_requirements(
+        let recorded = record_discharge_facts(
             source,
             &record,
-            &required_approval_clauses,
+            &DischargeChecks {
+                policy: policy.as_ref(),
+                verifier: verifier.as_deref(),
+                offline: false,
+            },
         )
         .map_err(|e| map_store_error(e, op))?;
         value(&RecordDischargePayload {
@@ -196,16 +260,25 @@ pub fn discharge_report(
     bound(request, op, MAX_DISCHARGE_BYTES)?;
     let request: DischargeReportRequest = parse(request, op)?;
     check_scalar(op, "repo", &request.repo)?;
-    let required_approval_clauses =
-        approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;
+    let (policy, setup) = prepare(
+        op,
+        capabilities,
+        &request.repo,
+        &request.binding,
+        request.approval.as_ref(),
+    )?;
+    let verifier = verifier_for(capabilities, setup.as_ref(), op)?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let report = discharge_report_from_store_with_approval_requirements(
+        let report = report_for(
             &*source,
-            &request.binding,
-            &request.as_of,
-            &required_approval_clauses,
+            &request,
+            &DischargeChecks {
+                policy: policy.as_ref(),
+                verifier: verifier.as_deref(),
+                offline: request.offline,
+            },
         )
         .map_err(|e| map_store_error(e, op))?;
         value(&report)
@@ -241,18 +314,28 @@ pub fn inward_completeness(
     bound(request, op, MAX_DISCHARGE_BYTES)?;
     let request: DischargeReportRequest = parse(request, op)?;
     check_scalar(op, "repo", &request.repo)?;
-    let required_approval_clauses =
-        approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;
+    let (policy, setup) = prepare(
+        op,
+        capabilities,
+        &request.repo,
+        &request.binding,
+        request.approval.as_ref(),
+    )?;
+    let verifier = verifier_for(capabilities, setup.as_ref(), op)?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let completeness = inward_completeness_from_store_with_approval_requirements(
+        let report = report_for(
             &*source,
-            &request.binding,
-            &request.as_of,
-            &required_approval_clauses,
+            &request,
+            &DischargeChecks {
+                policy: policy.as_ref(),
+                verifier: verifier.as_deref(),
+                offline: request.offline,
+            },
         )
         .map_err(|e| map_store_error(e, op))?;
+        let completeness = quoin_assurance::build_inward_completeness(&report);
         value(&InwardCompletenessPayload {
             rendered: render_inward_completeness(&completeness),
             completeness,
@@ -285,16 +368,25 @@ pub fn requirements_matrix(
     bound(request, op, MAX_DISCHARGE_BYTES)?;
     let request: DischargeReportRequest = parse(request, op)?;
     check_scalar(op, "repo", &request.repo)?;
-    let required_approval_clauses =
-        approval_requirements_for_binding(capabilities.modules, &request.binding, op)?;
+    let (policy, setup) = prepare(
+        op,
+        capabilities,
+        &request.repo,
+        &request.binding,
+        request.approval.as_ref(),
+    )?;
+    let verifier = verifier_for(capabilities, setup.as_ref(), op)?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let report = discharge_report_from_store_with_approval_requirements(
+        let report = report_for(
             &*source,
-            &request.binding,
-            &request.as_of,
-            &required_approval_clauses,
+            &request,
+            &DischargeChecks {
+                policy: policy.as_ref(),
+                verifier: verifier.as_deref(),
+                offline: request.offline,
+            },
         )
         .map_err(|e| map_store_error(e, op))?;
         let matrix = build_requirements_mapping(&request.binding, &report)
@@ -321,6 +413,13 @@ pub struct PackRequirementsMatrixRequest {
     /// `KEY=VALUE` context entries shared by every clause set.
     #[serde(default)]
     pub context: Vec<String>,
+    /// The engineering-assurance inputs approval verification needs.
+    #[serde(default)]
+    pub approval: Option<ApprovalInputs>,
+    /// Never call engineering-assurance: an approval-class clause is open with
+    /// `not-verified-offline`.
+    #[serde(default)]
+    pub offline: bool,
 }
 
 /// The result of an `evidence.pack_requirements_matrix`.
@@ -390,14 +489,14 @@ pub fn pack_matrix(
     let mut approval_policies = Vec::new();
     for module in &installed_modules {
         let policies = modules
-            .clause_approval_requirements(module, &installed_modules)
+            .clause_policies(module, &installed_modules)
             .map_err(|error| {
                 refused(format!(
-                    "module {} failed to load approval metadata: {error}",
+                    "module {} failed to load clause policies: {error}",
                     module.name
                 ))
             })?;
-        for (set, required_clause_ids) in policies {
+        for (set, policy) in policies {
             if !installed_clause_sets.insert(set.clone()) {
                 return Err(refused(format!(
                     "multiple installed modules declare clause set {}/{}/{}",
@@ -407,15 +506,22 @@ pub fn pack_matrix(
                 )));
             }
             if module.name.as_str() == request.pack {
-                approval_policies.push(ClauseApprovalPolicy {
+                approval_policies.push(ClauseSetPolicy {
                     authority: set.authority.as_str().to_owned(),
                     id: set.id.as_str().to_owned(),
                     version: set.version.as_str().to_owned(),
-                    required_clause_ids,
+                    policy,
                 });
             }
         }
     }
+
+    let setup = request
+        .approval
+        .as_ref()
+        .map(|inputs| approval_setup(op, &request.repo, inputs))
+        .transpose()?;
+    let verifier = verifier_for(capabilities, setup.as_ref(), op)?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
@@ -425,7 +531,11 @@ pub fn pack_matrix(
             &request.as_of,
             context.as_map(),
             &bindings,
-            &approval_policies,
+            &PackChecks {
+                policies: &approval_policies,
+                verifier: verifier.as_deref(),
+                offline: request.offline,
+            },
         )
         .map_err(|e| map_store_error(e, op))?;
         value(&PackRequirementsMatrixPayload {

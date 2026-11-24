@@ -253,7 +253,7 @@ impl Env {
 
 fn direct(clause: &str) -> serde_json::Value {
     serde_json::json!({
-        "kind": "direct", "clauseId": clause, "evidenceRefs": ["evidence://run/one"],
+        "kind": "direct", "clauseId": clause, "evidenceRefs": ["evidence://runs/SUITE-1/one"],
         "attestation": {"attestedBy": "r", "authority": "lead",
             "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
     })
@@ -274,6 +274,41 @@ fn record_output(
     version: &str,
     facts: &[serde_json::Value],
 ) -> Output {
+    record_output_with(env, repo, set, version, facts, &[])
+}
+
+/// A verifier that approves every request as `r` with the given meaning,
+/// standing in for engineering-assurance.
+fn stub_verifier(env: &Env, meaning: &str) -> (String, String) {
+    use std::os::unix::fs::PermissionsExt as _;
+    let script = env.base.join("stub-ea");
+    std::fs::write(
+        &script,
+        format!(
+            "#!/bin/sh\ncat >/dev/null\necho '{{\"protocol\":\"engineering-assurance.approval-verify-result/v1\",\"status\":\"approved\",\"meaning\":[\"{meaning}\"],\"approver\":\"r\"}}'\n"
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let signers = env.base.join("allowed-signers");
+    std::fs::write(&signers, "").unwrap();
+    (
+        script.to_str().unwrap().to_owned(),
+        signers.to_str().unwrap().to_owned(),
+    )
+}
+
+fn record_output_with(
+    env: &Env,
+    repo: &Path,
+    set: &str,
+    version: &str,
+    facts: &[serde_json::Value],
+    extra: &[&str],
+) -> Output {
+    let run = repo.join("spec/evidence/runs/SUITE-1");
+    std::fs::create_dir_all(&run).unwrap();
+    std::fs::write(run.join("one.json"), "{}").unwrap();
     let binding = serde_json::json!({
         "schemaVersion": "clause-binding-v1",
         "clauseSet": {"authority": "example.invalid", "id": set, "version": version},
@@ -290,7 +325,7 @@ fn record_output(
         serde_json::Value::from(facts.to_vec()).to_string(),
     )
     .unwrap();
-    env.run(&[
+    let mut arguments = vec![
         "evidence",
         "record-discharge",
         "--repo",
@@ -299,7 +334,9 @@ fn record_output(
         binding_path.to_str().unwrap(),
         "--facts",
         facts_path.to_str().unwrap(),
-    ])
+    ];
+    arguments.extend_from_slice(extra);
+    env.run(&arguments)
 }
 
 fn approval_clause_set(id: &str, approval_roles: &str) -> String {
@@ -321,9 +358,13 @@ fn one_clause_binding(set: &str) -> serde_json::Value {
 }
 
 fn discharge_output(env: &Env, repo: &Path, set: &str) -> Output {
+    discharge_output_with(env, repo, set, &[])
+}
+
+fn discharge_output_with(env: &Env, repo: &Path, set: &str, extra: &[&str]) -> Output {
     let binding_path = env.base.join(format!("discharge-binding-{set}.json"));
     std::fs::write(&binding_path, one_clause_binding(set).to_string()).unwrap();
-    env.run(&[
+    let mut arguments = vec![
         "discharge",
         "--binding",
         binding_path.to_str().unwrap(),
@@ -332,7 +373,9 @@ fn discharge_output(env: &Env, repo: &Path, set: &str) -> Output {
         "--as-of",
         AS_OF,
         "--json",
-    ])
+    ];
+    arguments.extend_from_slice(extra);
+    env.run(&arguments)
 }
 
 fn stdout(output: &Output) -> String {
@@ -491,7 +534,7 @@ fn tc_1488_003_facts_for_one_set_leave_the_others_undischarged_and_counts_match_
     }
     let markdown = stdout(&env.report(&["--context", "region=eu"]));
     assert!(
-        markdown.contains("| A-1 | Applicable | Compliant | evidence://run/one | - | - |"),
+        markdown.contains("| A-1 | Applicable | Compliant | evidence://runs/SUITE-1/one | - | - |"),
         "{markdown}"
     );
     assert!(
@@ -506,13 +549,22 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     let env = env();
     install_approval_fixture(&env);
 
-    record(
-        &env,
-        &env.repo,
-        "gdpr",
-        "1.0.0",
-        &[direct("art-35(1)"), direct("no-role")],
-    );
+    // An approval-class fact with no approval reference, or a blank one, is
+    // refused whole; the clause without roles is stored.
+    for blank in [None, Some(" \t\n")] {
+        let mut fact = direct("art-35(1)");
+        if let Some(blank) = blank {
+            fact["approvalRef"] = serde_json::json!(blank);
+        }
+        let refused = record_output(&env, &env.repo, "gdpr", "1.0.0", &[fact, direct("no-role")]);
+        assert_eq!(refused.status.code(), Some(3), "{}", text(&refused));
+        assert!(
+            stderr(&refused).contains("approval-missing"),
+            "{}",
+            text(&refused)
+        );
+    }
+    record(&env, &env.repo, "gdpr", "1.0.0", &[direct("no-role")]);
     let missing = json(&env.report(&["--json"]));
     let rows = missing["matrices"][0]["rows"].as_array().unwrap();
     let row = |clause_id: &str| {
@@ -521,23 +573,8 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
             .unwrap()
     };
     assert_eq!(row("art-35(1)")["compliance"], "undischarged");
-    assert_eq!(
-        row("art-35(1)")["reason"],
-        "required approval reference is missing"
-    );
+    assert_eq!(row("art-35(1)")["reason"], "no discharge fact");
     assert_eq!(row("no-role")["compliance"], "compliant");
-
-    let mut blank_required_approval = direct("art-35(1)");
-    blank_required_approval["approvalRef"] = serde_json::json!(" \t\n");
-    record(&env, &env.repo, "gdpr", "1.0.0", &[blank_required_approval]);
-    let blank_report = json(&env.report(&["--json"]));
-    let blank_rows = blank_report["matrices"][0]["rows"].as_array().unwrap();
-    let art_35 = blank_rows
-        .iter()
-        .find(|row| row["clauseId"] == "art-35(1)")
-        .unwrap();
-    assert_eq!(art_35["compliance"], "undischarged");
-    assert_eq!(art_35["reason"], "required approval reference is missing");
 
     let mut blank_generic_approval = direct("no-role");
     blank_generic_approval["approvalRef"] = serde_json::json!("");
@@ -549,17 +586,312 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
         text(&rejected)
     );
 
+    // With a verifier the approval is verified at record time and again when
+    // the report is built.
+    let (verifier, signers) = stub_verifier(&env, "risk-approver");
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
     let mut approved = direct("art-35(1)");
     approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
-    record(&env, &env.repo, "gdpr", "1.0.0", &[approved]);
-    let accepted = json(&env.report(&["--json"]));
+    let recorded = record_output_with(&env, &env.repo, "gdpr", "1.0.0", &[approved], &flags);
+    assert!(recorded.status.success(), "{}", text(&recorded));
+    let mut arguments = vec!["--json"];
+    arguments.extend_from_slice(&flags);
+    let accepted = json(&env.report(&arguments));
     let rows = accepted["matrices"][0]["rows"].as_array().unwrap();
     let art_35 = rows
         .iter()
         .find(|row| row["clauseId"] == "art-35(1)")
         .unwrap();
     assert_eq!(art_35["compliance"], "compliant");
-    assert_eq!(art_35["evidenceRefs"][0], "evidence://run/one");
+    assert_eq!(art_35["evidenceRefs"][0], "evidence://runs/SUITE-1/one");
+
+    // Without the flags nothing is verified, so the stored fact does not
+    // discharge.
+    let unverified = json(&env.report(&["--json"]));
+    let rows = unverified["matrices"][0]["rows"].as_array().unwrap();
+    let art_35 = rows
+        .iter()
+        .find(|row| row["clauseId"] == "art-35(1)")
+        .unwrap();
+    assert_eq!(art_35["compliance"], "undischarged");
+    assert!(
+        art_35["reason"]
+            .as_str()
+            .unwrap()
+            .starts_with("approval-verifier-unavailable"),
+        "{art_35}"
+    );
+}
+
+/// An engineering-assurance stand-in that writes the request it reads to
+/// `request.json` and then runs `body`. Returns the script and an
+/// allowed-signers file.
+fn scripted_verifier(env: &Env, body: &str) -> (String, String) {
+    use std::os::unix::fs::PermissionsExt as _;
+    let script = env.base.join("scripted-ea");
+    let log = env.base.join("request.json");
+    std::fs::write(
+        &script,
+        format!("#!/bin/sh\ncat > '{}'\n{body}\n", log.display()),
+    )
+    .unwrap();
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let signers = env.base.join("allowed-signers");
+    std::fs::write(&signers, "").unwrap();
+    (
+        script.to_str().unwrap().to_owned(),
+        signers.to_str().unwrap().to_owned(),
+    )
+}
+
+fn approved_art_35() -> serde_json::Value {
+    let mut fact = direct("art-35(1)");
+    fact["approvalRef"] = serde_json::json!("approval-1");
+    fact
+}
+
+/// The request the production verifier writes carries exactly the members
+/// engineering-assurance reads, and its `record_digest` is the one
+/// `approval-subject` prints (FR-211-AC-6, AC-17).
+#[trace("FR-211-AC-6", "FR-211-AC-17")]
+#[test]
+fn tc_211_the_verifier_is_sent_the_request_engineering_assurance_reads() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = scripted_verifier(
+        &env,
+        r#"echo '{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","meaning":["risk-approver"],"approver":"r"}'"#,
+    );
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+        "--gitsign-certificate-identity",
+        "id@example.invalid",
+        "--gitsign-certificate-oidc-issuer",
+        "https://issuer.example.invalid",
+        "--gitsign-principal",
+        "principal@example.invalid",
+    ];
+    let recorded = record_output_with(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[approved_art_35()],
+        &flags,
+    );
+    assert!(recorded.status.success(), "{}", text(&recorded));
+    let request: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(env.base.join("request.json")).unwrap()).unwrap();
+
+    // The identity and digest a person signs, from the dedicated command.
+    let binding = env.base.join("subject-binding.json");
+    let fact = env.base.join("subject-fact.json");
+    let mut report = one_clause_binding("gdpr");
+    report["clauseSet"]["version"] = serde_json::json!("1.0.0");
+    report["clauses"][0]["clauseId"] = serde_json::json!("art-35(1)");
+    std::fs::write(&binding, report.to_string()).unwrap();
+    std::fs::write(&fact, approved_art_35().to_string()).unwrap();
+    let subject = json(&env.run(&[
+        "evidence",
+        "approval-subject",
+        "--binding",
+        binding.to_str().unwrap(),
+        "--fact",
+        fact.to_str().unwrap(),
+    ]));
+
+    assert_eq!(
+        request,
+        serde_json::json!({
+            "protocol": "engineering-assurance.approval-verify-request/v1",
+            "repository": env.repo.to_str().unwrap(),
+            "tag": "approval-1",
+            "record_id": subject["record_id"],
+            "record_digest": subject["record_digest"],
+            "allowed_signers": signers,
+            "gitsign": {
+                "certificate_identity": "id@example.invalid",
+                "certificate_oidc_issuer": "https://issuer.example.invalid",
+                "principal": "principal@example.invalid",
+            },
+        })
+    );
+    assert_eq!(subject["record_id"], "example.invalid/gdpr/1.0.0/art-35(1)");
+    assert!(
+        subject["record_digest"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+}
+
+/// A result whose `meaning` holds a non-string value is not read as a single
+/// role: the verifier is unavailable, exit 3 (FR-211-AC-7).
+#[trace("FR-211-AC-7", "FR-211-AC-11")]
+#[test]
+fn tc_211_a_non_string_meaning_is_not_a_role() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = scripted_verifier(
+        &env,
+        r#"echo '{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","meaning":["risk-approver",1],"approver":"r"}'"#,
+    );
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
+    let refused = record_output_with(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[approved_art_35()],
+        &flags,
+    );
+    assert_eq!(refused.status.code(), Some(3), "{}", text(&refused));
+    assert!(
+        stderr(&refused).contains("non-string"),
+        "{}",
+        text(&refused)
+    );
+}
+
+/// An engineering-assurance refusal reaches the user with its own message,
+/// which it writes on stdout (FR-211-AC-11).
+#[trace("FR-211-AC-11")]
+#[test]
+fn tc_211_a_refusal_names_the_message_engineering_assurance_gave() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = scripted_verifier(
+        &env,
+        r#"echo '{"protocol":"engineering-assurance.error/v1","code":"approval_verify_request_invalid","message":"the tag is not a plain revision"}'; exit 1"#,
+    );
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
+    let refused = record_output_with(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[approved_art_35()],
+        &flags,
+    );
+    assert_eq!(refused.status.code(), Some(3), "{}", text(&refused));
+    let message = stderr(&refused);
+    assert!(
+        message.contains("approval_verify_request_invalid"),
+        "{message}"
+    );
+    assert!(
+        message.contains("the tag is not a plain revision"),
+        "{message}"
+    );
+}
+
+/// The dossier RMM never reaches engineering-assurance: an approval-class
+/// clause reads `not-verified-offline`, not an unavailable verifier.
+#[trace("FR-195-AC-1", "FR-195-AC-5", "FR-211-AC-13")]
+#[test]
+fn tc_211_the_dossier_rmm_leaves_an_approval_class_clause_not_verified_offline() {
+    let env = env();
+    install_approval_fixture(&env);
+    let (verifier, signers) = stub_verifier(&env, "risk-approver");
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
+    let mut approved = direct("art-35(1)");
+    approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
+    let recorded = record_output_with(&env, &env.repo, "gdpr", "1.0.0", &[approved], &flags);
+    assert!(recorded.status.success(), "{}", text(&recorded));
+
+    let out = env.base.join("dossier");
+    let generated = env.run(&[
+        "dossier",
+        "generate",
+        "--doc",
+        "rmm",
+        "--version",
+        "1",
+        "--pack",
+        PACK,
+        "--scope",
+        env.repo.to_str().unwrap(),
+        "--as-of",
+        AS_OF,
+        "--out",
+        out.to_str().unwrap(),
+        "--json",
+    ]);
+    let rmm = std::fs::read_to_string(out.join("DOS-RMM.md"));
+    assert!(rmm.is_ok(), "{}", text(&generated));
+    let rmm = rmm.unwrap();
+    let row = rmm
+        .lines()
+        .find(|line| line.starts_with("| art-35(1)"))
+        .expect("the RMM has an art-35(1) row");
+    assert!(row.contains("not-verified-offline"), "{row}");
+    assert!(!row.contains("approval-verifier-unavailable"), "{row}");
+}
+
+/// A trust file engineering-assurance refuses exits 2, an absent verifier
+/// exits 3, and neither writes a fact.
+#[trace("FR-211-AC-11")]
+#[test]
+fn tc_211_a_refused_trust_file_exits_two_and_an_absent_verifier_exits_three() {
+    use std::os::unix::fs::PermissionsExt as _;
+    let env = env();
+    install_approval_fixture(&env);
+    let signers = env.base.join("allowed-signers");
+    std::fs::write(&signers, "").unwrap();
+    let refusing = env.base.join("refusing-ea");
+    std::fs::write(
+        &refusing,
+        "#!/bin/sh\ncat >/dev/null\necho '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"approval_verify_allowed_signers_invalid\"}'\nexit 2\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&refusing, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let mut fact = direct("art-35(1)");
+    fact["approvalRef"] = serde_json::json!("tag-1");
+    let signers = signers.to_str().unwrap();
+    for (verifier, status) in [
+        (refusing.to_str().unwrap().to_owned(), 2),
+        ("/nonexistent/engineering-assurance".to_owned(), 3),
+    ] {
+        let output = record_output_with(
+            &env,
+            &env.repo,
+            "gdpr",
+            "1.0.0",
+            &[fact.clone()],
+            &[
+                "--engineering-assurance",
+                &verifier,
+                "--allowed-signers",
+                signers,
+            ],
+        );
+        assert_eq!(output.status.code(), Some(status), "{}", text(&output));
+        assert!(output.stdout.is_empty(), "{}", text(&output));
+    }
+    assert!(!env.repo.join("spec/evidence/discharge").exists());
 }
 
 #[trace("FR-208-AC-6")]
@@ -619,26 +951,45 @@ edge_types:
         text(&provider_install)
     );
 
+    // The roles come from the owner set, found through the full module set:
+    // a fact without an approval reference is refused by name.
     let missing_approval =
         record_output(&env, &env.repo, "cross-vocabulary", "1", &[direct("C-1")]);
-    assert!(
-        missing_approval.status.success(),
+    assert_eq!(
+        missing_approval.status.code(),
+        Some(3),
         "{}",
         text(&missing_approval)
     );
-    let missing_report = json(&discharge_output(&env, &env.repo, "cross-vocabulary"));
     assert!(
-        missing_report["binding"]["open"][0]["reason"] == "required approval reference is missing",
-        "{missing_report}"
+        stderr(&missing_approval).contains("approval-missing"),
+        "{}",
+        text(&missing_approval)
     );
 
+    let (verifier, signers) = stub_verifier(&env, "privacy-officer");
+    let flags = [
+        "--engineering-assurance",
+        &verifier,
+        "--allowed-signers",
+        &signers,
+    ];
     let mut fact = direct("C-1");
     fact["approvalRef"] = serde_json::json!("person://example.invalid/privacy-officer");
-    let recorded = record_output(&env, &env.repo, "cross-vocabulary", "1", &[fact]);
+    let recorded = record_output_with(&env, &env.repo, "cross-vocabulary", "1", &[fact], &flags);
     assert!(recorded.status.success(), "{}", text(&recorded));
     assert!(stdout(&recorded).contains("C-1"), "{}", stdout(&recorded));
-    let approved_report = json(&discharge_output(&env, &env.repo, "cross-vocabulary"));
+    let approved_report = json(&discharge_output_with(
+        &env,
+        &env.repo,
+        "cross-vocabulary",
+        &flags,
+    ));
     assert_eq!(approved_report["binding"]["direct"][0]["clauseId"], "C-1");
+    assert_eq!(
+        approved_report["binding"]["direct"][0]["verifiedApprover"],
+        "r"
+    );
 }
 
 #[trace("FR-208-AC-7")]

@@ -13,6 +13,8 @@
 
 use std::collections::BTreeMap;
 
+use quoin_quire_types::{ClausePolicy, OutputPolicy, SetPolicy};
+
 use crate::error::{Error, Result};
 use crate::ids::{ClauseSetAuthority, ClauseSetId, ClauseSetRef, ClauseSetVersion, ModuleRoot};
 use crate::modules::{Notice, NoticeKind};
@@ -126,42 +128,63 @@ pub fn evaluate_all(
         .collect()
 }
 
-/// The clause ids whose declared approval roles require a direct fact to
-/// carry an approval reference, grouped by exact clause-set identity.
+/// The discharge policy of every clause, grouped by exact clause-set identity.
 ///
 /// The loaded Quire clause set is the source of this metadata; it is kept
-/// separate from `clause-binding-v1`, which does not include approval roles.
+/// separate from `clause-binding-v1`, which does not include approval roles or
+/// the output catalog.
 ///
 /// # Errors
 /// [`Error::ModuleLoad`] when the module's clause sets do not load strictly,
 /// or [`Error::ContextEntryMalformed`] when a set identity is malformed.
-pub fn approval_required_clauses(
-    module: &ModuleRoot,
-) -> Result<BTreeMap<ClauseSetRef, std::collections::BTreeSet<String>>> {
+pub fn clause_policies(module: &ModuleRoot) -> Result<BTreeMap<ClauseSetRef, SetPolicy>> {
     if !declares_clause_sets(module.as_path())? {
         return Ok(BTreeMap::new());
     }
     let registry = load_strict(module, &mut Vec::new())?;
     registry
         .clause_sets()
-        .map(|set| {
-            let key = ClauseSetRef {
-                authority: ClauseSetAuthority::new(set.authority.as_str())?,
-                id: ClauseSetId::new(set.id.as_str())?,
-                version: ClauseSetVersion::new(set.version.as_str())?,
-            };
-            let clause_ids = set
-                .clauses
+        .map(|set| Ok((set_ref(set)?, set_policy(set))))
+        .collect()
+}
+
+fn set_ref(set: &quire_rs::clauses::ClauseSet) -> Result<ClauseSetRef> {
+    Ok(ClauseSetRef {
+        authority: ClauseSetAuthority::new(set.authority.as_str())?,
+        id: ClauseSetId::new(set.id.as_str())?,
+        version: ClauseSetVersion::new(set.version.as_str())?,
+    })
+}
+
+/// Quire's catalog entry carries `kind` and `description` only, so no
+/// `producers` are read until it declares them.
+fn set_policy(set: &quire_rs::clauses::ClauseSet) -> SetPolicy {
+    set.clauses
+        .iter()
+        .map(|clause| {
+            let outputs = clause
+                .expected_outputs
                 .iter()
-                .filter(|clause| !clause.approval_roles.is_empty())
-                .map(|clause| clause.id.clone())
+                .map(|name| OutputPolicy {
+                    procedure: set
+                        .output_catalog
+                        .get(name)
+                        .is_some_and(|entry| entry.kind == "procedure"),
+                    producers: Vec::new(),
+                })
                 .collect();
-            Ok((key, clause_ids))
+            (
+                clause.id.clone(),
+                ClausePolicy {
+                    approval_roles: clause.approval_roles.clone(),
+                    outputs,
+                },
+            )
         })
         .collect()
 }
 
-/// The approval requirements declared by `module`, validating its clause sets
+/// The clause policies declared by `module`, validating its clause sets
 /// against the complete installed module vocabulary.
 ///
 /// The returned keys remain attributable to `module`; other installed modules
@@ -171,10 +194,10 @@ pub fn approval_required_clauses(
 /// # Errors
 /// [`Error::ModuleLoad`] when any installed module fails strict loading, or
 /// when `module` is not present in `module_roots`.
-pub fn approval_required_clauses_in_module_set(
+pub fn clause_policies_in_module_set(
     module: &ModuleRoot,
     module_roots: &[ModuleRoot],
-) -> Result<BTreeMap<ClauseSetRef, std::collections::BTreeSet<String>>> {
+) -> Result<BTreeMap<ClauseSetRef, SetPolicy>> {
     let roots: Vec<&std::path::Path> = module_roots.iter().map(ModuleRoot::as_path).collect();
     let outcome = quire_rs::loader::load_module_set(&roots);
     if let Some(failure) = outcome.manifest_errors.first() {
@@ -204,20 +227,7 @@ pub fn approval_required_clauses_in_module_set(
     loaded
         .clause_sets
         .iter()
-        .map(|set| {
-            let key = ClauseSetRef {
-                authority: ClauseSetAuthority::new(set.authority.as_str())?,
-                id: ClauseSetId::new(set.id.as_str())?,
-                version: ClauseSetVersion::new(set.version.as_str())?,
-            };
-            let clause_ids = set
-                .clauses
-                .iter()
-                .filter(|clause| !clause.approval_roles.is_empty())
-                .map(|clause| clause.id.clone())
-                .collect();
-            Ok((key, clause_ids))
-        })
+        .map(|set| Ok((set_ref(set)?, set_policy(set))))
         .collect()
 }
 
@@ -601,21 +611,21 @@ mod tests {
             );
         std::fs::write(path, yaml).expect("approval role is written");
 
-        let requirements = approval_required_clauses(&module)
-            .expect("approval roles are read from loaded module data");
-        assert_eq!(requirements.len(), 2);
-        let required = requirements
-            .iter()
-            .find(|(key, _)| key.id.as_str() == "with-roles")
-            .map(|(_, clauses)| clauses)
-            .expect("the role-bearing set is present");
-        assert_eq!(required, &["C-1".to_owned()].into_iter().collect());
-        let optional = requirements
-            .iter()
-            .find(|(key, _)| key.id.as_str() == "without-roles")
-            .map(|(_, clauses)| clauses)
-            .expect("the set without roles is present");
-        assert!(optional.is_empty());
+        let policies =
+            clause_policies(&module).expect("approval roles are read from loaded module data");
+        assert_eq!(policies.len(), 2);
+        let policy = |id: &str| {
+            policies
+                .iter()
+                .find(|(key, _)| key.id.as_str() == id)
+                .map(|(_, set)| set.get("C-1").expect("the clause is present"))
+                .expect("the set is present")
+        };
+        assert_eq!(
+            policy("with-roles").approval_roles,
+            ["risk-approver".to_owned()]
+        );
+        assert!(!policy("without-roles").approval_class());
     }
 
     #[trace("FR-137-AC-12")]

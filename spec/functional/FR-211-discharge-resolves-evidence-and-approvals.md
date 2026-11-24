@@ -59,10 +59,10 @@ people accept risk, and the tool assigns no score, class or acceptability.
 - Any other ref is `unresolved`: an unknown or non-citable family (including
   `discharge`, `trust` and `bindings.json`), another scheme, an empty segment, a
   `.` or `..` segment, or a path leaving the store root.
-- Segments are matched exactly as written. The `integration` and `scenario`
-  segments are compared in the store's own folded (lowercase) form, so a ref
-  whose scenario segment is not in that form does not resolve; no two spellings
-  alias one record.
+- Segments are matched exactly as written. The store keeps the `integration`
+  segment as written and folds only the `scenario` segment to lowercase
+  (FR-030), so a ref whose scenario segment is not in that form does not
+  resolve; no two spellings of a scenario alias one record.
 - A ref resolves when the store holds a readable record at that path. Quoin
   reads the record file through the evidence store reader of `quoin-evidence`.
 - The retained kind of a record is its `subject.kind` for an experiment or
@@ -131,6 +131,12 @@ people accept risk, and the tool assigns no score, class or acceptability.
   MAY be given with `--facts` (FR-133). A run without it leaves each direct-fact
   clause and each approval-class clause open with reason `no-store`; a direct
   fact therefore discharges only when a store (`--repo`) is given.
+- A clause whose clause set no installed module declares, or that the declared
+  set does not list, has no policy to check against: nothing says which
+  outputs it expects or whether it needs an approval. It is open with reason
+  `no-clause-policy` and is never discharged, and `record-discharge` refuses a
+  fact for it. A discharged entry that carries no fact is open with reason
+  `no-fact`.
 - The operations that take an already-built report (`render_discharge`,
   `build_authored_argument`, FR-047) take the store or `--repo`, the
   engineering-assurance flags and the installed module set as explicit inputs.
@@ -205,6 +211,7 @@ people accept risk, and the tool assigns no score, class or acceptability.
 | FR-211-AC-21 | `quoin discharge --facts F --repo R` reads facts from `F`, ignores the facts stored in `R`, and resolves refs and verifies approvals against `R`; the same run without `--repo` leaves each direct-fact and approval-class clause open with `no-store`. | Test |
 | FR-211-AC-22 | `render_discharge` and `build_authored_argument` given a report document without the store, engineering-assurance flags and module set leave the affected clauses open with a stated reason; given them, they verify as AC-6. | Test |
 | FR-211-AC-23 | A ref matching no `producers` has `no-producer` only when none of the clause's `expectedOutputs` catalog entries carries `producers`, and `kind-not-expected` otherwise. | Test |
+| FR-211-AC-24 | A direct fact or disposition on a clause whose clause set no installed module declares, or that the declared set does not list, is open with reason `no-clause-policy`, and `record-discharge` refuses it; a discharged entry with no fact is open with reason `no-fact`. | Test |
 
 ## Dependencies
 

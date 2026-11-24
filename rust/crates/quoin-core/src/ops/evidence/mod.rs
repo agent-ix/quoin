@@ -52,6 +52,7 @@ mod documents;
 mod records;
 mod store;
 mod taxonomy;
+mod verification;
 mod wire;
 
 #[cfg(test)]
@@ -79,16 +80,18 @@ pub use self::wire::{
 };
 
 pub use self::discharge::{
-    DischargeReportRequest, InwardCompletenessPayload, MAX_DISCHARGE_BYTES,
+    ApprovalSubjectRequest, DischargeReportRequest, InwardCompletenessPayload, MAX_DISCHARGE_BYTES,
     PackRequirementsMatrixPayload, PackRequirementsMatrixRequest, RecordDischargeOpRequest,
-    RecordDischargePayload, RecordedDischargeFact, RequirementsMatrixPayload, discharge_report,
-    inward_completeness, pack_matrix, record_discharge, requirements_matrix,
+    RecordDischargePayload, RecordedDischargeFact, RequirementsMatrixPayload, approval_subject,
+    discharge_report, inward_completeness, pack_matrix, record_discharge, requirements_matrix,
 };
 pub use self::documents::{parse_lineage, parse_policy, parse_results, store_facts};
 pub use self::records::{
     inspect_mocks, record, record_experiment, record_operational, record_scenario, trust_decision,
 };
 pub use self::store::{audit_inputs, gc, trust_assessments};
+pub(crate) use self::verification::policy_for_binding;
+pub use self::verification::{ApprovalInputs, GitsignInputs, check_supplied_report};
 
 /// One store-relative path as the caller must see it: absolute.
 ///

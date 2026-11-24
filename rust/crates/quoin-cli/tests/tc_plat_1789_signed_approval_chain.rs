@@ -595,3 +595,62 @@ fn an_expired_key_does_not_approve_whatever_date_the_tagger_claims() {
     let result = approval_verify(&fixture, "approval-1", "change-1", &digest);
     assert_eq!(result["status"], "approved", "{result}");
 }
+
+/// `quoin evidence approval-subject` names the identity and digest a person
+/// signs, and a tag over exactly those verifies as approved (FR-211-AC-17).
+#[trace("FR-211-AC-17")]
+#[test]
+#[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
+fn a_tag_created_from_the_approval_subject_output_verifies_as_approved() {
+    let fixture = Fixture::new();
+    let work = tempfile::tempdir().unwrap();
+    let binding = work.path().join("binding.json");
+    let fact = work.path().join("fact.json");
+    fs::write(
+        &binding,
+        serde_json::json!({
+            "schemaVersion": "clause-binding-v1",
+            "clauseSet": {"authority": "example.invalid", "id": "gdpr", "version": "1.0.0"},
+            "context": {},
+            "clauses": [{
+                "clauseId": "art-35", "force": "mandatory", "outcome": "binding",
+                "reasons": [], "expectedOutputs": []
+            }]
+        })
+        .to_string(),
+    )
+    .unwrap();
+    fs::write(
+        &fact,
+        serde_json::json!({
+            "kind": "direct", "clauseId": "art-35",
+            "evidenceRefs": ["evidence://runs/SUITE-1/one"],
+            "approvalRef": "approval-1",
+            "attestation": {"attestedBy": "alice@example.invalid", "authority": "lead",
+                "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["evidence", "approval-subject", "--binding"])
+        .arg(&binding)
+        .arg("--fact")
+        .arg(&fact)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    let subject: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let record_id = subject["record_id"].as_str().unwrap();
+    let digest = subject["record_digest"].as_str().unwrap();
+    approval_tag(
+        &fixture,
+        &fixture.signer,
+        "approval-1",
+        &approval_message(record_id, digest),
+        &[],
+    );
+    let verified = approval_verify(&fixture, "approval-1", record_id, digest);
+    assert_eq!(verified["status"], "approved", "{verified}");
+    assert_eq!(verified["approver"], "alice@example.invalid");
+}

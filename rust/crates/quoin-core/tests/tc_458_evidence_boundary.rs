@@ -39,14 +39,69 @@ struct Run {
     status: i32,
 }
 
-/// Invoke the runtime with the operation and request.
+/// An IX home with no installed module but one declaring the clause set of
+/// [`discharge_binding`], so the installed modules of the machine running the
+/// test never take part and a discharge still finds its clause policies.
+fn empty_home() -> PathBuf {
+    static HOME: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    HOME.get_or_init(|| {
+        let home =
+            std::env::temp_dir().join(format!("quoin-core-empty-home-{}", std::process::id()));
+        std::fs::create_dir_all(&home).expect("the empty home is created");
+        let source =
+            std::env::temp_dir().join(format!("quoin-core-clause-source-{}", std::process::id()));
+        std::fs::create_dir_all(&source).expect("the module source is created");
+        std::fs::write(
+            source.join("manifest.yaml"),
+            "name: quire-spec\nversion: 0.1.0\nclause_sets:\n  - set.yaml\n",
+        )
+        .expect("the manifest is written");
+        std::fs::write(
+            source.join("set.yaml"),
+            "schemaVersion: clause-set-v1\nauthority: quire\nid: spec\ntitle: Spec\nversion: \"1\"\nrights:\n  structure: original\n  text: none\nclauses:\n  - id: C-1\n    force: mandatory\n  - id: C-2\n    force: mandatory\n",
+        )
+        .expect("the clause set is written");
+        let settings = RuntimeSettings {
+            ix_home: Some(home.clone()),
+            semantic_root: Some(semantic_root()),
+        };
+        let installed = dispatch(
+            "modules.install",
+            &json!({ "source": format!("path:{}", source.display()) }),
+            &settings,
+        )
+        .expect("the clause set installs");
+        assert_eq!(installed.outcome.code(), 0, "{:?}", installed.diagnostics);
+        let _ = std::fs::remove_dir_all(&source);
+        home
+    })
+    .clone()
+}
+
+/// The embedded semantic contract, written once per process beside the home
+/// so operations that read the module set find it.
+fn semantic_root() -> PathBuf {
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root =
+            std::env::temp_dir().join(format!("quoin-core-tc-458-semantic-{}", std::process::id()));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
+    .clone()
+}
+
 fn run(op: &str, request: &Value) -> Run {
-    let response =
-        dispatch(op, request, &RuntimeSettings::default()).unwrap_or_else(|error| Response {
-            payload: Value::Null,
-            diagnostics: vec![Diagnostic::from(&error)],
-            outcome: error.outcome(),
-        });
+    let settings = RuntimeSettings {
+        ix_home: Some(empty_home()),
+        semantic_root: Some(semantic_root()),
+    };
+    let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
+        payload: Value::Null,
+        diagnostics: vec![Diagnostic::from(&error)],
+        outcome: error.outcome(),
+    });
     let stdout = if response.outcome.carries_payload() {
         canonical_json(&response.payload).unwrap()
     } else {
@@ -75,6 +130,13 @@ fn ok(result: &Run) -> Value {
 fn repo() -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     fs::create_dir_all(dir.path().join("spec/evidence")).unwrap();
+    dir
+}
+
+/// A repository whose store holds the run record `discharge_fact` cites.
+fn discharge_repo() -> tempfile::TempDir {
+    let dir = repo();
+    write_store(dir.path(), "runs/SUITE-1/one.json", "{}");
     dir
 }
 
@@ -680,7 +742,7 @@ fn discharge_fact() -> Value {
     json!({
         "kind": "direct",
         "clauseId": "C-1",
-        "evidenceRefs": ["evidence://run/one"],
+        "evidenceRefs": ["evidence://runs/SUITE-1/one"],
         "attestation": {
             "attestedBy": "reviewer-1",
             "authority": "quality-lead",
@@ -695,7 +757,7 @@ fn discharge_fact() -> Value {
 #[trace("FR-133-AC-6")]
 #[test]
 fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_report() {
-    let dir = repo();
+    let dir = discharge_repo();
     let recorded = ok(&run(
         "evidence.record_discharge",
         &json!({
@@ -755,7 +817,7 @@ fn tc_2605_recorded_discharge_facts_feed_a_live_partition_and_the_completeness_r
 #[trace("FR-133-AC-3")]
 #[test]
 fn tc_2602_a_refused_fact_list_exits_bad_request_and_writes_nothing() {
-    let dir = repo();
+    let dir = discharge_repo();
     let refused = run(
         "evidence.record_discharge",
         &json!({
@@ -792,7 +854,7 @@ fn tc_2604_a_binding_report_naming_a_clause_twice_is_refused_by_every_discharge_
 #[trace("FR-133-AC-3")]
 #[test]
 fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_writes_nothing() {
-    let dir = repo();
+    let dir = discharge_repo();
     let mut long = discharge_fact();
     long["clauseId"] = json!("x".repeat(120));
     let mut lower = discharge_fact();
@@ -816,7 +878,7 @@ fn tc_2602_an_overlong_or_case_colliding_clause_id_is_a_typed_refusal_that_write
 #[trace("FR-135-AC-6")]
 #[test]
 fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
-    let dir = repo();
+    let dir = discharge_repo();
     ok(&run(
         "evidence.record_discharge",
         &json!({
@@ -836,7 +898,7 @@ fn tc_3205_the_requirements_matrix_operation_answers_from_stored_facts() {
     assert_eq!(now["matrix"]["rows"][0]["compliance"], "compliant");
     assert_eq!(
         now["matrix"]["rows"][0]["evidenceRefs"],
-        json!(["evidence://run/one"])
+        json!(["evidence://runs/SUITE-1/one"])
     );
     assert_eq!(now["matrix"]["rows"][1]["compliance"], "undischarged");
     assert!(
@@ -936,4 +998,37 @@ fn tc_3205_a_stored_disposition_with_a_blank_rationale_refuses_the_matrix() {
         "{}",
         refused.stderr
     );
+}
+
+/// `evidence.approval_subject` answers through the wire: the record id and
+/// digest of the fact, whatever its `approvalRef`.
+#[trace("FR-211-AC-17", "FR-211-AC-18")]
+#[test]
+fn tc_211_the_approval_subject_operation_names_the_record_and_its_digest() {
+    let subject = ok(&run(
+        "evidence.approval_subject",
+        &json!({"binding": discharge_binding(), "fact": discharge_fact()}),
+    ));
+    assert_eq!(subject["record_id"], "quire/spec/1/C-1");
+    let digest = subject["record_digest"].as_str().unwrap();
+    assert!(
+        digest.starts_with("sha256:") && digest.len() == 71,
+        "{digest}"
+    );
+    let mut tagged = discharge_fact();
+    tagged["approvalRef"] = json!("tag-1");
+    let again = ok(&run(
+        "evidence.approval_subject",
+        &json!({"binding": discharge_binding(), "fact": tagged}),
+    ));
+    assert_eq!(again["record_digest"], subject["record_digest"]);
+
+    let mut absent = discharge_fact();
+    absent["clauseId"] = json!("C-9");
+    let refused = run(
+        "evidence.approval_subject",
+        &json!({"binding": discharge_binding(), "fact": absent}),
+    );
+    assert_eq!(refused.status, 3, "{}", refused.stderr);
+    assert!(refused.stdout.is_empty());
 }

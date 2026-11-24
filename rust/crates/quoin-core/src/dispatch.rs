@@ -47,6 +47,7 @@ pub const OPERATIONS: &[&str] = &[
     "config.resolve_org",
     "config.unresolved_org_message",
     "core.ping",
+    "evidence.approval_subject",
     "evidence.audit_inputs",
     "evidence.gc",
     "evidence.inspect_mocks",
@@ -128,13 +129,17 @@ pub fn dispatch(
         "config.resolve_org" => crate::ops::config::resolve_org(request),
         "config.unresolved_org_message" => crate::ops::config::unresolved_org_message(request),
         "assurance.build_authored_argument" => {
-            crate::ops::assurance::build_authored_argument(request)
+            crate::ops::assurance::build_authored_argument(request, capabilities)
         }
         "assurance.render_authored_argument" => {
             crate::ops::assurance::render_authored_argument(request)
         }
-        "assurance.build_discharge" => crate::ops::assurance::build_discharge(request),
-        "assurance.render_discharge" => crate::ops::assurance::render_discharge(request),
+        "assurance.build_discharge" => {
+            crate::ops::assurance::build_discharge(request, capabilities)
+        }
+        "assurance.render_discharge" => {
+            crate::ops::assurance::render_discharge(request, capabilities)
+        }
         "change_assurance.intake" => crate::ops::change_assurance::intake(request, capabilities),
         "change_assurance.prepare_attestation" => {
             crate::ops::change_assurance::prepare_attestation(request)
@@ -173,6 +178,7 @@ pub fn dispatch(
         "evidence.record_experiment" => {
             crate::ops::evidence::record_experiment(request, capabilities)
         }
+        "evidence.approval_subject" => evidence::approval_subject(request),
         "evidence.record_discharge" => evidence::record_discharge(request, capabilities),
         "evidence.discharge_report" => evidence::discharge_report(request, capabilities),
         "evidence.inward_completeness" => evidence::inward_completeness(request, capabilities),

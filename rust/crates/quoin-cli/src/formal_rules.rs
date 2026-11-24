@@ -3,9 +3,8 @@
 //! Read-only, git-derived formal-rule approval status (VER-101).
 
 use std::ffi::OsStr;
-use std::io::Write;
 use std::path::{Component, Path, PathBuf};
-use std::process::{Command as ProcessCommand, Stdio};
+use std::process::Command as ProcessCommand;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
@@ -507,22 +506,8 @@ fn verify_requesting(
     trailers: bool,
 ) -> Result<Value, StatusError> {
     let request = signature_request(repo, revision, allowed, gitsign, trailers);
-    let mut child = ProcessCommand::new(ea)
-        .args(["signature-verify", "--request", "-"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|error| format!("engineering-assurance is unavailable: {error}"))?;
-    child
-        .stdin
-        .take()
-        .ok_or_else(|| "engineering-assurance stdin unavailable".to_owned())?
-        .write_all(request.to_string().as_bytes())
-        .map_err(|error| error.to_string())?;
-    let output = child
-        .wait_with_output()
-        .map_err(|error| error.to_string())?;
+    let output = quoin_core::runtime::engineering_assurance_call(ea, "signature-verify", &request)
+        .map_err(StatusError::Unavailable)?;
     if !output.status.success() {
         let refusal: Value = serde_json::from_slice(&output.stdout).unwrap_or(Value::Null);
         if refusal.get("protocol").and_then(Value::as_str) == Some("engineering-assurance.error/v1")

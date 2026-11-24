@@ -118,9 +118,9 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
         }
         None => serde_json::json!([]),
     };
-    let view = invoke(
+    let view = crate::core_runtime::invoke_verifying(
         "assurance.build_authored_argument",
-        &serde_json::json!({ "argument": argument, "decisions": decisions, "asOf": as_of, "discharge": discharge, "evidence": evidence }),
+        &serde_json::json!({ "argument": argument, "decisions": decisions, "asOf": as_of, "discharge": discharge, "evidence": evidence, "repo": repo, "approval": crate::discharge::approval_inputs(arguments)? }),
     )?;
     if !view.outcome.carries_payload() {
         return Ok(view);

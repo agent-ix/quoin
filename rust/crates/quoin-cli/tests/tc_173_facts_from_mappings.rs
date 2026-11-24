@@ -109,6 +109,9 @@ fn exclusion_with(id: &str, set: &str, clause: &str, disposition: &Disposition<'
     )
 }
 
+/// The retained run record every control of the fixture cites.
+const RUN_REF: &str = "evidence://runs/SUITE-1/one";
+
 struct World {
     dir: tempfile::TempDir,
     home: tempfile::TempDir,
@@ -125,6 +128,22 @@ impl World {
             std::fs::write(world.spec().join(name), text).unwrap();
         }
         std::fs::write(world.path("binding.json"), binding.to_string()).unwrap();
+        // Every control cites the one retained run record the store holds.
+        let controls: serde_json::Map<String, Value> = files
+            .iter()
+            .filter(|(_, text)| text.contains("\ntype: control\n"))
+            .filter_map(|(_, text)| {
+                let id = text.lines().find_map(|line| line.strip_prefix("id: "))?;
+                Some((format!("ix://{id}"), serde_json::json!([RUN_REF])))
+            })
+            .collect();
+        std::fs::write(
+            world.path("evidence.json"),
+            Value::Object(controls).to_string(),
+        )
+        .unwrap();
+        std::fs::create_dir_all(world.path("spec/evidence/runs/SUITE-1")).unwrap();
+        std::fs::write(world.path("spec/evidence/runs/SUITE-1/one.json"), "{}").unwrap();
         std::fs::write(world.path("attestation.json"), attestation().to_string()).unwrap();
         synthetic_types_module(&world.path("modules"));
         world
@@ -172,6 +191,7 @@ impl World {
         let binding = self.path("binding.json");
         let attestation = self.path("attestation.json");
         let spec = self.spec();
+        let evidence = self.path("evidence.json");
         let mut arguments = vec![
             "evidence",
             "facts-from-mappings",
@@ -181,6 +201,8 @@ impl World {
             attestation.to_str().unwrap(),
             "--spec",
             spec.to_str().unwrap(),
+            "--evidence",
+            evidence.to_str().unwrap(),
         ];
         arguments.extend_from_slice(extra);
         self.run(&arguments, None)
@@ -194,6 +216,7 @@ impl World {
         let binding = self.path("binding.json");
         let attestation = self.path("attestation.json");
         let spec = self.spec();
+        let evidence = self.path("evidence.json");
         let mut arguments = vec![
             "evidence",
             "facts-from-mappings",
@@ -203,6 +226,8 @@ impl World {
             attestation.to_str().unwrap(),
             "--spec",
             spec.to_str().unwrap(),
+            "--evidence",
+            evidence.to_str().unwrap(),
         ];
         arguments.extend_from_slice(extra);
         self.run_with_installed_modules(&arguments, None, true)
@@ -225,6 +250,8 @@ impl World {
                 attestation.to_str().unwrap(),
                 "--spec",
                 spec.to_str().unwrap(),
+                "--evidence",
+                self.path("evidence.json").to_str().unwrap(),
             ])
             .env("IX_HOME", self.home.path())
             .env("IX_FILAMENT_MODULES_PATH", modules)
@@ -236,7 +263,46 @@ impl World {
             .unwrap()
     }
 
+    /// Install a module declaring the clause set and clauses of
+    /// `binding.json`, once, so a discharge resolves their policies.
+    fn ensure_clause_set(&self) {
+        let marker = self.home.path().join("filament/modules/binding-clause-set");
+        if marker.exists() {
+            return;
+        }
+        let binding: Value =
+            serde_json::from_str(&std::fs::read_to_string(self.path("binding.json")).unwrap())
+                .unwrap();
+        let set = &binding["clauseSet"];
+        let clauses: Vec<&str> = binding["clauses"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|clause| clause["clauseId"].as_str().unwrap())
+            .collect();
+        let source = tempfile::tempdir().unwrap();
+        let dir = source.path().join("binding-clause-set");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("manifest.yaml"),
+            "name: binding-clause-set\nversion: 0.1.0\nclause_sets:\n  - set.yaml\n",
+        )
+        .unwrap();
+        let mut yaml = format!(
+            "schemaVersion: clause-set-v1\nauthority: {}\nid: {}\ntitle: Binding set\nversion: \"{}\"\nrights:\n  structure: original\n  text: none\nclauses:\n",
+            set["authority"].as_str().unwrap(),
+            set["id"].as_str().unwrap(),
+            set["version"].as_str().unwrap(),
+        );
+        for clause in clauses {
+            writeln!(yaml, "  - id: {clause}\n    force: mandatory").unwrap();
+        }
+        std::fs::write(dir.join("set.yaml"), yaml).unwrap();
+        self.install_pack(&dir);
+    }
+
     fn record(&self, facts: &str) -> Output {
+        self.ensure_clause_set();
         let binding = self.path("binding.json");
         self.run(
             &[
@@ -272,6 +338,7 @@ impl World {
     }
 
     fn rmm(&self, as_of: &str) -> String {
+        self.ensure_clause_set();
         let binding = self.path("binding.json");
         let output = self.run(
             &[
@@ -519,7 +586,7 @@ fn is_expected_rmm_compliance_row(line: &str) -> bool {
     let cells: Vec<_> = line.split('|').map(str::trim).collect();
     matches!(
         cells.as_slice(),
-        ["C1", "Applicable", "Compliant", "ix://CTRL-A", _, _]
+        ["C1", "Applicable", "Compliant", RUN_REF, _, _]
             | [
                 "C3",
                 "Applicable",
@@ -545,7 +612,7 @@ fn tc_173_an_effective_control_yields_a_direct_fact_with_the_supplied_attestatio
     assert_eq!(facts.len(), 1);
     assert_eq!(facts[0]["kind"], "direct");
     assert_eq!(facts[0]["clauseId"], "C1");
-    assert_eq!(facts[0]["evidenceRefs"], json!(["ix://CTRL-001"]));
+    assert_eq!(facts[0]["evidenceRefs"], json!([RUN_REF]));
     assert_eq!(facts[0]["attestation"], attestation());
     assert!(!out(&world.facts()).contains("effectiveness"));
 }
@@ -1222,7 +1289,7 @@ fn tc_174_the_chain_renders_compliant_tailored_and_undischarged_rows_without_a_s
     assert_no_compliant_count_or_clause_text(&out(&recorded));
     let report = world.rmm_installed(AS_OF);
     assert!(
-        report.contains("| C1 | Applicable | Compliant | ix://CTRL-A |"),
+        report.contains("| C1 | Applicable | Compliant | evidence://runs/SUITE-1/one |"),
         "{report}"
     );
     assert!(report.contains("| C2 | Applicable | Tailored"), "{report}");
@@ -1291,7 +1358,7 @@ fn tc_174_the_chain_uses_a_synthetic_pack_installed_in_the_temporary_ix_home() {
     assert!(recorded.status.success(), "{recorded:?}");
     let report = world.rmm_installed(AS_OF);
     assert!(
-        report.contains("| C1 | Applicable | Compliant | ix://CTRL-A |"),
+        report.contains("| C1 | Applicable | Compliant | evidence://runs/SUITE-1/one |"),
         "{report}"
     );
     assert!(report.contains("| C2 | Applicable | Tailored"), "{report}");
@@ -1329,13 +1396,18 @@ fn tc_1525_skill_output_on_the_fixture_repo_flows_to_the_matrix() {
     let path = world.spec().join("CTRL-002-request-authorization.md");
     let text = std::fs::read_to_string(&path).unwrap();
     std::fs::write(&path, text.replace("`not_assessed`", "`effective`")).unwrap();
+    std::fs::write(
+        world.path("evidence.json"),
+        json!({"ix://CTRL-002": [RUN_REF]}).to_string(),
+    )
+    .unwrap();
 
     chain(&world);
     let report = world.rmm(AS_OF);
     for clause in ["AC-3", "AC-6"] {
         assert!(
             report.contains(&format!(
-                "| {clause} | Applicable | Compliant | ix://CTRL-002 "
+                "| {clause} | Applicable | Compliant | evidence://runs/SUITE-1/one "
             )),
             "{report}"
         );
@@ -1348,4 +1420,132 @@ fn tc_1525_skill_output_on_the_fixture_repo_flows_to_the_matrix() {
         report.contains("| IA-5 | Applicable | Not compliant - undischarged"),
         "{report}"
     );
+}
+
+impl World {
+    /// `facts-from-mappings` with `text` as the `--evidence` file.
+    fn facts_with_evidence_text(&self, text: &str) -> Output {
+        std::fs::write(self.path("custom-evidence.json"), text).unwrap();
+        let (binding, attestation, spec, evidence) = (
+            self.path("binding.json"),
+            self.path("attestation.json"),
+            self.spec(),
+            self.path("custom-evidence.json"),
+        );
+        self.run(
+            &[
+                "evidence",
+                "facts-from-mappings",
+                "--binding",
+                binding.to_str().unwrap(),
+                "--attestation",
+                attestation.to_str().unwrap(),
+                "--spec",
+                spec.to_str().unwrap(),
+                "--evidence",
+                evidence.to_str().unwrap(),
+            ],
+            None,
+        )
+    }
+}
+
+/// An effective control with no `--evidence` entry contributes no ref, so the
+/// clause yields no fact and an `open` line; refs of several controls union.
+#[trace("FR-173-AC-1", "FR-173-AC-2")]
+#[test]
+fn tc_211_a_control_without_an_evidence_entry_leaves_its_clause_open() {
+    let world = World::new(
+        &two_clauses(),
+        &[
+            ("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")])),
+            ("B.md", control("CTRL-B", Some("effective"), &[(SET, "C1")])),
+            ("C.md", control("CTRL-C", Some("effective"), &[(SET, "C2")])),
+        ],
+    );
+    let output = world.facts_with_evidence_text(
+        r#"{"ix://CTRL-A": ["evidence://runs/SUITE-1/b", "evidence://runs/SUITE-1/a"],
+            "ix://CTRL-B": ["evidence://runs/SUITE-1/a"]}"#,
+    );
+    let facts = parsed(&output);
+    assert_eq!(facts.len(), 1);
+    assert_eq!(
+        facts[0]["evidenceRefs"],
+        json!(["evidence://runs/SUITE-1/a", "evidence://runs/SUITE-1/b"])
+    );
+    assert!(err(&output).contains("open C2 CTRL-C"), "{}", err(&output));
+}
+
+/// A missing, malformed or empty `--evidence`, and a key naming no control,
+/// each refuse with empty stdout and a message naming the file and the key.
+#[trace("FR-173-AC-5")]
+#[test]
+fn tc_211_a_bad_evidence_file_is_refused_naming_the_file_and_the_key() {
+    let world = World::new(
+        &two_clauses(),
+        &[("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")]))],
+    );
+    for (text, needles) in [
+        ("[]", vec!["custom-evidence.json", "not a JSON object"]),
+        ("not json", vec!["custom-evidence.json"]),
+        (
+            r#"{"ix://CTRL-A": []}"#,
+            vec!["custom-evidence.json", "ix://CTRL-A"],
+        ),
+        (
+            r#"{"ix://CTRL-A": ["evidence://runs/S-1/a", 3]}"#,
+            vec!["custom-evidence.json", "ix://CTRL-A"],
+        ),
+        (
+            r#"{"ix://CTRL-Z": ["evidence://runs/S-1/a"]}"#,
+            vec!["custom-evidence.json", "ix://CTRL-Z"],
+        ),
+        (
+            r#"{"CTRL-A": ["evidence://runs/S-1/a"]}"#,
+            vec!["custom-evidence.json", "CTRL-A", "not an ix:// control id"],
+        ),
+    ] {
+        let output = world.facts_with_evidence_text(text);
+        assert!(!output.status.success(), "{text}: {output:?}");
+        assert!(out(&output).is_empty(), "{text}");
+        for needle in needles {
+            assert!(err(&output).contains(needle), "{text}: {}", err(&output));
+        }
+    }
+    let missing = world.run(
+        &[
+            "evidence",
+            "facts-from-mappings",
+            "--binding",
+            world.path("binding.json").to_str().unwrap(),
+            "--attestation",
+            world.path("attestation.json").to_str().unwrap(),
+            "--spec",
+            world.spec().to_str().unwrap(),
+        ],
+        None,
+    );
+    assert!(!missing.status.success());
+    assert!(out(&missing).is_empty());
+}
+
+/// The facts a run proposes are refused by `record-discharge` while a ref does
+/// not resolve (FR-211-AC-15).
+#[trace("FR-173-AC-7", "FR-211-AC-15")]
+#[test]
+fn tc_211_record_discharge_refuses_facts_whose_ref_no_longer_resolves() {
+    let world = World::new(
+        &two_clauses(),
+        &[("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")]))],
+    );
+    let facts = out(&world.facts());
+    std::fs::remove_file(world.path("spec/evidence/runs/SUITE-1/one.json")).unwrap();
+    let refused = world.record(&facts);
+    assert_eq!(refused.status.code(), Some(3), "{refused:?}");
+    assert!(
+        err(&refused).contains("C1: unresolved"),
+        "{}",
+        err(&refused)
+    );
+    assert!(world.discharge_files().is_empty());
 }
