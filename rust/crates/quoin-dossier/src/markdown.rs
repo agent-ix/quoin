@@ -25,7 +25,7 @@ pub(crate) fn line(text: &str) -> String {
         .to_owned()
 }
 
-/// A setext underline: only `-` or only `=` (CommonMark allows indentation and
+/// A setext underline: only `-` or only `=` (`CommonMark` allows indentation and
 /// trailing blanks around it, which the caller trims).
 fn is_underline(text: &str) -> bool {
     !text.is_empty() && (text.chars().all(|c| c == '-') || text.chars().all(|c| c == '='))
