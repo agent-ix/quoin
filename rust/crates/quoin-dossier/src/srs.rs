@@ -198,16 +198,6 @@ pub(crate) fn safety_class_gap(requirement: &str) -> Gap {
     .for_requirement(requirement)
 }
 
-/// The gap for an architecture part that records no software safety class.
-pub(crate) fn safety_class_gap_for_part(part: &str) -> Gap {
-    Gap::new(
-        GapKind::SafetyClassUnassigned,
-        part,
-        "records no software safety class",
-    )
-    .for_element(part)
-}
-
 /// The criteria table of a requirement as `(id, text)` pairs.
 pub(crate) fn criteria_of(doc: &Document) -> Vec<(String, String)> {
     let table_name = match doc.kind.as_str() {
