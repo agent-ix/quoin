@@ -113,7 +113,7 @@ and [FR-225](./FR-225-signed-acceptance-of-case-content.md), respectively.
 | FR-221-AC-8 | Content outside the declared mapping is listed in `unmapped` with a reason and is never silently dropped or approximated. | Test |
 | FR-221-AC-9 | Invoking `--gsn` with `--json` is a usage error and writes no model to stdout; invoking the command without `--gsn` preserves the existing output. | Test |
 | FR-221-AC-10 | Exporting unchanged input twice produces byte-identical JSON, including generated node ids, node ordering, edge ordering, and top-level lists. | Test |
-| FR-221-AC-12 | A tool-confidence strategy reports the intended-use, retained-run, validation-report, and anomaly source facts without a score or inferred trust verdict. | Test |
+| FR-221-AC-11 | A tool-confidence strategy reports the intended-use, retained-run, validation-report, and anomaly source facts without a score or inferred trust verdict. | Test |
 
 ## Dependencies
 

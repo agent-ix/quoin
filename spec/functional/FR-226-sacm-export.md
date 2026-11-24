@@ -74,14 +74,14 @@ build a second, independent mapping from the corpus.
 - The exporter SHALL derive XMI ids from source GSN ids with a stable role
   suffix for generated relationship elements.
 - The exporter SHALL make every reference resolve to one id in the document.
-- The repository SHALL NOT contain a copied SACM metamodel. Unit tests SHALL
-  validate against closed local expectations; a separate metamodel check MAY
-  load the normative SACM 2.3 machine-readable model from an explicit
-  `QUOIN_SACM_METAMODEL` path and SHALL fail when that path is unset.
-- The workspace has no XML writer dependency. The implementation SHALL use
-  the MIT-licensed `quick-xml` 0.42.0 writer as the sole new runtime dependency
-  only if an XML writer is required; it SHALL NOT add another non-workspace
-  runtime dependency. See https://docs.rs/crate/quick-xml/0.42.0.
+- A metamodel-conformance check MAY load the normative SACM 2.3 machine-readable
+  model from the explicit `QUOIN_SACM_METAMODEL` path. That check SHALL fail
+  when the path is unset. The metamodel source boundary is governed by
+  [NFR-046](../non-functional/NFR-046-no-copied-sacm-metamodel.md).
+- The workspace has no XML writer dependency. If an XML writer is required,
+  the implementation SHALL use `quick-xml` (MIT) as the sole new runtime
+  dependency outside the workspace. The exact crate version is set in the
+  Cargo manifest and lockfile.
 - No external application candidate was found and verified for importing the
   SACM 2.3 fixture at specification time. The upstream ACME repository
   documents a SACM 2.3 EMF model but no verified importer
@@ -94,6 +94,28 @@ build a second, independent mapping from the corpus.
   candidate and confirm its version and licence only after a successful
   import of the fixture.
 
+## Namespaces and XMI types
+
+The XMI document SHALL bind prefix `xmi` to
+`http://www.omg.org/spec/XMI/20131001` and prefix `sacm` to
+`http://www.omg.org/spec/SACM/20220301`. The root element SHALL use
+`xmi:type="sacm:AssuranceCasePackage"`.
+
+The exporter SHALL use these `xmi:type` identifiers from the normative SACM
+2.3 model:
+
+| SACM element role | `xmi:type` |
+| --- | --- |
+| Claim, including a goal or counter-claim | `sacm:Claim` |
+| Strategy | `sacm:ArgumentReasoning` |
+| Support or counter-claim relation | `sacm:AssertedInference` |
+| Solution evidence relation | `sacm:AssertedEvidence` |
+| Context relation | `sacm:AssertedContext` |
+| Evidence reference | `sacm:ArtifactReference` |
+| Evidence package | `sacm:ArtifactPackage` |
+| Evidence or acceptance record | `sacm:Artifact` |
+| Location-bearing artifact data | `sacm:Resource` |
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -104,7 +126,7 @@ build a second, independent mapping from the corpus.
 | FR-226-AC-4 | Re-export of unchanged GSN input produces byte-identical UTF-8 XMI with stable element and relationship ordering. | Test |
 | FR-226-AC-5 | Combining `--sacm` with any incompatible output flag returns a usage error and writes no XMI. | Test |
 | FR-226-AC-6 | A well-formedness failure in the GSN input writes no XMI and preserves the named WF rule and node ids in the error report. | Test |
-| FR-226-AC-7 | The repository contains no copied SACM metamodel; local expectations validate the XMI shape, and the explicit metamodel check rejects an unset path. | Test |
+| FR-226-AC-7 | Local expectations validate the XMI shape; the explicit metamodel-conformance check compares the output against the normative model at `QUOIN_SACM_METAMODEL` and rejects an unset path. | Test |
 | FR-226-AC-8 | No external interop application is named as verified until PLAT-1649 has successful fixture-import evidence with application name, version, and licence. | Inspection |
 
 ## Dependencies
@@ -117,5 +139,5 @@ build a second, independent mapping from the corpus.
 OMG Structured Assurance Case Metamodel (SACM), Version 2.3, formal October
 2023: https://www.omg.org/spec/SACM/2.3. Normative machine-readable model:
 https://www.omg.org/spec/SACM/20220301/SACM.xml. OMG XMI 2.5.1:
-https://www.omg.org/spec/XMI/2.5.1. The requirement names metamodel element
-types only and does not copy standard text or package files.
+https://www.omg.org/spec/XMI/2.5.1. The requirement names the normative
+metamodel element and type identifiers.

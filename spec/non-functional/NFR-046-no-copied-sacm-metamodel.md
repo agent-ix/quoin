@@ -35,4 +35,5 @@ only its own SACM output contract.
 
 Inspect repository contents for a copied SACM model and inspect runtime
 dependencies. If an XML writer is required, the only permitted external writer
-is `quick-xml` 0.42.0 under MIT; the workspace currently has no XML writer.
+is `quick-xml` under MIT; the workspace currently has no XML writer. Its exact
+version is selected in the Cargo manifest and lockfile.
