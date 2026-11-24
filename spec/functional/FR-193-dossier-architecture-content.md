@@ -45,7 +45,7 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 - The document SHALL NOT infer, default or inherit a class, from a parent part, an allocated requirement or elsewhere.
 - The architecture document SHALL show for each connection its flow direction and both ends.
 - The architecture document SHALL list for each part the requirements allocated to or realized by it, from the join.
-- If the join reports a requirement in the `uncovered` state, the document SHALL record a `no_design_element` gap naming it.
+- If the join reports a requirement in the `uncovered` state in a design relation, the document SHALL record one `no_design_element` gap per `uncovered` row, naming the requirement and the `check` token of that row's relation. The gap states that the relation's check found no element, and SHALL NOT state that the requirement has no design element at all when it has an element under another relation. A requirement with `uncovered` rows in two relations has two gaps, told apart by the `check` token.
 - If a design reference resolves to no element, the document SHALL show the reference.
 - If a design reference resolves to no element, the document SHALL record a `dangling_design_reference` gap naming it.
 - If the join lists a design element of a kind the relation does not accept (`kind_mismatch`), the document SHALL show the element.
@@ -66,6 +66,7 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 | FR-193-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
 | FR-193-AC-7 | A part that records class `class-3` shows `class-3` as recorded. | Test |
 | FR-193-AC-8 | A part with no recorded class shows `unassigned` and one `safety_class_unassigned` gap naming the part, even when its parent part and an allocated requirement record a class. | Test |
+| FR-193-AC-9 | A requirement with a `covered` row in one relation and an `uncovered` row in a second records one `no_design_element` gap carrying the second relation's `check` token and no gap for the first; a requirement with `uncovered` rows in two relations records two gaps with their two `check` tokens. | Test |
 
 ## Dependencies
 
