@@ -55,6 +55,9 @@ pub(super) fn map_error(error: &EvidenceError, op: &'static str) -> CoreError {
         EvidenceError::ScenarioRefused { kind, .. } => {
             envelope.with_context("refusal", kind.as_str())
         }
+        EvidenceError::CustomerArtifactRefused { kind, .. } => {
+            envelope.with_context("refusal", kind.as_str())
+        }
         _ => envelope,
     };
     match mapped {
@@ -75,7 +78,8 @@ const fn core_code(code: EvidenceErrorCode) -> Option<CoreErrorCode> {
         | EvidenceErrorCode::InvalidRecord
         | EvidenceErrorCode::PolicyUnknownObligation
         | EvidenceErrorCode::Canonicalization
-        | EvidenceErrorCode::ScenarioRefused => CoreErrorCode::BadRequest,
+        | EvidenceErrorCode::ScenarioRefused
+        | EvidenceErrorCode::CustomerArtifactRefused => CoreErrorCode::BadRequest,
 
         EvidenceErrorCode::StoreRead
         | EvidenceErrorCode::StoreIo
@@ -113,7 +117,7 @@ mod tests {
     fn the_error_mapping_covers_every_evidence_code() {
         assert_eq!(
             EvidenceErrorCode::ALL.len(),
-            10,
+            11,
             "quoin-evidence gained or lost an error code; map it in map_error deliberately"
         );
 
@@ -125,6 +129,7 @@ mod tests {
             EvidenceErrorCode::PolicyUnknownObligation,
             EvidenceErrorCode::Canonicalization,
             EvidenceErrorCode::ScenarioRefused,
+            EvidenceErrorCode::CustomerArtifactRefused,
         ];
         let refused = [
             EvidenceErrorCode::StoreRead,

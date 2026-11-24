@@ -441,6 +441,14 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             requirements_matrix(&json!({"repo": filler(MAX_DISCHARGE_BYTES)}), &capabilities),
         ),
         (
+            "evidence.record_customer_artifact",
+            MAX_CUSTOMER_ARTIFACT_BYTES,
+            record_customer_artifact(
+                &json!({"repo": filler(MAX_CUSTOMER_ARTIFACT_BYTES)}),
+                &capabilities,
+            ),
+        ),
+        (
             "evidence.record_scenario",
             MAX_SCENARIO_RECORD_BYTES,
             record_scenario(

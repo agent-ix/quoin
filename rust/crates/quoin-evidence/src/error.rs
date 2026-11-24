@@ -40,6 +40,8 @@ pub enum EvidenceErrorCode {
     Canonicalization,
     /// A Protocol scenario-evidence document was refused by the intake.
     ScenarioRefused,
+    /// A customer artifact id was refused (`invalid-identifier`, `case-collision`).
+    CustomerArtifactRefused,
 }
 
 impl EvidenceErrorCode {
@@ -55,6 +57,7 @@ impl EvidenceErrorCode {
         Self::RecordIntegrity,
         Self::Canonicalization,
         Self::ScenarioRefused,
+        Self::CustomerArtifactRefused,
     ];
 
     /// The code's contractual spelling.
@@ -71,6 +74,7 @@ impl EvidenceErrorCode {
             Self::RecordIntegrity => "QE-E008",
             Self::Canonicalization => "QE-E009",
             Self::ScenarioRefused => "QE-E010",
+            Self::CustomerArtifactRefused => "QE-E011",
         }
     }
 
@@ -208,6 +212,15 @@ pub enum EvidenceError {
         /// The offending component, in words.
         detail: String,
     },
+    /// A customer artifact id was refused. The kind is the API; the detail
+    /// names the id.
+    #[error("customer artifact refused ({}): {detail}", .kind.as_str())]
+    CustomerArtifactRefused {
+        /// Which identifier rule refused it.
+        kind: crate::customer_artifact::CustomerArtifactRefusal,
+        /// The offending id, in words.
+        detail: String,
+    },
 }
 
 impl EvidenceError {
@@ -227,6 +240,7 @@ impl EvidenceError {
             Self::RecordIntegrity { .. } => EvidenceErrorCode::RecordIntegrity,
             Self::Canonicalization { .. } => EvidenceErrorCode::Canonicalization,
             Self::ScenarioRefused { .. } => EvidenceErrorCode::ScenarioRefused,
+            Self::CustomerArtifactRefused { .. } => EvidenceErrorCode::CustomerArtifactRefused,
         }
     }
 
