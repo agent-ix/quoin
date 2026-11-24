@@ -11,6 +11,7 @@
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Response, canonical_json};
+use quoin_evidence::qualify::RetainedRun;
 
 use crate::core_runtime::invoke;
 use crate::evidence::audit::{
@@ -122,7 +123,7 @@ pub(crate) fn build(
             .ok_or_else(|| "quire.coverage did not return obligations".to_owned())?,
     )
     .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
-    let (analysis, design_coverage) = crate::analysis_evidence::compute_for_matrix(
+    let (analysis, design_coverage, retained) = crate::analysis_evidence::compute_for_matrix(
         repo,
         options.module_paths(),
         &audited.store_inputs,
@@ -153,10 +154,32 @@ pub(crate) fn build(
             "evidence_results": evidence_report.get("evidence_results").cloned().unwrap_or_else(|| serde_json::json!([])),
         }),
     );
+    request.insert("runs".to_owned(), run_records(&retained));
     let request = serde_json::Value::Object(request);
     let response = invoke("matrix.build", &request)?;
     Ok(Built::Matrix(MatrixBuilt {
         response,
         audit_diagnostics: audited.response.diagnostics,
     }))
+}
+
+/// The retained run records, reduced to what the run identity of FR-196 reads.
+fn run_records(retained: &[RetainedRun]) -> serde_json::Value {
+    serde_json::Value::Array(
+        retained
+            .iter()
+            .map(|run| {
+                serde_json::json!({
+                    "file": run.file,
+                    "suite": run.record.suite.as_str(),
+                    "tool": run.record.tool,
+                    "timestamp": run.record.timestamp,
+                    "entries": run.record.entries.iter().map(|entry| serde_json::json!({
+                        "symbol": entry.symbol.as_str(),
+                        "outcome": entry.outcome.as_str(),
+                    })).collect::<Vec<_>>(),
+                })
+            })
+            .collect(),
+    )
 }

@@ -360,9 +360,9 @@ fn a_failing_source_exits_3_names_it_writes_nothing_and_keeps_existing_files() {
     assert_eq!(names(&work.path().join("dossier")), ["DOS-STUB-A.md"]);
 }
 
-#[trace("FR-191-AC-13", "FR-191-AC-24")]
+#[trace("FR-191-AC-13", "FR-191-AC-24", "FR-191-AC-29", "FR-207-AC-10")]
 #[test]
-fn versionless_generation_is_limited_to_records_of_processing() {
+fn records_of_processing_needs_no_version_and_exports_only_with_release() {
     let work = tempfile::tempdir().unwrap();
     let spec = work.path().join("spec");
     fs::create_dir(&spec).unwrap();
@@ -382,6 +382,7 @@ fn versionless_generation_is_limited_to_records_of_processing() {
         assert_eq!(names(work.path()), ["spec"], "{args:?}");
     }
 
+    init_temp_git(work.path());
     let generated = quoin(
         work.path(),
         &[
@@ -398,23 +399,84 @@ fn versionless_generation_is_limited_to_records_of_processing() {
     assert_eq!(report["documents"][0]["id"], "DOS-ROP");
     let document = read(&work.path().join("dossier/DOS-ROP.md"));
     assert!(!document.lines().any(|line| line.starts_with("version:")));
+    commit_paths(work.path(), "dossier", &["dossier"]);
 
-    for args in [
-        &["check", "--doc", "records-of-processing"][..],
+    let checked = quoin(
+        work.path(),
+        &[
+            "check",
+            "--doc",
+            "records-of-processing",
+            "--module",
+            module_path,
+            "--json",
+        ],
+    );
+    assert_eq!(code(&checked), 1, "{}", stderr(&checked));
+    let report = json(&checked);
+    assert_eq!(report["documents"][0]["id"], "DOS-ROP");
+    assert_eq!(report["documents"][0]["comparison"], "matches");
+    assert_eq!(
+        report["documents"][0]["gaps"][0]["gap_kind"],
+        "no_processing_activity"
+    );
+
+    fs::write(work.path().join("out.pdf"), b"sentinel").unwrap();
+    let refusing = fake_quire(work.path(), 3, "a release or version is required");
+    let refused = quoin(
+        work.path(),
         &[
             "export",
             "--doc",
             "records-of-processing",
+            "--module",
+            module_path,
             "--to",
             "pdf",
             "--output",
             "out.pdf",
-        ][..],
-    ] {
-        let output = quoin(work.path(), args);
-        assert_eq!(code(&output), 2, "{args:?}: {}", stderr(&output));
-    }
-    assert!(!work.path().join("out.pdf").exists());
+            "--quire",
+            refusing.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    assert_eq!(code(&refused), 4, "{}", stderr(&refused));
+    assert_eq!(json(&refused)["quire"]["exit_code"], 3);
+    assert_eq!(fs::read(work.path().join("out.pdf")).unwrap(), b"sentinel");
+    assert!(
+        !recorded_args(work.path())
+            .iter()
+            .any(|arg| arg == "--release")
+    );
+
+    let accepting = fake_quire(work.path(), 0, "");
+    let exported = quoin(
+        work.path(),
+        &[
+            "export",
+            "--doc",
+            "records-of-processing",
+            "--module",
+            module_path,
+            "--release",
+            "v1",
+            "--to",
+            "pdf",
+            "--output",
+            "out.pdf",
+            "--quire",
+            accepting.to_str().unwrap(),
+            "--json",
+        ],
+    );
+    // The empty fixture leaves DOS-ROP incomplete (`no_processing_activity`),
+    // which exits 1 even though `quire export` succeeded (FR-191-AC-16).
+    assert_eq!(code(&exported), 1, "{}", stderr(&exported));
+    assert!(json(&exported).get("quire").is_none_or(Value::is_null));
+    assert_eq!(read(&work.path().join("out.pdf")), "bundle\n");
+    let args = recorded_args(work.path());
+    assert!(args.windows(2).any(|pair| pair == ["--release", "v1"]));
+    assert!(!args.iter().any(|arg| arg == "--version"));
 }
 
 #[trace("FR-191")]

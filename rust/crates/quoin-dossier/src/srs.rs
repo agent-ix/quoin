@@ -104,6 +104,13 @@ fn render(documents: &[Document]) -> Generated {
             );
         }
 
+        if let Some(class) = software_safety_class_of(req) {
+            let _ = write!(body, "Software safety class: {}\n\n", line(&class));
+        } else {
+            body.push_str("Software safety class: unassigned\n\n");
+            gaps.push(safety_class_gap(&req.id));
+        }
+
         let criteria = criteria_of(req);
         if criteria.is_empty() {
             gaps.push(
@@ -161,6 +168,44 @@ pub(crate) fn criticality_of(doc: &Document) -> Option<String> {
         other => other.to_string(),
     };
     (!recorded.trim().is_empty()).then_some(recorded)
+}
+
+/// The software safety class exactly as recorded in the requirement's own
+/// frontmatter; `None` when the key is absent, null or blank. A class is never
+/// inferred, defaulted or inherited from criticality, an allocated part or
+/// another requirement (spec-artifacts-iso FR-009).
+pub(crate) fn software_safety_class_of(doc: &Document) -> Option<String> {
+    recorded_text(doc.software_safety_class()?)
+}
+
+/// A recorded scalar as written: a string is its own text, any other value its
+/// JSON. `None` when blank.
+pub(crate) fn recorded_text(value: &Value) -> Option<String> {
+    let text = match value {
+        Value::String(text) => text.clone(),
+        other => other.to_string(),
+    };
+    (!text.trim().is_empty()).then_some(text)
+}
+
+/// The gap for a requirement that records no software safety class.
+pub(crate) fn safety_class_gap(requirement: &str) -> Gap {
+    Gap::new(
+        GapKind::SafetyClassUnassigned,
+        requirement,
+        "records no software safety class",
+    )
+    .for_requirement(requirement)
+}
+
+/// The gap for an architecture part that records no software safety class.
+pub(crate) fn safety_class_gap_for_part(part: &str) -> Gap {
+    Gap::new(
+        GapKind::SafetyClassUnassigned,
+        part,
+        "records no software safety class",
+    )
+    .for_element(part)
 }
 
 /// The criteria table of a requirement as `(id, text)` pairs.
@@ -227,6 +272,10 @@ mod tests {
     ) -> Document {
         let mut frontmatter = Map::new();
         frontmatter.insert("title".to_owned(), Value::String(title.to_owned()));
+        frontmatter.insert(
+            "software_safety_class".to_owned(),
+            Value::String("class-1".to_owned()),
+        );
         if let Some(level) = criticality {
             frontmatter.insert("criticality".to_owned(), Value::String(level.to_owned()));
         }
@@ -421,6 +470,45 @@ mod tests {
             failure
                 .detail
                 .contains("FR-1.md: header is not the declared one")
+        );
+    }
+
+    #[trace("FR-192-AC-7")]
+    #[test]
+    fn a_recorded_class_is_shown_as_written_apart_from_criticality() {
+        let mut document = requirement("FR", "FR-1", "One", Some("high"), &[("FR-1-AC-1", "c")]);
+        document.frontmatter.insert(
+            "software_safety_class".to_owned(),
+            Value::String("class-2".to_owned()),
+        );
+        let generated = render(&[document]);
+        let lines: Vec<_> = generated.body.lines().collect();
+        assert!(lines.contains(&"Criticality: high"));
+        assert!(lines.contains(&"Software safety class: class-2"));
+        assert!(generated.gaps.is_empty());
+    }
+
+    #[trace("FR-192-AC-8", "FR-192-AC-9")]
+    #[test]
+    fn an_unrecorded_class_is_unassigned_and_never_copied_from_criticality_or_a_part() {
+        let mut document = requirement("FR", "FR-1", "One", Some("high"), &[("FR-1-AC-1", "c")]);
+        document.frontmatter.remove("software_safety_class");
+        // A part that records a class is allocated this requirement elsewhere;
+        // the SRS reads only the requirement's own document.
+        let mut part = requirement("FR", "PART-1", "Part", None, &[]);
+        part.kind = "part".to_owned();
+        let generated = render(&[document, part]);
+        let section = generated.body.find("## FR-1: One").unwrap();
+        let section = &generated.body[section
+            ..generated
+                .body
+                .find("## PART-1")
+                .unwrap_or(generated.body.len())];
+        assert!(section.contains("Software safety class: unassigned"));
+        assert!(!section.contains("class-"));
+        assert_eq!(
+            gap_kinds(&generated),
+            vec![("safety_class_unassigned", "FR-1".to_owned())]
         );
     }
 }

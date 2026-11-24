@@ -23,6 +23,8 @@ pub enum GapKind {
     NoAcceptanceCriteria,
     /// A requirement has no criticality.
     CriticalityUnassigned,
+    /// A requirement or architecture part records no software safety class.
+    SafetyClassUnassigned,
     /// The design relations could not be read.
     DesignRelationsUnavailable,
     /// A requirement is allocated to no design element.
@@ -47,6 +49,8 @@ pub enum GapKind {
     EvidenceStale,
     /// A criterion's evidence is distrusted by the auditor.
     EvidenceSuspect,
+    /// A selected run records no timestamp or no tool.
+    RunIdentityUnrecorded,
     /// A SOUP advisory or policy finding has no current disposition.
     SoupUnresolvedAdvisory,
     /// A SOUP component is past its stated support end date.
@@ -100,10 +104,11 @@ pub enum GapKind {
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 39] = [
+    pub(crate) const ALL: [Self; 41] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
+        Self::SafetyClassUnassigned,
         Self::DesignRelationsUnavailable,
         Self::NoDesignElement,
         Self::DanglingDesignReference,
@@ -116,6 +121,7 @@ impl GapKind {
         Self::EvidenceFailed,
         Self::EvidenceStale,
         Self::EvidenceSuspect,
+        Self::RunIdentityUnrecorded,
         Self::SoupUnresolvedAdvisory,
         Self::SoupPastEndOfSupport,
         Self::SoupFieldNotStated,
@@ -149,6 +155,7 @@ impl GapKind {
             Self::NoRequirements => "no_requirements",
             Self::NoAcceptanceCriteria => "no_acceptance_criteria",
             Self::CriticalityUnassigned => "criticality_unassigned",
+            Self::SafetyClassUnassigned => "safety_class_unassigned",
             Self::DesignRelationsUnavailable => "design_relations_unavailable",
             Self::NoDesignElement => "no_design_element",
             Self::DanglingDesignReference => "dangling_design_reference",
@@ -161,6 +168,7 @@ impl GapKind {
             Self::EvidenceFailed => "evidence_failed",
             Self::EvidenceStale => "evidence_stale",
             Self::EvidenceSuspect => "evidence_suspect",
+            Self::RunIdentityUnrecorded => "run_identity_unrecorded",
             Self::SoupUnresolvedAdvisory => "soup_unresolved_advisory",
             Self::SoupPastEndOfSupport => "soup_past_end_of_support",
             Self::SoupFieldNotStated => "soup_field_not_stated",
@@ -321,6 +329,7 @@ mod tests {
                 "no_requirements",
                 "no_acceptance_criteria",
                 "criticality_unassigned",
+                "safety_class_unassigned",
                 "design_relations_unavailable",
                 "no_design_element",
                 "dangling_design_reference",
@@ -333,6 +342,7 @@ mod tests {
                 "evidence_failed",
                 "evidence_stale",
                 "evidence_suspect",
+                "run_identity_unrecorded",
                 "soup_unresolved_advisory",
                 "soup_past_end_of_support",
                 "soup_field_not_stated",
@@ -401,5 +411,21 @@ mod tests {
     fn a_bullet_carries_kind_subject_and_detail_on_one_line() {
         let gap = Gap::new(GapKind::ClauseOpen, "CL-1", "no\nevidence");
         assert_eq!(gap.bullet(), "- `clause_open` CL-1: no evidence");
+    }
+
+    #[trace("FR-191-AC-15")]
+    #[test]
+    fn a_part_class_gap_sorts_by_its_element_id_and_a_requirement_one_by_its_requirement() {
+        let mut gaps = vec![
+            Gap::new(GapKind::SafetyClassUnassigned, "FR-2", "none").for_requirement("FR-2"),
+            Gap::new(GapKind::SafetyClassUnassigned, "PART-B", "none").for_element("PART-B"),
+            Gap::new(GapKind::SafetyClassUnassigned, "PART-A", "none").for_element("PART-A"),
+            Gap::new(GapKind::RunIdentityUnrecorded, "FR-2-AC-1", "none")
+                .for_requirement("FR-2")
+                .for_criterion("FR-2-AC-1"),
+        ];
+        sort_gaps(&mut gaps);
+        let subjects: Vec<_> = gaps.iter().map(|gap| gap.subject.as_str()).collect();
+        assert_eq!(subjects, ["PART-A", "PART-B", "FR-2", "FR-2-AC-1"]);
     }
 }

@@ -16,7 +16,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use quoin_evidence::types::BindingsFile;
+use quoin_evidence::parse_timestamp;
+use quoin_evidence::types::{Binding, BindingsFile, Outcome};
 pub use quoin_finding_types::StaleCause;
 use quoin_finding_types::{AuditReport, Finding, FindingKind};
 use quoin_quire_types::{CoverageMatrixBinder, CoverageMatrixUnbackedClaim, TargetLocus};
@@ -43,6 +44,41 @@ pub struct MatrixInput {
     /// The exact FR-078 claims and causes emitted for this selected inventory.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub analysis_evidence: Option<AnalysisEvidenceInput>,
+    /// Every retained run record of the evidence store, reduced to the members
+    /// the run identity of FR-196 reads. Absent when the host supplies none.
+    #[serde(default)]
+    pub runs: Vec<MatrixRun>,
+}
+
+/// One retained run record, as `matrix.build` reads it (FR-196, "Run-identity
+/// source contract").
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MatrixRun {
+    /// The record's store-relative file name; the tie-breaker of the run order.
+    pub file: String,
+    /// The suite the run covered.
+    pub suite: String,
+    /// Tool and version, as the adapter reported them.
+    pub tool: String,
+    /// The run's recorded timestamp.
+    pub timestamp: String,
+    /// The source revision the record names, when it carries a member naming
+    /// one. The run record carries none today, so a host leaves this absent.
+    #[serde(default)]
+    pub source_revision: Option<String>,
+    /// One entry per symbol the producer reported.
+    pub entries: Vec<MatrixRunEntry>,
+}
+
+/// One run entry: the symbol and what the producer said about it.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MatrixRunEntry {
+    /// The producer's own identity for the result.
+    pub symbol: String,
+    /// What the producer said.
+    pub outcome: Outcome,
 }
 
 /// FR-078 values supplied by the analysis bridge, preserved without reduction.
@@ -278,6 +314,42 @@ pub struct FindingDetail {
 pub struct BindingDetail {
     /// The suite that discharged the obligation.
     pub suite: String,
+    /// The identity of the newest retained run of `suite` that holds an entry
+    /// the audit bound to this criterion. Omitted when no retained run does.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run: Option<RunIdentity>,
+}
+
+/// Which run backs a bound suite, exactly as the run record states it. The
+/// matrix computes no outcome from it (FR-196).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunIdentity {
+    /// The run record's store-relative file name.
+    pub file: String,
+    /// The recorded timestamp, possibly empty.
+    pub timestamp: String,
+    /// The `tool` string as recorded, possibly empty.
+    pub tool: String,
+    /// The source revision, verbatim, when the record names one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_revision: Option<String>,
+    /// How many entries bound to the criterion recorded each outcome.
+    pub outcomes: OutcomeTally,
+}
+
+/// A count of recorded outcome values, never a verdict.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OutcomeTally {
+    /// Entries recorded as `pass`.
+    pub pass: usize,
+    /// Entries recorded as `fail`.
+    pub fail: usize,
+    /// Entries recorded as `skip`.
+    pub skip: usize,
+    /// Entries recorded as `error`.
+    pub error: usize,
 }
 
 /// The audit named one obligation both healthy and not.
@@ -466,6 +538,7 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, MatrixRefusal> {
             .or_default()
             .push(BindingDetail {
                 suite: binding.suite.as_str().to_owned(),
+                run: selected_run(binding, &input.runs),
             });
     }
     let store_is_empty = input.bindings.bindings.is_empty();
@@ -746,6 +819,46 @@ fn add_criterion(
                 coverage,
             ),
         });
+}
+
+/// The run that backs `binding`: of the retained runs of its suite that hold at
+/// least one entry whose symbol the binding names, the one with the greatest
+/// timestamp, the file name breaking a tie. This is the order of
+/// `quoin_evidence`'s `RetainedRun`: the parsed UTC instant, then the file name.
+fn selected_run(binding: &Binding, runs: &[MatrixRun]) -> Option<RunIdentity> {
+    let bound = |entry: &&MatrixRunEntry| {
+        binding
+            .symbols
+            .iter()
+            .any(|symbol| symbol.as_str() == entry.symbol)
+    };
+    runs.iter()
+        .filter(|run| run.suite == binding.suite.as_str())
+        .filter(|run| run.entries.iter().any(|entry| bound(&entry)))
+        .max_by(|left, right| {
+            parse_timestamp(&left.timestamp)
+                .cmp(&parse_timestamp(&right.timestamp))
+                .then_with(|| left.file.cmp(&right.file))
+        })
+        .map(|run| {
+            let mut outcomes = OutcomeTally::default();
+            for entry in run.entries.iter().filter(bound) {
+                let count = match entry.outcome {
+                    Outcome::Pass => &mut outcomes.pass,
+                    Outcome::Fail => &mut outcomes.fail,
+                    Outcome::Skip => &mut outcomes.skip,
+                    Outcome::Error => &mut outcomes.error,
+                };
+                *count += 1;
+            }
+            RunIdentity {
+                file: run.file.clone(),
+                timestamp: run.timestamp.clone(),
+                tool: run.tool.clone(),
+                source_revision: run.source_revision.clone(),
+                outcomes,
+            }
+        })
 }
 
 /// One criterion's total evidence detail, in the orders FR-115-AC-9 states.

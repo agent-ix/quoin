@@ -73,7 +73,14 @@ fn the_srs_lists_the_criteria_the_repository_states() {
         .iter()
         .map(|gap| (gap.gap_kind.as_str(), gap.subject.as_str()))
         .collect();
-    assert_eq!(gaps, [("criticality_unassigned", "FR-001")]);
+    assert_eq!(
+        gaps,
+        [
+            ("criticality_unassigned", "FR-001"),
+            ("safety_class_unassigned", "FR-001")
+        ]
+    );
+    assert!(text.contains("Software safety class: unassigned"));
 }
 
 /// A module set that declares no `design_relations` is incomplete with that one

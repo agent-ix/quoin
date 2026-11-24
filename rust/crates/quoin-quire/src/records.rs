@@ -71,6 +71,23 @@ pub struct Document {
     pub contract: Contract,
 }
 
+/// The frontmatter key under which a document records its software safety
+/// class (spec-artifacts-iso FR-009 for requirements, spec-objects-architecture
+/// FR-012 for parts); the engine maps it to the record key `softwareSafetyClass`.
+pub const SOFTWARE_SAFETY_CLASS_KEY: &str = "software_safety_class";
+
+impl Document {
+    /// The software safety class this document records, exactly as written.
+    /// `None` when the key is absent or null: a class is never inferred,
+    /// defaulted or inherited from another document.
+    #[must_use]
+    pub fn software_safety_class(&self) -> Option<&Value> {
+        self.frontmatter
+            .get(SOFTWARE_SAFETY_CLASS_KEY)
+            .filter(|value| !value.is_null())
+    }
+}
+
 /// A file the engine's walker could not load.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unreadable {

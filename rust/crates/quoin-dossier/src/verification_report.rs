@@ -14,7 +14,7 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 use quoin_assurance::matrix::{
-    EvidenceStatus, MatrixCriterion, MatrixOutput, MatrixRequirement, StaleCause,
+    EvidenceStatus, MatrixCriterion, MatrixOutput, MatrixRequirement, RunIdentity, StaleCause,
 };
 use quoin_quire::records::Document;
 use serde_json::Value;
@@ -32,6 +32,9 @@ const STALE_EVIDENCE: &str = "stale-evidence";
 
 /// The analysis item status of a qualified retained record.
 const QUALIFIED_RECORD: &str = "qualified-record";
+
+/// What the report reads where the source states no value.
+const NOT_RECORDED: &str = "not recorded";
 
 /// Every status the summary counts, in the order FR-115 lists them.
 const STATUSES: [EvidenceStatus; 5] = [
@@ -214,17 +217,18 @@ fn render_requirement(
     }
 
     body.push_str(
-        "| Criterion | Method | Evidence | Source findings | Evidence status |\n\
-         |-----------|--------|----------|-----------------|-----------------|\n",
+        "| Criterion | Method | Evidence | Source findings | Run identity | Evidence status |\n\
+         |-----------|--------|----------|-----------------|--------------|-----------------|\n",
     );
     for criterion in criteria {
         let _ = writeln!(
             body,
-            "| {} | {} | {} | {} | {} |",
+            "| {} | {} | {} | {} | {} | {} |",
             cell(&criterion.id),
             cell(criterion.method.as_deref().unwrap_or("not stated")),
             cell(&evidence_cell(criterion)),
             cell(&findings_cell(criterion)),
+            cell(&run_identity_cell(criterion)),
             criterion.evidence_status.as_str()
         );
         gaps.extend(criterion_gaps(id, criterion));
@@ -296,6 +300,50 @@ fn findings_cell(criterion: &MatrixCriterion) -> String {
     joined(&items)
 }
 
+/// The run identity the matrix selects for each suite bound to a criterion,
+/// every value as recorded and a value the source does not state as
+/// `not recorded`. The tally counts recorded outcome values; no outcome is
+/// computed from it.
+fn run_identity_cell(criterion: &MatrixCriterion) -> String {
+    let bindings = &criterion.evidence_detail.bindings;
+    if bindings.is_empty() {
+        return NOT_RECORDED.to_owned();
+    }
+    let items: Vec<String> = bindings
+        .iter()
+        .map(|binding| match &binding.run {
+            Some(run) => format!("suite {}: {}", binding.suite, run_values(run)),
+            None => format!("suite {}: {NOT_RECORDED}", binding.suite),
+        })
+        .collect();
+    items.join("; ")
+}
+
+fn run_values(run: &RunIdentity) -> String {
+    let stated = |value: &str| {
+        if value.is_empty() {
+            NOT_RECORDED
+        } else {
+            value
+        }
+        .to_owned()
+    };
+    let tally = &run.outcomes;
+    format!(
+        "timestamp {}, tool {}, file {}, outcomes pass {} fail {} skip {} error {}, source revision {}",
+        stated(&run.timestamp),
+        stated(&run.tool),
+        stated(&run.file),
+        tally.pass,
+        tally.fail,
+        tally.skip,
+        tally.error,
+        run.source_revision
+            .as_deref()
+            .map_or(NOT_RECORDED, |revision| revision),
+    )
+}
+
 fn joined(items: &[String]) -> String {
     if items.is_empty() {
         "none".to_owned()
@@ -339,6 +387,31 @@ fn criterion_gaps(requirement: &str, criterion: &MatrixCriterion) -> Vec<Gap> {
         )),
         EvidenceStatus::Bound | EvidenceStatus::Stale => {}
     }
+
+    gaps.extend(
+        criterion
+            .evidence_detail
+            .bindings
+            .iter()
+            .filter_map(|binding| {
+                let run = binding.run.as_ref()?;
+                let missing: Vec<&str> = [("timestamp", &run.timestamp), ("tool", &run.tool)]
+                    .into_iter()
+                    .filter(|(_, value)| value.is_empty())
+                    .map(|(name, _)| name)
+                    .collect();
+                (!missing.is_empty()).then(|| {
+                    gap(
+                        GapKind::RunIdentityUnrecorded,
+                        &format!(
+                            "the selected run of suite {} records no {}",
+                            binding.suite,
+                            missing.join(" and ")
+                        ),
+                    )
+                })
+            }),
+    );
 
     let backed = !criterion.binders.is_empty() || retained_records(criterion).next().is_some();
     if !backed {

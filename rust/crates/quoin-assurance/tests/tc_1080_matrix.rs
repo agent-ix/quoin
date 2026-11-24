@@ -1029,3 +1029,130 @@ fn tc_160_matrix_002_the_class_column_shows_the_value_and_unassigned() {
     assert!(rendered.contains("| unassigned |"), "{rendered}");
     assert!(rendered.contains("1 criterion(s) state no software safety class."));
 }
+
+fn run_record(file: &str, suite: &str, timestamp: &str, entries: &[(&str, &str)]) -> Value {
+    json!({
+        "file": file, "suite": suite, "tool": "cargo-test 1.90", "timestamp": timestamp,
+        "entries": entries
+            .iter()
+            .map(|(symbol, outcome)| json!({ "symbol": symbol, "outcome": outcome }))
+            .collect::<Vec<_>>(),
+    })
+}
+
+fn detail_runs(
+    runs: &[Value],
+    suites: &[&str],
+) -> Vec<Option<quoin_assurance::matrix::RunIdentity>> {
+    let bindings: Vec<Value> = suites
+        .iter()
+        .map(|suite| binding("FR-001-AC-1", suite))
+        .collect();
+    let mut request = serde_json::to_value(json!({
+        "coverage": [{ "document": "spec/FR-001.md", "criteria": [criterion("FR-001-AC-1")] }],
+        "bindings": { "schemaVersion": 1, "bindings": bindings },
+        "audit": audit(&[], &[], &[]),
+    }))
+    .unwrap();
+    request["runs"] = json!(runs);
+    let input: MatrixInput = serde_json::from_value(request).unwrap();
+    let matrix = build(&input).unwrap();
+    matrix.requirements[0].criteria[0]
+        .evidence_detail
+        .bindings
+        .iter()
+        .map(|binding| binding.run.clone())
+        .collect()
+}
+
+/// FR-196-AC-12: the newest retained run of the suite that holds an entry the
+/// audit bound, the file name breaking a timestamp tie; one identity per suite.
+#[trace("FR-196-AC-9", "FR-196-AC-12")]
+#[test]
+fn the_run_identity_is_the_newest_run_holding_a_bound_entry_per_suite() {
+    let runs = [
+        run_record(
+            "runs/unit/a.json",
+            "unit",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "pass")],
+        ),
+        run_record(
+            "runs/unit/b.json",
+            "unit",
+            "2026-11-02T00:00:00Z",
+            &[("tc_1", "pass"), ("tc_1", "fail"), ("other", "error")],
+        ),
+        // Newer, but holds no entry the binding names: never selected.
+        run_record(
+            "runs/unit/c.json",
+            "unit",
+            "2026-11-03T00:00:00Z",
+            &[("other", "pass")],
+        ),
+        // Same instant as the next one: the file name breaks the tie.
+        run_record(
+            "runs/py/a.json",
+            "py",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "skip")],
+        ),
+        run_record(
+            "runs/py/b.json",
+            "py",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "pass")],
+        ),
+    ];
+    let found = detail_runs(&runs, &["py", "unit"]);
+    let py = found[0].as_ref().unwrap();
+    assert_eq!(
+        (py.file.as_str(), py.outcomes.pass, py.outcomes.skip),
+        ("runs/py/b.json", 1, 0)
+    );
+    let unit = found[1].as_ref().unwrap();
+    assert_eq!(unit.file, "runs/unit/b.json");
+    assert_eq!(unit.timestamp, "2026-11-02T00:00:00Z");
+    assert_eq!(unit.tool, "cargo-test 1.90");
+    assert_eq!(unit.source_revision, None);
+    // Only the entries bound to the criterion are tallied: `other` is not.
+    assert_eq!(
+        (
+            unit.outcomes.pass,
+            unit.outcomes.fail,
+            unit.outcomes.skip,
+            unit.outcomes.error
+        ),
+        (1, 1, 0, 0)
+    );
+}
+
+#[trace("FR-196-AC-11")]
+#[test]
+fn a_suite_with_no_retained_run_holding_a_bound_entry_has_no_run_identity() {
+    let runs = [run_record(
+        "runs/unit/c.json",
+        "unit",
+        "2026-11-03T00:00:00Z",
+        &[("other", "pass")],
+    )];
+    assert_eq!(detail_runs(&runs, &["unit"]), [None]);
+    assert_eq!(detail_runs(&[], &["unit"]), [None]);
+}
+
+#[trace("FR-196-AC-10")]
+#[test]
+fn a_source_revision_the_record_names_is_exposed_verbatim() {
+    let mut run = run_record(
+        "runs/unit/a.json",
+        "unit",
+        "2026-11-01T00:00:00Z",
+        &[("tc_1", "pass")],
+    );
+    run["source_revision"] = json!("9f2c1ab");
+    let found = detail_runs(&[run], &["unit"]);
+    assert_eq!(
+        found[0].as_ref().unwrap().source_revision.as_deref(),
+        Some("9f2c1ab")
+    );
+}

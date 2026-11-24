@@ -117,7 +117,12 @@ fn m1_and_verification_report_keep_bundle_order_and_share_the_matrix_source() {
                 .lines()
                 .find(|row| row.starts_with(&format!("| {id} |")))
                 .unwrap();
-            assert!(row.ends_with(&format!("| {status} |")), "{name}: {row}");
+            let tail = if name == "DOS-TRACE.md" {
+                format!("| {status} | unassigned |")
+            } else {
+                format!("| {status} |")
+            };
+            assert!(row.ends_with(&tail), "{name}: {row}");
         }
     }
 }
@@ -135,7 +140,9 @@ fn the_report_titles_rows_from_the_repository_and_flags_the_failed_run() {
     let text = fs::read_to_string(out.path().join("DOS-VR.md")).unwrap();
     assert!(text.contains("## FR-001: A requirement stating two obligations"));
     assert!(text.contains("Criticality: unassigned"));
-    assert!(text.contains("| FR-001-AC-1 | Test | tc_1 (function, tests/t.rs:3) | none | bound |"));
+    assert!(text.contains(
+        "| FR-001-AC-1 | Test | tc_1 (function, tests/t.rs:3) | none | not recorded | bound |"
+    ));
     assert!(text.contains("| stale | 1 |"));
 
     let document = &report.documents[0];
@@ -177,6 +184,7 @@ fn a_stale_suite_without_a_traced_or_retained_binder_is_unbacked() {
     criterion.static_status = "untagged".to_owned();
     criterion.evidence_detail.bindings = vec![BindingDetail {
         suite: "old-suite".to_owned(),
+        run: None,
     }];
     let registry = builtin_registry(sources(source)).unwrap();
     let out = tempfile::tempdir().unwrap();
@@ -196,6 +204,135 @@ fn a_stale_suite_without_a_traced_or_retained_binder_is_unbacked() {
             ("evidence_failed", "FR-001-AC-2"),
         ]
     );
+}
+
+/// The report over `matrix`, with the text of `DOS-VR.md` and its gaps as
+/// `(kind, subject, detail)`.
+fn report_of(matrix: MatrixOutput) -> (String, Vec<(String, String, String)>) {
+    let registry = builtin_registry(sources(matrix)).unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let report = generate(&registry, &kinds(), out.path(), &inputs()).unwrap();
+    let text = fs::read_to_string(out.path().join("DOS-VR.md")).unwrap();
+    let gaps = report.documents[0]
+        .gaps
+        .iter()
+        .map(|gap| {
+            (
+                gap.gap_kind.as_str().to_owned(),
+                gap.subject.clone(),
+                gap.detail.clone(),
+            )
+        })
+        .collect();
+    (text, gaps)
+}
+
+/// FR-001-AC-1 of [`matrix`], bound to `bindings` as `matrix.build` reports them.
+fn with_bindings(bindings: &serde_json::Value) -> MatrixOutput {
+    let mut source = matrix();
+    source.requirements[0].criteria[0].evidence_detail.bindings =
+        serde_json::from_value(bindings.clone()).unwrap();
+    source
+}
+
+fn run(timestamp: &str, tool: &str, revision: Option<&str>) -> serde_json::Value {
+    let mut run = json!({
+        "file": "runs/unit/2026-11-01T00-00-00Z.json", "timestamp": timestamp, "tool": tool,
+        "outcomes": { "pass": 1, "fail": 1, "skip": 0, "error": 0 },
+    });
+    if let Some(revision) = revision {
+        run["source_revision"] = json!(revision);
+    }
+    run
+}
+
+fn run_gaps(gaps: &[(String, String, String)]) -> Vec<&(String, String, String)> {
+    gaps.iter()
+        .filter(|gap| gap.0 == "run_identity_unrecorded")
+        .collect()
+}
+
+#[trace("FR-196-AC-9")]
+#[test]
+fn a_bound_suite_shows_the_recorded_run_identity_and_tally_without_a_computed_outcome() {
+    // The status says bound while the recorded outcomes include a fail: both
+    // are shown unchanged.
+    let (text, gaps) = report_of(with_bindings(&json!([
+        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "cargo-test 1.90", None) }
+    ])));
+    let row = text
+        .lines()
+        .find(|row| row.starts_with("| FR-001-AC-1 |"))
+        .unwrap();
+    assert!(row.contains(
+        "suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90, file runs/unit/2026-11-01T00-00-00Z.json, outcomes pass 1 fail 1 skip 0 error 0, source revision not recorded"
+    ), "{row}");
+    assert!(row.ends_with("| bound |"));
+    assert!(run_gaps(&gaps).is_empty(), "{gaps:?}");
+}
+
+#[trace("FR-196-AC-10")]
+#[test]
+fn an_empty_tool_or_timestamp_is_one_gap_and_a_recorded_revision_is_verbatim() {
+    let (_, gaps) = report_of(with_bindings(&json!([
+        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "", None) }
+    ])));
+    let found = run_gaps(&gaps);
+    assert_eq!(found.len(), 1, "{gaps:?}");
+    assert_eq!(found[0].1, "FR-001-AC-1");
+    assert!(found[0].2.contains("suite unit") && found[0].2.contains("tool"));
+    assert!(!found[0].2.contains("timestamp"));
+
+    let (text, gaps) = report_of(with_bindings(&json!([
+        { "suite": "unit", "run": run("", "cargo-test 1.90", Some("9f2c1ab")) }
+    ])));
+    let found = run_gaps(&gaps);
+    assert_eq!(found.len(), 1, "{gaps:?}");
+    assert!(found[0].2.contains("timestamp") && !found[0].2.contains("tool"));
+    assert!(text.contains("timestamp not recorded, tool cargo-test 1.90"));
+    assert!(text.contains("source revision 9f2c1ab"));
+}
+
+#[trace("FR-196-AC-11")]
+#[test]
+fn a_criterion_with_no_selected_run_reads_not_recorded_and_gets_no_run_gap() {
+    // No bound suite at all, and an undischarged status.
+    let mut source = with_bindings(&json!([]));
+    source.requirements[0].criteria[0].evidence_status =
+        quoin_assurance::matrix::EvidenceStatus::Undischarged;
+    let (text, gaps) = report_of(source);
+    let row = text
+        .lines()
+        .find(|row| row.starts_with("| FR-001-AC-1 |"))
+        .unwrap();
+    assert!(row.contains("| not recorded | undischarged |"), "{row}");
+    assert!(
+        gaps.iter()
+            .any(|gap| gap.0 == "no_evidence" && gap.1 == "FR-001-AC-1")
+    );
+    assert!(run_gaps(&gaps).is_empty());
+
+    // A bound suite with no retained run holding a bound entry.
+    let (text, gaps) = report_of(with_bindings(&json!([{ "suite": "unit" }])));
+    assert!(text.contains("suite unit: not recorded"));
+    assert!(run_gaps(&gaps).is_empty());
+}
+
+#[trace("FR-196-AC-12")]
+#[test]
+fn two_bound_suites_show_one_run_identity_each() {
+    let mut other = run("2026-11-02T00:00:00Z", "pytest 8", None);
+    other["file"] = json!("runs/py/2026-11-02T00-00-00Z.json");
+    let (text, _) = report_of(with_bindings(&json!([
+        { "suite": "py", "run": other },
+        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "cargo-test 1.90", None) }
+    ])));
+    let row = text
+        .lines()
+        .find(|row| row.starts_with("| FR-001-AC-1 |"))
+        .unwrap();
+    assert!(row.contains("suite py: timestamp 2026-11-02T00:00:00Z, tool pytest 8"));
+    assert!(row.contains("suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90"));
 }
 
 /// Run `program` in `dir` and return its stdout; a failure panics with both streams.

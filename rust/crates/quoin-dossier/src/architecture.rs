@@ -20,6 +20,7 @@ use crate::gap::{Gap, GapKind};
 use crate::markdown::{cell, unusable_input};
 use crate::order::dossier_cmp;
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
+use crate::srs::{recorded_text, safety_class_gap_for_part};
 
 /// The Architecture generator.
 pub(crate) struct ArchitectureGenerator;
@@ -98,6 +99,8 @@ impl Generator for ArchitectureGenerator {
 struct Part {
     requirements: BTreeSet<String>,
     ports: BTreeSet<String>,
+    /// The software safety class the part's own document records, as written.
+    class: Option<String>,
 }
 
 /// The architecture document over the design-matrix `entries` (as JSON), the
@@ -183,8 +186,11 @@ fn collect_join(entries: &[Value]) -> Join {
 /// Add the parts the systems records declare and the requirements they
 /// allocate.
 fn add_systems(parts: &mut BTreeMap<String, Part>, systems: &Systems) {
+    // A part is identified by the document that declares it. The `owner` cell
+    // names the composite that holds the part and is not the part's identity.
     for part in &systems.parts {
-        parts.entry(part.owner.clone()).or_default();
+        parts.entry(part.document.clone()).or_default().class =
+            part.software_safety_class.as_ref().and_then(recorded_text);
     }
     for port in &systems.ports {
         parts
@@ -208,8 +214,12 @@ fn parts_section(body: &mut String, gaps: &mut Vec<Gap>, parts: &BTreeMap<String
     if parts.is_empty() {
         body.push_str("None.\n\n");
     } else {
-        body.push_str("| Part | Ports | Allocated or realized requirements |\n");
-        body.push_str("|------|-------|-------------------------------------|\n");
+        body.push_str(
+            "| Part | Software safety class | Ports | Allocated or realized requirements |\n",
+        );
+        body.push_str(
+            "|------|-----------------------|-------|-------------------------------------|\n",
+        );
         let mut ids: Vec<&String> = parts.keys().collect();
         ids.sort_by(|a, b| dossier_cmp(a, b));
         for id in ids {
@@ -218,11 +228,15 @@ fn parts_section(body: &mut String, gaps: &mut Vec<Gap>, parts: &BTreeMap<String
             };
             let _ = writeln!(
                 body,
-                "| {} | {} | {} |",
+                "| {} | {} | {} | {} |",
                 cell(id),
+                cell(part.class.as_deref().unwrap_or("unassigned")),
                 cell(&part.ports.iter().cloned().collect::<Vec<_>>().join(", ")),
                 cell(&sorted(&part.requirements).join(", ")),
             );
+            if part.class.is_none() {
+                gaps.push(safety_class_gap_for_part(id));
+            }
             if part.requirements.is_empty() {
                 gaps.push(
                     Gap::new(GapKind::NoAllocation, id, "has no allocated requirement")
@@ -490,12 +504,24 @@ mod tests {
         }
     }
 
+    /// The gaps in FR-191 order.
     fn kinds(generated: &Generated) -> Vec<(&'static str, String)> {
-        generated
-            .gaps
-            .iter()
+        let mut gaps = generated.gaps.clone();
+        crate::gap::sort_gaps(&mut gaps);
+        gaps.iter()
             .map(|gap| (gap.gap_kind.as_str(), gap.subject.clone()))
             .collect()
+    }
+
+    /// A part row declared by the document `document`, owned by `OWNER`.
+    fn part_row(document: &str, class: Option<&str>) -> PartRow {
+        PartRow {
+            document: document.to_owned(),
+            owner: "OWNER".to_owned(),
+            declared_type: "T".to_owned(),
+            multiplicity: "1".to_owned(),
+            software_safety_class: class.map(|class| json!(class)),
+        }
     }
 
     #[trace("FR-193-AC-1")]
@@ -516,8 +542,8 @@ mod tests {
         let record = adr("ADR-1", "Use a queue", "accepted");
         let generated = render(&entries, &systems, &[&record]);
 
-        assert!(generated.body.contains("| PART-A |  | FR-1 |"));
-        assert!(generated.body.contains("| PART-B |  | FR-1 |"));
+        assert!(generated.body.contains("| PART-A | unassigned |  | FR-1 |"));
+        assert!(generated.body.contains("| PART-B | unassigned |  | FR-1 |"));
         assert!(
             generated
                 .body
@@ -535,7 +561,11 @@ mod tests {
         );
         assert_eq!(
             kinds(&generated),
-            vec![("no_design_element", "FR-2".to_owned())]
+            vec![
+                ("safety_class_unassigned", "PART-A".to_owned()),
+                ("safety_class_unassigned", "PART-B".to_owned()),
+                ("no_design_element", "FR-2".to_owned()),
+            ]
         );
     }
 
@@ -579,18 +609,8 @@ mod tests {
     fn a_part_with_no_allocated_requirement_is_a_gap_and_an_allocation_counts() {
         let systems = Systems {
             parts: vec![
-                PartRow {
-                    document: "C.md".to_owned(),
-                    owner: "PART-FREE".to_owned(),
-                    declared_type: "T".to_owned(),
-                    multiplicity: "1".to_owned(),
-                },
-                PartRow {
-                    document: "C.md".to_owned(),
-                    owner: "PART-ALLOCATED".to_owned(),
-                    declared_type: "T".to_owned(),
-                    multiplicity: "1".to_owned(),
-                },
+                part_row("PART-FREE", Some("class-1")),
+                part_row("PART-ALLOCATED", Some("class-1")),
             ],
             allocations: vec![Allocation {
                 document: "C.md".to_owned(),
@@ -602,9 +622,16 @@ mod tests {
         let generated = render(&[covered("FR-1", &["PART-A"])], &systems, &[]);
         assert_eq!(
             kinds(&generated),
-            vec![("no_allocation", "PART-FREE".to_owned())]
+            vec![
+                ("safety_class_unassigned", "PART-A".to_owned()),
+                ("no_allocation", "PART-FREE".to_owned()),
+            ]
         );
-        assert!(generated.body.contains("| PART-ALLOCATED |  | FR-7 |"));
+        assert!(
+            generated
+                .body
+                .contains("| PART-ALLOCATED | class-1 |  | FR-7 |")
+        );
         assert!(generated.body.contains("| FR-7 | PART-ALLOCATED |"));
     }
 
@@ -633,7 +660,11 @@ mod tests {
         assert!(generated.body.contains(
             "| PART-A.out -> PART-B.in | PART-A.out [1] | PART-B.in [0..*] | bidirectional |"
         ));
-        assert!(generated.body.contains("| PART-A | Telemetry (out) |"));
+        assert!(
+            generated
+                .body
+                .contains("| PART-A | unassigned | Telemetry (out) |")
+        );
     }
 
     #[trace("FR-193-AC-6")]
@@ -672,7 +703,54 @@ mod tests {
     #[test]
     fn a_part_title_with_a_pipe_and_a_newline_is_one_table_row() {
         let generated = render(&[covered("FR-1", &["A|B\nC"])], &Systems::default(), &[]);
-        assert!(generated.body.contains("| A\\|B C |  | FR-1 |\n"));
+        assert!(
+            generated
+                .body
+                .contains("| A\\|B C | unassigned |  | FR-1 |\n")
+        );
         assert_eq!(generated.body.matches("\n| A").count(), 1);
+    }
+
+    #[trace("FR-193-AC-7")]
+    #[test]
+    fn a_part_shows_the_class_its_document_records_as_written() {
+        let systems = Systems {
+            parts: vec![part_row("PART-A", Some("class-3"))],
+            ..Systems::default()
+        };
+        let generated = render(&[covered("FR-1", &["PART-A"])], &systems, &[]);
+        assert!(generated.body.contains("| PART-A | class-3 |  | FR-1 |"));
+        assert!(kinds(&generated).is_empty());
+    }
+
+    #[trace("FR-193-AC-8")]
+    #[test]
+    fn an_unclassed_part_is_unassigned_whatever_its_parent_or_requirement_records() {
+        // The owner cell names a classed parent, and the allocated requirement
+        // is classed through its own document; neither lends a class.
+        let systems = Systems {
+            parts: vec![
+                part_row("PART-HIGH", Some("class-2")),
+                part_row("PART-NONE", None),
+            ],
+            allocations: vec![Allocation {
+                document: "C.md".to_owned(),
+                source: "FR-1".to_owned(),
+                target: "PART-NONE".to_owned(),
+            }],
+            ..Systems::default()
+        };
+        let generated = render(&[covered("FR-1", &["PART-HIGH"])], &systems, &[]);
+        assert!(
+            generated
+                .body
+                .contains("| PART-NONE | unassigned |  | FR-1 |")
+        );
+        assert!(generated.body.contains("| PART-HIGH | class-2 |"));
+        assert_eq!(
+            kinds(&generated),
+            vec![("safety_class_unassigned", "PART-NONE".to_owned())]
+        );
+        assert_eq!(generated.gaps[0].subject, "PART-NONE");
     }
 }
