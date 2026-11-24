@@ -50,7 +50,7 @@ source and restates no vocabulary.
 | `open_findings` | each open finding, as one item of the closed shape `obligation`, `kind`, `summary`, `path`, `line`, `symbol`, and for a `stale-evidence` finding the optional `cause` (`missing-run` or `failed-run` when present), omitted when absent and omitted on every other kind. Three sources contribute items: the auditor findings of every criterion, the risk-completeness findings, and the anomaly-gate findings, each mapped as stated below | FR-115 `evidence_detail.findings`; FR-170; FR-164 |
 | `soup` | `rows`: per record `purl`, `version`, `group`, `support_status`, `end_of_support`; and `not_assessed`: each item FR-144 appends after its rows, as `{ kind, tool, detail }` | FR-144 |
 | `vulnerabilities` | Each vulnerability record whose status is `open` or `in_remediation`: `id`, `cve_id`, `severity`, `affects`, `references`, `status`, `disposition`, `disposition_by`, and present `discovered_at`, `disclosed_at`, and `fixed_at` values, copied as authored | spec-objects-security FR-032 |
-| `anomalies` | each carried anomaly: `id`, `title`, `status`, `resolution`, `severity`, `safety_impact`, `unassessed`, `release_rationale` | FR-162, FR-163 |
+| `anomalies` | every anomaly carried by FR-162, plus each anomaly with status `closed` and resolution `fixed`; a closed anomaly with another resolution is included only when FR-162 carries it: `id`, `title`, `status`, `resolution`, `severity`, `safety_impact`, `unassessed`, `release_rationale` | FR-162, FR-163 |
 | `change_records` | the change-assurance records since the previous release | FR-168 |
 
 Open findings come from three sources, told apart by `kind`; the three sets of kinds are disjoint.
@@ -64,8 +64,10 @@ Open findings come from three sources, told apart by `kind`; the three sets of k
 The risk-completeness findings are those that `quoin risk-summary` (FR-169) places in the `findings` of its rows,
 computed by the same code. A finding that FR-170 places on several rows is one item, identified by its token and its
 `names`. The anomaly-gate findings are the failures that `quoin anomaly report --fail-on unassessed --fail-on
-unjustified-impacting` (FR-164) states in `gate.failures`, evaluated over the anomalies the snapshot carries; each
-gate failure is one item, and an anomaly fails at most one mode. A finding states that a link, a record or a rationale is missing. It
+unjustified-impacting` (FR-164) states in `gate.failures`, evaluated over the carried anomalies of FR-162; a closed
+`fixed` anomaly is included in the snapshot's `anomalies` list, and is evaluated by the gate only if FR-162 carries it
+(for example, when its `safety_impact` is `unassessed`).
+Each gate failure is one item, and an anomaly fails at most one mode. A finding states that a link, a record or a rationale is missing. It
 does not say that a risk or an anomaly is acceptable: people decide that, and the snapshot never does. An `open_findings` list holding
 none of these three sources states that no finding exists in them and is not an acceptance.
 
@@ -102,6 +104,10 @@ does not claim the caller's clean-tree precondition was met.
 - The command SHALL NOT inspect git state to verify the clean-tree precondition.
 - The command SHALL add to `open_findings` one item for each distinct risk-completeness finding of `quoin risk-summary` over `--repo`, with `obligation` the first element of `names`, `kind` the finding token, `summary` the `names` joined by `, `, `path`, `line` and `symbol` `null` and no `cause`.
 - The command SHALL add to `open_findings` one item for each failure of FR-164's `unassessed` and `unjustified-impacting` modes over the carried anomalies, with `obligation` the anomaly id, `kind` `anomaly-unassessed` or `anomaly-unjustified-impacting`, `summary` the mode word, `path` the failure's path as a repository-relative path (never absolute), `line` and `symbol` `null` and no `cause`.
+- The command SHALL include in `anomalies` every anomaly FR-162 carries and every anomaly whose authored `status` is `closed` and `resolution` is `fixed`.
+- The command SHALL NOT include a closed anomaly with a resolution other than `fixed` or `wont-fix` unless FR-162 carries it.
+- The command SHALL evaluate FR-164 gate modes over the FR-162 carried anomalies only.
+- A closed `fixed` anomaly SHALL add an anomaly-gate finding only when FR-162 carries it and the anomaly fails an FR-164 gate mode.
 - The command SHALL NOT add to `open_findings` an item for a hazard, situation, control, estimate or residual risk that has the link or record the FR-170 rule asks for, or for an anomaly that passes both gate modes.
 - The command SHALL NOT assign a severity, score, class or acceptability to any `open_findings` item.
 - The command SHALL NOT omit an `open_findings` item because a person accepted the risk it names.
@@ -151,7 +157,8 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-15 | A fixture whose `control` is assumed by a post-control estimate and has no incoming `verifies` edge yields an `open_findings` item with `kind` `control-without-verification`, `obligation` the control id, `summary` the control id, `path`, `line` and `symbol` `null` and no `cause`, and `quoin risk-summary` over the same fixture carries the same token naming the same control. | Test |
 | FR-167-AC-16 | The same fixture with an incoming `verifies` edge added to the control yields no `control-without-verification` item, and a complete chain yields no item of any FR-170 token. | Test |
 | FR-167-AC-17 | A control with no incoming `verifies` edge that appears on two rows of `quoin risk-summary` yields exactly one `control-without-verification` item; a fixture with a `benefit-risk-not-accepted` finding naming a residual risk and its covering benefit-risk ids yields one item whose `obligation` is the residual-risk id and whose `summary` lists every name in `names` order. | Test |
-| FR-167-AC-18 | A fixture with an `unassessed` anomaly and an `impacting` anomaly with no release rationale yields one `anomaly-unassessed` item and one `anomaly-unjustified-impacting` item, each with the anomaly's id and path; a closed `fixed` anomaly and an `impacting` anomaly with a rationale yield none, as FR-164-AC-5 and FR-164-AC-4 state. | Test |
+| FR-167-AC-18 | A fixture with an `unassessed` anomaly and an `impacting` anomaly with no release rationale yields one `anomaly-unassessed` item and one `anomaly-unjustified-impacting` item, each with the anomaly's id and path; a closed `fixed` anomaly with `safety_impact` `impacting` is included in `anomalies` and yields no gate finding, and an `impacting` anomaly with a rationale yields no gate finding, as FR-164-AC-5 and FR-164-AC-4 state. | Test |
+| FR-167-AC-23 | A closed `fixed` anomaly with `safety_impact` `unassessed` is included in `anomalies` and yields the FR-164 `unassessed` gate finding; a closed `duplicate` anomaly with an assessed `safety_impact` is absent from `anomalies`. | Test |
 | FR-167-AC-19 | A fixture holding auditor, risk-completeness and anomaly-gate findings yields `open_findings` in `obligation`, `kind`, `path`, `line`, `symbol`, `cause`, `summary` order whatever order the sources produce them, and no item carries a key outside the closed shape or a severity, score or acceptance word, the stem "accept" occurring only inside a finding token. | Test |
 | FR-167-AC-14 | A scan with an invalid retained timestamp refuses the snapshot section under FR-166-AC-11, so the snapshot never contains a `scan_unordered` item. | Test |
 | FR-167-AC-20 | A fixture with `open`, `in_remediation`, `remediated`, and `closed` vulnerability records carries only the first two into `vulnerabilities`, copies each listed source field unchanged, orders included records by id, and emits an empty list when neither open status is present. | Test |

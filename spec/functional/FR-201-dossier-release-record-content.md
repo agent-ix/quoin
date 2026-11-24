@@ -64,8 +64,13 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
   The decision section shows source status, approver, meaning, signed-at claim,
   accepted anomalies and, for `not_released`, every EA reason.
 - `Evidence at release` shows the snapshot's `coverage`,
-  `evidence_freshness`, `open_findings`, `soup` and `anomalies` members in
-  their source order and with their source status words.
+  `evidence_freshness`, `open_findings` and `soup` members in their source
+  order and with their source status words. It lists the snapshot's anomalies
+  under separate `Known anomalies` and `Fixed anomalies` headings: known
+  anomalies are exactly the FR-162 carried anomalies. Fixed anomalies are
+  records with status `closed` and resolution `fixed` that are not already
+  listed as known; when an anomaly meets both definitions, the Known category
+  takes precedence so the record appears once.
 - The `Decision` section SHALL include these statements verbatim:
   `Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.`
   and `Verifier identity: not provided as a distinct field by the source approval contracts.`
@@ -75,8 +80,21 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
 - The document SHALL render the snapshot supplied by `--snapshot` without
   recomputing coverage, anomaly, SOUP or change records from current inputs.
 - The document SHALL render `coverage`, `evidence_freshness`,
-  `open_findings`, `soup` and `anomalies` from that snapshot under
-  `Evidence at release`, without supplementing them from current records.
+  `open_findings` and `soup` from that snapshot under `Evidence at release`,
+  without supplementing them from current records.
+- Under `Evidence at release`, the document SHALL render a `Known anomalies`
+  list from snapshot anomaly entries that are not closed or are closed with
+  resolution `wont-fix` or have `safety_impact` `unassessed`, preserving
+  snapshot order.
+- Under `Evidence at release`, the document SHALL render a `Fixed anomalies`
+  list from snapshot anomaly entries whose status is `closed` and resolution
+  is `fixed` and which are not listed as known, preserving snapshot order.
+- Each snapshot anomaly SHALL appear in at most one of these lists. When an
+  anomaly is both FR-162-carried and closed/fixed, it SHALL appear under
+  `Known anomalies` only.
+- The document SHALL NOT render a snapshot anomaly with status `closed` and a
+  resolution other than `fixed` or `wont-fix` in either list unless it is
+  FR-162-carried because its `safety_impact` is `unassessed`.
 - When an EA result is `not_released` and has no `release` or `baseline`
   member, the document SHALL show those absent fields as `not stated`
   rather than taking them from current files or inventing them.
@@ -125,6 +143,7 @@ snapshot and Engineering Assurance `release-verify` result as they stand.
 | FR-201-AC-8 | The generator runs with `git` absent from `PATH`, renders the same bytes, and creates no tag or ref. | Test |
 | FR-201-AC-9 | An export containing `DOS-REL`, standalone approval verdicts for other source records, and an EA release result with a nested approval passes every entry to Quire in command-line order, appends the release result once, and renders every verdict entry; the generated DOS-REL text states that all entries are treated as unbound to its exact bytes. | Test |
 | FR-201-AC-10 | The `Decision` section contains both the approval-scope and verifier-identity statements exactly as specified in this requirement; the statements occur in the generated Markdown before the final `Gaps` section. | Test |
+| FR-201-AC-11 | A snapshot containing an open anomaly (`safety_impact: impacting`), a `closed`/`wont-fix` anomaly (`safety_impact: none`), a `closed`/`fixed` anomaly (`safety_impact: impacting`), a `closed`/`fixed` anomaly (`safety_impact: unassessed`), and a `closed`/`duplicate` anomaly (`safety_impact: none`, assessed) renders the open, wont-fix, and unassessed fixed records under `Known anomalies`; renders the assessed fixed record under `Fixed anomalies`; and omits the assessed duplicate. Each record appears once, preserving snapshot order within each list. | Test |
 
 ## Dependencies
 

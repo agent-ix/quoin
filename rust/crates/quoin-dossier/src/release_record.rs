@@ -281,23 +281,27 @@ fn render_evidence(body: &mut String, snapshot: &ReleaseSnapshot) {
 fn render_anomalies(body: &mut String, anomalies: &[crate::release_snapshot::SnapshotAnomaly]) {
     let known: Vec<_> = anomalies
         .iter()
-        .filter(|anomaly| {
-            anomaly.status != "closed"
-                || anomaly.resolution.as_deref() == Some("wont-fix")
-                || anomaly.unassessed
-        })
+        .filter(|anomaly| is_known_anomaly(anomaly))
         .collect();
     let fixed: Vec<_> = anomalies
         .iter()
-        .filter(|anomaly| {
-            anomaly.status == "closed" && anomaly.resolution.as_deref() == Some("fixed")
-        })
+        .filter(|anomaly| is_fixed_anomaly(anomaly) && !is_known_anomaly(anomaly))
         .collect();
 
     body.push_str("### Known anomalies\n\n");
     field(body, "Records", json(&known).as_ref());
     body.push_str("\n### Fixed anomalies\n\n");
     field(body, "Records", json(&fixed).as_ref());
+}
+
+fn is_known_anomaly(anomaly: &crate::release_snapshot::SnapshotAnomaly) -> bool {
+    anomaly.status != "closed"
+        || anomaly.resolution.as_deref() == Some("wont-fix")
+        || anomaly.unassessed
+}
+
+fn is_fixed_anomaly(anomaly: &crate::release_snapshot::SnapshotAnomaly) -> bool {
+    anomaly.status == "closed" && anomaly.resolution.as_deref() == Some("fixed")
 }
 
 fn render_history(body: &mut String, snapshot: &ReleaseSnapshot) {
@@ -451,29 +455,25 @@ mod tests {
     #[trace("FR-201-AC-11")]
     #[test]
     fn release_record_lists_fr162_carried_and_fixed_anomalies_separately() {
-        let anomaly = |id: &str, status: &str, resolution: Option<&str>, unassessed: bool| {
+        let anomaly = |id: &str, status: &str, resolution: Option<&str>, safety_impact: &str| {
             crate::release_snapshot::SnapshotAnomaly {
                 id: id.to_owned(),
                 title: Some(format!("Title {id}")),
                 status: status.to_owned(),
                 resolution: resolution.map(str::to_owned),
                 severity: None,
-                safety_impact: if unassessed {
-                    "unassessed".to_owned()
-                } else {
-                    "none".to_owned()
-                },
-                unassessed,
+                safety_impact: safety_impact.to_owned(),
+                unassessed: safety_impact == "unassessed",
                 release_rationale: Vec::new(),
             }
         };
         let mut snapshot = snapshot();
         snapshot.anomalies = vec![
-            anomaly("AN-001", "identified", None, true),
-            anomaly("AN-002", "closed", Some("wont-fix"), false),
-            anomaly("AN-003", "closed", Some("fixed"), false),
-            anomaly("AN-004", "closed", Some("duplicate"), false),
-            anomaly("AN-005", "closed", Some("duplicate"), true),
+            anomaly("AN-001", "identified", None, "impacting"),
+            anomaly("AN-002", "closed", Some("wont-fix"), "none"),
+            anomaly("AN-003", "closed", Some("fixed"), "impacting"),
+            anomaly("AN-004", "closed", Some("fixed"), "unassessed"),
+            anomaly("AN-005", "closed", Some("duplicate"), "none"),
         ];
 
         let generated = render(Some(&snapshot), None);
@@ -490,13 +490,13 @@ mod tests {
             .split("### Fixed anomalies\n\n")
             .nth(1)
             .unwrap();
-        for id in ["AN-001", "AN-002", "AN-005"] {
+        for id in ["AN-001", "AN-002", "AN-004"] {
             assert!(known.contains(id), "missing known anomaly {id}: {known}");
         }
         assert!(known.find("AN-001").unwrap() < known.find("AN-002").unwrap());
-        assert!(known.find("AN-002").unwrap() < known.find("AN-005").unwrap());
+        assert!(known.find("AN-002").unwrap() < known.find("AN-004").unwrap());
         assert!(!known.contains("AN-003"));
-        assert!(!known.contains("AN-004"));
+        assert!(!known.contains("AN-005"));
         assert!(fixed.contains("AN-003"));
         assert!(!fixed.contains("AN-004"));
         assert!(!fixed.contains("AN-005"));

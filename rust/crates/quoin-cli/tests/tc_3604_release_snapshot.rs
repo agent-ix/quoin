@@ -1118,9 +1118,9 @@ fn soup_rows_follow_the_group_order_and_unassessed_items_are_listed_after_them()
     );
 }
 
-#[trace("FR-167-AC-5", "FR-167-AC-18")]
+#[trace("FR-167-AC-5", "FR-167-AC-18", "FR-167-AC-23")]
 #[test]
-fn release_record_lists_fr162_carried_and_fixed_anomalies_separately() {
+fn snapshot_lists_fr162_carried_and_fixed_anomalies_with_gate_only_on_carried() {
     let repo = Repo::bare();
     let rationale = "## Release Rationale\n\n| Author | Rationale |\n|--------|-----------|\n| Dana LEE | Mixed Case stays. |\n| Sam | Second row. |\n";
     repo.anomaly("AN-003", "identified", "unassessed", &[], "");
@@ -1171,13 +1171,23 @@ fn release_record_lists_fr162_carried_and_fixed_anomalies_separately() {
         ],
         "",
     );
+    repo.anomaly(
+        "AN-007",
+        "closed",
+        "unassessed",
+        &["resolution: fixed", "closed_by: \"Pat\"", "severity: minor"],
+        "",
+    );
     let snapshot = repo.snapshot(&repo.run());
     let anomalies = snapshot["anomalies"].as_array().unwrap();
     let ids: Vec<&str> = anomalies
         .iter()
         .map(|a| a["id"].as_str().unwrap())
         .collect();
-    assert_eq!(ids, ["AN-001", "AN-002", "AN-003", "AN-004", "AN-006"]);
+    assert_eq!(
+        ids,
+        ["AN-001", "AN-002", "AN-003", "AN-004", "AN-006", "AN-007"]
+    );
     assert_eq!(
         anomalies[0]["release_rationale"],
         json!([
@@ -1196,8 +1206,18 @@ fn release_record_lists_fr162_carried_and_fixed_anomalies_separately() {
             json!(false),
             json!(true),
             json!(false),
+            json!(true),
             json!(true)
         ]
+    );
+    assert!(
+        snapshot["open_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|finding| {
+                finding["obligation"] == "AN-007" && finding["kind"] == "anomaly-unassessed"
+            })
     );
     assert!(
         snapshot["open_findings"]
