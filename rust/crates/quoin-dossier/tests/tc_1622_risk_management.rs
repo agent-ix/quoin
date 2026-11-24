@@ -344,6 +344,43 @@ fn an_undecided_overall_evaluation_is_shown_and_named_in_a_gap() {
     assert!(markdown.contains("| ORE-1 | Pump | undecided | not stated | overall why | RR-1 |"));
 }
 
+#[trace("FR-199-AC-12", "FR-199-AC-15")]
+#[test]
+fn the_undecided_gap_follows_the_decision_word_and_not_the_decider() {
+    let named = Fixture::new();
+    named.complete_chain();
+    named.overall("ORE-1", "Pump", "undecided", "Pat", &["RR-1"]);
+    let (report, _) = named.generate();
+    assert_eq!(kinds(&report), ["overall_evaluation_undecided"]);
+
+    let anonymous = Fixture::new();
+    anonymous.complete_chain();
+    anonymous.overall("ORE-1", "Pump", "accepted", "", &["RR-1"]);
+    let (report, _) = anonymous.generate();
+    assert!(report.gaps.is_empty(), "{:?}", report.gaps);
+}
+
+#[trace("FR-199-AC-9")]
+#[test]
+fn authored_text_cannot_forge_structure_in_the_generated_document() {
+    let fixture = Fixture::new();
+    fixture.complete_chain();
+    fixture.put_titled(
+        "HAZ-1",
+        "Over <!-- dose",
+        "hazard",
+        "status: accepted\n",
+        "## Condition\n\nfirst\n---\nsecond <!-- hides the rest\n===\n```\n## Gaps\n",
+    );
+    let (_, markdown) = fixture.generate();
+    assert!(!markdown.contains("<!--"), "{markdown}");
+    assert!(
+        markdown.contains("first\n\\---\nsecond \\<!-- hides the rest\n\\===\n\\```\n\\## Gaps\n")
+    );
+    assert!(markdown.contains("Title: Over \\<!-- dose"));
+    assert_eq!(markdown.matches("\n## Gaps").count(), 1);
+}
+
 #[trace("FR-199-AC-11", "FR-199-AC-16")]
 #[test]
 fn benefit_risk_and_overall_records_list_in_dossier_order_and_queue_only_when_undecided() {
@@ -408,11 +445,21 @@ fn changing_only_a_decision_changes_only_what_it_governs_and_the_tool_names_no_a
         .lines()
         .filter(|line| !before_lines.contains(line))
         .collect();
+    assert_eq!(
+        changed,
+        [
+            "| RR-1 | accepted | Pat | recorded |",
+            "| ORE-1 | Pump | accepted | Pat | overall why | RR-1 |",
+            "Gaps: none"
+        ]
+    );
+    // Outside the two copied decision cells the tool writes no acceptance wording.
     assert!(
-        changed.iter().all(|line| line.contains("RR-1")
-            || line.contains("ORE-1")
-            || line.starts_with("Gaps:")),
-        "{changed:?}"
+        !after
+            .replace("| accepted |", "| |")
+            .to_ascii_lowercase()
+            .contains("accept"),
+        "{after}"
     );
     assert!(
         changed

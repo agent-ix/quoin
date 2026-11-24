@@ -758,4 +758,44 @@ mod tests {
             1
         );
     }
+
+    #[trace("FR-199-AC-9", "FR-199-AC-10", "FR-199-AC-11", "FR-199-AC-12")]
+    #[test]
+    fn every_absent_authored_value_reads_not_stated() {
+        let mut row = complete_row();
+        row.hazard_title = None;
+        row.hazard_text = None;
+        row.harm_texts[0].title = None;
+        row.residual_risks[0].rationale = None;
+        row.residual_risks[0].decided_by = None;
+        let mut evaluation = decided_evaluation();
+        evaluation.product = None;
+        evaluation.decided_by = None;
+        evaluation.rationale = None;
+        let summary = Summary {
+            attribution: quoin_risk_advice::ATTRIBUTION,
+            rows: vec![row],
+            benefit_risks: vec![quoin_risk_advice::BenefitRiskEntry {
+                benefit_risk: "BR-1".to_owned(),
+                benefit: None,
+                decision: "undecided".to_owned(),
+                decided_by: None,
+                rationale: None,
+                residual_risks: Vec::new(),
+            }],
+            overall_evaluations: vec![evaluation],
+            unreadable: Vec::new(),
+            unusable: Vec::new(),
+        };
+        let body = render(&summary, &advice()).body;
+        assert!(body.contains("Title: not stated\n\nCondition:\n\nnot stated\n"));
+        assert!(body.contains("#### Harm HARM-1\n\nTitle: not stated\n"));
+        assert!(body.contains("| RR-1 | accepted | not stated | not stated |"));
+        assert!(
+            body.contains("| BR-1 | not stated | undecided | not stated | not stated | none |")
+        );
+        assert!(
+            body.contains("| ORE-1 | not stated | accepted | not stated | not stated | RR-1 |")
+        );
+    }
 }

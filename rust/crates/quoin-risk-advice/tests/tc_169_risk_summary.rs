@@ -166,12 +166,24 @@ fn assert_markdown_voice(md: &str) {
     let mut lines = md.lines();
     let attribution = lines.next().unwrap();
     assert!(attribution.contains("policy") && attribution.contains("named person"));
-    let copied = |line: &&str| line.starts_with("| BR-") || line.starts_with("| ORE-");
+    // A benefit-risk or evaluation row copies its decision word as written; the
+    // rest of the row is checked like any other line.
+    let without_copied_decision = |line: &str| -> String {
+        if line.starts_with("| BR-") || line.starts_with("| ORE-") {
+            let mut cells = cells(line);
+            cells[3] = String::new();
+            cells.join("|")
+        } else {
+            line.to_owned()
+        }
+    };
     for line in md
         .lines()
         .skip(1)
-        .filter(|line| line.contains("accept") && !copied(line))
+        .map(without_copied_decision)
+        .filter(|line| line.contains("accept"))
     {
+        let line = line.as_str();
         let stripped = line
             .replace("decision=accepted", "")
             .replace("decision=not_accepted", "")
@@ -1350,4 +1362,45 @@ fn an_overall_evaluation_that_breaks_its_contract_stops_the_report_with_the_advi
         advise(c.dir.path(), &modules()).err().unwrap().code,
         error.code
     );
+}
+
+#[trace("FR-169-AC-29", "FR-169-AC-35", "FR-169-AC-27")]
+#[test]
+fn a_pipe_a_line_break_or_html_in_any_copied_title_or_text_cannot_split_the_row() {
+    let c = corpus();
+    complete(&c);
+    c.put_titled(
+        "HAZ-1",
+        "Haz|title\\nsecond <!-- x",
+        "hazard",
+        "status: accepted\n",
+        "## Condition\n\nc|1\nc2 <b>\n",
+    );
+    c.put_titled(
+        "SIT-1",
+        "Sit|title\\nsecond",
+        "hazardous_situation",
+        &rels(&[("HAZ-1", "arises_from")]),
+        "## Description\n\nd|1\n\nd2\n",
+    );
+    c.put_titled(
+        "HARM-1",
+        "Harm|title\\nsecond",
+        "harm",
+        &rels(&[("SIT-1", "arises_from")]),
+        "## Description\n\nh|1\nh2\n",
+    );
+    let md = c.markdown();
+    let line = md.lines().find(|line| line.starts_with("| HAZ-1")).unwrap();
+    assert_eq!(cells(line).len(), 15, "{line}");
+    for expected in [
+        "Haz\\|title<br>second \\<!-- x",
+        "c\\|1<br>c2 \\<b>",
+        "Sit\\|title<br>second",
+        "d\\|1<br><br>d2",
+        "title=Harm\\|title<br>second; text=h\\|1<br>h2",
+    ] {
+        assert!(line.contains(expected), "{expected}: {line}");
+    }
+    assert!(!line.contains("<!--") && !line.contains("<b>"), "{line}");
 }

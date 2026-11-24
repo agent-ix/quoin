@@ -598,6 +598,7 @@ pub(crate) fn evaluations(records: &Records) -> Vec<EvaluationEntry> {
 fn esc(value: &str) -> String {
     value
         .replace('|', "\\|")
+        .replace('<', "\\<")
         .replace("\r\n", "<br>")
         .replace(['\n', '\r'], "<br>")
 }

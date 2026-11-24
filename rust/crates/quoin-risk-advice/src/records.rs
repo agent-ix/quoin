@@ -297,3 +297,84 @@ fn plain(doc: &Document) -> Plain {
         },
     }
 }
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::*;
+    use ix_trace_rs::trace;
+
+    fn document(kind: &str, headers: &[&str], cells: &[&str]) -> Document {
+        let mut tables = BTreeMap::new();
+        tables.insert(
+            "Determination".to_owned(),
+            Table {
+                headers: headers.iter().map(|h| (*h).to_owned()).collect(),
+                rows: vec![cells.iter().map(|c| (*c).to_owned()).collect()],
+            },
+        );
+        Document {
+            path: "R-1.md".into(),
+            id: "R-1".to_owned(),
+            kind: kind.to_owned(),
+            frontmatter: serde_json::Map::new(),
+            edges: Vec::new(),
+            tables,
+            sections: BTreeMap::from([
+                ("Condition".to_owned(), "\n  \n".to_owned()),
+                (
+                    "Description".to_owned(),
+                    "\nline one\n\nline two\n".to_owned(),
+                ),
+            ]),
+            raw: String::new(),
+            contract: Contract::NotChecked,
+        }
+    }
+
+    #[trace("FR-169-AC-30", "FR-169-AC-31", "FR-169-AC-32")]
+    #[test]
+    fn an_empty_rationale_benefit_product_or_decider_cell_is_none() {
+        let benefit = choice(&document(
+            "benefit_risk",
+            &["Benefit", "Decision", "Rationale", "Decided by"],
+            &["", "undecided", " ", ""],
+        ));
+        assert_eq!(benefit.subject, None);
+        assert_eq!(benefit.rationale, None);
+        assert_eq!(benefit.decided_by, None);
+        assert_eq!(benefit.decision, "undecided");
+        let overall = choice(&document(
+            "overall_residual_risk_evaluation",
+            &["Product", "Decision", "Rationale", "Decided by"],
+            &["", "undecided", "", ""],
+        ));
+        assert_eq!(overall.subject, None);
+        assert_eq!(overall.rationale, None);
+        let filled = choice(&document(
+            "overall_residual_risk_evaluation",
+            &["Product", "Decision", "Rationale", "Decided by"],
+            &["Pump", "accepted", "why", "Pat"],
+        ));
+        assert_eq!(filled.subject.as_deref(), Some("Pump"));
+        assert_eq!(filled.rationale.as_deref(), Some("why"));
+    }
+
+    #[trace("FR-169-AC-29")]
+    #[test]
+    fn a_blank_section_is_none_and_a_text_keeps_its_inner_line_breaks() {
+        let doc = document("hazard", &["Decision"], &["x"]);
+        assert_eq!(section(&doc, "Condition"), None);
+        assert_eq!(section(&doc, "Missing"), None);
+        assert_eq!(
+            section(&doc, "Description").as_deref(),
+            Some("line one\n\nline two")
+        );
+    }
+}
