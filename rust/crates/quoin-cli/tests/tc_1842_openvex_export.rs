@@ -13,6 +13,7 @@
 //! (FR-216).
 
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use ix_trace_rs::trace;
@@ -29,6 +30,7 @@ impl Fixture {
     fn new() -> Self {
         let root = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(root.path().join("spec/soup")).unwrap();
+        std::fs::create_dir_all(root.path().join("home")).unwrap();
         Self { root }
     }
 
@@ -37,19 +39,28 @@ impl Fixture {
     }
 
     fn record(&self, id: &str, purl: &str, statements: Option<Value>) {
-        let mut front =
-            format!("---\nid: {id}\ntitle: {id}\ntype: soup_record\npurl: \"{purl}\"\n");
+        let mut front = format!(
+            "---\nid: {id}\ntitle: \"{id}\"\ntype: soup_record\nobject: soup_record\npurl: \"{purl}\"\n"
+        );
         if let Some(statements) = statements {
             front.push_str("vex_statements: ");
             front.push_str(&serde_json::to_string(&statements).unwrap());
             front.push('\n');
         }
-        front.push_str("---\n# Record\n");
+        front.push_str(&format!(
+            "---\n# [{id}] {id}\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| component_id | UUID | 1..1 | identity |\n| purl | String | 1..1 | minLength: 1 |\n"
+        ));
         std::fs::write(self.path().join(format!("spec/soup/{id}.md")), front).unwrap();
     }
 
     fn command(&self, output: &Path) -> Output {
+        let security_modules = security_module()
+            .parent()
+            .expect("the security module has a parent directory")
+            .to_path_buf();
         Command::new(env!("CARGO_BIN_EXE_quoin"))
+            .env("IX_FILAMENT_MODULES_PATH", security_modules)
+            .env("HOME", self.path().join("home"))
             .args(["soup", "vex", "export"])
             .arg("--repo")
             .arg(self.path())
@@ -68,6 +79,22 @@ impl Fixture {
             .output()
             .unwrap()
     }
+}
+
+fn security_module() -> PathBuf {
+    let root = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map_or_else(
+        || {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../../spec-objects-security/spec_objects_security")
+        },
+        PathBuf::from,
+    );
+    std::fs::canonicalize(&root).unwrap_or_else(|error| {
+        panic!(
+            "spec-objects-security module is not available at {}: {error}; set SPEC_OBJECTS_SECURITY_DIR",
+            root.display()
+        )
+    })
 }
 
 fn statement(advisory: &str, status: &str) -> Value {

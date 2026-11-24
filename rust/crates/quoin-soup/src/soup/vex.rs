@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
 use quoin_core::protocol::Response;
+use quoin_quire::records::Contract;
+use quoin_quire::{ModuleSelection, records};
 use serde_json::{Map, Value, json};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
@@ -18,14 +20,6 @@ use url::Url;
 use super::{Existing, Stop, arg, read_all_records, refuse};
 
 const OPENVEX_CONTEXT: &str = "https://openvex.dev/ns/v0.2.0";
-const STATUSES: [&str; 4] = ["affected", "not_affected", "under_investigation", "fixed"];
-const JUSTIFICATIONS: [&str; 5] = [
-    "component_not_present",
-    "vulnerable_code_not_present",
-    "vulnerable_code_not_in_execute_path",
-    "vulnerable_code_cannot_be_controlled_by_adversary",
-    "inline_mitigations_already_exist",
-];
 
 struct Metadata {
     id: String,
@@ -43,6 +37,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
     let output = arg(arguments, "out")
         .map_or_else(|| repo.join("spec/soup.vex.openvex.json"), PathBuf::from);
     let metadata = metadata(arguments)?;
+    validate_source_contract(&records_dir)?;
     let records = read_all_records(&records_dir)?;
     let document = render(&records, &metadata)?;
     write_atomic(&output, &document)?;
@@ -59,6 +54,41 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
             output.display()
         ),
     })))
+}
+
+/// Validate authored SOUP statements through the owning module's contract.
+///
+/// The module selection follows Quire's ambient resolution path, which reads
+/// `IX_FILAMENT_MODULES_PATH` and the installed default module set. This keeps
+/// the export aligned with `quire validate` and the current `SoupRecord`
+/// schema instead of maintaining a second statement schema here.
+fn validate_source_contract(records_dir: &Path) -> Result<(), Stop> {
+    let corpus = records::read(
+        records_dir,
+        &ModuleSelection::Ambient,
+        &["soup_record"],
+    )
+    .map_err(|error| {
+        Stop::Fail(format!(
+            "cannot validate SOUP records in {} against the spec-objects-security contract: {error}",
+            records_dir.display()
+        ))
+    })?;
+    for document in &corpus.documents {
+        if document.kind == "soup_record"
+            && let Contract::Violated(reason) = &document.contract
+        {
+            return Err(refuse(
+                "soup.vex_statement_invalid",
+                format!(
+                    "{} does not satisfy the spec-objects-security `soup_record` contract: {reason}",
+                    document.path.display()
+                ),
+                &[("path", document.path.display().to_string())],
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn metadata(arguments: &ArgMatches) -> Result<Metadata, Stop> {
@@ -244,89 +274,30 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
     }
     let required = |field: &str| -> Result<String, Stop> {
         match object.get(field) {
-            Some(Value::String(value)) if !value.trim().is_empty() => Ok(value.clone()),
-            _ => Err(source_invalid(record, field, "must be non-blank text")),
+            Some(Value::String(value)) => Ok(value.clone()),
+            _ => Err(source_invalid(
+                record,
+                field,
+                "must be text as required by the source contract",
+            )),
         }
     };
     let optional = |field: &str| -> Result<Option<String>, Stop> {
         match object.get(field) {
             None => Ok(None),
             Some(Value::String(value)) => Ok(Some(value.clone())),
-            _ => Err(source_invalid(record, field, "must be text when present")),
+            _ => Err(source_invalid(
+                record,
+                field,
+                "must be text as required by the source contract",
+            )),
         }
     };
     let advisory = required("advisory")?;
     let status = required("status")?;
-    let _assessed_by = required("assessed_by")?;
-    let assessed_at = required("assessed_at")?;
-    let date_format = time::format_description::parse_borrowed::<3>("[year]-[month]-[day]")
-        .map_err(|error| {
-            Stop::Fail(format!("cannot configure assessed_at date parser: {error}"))
-        })?;
-    if time::Date::parse(&assessed_at, &date_format).is_err() {
-        return Err(source_invalid(
-            record,
-            "assessed_at",
-            "must be a valid YYYY-MM-DD calendar date",
-        ));
-    }
-    if !STATUSES.contains(&status.as_str()) {
-        return Err(source_invalid(record, "status", "is not an OpenVEX status"));
-    }
     let justification = optional("justification")?;
-    if let Some(value) = &justification
-        && !JUSTIFICATIONS.contains(&value.as_str())
-    {
-        return Err(source_invalid(
-            record,
-            "justification",
-            "is not an OpenVEX justification",
-        ));
-    }
     let impact_statement = optional("impact_statement")?;
     let action_statement = optional("action_statement")?;
-    if let Some(value) = &action_statement
-        && value.trim().is_empty()
-    {
-        return Err(source_invalid(
-            record,
-            "action_statement",
-            "must be non-blank text",
-        ));
-    }
-    if let Some(evidence_refs) = object.get("evidence_refs") {
-        let Some(evidence_refs) = evidence_refs.as_array() else {
-            return Err(source_invalid(
-                record,
-                "evidence_refs",
-                "must be a list of SemanticIds",
-            ));
-        };
-        if evidence_refs
-            .iter()
-            .any(|reference| !reference.as_str().is_some_and(is_semantic_id))
-        {
-            return Err(source_invalid(
-                record,
-                "evidence_refs",
-                "entries must be SemanticIds",
-            ));
-        }
-    }
-    if status == "not_affected" && justification.is_none() {
-        return Err(source_invalid(
-            record,
-            "justification",
-            "not_affected source statements require justification",
-        ));
-    }
-    if status == "affected" && action_statement.is_none() {
-        return Err(source_invalid(
-            record,
-            "action_statement",
-            "affected requires an action statement",
-        ));
-    }
     Ok(Statement {
         advisory,
         status,
@@ -334,30 +305,6 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
         impact_statement,
         action_statement,
     })
-}
-
-fn is_semantic_id(value: &str) -> bool {
-    let Some(rest) = value.strip_prefix("ix://") else {
-        return false;
-    };
-    let Some((authority, identity)) = rest.split_once('/') else {
-        return false;
-    };
-    let mut authority_chars = authority.chars();
-    let Some(first_authority) = authority_chars.next() else {
-        return false;
-    };
-    (first_authority.is_ascii_lowercase() || first_authority.is_ascii_digit())
-        && authority_chars.all(|ch| {
-            ch.is_ascii_lowercase() || ch.is_ascii_digit() || matches!(ch, '.' | '_' | '-')
-        })
-        && identity
-            .chars()
-            .next()
-            .is_some_and(|ch| ch.is_ascii_alphanumeric())
-        && identity
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '~' | ':' | '/' | '-'))
 }
 
 fn source_invalid(record: &Existing, field: &str, reason: &str) -> Stop {
