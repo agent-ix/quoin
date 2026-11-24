@@ -26,6 +26,8 @@ use quoin_evidence::types::FindingRecord;
 use quoin_evidence::{DiskEvidence, STORE_SCHEMA_VERSION, SuiteId};
 use serde_json::{Value, json};
 
+mod pack_support;
+
 const BASE: &str = "0123456789abcdef0123456789abcdef01234567";
 const AS_OF: &str = "2026-08-15T00:00:00Z";
 const SCANNED: &str = "2026-07-31T00:00:00.000Z";
@@ -288,6 +290,14 @@ impl Repo {
             json!({"clauseId": id, "force": "mandatory", "outcome": "binding",
                    "reasons": [], "expectedOutputs": []})
         };
+        // A discharge resolves each clause's policy from an installed module.
+        pack_support::install_clause_set(
+            self.home.path(),
+            "example.invalid",
+            "soup",
+            "1.0.0",
+            clauses,
+        );
         let binding = self.aux("binding.json");
         std::fs::write(
             &binding,
