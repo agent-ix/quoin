@@ -26,7 +26,7 @@ When `quoin dossier generate` selects `records-of-processing` (document id `DOS-
 
 ## Outputs
 
-- `dossier/DOS-ROP.md`, with `type: DossierDocument`, `document_kind: records-of-processing` and `generated_by: quoin dossier`.
+- `dossier/DOS-ROP.md`, with `type: DossierDocument`, `document_kind: records-of-processing` and `generated_by: quoin dossier`; producer name and version follow FR-191.
 - A deterministic JSON gap report with the same gap rows and order as the Markdown.
 
 ## Field-to-source table
