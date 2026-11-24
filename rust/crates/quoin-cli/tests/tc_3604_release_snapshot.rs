@@ -521,6 +521,22 @@ fn snapshot_shape() -> Shape {
             Optional(Box::new(obj(vec![("tag", Leaf), ("commit", Leaf)]))),
         ),
         (
+            "vulnerabilities",
+            list(obj(vec![
+                ("id", Leaf),
+                ("cve_id", Optional(Box::new(Leaf))),
+                ("severity", Optional(Box::new(Leaf))),
+                ("affects", list(Leaf)),
+                ("references", list(Leaf)),
+                ("status", Leaf),
+                ("disposition", Optional(Box::new(Leaf))),
+                ("disposition_by", Optional(Box::new(Leaf))),
+                ("discovered_at", Optional(Box::new(Leaf))),
+                ("disclosed_at", Optional(Box::new(Leaf))),
+                ("fixed_at", Optional(Box::new(Leaf))),
+            ])),
+        ),
+        (
             "coverage",
             list(obj(vec![
                 ("id", Leaf),
@@ -662,6 +678,7 @@ fn one_file_is_written_with_exactly_the_named_members_and_nothing_else_changes()
             "protocol",
             "soup",
             "tool_identity",
+            "vulnerabilities",
         ]
     );
     assert_eq!(snapshot["protocol"], "quoin.release-snapshot/v1");
@@ -675,6 +692,7 @@ fn one_file_is_written_with_exactly_the_named_members_and_nothing_else_changes()
     assert_eq!(snapshot["as_of"], AS_OF);
     assert_eq!(snapshot["baseline_commit"], BASE);
     assert_eq!(keys(&snapshot["soup"]), ["not_assessed", "rows"]);
+    assert_eq!(snapshot["vulnerabilities"], json!([]));
     assert_eq!(
         keys(&snapshot["coverage"][0]["criteria"][0]),
         ["evidence_status", "id", "static_status"]
@@ -715,11 +733,28 @@ fn the_snapshot_reader_requires_both_members_and_refuses_dirty_or_unordered_valu
         "evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},
         "open_findings":[],
         "soup":{"rows":[],"not_assessed":[]},
+        "vulnerabilities":[],
         "anomalies":[],
         "change_records":[]
     });
     let parsed = parse(&full).unwrap();
     assert_eq!(parsed.tool_identity.name, "quoin");
+
+    let mut terminal = full.clone();
+    terminal["vulnerabilities"] = json!([{
+        "id":"VULN-001",
+        "cve_id":"CVE-2026-0001",
+        "severity":"high",
+        "affects":["SOUP-001"],
+        "references":["AN-001"],
+        "status":"remediated",
+        "disposition":null,
+        "disposition_by":null,
+        "discovered_at":null,
+        "disclosed_at":null,
+        "fixed_at":"2026-01-02"
+    }]);
+    assert!(refusal(&terminal).contains("vulnerabilities status"));
 
     let mut healthy_kind = full.clone();
     healthy_kind["soup"]["not_assessed"] =

@@ -19,10 +19,12 @@ use quoin_assurance::matrix::MatrixOutput;
 pub(super) use quoin_dossier::release_snapshot::ReleaseSnapshot as Snapshot;
 use quoin_dossier::release_snapshot::{
     CoverageCriterion, CoverageRequirement, Freshness, OpenFinding, RationaleEntry,
-    SnapshotAnomaly as Anomaly,
+    SnapshotAnomaly as Anomaly, SnapshotVulnerability,
 };
+use quoin_quire::records::Contract;
 use quoin_quire::{ModuleRoot, ModuleSelection};
 use quoin_risk_advice::{AdviceError, ErrorCode, summarize};
+use serde_json::Value;
 
 /// The sections that come from the evidence matrix.
 pub(super) struct MatrixSections {
@@ -152,6 +154,145 @@ pub(super) fn risk_findings(repo: &Path, modules: &[String]) -> Result<Vec<OpenF
         .collect())
 }
 
+/// Authored vulnerability records whose lifecycle status is still open
+/// (FR-032, FR-167). No advisory, VEX or anomaly data is consulted.
+pub(super) fn vulnerabilities(
+    repo: &Path,
+    modules: &[String],
+) -> Result<Vec<SnapshotVulnerability>, Stop> {
+    let mut roots = Vec::new();
+    for dir in modules {
+        roots.push(ModuleRoot::open(dir).map_err(|error| module_invalid(dir, &error.to_string()))?);
+    }
+    let selection = if roots.is_empty() {
+        ModuleSelection::ScopeOrAmbient
+    } else {
+        ModuleSelection::Closed(roots)
+    };
+    let corpus =
+        quoin_quire::records::read(repo, &selection, &["vulnerability"]).map_err(|error| {
+            Stop::from(Refusal::invalid(
+                "--repo",
+                "vulnerability-records",
+                &error.to_string(),
+            ))
+        })?;
+    if let Some(unreadable) = corpus.unreadable.first() {
+        let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
+        let path = unreadable
+            .path
+            .strip_prefix(&root)
+            .unwrap_or(&unreadable.path)
+            .display()
+            .to_string();
+        return Err(Refusal::new(
+            Code::InputUnreadable,
+            format!("--repo holds {path}, which cannot be read"),
+            &[("input", "--repo"), ("path", &path)],
+        )
+        .into());
+    }
+    if let Some(path) = corpus.malformed.first() {
+        let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
+        let shown = path
+            .strip_prefix(&root)
+            .unwrap_or(path)
+            .display()
+            .to_string();
+        return Err(Refusal::invalid(
+            "--repo",
+            "vulnerability-record-malformed",
+            &format!("{shown} has malformed frontmatter or identity"),
+        )
+        .into());
+    }
+
+    render_vulnerabilities(&corpus.documents)
+}
+
+/// Select and copy authored lifecycle facts from the parsed vulnerability
+/// corpus. Kept separate from loading so status filtering and field mapping
+/// are testable without a module installation.
+fn render_vulnerabilities(
+    documents: &[quoin_quire::records::Document],
+) -> Result<Vec<SnapshotVulnerability>, Stop> {
+    let mut selected = Vec::new();
+    for document in documents
+        .iter()
+        .filter(|document| document.kind == "vulnerability")
+    {
+        if let Contract::Violated(reason) = &document.contract {
+            return Err(Refusal::invalid(
+                "--repo",
+                "vulnerability-record-invalid",
+                &format!("{}: {reason}", document.path.display()),
+            )
+            .into());
+        }
+        let status = optional_text(document, "status")?;
+        let Some(status) = status else {
+            continue;
+        };
+        match status.as_str() {
+            "open" | "in_remediation" => {}
+            "remediated" | "closed" => continue,
+            other => {
+                return Err(Refusal::invalid(
+                    "--repo",
+                    "vulnerability-record-invalid",
+                    &format!(
+                        "{} has unsupported status {other:?}",
+                        document.path.display()
+                    ),
+                )
+                .into());
+            }
+        }
+        let optional = |key| optional_text(document, key);
+        let mut affects = Vec::new();
+        let mut references = Vec::new();
+        for (target, relation) in &document.edges {
+            match relation.as_str() {
+                "affects" => affects.push(target.clone()),
+                "references" => references.push(target.clone()),
+                _ => {}
+            }
+        }
+        selected.push(SnapshotVulnerability {
+            id: document.id.clone(),
+            cve_id: optional("cve_id")?,
+            severity: optional("severity")?,
+            affects,
+            references,
+            status,
+            disposition: optional("disposition")?,
+            disposition_by: optional("disposition_by")?,
+            discovered_at: optional("discovered_at")?,
+            disclosed_at: optional("disclosed_at")?,
+            fixed_at: optional("fixed_at")?,
+        });
+    }
+    selected.sort_by(|left, right| left.id.cmp(&right.id));
+    Ok(selected)
+}
+
+/// An optional text field in a contract-checked vulnerability record.
+fn optional_text(
+    document: &quoin_quire::records::Document,
+    field: &str,
+) -> Result<Option<String>, Stop> {
+    match document.frontmatter.get(field) {
+        None => Ok(None),
+        Some(Value::String(value)) => Ok(Some(value.clone())),
+        Some(_) => Err(Refusal::invalid(
+            "--repo",
+            "vulnerability-record-invalid",
+            &format!("{} has a non-text {field}", document.path.display()),
+        )
+        .into()),
+    }
+}
+
 fn module_invalid(dir: &str, message: &str) -> Refusal {
     Refusal::new(
         Code::InputInvalid,
@@ -258,4 +399,88 @@ fn carried(repo: &Path, read: CarriedRead) -> Result<Vec<Anomaly>, Stop> {
             }
         })
         .collect())
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    reason = "in a test, a panic is the failure report"
+)]
+mod vulnerability_tests {
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    use ix_trace_rs::trace;
+    use quoin_quire::records::{Contract, Document};
+    use serde_json::{Map, json};
+
+    use super::render_vulnerabilities;
+
+    fn document(id: &str, status: &str) -> Document {
+        let mut frontmatter = Map::new();
+        frontmatter.insert("status".to_owned(), json!(status));
+        frontmatter.insert("cve_id".to_owned(), json!(format!("CVE-{id}")));
+        frontmatter.insert("severity".to_owned(), json!("high"));
+        frontmatter.insert("disposition".to_owned(), json!("maintained component"));
+        frontmatter.insert("disposition_by".to_owned(), json!("Ada Example"));
+        frontmatter.insert("discovered_at".to_owned(), json!("2026-02-03"));
+        frontmatter.insert("disclosed_at".to_owned(), json!("2026-02-04"));
+        frontmatter.insert("fixed_at".to_owned(), json!("2026-02-05"));
+        Document {
+            path: PathBuf::from(format!("spec/vulnerabilities/{id}.md")),
+            id: id.to_owned(),
+            kind: "vulnerability".to_owned(),
+            frontmatter,
+            edges: vec![
+                ("AN-001".to_owned(), "references".to_owned()),
+                ("SOUP-001".to_owned(), "affects".to_owned()),
+            ],
+            tables: BTreeMap::new(),
+            sections: BTreeMap::new(),
+            raw: String::new(),
+            contract: Contract::Satisfied,
+        }
+    }
+
+    #[trace("FR-167-AC-20", "FR-167-AC-21")]
+    #[test]
+    fn snapshot_copies_only_open_lifecycles_and_sorts_by_id() {
+        let rendered = render_vulnerabilities(&[
+            document("VULN-4", "closed"),
+            document("VULN-3", "remediated"),
+            document("VULN-2", "in_remediation"),
+            document("VULN-1", "open"),
+        ])
+        .unwrap_or_else(|_| panic!("valid vulnerability fixtures should render"));
+
+        let ids: Vec<&str> = rendered.iter().map(|item| item.id.as_str()).collect();
+        assert_eq!(ids, ["VULN-1", "VULN-2"]);
+        let first = &rendered[0];
+        assert_eq!(first.cve_id.as_deref(), Some("CVE-VULN-1"));
+        assert_eq!(first.severity.as_deref(), Some("high"));
+        assert_eq!(first.affects, ["SOUP-001"]);
+        assert_eq!(first.references, ["AN-001"]);
+        assert_eq!(first.status, "open");
+        assert_eq!(first.disposition.as_deref(), Some("maintained component"));
+        assert_eq!(first.disposition_by.as_deref(), Some("Ada Example"));
+        assert_eq!(first.discovered_at.as_deref(), Some("2026-02-03"));
+        assert_eq!(first.disclosed_at.as_deref(), Some("2026-02-04"));
+        assert_eq!(first.fixed_at.as_deref(), Some("2026-02-05"));
+    }
+
+    #[trace("FR-167-AC-20")]
+    #[test]
+    fn no_open_lifecycle_records_produces_an_empty_section() {
+        assert!(
+            render_vulnerabilities(&[
+                document("VULN-1", "remediated"),
+                document("VULN-2", "closed"),
+            ])
+            .unwrap_or_else(|_| panic!("terminal vulnerability fixtures should render"))
+            .is_empty()
+        );
+    }
 }

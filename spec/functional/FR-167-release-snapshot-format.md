@@ -17,6 +17,8 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-170"
     type: "depends_on"
+  - target: "ix://agent-ix/spec-objects-security/FR-032"
+    type: "depends_on"
 ---
 
 # FR-167: Release snapshot format: a closed, ordered JSON document the dossier documents read
@@ -47,6 +49,7 @@ source and restates no vocabulary.
 | `evidence_freshness` | the count of criteria at each of the five evidence statuses | FR-115 |
 | `open_findings` | each open finding, as one item of the closed shape `obligation`, `kind`, `summary`, `path`, `line`, `symbol`, and for a `stale-evidence` finding the optional `cause` (`missing-run` or `failed-run` when present), omitted when absent and omitted on every other kind. Three sources contribute items: the auditor findings of every criterion, the risk-completeness findings, and the anomaly-gate findings, each mapped as stated below | FR-115 `evidence_detail.findings`; FR-170; FR-164 |
 | `soup` | `rows`: per record `purl`, `version`, `group`, `support_status`, `end_of_support`; and `not_assessed`: each item FR-144 appends after its rows, as `{ kind, tool, detail }` | FR-144 |
+| `vulnerabilities` | Each vulnerability record whose status is `open` or `in_remediation`: `id`, `cve_id`, `severity`, `affects`, `references`, `status`, `disposition`, `disposition_by`, and present `discovered_at`, `disclosed_at`, and `fixed_at` values, copied as authored | spec-objects-security FR-032 |
 | `anomalies` | each carried anomaly: `id`, `title`, `status`, `resolution`, `severity`, `safety_impact`, `unassessed`, `release_rationale` | FR-162, FR-163 |
 | `change_records` | the change-assurance records since the previous release | FR-168 |
 
@@ -112,6 +115,12 @@ does not claim the caller's clean-tree precondition was met.
 - The command SHALL omit `cause` from a finding whose kind is not `stale-evidence`.
 - The command SHALL omit `cause` from a `stale-evidence` finding when FR-115 supplies that finding without `cause`.
 - The command SHALL NOT derive `cause` from `summary`.
+- The command SHALL include in `vulnerabilities` each selected vulnerability record whose `status` is `open` or `in_remediation`, with every field in the table copied from its authored record without deriving or defaulting a value.
+- A reader SHALL interpret a missing `vulnerabilities` member in a `quoin.release-snapshot/v1` document as an empty list. This covers snapshots written before the member was added; a present member SHALL still have the declared list shape.
+- The command SHALL omit a selected vulnerability record whose `status` is `remediated` or `closed`.
+- The command SHALL carry each included vulnerability's `status` as `open` or `in_remediation`, using the vocabulary defined by spec-objects-security FR-032.
+- The command SHALL order `vulnerabilities` by record id.
+- The command SHALL NOT infer vulnerability status, disposition, owner, discovery date, disclosure date, or fixed date from an advisory scan, VEX statement, anomaly, or other analysis.
 - The command SHALL order `soup.rows` as FR-144 orders its rows.
 - The command SHALL order `soup.not_assessed` by `kind`, `tool` and `detail`, comparing bytewise.
 - The command SHALL order `anomalies` by anomaly id.
@@ -127,7 +136,7 @@ does not claim the caller's clean-tree precondition was met.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-167-AC-1 | A snapshot built from a fixture validates against the closed schema, and the same snapshot with one extra member at the top level, inside a coverage row, a finding, a SOUP row, an anomaly and a change record is refused by the schema each time. | Test |
+| FR-167-AC-1 | A snapshot built from a fixture validates against the closed schema, and the same snapshot with one extra member at the top level, inside a coverage row, a finding, a SOUP row, a vulnerability, an anomaly and a change record is refused by the schema each time. | Test |
 | FR-167-AC-2 | `evidence_freshness` has exactly the five keys and no other, and its counts sum to the number of criteria in `coverage`. | Test |
 | FR-167-AC-3 | A fixture with a `stale`, a `suspect` and a `bound` criterion carries each at its status in `coverage`, and the auditor findings of the first two appear in `open_findings`; a fixture with two `surviving-mutant` findings on one obligation that differ only in `line`, and two that differ only in `summary`, yields them in `path`, `line`, `symbol`, `summary` order whatever order the audit report lists them. | Test |
 | FR-167-AC-4 | A fixture with an unresolved-advisory record, a past-end-of-support record and a clean record yields `soup.rows` in that group order with `group` set to `unresolved_advisory`, `past_end_of_support` and `other`, and a scan reported not run, an advisory matching no record and a policy finding matching no record each appear in `soup.not_assessed` with `kind`, `tool` and `detail`, in `kind`, `tool`, `detail` order. A retained scan with an invalid timestamp refuses the snapshot under FR-166-AC-10 and FR-030-AC-29. | Test |
@@ -145,13 +154,17 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-18 | A fixture with an `unassessed` anomaly and an `impacting` anomaly with no release rationale yields one `anomaly-unassessed` item and one `anomaly-unjustified-impacting` item, each with the anomaly's id and path; a closed `fixed` anomaly and an `impacting` anomaly with a rationale yield none, as FR-164-AC-5 and FR-164-AC-4 state. | Test |
 | FR-167-AC-19 | A fixture holding auditor, risk-completeness and anomaly-gate findings yields `open_findings` in `obligation`, `kind`, `path`, `line`, `symbol`, `cause`, `summary` order whatever order the sources produce them, and no item carries a key outside the closed shape or a severity, score or acceptance word, the stem "accept" occurring only inside a finding token. | Test |
 | FR-167-AC-14 | A scan with an invalid retained timestamp refuses the snapshot section under FR-166-AC-11, so the snapshot never contains a `scan_unordered` item. | Test |
+| FR-167-AC-20 | A fixture with `open`, `in_remediation`, `remediated`, and `closed` vulnerability records carries only the first two into `vulnerabilities`, copies each listed source field unchanged, orders included records by id, and emits an empty list when neither open status is present. | Test |
+| FR-167-AC-21 | A fixture with an included vulnerability record whose status or disposition conflicts with advisory scan, VEX, or anomaly data carries the authored values unchanged; a record with status `remediated` or `closed` remains absent. | Test |
+| FR-167-AC-22 | A valid `quoin.release-snapshot/v1` written before the `vulnerabilities` member was added is accepted by the reader and exposes `vulnerabilities` as an empty list; an invalid present value is still refused. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-115](./FR-115-evidence-backed-test-matrix.md) (including the typed `cause` of FR-032-AC-18..21), [FR-144](./FR-144-soup-report.md),
   [FR-162](./FR-162-anomaly-report.md), [FR-163](./FR-163-anomaly-report-release-rationale.md), [FR-164](./FR-164-anomaly-report-gate.md),
   [FR-169](./FR-169-risk-summary-command.md), [FR-170](./FR-170-risk-summary-row-findings.md),
-  [FR-166](./FR-166-release-snapshot-command.md), [FR-168](./FR-168-release-snapshot-change-records.md).
+  [FR-166](./FR-166-release-snapshot-command.md), [FR-168](./FR-168-release-snapshot-change-records.md),
+  spec-objects-security [FR-032](ix://agent-ix/spec-objects-security/FR-032) (authored vulnerability lifecycle fields).
 - **Downstream**: the dossier documents, which read the snapshot. The closed shape of an `open_findings` item does
   not change and `kind` is an open string for the reader, so the release record of FR-201 renders the added items
   in their source order with no change of its own; the format version stays `quoin.release-snapshot/v1` and no

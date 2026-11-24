@@ -339,11 +339,52 @@ mod tests {
               "evidence_freshness":{"bound":1,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},
               "open_findings":[],
               "soup":{"rows":[],"not_assessed":[]},
+              "vulnerabilities":[],
               "anomalies":[],
               "change_records":[{"record_id":"REC-2","revision":2,"path":"records/2.md","commit":"commit-2"},{"record_id":"REC-1","revision":1,"path":"records/1.md","commit":"commit-1"}]
             }"#,
         )
         .unwrap()
+    }
+
+    #[trace("FR-167-AC-22")]
+    #[test]
+    fn pre_vulnerability_v1_snapshot_defaults_the_added_section_to_empty() {
+        let snapshot = ReleaseSnapshot::parse(
+            br#"{
+              "protocol":"quoin.release-snapshot/v1",
+              "tool_identity":{"name":"quoin","version":"0.0.0"},
+              "clean_tree_precondition":"not_verified",
+              "as_of":"2026-11-01T00:00:00Z",
+              "baseline_commit":"snapshot-commit",
+              "previous_release":null,
+              "coverage":[],
+              "evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},
+              "open_findings":[],
+              "soup":{"rows":[],"not_assessed":[]},
+              "anomalies":[],
+              "change_records":[]
+            }"#,
+        )
+        .unwrap();
+
+        assert!(snapshot.vulnerabilities.is_empty());
+        let invalid = json!({
+            "protocol": "quoin.release-snapshot/v1",
+            "tool_identity": {"name": "quoin", "version": "0.0.0"},
+            "clean_tree_precondition": "not_verified",
+            "as_of": "2026-11-01T00:00:00Z",
+            "baseline_commit": "snapshot-commit",
+            "previous_release": null,
+            "coverage": [],
+            "evidence_freshness": {"bound": 0, "stale": 0, "suspect": 0, "undischarged": 0, "no run evidence": 0},
+            "open_findings": [],
+            "soup": {"rows": [], "not_assessed": []},
+            "vulnerabilities": null,
+            "anomalies": [],
+            "change_records": []
+        });
+        assert!(ReleaseSnapshot::parse(&serde_json::to_vec(&invalid).unwrap()).is_err());
     }
 
     #[trace("FR-201-AC-1", "FR-201-AC-4")]
@@ -489,6 +530,7 @@ mod tests {
             "evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},
             "open_findings":[],
             "soup":{"rows":[],"not_assessed":[]},
+            "vulnerabilities":[],
             "anomalies":[],
             "change_records":[],
             "unexpected":true

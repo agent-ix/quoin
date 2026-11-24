@@ -27,7 +27,8 @@ quoin-quire = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
+tempfile = { workspace = true }
+url = { workspace = true }
 
 [dev-dependencies]
 quoin-quire-types = { workspace = true }
-tempfile = { workspace = true }

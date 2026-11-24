@@ -37,6 +37,10 @@ pub struct ReleaseSnapshot {
     pub open_findings: Vec<OpenFinding>,
     /// SOUP state captured in the snapshot.
     pub soup: quoin_soup::SoupSection,
+    /// Open vulnerability lifecycle records captured from the selected scope;
+    /// empty when an earlier v1 snapshot omitted this section.
+    #[serde(default)]
+    pub vulnerabilities: Vec<SnapshotVulnerability>,
     /// Carried anomalies in snapshot order.
     pub anomalies: Vec<SnapshotAnomaly>,
     /// Change records in FR-168 source order.
@@ -93,6 +97,15 @@ impl ReleaseSnapshot {
             return Err(<serde_json::Error as serde::de::Error>::custom(
                 "soup.not_assessed kind must be one of unmatched_advisory, \
                  unmatched_policy_finding, scan_not_run, scan_vacuous",
+            ));
+        }
+        if snapshot
+            .vulnerabilities
+            .iter()
+            .any(|item| !matches!(item.status.as_str(), "open" | "in_remediation"))
+        {
+            return Err(<serde_json::Error as serde::de::Error>::custom(
+                "vulnerabilities status must be open or in_remediation",
             ));
         }
         Ok(snapshot)
@@ -245,6 +258,34 @@ pub struct SnapshotAnomaly {
     pub unassessed: bool,
     /// Release rationale entries in source order.
     pub release_rationale: Vec<RationaleEntry>,
+}
+
+/// One authored vulnerability whose lifecycle is still open.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotVulnerability {
+    /// Record identifier.
+    pub id: String,
+    /// Authored CVE identifier, when present.
+    pub cve_id: Option<String>,
+    /// Authored severity, when present.
+    pub severity: Option<String>,
+    /// SOUP identifiers in the authored `affects` relationships.
+    pub affects: Vec<String>,
+    /// Vulnerability and anomaly identifiers in authored `references` relationships.
+    pub references: Vec<String>,
+    /// Authored lifecycle status.
+    pub status: String,
+    /// Authored disposition, when present.
+    pub disposition: Option<String>,
+    /// Named disposition author, when present.
+    pub disposition_by: Option<String>,
+    /// Authored discovery date, when present.
+    pub discovered_at: Option<String>,
+    /// Authored disclosure date, when present.
+    pub disclosed_at: Option<String>,
+    /// Authored fixed date, when present.
+    pub fixed_at: Option<String>,
 }
 
 /// Previous release as captured in snapshot history.

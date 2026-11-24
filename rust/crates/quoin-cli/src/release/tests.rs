@@ -251,6 +251,12 @@ fn sample() -> Value {
                 "end_of_support": { "value": "unknown", "origin": "none" } }],
             "not_assessed": [{ "kind": "scan_not_run", "tool": "cargo-deny", "detail": "not run" }],
         },
+        "vulnerabilities": [{
+            "id": "VULN-1", "cve_id": "CVE-2026-0001", "severity": "high",
+            "affects": ["SOUP-1"], "references": ["AN-1"], "status": "open",
+            "disposition": null, "disposition_by": null, "discovered_at": null,
+            "disclosed_at": null, "fixed_at": null
+        }],
         "anomalies": [{ "id": "AN-1", "title": "t", "status": "identified", "resolution": null,
             "severity": null, "safety_impact": "unassessed", "unassessed": true,
             "release_rationale": [{ "author": "A", "rationale": "R" }] }],
@@ -262,11 +268,12 @@ fn sample() -> Value {
 #[test]
 fn the_closed_types_read_a_snapshot_and_refuse_an_extra_member_at_every_object() {
     serde_json::from_value::<Snapshot>(sample()).expect("the sample is a snapshot");
-    let extra_at: [&dyn Fn(&mut Value) -> &mut Value; 8] = [
+    let extra_at: [&dyn Fn(&mut Value) -> &mut Value; 9] = [
         &|d| d,
         &|d| &mut d["coverage"][0]["criteria"][0],
         &|d| &mut d["open_findings"][0],
         &|d| &mut d["soup"]["rows"][0],
+        &|d| &mut d["vulnerabilities"][0],
         &|d| &mut d["anomalies"][0],
         &|d| &mut d["change_records"][0],
         &|d| &mut d["soup"]["not_assessed"][0],

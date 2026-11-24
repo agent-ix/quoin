@@ -37,6 +37,7 @@ mod testing;
 mod threat_model;
 mod trace_matrix;
 mod verification_report;
+mod vulnerability_management_plan;
 mod writer;
 
 pub use engine::{check, generate};
@@ -93,6 +94,7 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
         Box::new(records_of_processing::RecordsOfProcessingGenerator(
             sources.records_of_processing,
         )),
+        Box::new(vulnerability_management_plan::VulnerabilityManagementPlanGenerator),
     ];
     #[cfg(feature = "test-stubs")]
     let generators = {
@@ -141,9 +143,9 @@ mod tests {
     #[cfg(not(feature = "test-stubs"))]
     #[trace("FR-191")]
     #[test]
-    fn the_shipped_registry_holds_the_twelve_documents() {
+    fn the_shipped_registry_holds_the_thirteen_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 12);
+        assert_eq!(registry.specs().count(), 13);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -159,7 +161,8 @@ mod tests {
                 "risk-management-plan",
                 "release-record",
                 "threat-model",
-                "records-of-processing"
+                "records-of-processing",
+                "vulnerability-management-plan"
             ]
         );
     }
@@ -173,7 +176,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            17
+            18
         );
     }
 }
