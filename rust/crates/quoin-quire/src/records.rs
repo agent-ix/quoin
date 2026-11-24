@@ -72,35 +72,16 @@ pub struct Document {
 }
 
 impl Document {
-    /// A member of this document's record, by the record key the engine maps
-    /// it to. The engine maps a frontmatter member to the camelCase record key
-    /// of the same words (`declared_type` to `declaredType`), so the member is
-    /// found by spelling the record key's words in snake case. `None` when the
-    /// member is absent or null.
-    #[must_use]
-    pub fn record_member(&self, record_key: &str) -> Option<&Value> {
-        let mut member = String::with_capacity(record_key.len() + 4);
-        for character in record_key.chars() {
-            if character.is_ascii_uppercase() {
-                member.push('_');
-                member.push(character.to_ascii_lowercase());
-            } else {
-                member.push(character);
-            }
-        }
-        self.frontmatter
-            .get(&member)
-            .filter(|value| !value.is_null())
-    }
-
-    /// The software safety class this document records, exactly as written,
-    /// read through its record key `softwareSafetyClass` (spec-artifacts-iso
-    /// FR-009 for a requirement, spec-objects-architecture FR-012 for a part).
+    /// The software safety class this document records, exactly as written, in
+    /// its frontmatter field `software_safety_class` (the field the engine maps
+    /// to the record key `softwareSafetyClass`, spec-artifacts-iso FR-009).
     /// `None` when it records none: a class is never inferred, defaulted or
     /// inherited from another document.
     #[must_use]
     pub fn software_safety_class(&self) -> Option<&Value> {
-        self.record_member("softwareSafetyClass")
+        self.frontmatter
+            .get("software_safety_class")
+            .filter(|value| !value.is_null())
     }
 }
 

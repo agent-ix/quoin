@@ -58,3 +58,27 @@ The coder's own run-selection mutation (`max_by` to `min_by`) was not repeated.
 - Reverse gap: none; stubs: none.
 - Semantic review: skipped (not requested); mutation check done instead (table above).
 - Plan completion: not assessed
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-012 | high | Removing the part-level class leaves FR-193 unchanged: it still says the document "SHALL show for each part the software safety class" and records a gap "naming the part", and keeps FR-193-AC-7 and FR-193-AC-8. `quire matrix` now reports both criteria `untagged` with no implementation. Meanwhile 67069dac changes FR-191 so that `safety_class_unassigned` names only a requirement, so FR-191 and FR-193 now contradict each other. Amend FR-193 in this PR (drop lines 43-45 and AC-7/AC-8, citing the spec-objects-architecture FR-012 conflict), or keep and implement the part class | spec/functional/FR-193-dossier-architecture-content.md:43-45,67-68; spec/functional/FR-191-dossier-command.md:115 |
+
+## Dispositions
+
+Round 1 covers fix commits 35e762f6, d530c084, 67069dac and 0b51bb70 on top of 42e56d0c. I checked them by inspection. The previously surviving mutations were not re-run; each now has an assertion that fails under it.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The AC-9 and AC-3 tests compare the whole run-identity cell with `assert_eq!(run_cell(..), "...")`, so anything appended to it fails |
+| FND-002 | fixed | The part-level class and its inheritance path are removed from the code (`architecture.rs` is at the merge base). The spec side is FND-010 and FND-012 |
+| FND-003 | fixed | `a_recorded_criticality_never_lends_a_class_to_the_rows` gives FR-10 criticality `high` and no class, and asserts `unassigned` plus the gap |
+| FND-004 | fixed | `a_failed_run_criterion_shows_the_typed_cause_and_the_tally_of_recorded_outcomes` asserts the typed cause, the exact tally cell and `evidence_failed` |
+| FND-005 | fixed | The AC-11 test now has an Inspection-only criterion asserting a `not recorded` cell and no gap |
+| FND-006 | fixed | `tc_1080_211_the_matrix_carries_the_run_identity_the_store_retains` runs `quoin matrix --json` over a recorded store and asserts `bindings[].run`, so removing the host's `runs` insert fails it |
+| FND-007 | fixed | `an_unfiltered_export_includes_records_of_processing_only_with_release` renders the real generator through `render_for` with and without `--release` and for an explicit selection. The constant-only test is gone |
+| FND-008 | fixed | FR-196 now names `Binding.symbols` as the bound join and says `trace_ids` are not read |
+| FND-009 | fixed | `run_identity_unrecorded` is deleted (gap kind, generator code and the FR-191 list), and FR-196 states that the store refuses an empty tool or a non-canonical timestamp |
+| FND-010 | still-open | FR-193 is unchanged, so its part-class statements still conflict with spec-objects-architecture FR-012. The code no longer reads the part class, but the spec still requires it; see FND-012 |
+| FND-011 | fixed | FR-207-AC-10 is amended: explicit `check --doc records-of-processing` needs no `--version`, and an unfiltered `check` includes DOS-ROP beside versioned kinds that do require it |

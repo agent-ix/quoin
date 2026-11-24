@@ -39,3 +39,21 @@ Gates run (focused, through `locked-build.sh`): `cargo test -p quoin-dossier -p 
 - (b) Source revision: wire `RetainedRun.observation.performed_revision` and amend FR-196 to name the FR-116 observation as its source (shown verbatim, `not recorded` when absent). If the team does not want it, delete `source_revision` from `MatrixRun`/`RunIdentity`, the column text and the AC-10 clause. Do not keep a field that can only ever read `not recorded`.
 - (c) `trace_ids` unused: the binding-symbol join is the right one. The bindings file's `symbols` already include those bound through `trace_ids` by `quoin evidence record`, and that is the join the auditor binds on. Amend FR-196 to read `Binding.symbols` and drop `trace_ids` from the read list (see SR-17099).
 - (d) Payload ceiling: see FND-001. Bound it in the host (`quoin-cli/src/matrix.rs::run_records`), not by raising the 16 MiB cap.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-006 | low | `Document::record_member` does not read the engine's mapped record: it rebuilds a frontmatter key from the camelCase record key by a naming convention (`softwareSafetyClass` to `software_safety_class`). It matches the ISO mapping today, but a module whose mapping takes the key from a differently spelled source would make every class read silently `unassigned`. This is also a general public helper built on that guess. Read the mapped record, or name the frontmatter key the module maps, and keep it private to the class reader | rust/crates/quoin-quire/src/records.rs:74-105 |
+
+## Dispositions
+
+Round 1 covers fix commits 35e762f6, d530c084, 67069dac and 0b51bb70 on top of 42e56d0c. I checked them by inspection against the diff; I did not re-run the build.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | `quoin_assurance::matrix::bounded_runs` sends, per binding, only the newest run holding a bound entry, and in it only the entries a binding of its suite names. The host calls it, and `the_runs_sent_to_the_matrix_are_bounded_and_read_the_same_identity` asserts both the reduction and an unchanged identity |
+| FND-002 | fixed | The part-level class is removed: `architecture.rs` and `systems.rs` are back to the merge base, so no design element gets a `safety_class_unassigned` gap |
+| FND-003 | fixed | FR-192 is amended to read the requirement's own record key `softwareSafetyClass` and states why the `carried` entry is not used. `SOFTWARE_SAFETY_CLASS_KEY` is gone, so no quoin source names a carried field (FR-160-AC-13 holds) |
+| FND-004 | fixed | `MatrixRun::from(&RetainedRun)` takes `observation.performed_revision`, FR-196 and AC-10 are amended to name the FR-116 observation, and `tc_1080_211_the_matrix_carries_the_run_identity_the_store_retains` drives it end to end through `--run-observation` |
+| FND-005 | fixed | `MatrixRun` and `MatrixRunEntry` derive `Serialize`, and the host builds them through `From<&RetainedRun>` and `bounded_runs`. The `json!` literal is deleted, leaving one wire shape |

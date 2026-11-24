@@ -31,7 +31,6 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 - The `design-join` source (`quire_rs::design_join`) and the `design-matrix` source (quire-rs FR-092), which `quoin-quire` exposes as `rust/crates/quoin-quire/src/design_join.rs` and `design_matrix.rs`.
 - The `systems-records` source: the systems records `PartRecord`, `PortRecord`, `ConnectionRecord` and allocation of quire-rs `src/semantic/systems.rs`, and the objects `Part`, `Port`, `Connection` and `Allocation` of spec-objects-architecture.
 - Documents of the `ADR` archetype.
-- Source contract: the class of a part is a frontmatter field of its `part` document (spec-objects-architecture FR-012), which the quire engine extracts as the part record key `softwareSafetyClass`. The `systems-records` source (`PartRecord` of quire-rs, wrapped by `quoin-quire`) carries no frontmatter, so `quoin-quire` SHALL expose that record key, as written and omitted when absent, beside each `Part`, matched to the `PartRecord` by the part document's id.
 
 ## Outputs
 
@@ -40,9 +39,8 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 ## Behavior
 
 - The architecture document SHALL list elements in dossier order (FR-191) by element id.
-- The architecture document SHALL show for each part the software safety class recorded in its `part` document, exactly as recorded.
-- If a part records no software safety class, the document SHALL show `unassigned` and record one `safety_class_unassigned` gap naming the part.
-- The document SHALL NOT infer, default or inherit a class, from a parent part, an allocated requirement or elsewhere.
+- The architecture document SHALL NOT show a part-level software safety class, because spec-objects-architecture FR-012 states that the part class is used only by the `field_consistency` check and by no per-item report.
+- The architecture document SHALL NOT record a `safety_class_unassigned` gap naming a part, for the same reason.
 - The architecture document SHALL show for each connection its flow direction and both ends.
 - The architecture document SHALL list for each part the requirements allocated to or realized by it, from the join.
 - If the join reports a requirement in the `uncovered` state in a design relation, the document SHALL record one `no_design_element` gap per `uncovered` row, naming the requirement and the `check` token of that row's relation.
@@ -67,8 +65,6 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 | FR-193-AC-4 | A part with no allocated requirement produces a `no_allocation` gap | Test |
 | FR-193-AC-5 | A connection shows its flow direction and both ends | Test |
 | FR-193-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
-| FR-193-AC-7 | A part that records class `class-3` shows `class-3` as recorded. | Test |
-| FR-193-AC-8 | A part with no recorded class shows `unassigned` and one `safety_class_unassigned` gap naming the part, even when its parent part and an allocated requirement record a class. | Test |
 | FR-193-AC-9 | A requirement with a `covered` row in one relation and an `uncovered` row in a second records one `no_design_element` gap carrying the second relation's `check` token and no gap for the first; a requirement with `uncovered` rows in two relations records two gaps with their two `check` tokens. | Test |
 
 ## Dependencies
