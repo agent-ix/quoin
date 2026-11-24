@@ -158,8 +158,14 @@ impl Builder {
             open_reason: node.because.clone(),
             undeveloped: undeveloped.then_some(true),
             evidence: if node.kind == NodeKind::Solution && node.status == NodeStatus::Supported {
-                node.evidence.as_ref().map(serde_json::to_value).transpose().map_err(|error| error.to_string())?
-            } else { None },
+                node.evidence
+                    .as_ref()
+                    .map(serde_json::to_value)
+                    .transpose()
+                    .map_err(|error| error.to_string())?
+            } else {
+                None
+            },
             source_data: None,
         });
         for child in &node.children {
@@ -573,7 +579,10 @@ fn cycle(
 /// Render a GSN model as a Mermaid flowchart.
 pub fn render_diagram(model: &GsnCase) -> Result<String, String> {
     validate(model)?;
-    let mut lines = vec!["flowchart TB".to_owned(), "  classDef open stroke:#d33".to_owned()];
+    let mut lines = vec![
+        "flowchart TB".to_owned(),
+        "  classDef open stroke:#d33".to_owned(),
+    ];
     for node in &model.nodes {
         let full_label = format!("{}: {}", node.source, node.statement);
         let truncated = full_label.chars().take(160).collect::<String>();
@@ -582,8 +591,8 @@ pub fn render_diagram(model: &GsnCase) -> Result<String, String> {
         } else {
             truncated
         }
-            .replace('"', "#quot;")
-            .replace('\n', "<br/>");
+        .replace('"', "#quot;")
+        .replace('\n', "<br/>");
         let shape = match node.kind.as_str() {
             "goal" => ("[", "]"),
             "strategy" => ("[/", "/]"),

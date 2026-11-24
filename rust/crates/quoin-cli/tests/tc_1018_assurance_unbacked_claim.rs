@@ -199,3 +199,40 @@ fn tc_1018_the_same_claim_with_its_reference_resolved_is_supported_through_the_r
     );
     assert_eq!(rendered["topClaim"]["reasons"], serde_json::json!([]));
 }
+
+/// Provenance: agent-ix/quoin#PLAT-1447, agent-ix/quoin#PLAT-1645.
+#[trace("FR-221-AC-9")]
+#[test]
+fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
+    let root = repo_with_argument("argument-no-refs.md");
+    let decisions = root.path().join("decisions.json");
+    let common = [
+        "--repo",
+        root.path().to_str().unwrap(),
+        "--argument",
+        "AA-10180",
+        "--decisions",
+        decisions.to_str().unwrap(),
+        "--as-of",
+        "2026-08-15T00:00:00.000Z",
+    ];
+    let mut args = common.to_vec();
+    args.push("--gsn");
+    let output = quoin(&args);
+    assert_eq!(output.status.code(), Some(0), "{}", text(&output.stderr));
+    let response: serde_json::Value =
+        serde_json::from_str(text(&output.stdout).trim()).expect("GSN output is JSON");
+    let model: serde_json::Value = serde_json::from_str(
+        response["rendered"]
+            .as_str()
+            .expect("rendered model string"),
+    )
+    .expect("rendered GSN model is JSON");
+    assert_eq!(model["format"], "quoin.gsn-case/v1");
+
+    let mut conflicting = common.to_vec();
+    conflicting.extend(["--gsn", "--json"]);
+    let refused = quoin(&conflicting);
+    assert_ne!(refused.status.code(), Some(0));
+    assert!(refused.stdout.is_empty());
+}
