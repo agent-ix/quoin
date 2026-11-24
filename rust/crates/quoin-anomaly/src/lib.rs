@@ -25,7 +25,7 @@ pub mod verification;
 
 pub use carried::{CarriedAnomaly, CarriedRead, UnreadableAnomaly, is_carried, read_carried};
 pub use check::{Checked, Context, Diagnostic, DiagnosticCode, Severity, check_document};
-pub use derived::{Change, Derived, fixing_change, rationale_change};
+pub use derived::{Change, Derived, fixing_change, rationale_change, value_change};
 pub use error::{AnomalyError, ErrorCode};
 pub use history::{History, Signature, StatusEntry, read_history};
 pub use record::{

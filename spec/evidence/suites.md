@@ -23,6 +23,8 @@ FR-006).
 | SUITE-001 | Unit and integration suite | `make evidence` | cargo-nextest | Unit |
 | SUITE-002 | Spec validation gate | `make validate` | quire-cli | Static |
 | SUITE-003 | Agent evals | `make evals` | cli-agent-evals | Eval |
+| SUITE-004 | Real-tool integration checks | `make real-tool-test` | real-tool-test lane | Integration |
+| SUITE-005 | Behavioral mutation checks | `make mutation-test` | cargo-mutants | Integration |
 
 For the Quoin tag-attestation release-verification result, `SUITE-001` is the
 declared suite. Its required release bindings are `FR-186-AC-1` through
@@ -34,6 +36,23 @@ generated facts with the maintained declarations and tag/run provenance as the
 `release-evidence` artifact. It does not commit run-specific bindings or
 tag-run records. `SUITE-002` and `SUITE-003` remain separate evidence suites
 and are not claimed by the release Test Result.
+
+`SUITE-004` runs the repository's applicable ignored tests against the real
+tools that compose its verification path. The local target records every
+attempted tool check, including a failed or unavailable tool, in a retained run
+record. Each entry identifies the tool version and any result-affecting input
+in its `config`; an OSV-Scanner entry includes the exact caller-supplied
+`osv_mirror_date`. An unavailable tool has `outcome: error` and
+`config.execution_state: not-executed`; it never has a passing outcome. This
+local suite is independent of release CI.
+
+`SUITE-005` runs behavioral mutations over the approval-decision, discharge,
+evidence-binding, risk-completeness and per-class-floor kernels. The raw
+cargo-mutants output is retained under the worktree's target directory; the
+Quoin run record retains the survivor projection. Every surviving mutation
+requires a human review disposition in the adjacent retained disposition file.
+The lane records results and does not assign acceptance, risk, severity or
+qualification.
 
 ## What the store discharges
 
@@ -57,15 +76,18 @@ The target returns the tests' own exit status after recording, so a red suite is
 recorded as red. Tagged tests absent from a run (filtered or ignored) are
 counted in the tool's summary line and bind nothing.
 
-No run record is kept in this repository; a run is transcribed by the consumer's
-CI when it executes a suite.
+Local runs of `SUITE-004` and `SUITE-005` are transcribed by their repository
+targets and retained in the generated evidence store. Those run-specific files
+are not committed: they describe one exact tool and input set and go stale with
+the next commit. Consumer CI may also transcribe its own run when it executes a
+suite.
 
 ## Open follow-ups
 
 - **The generated evidence store is not committed, on purpose.** A run record and
   the bindings derived from it describe one commit's test run, so they go stale
   with the next commit and would add churn to every change without adding
-  information a reader cannot regenerate with `make evidence`. The committed
+  information a reader cannot regenerate with the suite targets. The committed
   `bindings.json` is the empty skeleton. Freshness is judged by the consumer that
   ran the suite, not by a file in this repository.
 - **A bound-and-accepted ratchet check is not implemented.** Nothing yet fails

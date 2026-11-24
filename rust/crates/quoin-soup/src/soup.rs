@@ -276,6 +276,16 @@ fn run_promote(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Res
     };
 
     let mut planned = plan::plan(&components, &existing);
+    if arg(arguments, "discharges").is_some() && planned.created.len() > 1 {
+        return Err(refuse(
+            "soup.multi_component_discharge",
+            format!(
+                "--discharges cannot be used when promotion creates {} soup_records; no records were written",
+                planned.created.len()
+            ),
+            &[("records_to_create", planned.created.len().to_string())],
+        ));
+    }
     let first_id = plan::next_id_number(ids);
     let adopted = check_destinations(&planned, &out)?;
     for record in &planned.created {

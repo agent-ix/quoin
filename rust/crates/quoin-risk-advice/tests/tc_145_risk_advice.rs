@@ -94,7 +94,7 @@ fn ids(entries: &Value, key: &str) -> Vec<String> {
 
 #[trace("FR-145-AC-1", "FR-145-AC-6", "NFR-031-AC-3")]
 #[test]
-fn the_json_has_exactly_the_four_keys_and_no_chain_rows() {
+fn the_json_has_exactly_the_six_keys_and_no_chain_rows() {
     let c = corpus();
     chain(&c);
     let json = c.json();
@@ -102,8 +102,10 @@ fn the_json_has_exactly_the_four_keys_and_no_chain_rows() {
         keys(&json),
         [
             "attribution",
+            "decision_attribution",
             "decision_queue",
             "evidence_gaps",
+            "overall_evaluation_checks",
             "policy_cells"
         ]
     );
@@ -148,7 +150,7 @@ fn two_runs_are_byte_identical() {
 
 #[trace("FR-145-AC-4", "FR-145-AC-5")]
 #[test]
-fn an_empty_scope_prints_three_empty_sections_and_the_attribution() {
+fn an_empty_scope_prints_five_empty_sections_and_the_attribution() {
     let c = corpus();
     let json = c.json();
     assert_eq!(json["policy_cells"], serde_json::json!([]));
@@ -157,6 +159,8 @@ fn an_empty_scope_prints_three_empty_sections_and_the_attribution() {
         json["decision_queue"],
         serde_json::json!({"queue": [], "no_record": []})
     );
+    assert_eq!(json["overall_evaluation_checks"], serde_json::json!([]));
+    assert_eq!(json["decision_attribution"], serde_json::json!([]));
     let attribution = json["attribution"].as_str().unwrap();
     assert!(attribution.contains("policy") && attribution.contains("named person"));
 }

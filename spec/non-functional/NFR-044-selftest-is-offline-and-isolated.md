@@ -1,5 +1,5 @@
 ---
-id: NFR-042
+id: NFR-044
 title: "Self-tests run offline with repository-owned fixtures"
 type: NFR
 quality_attribute: reliability
@@ -10,7 +10,7 @@ relationships:
     type: "constrains"
 ---
 
-# NFR-042: Self-tests run offline with repository-owned fixtures
+# NFR-044: Self-tests run offline with repository-owned fixtures
 
 ## Statement
 

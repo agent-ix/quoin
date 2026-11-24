@@ -304,6 +304,39 @@ fn a_stated_obligation_is_written_verbatim_as_the_disposition_clause() {
     validates(&record);
 }
 
+#[trace("FR-141-AC-26")]
+#[test]
+fn multi_component_promotion_with_discharges_refuses_before_writing() {
+    let work = tempfile::tempdir().unwrap();
+    let repo = work.path().join("repo");
+    let spec = repo.join("spec/functional");
+    std::fs::create_dir_all(&spec).unwrap();
+    let requirement = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../spec/functional/FR-141-promote-sbom-components-to-soup-records.md");
+    std::fs::copy(requirement, spec.join("FR-141.md")).unwrap();
+    let sbom = write(work.path(), "bom.json", &cyclonedx(&[]));
+    let out = work.path().join("soup");
+    let run = with_module(
+        &sbom,
+        &out,
+        &[
+            "--repo",
+            repo.to_str().unwrap(),
+            "--discharges",
+            "FR-141-AC-1",
+        ],
+    );
+
+    assert_eq!(run.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&run.stderr);
+    assert!(
+        stderr.contains("soup.multi_component_discharge"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("3 soup_records"), "{stderr}");
+    assert!(files(&out).is_empty());
+}
+
 #[trace("FR-141-AC-5", "FR-141-AC-7")]
 #[test]
 fn promoting_again_changes_no_file_and_never_touches_a_reviewed_record() {

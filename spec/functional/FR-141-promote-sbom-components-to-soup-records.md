@@ -88,6 +88,7 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 - The command SHALL NOT write `serves`, `known_anomalies`, `support_status` or `end_of_support` on a record it creates.
 - Where `--discharges <obligation-id>` is not given, the command SHALL NOT write `disposition_clause` on a record it creates.
 - Where `--discharges <obligation-id>` is given and an obligation states that id, the command SHALL write the id verbatim as `disposition_clause`.
+- If `--discharges` is given and the promotion plans to create more than one new `soup_record`, then the command SHALL refuse before writing any record; it SHALL name the multi-component promotion refusal and SHALL NOT accept a mapping format.
 - If `--discharges` names an id that no obligation states, then the command SHALL report it as `unmatched` as FR-041-AC-8 does.
 - If `--discharges` names an id that no obligation states, the command SHALL write no `disposition_clause`.
 - The command SHALL write each new record under `--out <dir>` (default `spec/soup/` of the repository) in a file named by the purl without its qualifiers and subpath, with every byte outside `A-Za-z0-9._-` replaced by `%` and its two uppercase hex digits, followed by `.md`.
@@ -141,6 +142,7 @@ with no purl is skipped and a repeated purl is one record, so the count that hol
 | FR-141-AC-23 | An existing record that sets a `supplier` while the SBOM states none for its purl, and one that sets a `license` while the SBOM declares no licence, two licences, an unreadable licence or a licence containing a control character, are each listed as a difference and left byte-identical; an existing record that sets neither, for an SBOM component that states a supplier and a licence, is listed as a difference for both fields. | Test |
 | FR-141-AC-24 | A component whose supplier and licence text contain a control character yields a record whose text has neither a `supplier` nor a `license` line, and the report lists both fields; a component whose only licence entry is unreadable yields a record with no `license` line and appears in the report. | Test |
 | FR-141-AC-25 | A document listing one purl twice with different suppliers and licences yields one record carrying the first occurrence's values, and the report lists the conflict. | Test |
+| FR-141-AC-26 | Given an SBOM that plans to create more than one `soup_record`, `quoin soup promote --discharges OB-1` refuses before writing any record, even if `OB-1` is unstated; the command offers no per-component mapping form. | Test |
 
 ## Constraints
 

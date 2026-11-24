@@ -170,6 +170,7 @@ pub(in crate::soup) fn discharge_with(fact: &Value) -> DischargeReport {
             "context": { "product": "widget" },
             "clauses": [
                 binding_clause("C-DISP", "binding", json!([])),
+                binding_clause("C-DISP2", "binding", json!([])),
                 binding_clause("C-OLD", "binding", json!([])),
                 binding_clause("C-DIRECT", "binding", json!([])),
                 binding_clause("C-NONE", "binding", json!([])),
@@ -181,6 +182,7 @@ pub(in crate::soup) fn discharge_with(fact: &Value) -> DischargeReport {
         },
         "facts": [
             fact,
+            disposition("C-DISP2", "2026-08-01T00:00:00.000Z", "2026-09-01T00:00:00.000Z"),
             disposition("C-OLD", "2026-01-01T00:00:00.000Z", "2026-02-01T00:00:00.000Z"),
             {
                 "kind": "direct", "clauseId": "C-DIRECT",
@@ -542,6 +544,52 @@ fn tc_1516_007_each_way_a_disposition_fails_names_itself() {
         Unresolved::NoDispositionClause.to_string(),
         "no disposition clause"
     );
+}
+
+#[trace("FR-142-AC-37")]
+#[test]
+fn a_clause_two_records_name_resolves_neither_of_them() {
+    let audit = scan(
+        "cargo-audit",
+        "audit",
+        BEFORE,
+        &audit_text(
+            &[
+                audit_entry("RUSTSEC-A", "x", "1.0.0"),
+                audit_entry("RUSTSEC-B", "y", "1.0.0"),
+            ],
+            &[],
+        ),
+    );
+    let shared = [
+        record("pkg:cargo/x@1.0.0", Some("C-DISP")),
+        record("pkg:cargo/y@1.0.0", Some("C-DISP")),
+    ];
+    let joined = join(&shared, std::slice::from_ref(&audit), &discharge());
+    for purl in ["pkg:cargo/x@1.0.0", "pkg:cargo/y@1.0.0"] {
+        assert_eq!(
+            only_record(&joined, purl).advisories[0].resolution,
+            Resolution::Unresolved(Unresolved::ClauseShared(2))
+        );
+    }
+    assert_eq!(
+        Unresolved::ClauseShared(2).to_string(),
+        "disposition clause shared by 2 records"
+    );
+    // Each record with its own clause: the fact resolves only the record that names it.
+    let own = [
+        record("pkg:cargo/x@1.0.0", Some("C-DISP")),
+        record("pkg:cargo/y@1.0.0", Some("C-OLD")),
+    ];
+    let joined = join(&own, &[audit], &discharge());
+    assert!(matches!(
+        only_record(&joined, "pkg:cargo/x@1.0.0").advisories[0].resolution,
+        Resolution::Resolved(_)
+    ));
+    assert!(matches!(
+        only_record(&joined, "pkg:cargo/y@1.0.0").advisories[0].resolution,
+        Resolution::Unresolved(Unresolved::NotCurrent(_))
+    ));
 }
 
 #[trace("FR-142-AC-12")]

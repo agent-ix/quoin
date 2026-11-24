@@ -150,6 +150,13 @@ people to click through it.
   leave all existing bytes unchanged (FR-030-AC-26, FR-030-AC-27).
 - The store SHALL preserve submitted values without trimming, normalizing or
   repairing them (FR-030-AC-26).
+- The store SHALL retain the version of each real tool and each result-
+  affecting run input on the corresponding `SUITE-004` entry. An OSV-Scanner
+  entry SHALL retain the exact OSV mirror date used as
+  `config.osv_mirror_date`.
+- The `make real-tool-test` target SHALL record an unavailable required tool's
+  entry with `outcome: error` and `config.execution_state: not-executed`, and
+  the target SHALL NOT record a passing outcome.
 - The store SHALL accept record timestamps only in the canonical UTC form
   `YYYY-MM-DDTHH:MM:SS[.mmm]Z`, where the year is 0001 through 9999, the date
   and time are valid Gregorian values, and `.mmm` is either absent or exactly
@@ -312,6 +319,7 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-39 | The stored customer artifact holds no digest, hash, size or content of the artifact, and recording one never reads, opens or fetches the `location`: with a `location` naming an unreadable path and an unreachable URL the record is accepted and the stored bytes equal the submitted members plus `schemaVersion`. | Test |
 | FR-030-AC-40 | `quoin evidence gc` leaves every customer artifact in place, `--dry-run` or not, and its retirement log names none. | Test |
 | FR-030-AC-41 | A stored customer artifact file that is not valid JSON, holds an `artifactId` that, lowercased, differs from its file name (a mixed-case `artifactId` in a lowercase file name is valid), or breaks AC-37 is an error naming the file, and is never read as an absent record. | Test |
+| FR-030-AC-42 | A retained `SUITE-004` record preserves each real tool's version and result-affecting inputs on its corresponding entry; an OSV-Scanner entry carries the exact `osv_mirror_date`. An unavailable required tool is recorded with `outcome: error` and `config.execution_state: not-executed`, never `pass`. | Test |
 
 > **CR note (PLAT-1853, 2026-11-23):** The store gains the `customer-artifacts`
 > family for records and documents the customer supplies, so a pack can list the

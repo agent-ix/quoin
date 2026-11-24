@@ -207,7 +207,7 @@ fn status_error_message(error: StatusError) -> String {
     }
 }
 
-enum StatusError {
+pub(crate) enum StatusError {
     Invalid(String),
     Unavailable(String),
 }
@@ -607,6 +607,17 @@ pub(crate) fn verify_for_evidence(
     gitsign: Option<&Value>,
 ) -> Result<Value, String> {
     verify(ea, allowed, repo, revision, gitsign).map_err(status_error_message)
+}
+
+/// Verify one risk-decision commit through engineering-assurance without
+/// adding a second signature implementation to Quoin.
+pub(crate) fn verify_for_risk(
+    ea: &Path,
+    allowed: &Path,
+    repo: &Path,
+    revision: &str,
+) -> Result<Value, StatusError> {
+    verify(ea, allowed, repo, revision, None)
 }
 
 fn signature_request(
