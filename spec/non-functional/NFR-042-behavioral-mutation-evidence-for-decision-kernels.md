@@ -4,6 +4,8 @@ title: "Behavioral mutation evidence for decision and binding kernels"
 type: NFR
 quality_attribute: reliability
 relationships:
+  - target: "ix://agent-ix/quoin/FR-030"
+    type: "constrains"
   - target: "ix://agent-ix/quoin/FR-039"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-115"

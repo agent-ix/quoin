@@ -565,7 +565,7 @@ mod tests {
         assert_eq!(values(&none, "module").len(), 0);
     }
 
-    #[trace("FR-030-AC-42", "FR-115-AC-26")]
+    #[trace("FR-115-AC-26")]
     #[test]
     fn matrix_bindings_are_derived_in_memory_from_known_run_trace_ids() {
         let bindings = serde_json::json!([]);
