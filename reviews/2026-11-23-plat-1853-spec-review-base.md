@@ -88,3 +88,20 @@ references, the new producers bullet, Customer-owned clauses, AC-25 to AC-30
 and Dependencies. Context: FR-211-AC-1, AC-5 and AC-12; FR-133-AC-3, AC-5 and
 AC-6; FR-130 identifier rules and AC-10 and AC-11; FR-174; FR-046-AC-7;
 quire-rs FR-073 and `src/clauses.rs` on origin/main.
+
+## New findings (disposition pass 1)
+
+Fix commit d64c733b. The lead's ruling makes `delegated` discharge only a customer-owned clause, and `record-discharge` now refuses it on any other clause. Today's code accepts that case: `quoin-assurance/src/discharge/verify.rs` `check_disposition` returns success for a non-approval-class clause that is not customer-owned and verifies the approval for an approval-class one. So this is a behaviour change, and the FR-211 SHALL and AC-27 state it clearly; the code ticket must add the refusal. The ruling introduces the two findings below.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-004 | medium | The new FR-211 rule now conflicts with FR-173 and FR-174. FR-173 emits a `delegated` disposition for every binding clause whose `scope_exclusion` authors `delegated`, whatever the clause's output kinds. FR-173-AC-12 says that array is accepted by `record-discharge` when its refs resolve and its approvals verify. FR-174-AC-1 records every supported disposition on synthetic clauses of unstated kind. For a `delegated` exclusion on a clause that is not customer-owned, FR-211 now makes `record-discharge` refuse the whole list, so FR-173's own output cannot be recorded. FR-173 must refuse or report such an exclusion (or say why it cannot), and FR-173-AC-12 and FR-174-AC-1 must name a customer-owned clause for `delegated`. | FR-211 Customer-owned clauses; FR-211-AC-27; FR-173 (line 61); FR-173-AC-4; FR-173-AC-12; FR-174-AC-1 | wrong-requirement |
+| FND-005 | low | The refusal reuses the reason `customer-owned` for a clause that is not customer-owned, so the code states the opposite of the clause's property. Existing codes name the condition at fault (`no-store`, `approval-missing`, `kind-not-expected`), and no existing code fits. A new code `not-customer-owned` would be accurate. The prose tail in `verify.rs` softens the problem, so no behaviour is wrong. The new FR-211 sentence also gives the reason only for `record-discharge`, not for a report built from `--facts`. | FR-211 Customer-owned clauses; FR-211-AC-27; rust/crates/quoin-assurance/src/discharge/verify.rs:338-347 | wrong-requirement |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | d64c733b states once that `delegated` discharges only a customer-owned clause and that `record-discharge` refuses it on any other clause, names a reason, and removes the "open" wording. AC-27 is now an instance of that rule. The cross-FR conflict the rule creates with FR-173 and FR-174 is FND-004. |
+| FND-002 | fixed | FR-030 Behavior and AC-41 now compare the lowercased `artifactId` with the file name, and AC-41 states that a mixed-case id in a lowercase file name is valid. |
+| FND-003 | fixed | FR-211-AC-26 no longer carries the `no-producer` case, which AC-5 covers. |

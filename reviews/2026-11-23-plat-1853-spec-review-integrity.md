@@ -38,3 +38,10 @@ AC-36 to AC-41). The FR-133 Behavior bullet and AC-8 row. The FR-211 Evidence
 references and Customer-owned clauses sections, and the Acceptance Criteria
 table (AC-24 to AC-30). The minted ids came from `quire matrix --scope .` and
 the section contents from `quire lookup`.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The blank line is gone. `quire matrix --scope .` at d64c733b lists FR-211-AC-25 through AC-30. |
+| FND-002 | fixed | `### Customer artifacts` now sits at the end of `## Behavior`, before `## Constraints`. `quire lookup --heading Behavior` returns the 36 store bullets, and `--heading "Customer artifacts"` returns its 12 own bullets. |

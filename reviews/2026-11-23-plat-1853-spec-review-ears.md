@@ -33,3 +33,10 @@ recoverable from context.
 The FR-030 Customer artifacts bullets (lines 105-132), CON-4, CON-5 and
 AC-36 to AC-41. The FR-133 new Behavior bullet and AC-8. The FR-211 new
 Evidence references and Customer-owned clauses bullets, and AC-25 to AC-30.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | accepted-no-change | Mostly fixed in d64c733b: every Customer-artifacts bullet now carries a SHALL, and gc and the retained kind are separate bullets. Two bullets still pair two SHALLs: the `invalid-identifier`/`case-collision` refusal pair, and "SHALL report an error ... and SHALL NOT read the file as an absent record". The finding is low and each pair states one condition, so it is accepted under the two-round cap. |
+| FND-002 | fixed | Named subjects replace "it" in FR-030 ("the artifact", "the customer artifact"), FR-133 ("digest of the customer artifact") and FR-211 ("the artifact"). One "before writing it" remains, and its referent is the subject of the same clause. |
