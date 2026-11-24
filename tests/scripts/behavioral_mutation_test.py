@@ -95,8 +95,9 @@ def main() -> int:
                   "external_fixture_roots": json.dumps({key: env[key] for key in
                       ("SPEC_OBJECTS_SAFETY_DIR", "SPEC_ARTIFACTS_PROCESS_DIR") if env.get(key)})}
         if error:
-            config.update({"execution_state": "not-executed", "reason": error})
-            entries.append(evidence.entry(name, "error", config))
+            outcome, execution_state = evidence.classify_execution(status, error)
+            config.update({"execution_state": execution_state, "reason": error})
+            entries.append(evidence.entry(name, outcome, config))
             failed = True
             continue
         if not outcomes.is_file():
@@ -112,7 +113,11 @@ def main() -> int:
                        "baseline_failed": str(baseline_failed)})
         run_failed = status != 0 or baseline_failed or not any(counts.values())
         survivors = raw_survivors(outcomes)
-        record_entry = evidence.entry(name, "fail" if run_failed or survivors else "pass", config)
+        outcome, execution_state = evidence.classify_execution(
+            1 if run_failed or survivors else 0,
+        )
+        config["execution_state"] = execution_state
+        record_entry = evidence.entry(name, outcome, config)
         viable = counts["killed"] + counts["survived"]
         if viable:
             record_entry["score"] = counts["killed"] / viable

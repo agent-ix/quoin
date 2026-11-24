@@ -565,7 +565,7 @@ mod tests {
         assert_eq!(values(&none, "module").len(), 0);
     }
 
-    #[trace("FR-031-AC-1")]
+    #[trace("FR-030-AC-42", "FR-115-AC-26")]
     #[test]
     fn matrix_bindings_are_derived_in_memory_from_known_run_trace_ids() {
         let bindings = serde_json::json!([]);
@@ -588,6 +588,43 @@ mod tests {
                 "obligation": "FR-031-AC-1",
                 "suite": "SUITE-004",
                 "symbols": ["cli_export::exports"]
+            }])
+        );
+    }
+
+    #[trace("FR-115-AC-26")]
+    #[test]
+    fn matrix_trace_bindings_merge_symbols_and_preserve_lineage() {
+        let bindings = serde_json::json!([{
+            "obligation": "FR-031-AC-1",
+            "suite": "SUITE-004",
+            "symbols": ["existing::test"],
+            "lineage": {"actor": "recorded"}
+        }]);
+        let runs = serde_json::json!([{
+            "schemaVersion": 1,
+            "suite": "SUITE-004",
+            "tool": "cargo test 1.0",
+            "timestamp": "2026-11-24T00:00:00Z",
+            "entries": [{
+                "symbol": "existing::test",
+                "outcome": "pass",
+                "traceIds": ["FR-031-AC-1"]
+            }, {
+                "symbol": "new::test",
+                "outcome": "pass",
+                "traceIds": ["FR-031-AC-1"]
+            }]
+        }]);
+        let obligations = serde_json::json!([{"id": "FR-031-AC-1"}]);
+
+        assert_eq!(
+            trace_bindings(&bindings, &runs, &obligations).expect("trace bindings"),
+            serde_json::json!([{
+                "obligation": "FR-031-AC-1",
+                "suite": "SUITE-004",
+                "symbols": ["existing::test", "new::test"],
+                "lineage": {"actor": "recorded"}
             }])
         );
     }

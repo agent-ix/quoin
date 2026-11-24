@@ -38,7 +38,7 @@ Compiling a mutated program does not show that a test distinguishes the behavior
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Generated viable mutations with a recorded behavioral outcome | all | all | Mutation run |
+| Generated viable mutations with a recorded behavioral outcome | all | all | Test |
 | Surviving mutations omitted from the retained result | 0 | 0 | Inspection |
 | Surviving mutations without a recorded human review disposition | 0 | 0 | Inspection |
 
