@@ -148,6 +148,7 @@ pub(super) fn strategy_for(
         evidence: None,
         analysis_evidence: None,
         children: sub_nodes,
+        context: Vec::new(),
     }
 }
 
@@ -202,6 +203,7 @@ pub(super) fn solution_for(
         evidence: evidence_for(id, findings, healthy, store),
         analysis_evidence,
         children: Vec::new(),
+        context: Vec::new(),
     }
 }
 

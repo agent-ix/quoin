@@ -40,9 +40,23 @@ pub(crate) fn command() -> Command {
         .arg(Arg::new("as-of").long("as-of"))
         .args(crate::formal_rules::trust_arguments())
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
+        .arg(Arg::new("gsn").long("gsn").action(ArgAction::SetTrue))
+        .arg(
+            Arg::new("gsn-diagram")
+                .long("gsn-diagram")
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    if arguments.get_flag("gsn") && arguments.get_flag("json") {
+        return Err("--gsn cannot be combined with --json".to_owned());
+    }
+    if arguments.get_flag("gsn-diagram")
+        && (arguments.get_flag("json") || arguments.get_flag("gsn"))
+    {
+        return Err("--gsn-diagram cannot be combined with --json or --gsn".to_owned());
+    }
     if arguments.get_one::<String>("argument").is_some() {
         if arguments
             .get_one::<String>("formalization-records")
@@ -124,6 +138,15 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
     )?;
     if !view.outcome.carries_payload() {
         return Ok(view);
+    }
+    if arguments.get_flag("gsn") || arguments.get_flag("gsn-diagram") {
+        let model = quoin_assurance::gsn::from_authored(&view.payload)?;
+        let rendered = if arguments.get_flag("gsn-diagram") {
+            quoin_assurance::render_gsn_diagram(&model)?
+        } else {
+            serde_json::to_string_pretty(&model).map_err(|error| error.to_string())?
+        };
+        return Ok(Response::ok(serde_json::json!({ "rendered": rendered })));
     }
     present(
         "assurance.render_authored_argument",
@@ -216,6 +239,19 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     let case = invoke("assurance.build_case", &case_request)?;
     if !case.outcome.carries_payload() {
         return Ok(case);
+    }
+    if arguments.get_flag("gsn") || arguments.get_flag("gsn-diagram") {
+        let assurance: quoin_assurance::AssuranceCase =
+            serde_json::from_value(case.payload.clone()).map_err(|error| {
+                format!("assurance.build_case returned an invalid case: {error}")
+            })?;
+        let model = quoin_assurance::gsn_from_case(&assurance)?;
+        let rendered = if arguments.get_flag("gsn-diagram") {
+            quoin_assurance::render_gsn_diagram(&model)?
+        } else {
+            serde_json::to_string_pretty(&model).map_err(|error| error.to_string())?
+        };
+        return Ok(Response::ok(serde_json::json!({ "rendered": rendered })));
     }
     present(
         "assurance.render_case",
