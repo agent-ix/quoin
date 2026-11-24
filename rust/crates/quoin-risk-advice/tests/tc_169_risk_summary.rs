@@ -58,6 +58,40 @@ fn situation(c: &Corpus, id: &str, hazards: &[&str]) {
     c.put(id, "hazardous_situation", &rels(&edges), "");
 }
 
+fn evaluation(
+    c: &Corpus,
+    id: &str,
+    refs: &[(&str, &str)],
+    product: &str,
+    (decision, by, rationale): (&str, &str, &str),
+) {
+    c.put(
+        id,
+        "overall_residual_risk_evaluation",
+        &rels(refs),
+        &format!(
+            "## Determination\n\n| Product | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n| {product} | {decision} | {rationale} | {by} |\n"
+        ),
+    );
+}
+
+fn benefit_risk(
+    c: &Corpus,
+    id: &str,
+    refs: &[(&str, &str)],
+    benefit: &str,
+    (decision, by, rationale): (&str, &str, &str),
+) {
+    c.put(
+        id,
+        "benefit_risk",
+        &rels(refs),
+        &format!(
+            "## Determination\n\n| Benefit | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n| {benefit} | {decision} | {rationale} | {by} |\n"
+        ),
+    );
+}
+
 fn harm(c: &Corpus, id: &str, situation: &str) {
     c.put(id, "harm", &rels(&[(situation, "arises_from")]), "");
 }
@@ -132,7 +166,12 @@ fn assert_markdown_voice(md: &str) {
     let mut lines = md.lines();
     let attribution = lines.next().unwrap();
     assert!(attribution.contains("policy") && attribution.contains("named person"));
-    for line in md.lines().skip(1).filter(|line| line.contains("accept")) {
+    let copied = |line: &&str| line.starts_with("| BR-") || line.starts_with("| ORE-");
+    for line in md
+        .lines()
+        .skip(1)
+        .filter(|line| line.contains("accept") && !copied(line))
+    {
         let stripped = line
             .replace("decision=accepted", "")
             .replace("decision=not_accepted", "")
@@ -203,7 +242,17 @@ fn a_complete_chain_is_one_row_with_exact_keys_and_no_findings() {
     let c = corpus();
     complete(&c);
     let json = c.json();
-    assert_eq!(keys(&json), ["attribution", "rows"]);
+    assert_eq!(
+        keys(&json),
+        [
+            "attribution",
+            "benefit_risks",
+            "overall_evaluations",
+            "rows"
+        ]
+    );
+    assert_eq!(json["benefit_risks"], json!([]));
+    assert_eq!(json["overall_evaluations"], json!([]));
     let rows = json["rows"].as_array().unwrap();
     assert_eq!(rows.len(), 1);
     let row = &rows[0];
@@ -212,12 +261,17 @@ fn a_complete_chain_is_one_row_with_exact_keys_and_no_findings() {
         [
             "controls",
             "findings",
+            "harm_texts",
             "harms",
             "hazard",
+            "hazard_text",
+            "hazard_title",
             "post_control",
             "pre_control",
             "residual_risks",
-            "situation"
+            "situation",
+            "situation_text",
+            "situation_title"
         ]
     );
     assert_eq!(row["harms"], json!(["HARM-1"]));
@@ -235,8 +289,13 @@ fn a_complete_chain_is_one_row_with_exact_keys_and_no_findings() {
     );
     assert_eq!(
         row["residual_risks"],
-        json!([{"residual_risk": "RR-1", "decision": "accepted", "decided_by": "Pat"}])
+        json!([{"residual_risk": "RR-1", "decision": "accepted", "decided_by": "Pat", "rationale": "r"}])
     );
+    assert_eq!(
+        keys(&row["residual_risks"][0]),
+        ["decided_by", "decision", "rationale", "residual_risk"]
+    );
+    assert_eq!(keys(&row["harm_texts"][0]), ["harm", "text", "title"]);
     assert_eq!(row["findings"], json!([]));
 }
 
@@ -309,6 +368,8 @@ fn missing_links_give_rows_with_null_and_a_situation_of_two_hazards_gives_two_ro
     let strip = |row: &Value| {
         let mut row = row.clone();
         row["hazard"] = Value::Null;
+        row["hazard_title"] = Value::Null;
+        row["hazard_text"] = Value::Null;
         row
     };
     assert_eq!(strip(&first), strip(&second));
@@ -357,7 +418,7 @@ fn an_undecided_record_is_shown_undecided_and_a_hazard_status_decides_nothing() 
     let row = c.row(Some("HAZ-1"), Some("SIT-1"));
     assert_eq!(
         row["residual_risks"],
-        json!([{"residual_risk": "RR-1", "decision": "undecided", "decided_by": null}])
+        json!([{"residual_risk": "RR-1", "decision": "undecided", "decided_by": null, "rationale": "r"}])
     );
     assert_eq!(tokens(&row), ["residual-risk-undecided"]);
     assert!(!c.json().to_string().contains("\"accepted\""));
@@ -786,17 +847,29 @@ fn the_markdown_joins_ids_entries_and_pairs_with_the_documented_separators() {
     assert_eq!(
         lines.next(),
         Some(
-            "| hazard | situation | harms | pre_control | controls | post_control | residual_risks | findings |"
+            "| hazard | hazard_title | hazard_text | situation | situation_title | situation_text | harms | harm_texts | pre_control | controls | post_control | residual_risks | findings |"
         )
     );
     assert_eq!(
         lines.next(),
-        Some("| --- | --- | --- | --- | --- | --- | --- | --- |")
+        Some("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
     );
     let row = lines.next().unwrap();
+    assert_eq!(lines.next(), Some(""));
+    assert_eq!(
+        lines.next(),
+        Some("| benefit_risk | benefit | decision | decided_by | rationale | residual_risks |")
+    );
+    assert_eq!(lines.next(), Some("| --- | --- | --- | --- | --- | --- |"));
+    assert_eq!(lines.next(), Some(""));
+    assert_eq!(
+        lines.next(),
+        Some("| evaluation | product | decision | decided_by | rationale | references |")
+    );
+    assert_eq!(lines.next(), Some("| --- | --- | --- | --- | --- | --- |"));
     assert!(lines.next().is_none());
     assert!(
-        row.starts_with("| HAZ-1 | SIT-1 | HARM-1, HARM-2 | "),
+        row.starts_with("| HAZ-1 | HAZ-1 | null | SIT-1 | SIT-1 | null | HARM-1, HARM-2 | "),
         "{row}"
     );
     assert!(
@@ -808,7 +881,7 @@ fn the_markdown_joins_ids_entries_and_pairs_with_the_documented_separators() {
     assert!(row.contains(
         "control=CTRL-1; requirements=FR-9; retired_requirements=[]; verifications=TC-9"
     ));
-    assert!(row.contains("residual_risk=RR-1; decision=accepted; decided_by=Pat"));
+    assert!(row.contains("residual_risk=RR-1; decision=accepted; decided_by=Pat; rationale=r"));
     assert!(row.contains("finding=post-control-estimate-without-decision; names=EST-C"));
     // The stem appears only in the attribution, a finding token and copied values.
     for line in md.lines().filter(|line| line.contains("accept")) {
@@ -825,7 +898,7 @@ fn the_markdown_joins_ids_entries_and_pairs_with_the_documented_separators() {
     hazard(&bare, "HAZ-0");
     let md = bare.markdown();
     assert!(md.contains(
-        "| HAZ-0 | null | [] | [] | [] | [] | [] | finding=hazard-without-situation; names=HAZ-0 |"
+        "| HAZ-0 | HAZ-0 | null | null | null | null | [] | [] | [] | [] | [] | [] | finding=hazard-without-situation; names=HAZ-0 |"
     ));
 }
 
@@ -835,6 +908,8 @@ fn an_empty_scope_has_the_attribution_and_no_rows() {
     let c = corpus();
     let json = c.json();
     assert_eq!(json["rows"], json!([]));
+    assert_eq!(json["benefit_risks"], json!([]));
+    assert_eq!(json["overall_evaluations"], json!([]));
     assert!(json["attribution"].as_str().unwrap().contains("policy"));
 }
 
@@ -919,7 +994,7 @@ fn a_scope_that_exists_but_cannot_be_read_uses_the_advise_code() {
 
 #[trace("FR-169-AC-27")]
 #[test]
-fn a_pipe_in_a_copied_value_is_escaped_so_the_row_keeps_eight_cells() {
+fn a_pipe_in_a_copied_value_is_escaped_so_the_row_keeps_thirteen_cells() {
     let c = corpus();
     complete(&c);
     c.put(
@@ -931,7 +1006,7 @@ fn a_pipe_in_a_copied_value_is_escaped_so_the_row_keeps_eight_cells() {
     let md = c.markdown();
     let row = md.lines().find(|line| line.starts_with("| HAZ-1")).unwrap();
     assert!(row.contains("decided_by=Pat \\| Lee"), "{row}");
-    assert_eq!(cells(row).len(), 10, "{row}");
+    assert_eq!(cells(row).len(), 15, "{row}");
     assert_eq!(cells(row)[1], "HAZ-1");
 }
 
@@ -1049,6 +1124,20 @@ fn snapshot_corpus() -> Corpus {
         &rels(&[("RR-5", "references")]),
         "## Determination\n\n| Benefit | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n| b | not_accepted | r | Pat |\n",
     );
+    evaluation(
+        &c,
+        "ORE-1",
+        &[("RR-1", "references"), ("BR-2", "references")],
+        "Pump",
+        ("undecided", "", "pending"),
+    );
+    c.put_titled(
+        "HAZ-5",
+        "Overdose",
+        "hazard",
+        "status: accepted\n",
+        "## Condition\n\nThe pump delivers\ntoo much.\n",
+    );
     c
 }
 
@@ -1078,4 +1167,187 @@ fn the_markdown_and_the_json_equal_their_checked_in_snapshots() {
     let json = std::fs::read_to_string(snapshot_path("risk_summary.json")).unwrap();
     assert_eq!(summary.to_markdown(), markdown);
     assert_eq!(summary.to_json().unwrap(), json.trim_end());
+}
+
+#[trace("FR-169-AC-29", "FR-169-AC-35")]
+#[test]
+fn authored_titles_and_texts_are_shown_as_written_and_line_breaks_become_br() {
+    let c = corpus();
+    complete(&c);
+    c.put_titled(
+        "HAZ-1",
+        "Overdose",
+        "hazard",
+        "status: accepted\n",
+        "## Condition\n\nline one\nline two\n\nline three\n\n## Other\n\nnot this\n",
+    );
+    c.put_titled(
+        "SIT-1",
+        "Rapid infusion",
+        "hazardous_situation",
+        &rels(&[("HAZ-1", "arises_from")]),
+        "## Description\n\nThe set is primed wrongly.\n",
+    );
+    c.put_titled(
+        "HARM-2",
+        "Burn",
+        "harm",
+        &rels(&[("SIT-1", "arises_from")]),
+        "## Description\n\nSkin burn.\n",
+    );
+    c.put_titled(
+        "HARM-1",
+        "Embolism",
+        "harm",
+        &rels(&[("SIT-1", "arises_from")]),
+        "",
+    );
+    let row = c.row(Some("HAZ-1"), Some("SIT-1"));
+    assert_eq!(row["hazard_title"], "Overdose");
+    assert_eq!(row["hazard_text"], "line one\nline two\n\nline three");
+    assert_eq!(row["situation_title"], "Rapid infusion");
+    assert_eq!(row["situation_text"], "The set is primed wrongly.");
+    assert_eq!(
+        row["harm_texts"],
+        json!([
+            {"harm": "HARM-1", "title": "Embolism", "text": null},
+            {"harm": "HARM-2", "title": "Burn", "text": "Skin burn."}
+        ])
+    );
+    let md = c.markdown();
+    let line = md.lines().find(|line| line.starts_with("| HAZ-1")).unwrap();
+    assert!(
+        line.contains("line one<br>line two<br><br>line three"),
+        "{line}"
+    );
+    assert_eq!(cells(line).len(), 15, "{line}");
+    assert!(
+        line.contains("harm=HARM-2; title=Burn; text=Skin burn."),
+        "{line}"
+    );
+}
+
+#[trace("FR-169-AC-30")]
+#[test]
+fn a_residual_risk_rationale_is_shown_as_the_record_wrote_it() {
+    let c = corpus();
+    complete(&c);
+    c.put(
+        "RR-1",
+        "residual_risk",
+        &rels(&[("EST-B", "estimate"), ("POL-1", "references")]),
+        "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| accepted | The benefit outweighs it. | Pat |\n",
+    );
+    let row = c.row(Some("HAZ-1"), Some("SIT-1"));
+    assert_eq!(
+        row["residual_risks"][0]["rationale"],
+        "The benefit outweighs it."
+    );
+}
+
+#[trace("FR-169-AC-31", "FR-169-AC-32", "FR-169-AC-33")]
+#[test]
+fn benefit_risk_and_overall_evaluation_records_are_listed_whatever_their_decision() {
+    let c = corpus();
+    complete(&c);
+    residual(&c, "RR-2", "EST-B", "POL-1", "undecided");
+    benefit_risk(
+        &c,
+        "BR-2",
+        &[("RR-2", "references"), ("RR-1", "references")],
+        "b2",
+        ("undecided", "", "b2 why"),
+    );
+    benefit_risk(
+        &c,
+        "BR-1",
+        &[("RR-1", "references")],
+        "b1",
+        ("accepted", "Pat", "because"),
+    );
+    evaluation(
+        &c,
+        "ORE-2",
+        &[("BR-1", "references"), ("RR-1", "references")],
+        "Pump",
+        ("undecided", "", "later"),
+    );
+    evaluation(
+        &c,
+        "ORE-1",
+        &[("RR-2", "references")],
+        "Pump",
+        ("not_accepted", "Lee", "no"),
+    );
+    let json = c.json();
+    assert_eq!(
+        json["benefit_risks"],
+        json!([
+            {"benefit_risk": "BR-1", "benefit": "b1", "decision": "accepted", "decided_by": "Pat", "rationale": "because", "residual_risks": ["RR-1"]},
+            {"benefit_risk": "BR-2", "benefit": "b2", "decision": "undecided", "decided_by": null, "rationale": "b2 why", "residual_risks": ["RR-1", "RR-2"]}
+        ])
+    );
+    assert_eq!(
+        keys(&json["benefit_risks"][0]),
+        [
+            "benefit",
+            "benefit_risk",
+            "decided_by",
+            "decision",
+            "rationale",
+            "residual_risks"
+        ]
+    );
+    assert_eq!(
+        json["overall_evaluations"],
+        json!([
+            {"evaluation": "ORE-1", "product": "Pump", "decision": "not_accepted", "decided_by": "Lee", "rationale": "no", "references": ["RR-2"]},
+            {"evaluation": "ORE-2", "product": "Pump", "decision": "undecided", "decided_by": null, "rationale": "later", "references": ["BR-1", "RR-1"]}
+        ])
+    );
+    assert_eq!(
+        keys(&json["overall_evaluations"][0]),
+        [
+            "decided_by",
+            "decision",
+            "evaluation",
+            "product",
+            "rationale",
+            "references"
+        ]
+    );
+    let md = c.markdown();
+    assert!(
+        md.contains("| BR-1 | b1 | accepted | Pat | because | RR-1 |"),
+        "{md}"
+    );
+    assert!(
+        md.contains("| BR-2 | b2 | undecided | null | b2 why | RR-1, RR-2 |"),
+        "{md}"
+    );
+    assert!(
+        md.contains("| ORE-2 | Pump | undecided | null | later | BR-1, RR-1 |"),
+        "{md}"
+    );
+    assert!(md.find("| BR-1 |").unwrap() < md.find("| ORE-1 |").unwrap());
+}
+
+#[trace("FR-169-AC-34")]
+#[test]
+fn an_overall_evaluation_that_breaks_its_contract_stops_the_report_with_the_advise_code() {
+    let c = corpus();
+    complete(&c);
+    c.put(
+        "ORE-1",
+        "overall_residual_risk_evaluation",
+        "",
+        "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| undecided | r | |\n",
+    );
+    let error = summarize(c.dir.path(), &modules()).err().unwrap();
+    assert_eq!(error.code, ErrorCode::Record);
+    assert!(error.message.contains("ORE-1"), "{}", error.message);
+    assert_eq!(
+        advise(c.dir.path(), &modules()).err().unwrap().code,
+        error.code
+    );
 }

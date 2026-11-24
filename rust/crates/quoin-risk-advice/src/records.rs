@@ -68,6 +68,11 @@ pub(crate) struct Choice {
     pub(crate) decision: String,
     /// The `Decided by` cell as written; `None` when empty or absent.
     pub(crate) decided_by: Option<String>,
+    /// The `Rationale` cell as written; `None` when empty or absent.
+    pub(crate) rationale: Option<String>,
+    /// The `Benefit` cell of a benefit-risk record or the `Product` cell of an
+    /// evaluation, as written; `None` when empty or absent.
+    pub(crate) subject: Option<String>,
     /// `estimate` for a residual risk.
     pub(crate) estimate: Option<String>,
     /// `references` edges: the policy of a residual risk, the covered or
@@ -79,6 +84,12 @@ pub(crate) struct Choice {
 pub(crate) struct Plain {
     pub(crate) id: String,
     pub(crate) kind: String,
+    /// The frontmatter `title`, when one is present.
+    pub(crate) title: Option<String>,
+    /// The `## Condition` section text of a hazard, as written.
+    pub(crate) condition: Option<String>,
+    /// The `## Description` section text, as written.
+    pub(crate) description: Option<String>,
     /// The exact authored status, when one is present.
     pub(crate) status: Option<String>,
     pub(crate) hazard: bool,
@@ -230,21 +241,29 @@ fn policy(doc: &Document) -> Policy {
     }
 }
 
+/// The text of a cell or section, `None` when it holds nothing but whitespace.
+fn non_blank(text: String) -> Option<String> {
+    (!text.trim().is_empty()).then_some(text)
+}
+
+/// A section's text without the blank lines around it, `None` when empty.
+fn section(doc: &Document, heading: &str) -> Option<String> {
+    let text = doc.sections.get(heading)?;
+    non_blank(text.trim_matches(['\r', '\n']).to_owned())
+}
+
 fn choice(doc: &Document) -> Choice {
-    let decision = doc
-        .tables
-        .get("Determination")
-        .and_then(|table| cell(table, 0, "Decision"))
-        .unwrap_or_default();
-    let decided_by = doc
-        .tables
-        .get("Determination")
-        .and_then(|table| cell(table, 0, "Decided by"))
-        .filter(|by| !by.trim().is_empty());
+    let determination = doc.tables.get("Determination");
+    let decided = |name: &str| determination.and_then(|table| cell(table, 0, name));
+    let decision = decided("Decision").unwrap_or_default();
     Choice {
         id: doc.id.clone(),
         decision,
-        decided_by,
+        decided_by: decided("Decided by").and_then(non_blank),
+        rationale: decided("Rationale").and_then(non_blank),
+        subject: decided("Benefit")
+            .or_else(|| decided("Product"))
+            .and_then(non_blank),
         estimate: edges(doc, "estimate").into_iter().next(),
         references: edges(doc, "references"),
     }
@@ -255,6 +274,13 @@ fn plain(doc: &Document) -> Plain {
     Plain {
         id: doc.id.clone(),
         kind: doc.kind.clone(),
+        title: doc
+            .frontmatter
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned),
+        condition: section(doc, "Condition"),
+        description: section(doc, "Description"),
         status: doc
             .frontmatter
             .get("status")
