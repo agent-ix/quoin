@@ -1118,9 +1118,9 @@ fn soup_rows_follow_the_group_order_and_unassessed_items_are_listed_after_them()
     );
 }
 
-#[trace("FR-167-AC-5")]
+#[trace("FR-167-AC-5", "FR-167-AC-18")]
 #[test]
-fn open_wont_fix_and_unassessed_anomalies_are_listed_by_id_and_closed_fixed_ones_are_not() {
+fn release_record_lists_fr162_carried_and_fixed_anomalies_separately() {
     let repo = Repo::bare();
     let rationale = "## Release Rationale\n\n| Author | Rationale |\n|--------|-----------|\n| Dana LEE | Mixed Case stays. |\n| Sam | Second row. |\n";
     repo.anomaly("AN-003", "identified", "unassessed", &[], "");
@@ -1160,13 +1160,24 @@ fn open_wont_fix_and_unassessed_anomalies_are_listed_by_id_and_closed_fixed_ones
         ],
         "",
     );
+    repo.anomaly(
+        "AN-006",
+        "closed",
+        "unassessed",
+        &[
+            "resolution: duplicate",
+            "closed_by: \"Pat\"",
+            "severity: minor",
+        ],
+        "",
+    );
     let snapshot = repo.snapshot(&repo.run());
     let anomalies = snapshot["anomalies"].as_array().unwrap();
     let ids: Vec<&str> = anomalies
         .iter()
         .map(|a| a["id"].as_str().unwrap())
         .collect();
-    assert_eq!(ids, ["AN-001", "AN-002", "AN-003"]);
+    assert_eq!(ids, ["AN-001", "AN-002", "AN-003", "AN-004", "AN-006"]);
     assert_eq!(
         anomalies[0]["release_rationale"],
         json!([
@@ -1176,12 +1187,29 @@ fn open_wont_fix_and_unassessed_anomalies_are_listed_by_id_and_closed_fixed_ones
     );
     assert_eq!(anomalies[1]["release_rationale"], json!([]));
     assert_eq!(
+        anomalies
+            .iter()
+            .map(|anomaly| anomaly["unassessed"].clone())
+            .collect::<Vec<_>>(),
         [
-            anomalies[0]["unassessed"].clone(),
-            anomalies[1]["unassessed"].clone(),
-            anomalies[2]["unassessed"].clone()
-        ],
-        [json!(false), json!(false), json!(true)]
+            json!(false),
+            json!(false),
+            json!(true),
+            json!(false),
+            json!(true)
+        ]
+    );
+    assert!(
+        snapshot["open_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|finding| {
+                finding["obligation"] != "AN-004"
+                    || !finding["kind"]
+                        .as_str()
+                        .is_some_and(|kind| kind.starts_with("anomaly-"))
+            })
     );
     assert!(
         !std::fs::read_to_string(repo.aux("snapshot.json"))
@@ -1946,6 +1974,13 @@ fn an_unverified_control_on_two_rows_is_one_open_finding_equal_to_the_risk_summa
     let repo = Repo::bare();
     unverified_control(&repo);
     let snapshot = repo.snapshot(&with_risk(&repo));
+    let snapshot_anomaly_ids: Vec<&str> = snapshot["anomalies"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|anomaly| anomaly["id"].as_str().unwrap())
+        .collect();
+    assert!(snapshot_anomaly_ids.contains(&"AN-004"));
     let items = findings_of(&snapshot, "control-without-verification");
     assert_eq!(items.len(), 1, "{items:?}");
     assert_eq!(

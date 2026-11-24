@@ -54,6 +54,24 @@ pub struct CarriedRead {
     pub unreadable: Vec<UnreadableAnomaly>,
 }
 
+/// A parsed anomaly record, whether currently carried or resolved.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuthoredAnomaly {
+    /// The document path, under the scope that was read.
+    pub path: PathBuf,
+    /// The record as authored.
+    pub record: Record,
+}
+
+/// Every readable anomaly record and every record that could not be mapped.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AnomalyRead {
+    /// All parsed anomaly records, ordered by anomaly id and then path.
+    pub anomalies: Vec<AuthoredAnomaly>,
+    /// The documents that yield no record, in path order.
+    pub unreadable: Vec<UnreadableAnomaly>,
+}
+
 /// Whether a record is carried: not `closed`, `closed` as `wont-fix`, or
 /// `unassessed` whatever its status.
 #[must_use]
@@ -69,21 +87,39 @@ pub fn is_carried(record: &Record) -> bool {
 ///
 /// Returns an error when `scope` cannot be read.
 pub fn read_carried(scope: &Path) -> Result<CarriedRead, AnomalyError> {
-    let mut read = CarriedRead::default();
+    let read = read_anomalies(scope)?;
+    let carried = read
+        .anomalies
+        .into_iter()
+        .filter(|anomaly| is_carried(&anomaly.record))
+        .map(|anomaly| CarriedAnomaly {
+            path: anomaly.path,
+            record: anomaly.record,
+        })
+        .collect();
+    Ok(CarriedRead {
+        carried,
+        unreadable: read.unreadable,
+    })
+}
+
+/// Read every `Anomaly` document under `scope`, including resolved records.
+///
+/// # Errors
+///
+/// Returns an error when `scope` cannot be read.
+pub fn read_anomalies(scope: &Path) -> Result<AnomalyRead, AnomalyError> {
+    let mut read = AnomalyRead::default();
     for (path, text) in anomaly_documents(scope)? {
         match parse_record(&text) {
-            Ok(record) => {
-                if is_carried(&record) {
-                    read.carried.push(CarriedAnomaly { path, record });
-                }
-            }
+            Ok(record) => read.anomalies.push(AuthoredAnomaly { path, record }),
             Err(error) => read.unreadable.push(UnreadableAnomaly {
                 path,
                 code: error.code,
             }),
         }
     }
-    read.carried
+    read.anomalies
         .sort_by(|a, b| (&a.record.id, &a.path).cmp(&(&b.record.id, &b.path)));
     Ok(read)
 }

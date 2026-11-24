@@ -13,7 +13,10 @@ use std::path::{Path, PathBuf};
 use super::{Code, Refusal, Stop};
 use crate::evidence::audit::AuditOptions;
 use crate::matrix::{Built, build};
-use quoin_anomaly::{CarriedAnomaly, CarriedRead, GateMode, gate_carried, read_carried};
+use quoin_anomaly::{
+    AnomalyRead, CarriedAnomaly, GateMode, Record as AnomalyRecord, gate_carried, is_carried,
+    read_anomalies,
+};
 use quoin_assurance::matrix::MatrixOutput;
 #[cfg(test)]
 pub(super) use quoin_dossier::release_snapshot::ReleaseSnapshot as Snapshot;
@@ -335,9 +338,18 @@ fn advice_refusal(modules: &[String], resolved: &[PathBuf], error: &AdviceError)
 /// A document with a mapping error is a refusal, because the snapshot has no
 /// member for an unreadable anomaly and one must not vanish from it.
 pub(super) fn anomalies(repo: &Path) -> Result<(Vec<Anomaly>, Vec<OpenFinding>), Stop> {
-    let read = read_carried(repo).map_err(|error| Refusal::unreadable("--repo", error))?;
-    let findings = gate_findings(repo, &read.carried);
-    Ok((carried(repo, read)?, findings))
+    let read = read_anomalies(repo).map_err(|error| Refusal::unreadable("--repo", error))?;
+    let carried: Vec<CarriedAnomaly> = read
+        .anomalies
+        .iter()
+        .filter(|anomaly| is_carried(&anomaly.record))
+        .map(|anomaly| CarriedAnomaly {
+            path: anomaly.path.clone(),
+            record: anomaly.record.clone(),
+        })
+        .collect();
+    let findings = gate_findings(repo, &carried);
+    Ok((snapshot_anomalies(repo, read)?, findings))
 }
 
 /// One item for each failure of either gate mode.
@@ -357,7 +369,7 @@ fn gate_findings(repo: &Path, carried: &[CarriedAnomaly]) -> Vec<OpenFinding> {
         .collect()
 }
 
-fn carried(repo: &Path, read: CarriedRead) -> Result<Vec<Anomaly>, Stop> {
+fn snapshot_anomalies(repo: &Path, read: AnomalyRead) -> Result<Vec<Anomaly>, Stop> {
     if let Some(unreadable) = read.unreadable.first() {
         let path = unreadable
             .path
@@ -374,10 +386,11 @@ fn carried(repo: &Path, read: CarriedRead) -> Result<Vec<Anomaly>, Stop> {
         .into());
     }
     Ok(read
-        .carried
+        .anomalies
         .into_iter()
+        .filter(|anomaly| is_carried(&anomaly.record) || is_closed_fixed(&anomaly.record))
         .map(|anomaly| {
-            let unassessed = anomaly.unassessed();
+            let unassessed = anomaly.record.safety_impact == "unassessed";
             let record = anomaly.record;
             Anomaly {
                 id: record.id,
@@ -399,6 +412,10 @@ fn carried(repo: &Path, read: CarriedRead) -> Result<Vec<Anomaly>, Stop> {
             }
         })
         .collect())
+}
+
+fn is_closed_fixed(anomaly: &AnomalyRecord) -> bool {
+    anomaly.status_word == "closed" && anomaly.resolution.as_deref() == Some("fixed")
 }
 
 #[cfg(test)]
