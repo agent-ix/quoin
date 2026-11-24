@@ -57,7 +57,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         outcome: if duplicates {
             ix_cli_kit::exit::Outcome::Partial
         } else {
-            ix_cli_kit::exit::Outcome::Success
+            ix_cli_kit::exit::Outcome::Ok
         },
     })
 }
