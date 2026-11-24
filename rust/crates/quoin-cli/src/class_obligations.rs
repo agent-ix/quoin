@@ -1062,26 +1062,48 @@ mod tests {
             )]),
             gate: false,
         };
+        let row = |path: &str, state: &str| json!({"document":{"path":path},"state":state});
         let join = json!({"relations":[
-            {"name":"real","rows":[{"document":{"path":"spec/FR-1.md"},"state":"covered"}]},
-            {"name":"S","rows":[{"document":{"path":"spec/FR-1.md"},"state":"uncovered"}]},
-            {"name":"G","rows":[]}
+            {"name":"real","rows":[row("spec/FR-1.md", "covered"), row("spec/FR-2.md", "covered")]},
+            {"name":"S","rows":[row("spec/FR-1.md", "uncovered"), row("spec/FR-2.md", "covered")]},
+            {"name":"G","rows":[row("spec/FR-2.md", "covered"), row("spec/FR-3.md", "uncovered")]}
         ]});
         check_relations_declared(&policy, &join, &BTreeMap::new()).unwrap();
-        let matrix =
-            vec![json!({"document":"spec/FR-1.md","carried":{"class":"class-3"},"criteria":[]})];
-        let rows = build_rows(&matrix, &join, &policy, &BTreeMap::new(), &BTreeMap::new()).unwrap();
-        let statuses = rows.requirements[0]["activities"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|row| row["status"].as_str().unwrap())
-            .collect::<Vec<_>>();
-        assert_eq!(statuses, ["unmet", "unmet", "not-available"]);
-        assert_eq!(
-            rows.requirements[0]["activities"][0]["missing"],
-            json!(["S"])
+        let matrix = ["spec/FR-1.md", "spec/FR-2.md", "spec/FR-3.md"].map(
+            |document| json!({"document":document,"carried":{"class":"class-3"},"criteria":[]}),
         );
+        let rows = build_rows(&matrix, &join, &policy, &BTreeMap::new(), &BTreeMap::new()).unwrap();
+        let activities = |index: usize| rows.requirements[index]["activities"].as_array().unwrap();
+        let statuses = |index| {
+            activities(index)
+                .iter()
+                .map(|row| (row["id"].as_str().unwrap(), row["status"].as_str().unwrap()))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            statuses(0),
+            [
+                ("trace", "unmet"),
+                ("soup", "unmet"),
+                ("seg", "not-available")
+            ]
+        );
+        assert_eq!(activities(0)[0]["missing"], json!(["S"]));
+        assert!(activities(0)[1].get("missing").is_none());
+        assert_eq!(
+            statuses(1),
+            [("trace", "met"), ("soup", "met"), ("seg", "met")]
+        );
+        assert_eq!(
+            statuses(2),
+            [
+                ("trace", "unmet"),
+                ("soup", "not-available"),
+                ("seg", "unmet")
+            ]
+        );
+        assert_eq!(activities(2)[0]["missing"], json!(["G"]));
+        assert!(activities(2)[2].get("missing").is_none());
     }
 
     #[trace("FR-161-AC-13")]
