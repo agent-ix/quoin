@@ -388,31 +388,6 @@ fn criterion_gaps(requirement: &str, criterion: &MatrixCriterion) -> Vec<Gap> {
         EvidenceStatus::Bound | EvidenceStatus::Stale => {}
     }
 
-    gaps.extend(
-        criterion
-            .evidence_detail
-            .bindings
-            .iter()
-            .filter_map(|binding| {
-                let run = binding.run.as_ref()?;
-                let missing: Vec<&str> = [("timestamp", &run.timestamp), ("tool", &run.tool)]
-                    .into_iter()
-                    .filter(|(_, value)| value.is_empty())
-                    .map(|(name, _)| name)
-                    .collect();
-                (!missing.is_empty()).then(|| {
-                    gap(
-                        GapKind::RunIdentityUnrecorded,
-                        &format!(
-                            "the selected run of suite {} records no {}",
-                            binding.suite,
-                            missing.join(" and ")
-                        ),
-                    )
-                })
-            }),
-    );
-
     let backed = !criterion.binders.is_empty() || retained_records(criterion).next().is_some();
     if !backed {
         gaps.push(gap(

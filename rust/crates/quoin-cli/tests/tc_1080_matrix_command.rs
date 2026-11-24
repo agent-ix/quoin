@@ -528,6 +528,73 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
     );
 }
 
+/// The retained runs reach `matrix.build` through the host: the run identity of
+/// a bound criterion is read from the real store, bounded to what a binding
+/// names, and a criterion whose run is gone has none. The source revision is the
+/// checkout SHA an observation file gives for that record (FR-116).
+#[trace("FR-196-AC-9", "FR-196-AC-10", "FR-196-AC-11")]
+#[test]
+fn tc_1080_211_the_matrix_carries_the_run_identity_the_store_retains() {
+    let fixture = populated();
+    let bindings_of = |matrix: &Value, id: &str| -> Value {
+        matrix["requirements"][0]["criteria"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|criterion| criterion["id"] == id)
+            .unwrap()["evidence_detail"]["bindings"]
+            .clone()
+    };
+    let matrix: Value =
+        serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    let bound = bindings_of(&matrix, "FR-001-AC-1");
+    let run = &bound[0]["run"];
+    assert_eq!(bound[0]["suite"], "unit");
+    assert_eq!(run["tool"], "fixture");
+    assert_eq!(run["timestamp"], "2026-01-01T00:00:00Z");
+    assert_eq!(
+        run["outcomes"],
+        serde_json::json!({ "pass": 1, "fail": 0, "skip": 0, "error": 0 })
+    );
+    assert!(
+        run.get("source_revision").is_none_or(Value::is_null),
+        "{run}"
+    );
+    let file = run["file"].as_str().unwrap().to_owned();
+    assert!(file.starts_with("runs/unit/"), "{file}");
+    // The run of the `legacy` binding is gone: no identity is invented.
+    let missing = bindings_of(&matrix, "FR-001-AC-2");
+    assert!(
+        missing[0].get("run").is_none_or(Value::is_null),
+        "{missing}"
+    );
+
+    let observation = fixture.home.path().join("observation.json");
+    std::fs::write(
+        &observation,
+        serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": file,
+            "checkout_sha": "9f2c1ab9f2c1ab9f2c1ab9f2c1ab9f2c1ab9f2c1",
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let observed: Value = serde_json::from_str(&fixture.ok(&[
+        "matrix",
+        "--module",
+        ".",
+        "--json",
+        "--run-observation",
+        observation.to_str().unwrap(),
+    ]))
+    .unwrap();
+    assert_eq!(
+        bindings_of(&observed, "FR-001-AC-1")[0]["run"]["source_revision"],
+        "9f2c1ab9f2c1ab9f2c1ab9f2c1ab9f2c1ab9f2c1"
+    );
+}
+
 /// Markdown by default, canonical JSON under `--json`, both byte-identical
 /// across two runs.
 #[trace("FR-115-AC-11")]

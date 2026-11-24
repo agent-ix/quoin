@@ -246,76 +246,107 @@ fn run(timestamp: &str, tool: &str, revision: Option<&str>) -> serde_json::Value
     run
 }
 
-fn run_gaps(gaps: &[(String, String, String)]) -> Vec<&(String, String, String)> {
-    gaps.iter()
-        .filter(|gap| gap.0 == "run_identity_unrecorded")
-        .collect()
+/// The run-identity cell of the row for `id`: the fifth cell of
+/// `| id | method | evidence | source findings | run identity | status |`.
+fn run_cell(text: &str, id: &str) -> String {
+    let row = text
+        .lines()
+        .find(|row| row.starts_with(&format!("| {id} |")))
+        .unwrap();
+    row.split(" | ").nth(4).unwrap().to_owned()
 }
 
 #[trace("FR-196-AC-9")]
 #[test]
 fn a_bound_suite_shows_the_recorded_run_identity_and_tally_without_a_computed_outcome() {
     // The status says bound while the recorded outcomes include a fail: both
-    // are shown unchanged.
+    // are shown unchanged, and nothing else is appended to the cell.
     let (text, gaps) = report_of(with_bindings(&json!([
         { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "cargo-test 1.90", None) }
     ])));
+    assert_eq!(
+        run_cell(&text, "FR-001-AC-1"),
+        "suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90, file runs/unit/2026-11-01T00-00-00Z.json, outcomes pass 1 fail 1 skip 0 error 0, source revision not recorded"
+    );
     let row = text
         .lines()
         .find(|row| row.starts_with("| FR-001-AC-1 |"))
         .unwrap();
-    assert!(row.contains(
-        "suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90, file runs/unit/2026-11-01T00-00-00Z.json, outcomes pass 1 fail 1 skip 0 error 0, source revision not recorded"
-    ), "{row}");
     assert!(row.ends_with("| bound |"));
-    assert!(run_gaps(&gaps).is_empty(), "{gaps:?}");
+    assert!(gaps.iter().all(|gap| gap.1 != "FR-001-AC-1"), "{gaps:?}");
+}
+
+#[trace("FR-196-AC-3")]
+#[test]
+fn a_failed_run_criterion_shows_the_typed_cause_and_the_tally_of_recorded_outcomes() {
+    let mut source = matrix();
+    source.requirements[0].criteria[1].evidence_detail.bindings = serde_json::from_value(json!([
+        { "suite": "unit", "run": {
+            "file": "runs/unit/2026-11-01T00-00-00Z.json", "timestamp": "2026-11-01T00:00:00Z",
+            "tool": "cargo-test 1.90", "outcomes": { "pass": 0, "fail": 2, "skip": 0, "error": 0 },
+        } }
+    ]))
+    .unwrap();
+    let (text, gaps) = report_of(source);
+    let row = text
+        .lines()
+        .find(|row| row.starts_with("| FR-001-AC-2 |"))
+        .unwrap();
+    assert!(row.contains("stale-evidence (cause failed-run)"), "{row}");
+    assert_eq!(
+        run_cell(&text, "FR-001-AC-2"),
+        "suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90, file runs/unit/2026-11-01T00-00-00Z.json, outcomes pass 0 fail 2 skip 0 error 0, source revision not recorded"
+    );
+    assert!(
+        gaps.iter()
+            .any(|gap| gap.0 == "evidence_failed" && gap.1 == "FR-001-AC-2")
+    );
 }
 
 #[trace("FR-196-AC-10")]
 #[test]
-fn an_empty_tool_or_timestamp_is_one_gap_and_a_recorded_revision_is_verbatim() {
-    let (_, gaps) = report_of(with_bindings(&json!([
-        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "", None) }
+fn a_source_revision_the_source_states_is_shown_verbatim() {
+    let (text, _) = report_of(with_bindings(&json!([
+        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "cargo-test 1.90", Some("9f2c1ab")) }
     ])));
-    let found = run_gaps(&gaps);
-    assert_eq!(found.len(), 1, "{gaps:?}");
-    assert_eq!(found[0].1, "FR-001-AC-1");
-    assert!(found[0].2.contains("suite unit") && found[0].2.contains("tool"));
-    assert!(!found[0].2.contains("timestamp"));
-
-    let (text, gaps) = report_of(with_bindings(&json!([
-        { "suite": "unit", "run": run("", "cargo-test 1.90", Some("9f2c1ab")) }
-    ])));
-    let found = run_gaps(&gaps);
-    assert_eq!(found.len(), 1, "{gaps:?}");
-    assert!(found[0].2.contains("timestamp") && !found[0].2.contains("tool"));
-    assert!(text.contains("timestamp not recorded, tool cargo-test 1.90"));
-    assert!(text.contains("source revision 9f2c1ab"));
+    assert!(
+        run_cell(&text, "FR-001-AC-1").ends_with("source revision 9f2c1ab"),
+        "{text}"
+    );
 }
 
 #[trace("FR-196-AC-11")]
 #[test]
-fn a_criterion_with_no_selected_run_reads_not_recorded_and_gets_no_run_gap() {
+fn a_criterion_with_no_selected_run_reads_not_recorded_and_gets_only_its_evidence_gaps() {
     // No bound suite at all, and an undischarged status.
     let mut source = with_bindings(&json!([]));
     source.requirements[0].criteria[0].evidence_status =
         quoin_assurance::matrix::EvidenceStatus::Undischarged;
     let (text, gaps) = report_of(source);
-    let row = text
-        .lines()
-        .find(|row| row.starts_with("| FR-001-AC-1 |"))
-        .unwrap();
-    assert!(row.contains("| not recorded | undischarged |"), "{row}");
-    assert!(
-        gaps.iter()
-            .any(|gap| gap.0 == "no_evidence" && gap.1 == "FR-001-AC-1")
-    );
-    assert!(run_gaps(&gaps).is_empty());
+    assert_eq!(run_cell(&text, "FR-001-AC-1"), "not recorded");
+    let for_criterion: Vec<_> = gaps
+        .iter()
+        .filter(|gap| gap.1 == "FR-001-AC-1")
+        .map(|gap| gap.0.as_str())
+        .collect();
+    assert_eq!(for_criterion, ["no_evidence"]);
 
     // A bound suite with no retained run holding a bound entry.
     let (text, gaps) = report_of(with_bindings(&json!([{ "suite": "unit" }])));
-    assert!(text.contains("suite unit: not recorded"));
-    assert!(run_gaps(&gaps).is_empty());
+    assert_eq!(run_cell(&text, "FR-001-AC-1"), "suite unit: not recorded");
+    assert!(gaps.iter().all(|gap| gap.1 != "FR-001-AC-1"), "{gaps:?}");
+
+    // Backed only by a retained Inspection record: no run value, no gap.
+    let mut source = matrix();
+    let inspected = &mut source.requirements[0].criteria[0];
+    inspected.binders.clear();
+    inspected.analysis_evidence = Some(vec![json!({
+        "status": "qualified-record",
+        "record_binder": { "locator": { "record": "runs/INS/a.json", "run": "INS@a", "entry": "review::x" } },
+    })]);
+    let (text, gaps) = report_of(source);
+    assert_eq!(run_cell(&text, "FR-001-AC-1"), "not recorded");
+    assert!(gaps.iter().all(|gap| gap.1 != "FR-001-AC-1"), "{gaps:?}");
 }
 
 #[trace("FR-196-AC-12")]

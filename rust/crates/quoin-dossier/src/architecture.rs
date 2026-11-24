@@ -94,9 +94,14 @@ impl Generator for ArchitectureGenerator {
     }
 }
 
-/// What the document knows of one part.
+/// What the document knows of one design element, which is a part when a
+/// `part` document declares it.
 #[derive(Default)]
 struct Part {
+    /// A part document declares it: the design join says its archetype is
+    /// `part`, or a systems record names its document. Only a part has a class
+    /// to record.
+    is_part: bool,
     requirements: BTreeSet<String>,
     ports: BTreeSet<String>,
     /// The software safety class the part's own document records, as written.
@@ -158,11 +163,12 @@ fn collect_join(entries: &[Value]) -> Join {
                 join.without_design.extend(requirements.iter().cloned());
             }
             for element in array(block, "elements") {
-                join.parts
-                    .entry(qualified(element))
-                    .or_default()
-                    .requirements
-                    .extend(requirements.iter().cloned());
+                let part = join.parts.entry(qualified(element)).or_default();
+                part.is_part |= element
+                    .get("kind")
+                    .and_then(Value::as_str)
+                    .is_some_and(|kind| kind.eq_ignore_ascii_case("part"));
+                part.requirements.extend(requirements.iter().cloned());
             }
             for reference in array(block, "dangling") {
                 let name = text(reference, "reference");
@@ -189,8 +195,9 @@ fn add_systems(parts: &mut BTreeMap<String, Part>, systems: &Systems) {
     // A part is identified by the document that declares it. The `owner` cell
     // names the composite that holds the part and is not the part's identity.
     for part in &systems.parts {
-        parts.entry(part.document.clone()).or_default().class =
-            part.software_safety_class.as_ref().and_then(recorded_text);
+        let entry = parts.entry(part.document.clone()).or_default();
+        entry.is_part = true;
+        entry.class = part.software_safety_class.as_ref().and_then(recorded_text);
     }
     for port in &systems.ports {
         parts
@@ -230,11 +237,11 @@ fn parts_section(body: &mut String, gaps: &mut Vec<Gap>, parts: &BTreeMap<String
                 body,
                 "| {} | {} | {} | {} |",
                 cell(id),
-                cell(part.class.as_deref().unwrap_or("unassigned")),
+                cell(class_cell(part)),
                 cell(&part.ports.iter().cloned().collect::<Vec<_>>().join(", ")),
                 cell(&sorted(&part.requirements).join(", ")),
             );
-            if part.class.is_none() {
+            if part.is_part && part.class.is_none() {
                 gaps.push(safety_class_gap_for_part(id));
             }
             if part.requirements.is_empty() {
@@ -245,6 +252,18 @@ fn parts_section(body: &mut String, gaps: &mut Vec<Gap>, parts: &BTreeMap<String
             }
         }
         body.push('\n');
+    }
+}
+
+/// The class column: the class a part's document records, `unassigned` when it
+/// records none, and `not a part` for a design element no part document
+/// declares (a component, or an element of another repository), which has no
+/// class to record.
+fn class_cell(part: &Part) -> &str {
+    match (&part.class, part.is_part) {
+        (Some(class), _) => class,
+        (None, true) => "unassigned",
+        (None, false) => "not a part",
     }
 }
 
@@ -467,13 +486,18 @@ mod tests {
     use ix_trace_rs::trace;
 
     fn covered(id: &str, elements: &[&str]) -> Value {
+        covered_kind(id, elements, "part")
+    }
+
+    /// A requirement realized by `elements`, each of the design-join `kind`.
+    fn covered_kind(id: &str, elements: &[&str], kind: &str) -> Value {
         json!({
             "document": format!("{id}.md"),
             "id": id,
             "criteria": [],
             "design": [{
                 "relation": "realized-by", "check": "c", "state": "covered",
-                "elements": elements.iter().map(|e| json!({"id": e, "kind": "Component", "verb": "implements"})).collect::<Vec<_>>(),
+                "elements": elements.iter().map(|e| json!({"id": e, "kind": kind, "verb": "implements"})).collect::<Vec<_>>(),
                 "dangling": [], "kind_mismatch": []
             }]
         })
@@ -515,9 +539,14 @@ mod tests {
 
     /// A part row declared by the document `document`, owned by `OWNER`.
     fn part_row(document: &str, class: Option<&str>) -> PartRow {
+        part_row_owned(document, "OWNER", class)
+    }
+
+    /// A part row declared by `document` and held by the composite `owner`.
+    fn part_row_owned(document: &str, owner: &str, class: Option<&str>) -> PartRow {
         PartRow {
             document: document.to_owned(),
-            owner: "OWNER".to_owned(),
+            owner: owner.to_owned(),
             declared_type: "T".to_owned(),
             multiplicity: "1".to_owned(),
             software_safety_class: class.map(|class| json!(class)),
@@ -663,7 +692,7 @@ mod tests {
         assert!(
             generated
                 .body
-                .contains("| PART-A | unassigned | Telemetry (out) |")
+                .contains("| PART-A | not a part | Telemetry (out) |")
         );
     }
 
@@ -726,31 +755,51 @@ mod tests {
     #[trace("FR-193-AC-8")]
     #[test]
     fn an_unclassed_part_is_unassigned_whatever_its_parent_or_requirement_records() {
-        // The owner cell names a classed parent, and the allocated requirement
-        // is classed through its own document; neither lends a class.
+        // PART-CHILD is held by PART-PARENT, a part that records class-2, and
+        // the allocated requirement is classed through its own document;
+        // neither lends a class.
         let systems = Systems {
             parts: vec![
-                part_row("PART-HIGH", Some("class-2")),
-                part_row("PART-NONE", None),
+                part_row_owned("PART-PARENT", "ROOT", Some("class-2")),
+                part_row_owned("PART-CHILD", "PART-PARENT", None),
             ],
             allocations: vec![Allocation {
                 document: "C.md".to_owned(),
                 source: "FR-1".to_owned(),
-                target: "PART-NONE".to_owned(),
+                target: "PART-CHILD".to_owned(),
             }],
             ..Systems::default()
         };
-        let generated = render(&[covered("FR-1", &["PART-HIGH"])], &systems, &[]);
+        let generated = render(&[covered("FR-1", &["PART-PARENT"])], &systems, &[]);
         assert!(
             generated
                 .body
-                .contains("| PART-NONE | unassigned |  | FR-1 |")
+                .contains("| PART-CHILD | unassigned |  | FR-1 |")
         );
-        assert!(generated.body.contains("| PART-HIGH | class-2 |"));
+        assert!(generated.body.contains("| PART-PARENT | class-2 |"));
         assert_eq!(
             kinds(&generated),
-            vec![("safety_class_unassigned", "PART-NONE".to_owned())]
+            vec![("safety_class_unassigned", "PART-CHILD".to_owned())]
         );
-        assert_eq!(generated.gaps[0].subject, "PART-NONE");
+        assert_eq!(generated.gaps[0].subject, "PART-CHILD");
+    }
+
+    #[trace("FR-193-AC-9")]
+    #[test]
+    fn a_design_element_that_is_not_a_part_gets_no_class_gap() {
+        // A component and an element of another repository have no part
+        // document of this corpus, so no class gap could ever be cleared.
+        let entries = vec![
+            covered_kind("FR-1", &["COMP-1"], "Component"),
+            covered_kind("FR-2", &["repo-b/EXT-1"], "Component"),
+        ];
+        let generated = render(&entries, &Systems::default(), &[]);
+        assert!(generated.body.contains("| COMP-1 | not a part |  | FR-1 |"));
+        assert!(
+            generated
+                .body
+                .contains("| repo-b/EXT-1 | not a part |  | FR-2 |")
+        );
+        assert!(kinds(&generated).is_empty());
     }
 }

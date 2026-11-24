@@ -388,4 +388,33 @@ mod tests {
             .collect();
         assert_eq!(class_gaps, ["FR-10"]);
     }
+
+    #[trace("FR-194-AC-8")]
+    #[test]
+    fn a_recorded_criticality_never_lends_a_class_to_the_rows() {
+        // FR-10 records criticality high and no class: its row is unassigned.
+        let generated = render(
+            &matrix(),
+            &[
+                classed("FR-10", Some("high"), None),
+                classed("FR-2", Some("low"), Some("class-1")),
+            ],
+        );
+        let rows: Vec<_> = generated
+            .body
+            .lines()
+            .filter(|line| line.starts_with("| FR-"))
+            .collect();
+        assert!(
+            rows[1].ends_with("| undischarged | unassigned |"),
+            "{}",
+            rows[1]
+        );
+        assert!(
+            generated
+                .gaps
+                .iter()
+                .any(|gap| gap.gap_kind == GapKind::SafetyClassUnassigned && gap.subject == "FR-10")
+        );
+    }
 }
