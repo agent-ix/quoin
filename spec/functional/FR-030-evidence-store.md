@@ -88,6 +88,8 @@ people to click through it.
   `quoin.analysis-report-projection/v1` allowlisted projection paired with a
   differential-report run at the same suite and timestamp
 - `spec/evidence/bindings.json` — obligation → evidence
+- `spec/evidence/customer-artifacts/<artifact-id>.json` — one customer-supplied
+  record or document, retained as a description and a locator, never as content
 
 ## Behavior
 
@@ -187,6 +189,49 @@ people to click through it.
   disagreement as a disagreement that cannot qualify positively
   (FR-030-AC-30).
 
+### Customer artifacts
+
+A pack clause can expect a record or document that only the customer holds (a
+complaint record, a supplier agreement). No toolchain run produces such an artifact, so a
+run, scan or experiment can never stand for the artifact. A person retains the artifact as a
+customer artifact, and the clause cites the customer artifact like any other retained record.
+
+- When a person runs `quoin evidence record-customer-artifact --repo <dir>
+  --artifact <path|->`, the store SHALL retain the document at
+  `customer-artifacts/<artifact-id>.json`; the library operation
+  `evidence.record_customer_artifact` takes the same document.
+- The store SHALL accept a customer artifact document of exactly the members
+  `artifactId`, `title`, `location`, `suppliedBy` and `suppliedAt`.
+- The store SHALL keep the document as submitted plus `schemaVersion`, where
+  `title` names the artifact, `location` is an opaque locator in the customer's
+  own system (a URL, a document-system id, a repository path), `suppliedBy` names
+  the person or role at the customer who supplied the artifact, and `suppliedAt`
+  is a canonical UTC timestamp.
+- The store SHALL NOT copy, open, fetch, hash or inspect the artifact itself
+  (FR-030-CON-4, FR-030-CON-5); the record vouches that the customer supplied the
+  artifact, not that the artifact's content is adequate or unchanged.
+- The store SHALL accept an `artifactId` of 1 to 64 bytes of ASCII letters,
+  digits and `-`, keep the `artifactId` as submitted, and lowercase only the file
+  name in the path.
+- If an `artifactId` is outside that bound, then the store SHALL refuse the
+  document as `invalid-identifier`; if a different `artifactId` folds to an
+  occupied file name, then the store SHALL refuse the document as
+  `case-collision` (FR-130's identifier rules).
+- The store SHALL accept every other member only as a non-blank string, with
+  `title` and `suppliedBy` at most 256 bytes and `location` at most 2048 bytes.
+- The store SHALL treat a customer artifact as append-only at its file name: an
+  identical replay is a no-op, and a different document at an occupied name is
+  refused with `RecordIntegrity` and the stored bytes unchanged. A person
+  supplies a replacement under a new id.
+- The `gc` command SHALL NOT collect a customer artifact.
+- The store SHALL give a customer artifact the retained kind `customer-artifact`,
+  the kind a pack lists in the catalog `producers` of an output the customer
+  supplies (FR-211).
+- The store SHALL validate a customer artifact in full before writing it.
+- If a stored customer artifact file is not valid or its `artifactId`, lowercased,
+  differs from its file name, then the store SHALL report an error naming the
+  file and SHALL NOT read the file as an absent record.
+
 ## Constraints
 
 | ID | Constraint | Type | Validation |
@@ -194,6 +239,8 @@ people to click through it.
 | FR-030-CON-1 | quoin SHALL NOT execute a consumer's suite. It transcribes; the consumer's CI runs (ADR-0011 invariant 1). | Architecture | Inspection |
 | FR-030-CON-2 | The store SHALL NOT persist an obligation's statement, document or method — only its id. Anything re-derivable is re-derived, so the store cannot disagree with the spec. | Architecture | Test |
 | FR-030-CON-3 | The store SHALL NOT contain a database or a derived index. Files only. | Architecture | Inspection |
+| FR-030-CON-4 | The store SHALL NOT compute or persist a content identity, digest or size of a customer artifact. | Architecture | Test |
+| FR-030-CON-5 | The store SHALL NOT read the artifact a customer artifact's `location` names. | Architecture | Test |
 
 ### A tool reports the id it knows
 
@@ -259,6 +306,17 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-33 | For the `entries`, `junit`, `agent-eval` and `contract-conformance` adapters, `quoin evidence record` exits 1 when the run has at least one entry and no entry carries a trace id, and writes the stderr line `warning: no entry carries a trace id: <n> entries recorded, none can bind`. The run record is published before the exit. AC-32 and AC-33 never both apply to one recording: an unmatched id is carried by an entry, and AC-33 requires that no entry carries one, so exactly one stderr line is written and the exit is 1 either way. | Test |
 | FR-030-AC-34 | `quoin evidence record` exits 0 for a run whose entries carry trace ids that obligations state and whose entries all failed, errored or skipped: the outcome has no bound obligation and no unmatched id. A run of zero entries (normalized `{"entries":[]}`) also exits 0 and writes no AC-33 line; FR-030-AC-30 separately keeps it from qualifying any candidate. | Test |
 | FR-030-AC-35 | `quoin evidence record --adapter cargo-mutants`, and `--adapter sbom` without `--discharges`, record entries that carry no trace id and exit 0 when no id is unmatched, and AC-33 does not apply to them. | Test |
+| FR-030-AC-36 | `quoin evidence record-customer-artifact` with a document of exactly `artifactId`, `title`, `location`, `suppliedBy` and `suppliedAt` writes `customer-artifacts/<artifact-id>.json` (file name lowercased, `artifactId` as submitted), canonical, holding those members and `schemaVersion` only, and the store reads it back unchanged. | Test |
+| FR-030-AC-37 | A customer artifact document with a missing, unknown, blank or non-string member, an over-long `title`, `suppliedBy` or `location`, an `artifactId` outside 1 to 64 ASCII letters, digits and `-` (`invalid-identifier`), or a `suppliedAt` that is not canonical UTC is refused before any file is written. | Test |
+| FR-030-AC-38 | Two artifact ids that differ only in letter case file under one lowercase name and the second is refused as `case-collision`; an identical replay is a no-op, and a different document at an occupied id is refused with `RecordIntegrity` and the stored bytes unchanged. | Test |
+| FR-030-AC-39 | The stored customer artifact holds no digest, hash, size or content of the artifact, and recording one never reads, opens or fetches the `location`: with a `location` naming an unreadable path and an unreachable URL the record is accepted and the stored bytes equal the submitted members plus `schemaVersion`. | Test |
+| FR-030-AC-40 | `quoin evidence gc` leaves every customer artifact in place, `--dry-run` or not, and its retirement log names none. | Test |
+| FR-030-AC-41 | A stored customer artifact file that is not valid JSON, holds an `artifactId` that, lowercased, differs from its file name (a mixed-case `artifactId` in a lowercase file name is valid), or breaks AC-37 is an error naming the file, and is never read as an absent record. | Test |
+
+> **CR note (PLAT-1853, 2026-11-23):** The store gains the `customer-artifacts`
+> family for records and documents the customer supplies, so a pack can list the
+> kind `customer-artifact` in `producers` (FR-211). FR-030-AC-36 through
+> FR-030-AC-41, FR-030-CON-4 and FR-030-CON-5 are new; no id is reused.
 
 > **CR note (PLAT-1794, 2026-11-22):** Evidence records are validated in full
 > before publication. Record timestamps use canonical UTC spelling, identities
