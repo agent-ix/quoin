@@ -3208,6 +3208,7 @@ dependencies = [
  "quoin-anomaly",
  "quoin-assurance",
  "quoin-auditor",
+ "quoin-completeness",
  "quoin-config",
  "quoin-core",
  "quoin-delivery",

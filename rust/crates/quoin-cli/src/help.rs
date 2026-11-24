@@ -132,6 +132,10 @@ const COMMANDS: &[(&str, &str)] = &[
         "Validate repository QA gates and report located defects.",
     ),
     (
+        "validation",
+        "Report supplier feature-rating completeness and retained tool evidence.",
+    ),
+    (
         "write",
         "Build an authoring pack for spec files an agent is about to\n                    create or edit.",
     ),
@@ -209,7 +213,7 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
 /// The oclif `command_not_found` hook's compact actionable refusal.
 pub(crate) fn unknown_command(name: &str) -> String {
     format!(
-        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, design-gate, discharge, evidence, formalize, formal-rules, graph, matrix, measurement, module, \n ›   release, report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, anomaly, assurance, catalog, change-assurance, class, completeness, \n ›   config, design-gate, discharge, evidence, formalize, formal-rules, graph, matrix, measurement, module, \n ›   release, report, review, risk, risk-summary, semantic, soup, to-plan, update, validate, validation, write\n ›\n ›   Run `quoin <command> --help` for details."
     )
 }
 

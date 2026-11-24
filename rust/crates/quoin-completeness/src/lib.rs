@@ -30,6 +30,7 @@ pub mod bundle;
 pub mod declarations;
 pub mod error;
 pub mod ids;
+pub mod ratings;
 pub mod run;
 
 pub use assess::{
@@ -47,4 +48,5 @@ pub use declarations::{
 };
 pub use error::{CompletenessError, CompletenessErrorCode};
 pub use ids::{ArtifactTypeName, FrontmatterField, VocabularyName, VocabularyValue};
+pub use ratings::{FeatureRatingState, RatingStatus, assess_feature_ratings};
 pub use run::{AssessInput, AssessOptions, BundleAssessment, assess_bundle, assess_sources};
