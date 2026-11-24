@@ -3,7 +3,8 @@
 
 //! `quoin soup promote`: write one `soup_record` per purl of an ingested SBOM
 //! (FR-141); `quoin soup report`: render them with their advisories and
-//! support (FR-144).
+//! support (FR-144); `quoin soup vex export`: serialize authored statements
+//! as OpenVEX (FR-216).
 //!
 //! The components are the FR-041 adapter's (`quoin_evidence::adapters::sbom`);
 //! this command has no SBOM reader. The record type, skeleton and schema belong
@@ -14,6 +15,7 @@ mod plan;
 mod policy;
 pub(crate) mod report;
 mod support;
+mod vex;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -132,6 +134,69 @@ pub fn command() -> Command {
                         .help("Emit the report as JSON instead of Markdown"),
                 ),
         )
+        .subcommand(
+            Command::new("vex")
+                .about("Export authored SOUP VEX statements")
+                .hide(true)
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("export")
+                        .about("Export authored statements as OpenVEX 0.2.0 JSON")
+                        .arg(
+                            Arg::new("repo")
+                                .long("repo")
+                                .value_name("DIR")
+                                .default_value(".")
+                                .help("Repository root; records default to <repo>/spec/soup"),
+                        )
+                        .arg(
+                            Arg::new("records")
+                                .long("records")
+                                .value_name("DIR")
+                                .help("Where the soup_record files are read"),
+                        )
+                        .arg(
+                            Arg::new("out")
+                                .long("out")
+                                .value_name("FILE")
+                                .help("Output file; defaults to <repo>/spec/soup.vex.openvex.json"),
+                        )
+                        .arg(
+                            Arg::new("id")
+                                .long("id")
+                                .value_name("IRI")
+                                .required(true)
+                                .help("Caller-supplied OpenVEX document @id"),
+                        )
+                        .arg(
+                            Arg::new("author")
+                                .long("author")
+                                .value_name("AUTHOR")
+                                .required(true)
+                                .help("Caller-supplied OpenVEX author"),
+                        )
+                        .arg(
+                            Arg::new("timestamp")
+                                .long("timestamp")
+                                .value_name("RFC3339")
+                                .required(true)
+                                .help("Caller-supplied OpenVEX timestamp"),
+                        )
+                        .arg(
+                            Arg::new("version")
+                                .long("version")
+                                .value_name("POSITIVE_INTEGER")
+                                .required(true)
+                                .help("Caller-supplied OpenVEX document version"),
+                        )
+                        .arg(
+                            Arg::new("role")
+                                .long("role")
+                                .value_name("ROLE")
+                                .help("Optional caller-supplied OpenVEX author role"),
+                        ),
+                ),
+        )
 }
 
 /// Run the selected SOUP command using the host runtime configuration.
@@ -143,6 +208,15 @@ pub fn run(arguments: &ArgMatches, settings: &RuntimeSettings) -> Result<Respons
     let outcome = match arguments.subcommand() {
         Some(("promote", promote)) => run_promote(promote, settings),
         Some(("report", report)) => report::run(report, settings),
+        Some(("vex", vex)) => match vex.subcommand() {
+            Some(("export", export)) => vex::run(export),
+            _ => {
+                return Err(SoupError::new(
+                    SoupErrorCode::InvalidCommand,
+                    "an unknown soup vex command reached dispatch",
+                ));
+            }
+        },
         _ => {
             return Err(SoupError::new(
                 SoupErrorCode::InvalidCommand,
