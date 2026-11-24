@@ -8,9 +8,13 @@
 
 use std::fmt::Write as _;
 
+use quoin_anomaly::{Derived, Signature};
+
 use crate::Advice;
+use crate::attribution::Attribution;
 use crate::evidence::EvidenceEntry;
 use crate::finding::{Finding, Token};
+use crate::overall::OverallCheck;
 use crate::policy::PolicyCell;
 use crate::queue::QueueEntry;
 
@@ -133,6 +137,58 @@ fn queue_line(entry: &QueueEntry) -> String {
     line
 }
 
+fn overall_line(check: &OverallCheck) -> String {
+    let product = check.product.as_deref().unwrap_or("null");
+    let head = format!(
+        "- {} (product {product}): decision {}",
+        check.evaluation, check.decision
+    );
+    if check.findings.is_empty() {
+        format!("{head}; no findings")
+    } else {
+        format!("{head}; {}", findings_line(&check.findings))
+    }
+}
+
+fn attribution_line(entry: &Attribution) -> String {
+    let decider = entry.decided_by.as_deref().unwrap_or("null");
+    let mut line = format!(
+        "- {} ({}): decision {}, decided by {decider}",
+        entry.record, entry.kind, entry.decision
+    );
+    if let Some(principal) = entry.signer_principal.as_deref() {
+        let _ = write!(line, "; verified signer {principal}");
+    }
+    match &entry.decision_change {
+        Derived::Present(change) => {
+            let _ = write!(
+                line,
+                "; set by commit {} authored by {} on {}, signature {} ({})",
+                change.commit,
+                change.author,
+                change.authored_at,
+                signature_word(change.signature),
+                change.signature_code
+            );
+        }
+        other => {
+            let _ = write!(line, "; decision commit {}", other.state());
+        }
+    }
+    if !entry.findings.is_empty() {
+        let _ = write!(line, "; {}", findings_line(&entry.findings));
+    }
+    line
+}
+
+fn signature_word(signature: Signature) -> &'static str {
+    match signature {
+        Signature::Signed => "signed",
+        Signature::Unsigned => "unsigned",
+        Signature::Unknown => "unknown",
+    }
+}
+
 pub(crate) fn markdown(advice: &Advice) -> String {
     let mut out = format!(
         "# Risk advice\n\n{}\n\n## policy_cells\n\n",
@@ -165,6 +221,20 @@ pub(crate) fn markdown(advice: &Advice) -> String {
             entry.estimate,
             findings_line(&entry.findings)
         );
+    }
+    out.push_str("\n## overall_evaluation_checks\n\n");
+    if advice.overall_evaluation_checks.is_empty() {
+        out.push_str("none\n");
+    }
+    for check in &advice.overall_evaluation_checks {
+        let _ = writeln!(out, "{}", overall_line(check));
+    }
+    out.push_str("\n## decision_attribution\n\n");
+    if advice.decision_attribution.is_empty() {
+        out.push_str("none\n");
+    }
+    for entry in &advice.decision_attribution {
+        let _ = writeln!(out, "{}", attribution_line(entry));
     }
     out
 }

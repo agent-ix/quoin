@@ -202,6 +202,10 @@ pub(super) enum Unresolved {
     /// The record names no `disposition_clause`.
     #[error("no disposition clause")]
     NoDispositionClause,
+    /// More than one record names the clause, so its one fact would accept
+    /// each of them: the count is every record naming it (FR-142).
+    #[error("disposition clause shared by {0} records")]
+    ClauseShared(usize),
     /// The clause is not in the binding report.
     #[error("the disposition clause is not a clause of the binding report")]
     ClauseNotInBindingReport,
@@ -430,7 +434,7 @@ fn attach(
             message: item.finding.message.clone(),
             package: item.finding.path.clone().unwrap_or_default(),
             scan_timestamp: item.scan_timestamp.clone(),
-            resolution: resolve(record.disposition_clause.as_deref(), discharge, scan_millis),
+            resolution: resolve_for(record, records, discharge, scan_millis),
         });
     }
 
@@ -585,12 +589,30 @@ fn read_scan(tool: Tool, scan: &FindingRecord, index: &RecordIndex) -> Read {
     }
 }
 
-/// Decide one attached advisory against the fact under its record's clause.
-pub(super) fn resolve(
-    clause: Option<&str>,
+/// Decide one attached finding of `record` against the fact under its clause,
+/// where no other record in `records` names that clause. A disposition is a
+/// decision about one component (FR-142): a clause several records name
+/// resolves none of them.
+pub(super) fn resolve_for(
+    record: &Existing,
+    records: &[Existing],
     discharge: &DischargeReport,
     scan_millis: i64,
 ) -> Resolution {
+    if let Some(clause) = record.disposition_clause.as_deref() {
+        let sharing = records
+            .iter()
+            .filter(|other| other.disposition_clause.as_deref() == Some(clause))
+            .count();
+        if sharing > 1 {
+            return Resolution::Unresolved(Unresolved::ClauseShared(sharing));
+        }
+    }
+    resolve(record.disposition_clause.as_deref(), discharge, scan_millis)
+}
+
+/// Decide one attached advisory against the fact under its record's clause.
+fn resolve(clause: Option<&str>, discharge: &DischargeReport, scan_millis: i64) -> Resolution {
     let Some(clause) = clause else {
         return Resolution::Unresolved(Unresolved::NoDispositionClause);
     };

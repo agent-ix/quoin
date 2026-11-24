@@ -182,7 +182,7 @@ fn advice_refusal(modules: &[String], resolved: &[PathBuf], error: &AdviceError)
             module_invalid(&named, &error.message).into()
         }
         ErrorCode::Render => Stop::Failed(error.message.clone()),
-        ErrorCode::Scope | ErrorCode::Record | ErrorCode::Unparseable => {
+        ErrorCode::Scope | ErrorCode::Record | ErrorCode::Unparseable | ErrorCode::Git => {
             Refusal::invalid("--repo", error.code.as_str(), &error.message).into()
         }
     }

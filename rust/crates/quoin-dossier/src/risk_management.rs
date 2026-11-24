@@ -7,7 +7,8 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use quoin_risk_advice::{Advice, HarmText, Row, RowToken, Summary};
+use quoin_anomaly::{Derived, Signature};
+use quoin_risk_advice::{Advice, HarmText, Row, RowToken, Summary, Token};
 
 use crate::error::SourceFailure;
 use crate::gap::{Gap, GapKind};
@@ -104,8 +105,9 @@ fn render(summary: &Summary, advice: &Advice) -> Generated {
         render_row(&mut body, &mut gaps, row, &policy_findings, index);
     }
     render_benefit_risks(&mut body, summary);
-    render_evaluations(&mut body, summary);
+    render_evaluations(&mut body, summary, advice);
     render_decision_queue(&mut body, advice);
+    render_attribution(&mut body, advice);
     if summary.overall_evaluations.is_empty() {
         gaps.push(Gap::new(
             GapKind::NoOverallEvaluation,
@@ -125,6 +127,7 @@ fn render(summary: &Summary, advice: &Advice) -> Generated {
             );
         }
     }
+    gaps.extend(decision_gaps(advice));
     if advice.policy_cells.iter().any(|cell| {
         cell.findings
             .iter()
@@ -291,7 +294,7 @@ fn render_benefit_risks(body: &mut String, summary: &Summary) {
     body.push('\n');
 }
 
-fn render_evaluations(body: &mut String, summary: &Summary) {
+fn render_evaluations(body: &mut String, summary: &Summary, advice: &Advice) {
     body.push_str("## Overall residual risk evaluation\n\n");
     if summary.overall_evaluations.is_empty() {
         body.push_str("none\n\n");
@@ -313,6 +316,24 @@ fn render_evaluations(body: &mut String, summary: &Summary) {
         );
     }
     body.push('\n');
+    for check in &advice.overall_evaluation_checks {
+        for finding in &check.findings {
+            let _ = writeln!(
+                body,
+                "- {}: `{}`: {}",
+                line(&check.evaluation),
+                finding_name(finding.finding),
+                line(&finding.names.join(", "))
+            );
+        }
+    }
+    if advice
+        .overall_evaluation_checks
+        .iter()
+        .any(|check| !check.findings.is_empty())
+    {
+        body.push('\n');
+    }
 }
 
 fn render_estimates(
@@ -423,6 +444,98 @@ fn render_decision_queue(body: &mut String, advice: &Advice) {
     }
 }
 
+/// The gaps of the FR-213 and FR-214 source findings (FR-199).
+fn decision_gaps(advice: &Advice) -> Vec<Gap> {
+    let mut gaps = Vec::new();
+    for check in &advice.overall_evaluation_checks {
+        for finding in &check.findings {
+            let (kind, detail) = match finding.finding {
+                Token::ResidualRiskNotConsidered => (
+                    GapKind::ResidualRiskNotConsidered,
+                    "the overall residual risk evaluation does not consider residual risks",
+                ),
+                Token::EvaluationAcceptedWithOpenRisk => (
+                    GapKind::EvaluationAcceptedWithOpenRisk,
+                    "the overall residual risk evaluation is decided over considered residual risks that are not decided as it is",
+                ),
+                _ => continue,
+            };
+            gaps.push(
+                Gap::new(
+                    kind,
+                    check.evaluation.as_str(),
+                    format!("{detail}: {}", finding.names.join(", ")),
+                )
+                .for_element(check.evaluation.as_str()),
+            );
+        }
+    }
+    for entry in &advice.decision_attribution {
+        for finding in &entry.findings {
+            let (kind, detail) = match finding.finding {
+                Token::DecidedByDiffersFromCommitAuthor => (
+                    GapKind::DecisionSignerMismatch,
+                    "the typed decider differs from the author of the commit that set the decision",
+                ),
+                Token::DecidedByDiffersFromVerifiedSigner => (
+                    GapKind::DecisionSignerMismatch,
+                    "the typed decider differs from the verified signer of the commit that set the decision",
+                ),
+                Token::DecisionCommitNotSigned => (
+                    GapKind::DecisionCommitUnsigned,
+                    "the commit that set the decision carries no valid signature",
+                ),
+                _ => continue,
+            };
+            gaps.push(
+                Gap::new(kind, entry.record.as_str(), detail).for_element(entry.record.as_str()),
+            );
+        }
+    }
+    gaps
+}
+
+fn render_attribution(body: &mut String, advice: &Advice) {
+    body.push_str("\n## Decision attribution\n\n");
+    if advice.decision_attribution.is_empty() {
+        body.push_str("none\n");
+        return;
+    }
+    let mut entries: Vec<_> = advice.decision_attribution.iter().collect();
+    entries.sort_by(|a, b| dossier_cmp(&a.record, &b.record));
+    body.push_str("| Record | Kind | Decision | Decider | Commit author | Signature | Findings |\n| --- | --- | --- | --- | --- | --- | --- |\n");
+    for entry in entries {
+        let (author, signature) = match &entry.decision_change {
+            Derived::Present(change) => (
+                change.author.as_str(),
+                match change.signature {
+                    Signature::Signed => "signed",
+                    Signature::Unsigned => "unsigned",
+                    Signature::Unknown => "unknown",
+                },
+            ),
+            _ => (NOT_STATED, NOT_STATED),
+        };
+        let findings = entry
+            .findings
+            .iter()
+            .map(|finding| finding_name(finding.finding))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = writeln!(
+            body,
+            "| {} | {} | {} | {} | {} | {} | {} |",
+            cell_text(&entry.record),
+            cell_text(entry.kind),
+            cell_text(&entry.decision),
+            cell_text(entry.decided_by.as_deref().unwrap_or(NOT_STATED)),
+            cell_text(author),
+            cell_text(signature),
+            cell_text(&findings)
+        );
+    }
+}
+
 fn row_token(token: RowToken) -> &'static str {
     match token {
         RowToken::HazardWithoutSituation => "hazard-without-situation",
@@ -456,6 +569,17 @@ fn finding_name(token: quoin_risk_advice::Token) -> &'static str {
         quoin_risk_advice::Token::PostControlEstimateWithoutDecision => {
             "post-control-estimate-without-decision"
         }
+        quoin_risk_advice::Token::ResidualRiskNotConsidered => "residual-risk-not-considered",
+        quoin_risk_advice::Token::EvaluationAcceptedWithOpenRisk => {
+            "evaluation-accepted-with-open-risk"
+        }
+        quoin_risk_advice::Token::DecidedByDiffersFromCommitAuthor => {
+            "decided-by-differs-from-commit-author"
+        }
+        quoin_risk_advice::Token::DecidedByDiffersFromVerifiedSigner => {
+            "decided-by-differs-from-verified-signer"
+        }
+        quoin_risk_advice::Token::DecisionCommitNotSigned => "decision-commit-not-signed",
     }
 }
 
@@ -500,6 +624,8 @@ mod tests {
                 queue: Vec::<QueueEntry>::new(),
                 no_record: Vec::<NoRecord>::new(),
             },
+            overall_evaluation_checks: Vec::new(),
+            decision_attribution: Vec::new(),
             unreadable: Vec::new(),
         }
     }
@@ -595,7 +721,7 @@ mod tests {
         assert!(!first.body.to_ascii_lowercase().contains("rank"));
     }
 
-    #[trace("FR-199-AC-1")]
+    #[trace("FR-199-AC-1", "FR-199-AC-17")]
     #[test]
     fn retired_requirements_render_only_for_the_control_that_has_them() {
         let mut row = complete_row();
@@ -617,6 +743,142 @@ mod tests {
         let out = render(&summary, &advice());
         assert!(out.body.contains("| CTRL-1 | FR-9 | FR-9 | TC-9 |"));
         assert!(out.body.contains("| CTRL-2 | FR-10 | none | TC-10 |"));
+    }
+
+    fn summary_with_evaluation() -> Summary {
+        Summary {
+            attribution: quoin_risk_advice::ATTRIBUTION,
+            rows: vec![complete_row()],
+            benefit_risks: Vec::new(),
+            overall_evaluations: vec![decided_evaluation()],
+            unreadable: Vec::new(),
+            unusable: Vec::new(),
+        }
+    }
+
+    fn finding(token: Token, names: &[&str]) -> quoin_risk_advice::Finding {
+        quoin_risk_advice::Finding {
+            finding: token,
+            names: names.iter().map(|name| (*name).to_owned()).collect(),
+        }
+    }
+
+    #[trace("FR-199-AC-18")]
+    #[test]
+    fn overall_evaluation_findings_become_their_own_gaps_and_a_clean_one_none() {
+        let mut advice = advice();
+        let clean = render(&summary_with_evaluation(), &advice);
+        assert!(clean.gaps.is_empty());
+        advice.overall_evaluation_checks = vec![quoin_risk_advice::OverallCheck {
+            evaluation: "ORE-1".to_owned(),
+            product: Some("Pump".to_owned()),
+            decision: "accepted".to_owned(),
+            findings: vec![
+                finding(Token::ResidualRiskNotConsidered, &["RR-2"]),
+                finding(Token::EvaluationAcceptedWithOpenRisk, &["RR-1"]),
+            ],
+        }];
+        let out = render(&summary_with_evaluation(), &advice);
+        let kinds: Vec<_> = out.gaps.iter().map(|gap| gap.gap_kind).collect();
+        assert_eq!(
+            kinds,
+            [
+                GapKind::ResidualRiskNotConsidered,
+                GapKind::EvaluationAcceptedWithOpenRisk
+            ]
+        );
+        assert_eq!(out.gaps[0].subject, "ORE-1");
+        assert!(out.gaps[0].detail.contains("RR-2"));
+        assert!(out.gaps[1].detail.contains("RR-1"));
+        assert!(
+            out.body
+                .contains("- ORE-1: `evaluation-accepted-with-open-risk`: RR-1")
+        );
+    }
+
+    fn attribution_entry(
+        findings: Vec<quoin_risk_advice::Finding>,
+        change: Derived,
+    ) -> quoin_risk_advice::Attribution {
+        quoin_risk_advice::Attribution {
+            record: "RR-1".to_owned(),
+            kind: "residual_risk",
+            decision: "accepted".to_owned(),
+            decided_by: Some("Lee".to_owned()),
+            decision_change: change,
+            signer_principal: None,
+            findings,
+        }
+    }
+
+    fn present(signature: Signature) -> Derived {
+        Derived::Present(quoin_anomaly::Change {
+            commit: "abc123".to_owned(),
+            author: "Pat".to_owned(),
+            authored_at: "2026-01-01T00:00:00+00:00".to_owned(),
+            signature,
+            signature_code: 'N',
+        })
+    }
+
+    #[trace("FR-199-AC-19", "FR-199-AC-20")]
+    #[test]
+    fn decision_attribution_renders_signer_columns_and_maps_findings_to_gaps() {
+        let mut advice = advice();
+        let none = render(&summary_with_evaluation(), &advice);
+        assert!(none.body.contains("## Decision attribution\n\nnone\n"));
+        advice.decision_attribution = vec![
+            attribution_entry(
+                vec![
+                    finding(Token::DecidedByDiffersFromCommitAuthor, &["Lee", "Pat"]),
+                    finding(Token::DecisionCommitNotSigned, &["abc123"]),
+                ],
+                present(Signature::Unsigned),
+            ),
+            quoin_risk_advice::Attribution {
+                record: "BR-1".to_owned(),
+                ..attribution_entry(Vec::new(), Derived::Pending)
+            },
+            quoin_risk_advice::Attribution {
+                record: "ORE-1".to_owned(),
+                findings: vec![finding(
+                    Token::DecidedByDiffersFromVerifiedSigner,
+                    &["Lee", "Morgan"],
+                )],
+                ..attribution_entry(Vec::new(), present(Signature::Signed))
+            },
+            quoin_risk_advice::Attribution {
+                record: "RR-2".to_owned(),
+                findings: Vec::new(),
+                ..attribution_entry(Vec::new(), present(Signature::Signed))
+            },
+        ];
+        let out = render(&summary_with_evaluation(), &advice);
+        assert!(out.body.contains(
+            "| RR-1 | residual_risk | accepted | Lee | Pat | unsigned | decided-by-differs-from-commit-author, decision-commit-not-signed |"
+        ));
+        assert!(
+            out.body
+                .contains("| BR-1 | residual_risk | accepted | Lee | not stated | not stated |  |")
+        );
+        assert!(out.body.contains(
+            "| ORE-1 | residual_risk | accepted | Lee | Pat | signed | decided-by-differs-from-verified-signer |"
+        ));
+        let kinds: Vec<_> = out.gaps.iter().map(|gap| gap.gap_kind).collect();
+        assert_eq!(
+            kinds,
+            [
+                GapKind::DecisionSignerMismatch,
+                GapKind::DecisionCommitUnsigned,
+                GapKind::DecisionSignerMismatch
+            ]
+        );
+        assert_eq!(out.gaps[0].subject, "RR-1");
+        assert_eq!(out.gaps[1].subject, "RR-1");
+        assert_eq!(out.gaps[2].subject, "ORE-1");
+        assert!(!out.gaps.iter().any(|gap| gap.subject == "RR-2"));
+        let lower = out.body.to_ascii_lowercase();
+        assert!(!lower.contains("approv"));
     }
 
     #[trace("FR-199-AC-2", "FR-199-AC-3", "FR-199-AC-4")]

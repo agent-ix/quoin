@@ -15,6 +15,10 @@ relationships:
     type: "references"
   - target: "ix://agent-ix/quoin/FR-145"
     type: "references"
+  - target: "ix://agent-ix/quoin/FR-213"
+    type: "references"
+  - target: "ix://agent-ix/quoin/FR-214"
+    type: "references"
 ---
 
 # FR-199: The dossier risk management document renders the recorded hazard-to-decision chain
@@ -33,7 +37,11 @@ of `quoin risk-summary` without assigning a new risk value or decision.
   ([FR-169](./FR-169-risk-summary-command.md),
   [FR-170](./FR-170-risk-summary-row-findings.md)).
 - `quoin_risk_advice::advise` from the same crate supplies policy-cell causes
-  and the undecided decision queue. The common dossier `--scope` and
+  and the undecided decision queue, and its `overall_evaluation_checks`
+  ([FR-213](./FR-213-risk-advise-overall-evaluation-checks.md)) and
+  `decision_attribution` ([FR-214](./FR-214-risk-decision-signer-attribution.md))
+  sections supply the overall-evaluation findings and the git attribution of each
+  decision. The common dossier `--scope` and
   `--module` select the same safety corpus for both source operations. The
   generator does not repeat region lookup or chain-completeness rules.
 - The `risk-summary` JSON as FR-169 defines it, including its `hazard_title`,
@@ -47,7 +55,8 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 - `dossier/DOS-RISK.md`: `# Risk management document`, one
   `## <hazard id>` section per source hazard in source order,
   `## Benefit-risk records`, `## Overall residual risk evaluation`,
-  `## Undecided decisions` from the source queue, then `## Gaps`.
+  `## Undecided decisions` from the source queue, `## Decision attribution`
+  from the source `decision_attribution`, then `## Gaps`.
 - Each hazard section shows the hazard's authored title and `## Condition` text under its id. Under each situation, the situation's authored title and `## Description` text and each harm's id, title and `## Description` text appear under their ids; tables show `Phase | Severity | Probability | Region`
   and `Control | Implementing requirements | Retired requirements | Verifications`, followed by
   each residual-risk record's decision, decider and authored rationale, and row findings.
@@ -57,7 +66,13 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 - `## Overall residual risk evaluation` has one entry per source
   `overall_evaluations` entry, in dossier id order, showing its id, `product`,
   decision, decider, rationale and referenced records, and the line `none`
-  when the list is empty.
+  when the list is empty. Under that table, one line `<id>: <finding>: <names>`
+  per source `overall_evaluation_checks` finding of the evaluation, as the source states it.
+- `## Decision attribution` has one row per source `decision_attribution`
+  entry, in dossier id order, with the columns
+  `Record | Kind | Decision | Decider | Commit author | Signature | Findings`,
+  and the line `none` when the list is empty. A `Commit author` or `Signature`
+  that the source does not state (`pending`, `not-applicable`) reads `not stated`.
 
 ## Behavior
 
@@ -73,6 +88,18 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 - The document SHALL render every `benefit_risks` entry, decided or not, and every `overall_evaluations` entry, decided or not, with the values named under Outputs; an absent field reads `not stated`.
 - When the corpus holds no `overall_residual_risk_evaluation` record, the document SHALL produce one document-level `no_overall_evaluation` gap.
 - When an `overall_evaluations` entry has decision `undecided`, the document SHALL produce one `overall_evaluation_undecided` gap naming that evaluation, so an open overall decision never reads as complete.
+- The `Retired requirements` column of each control table SHALL list the ids of the control's `retired_requirements` source entry, joined by `, `.
+- When a control's `retired_requirements` source list is empty, its `Retired requirements` column SHALL read `none`.
+- The document SHALL retain retired requirement ids in the `Implementing requirements` column as well as the `Retired requirements` column.
+- The `Retired requirements` column SHALL state only a status, without stating discharge or satisfaction.
+- For each source `overall_evaluation_checks` finding `residual-risk-not-considered`, the document SHALL produce one `residual_risk_not_considered` gap naming the evaluation and the residual risks the finding names.
+- For each source `overall_evaluation_checks` finding `evaluation-accepted-with-open-risk`, the document SHALL produce one `evaluation_accepted_with_open_risk` gap naming the evaluation and the residual risks the finding names.
+- For each source `decision_attribution` finding `decided-by-differs-from-commit-author`, the document SHALL produce one `decision_signer_mismatch` gap naming the record.
+- For each source `decision_attribution` finding `decided-by-differs-from-verified-signer`, the document SHALL produce one `decision_signer_mismatch` gap naming the record.
+- For each source `decision_attribution` finding `decision-commit-not-signed`, the document SHALL produce one `decision_commit_unsigned` gap naming the record.
+- The document SHALL NOT compute these findings itself.
+- A gap of these four kinds SHALL NOT replace `no_overall_evaluation`.
+- A gap of these four kinds SHALL NOT replace `overall_evaluation_undecided`.
 - The document SHALL add no acceptance state or label of its own to any residual-risk, benefit-risk or overall record: authored decision values and texts are shown verbatim, and the document assigns no score, class or acceptability value.
 - The document SHALL keep each FR-170 finding against its source row.
 - For a `control-without-verification` finding, the document SHALL produce
@@ -112,6 +139,10 @@ of `quoin risk-summary` without assigning a new risk value or decision.
 | FR-199-AC-14 | Changing only a residual-risk, benefit-risk or overall record's authored decision from `undecided` to `accepted` changes that record's decision and decider cells and the gap or queue entries that decision governs, and nothing else; no heading, column label or gap detail that the tool writes names acceptance, approval or acceptability, and no score, class or acceptability value appears. | Test |
 | FR-199-AC-15 | An overall evaluation with decision `undecided` renders with that decision and produces one `overall_evaluation_undecided` gap naming it, status `incomplete`, and no `no_overall_evaluation` gap. | Test |
 | FR-199-AC-16 | With two benefit-risk records and two overall evaluations in scope, each section lists them in dossier id order; with none of a kind, its section reads `none`. | Test |
+| FR-199-AC-17 | A control with `retired_requirements` `[FR-9]` and `requirements` `[FR-9]` renders `FR-9` in both columns of its row, and a control with an empty `retired_requirements` list renders `none` in the `Retired requirements` column; the retired id stays in `Implementing requirements`. | Test |
+| FR-199-AC-18 | An accepted overall evaluation over a considered undecided or not-accepted residual risk produces one `evaluation_accepted_with_open_risk` gap naming the evaluation and the risk, and a residual risk missing from the considered list produces one `residual_risk_not_considered` gap; an evaluation with neither finding produces neither gap. | Test |
+| FR-199-AC-19 | A decision whose source attribution finding is `decided-by-differs-from-commit-author` or `decided-by-differs-from-verified-signer` produces one `decision_signer_mismatch` gap naming the record; `decision-commit-not-signed` produces one `decision_commit_unsigned` gap; a clean entry produces neither gap, and no wording of these gaps names acceptance or approval by the tool. | Test |
+| FR-199-AC-20 | `## Decision attribution` lists each source attribution entry with its decider, commit author and signature, reads `not stated` for a pending or not-applicable change, reads `none` when the source list is empty, and orders rows by dossier id. | Test |
 
 ## Dependencies
 

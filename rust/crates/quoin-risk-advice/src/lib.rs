@@ -15,17 +15,20 @@
 
 #![forbid(unsafe_code)]
 
+mod attribution;
 mod discrepancies;
 mod error;
 mod evidence;
 mod finding;
 mod links;
+mod overall;
 mod policy;
 mod queue;
 mod records;
 mod render;
 mod summary;
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use quoin_quire::ModuleSelection;
@@ -33,10 +36,12 @@ use quoin_quire::records::read;
 
 use serde::Serialize;
 
+pub use attribution::Attribution;
 pub use discrepancies::{Discrepancies, Discrepancy, DiscrepancyToken, Refs};
 pub use error::{AdviceError, ErrorCode};
 pub use evidence::{AnomalyRef, ControlEvidence, EvidenceEntry};
 pub use finding::{Finding, Token};
+pub use overall::OverallCheck;
 pub use policy::{CellKey, PolicyCell};
 pub use queue::{NoRecord, Queue, QueueEntry};
 pub use summary::{
@@ -59,11 +64,64 @@ pub struct Advice {
     pub evidence_gaps: Vec<EvidenceEntry>,
     /// The undecided decisions (FR-148).
     pub decision_queue: Queue,
+    /// The overall-evaluation checks of FR-107 (FR-213).
+    pub overall_evaluation_checks: Vec<OverallCheck>,
+    /// The git attribution of each decided record (FR-214).
+    pub decision_attribution: Vec<Attribution>,
     /// The files the reader could not load, each as `path: reason`. They are
     /// absent from the report, so the caller says so; they are not part of
     /// the rendered output.
     #[serde(skip)]
     pub unreadable: Vec<String>,
+}
+
+/// Attach the mapped signer principal for each verified decision commit.
+///
+/// The map key is the exact commit id from `decision_change`. A present key
+/// with `None` means signature verification ran but found no mapped principal;
+/// such an entry must not fall back to comparing `decided_by` with the git
+/// author. A missing key means verification was not requested for that entry.
+pub fn apply_verified_signers(
+    advice: &mut Advice,
+    signer_principals: &BTreeMap<String, Option<String>>,
+) {
+    for attribution in &mut advice.decision_attribution {
+        let Some(commit) = attribution.decision_commit() else {
+            continue;
+        };
+        let Some(principal) = signer_principals.get(commit) else {
+            continue;
+        };
+
+        attribution.signer_principal = principal.clone();
+        attribution
+            .findings
+            .retain(|finding| finding.finding != Token::DecidedByDiffersFromCommitAuthor);
+
+        let Some(principal) = principal.as_deref() else {
+            continue;
+        };
+        let Some(decider) = attribution
+            .decided_by
+            .as_deref()
+            .filter(|decider| !decider.trim().is_empty())
+        else {
+            continue;
+        };
+        if decider.trim().eq_ignore_ascii_case(principal.trim()) {
+            continue;
+        }
+        let finding = Finding::naming(
+            Token::DecidedByDiffersFromVerifiedSigner,
+            vec![decider.to_owned(), principal.to_owned()],
+        );
+        let index = attribution
+            .findings
+            .iter()
+            .position(|finding| finding.finding == Token::DecisionCommitNotSigned)
+            .unwrap_or(attribution.findings.len());
+        attribution.findings.insert(index, finding);
+    }
 }
 
 /// Read the records below `scope`, with the record types of the modules
@@ -73,7 +131,8 @@ pub struct Advice {
 ///
 /// Returns an error when `scope` or the modules cannot be read, or when a
 /// residual-risk, benefit-risk, overall-evaluation or policy record breaks the
-/// contract its type declares.
+/// contract its type declares, or when `git` cannot answer a history query
+/// for a record under a repository.
 pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceError> {
     let loaded = load(scope, modules, &records::CHECKED, false)?;
     let (records, unreadable) = (loaded.records, loaded.unreadable);
@@ -83,6 +142,8 @@ pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceE
         policy_cells: policy::cells(&records, &links),
         evidence_gaps: evidence::gaps(&records, &links),
         decision_queue: queue::build(&records, &links),
+        overall_evaluation_checks: overall::build(&records),
+        decision_attribution: attribution::build(&records)?,
         unreadable,
     })
 }

@@ -21,6 +21,8 @@ pub enum ErrorCode {
     Unparseable,
     /// The report could not be serialized.
     Render,
+    /// `git` could not be run or could not answer a history query.
+    Git,
 }
 
 /// An operational failure, as opposed to a finding about a record.
@@ -46,6 +48,7 @@ impl ErrorCode {
             Self::Record => "record_invalid",
             Self::Unparseable => "document_unparseable",
             Self::Render => "render_failed",
+            Self::Git => "git_failed",
         }
     }
 }
@@ -97,6 +100,14 @@ impl AdviceError {
                 "cannot read or parse {}; a decision in it would go unreported",
                 files.join("; ")
             ),
+            module: None,
+        }
+    }
+
+    pub(crate) fn git(error: &quoin_anomaly::AnomalyError) -> Self {
+        Self {
+            code: ErrorCode::Git,
+            message: error.message.clone(),
             module: None,
         }
     }
