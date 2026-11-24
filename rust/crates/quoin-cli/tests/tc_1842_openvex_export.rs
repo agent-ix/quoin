@@ -114,6 +114,22 @@ fn keys(value: &Value) -> Vec<&str> {
     keys
 }
 
+fn assert_matches_openvex_020_schema(document: &Value) {
+    let schema_path = std::env::var_os("OPENVEX_SCHEMA_PATH")
+        .expect("OPENVEX_SCHEMA_PATH must name the fetched OpenVEX 0.2.0 schema");
+    let schema_path = Path::new(&schema_path);
+    let schema: Value = serde_json::from_slice(&std::fs::read(schema_path).unwrap())
+        .expect("the fetched OpenVEX schema must be valid JSON");
+    let validator =
+        quoin_jsonschema::validator::SchemaValidator::compile_vendored(schema_path, &schema, &[])
+            .expect("the fetched OpenVEX 0.2.0 schema must compile");
+    let errors = validator.errors(document);
+    assert!(
+        errors.is_empty(),
+        "generated OpenVEX document does not match the published 0.2.0 schema: {errors:#?}"
+    );
+}
+
 #[trace(
     "FR-216-AC-1",
     "FR-216-AC-2",
@@ -184,6 +200,7 @@ fn export_copies_authored_values_with_caller_metadata_and_stays_deterministic() 
     let second_bytes = std::fs::read(&second_path).unwrap();
     assert_eq!(first_bytes, second_bytes);
     let document: Value = serde_json::from_slice(&first_bytes).unwrap();
+    assert_matches_openvex_020_schema(&document);
 
     assert_eq!(document["@context"], "https://openvex.dev/ns/v0.2.0");
     assert_eq!(document["@id"], "urn:example:vex:document-1");
@@ -264,6 +281,7 @@ fn supplied_role_is_written_verbatim() {
         .unwrap();
     assert!(result.status.success(), "{}", stderr(&result));
     let document: Value = serde_json::from_slice(&std::fs::read(output).unwrap()).unwrap();
+    assert_matches_openvex_020_schema(&document);
     assert_eq!(document["role"], "Product security team");
 }
 
