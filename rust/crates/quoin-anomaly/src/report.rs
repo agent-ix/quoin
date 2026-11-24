@@ -17,7 +17,7 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use crate::carried::read_carried;
+use crate::carried::{CarriedAnomaly, read_carried};
 use crate::derived::{Derived, fixing_change, rationale_in};
 use crate::error::AnomalyError;
 use crate::history::{history_of, locate};
@@ -298,24 +298,51 @@ fn groups(rows: &[ReportRow], kind: &str) -> Vec<Group> {
         .collect()
 }
 
-fn gate(rows: &[ReportRow], modes: &[GateMode]) -> Gate {
+/// What the gate reads of one anomaly: authored values only, so it runs over a
+/// report row or a carried anomaly alike, with no git.
+struct GateFacts<'a> {
+    id: &'a str,
+    path: String,
+    status: &'a str,
+    resolution: Option<&'a str>,
+    safety_impact: &'a str,
+    release_rationale: &'a [RationaleEntry],
+}
+
+impl<'a> GateFacts<'a> {
+    fn of_record(record: &'a Record, path: String) -> Self {
+        Self {
+            id: &record.id,
+            path,
+            status: &record.status_word,
+            resolution: record.resolution.as_deref(),
+            safety_impact: &record.safety_impact,
+            release_rationale: record.release_rationale.as_deref().unwrap_or_default(),
+        }
+    }
+
+    fn fails(&self, mode: GateMode) -> bool {
+        match mode {
+            GateMode::Unassessed => self.safety_impact == "unassessed",
+            GateMode::UnjustifiedImpacting => {
+                self.safety_impact == "impacting"
+                    && (self.status != "closed" || self.resolution == Some("wont-fix"))
+                    && !self.release_rationale.iter().any(counts_as_rationale)
+            }
+        }
+    }
+}
+
+fn gate(facts: &[GateFacts<'_>], modes: &[GateMode]) -> Gate {
     let modes = modes.iter().copied().collect::<BTreeSet<_>>();
     let mut failures = Vec::new();
-    for row in rows {
+    for fact in facts {
         for &mode in &modes {
-            let fails = match mode {
-                GateMode::Unassessed => row.unassessed,
-                GateMode::UnjustifiedImpacting => {
-                    row.safety_impact == "impacting"
-                        && (row.status != "closed" || row.resolution.as_deref() == Some("wont-fix"))
-                        && !row.release_rationale.iter().any(counts_as_rationale)
-                }
-            };
-            if fails {
+            if fact.fails(mode) {
                 failures.push(Failure {
                     mode,
-                    anomaly: row.id.clone(),
-                    path: row.path.clone(),
+                    anomaly: fact.id.to_owned(),
+                    path: fact.path.clone(),
                 });
             }
         }
@@ -325,6 +352,20 @@ fn gate(rows: &[ReportRow], modes: &[GateMode]) -> Gate {
         modes: modes.into_iter().collect(),
         failures,
     }
+}
+
+/// Evaluate the gate over carried anomalies, as `build_report` does over its
+/// rows, reading no git. Each failure's path is relative to `scope`.
+#[must_use]
+pub fn gate_carried(scope: &Path, carried: &[CarriedAnomaly], modes: &[GateMode]) -> Gate {
+    let facts: Vec<GateFacts<'_>> = carried
+        .iter()
+        .map(|anomaly| {
+            let relative = anomaly.path.strip_prefix(scope).unwrap_or(&anomaly.path);
+            GateFacts::of_record(&anomaly.record, shown(relative))
+        })
+        .collect();
+    gate(&facts, modes)
 }
 
 /// Build the report over the `Anomaly` documents under `scope`, and evaluate
@@ -368,7 +409,22 @@ pub fn build_report(scope: &Path, modes: &[GateMode]) -> Result<Report, AnomalyE
             },
         })
         .collect();
-    let gate = (!modes.is_empty()).then(|| gate(&rows, modes));
+    let gate = (!modes.is_empty()).then(|| {
+        // A row's gate facts are its authored values; the row carries them
+        // without the record, so rebuild the view from the row.
+        let facts: Vec<GateFacts<'_>> = rows
+            .iter()
+            .map(|row| GateFacts {
+                id: &row.id,
+                path: row.path.clone(),
+                status: &row.status,
+                resolution: row.resolution.as_deref(),
+                safety_impact: &row.safety_impact,
+                release_rationale: &row.release_rationale,
+            })
+            .collect();
+        gate(&facts, modes)
+    });
     Ok(Report {
         anomalies: rows,
         by_hazard,

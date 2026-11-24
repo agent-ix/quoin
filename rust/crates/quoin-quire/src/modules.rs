@@ -104,10 +104,16 @@ impl ModuleSelection {
                 let paths: Vec<&std::path::Path> = roots.iter().map(ModuleRoot::as_path).collect();
                 let registry =
                     Registry::load_module_set(&paths).map_err(|error| Error::ModuleLoad {
-                        path: paths.first().map_or_else(
-                            || scope.as_path().to_path_buf(),
-                            |path| (*path).to_path_buf(),
-                        ),
+                        // The root that fails alone is the one to name; a set
+                        // that fails only together names its first root.
+                        path: paths
+                            .iter()
+                            .find(|path| Registry::load_module(path).is_err())
+                            .or(paths.first())
+                            .map_or_else(
+                                || scope.as_path().to_path_buf(),
+                                |path| (*path).to_path_buf(),
+                            ),
                         reason: error.to_string(),
                     })?;
                 if registry.module_names().count() == 0 {

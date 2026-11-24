@@ -8,12 +8,12 @@
 //! so reading a snapshot back through these types is the check that it is
 //! closed. No type here holds a digest, hash, score or verdict.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::{Code, Refusal, Stop};
 use crate::evidence::audit::AuditOptions;
 use crate::matrix::{Built, build};
-use quoin_anomaly::{CarriedRead, read_carried};
+use quoin_anomaly::{CarriedAnomaly, CarriedRead, GateMode, gate_carried, read_carried};
 use quoin_assurance::matrix::MatrixOutput;
 #[cfg(test)]
 pub(super) use quoin_dossier::release_snapshot::ReleaseSnapshot as Snapshot;
@@ -21,6 +21,8 @@ use quoin_dossier::release_snapshot::{
     CoverageCriterion, CoverageRequirement, Freshness, OpenFinding, RationaleEntry,
     SnapshotAnomaly as Anomaly,
 };
+use quoin_quire::{ModuleRoot, ModuleSelection};
+use quoin_risk_advice::{AdviceError, ErrorCode, summarize};
 
 /// The sections that come from the evidence matrix.
 pub(super) struct MatrixSections {
@@ -95,13 +97,123 @@ pub(super) fn sections(matrix: MatrixOutput) -> MatrixSections {
     }
 }
 
-/// Read the carried anomalies of `repo`: selection and authored values only.
+/// The risk-completeness findings of `repo`, built by the code `quoin
+/// risk-summary` uses, one item per distinct finding (FR-170).
+///
+/// A failure `quoin risk-summary` would refuse with is a refusal here, and so
+/// is a file below `repo` that cannot be read or whose frontmatter is not valid
+/// YAML, because a record in it would go unreported.
+pub(super) fn risk_findings(repo: &Path, modules: &[String]) -> Result<Vec<OpenFinding>, Stop> {
+    let mut roots = Vec::new();
+    for dir in modules {
+        roots.push(ModuleRoot::open(dir).map_err(|error| module_invalid(dir, &error.to_string()))?);
+    }
+    let resolved: Vec<PathBuf> = roots
+        .iter()
+        .map(|root| root.as_path().to_path_buf())
+        .collect();
+    let selection = if roots.is_empty() {
+        ModuleSelection::Ambient
+    } else {
+        ModuleSelection::Closed(roots)
+    };
+    let summary =
+        summarize(repo, &selection).map_err(|error| advice_refusal(modules, &resolved, &error))?;
+    if let Some(path) = summary.unusable.first() {
+        // The reader works on the canonical scope, so its paths are made
+        // relative to that, never to the spelling of `--repo`.
+        let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
+        let shown = path
+            .strip_prefix(&root)
+            .unwrap_or(path)
+            .display()
+            .to_string();
+        return Err(Refusal::new(
+            Code::InputUnreadable,
+            format!(
+                "--repo holds {shown}, which cannot be read or whose frontmatter is not a YAML mapping"
+            ),
+            &[("input", "--repo"), ("path", &shown)],
+        )
+        .into());
+    }
+    Ok(summary
+        .distinct_findings()
+        .into_iter()
+        .map(|found| OpenFinding {
+            obligation: found.names.first().cloned().unwrap_or_default(),
+            kind: found.finding.as_str().to_owned(),
+            summary: found.names.join(", "),
+            path: None,
+            line: None,
+            symbol: None,
+            cause: None,
+        })
+        .collect())
+}
+
+fn module_invalid(dir: &str, message: &str) -> Refusal {
+    Refusal::new(
+        Code::InputInvalid,
+        format!("--module {dir} is invalid: {message}"),
+        &[("input", "--module"), ("module", dir)],
+    )
+}
+
+/// The refusal for a failure `quoin risk-summary` reports with exit status 2.
+///
+/// A module root that failed to load names its own `--module DIR`. A set of
+/// roots that declares no safety record type names every `--module DIR`, and
+/// the installed modules when none was given. Anything else names `--repo` and
+/// carries the record's own message.
+fn advice_refusal(modules: &[String], resolved: &[PathBuf], error: &AdviceError) -> Stop {
+    match error.code {
+        ErrorCode::Modules | ErrorCode::TypeUndeclared => {
+            let failed = error
+                .module
+                .as_ref()
+                .and_then(|path| resolved.iter().position(|root| root == path))
+                .and_then(|index| modules.get(index));
+            let named = match (failed, modules) {
+                (Some(dir), _) => dir.clone(),
+                (None, []) => "installed modules".to_owned(),
+                (None, all) => all.join(", "),
+            };
+            module_invalid(&named, &error.message).into()
+        }
+        ErrorCode::Render => Stop::Failed(error.message.clone()),
+        ErrorCode::Scope | ErrorCode::Record | ErrorCode::Unparseable => {
+            Refusal::invalid("--repo", error.code.as_str(), &error.message).into()
+        }
+    }
+}
+
+/// The carried anomalies of `repo`, with the anomaly-gate findings (FR-164)
+/// over them: selection and authored values only, no git.
 ///
 /// A document with a mapping error is a refusal, because the snapshot has no
 /// member for an unreadable anomaly and one must not vanish from it.
-pub(super) fn anomalies(repo: &Path) -> Result<Vec<Anomaly>, Stop> {
+pub(super) fn anomalies(repo: &Path) -> Result<(Vec<Anomaly>, Vec<OpenFinding>), Stop> {
     let read = read_carried(repo).map_err(|error| Refusal::unreadable("--repo", error))?;
-    carried(repo, read)
+    let findings = gate_findings(repo, &read.carried);
+    Ok((carried(repo, read)?, findings))
+}
+
+/// One item for each failure of either gate mode.
+fn gate_findings(repo: &Path, carried: &[CarriedAnomaly]) -> Vec<OpenFinding> {
+    gate_carried(repo, carried, &GateMode::ALL)
+        .failures
+        .into_iter()
+        .map(|failure| OpenFinding {
+            obligation: failure.anomaly,
+            kind: format!("anomaly-{}", failure.mode.as_str()),
+            summary: failure.mode.as_str().to_owned(),
+            path: Some(failure.path),
+            line: None,
+            symbol: None,
+            cause: None,
+        })
+        .collect()
 }
 
 fn carried(repo: &Path, read: CarriedRead) -> Result<Vec<Anomaly>, Stop> {

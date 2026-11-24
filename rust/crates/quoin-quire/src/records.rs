@@ -227,6 +227,21 @@ fn invalid_identity_paths(
     Ok(malformed)
 }
 
+/// Whether the file holds a complete frontmatter block that is not a YAML
+/// mapping, as the engine's walker reports it malformed: invalid YAML, or a
+/// list or scalar.
+///
+/// An empty block, an unclosed fence and a mapping with no `type` or `id` are
+/// not unparseable: they are documents the corpus does not carry, not damaged
+/// ones.
+#[must_use]
+pub fn frontmatter_unparseable(path: &Path) -> bool {
+    std::fs::read_to_string(path).is_ok_and(|text| {
+        quire_rs::parser::extract_frontmatter(&text).status
+            == quire_rs::parser::FrontmatterStatus::Malformed
+    })
+}
+
 /// Whether the file's text opens with a frontmatter fence line.
 fn opens_a_fence(path: &Path) -> bool {
     std::fs::read_to_string(path).is_ok_and(|text| {

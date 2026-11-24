@@ -26,7 +26,7 @@ mod records;
 mod render;
 mod summary;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use quoin_quire::ModuleSelection;
 use quoin_quire::records::read;
@@ -72,7 +72,8 @@ pub struct Advice {
 /// residual-risk, benefit-risk, overall-evaluation or policy record breaks the
 /// contract its type declares.
 pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceError> {
-    let (records, unreadable) = load(scope, modules, &records::CHECKED, false)?;
+    let loaded = load(scope, modules, &records::CHECKED, false)?;
+    let (records, unreadable) = (loaded.records, loaded.unreadable);
     let links = links::Links::build(&records);
     Ok(Advice {
         attribution: ATTRIBUTION,
@@ -81,6 +82,16 @@ pub fn advise(scope: &Path, modules: &ModuleSelection) -> Result<Advice, AdviceE
         decision_queue: queue::build(&records, &links),
         unreadable,
     })
+}
+
+/// What [`load`] read below a scope.
+struct Loaded {
+    records: records::Records,
+    /// The files the reader could not load, each as `path: reason`.
+    unreadable: Vec<String>,
+    /// The files that cannot be read, or whose frontmatter block is not valid
+    /// YAML, in path order.
+    unusable: Vec<PathBuf>,
 }
 
 /// The records below `scope` with the types in `checked` contract-checked, and
@@ -92,7 +103,7 @@ fn load(
     modules: &ModuleSelection,
     checked: &[&str],
     refuse_unreadable: bool,
-) -> Result<(records::Records, Vec<String>), AdviceError> {
+) -> Result<Loaded, AdviceError> {
     let corpus = read(scope, modules, checked).map_err(|error| AdviceError::read(&error))?;
     let unreadable: Vec<String> = corpus
         .unreadable
@@ -109,8 +120,26 @@ fn load(
             return Err(AdviceError::unparseable(&all));
         }
     }
+    let mut unusable: Vec<PathBuf> = corpus
+        .unreadable
+        .iter()
+        .map(|file| file.path.clone())
+        .chain(
+            corpus
+                .malformed
+                .iter()
+                .filter(|path| quoin_quire::records::frontmatter_unparseable(path))
+                .cloned(),
+        )
+        .collect();
+    unusable.sort();
+    unusable.dedup();
     let records = records::Records::read(&corpus.documents)?;
-    Ok((records, unreadable))
+    Ok(Loaded {
+        records,
+        unreadable,
+        unusable,
+    })
 }
 
 /// Read the records below `scope` and build the hazard-to-decision summary
@@ -121,12 +150,13 @@ fn load(
 ///
 /// Returns an error as [`advise`] does.
 pub fn summarize(scope: &Path, modules: &ModuleSelection) -> Result<Summary, AdviceError> {
-    let (records, unreadable) = load(scope, modules, &records::CHECKED, false)?;
-    let links = links::Links::build(&records);
+    let loaded = load(scope, modules, &records::CHECKED, false)?;
+    let links = links::Links::build(&loaded.records);
     Ok(Summary {
         attribution: ATTRIBUTION,
-        rows: summary::build(&records, &links),
-        unreadable,
+        rows: summary::build(&loaded.records, &links),
+        unreadable: loaded.unreadable,
+        unusable: loaded.unusable,
     })
 }
 
@@ -157,7 +187,7 @@ pub fn discrepancies(
     scope: &Path,
     modules: &ModuleSelection,
 ) -> Result<Discrepancies, AdviceError> {
-    let (records, _) = load(scope, modules, &records::DISCREPANCY_CHECKED, true)?;
+    let records = load(scope, modules, &records::DISCREPANCY_CHECKED, true)?.records;
     let links = links::Links::build(&records);
     Ok(Discrepancies {
         attribution: ATTRIBUTION,

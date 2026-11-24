@@ -15,6 +15,7 @@
 //! store's own writer, and every other input by hand. `git` is run only by
 //! this file's setup, to give one fixture a history the command must ignore.
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -1323,7 +1324,14 @@ fn two_runs_in_other_directories_and_environments_write_the_same_bytes_and_no_ve
             assert!(!key.contains(forbidden), "{key}");
         }
     }
-    let body = text(&first_bytes).to_lowercase();
+    let mut body = text(&first_bytes).to_lowercase();
+    for token in [
+        "accepted-outside-acceptable-region",
+        "benefit-risk-not-accepted",
+        "not-accepted-inside-acceptable-region",
+    ] {
+        body = body.replace(token, "");
+    }
     for word in ["accepted", "releasable", "ready"] {
         assert!(!body.contains(word), "{word}");
     }
@@ -1619,4 +1627,616 @@ fn tc_1760_snapshot_non_stale_has_no_cause_key() {
             "non-stale finding must have no cause key: {finding}"
         );
     }
+}
+
+fn safety_module() -> String {
+    let checkout = std::env::var_os("SPEC_OBJECTS_SAFETY_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-safety"),
+        PathBuf::from,
+    );
+    let root = checkout.join("spec_objects_safety");
+    assert!(
+        root.join("manifest.yaml").is_file(),
+        "the spec-objects-safety module is not at {}: check it out next to this repository or set SPEC_OBJECTS_SAFETY_DIR",
+        root.display()
+    );
+    root.display().to_string()
+}
+
+/// A risk record under `spec/risk/`.
+fn risk_record(repo: &Repo, id: &str, kind: &str, front: &str, body: &str) {
+    repo.write(
+        &format!("spec/risk/{id}.md"),
+        &format!(
+            "---\nid: {id}\ntitle: \"{id}\"\ntype: {kind}\nobject: {kind}\n{front}---\n# [{id}] {id}\n\n{body}\
+             \n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| record_id | UUID | 1..1 | identity |\n"
+        ),
+    );
+}
+
+fn estimate(repo: &Repo, id: &str, situation: &str, control: Option<&str>) {
+    let assumes = control.map_or_else(String::new, |control| {
+        format!("  - target: {control}\n    type: assumes\n")
+    });
+    risk_record(
+        repo,
+        id,
+        "risk_estimate",
+        &format!(
+            "phase: post_control\nrelationships:\n  - target: {situation}\n    type: estimates\n{assumes}"
+        ),
+        "## Judgement\n\n| Severity | Probability | Rationale |\n| --- | --- | --- |\n| Serious | Likely | why |\n\n\
+         ## Provenance\n\n| Asserted by | Asserted at |\n| --- | --- |\n| Pat | 2026-01-01 |\n",
+    );
+}
+
+/// A hazard, two situations (each with a post-control estimate assuming
+/// CTRL-1) and a control that nothing verifies.
+fn unverified_control(repo: &Repo) {
+    risk_record(repo, "HAZ-1", "hazard", "", "");
+    risk_record(repo, "CTRL-1", "control", "", "");
+    for n in 1..=2 {
+        risk_record(
+            repo,
+            &format!("SIT-{n}"),
+            "hazardous_situation",
+            "relationships:\n  - target: HAZ-1\n    type: arises_from\n",
+            "",
+        );
+        estimate(
+            repo,
+            &format!("EST-{n}"),
+            &format!("SIT-{n}"),
+            Some("CTRL-1"),
+        );
+    }
+}
+
+fn with_risk(repo: &Repo) -> Run {
+    repo.run().set("--module", &safety_module())
+}
+
+fn findings_of<'a>(snapshot: &'a Value, kind: &str) -> Vec<&'a Value> {
+    snapshot["open_findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|item| item["kind"] == kind)
+        .collect()
+}
+
+/// The FR-170 tokens, which are the kinds of the risk-completeness items.
+const RISK_TOKENS: [&str; 13] = [
+    "hazard-without-situation",
+    "situation-without-hazard",
+    "situation-without-harm",
+    "control-without-requirement",
+    "control-without-verification",
+    "post-control-without-control",
+    "post-control-estimate-without-decision",
+    "residual-risk-undecided",
+    "decision-without-region",
+    "accepted-outside-acceptable-region",
+    "benefit-risk-undecided",
+    "benefit-risk-not-accepted",
+    "not-accepted-inside-acceptable-region",
+];
+
+/// The distinct `(token, names)` of `quoin risk-summary` over the repository.
+fn summary_findings(repo: &Repo) -> Vec<(String, Vec<String>)> {
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["risk-summary", "--format", "json"])
+        .arg(repo.path())
+        .args(["--module", &safety_module()])
+        .env("IX_HOME", repo.home.path())
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0), "{}", text(&output.stderr));
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let mut found: Vec<(String, Vec<String>)> = report["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|row| row["findings"].as_array().unwrap())
+        .map(|finding| {
+            (
+                finding["finding"].as_str().unwrap().to_owned(),
+                finding["names"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|name| name.as_str().unwrap().to_owned())
+                    .collect(),
+            )
+        })
+        .collect();
+    found.sort();
+    found.dedup();
+    found
+}
+
+/// The `(anomaly, path)` failures of `quoin anomaly report --fail-on <mode>`.
+fn gate_failures(repo: &Repo, mode: &str) -> Vec<(String, String)> {
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["anomaly", "report", "--fail-on", mode, "--json"])
+        .current_dir(repo.path())
+        .env("IX_HOME", repo.home.path())
+        .output()
+        .unwrap();
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    report["gate"]["failures"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|failure| {
+            (
+                failure["anomaly"].as_str().unwrap().to_owned(),
+                failure["path"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect()
+}
+
+/// The snapshot's risk-completeness items are exactly the distinct findings
+/// of `quoin risk-summary`, each mapped as FR-167 states.
+fn assert_risk_items_equal_summary(repo: &Repo, snapshot: &Value) {
+    let mut items: Vec<(String, Vec<String>)> = snapshot["open_findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|item| RISK_TOKENS.contains(&item["kind"].as_str().unwrap()))
+        .map(|item| {
+            assert_eq!(item["path"], Value::Null);
+            assert_eq!(item["line"], Value::Null);
+            assert_eq!(item["symbol"], Value::Null);
+            assert!(item.get("cause").is_none());
+            let names: Vec<String> = item["summary"]
+                .as_str()
+                .unwrap()
+                .split(", ")
+                .map(str::to_owned)
+                .collect();
+            assert_eq!(item["obligation"], json!(names[0]));
+            (item["kind"].as_str().unwrap().to_owned(), names)
+        })
+        .collect();
+    items.sort();
+    assert_eq!(items, summary_findings(repo));
+}
+
+/// A policy, a hazard, a situation with a harm, a satisfied and verified
+/// control, a pre-control estimate, a post-control estimate assuming the
+/// control, and a decided residual risk inside the acceptable region.
+fn complete_chain(repo: &Repo) {
+    risk_record(
+        repo,
+        "POL-1",
+        "acceptability_policy",
+        "",
+        "## Severity levels\n\n| Severity level |\n| --- |\n| Minor |\n| Serious |\n\n\
+         ## Probability levels\n\n| Probability level |\n| --- |\n| Rare |\n| Likely |\n\n\
+         ## Regions\n\n| Region | Outside acceptable |\n| --- | --- |\n| Low | false |\n| Mid | false |\n| High | true |\n\n\
+         ## Cells\n\n| Severity | Probability | Region |\n| --- | --- | --- |\n\
+         | Minor | Rare | Low |\n| Minor | Likely | Low |\n| Serious | Rare | Mid |\n| Serious | Likely | High |\n",
+    );
+    risk_record(repo, "HAZ-1", "hazard", "status: accepted\n", "");
+    risk_record(
+        repo,
+        "SIT-1",
+        "hazardous_situation",
+        "relationships:\n  - target: HAZ-1\n    type: arises_from\n",
+        "",
+    );
+    risk_record(
+        repo,
+        "HARM-1",
+        "harm",
+        "relationships:\n  - target: SIT-1\n    type: arises_from\n",
+        "",
+    );
+    risk_record(repo, "CTRL-1", "control", "", "");
+    risk_record(
+        repo,
+        "REQ-9",
+        "FR",
+        "relationships:\n  - target: CTRL-1\n    type: satisfies\n",
+        "| ID | Criteria |\n|---|---|\n| REQ-9-AC-1 | synthetic |\n",
+    );
+    risk_record(
+        repo,
+        "TC-9",
+        "TC",
+        "relationships:\n  - target: CTRL-1\n    type: verifies\n",
+        "result: failed\n",
+    );
+    risk_estimate(repo, "EST-A", "pre_control", "Serious", &["SIT-1"]);
+    risk_estimate(repo, "EST-B", "post_control", "Minor", &["SIT-1", "CTRL-1"]);
+    residual_risk(repo, "RR-1", "EST-B", "accepted");
+}
+
+fn risk_estimate(repo: &Repo, id: &str, phase: &str, severity: &str, targets: &[&str]) {
+    let probability = if severity == "Minor" {
+        "Rare"
+    } else {
+        "Likely"
+    };
+    let mut edges = String::new();
+    for target in targets {
+        let verb = if target.starts_with("SIT") {
+            "estimates"
+        } else {
+            "assumes"
+        };
+        let _ = writeln!(edges, "  - target: {target}\n    type: {verb}");
+    }
+    risk_record(
+        repo,
+        id,
+        "risk_estimate",
+        &format!("phase: {phase}\nrelationships:\n{edges}"),
+        &format!(
+            "## Judgement\n\n| Severity | Probability | Rationale |\n| --- | --- | --- |\n| {severity} | {probability} | why |\n\n\
+             ## Provenance\n\n| Asserted by | Asserted at |\n| --- | --- |\n| Pat | 2026-01-01 |\n"
+        ),
+    );
+}
+
+fn residual_risk(repo: &Repo, id: &str, estimate: &str, decision: &str) {
+    risk_record(
+        repo,
+        id,
+        "residual_risk",
+        &format!(
+            "relationships:\n  - target: {estimate}\n    type: estimate\n  - target: POL-1\n    type: references\n"
+        ),
+        &format!(
+            "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| {decision} | r | Pat |\n"
+        ),
+    );
+}
+
+#[trace("FR-167-AC-15", "FR-167-AC-17")]
+#[test]
+fn an_unverified_control_on_two_rows_is_one_open_finding_equal_to_the_risk_summary_token() {
+    let repo = Repo::bare();
+    unverified_control(&repo);
+    let snapshot = repo.snapshot(&with_risk(&repo));
+    let items = findings_of(&snapshot, "control-without-verification");
+    assert_eq!(items.len(), 1, "{items:?}");
+    assert_eq!(
+        items[0],
+        &json!({
+            "obligation": "CTRL-1", "kind": "control-without-verification",
+            "summary": "CTRL-1", "path": null, "line": null, "symbol": null,
+        })
+    );
+    assert!(summary_findings(&repo).contains(&(
+        "control-without-verification".to_owned(),
+        vec!["CTRL-1".to_owned()]
+    )));
+    assert_risk_items_equal_summary(&repo, &snapshot);
+}
+
+#[trace("FR-167-AC-16")]
+#[test]
+fn a_verified_control_and_a_complete_chain_yield_no_risk_completeness_item() {
+    let repo = Repo::bare();
+    unverified_control(&repo);
+    risk_record(
+        &repo,
+        "VER-1",
+        "FR",
+        "relationships:\n  - target: CTRL-1\n    type: verifies\n",
+        "| ID | Criteria |\n|---|---|\n| VER-1-AC-1 | synthetic |\n",
+    );
+    let snapshot = repo.snapshot(&with_risk(&repo));
+    assert!(findings_of(&snapshot, "control-without-verification").is_empty());
+
+    let chain = Repo::bare();
+    complete_chain(&chain);
+    assert_eq!(summary_findings(&chain), []);
+    let snapshot = chain.snapshot(&with_risk(&chain));
+    let kinds: Vec<&str> = snapshot["open_findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["kind"].as_str().unwrap())
+        .collect();
+    assert!(
+        kinds.iter().all(|kind| !RISK_TOKENS.contains(kind)),
+        "{kinds:?}"
+    );
+}
+
+#[trace("FR-167-AC-17")]
+#[test]
+fn a_finding_naming_several_records_is_one_item_with_the_first_name_and_all_names() {
+    let repo = Repo::bare();
+    complete_chain(&repo);
+    risk_estimate(
+        &repo,
+        "EST-H",
+        "post_control",
+        "Serious",
+        &["SIT-1", "CTRL-1"],
+    );
+    residual_risk(&repo, "RR-2", "EST-H", "accepted");
+    risk_record(
+        &repo,
+        "BR-1",
+        "benefit_risk",
+        "relationships:\n  - target: RR-2\n    type: references\n",
+        "## Determination\n\n| Benefit | Decision | Rationale | Decided by |\n| --- | --- | --- | --- |\n| b | not_accepted | r | Pat |\n",
+    );
+    let snapshot = repo.snapshot(&with_risk(&repo));
+    let items = findings_of(&snapshot, "benefit-risk-not-accepted");
+    assert_eq!(items.len(), 1, "{items:?}");
+    assert_eq!(items[0]["obligation"], "RR-2");
+    assert_eq!(items[0]["summary"], "RR-2, BR-1");
+    assert_risk_items_equal_summary(&repo, &snapshot);
+}
+
+#[trace("FR-166-AC-12", "FR-167-AC-18", "FR-167-AC-19")]
+#[test]
+fn risk_and_anomaly_gate_findings_join_the_auditor_findings_in_the_total_order() {
+    let repo = Repo::bare();
+    unverified_control(&repo);
+    repo.anomaly("AN-001", "identified", "unassessed", &[], "");
+    repo.anomaly("AN-002", "assessed", "impacting", &["severity: major"], "");
+    repo.anomaly(
+        "AN-003",
+        "assessed",
+        "impacting",
+        &["severity: major"],
+        "## Release Rationale\n\n| Author | Rationale |\n|--------|-----------|\n| Dana | Ships behind a flag. |\n",
+    );
+    repo.anomaly(
+        "AN-004",
+        "closed",
+        "impacting",
+        &["resolution: fixed", "closed_by: \"Pat\"", "severity: major"],
+        "",
+    );
+    let snapshot = repo.snapshot(&with_risk(&repo));
+
+    // Each gate item is a failure of `quoin anomaly report` for its mode.
+    let gate = |kind: &str| -> Vec<(String, String)> {
+        findings_of(&snapshot, kind)
+            .iter()
+            .map(|item| {
+                assert_eq!(item["summary"], kind.trim_start_matches("anomaly-"));
+                assert_eq!(item["line"], Value::Null);
+                assert_eq!(item["symbol"], Value::Null);
+                assert!(item.get("cause").is_none());
+                (
+                    item["obligation"].as_str().unwrap().to_owned(),
+                    item["path"].as_str().unwrap().to_owned(),
+                )
+            })
+            .collect()
+    };
+    assert_eq!(
+        gate("anomaly-unassessed"),
+        gate_failures(&repo, "unassessed")
+    );
+    assert_eq!(
+        gate("anomaly-unjustified-impacting"),
+        gate_failures(&repo, "unjustified-impacting")
+    );
+    assert_eq!(
+        gate("anomaly-unassessed"),
+        [("AN-001".to_owned(), "spec/anomalies/AN-001.md".to_owned())]
+    );
+    assert_eq!(
+        gate("anomaly-unjustified-impacting"),
+        [("AN-002".to_owned(), "spec/anomalies/AN-002.md".to_owned())]
+    );
+
+    assert_eq!(
+        findings_of(&snapshot, "control-without-verification").len(),
+        1
+    );
+    assert_eq!(findings_of(&snapshot, "situation-without-harm").len(), 2);
+    assert_risk_items_equal_summary(&repo, &snapshot);
+
+    // Auditor, risk and gate items sit in one total order, and every item has
+    // exactly the closed keys and no severity, score or acceptance word.
+    let items = snapshot["open_findings"].as_array().unwrap();
+    let order: Vec<(&str, &str)> = items
+        .iter()
+        .map(|item| {
+            (
+                item["obligation"].as_str().unwrap(),
+                item["kind"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    let mut sorted = order.clone();
+    sorted.sort_unstable();
+    assert_eq!(order, sorted);
+    assert!(order.contains(&("FR-001-AC-3", "undischarged")));
+    for item in items {
+        let mut keys: Vec<&str> = item
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            ["kind", "line", "obligation", "path", "summary", "symbol"],
+            "{item}"
+        );
+        let lower = item.to_string().to_lowercase();
+        for word in ["severity", "score", "accept", "rank", "verdict"] {
+            assert!(!lower.contains(word), "{word} in {item}");
+        }
+    }
+}
+
+#[trace("FR-166-AC-13")]
+#[test]
+fn a_risk_summary_failure_refuses_naming_the_root_and_a_repository_without_risk_records_writes() {
+    let repo = Repo::bare();
+    let plain = repo.snapshot(&with_risk(&repo));
+    assert!(
+        plain["open_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|item| item["obligation"].as_str().unwrap().starts_with("FR-001"))
+    );
+    std::fs::remove_file(repo.aux("snapshot.json")).unwrap();
+
+    let missing = repo.run().set("--module", "/nonexistent-module-root");
+    let refused = repo.refusal(&missing);
+    assert_eq!(refused["code"], "release_snapshot_input_invalid");
+    assert_eq!(refused["context"]["input"], "--module");
+    assert_eq!(refused["context"]["module"], "/nonexistent-module-root");
+
+    estimate_chain_with_bad_residual(&repo);
+    let refused = repo.refusal(&with_risk(&repo));
+    assert_eq!(refused["code"], "release_snapshot_input_invalid");
+    assert_eq!(refused["context"]["input"], "--repo");
+    assert!(
+        refused["message"].as_str().unwrap().contains("RR-1"),
+        "{refused}"
+    );
+}
+
+/// Run with two `--module` roots, the second of which does not load.
+fn run_with_modules(repo: &Repo, modules: &[&str]) -> Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+    command.args(["release", "snapshot"]);
+    for (flag, value) in &repo.run().flags {
+        command.arg(flag).arg(value);
+    }
+    for module in modules {
+        command.args(["--module", module]);
+    }
+    command.env("IX_HOME", repo.home.path());
+    command.output().unwrap()
+}
+
+#[trace("FR-166-AC-13")]
+#[test]
+fn the_refusal_names_the_module_that_failed_and_not_one_that_loaded() {
+    let repo = Repo::bare();
+    let broken = tempfile::tempdir().unwrap();
+    std::fs::write(broken.path().join("manifest.yaml"), "name: [unclosed\n").unwrap();
+    let safety = safety_module();
+    let output = run_with_modules(&repo, &[&safety, broken.path().to_str().unwrap()]);
+    assert_eq!(output.status.code(), Some(2), "{}", text(&output.stderr));
+    let refused: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(refused[0]["code"], "release_snapshot_input_invalid");
+    assert_eq!(
+        refused[0]["context"]["module"],
+        broken.path().to_str().unwrap()
+    );
+
+    // A set that declares no safety record type names every root given, and
+    // with none given the installed modules, never `--repo`.
+    unverified_control(&repo);
+    std::fs::remove_file(repo.aux("snapshot.json")).ok();
+    let own = repo.path().to_str().unwrap();
+    let output = run_with_modules(&repo, &[own]);
+    let refused: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(refused[0]["context"]["input"], "--module");
+    assert_eq!(refused[0]["context"]["module"], own);
+    let output = run_with_modules(&repo, &[]);
+    let refused: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(refused[0]["context"]["input"], "--module");
+    assert_eq!(refused[0]["context"]["module"], "installed modules");
+}
+
+fn estimate_chain_with_bad_residual(repo: &Repo) {
+    risk_record(repo, "HAZ-1", "hazard", "", "");
+    risk_record(
+        repo,
+        "SIT-1",
+        "hazardous_situation",
+        "relationships:\n  - target: HAZ-1\n    type: arises_from\n",
+        "",
+    );
+    estimate(repo, "EST-1", "SIT-1", None);
+    risk_record(
+        repo,
+        "RR-1",
+        "residual_risk",
+        "relationships:\n  - target: EST-1\n    type: estimate\n",
+        "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| bogus-word | r | Pat |\n",
+    );
+}
+
+#[trace("FR-166-AC-14")]
+#[test]
+fn only_an_unreadable_or_non_mapping_file_below_repo_refuses_and_a_typeless_one_does_not() {
+    let repo = Repo::bare();
+    for (path, text) in [
+        (
+            "docs/SKILL.md",
+            "---\nname: tool\ndescription: a skill\n---\n# Skill\n",
+        ),
+        ("docs/empty.md", "---\n---\n# Empty block\n"),
+        (
+            "docs/rule.md",
+            "---\nA page that opens with a thematic break.\n",
+        ),
+    ] {
+        repo.write(path, text);
+    }
+    repo.snapshot(&with_risk(&repo));
+    std::fs::remove_file(repo.aux("snapshot.json")).unwrap();
+
+    for (path, bytes) in [
+        (
+            "docs/broken.md",
+            b"---\nkey: [unclosed\n---\n# Broken\n".to_vec(),
+        ),
+        ("docs/list.md", b"---\n- a\n- b\n---\n# List\n".to_vec()),
+        ("docs/binary.md", vec![0xff, 0xfe, 0x00, 0x80]),
+        (
+            "spec/risk/HAZ-9.md",
+            b"---\nid: HAZ-9\ntype: hazard\nobject: [unclosed\n---\n# Hazard\n".to_vec(),
+        ),
+    ] {
+        let full = repo.path().join(path);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, bytes).unwrap();
+        let refused = repo.refusal(&with_risk(&repo));
+        assert_eq!(
+            refused["code"], "release_snapshot_input_unreadable",
+            "{path}"
+        );
+        assert_eq!(refused["context"]["input"], "--repo");
+        assert_eq!(refused["context"]["path"], path);
+        std::fs::remove_file(full).unwrap();
+    }
+}
+
+#[trace("FR-166-AC-14")]
+#[test]
+fn the_unusable_file_is_named_relative_to_repo_whatever_the_repo_spelling() {
+    let repo = Repo::bare();
+    repo.write("docs/broken.md", "---\nkey: [unclosed\n---\n# Broken\n");
+    let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+    command.args(["release", "snapshot"]);
+    for (flag, value) in &repo.run().set("--repo", ".").flags {
+        command.arg(flag).arg(value);
+    }
+    let output = command
+        .args(["--module", &safety_module()])
+        .current_dir(repo.path())
+        .env("IX_HOME", repo.home.path())
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2), "{}", text(&output.stderr));
+    let refused: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(refused[0]["context"]["path"], "docs/broken.md");
+    let message = refused[0]["message"].as_str().unwrap();
+    assert!(
+        !message.contains(repo.path().to_str().unwrap()),
+        "{message}"
+    );
 }
