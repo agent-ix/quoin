@@ -51,3 +51,17 @@ helper is needed but implements the unreadable rule wrongly (FND-001).
 - FR-164 gate modes (context only), FR-170 tokens (context only).
 
 ## Dispositions
+
+Round 1 (fix commit 4b3fc242). I checked each fix against the code. tc_3604 passed 33/33, tc_169 risk-summary command 5/5,
+quoin-risk-advice tc_169 21/21 and quoin-quire modules 2/2. Three mutations, each reverted, were caught by the new tests:
+going back to `!= Present`, dropping the canonical scope, and naming the first module root.
+fmt is clean and clippy reports nothing in the touched files. The two extra files cause no regression. `AdviceError.module` is set only
+for `ModuleLoad`. `ModuleSelection::resolve` loads each root again only on the failure path, to name the root
+that fails alone. A root that loads only together with a sibling could still be named for another root's failure.
+This is not a regression: the earlier code always named the first root.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

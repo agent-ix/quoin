@@ -49,3 +49,25 @@ each.
 - Semantic review: skipped (not requested).
 
 ## Dispositions
+
+Round 1 (fix commit 4b3fc242). I checked every finding against the fix commit. The FR-167-AC-17 test uses
+`benefit-risk-not-accepted` (names `RR-2, BR-1`) in place of `accepted-outside-acceptable-region`. That substitution
+is the only way to test the clause's intent: `token_for` in quoin-risk-advice emits
+`accepted-outside-acceptable-region` only when no benefit-risk record covers the residual risk, so that token can
+never name covering benefit-risk ids. The test now covers the multi-name mapping, but the AC text names a token
+that cannot take that shape (FND-007).
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | medium | No test can meet FR-167-AC-17's second clause as written. `accepted-outside-acceptable-region` is emitted only when no benefit-risk record covers the residual risk (FR-170-AC-7; `token_for` in quoin-risk-advice), so its `names` hold the residual-risk id alone and never "its covering benefit-risk ids". Amend the clause to name `benefit-risk-not-accepted` (or `benefit-risk-undecided`), which the round-1 test already exercises. FR-170's table row for the token, which lists covering ids, is out of this PR's scope. | spec/functional/FR-167-release-snapshot-format.md; FR-167-AC-17; FR-170 |
