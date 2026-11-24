@@ -54,6 +54,10 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
     Ok(Response::ok(json!({
         "path": output.display().to_string(),
         "statements": statements,
+        "rendered": format!(
+            "Wrote OpenVEX 0.2.0 document to {} ({statements} statements)",
+            output.display()
+        ),
     })))
 }
 
