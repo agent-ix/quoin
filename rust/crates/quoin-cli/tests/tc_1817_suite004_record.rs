@@ -15,17 +15,44 @@ use serde_json::{Value, json};
 use std::fs;
 use std::process::Command;
 
+const MODULE: &str = r##"name: wave2-suite004-fixture
+version: 0.1.0
+description: Fixture for the retained SUITE-004 run test
+artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+"##;
+
+const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: Fixture\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|---|---|---|\n| FR-001-AC-1 | The retained tool evidence is complete. | Test |\n";
+
 #[trace("FR-030-AC-42")]
 #[test]
 fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
     let repo = tempfile::tempdir().unwrap();
     let home = tempfile::tempdir().unwrap();
+    fs::write(repo.path().join("manifest.yaml"), MODULE).unwrap();
+    fs::create_dir_all(repo.path().join("spec")).unwrap();
+    fs::write(repo.path().join("spec/FR-001-example.md"), SPEC).unwrap();
     let input = home.path().join("results.json");
     let results = json!({
         "entries": [
             {
                 "symbol": "osv-authentic-report",
                 "outcome": "pass",
+                "traceIds": ["FR-001-AC-1"],
                 "config": {
                     "tool": "osv-scanner",
                     "tool_version": "osv-scanner 2.1.0",
@@ -37,6 +64,7 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
             {
                 "symbol": "engineering-assurance-cli",
                 "outcome": "error",
+                "traceIds": ["FR-001-AC-1"],
                 "config": {
                     "tool": "engineering-assurance",
                     "tool_version": "unavailable",
@@ -55,6 +83,8 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
             "record",
             "--repo",
             repo.path().to_str().unwrap(),
+            "--module",
+            ".",
             "--suite",
             "SUITE-004",
             "--kind",
@@ -62,7 +92,7 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
             "--adapter",
             "entries",
             "--tool",
-            "quoin-real-tool-test 1",
+            "quoin-real-tool-test 1.0.0",
             "--results",
             input.to_str().unwrap(),
             "--timestamp",
@@ -80,7 +110,7 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
     let retained: Value = serde_json::from_slice(&fs::read(retained_path).unwrap()).unwrap();
 
     assert_eq!(retained["suite"], "SUITE-004");
-    assert_eq!(retained["tool"], "quoin-real-tool-test 1");
+    assert_eq!(retained["tool"], "quoin-real-tool-test 1.0.0");
     assert_eq!(retained["timestamp"], "2026-11-24T00:00:00.123Z");
     let entries = retained["entries"].as_array().unwrap();
     let osv = entries.iter().find(|entry| entry["symbol"] == "osv-authentic-report").unwrap();
