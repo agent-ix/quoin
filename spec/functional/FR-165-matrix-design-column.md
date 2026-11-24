@@ -95,6 +95,12 @@ SHALL show it as a gap in markdown by the rendering below, and a gap SHALL NOT c
 - `--json` carries `design` and `design_elements` as above in the canonical `MatrixOutput`, with each
   element's `kind` where quire-rs supplies one.
 
+A relation a module adds to `design_relations` after this requirement, such as the SOUP-requirements and segregation relations of
+`agent-ix/spec-objects-security` FR-030 and `agent-ix/spec-objects-architecture` FR-016, is carried like any other: `quoin matrix`
+adds no per-relation code. `matrix.build` does not see a relation's scope, only the blocks the engine emitted: a requirement with no block of a relation
+shows no gap for it, and a requirement with an `uncovered` block of it shows one `Design gap:` line for that block, so a requirement with `uncovered`
+blocks of two relations shows two lines, one per `check` token.
+
 `quoin matrix` has no `--strict` flag (FR-115-AC-11); the design gate is `quire matrix --strict`
 ([quire-cli FR-043](ix://agent-ix/quire-cli/FR-043)), and quoin adds no third gate.
 
@@ -121,6 +127,7 @@ SHALL show it as a gap in markdown by the rendering below, and a gap SHALL NOT c
 | FR-165-AC-17 | A `design_relations` entry naming no declared relation makes `quire.design_matrix` return `Refused` with `context.reason` `design-matrix-failed`, and `quoin matrix` exits 2 naming the entry and prints no matrix. | Test |
 | FR-165-AC-18 | `quire.design_matrix` is in `quoin-core`'s `OPERATIONS` list and dispatched by an exhaustive arm, and `quire.coverage` output is unchanged. | Test |
 | FR-165-AC-19 | A `quire.design_matrix` failure other than an undeclared design relation, such as an oversized request, an engine refusal or a missing quire host, gives the error code and exit code `quire.coverage` gives for the same cause, not `design-matrix-failed`, and `quoin matrix` prints no matrix. | Test |
+| FR-165-AC-20 | Given a `coverage` in which requirement A carries `uncovered` blocks of relations P and Q, requirement B carries no block of P and an `uncovered` block of Q, and requirement C carries only `covered` blocks, `matrix.build` carries every block verbatim, B has no block of P, and markdown shows two `Design gap:` lines under A (one per `check` token), one under B (Q's) and none under C. | Test |
 
 ## Constraints
 
