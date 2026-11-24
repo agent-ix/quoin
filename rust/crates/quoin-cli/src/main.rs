@@ -43,6 +43,7 @@ mod semantic;
 mod soup;
 mod update;
 mod validate;
+mod validation;
 mod write;
 
 use ix_trace_rs::implements;
@@ -320,6 +321,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("completeness", completeness)) = matches.subcommand() {
         return completeness::run(completeness);
     }
+    if let Some(("validation", validation)) = matches.subcommand() {
+        return validation::run(validation);
+    }
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
     }
@@ -449,6 +453,7 @@ fn command() -> Command {
         .subcommand(assurance::command())
         .subcommand(config::command())
         .subcommand(completeness::command())
+        .subcommand(validation::command())
         .subcommand(change_assurance::command())
         .subcommand(evidence::command())
         .subcommand(discharge::command())
