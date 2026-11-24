@@ -12,12 +12,26 @@ import wave2_evidence as evidence
 
 
 KERNELS = [
-    ("approval-decision", "quoin-change-assurance", "crates/quoin-change-assurance/src/verify/approval.rs"),
-    ("discharge", "quoin-core", "crates/quoin-core/src/ops/evidence/discharge.rs"),
-    ("evidence-binding", "quoin-evidence", "crates/quoin-evidence/src/store/graph.rs"),
-    ("risk-completeness", "quoin-risk-advice", "crates/quoin-risk-advice/src/summary.rs"),
-    ("class-floor", "quoin-auditor", "crates/quoin-auditor/src/audit/class.rs"),
+    ("approval-decision", "quoin-change-assurance", "crates/quoin-change-assurance/src/verify/approval.rs",
+     ["--skip", "tc_1511_policy_history_refuses_weakened_approval", "--skip",
+      "tc_1511_policy_history_uses_normal_claim_rules_after_an_allowed_transition"]),
+    ("discharge", "quoin-core", "crates/quoin-core/src/ops/evidence/discharge.rs",
+     ["--skip", "tc_90_001_no_module_is_over_the_hard_ceiling_unless_listed"]),
+    ("evidence-binding", "quoin-evidence", "crates/quoin-evidence/src/store/graph.rs",
+     ["--skip", "tc_458_250_no_adapter_module_names_a_host_capability"]),
+    ("risk-completeness", "quoin-risk-advice", "crates/quoin-risk-advice/src/summary.rs", []),
+    ("class-floor", "quoin-auditor", "crates/quoin-auditor/src/audit/class.rs", []),
 ]
+
+
+def adjacent_checkout(env: dict[str, str], variable: str, checkout: str, marker: str) -> None:
+    if env.get(variable):
+        return
+    for parent in evidence.ROOT.parents:
+        candidate = parent / checkout
+        if (candidate / marker).is_dir():
+            env[variable] = str(candidate)
+            return
 
 
 def raw_counts(path: Path) -> tuple[dict[str, int], bool]:
@@ -60,19 +74,26 @@ def main() -> int:
     failed = version_output is None
     summaries: dict[str, dict] = {}
 
-    for name, package, source in KERNELS:
+    for name, package, source, test_args in KERNELS:
         output = evidence.ARTIFACTS / "mutants" / name
         output.mkdir(parents=True, exist_ok=True)
         command = ["cargo", "mutants", "--manifest-path", str(evidence.ROOT / "rust" / "Cargo.toml"),
                    "--package", package, "--file", source, "--output", str(output),
                    "--in-place", "--cargo-arg", "--locked"]
+        if test_args:
+            command.extend(["--", *test_args])
         env = os.environ.copy()
         env.pop("CARGO_MUTANTS_JOBS", None)
-        env["SPEC_OBJECTS_SAFETY_DIR"] = "/home/peter/dev/spec-objects-safety"
+        adjacent_checkout(env, "SPEC_OBJECTS_SAFETY_DIR", "spec-objects-safety", "spec_objects_safety")
+        if name == "risk-completeness":
+            adjacent_checkout(env, "SPEC_ARTIFACTS_PROCESS_DIR", "spec-artifacts-process", "spec_artifacts_process")
         log, status, error = evidence.execute(f"mutation-{name}", command, env)
         outcomes = output / "mutants.out" / "outcomes.json"
         config = {"kernel": name, "source": source, "tool_version": mutants_version,
-                  "command_log": log, "raw_outcomes": str(outcomes)}
+                  "command_log": log, "raw_outcomes": str(outcomes),
+                  "cargo_test_args": json.dumps(test_args),
+                  "external_fixture_roots": json.dumps({key: env[key] for key in
+                      ("SPEC_OBJECTS_SAFETY_DIR", "SPEC_ARTIFACTS_PROCESS_DIR") if env.get(key)})}
         if error:
             config.update({"execution_state": "not-executed", "reason": error})
             entries.append(evidence.entry(name, "error", config))

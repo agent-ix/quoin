@@ -32,6 +32,10 @@ def execute(name: str, command: list[str], env: dict[str, str] | None = None) ->
     log = ARTIFACTS / f"{name}.log"
     with log.open("w", encoding="utf-8") as stream:
         stream.write(f"command: {json.dumps(command)}\ncwd: {ROOT / 'rust'}\n")
+        if env is not None:
+            retained_env = {key: env[key] for key in
+                            ("SPEC_OBJECTS_SAFETY_DIR", "SPEC_ARTIFACTS_PROCESS_DIR") if env.get(key)}
+            stream.write(f"external_fixture_roots: {json.dumps(retained_env)}\n")
         try:
             result = subprocess.run(command, cwd=ROOT / "rust", env=env, stdout=stream, stderr=subprocess.STDOUT, check=False)
         except FileNotFoundError as error:
