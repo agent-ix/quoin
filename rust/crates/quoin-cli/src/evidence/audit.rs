@@ -6,6 +6,8 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::Response;
+use quoin_evidence::types::{Binding, ObligationId, RunRecord};
+use std::collections::BTreeSet;
 
 use super::{json_arg, repo_arg, required};
 use crate::core_runtime::invoke;
@@ -160,8 +162,11 @@ fn assemble_with_coverage_operation(
     if !catalog.outcome.carries_payload() {
         return Ok(Assembly::Declined(catalog));
     }
-    let bindings = field(&store.payload, "bindings")?;
+    let mut bindings = field(&store.payload, "bindings")?;
     let runs = field(&store.payload, "runs")?;
+    if coverage_operation == "quire.design_matrix" {
+        bindings = trace_bindings(&bindings, &runs, &obligations)?;
+    }
     let scans = field(&store.payload, "scans")?;
     let mut input = serde_json::json!({
         "obligations": obligations,
@@ -193,6 +198,73 @@ fn assemble_with_coverage_operation(
         response: audited,
         store_inputs: store.payload,
     })))
+}
+
+/// Add in-memory matrix bindings for criterion ids carried by retained runs.
+/// The evidence store remains append-only and `bindings.json` is not changed.
+fn trace_bindings(
+    bindings: &serde_json::Value,
+    runs: &serde_json::Value,
+    obligations: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let mut bindings: Vec<Binding> = serde_json::from_value(bindings.clone())
+        .map_err(|error| format!("evidence.audit_inputs bindings are malformed: {error}"))?;
+    let runs: Vec<RunRecord> = serde_json::from_value(runs.clone())
+        .map_err(|error| format!("evidence.audit_inputs runs are malformed: {error}"))?;
+    let mut known = BTreeSet::new();
+    collect_ids(obligations, &mut known);
+
+    for run in runs {
+        for entry in run.entries {
+            for obligation in entry.trace_ids.unwrap_or_default() {
+                if !known.contains(obligation.as_str()) {
+                    continue;
+                }
+                let binding = bindings.iter_mut().find(|binding| {
+                    binding.obligation.as_str() == obligation && binding.suite == run.suite
+                });
+                if let Some(binding) = binding {
+                    if !binding.symbols.contains(&entry.symbol) {
+                        binding.symbols.push(entry.symbol.clone());
+                        binding.symbols.sort();
+                    }
+                } else {
+                    bindings.push(Binding {
+                        obligation: ObligationId::new(obligation),
+                        suite: run.suite.clone(),
+                        symbols: vec![entry.symbol.clone()],
+                        lineage: None,
+                    });
+                }
+            }
+        }
+    }
+    bindings.sort_by(|left, right| {
+        left.obligation
+            .cmp(&right.obligation)
+            .then_with(|| left.suite.cmp(&right.suite))
+    });
+    serde_json::to_value(bindings)
+        .map_err(|error| format!("cannot serialize in-memory trace bindings: {error}"))
+}
+
+fn collect_ids(value: &serde_json::Value, ids: &mut BTreeSet<String>) {
+    match value {
+        serde_json::Value::Array(values) => {
+            for value in values {
+                collect_ids(value, ids);
+            }
+        }
+        serde_json::Value::Object(object) => {
+            if let Some(id) = object.get("id").and_then(serde_json::Value::as_str) {
+                ids.insert(id.to_owned());
+            }
+            for value in object.values() {
+                collect_ids(value, ids);
+            }
+        }
+        _ => {}
+    }
 }
 
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
@@ -473,7 +545,7 @@ fn class_rows(class: &serde_json::Value) -> Vec<String> {
 mod tests {
     use ix_trace_rs::trace;
 
-    use super::{command, values};
+    use super::{command, trace_bindings, values};
 
     /// Repeatable `--module` arguments reach the producer one by one and in the
     /// order supplied, so the catalog loader and native coverage read one array.
@@ -491,5 +563,32 @@ mod tests {
             .try_get_matches_from(["audit"])
             .expect("--module is optional");
         assert_eq!(values(&none, "module").len(), 0);
+    }
+
+    #[trace("FR-031-AC-1")]
+    #[test]
+    fn matrix_bindings_are_derived_in_memory_from_known_run_trace_ids() {
+        let bindings = serde_json::json!([]);
+        let runs = serde_json::json!([{
+            "schemaVersion": 1,
+            "suite": "SUITE-004",
+            "tool": "cargo test 1.0",
+            "timestamp": "2026-11-24T00:00:00Z",
+            "entries": [{
+                "symbol": "cli_export::exports",
+                "outcome": "pass",
+                "traceIds": ["FR-031-AC-1", "FR-999-AC-1"]
+            }]
+        }]);
+        let obligations = serde_json::json!([{"id": "FR-031-AC-1"}]);
+
+        assert_eq!(
+            trace_bindings(&bindings, &runs, &obligations).expect("trace bindings"),
+            serde_json::json!([{
+                "obligation": "FR-031-AC-1",
+                "suite": "SUITE-004",
+                "symbols": ["cli_export::exports"]
+            }])
+        );
     }
 }
