@@ -77,7 +77,7 @@ fn decision_repo(author: &str, decider: &str) -> (tempfile::TempDir, String) {
     std::fs::write(
         dir.path().join("RR-1.md"),
         format!(
-            "---\nid: RR-1\ntitle: \"RR-1\"\ntype: residual_risk\nobject: residual_risk\n\
+            "---\nid: RR-1\ntitle: \"RR-1\"\ntype: residual_risk\nobject: residual_risk\nfixture_contract_field: fixture-value\n\
              relationships:\n  - target: EST-1\n    type: estimate\n  - target: POL-1\n    type: references\n---\n\
              # [RR-1] RR-1\n\n## Determination\n\n| Decision | Rationale | Decided by |\n\
              | --- | --- | --- |\n| accepted | r | {decider} |\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n\

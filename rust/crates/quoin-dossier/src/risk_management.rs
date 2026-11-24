@@ -869,7 +869,8 @@ mod tests {
             kinds,
             [
                 GapKind::DecisionSignerMismatch,
-                GapKind::DecisionCommitUnsigned
+                GapKind::DecisionCommitUnsigned,
+                GapKind::DecisionSignerMismatch
             ]
         );
         assert_eq!(out.gaps[0].subject, "RR-1");
