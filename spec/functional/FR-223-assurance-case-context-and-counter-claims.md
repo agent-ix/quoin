@@ -60,6 +60,8 @@ invent an assumption or justification to make a case appear complete.
   descriptive facts.
 - The case builder SHALL NOT create a `supported_by` edge from a participant
   or authority context node.
+- The case builder SHALL NOT change the top-claim status based on participant
+  or authority context.
 - If no authored source exists for an assumption or justification, then
   `quoin assurance` SHALL omit nodes of that kind from the derived case.
 - The existing JSON representation SHALL omit an empty context collection so
