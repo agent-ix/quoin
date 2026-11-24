@@ -101,7 +101,6 @@ fn entry(obligation: &str, carried: &Value) -> CoverageMatrixRequirement {
             method: None,
             binders: Vec::new(),
             identity: None,
-            document: None,
             unbacked_claims: Vec::new(),
             status: "tagged".to_owned(),
         }],
