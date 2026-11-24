@@ -46,6 +46,8 @@ pub enum ErrorCode {
     ModuleSetEmpty,
     /// No module in scope declares a `traceability:` model.
     TraceabilityModelUndeclared,
+    /// Declarations of the selected modules were dropped at load.
+    TraceabilityDeclarationsDropped,
     /// The linked engine has no symbol adapter for a language the tree holds.
     ExtractionUnavailable,
     /// A document's frontmatter carries no `type`.
@@ -94,6 +96,7 @@ impl ErrorCode {
             Self::ModuleLoad => "QQ-1010",
             Self::ModuleSetEmpty => "QQ-1011",
             Self::TraceabilityModelUndeclared => "QQ-1020",
+            Self::TraceabilityDeclarationsDropped => "QQ-1022",
             Self::ExtractionUnavailable => "QQ-1021",
             Self::ArchetypeUndeclared => "QQ-1030",
             Self::ArchetypeUnknown => "QQ-1031",
@@ -129,6 +132,7 @@ impl ErrorCode {
             Self::ModuleLoad,
             Self::ModuleSetEmpty,
             Self::TraceabilityModelUndeclared,
+            Self::TraceabilityDeclarationsDropped,
             Self::ExtractionUnavailable,
             Self::ArchetypeUndeclared,
             Self::ArchetypeUnknown,
@@ -240,6 +244,26 @@ pub enum Error {
          or name one explicitly"
     )]
     TraceabilityModelUndeclared,
+
+    /// Declarations of the selected modules failed to load, so the merged
+    /// traceability model is not the one the modules declared (quire-rs
+    /// FR-058-AC-47).
+    ///
+    /// Every computation over that model refuses with this instead of
+    /// answering from a model that silently lost rules: a short rule set reads
+    /// as a clean result. Distinct from [`Self::TraceabilityModelUndeclared`]
+    /// because the remedy is repairing the named declarations, not declaring a
+    /// model. The message carries one line per dropped declaration.
+    #[error(
+        "{}: {} traceability declaration(s) were dropped at load, so no result is computed:\n{}",
+        ErrorCode::TraceabilityDeclarationsDropped,
+        dropped.len(),
+        render_dropped(dropped)
+    )]
+    TraceabilityDeclarationsDropped {
+        /// Every dropped declaration, in the engine's order.
+        dropped: Vec<DroppedDeclaration>,
+    },
 
     /// The linked engine has no symbol adapter for a language the tree holds
     /// source in (quire-rs FR-051-AC-29).
@@ -471,6 +495,9 @@ impl Error {
             Self::ModuleLoad { .. } => ErrorCode::ModuleLoad,
             Self::ModuleSetEmpty { .. } => ErrorCode::ModuleSetEmpty,
             Self::TraceabilityModelUndeclared => ErrorCode::TraceabilityModelUndeclared,
+            Self::TraceabilityDeclarationsDropped { .. } => {
+                ErrorCode::TraceabilityDeclarationsDropped
+            }
             Self::ExtractionUnavailable { .. } => ErrorCode::ExtractionUnavailable,
             Self::ArchetypeUndeclared { .. } => ErrorCode::ArchetypeUndeclared,
             Self::ArchetypeUnknown { .. } => ErrorCode::ArchetypeUnknown,
@@ -490,6 +517,66 @@ impl Error {
             Self::DesignJoin { .. } | Self::DesignMatrixUnknownRelation { .. } => {
                 ErrorCode::DesignJoin
             }
+        }
+    }
+}
+
+/// One traceability declaration the engine dropped at load.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DroppedDeclaration {
+    /// The module that declared it.
+    pub module: String,
+    /// The engine's kind token (`flow_rule`, `trace_target`, ...). A section
+    /// that could not be read at all is `traceability_section`.
+    pub kind: String,
+    /// The declaration's name, value or position, as the engine records it.
+    pub item: String,
+}
+
+impl DroppedDeclaration {
+    /// The one-line form: `module=<module> kind=<kind> item=<item>`.
+    #[must_use]
+    pub fn line(&self) -> String {
+        format!(
+            "module={} kind={} item={}",
+            self.module, self.kind, self.item
+        )
+    }
+}
+
+fn render_dropped(dropped: &[DroppedDeclaration]) -> String {
+    dropped
+        .iter()
+        .map(DroppedDeclaration::line)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+impl Error {
+    /// The `dropped_declarations` envelope value for a
+    /// [`Self::TraceabilityDeclarationsDropped`]: one line per drop, engine
+    /// order. `None` for every other condition.
+    #[must_use]
+    pub fn dropped_declarations_lines(&self) -> Option<String> {
+        match self {
+            Self::TraceabilityDeclarationsDropped { dropped } => Some(render_dropped(dropped)),
+            _ => None,
+        }
+    }
+}
+
+impl From<quire_rs::traceability::DroppedDeclarations> for Error {
+    fn from(error: quire_rs::traceability::DroppedDeclarations) -> Self {
+        Self::TraceabilityDeclarationsDropped {
+            dropped: error
+                .0
+                .into_iter()
+                .map(|drop| DroppedDeclaration {
+                    module: drop.module,
+                    kind: drop.kind.as_str().to_owned(),
+                    item: drop.item,
+                })
+                .collect(),
         }
     }
 }
@@ -554,6 +641,10 @@ mod tests {
         ));
     }
 
+    #[allow(
+        clippy::too_many_lines,
+        reason = "one sample per error variant, so the list grows with the catalogue"
+    )]
     #[trace("FR-096")]
     #[test]
     fn tc_379_002_each_variant_reports_its_own_code() {
@@ -581,6 +672,13 @@ mod tests {
             },
             Error::ModuleSetEmpty { requested: 2 },
             Error::TraceabilityModelUndeclared,
+            Error::TraceabilityDeclarationsDropped {
+                dropped: vec![DroppedDeclaration {
+                    module: "m".into(),
+                    kind: "flow_rule".into(),
+                    item: "r".into(),
+                }],
+            },
             Error::ExtractionUnavailable {
                 languages: vec!["rust".into()],
             },

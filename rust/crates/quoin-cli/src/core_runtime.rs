@@ -8,7 +8,7 @@
 //! Rust-to-Rust subprocess and its JSON reparse.
 
 use quoin_core::error::{CoreError, CoreErrorCode};
-use quoin_core::protocol::{Diagnostic, Response};
+use quoin_core::protocol::Response;
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 use crate::invocation;
@@ -29,8 +29,58 @@ fn failed(operation: &str, error: &CoreError) -> String {
 }
 
 /// Invoke one command-shaped core operation through the governed runtime.
+///
+/// A dropped-declaration refusal (`QQ-1022`, FR-029) is not an operational
+/// failure: it comes back as the payload-free refusal response, so the shell
+/// exits `Refused` with the code and every dropped declaration on stderr and
+/// nothing on stdout. Every caller already tests `outcome.carries_payload()`
+/// before it reads a payload.
 pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Response, String> {
-    invoke_typed(operation, request).map_err(|error| failed(operation, &error))
+    match invoke_typed(operation, request) {
+        Err(error) if quoin_core::ops::quire::declarations_dropped(&error) => {
+            Ok(Response::refusal(&error))
+        }
+        Err(error) => Err(failed(operation, &error)),
+        Ok(response) => Ok(response),
+    }
+}
+
+/// Why a command path that holds the engine's typed error stopped.
+///
+/// A path that turns every failure into a string loses the one distinction the
+/// shell needs: a dropped declaration (`QQ-1022`, FR-029) is a refusal, exit
+/// `Refused`, not an operational failure, exit 1.
+pub(crate) enum Failure {
+    /// An operational failure, stated as a message.
+    Message(String),
+    /// A refusal to return as the command's own answer.
+    Refused(Response),
+}
+
+impl From<String> for Failure {
+    fn from(message: String) -> Self {
+        Self::Message(message)
+    }
+}
+
+impl Failure {
+    /// Classify an engine error raised by `operation`.
+    pub(crate) fn from_quire(error: &quoin_quire::Error, operation: &'static str) -> Self {
+        let envelope = quoin_core::ops::quire::map_error(error, operation);
+        if quoin_core::ops::quire::declarations_dropped(&envelope) {
+            Self::Refused(Response::refusal(&envelope))
+        } else {
+            Self::Message(error.to_string())
+        }
+    }
+
+    /// The command's result for a failure that ends it here.
+    pub(crate) fn settle(self) -> Result<Response, String> {
+        match self {
+            Self::Message(message) => Err(message),
+            Self::Refused(response) => Ok(response),
+        }
+    }
 }
 
 /// As [`invoke`], keeping the core's typed error so a caller can tell a
@@ -53,11 +103,7 @@ pub(crate) fn invoke_refusable(
         Err(error)
             if error.code == CoreErrorCode::Refused && error.context.contains_key("pack") =>
         {
-            Ok(Response {
-                payload: serde_json::Value::Null,
-                diagnostics: vec![Diagnostic::from(&error)],
-                outcome: error.outcome(),
-            })
+            Ok(Response::refusal(&error))
         }
         Err(error) => Err(failed(operation, &error)),
         Ok(response) => Ok(response),
@@ -82,11 +128,7 @@ pub(crate) fn invoke_verifying(
                 )
             ) =>
         {
-            Ok(Response {
-                payload: serde_json::Value::Null,
-                diagnostics: vec![Diagnostic::from(&error)],
-                outcome: error.outcome(),
-            })
+            Ok(Response::refusal(&error))
         }
         Err(error) => Err(failed(operation, &error)),
         Ok(response) => Ok(response),
@@ -99,11 +141,7 @@ pub(crate) fn invoke_declining(
     request: &serde_json::Value,
 ) -> Result<Response, String> {
     match dispatch(operation, request, &settings()) {
-        Err(error) if error.code == CoreErrorCode::Refused => Ok(Response {
-            payload: serde_json::Value::Null,
-            diagnostics: vec![Diagnostic::from(&error)],
-            outcome: error.outcome(),
-        }),
+        Err(error) if error.code == CoreErrorCode::Refused => Ok(Response::refusal(&error)),
         Err(error) => Err(failed(operation, &error)),
         Ok(response) => Ok(response),
     }

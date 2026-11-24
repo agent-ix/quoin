@@ -166,6 +166,9 @@ pub(crate) fn command() -> Command {
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    if let Some(refusal) = dropped_declarations(arguments) {
+        return Ok(refusal);
+    }
     run_with(
         builtin_registry(quoin_dossier::Sources {
             matrix: Arc::new(CliMatrix),
@@ -177,6 +180,39 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         }),
         arguments,
     )
+}
+
+/// The `QQ-1022` refusal when the modules the sources will read lost a
+/// traceability declaration, asked before any document is computed (FR-029).
+///
+/// The model is read by several sources (the matrix, the design matrix, the
+/// flow report), so the one question is put once, up front, over the same scope
+/// and module selection they use, and every dossier command is refused when a
+/// declaration was dropped, whichever document kinds it selects. Any other
+/// failure to resolve the modules is not this refusal and is left to the
+/// source that needs the modules to report it.
+fn dropped_declarations(arguments: &ArgMatches) -> Option<Response> {
+    let (_, selected) = arguments.subcommand()?;
+    let scope = quoin_quire::ids::ScopeRoot::open(
+        text(selected, "scope").unwrap_or_else(|| ".".to_owned()),
+    )
+    .ok()?;
+    let modules = paths(selected, "module")
+        .iter()
+        .map(quoin_quire::ids::ModuleRoot::open)
+        .collect::<Result<Vec<_>, _>>()
+        .ok()?;
+    let selection = if modules.is_empty() {
+        quoin_quire::ModuleSelection::ScopeOrAmbient
+    } else {
+        quoin_quire::ModuleSelection::Closed(modules)
+    };
+    let registry = selection.resolve(&scope, &mut Vec::new()).ok()?;
+    let error = quoin_quire::modules::require_complete_model(&registry).err()?;
+    match crate::core_runtime::Failure::from_quire(&error, "dossier") {
+        crate::core_runtime::Failure::Refused(response) => Some(response),
+        crate::core_runtime::Failure::Message(_) => None,
+    }
 }
 
 fn policy_source(

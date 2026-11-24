@@ -75,6 +75,7 @@ pub(crate) fn obligation(id: &str, statement: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
         identity: None,
+        document: None,
         statement: statement.to_owned(),
         target_ids: None,
         // The three fields quoin#383 added for the auditor. The assurance view

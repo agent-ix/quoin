@@ -97,7 +97,10 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .ok_or_else(|| "--repo is not valid UTF-8".to_owned())?;
 
     let modules = values(arguments, "module");
-    let status = crate::formal_rules::status_report_with_modules(arguments, &modules)?;
+    let status = match crate::formal_rules::status_report_with_modules(arguments, &modules) {
+        Ok(status) => status,
+        Err(failure) => return failure.settle(),
+    };
     let status_rules = status
         .get("rules")
         .and_then(Value::as_array)
@@ -145,14 +148,17 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let run_observations =
         crate::run_observation::read_run_observations(&values(arguments, "run-observation"))?;
     let signature_verifier = crate::analysis_evidence::signature_verifier(arguments)?;
-    let analysis = crate::analysis_evidence::compute(
+    let analysis = match crate::analysis_evidence::compute(
         repo_text,
         &modules,
         &store.payload,
         &obligations,
         &run_observations,
         signature_verifier.as_ref(),
-    )?;
+    ) {
+        Ok(analysis) => analysis,
+        Err(failure) => return failure.settle(),
+    };
 
     let frontmatter = crate::completeness::read_frontmatter(&repo.join("spec"))?;
     if !frontmatter.outcome.carries_payload() {

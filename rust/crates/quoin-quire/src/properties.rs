@@ -410,7 +410,8 @@ pub fn documents_under_spec(scope: &ScopeRoot) -> Result<Vec<PathBuf>> {
 ///
 /// # Errors
 /// [`Error::ModuleLoad`] / [`Error::ModuleSetEmpty`] when the module set does
-/// not resolve, [`Error::ArchetypeUnknown`] when an explicit
+/// not resolve, [`Error::TraceabilityDeclarationsDropped`] when a declaration
+/// of the selected modules failed to load, [`Error::ArchetypeUnknown`] when an explicit
 /// [`Request::archetype`] names nothing, and [`Error::PathEscapesRoot`] when a
 /// document resolves outside the scope.
 ///
@@ -419,6 +420,9 @@ pub fn documents_under_spec(scope: &ScopeRoot) -> Result<Vec<PathBuf>> {
 pub fn classify(request: &Request) -> Result<Outcome> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
+    // Criteria are classified against the merged model's declarations, so a
+    // model that lost declarations is refused (FR-029).
+    crate::modules::require_complete_model(&registry)?;
 
     let mut documents = Vec::new();
     let mut unresolved = Vec::new();

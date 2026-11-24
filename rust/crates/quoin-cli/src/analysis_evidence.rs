@@ -24,6 +24,7 @@ use quoin_quire::ids::{ModuleRoot, ScopeRoot};
 use quoin_quire::modules::ModuleSelection;
 use quoin_quire_types::Obligation;
 
+use crate::core_runtime::Failure;
 use crate::run_observation::RunObservationFile;
 
 /// Carry an exact native target onto a CLI obligation only where both the
@@ -85,7 +86,7 @@ pub(crate) fn compute(
     obligations: &[Obligation],
     observations: &[RunObservationFile],
     signature_verifier: Option<&SignatureVerifier>,
-) -> Result<quoin_quire::evidence::Outcome, String> {
+) -> Result<quoin_quire::evidence::Outcome, Failure> {
     quoin_quire::evidence::compute(&request(
         repo,
         module_paths,
@@ -94,7 +95,7 @@ pub(crate) fn compute(
         observations,
         signature_verifier,
     )?)
-    .map_err(|error| error.to_string())
+    .map_err(|error| Failure::from_quire(&error, "evidence.compute"))
 }
 
 /// Render design rows with the exact native identities used for qualification,
@@ -113,7 +114,7 @@ pub(crate) fn compute_for_matrix(
         serde_json::Value,
         Vec<RetainedRun>,
     ),
-    String,
+    Failure,
 > {
     let request = request(
         repo,
@@ -123,8 +124,8 @@ pub(crate) fn compute_for_matrix(
         observations,
         signature_verifier,
     )?;
-    let (outcome, design) =
-        quoin_quire::evidence::compute_for_matrix(&request).map_err(|error| error.to_string())?;
+    let (outcome, design) = quoin_quire::evidence::compute_for_matrix(&request)
+        .map_err(|error| Failure::from_quire(&error, "evidence.compute_for_matrix"))?;
     let design = serde_json::to_value(design)
         .map_err(|error| format!("analysis design matrix is malformed: {error}"))?;
     Ok((outcome, design, request.runs))

@@ -168,6 +168,20 @@ impl ModuleSelection {
     }
 }
 
+/// Refuse when any traceability declaration of the selected modules was
+/// dropped at load (FR-029, quire-rs FR-058-AC-47).
+///
+/// Every code path that reads the merged traceability model asks this first,
+/// before it reads the model and before any absent-model check: a model that
+/// lost declarations, or lost all of them and so reads as absent, must not be
+/// computed over.
+///
+/// # Errors
+/// [`Error::TraceabilityDeclarationsDropped`] naming every dropped declaration.
+pub fn require_complete_model(registry: &Registry) -> Result<()> {
+    registry.require_complete_model().map_err(Error::from)
+}
+
 /// Fold engine diagnostics into notices.
 pub(crate) fn collect(
     kind: NoticeKind,

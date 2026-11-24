@@ -116,6 +116,20 @@ impl Response {
         }
     }
 
+    /// A payload-free answer carrying one refusal: the refusal's own exit
+    /// status, its diagnostic on stderr, nothing on stdout.
+    ///
+    /// The shape every command already returns for a repository refusal (a
+    /// caller tests `outcome.carries_payload()` before reading the payload).
+    #[must_use]
+    pub fn refusal(error: &crate::error::CoreError) -> Self {
+        Self {
+            payload: serde_json::Value::Null,
+            diagnostics: vec![Diagnostic::from(error)],
+            outcome: error.outcome(),
+        }
+    }
+
     /// A complete payload qualified by one diagnostic — exit 1.
     #[must_use]
     pub fn partial(payload: serde_json::Value, diagnostic: &crate::error::CoreError) -> Self {

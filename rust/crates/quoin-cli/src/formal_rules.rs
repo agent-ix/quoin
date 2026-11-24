@@ -8,6 +8,8 @@ use std::process::Command as ProcessCommand;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
+
+use crate::core_runtime::Failure;
 use quoin_quire::ScopeRoot;
 use serde_json::{Value, json};
 
@@ -81,7 +83,10 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
             "an unknown formal-rules command reached dispatch",
         ));
     }
-    let report = status_report_shell(args)?;
+    let report = match status_report_shell(args) {
+        Ok(report) => report,
+        Err(error) => return settle_status(error),
+    };
     let rendered = if args.get_flag("json") {
         serde_json::to_string(&report)
             .map_err(|error| crate::ShellError::unavailable(error.to_string()))?
@@ -110,9 +115,10 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
 pub(crate) fn status_report_with_modules(
     args: &ArgMatches,
     module_paths: &[String],
-) -> Result<Value, String> {
-    validate_status_arguments(args).map_err(status_error_message)?;
-    status(args, module_paths).map_err(status_error_message)
+) -> Result<Value, Failure> {
+    validate_status_arguments(args)
+        .map_err(|error| Failure::Message(status_error_message(error)))?;
+    status(args, module_paths).map_err(status_failure)
 }
 
 /// Read the current QSL formalizes relations for assurance's FR-204 state
@@ -121,7 +127,7 @@ pub(crate) fn status_report_with_modules(
 pub(crate) fn assurance_declarations(
     repo: &Path,
     module_paths: &[String],
-) -> Result<Vec<Value>, String> {
+) -> Result<Vec<Value>, Failure> {
     let repo = repo
         .canonicalize()
         .map_err(|error| format!("repository is unavailable: {error}"))?;
@@ -131,6 +137,10 @@ pub(crate) fn assurance_declarations(
     let registry = selection
         .resolve(&scope, &mut notices)
         .map_err(|error| error.to_string())?;
+    // Before the model is read and before the absent-model answer below: a
+    // model that lost every declaration reads as absent (FR-029).
+    quoin_quire::modules::require_complete_model(&registry)
+        .map_err(|error| Failure::from_quire(&error, "formal_rules.assurance_declarations"))?;
     let model = registry
         .traceability()
         .ok_or_else(|| "no active module declares a traceability model".to_owned())?;
@@ -148,9 +158,9 @@ pub(crate) fn assurance_declarations(
         .collect())
 }
 
-fn status_report_shell(args: &ArgMatches) -> Result<Value, crate::ShellError> {
-    validate_status_arguments(args).map_err(status_shell_error)?;
-    status(args, &[]).map_err(status_shell_error)
+fn status_report_shell(args: &ArgMatches) -> Result<Value, StatusStop> {
+    validate_status_arguments(args)?;
+    status(args, &[])
 }
 
 fn validate_status_arguments(args: &ArgMatches) -> Result<(), StatusError> {
@@ -215,7 +225,50 @@ impl From<String> for StatusError {
     }
 }
 
-fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusError> {
+/// Why a status read stopped: a failure the shell reports, or the `QQ-1022`
+/// refusal (FR-029), which is the command's own answer.
+enum StatusStop {
+    Failed(StatusError),
+    Refused(Response),
+}
+
+impl From<StatusError> for StatusStop {
+    fn from(error: StatusError) -> Self {
+        Self::Failed(error)
+    }
+}
+
+impl From<String> for StatusStop {
+    fn from(message: String) -> Self {
+        Self::Failed(StatusError::Unavailable(message))
+    }
+}
+
+/// The shell's answer for a stopped status read.
+fn settle_status(stop: StatusStop) -> Result<Response, crate::ShellError> {
+    match stop {
+        StatusStop::Failed(error) => Err(status_shell_error(error)),
+        StatusStop::Refused(response) => Ok(response),
+    }
+}
+
+fn status_failure(stop: StatusStop) -> Failure {
+    match stop {
+        StatusStop::Failed(error) => Failure::Message(status_error_message(error)),
+        StatusStop::Refused(response) => Failure::Refused(response),
+    }
+}
+
+/// The stop for an engine error raised while asking whether the model is
+/// complete: the `QQ-1022` refusal, or a failure to report.
+fn model_incomplete(error: &quoin_quire::Error) -> StatusStop {
+    match Failure::from_quire(error, "formal_rules.status") {
+        Failure::Refused(response) => StatusStop::Refused(response),
+        Failure::Message(message) => StatusStop::from(message),
+    }
+}
+
+fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusStop> {
     let repo = PathBuf::from(
         args.get_one::<String>("repo")
             .ok_or_else(|| "--repo default is unavailable".to_owned())?,
@@ -246,17 +299,19 @@ fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusErr
         _ => {
             return Err(StatusError::Invalid(
                 "all three gitsign identity options must be supplied together".to_owned(),
-            ));
+            )
+            .into());
         }
     };
 
     let scope = ScopeRoot::open(&repo).map_err(|error| error.to_string())?;
-    let mut notices = Vec::new();
     let selection = crate::analysis_evidence::module_selection(module_paths)
         .map_err(StatusError::Unavailable)?;
     let registry = selection
-        .resolve(&scope, &mut notices)
+        .resolve(&scope, &mut Vec::new())
         .map_err(|error| error.to_string())?;
+    // Before the absent-model answer: an all-dropped model reads as absent.
+    quoin_quire::modules::require_complete_model(&registry).map_err(|e| model_incomplete(&e))?;
     let model = registry
         .traceability()
         .ok_or_else(|| "no active module declares a traceability model".to_owned())?;
@@ -668,6 +723,7 @@ fn git_output(repo: &Path, args: &[&OsStr]) -> Result<Vec<u8>, String> {
 #[allow(
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "fixture assertions are test failures"
 )]
 mod tests {
@@ -1125,6 +1181,43 @@ mod tests {
         assert_eq!(result.state, "approved");
         assert_eq!(git(repo.path(), &["rev-parse", "HEAD"]), before_head);
         assert_ne!(git(repo.path(), &["status", "--porcelain"]), before_status);
+    }
+
+    /// FR-029-AC-22 and AC-20: the formal-rules declaration read behind
+    /// `quoin assurance` refuses with `QQ-1022` before the absent-model check,
+    /// including when every declaration was dropped and the model is empty.
+    #[trace("FR-029-AC-22", "FR-029-AC-20")]
+    #[test]
+    fn the_assurance_declaration_read_refuses_a_dropped_declaration() {
+        let manifests = [
+            (
+                "one",
+                "name: drop-one\nversion: 0.1.0\ndescription: x\nartifact_types:\n  - name: FR\n\
+                 traceability:\n  flow_rules:\n    - name: bad\n      subject: [nowhere]\n      \
+                 match: [{path: [], field: id, present: true}]\n      check: c\n      rationale: r\n",
+                "module=drop-one kind=flow_rule item=bad",
+            ),
+            (
+                "all",
+                "name: drop-all\nversion: 0.1.0\ndescription: x\nartifact_types:\n  - name: FR\n\
+                 traceability:\n  required_relations: 5\n",
+                "module=drop-all kind=traceability_section item=traceability",
+            ),
+        ];
+        for (label, manifest, line) in manifests {
+            let repo = tempfile::tempdir().expect("scope");
+            fs::create_dir_all(repo.path().join("spec")).expect("spec");
+            fs::write(repo.path().join("manifest.yaml"), manifest).expect("manifest");
+            let refused = super::assurance_declarations(repo.path(), &[]).expect_err(label);
+            let super::Failure::Refused(response) = refused else {
+                panic!("{label}: expected the QQ-1022 refusal");
+            };
+            assert_eq!(response.outcome.code(), 2, "{label}");
+            assert!(response.payload.is_null(), "{label}");
+            let diagnostic = &response.diagnostics[0];
+            assert_eq!(diagnostic.context["quire_code"], "QQ-1022", "{label}");
+            assert_eq!(diagnostic.context["dropped_declarations"], line, "{label}");
+        }
     }
 
     #[cfg(unix)]

@@ -12,7 +12,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Response, canonical_json};
 
-use crate::core_runtime::invoke;
+use crate::core_runtime::{Failure, invoke};
 use crate::evidence::audit::{
     Assembly, AuditOptions, assemble_for_matrix_with, module_arg, policy_args,
 };
@@ -122,14 +122,18 @@ pub(crate) fn build(
             .ok_or_else(|| "quire.coverage did not return obligations".to_owned())?,
     )
     .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
-    let (analysis, design_coverage, retained) = crate::analysis_evidence::compute_for_matrix(
+    let (analysis, design_coverage, retained) = match crate::analysis_evidence::compute_for_matrix(
         repo,
         options.module_paths(),
         &audited.store_inputs,
         &obligations,
         run_observations,
         signature_verifier,
-    )?;
+    ) {
+        Ok(computed) => computed,
+        Err(Failure::Refused(response)) => return Ok(Built::Declined(response)),
+        Err(Failure::Message(message)) => return Err(message),
+    };
     let evidence_report = serde_json::to_value(&analysis.report)
         .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
     let mut request = serde_json::Map::new();

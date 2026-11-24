@@ -7,7 +7,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
 use crate::completeness::read_frontmatter;
-use crate::core_runtime::invoke;
+use crate::core_runtime::{Failure, invoke};
 
 pub(crate) fn command() -> Command {
     Command::new("assurance")
@@ -153,13 +153,16 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         return Ok(coverage);
     }
     let obligations = field(&coverage.payload, "obligations")?;
-    let formalization_records = read_formalization_records(
+    let formalization_records = match read_formalization_records(
         formalization_path,
         &repo,
         &modules,
         &obligations,
         &coverage.payload,
-    )?;
+    ) {
+        Ok(records) => records,
+        Err(failure) => return failure.settle(),
+    };
     let policy = policy(arguments, &obligations)?;
     let store = invoke(
         "evidence.audit_inputs",
@@ -194,7 +197,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     if !trust.outcome.carries_payload() {
         return Ok(trust);
     }
-    let case_request = build_case_request(&CaseRequestInputs {
+    let case_request = match build_case_request(&CaseRequestInputs {
         arguments,
         repo: &repo,
         signature_verifier: signature_verifier.as_ref(),
@@ -206,7 +209,10 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         audit: &audit.payload,
         frontmatter: &frontmatter.payload,
         trust: &trust.payload,
-    })?;
+    }) {
+        Ok(request) => request,
+        Err(failure) => return failure.settle(),
+    };
     let case = invoke("assurance.build_case", &case_request)?;
     if !case.outcome.carries_payload() {
         return Ok(case);
@@ -232,7 +238,7 @@ struct CaseRequestInputs<'a> {
     trust: &'a serde_json::Value,
 }
 
-fn build_case_request(input: &CaseRequestInputs<'_>) -> Result<serde_json::Value, String> {
+fn build_case_request(input: &CaseRequestInputs<'_>) -> Result<serde_json::Value, Failure> {
     let CaseRequestInputs {
         arguments,
         repo,
@@ -299,13 +305,18 @@ fn read_formalization_records(
     modules: &[String],
     obligations: &serde_json::Value,
     coverage: &serde_json::Value,
-) -> Result<Vec<quoin_assurance::FormalizationRecordView>, String> {
+) -> Result<Vec<quoin_assurance::FormalizationRecordView>, Failure> {
     let Some(path) = path else {
         return Ok(Vec::new());
     };
     let rules = crate::formal_rules::assurance_declarations(std::path::Path::new(repo), modules)?;
     let identities = field(coverage, "formalization_identities")?;
-    crate::formalization_records::read_and_join(path, obligations, &identities, &rules)
+    Ok(crate::formalization_records::read_and_join(
+        path,
+        obligations,
+        &identities,
+        &rules,
+    )?)
 }
 
 fn read_run_observations(
@@ -345,7 +356,7 @@ fn analysis_case_inputs(
     obligation_value: serde_json::Value,
     observations: &[crate::run_observation::RunObservationFile],
     signature_verifier: Option<&crate::analysis_evidence::SignatureVerifier>,
-) -> Result<(Vec<quoin_quire_types::Obligation>, serde_json::Value), String> {
+) -> Result<(Vec<quoin_quire_types::Obligation>, serde_json::Value), Failure> {
     let mut obligations: Vec<quoin_quire_types::Obligation> =
         serde_json::from_value(obligation_value)
             .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;

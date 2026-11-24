@@ -19,6 +19,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+ix-cli-kit = { workspace = true }
 quoin-quire = { workspace = true }
 regex = { workspace = true }
 serde_json = { workspace = true }
@@ -27,3 +28,4 @@ thiserror = { workspace = true }
 [dev-dependencies]
 ix-trace-rs = { workspace = true }
 quoin-evidence = { workspace = true }
+tempfile = { workspace = true }

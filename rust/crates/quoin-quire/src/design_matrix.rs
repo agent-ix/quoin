@@ -63,8 +63,6 @@ pub(crate) fn for_coverage(
         quire_rs::RelationReportError::UnknownDesignRelation { name } => {
             Error::DesignMatrixUnknownRelation { name }
         }
-        other => Error::DesignJoin {
-            reason: other.to_string(),
-        },
+        other => crate::design_join::relation_error(other),
     })
 }

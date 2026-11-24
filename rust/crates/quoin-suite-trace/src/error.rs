@@ -22,6 +22,11 @@ pub(crate) enum Error {
     /// `cargo metadata` failed or printed something that is not its JSON shape.
     #[error("cargo metadata: {0}")]
     Metadata(String),
+    /// The modules lost traceability declarations (`QQ-1022`, FR-029), so the
+    /// model the tags bind through is not the one they declared. A refusal, not
+    /// an operational failure: the message names every dropped declaration.
+    #[error("trace tags: {0}")]
+    Refused(String),
     /// The quire engine could not produce the tag relations.
     #[error("trace tags: {0}")]
     Engine(String),

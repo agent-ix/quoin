@@ -47,7 +47,8 @@ use crate::error::{CoreError, CoreErrorCode};
 /// `the_error_mapping_covers_every_quire_code` pins `ErrorCode::all().len()`,
 /// which a loop over `all()` could not do — such a loop re-runs this same match
 /// and agrees with itself (the quoin#443 failure mode).
-pub(super) fn map_error(error: &quoin_quire::Error, op: &'static str) -> CoreError {
+#[must_use]
+pub fn map_error(error: &quoin_quire::Error, op: &'static str) -> CoreError {
     let code = error.code();
     let mapped = match error {
         quoin_quire::Error::AuditFailed {
@@ -55,15 +56,30 @@ pub(super) fn map_error(error: &quoin_quire::Error, op: &'static str) -> CoreErr
         } => core_code(code, Some(*auditor_code)),
         _ => core_code(code, None),
     };
-    let envelope = CoreError::new(mapped.unwrap_or(CoreErrorCode::Io), error.to_string())
+    let mut envelope = CoreError::new(mapped.unwrap_or(CoreErrorCode::Io), error.to_string())
         .with_context("op", op)
         .with_context("quire_code", code.as_str());
+    // FR-029: one `module=<module> kind=<kind> item=<item>` line per dropped
+    // declaration, engine order, so the envelope names what to repair.
+    if let Some(lines) = error.dropped_declarations_lines() {
+        envelope = envelope.with_context("dropped_declarations", lines);
+    }
     match mapped {
         Some(_) => envelope,
         // A code this build has no opinion on. It exits Internal (4), and it
         // SAYS it was unmapped rather than posing as a considered answer.
         None => envelope.with_context("mapping", "unrecognised"),
     }
+}
+
+/// Whether `error` is the dropped-declaration refusal (`QQ-1022`, FR-029).
+///
+/// Read from the envelope's `quire_code`, the typed carrier [`map_error`]
+/// always sets, never from the message.
+#[must_use]
+pub fn declarations_dropped(error: &CoreError) -> bool {
+    error.context.get("quire_code").map(String::as_str)
+        == Some(ErrorCode::TraceabilityDeclarationsDropped.as_str())
 }
 
 /// The exit-taxonomy code one [`ErrorCode`] maps to, or `None` for a code this
@@ -83,6 +99,7 @@ const fn core_code(
         | ErrorCode::ModuleLoad
         | ErrorCode::ModuleSetEmpty
         | ErrorCode::TraceabilityModelUndeclared
+        | ErrorCode::TraceabilityDeclarationsDropped
         | ErrorCode::ExtractionUnavailable
         | ErrorCode::ArchetypeUndeclared
         | ErrorCode::ArchetypeUnknown
@@ -153,6 +170,7 @@ mod tests {
             ErrorCode::ModuleLoad,
             ErrorCode::ModuleSetEmpty,
             ErrorCode::TraceabilityModelUndeclared,
+            ErrorCode::TraceabilityDeclarationsDropped,
             ErrorCode::ExtractionUnavailable,
             ErrorCode::ArchetypeUndeclared,
             ErrorCode::ArchetypeUnknown,
@@ -232,6 +250,44 @@ mod tests {
         assert_eq!(envelope.context["quire_code"], "QQ-1020");
         assert_eq!(envelope.code, CoreErrorCode::Refused);
         assert_eq!(envelope.outcome().code(), 2);
+    }
+
+    /// FR-029-AC-18: `QQ-1022` is `Refused`, like `QQ-1020`, and its envelope
+    /// carries `quire_code` and one `module=.. kind=.. item=..` line per drop
+    /// in engine order.
+    #[trace("FR-029-AC-18")]
+    #[test]
+    fn the_dropped_declaration_envelope_is_refused_and_lists_every_drop() {
+        let error = quoin_quire::Error::TraceabilityDeclarationsDropped {
+            dropped: vec![
+                quoin_quire::DroppedDeclaration {
+                    module: "m1".to_owned(),
+                    kind: "flow_rule".to_owned(),
+                    item: "second-in-name-first-in-engine".to_owned(),
+                },
+                quoin_quire::DroppedDeclaration {
+                    module: "m0".to_owned(),
+                    kind: "traceability_section".to_owned(),
+                    item: "traceability".to_owned(),
+                },
+            ],
+        };
+        let envelope = map_error(&error, "quire.coverage");
+        assert_eq!(envelope.code, CoreErrorCode::Refused);
+        assert_eq!(envelope.outcome().code(), 2);
+        assert_eq!(envelope.context["quire_code"], "QQ-1022");
+        assert_eq!(
+            envelope.context["dropped_declarations"],
+            "module=m1 kind=flow_rule item=second-in-name-first-in-engine\n\
+             module=m0 kind=traceability_section item=traceability"
+        );
+        assert!(super::declarations_dropped(&envelope));
+        let undeclared = map_error(
+            &quoin_quire::Error::TraceabilityModelUndeclared,
+            "quire.coverage",
+        );
+        assert!(!super::declarations_dropped(&undeclared));
+        assert!(!undeclared.context.contains_key("dropped_declarations"));
     }
 
     #[trace("FR-096-AC-10")]

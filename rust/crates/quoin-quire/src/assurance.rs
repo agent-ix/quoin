@@ -53,6 +53,9 @@ pub struct Outcome {
 pub fn build(request: &Request) -> Result<Outcome> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
+    // Before the model is read: the absent-model answer below is a modelled
+    // export, and a model that lost every declaration must not take it.
+    crate::modules::require_complete_model(&registry)?;
 
     let document_root = request.scope.document_root()?;
     let spec = quire_rs::Spec::from_path(&document_root);
