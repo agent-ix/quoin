@@ -1,0 +1,93 @@
+---
+id: SR-17099
+title: "Gap analysis of Quoin PR 1040 (PLAT-1813 and PLAT-1814)"
+type: SpecReview
+analysis: gap-analysis
+scope: "agent-ix/quoin; FR-191 (AC-13, AC-15, AC-24, AC-29, AC-30), FR-192 (AC-7..9), FR-193 (AC-7, AC-8), FR-194 (AC-7, AC-8), FR-196 (AC-3, AC-9..12), FR-207-AC-10, against the PR 1040 diff"
+review_set: subset
+---
+
+# Gap analysis of Quoin PR 1040
+
+## Summary
+
+Tickets: PLAT-1813 (safety class and run identity: FR-192, FR-193, FR-194, FR-196) and PLAT-1814 (records-of-processing identity: FR-191, FR-207). Planless run scoped to the PR diff.
+
+Matrix verification: `quire matrix --scope . --format json` reports every in-scope criterion `tagged`: FR-191-AC-13/15/24/29/30, FR-192-AC-7/8/9, FR-193-AC-7/8, FR-194-AC-7/8, FR-196-AC-3/9/10/11/12 and FR-207-AC-10. Reverse gap: no production change in the diff lacks an owning requirement. No stubs.
+
+Mutation check: the reviewer applied each mutation, ran the focused tests through `locked-build.sh`, and reverted the tree clean.
+
+| Mutation | Killed by | Result |
+| --- | --- | --- |
+| Drop the `exports_only_with_release` filter in `engine.rs` | `export::tests::an_unfiltered_export_leaves_a_release_only_document_out_unless_release_is_given` | killed |
+| Re-key the architecture part from `part.document` to `part.owner` | three architecture tests (FR-193-AC-7, AC-8, no_allocation) | killed |
+| SRS/trace class falls back to criticality (shared `software_safety_class_of`) | `srs::tests::an_unrecorded_class_is_unassigned_and_never_copied_from_criticality_or_a_part` | killed |
+| Trace matrix alone infers the class from criticality | none | **survived** |
+| Architecture part inherits its parent (owner) part's class | none | **survived** |
+| Drop the `run_identity_unrecorded` gate | `an_empty_tool_or_timestamp_is_one_gap_and_a_recorded_revision_is_verbatim` | killed |
+| Compute a run outcome (append `run outcome failed/passed`) beside the tally | none | **survived** |
+| Write a `version` into every document when `--version` is given (DOS-ROP included) | the two release-only export tests over the generic `Doc` fixture | killed (no records-of-processing test catches it) |
+| `RecordsOfProcessingGenerator::exports_only_with_release` returns `false` (DOS-ROP in unfiltered export without `--release`) | only `records_of_processing_takes_its_identity_from_release_alone`, which asserts the hook's constant | killed by a constant-assertion only |
+| Host stops sending `runs` to `matrix.build` (`quoin-cli/src/matrix.rs`) | none of `tc_1080_matrix_command` (13) or `tc_1438_dossier_matrices` (7) | **survived** |
+
+The coder's own run-selection mutation (`max_by` to `min_by`) was not repeated.
+
+## Verdict
+
+**CONDITIONAL: no untagged criterion and no high finding.** Four behaviour mutations survive (computed outcome, parent-class inheritance, trace-matrix criticality inference, host not sending runs), and four spec texts need amending. See also SR-17098, which carries the high payload-ceiling finding.
+
+## Findings
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-001 | medium | FR-196 "SHALL NOT compute ... a run outcome" has no test that fails when an outcome is computed. The AC-9/AC-12 tests assert with `contains`, so a computed `run outcome failed` appended to the cell survives. Assert the whole run-identity cell exactly | rust/crates/quoin-dossier/tests/tc_1617_verification_report.rs:255-273,321-337 |
+| FND-002 | medium | FR-193-AC-8 ("even when its parent part ... record[s] a class") is not exercised: `part_row` hard-codes owner `OWNER`, which is no classed part, so inheriting the parent's class survives. The test comment claims "The owner cell names a classed parent", which the fixture does not do | rust/crates/quoin-dossier/src/architecture.rs:516-525,726-756 |
+| FND-003 | low | No trace-matrix test has a requirement with criticality and no class (FR-10 has neither), so a trace-matrix-only fallback to criticality survives (FR-194 "SHALL NOT infer") | rust/crates/quoin-dossier/src/trace_matrix.rs:365-390 |
+| FND-004 | medium | The FR-196-AC-3 clause "shows that typed cause and the tally of recorded outcome values" has no assertion. None of the four AC-3-tagged tests gives the failed-run criterion a selected run, so the tally on a failed-run row is never checked | rust/crates/quoin-dossier/src/verification_report.rs:562-620; rust/crates/quoin-dossier/tests/tc_1617_verification_report.rs:134-148 |
+| FND-005 | low | The FR-196-AC-11 clause "a criterion backed only by retained Inspection evidence gets neither run gap nor a run value" is not asserted. The AC-11 test covers only the no-binding and no-run cases | rust/crates/quoin-dossier/tests/tc_1617_verification_report.rs:296-319 |
+| FND-006 | medium | Mutation survived: deleting the host's `request.insert("runs", ...)` passes `tc_1080_matrix_command` and `tc_1438_dossier_matrices`. No CLI test shows that real retained runs reach `matrix.build` (`request.insert("runs", ...)`). Every run-identity test injects `runs` or `RunIdentity` directly. Add one `quoin matrix --json` test over a recorded store asserting `evidence_detail.bindings[].run` | rust/crates/quoin-cli/src/matrix.rs:157,167-186 |
+| FND-007 | low | The records-of-processing release-only behaviour (FR-191-AC-30, FR-207-AC-10 "unfiltered export without --release omits DOS-ROP") is pinned for the real generator only by a test that asserts the hook's constant. The behavioural tests use the `Doc` test double, and no test exports unfiltered over the builtin registry with and without `--release` | rust/crates/quoin-dossier/src/records_of_processing.rs:1329-1336; rust/crates/quoin-dossier/src/export.rs:679-736 |
+| FND-008 | low | FR-196's read list names `trace_ids`, but the selection correctly joins on `Binding.symbols`, the auditor's bound join (`quoin evidence record` already folds `trace_ids` into binding symbols). Amend FR-196 to name `Binding.symbols` and drop `trace_ids` | spec/functional/FR-196-dossier-verification-report-content.md:30 |
+| FND-009 | low | `run_identity_unrecorded` cannot fire on a store-read record: `validate_envelope` refuses an empty `tool` or a non-canonical `timestamp` before a run is retained. The gap only fires on host-injected data. State this in FR-196 or drop the gap kind (value test) | rust/crates/quoin-evidence/src/store/records.rs:312-333; spec/functional/FR-196-dossier-verification-report-content.md:59 |
+| FND-010 | low | FR-193 has the architecture document read the part class, while spec-objects-architecture FR-012 says "The part-level class is used by the field_consistency check below and by nothing else: no per-item report reads it". The two specs conflict, and one must be amended | spec/functional/FR-193-dossier-architecture-content.md:34,43-45 |
+| FND-011 | low | FR-207-AC-10 asks for `check` with no `--doc` and no `--version` to report DOS-ROP. With the builtin registry, an unfiltered `check` also selects versioned kinds and exits 2 without `--version`. The test uses explicit `--doc` (and `--version 1.0` for the unfiltered case), so the AC text cannot hold as written | spec/functional/FR-207-dossier-records-of-processing-content.md:93; rust/crates/quoin-dossier/src/records_of_processing.rs:1278-1327 |
+
+## Coverage
+
+- Criteria examined: 18, all `tagged` in the computed matrix; 0 untagged.
+- Reverse gap: none; stubs: none.
+- Semantic review: skipped (not requested); mutation check done instead (table above).
+- Plan completion: not assessed
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-012 | high | Removing the part-level class leaves FR-193 unchanged: it still says the document "SHALL show for each part the software safety class" and records a gap "naming the part", and keeps FR-193-AC-7 and FR-193-AC-8. `quire matrix` now reports both criteria `untagged` with no implementation. Meanwhile 67069dac changes FR-191 so that `safety_class_unassigned` names only a requirement, so FR-191 and FR-193 now contradict each other. Amend FR-193 in this PR (drop lines 43-45 and AC-7/AC-8, citing the spec-objects-architecture FR-012 conflict), or keep and implement the part class | spec/functional/FR-193-dossier-architecture-content.md:43-45,67-68; spec/functional/FR-191-dossier-command.md:115 |
+
+## Dispositions
+
+Round 1 covers fix commits 35e762f6, d530c084, 67069dac and 0b51bb70 on top of 42e56d0c. I checked them by inspection. The previously surviving mutations were not re-run; each now has an assertion that fails under it.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The AC-9 and AC-3 tests compare the whole run-identity cell with `assert_eq!(run_cell(..), "...")`, so anything appended to it fails |
+| FND-002 | fixed | The part-level class and its inheritance path are removed from the code (`architecture.rs` is at the merge base). The spec side is FND-010 and FND-012 |
+| FND-003 | fixed | `a_recorded_criticality_never_lends_a_class_to_the_rows` gives FR-10 criticality `high` and no class, and asserts `unassigned` plus the gap |
+| FND-004 | fixed | `a_failed_run_criterion_shows_the_typed_cause_and_the_tally_of_recorded_outcomes` asserts the typed cause, the exact tally cell and `evidence_failed` |
+| FND-005 | fixed | The AC-11 test now has an Inspection-only criterion asserting a `not recorded` cell and no gap |
+| FND-006 | fixed | `tc_1080_211_the_matrix_carries_the_run_identity_the_store_retains` runs `quoin matrix --json` over a recorded store and asserts `bindings[].run`, so removing the host's `runs` insert fails it |
+| FND-007 | fixed | `an_unfiltered_export_includes_records_of_processing_only_with_release` renders the real generator through `render_for` with and without `--release` and for an explicit selection. The constant-only test is gone |
+| FND-008 | fixed | FR-196 now names `Binding.symbols` as the bound join and says `trace_ids` are not read |
+| FND-009 | fixed | `run_identity_unrecorded` is deleted (gap kind, generator code and the FR-191 list), and FR-196 states that the store refuses an empty tool or a non-canonical timestamp |
+| FND-010 | still-open | FR-193 is unchanged, so its part-class statements still conflict with spec-objects-architecture FR-012. The code no longer reads the part class, but the spec still requires it; see FND-012 |
+| FND-011 | fixed | FR-207-AC-10 is amended: explicit `check --doc records-of-processing` needs no `--version`, and an unfiltered `check` includes DOS-ROP beside versioned kinds that do require it |
+
+## Dispositions (round 2)
+
+Round 2 covers fix commit c7f409d0 after merge 628c76b3 (origin/main #1042), head c7f409d0. `quire matrix` was computed at the head and at origin/main ca4b756f. Non-tagged FR-191..196/207 criteria at the head are FR-191-AC-18/19/20/21/23/27/28, FR-193-AC-9 and FR-194-AC-9, and every one of them is also untagged on origin/main. This PR introduces no untagged criterion and leaves 14 previously untagged ones tagged. The coder's list omitted FR-194-AC-9, which is also untagged on main.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-010 | fixed | FR-193 drops the part-class source contract, statements and AC-7/AC-8. It now says the architecture document shows no part-level class and records no part `safety_class_unassigned` gap, citing spec-objects-architecture FR-012, so the conflict with FR-012 is gone |
+| FND-012 | fixed | FR-193-AC-7/AC-8 are removed, so there are no untagged part-class criteria. FR-191 (`safety_class_unassigned` names a requirement) and FR-193 (no part gap) now agree, and no other FR-19x/20x text gives the gap a part subject |

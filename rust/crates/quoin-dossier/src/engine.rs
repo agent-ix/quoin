@@ -39,25 +39,10 @@ pub(crate) struct Rendered {
 pub(crate) enum Operation {
     Generate,
     Check,
-    Export,
-}
-
-impl Operation {
-    fn supports(self, generator: &dyn crate::registry::Generator) -> bool {
-        match self {
-            Self::Generate => true,
-            Self::Check => generator.supports_check(),
-            Self::Export => generator.supports_export(),
-        }
-    }
-
-    fn label(self) -> &'static str {
-        match self {
-            Self::Generate => "generation",
-            Self::Check => "check",
-            Self::Export => "export",
-        }
-    }
+    /// `release` is whether `--release` was given.
+    Export {
+        release: bool,
+    },
 }
 
 impl Rendered {
@@ -91,16 +76,6 @@ impl Rendered {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn render(
-    registry: &Registry,
-    kinds: &[String],
-    out: &Path,
-    inputs: &Inputs,
-) -> Result<Vec<Rendered>, DossierError> {
-    render_for(registry, kinds, out, inputs, Operation::Generate)
-}
-
 /// Render one operation's selected document set.
 pub(crate) fn render_for(
     registry: &Registry,
@@ -110,18 +85,11 @@ pub(crate) fn render_for(
     operation: Operation,
 ) -> Result<Vec<Rendered>, DossierError> {
     let mut selected = registry.select(kinds)?;
-    if kinds.is_empty() {
-        selected.retain(|generator| operation.supports(*generator));
-    } else if let Some(unsupported) = selected
-        .iter()
-        .find(|generator| !operation.supports(**generator))
-    {
-        let spec = unsupported.spec();
-        return Err(DossierError::new(
-            DossierErrorCode::OperationUnsupported,
-            format!("{} does not support {}", spec.kind, operation.label()),
-        )
-        .with_context("document", spec.id));
+    // An unfiltered export leaves out a document that has no identity of its
+    // own unless `--release` supplies one; an explicit selection stays and
+    // `quire export` refuses it (FR-191).
+    if kinds.is_empty() && operation == (Operation::Export { release: false }) {
+        selected.retain(|generator| !generator.exports_only_with_release());
     }
     if selected
         .iter()

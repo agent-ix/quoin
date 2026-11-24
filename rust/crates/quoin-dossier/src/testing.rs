@@ -24,11 +24,22 @@ pub(crate) struct Doc {
     pub(crate) spec: DocumentSpec,
     pub(crate) gaps: fn() -> Vec<Gap>,
     pub(crate) fail: bool,
+    /// Behaves as a document with no version of its own, exported only with
+    /// `--release` when unfiltered.
+    pub(crate) release_only: bool,
 }
 
 impl Generator for Doc {
     fn spec(&self) -> DocumentSpec {
         self.spec
+    }
+
+    fn requires_version(&self) -> bool {
+        !self.release_only
+    }
+
+    fn exports_only_with_release(&self) -> bool {
+        self.release_only
     }
 
     fn generate(&self, _: &Inputs) -> Result<Generated, SourceFailure> {
@@ -57,6 +68,7 @@ pub(crate) fn doc(kind: &'static str, id: &'static str, needs_as_of: bool) -> Do
         },
         gaps: Vec::new,
         fail: false,
+        release_only: false,
     }
 }
 

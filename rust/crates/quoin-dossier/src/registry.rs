@@ -82,14 +82,11 @@ pub trait Generator: Send + Sync {
         true
     }
 
-    /// Whether the document can be selected for a freshness check.
-    fn supports_check(&self) -> bool {
-        true
-    }
-
-    /// Whether the document can be selected for export.
-    fn supports_export(&self) -> bool {
-        true
+    /// Whether an unfiltered export includes the document only when
+    /// `--release` is given, because the document carries no version of its
+    /// own and `quire export` takes its identity from `--release` alone.
+    fn exports_only_with_release(&self) -> bool {
+        false
     }
 
     /// Compute the document in memory.

@@ -59,7 +59,15 @@ pub fn export(
     inputs: &Inputs,
     options: &ExportOptions,
 ) -> Result<Report, DossierError> {
-    let rendered = render_for(registry, kinds, out, inputs, Operation::Export)?;
+    let rendered = render_for(
+        registry,
+        kinds,
+        out,
+        inputs,
+        Operation::Export {
+            release: options.release.is_some(),
+        },
+    )?;
     let resolved_head = resolve_head(inputs.scope.as_path());
     let mut report = report_with_comparison(&rendered);
     let head = match resolved_head {
@@ -391,7 +399,7 @@ mod tests {
         fs::write(
             &path,
             format!(
-                "#!/bin/sh\nout=\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = --output ]; then out=$2; fi\n  shift\ndone\n{body}\n"
+                "#!/bin/sh\nall=\"$*\"\nout=\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = --output ]; then out=$2; fi\n  shift\ndone\n{body}\n"
             ),
         )
         .unwrap();
@@ -519,5 +527,110 @@ mod tests {
             failure.stderr
         );
         assert!(failure.stderr.contains("out.pdf"));
+    }
+
+    /// `DOS-A` plus a release-only document (as `DOS-ROP` is), generated and committed.
+    #[cfg(unix)]
+    fn release_only_fixture(work: &Path) -> (Registry, PathBuf) {
+        let mut only = doc("only", "DOS-ONLY", false);
+        only.release_only = true;
+        let registry = registry(vec![doc("a", "DOS-A", false), only]);
+        let out = work.join("dossier");
+        let mut input = inputs();
+        input.version.clear();
+        crate::engine::generate(&registry, &["only".to_owned()], &out, &input).unwrap();
+        input.version = "1.0".to_owned();
+        crate::engine::generate(&registry, &["a".to_owned()], &out, &input).unwrap();
+        commit_docs(work);
+        (registry, out)
+    }
+
+    #[cfg(unix)]
+    fn export_release_only(
+        work: &Path,
+        kinds: &[&str],
+        release: Option<&str>,
+    ) -> (Report, Vec<String>) {
+        let (registry, out) = release_only_fixture(work);
+        let args_file = work.join("quire-args.txt");
+        let quire = script(
+            work,
+            &format!(
+                "echo \"$all\" > {}\ncase \" $all \" in\n  *\" --release \"*) echo ok > \"$out\";;\n  *) echo refused >&2; exit 3;;\nesac",
+                args_file.display()
+            ),
+        );
+        let mut options = options(quire.to_str().unwrap());
+        options.output = work.join("out.pdf");
+        options.release = release.map(str::to_owned);
+        options.approvals.clear();
+        options.template = None;
+        let mut input = inputs();
+        input.scope = work.to_owned();
+        let kinds: Vec<String> = kinds.iter().map(|kind| (*kind).to_owned()).collect();
+        let report = export(&registry, &kinds, &out, &input, &options).unwrap();
+        let args = fs::read_to_string(&args_file)
+            .map(|text| text.split_whitespace().map(str::to_owned).collect())
+            .unwrap_or_default();
+        (report, args)
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-191-AC-30", "FR-207-AC-10")]
+    #[test]
+    fn an_unfiltered_export_leaves_a_release_only_document_out_unless_release_is_given() {
+        let work = tempfile::tempdir().unwrap();
+        let (report, args) = export_release_only(work.path(), &[], None);
+        assert_eq!(
+            report
+                .documents
+                .iter()
+                .map(|document| document.id.as_str())
+                .collect::<Vec<_>>(),
+            ["DOS-A"]
+        );
+        assert!(report.quire.is_some(), "quire ran and refused the sentinel");
+        assert!(args.iter().any(|arg| arg.ends_with("DOS-A.md")));
+        assert!(!args.iter().any(|arg| arg.ends_with("DOS-ONLY.md")));
+        assert!(!args.iter().any(|arg| arg == "--bundle-id"));
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-191-AC-30", "FR-207-AC-10")]
+    #[test]
+    fn an_unfiltered_export_with_release_bundles_the_release_only_document_last_with_no_version() {
+        let work = tempfile::tempdir().unwrap();
+        let (report, args) = export_release_only(work.path(), &[], Some("v1"));
+        assert!(report.quire.is_none(), "{:?}", report.quire);
+        let inputs: Vec<_> = args
+            .iter()
+            .filter(|arg| Path::new(arg).extension().is_some_and(|ext| ext == "md"))
+            .map(|arg| arg.rsplit('/').next().unwrap())
+            .collect();
+        assert_eq!(inputs, ["DOS-A.md", "DOS-ONLY.md"]);
+        assert!(args.windows(2).any(|pair| pair == ["--release", "v1"]));
+        assert!(!args.iter().any(|arg| arg == "--version"));
+        assert!(args.iter().any(|arg| arg == "--bundle-id"));
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-191-AC-29", "FR-207-AC-10")]
+    #[test]
+    fn an_explicit_release_only_selection_without_release_is_refused_by_quire_and_output_is_unchanged()
+     {
+        for kinds in [&["only"][..], &["a", "only"][..]] {
+            let work = tempfile::tempdir().unwrap();
+            fs::write(work.path().join("out.pdf"), b"sentinel").unwrap();
+            let (report, args) = export_release_only(work.path(), kinds, None);
+            let failure = report.quire.unwrap();
+            assert_eq!(failure.exit_code, Some(3));
+            assert!(!args.iter().any(|arg| arg == "--version"));
+            assert!(args.iter().any(|arg| arg.ends_with("DOS-ONLY.md")));
+            assert_eq!(fs::read(work.path().join("out.pdf")).unwrap(), b"sentinel");
+        }
+        let work = tempfile::tempdir().unwrap();
+        let (report, args) = export_release_only(work.path(), &["only"], Some("v1"));
+        assert!(report.quire.is_none());
+        assert!(!args.iter().any(|arg| arg == "--version"));
     }
 }

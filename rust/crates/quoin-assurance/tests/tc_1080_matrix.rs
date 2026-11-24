@@ -18,8 +18,11 @@
 
 use ix_trace_rs::trace;
 use quoin_assurance::matrix::{
-    EMPTY_REASON, EvidenceStatus, MatrixInput, MatrixOutput, MatrixRefusal, build, render_markdown,
+    EMPTY_REASON, EvidenceStatus, MatrixInput, MatrixOutput, MatrixRefusal, MatrixRun,
+    bounded_runs, build, render_markdown,
 };
+use quoin_evidence::qualify::{RetainedRun, RunObservation};
+use quoin_evidence::types::Binding;
 use serde_json::{Value, json};
 
 fn criterion(id: &str) -> Value {
@@ -1028,4 +1031,257 @@ fn tc_160_matrix_002_the_class_column_shows_the_value_and_unassigned() {
     assert!(rendered.contains("| class-2 |"), "{rendered}");
     assert!(rendered.contains("| unassigned |"), "{rendered}");
     assert!(rendered.contains("1 criterion(s) state no software safety class."));
+}
+
+fn run_record(file: &str, suite: &str, timestamp: &str, entries: &[(&str, &str)]) -> Value {
+    json!({
+        "file": file, "suite": suite, "tool": "cargo-test 1.90", "timestamp": timestamp,
+        "entries": entries
+            .iter()
+            .map(|(symbol, outcome)| json!({ "symbol": symbol, "outcome": outcome }))
+            .collect::<Vec<_>>(),
+    })
+}
+
+fn detail_runs(
+    runs: &[Value],
+    suites: &[&str],
+) -> Vec<Option<quoin_assurance::matrix::RunIdentity>> {
+    let bindings: Vec<Value> = suites
+        .iter()
+        .map(|suite| binding("FR-001-AC-1", suite))
+        .collect();
+    let mut request = serde_json::to_value(json!({
+        "coverage": [{ "document": "spec/FR-001.md", "criteria": [criterion("FR-001-AC-1")] }],
+        "bindings": { "schemaVersion": 1, "bindings": bindings },
+        "audit": audit(&[], &[], &[]),
+    }))
+    .unwrap();
+    request["runs"] = json!(runs);
+    let input: MatrixInput = serde_json::from_value(request).unwrap();
+    let matrix = build(&input).unwrap();
+    matrix.requirements[0].criteria[0]
+        .evidence_detail
+        .bindings
+        .iter()
+        .map(|binding| binding.run.clone())
+        .collect()
+}
+
+/// FR-196-AC-12: the newest retained run of the suite that holds an entry the
+/// audit bound, the file name breaking a timestamp tie; one identity per suite.
+#[trace("FR-196-AC-9", "FR-196-AC-12")]
+#[test]
+fn the_run_identity_is_the_newest_run_holding_a_bound_entry_per_suite() {
+    let runs = [
+        run_record(
+            "runs/unit/a.json",
+            "unit",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "pass")],
+        ),
+        run_record(
+            "runs/unit/b.json",
+            "unit",
+            "2026-11-02T00:00:00Z",
+            &[("tc_1", "pass"), ("tc_1", "fail"), ("other", "error")],
+        ),
+        // Newer, but holds no entry the binding names: never selected.
+        run_record(
+            "runs/unit/c.json",
+            "unit",
+            "2026-11-03T00:00:00Z",
+            &[("other", "pass")],
+        ),
+        // Same instant as the next one: the file name breaks the tie.
+        run_record(
+            "runs/py/a.json",
+            "py",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "skip")],
+        ),
+        run_record(
+            "runs/py/b.json",
+            "py",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "pass")],
+        ),
+    ];
+    let found = detail_runs(&runs, &["py", "unit"]);
+    let py = found[0].as_ref().unwrap();
+    assert_eq!(
+        (py.file.as_str(), py.outcomes.pass, py.outcomes.skip),
+        ("runs/py/b.json", 1, 0)
+    );
+    let unit = found[1].as_ref().unwrap();
+    assert_eq!(unit.file, "runs/unit/b.json");
+    assert_eq!(unit.timestamp, "2026-11-02T00:00:00Z");
+    assert_eq!(unit.tool, "cargo-test 1.90");
+    assert_eq!(unit.source_revision, None);
+    // Only the entries bound to the criterion are tallied: `other` is not.
+    assert_eq!(
+        (
+            unit.outcomes.pass,
+            unit.outcomes.fail,
+            unit.outcomes.skip,
+            unit.outcomes.error
+        ),
+        (1, 1, 0, 0)
+    );
+}
+
+#[trace("FR-196-AC-11")]
+#[test]
+fn a_suite_with_no_retained_run_holding_a_bound_entry_has_no_run_identity() {
+    let runs = [run_record(
+        "runs/unit/c.json",
+        "unit",
+        "2026-11-03T00:00:00Z",
+        &[("other", "pass")],
+    )];
+    assert_eq!(detail_runs(&runs, &["unit"]), [None]);
+    assert_eq!(detail_runs(&[], &["unit"]), [None]);
+}
+
+/// A retained run as the host reads it from the store, with the checkout
+/// revision the host observed for that record, when it observed one.
+fn retained(
+    file: &str,
+    suite: &str,
+    timestamp: &str,
+    entries: &[(&str, &str)],
+    revision: Option<&str>,
+) -> RetainedRun {
+    RetainedRun {
+        file: file.to_owned(),
+        record: serde_json::from_value(json!({
+            "schemaVersion": 1, "suite": suite, "tool": "cargo-test 1.90", "timestamp": timestamp,
+            "entries": entries
+                .iter()
+                .map(|(symbol, outcome)| json!({ "symbol": symbol, "outcome": outcome }))
+                .collect::<Vec<_>>(),
+        }))
+        .unwrap(),
+        report: None,
+        observation: RunObservation {
+            performed_revision: revision.map(ToOwned::to_owned),
+            ..RunObservation::default()
+        },
+    }
+}
+
+fn bindings_of(pairs: &[(&str, &str)]) -> Vec<Binding> {
+    pairs
+        .iter()
+        .map(|(suite, symbol)| {
+            serde_json::from_value(json!({
+                "obligation": "FR-001-AC-1", "suite": suite, "symbols": [symbol],
+            }))
+            .unwrap()
+        })
+        .collect()
+}
+
+/// FR-196-AC-10: the source revision is the checkout revision the host
+/// observed for the retained record (FR-116 `performed_revision`), read from
+/// a real retained run and shown verbatim; a record the host observed nothing
+/// for has none.
+#[trace("FR-196-AC-10")]
+#[test]
+fn a_source_revision_is_the_checkout_revision_observed_for_the_retained_run() {
+    let retained_runs = [
+        retained(
+            "runs/unit/a.json",
+            "unit",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "pass")],
+            Some("9f2c1ab"),
+        ),
+        retained(
+            "runs/py/a.json",
+            "py",
+            "2026-11-01T00:00:00Z",
+            &[("tc_1", "pass")],
+            None,
+        ),
+    ];
+    let runs = serde_json::to_value(bounded_runs(
+        &bindings_of(&[("py", "tc_1"), ("unit", "tc_1")]),
+        &retained_runs,
+    ))
+    .unwrap();
+    let found = detail_runs(runs.as_array().unwrap(), &["py", "unit"]);
+    assert_eq!(found[0].as_ref().unwrap().source_revision, None);
+    assert_eq!(
+        found[1].as_ref().unwrap().source_revision.as_deref(),
+        Some("9f2c1ab")
+    );
+}
+
+/// The store is append-only, so the runs sent to `matrix.build` are bounded by
+/// what FR-196 reads: per binding the newest run holding a bound entry, and in
+/// it only the entries a binding of the suite names. The identity read from the
+/// bounded runs is the identity read from every run.
+#[trace("FR-196-AC-12")]
+#[test]
+fn the_runs_sent_to_the_matrix_are_bounded_and_read_the_same_identity() {
+    let noise: Vec<(String, &str)> = (0..50).map(|n| (format!("other_{n}"), "pass")).collect();
+    let mut all = Vec::new();
+    for day in 1..=30 {
+        let mut entries: Vec<(&str, &str)> = vec![("tc_1", "pass")];
+        entries.extend(
+            noise
+                .iter()
+                .map(|(symbol, outcome)| (symbol.as_str(), *outcome)),
+        );
+        all.push(retained(
+            &format!("runs/unit/{day:02}.json"),
+            "unit",
+            &format!("2026-11-{day:02}T00:00:00Z"),
+            &entries,
+            None,
+        ));
+    }
+    // A suite no binding names, and an old run holding only the second
+    // binding's symbol, which stays because that binding selects it.
+    all.push(retained(
+        "runs/zzz/a.json",
+        "zzz",
+        "2026-11-01T00:00:00Z",
+        &[("tc_1", "pass")],
+        None,
+    ));
+    all.push(retained(
+        "runs/unit/00.json",
+        "unit",
+        "2026-10-01T00:00:00Z",
+        &[("tc_2", "fail"), ("other_1", "pass")],
+        None,
+    ));
+    let bindings = bindings_of(&[("unit", "tc_1"), ("unit", "tc_2")]);
+    let bounded = bounded_runs(&bindings, &all);
+    let files: Vec<&str> = bounded.iter().map(|run| run.file.as_str()).collect();
+    assert_eq!(files, ["runs/unit/30.json", "runs/unit/00.json"]);
+    for run in &bounded {
+        let symbols: Vec<&str> = run
+            .entries
+            .iter()
+            .map(|entry| entry.symbol.as_str())
+            .collect();
+        assert!(
+            symbols
+                .iter()
+                .all(|symbol| matches!(*symbol, "tc_1" | "tc_2")),
+            "{symbols:?}"
+        );
+    }
+    assert!(serde_json::to_string(&bounded).unwrap().len() < 1_000);
+
+    let full: Vec<MatrixRun> = all.iter().map(MatrixRun::from).collect();
+    let full = serde_json::to_value(full).unwrap();
+    let reduced = serde_json::to_value(&bounded).unwrap();
+    assert_eq!(
+        detail_runs(full.as_array().unwrap(), &["unit"]),
+        detail_runs(reduced.as_array().unwrap(), &["unit"]),
+    );
 }

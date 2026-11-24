@@ -122,7 +122,7 @@ pub(crate) fn build(
             .ok_or_else(|| "quire.coverage did not return obligations".to_owned())?,
     )
     .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
-    let (analysis, design_coverage) = crate::analysis_evidence::compute_for_matrix(
+    let (analysis, design_coverage, retained) = crate::analysis_evidence::compute_for_matrix(
         repo,
         options.module_paths(),
         &audited.store_inputs,
@@ -152,6 +152,14 @@ pub(crate) fn build(
             "record_binders": evidence_report.get("record_binders").cloned().unwrap_or_else(|| serde_json::json!([])),
             "evidence_results": evidence_report.get("evidence_results").cloned().unwrap_or_else(|| serde_json::json!([])),
         }),
+    );
+    let bindings: Vec<quoin_evidence::types::Binding> =
+        serde_json::from_value(audited.bindings.clone())
+            .map_err(|error| format!("the binding graph is malformed: {error}"))?;
+    request.insert(
+        "runs".to_owned(),
+        serde_json::to_value(quoin_assurance::matrix::bounded_runs(&bindings, &retained))
+            .map_err(|error| format!("the retained runs are malformed: {error}"))?,
     );
     let request = serde_json::Value::Object(request);
     let response = invoke("matrix.build", &request)?;

@@ -71,6 +71,20 @@ pub struct Document {
     pub contract: Contract,
 }
 
+impl Document {
+    /// The software safety class this document records, exactly as written, in
+    /// its frontmatter field `software_safety_class` (the field the engine maps
+    /// to the record key `softwareSafetyClass`, spec-artifacts-iso FR-009).
+    /// `None` when it records none: a class is never inferred, defaulted or
+    /// inherited from another document.
+    #[must_use]
+    pub fn software_safety_class(&self) -> Option<&Value> {
+        self.frontmatter
+            .get("software_safety_class")
+            .filter(|value| !value.is_null())
+    }
+}
+
 /// A file the engine's walker could not load.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unreadable {

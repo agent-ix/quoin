@@ -97,7 +97,9 @@ pub(crate) fn compute(
     .map_err(|error| error.to_string())
 }
 
-/// Render design rows with the exact native identities used for qualification.
+/// Render design rows with the exact native identities used for qualification,
+/// and hand back the retained runs the qualification read, so the matrix reads
+/// run identities from the same records.
 pub(crate) fn compute_for_matrix(
     repo: &str,
     module_paths: &[String],
@@ -105,19 +107,27 @@ pub(crate) fn compute_for_matrix(
     obligations: &[Obligation],
     observations: &[RunObservationFile],
     signature_verifier: Option<&SignatureVerifier>,
-) -> Result<(quoin_quire::evidence::Outcome, serde_json::Value), String> {
-    let (outcome, design) = quoin_quire::evidence::compute_for_matrix(&request(
+) -> Result<
+    (
+        quoin_quire::evidence::Outcome,
+        serde_json::Value,
+        Vec<RetainedRun>,
+    ),
+    String,
+> {
+    let request = request(
         repo,
         module_paths,
         audit_inputs,
         obligations,
         observations,
         signature_verifier,
-    )?)
-    .map_err(|error| error.to_string())?;
+    )?;
+    let (outcome, design) =
+        quoin_quire::evidence::compute_for_matrix(&request).map_err(|error| error.to_string())?;
     let design = serde_json::to_value(design)
         .map_err(|error| format!("analysis design matrix is malformed: {error}"))?;
-    Ok((outcome, design))
+    Ok((outcome, design, request.runs))
 }
 
 fn request(

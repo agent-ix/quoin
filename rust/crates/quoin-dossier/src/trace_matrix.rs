@@ -11,7 +11,7 @@ use quoin_quire::records::Document;
 
 use crate::markdown::{cell, line, prose, unusable_input};
 use crate::order::dossier_cmp;
-use crate::srs::{criteria_of, criticality_of};
+use crate::srs::{criteria_of, criticality_of, safety_class_gap, software_safety_class_of};
 use crate::{
     DocumentSpec, Gap, GapKind, Generated, Generator, Inputs, MatrixSource, SourceFailure,
 };
@@ -81,6 +81,7 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
     for requirement in requirements {
         let document = documents.iter().find(|doc| doc.id == requirement.id);
         let criticality = document.and_then(criticality_of);
+        let class = document.and_then(software_safety_class_of);
         let _ = write!(
             body,
             "## {}\n\nCriticality: {}\n\n",
@@ -96,6 +97,9 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
                 )
                 .for_requirement(&requirement.id),
             );
+        }
+        if class.is_none() {
+            gaps.push(safety_class_gap(&requirement.id));
         }
         if requirement.design.as_ref().is_some_and(|blocks| {
             blocks.iter().any(|block| {
@@ -114,7 +118,7 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
         if requirement.criteria.is_empty() {
             continue;
         }
-        body.push_str("| Criterion | Statement | Design | Method | Static status | Evidence status |\n| --- | --- | --- | --- | --- | --- |\n");
+        body.push_str("| Criterion | Statement | Design | Method | Static status | Evidence status | Software safety class |\n| --- | --- | --- | --- | --- | --- | --- |\n");
         let mut rows: Vec<_> = requirement.criteria.iter().collect();
         rows.sort_by(|a, b| dossier_cmp(&a.id, &b.id));
         for criterion in rows {
@@ -124,13 +128,14 @@ fn render(matrix: &MatrixOutput, documents: &[Document]) -> Generated {
                 .map_or("", |(_, statement)| statement.as_str());
             let _ = writeln!(
                 body,
-                "| {} | {} | {} | {} | {} | {} |",
+                "| {} | {} | {} | {} | {} | {} | {} |",
                 cell(&criterion.id),
                 cell(statement),
                 cell(&design_cell(requirement, criterion)),
                 cell(criterion.method.as_deref().unwrap_or("—")),
                 cell(&criterion.static_status),
-                cell(criterion.evidence_status.as_str())
+                cell(criterion.evidence_status.as_str()),
+                cell(class.as_deref().unwrap_or("unassigned"))
             );
             if criterion.static_status != "tagged" {
                 gaps.push(
@@ -196,6 +201,10 @@ mod tests {
     }
 
     fn requirement(id: &str, criticality: Option<&str>) -> Document {
+        classed(id, criticality, Some("class-1"))
+    }
+
+    fn classed(id: &str, criticality: Option<&str>, class: Option<&str>) -> Document {
         Document {
             path: format!("{id}.md").into(),
             id: id.to_owned(),
@@ -203,6 +212,7 @@ mod tests {
             frontmatter: criticality
                 .map(|value| ("criticality".to_owned(), json!(value)))
                 .into_iter()
+                .chain(class.map(|value| ("software_safety_class".to_owned(), json!(value))))
                 .collect(),
             tables: [(
                 "Acceptance Criteria".to_owned(),
@@ -248,17 +258,17 @@ mod tests {
         assert_eq!(rows.len(), 2);
         assert_eq!(
             rows[0],
-            "| FR-2-AC-1 | statement \\| line \\`tick\\` | DE-1 (component) | Analysis | tagged | bound |"
+            "| FR-2-AC-1 | statement \\| line \\`tick\\` | DE-1 (component) | Analysis | tagged | bound | class-1 |"
         );
         assert_eq!(
             rows[1],
-            "| FR-10-AC-1 | statement \\| line \\`tick\\` | no design element (allocated) | Test | untagged | undischarged |"
+            "| FR-10-AC-1 | statement \\| line \\`tick\\` | no design element (allocated) | Test | untagged | undischarged | class-1 |"
         );
         for requirement in &source.requirements {
             for criterion in &requirement.criteria {
                 let row = rows.iter().find(|row| row.contains(&criterion.id)).unwrap();
                 assert!(row.ends_with(&format!(
-                    "| {} | {} |",
+                    "| {} | {} | class-1 |",
                     criterion.static_status,
                     criterion.evidence_status.as_str()
                 )));
@@ -350,5 +360,61 @@ mod tests {
                 .contains("| FR-2-AC-1 | statement \\| line \\`tick\\` | DE-1 (component) |")
         );
         assert!(generated.body.contains("Criticality: high"));
+    }
+
+    #[trace("FR-194-AC-7", "FR-194-AC-8")]
+    #[test]
+    fn each_row_shows_its_requirements_class_and_an_unrecorded_one_is_one_gap() {
+        let generated = render(
+            &matrix(),
+            &[
+                classed("FR-10", None, None),
+                classed("FR-2", Some("high"), Some("class-3")),
+            ],
+        );
+        let rows: Vec<_> = generated
+            .body
+            .lines()
+            .filter(|line| line.starts_with("| FR-"))
+            .collect();
+        assert!(rows[0].ends_with("| bound | class-3 |"));
+        assert!(rows[1].ends_with("| undischarged | unassigned |"));
+        assert!(!rows[1].contains("class-"));
+        let class_gaps: Vec<_> = generated
+            .gaps
+            .iter()
+            .filter(|gap| gap.gap_kind == GapKind::SafetyClassUnassigned)
+            .map(|gap| gap.subject.as_str())
+            .collect();
+        assert_eq!(class_gaps, ["FR-10"]);
+    }
+
+    #[trace("FR-194-AC-8")]
+    #[test]
+    fn a_recorded_criticality_never_lends_a_class_to_the_rows() {
+        // FR-10 records criticality high and no class: its row is unassigned.
+        let generated = render(
+            &matrix(),
+            &[
+                classed("FR-10", Some("high"), None),
+                classed("FR-2", Some("low"), Some("class-1")),
+            ],
+        );
+        let rows: Vec<_> = generated
+            .body
+            .lines()
+            .filter(|line| line.starts_with("| FR-"))
+            .collect();
+        assert!(
+            rows[1].ends_with("| undischarged | unassigned |"),
+            "{}",
+            rows[1]
+        );
+        assert!(
+            generated
+                .gaps
+                .iter()
+                .any(|gap| gap.gap_kind == GapKind::SafetyClassUnassigned && gap.subject == "FR-10")
+        );
     }
 }

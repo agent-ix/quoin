@@ -196,8 +196,9 @@ mod tests {
     use super::*;
     use ix_trace_rs::trace;
     use quoin_assurance::{
-        PackIndexEntry, PackRequirementsMapping, PackRequirementsMappingSchemaVersion,
-        build_requirements_mapping, discharge_report_from_store,
+        DischargeChecks, PackIndexEntry, PackRequirementsMapping,
+        PackRequirementsMappingSchemaVersion, build_requirements_mapping,
+        discharge_report_from_store,
     };
     use quoin_evidence::source::MemoryEvidence;
     use quoin_quire_types::ClauseBindingReport;
@@ -211,9 +212,18 @@ mod tests {
                 {"clauseId":"C-1", "force":"permitted", "outcome":"not_binding", "reasons":[], "expectedOutputs":[]}
             ]
         })).unwrap();
-        let report =
-            discharge_report_from_store(&MemoryEvidence::new(), &binding, "2026-11-15T00:00:00Z")
-                .unwrap();
+        let checks = DischargeChecks {
+            policy: None,
+            verifier: None,
+            offline: false,
+        };
+        let report = discharge_report_from_store(
+            &MemoryEvidence::new(),
+            &binding,
+            "2026-11-15T00:00:00Z",
+            &checks,
+        )
+        .unwrap();
         build_requirements_mapping(&binding, &report).unwrap()
     }
 

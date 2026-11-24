@@ -440,6 +440,7 @@ mod tests {
             attribution: quoin_risk_advice::ATTRIBUTION,
             rows: vec![complete_row()],
             unreadable: Vec::new(),
+            unusable: Vec::new(),
         };
         let advice = advice();
         let first = render(&summary, &advice);
@@ -479,6 +480,7 @@ mod tests {
             attribution: quoin_risk_advice::ATTRIBUTION,
             rows: vec![row],
             unreadable: Vec::new(),
+            unusable: Vec::new(),
         };
         let out = render(&summary, &advice());
         assert!(out.body.contains("| CTRL-1 | FR-9 | FR-9 | TC-9 |"));
@@ -518,6 +520,7 @@ mod tests {
                 attribution: quoin_risk_advice::ATTRIBUTION,
                 rows: vec![row, hazard_without_situation],
                 unreadable: Vec::new(),
+                unusable: Vec::new(),
             },
             &advice(),
         );
@@ -598,6 +601,7 @@ mod tests {
                 attribution: quoin_risk_advice::ATTRIBUTION,
                 rows: vec![row],
                 unreadable: Vec::new(),
+                unusable: Vec::new(),
             },
             &advice,
         );

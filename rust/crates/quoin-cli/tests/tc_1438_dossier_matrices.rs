@@ -200,7 +200,7 @@ fn dossier_rows_equal_the_evidence_backed_matrix_command() {
             .find(|row| row.starts_with(&format!("| {id} |")))
             .unwrap();
         assert!(row.ends_with(&format!(
-            "| {} | {} |",
+            "| {} | {} | unassigned |",
             criterion["static_status"].as_str().unwrap(),
             criterion["evidence_status"].as_str().unwrap()
         )));

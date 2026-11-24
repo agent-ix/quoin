@@ -47,12 +47,8 @@ impl Generator for RecordsOfProcessingGenerator {
         false
     }
 
-    fn supports_check(&self) -> bool {
-        false
-    }
-
-    fn supports_export(&self) -> bool {
-        false
+    fn exports_only_with_release(&self) -> bool {
+        true
     }
 }
 
@@ -1279,67 +1275,107 @@ mod tests {
         assert!(!generated.body.contains("## "));
     }
 
-    #[trace("FR-191-AC-13", "FR-191-AC-24")]
+    #[trace("FR-191-AC-13", "FR-191-AC-24", "FR-207-AC-10")]
     #[test]
-    fn records_of_processing_generates_without_version_and_is_generate_only() {
-        let generator = RecordsOfProcessingGenerator(empty_source);
+    fn records_of_processing_generates_and_checks_without_version() {
         let mut registry = crate::Registry::new();
-        registry.register(Box::new(generator)).unwrap();
+        registry
+            .register(Box::new(RecordsOfProcessingGenerator(empty_source)))
+            .unwrap();
+        registry
+            .register(Box::new(crate::testing::doc("srs", "DOS-SRS", false)))
+            .unwrap();
         let mut inputs = crate::testing::inputs();
         inputs.version.clear();
         let work = tempfile::tempdir().unwrap();
         let kinds = ["records-of-processing".to_owned()];
 
         crate::generate(&registry, &kinds, work.path(), &inputs).unwrap();
-        let generated = std::fs::read_to_string(work.path().join("DOS-ROP.md")).unwrap();
+        let file = work.path().join("DOS-ROP.md");
+        let generated = std::fs::read_to_string(&file).unwrap();
         assert!(!generated.lines().any(|line| line.starts_with("version:")));
-        assert!(
-            crate::check(&registry, &kinds, work.path(), &inputs)
-                .unwrap_err()
-                .message()
-                .contains("does not support check")
+
+        let checked = crate::check(&registry, &kinds, work.path(), &inputs).unwrap();
+        assert_eq!(checked.documents[0].id, "DOS-ROP");
+        assert_eq!(
+            checked.documents[0].comparison,
+            Some(crate::Comparison::Matches)
         );
-        let options = crate::ExportOptions {
-            to: "pdf".to_owned(),
-            output: work.path().join("out.pdf"),
-            release: None,
-            approvals: Vec::new(),
-            modules: Vec::new(),
-            template: None,
-            quire: PathBuf::from("quire"),
-        };
         assert!(
-            crate::export(&registry, &kinds, work.path(), &inputs, &options)
-                .unwrap_err()
-                .message()
-                .contains("does not support export")
+            checked.documents[0]
+                .gaps
+                .iter()
+                .any(|gap| gap.gap_kind == GapKind::NoProcessingActivity)
+        );
+        std::fs::write(&file, format!("{generated}edit\n")).unwrap();
+        let edited = crate::check(&registry, &kinds, work.path(), &inputs).unwrap();
+        assert_eq!(
+            edited.documents[0].comparison,
+            Some(crate::Comparison::Differs)
         );
 
-        let mut mixed = crate::Registry::new();
-        mixed
+        // An unfiltered check includes it beside a versioned kind.
+        inputs.version = "1.0".to_owned();
+        let all = crate::check(&registry, &[], work.path(), &inputs).unwrap();
+        assert_eq!(
+            all.documents
+                .iter()
+                .map(|document| document.id.as_str())
+                .collect::<Vec<_>>(),
+            ["DOS-ROP", "DOS-SRS"]
+        );
+    }
+
+    /// The registry of the real records-of-processing generator beside a
+    /// versioned kind.
+    fn registry_with_srs() -> crate::Registry {
+        let mut registry = crate::Registry::new();
+        registry
             .register(Box::new(RecordsOfProcessingGenerator(empty_source)))
             .unwrap();
-        mixed
+        registry
             .register(Box::new(crate::testing::doc("srs", "DOS-SRS", false)))
             .unwrap();
-        let inputs = crate::testing::inputs();
-        let checked = crate::check(&mixed, &[], work.path(), &inputs).unwrap();
-        assert_eq!(
-            checked
-                .documents
-                .iter()
-                .map(|document| document.id.as_str())
-                .collect::<Vec<_>>(),
-            ["DOS-SRS"]
-        );
-        let exported = crate::export(&mixed, &[], work.path(), &inputs, &options).unwrap();
-        assert_eq!(
-            exported
-                .documents
-                .iter()
-                .map(|document| document.id.as_str())
-                .collect::<Vec<_>>(),
-            ["DOS-SRS"]
-        );
+        registry
+    }
+
+    fn exported_ids(kinds: &[String], release: bool) -> Vec<&'static str> {
+        let work = tempfile::tempdir().unwrap();
+        crate::engine::render_for(
+            &registry_with_srs(),
+            kinds,
+            work.path(),
+            &crate::testing::inputs(),
+            crate::engine::Operation::Export { release },
+        )
+        .unwrap()
+        .iter()
+        .map(|document| document.spec.id)
+        .collect()
+    }
+
+    #[trace("FR-191-AC-30", "FR-207-AC-10")]
+    #[test]
+    fn an_unfiltered_export_includes_records_of_processing_only_with_release() {
+        assert_eq!(exported_ids(&[], false), ["DOS-SRS"]);
+        assert_eq!(exported_ids(&[], true), ["DOS-ROP", "DOS-SRS"]);
+        // An explicit selection stays whatever `--release` says, so `quire
+        // export` refuses it for want of an identity.
+        let explicit = ["records-of-processing".to_owned()];
+        assert_eq!(exported_ids(&explicit, false), ["DOS-ROP"]);
+    }
+
+    #[trace("FR-191-AC-13")]
+    #[test]
+    fn records_of_processing_never_carries_a_version_even_when_one_is_given() {
+        let work = tempfile::tempdir().unwrap();
+        let mut inputs = crate::testing::inputs();
+        inputs.version = "9.9".to_owned();
+        let kinds = ["records-of-processing".to_owned(), "srs".to_owned()];
+        crate::generate(&registry_with_srs(), &kinds, work.path(), &inputs).unwrap();
+        let rop = std::fs::read_to_string(work.path().join("DOS-ROP.md")).unwrap();
+        let srs = std::fs::read_to_string(work.path().join("DOS-SRS.md")).unwrap();
+        assert!(!rop.contains("9.9") && !rop.lines().any(|line| line.starts_with("version:")));
+        assert!(srs.contains("9.9"), "the versioned kind keeps its version");
     }
 }

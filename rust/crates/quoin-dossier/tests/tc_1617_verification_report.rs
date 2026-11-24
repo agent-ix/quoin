@@ -117,7 +117,12 @@ fn m1_and_verification_report_keep_bundle_order_and_share_the_matrix_source() {
                 .lines()
                 .find(|row| row.starts_with(&format!("| {id} |")))
                 .unwrap();
-            assert!(row.ends_with(&format!("| {status} |")), "{name}: {row}");
+            let tail = if name == "DOS-TRACE.md" {
+                format!("| {status} | unassigned |")
+            } else {
+                format!("| {status} |")
+            };
+            assert!(row.ends_with(&tail), "{name}: {row}");
         }
     }
 }
@@ -135,7 +140,9 @@ fn the_report_titles_rows_from_the_repository_and_flags_the_failed_run() {
     let text = fs::read_to_string(out.path().join("DOS-VR.md")).unwrap();
     assert!(text.contains("## FR-001: A requirement stating two obligations"));
     assert!(text.contains("Criticality: unassigned"));
-    assert!(text.contains("| FR-001-AC-1 | Test | tc_1 (function, tests/t.rs:3) | none | bound |"));
+    assert!(text.contains(
+        "| FR-001-AC-1 | Test | tc_1 (function, tests/t.rs:3) | none | not recorded | bound |"
+    ));
     assert!(text.contains("| stale | 1 |"));
 
     let document = &report.documents[0];
@@ -177,6 +184,7 @@ fn a_stale_suite_without_a_traced_or_retained_binder_is_unbacked() {
     criterion.static_status = "untagged".to_owned();
     criterion.evidence_detail.bindings = vec![BindingDetail {
         suite: "old-suite".to_owned(),
+        run: None,
     }];
     let registry = builtin_registry(sources(source)).unwrap();
     let out = tempfile::tempdir().unwrap();
@@ -196,6 +204,166 @@ fn a_stale_suite_without_a_traced_or_retained_binder_is_unbacked() {
             ("evidence_failed", "FR-001-AC-2"),
         ]
     );
+}
+
+/// The report over `matrix`, with the text of `DOS-VR.md` and its gaps as
+/// `(kind, subject, detail)`.
+fn report_of(matrix: MatrixOutput) -> (String, Vec<(String, String, String)>) {
+    let registry = builtin_registry(sources(matrix)).unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let report = generate(&registry, &kinds(), out.path(), &inputs()).unwrap();
+    let text = fs::read_to_string(out.path().join("DOS-VR.md")).unwrap();
+    let gaps = report.documents[0]
+        .gaps
+        .iter()
+        .map(|gap| {
+            (
+                gap.gap_kind.as_str().to_owned(),
+                gap.subject.clone(),
+                gap.detail.clone(),
+            )
+        })
+        .collect();
+    (text, gaps)
+}
+
+/// FR-001-AC-1 of [`matrix`], bound to `bindings` as `matrix.build` reports them.
+fn with_bindings(bindings: &serde_json::Value) -> MatrixOutput {
+    let mut source = matrix();
+    source.requirements[0].criteria[0].evidence_detail.bindings =
+        serde_json::from_value(bindings.clone()).unwrap();
+    source
+}
+
+fn run(timestamp: &str, tool: &str, revision: Option<&str>) -> serde_json::Value {
+    let mut run = json!({
+        "file": "runs/unit/2026-11-01T00-00-00Z.json", "timestamp": timestamp, "tool": tool,
+        "outcomes": { "pass": 1, "fail": 1, "skip": 0, "error": 0 },
+    });
+    if let Some(revision) = revision {
+        run["source_revision"] = json!(revision);
+    }
+    run
+}
+
+/// The run-identity cell of the row for `id`: the fifth cell of
+/// `| id | method | evidence | source findings | run identity | status |`.
+fn run_cell(text: &str, id: &str) -> String {
+    let row = text
+        .lines()
+        .find(|row| row.starts_with(&format!("| {id} |")))
+        .unwrap();
+    row.split(" | ").nth(4).unwrap().to_owned()
+}
+
+#[trace("FR-196-AC-9")]
+#[test]
+fn a_bound_suite_shows_the_recorded_run_identity_and_tally_without_a_computed_outcome() {
+    // The status says bound while the recorded outcomes include a fail: both
+    // are shown unchanged, and nothing else is appended to the cell.
+    let (text, gaps) = report_of(with_bindings(&json!([
+        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "cargo-test 1.90", None) }
+    ])));
+    assert_eq!(
+        run_cell(&text, "FR-001-AC-1"),
+        "suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90, file runs/unit/2026-11-01T00-00-00Z.json, outcomes pass 1 fail 1 skip 0 error 0, source revision not recorded"
+    );
+    let row = text
+        .lines()
+        .find(|row| row.starts_with("| FR-001-AC-1 |"))
+        .unwrap();
+    assert!(row.ends_with("| bound |"));
+    assert!(gaps.iter().all(|gap| gap.1 != "FR-001-AC-1"), "{gaps:?}");
+}
+
+#[trace("FR-196-AC-3")]
+#[test]
+fn a_failed_run_criterion_shows_the_typed_cause_and_the_tally_of_recorded_outcomes() {
+    let mut source = matrix();
+    source.requirements[0].criteria[1].evidence_detail.bindings = serde_json::from_value(json!([
+        { "suite": "unit", "run": {
+            "file": "runs/unit/2026-11-01T00-00-00Z.json", "timestamp": "2026-11-01T00:00:00Z",
+            "tool": "cargo-test 1.90", "outcomes": { "pass": 0, "fail": 2, "skip": 0, "error": 0 },
+        } }
+    ]))
+    .unwrap();
+    let (text, gaps) = report_of(source);
+    let row = text
+        .lines()
+        .find(|row| row.starts_with("| FR-001-AC-2 |"))
+        .unwrap();
+    assert!(row.contains("stale-evidence (cause failed-run)"), "{row}");
+    assert_eq!(
+        run_cell(&text, "FR-001-AC-2"),
+        "suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90, file runs/unit/2026-11-01T00-00-00Z.json, outcomes pass 0 fail 2 skip 0 error 0, source revision not recorded"
+    );
+    assert!(
+        gaps.iter()
+            .any(|gap| gap.0 == "evidence_failed" && gap.1 == "FR-001-AC-2")
+    );
+}
+
+#[trace("FR-196-AC-10")]
+#[test]
+fn a_source_revision_the_source_states_is_shown_verbatim() {
+    let (text, _) = report_of(with_bindings(&json!([
+        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "cargo-test 1.90", Some("9f2c1ab")) }
+    ])));
+    assert!(
+        run_cell(&text, "FR-001-AC-1").ends_with("source revision 9f2c1ab"),
+        "{text}"
+    );
+}
+
+#[trace("FR-196-AC-11")]
+#[test]
+fn a_criterion_with_no_selected_run_reads_not_recorded_and_gets_only_its_evidence_gaps() {
+    // No bound suite at all, and an undischarged status.
+    let mut source = with_bindings(&json!([]));
+    source.requirements[0].criteria[0].evidence_status =
+        quoin_assurance::matrix::EvidenceStatus::Undischarged;
+    let (text, gaps) = report_of(source);
+    assert_eq!(run_cell(&text, "FR-001-AC-1"), "not recorded");
+    let for_criterion: Vec<_> = gaps
+        .iter()
+        .filter(|gap| gap.1 == "FR-001-AC-1")
+        .map(|gap| gap.0.as_str())
+        .collect();
+    assert_eq!(for_criterion, ["no_evidence"]);
+
+    // A bound suite with no retained run holding a bound entry.
+    let (text, gaps) = report_of(with_bindings(&json!([{ "suite": "unit" }])));
+    assert_eq!(run_cell(&text, "FR-001-AC-1"), "suite unit: not recorded");
+    assert!(gaps.iter().all(|gap| gap.1 != "FR-001-AC-1"), "{gaps:?}");
+
+    // Backed only by a retained Inspection record: no run value, no gap.
+    let mut source = matrix();
+    let inspected = &mut source.requirements[0].criteria[0];
+    inspected.binders.clear();
+    inspected.analysis_evidence = Some(vec![json!({
+        "status": "qualified-record",
+        "record_binder": { "locator": { "record": "runs/INS/a.json", "run": "INS@a", "entry": "review::x" } },
+    })]);
+    let (text, gaps) = report_of(source);
+    assert_eq!(run_cell(&text, "FR-001-AC-1"), "not recorded");
+    assert!(gaps.iter().all(|gap| gap.1 != "FR-001-AC-1"), "{gaps:?}");
+}
+
+#[trace("FR-196-AC-12")]
+#[test]
+fn two_bound_suites_show_one_run_identity_each() {
+    let mut other = run("2026-11-02T00:00:00Z", "pytest 8", None);
+    other["file"] = json!("runs/py/2026-11-02T00-00-00Z.json");
+    let (text, _) = report_of(with_bindings(&json!([
+        { "suite": "py", "run": other },
+        { "suite": "unit", "run": run("2026-11-01T00:00:00Z", "cargo-test 1.90", None) }
+    ])));
+    let row = text
+        .lines()
+        .find(|row| row.starts_with("| FR-001-AC-1 |"))
+        .unwrap();
+    assert!(row.contains("suite py: timestamp 2026-11-02T00:00:00Z, tool pytest 8"));
+    assert!(row.contains("suite unit: timestamp 2026-11-01T00:00:00Z, tool cargo-test 1.90"));
 }
 
 /// Run `program` in `dir` and return its stdout; a failure panics with both streams.
