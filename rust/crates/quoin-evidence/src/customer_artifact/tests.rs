@@ -14,8 +14,10 @@ use serde_json::{Value, json};
 
 use super::{CustomerArtifactRefusal, read_customer_artifact, write_customer_artifact};
 use crate::error::{EvidenceError, EvidenceErrorCode};
+use crate::ids::SuiteId;
 use crate::source::{DiskEvidence, EvidenceSource, MemoryEvidence};
-use crate::store::gc;
+use crate::store::{gc, write_run};
+use crate::types::{RunRecord, STORE_SCHEMA_VERSION};
 
 fn document() -> Value {
     json!({
@@ -190,9 +192,35 @@ fn the_record_holds_only_the_submitted_members_and_never_touches_the_location() 
 }
 
 #[test]
+#[trace("FR-030-AC-37")]
+fn the_refusal_kinds_keep_their_contractual_spellings() {
+    let spellings: Vec<&str> = CustomerArtifactRefusal::ALL
+        .iter()
+        .map(|kind| kind.as_str())
+        .collect();
+    assert_eq!(spellings, ["invalid-identifier", "case-collision"]);
+}
+
+#[test]
 #[trace("FR-030-AC-40")]
 fn gc_never_collects_a_customer_artifact() {
     let mut store = MemoryEvidence::new();
+    // Two runs of one suite, so gc has a superseded record to retire and
+    // writes a retirement log: the log check below can fail.
+    for timestamp in ["2026-11-01T00:00:00Z", "2026-11-02T00:00:00Z"] {
+        write_run(
+            &mut store,
+            &RunRecord {
+                schema_version: STORE_SCHEMA_VERSION,
+                suite: SuiteId::new("SUITE-001"),
+                tool: "runner 1".to_owned(),
+                evidence_kind: None,
+                timestamp: timestamp.to_owned(),
+                entries: Vec::new(),
+            },
+        )
+        .unwrap();
+    }
     write_customer_artifact(&mut store, &document()).unwrap();
     let mut other = document();
     other["artifactId"] = json!("second");
@@ -200,11 +228,12 @@ fn gc_never_collects_a_customer_artifact() {
     for dry_run in [true, false] {
         let mut skipped = Vec::new();
         let deleted = gc(&mut store, dry_run, &mut skipped).unwrap();
-        assert!(
-            deleted
-                .iter()
-                .all(|path| !path.starts_with("customer-artifacts"))
+        assert_eq!(
+            deleted.len(),
+            1,
+            "gc collects the superseded run: {deleted:?}"
         );
+        assert!(deleted.iter().all(|path| path.starts_with("runs/")));
     }
     assert!(
         read_customer_artifact(&store, "complaint-2026-001")
@@ -212,14 +241,16 @@ fn gc_never_collects_a_customer_artifact() {
             .is_some()
     );
     assert!(read_customer_artifact(&store, "second").unwrap().is_some());
-    assert!(
-        store
-            .paths()
-            .iter()
-            .all(|path| !path.starts_with("retired/")),
-        "the retirement log names no customer artifact: {:?}",
-        store.paths()
-    );
+    let log: Vec<String> = store
+        .paths()
+        .into_iter()
+        .filter(|path| path.starts_with("retired/"))
+        .map(str::to_owned)
+        .collect();
+    assert_eq!(log.len(), 1, "gc wrote one retirement log: {log:?}");
+    let logged = store.read(&log[0]).unwrap().unwrap();
+    assert!(logged.contains("runs/SUITE-001"), "{logged}");
+    assert!(!logged.contains("customer-artifacts"), "{logged}");
 }
 
 #[test]
@@ -243,7 +274,13 @@ fn an_invalid_stored_file_is_an_error_naming_it_never_an_absent_record() {
     let renamed = good.replace("Complaint-2026-001", "Complaint-2026-002");
     let unknown_member = good.replace("\"title\"", "\"extra\": 1,\n  \"title\"");
     let blank_title = good.replace("Complaint record 001", " ");
-    let broken: [(&str, String, EvidenceErrorCode); 4] = [
+    let bad_charset = good.replace("Complaint-2026-001", "Complaint_2026_001");
+    let broken: [(&str, String, EvidenceErrorCode); 5] = [
+        (
+            "id outside the charset",
+            bad_charset,
+            EvidenceErrorCode::InvalidRecord,
+        ),
         (
             "not json",
             "<<<<<<< HEAD".to_owned(),

@@ -421,7 +421,10 @@ fn record(arguments: &ArgMatches, operation: &str) -> Result<Response, String> {
 
 fn record_customer_artifact(arguments: &ArgMatches) -> Result<Response, String> {
     let operation = "evidence.record_customer_artifact";
-    let document = json_input(&required(arguments, "artifact")?)?;
+    let source = required(arguments, "artifact")?;
+    let bytes = bounded_input(&source, MAX_CUSTOMER_ARTIFACT_INPUT_BYTES)?;
+    let document: serde_json::Value =
+        serde_json::from_slice(&bytes).map_err(|error| format!("input is not JSON: {error}"))?;
     let response = invoke(
         operation,
         &serde_json::json!({ "repo": required(arguments, "repo")?, "document": document }),
@@ -465,6 +468,11 @@ pub(crate) fn required(arguments: &ArgMatches, name: &str) -> Result<String, Str
 fn json_input(source: &str) -> Result<serde_json::Value, String> {
     serde_json::from_slice(&input(source)?).map_err(|error| format!("input is not JSON: {error}"))
 }
+/// The largest `--artifact` document `evidence record-customer-artifact` reads: the
+/// core's own bound on the whole request.
+const MAX_CUSTOMER_ARTIFACT_INPUT_BYTES: u64 =
+    quoin_core::ops::evidence::MAX_CUSTOMER_ARTIFACT_BYTES as u64;
+
 /// The largest `--results` document `evidence record` reads, in bytes: the
 /// core's own bound on the whole request, since the results are the bulk of it.
 const MAX_RECORD_RESULTS_BYTES: u64 = quoin_core::ops::evidence::MAX_RECORD_BYTES as u64;

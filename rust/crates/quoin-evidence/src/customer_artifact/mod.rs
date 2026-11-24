@@ -177,10 +177,16 @@ fn read_file(path: &str, file_stem: &str, body: &str) -> Result<CustomerArtifact
             path: path.to_owned(),
             detail: error.to_string(),
         })?;
+    // Every way a stored file fails admission names the file: an id outside
+    // the charset is the file's defect, not a refusal of the caller's request.
     let named = |error: EvidenceError| match error {
         EvidenceError::InvalidRecord { label, detail } => EvidenceError::InvalidRecord {
             label,
             detail: format!("{path}: {detail}"),
+        },
+        EvidenceError::CustomerArtifactRefused { kind, detail } => EvidenceError::InvalidRecord {
+            label: LABEL,
+            detail: format!("{path}: {}: {detail}", kind.as_str()),
         },
         other => other,
     };

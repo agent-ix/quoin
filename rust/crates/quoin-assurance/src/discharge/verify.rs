@@ -16,6 +16,7 @@
 
 use std::collections::HashMap;
 
+use quoin_evidence::customer_artifact::read_customer_artifact;
 use quoin_evidence::source::EvidenceSource;
 use quoin_quire_types::{ClauseBinding, ClausePolicy, ClauseSetKey, SetPolicy};
 
@@ -518,7 +519,13 @@ fn resolve_reference(store: &dyn EvidenceSource, reference: &str) -> Result<Stri
             return Err("the scenario segment is not in the store's folded form");
         }
         ["customer-artifacts", id] if id.to_ascii_lowercase() == *id => {
-            ("customer-artifacts", Some("customer-artifact"))
+            // Retained means a valid record that belongs to its file name; a
+            // file that merely parses as JSON is not a customer artifact
+            // (FR-030-AC-41).
+            return match read_customer_artifact(store, id) {
+                Ok(Some(_)) => Ok("customer-artifact".to_owned()),
+                _ => Err("the store holds no valid customer artifact at that path"),
+            };
         }
         ["customer-artifacts", _] => {
             return Err("the artifact-id segment is not in the store's folded form");
@@ -833,6 +840,50 @@ mod tests {
         assert!(reason(&checked).starts_with("kind-not-expected: "));
     }
 
+    /// A file under `customer-artifacts/` is a retained artifact only when it is
+    /// a valid record whose id lowercases to its file name (FR-030-AC-41).
+    #[trace("FR-211-AC-25", "FR-211-AC-26")]
+    #[test]
+    fn a_file_that_is_not_a_valid_customer_artifact_is_not_a_retained_one() {
+        let producers = policy(&[], vec![producing(&["customer-artifact"])]);
+        let valid = r#"{"artifactId":"complaint-001","location":"l","schemaVersion":1,"suppliedAt":"2026-11-20T09:30:00Z","suppliedBy":"s","title":"t"}"#;
+        for (what, text) in [
+            ("empty object", "{}".to_owned()),
+            ("not json", "<<<<<<< HEAD".to_owned()),
+            (
+                "id differs from file name",
+                valid.replace("complaint-001", "other"),
+            ),
+            (
+                "id outside the charset",
+                valid.replace("complaint-001", "complaint_001"),
+            ),
+        ] {
+            let mut held = MemoryEvidence::new();
+            held.write("customer-artifacts/complaint-001.json", text.as_bytes())
+                .unwrap();
+            let checked = one(
+                cites("evidence://customer-artifacts/complaint-001"),
+                &producers,
+                Some(&held),
+            );
+            assert!(reason(&checked).starts_with("unresolved: "), "{what}");
+        }
+        let mut held = MemoryEvidence::new();
+        held.write("customer-artifacts/complaint-001.json", valid.as_bytes())
+            .unwrap();
+        let checked = one(
+            cites("evidence://customer-artifacts/complaint-001"),
+            &producers,
+            Some(&held),
+        );
+        assert_eq!(
+            checked.report.binding.direct.len(),
+            1,
+            "the valid control resolves"
+        );
+    }
+
     #[trace("FR-211-AC-28")]
     #[test]
     fn a_customer_artifact_ref_is_citable_only_as_a_lowercase_single_segment() {
@@ -850,6 +901,14 @@ mod tests {
             let checked = one(cites(bad), &producers, Some(&held));
             assert!(reason(&checked).starts_with("unresolved: "), "{bad}");
         }
+        // The store looks an id up in any letter case, so only the folded-form
+        // rule keeps one record from being cited under two spellings.
+        let checked = one(
+            cites("evidence://customer-artifacts/Complaint-001"),
+            &producers,
+            Some(&held),
+        );
+        assert!(reason(&checked).contains("not in the store's folded form"));
     }
 
     #[trace("FR-211-AC-29")]
@@ -1212,6 +1271,33 @@ mod tests {
                 .unwrap()
                 .starts_with("customer-owned: ")
         );
+    }
+
+    #[trace("FR-211-AC-31")]
+    #[test]
+    fn a_delegated_disposition_discharges_a_clause_that_is_not_customer_owned() {
+        let delegated = |rationale: &str, approval_ref: &str| {
+            json!({
+                "kind": "disposition", "clauseId": "SYN-001", "decision": "delegated",
+                "owner": "o", "rationale": rationale, "approvalRef": approval_ref,
+                "attestation": direct()["attestation"].clone(),
+            })
+        };
+        for clause in [policy(&[], vec![]), policy(&[], vec![producing(&["run"])])] {
+            let checked = one(delegated("because", "ref-1"), &clause, Some(&store()));
+            assert_eq!(checked.report.binding.dispositions.len(), 1, "{checked:?}");
+        }
+        for (rationale, approval_ref) in [(" ", "ref-1"), ("because", " ")] {
+            let blank = delegated(rationale, approval_ref);
+            assert!(
+                super::super::parse::parse_fact_with_approval_requirements(
+                    &blank,
+                    &std::collections::BTreeSet::new()
+                )
+                .is_err(),
+                "{rationale:?} {approval_ref:?}"
+            );
+        }
     }
 
     #[trace("FR-211-AC-13", "FR-211-AC-22")]
