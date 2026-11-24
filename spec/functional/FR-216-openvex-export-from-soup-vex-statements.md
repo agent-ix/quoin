@@ -29,6 +29,7 @@ reconciling it with advisory scans, vulnerability lifecycle records, or other an
 
 - A UTF-8 JSON OpenVEX 0.2.0 document at the selected output path.
 - A located error naming the SOUP record and source field when a selected statement cannot be serialized.
+- An actionable validation error when no selected SOUP record has a `vex_statements` entry.
 
 ## Behavior
 
@@ -43,8 +44,11 @@ reconciling it with advisory scans, vulnerability lifecycle records, or other an
 - The command SHALL NOT emit a statement from a vulnerability lifecycle record, advisory scan, scanner finding,
   reachability result, or other analysis.
 - The command SHALL NOT infer, replace, or reconcile a VEX statement's status or justification from any other source.
-- When `vex_statements` is absent or empty on every selected record, the document SHALL contain an empty
-  `statements` list.
+- When no selected SOUP record has a `vex_statements` entry, the command SHALL report that OpenVEX 0.2.0 requires
+  at least one statement and direct the caller to add an authored entry or select records that contain one.
+- When no selected SOUP record has a `vex_statements` entry, the command SHALL NOT write a new document.
+- When no selected SOUP record has a `vex_statements` entry and the output file exists, the command SHALL leave it
+  byte-unchanged.
 - When a selected statement cannot be represented or fails an OpenVEX-required condition, the command SHALL report
   the record and field and SHALL NOT write a partial document or change an existing output file.
 - The command SHALL write deterministic JSON for identical records and document metadata.
@@ -73,11 +77,11 @@ derive a document timestamp from a source record; document metadata is supplied 
 | FR-216-AC-1 | A selected record with two authored VEX statements emits exactly two OpenVEX statements, each with the exact advisory identifier, source status, and canonical package URL. | Test |
 | FR-216-AC-2 | Each present source justification, impact statement, and action statement is copied unchanged to the correspondingly named OpenVEX field; absent optional fields remain absent. | Test |
 | FR-216-AC-3 | The document contains the OpenVEX 0.2.0 context and the caller-supplied `@id`, author, timestamp, and version, and contains role only when supplied. | Test |
-| FR-216-AC-4 | When no selected SOUP record has a VEX statement, the document contains an empty `statements` list even if scans or vulnerability lifecycle records contain entries. | Test |
+| FR-216-AC-4 | When no selected SOUP record has a VEX statement, the command reports that OpenVEX 0.2.0 requires at least one statement and directs the caller to add an authored entry or select records that contain one; it writes no new document and leaves any existing output byte-unchanged, even if scans or vulnerability lifecycle records contain entries. | Test |
 | FR-216-AC-5 | Given a source VEX statement and conflicting advisory scan or vulnerability lifecycle data, the output retains only the authored VEX statement's values and does not add statements from those other sources. | Test |
 | FR-216-AC-6 | A malformed source statement reports its SOUP record and field, writes no partial output, and leaves any existing output byte-unchanged. | Test |
 | FR-216-AC-7 | Repeating the export with identical records and document metadata produces byte-identical JSON. | Test |
-| FR-216-AC-8 | The generated document validates against the published OpenVEX 0.2.0 schema. | Test |
+| FR-216-AC-8 | Every generated document validates against the published OpenVEX 0.2.0 schema, and no generated document has an empty `statements` list. | Test |
 
 ## Dependencies
 
