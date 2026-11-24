@@ -259,7 +259,7 @@ fn a_missing_scope_and_a_malformed_record_each_exit_2_naming_what_is_wrong() {
 #[test]
 fn each_failure_exits_2_with_its_own_diagnostic_code_and_an_unreadable_file_is_named_on_stderr() {
     let dir = tempfile::tempdir().unwrap();
-    let module = risk_module();
+    let module = safety_module_root();
     let code_of = |out: &Output| String::from_utf8_lossy(&out.stderr).into_owned();
     let out = advise(&dir.path().join("absent"), module.path(), &[]);
     assert!(
@@ -327,10 +327,10 @@ fn each_failure_exits_2_with_its_own_diagnostic_code_and_an_unreadable_file_is_n
 #[test]
 fn risk_advice_uses_mapped_principal_and_passes_signature_verify_inputs() {
     let (repo, commit) = decision_repo("Pat", "Lee");
-    let module = safety_module_root();
+    let module = risk_module();
     let verifier = SignatureVerifier::new();
     verifier.write_result("signed_valid", Some("Lee"), &commit);
-    let out = verifier.run(repo.path(), &module, "0");
+    let out = verifier.run(repo.path(), module.path(), "0");
     assert!(
         out.status.success(),
         "{}",
@@ -369,10 +369,10 @@ fn risk_advice_uses_mapped_principal_and_passes_signature_verify_inputs() {
 #[test]
 fn risk_advice_reports_a_mapped_signer_mismatch() {
     let (repo, commit) = decision_repo("Pat", "Lee");
-    let module = safety_module_root();
+    let module = risk_module();
     let verifier = SignatureVerifier::new();
     verifier.write_result("signed_valid", Some("Morgan"), &commit);
-    let out = verifier.run(repo.path(), &module, "0");
+    let out = verifier.run(repo.path(), module.path(), "0");
     assert!(
         out.status.success(),
         "{}",
@@ -398,10 +398,10 @@ fn risk_advice_reports_a_mapped_signer_mismatch() {
 #[test]
 fn risk_advice_does_not_infer_a_principal_from_an_unmapped_signer() {
     let (repo, commit) = decision_repo("Pat", "Lee");
-    let module = safety_module_root();
+    let module = risk_module();
     let verifier = SignatureVerifier::new();
     verifier.write_result("signed_untrusted", None, &commit);
-    let out = verifier.run(repo.path(), &module, "0");
+    let out = verifier.run(repo.path(), module.path(), "0");
     assert!(
         out.status.success(),
         "{}",
@@ -422,10 +422,10 @@ fn risk_advice_does_not_infer_a_principal_from_an_unmapped_signer() {
 #[test]
 fn risk_advice_rejects_a_signature_result_for_another_commit() {
     let (repo, _commit) = decision_repo("Pat", "Lee");
-    let module = safety_module_root();
+    let module = risk_module();
     let verifier = SignatureVerifier::new();
     verifier.write_result("signed_valid", Some("Lee"), "another-commit");
-    let out = verifier.run(repo.path(), &module, "0");
+    let out = verifier.run(repo.path(), module.path(), "0");
     assert_eq!(out.status.code(), Some(3));
     assert!(out.stdout.is_empty());
     assert!(
@@ -437,7 +437,7 @@ fn risk_advice_rejects_a_signature_result_for_another_commit() {
 #[test]
 fn risk_advice_reports_an_invalid_allowed_signers_input() {
     let (repo, _commit) = decision_repo("Pat", "Lee");
-    let module = safety_module_root();
+    let module = risk_module();
     let verifier = SignatureVerifier::new();
     let refused = serde_json::json!({
         "protocol": "engineering-assurance.error/v1",
@@ -445,7 +445,7 @@ fn risk_advice_reports_an_invalid_allowed_signers_input() {
         "message": "bad allowed-signers file"
     });
     std::fs::write(&verifier.result_file, serde_json::to_vec(&refused).unwrap()).unwrap();
-    let out = verifier.run(repo.path(), &module, "2");
+    let out = verifier.run(repo.path(), module.path(), "2");
     assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty());
     assert!(String::from_utf8_lossy(&out.stderr).contains("risk.allowed_signers_invalid"));
@@ -455,7 +455,7 @@ fn risk_advice_reports_an_invalid_allowed_signers_input() {
 #[test]
 fn risk_advice_reports_signature_verifier_unavailability() {
     let (repo, _commit) = decision_repo("Pat", "Lee");
-    let module = safety_module_root();
+    let module = risk_module();
     let verifier = SignatureVerifier::new();
     let unavailable = serde_json::json!({
         "protocol": "engineering-assurance.error/v1",
@@ -467,7 +467,7 @@ fn risk_advice_reports_signature_verifier_unavailability() {
         serde_json::to_vec(&unavailable).unwrap(),
     )
     .unwrap();
-    let out = verifier.run(repo.path(), &module, "1");
+    let out = verifier.run(repo.path(), module.path(), "1");
     assert_eq!(out.status.code(), Some(3));
     assert!(out.stdout.is_empty());
     assert!(String::from_utf8_lossy(&out.stderr).contains("risk.signature_verification_failed"));
