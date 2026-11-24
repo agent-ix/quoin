@@ -50,7 +50,7 @@ Before finalizing, verify against `spec-failure-domain-analysis`:
 
 ## Output contract
 
-This skill emits one **`SpecReview`** under `reviews/YY-MM-DD-<slug>.md` with
+This skill emits one **`SpecReview`** under `reviews/YYYY-MM-DD-<slug>-integrity.md` with
 `analysis: integrity` in its frontmatter.
 
 Stated here because nothing checked it. The module declares an `analysis`

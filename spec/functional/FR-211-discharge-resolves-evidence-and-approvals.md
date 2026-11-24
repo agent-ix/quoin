@@ -134,6 +134,13 @@ people accept risk, and the tool assigns no score, class or acceptability.
   entry has `kind: procedure` in the output catalog. A direct fact for it has
   reason `customer-owned`; a disposition for it discharges only when its decision
   is `delegated` and its rationale and approval reference are non-blank.
+- A `delegated` disposition whose rationale and approval reference are non-blank
+  discharges any clause, customer-owned or not: it is a person accepting the risk
+  with an approval reference, and on an approval-class clause it discharges once
+  the approval verifies (FR-173 emits it, FR-174 reports it). "Customer-owned"
+  decides only the reason a direct fact for the clause gets (`customer-owned`) and
+  which clauses a pack declares as procedure-only; it never makes `delegated` the
+  sole disposition that discharges a clause that is not customer-owned.
 - A clause with an output of `kind: record` or `kind: document` is not
   customer-owned however the customer supplies the artifact: "the customer
   supplied X" is a direct fact citing a retained customer artifact, and "the
@@ -231,6 +238,11 @@ people accept risk, and the tool assigns no score, class or acceptability.
 | FR-211-AC-28 | A ref `evidence://customer-artifacts/<artifact-id>` whose `artifact-id` segment is not lowercase, is empty, or holds a `.` or `..` segment is `unresolved`; the family is citable only as `customer-artifacts/<artifact-id>`. | Test |
 | FR-211-AC-29 | Resolving a ref to a customer artifact reads only the retained record: with the record's `location` naming an unreadable path and an unreachable URL the clause still discharges, and the report carries no digest, hash or size of the artifact and no statement that the artifact is adequate. | Test |
 | FR-211-AC-30 | A customer artifact that `quoin evidence gc` leaves in place keeps its clause discharged on the next report, and a stored fact citing it is unchanged. | Test |
+| FR-211-AC-31 | A `delegated` disposition with non-blank rationale and approval reference discharges a clause that is not customer-owned: with empty `expectedOutputs`, and with an `expectedOutputs` entry that has `producers`; a blank rationale or approval reference is refused at intake. | Test |
+
+> **CR note (PLAT-1858, 2026-11-23):** Spec clarification with no behaviour change.
+> A `delegated` disposition discharges any clause, as the discharge check already
+> does; FR-211-AC-31 is new and no id is reused.
 
 ## Dependencies
 

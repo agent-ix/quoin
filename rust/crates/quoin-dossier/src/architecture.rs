@@ -135,7 +135,9 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
 #[derive(Default)]
 struct Join {
     parts: BTreeMap<String, Part>,
-    without_design: BTreeSet<(String, String)>,
+    /// Requirement to the `check` token of each of its `uncovered` blocks, in
+    /// block order.
+    uncovered: BTreeMap<String, Vec<String>>,
     /// `(requirement, reference)`.
     dangling: BTreeSet<(String, String)>,
     /// `(requirement, element id, archetype)`.
@@ -152,13 +154,17 @@ fn collect_join(entries: &[Value]) -> Join {
         for block in blocks {
             let state = block.get("state").and_then(Value::as_str);
             if state == Some("uncovered") {
-                let check = text(block, "check");
-                join.without_design.extend(
-                    requirements
-                        .iter()
-                        .cloned()
-                        .map(|requirement| (requirement, check.clone())),
-                );
+                let check = block
+                    .get("check")
+                    .and_then(Value::as_str)
+                    .unwrap_or("unnamed")
+                    .to_owned();
+                for requirement in &requirements {
+                    join.uncovered
+                        .entry(requirement.clone())
+                        .or_default()
+                        .push(check.clone());
+                }
             }
             for element in array(block, "elements") {
                 join.parts
@@ -316,22 +322,24 @@ fn decisions_section(body: &mut String, adrs: &[&Document]) {
 
 /// The sections for what the join could not place, each with its gaps.
 fn findings_sections(body: &mut String, gaps: &mut Vec<Gap>, join: &Join) {
-    body.push_str("## Requirements without a design element\n\n");
-    if join.without_design.is_empty() {
+    body.push_str("## Requirements with an uncovered design relation\n\n");
+    if join.uncovered.is_empty() {
         body.push_str("None.\n\n");
     } else {
-        let mut uncovered = join.without_design.iter().collect::<Vec<_>>();
-        uncovered.sort_by(|a, b| dossier_cmp(&a.0, &b.0).then_with(|| dossier_cmp(&a.1, &b.1)));
-        for (requirement, check) in uncovered {
-            let _ = writeln!(body, "- {} ({})", cell(requirement), cell(check));
-            gaps.push(
-                Gap::new(
-                    GapKind::NoDesignElement,
-                    requirement,
-                    format!("design relation check `{check}` found no element"),
-                )
-                .for_requirement(requirement),
-            );
+        let mut requirements: Vec<&String> = join.uncovered.keys().collect();
+        requirements.sort_by(|a, b| dossier_cmp(a, b));
+        for requirement in requirements {
+            for check in join.uncovered.get(requirement).into_iter().flatten() {
+                let _ = writeln!(body, "- {} (check `{}`)", cell(requirement), cell(check));
+                gaps.push(
+                    Gap::new(
+                        GapKind::NoDesignElement,
+                        requirement,
+                        format!("design relation check `{check}` found no element"),
+                    )
+                    .for_requirement(requirement),
+                );
+            }
         }
         body.push('\n');
     }
@@ -506,20 +514,10 @@ mod tests {
             .collect()
     }
 
-    #[trace("FR-193-AC-1", "FR-193-AC-9")]
+    #[trace("FR-193-AC-1")]
     #[test]
     fn parts_connections_adr_are_listed_and_an_uncovered_requirement_is_a_gap() {
-        let entries = vec![
-            covered("FR-1", &["PART-A", "PART-B"]),
-            json!({"document":"FR-2.md","id":"FR-2","criteria":[],"design":[
-                {"relation":"realized-by","check":"soup","state":"uncovered","elements":[],"dangling":[],"kind_mismatch":[]},
-                {"relation":"realized-by","check":"segregation","state":"uncovered","elements":[],"dangling":[],"kind_mismatch":[]}
-            ]}),
-            json!({"document":"FR-3.md","id":"FR-3","criteria":[],"design":[
-                {"relation":"realized-by","check":"soup","state":"uncovered","elements":[],"dangling":[],"kind_mismatch":[]},
-                {"relation":"realized-by","check":"segregation","state":"uncovered","elements":[],"dangling":[],"kind_mismatch":[]}
-            ]}),
-        ];
+        let entries = vec![covered("FR-1", &["PART-A", "PART-B"]), uncovered("FR-2")];
         let systems = Systems {
             connections: vec![Connection {
                 document: "COMP.md".to_owned(),
@@ -546,25 +544,14 @@ mod tests {
                 .body
                 .contains("| ADR-1 | Use a queue | accepted |")
         );
-        assert!(generated.body.contains(
-            "## Requirements without a design element\n\n- FR-2 (segregation)\n- FR-2 (soup)\n"
-        ));
+        assert!(
+            generated
+                .body
+                .contains("## Requirements with an uncovered design relation\n\n- FR-2 (check `fr-needs-design`)\n")
+        );
         assert_eq!(
             kinds(&generated),
-            vec![
-                ("no_design_element", "FR-2".to_owned()),
-                ("no_design_element", "FR-2".to_owned()),
-                ("no_design_element", "FR-3".to_owned()),
-                ("no_design_element", "FR-3".to_owned())
-            ]
-        );
-        assert_eq!(
-            generated.gaps[0].detail,
-            "design relation check `segregation` found no element"
-        );
-        assert_eq!(
-            generated.gaps[1].detail,
-            "design relation check `soup` found no element"
+            vec![("no_design_element", "FR-2".to_owned())]
         );
     }
 
@@ -695,6 +682,61 @@ mod tests {
         assert_eq!(
             kinds(&generated),
             vec![("no_design_element", "FR-3".to_owned())]
+        );
+    }
+
+    #[trace("FR-193-AC-9")]
+    #[test]
+    fn one_no_design_element_gap_per_uncovered_relation_naming_its_check() {
+        let block = |check: &str, state: &str| {
+            json!({"relation": check, "check": check, "state": state, "elements": [],
+                   "dangling": [], "kind_mismatch": []})
+        };
+        let entries = vec![
+            json!({"document": "FR-1.md", "id": "FR-1", "criteria": [],
+                   "design": [block("realized", "covered"), block("soup", "uncovered")]}),
+            json!({"document": "FR-2.md", "id": "FR-2", "criteria": [],
+                   "design": [block("soup", "uncovered"), block("segregation", "uncovered")]}),
+        ];
+        let generated = render(&entries, &Systems::default(), &[]);
+        let gaps: Vec<_> = generated
+            .gaps
+            .iter()
+            .map(|gap| (gap.subject.as_str(), gap.detail.as_str()))
+            .collect();
+        assert_eq!(
+            gaps,
+            [
+                ("FR-1", "design relation check `soup` found no element"),
+                ("FR-2", "design relation check `soup` found no element"),
+                (
+                    "FR-2",
+                    "design relation check `segregation` found no element"
+                ),
+            ]
+        );
+        assert!(
+            generated
+                .gaps
+                .iter()
+                .all(|gap| !gap.detail.contains("no realizing"))
+        );
+    }
+
+    #[trace("FR-191-AC-15")]
+    #[test]
+    fn uncovered_requirements_are_listed_in_dossier_order() {
+        let generated = render(
+            &[uncovered("FR-10"), uncovered("FR-2")],
+            &Systems::default(),
+            &[],
+        );
+        assert!(
+            generated
+                .body
+                .contains("- FR-2 (check `fr-needs-design`)\n- FR-10 (check `fr-needs-design`)\n"),
+            "{}",
+            generated.body
         );
     }
 

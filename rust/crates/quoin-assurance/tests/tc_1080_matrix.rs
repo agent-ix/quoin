@@ -744,7 +744,7 @@ fn tc_1080_012_gaps_render_with_the_check_token() {
     );
 }
 
-/// Every uncovered relation block remains visible as its own design gap.
+/// Every relation's block is carried verbatim and each uncovered block is its own gap line.
 #[trace("FR-165-AC-20")]
 #[test]
 fn tc_1080_012b_each_uncovered_block_is_its_own_design_gap_line() {
@@ -788,8 +788,12 @@ fn tc_1080_012b_each_uncovered_block_is_its_own_design_gap_line() {
         ],
         "{rendered}"
     );
-    assert_eq!(section("FR-102"), ["Design gap: no design element (q)"]);
-    assert!(section("FR-103").is_empty());
+    assert_eq!(
+        section("FR-102"),
+        ["Design gap: no design element (q)"],
+        "{rendered}"
+    );
+    assert!(section("FR-103").is_empty(), "{rendered}");
 }
 
 /// Missing design stays absent in JSON and renders n/a; an empty reference list is none.

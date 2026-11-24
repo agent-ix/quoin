@@ -34,7 +34,8 @@ other agents in parallel, and this skill must not paper over either:
    trust a point-in-time record of whether `criterion-strength` has landed,
    since that fact changes the moment the owning change merges and a stale
    note would silently stop being true. If `criterion-strength` is absent,
-   stop and say so rather than writing a `spec/reviews/criterion-strength.md`
+   stop and say so rather than writing
+   `reviews/YYYY-MM-DD-<slug>-criterion-strength.md`
    that fails `quire validate`.
 2. **The Jev client.** This skill has no HTTP client and adds no third-party
    dependency — that is a separate, later task, gated on its own approval. Step
@@ -82,7 +83,7 @@ copy the `ix-board` rule across by reflex.
    adds; nothing here performs it.
 5. **Author the `SpecReview`.** Fetch the template once with
    `quoin write . --types SpecReview`. Write one document to
-   `spec/reviews/criterion-strength.md` with `analysis: criterion-strength` in
+   `reviews/YYYY-MM-DD-<slug>-criterion-strength.md` with `analysis: criterion-strength` in
    the frontmatter, a `## Summary`, and a validated `## Findings` table
    (`| ID | Severity | Summary | Refs |`, `FND-NNN` ids, Severity ∈
    `low`/`medium`/`high`). A below-threshold `weakness_kind` or
@@ -188,7 +189,7 @@ Stated plainly, so nothing here is read as a working lens:
 - **The Jev API call itself.** No client exists in this repository or this
   change; adding one is a separate, later, approval-gated task. Nothing in
   this skill can execute end to end without it.
-- **`spec/reviews/criterion-strength.md` does not exist.** PLAT-837's
+- **The criterion-strength review does not exist.** PLAT-837's
   acceptance requires it to validate under `quire validate --scope <repo>`
   with the new `analysis:` value. It cannot be authored — even as a stub —
   without a real run to summarise, and the schema value it would declare is

@@ -31,7 +31,7 @@ Identify prerequisite relationships between requirements so work can be sequence
 
 ## Deliverable template
 
-Record output in `spec/analysis/dependency.md` (or as a section in `spec/spec.md` § 7 if your project keeps analysis inline).
+Include the dependency analysis in the SpecReview described below.
 
 ```markdown
 # Dependency Analysis
@@ -78,7 +78,7 @@ None detected.
 
 ## Output contract
 
-This skill emits one **`SpecReview`** under `reviews/YY-MM-DD-<slug>.md` with
+This skill emits one **`SpecReview`** under `reviews/YYYY-MM-DD-<slug>-dependency.md` with
 `analysis: dependency` in its frontmatter.
 
 Stated here because nothing checked it. The module declares an `analysis`

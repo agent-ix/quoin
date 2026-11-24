@@ -72,7 +72,7 @@ whether existing tests are good (`gap-analysis`).
 5. **[Second pass](references/step-5-second-pass.md)**: the LLM pass over `example`,
    `unclassified`, and anything step 2 refused to ground.
 6. **[Review artifact](references/step-6-review-artifact.md)**: the `SpecReview` at
-   `reviews/YY-MM-DD-<slug>.md` recording what could not be grounded, and why.
+   `reviews/YYYY-MM-DD-<slug>-spec-correctness.md` recording what could not be grounded, and why.
 7. **[Report and handoff](references/step-7-report-and-handoff.md)**: the run report and
    the binding check that every emitted tag reaches its criterion in `quire matrix`.
 
@@ -84,7 +84,7 @@ when the residue is large (say, more than 30 records).
 | Path | What |
 | --- | --- |
 | `tests/props/<per-harness naming>` | Property tests, all of them runnable |
-| `reviews/YY-MM-DD-<slug>.md` | A `SpecReview` (`analysis: spec-correctness`) recording what could not be grounded |
+| `reviews/YYYY-MM-DD-<slug>-spec-correctness.md` | A `SpecReview` (`analysis: spec-correctness`) recording what could not be grounded |
 
 Nothing else is written to the tree (FR-028-CON-1). No skipped tests, no `_review/`
 directory, no ad-hoc report file. A generated test arrives in a pull request, and that is

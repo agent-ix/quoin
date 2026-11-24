@@ -251,7 +251,7 @@ fn uninspected_suites(
             .collect(),
         reason: format!(
             "no current mock inspection exists for {suites}. Run quoin evidence \
-             inspect-mocks for each suite at HEAD.",
+             inspect-mocks for each suite.",
             suites = uninspected.join(", ")
         ),
         // The auditor writes exactly the four members it declares; the map is
