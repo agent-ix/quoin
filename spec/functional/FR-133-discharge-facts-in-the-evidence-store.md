@@ -56,6 +56,10 @@ verified; a discharge attestation is the same kind of fact.
   as `invalid-identifier`.
 - A binding report that names one clause twice is refused wherever FR-133
   consumes it, and by the FR-046 builder, so a clause is never counted twice.
+- A direct fact cites a customer artifact (FR-030) by its `evidenceRefs` entry
+  `evidence://customer-artifacts/<artifact-id>` and nothing else: the stored
+  fact holds the ref string, never a copy of the artifact record, its `title`,
+  its `location` or any digest of it.
 - A fact for a clause that does not currently bind is stored and returned only
   as an unused `{clauseId, kind, reason}` by the report, because applicability
   can change with the declared context. `read_discharge_facts` returns the full
@@ -101,6 +105,7 @@ verified; a discharge attestation is the same kind of fact.
 | FR-133-AC-5 | `evidence.inward_completeness` derives its report from the live binding report and the stored facts, and states `binding`, `discharged`, dispositions by decision and the open remainder by clause with its reason, such that `discharged + Σ dispositions + open == binding`; clause ids in the binding report are unique, so a binding report naming a clause twice is refused; an expired fact leaves its clause in the open remainder; unresolved applicability and unused facts are counted outside `binding`; the report carries no score. | Test |
 | FR-133-AC-6 | `evidence.record_discharge`, `evidence.discharge_report` and `evidence.inward_completeness` answer through the production runtime with absolute store paths, each refuses a request over its ceiling before reading it, and `evidence.discharge_report` and `evidence.inward_completeness` each exit as a bad request when given a doubled binding clause. | Test |
 | FR-133-AC-7 | `quoin evidence record-discharge` followed by `quoin discharge --repo ... --inward` reports the recorded fact as discharged and the remaining clause as open, and `--inward` refuses a doubled binding clause. | Test |
+| FR-133-AC-8 | A stored fact that cites `evidence://customer-artifacts/<artifact-id>` holds that ref string and no member of the artifact record, and no digest of it; after a further customer artifact is recorded, the stored fact file bytes are unchanged. | Test |
 
 ## Dependencies
 

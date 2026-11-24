@@ -54,20 +54,23 @@ people accept risk, and the tool assigns no score, class or acceptability.
   store-relative path of one retained record without its `.json` suffix:
   `<family>/<SUITE-N>/<stem>` for `runs`, `scans`, `mock-inspections` and
   `analysis-reports`; `experiments/<record-id>` and `operational/<record-id>`;
-  and `scenarios/<integration>/<scenario>`. These families are the only ones a
-  fact may cite.
+  `scenarios/<integration>/<scenario>`; and `customer-artifacts/<artifact-id>`
+  (FR-030). These families are the only ones a fact may cite.
 - Any other ref is `unresolved`: an unknown or non-citable family (including
   `discharge`, `trust` and `bindings.json`), another scheme, an empty segment, a
   `.` or `..` segment, or a path leaving the store root.
 - Segments are matched exactly as written. The store keeps the `integration`
   segment as written and folds only the `scenario` segment to lowercase
   (FR-030), so a ref whose scenario segment is not in that form does not
-  resolve; no two spellings of a scenario alias one record.
+  resolve; no two spellings of a scenario alias one record. The store lowercases
+  the `artifact-id` of a customer artifact in the same way, so a ref whose
+  `artifact-id` segment is not lowercase does not resolve.
 - A ref resolves when the store holds a readable record at that path. Quoin
   reads the record file through the evidence store reader of `quoin-evidence`.
 - The retained kind of a record is its `subject.kind` for an experiment or
   operational record, and otherwise the family's singular name: `run`, `scan`,
-  `mock-inspection`, `analysis-report`, `scenario`.
+  `mock-inspection`, `analysis-report`, `scenario`, and for a customer
+  artifact `customer-artifact`.
 - Each `expectedOutputs` entry is a name in the `outputCatalog` of the uniquely
   resolved clause set that defines the clause (FR-208). Quoin reads one catalog
   member, `producers`, from each catalog entry: a non-empty list of retained
@@ -77,6 +80,13 @@ people accept risk, and the tool assigns no score, class or acceptability.
   the clause's `expectedOutputs` catalog entries carries `producers` the reason
   is `no-producer`. A clause with empty `expectedOutputs` accepts a resolved ref
   of any kind.
+- A pack that expects a record or document only the customer holds lists
+  `customer-artifact` in the `producers` of that output. A direct fact on that
+  clause then discharges when each ref resolves to a retained customer artifact
+  (FR-030), and stays open with `no-producer` or `kind-not-expected` otherwise.
+  Quoin reads the retained record's existence and kind only: it does not open the
+  artifact the record's `location` names, computes no content identity or digest
+  of it, and does not judge that it is adequate (people accept risk).
 - Until the catalog schema carries `producers` (quire-rs FR-073), no catalog
   entry has any, so a direct fact on a clause with non-empty `expectedOutputs`
   has reason `no-producer` and does not discharge.
@@ -124,6 +134,11 @@ people accept risk, and the tool assigns no score, class or acceptability.
   entry has `kind: procedure` in the output catalog. A direct fact for it has
   reason `customer-owned`; a disposition for it discharges only when its decision
   is `delegated` and its rationale and approval reference are non-blank.
+- An output of `kind: record` or `kind: document` is not customer-owned, however
+  the customer supplies it. A clause with such an output is satisfied by a direct
+  fact citing a retained customer artifact and is never discharged by a
+  `delegated` disposition; "the customer supplied X" and "the customer owns the
+  procedure" are distinct and a disposition only expresses the second.
 
 ### When resolution and verification run
 
@@ -213,10 +228,18 @@ people accept risk, and the tool assigns no score, class or acceptability.
 | FR-211-AC-23 | A ref matching no `producers` has `no-producer` only when none of the clause's `expectedOutputs` catalog entries carries `producers`, and `kind-not-expected` otherwise. | Test |
 | FR-211-AC-24 | A direct fact or disposition on a clause whose clause set no installed module declares, or that the declared set does not list, is open with reason `no-clause-policy`, and `record-discharge` refuses it; a discharged entry with no fact is open with reason `no-fact`. | Test |
 
+| FR-211-AC-25 | A clause whose every `expectedOutputs` entry is `kind: record` or `kind: document` with `producers` of `[customer-artifact]` is discharged by a direct fact whose `evidenceRefs` is `evidence://customer-artifacts/<artifact-id>` naming a retained customer artifact (FR-030). | Test |
+| FR-211-AC-26 | The same clause with no `evidenceRefs` entry resolving to a retained customer artifact stays open: a ref naming no customer artifact is `unresolved`, a ref to a retained run or other kind outside the `producers` is `kind-not-expected`, and a fact on a clause whose output catalog entry lists no `producers` is `no-producer`. | Test |
+| FR-211-AC-27 | A `delegated` disposition with non-blank rationale and approval reference does not discharge a clause whose outputs are `kind: record` or `kind: document`; the clause is open, because it is not customer-owned. | Test |
+| FR-211-AC-28 | A ref `evidence://customer-artifacts/<artifact-id>` whose `artifact-id` segment is not lowercase, is empty, or holds a `.` or `..` segment is `unresolved`; the family is citable only as `customer-artifacts/<artifact-id>`. | Test |
+| FR-211-AC-29 | Resolving a ref to a customer artifact reads only the retained record: with the record's `location` naming an unreadable path and an unreachable URL the clause still discharges, and the report carries no digest, hash or size of the artifact and no statement that the artifact is adequate. | Test |
+| FR-211-AC-30 | A customer artifact that `quoin evidence gc` leaves in place keeps its clause discharged on the next report, and a stored fact citing it is unchanged. | Test |
+
 ## Dependencies
 
 - FR-046 supplies the facts; FR-208 supplies `approvalRoles` and the clause-set
-  resolution; FR-030 and FR-133 supply the store; FR-188 supplies the
+  resolution; FR-030 and FR-133 supply the store and the customer-artifact
+  retained kind; FR-188 supplies the
   engineering-assurance invocation inputs and refusal mapping; FR-098 supplies
   RFC 8785 canonicalisation.
 - Engineering Assurance FR-041 supplies the `approval-verify` result.
