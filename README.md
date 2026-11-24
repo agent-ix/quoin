@@ -148,6 +148,10 @@ npm install -g @agent-ix/quoin @agent-ix/ix-flow@latest
 platform (linux-x64, linux-arm64, darwin-arm64, win32-x64) as an
 `optionalDependency`, built from the same GitHub Release assets as the
 manual install below — see [Install with npm](./docs/native-release.md#install-with-npm).
+The packaged binaries support x86_64 Linux with glibc 2.35 or newer, aarch64
+Linux with glibc 2.35 or newer, Apple Silicon macOS, and x86_64 Windows. Intel
+macOS and musl-based Linux hosts such as Alpine are not in the release matrix;
+build from a checkout with `cargo install --path rust/crates/quoin-cli --locked`.
 Later updates are then `npm update -g @agent-ix/quoin`; `quoin update`
 reports this rather than acting, since npm owns the install.
 
