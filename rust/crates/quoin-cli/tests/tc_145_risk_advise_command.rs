@@ -259,7 +259,7 @@ fn a_missing_scope_and_a_malformed_record_each_exit_2_naming_what_is_wrong() {
 #[test]
 fn each_failure_exits_2_with_its_own_diagnostic_code_and_an_unreadable_file_is_named_on_stderr() {
     let dir = tempfile::tempdir().unwrap();
-    let module = safety_module_root();
+    let module = risk_module();
     let code_of = |out: &Output| String::from_utf8_lossy(&out.stderr).into_owned();
     let out = advise(&dir.path().join("absent"), module.path(), &[]);
     assert!(
