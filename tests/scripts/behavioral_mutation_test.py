@@ -81,7 +81,7 @@ def main() -> int:
                    "--package", package, "--file", source, "--output", str(output),
                    "--in-place", "--cargo-arg", "--locked"]
         if test_args:
-            command.extend(["--", *test_args])
+            command.extend(["--", "--", *test_args])
         env = os.environ.copy()
         env.pop("CARGO_MUTANTS_JOBS", None)
         adjacent_checkout(env, "SPEC_OBJECTS_SAFETY_DIR", "spec-objects-safety", "spec_objects_safety")
