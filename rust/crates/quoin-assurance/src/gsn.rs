@@ -17,14 +17,14 @@ pub struct GsnCase {
     pub format: String,
     /// Nodes in deterministic depth-first order.
     pub nodes: Vec<GsnNode>,
+    /// Typed relationships.
+    pub edges: Vec<GsnEdge>,
     /// Root node ids.
     pub roots: Vec<String>,
     /// Unreachable requirement ids.
     pub unreachable: Vec<String>,
     /// Source facts that this format does not represent.
     pub unmapped: Vec<Unmapped>,
-    /// Typed relationships.
-    pub edges: Vec<GsnEdge>,
 }
 
 /// A typed GSN node.
@@ -169,20 +169,28 @@ impl Builder {
             source_data: None,
         });
         for child in &node.children {
+            let edge_position = self.edges.len();
             let child_id = self.add(child)?;
-            self.edges.push(GsnEdge {
-                kind: "supported_by".to_owned(),
-                from: generated.clone(),
-                to: child_id,
-            });
+            self.edges.insert(
+                edge_position,
+                GsnEdge {
+                    kind: "supported_by".to_owned(),
+                    from: generated.clone(),
+                    to: child_id,
+                },
+            );
         }
         for context in &node.context {
+            let edge_position = self.edges.len();
             let context_id = self.add(context)?;
-            self.edges.push(GsnEdge {
-                kind: "in_context_of".to_owned(),
-                from: generated.clone(),
-                to: context_id,
-            });
+            self.edges.insert(
+                edge_position,
+                GsnEdge {
+                    kind: "in_context_of".to_owned(),
+                    from: generated.clone(),
+                    to: context_id,
+                },
+            );
         }
         Ok(generated)
     }
@@ -289,6 +297,9 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
                         None,
                         Some(serde_json::json!({"evidenceRef": reference, "decision": decision})),
                     );
+                    if let Some(node) = b.nodes.last_mut() {
+                        node.evidence = Some(serde_json::json!({"references": [reference]}));
+                    }
                     b.edges.push(GsnEdge {
                         kind: "supported_by".to_owned(),
                         from: goal.clone(),
@@ -732,5 +743,28 @@ mod tests {
             ],
         );
         assert!(validate(&shared).is_ok());
+    }
+
+    /// Provenance: agent-ix/quoin#PLAT-1447.
+    #[trace("FR-221-AC-3")]
+    #[test]
+    fn open_derived_obligation_becomes_undeveloped_goal_with_reason() {
+        let case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
+            "claims": [{"id":"StR-1", "kind":"goal", "statement":"Claim", "status":"open", "children":[
+                {"id":"StR-1/strategy", "kind":"strategy", "statement":"Argument", "status":"open", "children":[
+                    {"id":"FR-1-AC-1", "kind":"solution", "statement":"Requirement", "status":"open", "because":"audit reason", "children":[]}
+                ]}
+            ]}], "unreachable":[], "unreadable":[], "producerTrust":[]
+        })).expect("case fixture deserializes");
+        let model = super::from_case(&case).expect("valid case converts");
+        let goal = model
+            .nodes
+            .iter()
+            .find(|node| node.source == "FR-1-AC-1")
+            .expect("obligation is present");
+        assert_eq!(goal.kind, "goal");
+        assert_eq!(goal.status, "open");
+        assert_eq!(goal.open_reason.as_deref(), Some("audit reason"));
+        assert_eq!(goal.undeveloped, Some(true));
     }
 }
