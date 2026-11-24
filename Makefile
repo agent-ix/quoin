@@ -76,7 +76,10 @@ evidence: build-inputs
 # behavioral mutation kernels, then transcribe each result into Quoin's own
 # evidence store. Run through locked-build.sh; the script retains raw outputs
 # under target/wave2-evidence-mutation/.
-real-tool-test:
+# `make real-tool-test` is also supported on a clean checkout: build the
+# recorder CLI before the runner invokes `quoin evidence record`.
+real-tool-test: build-inputs
+	cd $(RUST_DIR) && cargo build --locked -p quoin-cli --bin quoin $(CARGO_TARGET_FLAG)
 	python3 tests/scripts/real_tool_test.py
 
 mutation-test:
