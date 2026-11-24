@@ -296,7 +296,7 @@ fn the_direct_readers_of_the_model_refuse_on_a_dropped_declaration() {
 
 /// FR-029-AC-22: the trace-tag walk asks about drops before the absent-model
 /// check, so a model that lost every declaration is the drop, not QQ-1020.
-#[trace("FR-029-AC-22", "FR-029-AC-20")]
+#[trace("FR-029-AC-22")]
 #[test]
 fn the_trace_tag_walk_refuses_an_all_dropped_model_with_qq_1022() {
     let module = every_declaration_dropped();
@@ -309,7 +309,6 @@ fn the_trace_tag_walk_refuses_an_all_dropped_model_with_qq_1022() {
 
 /// FR-029: `quire.properties` classifies against the merged model, so it
 /// refuses a model that lost declarations too.
-#[trace("FR-029-AC-21")]
 #[test]
 fn the_properties_classification_refuses_a_dropped_declaration() {
     let module = one_drop();
