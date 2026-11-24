@@ -338,10 +338,10 @@ fn repeated_advisory_in_one_record_fails_without_writing() {
     fixture.record(
         "SOUP-DUP",
         PURL_A,
-        Some(json![
+        Some(json!([
             statement("CVE-2026-0001", "fixed"),
             statement("CVE-2026-0001", "not_affected")
-        ]),
+        ])),
     );
     let new_output = fixture.path().join("new.json");
 

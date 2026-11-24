@@ -21,7 +21,8 @@ use quoin_dossier::release_snapshot::{
     CoverageCriterion, CoverageRequirement, Freshness, OpenFinding, RationaleEntry,
     SnapshotAnomaly as Anomaly, SnapshotVulnerability,
 };
-use quoin_quire::{Contract, ModuleRoot, ModuleSelection};
+use quoin_quire::records::Contract;
+use quoin_quire::{ModuleRoot, ModuleSelection};
 use quoin_risk_advice::{AdviceError, ErrorCode, summarize};
 use serde_json::Value;
 
@@ -168,8 +169,10 @@ pub(super) fn vulnerabilities(
     } else {
         ModuleSelection::Closed(roots)
     };
-    let corpus = quoin_quire::records::read(repo, &selection, &["vulnerability"])
-        .map_err(|error| Refusal::invalid("--repo", "vulnerability-records", &error).into())?;
+    let corpus =
+        quoin_quire::records::read(repo, &selection, &["vulnerability"]).map_err(|error| {
+            Refusal::invalid("--repo", "vulnerability-records", &error.to_string()).into()
+        })?;
     if let Some(unreadable) = corpus.unreadable.first() {
         let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
         let path = unreadable
