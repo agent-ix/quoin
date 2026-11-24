@@ -252,26 +252,6 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
             "entries must be objects",
         ));
     };
-    const SOURCE_FIELDS: [&str; 8] = [
-        "advisory",
-        "status",
-        "assessed_by",
-        "assessed_at",
-        "justification",
-        "action_statement",
-        "impact_statement",
-        "evidence_refs",
-    ];
-    if let Some(field) = object
-        .keys()
-        .find(|field| !SOURCE_FIELDS.contains(&field.as_str()))
-    {
-        return Err(source_invalid(
-            record,
-            field,
-            "is not a supported vex_statements field",
-        ));
-    }
     let required = |field: &str| -> Result<String, Stop> {
         match object.get(field) {
             Some(Value::String(value)) => Ok(value.clone()),

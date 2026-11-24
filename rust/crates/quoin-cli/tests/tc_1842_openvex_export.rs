@@ -54,11 +54,16 @@ impl Fixture {
     }
 
     fn command(&self, output: &Path) -> Output {
+        self.command_with_role(output, None)
+    }
+
+    fn command_with_role(&self, output: &Path, role: Option<&str>) -> Output {
         let security_modules = security_module()
             .parent()
             .expect("the security module has a parent directory")
             .to_path_buf();
-        Command::new(env!("CARGO_BIN_EXE_quoin"))
+        let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+        command
             .env("IX_FILAMENT_MODULES_PATH", security_modules)
             .env("HOME", self.path().join("home"))
             .args(["soup", "vex", "export"])
@@ -75,9 +80,11 @@ impl Fixture {
                 "2026-11-24T10:00:00Z",
                 "--version",
                 "1",
-            ])
-            .output()
-            .unwrap()
+            ]);
+        if let Some(role) = role {
+            command.args(["--role", role]);
+        }
+        command.output().unwrap()
     }
 }
 
@@ -287,25 +294,7 @@ fn supplied_role_is_written_verbatim() {
     let fixture = Fixture::new();
     fixture.record("SOUP-A", PURL_A, Some(json!([statement("CVE-1", "fixed")])));
     let output = fixture.path().join("vex.json");
-    let result = Command::new(env!("CARGO_BIN_EXE_quoin"))
-        .args(["soup", "vex", "export", "--repo"])
-        .arg(fixture.path())
-        .args(["--out"])
-        .arg(&output)
-        .args([
-            "--id",
-            "urn:example:vex:document-2",
-            "--author",
-            "security@example.test",
-            "--role",
-            "Product security team",
-            "--timestamp",
-            "2026-11-24T10:00:00Z",
-            "--version",
-            "2",
-        ])
-        .output()
-        .unwrap();
+    let result = fixture.command_with_role(&output, Some("Product security team"));
     assert!(result.status.success(), "{}", stderr(&result));
     let document: Value = serde_json::from_slice(&std::fs::read(output).unwrap()).unwrap();
     assert_matches_openvex_020_schema(&document);
