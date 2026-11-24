@@ -112,3 +112,26 @@ Mutation pass (each mutant applied alone, focused tests run, then reverted): 14 
 | FND-006 | low | On a non-zero EA exit the reason is `<code>: <stderr>`, but EA writes its `message` to stdout and usually nothing to stderr, so a user sees `approval-verifier-unavailable: approval_verify_request_invalid: ` with no explanation. This is also the reason when the `approvalRef` is not a plain revision (for example it holds whitespace), where the verifier is in fact available. Include the EA `message` (as `formal_rules.rs` does). The EA invocation is also a second copy of `formal_rules.rs` `verify_requesting`; share one spawn-and-decode helper | rust/crates/quoin-core/src/runtime.rs:632-641, rust/crates/quoin-cli/src/formal_rules.rs:501-545 | implementation-bug-despite-evidence |
 | FND-007 | low | `quoin discharge --facts F` with `--engineering-assurance`/`--allowed-signers` and no `--repo`: the `--json` path silently ignores the flags (`assurance.build_discharge` is sent no approval), while the text path fails in `render_discharge` with "approval inputs need a repository". Refuse the flags without `--repo` up front, the same way on both paths | rust/crates/quoin-cli/src/discharge.rs:232-256, rust/crates/quoin-core/src/ops/evidence/verification.rs:217-220 | implementation-bug-despite-evidence |
 | FND-008 | low | `read_evidence` accepts a key without the `ix://` prefix (`strip_prefix("ix://").unwrap_or(key)`), but FR-173 keys `--evidence` by a control's `ix://` id. A bare `CTRL-A` key is accepted silently instead of being refused | rust/crates/quoin-cli/src/evidence/mapping_facts.rs:164 | implementation-bug-despite-evidence |
+
+## New findings (disposition pass 1)
+
+Re-checked against fix commit 8c1e2d6a.
+
+| ID | Severity | Summary | Refs | Escape Cause |
+| --- | --- | --- | --- | --- |
+| FND-009 | low | FR-211 now has the reasons `no-clause-policy` and `no-fact` (new Behavior bullet and AC-24), but FR-195's Behavior bullet that lists "Every FR-211 reason" by name still omits them. The code is right: both are open, so the row is `undischarged`. The enumerated list is now out of step; add the two names, or refer to FR-211's reasons without listing them | spec/functional/FR-195-dossier-rmm-content.md:54, spec/functional/FR-211-discharge-resolves-evidence-and-approvals.md:134-139 | wrong-requirement |
+
+## Dispositions
+
+Round 1, fix commit 8c1e2d6a. Each outcome was checked against the code at that commit, by focused test runs and by reverting the fix as a mutant.
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | `DischargeChecks.policy` is now `Option<&SetPolicy>`. `check_one` opens a fact with `no-clause-policy` when no installed module declares the set or the set does not list the clause, before any other check. This covers every path (`quoin discharge`, `--inward`, `--rmm`, pack, render, authored-argument, record-discharge via `check_facts`). Restoring either fallback is caught by `a_clause_without_a_declared_policy_is_never_discharged`. The new FR-211 bullet and AC-24 state the strict reading, and the name follows the existing kebab-case reason style |
+| FND-002 | fixed | Only the scenario segment must be folded. The test now resolves `evidence://scenarios/IT-002/it-002-sc-07a` against the store's real layout. Restoring the integration check is caught. The FR-211 Behavior bullet now matches FR-030 |
+| FND-003 | fixed | An entry with no fact moves to open with `no-fact`. This is caught at both the assurance and core levels, and the render test asserts `no-fact`. Omitted clauses remain the recorded FR-211 input limit, as the finding asked |
+| FND-004 | fixed | `build_discharge_report` is `#[cfg(test)] pub(crate)` and `build_discharge_report_with_approval_requirements` is `pub(crate)`. Neither is re-exported; the only public builder is `build_checked_discharge_report` |
+| FND-005 | fixed | A non-string `meaning` member makes the result unavailable, tested by `tc_211_a_non_string_meaning_is_not_a_role` |
+| FND-006 | fixed | The reason now carries EA's `message` (tested by `tc_211_a_refusal_names_the_message_engineering_assurance_gave`), and both callers share `quoin_core::runtime::engineering_assurance_call` |
+| FND-007 | fixed | `quoin discharge` refuses the engineering-assurance flags without `--repo` before either path, tested by `tc_211_approval_flags_without_repo_are_refused_on_both_paths` |
+| FND-008 | fixed | An `--evidence` key without `ix://` is refused, naming the file and the key (tc_173) |
