@@ -562,7 +562,7 @@ fn a_forged_claimed_approval_stays_a_claim_and_the_real_verifier_refuses_it() {
 #[trace("FR-188-AC-25")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
-fn an_expired_key_does_not_approve_whatever_date_the_tagger_claims() {
+fn an_expired_key_does_not_approve() {
     let fixture = Fixture::new();
     let store = tempfile::tempdir().unwrap();
     let digest = record_digest(store.path());
@@ -575,13 +575,15 @@ fn an_expired_key_does_not_approve_whatever_date_the_tagger_claims() {
         ),
     )
     .unwrap();
-    // The tagger date is claimed as 2019, before the expiry.
+    // The tag carries today's date, after the expiry. A backdated tagger date is
+    // deliberately not used: git 2.35 and later judge `valid-before` at the
+    // signer-claimed tagger date, so a backdated tag verifies there (EA FR-041).
     approval_tag(
         &fixture,
         &fixture.signer,
         "approval-1",
         &approval_message("change-1", &digest),
-        &[("GIT_COMMITTER_DATE", "2019-06-01T00:00:00Z")],
+        &[],
     );
     let result = approval_verify(&fixture, "approval-1", "change-1", &digest);
     assert_eq!(
@@ -589,8 +591,7 @@ fn an_expired_key_does_not_approve_whatever_date_the_tagger_claims() {
         "an expired key was not refused as untrusted: {result}"
     );
 
-    // Healthy control: the same backdated tag, the same key, an entry that has
-    // not expired. Only the trust root's expiry differs.
+    // Healthy control: the same tag, the same key, an entry that has not expired. Only the trust root's expiry differs.
     fixture.allow(&fixture.signer, "alice@example.invalid");
     let result = approval_verify(&fixture, "approval-1", "change-1", &digest);
     assert_eq!(result["status"], "approved", "{result}");
