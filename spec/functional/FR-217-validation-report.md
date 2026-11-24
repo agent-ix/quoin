@@ -38,8 +38,9 @@ collected for the intended use.
   `not-executed` status.
 - A `not_high_process_risk` feature MAY rely on retained release test evidence
   only when that evidence is present as a versioned run record.
-- If a required run record or configuration index is absent, the report SHALL
-  state that it was not provided.
+- If a required run record is absent, the report SHALL state that it was not
+  provided. [FR-220](./FR-220-external-tool-configuration-index.md) defines
+  how the report resolves external-tool index evidence.
 - The report SHALL NOT present missing evidence as a passing result.
 - When the report generator receives the same retained run records and rating
   inputs again, it SHALL produce byte-identical Markdown and JSON files.
@@ -54,7 +55,7 @@ collected for the intended use.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-217-AC-1 | Given retained run records for two tools, the command writes valid Markdown and JSON containing each tool version, environment, per-case results, and per-FR coverage rows. | Test |
-| FR-217-AC-2 | Given a missing run record or external-tools configuration index, the report says `not provided` for that evidence and does not mark it as passing. | Test |
+| FR-217-AC-2 | Given a missing required run record, the report says `not provided` for that evidence and does not mark it as passing. | Test |
 | FR-217-AC-3 | Given unchanged retained run records and rating inputs, two report invocations produce byte-identical Markdown and JSON. | Test |
 | FR-217-AC-4 | The generated report contains a `Sign-off` section and does not contain a generated acceptance or compliance decision. | Test |
 

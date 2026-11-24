@@ -30,8 +30,6 @@ observed and which tool limitations remain open.
   the binary supplied no anomaly set, the report SHALL show `not provided`.
 - A carried anomaly assessed against a high-process-risk FR SHALL be visibly
   highlighted with that FR id.
-- The run recorder SHALL label an unavailable external tool `not-executed`.
-- The report SHALL NOT count an unavailable external tool as a pass.
 
 ## Acceptance Criteria
 
@@ -40,9 +38,8 @@ observed and which tool limitations remain open.
 | FR-219-AC-1 | Given a run record for engineering-assurance and one for filament-analyze, the report includes both tools and their observed versions. | Test |
 | FR-219-AC-2 | Given a supplied empty anomaly set, the report says `none known`; given no supplied set, it says `not provided`. | Test |
 | FR-219-AC-3 | Given an open anomaly assessed against a high-process-risk FR, the report highlights that anomaly and names the FR. | Test |
-| FR-219-AC-4 | Given an unavailable external tool in the configuration index, the run records `not-executed` and the report does not count it as a pass. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-136](./FR-136-anomaly-record-mapping.md) defines anomaly record mapping; [FR-162](./FR-162-anomaly-report.md) defines carried anomaly reporting; PLAT-1817 records real-tool runs.
-- **Downstream**: [FR-217](./FR-217-validation-report.md) incorporates the anomaly and external-tool sections.
+- **Downstream**: [FR-217](./FR-217-validation-report.md) incorporates retained run evidence and anomaly reporting.

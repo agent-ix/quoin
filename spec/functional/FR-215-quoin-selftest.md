@@ -50,9 +50,11 @@ environment without checking out the source repository.
   only when the evidence record identifies the tool version and the evidence
   exists in the tool's evidence store.
 - The quire-cli repository SHALL provide the corresponding `quire selftest`
-  entry point for cases it owns, including quire-rs cases embedded by
-  quire-cli. Engineering-assurance and filament-analyze test evidence SHALL
-  be included in the validation report under [FR-219](./FR-219-validation-report-tool-evidence.md).
+  entry point for cases it owns. Its binary MAY embed quire-rs-owned case
+  assets exposed by the linked quire-rs crate at build time; quire-cli SHALL
+  NOT copy or maintain those cases. The validation report's retained
+  engineering-assurance and filament-analyze run evidence is specified by
+  [FR-219](./FR-219-validation-report-tool-evidence.md).
 
 ## Constraints
 

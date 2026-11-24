@@ -12,9 +12,13 @@ relationships:
 
 ## Statement
 
-Each self-test suite shall use only test fixtures authored and maintained in
-the repository that builds the tool binary being tested, and shall not copy
-cases from the qa-corpus repository.
+Each owning tool repository SHALL author and maintain its own self-test cases.
+A consuming repository SHALL NOT copy those cases or any case from the
+qa-corpus repository. A consuming binary MAY embed case assets exposed by a
+linked crate at build time without copying or maintaining those assets. In
+particular, quire-cli may embed quire-rs-owned cases exposed by the linked
+quire-rs crate; quire-rs remains the only repository that authors and
+maintains those cases.
 
 ## Scope
 
@@ -33,10 +37,12 @@ repackaged as a self-test fixture set.
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Self-test cases sourced from another tool repository | 0 | 0 | Inspection |
+| Self-test cases copied from another tool repository | 0 | 0 | Inspection |
 | Self-test cases sourced from qa-corpus | 0 | 0 | Inspection |
 
 ## Verification
 
-Inspect each tool repository's packaged test assets and confirm all cases have
-an owning-repository source path and no case is copied from qa-corpus.
+Inspect each tool repository's packaged test assets and confirm each case has
+one owning-repository source path, embedded dependency assets are exposed by
+their owning crate at build time, and no case is copied from another
+repository or qa-corpus.

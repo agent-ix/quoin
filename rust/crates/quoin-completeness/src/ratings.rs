@@ -39,10 +39,16 @@ pub struct FeatureRatingState {
 /// Report supplier-rating completeness for every FR document in a parsed
 /// bundle. Adopter re-ratings are deliberately excluded.
 #[must_use]
-pub fn assess_feature_ratings(documents: &[BundleDocument]) -> Vec<FeatureRatingState> {
+pub fn assess_feature_ratings(
+    documents: &[BundleDocument],
+    repository_namespace: &str,
+) -> Vec<FeatureRatingState> {
     let mut features = documents
         .iter()
         .filter_map(|document| {
+            if string_field(&document.frontmatter, "type") != Some("FR") {
+                return None;
+            }
             let id = string_field(&document.frontmatter, "id")?;
             (id.starts_with("FR-") && id[3..].chars().all(|character| character.is_ascii_digit()))
                 .then(|| id.to_owned())
@@ -61,7 +67,7 @@ pub fn assess_feature_ratings(documents: &[BundleDocument]) -> Vec<FeatureRating
         let Some(rating_id) = string_field(&document.frontmatter, "id") else {
             continue;
         };
-        let mut targets = rated_features(&document.frontmatter);
+        let mut targets = rated_features(&document.frontmatter, repository_namespace);
         targets.sort();
         targets.dedup();
         for target in targets {
@@ -93,13 +99,16 @@ pub fn assess_feature_ratings(documents: &[BundleDocument]) -> Vec<FeatureRating
         .collect()
 }
 
-fn rated_features(frontmatter: &serde_json::Map<String, Value>) -> Vec<String> {
+fn rated_features(
+    frontmatter: &serde_json::Map<String, Value>,
+    repository_namespace: &str,
+) -> Vec<String> {
     let mut targets = Vec::new();
     if let Some(relations) = frontmatter.get("relationships").and_then(Value::as_array) {
         for relation in relations {
             if relation.get("type").and_then(Value::as_str) == Some("rates_feature")
                 && let Some(target) = relation.get("target").and_then(Value::as_str)
-                && let Some(feature) = feature_id(target)
+                && let Some(feature) = feature_id(target, repository_namespace)
             {
                 targets.push(feature.to_owned());
             }
@@ -108,8 +117,12 @@ fn rated_features(frontmatter: &serde_json::Map<String, Value>) -> Vec<String> {
     targets
 }
 
-fn feature_id(target: &str) -> Option<&str> {
-    let candidate = target.rsplit('/').next().unwrap_or(target);
+fn feature_id<'a>(target: &'a str, repository_namespace: &str) -> Option<&'a str> {
+    let target = target.strip_prefix("ix://")?;
+    let (namespace, candidate) = target.rsplit_once('/')?;
+    if namespace != repository_namespace {
+        return None;
+    }
     (candidate.starts_with("FR-")
         && candidate[3..]
             .chars()
@@ -139,14 +152,14 @@ mod tests {
         }
     }
 
-    fn rating(id: &str, scope: &str, feature: &str) -> BundleDocument {
+    fn rating(id: &str, scope: &str, target: &str) -> BundleDocument {
         document(
             id,
             &json!({
                 "id": id,
                 "type": "FeatureRiskRating",
                 "scope": scope,
-                "relationships": [{"target": format!("ix://agent-ix/quoin/{feature}"), "type": "rates_feature"}]
+                "relationships": [{"target": target, "type": "rates_feature"}]
             }),
         )
     }
@@ -158,13 +171,13 @@ mod tests {
             document("FR-001", &json!({"id":"FR-001", "type":"FR"})),
             document("FR-002", &json!({"id":"FR-002", "type":"FR"})),
             document("FR-003", &json!({"id":"FR-003", "type":"FR"})),
-            rating("RR-001", "supplier", "FR-002"),
-            rating("RR-002", "supplier", "FR-002"),
-            rating("RR-003", "adopter", "FR-001"),
-            rating("RR-004", "supplier", "FR-999"),
+            rating("RR-001", "supplier", "ix://agent-ix/quoin/FR-002"),
+            rating("RR-002", "supplier", "ix://agent-ix/quoin/FR-002"),
+            rating("RR-003", "adopter", "ix://agent-ix/quoin/FR-001"),
+            rating("RR-004", "supplier", "ix://agent-ix/quoin/FR-999"),
         ];
 
-        let states = assess_feature_ratings(&docs);
+        let states = assess_feature_ratings(&docs, "agent-ix/quoin");
         assert_eq!(states.len(), 3);
         assert_eq!(
             states,
@@ -185,6 +198,30 @@ mod tests {
                     rating_ids: Vec::new(),
                 },
             ]
+        );
+    }
+
+    #[trace("PLAT-1636-AC-6")]
+    #[test]
+    fn tc_1636_external_rating_uri_cannot_match_local_fr_id() {
+        let docs = vec![
+            document("FR-001", &json!({"id":"FR-001", "type":"FR"})),
+            rating("RR-local", "supplier", "ix://agent-ix/quoin/FR-001"),
+            rating(
+                "RR-external",
+                "supplier",
+                "ix://other-org/other-repo/FR-001",
+            ),
+        ];
+
+        let states = assess_feature_ratings(&docs, "agent-ix/quoin");
+        assert_eq!(
+            states.first(),
+            Some(&FeatureRatingState {
+                feature_id: "FR-001".to_owned(),
+                status: RatingStatus::Rated,
+                rating_ids: vec!["RR-local".to_owned()],
+            })
         );
     }
 }

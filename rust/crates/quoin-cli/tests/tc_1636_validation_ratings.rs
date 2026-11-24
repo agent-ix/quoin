@@ -39,13 +39,35 @@ fn snapshot(path: &Path, root: &Path, result: &mut BTreeMap<String, Vec<u8>>) {
     }
 }
 
-fn invoke(root: &Path) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_quoin"))
-        .args(["validation", "ratings", "--repo"])
+fn initialize_repo(root: &Path) {
+    let init = Command::new("git")
+        .arg("-C")
         .arg(root)
-        .arg("--json")
-        .output()
-        .expect("quoin binary runs")
+        .args(["init", "--quiet"])
+        .status()
+        .expect("git initializes fixture repository");
+    assert!(init.success());
+    let remote = Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args([
+            "remote",
+            "add",
+            "origin",
+            "git@github.com:agent-ix/quoin.git",
+        ])
+        .status()
+        .expect("git configures fixture origin");
+    assert!(remote.success());
+}
+
+fn invoke(root: &Path, json: bool) -> std::process::Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+    command.args(["validation", "ratings", "--repo"]).arg(root);
+    if json {
+        command.arg("--json");
+    }
+    command.output().expect("quoin binary runs")
 }
 
 #[trace("PLAT-1636-AC-6")]
@@ -53,6 +75,7 @@ fn invoke(root: &Path) -> std::process::Output {
 #[test]
 fn tc_1636_ratings_reports_each_status_and_is_read_only() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
+    initialize_repo(scratch.path());
     write(
         scratch.path(),
         "spec/functional/FR-001-a.md",
@@ -88,16 +111,29 @@ fn tc_1636_ratings_reports_each_status_and_is_read_only() {
         "spec/ratings/RR-3.md",
         "---\nid: RR-3\ntype: FeatureRiskRating\nscope: supplier\nrelationships:\n  - target: ix://agent-ix/quoin/FR-003\n    type: rates_feature\n---\n",
     );
+    write(
+        scratch.path(),
+        "spec/ratings/RR-external.md",
+        "---\nid: RR-external\ntype: FeatureRiskRating\nscope: supplier\nrelationships:\n  - target: ix://agent-ix/other-repo/FR-001\n    type: rates_feature\n---\n",
+    );
     let mut before = BTreeMap::new();
     snapshot(scratch.path(), scratch.path(), &mut before);
 
-    let output = invoke(scratch.path());
+    let output = invoke(scratch.path(), true);
     assert_eq!(output.status.code(), Some(1));
     let report: Value = serde_json::from_slice(&output.stdout).expect("JSON report parses");
+    assert_eq!(report.as_object().expect("report is an object").len(), 2);
     let features = report
         .get("features")
         .and_then(Value::as_array)
         .expect("features listed");
+    assert_eq!(
+        features
+            .iter()
+            .map(|item| item["feature_id"].as_str().expect("feature ID is string"))
+            .collect::<Vec<_>>(),
+        ["FR-001", "FR-002", "FR-003"]
+    );
     let state = |feature: &str| {
         features
             .iter()
@@ -120,4 +156,46 @@ fn tc_1636_ratings_reports_each_status_and_is_read_only() {
         before, after,
         "validation ratings does not modify the repository tree"
     );
+}
+
+#[trace("PLAT-1636-AC-6")]
+#[trace("PLAT-1636-AC-7")]
+#[test]
+fn tc_1636_unreadable_input_is_reported_in_json_and_human_output() {
+    let scratch = tempfile::tempdir().expect("temporary repository created");
+    initialize_repo(scratch.path());
+    write(
+        scratch.path(),
+        "spec/functional/FR-001-a.md",
+        "---\nid: FR-001\ntype: FR\n---\nA\n",
+    );
+    write(
+        scratch.path(),
+        "spec/functional/FR-002-broken.md",
+        "---\nid: [invalid\ntype: FR\n---\nBroken frontmatter\n",
+    );
+
+    let json_output = invoke(scratch.path(), true);
+    assert_eq!(json_output.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&json_output.stdout).expect("JSON report parses");
+    assert_eq!(report["features"][0]["feature_id"], "FR-001");
+    assert_eq!(report["features"][0]["status"], "unrated");
+    assert_eq!(
+        report["unreadable"]
+            .as_array()
+            .expect("diagnostics listed")
+            .len(),
+        1
+    );
+    assert_eq!(
+        report["unreadable"][0]["path"],
+        "functional/FR-002-broken.md"
+    );
+    assert!(report["unreadable"][0]["reason"].as_str().is_some());
+
+    let human_output = invoke(scratch.path(), false);
+    assert_eq!(human_output.status.code(), Some(1));
+    let stdout = String::from_utf8(human_output.stdout).expect("human output is UTF-8");
+    assert!(stdout.contains("FR-001: unrated (rating IDs: none)"));
+    assert!(stdout.contains("unreadable: functional/FR-002-broken.md: "));
 }
