@@ -44,6 +44,10 @@ pub(crate) struct Corpus {
 
 impl Corpus {
     pub(crate) fn put(&self, id: &str, kind: &str, front: &str, body: &str) {
+        self.put_titled(id, id, kind, front, body);
+    }
+
+    pub(crate) fn put_titled(&self, id: &str, title: &str, kind: &str, front: &str, body: &str) {
         // The safety types require the `## Properties` identity table every
         // authored record carries.
         let properties = if matches!(
@@ -59,7 +63,7 @@ impl Corpus {
             ""
         };
         let text = format!(
-            "---\nid: {id}\ntitle: \"{id}\"\ntype: {kind}\nobject: {kind}\n{front}---\n# [{id}] {id}\n\n{body}{properties}"
+            "---\nid: {id}\ntitle: \"{title}\"\ntype: {kind}\nobject: {kind}\n{front}---\n# [{id}] {id}\n\n{body}{properties}"
         );
         std::fs::write(self.dir.path().join(format!("{id}.md")), text).unwrap();
     }

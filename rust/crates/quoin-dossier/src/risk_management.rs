@@ -7,11 +7,12 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use quoin_risk_advice::{Advice, Row, RowToken, Summary};
+use quoin_risk_advice::{Advice, HarmText, Row, RowToken, Summary};
 
 use crate::error::SourceFailure;
 use crate::gap::{Gap, GapKind};
-use crate::markdown::{cell, line};
+use crate::markdown::{cell, line, prose};
+use crate::order::dossier_cmp;
 use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
 
 /// The risk-management dossier generator.
@@ -89,6 +90,12 @@ fn render(summary: &Summary, advice: &Advice) -> Generated {
             match hazard {
                 Some(id) => {
                     let _ = writeln!(body, "## {}\n", line(id));
+                    render_authored(
+                        &mut body,
+                        row.hazard_title.as_deref(),
+                        "Condition",
+                        row.hazard_text.as_deref(),
+                    );
                 }
                 None => body.push_str("## Hazard not stated\n\n"),
             }
@@ -96,7 +103,28 @@ fn render(summary: &Summary, advice: &Advice) -> Generated {
         }
         render_row(&mut body, &mut gaps, row, &policy_findings, index);
     }
+    render_benefit_risks(&mut body, summary);
+    render_evaluations(&mut body, summary);
     render_decision_queue(&mut body, advice);
+    if summary.overall_evaluations.is_empty() {
+        gaps.push(Gap::new(
+            GapKind::NoOverallEvaluation,
+            "this document",
+            "the corpus holds no overall residual risk evaluation record",
+        ));
+    }
+    for evaluation in &summary.overall_evaluations {
+        if evaluation.decision == "undecided" {
+            gaps.push(
+                Gap::new(
+                    GapKind::OverallEvaluationUndecided,
+                    evaluation.evaluation.as_str(),
+                    "the overall residual risk evaluation has no recorded decision",
+                )
+                .for_element(evaluation.evaluation.as_str()),
+            );
+        }
+    }
     if advice.policy_cells.iter().any(|cell| {
         cell.findings
             .iter()
@@ -124,19 +152,17 @@ fn render_row(
 ) {
     if let Some(situation) = &row.situation {
         let _ = writeln!(body, "### Situation {}\n", line(situation));
+        render_authored(
+            body,
+            row.situation_title.as_deref(),
+            "Description",
+            row.situation_text.as_deref(),
+        );
     } else if row.hazard.is_none() {
         body.push_str("### Situation not stated\n\n");
     }
-    if !row.harms.is_empty() {
-        let _ = writeln!(
-            body,
-            "Harms: {}\n",
-            row.harms
-                .iter()
-                .map(|id| line(id))
-                .collect::<Vec<_>>()
-                .join(", ")
-        );
+    for harm in &row.harm_texts {
+        render_harm(body, harm);
     }
     render_estimates(
         body,
@@ -152,15 +178,17 @@ fn render_row(
         policy_findings,
     );
     if !row.residual_risks.is_empty() {
-        body.push_str("| Residual risk | Decision | Decider |\n| --- | --- | --- |\n");
+        body.push_str(
+            "| Residual risk | Decision | Decider | Rationale |\n| --- | --- | --- | --- |\n",
+        );
         for risk in &row.residual_risks {
-            let decider = risk.decided_by.as_deref().unwrap_or("not stated");
             let _ = writeln!(
                 body,
-                "| {} | {} | {} |",
+                "| {} | {} | {} | {} |",
                 cell(&risk.residual_risk),
                 cell(&risk.decision),
-                cell(decider)
+                cell(risk.decided_by.as_deref().unwrap_or(NOT_STATED)),
+                cell(risk.rationale.as_deref().unwrap_or(NOT_STATED))
             );
         }
         body.push('\n');
@@ -210,6 +238,81 @@ fn render_row(
         }
         body.push('\n');
     }
+}
+
+const NOT_STATED: &str = "not stated";
+
+/// An authored title and text, shown as the record wrote them.
+fn render_authored(body: &mut String, title: Option<&str>, label: &str, text: Option<&str>) {
+    let _ = writeln!(
+        body,
+        "Title: {}\n",
+        title.map_or_else(|| NOT_STATED.to_owned(), line)
+    );
+    let _ = writeln!(body, "{label}:\n");
+    let _ = writeln!(
+        body,
+        "{}\n",
+        text.map_or_else(|| NOT_STATED.to_owned(), prose)
+    );
+}
+
+fn render_harm(body: &mut String, harm: &HarmText) {
+    let _ = writeln!(body, "#### Harm {}\n", line(&harm.harm));
+    render_authored(
+        body,
+        harm.title.as_deref(),
+        "Description",
+        harm.text.as_deref(),
+    );
+}
+
+fn render_benefit_risks(body: &mut String, summary: &Summary) {
+    body.push_str("## Benefit-risk records\n\n");
+    if summary.benefit_risks.is_empty() {
+        body.push_str("none\n\n");
+        return;
+    }
+    let mut records: Vec<_> = summary.benefit_risks.iter().collect();
+    records.sort_by(|a, b| dossier_cmp(&a.benefit_risk, &b.benefit_risk));
+    body.push_str("| Record | Benefit | Decision | Decider | Rationale | Residual risks |\n| --- | --- | --- | --- | --- | --- |\n");
+    for record in records {
+        let _ = writeln!(
+            body,
+            "| {} | {} | {} | {} | {} | {} |",
+            cell_text(&record.benefit_risk),
+            cell_text(record.benefit.as_deref().unwrap_or(NOT_STATED)),
+            cell_text(&record.decision),
+            cell_text(record.decided_by.as_deref().unwrap_or(NOT_STATED)),
+            cell_text(record.rationale.as_deref().unwrap_or(NOT_STATED)),
+            list_cell(&record.residual_risks)
+        );
+    }
+    body.push('\n');
+}
+
+fn render_evaluations(body: &mut String, summary: &Summary) {
+    body.push_str("## Overall residual risk evaluation\n\n");
+    if summary.overall_evaluations.is_empty() {
+        body.push_str("none\n\n");
+        return;
+    }
+    let mut records: Vec<_> = summary.overall_evaluations.iter().collect();
+    records.sort_by(|a, b| dossier_cmp(&a.evaluation, &b.evaluation));
+    body.push_str("| Record | Product | Decision | Decider | Rationale | References |\n| --- | --- | --- | --- | --- | --- |\n");
+    for record in records {
+        let _ = writeln!(
+            body,
+            "| {} | {} | {} | {} | {} | {} |",
+            cell_text(&record.evaluation),
+            cell_text(record.product.as_deref().unwrap_or(NOT_STATED)),
+            cell_text(&record.decision),
+            cell_text(record.decided_by.as_deref().unwrap_or(NOT_STATED)),
+            cell_text(record.rationale.as_deref().unwrap_or(NOT_STATED)),
+            list_cell(&record.references)
+        );
+    }
+    body.push('\n');
 }
 
 fn render_estimates(
@@ -384,8 +487,8 @@ mod tests {
     use super::*;
     use ix_trace_rs::trace;
     use quoin_risk_advice::{
-        ControlEntry, EstimateEntry, NoRecord, Queue, QueueEntry, ResidualEntry, RowFinding,
-        RowToken,
+        ControlEntry, EstimateEntry, EvaluationEntry, NoRecord, Queue, QueueEntry, ResidualEntry,
+        RowFinding, RowToken,
     };
 
     fn advice() -> Advice {
@@ -401,11 +504,31 @@ mod tests {
         }
     }
 
+    fn decided_evaluation() -> EvaluationEntry {
+        EvaluationEntry {
+            evaluation: "ORE-1".to_owned(),
+            product: Some("Pump".to_owned()),
+            decision: "accepted".to_owned(),
+            decided_by: Some("A. Person".to_owned()),
+            rationale: None,
+            references: vec!["RR-1".to_owned()],
+        }
+    }
+
     fn complete_row() -> Row {
         Row {
             hazard: Some("HAZ-1".to_owned()),
+            hazard_title: Some("Overdose".to_owned()),
+            hazard_text: Some("The pump delivers too much.".to_owned()),
             situation: Some("SIT-1".to_owned()),
+            situation_title: None,
+            situation_text: None,
             harms: vec!["HARM-1".to_owned()],
+            harm_texts: vec![HarmText {
+                harm: "HARM-1".to_owned(),
+                title: Some("Tissue damage".to_owned()),
+                text: None,
+            }],
             pre_control: vec![EstimateEntry {
                 estimate: "EST-PRE".to_owned(),
                 severity: "serious".to_owned(),
@@ -428,6 +551,7 @@ mod tests {
                 residual_risk: "RR-1".to_owned(),
                 decision: "accepted".to_owned(),
                 decided_by: Some("A. Person".to_owned()),
+                rationale: Some("Benefit outweighs the risk.".to_owned()),
             }],
             findings: Vec::new(),
         }
@@ -439,6 +563,8 @@ mod tests {
         let summary = Summary {
             attribution: quoin_risk_advice::ATTRIBUTION,
             rows: vec![complete_row()],
+            benefit_risks: Vec::new(),
+            overall_evaluations: vec![decided_evaluation()],
             unreadable: Vec::new(),
             unusable: Vec::new(),
         };
@@ -447,7 +573,7 @@ mod tests {
         let second = render(&summary, &advice);
         assert_eq!(first, second);
         assert!(first.body.contains("## HAZ-1"));
-        assert!(first.body.contains("Harms: HARM-1"));
+        assert!(first.body.contains("#### Harm HARM-1"));
         assert!(
             first
                 .body
@@ -459,7 +585,11 @@ mod tests {
                 .contains("| EST-POST | post_control | minor | unlikely | low |  |")
         );
         assert!(first.body.contains("| CTRL-1 | FR-9 | none | TC-9 |"));
-        assert!(first.body.contains("| RR-1 | accepted | A. Person |"));
+        assert!(
+            first
+                .body
+                .contains("| RR-1 | accepted | A. Person | Benefit outweighs the risk. |")
+        );
         assert!(first.gaps.is_empty());
         assert!(!first.body.to_ascii_lowercase().contains("score"));
         assert!(!first.body.to_ascii_lowercase().contains("rank"));
@@ -479,6 +609,8 @@ mod tests {
         let summary = Summary {
             attribution: quoin_risk_advice::ATTRIBUTION,
             rows: vec![row],
+            benefit_risks: Vec::new(),
+            overall_evaluations: vec![decided_evaluation()],
             unreadable: Vec::new(),
             unusable: Vec::new(),
         };
@@ -519,12 +651,18 @@ mod tests {
             &Summary {
                 attribution: quoin_risk_advice::ATTRIBUTION,
                 rows: vec![row, hazard_without_situation],
+                benefit_risks: Vec::new(),
+                overall_evaluations: vec![decided_evaluation()],
                 unreadable: Vec::new(),
                 unusable: Vec::new(),
             },
             &advice(),
         );
-        assert!(rendered.body.contains("| RR-1 | accepted | not stated |"));
+        assert!(
+            rendered
+                .body
+                .contains("| RR-1 | accepted | not stated | Benefit outweighs the risk. |")
+        );
         assert!(rendered.body.contains("## HAZ-EMPTY"));
         assert!(
             rendered
@@ -600,6 +738,8 @@ mod tests {
             &Summary {
                 attribution: quoin_risk_advice::ATTRIBUTION,
                 rows: vec![row],
+                benefit_risks: Vec::new(),
+                overall_evaluations: vec![decided_evaluation()],
                 unreadable: Vec::new(),
                 unusable: Vec::new(),
             },
@@ -616,6 +756,46 @@ mod tests {
                 .filter(|gap| gap.gap_kind == GapKind::NoAcceptabilityPolicy)
                 .count(),
             1
+        );
+    }
+
+    #[trace("FR-199-AC-9", "FR-199-AC-10", "FR-199-AC-11", "FR-199-AC-12")]
+    #[test]
+    fn every_absent_authored_value_reads_not_stated() {
+        let mut row = complete_row();
+        row.hazard_title = None;
+        row.hazard_text = None;
+        row.harm_texts[0].title = None;
+        row.residual_risks[0].rationale = None;
+        row.residual_risks[0].decided_by = None;
+        let mut evaluation = decided_evaluation();
+        evaluation.product = None;
+        evaluation.decided_by = None;
+        evaluation.rationale = None;
+        let summary = Summary {
+            attribution: quoin_risk_advice::ATTRIBUTION,
+            rows: vec![row],
+            benefit_risks: vec![quoin_risk_advice::BenefitRiskEntry {
+                benefit_risk: "BR-1".to_owned(),
+                benefit: None,
+                decision: "undecided".to_owned(),
+                decided_by: None,
+                rationale: None,
+                residual_risks: Vec::new(),
+            }],
+            overall_evaluations: vec![evaluation],
+            unreadable: Vec::new(),
+            unusable: Vec::new(),
+        };
+        let body = render(&summary, &advice()).body;
+        assert!(body.contains("Title: not stated\n\nCondition:\n\nnot stated\n"));
+        assert!(body.contains("#### Harm HARM-1\n\nTitle: not stated\n"));
+        assert!(body.contains("| RR-1 | accepted | not stated | not stated |"));
+        assert!(
+            body.contains("| BR-1 | not stated | undecided | not stated | not stated | none |")
+        );
+        assert!(
+            body.contains("| ORE-1 | not stated | accepted | not stated | not stated | RR-1 |")
         );
     }
 }

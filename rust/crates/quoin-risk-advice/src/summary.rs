@@ -161,6 +161,54 @@ pub struct ResidualEntry {
     pub decision: String,
     /// The decider as written, or `null`.
     pub decided_by: Option<String>,
+    /// The `Rationale` cell as written, or `null`.
+    pub rationale: Option<String>,
+}
+
+/// A harm's authored title and text.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct HarmText {
+    /// The harm id.
+    pub harm: String,
+    /// The frontmatter `title`, or `null`.
+    pub title: Option<String>,
+    /// The `## Description` text as written, or `null`.
+    pub text: Option<String>,
+}
+
+/// A `benefit_risk` record as written.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct BenefitRiskEntry {
+    /// The record id.
+    pub benefit_risk: String,
+    /// The `Benefit` cell as written, or `null`.
+    pub benefit: Option<String>,
+    /// The decision word as written.
+    pub decision: String,
+    /// The `Decided by` cell as written, or `null`.
+    pub decided_by: Option<String>,
+    /// The `Rationale` cell as written, or `null`.
+    pub rationale: Option<String>,
+    /// Ids of the residual risks it references, ascending.
+    pub residual_risks: Vec<String>,
+}
+
+/// An `overall_residual_risk_evaluation` record as written.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EvaluationEntry {
+    /// The record id.
+    pub evaluation: String,
+    /// The `Product` cell as written, or `null`.
+    pub product: Option<String>,
+    /// The decision word as written.
+    pub decision: String,
+    /// The `Decided by` cell as written, or `null`.
+    pub decided_by: Option<String>,
+    /// The `Rationale` cell as written, or `null`.
+    pub rationale: Option<String>,
+    /// Ids of the residual-risk and benefit-risk records it references,
+    /// ascending.
+    pub references: Vec<String>,
 }
 
 /// One hazard and situation pairing.
@@ -168,10 +216,20 @@ pub struct ResidualEntry {
 pub struct Row {
     /// The hazard id, or `null`.
     pub hazard: Option<String>,
+    /// The hazard's frontmatter `title`, or `null`.
+    pub hazard_title: Option<String>,
+    /// The hazard's `## Condition` text as written, or `null`.
+    pub hazard_text: Option<String>,
     /// The situation id, or `null`.
     pub situation: Option<String>,
+    /// The situation's frontmatter `title`, or `null`.
+    pub situation_title: Option<String>,
+    /// The situation's `## Description` text as written, or `null`.
+    pub situation_text: Option<String>,
     /// Ids of the harms that arise from the situation.
     pub harms: Vec<String>,
+    /// The authored title and text of those harms.
+    pub harm_texts: Vec<HarmText>,
     /// The pre-control estimates of the situation.
     pub pre_control: Vec<EstimateEntry>,
     /// The controls the post-control estimates assume.
@@ -191,6 +249,10 @@ pub struct Summary {
     pub attribution: &'static str,
     /// One row per hazard and situation pairing.
     pub rows: Vec<Row>,
+    /// Every `benefit_risk` record, ascending by id.
+    pub benefit_risks: Vec<BenefitRiskEntry>,
+    /// Every `overall_residual_risk_evaluation` record, ascending by id.
+    pub overall_evaluations: Vec<EvaluationEntry>,
     /// The files the reader could not load, each as `path: reason`.
     #[serde(skip)]
     pub unreadable: Vec<String>,
@@ -312,6 +374,43 @@ impl<'a> Chain<'a> {
             .collect()
     }
 
+    fn title_of(&self, id: Option<&str>) -> Option<String> {
+        self.records.others.get(id?)?.title.clone()
+    }
+
+    fn text_of(&self, id: Option<&str>, hazard: bool) -> Option<String> {
+        let doc = self.records.others.get(id?)?;
+        if hazard {
+            doc.condition.clone()
+        } else {
+            doc.description.clone()
+        }
+    }
+
+    fn harm_texts(&self, harms: &[String]) -> Vec<HarmText> {
+        harms
+            .iter()
+            .filter_map(|id| self.records.others.get(id))
+            .map(|doc| HarmText {
+                harm: doc.id.clone(),
+                title: doc.title.clone(),
+                text: doc.description.clone(),
+            })
+            .collect()
+    }
+
+    fn residual_entries(&self, ids: &BTreeSet<String>) -> Vec<ResidualEntry> {
+        ids.iter()
+            .filter_map(|id| self.records.residual_risks.get(id))
+            .map(|risk| ResidualEntry {
+                residual_risk: risk.id.clone(),
+                decision: risk.decision.clone(),
+                decided_by: risk.decided_by.clone(),
+                rationale: risk.rationale.clone(),
+            })
+            .collect()
+    }
+
     fn row(&self, hazard: Option<&str>, situation: Option<&str>) -> Row {
         let mut findings = BTreeSet::new();
         let mut add = |finding: RowToken, names: Vec<String>| {
@@ -323,8 +422,13 @@ impl<'a> Chain<'a> {
             }
             return Row {
                 hazard: hazard.map(str::to_owned),
+                hazard_title: self.title_of(hazard),
+                hazard_text: self.text_of(hazard, true),
                 situation: None,
+                situation_title: None,
+                situation_text: None,
                 harms: Vec::new(),
+                harm_texts: Vec::new(),
                 pre_control: Vec::new(),
                 controls: Vec::new(),
                 post_control: Vec::new(),
@@ -382,15 +486,7 @@ impl<'a> Chain<'a> {
                 verifications: evidence.verifications,
             });
         }
-        let residual_risks = residual_ids
-            .iter()
-            .filter_map(|id| self.records.residual_risks.get(id))
-            .map(|risk| ResidualEntry {
-                residual_risk: risk.id.clone(),
-                decision: risk.decision.clone(),
-                decided_by: risk.decided_by.clone(),
-            })
-            .collect();
+        let residual_risks = self.residual_entries(&residual_ids);
         for id in &residual_ids {
             for found in self.decisions.by_residual.get(id).into_iter().flatten() {
                 add(found.finding, found.names.clone());
@@ -398,7 +494,12 @@ impl<'a> Chain<'a> {
         }
         Row {
             hazard: hazard.map(str::to_owned),
+            hazard_title: self.title_of(hazard),
+            hazard_text: self.text_of(hazard, true),
             situation: Some(situation.to_owned()),
+            situation_title: self.title_of(Some(situation)),
+            situation_text: self.text_of(Some(situation), false),
+            harm_texts: self.harm_texts(&harms),
             harms,
             pre_control: pre.into_iter().map(|e| self.entry(e)).collect(),
             controls,
@@ -449,9 +550,57 @@ pub(crate) fn build(records: &Records, links: &Links) -> Vec<Row> {
     rows
 }
 
-/// A copied value in a table cell: a pipe would end the cell, so it is escaped.
+pub(crate) fn benefit_risks(records: &Records) -> Vec<BenefitRiskEntry> {
+    records
+        .benefit_risks
+        .values()
+        .map(|record| BenefitRiskEntry {
+            benefit_risk: record.id.clone(),
+            benefit: record.subject.clone(),
+            decision: record.decision.clone(),
+            decided_by: record.decided_by.clone(),
+            rationale: record.rationale.clone(),
+            residual_risks: record
+                .references
+                .iter()
+                .filter(|id| records.residual_risks.contains_key(*id))
+                .cloned()
+                .collect(),
+        })
+        .collect()
+}
+
+pub(crate) fn evaluations(records: &Records) -> Vec<EvaluationEntry> {
+    records
+        .evaluations
+        .values()
+        .map(|record| EvaluationEntry {
+            evaluation: record.id.clone(),
+            product: record.subject.clone(),
+            decision: record.decision.clone(),
+            decided_by: record.decided_by.clone(),
+            rationale: record.rationale.clone(),
+            references: record
+                .references
+                .iter()
+                .filter(|id| {
+                    records.residual_risks.contains_key(*id)
+                        || records.benefit_risks.contains_key(*id)
+                })
+                .cloned()
+                .collect(),
+        })
+        .collect()
+}
+
+/// A copied value in a table cell: a pipe would end the cell, so it is
+/// escaped, and a line break would end the row, so it is written as `<br>`.
 fn esc(value: &str) -> String {
-    value.replace('|', "\\|")
+    value
+        .replace('|', "\\|")
+        .replace('<', "\\<")
+        .replace("\r\n", "<br>")
+        .replace(['\n', '\r'], "<br>")
 }
 
 fn ids(list: &[String]) -> String {
@@ -499,10 +648,20 @@ fn control_cell(entry: &ControlEntry) -> String {
 
 fn residual_cell(entry: &ResidualEntry) -> String {
     format!(
-        "residual_risk={}; decision={}; decided_by={}",
+        "residual_risk={}; decision={}; decided_by={}; rationale={}",
         esc(&entry.residual_risk),
         esc(&entry.decision),
-        or_null(entry.decided_by.as_ref())
+        or_null(entry.decided_by.as_ref()),
+        or_null(entry.rationale.as_ref())
+    )
+}
+
+fn harm_text_cell(entry: &HarmText) -> String {
+    format!(
+        "harm={}; title={}; text={}",
+        esc(&entry.harm),
+        or_null(entry.title.as_ref()),
+        or_null(entry.text.as_ref())
     )
 }
 
@@ -514,10 +673,15 @@ fn finding_cell(entry: &RowFinding) -> String {
     )
 }
 
-const COLUMNS: [&str; 8] = [
+const COLUMNS: [&str; 13] = [
     "hazard",
+    "hazard_title",
+    "hazard_text",
     "situation",
+    "situation_title",
+    "situation_text",
     "harms",
+    "harm_texts",
     "pre_control",
     "controls",
     "post_control",
@@ -525,20 +689,73 @@ const COLUMNS: [&str; 8] = [
     "findings",
 ];
 
+const BENEFIT_COLUMNS: [&str; 6] = [
+    "benefit_risk",
+    "benefit",
+    "decision",
+    "decided_by",
+    "rationale",
+    "residual_risks",
+];
+
+const EVALUATION_COLUMNS: [&str; 6] = [
+    "evaluation",
+    "product",
+    "decision",
+    "decided_by",
+    "rationale",
+    "references",
+];
+
+fn table_head(out: &mut String, columns: &[&str]) {
+    let _ = writeln!(out, "| {} |", columns.join(" | "));
+    let _ = writeln!(out, "|{}", " --- |".repeat(columns.len()));
+}
+
 pub(crate) fn markdown(summary: &Summary) -> String {
     let mut out = format!("{}\n\n", summary.attribution);
-    let _ = writeln!(out, "| {} |", COLUMNS.join(" | "));
-    let _ = writeln!(out, "|{}", " --- |".repeat(COLUMNS.len()));
+    table_head(&mut out, &COLUMNS);
     for row in &summary.rows {
         let cells = [
             or_null(row.hazard.as_ref()),
+            or_null(row.hazard_title.as_ref()),
+            or_null(row.hazard_text.as_ref()),
             or_null(row.situation.as_ref()),
+            or_null(row.situation_title.as_ref()),
+            or_null(row.situation_text.as_ref()),
             ids(&row.harms),
+            entries(&row.harm_texts, harm_text_cell),
             entries(&row.pre_control, estimate_cell),
             entries(&row.controls, control_cell),
             entries(&row.post_control, estimate_cell),
             entries(&row.residual_risks, residual_cell),
             entries(&row.findings, finding_cell),
+        ];
+        let _ = writeln!(out, "| {} |", cells.join(" | "));
+    }
+    out.push('\n');
+    table_head(&mut out, &BENEFIT_COLUMNS);
+    for entry in &summary.benefit_risks {
+        let cells = [
+            esc(&entry.benefit_risk),
+            or_null(entry.benefit.as_ref()),
+            esc(&entry.decision),
+            or_null(entry.decided_by.as_ref()),
+            or_null(entry.rationale.as_ref()),
+            ids(&entry.residual_risks),
+        ];
+        let _ = writeln!(out, "| {} |", cells.join(" | "));
+    }
+    out.push('\n');
+    table_head(&mut out, &EVALUATION_COLUMNS);
+    for entry in &summary.overall_evaluations {
+        let cells = [
+            esc(&entry.evaluation),
+            or_null(entry.product.as_ref()),
+            esc(&entry.decision),
+            or_null(entry.decided_by.as_ref()),
+            or_null(entry.rationale.as_ref()),
+            ids(&entry.references),
         ];
         let _ = writeln!(out, "| {} |", cells.join(" | "));
     }
