@@ -25,6 +25,8 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+mod pack_support;
+
 use ix_trace_rs::trace;
 use serde_json::{Value, json};
 
@@ -281,6 +283,14 @@ impl Release {
             .to_string(),
         )
         .unwrap();
+        // A discharge resolves each clause's policy from an installed module.
+        pack_support::install_clause_set(
+            self.home.path(),
+            "example.invalid",
+            "soup",
+            "1.0.0",
+            &["C-DISP"],
+        );
         let binding = self.aux("binding.json");
         fs::write(
             &binding,

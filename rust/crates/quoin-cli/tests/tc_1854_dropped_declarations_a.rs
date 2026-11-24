@@ -311,10 +311,25 @@ fn anomaly_scope(dropped: bool) -> Scope {
     )
     .expect("the spec-artifacts-process checkout holds the anomaly fixtures");
     write(scope.dir.path(), "AN-001.md", &text);
+    // The `hazard` object type lives in its own module, as in production; without
+    // it `anomaly check` reports a missing-module finding and exits 1.
+    write(
+        scope.dir.path(),
+        "hazard-module/manifest.yaml",
+        "name: spec-objects-safety\nversion: 0.0.0\nobject_types:\n- name: hazard\n",
+    );
     scope
 }
 
-const ANOMALY: &[&str] = &["anomaly", "check", ".", "--module", "."];
+const ANOMALY: &[&str] = &[
+    "anomaly",
+    "check",
+    ".",
+    "--module",
+    ".",
+    "--module",
+    "hazard-module",
+];
 
 #[trace("FR-029-AC-21")]
 #[test]
