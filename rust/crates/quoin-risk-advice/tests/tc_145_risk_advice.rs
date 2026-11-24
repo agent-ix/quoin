@@ -474,7 +474,13 @@ fn control_links_are_tested_by_their_edges_alone() {
     );
     assert_eq!(
         keys(&gaps(&json)["controls"][0]),
-        ["control", "findings", "requirements", "verifications"]
+        [
+            "control",
+            "findings",
+            "requirements",
+            "retired_requirements",
+            "verifications"
+        ]
     );
     assert_eq!(
         keys(gaps(&json)),
