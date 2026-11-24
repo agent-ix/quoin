@@ -166,16 +166,25 @@ mod tests {
 
         let states = assess_feature_ratings(&docs);
         assert_eq!(states.len(), 3);
-        let first = states.first().expect("first feature is present");
-        assert_eq!(first.feature_id, "FR-001");
-        assert_eq!(first.status, RatingStatus::Unrated);
-        assert!(first.rating_ids.is_empty());
-        let second = states.get(1).expect("second feature is present");
-        assert_eq!(second.feature_id, "FR-002");
-        assert_eq!(second.status, RatingStatus::RatedMoreThanOnce);
-        assert_eq!(second.rating_ids, ["RR-001", "RR-002"]);
-        let third = states.get(2).expect("third feature is present");
-        assert_eq!(third.feature_id, "FR-003");
-        assert_eq!(third.status, RatingStatus::Unrated);
+        assert_eq!(
+            states,
+            [
+                FeatureRatingState {
+                    feature_id: "FR-001".to_owned(),
+                    status: RatingStatus::Unrated,
+                    rating_ids: Vec::new(),
+                },
+                FeatureRatingState {
+                    feature_id: "FR-002".to_owned(),
+                    status: RatingStatus::RatedMoreThanOnce,
+                    rating_ids: vec!["RR-001".to_owned(), "RR-002".to_owned()],
+                },
+                FeatureRatingState {
+                    feature_id: "FR-003".to_owned(),
+                    status: RatingStatus::Unrated,
+                    rating_ids: Vec::new(),
+                },
+            ]
+        );
     }
 }
