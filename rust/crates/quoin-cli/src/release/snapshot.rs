@@ -171,7 +171,11 @@ pub(super) fn vulnerabilities(
     };
     let corpus =
         quoin_quire::records::read(repo, &selection, &["vulnerability"]).map_err(|error| {
-            Refusal::invalid("--repo", "vulnerability-records", &error.to_string()).into()
+            Stop::from(Refusal::invalid(
+                "--repo",
+                "vulnerability-records",
+                &error.to_string(),
+            ))
         })?;
     if let Some(unreadable) = corpus.unreadable.first() {
         let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
