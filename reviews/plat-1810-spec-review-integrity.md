@@ -44,3 +44,28 @@ subject and no-id sort rules for all three new kinds; FR-192-AC-7..9 and
 FR-194-AC-7..8 (testable, no inference); FR-193-AC-7..8; FR-196-AC-3 amendment
 (subject to dependency FND-003); FR-199-AC-9..13; the DOS-ROP bundle order and its
 consistency with FR-191-AC-16 for incomplete documents.
+
+## New findings (disposition pass 1)
+
+| ID      | Severity | Summary | Refs | Escape Cause |
+| ------- | -------- | ------- | ---- | ------------ |
+| FND-013 | medium | FR-169 now puts multi-line authored text in Markdown table cells (`hazard_text` from `## Condition`, `situation_text` and harm `text` from `## Description`, "as written"), but its cell rules escape only `\|`. A section of two or more lines, which is the normal case (the hazard skeleton's Condition spans two lines), breaks the row, against "a row has exactly one cell for each column". State how a line break inside a copied value renders in a cell (for example as `<br>`), and add it to FR-169-AC-27 or a new AC. JSON is unaffected. | spec/functional/FR-169-risk-summary-command.md:97-100,109-114,123; FR-169-AC-27 | missing-requirement |
+| FND-014 | low | FR-199-AC-14 says changing only the decision from `undecided` to `accepted` changes "that record's decision and decider cells", but the decider cell changes only if the decider is also changed. Say "decision cell" (and the decider only when it is edited too). Candidate for accepted-no-change. | FR-199-AC-14 | wrong-requirement |
+| FND-015 | low | FR-191-AC-30 says unfiltered `export --release` bundles DOS-ROP "after every other selected id", while the order rule places "later exportable kinds" after DOS-ROP. True today (no later kind exists) but it becomes false when one registers; say "after DOS-TM and every M1 and M2 id". Candidate for accepted-no-change. | FR-191-AC-30; spec/functional/FR-191-dossier-command.md:60 | wrong-requirement |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | ------- | ------ |
+| FND-001 | fixed | Round 1 (e53273f1). FR-169 row keys `hazard_title`/`hazard_text` (`## Condition`), `situation_title`/`situation_text` (`## Description`) and `harm_texts` entries `{harm, title, text}`; FR-199 Inputs read them from the FR-169 JSON. |
+| FND-002 | fixed | Round 1 (e53273f1). `benefit_risks` entries carry `benefit`; `overall_evaluations` entries carry `product` and `references`; FR-199 Outputs render them. |
+| FND-003 | fixed | Round 1 (e53273f1). FR-199 now: "SHALL add no acceptance state or label of its own … authored decision values and texts are shown verbatim". |
+| FND-004 | fixed | Round 1 (e53273f1). FR-199-AC-14 is now a differential test over tool-written text only (headings, column labels, gap details). |
+| FND-005 | fixed | Round 1 (e53273f1). New gap kind `overall_evaluation_undecided` in FR-199 and FR-191 (list, order, subject); FR-199-AC-15. |
+| FND-006 | fixed | Round 1 (e53273f1). FR-193: "for each part the software safety class recorded in its `part` document". |
+| FND-007 | fixed | Round 1 (e53273f1). FR-196 run-identity contract: per bound suite, greatest `timestamp`, file name breaking a tie, among runs holding an entry bound to the criterion; FR-196-AC-12 covers two runs and two suites. |
+| FND-008 | fixed | Round 1 (e53273f1). FR-196 shows the `tool` string as recorded, one value, in Inputs and Behavior. |
+| FND-009 | fixed | Round 1 (e53273f1). A criterion with no selected run gets only its evidence-status gaps and never `run_identity_unrecorded` (FR-196-AC-11). |
+| FND-010 | fixed | Round 1 (e53273f1). FR-199-AC-1 fixture adds a decided overall evaluation and asserts no gap and status `complete`. |
+| FND-011 | fixed | Round 1 (e53273f1). Both sections list entries in dossier id order and read `none` when empty (FR-199-AC-16). |
+| FND-012 | fixed | Round 1 (e53273f1). FR-191: "no command SHALL write a `version` member into its output". |

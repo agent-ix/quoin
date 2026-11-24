@@ -98,6 +98,7 @@ implementation as `quoin risk advise`. This requirement states no second lookup 
 - In a Markdown cell, a list of entries SHALL render as its entries joined by `<br>`, and one entry SHALL render as its `key=value` pairs in key-table order joined by `; `, with a list value rendered as above.
 - In a Markdown cell, an estimate entry with a region SHALL render its last pair as "the policy marks this cell as <region>" in place of `policy_region=<region>`, and one without a region SHALL render `policy_region=null`.
 - In a Markdown cell, the command SHALL write each `|` of a value copied from a record as `\|`, so that a row has exactly one cell for each column.
+- In a Markdown cell, the command SHALL write each line break of a value copied from a record, including the multi-line `## Condition` and `## Description` section texts, as `<br>`, so that a row stays on one line; JSON keeps the line breaks as written.
 - The `attribution` string SHALL state that regions come from the project's policy and that decisions come from the named person.
 - The command SHALL write one row for each pairing of a hazard and a hazardous situation that `arises_from` it ([FR-202](ix://agent-ix/spec-objects-safety/FR-202)). A hazard with no such situation has one row with `situation: null`. A situation with no `arises_from` edge to a hazard has one row with `hazard: null`. A situation that arises from two hazards appears in two rows with the same situation content.
 - Every row SHALL have exactly the keys below, each present, `null` or `[]` when empty.
@@ -187,6 +188,7 @@ These rules bind this command itself. NFR-031 binds `quoin risk advise` only and
 | FR-169-AC-32 | A fixture `overall_residual_risk_evaluation` gives `product`, `decision`, `decided_by`, `rationale` and the ascending ids of the residual-risk and benefit-risk records it references, and appears whatever its decision; with none in scope `overall_evaluations` is `[]`. | Test |
 | FR-169-AC-33 | The Markdown holds the rows table, then a `benefit_risks` table and an `overall_evaluations` table, each with its header row and one line per entry, and only its header row when empty. | Test |
 | FR-169-AC-34 | An `overall_residual_risk_evaluation` that breaks the contract of its type exits 2 naming the record, prints no report, and uses the diagnostic code of the same failure in `quoin risk advise`. | Test |
+| FR-169-AC-35 | A hazard whose `## Condition` text spans three lines, with a blank line between two of them, renders in the Markdown with each line break written as `<br>`, the row stays on one line with exactly one cell per column, and the `--format json` `hazard_text` holds the text with its line breaks unchanged. | Test |
 
 ## Dependencies
 

@@ -68,3 +68,9 @@ identity values the run file never records).
 3. No spec/test TC files: agree. Quoin binds tests to criteria by trace tags; the
    other dossier FRs have no TC files, and the TC-617..625 files of FR-207 are not a
    rule the new AC must follow.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | ------- | ------ |
+| FND-001 | accepted-no-change | Placeholder row for a clean base checklist; the fix round (e53273f1, 750089e5) adds FR-169-AC-29..34, FR-191-AC-29..30 and FR-199-AC-15..16, none used before on `origin/main` and none tagged in code; `quire validate` over the eight changed specs and the three committed SR files exits 0. |

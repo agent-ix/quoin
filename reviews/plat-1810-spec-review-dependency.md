@@ -45,3 +45,21 @@ FND-002 to PLAT-1810, FND-003, FND-004 and FND-005..007 to PLAT-1813. FR-107, FR
 FR-166/167, FR-195, FR-201 and FR-211 are not contradicted by the change. FR-166/167
 build release-snapshot findings through the `risk-summary` code path; the new fields do
 not change the row `findings` they read, so FND-002's fix need not touch them.
+
+## New findings (disposition pass 1)
+
+| ID      | Severity | Summary | Refs | Escape Cause |
+| ------- | -------- | ------- | ---- | ------------ |
+| FND-008 | low | FR-193 matches a part's class to the `PartRecord` "by the part document's id" (available as `quoin-quire` `Part.document`), but the architecture generator today keys parts by `PartRecord.owner`, the owning declaration. The spec is precise; the coder must key the class line and the `safety_class_unassigned` subject by the part document id and not attach it to the owner. Candidate for accepted-no-change (implementation note). | spec/functional/FR-193-dossier-architecture-content.md:34; rust/crates/quoin-dossier/src/architecture.rs:185-188 | - |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | ------- | ------ |
+| FND-001 | fixed | Rounds 1 and 2 (e53273f1, 750089e5). DOS-ROP export identity is `--release` only; explicit selection without `--release` exits 4 with quire code 3 and `--output` unchanged (FR-191-AC-29); unfiltered `export` includes DOS-ROP only with `--release` (FR-191-AC-30); AC-13, AC-24 and FR-207-AC-10 rewritten. Matches quire-cli FR-034/FR-039/FR-040. |
+| FND-002 | fixed | Round 1 (e53273f1). FR-169 amended: top-level keys `attribution`, `rows`, `benefit_risks`, `overall_evaluations`; new row keys; `rationale` on residual entries; reads `overall_residual_risk_evaluation`; AC-1/AC-2 amended, AC-29..34 new. FR-199 Inputs cite FR-169. |
+| FND-003 | fixed | Round 1 (e53273f1). FR-196 reads the real `RunRecord` members (`suite`, `tool`, `timestamp`, per-entry `symbol`, `outcome`, `trace_ids`), shows a tally of recorded outcomes, and shows source revision `not recorded` with no gap; `run_identity_unrecorded` only for an empty `timestamp` or `tool`. |
+| FND-004 | fixed | Round 1 (e53273f1). FR-193 source contract: class from the `part` document frontmatter, record key `softwareSafetyClass`, exposed by `quoin-quire` beside each `Part`. |
+| FND-005 | fixed | Round 1 (e53273f1). FR-192/193/194 frontmatter add FR-160, quire-rs FR-090 and spec-artifacts-iso FR-009 or spec-objects-architecture FR-012 edges. |
+| FND-006 | fixed | Round 1 (e53273f1). NFR-034 citations removed; the no-inference rule is stated in each FR on its own. |
+| FND-007 | fixed | Round 1 (e53273f1). FR-192 reads "the carried name that the ISO module declares for the class (spec-artifacts-iso FR-009)" and states why it differs from FR-160. |
