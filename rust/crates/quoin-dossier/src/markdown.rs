@@ -25,6 +25,12 @@ pub(crate) fn line(text: &str) -> String {
         .to_owned()
 }
 
+/// A setext underline: only `-` or only `=` (CommonMark allows indentation and
+/// trailing blanks around it, which the caller trims).
+fn is_underline(text: &str) -> bool {
+    !text.is_empty() && (text.chars().all(|c| c == '-') || text.chars().all(|c| c == '='))
+}
+
 /// A block of prose copied from a document. Every construct that could change
 /// the structure of the generated document is backslash-escaped: a line that
 /// opens a heading with `#`, a setext underline (a line of only `-` or `=`), a
@@ -36,8 +42,7 @@ pub(crate) fn prose(text: &str) -> String {
             let structural = trimmed.starts_with('#')
                 || trimmed.starts_with("```")
                 || trimmed.starts_with("~~~")
-                || (!trimmed.is_empty()
-                    && (trimmed.chars().all(|c| c == '-') || trimmed.chars().all(|c| c == '=')));
+                || is_underline(trimmed.trim_end());
             let row = if structural {
                 format!("\\{trimmed}")
             } else {
@@ -105,6 +110,15 @@ mod tests {
     fn setext_underlines_fences_and_raw_html_are_escaped() {
         assert_eq!(prose("Title\n---"), "Title\n\\---");
         assert_eq!(prose("Title\n  ==="), "Title\n\\===");
+        assert_eq!(prose("Title\n---  "), "Title\n\\---  ");
+        assert_eq!(prose("Title\n---\t"), "Title\n\\---\t");
+        assert_eq!(prose("Title\n=== \t "), "Title\n\\=== \t ");
+        for indent in [" ", "  ", "   "] {
+            assert_eq!(
+                prose(&format!("Title\n{indent}---")),
+                "Title\n\\---"
+            );
+        }
         assert_eq!(prose("```\ncode"), "\\```\ncode");
         assert_eq!(prose("a <!-- hide"), "a \\<!-- hide");
         assert_eq!(cell("a<b"), "a\\<b");
