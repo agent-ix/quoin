@@ -220,14 +220,8 @@ fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
     args.push("--gsn");
     let output = quoin(&args);
     assert_eq!(output.status.code(), Some(0), "{}", text(&output.stderr));
-    let response: serde_json::Value =
+    let model: serde_json::Value =
         serde_json::from_str(text(&output.stdout).trim()).expect("GSN output is JSON");
-    let model: serde_json::Value = serde_json::from_str(
-        response["rendered"]
-            .as_str()
-            .expect("rendered model string"),
-    )
-    .expect("rendered GSN model is JSON");
     assert_eq!(model["format"], "quoin.gsn-case/v1");
 
     let mut conflicting = common.to_vec();
