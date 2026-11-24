@@ -100,13 +100,15 @@ fn an_empty_scope_exits_zero_and_markdown_is_the_default() {
     assert_eq!(out.status.code(), Some(0));
     let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(report["rows"], serde_json::json!([]));
+    assert_eq!(report["benefit_risks"], serde_json::json!([]));
+    assert_eq!(report["overall_evaluations"], serde_json::json!([]));
 
     chain(dir.path());
     let plain = summary(dir.path(), &[]);
     let markdown = summary(dir.path(), &["--format", "markdown"]);
     assert_eq!(plain.status.code(), Some(0));
     assert_eq!(plain.stdout, markdown.stdout);
-    assert!(String::from_utf8_lossy(&plain.stdout).contains("| HAZ-1 | SIT-1 |"));
+    assert!(String::from_utf8_lossy(&plain.stdout).contains("| HAZ-1 | HAZ-1 | null | SIT-1 |"));
 }
 
 #[trace("FR-169-AC-28")]

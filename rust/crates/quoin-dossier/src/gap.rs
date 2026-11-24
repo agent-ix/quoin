@@ -63,6 +63,10 @@ pub enum GapKind {
     RiskChainIncomplete,
     /// A residual risk has no decision or decider.
     ResidualRiskUndecided,
+    /// The corpus holds no overall residual risk evaluation record.
+    NoOverallEvaluation,
+    /// An overall residual risk evaluation is undecided.
+    OverallEvaluationUndecided,
     /// A control has no verification.
     ControlUnverified,
     /// No acceptability policy is present for a risk estimate.
@@ -102,7 +106,7 @@ pub enum GapKind {
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 40] = [
+    pub(crate) const ALL: [Self; 42] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -126,6 +130,8 @@ impl GapKind {
         Self::AnomalyNoReleaseRationale,
         Self::RiskChainIncomplete,
         Self::ResidualRiskUndecided,
+        Self::NoOverallEvaluation,
+        Self::OverallEvaluationUndecided,
         Self::ControlUnverified,
         Self::NoAcceptabilityPolicy,
         Self::NoPlanRecord,
@@ -172,6 +178,8 @@ impl GapKind {
             Self::AnomalyNoReleaseRationale => "anomaly_no_release_rationale",
             Self::RiskChainIncomplete => "risk_chain_incomplete",
             Self::ResidualRiskUndecided => "residual_risk_undecided",
+            Self::NoOverallEvaluation => "no_overall_evaluation",
+            Self::OverallEvaluationUndecided => "overall_evaluation_undecided",
             Self::ControlUnverified => "control_unverified",
             Self::NoAcceptabilityPolicy => "no_acceptability_policy",
             Self::NoPlanRecord => "no_plan_record",
@@ -345,6 +353,8 @@ mod tests {
                 "anomaly_no_release_rationale",
                 "risk_chain_incomplete",
                 "residual_risk_undecided",
+                "no_overall_evaluation",
+                "overall_evaluation_undecided",
                 "control_unverified",
                 "no_acceptability_policy",
                 "no_plan_record",

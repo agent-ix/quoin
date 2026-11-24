@@ -39,7 +39,10 @@ pub use evidence::{AnomalyRef, ControlEvidence, EvidenceEntry};
 pub use finding::{Finding, Token};
 pub use policy::{CellKey, PolicyCell};
 pub use queue::{NoRecord, Queue, QueueEntry};
-pub use summary::{ControlEntry, EstimateEntry, ResidualEntry, Row, RowFinding, RowToken, Summary};
+pub use summary::{
+    BenefitRiskEntry, ControlEntry, EstimateEntry, EvaluationEntry, HarmText, ResidualEntry, Row,
+    RowFinding, RowToken, Summary,
+};
 
 /// The statement of where regions and decisions come from (FR-145).
 pub const ATTRIBUTION: &str =
@@ -155,6 +158,8 @@ pub fn summarize(scope: &Path, modules: &ModuleSelection) -> Result<Summary, Adv
     Ok(Summary {
         attribution: ATTRIBUTION,
         rows: summary::build(&loaded.records, &links),
+        benefit_risks: summary::benefit_risks(&loaded.records),
+        overall_evaluations: summary::evaluations(&loaded.records),
         unreadable: loaded.unreadable,
         unusable: loaded.unusable,
     })

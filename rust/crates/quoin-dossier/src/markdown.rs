@@ -13,24 +13,42 @@ pub(crate) fn cell(text: &str) -> String {
     text.replace('\\', "\\\\")
         .replace('|', "\\|")
         .replace('`', "\\`")
+        .replace('<', "\\<")
         .replace(['\r', '\n'], " ")
 }
 
 /// One line of text, such as the tail of a heading.
 pub(crate) fn line(text: &str) -> String {
-    text.replace(['\r', '\n'], " ").trim().to_owned()
+    text.replace(['\r', '\n'], " ")
+        .replace('<', "\\<")
+        .trim()
+        .to_owned()
 }
 
-/// A block of prose copied from a document: a line that opens with `#` would
-/// start a heading of the generated document, so it is backslash-escaped.
+/// A setext underline: only `-` or only `=` (`CommonMark` allows indentation and
+/// trailing blanks around it, which the caller trims).
+fn is_underline(text: &str) -> bool {
+    !text.is_empty() && (text.chars().all(|c| c == '-') || text.chars().all(|c| c == '='))
+}
+
+/// A block of prose copied from a document. Every construct that could change
+/// the structure of the generated document is backslash-escaped: a line that
+/// opens a heading with `#`, a setext underline (a line of only `-` or `=`), a
+/// code fence, and every `<`, so no raw HTML comment can hide what follows.
 pub(crate) fn prose(text: &str) -> String {
     text.lines()
         .map(|row| {
-            if row.trim_start().starts_with('#') {
-                format!("\\{}", row.trim_start())
+            let trimmed = row.trim_start();
+            let structural = trimmed.starts_with('#')
+                || trimmed.starts_with("```")
+                || trimmed.starts_with("~~~")
+                || is_underline(trimmed.trim_end());
+            let row = if structural {
+                format!("\\{trimmed}")
             } else {
                 row.to_owned()
-            }
+            };
+            row.replace('<', "\\<")
         })
         .collect::<Vec<_>>()
         .join("\n")
@@ -86,6 +104,22 @@ mod tests {
     #[test]
     fn a_heading_cannot_be_ended_by_a_newline() {
         assert_eq!(line("Title\n## Injected"), "Title ## Injected");
+    }
+
+    #[test]
+    fn setext_underlines_fences_and_raw_html_are_escaped() {
+        assert_eq!(prose("Title\n---"), "Title\n\\---");
+        assert_eq!(prose("Title\n  ==="), "Title\n\\===");
+        assert_eq!(prose("Title\n---  "), "Title\n\\---  ");
+        assert_eq!(prose("Title\n---\t"), "Title\n\\---\t");
+        assert_eq!(prose("Title\n=== \t "), "Title\n\\=== \t ");
+        for indent in [" ", "  ", "   "] {
+            assert_eq!(prose(&format!("Title\n{indent}---")), "Title\n\\---");
+        }
+        assert_eq!(prose("```\ncode"), "\\```\ncode");
+        assert_eq!(prose("a <!-- hide"), "a \\<!-- hide");
+        assert_eq!(cell("a<b"), "a\\<b");
+        assert_eq!(prose("a -- b"), "a -- b");
     }
 
     #[test]

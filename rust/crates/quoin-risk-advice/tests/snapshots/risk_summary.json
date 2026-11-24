@@ -3,9 +3,20 @@
   "rows": [
     {
       "hazard": "HAZ-1",
+      "hazard_title": "HAZ-1",
+      "hazard_text": null,
       "situation": "SIT-1",
+      "situation_title": "SIT-1",
+      "situation_text": null,
       "harms": [
         "HARM-1"
+      ],
+      "harm_texts": [
+        {
+          "harm": "HARM-1",
+          "title": "HARM-1",
+          "text": null
+        }
       ],
       "pre_control": [
         {
@@ -39,15 +50,21 @@
         {
           "residual_risk": "RR-1",
           "decision": "accepted",
-          "decided_by": "Pat"
+          "decided_by": "Pat",
+          "rationale": "r"
         }
       ],
       "findings": []
     },
     {
       "hazard": "HAZ-2",
+      "hazard_title": "HAZ-2",
+      "hazard_text": null,
       "situation": "SIT-2",
+      "situation_title": "SIT-2",
+      "situation_text": null,
       "harms": [],
+      "harm_texts": [],
       "pre_control": [],
       "controls": [
         {
@@ -75,12 +92,14 @@
         {
           "residual_risk": "RR-2",
           "decision": "accepted",
-          "decided_by": "Pat"
+          "decided_by": "Pat",
+          "rationale": "r"
         },
         {
           "residual_risk": "RR-3",
           "decision": "not_accepted",
-          "decided_by": "Pat"
+          "decided_by": "Pat",
+          "rationale": "r"
         }
       ],
       "findings": [
@@ -125,8 +144,13 @@
     },
     {
       "hazard": "HAZ-3",
+      "hazard_title": "HAZ-3",
+      "hazard_text": null,
       "situation": null,
+      "situation_title": null,
+      "situation_text": null,
       "harms": [],
+      "harm_texts": [],
       "pre_control": [],
       "controls": [],
       "post_control": [],
@@ -142,9 +166,20 @@
     },
     {
       "hazard": "HAZ-4",
+      "hazard_title": "HAZ-4",
+      "hazard_text": null,
       "situation": "SIT-4",
+      "situation_title": "SIT-4",
+      "situation_text": null,
       "harms": [
         "HARM-4"
+      ],
+      "harm_texts": [
+        {
+          "harm": "HARM-4",
+          "title": "HARM-4",
+          "text": null
+        }
       ],
       "pre_control": [],
       "controls": [
@@ -195,22 +230,26 @@
         {
           "residual_risk": "RR-4",
           "decision": "accepted",
-          "decided_by": "Pat"
+          "decided_by": "Pat",
+          "rationale": "r"
         },
         {
           "residual_risk": "RR-5",
           "decision": "accepted",
-          "decided_by": "Pat"
+          "decided_by": "Pat",
+          "rationale": "r"
         },
         {
           "residual_risk": "RR-6",
           "decision": "not_accepted",
-          "decided_by": "Pat"
+          "decided_by": "Pat",
+          "rationale": "r"
         },
         {
           "residual_risk": "RR-7",
           "decision": "undecided",
-          "decided_by": null
+          "decided_by": null,
+          "rationale": "r"
         }
       ],
       "findings": [
@@ -248,9 +287,36 @@
       ]
     },
     {
-      "hazard": null,
-      "situation": "SIT-3",
+      "hazard": "HAZ-5",
+      "hazard_title": "Overdose",
+      "hazard_text": "The pump delivers\ntoo much.",
+      "situation": null,
+      "situation_title": null,
+      "situation_text": null,
       "harms": [],
+      "harm_texts": [],
+      "pre_control": [],
+      "controls": [],
+      "post_control": [],
+      "residual_risks": [],
+      "findings": [
+        {
+          "finding": "hazard-without-situation",
+          "names": [
+            "HAZ-5"
+          ]
+        }
+      ]
+    },
+    {
+      "hazard": null,
+      "hazard_title": null,
+      "hazard_text": null,
+      "situation": "SIT-3",
+      "situation_title": "SIT-3",
+      "situation_text": null,
+      "harms": [],
+      "harm_texts": [],
       "pre_control": [],
       "controls": [],
       "post_control": [],
@@ -268,6 +334,41 @@
             "SIT-3"
           ]
         }
+      ]
+    }
+  ],
+  "benefit_risks": [
+    {
+      "benefit_risk": "BR-1",
+      "benefit": "b",
+      "decision": "undecided",
+      "decided_by": null,
+      "rationale": "r",
+      "residual_risks": [
+        "RR-2"
+      ]
+    },
+    {
+      "benefit_risk": "BR-2",
+      "benefit": "b",
+      "decision": "not_accepted",
+      "decided_by": "Pat",
+      "rationale": "r",
+      "residual_risks": [
+        "RR-5"
+      ]
+    }
+  ],
+  "overall_evaluations": [
+    {
+      "evaluation": "ORE-1",
+      "product": "Pump",
+      "decision": "undecided",
+      "decided_by": null,
+      "rationale": "pending",
+      "references": [
+        "BR-2",
+        "RR-1"
       ]
     }
   ]
