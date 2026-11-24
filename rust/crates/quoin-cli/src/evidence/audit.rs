@@ -6,7 +6,8 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::Response;
-use quoin_evidence::types::{Binding, ObligationId, RunRecord};
+use quoin_evidence::types::{Binding, RunRecord};
+use quoin_evidence::ObligationId;
 use std::collections::BTreeSet;
 
 use super::{json_arg, repo_arg, required};
