@@ -47,6 +47,7 @@ pub mod error;
 pub mod ids;
 pub mod intake;
 pub mod model;
+pub mod proof_integrity;
 pub mod records;
 pub mod schemas;
 pub mod verify;

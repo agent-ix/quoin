@@ -20,10 +20,13 @@ mod common;
 use std::fmt::Write as _;
 
 use ix_trace_rs::trace;
+use quoin_change_assurance::attestations::attestation_bytes;
 use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::AttestationId;
+use quoin_change_assurance::ids::{ProofId, RecordId, Revision};
 use quoin_change_assurance::intake::disk::DiskEvidenceStore;
 use quoin_change_assurance::intake::memory::MemoryEvidenceStore;
+use quoin_change_assurance::proof_integrity::ProofIntegrityStatement;
 use quoin_change_assurance::verify::input::{Selection, VerificationInput};
 use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_change_assurance::{
@@ -60,6 +63,61 @@ fn corrupted() -> Vec<u8> {
     bytes[0] ^= 0x01;
     assert_eq!(bytes.len(), OUTPUT.len());
     bytes
+}
+
+/// The statement binds exact canonical attestation bytes and exact output bytes.
+#[trace("FR-210-AC-1")]
+#[test]
+fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
+    let attestation = ProofAttestation::from_json(&json(&attestation_text())).unwrap();
+    let exact_attestation = attestation_bytes(&attestation).unwrap();
+    let record_id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
+    let proof_id = ProofId::parse("proof-1", Subject::Attestation, "proof_id").unwrap();
+    let revision = Revision::new(1, Subject::Record, "record_revision").unwrap();
+    let statement = ProofIntegrityStatement::create(
+        &record_id,
+        revision,
+        "candidate-1",
+        &proof_id,
+        &attestation,
+        &exact_attestation,
+        OUTPUT,
+    )
+    .unwrap();
+    assert_eq!(statement.record_id, "change-1");
+    assert_eq!(statement.record_revision, 1);
+    assert_eq!(statement.proof_id, "proof-1");
+    assert_eq!(statement.attestation_id, "att-1");
+    assert_eq!(
+        statement.output_size_bytes,
+        u64::try_from(OUTPUT.len()).unwrap()
+    );
+    assert_eq!(
+        statement.attestation_sha256,
+        format!(
+            "sha256:{}",
+            quoin_store::attachment::sha256_hex(&exact_attestation)
+        )
+    );
+    assert_eq!(
+        statement.output_sha256,
+        format!("sha256:{}", quoin_store::attachment::sha256_hex(OUTPUT))
+    );
+
+    let mut changed = exact_attestation.clone();
+    changed.push(b' ');
+    let substituted = ProofIntegrityStatement::create(
+        &record_id,
+        revision,
+        "candidate-1",
+        &proof_id,
+        &attestation,
+        &changed,
+        OUTPUT,
+    )
+    .unwrap();
+    assert_ne!(statement.attestation_sha256, substituted.attestation_sha256);
+    assert_ne!(statement.statement_digest, substituted.statement_digest);
 }
 
 /// Intact output verifies and the receipt carries the commitment checked; an
