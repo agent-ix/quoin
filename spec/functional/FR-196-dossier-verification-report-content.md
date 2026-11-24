@@ -28,7 +28,7 @@ criterion and the evidence status that `quoin matrix --json` gives it.
   `rust/crates/quoin-assurance/src/matrix.rs` ([FR-115](./FR-115-evidence-backed-test-matrix.md)).
   The dossier calls the same library path; it does not evaluate evidence.
 - Each `MatrixCriterion` supplies `id`, `method`, `evidence_status`,
-  `evidence_detail`, and optional `analysis_evidence`. The requirement
+  `evidence_detail`, optional `analysis_evidence` and, when the criterion has a retained run file, a run identity: the newest retained run file's timestamp, tool name, tool version, outcome as recorded, source commit as recorded and file path (the `quoin-assurance` source contract for this document; each value is omitted when the run file does not state it, and the whole identity is omitted when no run file is retained). The requirement
   documents supply the title and recorded criticality.
 - A typed `failed-run` cause on a source `stale-evidence` finding, supplied by
   the matrix source work in PLAT-1760. `kind: stale-evidence` and a prose
@@ -42,8 +42,7 @@ criterion and the evidence status that `quoin matrix --json` gives it.
   requirement in dossier order, and the final `## Gaps` section.
 - Each requirement section has a `Criticality:` line and a table
   `Criterion | Method | Evidence | Source findings | Evidence status`.
-  MatrixCriterion does not carry a newest run outcome or timestamp; the
-  report states only the source findings and bound suite identities.
+  Each criterion also shows its run identity (below), and its source findings and bound suite identities.
 
 ## Behavior
 
@@ -53,6 +52,10 @@ criterion and the evidence status that `quoin matrix --json` gives it.
 - The report SHALL list the criterion's traced bindings and retained
   Inspection, Analysis and gate evidence that the matrix supplies, preserving
   their source identities.
+- The report SHALL render, for each criterion, five run-identity values from the newest retained run file for that criterion: run timestamp, tool name and version, outcome as the run file records it, source commit as the run file records it, and the run-file path. A value the source does not state SHALL read `not recorded`.
+- The report SHALL NOT compute, normalise or choose a run outcome.
+- The report SHALL show the recorded run outcome verbatim.
+- When a criterion has no retained run file, or its run identity omits any of the five values, the report SHALL produce one `run_identity_unrecorded` gap naming the criterion and the missing values. A criterion whose evidence status is satisfied only by Inspection or Analysis records does not need a run file and SHALL NOT receive this gap on that account.
 - The summary SHALL count the rendered rows by the five source Evidence Status
   values; it SHALL NOT compute a percentage.
 - When a source finding has typed cause `failed-run`, the report SHALL produce
@@ -80,12 +83,16 @@ criterion and the evidence status that `quoin matrix --json` gives it.
 |----|----------|--------------|
 | FR-196-AC-1 | A fixture with six matrix criteria gives six report rows with the same ids, methods and Evidence Status values in source order. | Test |
 | FR-196-AC-2 | The summary counts equal counts computed from those six source rows, and the document contains no percentage. | Test |
-| FR-196-AC-3 | A source finding with typed `failed-run` cause yields `evidence_failed`, names the criterion, shows that typed cause without inventing a run outcome, and never calls it passing. Changing only the finding summary gives identical classification. | Test |
+| FR-196-AC-3 | A source finding with typed `failed-run` cause yields `evidence_failed`, names the criterion, shows that typed cause and the recorded run outcome verbatim, never calls it passing and computes no outcome. Changing only the finding summary gives identical classification. | Test |
 | FR-196-AC-4 | A `stale` criterion with a missing-run cause yields `evidence_stale`; a `suspect` criterion yields `evidence_suspect`; neither yields `evidence_failed`. | Test |
 | FR-196-AC-5 | `undischarged` and `no run evidence` each yield `no_evidence`, and a criterion without a binder also yields `unbacked_criterion`. | Test |
 | FR-196-AC-6 | A criterion backed only by retained Inspection evidence shows that record and receives no gap when the matrix says `bound`. | Test |
 | FR-196-AC-7 | A requirement with no criteria remains listed with `no_acceptance_criteria` and no fabricated criterion row. | Test |
 | FR-196-AC-8 | An empty matrix displays the source `reason`, produces document-level `no_requirements`, and is `incomplete`; two runs over the same inputs give byte-identical Markdown. | Test |
+| FR-196-AC-9 | A criterion with a retained run file shows the run's timestamp, tool name and version, outcome, source commit and file path exactly as recorded, and the outcome is not recomputed (a run file recording an outcome the matrix status disagrees with shows both unchanged). | Test |
+| FR-196-AC-10 | A criterion whose newest run file omits the source commit shows `not recorded` for it, shows the other four values, and produces one `run_identity_unrecorded` gap naming the criterion and the source commit. | Test |
+| FR-196-AC-11 | A criterion with no retained run file shows `not recorded` for all five values and one `run_identity_unrecorded` gap; a criterion backed only by retained Inspection evidence receives no such gap. | Test |
+| FR-196-AC-12 | With two retained run files for one criterion, the report shows the identity of the newer one only. | Test |
 
 ## Dependencies
 

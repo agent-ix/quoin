@@ -25,6 +25,7 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 - The `design-join` source (`quire_rs::design_join`) and the `design-matrix` source (quire-rs FR-092), which `quoin-quire` exposes as `rust/crates/quoin-quire/src/design_join.rs` and `design_matrix.rs`.
 - The `systems-records` source: the systems records `PartRecord`, `PortRecord`, `ConnectionRecord` and allocation of quire-rs `src/semantic/systems.rs`, and the objects `Part`, `Port`, `Connection` and `Allocation` of spec-objects-architecture.
 - Documents of the `ADR` archetype.
+- Source contract: the `systems-records` source SHALL expose each part's recorded `software_safety_class` as written, omitted when the part records none.
 
 ## Outputs
 
@@ -33,6 +34,9 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 ## Behavior
 
 - The architecture document SHALL list elements in dossier order (FR-191) by element id.
+- The architecture document SHALL show for each part and each other item that records a `software_safety_class` that class exactly as recorded.
+- If a part records no `software_safety_class`, the document SHALL show `unassigned` and record one `safety_class_unassigned` gap naming the part.
+- The document SHALL NOT infer, default or inherit a class, from a parent part, an allocated requirement or elsewhere ([NFR-034](../non-functional/NFR-034-class-reports-state-and-never-assign.md)).
 - The architecture document SHALL show for each connection its flow direction and both ends.
 - The architecture document SHALL list for each part the requirements allocated to or realized by it, from the join.
 - If the join reports a requirement in the `uncovered` state, the document SHALL record a `no_design_element` gap naming it.
@@ -54,6 +58,8 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 | FR-193-AC-4 | A part with no allocated requirement produces a `no_allocation` gap | Test |
 | FR-193-AC-5 | A connection shows its flow direction and both ends | Test |
 | FR-193-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
+| FR-193-AC-7 | A part that records class `class-3` shows `class-3` as recorded. | Test |
+| FR-193-AC-8 | A part with no recorded class shows `unassigned` and one `safety_class_unassigned` gap naming the part, even when its parent part and an allocated requirement record a class. | Test |
 
 ## Dependencies
 
