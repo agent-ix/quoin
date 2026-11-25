@@ -7,7 +7,7 @@ relationships:
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-217"
     type: "requires"
-  - target: "ix://agent-ix/quoin/FR-230"
+  - target: "ix://agent-ix/quoin/FR-236"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-219"
     type: "requires"
@@ -98,5 +98,5 @@ compliance verdict.
 
 ## Dependencies
 
-- **Upstream**: [FR-230](./FR-230-selftest-run-record.md), [FR-217](./FR-217-validation-report.md), [FR-219](./FR-219-validation-report-tool-evidence.md), [FR-220](./FR-220-external-tool-configuration-index.md)
+- **Upstream**: [FR-236](./FR-236-selftest-run-record.md), [FR-217](./FR-217-validation-report.md), [FR-219](./FR-219-validation-report-tool-evidence.md), [FR-220](./FR-220-external-tool-configuration-index.md)
 - **Downstream**: [PLAT-1447](https://linear.app/agent-ix/issue/PLAT-1447), [PLAT-1647](https://linear.app/agent-ix/issue/PLAT-1647)

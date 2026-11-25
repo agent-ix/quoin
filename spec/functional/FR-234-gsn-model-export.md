@@ -1,5 +1,5 @@
 ---
-id: FR-221
+id: FR-234
 title: "Export assurance cases as a GSN model"
 type: FR
 relationships:
@@ -13,7 +13,7 @@ relationships:
     type: "requires"
 ---
 
-# FR-221: Export assurance cases as a GSN model
+# FR-234: Export assurance cases as a GSN model
 
 ## Description
 
@@ -111,17 +111,17 @@ and [FR-225](./FR-225-signed-acceptance-of-case-content.md), respectively.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-221-AC-1 | `quoin assurance --gsn` emits a model with format `quoin.gsn-case/v1`, and the model validates against the schema shipped at `rust/crates/quoin-assurance/schemas/gsn-case-v1.schema.json`. | Test |
-| FR-221-AC-2 | A derived fixture exports goal, strategy, and solution nodes; `supported_by` edges preserve case order; every node's `source` equals its Quoin source id; and solution evidence matches the fixture's `LeafEvidence`. | Test |
-| FR-221-AC-3 | `quoin assurance --gsn` on a derived repository with a bound run and a bound suite with no run retains the bound solution evidence and maps the open obligation as an undeveloped open goal. The open goal carries the auditor reason verbatim and its `LeafEvidence`, including the suite with no timestamp, and has no `supported_by` child. A childless ordinary goal is undeveloped and an unreachable requirement appears only in `unreachable`. | Test |
-| FR-221-AC-4 | Producer-trust and evidence-independence entries export as context nodes connected only by `in_context_of`; no such node supports a goal. | Test |
-| FR-221-AC-5 | `quoin assurance --argument <ID> --gsn` on an authored fixture exports its top claim, reasoning, criteria, evidence, assumptions, participants, and authority. Its citations retain their resolution outcomes or associated sufficiency decisions without a run selection. An undecided criterion is an undeveloped goal, and a missing or unresolved top-claim evidence reference keeps the root open with its reason. | Test |
-| FR-221-AC-6 | A currently open authored challenge exports as a `counter_claim` node and one `challenges` edge to its goal, strategy, or assumption target; it is absent from `context` nodes and has no `in_context_of` or `supported_by` challenge edge; its source id, statement, owner, current reason, declared status, resolution references, and expiry are preserved. | Test |
-| FR-221-AC-7 | A currently resolved authored challenge exports as a justification connected to its target by `in_context_of`, retaining its source id, owner, resolution references, and expiry when present. | Test |
-| FR-221-AC-8 | Content outside the declared mapping is listed in `unmapped` with a reason and is never silently dropped or approximated. | Test |
-| FR-221-AC-9 | Invoking `--gsn` with `--json` is a usage error and writes no model to stdout; invoking the command without `--gsn` preserves the existing output. | Test |
-| FR-221-AC-10 | Exporting unchanged input twice produces byte-identical JSON, including generated node ids, node ordering, edge ordering, and top-level lists. | Test |
-| FR-221-AC-11 | A tool-confidence strategy reports the intended-use, retained-run, validation-report, and anomaly source facts without a score or inferred trust verdict. | Test |
+| FR-234-AC-1 | `quoin assurance --gsn` emits a model with format `quoin.gsn-case/v1`, and the model validates against the schema shipped at `rust/crates/quoin-assurance/schemas/gsn-case-v1.schema.json`. | Test |
+| FR-234-AC-2 | A derived fixture exports goal, strategy, and solution nodes; `supported_by` edges preserve case order; every node's `source` equals its Quoin source id; and solution evidence matches the fixture's `LeafEvidence`. | Test |
+| FR-234-AC-3 | `quoin assurance --gsn` on a derived repository with a bound run and a bound suite with no run retains the bound solution evidence and maps the open obligation as an undeveloped open goal. The open goal carries the auditor reason verbatim and its `LeafEvidence`, including the suite with no timestamp, and has no `supported_by` child. A childless ordinary goal is undeveloped and an unreachable requirement appears only in `unreachable`. | Test |
+| FR-234-AC-4 | Producer-trust and evidence-independence entries export as context nodes connected only by `in_context_of`; no such node supports a goal. | Test |
+| FR-234-AC-5 | `quoin assurance --argument <ID> --gsn` on an authored fixture exports its top claim, reasoning, criteria, evidence, assumptions, participants, and authority. Its citations retain their resolution outcomes or associated sufficiency decisions without a run selection. An undecided criterion is an undeveloped goal, and a missing or unresolved top-claim evidence reference keeps the root open with its reason. | Test |
+| FR-234-AC-6 | A currently open authored challenge exports as a `counter_claim` node and one `challenges` edge to its goal, strategy, or assumption target; it is absent from `context` nodes and has no `in_context_of` or `supported_by` challenge edge; its source id, statement, owner, current reason, declared status, resolution references, and expiry are preserved. | Test |
+| FR-234-AC-7 | A currently resolved authored challenge exports as a justification connected to its target by `in_context_of`, retaining its source id, owner, resolution references, and expiry when present. | Test |
+| FR-234-AC-8 | Content outside the declared mapping is listed in `unmapped` with a reason and is never silently dropped or approximated. | Test |
+| FR-234-AC-9 | Invoking `--gsn` with `--json` is a usage error and writes no model to stdout; invoking the command without `--gsn` preserves the existing output. | Test |
+| FR-234-AC-10 | Exporting unchanged input twice produces byte-identical JSON, including generated node ids, node ordering, edge ordering, and top-level lists. | Test |
+| FR-234-AC-11 | A tool-confidence strategy reports the intended-use, retained-run, validation-report, and anomaly source facts without a score or inferred trust verdict. | Test |
 
 ## Dependencies
 

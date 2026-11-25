@@ -24,30 +24,3 @@ FR-235 includes a quire-cli entry point and validation-kit behavior in a quoin r
 ## Coverage
 
 Reviewed frozen PR head a50fe034ecf05d405658c80e8b582c04940103fa against origin/main. Ratings remain proposed and unsigned; no acceptance decision is inferred. Plan completion: not assessed.
-
-
-## Dispositions
-
-| FND | outcome | reason |
-| --- | --- | --- |
-| FND-001 | fixed | The fix addresses the finding in the current diff. |
-
-+++ [reviewer data]
-
-```yaml
-dispositions:
-  - fnd: FND-001
-    outcome: fixed
-    after_excerpt: |-
-      - Quoin owns the `quoin selftest` entry point and its cases. The quire-cli
-        repository provides the corresponding `quire selftest` entry point for the
-        cases it owns. Its binary may embed quire-rs-owned case assets exposed by
-        the linked quire-rs crate at build time; quire-cli shall not copy or maintain
-        those cases.
-```
-
-+++
-
-## Current diff review — PR head 965259ca6f32889e6f8b763d085cd5fd790a13f1
-
-The new intended-use record limits Quoin's role to creating, validating, and presenting repository engineering records; it explicitly disclaims compliance and product/clinical safety determinations, and assigns acceptance to people. Its operating context names the filesystem and configured executables as external inputs and identifies Git, Quire, Engineering Assurance, and configured producer/analysis programs. This matches the stated tool scope; no new boundary-allocation defect was found in the added documents.

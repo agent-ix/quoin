@@ -4,7 +4,7 @@ title: "Assurance exports run without network access"
 type: NFR
 quality_attribute: reliability
 relationships:
-  - target: "ix://agent-ix/quoin/FR-221"
+  - target: "ix://agent-ix/quoin/FR-234"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-226"
     type: "constrains"
@@ -39,4 +39,4 @@ network request.
 
 ## Dependencies
 
-- **Upstream**: [FR-221](../functional/FR-221-gsn-model-export.md), [FR-226](../functional/FR-226-sacm-export.md)
+- **Upstream**: [FR-234](../functional/FR-234-gsn-model-export.md), [FR-226](../functional/FR-226-sacm-export.md)

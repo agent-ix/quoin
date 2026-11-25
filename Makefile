@@ -8,8 +8,14 @@
 RUST_DIR := $(CURDIR)/rust
 CARGO_TARGET := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(RUST_DIR)/target)
 CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
+QUIRE ?= quire
+# Pass explicit roots for the complete isolated module set. In particular,
+# spec-artifacts-process must be the current revision that registers
+# IntendedUse and FeatureRiskRating. Example:
+# make spec-validation QUIRE_MODULE_ARGS='--module /tmp/modules/spec-artifacts-iso --module /tmp/modules/spec-artifacts-process ...'
+QUIRE_MODULE_ARGS ?=
 
-.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test test-real mutation-test wave2-validation
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test test-real mutation-test wave2-validation spec-validation test-sacm-interop
 
 build: rust-build
 
@@ -51,6 +57,12 @@ rust-gate: rust-lint rust-deny rust-test workflow-test
 help:
 	@echo "Native Quoin targets: build, test, lint, format, clean, evidence"
 
+# Validate the complete specification bundle and require feature-risk coverage
+# for every functional requirement.
+spec-validation:
+	@test -n "$(QUIRE_MODULE_ARGS)" || { echo "set QUIRE_MODULE_ARGS to explicit isolated module roots, including current spec-artifacts-iso and spec-artifacts-process" >&2; exit 2; }
+	$(QUIRE) validate --scope . --okf --severity trace:feature-without-risk-rating=error $(QUIRE_MODULE_ARGS)
+
 # Run the Rust suite under cargo-nextest (JUnit writer), add each test's trace
 # tags to the report, and bind the run into spec/evidence with
 # `quoin evidence record`. Needs `cargo install cargo-nextest --locked`.
@@ -91,10 +103,19 @@ test-real:
 
 .PHONY: test-sacm-metamodel
 test-sacm-metamodel:
-	@test -n "$${QUOIN_SACM_METAMODEL:-}" || { echo "QUOIN_SACM_METAMODEL must name the external OMG SACM 2.3 metamodel XML" >&2; exit 1; }
-	@model="$$QUOIN_SACM_METAMODEL"; \
-	  case "$$model" in /*) ;; *) model="$(CURDIR)/$$model";; esac; \
-	  cd "$(RUST_DIR)" && QUOIN_SACM_METAMODEL="$$model" cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-assurance --test tc_sacm_export sacm_uses_normative_metamodel -- --ignored
+	QUOIN_CARGO_TARGET="$(CARGO_TARGET)" tests/scripts/test_sacm_metamodel.sh
+
+# Interop check against user-installed Assurance Forge 0.3.0-alpha.3 (MIT).
+# The generated XMI is copied byte-for-byte to a .sacm.xml name for the tool's
+# offline importer; no tool binary, plugin, or metamodel is stored in Quoin.
+test-sacm-interop:
+	@test -n "$(QUOIN_SACM_TOOL)" || { echo "QUOIN_SACM_TOOL must name the installed Assurance Forge MCP executable" >&2; exit 1; }
+	@set -e; export_file="$(CARGO_TARGET)/sacm-interop/full-case.xmi"; \
+	  import_file="$(CARGO_TARGET)/sacm-interop/full-case.sacm.xml"; \
+	  rm -f "$$export_file" "$$import_file"; \
+	  cd "$(RUST_DIR)" && QUOIN_SACM_INTEROP_FIXTURE="$$export_file" cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-assurance --test tc_sacm_export export_external_interop_fixture -- --ignored --exact; \
+	  cp "$$export_file" "$$import_file"; \
+	  cd "$(CURDIR)" && QUOIN_SACM_TOOL="$(QUOIN_SACM_TOOL)" QUOIN_SACM_INTEROP_FIXTURE="$$import_file" python3 tests/scripts/test_sacm_interop.py
 
 mutation-test:
 	python3 tests/scripts/behavioral_mutation_test.py

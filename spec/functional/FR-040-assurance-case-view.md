@@ -29,7 +29,7 @@ goal-structured argument (goal, strategy, solution): a **goal** is a claim or su
 **strategy** is the node that names how a goal is decomposed, and a **solution** is an obligation
 leaf. The view itself is not an interchange format. When the caller explicitly
 supplies `--gsn`, the command exports this derived case as the GSN model
-specified by [FR-221](./FR-221-gsn-model-export.md). When the caller supplies
+specified by [FR-234](./FR-234-gsn-model-export.md). When the caller supplies
 `--sacm`, the command exports the same case as SACM XMI under
 [FR-226](./FR-226-sacm-export.md). Its default markdown, mermaid, and `--json`
 output remain Quoin formats.
@@ -164,7 +164,7 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-18 | A leaf the audit does not list healthy is open even with no finding, and shows the unevaluated check's reason or that the audit reached no verdict. | Test |
 | FR-040-AC-19 | "Newest" run or scan is the later instant: fractional seconds and zone offsets order by the instant they name, not by string. | Test |
 | FR-040-AC-20 | A derived Analysis solution node carries the FR-153/FR-078 result items for its exact target, including `qualified-record` claims and every non-qualified cause with its category, locator and unmet-premise detail. The field is present even without a binding; JSON and text show identical items; non-Analysis nodes omit it, and these results do not override the auditor's verdict or alone support a claim. | Test |
-| FR-040-AC-21 | In derived-case mode, `--gsn` exports the case according to [FR-221](./FR-221-gsn-model-export.md) and `--sacm` exports the same case as SACM XMI according to [FR-226](./FR-226-sacm-export.md); without either flag the existing Markdown, Mermaid, and JSON output is unchanged. | Test |
+| FR-040-AC-21 | In derived-case mode, `--gsn` exports the case according to [FR-234](./FR-234-gsn-model-export.md) and `--sacm` exports the same case as SACM XMI according to [FR-226](./FR-226-sacm-export.md); without either flag the existing Markdown, Mermaid, and JSON output is unchanged. | Test |
 
 ## Constraints
 

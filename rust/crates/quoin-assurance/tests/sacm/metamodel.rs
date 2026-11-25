@@ -4,17 +4,34 @@
 //! Opt-in conformance of the emitted XMI against the external OMG model.
 
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 use ix_trace_rs::trace;
 
 use super::{Element, parse_xml, signed_shape_export};
 
+fn required_model_path(value: Option<std::ffi::OsString>) -> Result<PathBuf, &'static str> {
+    value
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+        .ok_or("QUOIN_SACM_METAMODEL must name the external OMG SACM 2.3 metamodel XML")
+}
+
 #[trace("FR-226-AC-7")]
+#[test]
+fn sacm_metamodel_check_rejects_an_unset_or_empty_model_path() {
+    let error = required_model_path(None).expect_err("an unset model path is rejected");
+    assert!(error.contains("QUOIN_SACM_METAMODEL"));
+    let error = required_model_path(Some(std::ffi::OsString::new()))
+        .expect_err("an empty model path is rejected");
+    assert!(error.contains("QUOIN_SACM_METAMODEL"));
+}
+
+#[trace("FR-226-AC-11")]
 #[test]
 #[ignore = "requires the external OMG SACM 2.3 model at QUOIN_SACM_METAMODEL"]
 fn sacm_uses_normative_metamodel() {
-    let path = std::env::var_os("QUOIN_SACM_METAMODEL")
-        .filter(|path| !path.is_empty())
+    let path = required_model_path(std::env::var_os("QUOIN_SACM_METAMODEL"))
         .expect("QUOIN_SACM_METAMODEL must name the external OMG SACM 2.3 metamodel XML");
     let bytes = std::fs::read(path).expect("read the supplied SACM metamodel");
     let normative = parse_xml(&bytes);
