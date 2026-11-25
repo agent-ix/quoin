@@ -237,6 +237,7 @@ fn an_empty_model_from_dropped_declarations_is_qq_1022_in_every_compute() {
     let evidence_request = evidence::Request {
         scope: module.request(),
         requested: Vec::new(),
+        requested_targets: Vec::new(),
         runs: Vec::new(),
         bindings: Vec::new(),
         injections: None,
@@ -277,6 +278,7 @@ fn the_direct_readers_of_the_model_refuse_on_a_dropped_declaration() {
     let evidence_request = evidence::Request {
         scope: module.request(),
         requested: Vec::new(),
+        requested_targets: Vec::new(),
         runs: Vec::new(),
         bindings: Vec::new(),
         injections: None,
