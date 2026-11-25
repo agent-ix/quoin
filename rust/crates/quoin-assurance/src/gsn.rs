@@ -25,6 +25,45 @@ pub struct GsnCase {
     pub unreachable: Vec<String>,
     /// Source facts that this format does not represent.
     pub unmapped: Vec<Unmapped>,
+    /// Human acceptance verified over this model's unsigned content.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signed_acceptance: Option<SignedAcceptance>,
+}
+
+/// The case content and signer facts from a qualifying EA approval.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SignedAcceptance {
+    /// The scope of the human acceptance.
+    pub label: String,
+    /// The case record kind bound by the verified approval.
+    pub record_id: String,
+    /// The SHA-256 identity of the unsigned canonical GSN model.
+    pub record_digest: String,
+    /// The verified annotated tag's bare name.
+    pub tag: String,
+    /// The principal mapped by the caller's case-specific trust source.
+    pub approver: String,
+    /// The verified tag's signed meaning.
+    pub meaning: Vec<String>,
+    /// The kind of source that mapped the principal.
+    pub signer_source: String,
+    /// The signer's claimed signing time, if readable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signed_at: Option<String>,
+    /// The source of the claimed signing time, when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signed_at_source: Option<String>,
+    /// Why the signer's claimed time is unavailable, when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signed_at_missing: Option<String>,
+    /// Why the SSH approval has no independent trusted signing time.
+    pub trusted_at_missing: String,
+}
+
+impl SignedAcceptance {
+    /// The label shared by GSN metadata and the SACM Artifact.
+    pub const LABEL: &str = "Human acceptance of case content";
 }
 
 /// A typed GSN node.
@@ -101,6 +140,7 @@ pub fn from_case(case: &AssuranceCase) -> Result<GsnCase, String> {
         edges: builder.edges,
         roots,
         unreachable: case.unreachable.clone(),
+        signed_acceptance: None,
         unmapped: case
             .unreadable
             .iter()
@@ -508,7 +548,7 @@ impl Builder {
             .to_owned(),
             open_reason: node.because.clone(),
             undeveloped: undeveloped.then_some(true),
-            evidence: if node.kind == NodeKind::Solution && node.status == NodeStatus::Supported {
+            evidence: if node.kind == NodeKind::Solution {
                 node.evidence
                     .as_ref()
                     .map(serde_json::to_value)
@@ -564,6 +604,9 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
         .and_then(serde_json::Value::as_array)
         .cloned()
         .unwrap_or_default();
+    let evidence_refs = top
+        .get("evidenceRefs")
+        .and_then(serde_json::Value::as_array);
     let root = b.push(
         "goal",
         "G",
@@ -575,15 +618,10 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
             .and_then(|v| v.first())
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned),
-        reasoning_rows.is_empty().then_some(true),
+        (reasoning_rows.is_empty() && evidence_refs.is_none_or(Vec::is_empty)).then_some(true),
         Some(top.clone()),
     );
-    for evidence_ref in top
-        .get("evidenceRefs")
-        .and_then(serde_json::Value::as_array)
-        .into_iter()
-        .flatten()
-    {
+    for evidence_ref in evidence_refs.into_iter().flatten() {
         let reference = str_field(evidence_ref, "reference")?;
         let state = evidence_ref
             .get("state")
@@ -593,24 +631,13 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned);
         let supported = state == Some("resolved");
-        let solution = b.push(
-            "solution",
-            "Sn",
-            reference,
+        b.cite(
+            &root,
             reference,
             if supported { "supported" } else { "open" },
             reason,
-            None,
-            Some(evidence_ref.clone()),
+            evidence_ref.clone(),
         );
-        if let Some(node) = b.nodes.iter_mut().find(|node| node.id == solution) {
-            node.evidence = Some(serde_json::json!({"references": [reference]}));
-        }
-        b.edges.push(GsnEdge {
-            kind: "supported_by".to_owned(),
-            from: root.clone(),
-            to: solution,
-        });
     }
     let mut strategy_ids = BTreeMap::new();
     let mut unmapped_extra = Vec::new();
@@ -685,7 +712,7 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
                 &source,
                 criterion_text,
                 status(criterion),
-                reason,
+                reason.clone(),
                 (!has_evidence).then_some(true),
                 Some(criterion.clone()),
             );
@@ -702,24 +729,13 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
                     .flatten()
                     .filter_map(serde_json::Value::as_str)
                 {
-                    let evidence = b.push(
-                        "solution",
-                        "Sn",
+                    b.cite(
+                        &goal,
                         reference,
-                        reference,
-                        "supported",
-                        None,
-                        None,
-                        Some(serde_json::json!({"evidenceRef": reference, "decision": decision})),
+                        status(criterion),
+                        reason.clone(),
+                        serde_json::json!({"evidenceRef": reference, "decision": decision}),
                     );
-                    if let Some(node) = b.nodes.iter_mut().find(|node| node.id == evidence) {
-                        node.evidence = Some(serde_json::json!({"references": [reference]}));
-                    }
-                    b.edges.push(GsnEdge {
-                        kind: "supported_by".to_owned(),
-                        from: goal.clone(),
-                        to: evidence,
-                    });
                 }
             }
         }
@@ -840,6 +856,7 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
         edges: b.edges,
         roots: vec![root],
         unreachable: Vec::new(),
+        signed_acceptance: None,
         unmapped,
     };
     validate(&model)?;
@@ -847,6 +864,36 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
 }
 
 impl Builder {
+    fn cite(
+        &mut self,
+        parent: &str,
+        reference: &str,
+        status: &str,
+        reason: Option<String>,
+        source_data: serde_json::Value,
+    ) {
+        // A citation's resolution belongs to its use by a particular Claim.
+        let count = self.counters.entry("Sn".to_owned()).or_default();
+        *count += 1;
+        let id = format!("Sn{count}");
+        self.nodes.push(GsnNode {
+            id: id.clone(),
+            kind: "solution".to_owned(),
+            source: reference.to_owned(),
+            statement: reference.to_owned(),
+            status: status.to_owned(),
+            open_reason: reason,
+            undeveloped: None,
+            evidence: Some(serde_json::json!({"references": [reference]})),
+            source_data: Some(source_data),
+        });
+        self.edges.push(GsnEdge {
+            kind: "supported_by".to_owned(),
+            from: parent.to_owned(),
+            to: id,
+        });
+    }
+
     fn push(
         &mut self,
         kind: &str,
@@ -1139,6 +1186,7 @@ mod tests {
             roots: vec!["G1".to_owned()],
             unreachable: Vec::new(),
             unmapped: Vec::new(),
+            signed_acceptance: None,
         }
     }
 

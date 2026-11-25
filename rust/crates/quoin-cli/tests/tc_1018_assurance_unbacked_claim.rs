@@ -338,3 +338,253 @@ fn sacm_authored_command_retains_report_and_refuses_failed_publication() {
     assert!(output.stdout.is_empty());
     assert!(text(&output.stderr).contains("could not write SACM report"));
 }
+
+fn successful_text(output: &Output) -> String {
+    assert_eq!(output.status.code(), Some(0), "{}", text(&output.stderr));
+    text(&output.stdout)
+}
+
+fn authored_export_args(repo: &Path, argument: &str) -> Vec<String> {
+    [
+        "--repo",
+        repo.to_str().unwrap(),
+        "--argument",
+        argument,
+        "--decisions",
+        repo.join("decisions.json").to_str().unwrap(),
+        "--as-of",
+        "2026-08-15T00:00:00.000Z",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect()
+}
+
+fn run_authored_args(args: &[String], extra: &[&str]) -> Output {
+    let arguments: Vec<_> = args
+        .iter()
+        .map(String::as_str)
+        .chain(extra.iter().copied())
+        .collect();
+    quoin(&arguments)
+}
+
+#[trace("FR-228-AC-9", "FR-221-AC-5")]
+#[test]
+fn sacm_preserves_authored_citation_resolution_without_a_fabricated_run() {
+    let repo = repo_with_argument("argument-unresolved-ref.md");
+    let args = authored_export_args(repo.path(), "AA-10181");
+    let evidence = write(
+        repo.path(),
+        "resolved.json",
+        &read_fixture("evidence-resolved.json"),
+    );
+    let path = evidence.to_str().unwrap();
+    let reference = "evidence://discharge/widget-1018";
+    for (state, declaration, selection) in [
+        ("resolved", "asserted", &["--evidence", path][..]),
+        ("unresolved", "needsSupport", &[][..]),
+    ] {
+        let gsn_args: Vec<_> = std::iter::once("--gsn")
+            .chain(selection.iter().copied())
+            .collect();
+        let gsn: serde_json::Value =
+            serde_json::from_str(&successful_text(&run_authored_args(&args, &gsn_args)))
+                .expect("GSN model");
+        let nodes = gsn["nodes"].as_array().unwrap();
+        let citation = nodes
+            .iter()
+            .find(|node| node["source"] == reference)
+            .expect("citation retained");
+        assert_eq!(citation["kind"], "solution");
+        assert_eq!(
+            citation["evidence"]["references"],
+            serde_json::json!([reference])
+        );
+        assert_eq!(citation["sourceData"]["state"], state);
+        assert!(citation["evidence"].get("suites").is_none());
+        let id = citation["id"].as_str().unwrap();
+        let sacm_args: Vec<_> = std::iter::once("--sacm")
+            .chain(selection.iter().copied())
+            .collect();
+        let xmi = successful_text(&run_authored_args(&args, &sacm_args));
+        assert!(
+            xmi.lines()
+                .any(|line| line.contains(&format!("xmi:id=\"{id}\""))
+                    && line.contains("sacm:ArtifactReference")
+                    && !line.contains("referencedArtifactElement")),
+            "{xmi}"
+        );
+        assert!(
+            xmi.contains(&format!("name content=\"{reference}\"")),
+            "{xmi}"
+        );
+        let declaration = format!("assertionDeclaration=\"{declaration}\"");
+        assert!(
+            xmi.lines().any(|line| line.contains("sacm:Claim")
+                && line.contains("xmi:id=\"G1\"")
+                && line.contains(&declaration)),
+            "{xmi}"
+        );
+        assert!(
+            xmi.lines()
+                .any(|line| line.contains("sacm:AssertedEvidence")
+                    && line.contains(&format!("source=\"{id}\""))
+                    && line.contains("target=\"G1\"")
+                    && line.contains("isCounter=\"false\"")
+                    && line.contains(&declaration)),
+            "{xmi}"
+        );
+        assert!(
+            !xmi.contains("xmi:type=\"sacm:Artifact\"") && !xmi.contains("sha256:"),
+            "{xmi}"
+        );
+        if state == "unresolved" {
+            let reason = citation["sourceData"]["reason"]
+                .as_str()
+                .expect("authored resolution reason");
+            assert!(xmi.contains(&format!("not supporting: {reason}")), "{xmi}");
+        }
+    }
+}
+
+#[trace("FR-226-AC-10")]
+#[test]
+fn sacm_preserves_goal_and_assumption_counter_inferences_and_reports_strategy_challenges() {
+    let repo = repo_with_argument("argument-unresolved-ref.md");
+    let document = String::from_utf8(read_fixture("argument-unresolved-ref.md")).unwrap();
+    let mut additions = String::new();
+    for (id, target) in [
+        ("CH-OPEN-GOAL", "CLAIM-1018-B"),
+        ("CH-OPEN-ASSUMPTION", "ASM-1018-B"),
+        ("CH-OPEN-STRATEGY", "ARG-1018-B"),
+    ] {
+        use std::fmt::Write as _;
+        write!(additions, "  - id: {id}\n    target: {target}\n    statement: A challenge requiring review.\n    status: open\n    owner: release-owner\n    resolution_refs: []\n").unwrap();
+    }
+    write(
+        repo.path(),
+        "spec/argument.md",
+        document
+            .replace("relationships:\n", &format!("{additions}relationships:\n"))
+            .as_bytes(),
+    );
+    let args = authored_export_args(repo.path(), "AA-10181");
+    let gsn: serde_json::Value =
+        serde_json::from_str(&successful_text(&run_authored_args(&args, &["--gsn"]))).unwrap();
+    let nodes = gsn["nodes"].as_array().unwrap();
+    let node_id = |source: &str| {
+        nodes.iter().find(|node| node["source"] == source).unwrap()["id"]
+            .as_str()
+            .unwrap()
+    };
+    let output = run_authored_args(&args, &["--sacm"]);
+    let xmi = successful_text(&output);
+    for (counter, target) in [
+        ("CH-OPEN-GOAL", "CLAIM-1018-B"),
+        ("CH-OPEN-ASSUMPTION", "ASM-1018-B"),
+    ] {
+        assert!(
+            xmi.lines()
+                .any(|line| line.contains("sacm:AssertedInference")
+                    && line.contains("isCounter=\"true\"")
+                    && line.contains(&format!("source=\"{}\"", node_id(counter)))
+                    && line.contains(&format!("target=\"{}\"", node_id(target)))),
+            "{xmi}"
+        );
+    }
+    for source in [
+        "CH-OPEN-GOAL",
+        "CH-OPEN-ASSUMPTION",
+        "CH-OPEN-STRATEGY",
+        "CLAIM-1018-B",
+    ] {
+        assert!(
+            xmi.lines().any(|line| line.contains("sacm:Claim")
+                && line.contains("assertionDeclaration=\"needsSupport\"")
+                && line.contains(&format!("xmi:id=\"{}\"", node_id(source)))),
+            "{xmi}"
+        );
+    }
+    assert!(
+        !xmi.contains(&format!("source=\"{}\"", node_id("CH-OPEN-STRATEGY"))),
+        "{xmi}"
+    );
+    assert!(text(&output.stderr).contains(
+        "unmapped: CH-OPEN-STRATEGY: challenges ARG-1018-B: strategy target is not a SACM Claim"
+    ));
+}
+
+#[trace("FR-227-AC-5")]
+#[test]
+fn sacm_reports_nested_authored_edges_without_approximating_them() {
+    let repo = repo_with_argument("argument-no-refs.md");
+    let document = String::from_utf8(read_fixture("argument-no-refs.md")).unwrap();
+    let nested = r"  - id: ARG-NESTED
+    statement: Describe an inner argument.
+    supports: ARG-1018-A
+    sufficiency_criteria:
+      - The inner criterion remains open.
+  - id: ARG-DIRECT
+    statement: Describe an independent argument.
+    supports: CLAIM-1018-A
+    sufficiency_criteria:
+      - The independent criterion remains open.
+";
+    write(
+        repo.path(),
+        "spec/argument.md",
+        document
+            .replace("assumptions:\n", &format!("{nested}assumptions:\n"))
+            .as_bytes(),
+    );
+    let args = authored_export_args(repo.path(), "AA-10180");
+    let gsn: serde_json::Value =
+        serde_json::from_str(&successful_text(&run_authored_args(&args, &["--gsn"]))).unwrap();
+    let nodes = gsn["nodes"].as_array().unwrap();
+    let node_id = |source: &str| {
+        nodes.iter().find(|node| node["source"] == source).unwrap()["id"]
+            .as_str()
+            .unwrap()
+    };
+    let report = repo.path().join("report.json");
+    let output = run_authored_args(
+        &args,
+        &["--sacm", "--sacm-report", report.to_str().unwrap()],
+    );
+    let xmi = successful_text(&output);
+    for source in [
+        "ARG-1018-A",
+        "ARG-NESTED",
+        "ARG-DIRECT",
+        "CLAIM-1018-A",
+        "ARG-NESTED:The inner criterion remains open.",
+    ] {
+        assert!(
+            xmi.contains(&format!("xmi:id=\"{}\"", node_id(source))),
+            "{xmi}"
+        );
+    }
+    let inner = node_id("ARG-NESTED:The inner criterion remains open.");
+    let direct = node_id("ARG-DIRECT");
+    assert!(!xmi.contains(&format!("source=\"{inner}\"")), "{xmi}");
+    assert!(
+        xmi.lines()
+            .any(|line| line.contains("sacm:AssertedInference")
+                && line.contains(&format!("reasoning=\"{direct}\""))),
+        "{xmi}"
+    );
+    let reason =
+        "supported_by ARG-NESTED: nested reasoning has no SACM relationship between strategies";
+    assert!(text(&output.stderr).contains(&format!("unmapped: ARG-1018-A: {reason}")));
+    let report: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(report).unwrap()).unwrap();
+    assert!(
+        report["unmapped"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|entry| entry["source"] == "ARG-1018-A" && entry["reason"] == reason),
+        "{report}"
+    );
+}

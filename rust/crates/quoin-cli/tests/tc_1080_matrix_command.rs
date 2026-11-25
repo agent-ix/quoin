@@ -468,7 +468,7 @@ const DERIVED_ASSURANCE: [&str; 9] = [
     "2026-01-01T00:00:00Z",
 ];
 
-#[trace("FR-228-AC-2")]
+#[trace("FR-221-AC-3", "FR-228-AC-8")]
 #[test]
 fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
     let fixture = populated();
@@ -476,6 +476,47 @@ fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
     let run = std::fs::read(fixture.repo().join(run_path)).expect("retained run record");
     let digest = quoin_store::attachment::sha256_hex(&run);
     let mut args = DERIVED_ASSURANCE.to_vec();
+    args.push("--gsn");
+    let gsn: Value = serde_json::from_str(&fixture.ok(&args)).expect("validated GSN");
+    let nodes = gsn["nodes"].as_array().expect("GSN nodes");
+    let healthy = nodes
+        .iter()
+        .find(|node| node["source"] == "FR-001-AC-1")
+        .expect("healthy solution");
+    let open = nodes
+        .iter()
+        .find(|node| node["source"] == "FR-001-AC-2")
+        .expect("missing run obligation");
+    assert_eq!(healthy["kind"], "solution");
+    assert_eq!(
+        healthy["evidence"]["suites"],
+        serde_json::json!([{"suite":"unit","at":"2026-01-01T00:00:00Z"}])
+    );
+    assert_eq!(open["kind"], "goal");
+    assert_eq!(open["status"], "open");
+    assert_eq!(open["undeveloped"], true);
+    assert_eq!(
+        open["evidence"]["suites"],
+        serde_json::json!([{"suite":"legacy"}])
+    );
+    assert_eq!(open["evidence"]["verdict"], "stale");
+    assert!(
+        open["openReason"]
+            .as_str()
+            .unwrap()
+            .contains("no recorded run"),
+        "{open}"
+    );
+    let open_id = open["id"].as_str().expect("open goal id");
+    assert!(
+        gsn["edges"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|edge| edge["from"] != open_id || edge["kind"] != "supported_by")
+    );
+
+    args.pop();
     args.push("--sacm");
     let xmi = fixture.ok(&args);
     assert!(xmi.contains(&format!("gid=\"sha256:{digest}\"")), "{xmi}");
@@ -493,6 +534,41 @@ fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
     assert!(xmi.contains("content=\"verdict: bound\""), "{xmi}");
     assert!(xmi.contains("content=\"FR-001-AC-2\""), "{xmi}");
     assert!(!xmi.contains("spec/evidence/runs/legacy/"), "{xmi}");
+    let healthy_id = healthy["id"].as_str().expect("healthy solution id");
+    assert!(
+        xmi.lines()
+            .any(|element| element.contains("sacm:AssertedEvidence")
+                && element.contains(&format!("source=\"{healthy_id}\""))
+                && element.contains("assertionDeclaration=\"asserted\"")),
+        "{xmi}"
+    );
+    assert!(
+        xmi.lines().any(|element| element.contains("sacm:Claim")
+            && element.contains(&format!("xmi:id=\"{open_id}\""))
+            && element.contains("assertionDeclaration=\"needsSupport\"")),
+        "{xmi}"
+    );
+    let open_ref = format!("{open_id}-evidence");
+    assert!(
+        xmi.lines()
+            .any(|element| element.contains("sacm:ArtifactReference")
+                && element.contains(&format!("xmi:id=\"{open_ref}\""))
+                && !element.contains("referencedArtifactElement")),
+        "{xmi}"
+    );
+    assert!(
+        xmi.lines()
+            .any(|element| element.contains("sacm:AssertedEvidence")
+                && element.contains(&format!("source=\"{open_ref}\""))
+                && element.contains(&format!("target=\"{open_id}\""))
+                && element.contains("isCounter=\"false\"")
+                && element.contains("assertionDeclaration=\"needsSupport\"")),
+        "{xmi}"
+    );
+    assert!(
+        xmi.contains("not supporting: stale, missing run for legacy (no observation time)"),
+        "{xmi}"
+    );
 }
 
 #[cfg(target_os = "linux")]

@@ -48,10 +48,21 @@ impl Xml {
 
     pub(super) fn description(&mut self, text: &str) -> Result<(), ExportError> {
         self.start("description", &[])?;
-        self.start("content", &[])?;
-        self.empty("value", &[("content", text)])?;
-        self.end("content")?;
+        self.multilingual("content", text)?;
         self.end("description")
+    }
+
+    pub(super) fn tagged_value(&mut self, key: &str, value: &str) -> Result<(), ExportError> {
+        self.start("taggedValue", &[])?;
+        self.multilingual("key", key)?;
+        self.multilingual("content", value)?;
+        self.end("taggedValue")
+    }
+
+    fn multilingual(&mut self, role: &str, text: &str) -> Result<(), ExportError> {
+        self.start(role, &[])?;
+        self.empty("value", &[("content", text)])?;
+        self.end(role)
     }
 
     pub(super) fn finish(self) -> Vec<u8> {

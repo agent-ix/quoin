@@ -60,6 +60,7 @@ time = { workspace = true, features = ["parsing"] }
 tempfile = { workspace = true }
 
 [dev-dependencies]
+serde_json_canonicalizer = { workspace = true }
 # The stub generators the dossier command tests drive (PLAT-1614); the feature
 # reaches the `quoin` binary these tests spawn through feature unification.
 base64 = { workspace = true }

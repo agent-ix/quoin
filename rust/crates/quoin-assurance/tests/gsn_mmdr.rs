@@ -31,6 +31,7 @@ fn exported_gsn_mermaid_is_accepted_by_mmdr() {
         roots: vec!["G1".to_owned()],
         unreachable: vec![],
         unmapped: vec![],
+        signed_acceptance: None,
     })
     .expect("export actual GSN model through the Mermaid renderer");
     std::fs::write(&input, diagram).expect("write exported Mermaid text");

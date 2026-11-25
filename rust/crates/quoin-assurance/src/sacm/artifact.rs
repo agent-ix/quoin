@@ -19,7 +19,7 @@ use super::xml::Xml;
 
 pub(super) struct Artifacts<'a> {
     records: Vec<Artifact>,
-    solutions: BTreeMap<&'a str, Solution>,
+    references: BTreeMap<&'a str, EvidenceReference>,
 }
 
 struct Artifact {
@@ -35,15 +35,10 @@ struct Selection {
     path: String,
 }
 
-pub(super) struct Solution {
+pub(super) struct EvidenceReference {
     pub(super) artifact_ids: String,
-    non_supporting: Option<EvidenceStatus>,
-}
-
-impl Solution {
-    pub(super) fn non_supporting(&self) -> Option<EvidenceStatus> {
-        self.non_supporting
-    }
+    pub(super) non_supporting: Option<String>,
+    pub(super) derived: bool,
 }
 
 impl<'a> Artifacts<'a> {
@@ -52,19 +47,52 @@ impl<'a> Artifacts<'a> {
         source: &dyn EvidenceSource,
     ) -> Result<Self, ExportError> {
         let mut records = Vec::new();
-        let mut solutions = BTreeMap::new();
+        let mut references = BTreeMap::new();
         let mut by_identity = BTreeMap::new();
         let mut by_path = BTreeMap::new();
-        for node in model.nodes.iter().filter(|node| node.kind == "solution") {
+        for node in model.nodes.iter().filter(|node| {
+            node.kind == "solution" || (node.kind == "goal" && node.status == "open")
+        }) {
             let evidence = leaf_evidence(node)?;
+            if node.kind == "goal" && evidence.is_none() {
+                continue;
+            }
+            if node
+                .evidence
+                .as_ref()
+                .is_some_and(|evidence| evidence.get("references").is_some())
+            {
+                let non_supporting = (node.status != "supported").then(|| {
+                    node.open_reason
+                        .clone()
+                        .unwrap_or_else(|| "authored citation is open".to_owned())
+                });
+                references.insert(
+                    node.id.as_str(),
+                    EvidenceReference {
+                        artifact_ids: String::new(),
+                        non_supporting,
+                        derived: false,
+                    },
+                );
+                continue;
+            }
             let verdict = evidence.as_ref().and_then(|evidence| evidence.verdict);
             let mut ids = Vec::new();
-            let mut missing = true;
+            let mut missing = Vec::new();
+            if evidence
+                .as_ref()
+                .is_none_or(|evidence| evidence.suites.is_empty())
+            {
+                missing.push("missing run selection".to_owned());
+            }
             if let Some(evidence) = evidence {
-                missing = evidence.suites.is_empty();
                 for suite in evidence.suites {
                     let Some(at) = suite.at else {
-                        missing = true;
+                        missing.push(format!(
+                            "missing run for {} (no observation time)",
+                            suite.suite
+                        ));
                         continue;
                     };
                     let path = selected_path(&suite.suite, &at)?;
@@ -77,7 +105,7 @@ impl<'a> Artifacts<'a> {
                         ),
                     };
                     let Some(digest) = digest else {
-                        missing = true;
+                        missing.push(format!("missing run for {} at {at}", suite.suite));
                         continue;
                     };
                     let selection = Selection {
@@ -92,28 +120,24 @@ impl<'a> Artifacts<'a> {
                     }
                 }
             }
-            let non_supporting = match (missing, verdict, node.status.as_str()) {
-                (true, _, _) => Some(EvidenceStatus::Undischarged),
-                (false, Some(EvidenceStatus::Bound), "supported") => None,
-                (false, status, _) => Some(
-                    status
-                        .filter(|status| *status != EvidenceStatus::Bound)
-                        .unwrap_or(EvidenceStatus::Undischarged),
-                ),
-            };
-            solutions.insert(
+            let non_supporting = derived_reason(node, verdict, missing);
+            references.insert(
                 node.id.as_str(),
-                Solution {
+                EvidenceReference {
                     artifact_ids: ids.join(" "),
                     non_supporting,
+                    derived: true,
                 },
             );
         }
-        Ok(Self { records, solutions })
+        Ok(Self {
+            records,
+            references,
+        })
     }
 
-    pub(super) fn solution(&self, id: &str) -> Option<&Solution> {
-        self.solutions.get(id)
+    pub(super) fn reference(&self, id: &str) -> Option<&EvidenceReference> {
+        self.references.get(id)
     }
 
     pub(super) fn write(&self, xml: &mut Xml) -> Result<(), ExportError> {
@@ -122,6 +146,32 @@ impl<'a> Artifacts<'a> {
         }
         Ok(())
     }
+}
+
+fn derived_reason(
+    node: &GsnNode,
+    verdict: Option<EvidenceStatus>,
+    missing: Vec<String>,
+) -> Option<String> {
+    let mut reasons = Vec::new();
+    match verdict {
+        Some(EvidenceStatus::Bound) => {
+            if !missing.is_empty() {
+                reasons.push("recorded verdict: bound".to_owned());
+            }
+        }
+        Some(status) => reasons.push(status.as_str().to_owned()),
+        None => reasons.push("verdict not recorded".to_owned()),
+    }
+    if node.status != "supported" && reasons.is_empty() {
+        reasons.push(
+            node.open_reason
+                .clone()
+                .unwrap_or_else(|| "obligation is open".to_owned()),
+        );
+    }
+    reasons.extend(missing);
+    (!reasons.is_empty()).then(|| reasons.join(", "))
 }
 
 fn leaf_evidence(node: &GsnNode) -> Result<Option<LeafEvidence>, ExportError> {

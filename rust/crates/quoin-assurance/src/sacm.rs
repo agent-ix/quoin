@@ -11,7 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use quoin_evidence::source::EvidenceSource;
 use serde::Serialize;
 
-use crate::gsn::{self, GsnCase, GsnEdge, GsnNode, Unmapped};
+use crate::gsn::{self, GsnCase, GsnEdge, GsnNode, SignedAcceptance, Unmapped};
 
 use artifact::Artifacts;
 use xml::Xml;
@@ -152,6 +152,15 @@ pub fn export(model: &GsnCase, source: &dyn EvidenceSource) -> Result<Export, Ex
     xml.name("Argument")?;
     for node in &model.nodes {
         write_node(&mut xml, node, &artifacts, &needs_support, &mut report)?;
+        if node.kind == "goal"
+            && let Some(reference) = artifacts.reference(&node.id)
+        {
+            let id = evidence_reference_id(node);
+            let attrs = evidence_attributes(&id, reference);
+            xml.start("argumentElement", &attrs)?;
+            xml.name(&node.source)?;
+            xml.end("argumentElement")?;
+        }
     }
     for relation in relations {
         relation.write(&mut xml)?;
@@ -166,6 +175,9 @@ pub fn export(model: &GsnCase, source: &dyn EvidenceSource) -> Result<Export, Ex
     )?;
     xml.name("Evidence artifacts")?;
     artifacts.write(&mut xml)?;
+    if let Some(acceptance) = &model.signed_acceptance {
+        write_acceptance(&mut xml, acceptance)?;
+    }
     xml.end("artifactPackage")?;
     xml.end("sacm:AssuranceCasePackage")?;
     report
@@ -178,6 +190,40 @@ pub fn export(model: &GsnCase, source: &dyn EvidenceSource) -> Result<Export, Ex
         xmi: xml.finish(),
         report,
     })
+}
+
+fn write_acceptance(xml: &mut Xml, acceptance: &SignedAcceptance) -> Result<(), ExportError> {
+    xml.start(
+        "artifactElement",
+        &[
+            ("xmi:type", "sacm:Artifact"),
+            ("xmi:id", "case-signed-acceptance"),
+        ],
+    )?;
+    xml.name(SignedAcceptance::LABEL)?;
+    for (key, value) in [
+        ("record_id", acceptance.record_id.as_str()),
+        ("record_digest", acceptance.record_digest.as_str()),
+        ("tag", acceptance.tag.as_str()),
+        ("approver", acceptance.approver.as_str()),
+        ("signer_source", acceptance.signer_source.as_str()),
+        ("trusted_at_missing", acceptance.trusted_at_missing.as_str()),
+    ] {
+        xml.tagged_value(key, value)?;
+    }
+    for meaning in &acceptance.meaning {
+        xml.tagged_value("meaning", meaning)?;
+    }
+    for (key, value) in [
+        ("signed_at", acceptance.signed_at.as_deref()),
+        ("signed_at_source", acceptance.signed_at_source.as_deref()),
+        ("signed_at_missing", acceptance.signed_at_missing.as_deref()),
+    ] {
+        if let Some(value) = value {
+            xml.tagged_value(key, value)?;
+        }
+    }
+    xml.end("artifactElement")
 }
 
 fn write_node(
@@ -212,10 +258,10 @@ fn write_node(
     if let Some(declaration) = declaration {
         attributes.push(("assertionDeclaration", declaration));
     }
-    if let Some(solution) = artifacts.solution(&node.id)
-        && !solution.artifact_ids.is_empty()
+    if node.kind == "solution"
+        && let Some(reference) = artifacts.reference(&node.id)
     {
-        attributes.push(("referencedArtifactElement", &solution.artifact_ids));
+        attributes = evidence_attributes(&node.id, reference);
     }
     xml.start("argumentElement", &attributes)?;
     xml.name(&node.source)?;
@@ -228,10 +274,26 @@ fn write_node(
     xml.end("argumentElement")
 }
 
+fn evidence_reference_id(node: &GsnNode) -> String {
+    format!("{}-evidence", node.id)
+}
+
+fn evidence_attributes<'a>(
+    id: &'a str,
+    reference: &'a artifact::EvidenceReference,
+) -> Vec<(&'a str, &'a str)> {
+    let mut attributes = vec![("xmi:id", id), ("xmi:type", "sacm:ArtifactReference")];
+    if !reference.artifact_ids.is_empty() {
+        attributes.push(("referencedArtifactElement", &reference.artifact_ids));
+    }
+    attributes
+}
+
 struct Graph<'a> {
     nodes: BTreeMap<&'a str, &'a GsnNode>,
     support_parents: BTreeMap<&'a str, Vec<&'a str>>,
     context_parents: BTreeMap<&'a str, Vec<&'a str>>,
+    challenged: Vec<&'a str>,
     non_strategy_children: BTreeSet<&'a str>,
 }
 
@@ -245,6 +307,7 @@ impl<'a> Graph<'a> {
                 .collect(),
             support_parents: BTreeMap::new(),
             context_parents: BTreeMap::new(),
+            challenged: Vec::new(),
             non_strategy_children: BTreeSet::new(),
         };
         for edge in &model.edges {
@@ -260,6 +323,10 @@ impl<'a> Graph<'a> {
                     &mut graph.support_parents
                 }
                 "in_context_of" => &mut graph.context_parents,
+                "challenges" => {
+                    graph.challenged.push(edge.to.as_str());
+                    continue;
+                }
                 _ => continue,
             };
             parents.entry(&edge.to).or_default().push(&edge.from);
@@ -304,10 +371,20 @@ impl<'a> Graph<'a> {
             let to = self.node(&edge.to)?;
             match edge.kind.as_str() {
                 "in_context_of" => {
-                    relationships.push(Relationship::new("AssertedContext", to, from, index))
+                    relationships.push(Relationship::new("AssertedContext", &to.id, from, index))
+                }
+                "challenges" if to.kind == "strategy" => {
+                    unmapped_edge(
+                        from,
+                        to,
+                        "challenges",
+                        "strategy target is not a SACM Claim",
+                        report,
+                    );
                 }
                 "challenges" => {
-                    let mut relationship = Relationship::new("AssertedInference", from, to, index);
+                    let mut relationship =
+                        Relationship::new("AssertedInference", &from.id, to, index);
                     relationship.is_counter = true;
                     relationships.push(relationship);
                 }
@@ -320,6 +397,20 @@ impl<'a> Graph<'a> {
                         edge.kind
                     )));
                 }
+            }
+        }
+        for (index, node) in model.nodes.iter().enumerate() {
+            if node.kind == "goal"
+                && let Some(reference) = artifacts.reference(&node.id)
+            {
+                let mut relation = Relationship::new(
+                    "AssertedEvidence",
+                    &evidence_reference_id(node),
+                    node,
+                    model.edges.len() + index,
+                );
+                relation.set_evidence(reference);
+                relationships.push(relation);
             }
         }
         Ok(relationships)
@@ -344,26 +435,34 @@ impl<'a> Graph<'a> {
                 None
             };
             if let Some(reason) = reason {
-                unmapped_edge(from, to, reason, report);
+                unmapped_edge(from, to, "supported_by", reason, report);
             }
             return Ok(());
         }
         let targets = self.claim_targets(from);
         if targets.is_empty() {
-            unmapped_edge(from, to, "strategy has no direct parent Claim", report);
+            unmapped_edge(
+                from,
+                to,
+                "supported_by",
+                "strategy has no direct parent Claim",
+                report,
+            );
         }
-        let non_supporting = artifacts
-            .solution(&to.id)
-            .and_then(artifact::Solution::non_supporting);
+        let reference = artifacts.reference(&to.id);
         for target in targets {
             let relation_type = if to.kind == "solution" {
                 "AssertedEvidence"
             } else {
                 "AssertedInference"
             };
-            let mut relationship = Relationship::new(relation_type, to, target, index);
+            let mut relationship = Relationship::new(relation_type, &to.id, target, index);
             relationship.reasoning = (from.kind == "strategy").then_some(from.id.as_str());
-            relationship.non_supporting = non_supporting.map(crate::matrix::EvidenceStatus::as_str);
+            if to.kind == "solution"
+                && let Some(reference) = reference
+            {
+                relationship.set_evidence(reference);
+            }
             relationships.push(relationship);
         }
         Ok(())
@@ -376,13 +475,10 @@ impl<'a> Graph<'a> {
     ) -> BTreeSet<&'a str> {
         let mut open = BTreeSet::new();
         let mut visited = BTreeSet::new();
-        let mut challenged = Vec::new();
+        let mut challenged = self.challenged.clone();
         for relation in relations {
-            if relation.non_supporting.is_some() {
+            if relation.needs_support {
                 open.insert(relation.target);
-            }
-            if relation.is_counter {
-                challenged.push(relation.target);
             }
         }
         let roots: BTreeSet<_> = model.roots.iter().map(String::as_str).collect();
@@ -403,41 +499,54 @@ impl<'a> Graph<'a> {
     }
 }
 
-fn unmapped_edge(from: &GsnNode, to: &GsnNode, reason: &str, report: &mut ExportReport) {
+fn unmapped_edge(
+    from: &GsnNode,
+    to: &GsnNode,
+    kind: &str,
+    reason: &str,
+    report: &mut ExportReport,
+) {
     report.unmapped.push(Unmapped {
         source: from.source.clone(),
-        reason: format!("supported_by {}: {reason}", to.source),
+        reason: format!("{kind} {}: {reason}", to.source),
     });
 }
 
 struct Relationship<'a> {
     id: String,
     kind: String,
-    source: &'a str,
+    source: String,
     target: &'a str,
     reasoning: Option<&'a str>,
     is_counter: bool,
-    non_supporting: Option<&'static str>,
+    non_supporting: Option<String>,
+    needs_support: bool,
 }
 
 impl<'a> Relationship<'a> {
-    fn new(kind: &str, source: &'a GsnNode, target: &'a GsnNode, index: usize) -> Self {
+    fn new(kind: &str, source: &str, target: &'a GsnNode, index: usize) -> Self {
         Self {
-            id: format!("{}-{}-{kind}-{}", source.id, target.id, index + 1),
+            id: format!("{source}-{}-{kind}-{}", target.id, index + 1),
             kind: format!("sacm:{kind}"),
-            source: &source.id,
+            source: source.to_owned(),
             target: &target.id,
             reasoning: None,
             is_counter: false,
             non_supporting: None,
+            needs_support: false,
         }
+    }
+
+    fn set_evidence(&mut self, reference: &artifact::EvidenceReference) {
+        self.non_supporting.clone_from(&reference.non_supporting);
+        self.needs_support = reference.derived && self.non_supporting.is_some();
     }
 
     fn write(&self, xml: &mut Xml) -> Result<(), ExportError> {
         let mut attrs = vec![
             ("xmi:type", self.kind.as_str()),
             ("xmi:id", self.id.as_str()),
-            ("source", self.source),
+            ("source", self.source.as_str()),
             ("target", self.target),
             ("isCounter", if self.is_counter { "true" } else { "false" }),
             (
@@ -454,7 +563,7 @@ impl<'a> Relationship<'a> {
         }
         xml.start("argumentElement", &attrs)?;
         xml.name(&self.id)?;
-        if let Some(verdict) = self.non_supporting {
+        if let Some(verdict) = &self.non_supporting {
             xml.description(&format!("not supporting: {verdict}"))?;
         }
         xml.end("argumentElement")

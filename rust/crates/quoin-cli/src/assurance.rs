@@ -3,6 +3,8 @@
 
 //! Rust adapter for the retained read-only `quoin assurance` view.
 
+mod case_approval;
+
 use std::path::Path;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -41,6 +43,7 @@ pub(crate) fn command() -> Command {
         )
         .arg(Arg::new("as-of").long("as-of"))
         .args(crate::formal_rules::trust_arguments())
+        .args(case_approval::options())
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
         .arg(
             Arg::new("gsn")
@@ -78,6 +81,12 @@ pub(crate) fn command() -> Command {
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    if case_approval::supplied(arguments)
+        && !arguments.get_flag("gsn")
+        && !arguments.get_flag("sacm")
+    {
+        return Err("case approval options require --gsn or --sacm".to_owned());
+    }
     if arguments.get_flag("gsn") && arguments.get_flag("json") {
         return Err("--gsn cannot be combined with --json".to_owned());
     }
@@ -173,7 +182,7 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
     }
     if exports_gsn_model(arguments) {
         let model = quoin_assurance::gsn::from_authored(&view.payload)?;
-        return render_case_export(&model, Path::new(&repo), arguments);
+        return render_case_export(model, Path::new(&repo), arguments);
     }
     present(
         "assurance.render_authored_argument",
@@ -285,7 +294,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             &run_records,
             validation_report.as_ref(),
         )?;
-        return render_case_export(&model, Path::new(&repo), arguments);
+        return render_case_export(model, Path::new(&repo), arguments);
     }
     present(
         "assurance.render_case",
@@ -301,18 +310,27 @@ fn exports_gsn_model(arguments: &ArgMatches) -> bool {
 }
 
 fn render_case_export(
-    model: &quoin_assurance::GsnCase,
+    mut model: quoin_assurance::GsnCase,
     repo: &Path,
     arguments: &ArgMatches,
 ) -> Result<Response, String> {
-    if arguments.get_flag("sacm") {
-        return render_sacm_response(
-            model,
+    let approval_warning = case_approval::attach(&mut model, repo, arguments);
+    let mut response = if arguments.get_flag("sacm") {
+        render_sacm_response(
+            &model,
             repo,
             arguments.get_one::<String>("sacm-report").map(Path::new),
-        );
+        )?
+    } else {
+        render_gsn_response(&model, arguments.get_flag("gsn-diagram"))?
+    };
+    if let Some(warning) = approval_warning {
+        response.payload["warning"] = match response.payload["warning"].as_str() {
+            Some(existing) => format!("{existing}\n{warning}").into(),
+            None => warning.into(),
+        };
     }
-    render_gsn_response(model, arguments.get_flag("gsn-diagram"))
+    Ok(response)
 }
 
 fn render_sacm_response(
@@ -398,6 +416,7 @@ mod gsn_refusal_tests {
                 roots: vec![to.to_owned()],
                 unreachable: vec![],
                 unmapped: vec![],
+                signed_acceptance: None,
             };
             let error = render_gsn_response(&model, false).expect_err("invalid graph is refused");
             let mut stdout = Vec::new();
@@ -429,6 +448,7 @@ mod gsn_refusal_tests {
             roots: vec![],
             unreachable: vec![],
             unmapped: vec![],
+            signed_acceptance: None,
         };
         let error = render_sacm_response(&model, repo.path(), Some(&report_path))
             .expect_err("invalid model is refused");
@@ -465,6 +485,7 @@ mod gsn_refusal_tests {
                 "FR-260".to_owned(),
             ],
             unmapped: vec![unmapped.clone(), unmapped],
+            signed_acceptance: None,
         };
         let response = render_sacm_response(&model, repo.path(), Some(&report_path))
             .expect("valid model exports");
@@ -521,6 +542,7 @@ mod gsn_refusal_tests {
             roots: vec!["G1".to_owned()],
             unreachable: vec![],
             unmapped: vec![],
+            signed_acceptance: None,
         };
         let error = render_gsn_response(&model, false).expect_err("invalid model is refused");
         let mut stdout = Vec::new();

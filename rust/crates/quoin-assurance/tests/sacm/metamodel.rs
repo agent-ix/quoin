@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use ix_trace_rs::trace;
 
-use super::{Element, parse_xml, shape_export};
+use super::{Element, parse_xml, signed_shape_export};
 
 #[trace("FR-226-AC-7")]
 #[test]
@@ -29,12 +29,34 @@ fn sacm_uses_normative_metamodel() {
             .map(|item| (item.attr("name"), item))
             .collect(),
     };
-    let package = parse_xml(&shape_export().xmi);
+    let exported = signed_shape_export();
+    let package = parse_xml(&exported.xmi);
     let mut emitted = Vec::new();
     package.walk(&mut emitted);
     let document_ids = identified(&emitted);
     let root_class = uml.class(package.attr("xmi:type"));
     uml.check(&package, root_class, &document_ids);
+
+    let text = String::from_utf8(exported.xmi).expect("UTF-8 package");
+    let invalid = text.replacen(
+        "xmi:type=\"sacm:Resource\"",
+        "xmi:type=\"sacm:Resource\" location=\"unsupported\"",
+        1,
+    );
+    assert_ne!(text, invalid, "the fixture contains a Resource");
+    let invalid = parse_xml(invalid.as_bytes());
+    let mut elements = Vec::new();
+    invalid.walk(&mut elements);
+    let ids = identified(&elements);
+    let failure = std::panic::catch_unwind(|| uml.check(&invalid, root_class, &ids))
+        .expect_err("Resource.location is absent from published XML");
+    let diagnostic = failure
+        .downcast_ref::<String>()
+        .expect("conformance diagnostic");
+    assert!(
+        diagnostic.contains("Resource has no SACM property location"),
+        "{diagnostic}"
+    );
 }
 
 type Ids<'a> = BTreeMap<&'a str, &'a Element>;

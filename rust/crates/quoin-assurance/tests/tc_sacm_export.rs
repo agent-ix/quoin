@@ -70,6 +70,7 @@ fn model(nodes: Vec<GsnNode>, edges: Vec<GsnEdge>, roots: &[&str]) -> GsnCase {
         roots: roots.iter().map(|id| (*id).to_owned()).collect(),
         unreachable: Vec::new(),
         unmapped: Vec::new(),
+        signed_acceptance: None,
     }
 }
 
@@ -119,6 +120,22 @@ fn disk_repo() -> tempfile::TempDir {
 fn shape_export() -> Export {
     let repo = disk_repo();
     export(&shape_fixture(), &DiskEvidence::new(repo.path())).expect("fixture exports")
+}
+
+fn signed_shape_export() -> Export {
+    let mut fixture = shape_fixture();
+    fixture.signed_acceptance = Some(
+        serde_json::from_value(json!({
+            "label": "Human acceptance of case content", "record_id": "quoin.gsn-case/v1",
+            "record_digest": format!("sha256:{SECOND_DIGEST}"),
+            "tag": "case/review", "approver": "case-reviewer@example.invalid",
+            "meaning": ["assurance-case-accepted"], "signer_source": "allowed_signers",
+            "signed_at_missing": "tagger_date_unreadable", "trusted_at_missing": "ssh_signature"
+        }))
+        .expect("signed acceptance shape"),
+    );
+    let repo = disk_repo();
+    export(&fixture, &DiskEvidence::new(repo.path())).expect("signed fixture exports")
 }
 
 #[trace("FR-226-AC-1", "FR-226-AC-2", "FR-226-AC-3", "FR-226-AC-4")]
@@ -295,6 +312,23 @@ fn sacm_content_addresses_exact_bytes_and_retains_non_supporting_evidence() {
             .iter()
             .all(|path| repo.path().join(path).is_file())
     );
+    let package = parsed.child("artifactPackage");
+    for digest in [FIRST_DIGEST, SECOND_DIGEST] {
+        let group = package.by_id(&format!("artifact-{digest}-record"));
+        assert_eq!(group.attr("xmi:type"), "sacm:ArtifactGroup");
+        assert_eq!(
+            group.attr("artifactElement"),
+            format!("artifact-{digest} artifact-{digest}-location-1")
+        );
+        let resource = package.by_id(&format!("artifact-{digest}-location-1"));
+        assert_eq!(resource.attr("location"), "");
+        assert!(
+            resource
+                .children
+                .iter()
+                .all(|child| child.role != "location")
+        );
+    }
     let argument = parsed.child("argumentPackage");
     let evidence: Vec<_> = argument
         .children
@@ -307,8 +341,14 @@ fn sacm_content_addresses_exact_bytes_and_retains_non_supporting_evidence() {
         (FIRST_DIGEST, "stale"),
         (SECOND_DIGEST, "suspect"),
         (FIRST_DIGEST, "undischarged"),
-        ("", "undischarged"),
-        ("", "undischarged"),
+        (
+            "",
+            "undischarged, missing run for SUITE-1 (no observation time)",
+        ),
+        (
+            "",
+            "recorded verdict: bound, missing run for SUITE-1 at absent",
+        ),
     ]
     .into_iter()
     .enumerate()

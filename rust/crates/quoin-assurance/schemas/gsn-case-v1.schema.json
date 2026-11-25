@@ -11,9 +11,32 @@
     "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
     "roots": { "type": "array", "items": { "type": "string" } },
     "unreachable": { "type": "array", "items": { "type": "string" } },
-    "unmapped": { "type": "array", "items": { "$ref": "#/$defs/unmapped" } }
+    "unmapped": { "type": "array", "items": { "$ref": "#/$defs/unmapped" } },
+    "signed_acceptance": { "$ref": "#/$defs/signed-acceptance" }
   },
   "$defs": {
+    "signed-acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "record_id", "record_digest", "tag", "approver", "meaning", "signer_source", "trusted_at_missing"],
+      "properties": {
+        "label": { "const": "Human acceptance of case content" },
+        "record_id": { "const": "quoin.gsn-case/v1" },
+        "record_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "tag": { "type": "string", "minLength": 1 },
+        "approver": { "type": "string", "minLength": 1 },
+        "meaning": { "const": ["assurance-case-accepted"] },
+        "signer_source": { "const": "allowed_signers" },
+        "signed_at": { "type": "string", "format": "date-time", "pattern": "Z$" },
+        "signed_at_source": { "const": "tagger_date" },
+        "signed_at_missing": { "const": "tagger_date_unreadable" },
+        "trusted_at_missing": { "const": "ssh_signature" }
+      },
+      "oneOf": [
+        { "required": ["signed_at", "signed_at_source"], "not": { "required": ["signed_at_missing"] } },
+        { "required": ["signed_at_missing"], "not": { "anyOf": [{ "required": ["signed_at"] }, { "required": ["signed_at_source"] }] } }
+      ]
+    },
     "node": {
       "type": "object", "additionalProperties": false,
       "required": ["id", "kind", "source", "statement", "status"],
