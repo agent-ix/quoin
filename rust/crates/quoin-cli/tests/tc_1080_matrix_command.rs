@@ -468,7 +468,7 @@ const DERIVED_ASSURANCE: [&str; 9] = [
     "2026-01-01T00:00:00Z",
 ];
 
-#[trace("FR-221-AC-3", "FR-228-AC-8")]
+#[trace("FR-234-AC-3", "FR-228-AC-8")]
 #[test]
 fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
     let fixture = populated();

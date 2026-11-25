@@ -3,7 +3,7 @@ id: FR-226
 title: "Export an assurance case as SACM 2.3 XMI"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/FR-221"
+  - target: "ix://agent-ix/quoin/FR-234"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-222"
     type: "requires"
@@ -30,7 +30,7 @@ build a second, independent mapping from the corpus.
 
 ## Inputs
 
-- The validated `quoin.gsn-case/v1` model produced by [FR-221](./FR-221-gsn-model-export.md).
+- The validated `quoin.gsn-case/v1` model produced by [FR-234](./FR-234-gsn-model-export.md).
 - The SACM ArtifactPackage evidence mapping in
   [FR-228](./FR-228-sacm-evidence-artifact-content-identity.md).
 
@@ -108,19 +108,30 @@ build a second, independent mapping from the corpus.
   the implementation SHALL use `quick-xml` (MIT) as the sole new runtime
   dependency outside the workspace. The exact crate version is set in the
   Cargo manifest and lockfile.
-- No external application candidate was found and verified for importing the
-  SACM 2.3 fixture at specification time. The upstream ACME repository
-  documents a SACM 2.3 EMF model but no verified importer
-  ([source](https://github.com/SystemsAssuranceGroup/SACM)); the MMINT-A
-  material documents GSN use but no SACM 2.3 XMI import
-  ([source](https://github.com/ScienceOfComputerProgramming/SCICO-D-22-00363)).
-  The metamodel check establishes structural compatibility for the exercised
-  XMI. [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649) SHALL identify
-  the importer, version and licence after importing an unchanged Quoin
-  fixture. Inspect the imported Claims, evidence declarations and links,
-  including the ArtifactGroup membership and exact run path in the grouped
-  Resource name. A generic XML or EMF load does not establish the importer's
-  preservation of that content or its interpretation as a native location.
+- The verified external importer is Assurance Forge `0.3.0-alpha.3`, an
+  explicitly pre-release Linux x64 application under the MIT licence. The
+  [release](https://github.com/lasrod/assurance-forge/releases/tag/0.3.0-alpha.3)
+  reads and writes SACM 2.3 XMI; its
+  [tagged licence](https://github.com/lasrod/assurance-forge/blob/0.3.0-alpha.3/LICENSE.md)
+  is MIT. Its bundled headless `assurance-forge-mcp` interface opens the
+  unchanged fixture with `--offline-project` and exposes `get_case_overview`
+  and `get_element` reads. `make test-sacm-interop` uses this interface to
+  reject load warnings, compare Claim, ArgumentReasoning, AssertedRelationship
+  and Artifact counts with the XMI, and inspect claim declarations, evidence
+  relationship endpoints, the ArtifactGroup element, and the exact Resource
+  path. It fails if `QUOIN_SACM_TOOL` is unset or unusable, and verifies that
+  a fixture with a dangling reference is rejected. Neither the application,
+  its binaries, its libraries, nor its data is committed.
+- The MCP read projection does not expose an ArtifactGroup's `artifactElement`
+  member ids, so the interop report SHALL NOT claim that those ids were
+  returned by Assurance Forge MCP. Separate release-bound evidence for this
+  relationship is the Assurance Forge SACM library test
+  [`SACM23_ART_001_FullArtifactFixtureRoundTrips`](https://github.com/lasrod/assurance-forge/blob/65577b306a5dadf1d250497d2ed6e16139870747/libs/sacm/tests/test_artifact.cpp#L35-L77):
+  it strictly imports an XMI fixture,
+  asserts two ArtifactGroup members, saves and reloads the model, and requires
+  semantic equality. This verifies the library's ArtifactGroup reference
+  round trip; it is not a claim of SACM-wide conformance. A generic XML or EMF
+  load alone does not establish preservation by the external application.
 
 ## Namespaces and XMI types
 
@@ -156,13 +167,13 @@ The exporter SHALL use these `xmi:type` identifiers from the normative SACM
 | FR-226-AC-5 | Combining `--sacm` with any incompatible output flag returns a usage error and writes no XMI. | Test |
 | FR-226-AC-6 | A well-formedness failure in the GSN input writes no XMI and preserves the named WF rule and node ids in the error report. | Test |
 | FR-226-AC-7 | The explicit check against the published UML XML at `QUOIN_SACM_METAMODEL` verifies the exported classes, containment and reference types, including `Resource.name` and `ArtifactGroup.artifactElement`. The check rejects an unset path and a fixture that invents a `Resource.location` property. | Test |
-| FR-226-AC-8 | A verified importer claim identifies the application, version and licence and cites a successful import of the unmodified fixture that preserves the specified claims, evidence links and declarations, Resource names and ArtifactGroup membership. | Inspection |
+| FR-226-AC-8 | A verified importer claim identifies Assurance Forge `0.3.0-alpha.3` and its MIT licence; the unchanged Quoin fixture imports without warnings and preserves the specified claims, evidence links and declarations, and exact Resource names. The MCP projection's ArtifactGroup-member limitation is stated, and the importer's separate ArtifactGroup round-trip test is cited without claiming that MCP returned the member ids. | Test / Inspection |
 | FR-226-AC-9 | A GSN case with verified `signed_acceptance` and an open claim yields exactly one labeled acceptance Artifact via the root's `artifactPackage` and its `artifactElement` containment. No argument element references it. Exporting the case with `signed_acceptance` omitted yields no acceptance Artifact and identical Claim declarations. | Test |
 | FR-226-AC-10 | `quoin assurance --argument <ID> --sacm` with open challenges to a goal, assumption, and strategy preserves all three counter-claim Claims and the open top claim. Counter inferences target exactly the goal and assumption Claims. The strategy challenge produces an unmapped edge diagnostic with both source ids and no substitute relationship. | Test |
 
 ## Dependencies
 
-- **Upstream**: [FR-221](./FR-221-gsn-model-export.md), [FR-222](./FR-222-gsn-model-well-formedness.md), [FR-223](./FR-223-assurance-case-context-and-counter-claims.md), [FR-225](./FR-225-signed-acceptance-of-case-content.md)
+- **Upstream**: [FR-234](./FR-234-gsn-model-export.md), [FR-222](./FR-222-gsn-model-well-formedness.md), [FR-223](./FR-223-assurance-case-context-and-counter-claims.md), [FR-225](./FR-225-signed-acceptance-of-case-content.md)
 - **Downstream**: [PLAT-1647](https://linear.app/agent-ix/issue/PLAT-1647), [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649)
 
 ## Reference

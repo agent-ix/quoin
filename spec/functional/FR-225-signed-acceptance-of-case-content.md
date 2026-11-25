@@ -5,7 +5,7 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/FR-047"
     type: "extends"
-  - target: "ix://agent-ix/quoin/FR-221"
+  - target: "ix://agent-ix/quoin/FR-234"
     type: "requires"
   - target: "ix://agent-ix/engineering-assurance/FR-041"
     type: "depends_on"
@@ -123,6 +123,6 @@ acceptance records a person's decision about the case representation.
 
 ## Dependencies
 
-- **Upstream**: [FR-221](./FR-221-gsn-model-export.md),
+- **Upstream**: [FR-234](./FR-234-gsn-model-export.md),
   [EA FR-041](ix://agent-ix/engineering-assurance/FR-041),
   [NFR-045](../non-functional/NFR-045-assurance-exports-run-offline.md)

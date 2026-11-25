@@ -1257,7 +1257,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-221-AC-3", "FR-223-AC-7")]
+    #[trace("FR-234-AC-3", "FR-223-AC-7")]
     #[test]
     fn open_derived_obligation_becomes_undeveloped_goal_with_reason() {
         let case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
@@ -1295,7 +1295,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-221-AC-4", "FR-221-AC-10")]
+    #[trace("FR-234-AC-4", "FR-234-AC-10")]
     #[test]
     fn global_trust_and_independence_context_attach_to_every_root_once() {
         let case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
@@ -1328,7 +1328,7 @@ mod tests {
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
     #[trace(
-        "FR-221-AC-11",
+        "FR-234-AC-11",
         "FR-224-AC-1",
         "FR-224-AC-2",
         "FR-224-AC-3",
@@ -1684,9 +1684,9 @@ mod tests {
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
     #[trace(
-        "FR-221-AC-6",
-        "FR-221-AC-7",
-        "FR-221-AC-8",
+        "FR-234-AC-6",
+        "FR-234-AC-7",
+        "FR-234-AC-8",
         "FR-223-AC-3",
         "FR-223-AC-4"
     )]
@@ -1774,7 +1774,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-221-AC-2", "FR-221-AC-5", "FR-221-AC-10")]
+    #[trace("FR-234-AC-2", "FR-234-AC-5", "FR-234-AC-10")]
     #[test]
     fn authored_supports_and_top_claim_evidence_keep_authored_links() {
         let view = serde_json::json!({
@@ -1845,7 +1845,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1645.
-    #[trace("FR-221-AC-10")]
+    #[trace("FR-234-AC-10")]
     #[test]
     fn diagram_escapes_quotes_newlines_and_truncates_code_points() {
         let text = format!("{}é", "x".repeat(170));
@@ -1868,7 +1868,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1645.
-    #[trace("FR-221-AC-6", "FR-221-AC-7")]
+    #[trace("FR-234-AC-6", "FR-234-AC-7")]
     #[test]
     fn diagram_renders_challenges_as_objections_and_labels_a_j_nodes() {
         let mut assumption = node("A1", "assumption", None);

@@ -24,7 +24,7 @@ risks, and expiries SHALL remain visible as separate facts. Missing decisions,
 invalidated or overdue assumptions, unresolved challenges, and expired risk
 acceptances SHALL keep the top claim open. The view SHALL NOT emit an aggregate
 score. When the caller supplies `--gsn`, the authored argument is exported by
-[FR-221](./FR-221-gsn-model-export.md); when the caller supplies `--sacm`, it
+[FR-234](./FR-234-gsn-model-export.md); when the caller supplies `--sacm`, it
 is exported as SACM XMI by [FR-226](./FR-226-sacm-export.md).
 
 The top claim MAY cite evidence references. A claim that cites none, cites a
@@ -72,7 +72,7 @@ reported status rather than into an error (`agent-ix/quoin#436`). The strict
 reader is shared with the measurement surfaces rather than written a third time.
 - The authored contract remains owned by the separately installed private
   engineering-assurance module.
-- No external argument notation is emitted by default. GSN and SACM exports are produced only through the explicit `--gsn` and `--sacm` options specified by [FR-221](./FR-221-gsn-model-export.md) and [FR-226](./FR-226-sacm-export.md).
+- No external argument notation is emitted by default. GSN and SACM exports are produced only through the explicit `--gsn` and `--sacm` options specified by [FR-234](./FR-234-gsn-model-export.md) and [FR-226](./FR-226-sacm-export.md).
 - The evaluator resolves no evidence itself. The caller states what the
   evidence store found for each reference (an evidence index, the same shape
   `asOf` and the clause discharge report already arrive as); a reference named
@@ -80,7 +80,7 @@ reader is shared with the measurement surfaces rather than written a third time.
   decides nothing on its own. `quoin assurance --argument` takes the index
   from `--evidence <path>`; without it every cited reference is unresolved.
 - With `--gsn`, an unbacked top claim SHALL be exported as an open goal with
-  its reason, as specified by [FR-221](./FR-221-gsn-model-export.md).
+  its reason, as specified by [FR-234](./FR-234-gsn-model-export.md).
 
 ## Dependencies
 

@@ -201,7 +201,7 @@ fn tc_1018_the_same_claim_with_its_reference_resolved_is_supported_through_the_r
 }
 
 /// Provenance: agent-ix/quoin#PLAT-1447, agent-ix/quoin#PLAT-1645.
-#[trace("FR-221-AC-1", "FR-221-AC-9")]
+#[trace("FR-234-AC-1", "FR-234-AC-9")]
 #[test]
 fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
     let root = repo_with_argument("argument-no-refs.md");
@@ -369,7 +369,7 @@ fn run_authored_args(args: &[String], extra: &[&str]) -> Output {
     quoin(&arguments)
 }
 
-#[trace("FR-228-AC-9", "FR-221-AC-5")]
+#[trace("FR-228-AC-9", "FR-234-AC-5")]
 #[test]
 fn sacm_preserves_authored_citation_resolution_without_a_fabricated_run() {
     let repo = repo_with_argument("argument-unresolved-ref.md");
