@@ -165,9 +165,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn ensure_supported_platform(os: &str) -> Result<(), String> {
     match os {
-        "linux" | "macos" => Ok(()),
+        "linux" => Ok(()),
         other => Err(format!(
-            "unsupported-platform: quoin self-tests run on Linux and macOS; current platform is {other}"
+            "unsupported-platform: quoin self-tests run on Linux only; current platform is {other}"
         )),
     }
 }
@@ -632,7 +632,8 @@ mod tests {
     #[test]
     fn tc_215_runner_fails_closed_on_unsupported_platforms() {
         assert!(ensure_supported_platform("linux").is_ok());
-        assert!(ensure_supported_platform("macos").is_ok());
+        let macos_error = ensure_supported_platform("macos").expect_err("macOS is unsupported");
+        assert!(macos_error.contains("unsupported-platform"));
         let error = ensure_supported_platform("windows").expect_err("Windows is unsupported");
         assert!(error.contains("unsupported-platform"));
     }
