@@ -4,7 +4,7 @@ title: "Self-test fixtures are owned by their tool repositories"
 type: NFR
 quality_attribute: maintainability
 relationships:
-  - target: "ix://agent-ix/quoin/FR-229"
+  - target: "ix://agent-ix/quoin/FR-235"
     type: "constrains"
 ---
 

@@ -3,7 +3,7 @@ id: FR-227
 title: "Report unreachable and unmapped SACM export content"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/FR-221"
+  - target: "ix://agent-ix/quoin/FR-234"
     type: "requires"
 ---
 
@@ -59,5 +59,5 @@ decide acceptance, risk, or compliance.
 
 ## Dependencies
 
-- **Upstream**: [FR-221](./FR-221-gsn-model-export.md)
+- **Upstream**: [FR-234](./FR-234-gsn-model-export.md)
 - **Downstream**: [PLAT-1647](https://linear.app/agent-ix/issue/PLAT-1647), [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649)

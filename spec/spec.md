@@ -215,6 +215,12 @@ index; the files are authoritative.
 - [FR-211](./functional/FR-211-discharge-resolves-evidence-and-approvals.md) — resolve discharge evidence and verify discharge approvals.
 - [FR-212](./functional/FR-212-module-lag-warning.md) — warn when an installed default module is not at the CLI pin.
 - [FR-221](./functional/FR-221-quoin-vulnerability-reporting-policy.md) — document the private vulnerability reporting route for quoin.
+**Tool validation and assurance exports**
+
+- [FR-234](./functional/FR-234-gsn-model-export.md) — export assurance cases as a GSN model.
+- [FR-235](./functional/FR-235-quoin-selftest.md) — run self-tests against the installed binary.
+- [FR-236](./functional/FR-236-selftest-run-record.md) — retain versioned self-test run records.
+- [FR-237](./functional/FR-237-independent-validation-kit-verification.md) — independently verify each released tool validation kit.
 
 **Dossier documents**
 

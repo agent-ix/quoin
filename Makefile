@@ -8,8 +8,14 @@
 RUST_DIR := $(CURDIR)/rust
 CARGO_TARGET := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(RUST_DIR)/target)
 CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
+QUIRE ?= quire
+# Pass explicit roots for the complete isolated module set. In particular,
+# spec-artifacts-process must be the current revision that registers
+# IntendedUse and FeatureRiskRating. Example:
+# make spec-validation QUIRE_MODULE_ARGS='--module /tmp/modules/spec-artifacts-iso --module /tmp/modules/spec-artifacts-process ...'
+QUIRE_MODULE_ARGS ?=
 
-.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test test-real mutation-test wave2-validation
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test test-real mutation-test wave2-validation spec-validation
 
 build: rust-build
 
@@ -50,6 +56,12 @@ rust-gate: rust-lint rust-deny rust-test workflow-test
 
 help:
 	@echo "Native Quoin targets: build, test, lint, format, clean, evidence"
+
+# Validate the complete specification bundle and require feature-risk coverage
+# for every functional requirement.
+spec-validation:
+	@test -n "$(QUIRE_MODULE_ARGS)" || { echo "set QUIRE_MODULE_ARGS to explicit isolated module roots, including current spec-artifacts-iso and spec-artifacts-process" >&2; exit 2; }
+	$(QUIRE) validate --scope . --okf --severity trace:feature-without-risk-rating=error $(QUIRE_MODULE_ARGS)
 
 # Run the Rust suite under cargo-nextest (JUnit writer), add each test's trace
 # tags to the report, and bind the run into spec/evidence with

@@ -3,7 +3,7 @@ id: FR-226
 title: "Export an assurance case as SACM 2.3 XMI"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/FR-221"
+  - target: "ix://agent-ix/quoin/FR-234"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-222"
     type: "requires"
@@ -30,7 +30,7 @@ build a second, independent mapping from the corpus.
 
 ## Inputs
 
-- The validated `quoin.gsn-case/v1` model produced by [FR-221](./FR-221-gsn-model-export.md).
+- The validated `quoin.gsn-case/v1` model produced by [FR-234](./FR-234-gsn-model-export.md).
 - The SACM ArtifactPackage evidence mapping in
   [FR-228](./FR-228-sacm-evidence-artifact-content-identity.md).
 
@@ -162,7 +162,7 @@ The exporter SHALL use these `xmi:type` identifiers from the normative SACM
 
 ## Dependencies
 
-- **Upstream**: [FR-221](./FR-221-gsn-model-export.md), [FR-222](./FR-222-gsn-model-well-formedness.md), [FR-223](./FR-223-assurance-case-context-and-counter-claims.md), [FR-225](./FR-225-signed-acceptance-of-case-content.md)
+- **Upstream**: [FR-234](./FR-234-gsn-model-export.md), [FR-222](./FR-222-gsn-model-well-formedness.md), [FR-223](./FR-223-assurance-case-context-and-counter-claims.md), [FR-225](./FR-225-signed-acceptance-of-case-content.md)
 - **Downstream**: [PLAT-1647](https://linear.app/agent-ix/issue/PLAT-1647), [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649)
 
 ## Reference

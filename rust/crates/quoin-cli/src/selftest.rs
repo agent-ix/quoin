@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Run the self-test cases embedded in the installed binary (FR-229, PLAT-1639).
+//! Run the self-test cases embedded in the installed binary (FR-235, PLAT-1639).
 
 use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command};
 use quoin_core::error::{CoreError, CoreErrorCode};
@@ -154,17 +154,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let retained_location = retained_location
         .to_str()
         .ok_or_else(|| "self-test run record destination is not valid UTF-8".to_owned())?;
-    let record = serde_json::json!({
-        "schemaVersion": 1,
-        "tool": "quoin",
-        "toolVersion": tool_version,
-        "os": std::env::consts::OS,
-        "architecture": std::env::consts::ARCH,
-        "suite": "SELFTEST",
-        "timestamp": timestamp,
-        "results": results,
-        "retainedLocation": retained_location,
-    });
+    let record = run_record(tool_version, &timestamp, results, retained_location);
     let mut bytes = serde_json::to_string_pretty(&record)
         .map_err(|error| format!("serialize self-test run record: {error}"))?
         .into_bytes();
@@ -192,6 +182,25 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     } else {
         Ok(Response::ok(payload))
     }
+}
+
+fn run_record(
+    tool_version: String,
+    timestamp: &str,
+    results: Vec<CaseResult>,
+    retained_location: &str,
+) -> serde_json::Value {
+    serde_json::json!({
+        "schemaVersion": 1,
+        "tool": "quoin",
+        "toolVersion": tool_version,
+        "os": std::env::consts::OS,
+        "architecture": std::env::consts::ARCH,
+        "suite": "SELFTEST",
+        "timestamp": timestamp,
+        "results": results,
+        "retainedLocation": retained_location,
+    })
 }
 
 fn ensure_supported_platform(os: &str) -> Result<(), String> {
@@ -684,7 +693,7 @@ mod tests {
     use super::*;
     use ix_trace_rs::trace;
 
-    #[trace("FR-229-AC-6")]
+    #[trace("FR-235-AC-6")]
     #[test]
     fn tc_229_case_selection_is_unique_and_follows_embedded_order() {
         let matches = command()
@@ -702,7 +711,7 @@ mod tests {
         assert_eq!(selected[0].id, EMBEDDED_CASES[0].id);
     }
 
-    #[trace("FR-229-AC-6")]
+    #[trace("FR-235-AC-6")]
     #[test]
     fn tc_229_command_requires_one_mode_and_cases_require_run() {
         assert!(command().try_get_matches_from(["selftest"]).is_err());
@@ -723,7 +732,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-229-AC-10")]
+    #[trace("FR-235-AC-10")]
     #[test]
     fn tc_229_runner_fails_closed_on_unsupported_platforms() {
         assert!(ensure_supported_platform("linux").is_ok());
@@ -733,7 +742,7 @@ mod tests {
         assert!(error.contains("unsupported-platform"));
     }
 
-    #[trace("FR-229-AC-6")]
+    #[trace("FR-235-AC-6")]
     #[test]
     fn tc_229_unknown_case_is_rejected_before_execution() {
         let matches = command()
@@ -743,7 +752,7 @@ mod tests {
         assert!(error.contains("missing-case"));
     }
 
-    #[trace("FR-229-AC-6")]
+    #[trace("FR-235-AC-6")]
     #[test]
     fn tc_229_list_shows_embedded_case_ids_in_declaration_order() {
         let listed = list();
@@ -756,7 +765,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-230-AC-7")]
+    #[trace("FR-236-AC-7")]
     #[test]
     fn tc_230_stderr_is_json_safe_and_does_not_affect_case_status() {
         let first = EmbeddedCase {
@@ -764,7 +773,7 @@ mod tests {
             files: &[
                 EmbeddedCaseFile {
                     path: "run.sh",
-                    bytes: b"#!/bin/sh\n# Trace: FR-230-AC-7\nprintf 'hello\\n'\nprintf 'first\\377\\n' >&2\nprintf 'saved\\n' > result.txt\n",
+                    bytes: b"#!/bin/sh\n# Trace: FR-236-AC-7\nprintf 'hello\\n'\nprintf 'first\\377\\n' >&2\nprintf 'saved\\n' > result.txt\n",
                 },
                 EmbeddedCaseFile {
                     path: "expected/exit_code",
@@ -785,7 +794,7 @@ mod tests {
             files: &[
                 EmbeddedCaseFile {
                     path: "run.sh",
-                    bytes: b"#!/bin/sh\n# Trace: FR-230-AC-7\nprintf 'hello\\n'\nprintf 'second\\n' >&2\nprintf 'saved\\n' > result.txt\n",
+                    bytes: b"#!/bin/sh\n# Trace: FR-236-AC-7\nprintf 'hello\\n'\nprintf 'second\\n' >&2\nprintf 'saved\\n' > result.txt\n",
                 },
                 EmbeddedCaseFile {
                     path: "expected/exit_code",
@@ -811,7 +820,7 @@ mod tests {
         assert!(json.contains("first�\\n"));
     }
 
-    #[trace("FR-229-AC-2")]
+    #[trace("FR-235-AC-2")]
     #[test]
     fn tc_229_stdout_mismatch_names_case_and_trace() {
         let case = EmbeddedCase {
@@ -819,7 +828,7 @@ mod tests {
             files: &[
                 EmbeddedCaseFile {
                     path: "run.sh",
-                    bytes: b"#!/bin/sh\n# Trace: FR-229-AC-2\nprintf 'hello\\n'\n",
+                    bytes: b"#!/bin/sh\n# Trace: FR-235-AC-2\nprintf 'hello\\n'\n",
                 },
                 EmbeddedCaseFile {
                     path: "expected/exit_code",
@@ -834,11 +843,11 @@ mod tests {
         let result = run_case(&case, Path::new("/bin/true"), Duration::from_secs(1));
         assert_eq!(result.id, "stdout-mismatch");
         assert_eq!(result.status, "fail");
-        assert_eq!(result.criteria, ["FR-229-AC-2"]);
+        assert_eq!(result.criteria, ["FR-235-AC-2"]);
         assert!(result.detail.contains("stdout bytes differ"));
     }
 
-    #[trace("FR-229-AC-3")]
+    #[trace("FR-235-AC-3")]
     #[test]
     fn tc_229_nonzero_exit_fails_even_when_expected() {
         let case = EmbeddedCase {
@@ -846,7 +855,7 @@ mod tests {
             files: &[
                 EmbeddedCaseFile {
                     path: "run.sh",
-                    bytes: b"#!/bin/sh\n# Trace: FR-229-AC-3\nexit 7\n",
+                    bytes: b"#!/bin/sh\n# Trace: FR-235-AC-3\nexit 7\n",
                 },
                 EmbeddedCaseFile {
                     path: "expected/exit_code",
@@ -863,7 +872,7 @@ mod tests {
         assert!(result.detail.contains("exited non-zero"));
     }
 
-    #[trace("FR-229-AC-7")]
+    #[trace("FR-235-AC-7")]
     #[test]
     fn tc_229_timeout_is_an_error_with_timeout_detail() {
         let case = EmbeddedCase {
@@ -871,7 +880,7 @@ mod tests {
             files: &[
                 EmbeddedCaseFile {
                     path: "run.sh",
-                    bytes: b"#!/bin/sh\n# Trace: FR-229-AC-7\nsleep 5\n",
+                    bytes: b"#!/bin/sh\n# Trace: FR-235-AC-7\nsleep 5\n",
                 },
                 EmbeddedCaseFile {
                     path: "expected/exit_code",
@@ -888,7 +897,7 @@ mod tests {
         assert!(result.detail.contains("timeout"));
     }
 
-    #[trace("FR-230-AC-6")]
+    #[trace("FR-236-AC-6")]
     #[test]
     fn tc_230_evidence_store_search_uses_nearest_ancestor() {
         let root = tempfile::tempdir().expect("a temporary repository");
@@ -910,7 +919,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-230-AC-5")]
+    #[trace("FR-236-AC-5")]
     #[test]
     fn tc_230_no_store_requires_explicit_run_record_destination() {
         assert!(require_retained_destination(None, None).is_err());
@@ -918,7 +927,49 @@ mod tests {
         assert!(require_retained_destination(Some(Path::new("spec/evidence")), None).is_ok());
     }
 
-    #[trace("FR-229-AC-8")]
+    #[trace("FR-236-AC-1", "FR-236-AC-2", "FR-236-AC-4")]
+    #[test]
+    fn tc_230_run_record_serializes_run_context_and_case_outcomes() {
+        let results = vec![
+            CaseResult {
+                id: "passing-case".to_owned(),
+                status: "pass",
+                criteria: vec!["FR-235-AC-1".to_owned()],
+                detail: String::new(),
+                stderr: String::new(),
+            },
+            CaseResult {
+                id: "unavailable-case".to_owned(),
+                status: "not-executed",
+                criteria: vec!["FR-235-AC-3".to_owned()],
+                detail: "required tool unavailable".to_owned(),
+                stderr: String::new(),
+            },
+        ];
+        let record = run_record(
+            "quoin 0.1.0".to_owned(),
+            "2026-11-25T12:00:00Z",
+            results,
+            "/repo/spec/evidence/runs/SELFTEST/run.json",
+        );
+
+        assert_eq!(record["tool"], "quoin");
+        assert_eq!(record["toolVersion"], "quoin 0.1.0");
+        assert_eq!(record["os"], std::env::consts::OS);
+        assert_eq!(record["architecture"], std::env::consts::ARCH);
+        assert_eq!(record["suite"], "SELFTEST");
+        assert_eq!(record["timestamp"], "2026-11-25T12:00:00Z");
+        assert_eq!(record["results"].as_array().expect("case results").len(), 2);
+        assert_eq!(record["results"][0]["status"], "pass");
+        assert_eq!(record["results"][1]["status"], "not-executed");
+        assert_eq!(record["results"][1]["detail"], "required tool unavailable");
+        let serialized = serde_json::to_string(&record).expect("the record serializes");
+        assert!(!serialized.contains("sourceDigest"));
+        assert!(!serialized.contains("sourceRevision"));
+        assert!(!serialized.contains("reportContentDigest"));
+    }
+
+    #[trace("FR-235-AC-8")]
     #[test]
     fn tc_229_out_and_stdout_preserve_exact_run_record_bytes() {
         let root = tempfile::tempdir().expect("a temporary evidence root");
@@ -950,7 +1001,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-229-AC-7")]
+    #[trace("FR-235-AC-7")]
     #[test]
     fn tc_229_timeout_terminates_case_process_group() {
         let root = tempfile::tempdir().expect("a temporary test root");
@@ -977,7 +1028,7 @@ mod tests {
     }
 
     #[cfg(target_os = "linux")]
-    #[trace("FR-229-AC-7")]
+    #[trace("FR-235-AC-7")]
     #[test]
     fn tc_229_timeout_kills_setsid_descendant_holding_output_pipe() {
         let root = tempfile::tempdir().expect("a temporary test root");
@@ -1006,7 +1057,7 @@ mod tests {
         assert!(!marker.exists(), "the setsid descendant was terminated");
     }
 
-    #[trace("FR-229-CON-1")]
+    #[trace("FR-235-CON-1")]
     #[test]
     fn tc_229_materialization_writes_only_case_relative_paths() {
         let root = tempfile::tempdir().expect("a temporary case directory");
