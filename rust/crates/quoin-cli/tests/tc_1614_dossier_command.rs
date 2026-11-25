@@ -1742,6 +1742,90 @@ fn each_m3_selector_writes_only_its_matching_document() {
     }
 }
 
+/// M3 documents preserve the identities of every source they read and repeat byte-for-byte.
+#[trace(
+    "FR-191-AC-32",
+    "FR-229-AC-5",
+    "FR-230-AC-5",
+    "FR-231-AC-4",
+    "FR-232-AC-4"
+)]
+#[test]
+fn m3_sources_and_producer_are_stable_across_generations() {
+    let producer_version = version();
+    let source_records = [
+        (
+            "software_description",
+            "sw",
+            r#"{"schema_version":1,"id":"sw","record_type":"software_description","software_id":"SW","name":"Software","purpose":"purpose","operating_environment":"environment","functions":["function"],"interfaces":["interface"]}"#,
+        ),
+        (
+            "documentation_level_decision",
+            "dl",
+            r#"{"schema_version":1,"id":"dl","record_type":"documentation_level_decision","software_id":"SW","level":"Level 2","decided_by":"Person","decided_on":"2026-10-01","rationale":"rationale","source_records":[{"id":"sw","record_type":"software_description"}]}"#,
+        ),
+        (
+            "device_description",
+            "dev",
+            r#"{"schema_version":1,"id":"dev","record_type":"device_description","device_id":"D","name":"Device","purpose":"purpose","intended_use":"use","operating_context":"context","software_ids":["SW"]}"#,
+        ),
+    ];
+    let kinds = [
+        (
+            "software-description",
+            "DOS-SW.md",
+            &["software_description/sw"][..],
+        ),
+        (
+            "documentation-level-decision",
+            "DOS-DL.md",
+            &["documentation_level_decision/dl", "software_description/sw"][..],
+        ),
+        (
+            "device-description",
+            "DOS-DEV.md",
+            &["device_description/dev", "software_description/sw"][..],
+        ),
+        (
+            "software-design-specification",
+            "DOS-SDS.md",
+            &["software_description/sw"][..],
+        ),
+    ];
+    for (kind, filename, source_ids) in kinds {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        for work in [first.path(), second.path()] {
+            fs::create_dir_all(work.join("dossier/sources")).unwrap();
+            for (source_kind, id, value) in source_records {
+                let source_dir = work.join("dossier/sources").join(source_kind);
+                fs::create_dir_all(&source_dir).unwrap();
+                fs::write(source_dir.join(format!("{id}.json")), value).unwrap();
+            }
+            let output = quoin(work, &["generate", "--version", "1.0", "--doc", kind]);
+            let expected = i32::from(kind == "software-design-specification");
+            assert_eq!(code(&output), expected, "{}", stderr(&output));
+        }
+        let generated = read(&first.path().join("dossier").join(filename));
+        assert_eq!(
+            generated,
+            read(&second.path().join("dossier").join(filename))
+        );
+        assert!(generated.contains(&format!(
+            "producer_identity:\n  name: quoin\n  version: \"{producer_version}\""
+        )));
+        for identity in source_ids {
+            assert!(
+                generated.contains(identity),
+                "missing {identity} in {filename}"
+            );
+        }
+        assert!(!generated.contains("source commit"));
+        assert!(!generated.contains("source digest"));
+        assert!(!generated.contains("source revision"));
+    }
+}
+
 /// A malformed selected M3 source fails before replacing any output file.
 #[trace("FR-229-AC-4", "FR-191-AC-12")]
 #[test]
@@ -1768,5 +1852,9 @@ fn malformed_m3_source_preserves_existing_outputs() {
         fs::read(output_dir.join("DOS-SW.md")).unwrap(),
         b"existing bytes\n"
     );
-    assert!(stdout(&output).contains("dossier/sources/software_description/sw.json"));
+    let report = json(&output);
+    assert_eq!(
+        report["source_failure"]["source"],
+        "./dossier/sources/software_description/sw.json"
+    );
 }

@@ -10,7 +10,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{
@@ -25,61 +24,44 @@ const DL_SCHEMA: &str =
     include_str!("../schemas/documentation-level-decision-source-v1.schema.json");
 const DEV_SCHEMA: &str = include_str!("../schemas/device-description-source-v1.schema.json");
 
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Software {
-    schema_version: u8,
-    id: String,
-    record_type: String,
-    #[serde(rename = "software_id")]
-    identity: String,
-    name: String,
-    purpose: Option<String>,
-    functions: Option<Vec<String>>,
-    operating_environment: Option<String>,
-    interfaces: Option<Vec<String>>,
-    architecture_part_ids: Option<Vec<String>>,
-    architecture_decision_ids: Option<Vec<String>>,
-}
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Decision {
-    schema_version: u8,
-    id: String,
-    record_type: String,
-    software_id: String,
-    level: Option<String>,
-    decided_by: Option<String>,
-    decided_on: Option<String>,
-    rationale: Option<String>,
-    source_records: Option<Vec<SourceRef>>,
-}
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Device {
-    schema_version: u8,
-    id: String,
-    record_type: String,
-    #[serde(rename = "device_id")]
-    identity: String,
-    name: String,
-    purpose: Option<String>,
-    intended_use: Option<String>,
-    operating_context: Option<String>,
-    software_ids: Option<Vec<String>>,
-}
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct SourceRef {
-    id: String,
-    record_type: String,
-}
-
 #[derive(Debug, Default)]
 struct ProductRecords {
-    software: Vec<Software>,
-    decisions: Vec<Decision>,
-    devices: Vec<Device>,
+    software: Vec<Value>,
+    decisions: Vec<Value>,
+    devices: Vec<Value>,
+}
+
+fn string_field<'a>(record: &'a Value, name: &str) -> Option<&'a str> {
+    record.get(name).and_then(Value::as_str)
+}
+
+fn required_field<'a>(record: &'a Value, name: &str) -> &'a str {
+    string_field(record, name).unwrap_or_default()
+}
+
+fn string_list<'a>(record: &'a Value, name: &str) -> Vec<&'a str> {
+    record
+        .get(name)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .collect()
+}
+
+fn object_string_pairs<'a>(record: &'a Value, name: &str) -> Vec<(&'a str, &'a str)> {
+    record
+        .get(name)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|item| {
+            Some((
+                string_field(item, "record_type")?,
+                string_field(item, "id")?,
+            ))
+        })
+        .collect()
 }
 
 fn fail(path: &Path, reason: impl std::fmt::Display) -> SourceFailure {
@@ -89,12 +71,12 @@ fn fail(path: &Path, reason: impl std::fmt::Display) -> SourceFailure {
     }
 }
 
-fn read_kind<T: for<'de> Deserialize<'de>>(
+fn read_kind(
     scope: &Path,
     kind: &str,
     schema: &str,
     record_type: &str,
-) -> Result<Vec<T>, SourceFailure> {
+) -> Result<Vec<Value>, SourceFailure> {
     let dir = scope.join("dossier/sources").join(kind);
     for parent in [
         scope.join("dossier"),
@@ -165,7 +147,7 @@ fn read_kind<T: for<'de> Deserialize<'de>>(
         if !ids.insert(id.to_owned()) {
             return Err(fail(&path, format!("duplicate {record_type} id {id}")));
         }
-        records.push(serde_json::from_value(value).map_err(|e| fail(&path, e))?);
+        records.push(value);
     }
     Ok(records)
 }
@@ -181,7 +163,7 @@ fn read_records(
     include_decisions: bool,
     include_devices: bool,
 ) -> Result<ProductRecords, SourceFailure> {
-    let software: Vec<Software> = if include_software {
+    let software: Vec<Value> = if include_software {
         read_kind(
             scope,
             "software_description",
@@ -191,7 +173,7 @@ fn read_records(
     } else {
         Vec::new()
     };
-    let decisions: Vec<Decision> = if include_decisions {
+    let decisions: Vec<Value> = if include_decisions {
         read_kind(
             scope,
             "documentation_level_decision",
@@ -201,7 +183,7 @@ fn read_records(
     } else {
         Vec::new()
     };
-    let devices: Vec<Device> = if include_devices {
+    let devices: Vec<Value> = if include_devices {
         read_kind(
             scope,
             "device_description",
@@ -213,10 +195,7 @@ fn read_records(
     };
     let mut identities = BTreeSet::new();
     for r in &software {
-        if r.schema_version != 1
-            || r.record_type != "software_description"
-            || !identities.insert(r.identity.clone())
-        {
+        if !identities.insert(required_field(r, "software_id").to_owned()) {
             return Err(fail(
                 &scope.join("dossier/sources/software_description"),
                 "invalid version/type or duplicate software_id",
@@ -225,27 +204,20 @@ fn read_records(
     }
     identities.clear();
     for r in &devices {
-        if r.schema_version != 1
-            || r.record_type != "device_description"
-            || !identities.insert(r.identity.clone())
-        {
+        if !identities.insert(required_field(r, "device_id").to_owned()) {
             return Err(fail(
                 &scope.join("dossier/sources/device_description"),
                 "invalid version/type or duplicate device_id",
             ));
         }
     }
-    if decisions.iter().any(|r| {
-        r.schema_version != 1
-            || r.record_type != "documentation_level_decision"
-            || r.decided_on
-                .as_deref()
-                .is_some_and(|date| !valid_date(date))
-    }) {
-        return Err(fail(
-            &scope.join("dossier/sources/documentation_level_decision"),
-            "invalid version, record_type, or decided_on calendar date",
-        ));
+    for record in &decisions {
+        if string_field(record, "decided_on").is_some_and(|date| !valid_date(date)) {
+            return Err(fail(
+                &scope.join("dossier/sources/documentation_level_decision"),
+                "invalid decided_on calendar date",
+            ));
+        }
     }
     Ok(ProductRecords {
         software,
@@ -348,7 +320,7 @@ impl Generator for DeviceDescription {
     }
 }
 
-fn render_sw(records: &[Software]) -> Generated {
+fn render_sw(records: &[Value]) -> Generated {
     let mut body = String::from("# Software description\n\n");
     let mut gaps = Vec::new();
     if records.is_empty() {
@@ -363,7 +335,11 @@ fn render_sw(records: &[Software]) -> Generated {
     }
     body.push_str("## Sources\n\n");
     for r in records {
-        let _ = writeln!(body, "- `software_description/{}`", cell(&r.id));
+        let _ = writeln!(
+            body,
+            "- `software_description/{}`",
+            cell(required_field(r, "id"))
+        );
     }
     Generated {
         body,
@@ -372,48 +348,49 @@ fn render_sw(records: &[Software]) -> Generated {
     }
 }
 
-fn render_sw_section(r: &Software, body: &mut String, gaps: &mut Vec<Gap>) {
+fn render_sw_section(r: &Value, body: &mut String, gaps: &mut Vec<Gap>) {
+    let source_id = required_field(r, "id");
+    let software_id = required_field(r, "software_id");
     let _ = writeln!(
         body,
         "## {} — {}\n\n**Source:** `software_description/{}`\n",
-        cell(&r.identity),
-        cell(&r.name),
-        cell(&r.id)
+        cell(software_id),
+        cell(required_field(r, "name")),
+        cell(source_id)
     );
-    let s = r.id.as_str();
+    let s = source_id;
     label(
         body,
         "Purpose",
-        r.purpose.as_deref(),
+        string_field(r, "purpose"),
         s,
         gaps,
-        (GapKind::SoftwareDescriptionFieldUnstated, &r.id),
+        (GapKind::SoftwareDescriptionFieldUnstated, source_id),
     );
     label(
         body,
         "Operating environment",
-        r.operating_environment.as_deref(),
+        string_field(r, "operating_environment"),
         s,
         gaps,
-        (GapKind::SoftwareDescriptionFieldUnstated, &r.id),
+        (GapKind::SoftwareDescriptionFieldUnstated, source_id),
     );
     for (field, values) in [
-        ("Functions", r.functions.as_deref()),
-        ("Interfaces", r.interfaces.as_deref()),
+        ("Functions", string_list(r, "functions")),
+        ("Interfaces", string_list(r, "interfaces")),
     ] {
-        match values {
-            Some(v) if !v.is_empty() => {
-                let _ = writeln!(body, "**{field}:** _(source: `{}`)_", cell(s));
-                for x in v {
-                    let _ = writeln!(body, "- {}", prose(x));
-                }
-                body.push('\n');
-            }
-            _ => gaps.push(Gap::new(
+        if values.is_empty() {
+            gaps.push(Gap::new(
                 GapKind::SoftwareDescriptionFieldUnstated,
-                &r.id,
+                source_id,
                 format!("{field} is not stated in source record {s}"),
-            )),
+            ));
+        } else {
+            let _ = writeln!(body, "**{field}:** _(source: `{}`)_", cell(s));
+            for x in values {
+                let _ = writeln!(body, "- {}", prose(x));
+            }
+            body.push('\n');
         }
     }
 }
@@ -433,7 +410,7 @@ fn render_dl(records: &ProductRecords) -> Generated {
     for r in &records.decisions {
         let decision_signature = render_decision(r, &index, &mut body, &mut gaps);
         decisions
-            .entry(&r.software_id)
+            .entry(required_field(r, "software_id"))
             .or_default()
             .insert(decision_signature);
     }
@@ -448,11 +425,13 @@ fn render_dl(records: &ProductRecords) -> Generated {
     }
     body.push_str("## Sources\n\n");
     for r in &records.decisions {
-        let _ = writeln!(body, "- `documentation_level_decision/{}`", cell(&r.id));
-        if let Some(refs) = &r.source_records {
-            for src in refs {
-                let _ = writeln!(body, "- `{}/{}`", cell(&src.record_type), cell(&src.id));
-            }
+        let _ = writeln!(
+            body,
+            "- `documentation_level_decision/{}`",
+            cell(required_field(r, "id"))
+        );
+        for (record_type, id) in object_string_pairs(r, "source_records") {
+            let _ = writeln!(body, "- `{}/{}`", cell(record_type), cell(id));
         }
     }
     Generated {
@@ -472,23 +451,23 @@ impl<'a> ProductIndex<'a> {
         let software = records
             .software
             .iter()
-            .map(|r| r.identity.as_str())
+            .map(|r| required_field(r, "software_id"))
             .collect();
         let source_ids = records
             .software
             .iter()
-            .map(|r| ("software_description", r.id.as_str()))
+            .map(|r| ("software_description", required_field(r, "id")))
             .chain(
                 records
                     .decisions
                     .iter()
-                    .map(|r| ("documentation_level_decision", r.id.as_str())),
+                    .map(|r| ("documentation_level_decision", required_field(r, "id"))),
             )
             .chain(
                 records
                     .devices
                     .iter()
-                    .map(|r| ("device_description", r.id.as_str())),
+                    .map(|r| ("device_description", required_field(r, "id"))),
             )
             .collect();
         Self {
@@ -499,75 +478,75 @@ impl<'a> ProductIndex<'a> {
 }
 
 fn render_decision(
-    r: &Decision,
+    r: &Value,
     index: &ProductIndex<'_>,
     body: &mut String,
     gaps: &mut Vec<Gap>,
 ) -> String {
+    let id = required_field(r, "id");
+    let software_id = required_field(r, "software_id");
     let _ = writeln!(
         body,
         "## {}\n\n**Source:** `documentation_level_decision/{}`\n\n**Software:** `{}`\n",
-        cell(&r.software_id),
-        cell(&r.id),
-        cell(&r.software_id)
+        cell(software_id),
+        cell(id),
+        cell(software_id)
     );
-    if !index.software.contains(r.software_id.as_str()) {
+    if !index.software.contains(software_id) {
         gaps.push(Gap::new(
             GapKind::SourceReferenceUnresolved,
-            &r.id,
-            format!(
-                "software_id {} expected software_description",
-                r.software_id
-            ),
+            id,
+            format!("software_id {software_id} expected software_description"),
         ));
     }
     for (key, value) in [
-        ("Level", r.level.as_deref()),
-        ("Decided by", r.decided_by.as_deref()),
-        ("Decided on", r.decided_on.as_deref()),
-        ("Rationale", r.rationale.as_deref()),
+        ("Level", string_field(r, "level")),
+        ("Decided by", string_field(r, "decided_by")),
+        ("Decided on", string_field(r, "decided_on")),
+        ("Rationale", string_field(r, "rationale")),
     ] {
         label(
             body,
             key,
             value,
-            &r.id,
+            id,
             gaps,
-            (GapKind::DocumentationLevelDecisionFieldUnstated, &r.id),
+            (GapKind::DocumentationLevelDecisionFieldUnstated, id),
         );
     }
-    match &r.source_records {
-        Some(rows) if rows.is_empty() => gaps.push(Gap::new(
+    let refs = object_string_pairs(r, "source_records");
+    let array_stated = r.get("source_records").is_some();
+    if !array_stated || refs.is_empty() {
+        gaps.push(Gap::new(
             GapKind::DocumentationLevelDecisionFieldUnstated,
-            &r.id,
-            "source_records is empty",
-        )),
-        Some(rows) => {
-            let _ = writeln!(body, "**Referenced sources:** _(from `{}`)_", cell(&r.id));
-            for src in rows {
-                let _ = writeln!(body, "- `{}/{}`", cell(&src.record_type), cell(&src.id));
-                if !index
-                    .source_ids
-                    .contains(&(src.record_type.as_str(), src.id.as_str()))
-                {
-                    gaps.push(Gap::new(
-                        GapKind::SourceReferenceUnresolved,
-                        &r.id,
-                        format!("referenced id {} expected {}", src.id, src.record_type),
-                    ));
-                }
+            id,
+            if array_stated {
+                "source_records is empty"
+            } else {
+                "source_records is not stated"
+            },
+        ));
+    } else {
+        let _ = writeln!(body, "**Referenced sources:** _(from `{}`)_", cell(id));
+        for (record_type, source_id) in &refs {
+            let _ = writeln!(body, "- `{}/{}`", cell(record_type), cell(source_id));
+            if !index.source_ids.contains(&(*record_type, *source_id)) {
+                gaps.push(Gap::new(
+                    GapKind::SourceReferenceUnresolved,
+                    id,
+                    format!("referenced id {source_id} expected {record_type}"),
+                ));
             }
-            body.push('\n');
         }
-        None => gaps.push(Gap::new(
-            GapKind::DocumentationLevelDecisionFieldUnstated,
-            &r.id,
-            "source_records is not stated",
-        )),
+        body.push('\n');
     }
     format!(
         "{:?}|{:?}|{:?}|{:?}|{:?}",
-        r.level, r.decided_by, r.decided_on, r.rationale, r.source_records
+        string_field(r, "level"),
+        string_field(r, "decided_by"),
+        string_field(r, "decided_on"),
+        string_field(r, "rationale"),
+        refs
     )
 }
 
@@ -581,59 +560,68 @@ fn render_dev(records: &ProductRecords) -> Generated {
             "no device description source was selected",
         ));
     }
-    let software: BTreeSet<&str> = records
+    let software: BTreeMap<&str, &str> = records
         .software
         .iter()
-        .map(|r| r.identity.as_str())
+        .map(|r| (required_field(r, "software_id"), required_field(r, "id")))
         .collect();
+    let mut source_rows = BTreeSet::new();
     for r in &records.devices {
+        let id = required_field(r, "id");
         let _ = writeln!(
             body,
             "## {} — {}\n\n**Source:** `device_description/{}`\n",
-            cell(&r.identity),
-            cell(&r.name),
-            cell(&r.id)
+            cell(required_field(r, "device_id")),
+            cell(required_field(r, "name")),
+            cell(id)
         );
         for (k, v) in [
-            ("Purpose", r.purpose.as_deref()),
-            ("Intended use", r.intended_use.as_deref()),
-            ("Operating context", r.operating_context.as_deref()),
+            ("Purpose", string_field(r, "purpose")),
+            ("Intended use", string_field(r, "intended_use")),
+            ("Operating context", string_field(r, "operating_context")),
         ] {
             label(
                 &mut body,
                 k,
                 v,
-                &r.id,
+                id,
                 &mut gaps,
-                (GapKind::DeviceFieldUnstated, &r.id),
+                (GapKind::DeviceFieldUnstated, id),
             );
         }
-        match &r.software_ids {
-            Some(ids) if !ids.is_empty() => {
-                let _ = writeln!(body, "**Software items:** _(source: `{}`)_", cell(&r.id));
-                for id in ids {
-                    if software.contains(id.as_str()) {
-                        let _ = writeln!(body, "- `{}`", cell(id));
-                    } else {
-                        gaps.push(Gap::new(
-                            GapKind::SourceReferenceUnresolved,
-                            &r.id,
-                            format!("referenced id {id} expected software_description"),
-                        ));
-                    }
-                }
-                body.push('\n');
-            }
-            _ => gaps.push(Gap::new(
+        let software_ids = string_list(r, "software_ids");
+        if software_ids.is_empty() {
+            gaps.push(Gap::new(
                 GapKind::DeviceFieldUnstated,
-                &r.id,
+                id,
                 "software_ids is absent or empty",
-            )),
+            ));
+        } else {
+            let _ = writeln!(body, "**Software items:** _(source: `{}`)_", cell(id));
+            for software_id in software_ids {
+                if let Some(source_id) = software.get(software_id) {
+                    let _ = writeln!(
+                        body,
+                        "- `{}` _(source: `software_description/{}`)_",
+                        cell(software_id),
+                        cell(source_id)
+                    );
+                    source_rows.insert(format!("software_description/{source_id}"));
+                } else {
+                    gaps.push(Gap::new(
+                        GapKind::SourceReferenceUnresolved,
+                        id,
+                        format!("referenced id {software_id} expected software_description"),
+                    ));
+                }
+            }
+            body.push('\n');
         }
+        source_rows.insert(format!("device_description/{id}"));
     }
     body.push_str("## Sources\n\n");
-    for r in &records.devices {
-        let _ = writeln!(body, "- `device_description/{}`", cell(&r.id));
+    for source in source_rows {
+        let _ = writeln!(body, "- `{}`", cell(&source));
     }
     Generated {
         body,
@@ -643,7 +631,7 @@ fn render_dev(records: &ProductRecords) -> Generated {
 }
 
 fn render_sds(
-    records: &[Software],
+    records: &[Value],
     scope: &Path,
     modules: &[PathBuf],
 ) -> Result<Generated, SourceFailure> {
@@ -677,11 +665,15 @@ fn render_sds(
             .map_err(|e| fail(scope, e))?;
         (systems, adrs.documents)
     };
-    let parts: BTreeSet<&str> = systems.parts.iter().map(|p| p.document.as_str()).collect();
-    let decisions: BTreeSet<&str> = adr_documents.iter().map(|d| d.id.as_str()).collect();
+    let mut context = SdsContext {
+        systems: &systems,
+        parts: systems.parts.iter().map(|p| p.owner.as_str()).collect(),
+        decisions: adr_documents.iter().map(|d| d.id.as_str()).collect(),
+        selected_parts: BTreeSet::new(),
+    };
     let mut any_design = false;
     for r in records {
-        any_design |= render_sds_item(r, &systems, &parts, &decisions, &mut body, &mut gaps);
+        any_design |= render_sds_item(r, &mut context, &mut body, &mut gaps);
     }
     if !records.is_empty() && !any_design {
         gaps.push(Gap::new(
@@ -690,45 +682,7 @@ fn render_sds(
             "no selected architecture part, decision, or related design record exists",
         ));
     }
-    body.push_str("## Sources\n\n");
-    let mut source_rows = BTreeSet::new();
-    let mut selected_parts = BTreeSet::new();
-    for r in records {
-        source_rows.insert(format!("software_description/{}", r.id));
-        for id in r.architecture_part_ids.iter().flatten() {
-            if parts.contains(id.as_str()) {
-                source_rows.insert(format!("part/{id}"));
-                selected_parts.insert(id.as_str());
-            }
-        }
-        for id in r.architecture_decision_ids.iter().flatten() {
-            if decisions.contains(id.as_str()) {
-                source_rows.insert(format!("ADR/{id}"));
-            }
-        }
-    }
-    for port in systems
-        .ports
-        .iter()
-        .filter(|port| selected_parts.contains(port.owner.as_str()))
-    {
-        source_rows.insert(format!("port/{}", port.document));
-    }
-    for edge in systems.connections.iter().filter(|edge| {
-        selected_parts.contains(edge.source.as_str())
-            || selected_parts.contains(edge.target.as_str())
-    }) {
-        source_rows.insert(format!("connection/{}", edge.document));
-    }
-    for edge in systems.allocations.iter().filter(|edge| {
-        selected_parts.contains(edge.source.as_str())
-            || selected_parts.contains(edge.target.as_str())
-    }) {
-        source_rows.insert(format!("allocation/{}", edge.document));
-    }
-    for source in source_rows {
-        let _ = writeln!(body, "- `{}`", cell(&source));
-    }
+    render_sds_sources(records, &context, &mut body);
     Ok(Generated {
         body,
         document_version: None,
@@ -736,27 +690,118 @@ fn render_sds(
     })
 }
 
+struct SdsContext<'a> {
+    systems: &'a quoin_quire::systems::Systems,
+    parts: BTreeSet<&'a str>,
+    decisions: BTreeSet<&'a str>,
+    selected_parts: BTreeSet<String>,
+}
+
+fn render_sds_sources(records: &[Value], context: &SdsContext<'_>, body: &mut String) {
+    body.push_str("## Sources\n\n");
+    let mut source_rows = BTreeSet::new();
+    for record in records {
+        source_rows.insert(format!(
+            "software_description/{}",
+            required_field(record, "id")
+        ));
+        source_rows.extend(
+            string_list(record, "architecture_part_ids")
+                .into_iter()
+                .filter(|id| context.parts.contains(id))
+                .map(|id| format!("part/{id}")),
+        );
+        source_rows.extend(
+            string_list(record, "architecture_decision_ids")
+                .into_iter()
+                .filter(|id| context.decisions.contains(id))
+                .map(|id| format!("ADR/{id}")),
+        );
+    }
+    for port in context
+        .systems
+        .ports
+        .iter()
+        .filter(|port| context.selected_parts.contains(port.owner.as_str()))
+    {
+        source_rows.insert(format!("port/{}.{}", port.owner, port.direction));
+    }
+    for edge in &context.systems.connections {
+        if selected_connection(edge, context) {
+            source_rows.insert(format!("connection/{}", edge.document));
+            source_rows.extend(
+                context
+                    .systems
+                    .ports
+                    .iter()
+                    .filter(|port| connection_has_port(edge, port))
+                    .flat_map(|port| {
+                        [
+                            format!("part/{}", port.owner),
+                            format!("port/{}.{}", port.owner, port.direction),
+                        ]
+                    }),
+            );
+        }
+    }
+    for edge in context.systems.allocations.iter().filter(|edge| {
+        context.selected_parts.contains(edge.source.as_str())
+            || context.selected_parts.contains(edge.target.as_str())
+    }) {
+        source_rows.insert(format!("allocation/{}", edge.document));
+    }
+    for source in source_rows {
+        let _ = writeln!(body, "- `{}`", cell(&source));
+    }
+}
+
+fn connection_has_port(
+    edge: &quoin_quire::systems::Connection,
+    port: &quoin_quire::systems::Port,
+) -> bool {
+    edge.source == format!("{}.{}", port.owner, port.direction)
+        || edge.target == format!("{}.{}", port.owner, port.direction)
+}
+
+fn selected_connection(edge: &quoin_quire::systems::Connection, context: &SdsContext<'_>) -> bool {
+    let candidate = context.systems.ports.iter().any(|port| {
+        context.selected_parts.contains(port.owner.as_str()) && connection_has_port(edge, port)
+    }) || context.selected_parts.contains(edge.source.as_str())
+        || context.selected_parts.contains(edge.target.as_str());
+    let source_matches = context
+        .systems
+        .ports
+        .iter()
+        .filter(|port| edge.source == format!("{}.{}", port.owner, port.direction))
+        .count();
+    let target_matches = context
+        .systems
+        .ports
+        .iter()
+        .filter(|port| edge.target == format!("{}.{}", port.owner, port.direction))
+        .count();
+    candidate && source_matches == 1 && target_matches == 1
+}
+
 fn render_sds_item(
-    r: &Software,
-    systems: &quoin_quire::systems::Systems,
-    parts: &BTreeSet<&str>,
-    decisions: &BTreeSet<&str>,
+    r: &Value,
+    context: &mut SdsContext<'_>,
     body: &mut String,
     gaps: &mut Vec<Gap>,
 ) -> bool {
     let _ = writeln!(
         body,
         "## {}\n\n**Source:** `software_description/{}`\n",
-        cell(&r.identity),
-        cell(&r.id)
+        cell(required_field(r, "software_id")),
+        cell(required_field(r, "id"))
     );
-    let part_ids = r.architecture_part_ids.as_deref().unwrap_or(&[]);
-    let decision_ids = r.architecture_decision_ids.as_deref().unwrap_or(&[]);
+    let part_ids = string_list(r, "architecture_part_ids");
+    let decision_ids = string_list(r, "architecture_decision_ids");
     let mut any_design = render_design_ids(
         body,
         gaps,
-        part_ids,
-        parts,
+        &part_ids,
+        &context.parts,
         r,
         DesignIdList {
             heading: "Architecture parts",
@@ -768,8 +813,8 @@ fn render_sds_item(
     any_design |= render_design_ids(
         body,
         gaps,
-        decision_ids,
-        decisions,
+        &decision_ids,
+        &context.decisions,
         r,
         DesignIdList {
             heading: "Architecture decisions",
@@ -780,9 +825,12 @@ fn render_sds_item(
     );
     let selected_parts: BTreeSet<&str> = part_ids
         .iter()
-        .filter_map(|id| parts.contains(id.as_str()).then_some(id.as_str()))
+        .filter_map(|id| context.parts.contains(id).then_some(*id))
         .collect();
-    any_design |= render_selected_relationships(systems, &selected_parts, body);
+    context
+        .selected_parts
+        .extend(selected_parts.iter().map(|id| (*id).to_owned()));
+    any_design |= render_selected_relationships(context.systems, &selected_parts, r, body, gaps);
     any_design
 }
 
@@ -797,30 +845,34 @@ struct DesignIdList {
 fn render_design_ids(
     body: &mut String,
     gaps: &mut Vec<Gap>,
-    ids: &[String],
+    ids: &[&str],
     known: &BTreeSet<&str>,
-    r: &Software,
+    r: &Value,
     list: DesignIdList,
 ) -> bool {
     if ids.is_empty() {
         let _ = writeln!(body, "**{}:** Not stated.\n", list.heading);
         gaps.push(Gap::new(
             list.gap_kind,
-            &r.identity,
-            format!("source record {} has no {}", r.id, list.field),
+            required_field(r, "software_id"),
+            format!(
+                "source record {} has no {}",
+                required_field(r, "id"),
+                list.field
+            ),
         ));
         return false;
     }
     let _ = writeln!(body, "**{}:**", list.heading);
     let mut resolved = false;
     for id in ids {
-        if known.contains(id.as_str()) {
+        if known.contains(id) {
             resolved = true;
             let _ = writeln!(body, "- `{}`", cell(id));
         } else {
             gaps.push(Gap::new(
                 GapKind::SourceReferenceUnresolved,
-                &r.id,
+                required_field(r, "id"),
                 format!("referenced id {id} expected {}", list.expected),
             ));
         }
@@ -832,7 +884,9 @@ fn render_design_ids(
 fn render_selected_relationships(
     systems: &quoin_quire::systems::Systems,
     selected_parts: &BTreeSet<&str>,
+    record: &Value,
     body: &mut String,
+    gaps: &mut Vec<Gap>,
 ) -> bool {
     let mut rendered = false;
     for port in systems
@@ -844,17 +898,47 @@ fn render_selected_relationships(
         let _ = writeln!(
             body,
             "**Port** `{}`: {} / {} / {} _(source: architecture part `{}`)_",
-            cell(&port.document),
+            cell(&format!("{}.{}", port.owner, port.direction)),
             cell(&port.direction),
             cell(&port.interface),
             cell(&port.multiplicity),
             cell(&port.owner)
         );
     }
-    for edge in systems.connections.iter().filter(|edge| {
-        selected_parts.contains(edge.source.as_str())
-            || selected_parts.contains(edge.target.as_str())
-    }) {
+    for edge in &systems.connections {
+        let candidate = systems.ports.iter().any(|port| {
+            selected_parts.contains(port.owner.as_str()) && connection_has_port(edge, port)
+        }) || selected_parts.contains(edge.source.as_str())
+            || selected_parts.contains(edge.target.as_str());
+        if !candidate {
+            continue;
+        }
+        let source_matches = systems
+            .ports
+            .iter()
+            .filter(|port| edge.source == format!("{}.{}", port.owner, port.direction))
+            .count();
+        let target_matches = systems
+            .ports
+            .iter()
+            .filter(|port| edge.target == format!("{}.{}", port.owner, port.direction))
+            .count();
+        if source_matches != 1 || target_matches != 1 {
+            let invalid = if source_matches == 1 {
+                &edge.target
+            } else {
+                &edge.source
+            };
+            gaps.push(Gap::new(
+                GapKind::SourceReferenceUnresolved,
+                required_field(record, "id"),
+                format!(
+                    "connection {} endpoint {invalid} expected architecture port",
+                    edge.document
+                ),
+            ));
+            continue;
+        }
         rendered = true;
         let _ = writeln!(
             body,
@@ -1161,7 +1245,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-232-AC-1", "FR-233-AC-3")]
+    #[trace("FR-232-AC-3", "FR-233-AC-3")]
     #[test]
     fn device_software_association_requires_a_resolved_explicit_id() {
         let t = scope();
@@ -1180,6 +1264,269 @@ mod tests {
                     && g.detail.contains("missing"))
         );
         assert!(!doc.body.contains("- `missing`"));
+    }
+
+    #[trace("FR-232-AC-1")]
+    #[test]
+    fn device_lists_explicit_resolved_software_and_all_source_identities() {
+        let t = scope();
+        put(
+            t.path(),
+            "software_description",
+            "sw-src",
+            r#"{"schema_version":1,"id":"sw-src","record_type":"software_description","software_id":"SW-1","name":"Software"}"#,
+        );
+        put(
+            t.path(),
+            "device_description",
+            "dev-src",
+            r#"{"schema_version":1,"id":"dev-src","record_type":"device_description","device_id":"D-1","name":"Device","purpose":"purpose","intended_use":"use","operating_context":"context","software_ids":["SW-1"]}"#,
+        );
+        let records = read_all(t.path()).expect("valid linked records");
+        let doc = render_dev(&records);
+        assert!(doc.body.contains("`SW-1`"));
+        assert!(doc.body.contains("software_description/sw-src"));
+        assert!(doc.body.contains("device_description/dev-src"));
+        assert!(
+            !doc.gaps
+                .iter()
+                .any(|g| g.gap_kind == GapKind::SourceReferenceUnresolved)
+        );
+    }
+
+    #[trace("FR-232-AC-2")]
+    #[test]
+    fn missing_device_facts_each_create_an_unstated_gap() {
+        let t = scope();
+        put(
+            t.path(),
+            "device_description",
+            "dev",
+            r#"{"schema_version":1,"id":"dev","record_type":"device_description","device_id":"D","name":"Device","software_ids":["SW"]}"#,
+        );
+        let doc = render_dev(&read_all(t.path()).expect("valid device record"));
+        assert_eq!(
+            doc.gaps
+                .iter()
+                .filter(|g| g.gap_kind == GapKind::DeviceFieldUnstated)
+                .count(),
+            3
+        );
+    }
+
+    #[trace("FR-232-AC-5")]
+    #[test]
+    fn absent_device_source_is_incomplete() {
+        let doc = render_dev(&ProductRecords::default());
+        assert_eq!(doc.gaps[0].gap_kind, GapKind::NoDeviceDescriptionSource);
+    }
+
+    #[trace("FR-233-AC-5")]
+    #[test]
+    fn shipped_schemas_encode_the_closed_v1_source_contract() {
+        for (schema_text, record_type) in [
+            (SW_SCHEMA, "software_description"),
+            (DL_SCHEMA, "documentation_level_decision"),
+            (DEV_SCHEMA, "device_description"),
+        ] {
+            let schema: Value = serde_json::from_str(schema_text).expect("valid shipped schema");
+            assert_eq!(
+                schema["$schema"],
+                "https://json-schema.org/draft/2020-12/schema"
+            );
+            assert_eq!(schema["type"], "object");
+            assert_eq!(schema["additionalProperties"], false);
+            assert_eq!(schema["properties"]["schema_version"]["const"], 1);
+            assert_eq!(schema["properties"]["record_type"]["const"], record_type);
+            assert_eq!(
+                schema["properties"]["id"]["pattern"],
+                "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+            );
+            assert!(schema["required"].as_array().is_some_and(|items| {
+                items.iter().any(|item| item == "schema_version")
+                    && items.iter().any(|item| item == "id")
+                    && items.iter().any(|item| item == "record_type")
+            }));
+            assert!(schema["properties"].as_object().is_some_and(|properties| {
+                properties.values().all(|definition| {
+                    definition.get("type").is_some() || definition.get("const").is_some()
+                })
+            }));
+        }
+    }
+
+    #[trace("FR-230-AC-4")]
+    #[test]
+    fn decision_contract_rejects_safety_or_acceptability_assignments() {
+        let t = scope();
+        put(
+            t.path(),
+            "documentation_level_decision",
+            "decision",
+            r#"{"schema_version":1,"id":"decision","record_type":"documentation_level_decision","software_id":"SW","safety_class":"Class A"}"#,
+        );
+        assert!(
+            read_all(t.path())
+                .expect_err("unknown assignment rejected")
+                .detail
+                .contains("schema validation")
+        );
+    }
+
+    #[trace("FR-191-AC-32", "FR-231-AC-1", "FR-231-AC-3")]
+    #[test]
+    fn selected_architecture_port_connection_renders_authored_fact_only() {
+        let systems = quoin_quire::systems::Systems {
+            parts: vec![quoin_quire::systems::Part {
+                document: "ARCH-1".into(),
+                owner: "PART-A".into(),
+                declared_type: "Engine".into(),
+                multiplicity: "1".into(),
+            }],
+            ports: vec![
+                quoin_quire::systems::Port {
+                    document: "ARCH-1".into(),
+                    owner: "PART-A".into(),
+                    direction: "out".into(),
+                    interface: "Telemetry".into(),
+                    multiplicity: "1".into(),
+                },
+                quoin_quire::systems::Port {
+                    document: "ARCH-1".into(),
+                    owner: "PART-B".into(),
+                    direction: "in".into(),
+                    interface: "Telemetry".into(),
+                    multiplicity: "1".into(),
+                },
+            ],
+            connections: vec![quoin_quire::systems::Connection {
+                document: "ARCH-1".into(),
+                source: "PART-A.out".into(),
+                source_multiplicity: "1".into(),
+                target: "PART-B.in".into(),
+                target_multiplicity: "1".into(),
+                direction: "forward".into(),
+            }],
+            allocations: Vec::new(),
+        };
+        let record = serde_json::json!({
+            "id":"sw-src", "software_id":"SW", "architecture_part_ids":["PART-A"],
+            "architecture_decision_ids":[]
+        });
+        let mut body = String::new();
+        let mut gaps = Vec::new();
+        assert!(render_selected_relationships(
+            &systems,
+            &BTreeSet::from(["PART-A"]),
+            &record,
+            &mut body,
+            &mut gaps
+        ));
+        assert!(body.contains("PART-A.out` → `PART-B.in"));
+        assert!(body.contains("Telemetry"));
+        assert!(!body.contains("safety class"));
+        assert!(gaps.is_empty());
+
+        let context = SdsContext {
+            systems: &systems,
+            parts: BTreeSet::from(["PART-A", "PART-B"]),
+            decisions: BTreeSet::new(),
+            selected_parts: BTreeSet::from(["PART-A".to_owned()]),
+        };
+        let mut sources = String::new();
+        render_sds_sources(std::slice::from_ref(&record), &context, &mut sources);
+        for identity in [
+            "software_description/sw-src",
+            "part/PART-A",
+            "part/PART-B",
+            "port/PART-A.out",
+            "port/PART-B.in",
+            "connection/ARCH-1",
+        ] {
+            assert!(
+                sources.contains(identity),
+                "missing source identity {identity}"
+            );
+        }
+    }
+
+    #[trace("FR-231-AC-1")]
+    #[test]
+    fn design_output_contains_only_explicit_part_and_decision_ids() {
+        let record = serde_json::json!({"id":"sw-src", "software_id":"SW"});
+        let known_parts = BTreeSet::from(["PART-A", "PART-B"]);
+        let known_decisions = BTreeSet::from(["ADR-1", "ADR-2"]);
+        let mut body = String::new();
+        let mut gaps = Vec::new();
+        assert!(render_design_ids(
+            &mut body,
+            &mut gaps,
+            &["PART-A"],
+            &known_parts,
+            &record,
+            DesignIdList {
+                heading: "Architecture parts",
+                gap_kind: GapKind::SoftwareDesignPartListUnstated,
+                field: "architecture_part_ids",
+                expected: "architecture part",
+            },
+        ));
+        assert!(render_design_ids(
+            &mut body,
+            &mut gaps,
+            &["ADR-1"],
+            &known_decisions,
+            &record,
+            DesignIdList {
+                heading: "Architecture decisions",
+                gap_kind: GapKind::SoftwareDesignDecisionListUnstated,
+                field: "architecture_decision_ids",
+                expected: "ADR",
+            },
+        ));
+        assert!(body.contains("- `PART-A`"));
+        assert!(body.contains("- `ADR-1`"));
+        assert!(!body.contains("PART-B"));
+        assert!(!body.contains("ADR-2"));
+        assert!(gaps.is_empty());
+    }
+
+    #[trace("FR-231-AC-5")]
+    #[test]
+    fn wrong_kind_or_missing_connection_endpoint_is_gapped_and_not_rendered() {
+        let systems = quoin_quire::systems::Systems {
+            parts: Vec::new(),
+            ports: vec![quoin_quire::systems::Port {
+                document: "ARCH-1".into(),
+                owner: "PART-A".into(),
+                direction: "out".into(),
+                interface: "Telemetry".into(),
+                multiplicity: "1".into(),
+            }],
+            connections: vec![quoin_quire::systems::Connection {
+                document: "ARCH-1".into(),
+                source: "PART-A".into(),
+                source_multiplicity: "1".into(),
+                target: "MISSING.in".into(),
+                target_multiplicity: "1".into(),
+                direction: "forward".into(),
+            }],
+            allocations: Vec::new(),
+        };
+        let record = serde_json::json!({"id":"sw-src", "software_id":"SW"});
+        let mut body = String::new();
+        let mut gaps = Vec::new();
+        assert!(render_selected_relationships(
+            &systems,
+            &BTreeSet::from(["PART-A"]),
+            &record,
+            &mut body,
+            &mut gaps
+        ));
+        assert!(!body.contains("**Connection**"));
+        assert_eq!(gaps.len(), 1);
+        assert!(gaps[0].detail.contains("PART-A"));
+        assert!(gaps[0].detail.contains("expected architecture port"));
     }
 
     #[trace("FR-231-AC-5")]
