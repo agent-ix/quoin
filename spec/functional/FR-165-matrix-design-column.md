@@ -40,7 +40,9 @@ relation obliges, `id`, `repo`, `criticality` and, when declared, `carried` (qui
 `criteria: []`. An entry with no `design` key means no design relation obliges that document.
 `quoin-core` SHALL provide a `quire.design_matrix` operation, registered beside `quire.coverage` with its
 own exhaustive `dispatch()` arm, taking `quire.coverage`'s request and its byte ceiling, over the working
-tree's single corpus member. `quire.coverage` is unchanged (FR-092-CON-2), and `quoin matrix` SHALL call
+tree's single corpus member. Its payload SHALL retain the engine's `entries` as `coverage_matrix` and its
+`errors` as `design_matrix_errors`, including both when valid entries and dropped-relation errors coexist.
+`quire.coverage` is unchanged (FR-092-CON-2), and `quoin matrix` SHALL call
 `quire.design_matrix` in its place. When no loaded module declares `design_relations` the payload, and so
 the output, is FR-115's. Cross-repository design elements are outside this command: they appear as
 `dangling` references, as quire-rs reports them.
@@ -128,6 +130,7 @@ blocks of two relations shows two lines, one per `check` token.
 | FR-165-AC-18 | `quire.design_matrix` is in `quoin-core`'s `OPERATIONS` list and dispatched by an exhaustive arm, and `quire.coverage` output is unchanged. | Test |
 | FR-165-AC-19 | A `quire.design_matrix` failure other than an undeclared design relation, such as an oversized request, an engine refusal or a missing quire host, gives the error code and exit code `quire.coverage` gives for the same cause, not `design-matrix-failed`, and `quoin matrix` prints no matrix. | Test |
 | FR-165-AC-20 | Given a `coverage` in which requirement A carries `uncovered` blocks of relations P and Q, requirement B carries no block of P and an `uncovered` block of Q, and requirement C carries only `covered` blocks, `matrix.build` carries every block verbatim, B has no block of P, and markdown shows two `Design gap:` lines under A (one per `check` token), one under B (Q's) and none under C. | Test |
+| FR-165-AC-21 | Given quire-rs returns at least one valid design-matrix entry and at least one dropped-relation error, `quire.design_matrix` returns the valid entries in `coverage_matrix` and preserves the errors in `design_matrix_errors`. | Test |
 
 ## Constraints
 
