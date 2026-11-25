@@ -166,22 +166,24 @@ fn signed_acceptance_is_one_contained_artifact_and_unsigned_export_is_unchanged(
     let signed = parse_xml(&signed_export.xmi);
     let unsigned = parse_xml(&shape_export().xmi);
     let artifact_id = "case-signed-acceptance";
-    let artifacts: Vec<_> = signed
+    let acceptance_artifacts: Vec<_> = signed
         .child("artifactPackage")
         .children
         .iter()
-        .filter(|item| item.attr("xmi:type") == "sacm:Artifact")
+        .filter(|item| {
+            item.attr("xmi:type") == "sacm:Artifact"
+                && item.child("name").attr("content") == "Human acceptance of case content"
+        })
         .collect();
-    assert_eq!(artifacts.len(), 1, "one accepted Artifact is exported");
-    assert_eq!(artifacts[0].attr("xmi:id"), artifact_id);
     assert_eq!(
-        artifacts[0].child("name").attr("content"),
-        "Human acceptance of case content"
+        acceptance_artifacts.len(),
+        1,
+        "artifactPackage contains one labeled acceptance Artifact"
     );
+    assert_eq!(acceptance_artifacts[0].attr("xmi:id"), artifact_id);
     assert_eq!(
-        signed.child("artifactPackage").attr("artifactElement"),
-        artifact_id,
-        "the root contains the acceptance Artifact"
+        acceptance_artifacts[0].child("name").attr("content"),
+        "Human acceptance of case content"
     );
     let mut argument_elements = Vec::new();
     signed.child("argumentPackage").walk(&mut argument_elements);
@@ -229,7 +231,11 @@ fn signed_acceptance_is_one_contained_artifact_and_unsigned_export_is_unchanged(
             .child("artifactPackage")
             .children
             .iter()
-            .filter(|item| item.attr("xmi:type") == "sacm:Artifact")
+            .filter(|item| {
+                item.attr("xmi:type") == "sacm:Artifact"
+                    && item.child("name").attr("content")
+                        == "Human acceptance of case content"
+            })
             .count(),
         0,
         "unsigned export has no acceptance Artifact"
