@@ -126,6 +126,26 @@ pub(crate) fn embedded_inputs_value() -> serde_json::Value {
     })
 }
 
+/// The anomaly documents and exact version of the binary that embeds them.
+pub(crate) fn embedded_anomaly_set_value(producer_version: &str) -> serde_json::Value {
+    let records = EMBEDDED_ANOMALIES.map(|files| {
+        files
+            .iter()
+            .map(|file| {
+                serde_json::json!({
+                    "path": file.path,
+                    "raw": String::from_utf8_lossy(file.bytes),
+                })
+            })
+            .collect::<Vec<_>>()
+    });
+    serde_json::json!({
+        "provided": records.is_some(),
+        "producerVersion": producer_version,
+        "documents": records.unwrap_or_default(),
+    })
+}
+
 fn validate_repository_namespace(namespace: &str) -> Result<(), String> {
     let mut segments = namespace.split('/');
     let valid_segment = |segment: &str| {

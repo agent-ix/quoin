@@ -8,30 +8,21 @@ use std::path::{Path, PathBuf};
 use std::process::Command as ProcessCommand;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use quoin_completeness::{DocumentSource, frontmatter_from_sources};
+use quoin_completeness::{
+    BundleDocument, DocumentSource, FeatureRatingState, RatingStatus, assess_feature_ratings,
+    frontmatter_from_sources,
+};
 use quoin_core::error::{CoreError, CoreErrorCode};
 use quoin_core::protocol::Response;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use super::{EMBEDDED_ANOMALIES, EMBEDDED_EXTERNAL_TOOLS_INDEX, EmbeddedFile};
+use super::EMBEDDED_EXTERNAL_TOOLS_INDEX;
 
 const SIGNATURE_REQUEST: &str = "engineering-assurance.signature-verify-request/v1";
 const SIGNATURE_RESULT: &str = "engineering-assurance.signature-verify-result/v1";
 const SIGNED_OFF_MEANING: &str = "tool-validation-accepted";
 const INDEX_PATH: &str = "spec/validation/external-tools.v1.json";
-const REQUIRED_TOOL_IDS: [&str; 9] = [
-    "git",
-    "ssh",
-    "gitsign",
-    "syft",
-    "osv-scanner",
-    "pandoc",
-    "typst",
-    "z3",
-    "cvc5",
-];
-
 pub(crate) fn command() -> Command {
     Command::new("report")
         .about("Generate a validation report from retained run records")
@@ -106,7 +97,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .ok_or_else(|| "report requires one or more --results files".to_owned())?
         .map(PathBuf::from)
         .collect::<Vec<_>>();
-    let report = build_report(&inputs, EMBEDDED_ANOMALIES)?;
+    let report = build_report(&inputs)?;
     let markdown = render_markdown(&report);
     let mut json_bytes = serde_json::to_vec_pretty(&report).map_err(|error| error.to_string())?;
     json_bytes.push(b'\n');
@@ -140,6 +131,8 @@ struct RunRecord {
     results: Vec<CaseResult>,
     validation_inputs: Option<ValidationInputs>,
     #[serde(default)]
+    anomaly_set: Option<AnomalySet>,
+    #[serde(default)]
     external_tools: Vec<ExternalToolEvidence>,
     retained_location: Option<String>,
 }
@@ -163,6 +156,14 @@ struct ValidationInputs {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct AnomalySet {
+    provided: bool,
+    producer_version: String,
+    documents: Vec<DocumentSource>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ExternalToolEvidence {
     tool_id: String,
@@ -172,13 +173,6 @@ struct ExternalToolEvidence {
     observed_version_stream: String,
     index_path: String,
     index_format_version: String,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ExternalToolsIndex {
-    format_version: String,
-    entries: Vec<ExternalToolEntry>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -211,6 +205,15 @@ struct ExternalToolsIndexReport {
     path: String,
     format_version: String,
     entries: Vec<ExternalToolEntry>,
+}
+
+#[derive(Debug, Clone)]
+struct ExternalToolsIndexState {
+    report: Option<ExternalToolsIndexReport>,
+    entries: BTreeMap<String, ExternalToolEntry>,
+    invalid_ids: BTreeSet<String>,
+    format_version: String,
+    valid: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -247,8 +250,16 @@ struct Coverage {
     tool: String,
     fr: String,
     rating: String,
+    rating_status: String,
+    ratings: Vec<RatingEvidence>,
     cases: Vec<String>,
     result: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RatingEvidence {
+    id: String,
+    rating: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -256,7 +267,16 @@ struct Coverage {
 struct KnownAnomalies {
     provided: bool,
     status: String,
+    producers: Vec<AnomalyProducer>,
     anomalies: Vec<KnownAnomaly>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AnomalyProducer {
+    tool: String,
+    version: String,
+    status: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -293,10 +313,7 @@ struct SignOff {
     meaning: String,
 }
 
-fn build_report(
-    paths: &[PathBuf],
-    embedded_anomalies: Option<&[EmbeddedFile]>,
-) -> Result<ValidationReport, String> {
+fn build_report(paths: &[PathBuf]) -> Result<ValidationReport, String> {
     if paths.is_empty() {
         return Err("report requires one or more --results files".to_owned());
     }
@@ -338,7 +355,7 @@ fn build_report(
         ))
     });
 
-    let (intended_use, mut reasons) = validation_documents(&records);
+    let (intended_use, mut reasons, documents_by_tool) = validation_documents(&records);
     let mut tools = Vec::new();
     let mut results = Vec::new();
     let mut required_tools = intended_use
@@ -400,16 +417,8 @@ fn build_report(
     }
     results.sort_by(|left, right| (&left.tool, &left.id).cmp(&(&right.tool, &right.id)));
 
-    let mut feature_ratings_by_tool = BTreeMap::<(String, String), String>::new();
     let mut feature_cases = BTreeMap::<(String, String), Vec<String>>::new();
     for record in &records {
-        if let Some(inputs) = &record.validation_inputs {
-            feature_ratings_by_tool.extend(
-                feature_ratings(&inputs.documents)
-                    .into_iter()
-                    .map(|(feature, rating)| ((record.tool.clone(), feature), rating)),
-            );
-        }
         for case in &record.results {
             for criterion in &case.criteria {
                 let feature = criterion.split("-AC-").next().unwrap_or_default();
@@ -426,6 +435,15 @@ fn build_report(
         cases.sort();
         cases.dedup();
     }
+    let mut feature_ratings_by_tool = BTreeMap::<(String, String), FeatureRating>::new();
+    for (tool, documents) in &documents_by_tool {
+        let repository_namespace = format!("agent-ix/{tool}");
+        feature_ratings_by_tool.extend(
+            feature_ratings(documents, &repository_namespace)
+                .into_iter()
+                .map(|(feature, rating)| ((tool.clone(), feature), rating)),
+        );
+    }
     let feature_ids = feature_ratings_by_tool
         .keys()
         .chain(feature_cases.keys())
@@ -433,10 +451,10 @@ fn build_report(
         .collect::<BTreeSet<_>>();
     let mut coverage = Vec::new();
     for (tool, feature) in feature_ids {
-        let rating = feature_ratings_by_tool
+        let feature_rating = feature_ratings_by_tool
             .get(&(tool.clone(), feature.clone()))
             .cloned()
-            .unwrap_or_else(|| "not provided".to_owned());
+            .unwrap_or_else(FeatureRating::unrated);
         let cases = feature_cases
             .remove(&(tool.clone(), feature.clone()))
             .unwrap_or_default();
@@ -449,35 +467,70 @@ fn build_report(
                 && case.result == "pass"
         });
         let result = if passed { "covered" } else { "uncovered" };
-        if rating == "high_process_risk" && !passed {
+        if feature_rating.high_process_risk && !passed {
             reasons.push(format!("uncovered FR {feature} for {tool}"));
         }
         coverage.push(Coverage {
             tool: tool.clone(),
             fr: feature,
-            rating,
+            rating: feature_rating.display_value,
+            rating_status: feature_rating.status,
+            ratings: feature_rating.ratings,
             cases,
             result: result.to_owned(),
         });
     }
 
-    let high_risk = coverage
+    let mut high_risk_by_tool = BTreeMap::<String, BTreeSet<String>>::new();
+    for item in &coverage {
+        if feature_ratings_by_tool
+            .get(&(item.tool.clone(), item.fr.clone()))
+            .is_some_and(|rating| rating.high_process_risk)
+        {
+            high_risk_by_tool
+                .entry(item.tool.clone())
+                .or_default()
+                .insert(item.fr.clone());
+        }
+    }
+    let known_anomalies = known_anomalies(&records, &high_risk_by_tool)?;
+    for producer in known_anomalies
+        .producers
         .iter()
-        .filter(|item| item.tool == "quoin")
-        .filter(|item| item.rating == "high_process_risk")
-        .map(|item| item.fr.clone())
-        .collect::<BTreeSet<_>>();
-    let known_anomalies = known_anomalies(embedded_anomalies, &high_risk)?;
+        .filter(|producer| producer.status != "provided")
+    {
+        reasons.push(format!(
+            "anomaly set {} for {} {}",
+            producer.status, producer.tool, producer.version
+        ));
+    }
     let quoin_rating_documents = records
         .iter()
         .filter(|record| record.tool == "quoin")
         .filter_map(|record| record.validation_inputs.as_ref())
         .flat_map(|inputs| inputs.documents.iter().cloned())
         .collect::<Vec<_>>();
-    let external_tools_index = embedded_external_tools_index();
-    let external_tools = external_tool_report(&records, external_tools_index.as_ref());
-    if external_tools_index.is_none() {
+    let external_tools_index = embedded_external_tools_index(EMBEDDED_EXTERNAL_TOOLS_INDEX);
+    let external_tools = external_tool_report(&records, &external_tools_index);
+    if !external_tools_index.valid {
         reasons.push("external-tools index missing or invalid".to_owned());
+    }
+    let recorded_external_ids = records
+        .iter()
+        .flat_map(|record| {
+            record
+                .external_tools
+                .iter()
+                .map(|item| item.tool_id.as_str())
+        })
+        .collect::<BTreeSet<_>>();
+    for tool in external_tools.iter().filter(|tool| {
+        recorded_external_ids.contains(tool.tool_id.as_str()) && tool.status != "observed"
+    }) {
+        reasons.push(format!(
+            "external tool evidence not provided for {}",
+            tool.tool_id
+        ));
     }
     reasons.sort();
     reasons.dedup();
@@ -493,7 +546,7 @@ fn build_report(
         results,
         coverage,
         known_anomalies,
-        external_tools_index,
+        external_tools_index: external_tools_index.report,
         external_tools,
         incomplete_reasons: reasons,
         rated_by: rated_by(&quoin_rating_documents),
@@ -505,7 +558,13 @@ fn build_report(
     })
 }
 
-fn validation_documents(records: &[RunRecord]) -> (Vec<IntendedUse>, Vec<String>) {
+fn validation_documents(
+    records: &[RunRecord],
+) -> (
+    Vec<IntendedUse>,
+    Vec<String>,
+    BTreeMap<String, Vec<DocumentSource>>,
+) {
     let mut by_path = BTreeMap::<(String, String), String>::new();
     let mut provided = false;
     for record in records {
@@ -518,11 +577,20 @@ fn validation_documents(records: &[RunRecord]) -> (Vec<IntendedUse>, Vec<String>
             }
         }
     }
-    let documents = by_path
-        .into_iter()
-        .map(|((tool, path), raw)| DocumentSource {
-            path: format!("{tool}/{path}"),
-            raw,
+    let mut documents_by_tool = BTreeMap::<String, Vec<DocumentSource>>::new();
+    for ((tool, path), raw) in by_path {
+        documents_by_tool
+            .entry(tool)
+            .or_default()
+            .push(DocumentSource { path, raw });
+    }
+    let documents = documents_by_tool
+        .iter()
+        .flat_map(|(tool, documents)| {
+            documents.iter().map(|document| DocumentSource {
+                path: format!("{tool}/{}", document.path),
+                raw: document.raw.clone(),
+            })
         })
         .collect::<Vec<_>>();
     let parsed = frontmatter_from_sources(&documents, &[]);
@@ -555,7 +623,7 @@ fn validation_documents(records: &[RunRecord]) -> (Vec<IntendedUse>, Vec<String>
     {
         reasons.push("feature risk ratings not provided".to_owned());
     }
-    (intended_use, reasons)
+    (intended_use, reasons, documents_by_tool)
 }
 
 fn rated_by(documents: &[DocumentSource]) -> Option<String> {
@@ -572,16 +640,41 @@ fn rated_by(documents: &[DocumentSource]) -> Option<String> {
     (raters.len() == 1).then(|| raters.first().copied().unwrap_or_default().to_owned())
 }
 
-fn feature_ratings(documents: &[DocumentSource]) -> BTreeMap<String, String> {
+#[derive(Debug, Clone)]
+struct FeatureRating {
+    status: String,
+    display_value: String,
+    ratings: Vec<RatingEvidence>,
+    high_process_risk: bool,
+}
+
+impl FeatureRating {
+    fn unrated() -> Self {
+        Self {
+            status: "unrated".to_owned(),
+            display_value: "not provided".to_owned(),
+            ratings: Vec::new(),
+            high_process_risk: false,
+        }
+    }
+}
+
+fn feature_ratings(
+    documents: &[DocumentSource],
+    repository_namespace: &str,
+) -> BTreeMap<String, FeatureRating> {
     let parsed = frontmatter_from_sources(documents, &[]);
-    let mut ratings = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut feature_documents = parsed.documents.clone();
+    let mut authored_feature_ids = feature_documents
+        .iter()
+        .filter(|document| field(&document.frontmatter, "type") == Some("FR"))
+        .filter_map(|document| field(&document.frontmatter, "id"))
+        .map(str::to_owned)
+        .collect::<BTreeSet<_>>();
     for document in parsed.documents.iter().filter(|document| {
         field(&document.frontmatter, "type") == Some("FeatureRiskRating")
             && field(&document.frontmatter, "scope") == Some("supplier")
     }) {
-        let Some(rating) = field(&document.frontmatter, "rating") else {
-            continue;
-        };
         let Some(relations) = document
             .frontmatter
             .get("relationships")
@@ -596,58 +689,178 @@ fn feature_ratings(documents: &[DocumentSource]) -> BTreeMap<String, String> {
             let Some(target) = relation.get("target").and_then(Value::as_str) else {
                 continue;
             };
-            let Some(feature) = target.rsplit('/').next().filter(|id| is_fr_id(id)) else {
+            let Some(feature) = feature_target(target, repository_namespace) else {
                 continue;
             };
-            ratings
-                .entry(feature.to_owned())
-                .or_default()
-                .insert(rating.to_owned());
+            if authored_feature_ids.insert(feature.clone()) {
+                let mut frontmatter = serde_json::Map::new();
+                frontmatter.insert("id".to_owned(), Value::String(feature.clone()));
+                frontmatter.insert("type".to_owned(), Value::String("FR".to_owned()));
+                feature_documents.push(BundleDocument {
+                    path: format!("retained/{feature}.md"),
+                    frontmatter,
+                    body: String::new(),
+                });
+            }
         }
     }
-    ratings
+    let states = assess_feature_ratings(&feature_documents, repository_namespace);
+    states
         .into_iter()
-        .map(|(feature, values)| {
-            let rating = if values.len() == 1 {
-                values.first().cloned().unwrap_or_default()
-            } else {
-                "not provided".to_owned()
+        .map(|state| {
+            let ratings = ratings_for_feature(&parsed.documents, &state, repository_namespace);
+            let high_process_risk = ratings
+                .iter()
+                .any(|rating| rating.rating == "high_process_risk");
+            let display_value = match state.status {
+                RatingStatus::Rated => ratings
+                    .first()
+                    .map_or_else(|| "not provided".to_owned(), |rating| rating.rating.clone()),
+                RatingStatus::RatedMoreThanOnce => "multiple ratings".to_owned(),
+                RatingStatus::Unrated => "not provided".to_owned(),
             };
-            (feature, rating)
+            let status = match state.status {
+                RatingStatus::Rated => "rated",
+                RatingStatus::RatedMoreThanOnce => "rated_more_than_once",
+                RatingStatus::Unrated => "unrated",
+            }
+            .to_owned();
+            (
+                state.feature_id,
+                FeatureRating {
+                    status,
+                    display_value,
+                    ratings,
+                    high_process_risk,
+                },
+            )
         })
         .collect()
 }
 
-fn known_anomalies(
-    embedded: Option<&[EmbeddedFile]>,
-    high_risk: &BTreeSet<String>,
-) -> Result<KnownAnomalies, String> {
-    let Some(files) = embedded else {
-        return Ok(KnownAnomalies {
-            provided: false,
-            status: "not provided".to_owned(),
-            anomalies: Vec::new(),
-        });
-    };
-    let temp = tempfile::tempdir().map_err(|error| format!("create anomaly workspace: {error}"))?;
-    let scope = temp.path().join("spec/anomalies");
-    std::fs::create_dir_all(&scope)
-        .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
-    for file in files {
-        let path = scope.join(file.path);
-        let parent = path
-            .parent()
-            .ok_or_else(|| "embedded anomaly path has no parent".to_owned())?;
-        std::fs::create_dir_all(parent)
-            .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
-        std::fs::write(&path, file.bytes)
-            .map_err(|error| format!("materialize embedded anomaly {}: {error}", file.path))?;
+fn feature_target(target: &str, repository_namespace: &str) -> Option<String> {
+    let target = target.strip_prefix("ix://")?;
+    let (namespace, feature) = target.rsplit_once('/')?;
+    (namespace == repository_namespace && is_fr_id(feature)).then(|| feature.to_owned())
+}
+
+fn ratings_for_feature(
+    documents: &[quoin_completeness::BundleDocument],
+    state: &FeatureRatingState,
+    repository_namespace: &str,
+) -> Vec<RatingEvidence> {
+    let mut ratings = Vec::new();
+    let mut occurrence_by_id = BTreeMap::<String, usize>::new();
+    for rating_id in &state.rating_ids {
+        let candidates = documents
+            .iter()
+            .filter(|document| {
+                field(&document.frontmatter, "type") == Some("FeatureRiskRating")
+                    && field(&document.frontmatter, "scope") == Some("supplier")
+                    && field(&document.frontmatter, "id") == Some(rating_id)
+                    && document
+                        .frontmatter
+                        .get("relationships")
+                        .and_then(Value::as_array)
+                        .is_some_and(|relations| {
+                            relations.iter().any(|relation| {
+                                relation.get("type").and_then(Value::as_str)
+                                    == Some("rates_feature")
+                                    && relation
+                                        .get("target")
+                                        .and_then(Value::as_str)
+                                        .and_then(|target| {
+                                            feature_target(target, repository_namespace)
+                                        })
+                                        .as_deref()
+                                        == Some(state.feature_id.as_str())
+                            })
+                        })
+            })
+            .collect::<Vec<_>>();
+        let occurrence = occurrence_by_id.entry(rating_id.clone()).or_default();
+        if let Some(document) = candidates.get(*occurrence) {
+            ratings.push(RatingEvidence {
+                id: rating_id.clone(),
+                rating: field(&document.frontmatter, "rating")
+                    .unwrap_or("not provided")
+                    .to_owned(),
+            });
+            *occurrence += 1;
+        }
     }
-    let report = quoin_anomaly::build_report(&scope, &[]).map_err(|error| error.to_string())?;
-    let mut anomalies = report
-        .anomalies
-        .iter()
-        .map(|row| {
+    ratings.sort_by(|left, right| (&left.id, &left.rating).cmp(&(&right.id, &right.rating)));
+    ratings
+}
+
+fn known_anomalies(
+    records: &[RunRecord],
+    high_risk: &BTreeMap<String, BTreeSet<String>>,
+) -> Result<KnownAnomalies, String> {
+    let mut producers = Vec::new();
+    let mut anomalies = Vec::new();
+    for record in records {
+        let version = record
+            .tool_version
+            .clone()
+            .unwrap_or_else(|| "not provided".to_owned());
+        let Some(set) = &record.anomaly_set else {
+            producers.push(AnomalyProducer {
+                tool: record.tool.clone(),
+                version,
+                status: "not provided".to_owned(),
+            });
+            continue;
+        };
+        if !set.provided {
+            producers.push(AnomalyProducer {
+                tool: record.tool.clone(),
+                version,
+                status: "not provided".to_owned(),
+            });
+            continue;
+        }
+        if set.producer_version != version || version == "not provided" {
+            producers.push(AnomalyProducer {
+                tool: record.tool.clone(),
+                version: set.producer_version.clone(),
+                status: "version mismatch".to_owned(),
+            });
+            continue;
+        }
+        let temp =
+            tempfile::tempdir().map_err(|error| format!("create anomaly workspace: {error}"))?;
+        let scope = temp.path().join("spec/anomalies");
+        std::fs::create_dir_all(&scope)
+            .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
+        for document in &set.documents {
+            let relative = Path::new(&document.path);
+            if relative.is_absolute()
+                || relative
+                    .components()
+                    .any(|part| !matches!(part, std::path::Component::Normal(_)))
+            {
+                return Err(format!("unsafe embedded anomaly path {}", document.path));
+            }
+            let path = scope.join(relative);
+            let parent = path
+                .parent()
+                .ok_or_else(|| "embedded anomaly path has no parent".to_owned())?;
+            std::fs::create_dir_all(parent)
+                .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
+            std::fs::write(&path, document.raw.as_bytes()).map_err(|error| {
+                format!("materialize embedded anomaly {}: {error}", document.path)
+            })?;
+        }
+        let report = quoin_anomaly::build_report(&scope, &[]).map_err(|error| error.to_string())?;
+        let invalid = !report.unreadable.is_empty();
+        producers.push(AnomalyProducer {
+            tool: record.tool.clone(),
+            version: set.producer_version.clone(),
+            status: if invalid { "invalid" } else { "provided" }.to_owned(),
+        });
+        let tool_risk = high_risk.get(&record.tool).cloned().unwrap_or_default();
+        anomalies.extend(report.anomalies.iter().map(|row| {
             let mut affected_frs = row
                 .affected
                 .iter()
@@ -658,7 +871,7 @@ fn known_anomalies(
             affected_frs.dedup();
             let high_process_risk_features = affected_frs
                 .iter()
-                .filter(|feature| high_risk.contains(*feature))
+                .filter(|feature| tool_risk.contains(*feature))
                 .cloned()
                 .collect::<Vec<_>>();
             let highlight = (!high_process_risk_features.is_empty()).then(|| {
@@ -673,7 +886,7 @@ fn known_anomalies(
                 )
             });
             KnownAnomaly {
-                tool: "quoin".to_owned(),
+                tool: record.tool.clone(),
                 anomaly: row.id.clone(),
                 title: row.title.clone().unwrap_or_else(|| "not stated".to_owned()),
                 severity: row
@@ -686,61 +899,134 @@ fn known_anomalies(
                 high_process_risk_features,
                 highlight,
             }
-        })
-        .collect::<Vec<_>>();
+        }));
+    }
+    producers
+        .sort_by(|left, right| (&left.tool, &left.version).cmp(&(&right.tool, &right.version)));
+    producers.dedup_by(|left, right| {
+        left.tool == right.tool && left.version == right.version && left.status == right.status
+    });
     anomalies.sort_by(|left, right| {
         left.high_process_risk_features
             .is_empty()
             .cmp(&right.high_process_risk_features.is_empty())
-            .then_with(|| left.anomaly.cmp(&right.anomaly))
+            .then_with(|| (&left.tool, &left.anomaly).cmp(&(&right.tool, &right.anomaly)))
     });
-    Ok(KnownAnomalies {
-        provided: true,
-        status: if anomalies.is_empty() {
+    anomalies.dedup_by(|left, right| left.tool == right.tool && left.anomaly == right.anomaly);
+    let all_provided =
+        !producers.is_empty() && producers.iter().all(|row| row.status == "provided");
+    let any_provided = producers.iter().any(|row| row.status == "provided");
+    let status = if all_provided {
+        if anomalies.is_empty() {
             "none known"
         } else {
             "listed"
         }
-        .to_owned(),
+    } else if any_provided {
+        "partially provided"
+    } else {
+        "not provided"
+    };
+    Ok(KnownAnomalies {
+        provided: all_provided,
+        status: status.to_owned(),
+        producers,
         anomalies,
     })
 }
 
-fn embedded_external_tools_index() -> Option<ExternalToolsIndexReport> {
-    let Some(bytes) = EMBEDDED_EXTERNAL_TOOLS_INDEX else {
-        return None;
+fn embedded_external_tools_index(bytes: Option<&[u8]>) -> ExternalToolsIndexState {
+    let Some(bytes) = bytes else {
+        return ExternalToolsIndexState {
+            report: None,
+            entries: BTreeMap::new(),
+            invalid_ids: BTreeSet::new(),
+            format_version: "not provided".to_owned(),
+            valid: false,
+        };
     };
-    let Ok(index) = serde_json::from_slice::<ExternalToolsIndex>(bytes) else {
-        return None;
+    let Ok(value) = serde_json::from_slice::<Value>(bytes) else {
+        return ExternalToolsIndexState {
+            report: None,
+            entries: BTreeMap::new(),
+            invalid_ids: BTreeSet::new(),
+            format_version: "not provided".to_owned(),
+            valid: false,
+        };
     };
-    if index.format_version != "1" || index.entries.len() != REQUIRED_TOOL_IDS.len() {
-        return None;
+    let format_version = value
+        .get("format_version")
+        .and_then(Value::as_str)
+        .unwrap_or("not provided")
+        .to_owned();
+    let raw_entries = value
+        .get("entries")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let mut counts = BTreeMap::<String, usize>::new();
+    for raw in &raw_entries {
+        if let Some(id) = raw
+            .get("id")
+            .and_then(Value::as_str)
+            .filter(|id| !id.is_empty())
+        {
+            *counts.entry(id.to_owned()).or_default() += 1;
+        }
     }
-    let ids = index
-        .entries
+    let mut entries = BTreeMap::<String, ExternalToolEntry>::new();
+    let mut invalid_ids = counts
         .iter()
-        .map(|entry| entry.id.as_str())
+        .filter(|(_, count)| **count > 1)
+        .map(|(id, _)| id.clone())
         .collect::<BTreeSet<_>>();
-    let valid = ids.len() == REQUIRED_TOOL_IDS.len()
-        && REQUIRED_TOOL_IDS
-            .iter()
-            .all(|required| ids.contains(required))
-        && index
-            .entries
-            .iter()
-            .all(|entry| !entry.executable.is_empty() && !entry.version_invocation.is_empty());
-    valid.then(|| ExternalToolsIndexReport {
-        path: INDEX_PATH.to_owned(),
-        format_version: index.format_version,
-        entries: index.entries,
-    })
+    for raw in &raw_entries {
+        let id = raw.get("id").and_then(Value::as_str).unwrap_or_default();
+        let Ok(entry) = serde_json::from_value::<ExternalToolEntry>(raw.clone()) else {
+            if !id.is_empty() {
+                invalid_ids.insert(id.to_owned());
+            }
+            continue;
+        };
+        if entry.id.trim().is_empty()
+            || entry.executable.trim().is_empty()
+            || entry.version_invocation.is_empty()
+            || entry
+                .version_invocation
+                .iter()
+                .any(|argument| argument.is_empty())
+            || counts.get(&entry.id).copied() != Some(1)
+        {
+            invalid_ids.insert(entry.id);
+            continue;
+        }
+        entries.insert(entry.id.clone(), entry);
+    }
+    for id in &invalid_ids {
+        entries.remove(id);
+    }
+    let format_valid = format_version == "1";
+    let entries_valid =
+        raw_entries.len() == 9 && invalid_ids.is_empty() && entries.len() == raw_entries.len();
+    let valid = format_valid && entries_valid;
+    let report_entries = entries.values().cloned().collect();
+    ExternalToolsIndexState {
+        report: Some(ExternalToolsIndexReport {
+            path: INDEX_PATH.to_owned(),
+            format_version,
+            entries: report_entries,
+        }),
+        entries,
+        invalid_ids,
+        format_version,
+        valid,
+    }
 }
 
 fn external_tool_report(
     records: &[RunRecord],
-    index: Option<&ExternalToolsIndexReport>,
+    index: &ExternalToolsIndexState,
 ) -> Vec<ExternalToolReport> {
-    let entries = index.map_or(&[][..], |index| index.entries.as_slice());
     let mut evidence_by_id = BTreeMap::<&str, Vec<&ExternalToolEvidence>>::new();
     for evidence in records.iter().flat_map(|record| &record.external_tools) {
         evidence_by_id
@@ -748,29 +1034,41 @@ fn external_tool_report(
             .or_default()
             .push(evidence);
     }
-    let mut out = entries
-        .iter()
-        .map(|entry| {
-            let candidates = evidence_by_id
-                .get(entry.id.as_str())
-                .cloned()
-                .unwrap_or_default();
+    let mut ids = index.entries.keys().cloned().collect::<BTreeSet<_>>();
+    ids.extend(index.invalid_ids.iter().cloned());
+    ids.extend(evidence_by_id.keys().map(|id| (*id).to_owned()));
+    let mut out = ids
+        .into_iter()
+        .map(|id| {
+            let entry = index.entries.get(&id);
+            let candidates = evidence_by_id.get(id.as_str()).cloned().unwrap_or_default();
             let evidence = (candidates.len() == 1).then(|| candidates[0]);
-            let valid = evidence.is_some_and(|evidence| {
-                evidence.executable == entry.executable
-                    && evidence.version_invocation == entry.version_invocation
-                    && evidence.index_path == INDEX_PATH
-                    && evidence.index_format_version == "1"
-                    && matches!(
-                        evidence.observed_version_stream.as_str(),
-                        "stdout" | "stderr"
-                    )
-                    && !evidence.observed_version_output.trim().is_empty()
-            });
+            let valid = index.format_version == "1"
+                && !index.invalid_ids.contains(&id)
+                && entry.is_some_and(|entry| {
+                    evidence.is_some_and(|evidence| {
+                        evidence.executable == entry.executable
+                            && evidence.version_invocation == entry.version_invocation
+                            && evidence.index_path == INDEX_PATH
+                            && evidence.index_format_version == "1"
+                            && matches!(
+                                evidence.observed_version_stream.as_str(),
+                                "stdout" | "stderr"
+                            )
+                            && !evidence.observed_version_output.trim().is_empty()
+                    })
+                });
+            let fallback = evidence;
             ExternalToolReport {
-                tool_id: entry.id.clone(),
-                executable: entry.executable.clone(),
-                version_invocation: entry.version_invocation.clone(),
+                tool_id: id,
+                executable: entry
+                    .map(|entry| entry.executable.clone())
+                    .or_else(|| fallback.map(|evidence| evidence.executable.clone()))
+                    .unwrap_or_else(|| "not provided".to_owned()),
+                version_invocation: entry
+                    .map(|entry| entry.version_invocation.clone())
+                    .or_else(|| fallback.map(|evidence| evidence.version_invocation.clone()))
+                    .unwrap_or_default(),
                 observed_version_output: if valid {
                     evidence.map_or_else(String::new, |evidence| {
                         evidence.observed_version_output.clone()
@@ -785,8 +1083,12 @@ fn external_tool_report(
                 } else {
                     "not provided".to_owned()
                 },
-                index_path: INDEX_PATH.to_owned(),
-                index_format_version: "1".to_owned(),
+                index_path: evidence
+                    .map(|evidence| evidence.index_path.clone())
+                    .unwrap_or_else(|| INDEX_PATH.to_owned()),
+                index_format_version: evidence
+                    .map(|evidence| evidence.index_format_version.clone())
+                    .unwrap_or_else(|| index.format_version.clone()),
                 status: if valid { "observed" } else { "not provided" }.to_owned(),
             }
         })
@@ -848,15 +1150,24 @@ fn render_markdown(report: &ValidationReport) -> String {
         String::new(),
         "## Coverage".to_owned(),
         String::new(),
-        "| Tool | FR | Rating | Cases | Result |".to_owned(),
-        "| --- | --- | --- | --- | --- |".to_owned(),
+        "| Tool | FR | Rating | Rating status | Rating IDs | Cases | Result |".to_owned(),
+        "| --- | --- | --- | --- | --- | --- | --- |".to_owned(),
     ]);
     for item in &report.coverage {
         lines.push(format!(
-            "| {} | {} | {} | {} | {} |",
+            "| {} | {} | {} | {} | {} | {} | {}",
             cell(&item.tool),
             cell(&item.fr),
             cell(&item.rating),
+            cell(&item.rating_status),
+            cell(
+                &item
+                    .ratings
+                    .iter()
+                    .map(|rating| rating.id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
             cell(&item.cases.join(", ")),
             cell(&item.result)
         ));
@@ -866,9 +1177,17 @@ fn render_markdown(report: &ValidationReport) -> String {
         "## Known anomalies".to_owned(),
         String::new(),
     ]);
-    if !report.known_anomalies.provided {
+    for producer in &report.known_anomalies.producers {
+        lines.push(format!(
+            "Anomaly set: {} {} — {}.",
+            cell(&producer.tool),
+            cell(&producer.version),
+            cell(&producer.status)
+        ));
+    }
+    if !report.known_anomalies.provided && report.known_anomalies.anomalies.is_empty() {
         lines.push("not provided".to_owned());
-    } else if report.known_anomalies.anomalies.is_empty() {
+    } else if report.known_anomalies.anomalies.is_empty() && report.known_anomalies.provided {
         lines.push("none known".to_owned());
     } else {
         lines.extend([
@@ -913,6 +1232,8 @@ fn render_markdown(report: &ValidationReport) -> String {
             ));
         }
         lines.push(String::new());
+    } else {
+        lines.push("Configuration index: not provided.".to_owned());
     }
     lines.extend([
         "| Tool | Executable | Version invocation | Observed version | Stream | Status |"
@@ -1190,6 +1511,11 @@ mod tests {
                 "stderr": "",
             }],
             "validationInputs": {"provided": true, "documents": documents},
+            "anomalySet": {
+                "provided": true,
+                "producerVersion": format!("{tool} 1.0.0"),
+                "documents": [],
+            },
             "externalTools": [],
             "retainedLocation": format!("spec/evidence/runs/{tool}/run.json"),
         })
@@ -1223,9 +1549,8 @@ mod tests {
             &run_input("quire-cli", "pass", "not_high_process_risk", false),
         );
         let paths = [quoin, quire_cli];
-        let empty_anomalies: [EmbeddedFile; 0] = [];
-        let first = build_report(&paths, Some(&empty_anomalies)).expect("report builds");
-        let second = build_report(&paths, Some(&empty_anomalies)).expect("repeat report builds");
+        let first = build_report(&paths).expect("report builds");
+        let second = build_report(&paths).expect("repeat report builds");
         assert_eq!(first.status, "complete");
         assert_eq!(first.tools.len(), 2);
         assert_eq!(first.coverage.len(), 2);
@@ -1258,7 +1583,7 @@ mod tests {
             "quoin.json",
             &run_input("quoin", "fail", "high_process_risk", true),
         );
-        let report = build_report(&[quoin], None).expect("incomplete report still builds");
+        let report = build_report(&[quoin]).expect("incomplete report still builds");
         assert_eq!(report.status, "incomplete");
         assert!(
             report
@@ -1281,17 +1606,52 @@ mod tests {
         assert!(render_markdown(&report).contains("not provided"));
     }
 
+    #[trace("FR-217-AC-10")]
+    #[test]
+    fn duplicate_supplier_records_are_preserved_by_completeness_assessment() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let mut run = run_input("quoin", "pass", "high_process_risk", false);
+        run["validationInputs"]["documents"]
+            .as_array_mut()
+            .expect("documents array")
+            .push(json!({
+                "path": "FRR-002.md",
+                "raw": "---\nid: FRR-002\ntype: FeatureRiskRating\nscope: supplier\nrating: high_process_risk\nrated_by: quality\nintended_use: IU-001\nrelationships:\n  - target: ix://agent-ix/quoin/FR-001\n    type: rates_feature\n---\n",
+            }));
+        let path = write_run(temp.path(), "quoin.json", &run);
+        let report = build_report(&[path]).expect("report builds");
+        let coverage = report
+            .coverage
+            .iter()
+            .find(|coverage| coverage.fr == "FR-001")
+            .expect("FR coverage");
+        assert_eq!(coverage.rating_status, "rated_more_than_once");
+        assert_eq!(coverage.rating, "multiple ratings");
+        assert_eq!(
+            coverage
+                .ratings
+                .iter()
+                .map(|rating| rating.id.as_str())
+                .collect::<Vec<_>>(),
+            ["FRR-001", "FRR-002"]
+        );
+    }
+
     #[trace("FR-217-AC-5", "FR-217-AC-6", "FR-217-AC-7")]
     #[test]
-    fn known_anomalies_uses_fr162_selection_and_distinguishes_absent_empty_and_unassessed() {
-        let files = [
-            EmbeddedFile { path: "AN-001-open.md", bytes: b"---\nid: AN-001\ntitle: High risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\nseverity: major\n---\n# [AN-001] High risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-001 | Affects | Fixture |\n" },
-            EmbeddedFile { path: "AN-002-low.md", bytes: b"---\nid: AN-002\ntitle: Low risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n# [AN-002] Low risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-002 | Affects | Fixture |\n" },
-            EmbeddedFile { path: "AN-003-fixed.md", bytes: b"---\nid: AN-003\ntitle: Fixed\ntype: Anomaly\nstatus: closed\nresolution: fixed\nsafety_impact: impacting\n---\n" },
-            EmbeddedFile { path: "AN-004-wont-fix.md", bytes: b"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n" },
-        ];
-        let high_risk = BTreeSet::from(["FR-001".to_owned()]);
-        let report = known_anomalies(Some(&files), &high_risk).expect("anomaly selection");
+    fn known_anomalies_uses_version_matched_retained_fr162_selection() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let mut run = run_input("quoin", "pass", "high_process_risk", false);
+        run["anomalySet"]["documents"] = json!([
+            {"path":"AN-001-open.md", "raw":"---\nid: AN-001\ntitle: High risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\nseverity: major\n---\n# [AN-001] High risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-001 | Affects | Fixture |\n"},
+            {"path":"AN-002-low.md", "raw":"---\nid: AN-002\ntitle: Low risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n# [AN-002] Low risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-002 | Affects | Fixture |\n"},
+            {"path":"AN-003-fixed.md", "raw":"---\nid: AN-003\ntitle: Fixed\ntype: Anomaly\nstatus: closed\nresolution: fixed\nsafety_impact: impacting\n---\n"},
+            {"path":"AN-004-wont-fix.md", "raw":"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n"}
+        ]);
+        let path = write_run(temp.path(), "quoin.json", &run);
+        let report = build_report(&[path])
+            .expect("anomaly selection")
+            .known_anomalies;
         assert_eq!(
             report
                 .anomalies
@@ -1306,23 +1666,201 @@ mod tests {
         );
         assert_eq!(report.anomalies[2].safety_impact, "unassessed");
         assert_eq!(report.anomalies[2].severity, "not stated");
-        let absent = known_anomalies(None, &BTreeSet::new()).expect("absent set");
-        assert_eq!(absent.status, "not provided");
-        let empty_files: [EmbeddedFile; 0] = [];
-        let empty = known_anomalies(Some(&empty_files), &BTreeSet::new()).expect("empty set");
-        assert_eq!(empty.status, "none known");
+        assert_eq!(report.status, "listed");
+    }
+
+    #[trace("FR-217-AC-6")]
+    #[test]
+    fn absent_anomaly_set_is_distinct_from_version_matched_empty_set() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let mut run = run_input("quoin", "pass", "high_process_risk", false);
+        run["anomalySet"]["provided"] = json!(false);
+        let path = write_run(temp.path(), "absent.json", &run);
+        let report = build_report(&[path]).expect("report builds");
+        assert_eq!(report.known_anomalies.status, "not provided");
+        assert_eq!(report.known_anomalies.producers[0].status, "not provided");
+    }
+
+    #[trace("FR-217-AC-9")]
+    #[test]
+    fn anomaly_set_from_a_different_producer_version_is_not_used() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let mut run = run_input("quoin", "pass", "high_process_risk", false);
+        run["anomalySet"]["producerVersion"] = json!("quoin 0.9.0");
+        run["anomalySet"]["documents"] = json!([
+            {"path":"AN-001.md", "raw":"---\nid: AN-001\ntitle: Old anomaly\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\n---\n"}
+        ]);
+        let path = write_run(temp.path(), "quoin.json", &run);
+        let report = build_report(&[path]).expect("report builds");
+        assert_eq!(report.known_anomalies.status, "not provided");
+        assert!(report.known_anomalies.anomalies.is_empty());
+        assert!(
+            report
+                .incomplete_reasons
+                .iter()
+                .any(|reason| reason.contains("version mismatch"))
+        );
     }
 
     #[trace("FR-220-AC-1")]
     #[test]
-    fn external_tools_index_has_the_nine_required_entries() {
-        let index = embedded_external_tools_index().expect("embedded external tools index");
-        let ids = index
-            .entries
+    fn external_tools_index_uses_unique_ids_from_the_authoritative_index() {
+        let index = embedded_external_tools_index(EMBEDDED_EXTERNAL_TOOLS_INDEX);
+        assert!(index.valid);
+        assert_eq!(index.entries.len(), 9);
+        let ids = index.entries.keys().collect::<BTreeSet<_>>();
+        assert_eq!(ids.len(), index.entries.len());
+        assert_eq!(index.report.expect("index report").path, INDEX_PATH);
+    }
+
+    #[trace("FR-220-AC-2")]
+    #[test]
+    fn external_tool_evidence_resolves_exactly_and_preserves_observed_version() {
+        let index = embedded_external_tools_index(EMBEDDED_EXTERNAL_TOOLS_INDEX);
+        let entry = index.entries.values().next().expect("indexed tool");
+        let record = run_record_with_evidence(json!({
+            "tool_id": entry.id,
+            "executable": entry.executable,
+            "version_invocation": entry.version_invocation,
+            "observed_version_output": "fixture tool 1.2.3",
+            "observed_version_stream": "stdout",
+            "index_path": INDEX_PATH,
+            "index_format_version": "1",
+        }));
+        let rows = external_tool_report(&[record], &index);
+        let row = rows
             .iter()
-            .map(|entry| entry.id.as_str())
-            .collect::<BTreeSet<_>>();
-        assert_eq!(ids, REQUIRED_TOOL_IDS.into_iter().collect());
-        assert_eq!(index.path, INDEX_PATH);
+            .find(|row| row.tool_id == entry.id)
+            .expect("tool row");
+        assert_eq!(row.status, "observed");
+        assert_eq!(row.executable, entry.executable);
+        assert_eq!(row.version_invocation, entry.version_invocation);
+        assert_eq!(row.observed_version_output, "fixture tool 1.2.3");
+        assert_eq!(row.observed_version_stream, "stdout");
+        assert_eq!(row.index_path, INDEX_PATH);
+        assert_eq!(row.index_format_version, "1");
+    }
+
+    #[trace("FR-220-AC-3")]
+    #[test]
+    fn unavailable_external_tool_case_remains_not_executed_and_not_passing() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let mut run = run_input("quoin", "not-executed", "high_process_risk", false);
+        run["results"][0]["detail"] = json!("required external tool git was unavailable");
+        let path = write_run(temp.path(), "unavailable.json", &run);
+        let report = build_report(&[path]).expect("report builds");
+        assert_eq!(report.status, "incomplete");
+        assert_eq!(report.results[0].result, "not-executed");
+        assert!(
+            report
+                .incomplete_reasons
+                .iter()
+                .any(|reason| reason.contains("not-executed tool quoin"))
+        );
+        assert!(!report.results.iter().any(|result| result.result == "pass"));
+    }
+
+    #[trace("FR-220-AC-4")]
+    #[test]
+    fn invalid_index_entries_and_mismatched_evidence_do_not_hide_valid_entries() {
+        let base = embedded_external_tools_index(EMBEDDED_EXTERNAL_TOOLS_INDEX);
+        let base_entries = base.entries.values().cloned().collect::<Vec<_>>();
+        let duplicate = base_entries[0].clone();
+        let missing = base_entries[2].clone();
+        let mismatched_identity = base_entries[1].clone();
+        let mismatched_invocation = base_entries[4].clone();
+        let valid = base_entries[3].clone();
+        let mut raw_index: Value =
+            serde_json::from_slice(EMBEDDED_EXTERNAL_TOOLS_INDEX.expect("index bytes"))
+                .expect("index JSON");
+        let entries = raw_index["entries"].as_array_mut().expect("entries array");
+        entries.retain(|entry| entry["id"] != missing.id);
+        entries.push(serde_json::to_value(&duplicate).expect("duplicate entry serializes"));
+        let damaged = serde_json::to_vec(&raw_index).expect("damaged index JSON");
+        let index = embedded_external_tools_index(Some(&damaged));
+        assert!(!index.valid);
+        assert!(index.invalid_ids.contains(&duplicate.id));
+        assert!(index.entries.contains_key(&valid.id));
+        assert!(index.entries.contains_key(&mismatched_identity.id));
+        assert!(index.entries.contains_key(&mismatched_invocation.id));
+
+        let record = run_record_with_evidence(json!([
+            {
+                "tool_id": duplicate.id,
+                "executable": duplicate.executable,
+                "version_invocation": duplicate.version_invocation,
+                "observed_version_output": "duplicate",
+                "observed_version_stream": "stdout",
+                "index_path": INDEX_PATH,
+                "index_format_version": "1"
+            },
+            {
+                "tool_id": missing.id,
+                "executable": missing.executable,
+                "version_invocation": missing.version_invocation,
+                "observed_version_output": "missing index entry",
+                "observed_version_stream": "stdout",
+                "index_path": INDEX_PATH,
+                "index_format_version": "1"
+            },
+            {
+                "tool_id": mismatched_identity.id,
+                "executable": "different-executable",
+                "version_invocation": mismatched_identity.version_invocation,
+                "observed_version_output": "mismatched identity",
+                "observed_version_stream": "stdout",
+                "index_path": INDEX_PATH,
+                "index_format_version": "1"
+            },
+            {
+                "tool_id": mismatched_invocation.id,
+                "executable": mismatched_invocation.executable,
+                "version_invocation": ["--wrong-version-flag"],
+                "observed_version_output": "mismatched invocation",
+                "observed_version_stream": "stdout",
+                "index_path": INDEX_PATH,
+                "index_format_version": "1"
+            },
+            {
+                "tool_id": valid.id,
+                "executable": valid.executable,
+                "version_invocation": valid.version_invocation,
+                "observed_version_output": "valid tool version",
+                "observed_version_stream": "stderr",
+                "index_path": INDEX_PATH,
+                "index_format_version": "1"
+            }
+        ]));
+        let rows = external_tool_report(&[record], &index);
+        for id in [
+            duplicate.id.as_str(),
+            missing.id.as_str(),
+            mismatched_identity.id.as_str(),
+            mismatched_invocation.id.as_str(),
+        ] {
+            let row = rows
+                .iter()
+                .find(|row| row.tool_id == id)
+                .expect("affected tool row");
+            assert_eq!(row.status, "not provided");
+            assert_eq!(row.observed_version_output, "not provided");
+        }
+        let valid_row = rows
+            .iter()
+            .find(|row| row.tool_id == valid.id)
+            .expect("valid tool row");
+        assert_eq!(valid_row.status, "observed");
+        assert_eq!(valid_row.observed_version_output, "valid tool version");
+        assert!(index.report.expect("partial index report").entries.len() > 0);
+    }
+
+    fn run_record_with_evidence(evidence: Value) -> RunRecord {
+        let mut value = run_input("quoin", "pass", "high_process_risk", false);
+        value["externalTools"] = if evidence.is_array() {
+            evidence
+        } else {
+            json!([evidence])
+        };
+        serde_json::from_value(value).expect("run record deserializes")
     }
 }

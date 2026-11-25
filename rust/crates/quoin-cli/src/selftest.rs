@@ -193,7 +193,7 @@ fn run_record(
     serde_json::json!({
         "schemaVersion": 1,
         "tool": "quoin",
-        "toolVersion": tool_version,
+        "toolVersion": tool_version.clone(),
         "os": std::env::consts::OS,
         "architecture": std::env::consts::ARCH,
         "suite": "SELFTEST",
@@ -201,6 +201,7 @@ fn run_record(
         "results": results,
         "retainedLocation": retained_location,
         "validationInputs": crate::validation::embedded_inputs_value(),
+        "anomalySet": crate::validation::embedded_anomaly_set_value(&tool_version),
     })
 }
 
@@ -966,6 +967,11 @@ mod tests {
         assert_eq!(record["results"][1]["status"], "not-executed");
         assert_eq!(record["results"][1]["detail"], "required tool unavailable");
         assert!(record["validationInputs"].is_object());
+        assert_eq!(
+            record["anomalySet"]["producerVersion"],
+            record["toolVersion"]
+        );
+        assert!(record["anomalySet"]["provided"].is_boolean());
         let serialized = serde_json::to_string(&record).expect("the record serializes");
         assert!(!serialized.contains("sourceDigest"));
         assert!(!serialized.contains("sourceRevision"));

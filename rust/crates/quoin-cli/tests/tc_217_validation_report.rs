@@ -57,6 +57,11 @@ fn write_run(root: &Path, status: &str, include_missing_tool: bool) -> std::path
                 "stderr": "",
             }],
             "validationInputs": {"provided": true, "documents": intended_use},
+            "anomalySet": {
+                "provided": true,
+                "producerVersion": "quoin test",
+                "documents": [],
+            },
             "externalTools": [],
             "retainedLocation": "spec/evidence/runs/SELFTEST/run.json",
         }))
