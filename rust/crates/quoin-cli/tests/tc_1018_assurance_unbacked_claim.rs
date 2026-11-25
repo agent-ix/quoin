@@ -224,6 +224,12 @@ fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
         serde_json::from_str(text(&output.stdout).trim()).expect("GSN output is JSON");
     assert_eq!(model["format"], "quoin.gsn-case/v1");
 
+    let mut diagram_args = common.to_vec();
+    diagram_args.push("--gsn-diagram");
+    let diagram = quoin(&diagram_args);
+    assert_eq!(diagram.status.code(), Some(0), "{}", text(&diagram.stderr));
+    assert!(text(&diagram.stdout).starts_with("flowchart TB\n"));
+
     let mut conflicting = common.to_vec();
     conflicting.extend(["--gsn", "--json"]);
     let refused = quoin(&conflicting);
