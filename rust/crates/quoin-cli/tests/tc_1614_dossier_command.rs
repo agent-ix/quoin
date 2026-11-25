@@ -40,6 +40,15 @@ fn code(output: &Output) -> i32 {
     output.status.code().expect("quoin exits with a status")
 }
 
+fn version() -> String {
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .arg("--version")
+        .output()
+        .expect("quoin version command starts");
+    assert!(output.status.success());
+    String::from_utf8(output.stdout).unwrap().trim().to_owned()
+}
+
 fn stdout(output: &Output) -> String {
     String::from_utf8(output.stdout.clone()).unwrap()
 }
@@ -1714,6 +1723,7 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
 #[test]
 fn each_m3_selector_writes_only_its_matching_document() {
     let root = tempfile::tempdir().unwrap();
+    let producer_version = version();
     for (kind, id) in [
         ("software-description", "DOS-SW.md"),
         ("documentation-level-decision", "DOS-DL.md"),
@@ -1725,5 +1735,38 @@ fn each_m3_selector_writes_only_its_matching_document() {
         let output = quoin(&work, &["generate", "--version", "1.0", "--doc", kind]);
         assert_eq!(code(&output), 1, "{}", stderr(&output));
         assert_eq!(names(&work.join("dossier")), [id]);
+        let document = read(&work.join("dossier").join(id));
+        assert!(document.contains(&format!(
+            "producer_identity:\n  name: quoin\n  version: \"{producer_version}\""
+        )));
     }
+}
+
+/// A malformed selected M3 source fails before replacing any output file.
+#[trace("FR-229-AC-4", "FR-191-AC-12")]
+#[test]
+fn malformed_m3_source_preserves_existing_outputs() {
+    let work = tempfile::tempdir().unwrap();
+    let output_dir = work.path().join("dossier");
+    fs::create_dir_all(output_dir.join("sources/software_description")).unwrap();
+    fs::write(output_dir.join("DOS-SW.md"), "existing bytes\n").unwrap();
+    let source = output_dir.join("sources/software_description/sw.json");
+    fs::write(&source, "{").unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "software-description",
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 3, "{}", stdout(&output));
+    assert_eq!(
+        fs::read(output_dir.join("DOS-SW.md")).unwrap(),
+        b"existing bytes\n"
+    );
+    assert!(stdout(&output).contains(&source.display().to_string()));
 }

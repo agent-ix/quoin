@@ -96,6 +96,23 @@ fn read_kind<T: for<'de> Deserialize<'de>>(
     record_type: &str,
 ) -> Result<Vec<T>, SourceFailure> {
     let dir = scope.join("dossier/sources").join(kind);
+    for parent in [
+        scope.join("dossier"),
+        scope.join("dossier/sources"),
+        dir.clone(),
+    ] {
+        match fs::symlink_metadata(&parent) {
+            Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_dir() => {
+                return Err(fail(
+                    &parent,
+                    "source directory must be a directory within the selected scope",
+                ));
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(fail(&parent, error)),
+        }
+    }
     let entries = match fs::read_dir(&dir) {
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -112,6 +129,13 @@ fn read_kind<T: for<'de> Deserialize<'de>>(
     let mut records = Vec::new();
     let mut ids = BTreeSet::new();
     for path in paths {
+        let metadata = fs::symlink_metadata(&path).map_err(|error| fail(&path, error))?;
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err(fail(
+                &path,
+                "source record must be a regular file within the selected scope",
+            ));
+        }
         if path.extension().and_then(|s| s.to_str()) != Some("json") {
             return Err(fail(&path, "source record must be a .json file"));
         }
@@ -645,14 +669,43 @@ fn render_sds(
         ));
     }
     body.push_str("## Sources\n\n");
+    let mut source_rows = BTreeSet::new();
+    let mut selected_parts = BTreeSet::new();
     for r in records {
-        let _ = writeln!(body, "- `software_description/{}`", cell(&r.id));
+        source_rows.insert(format!("software_description/{}", r.id));
         for id in r.architecture_part_ids.iter().flatten() {
-            let _ = writeln!(body, "- architecture part `{id}`");
+            if parts.contains(id.as_str()) {
+                source_rows.insert(format!("part/{id}"));
+                selected_parts.insert(id.as_str());
+            }
         }
         for id in r.architecture_decision_ids.iter().flatten() {
-            let _ = writeln!(body, "- ADR `{id}`");
+            if decisions.contains(id.as_str()) {
+                source_rows.insert(format!("ADR/{id}"));
+            }
         }
+    }
+    for port in systems
+        .ports
+        .iter()
+        .filter(|port| selected_parts.contains(port.owner.as_str()))
+    {
+        source_rows.insert(format!("port/{}", port.document));
+    }
+    for edge in systems.connections.iter().filter(|edge| {
+        selected_parts.contains(edge.source.as_str())
+            || selected_parts.contains(edge.target.as_str())
+    }) {
+        source_rows.insert(format!("connection/{}", edge.document));
+    }
+    for edge in systems.allocations.iter().filter(|edge| {
+        selected_parts.contains(edge.source.as_str())
+            || selected_parts.contains(edge.target.as_str())
+    }) {
+        source_rows.insert(format!("allocation/{}", edge.document));
+    }
+    for source in source_rows {
+        let _ = writeln!(body, "- `{}`", cell(&source));
     }
     Ok(Generated {
         body,
@@ -932,6 +985,32 @@ mod tests {
             render_sw(&[]).gaps[0].gap_kind,
             GapKind::NoSoftwareDescriptionSource
         );
+    }
+
+    #[trace("FR-233-AC-4")]
+    #[test]
+    fn field_order_does_not_change_the_normalized_generated_document() {
+        let first = scope();
+        let second = scope();
+        put(
+            first.path(),
+            "software_description",
+            "sw",
+            r#"{"schema_version":1,"id":"sw","record_type":"software_description","software_id":"SW","name":"Name","purpose":"Purpose","functions":["Function"]}"#,
+        );
+        put(
+            second.path(),
+            "software_description",
+            "sw",
+            r#"{"functions":["Function"],"purpose":"Purpose","name":"Name","software_id":"SW","record_type":"software_description","id":"sw","schema_version":1}"#,
+        );
+        let one = render_sw(&read_all(first.path()).expect("first valid record").software);
+        let two = render_sw(
+            &read_all(second.path())
+                .expect("second valid record")
+                .software,
+        );
+        assert_eq!(one, two);
     }
 
     #[trace("FR-231-AC-2")]
