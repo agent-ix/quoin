@@ -55,7 +55,10 @@ environment without checking out the source repository.
 - The runner SHALL retain the canonical run record defined by
   [FR-216](./FR-216-selftest-run-record.md). When `--out <path>` is supplied,
   it SHALL write those same JSON bytes to that path instead of standard output;
-  otherwise it SHALL write the JSON bytes to standard output.
+  otherwise it SHALL write the JSON bytes to standard output when a repository
+  evidence store is available. When no repository evidence store is available,
+  it SHALL reject the run before starting any case unless `--out <path>` is
+  supplied, as required by FR-216.
 - The high-process-risk features identified by the applicable
   `FeatureRiskRating` records SHALL each have at least one self-test case
   traced to an acceptance criterion of that feature.
@@ -92,7 +95,7 @@ environment without checking out the source repository.
 | FR-215-AC-5 | Given a test case without a trace marker, `quire matrix --strict` over `selftest/` reports the case as untagged. | Test |
 | FR-215-AC-6 | Given no `--case` option, `quoin selftest --run` runs every embedded case; given repeated `--case <id>` options, it runs only the named cases once each in embedded declaration order; an unknown id is rejected before any case starts and is named in the error. | Test |
 | FR-215-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
-| FR-215-AC-8 | Given `--out <path>`, the command writes the retained FR-216 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out`, it writes those bytes to stdout. | Test |
+| FR-215-AC-8 | Given `--out <path>`, the command writes the retained FR-216 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out` and with a repository evidence store, it writes those bytes to stdout; without a repository evidence store it rejects before starting any case. | Test |
 | FR-215-AC-9 | Given a quire-rs-owned case embedded by quire-cli, its source and trace tags remain in quire-rs and the listed case is evidence of test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
 
 ## Dependencies

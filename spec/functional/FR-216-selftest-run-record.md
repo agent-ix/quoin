@@ -26,6 +26,8 @@ found.
 ## Outputs
 
 - A canonical JSON run record under `spec/evidence/runs/<suite>/<timestamp>.json`
+  when a repository evidence store is available, or at an explicit `--out`
+  path when no repository evidence store is available
 - A link from each run record to the tool-validation report that consumes it
 
 ## Behavior
@@ -38,6 +40,11 @@ found.
   error, or non-execution.
 - The recorder SHALL retain a run record when a suite passes, fails, errors,
   or is not executed because a required tool is unavailable.
+- When no repository evidence store is available, `--out <path>` SHALL be
+  required and SHALL be the retained record location. The runner SHALL reject
+  a run without `--out` before starting any case when no repository evidence
+  store is available; it SHALL NOT silently emit a stdout-only, unretained
+  result.
 - The run record SHALL identify the retained evidence location.
 - The run record SHALL NOT claim an unavailable or unexecuted tool passed.
 - The run record SHALL carry the external-tools configuration index reference
@@ -53,6 +60,7 @@ found.
 | FR-216-AC-2 | A failed, errored, or not-executed run is retained with the corresponding status and detail. | Test |
 | FR-216-AC-3 | A run involving an external tool records the PLAT-1641 configuration index reference used by the run. | Test |
 | FR-216-AC-4 | A serialized run record contains no source commit digest, source revision pin, or report-content digest. | Test |
+| FR-216-AC-5 | Given no repository evidence store, `selftest --run --out <path>` retains the canonical run record at that path; without `--out`, the runner reports the missing retained destination and starts no case. | Test |
 
 ## Dependencies
 
