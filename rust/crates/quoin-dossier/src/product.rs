@@ -387,7 +387,7 @@ fn render_dl(records: &ProductRecords) -> Generated {
     for r in &records.decisions {
         let decision_signature = render_decision(r, &index, &mut body, &mut gaps);
         decisions
-            .entry(&r.identity)
+            .entry(&r.software_id)
             .or_default()
             .insert(decision_signature);
     }
@@ -461,15 +461,18 @@ fn render_decision(
     let _ = writeln!(
         body,
         "## {}\n\n**Source:** `documentation_level_decision/{}`\n\n**Software:** `{}`\n",
-        cell(&r.identity),
+        cell(&r.software_id),
         cell(&r.id),
-        cell(&r.identity)
+        cell(&r.software_id)
     );
-    if !index.software.contains(r.identity.as_str()) {
+    if !index.software.contains(r.software_id.as_str()) {
         gaps.push(Gap::new(
             GapKind::SourceReferenceUnresolved,
             &r.id,
-            format!("software_id {} expected software_description", r.identity),
+            format!(
+                "software_id {} expected software_description",
+                r.software_id
+            ),
         ));
     }
     for (key, value) in [
@@ -700,6 +703,7 @@ fn render_sds_item(
     any_design
 }
 
+#[derive(Clone, Copy)]
 struct DesignIdList {
     heading: &'static str,
     gap_kind: GapKind,
