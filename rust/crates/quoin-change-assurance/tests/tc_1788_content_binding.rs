@@ -20,10 +20,14 @@ mod common;
 use std::fmt::Write as _;
 
 use ix_trace_rs::trace;
+use quoin_change_assurance::attestations::attestation_bytes;
 use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::AttestationId;
+use quoin_change_assurance::ids::{ProofId, RecordId, Revision};
 use quoin_change_assurance::intake::disk::DiskEvidenceStore;
 use quoin_change_assurance::intake::memory::MemoryEvidenceStore;
+use quoin_change_assurance::proof_integrity::ProofIntegrityError;
+use quoin_change_assurance::proof_integrity::ProofIntegrityStatement;
 use quoin_change_assurance::verify::input::{Selection, VerificationInput};
 use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_change_assurance::{
@@ -60,6 +64,131 @@ fn corrupted() -> Vec<u8> {
     bytes[0] ^= 0x01;
     assert_eq!(bytes.len(), OUTPUT.len());
     bytes
+}
+
+/// The statement binds exact canonical attestation bytes and exact output bytes.
+#[trace("FR-210-AC-1")]
+#[test]
+fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
+    let attestation = ProofAttestation::from_json(&json(&attestation_text())).unwrap();
+    let exact_attestation = attestation_bytes(&attestation).unwrap();
+    let record_id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
+    let proof_id = ProofId::parse("proof-1", Subject::Attestation, "proof_id").unwrap();
+    let revision = Revision::new(1, Subject::Record, "record_revision").unwrap();
+    let statement = ProofIntegrityStatement::create(
+        &record_id,
+        revision,
+        "candidate-1",
+        &proof_id,
+        &attestation,
+        &exact_attestation,
+        OUTPUT,
+    )
+    .unwrap();
+    assert_eq!(statement.record_id(), "change-1");
+    assert_eq!(statement.record_revision(), 1);
+    assert_eq!(statement.candidate_revision(), "candidate-1");
+    assert_eq!(statement.proof_id(), "proof-1");
+    assert_eq!(statement.attestation_id(), "att-1");
+    assert_eq!(statement.output_media_type(), "text/plain");
+    assert_eq!(
+        statement.output_size_bytes(),
+        u64::try_from(OUTPUT.len()).unwrap()
+    );
+    assert_eq!(
+        statement.attestation_sha256(),
+        format!(
+            "sha256:{}",
+            quoin_store::attachment::sha256_hex(&exact_attestation)
+        )
+    );
+    assert_eq!(
+        statement.output_sha256(),
+        format!("sha256:{}", quoin_store::attachment::sha256_hex(OUTPUT))
+    );
+
+    let changed_attestation = ProofAttestation::from_json(&replacing(
+        &json(&attestation_text()),
+        "attestation_id",
+        JsonValue::string("att-substitute"),
+    ))
+    .unwrap();
+    let changed = attestation_bytes(&changed_attestation).unwrap();
+    assert_eq!(
+        ProofIntegrityStatement::create(
+            &record_id,
+            revision,
+            "candidate-1",
+            &proof_id,
+            &attestation,
+            &changed,
+            OUTPUT,
+        ),
+        Err(ProofIntegrityError::AttestationBytesMismatch),
+        "typed attestation metadata cannot be paired with bytes for another attestation"
+    );
+    let parsed = ProofIntegrityStatement::from_canonical_bytes(statement.as_bytes()).unwrap();
+    assert_eq!(parsed, statement);
+}
+
+/// Provenance: PLAT-1801
+#[trace("FR-210-AC-1")]
+#[test]
+fn tc_1788_statement_reader_refuses_duplicate_and_unknown_members() {
+    let attestation = ProofAttestation::from_json(&json(&attestation_text())).unwrap();
+    let record_id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
+    let proof_id = ProofId::parse("proof-1", Subject::Attestation, "proof_id").unwrap();
+    let revision = Revision::new(1, Subject::Record, "record_revision").unwrap();
+    let exact_attestation = attestation_bytes(&attestation).unwrap();
+    let statement = ProofIntegrityStatement::create(
+        &record_id,
+        revision,
+        "candidate-1",
+        &proof_id,
+        &attestation,
+        &exact_attestation,
+        OUTPUT,
+    )
+    .unwrap();
+    let mut duplicate = statement.as_bytes().strip_suffix(b"}").unwrap().to_vec();
+    duplicate.extend_from_slice(b",\"record_id\":\"other-record\"}");
+    assert!(ProofIntegrityStatement::from_canonical_bytes(&duplicate).is_err());
+    let mut unknown = statement.as_bytes().strip_suffix(b"}").unwrap().to_vec();
+    unknown.extend_from_slice(b",\"unexpected\":true}");
+    assert!(ProofIntegrityStatement::from_canonical_bytes(&unknown).is_err());
+}
+
+/// Provenance: PLAT-1801
+#[trace("FR-210-AC-6")]
+#[test]
+fn tc_1788_statement_reader_refuses_field_mutation_without_recomputed_digest() {
+    let attestation = ProofAttestation::from_json(&json(&attestation_text())).unwrap();
+    let record_id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
+    let proof_id = ProofId::parse("proof-1", Subject::Attestation, "proof_id").unwrap();
+    let revision = Revision::new(1, Subject::Record, "record_revision").unwrap();
+    let exact_attestation = attestation_bytes(&attestation).unwrap();
+    let statement = ProofIntegrityStatement::create(
+        &record_id,
+        revision,
+        "candidate-1",
+        &proof_id,
+        &attestation,
+        &exact_attestation,
+        OUTPUT,
+    )
+    .unwrap();
+    let mut changed = statement.as_bytes().to_vec();
+    let digest_start = changed
+        .windows(statement.statement_digest().len())
+        .position(|window| window == statement.statement_digest().as_bytes())
+        .unwrap();
+    let digit = digest_start + statement.statement_digest().len() - 1;
+    changed[digit] = if changed[digit] == b'0' { b'1' } else { b'0' };
+    assert_eq!(
+        ProofIntegrityStatement::from_canonical_bytes(&changed),
+        Err(ProofIntegrityError::StatementInvalid),
+        "editing canonical metadata while retaining its old digest must be refused"
+    );
 }
 
 /// Intact output verifies and the receipt carries the commitment checked; an
