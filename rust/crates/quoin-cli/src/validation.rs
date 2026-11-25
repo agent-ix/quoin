@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Supplier feature-rating validation command (PLAT-1636).
+//! Supplier feature-rating and retained validation-report commands (PLAT-1636, PLAT-1641).
+
+mod report;
 
 use std::path::Path;
 
@@ -9,9 +11,19 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_completeness::{FeatureRatingState, RatingStatus, read_bundle_frontmatter};
 use quoin_core::protocol::Response;
 
+/// One build-time embedded validation or anomaly record.
+pub(crate) struct EmbeddedFile {
+    /// Repository-relative path beneath the record directory.
+    pub(crate) path: &'static str,
+    /// The record's original bytes.
+    pub(crate) bytes: &'static [u8],
+}
+
+include!(concat!(env!("OUT_DIR"), "/embedded_validation.rs"));
+
 pub(crate) fn command() -> Command {
     Command::new("validation")
-        .about("Report authored validation evidence and supplier rating completeness")
+        .about("Report authored validation evidence and supplier ratings")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(
@@ -27,12 +39,20 @@ pub(crate) fn command() -> Command {
                 )
                 .arg(Arg::new("json").long("json").action(ArgAction::SetTrue)),
         )
+        .subcommand(report::command())
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
-    let Some(("ratings", ratings)) = arguments.subcommand() else {
+    let Some((subcommand, matches)) = arguments.subcommand() else {
         return Err("validation requires a subcommand".to_owned());
     };
+    if subcommand == "report" {
+        return report::run(matches);
+    }
+    if subcommand != "ratings" {
+        return Err("validation requires ratings or report".to_owned());
+    }
+    let ratings = matches;
     let repo = ratings
         .get_one::<String>("repo")
         .map(String::as_str)
@@ -83,6 +103,49 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         } else {
             ix_cli_kit::exit::Outcome::Ok
         },
+    })
+}
+
+/// The validation documents embedded in this binary, carried in a run record
+/// so report generation does not need a source checkout.
+pub(crate) fn embedded_inputs_value() -> serde_json::Value {
+    let records = EMBEDDED_VALIDATION_INPUTS.map(|files| {
+        files
+            .iter()
+            .map(|file| {
+                serde_json::json!({
+                    "path": file.path,
+                    "raw": String::from_utf8_lossy(file.bytes),
+                })
+            })
+            .collect::<Vec<_>>()
+    });
+    serde_json::json!({
+        "provided": records.is_some(),
+        "documents": records.unwrap_or_default(),
+    })
+}
+
+/// The anomaly documents and exact version of the binary that embeds them.
+pub(crate) fn anomaly_set_value(
+    producer_version: &str,
+    anomaly_documents: Option<&[EmbeddedFile]>,
+) -> serde_json::Value {
+    let records = anomaly_documents.map(|files| {
+        files
+            .iter()
+            .map(|file| {
+                serde_json::json!({
+                    "path": file.path,
+                    "raw": String::from_utf8_lossy(file.bytes),
+                })
+            })
+            .collect::<Vec<_>>()
+    });
+    serde_json::json!({
+        "provided": records.is_some(),
+        "producerVersion": producer_version,
+        "documents": records.unwrap_or_default(),
     })
 }
 

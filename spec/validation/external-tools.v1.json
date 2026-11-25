@@ -1,0 +1,14 @@
+{
+  "format_version": "1",
+  "entries": [
+    { "id": "git", "executable": "git", "version_invocation": ["--version"] },
+    { "id": "ssh", "executable": "ssh", "version_invocation": ["-V"] },
+    { "id": "gitsign", "executable": "gitsign", "version_invocation": ["version"] },
+    { "id": "syft", "executable": "syft", "version_invocation": ["version"] },
+    { "id": "osv-scanner", "executable": "osv-scanner", "version_invocation": ["--version"] },
+    { "id": "pandoc", "executable": "pandoc", "version_invocation": ["--version"] },
+    { "id": "typst", "executable": "typst", "version_invocation": ["--version"] },
+    { "id": "z3", "executable": "z3", "version_invocation": ["--version"] },
+    { "id": "cvc5", "executable": "cvc5", "version_invocation": ["--version"] }
+  ]
+}

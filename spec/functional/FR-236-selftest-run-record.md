@@ -22,6 +22,7 @@ case found.
 - Run timestamp and suite name
 - Per-case outcome, traced acceptance criteria, and detail
 - External-tool configuration index reference, when the run uses external tools
+- The producing binary's embedded anomaly-record set
 
 ## Outputs
 
@@ -48,16 +49,28 @@ case found.
 - When a suite passes, fails, errors, or is not executed because a required
   tool is unavailable, the recorder shall retain a run record.
 - When no repository evidence store is available, the runner shall require
-  `--out <path>` as the retained record location. Before starting any case, it
-  shall reject a run without `--out`; it shall not emit a stdout-only,
-  unretained result.
+  `--out <path>` as the retained record location.
+- When no repository evidence store is available and `--out` is absent, the
+  runner shall reject the run before starting any case.
+- The runner shall not emit a stdout-only, unretained result.
 - When locating a repository evidence store, the runner shall walk from the
   current working directory to its ancestors and select the nearest directory
   containing `spec/evidence/`. It shall not invoke Git to locate the store.
   When the store or suite directory does not exist, the runner shall create
   `spec/evidence/runs/` and the suite directory.
-- Each run record shall identify the retained evidence location and shall not
-  claim that an unavailable or unexecuted tool passed.
+- Each run record shall identify the retained evidence location.
+- The run recorder shall not claim that an unavailable or unexecuted tool
+  passed.
+- The self-test recorder SHALL add an anomaly-set object to each run record
+  with a provided flag,
+  the producer version, and each embedded anomaly document's path and raw
+  content.
+- The self-test recorder SHALL set the anomaly-set producer version to the
+  exact toolVersion recorded for that run.
+- The self-test recorder SHALL set provided to true and documents to an empty
+  array when the producing binary embeds an empty anomaly set.
+- The self-test recorder SHALL set provided to false and documents to an empty
+  array when the producing binary embeds no anomaly set.
 - When any listed external tool participates in the run, the run record shall
   carry the external-tools configuration index reference defined by
   [PLAT-1641](https://linear.app/agent-ix/issue/PLAT-1641).
@@ -75,6 +88,7 @@ case found.
 | FR-236-AC-5 | Given no repository evidence store, `selftest --run --out <path>` retains the canonical run record at that path; without `--out`, the runner reports the missing retained destination and starts no case. | Test |
 | FR-236-AC-6 | Given nested ancestors with `spec/evidence/`, the recorder writes under the nearest one without invoking Git and creates its `runs/<suite>/` directories; when no ancestor has `spec/evidence/`, it uses required `--out`. | Test |
 | FR-236-AC-7 | Given two case runs with identical exit code, stdout, and expected files but different stderr bytes, both case statuses are identical and each run record contains its actual stderr as a JSON-safe UTF-8 string, replacing invalid byte sequences with U+FFFD. | Test |
+| FR-236-AC-8 | Given a self-test run, the retained record preserves the producing binary's anomaly-set provided state, producer version, and authored anomaly documents; the producer version equals toolVersion, and provided-empty differs from absent. | Test |
 
 ## Dependencies
 

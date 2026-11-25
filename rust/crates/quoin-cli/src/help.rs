@@ -134,7 +134,7 @@ const COMMANDS: &[(&str, &str)] = &[
     ),
     (
         "validation",
-        "Report supplier feature-rating completeness and retained tool evidence.",
+        "Generate a validation report or inspect supplier feature ratings.",
     ),
     (
         "write",

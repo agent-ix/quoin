@@ -190,16 +190,34 @@ fn run_record(
     results: Vec<CaseResult>,
     retained_location: &str,
 ) -> serde_json::Value {
+    run_record_with_anomaly_documents(
+        tool_version,
+        timestamp,
+        results,
+        retained_location,
+        crate::validation::EMBEDDED_ANOMALIES,
+    )
+}
+
+fn run_record_with_anomaly_documents(
+    tool_version: String,
+    timestamp: &str,
+    results: Vec<CaseResult>,
+    retained_location: &str,
+    anomaly_documents: Option<&[crate::validation::EmbeddedFile]>,
+) -> serde_json::Value {
     serde_json::json!({
         "schemaVersion": 1,
         "tool": "quoin",
-        "toolVersion": tool_version,
+        "toolVersion": tool_version.clone(),
         "os": std::env::consts::OS,
         "architecture": std::env::consts::ARCH,
         "suite": "SELFTEST",
         "timestamp": timestamp,
         "results": results,
         "retainedLocation": retained_location,
+        "validationInputs": crate::validation::embedded_inputs_value(),
+        "anomalySet": crate::validation::anomaly_set_value(&tool_version, anomaly_documents),
     })
 }
 
@@ -928,6 +946,7 @@ mod tests {
     }
 
     #[trace("FR-236-AC-1", "FR-236-AC-2", "FR-236-AC-4")]
+    #[trace("FR-217-AC-1")]
     #[test]
     fn tc_230_run_record_serializes_run_context_and_case_outcomes() {
         let results = vec![
@@ -963,10 +982,87 @@ mod tests {
         assert_eq!(record["results"][0]["status"], "pass");
         assert_eq!(record["results"][1]["status"], "not-executed");
         assert_eq!(record["results"][1]["detail"], "required tool unavailable");
+        assert!(record["validationInputs"].is_object());
+        assert_eq!(
+            record["anomalySet"]["producerVersion"],
+            record["toolVersion"]
+        );
+        assert!(record["anomalySet"]["provided"].is_boolean());
         let serialized = serde_json::to_string(&record).expect("the record serializes");
         assert!(!serialized.contains("sourceDigest"));
         assert!(!serialized.contains("sourceRevision"));
         assert!(!serialized.contains("reportContentDigest"));
+    }
+
+    #[trace("FR-236-AC-8")]
+    #[test]
+    fn tc_230_run_record_retains_versioned_anomaly_set_and_absence_state() {
+        let version = "quoin 0.1.0";
+        let authored_documents = [
+            crate::validation::EmbeddedFile {
+                path: "high-risk.md",
+                bytes: b"---\nid: AN-001\nstatus: open\n---\nRisk details.\n",
+            },
+            crate::validation::EmbeddedFile {
+                path: "unassessed.md",
+                bytes: b"---\nid: AN-002\nstatus: unassessed\n---\nPending assessment.\n",
+            },
+        ];
+        let retained = run_record_with_anomaly_documents(
+            version.to_owned(),
+            "2026-11-25T12:00:00Z",
+            Vec::new(),
+            "/repo/spec/evidence/runs/SELFTEST/run.json",
+            Some(&authored_documents),
+        );
+        let empty = run_record_with_anomaly_documents(
+            version.to_owned(),
+            "2026-11-25T12:00:00Z",
+            Vec::new(),
+            "/repo/spec/evidence/runs/SELFTEST/empty.json",
+            Some(&[]),
+        );
+        let absent = run_record_with_anomaly_documents(
+            version.to_owned(),
+            "2026-11-25T12:00:00Z",
+            Vec::new(),
+            "/repo/spec/evidence/runs/SELFTEST/absent.json",
+            None,
+        );
+
+        let retained_bytes = serde_json::to_vec(&retained).expect("the retained record serializes");
+        let retained: serde_json::Value =
+            serde_json::from_slice(&retained_bytes).expect("the retained record parses");
+        assert_eq!(retained["anomalySet"]["provided"].as_bool(), Some(true));
+        assert_eq!(retained["anomalySet"]["producerVersion"], version);
+        assert_eq!(
+            retained["anomalySet"]["producerVersion"],
+            retained["toolVersion"]
+        );
+        assert_eq!(
+            retained["anomalySet"]["documents"],
+            serde_json::json!([
+                {
+                    "path": "high-risk.md",
+                    "raw": "---\nid: AN-001\nstatus: open\n---\nRisk details.\n",
+                },
+                {
+                    "path": "unassessed.md",
+                    "raw": "---\nid: AN-002\nstatus: unassessed\n---\nPending assessment.\n",
+                },
+            ])
+        );
+
+        assert_eq!(empty["anomalySet"]["provided"].as_bool(), Some(true));
+        assert_eq!(empty["anomalySet"]["producerVersion"], empty["toolVersion"]);
+        assert_eq!(empty["anomalySet"]["documents"], serde_json::json!([]));
+        assert_eq!(absent["anomalySet"]["provided"].as_bool(), Some(false));
+        assert_eq!(
+            absent["anomalySet"]["producerVersion"],
+            absent["toolVersion"]
+        );
+        assert_eq!(absent["anomalySet"]["documents"], serde_json::json!([]));
+        assert_ne!(empty["anomalySet"], absent["anomalySet"]);
     }
 
     #[trace("FR-235-AC-8")]
