@@ -76,9 +76,17 @@ pub struct AnomalyRead {
 /// `unassessed` whatever its status.
 #[must_use]
 pub fn is_carried(record: &Record) -> bool {
-    record.status_word != "closed"
-        || record.resolution.as_deref() == Some(WONT_FIX)
-        || record.safety_impact == UNASSESSED
+    is_carried_fields(
+        &record.status_word,
+        record.resolution.as_deref(),
+        &record.safety_impact,
+    )
+}
+
+/// Whether authored lifecycle fields satisfy the FR-162 carried predicate.
+#[must_use]
+pub fn is_carried_fields(status: &str, resolution: Option<&str>, safety_impact: &str) -> bool {
+    status != "closed" || resolution == Some(WONT_FIX) || safety_impact == UNASSESSED
 }
 
 /// Read every `Anomaly` document under `scope` and select the carried ones.

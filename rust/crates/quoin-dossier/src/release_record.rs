@@ -7,6 +7,7 @@
 use std::fmt::Write as _;
 use std::fs;
 
+use quoin_anomaly::is_carried_fields;
 use serde_json::Value;
 
 use crate::error::SourceFailure;
@@ -295,9 +296,11 @@ fn render_anomalies(body: &mut String, anomalies: &[crate::release_snapshot::Sna
 }
 
 fn is_known_anomaly(anomaly: &crate::release_snapshot::SnapshotAnomaly) -> bool {
-    anomaly.status != "closed"
-        || anomaly.resolution.as_deref() == Some("wont-fix")
-        || anomaly.unassessed
+    is_carried_fields(
+        &anomaly.status,
+        anomaly.resolution.as_deref(),
+        &anomaly.safety_impact,
+    )
 }
 
 fn is_fixed_anomaly(anomaly: &crate::release_snapshot::SnapshotAnomaly) -> bool {

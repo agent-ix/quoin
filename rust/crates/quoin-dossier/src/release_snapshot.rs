@@ -41,7 +41,7 @@ pub struct ReleaseSnapshot {
     /// empty when an earlier v1 snapshot omitted this section.
     #[serde(default)]
     pub vulnerabilities: Vec<SnapshotVulnerability>,
-    /// Carried anomalies in snapshot order.
+    /// FR-162 carried anomalies and closed/fixed anomalies in snapshot order.
     pub anomalies: Vec<SnapshotAnomaly>,
     /// Change records in FR-168 source order.
     pub change_records: Vec<SnapshotChangeRecord>,
@@ -238,7 +238,7 @@ pub struct RationaleEntry {
     pub rationale: String,
 }
 
-/// One carried anomaly as recorded in the snapshot.
+/// One anomaly included in the release snapshot.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SnapshotAnomaly {
