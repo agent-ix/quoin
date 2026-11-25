@@ -53,6 +53,8 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 - If the join lists a design element of a kind the relation does not accept (`kind_mismatch`), the document SHALL record a `design_kind_mismatch` gap naming the requirement and the element.
 - If a part has no allocated requirement, the document SHALL record a `no_allocation` gap naming the part.
 - If the loaded modules declare no `design_relations`, the document SHALL record a `design_relations_unavailable` gap that states the cause.
+- If quire-rs returns a dropped-relation error, the document SHALL retain every valid design-matrix entry and record one `design_relation_dropped` gap per error, naming the declaring module as the subject and identifying the relation and reason in the detail.
+- If quire-rs returns a dropped-relation error, the document SHALL NOT report `design_relations_unavailable` solely because no returned entry contains a design block.
 - A dangling design reference or a kind mismatch SHALL NOT be dropped.
 
 ## Acceptance Criteria
@@ -66,6 +68,8 @@ realized by it, from the quire-rs design join (quire-rs FR-086).
 | FR-193-AC-5 | A connection shows its flow direction and both ends | Test |
 | FR-193-AC-6 | A wrong-kind design element under an `outgoing` relation is listed and produces a `design_kind_mismatch` gap naming the requirement and the element | Test |
 | FR-193-AC-9 | A requirement with a `covered` row in one relation and an `uncovered` row in a second records one `no_design_element` gap carrying the second relation's `check` token and no gap for the first; a requirement with `uncovered` rows in two relations records two gaps with their two `check` tokens. | Test |
+| FR-193-AC-10 | When quire-rs returns a valid design entry and a dropped-relation error, the architecture document retains the valid design and records one `design_relation_dropped` gap per error, with the module subject and relation and reason in the detail. | Test |
+| FR-193-AC-11 | When quire-rs returns a dropped-relation error but no returned entry has a design block, the architecture document records the dropped-relation gap and does not report `design_relations_unavailable`. | Test |
 
 ## Dependencies
 
