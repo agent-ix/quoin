@@ -41,10 +41,17 @@ fn embed_selftest_cases() {
 
     let mut cases = Vec::new();
     let entries = fs::read_dir(&cases_root).unwrap_or_else(|error| {
-        panic!("quoin-cli selftest case directory {} is unavailable: {error}", cases_root.display())
+        panic!(
+            "quoin-cli selftest case directory {} is unavailable: {error}",
+            cases_root.display()
+        )
     });
     let mut case_dirs = entries
-        .map(|entry| entry.expect("selftest case directory entry is readable").path())
+        .map(|entry| {
+            entry
+                .expect("selftest case directory entry is readable")
+                .path()
+        })
         .collect::<Vec<_>>();
     case_dirs.sort();
 
@@ -53,7 +60,10 @@ fn embed_selftest_cases() {
             .expect("selftest case entry metadata is readable")
             .file_type();
         if file_type.is_symlink() || !file_type.is_dir() {
-            panic!("quoin-cli selftest cases must be directories: {}", case_dir.display());
+            panic!(
+                "quoin-cli selftest cases must be directories: {}",
+                case_dir.display()
+            );
         }
         let id = case_dir
             .file_name()
@@ -99,8 +109,11 @@ fn embed_selftest_cases() {
     generated.push_str("];\n");
 
     let out_dir = std::env::var_os("OUT_DIR").expect("Cargo sets OUT_DIR for build scripts");
-    fs::write(PathBuf::from(out_dir).join("embedded_selftest.rs"), generated)
-        .expect("write embedded selftest case table");
+    fs::write(
+        PathBuf::from(out_dir).join("embedded_selftest.rs"),
+        generated,
+    )
+    .expect("write embedded selftest case table");
 
     fn collect_case_files(
         case_root: &Path,
@@ -134,12 +147,16 @@ fn embed_selftest_cases() {
                     path.display()
                 )));
             }
-            let relative = path.strip_prefix(case_root).map_err(std::io::Error::other)?;
+            let relative = path
+                .strip_prefix(case_root)
+                .map_err(std::io::Error::other)?;
             if relative
                 .components()
                 .any(|component| !matches!(component, Component::Normal(_)))
             {
-                return Err(std::io::Error::other("selftest file path is not normalized"));
+                return Err(std::io::Error::other(
+                    "selftest file path is not normalized",
+                ));
             }
             let relative = relative
                 .to_str()
