@@ -19,6 +19,7 @@ mod export;
 mod gap;
 mod markdown;
 mod order;
+mod product;
 mod records_of_processing;
 mod registry;
 mod release_record;
@@ -91,6 +92,10 @@ fn builtin_generators(sources: Sources) -> Vec<Box<dyn Generator>> {
         Box::new(risk_plan::RiskPlanGenerator(sources.policy)),
         Box::new(release_record::ReleaseRecordGenerator),
         Box::new(threat_model::ThreatModelGenerator(sources.threat_model)),
+        Box::new(product::SoftwareDescription),
+        Box::new(product::DocumentationDecision),
+        Box::new(product::SoftwareDesign),
+        Box::new(product::DeviceDescription),
         Box::new(records_of_processing::RecordsOfProcessingGenerator(
             sources.records_of_processing,
         )),
@@ -141,11 +146,11 @@ mod tests {
 
     /// Shipped documents register in bundle order.
     #[cfg(not(feature = "test-stubs"))]
-    #[trace("FR-191")]
+    #[trace("FR-191-AC-23")]
     #[test]
-    fn the_shipped_registry_holds_the_thirteen_documents() {
+    fn the_shipped_registry_holds_the_seventeen_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
-        assert_eq!(registry.specs().count(), 13);
+        assert_eq!(registry.specs().count(), 17);
         let kinds: Vec<_> = registry.specs().map(|spec| spec.kind).collect();
         assert_eq!(
             kinds,
@@ -161,9 +166,28 @@ mod tests {
                 "risk-management-plan",
                 "release-record",
                 "threat-model",
+                "software-description",
+                "documentation-level-decision",
+                "software-design-specification",
+                "device-description",
                 "records-of-processing",
                 "vulnerability-management-plan"
             ]
+        );
+        let selected = registry
+            .select(&[
+                "device-description".to_owned(),
+                "software-description".to_owned(),
+                "software-design-specification".to_owned(),
+                "documentation-level-decision".to_owned(),
+            ])
+            .unwrap();
+        assert_eq!(
+            selected
+                .iter()
+                .map(|generator| generator.spec().id)
+                .collect::<Vec<_>>(),
+            ["DOS-SW", "DOS-DL", "DOS-SDS", "DOS-DEV"]
         );
     }
 
@@ -176,7 +200,7 @@ mod tests {
                 .unwrap()
                 .specs()
                 .count(),
-            18
+            22
         );
     }
 }

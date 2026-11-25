@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/quoin/software-description-source-v1.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "id", "record_type", "software_id", "name"],
+  "properties": {
+    "schema_version": {"const": 1}, "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "record_type": {"const": "software_description"}, "software_id": {"type": "string", "minLength": 1}, "name": {"type": "string", "minLength": 1},
+    "purpose": {"type": "string", "minLength": 1}, "functions": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "operating_environment": {"type": "string", "minLength": 1}, "interfaces": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "architecture_part_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}, "architecture_decision_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}

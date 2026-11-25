@@ -96,6 +96,28 @@ pub enum GapKind {
     ThreatWithoutTreatment,
     /// The selected scope has no threat model record.
     NoThreatModel,
+    /// The selected scope has no software description record.
+    NoSoftwareDescriptionSource,
+    /// A software description omits an authored field.
+    SoftwareDescriptionFieldUnstated,
+    /// No documentation-level decision record was selected.
+    NoDocumentationLevelDecision,
+    /// A documentation-level decision omits an authored field.
+    DocumentationLevelDecisionFieldUnstated,
+    /// Selected documentation-level decision records conflict.
+    ConflictingDocumentationLevelDecisions,
+    /// No software design source was selected.
+    NoSoftwareDesignSource,
+    /// A software design item has no explicit architecture part list.
+    SoftwareDesignPartListUnstated,
+    /// A software design item has no explicit architecture decision list.
+    SoftwareDesignDecisionListUnstated,
+    /// A product source reference does not resolve to its declared kind.
+    SourceReferenceUnresolved,
+    /// No device description record was selected.
+    NoDeviceDescriptionSource,
+    /// A device description omits an authored field.
+    DeviceFieldUnstated,
     /// The selected scope has no processing activity record.
     NoProcessingActivity,
     /// Required authored model facts were not available in the flow report.
@@ -115,7 +137,7 @@ pub enum GapKind {
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 46] = [
+    pub(crate) const ALL: [Self; 57] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -155,6 +177,17 @@ impl GapKind {
         Self::ClassifiedSinkWithoutThreat,
         Self::ThreatWithoutTreatment,
         Self::NoThreatModel,
+        Self::NoSoftwareDescriptionSource,
+        Self::SoftwareDescriptionFieldUnstated,
+        Self::NoDocumentationLevelDecision,
+        Self::DocumentationLevelDecisionFieldUnstated,
+        Self::ConflictingDocumentationLevelDecisions,
+        Self::NoSoftwareDesignSource,
+        Self::SoftwareDesignPartListUnstated,
+        Self::SoftwareDesignDecisionListUnstated,
+        Self::SourceReferenceUnresolved,
+        Self::NoDeviceDescriptionSource,
+        Self::DeviceFieldUnstated,
         Self::NoProcessingActivity,
         Self::ModelFactsUnavailable,
         Self::PersonalDataCategoriesUnstated,
@@ -207,6 +240,21 @@ impl GapKind {
             Self::ClassifiedSinkWithoutThreat => "classified_sink_without_threat",
             Self::ThreatWithoutTreatment => "threat_without_treatment",
             Self::NoThreatModel => "no_threat_model",
+            Self::NoSoftwareDescriptionSource => "no_software_description_source",
+            Self::SoftwareDescriptionFieldUnstated => "software_description_field_unstated",
+            Self::NoDocumentationLevelDecision => "no_documentation_level_decision",
+            Self::DocumentationLevelDecisionFieldUnstated => {
+                "documentation_level_decision_field_unstated"
+            }
+            Self::ConflictingDocumentationLevelDecisions => {
+                "conflicting_documentation_level_decisions"
+            }
+            Self::NoSoftwareDesignSource => "no_software_design_source",
+            Self::SoftwareDesignPartListUnstated => "software_design_part_list_unstated",
+            Self::SoftwareDesignDecisionListUnstated => "software_design_decision_list_unstated",
+            Self::SourceReferenceUnresolved => "source_reference_unresolved",
+            Self::NoDeviceDescriptionSource => "no_device_description_source",
+            Self::DeviceFieldUnstated => "device_field_unstated",
             Self::NoProcessingActivity => "no_processing_activity",
             Self::ModelFactsUnavailable => "model_facts_unavailable",
             Self::PersonalDataCategoriesUnstated => "personal_data_categories_unstated",

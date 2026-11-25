@@ -40,6 +40,15 @@ fn code(output: &Output) -> i32 {
     output.status.code().expect("quoin exits with a status")
 }
 
+fn version() -> String {
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .arg("--version")
+        .output()
+        .expect("quoin version command starts");
+    assert!(output.status.success());
+    String::from_utf8(output.stdout).unwrap().trim().to_owned()
+}
+
 fn stdout(output: &Output) -> String {
     String::from_utf8(output.stdout.clone()).unwrap()
 }
@@ -1707,4 +1716,145 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
     let (valid, diagnostics) = validate(&no_as_of);
     assert!(!valid, "{diagnostics}");
     assert!(diagnostics.contains("as_of"), "{diagnostics}");
+}
+
+/// Each new M3 selector generates only its registered document.
+#[trace("FR-191-AC-23")]
+#[test]
+fn each_m3_selector_writes_only_its_matching_document() {
+    let root = tempfile::tempdir().unwrap();
+    let producer_version = version();
+    for (kind, id) in [
+        ("software-description", "DOS-SW.md"),
+        ("documentation-level-decision", "DOS-DL.md"),
+        ("software-design-specification", "DOS-SDS.md"),
+        ("device-description", "DOS-DEV.md"),
+    ] {
+        let work = root.path().join(kind);
+        fs::create_dir_all(&work).unwrap();
+        let output = quoin(&work, &["generate", "--version", "1.0", "--doc", kind]);
+        assert_eq!(code(&output), 1, "{}", stderr(&output));
+        assert_eq!(names(&work.join("dossier")), [id]);
+        let document = read(&work.join("dossier").join(id));
+        assert!(document.contains(&format!(
+            "producer_identity:\n  name: quoin\n  version: \"{producer_version}\""
+        )));
+    }
+}
+
+/// M3 documents preserve the identities of every source they read and repeat byte-for-byte.
+#[trace(
+    "FR-191-AC-32",
+    "FR-229-AC-5",
+    "FR-230-AC-5",
+    "FR-231-AC-4",
+    "FR-232-AC-4"
+)]
+#[test]
+fn m3_sources_and_producer_are_stable_across_generations() {
+    let producer_version = version();
+    let source_records = [
+        (
+            "software_description",
+            "sw",
+            r#"{"schema_version":1,"id":"sw","record_type":"software_description","software_id":"SW","name":"Software","purpose":"purpose","operating_environment":"environment","functions":["function"],"interfaces":["interface"]}"#,
+        ),
+        (
+            "documentation_level_decision",
+            "dl",
+            r#"{"schema_version":1,"id":"dl","record_type":"documentation_level_decision","software_id":"SW","level":"Level 2","decided_by":"Person","decided_on":"2026-10-01","rationale":"rationale","source_records":[{"id":"sw","record_type":"software_description"}]}"#,
+        ),
+        (
+            "device_description",
+            "dev",
+            r#"{"schema_version":1,"id":"dev","record_type":"device_description","device_id":"D","name":"Device","purpose":"purpose","intended_use":"use","operating_context":"context","software_ids":["SW"]}"#,
+        ),
+    ];
+    let kinds = [
+        (
+            "software-description",
+            "DOS-SW.md",
+            &["software_description/sw"][..],
+        ),
+        (
+            "documentation-level-decision",
+            "DOS-DL.md",
+            &["documentation_level_decision/dl", "software_description/sw"][..],
+        ),
+        (
+            "device-description",
+            "DOS-DEV.md",
+            &["device_description/dev", "software_description/sw"][..],
+        ),
+        (
+            "software-design-specification",
+            "DOS-SDS.md",
+            &["software_description/sw"][..],
+        ),
+    ];
+    for (kind, filename, source_ids) in kinds {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        for work in [first.path(), second.path()] {
+            fs::create_dir_all(work.join("dossier/sources")).unwrap();
+            for (source_kind, id, value) in source_records {
+                let source_dir = work.join("dossier/sources").join(source_kind);
+                fs::create_dir_all(&source_dir).unwrap();
+                fs::write(source_dir.join(format!("{id}.json")), value).unwrap();
+            }
+            let output = quoin(work, &["generate", "--version", "1.0", "--doc", kind]);
+            let expected = i32::from(kind == "software-design-specification");
+            assert_eq!(code(&output), expected, "{}", stderr(&output));
+        }
+        let generated = read(&first.path().join("dossier").join(filename));
+        assert_eq!(
+            generated,
+            read(&second.path().join("dossier").join(filename))
+        );
+        assert!(generated.contains(&format!(
+            "producer_identity:\n  name: quoin\n  version: \"{producer_version}\""
+        )));
+        for identity in source_ids {
+            assert!(
+                generated.contains(identity),
+                "missing {identity} in {filename}"
+            );
+        }
+        assert!(!generated.contains("source commit"));
+        assert!(!generated.contains("source digest"));
+        assert!(!generated.contains("source revision"));
+    }
+}
+
+/// A malformed selected M3 source fails before replacing any output file.
+#[trace("FR-229-AC-4", "FR-191-AC-12")]
+#[test]
+fn malformed_m3_source_preserves_existing_outputs() {
+    let work = tempfile::tempdir().unwrap();
+    let output_dir = work.path().join("dossier");
+    fs::create_dir_all(output_dir.join("sources/software_description")).unwrap();
+    fs::write(output_dir.join("DOS-SW.md"), "existing bytes\n").unwrap();
+    let source = output_dir.join("sources/software_description/sw.json");
+    fs::write(&source, "{").unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "software-description",
+            "--json",
+        ],
+    );
+    assert_eq!(code(&output), 3, "{}", stdout(&output));
+    assert_eq!(
+        fs::read(output_dir.join("DOS-SW.md")).unwrap(),
+        b"existing bytes\n"
+    );
+    let report = json(&output);
+    assert_eq!(
+        report["source_failure"]["source"],
+        "./dossier/sources/software_description/sw.json"
+    );
 }
