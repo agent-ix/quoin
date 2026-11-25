@@ -146,6 +146,45 @@ fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_marke
     assert_eq!(features[0]["coverage"], "uncovered");
 }
 
+#[trace("FR-235-AC-4")]
+#[test]
+fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
+    let scratch = tempfile::tempdir().expect("temporary repository created");
+    write(
+        scratch.path(),
+        "spec/functional/FR-001-broken.md",
+        "---\nid: [invalid\ntype: FR\n---\nBroken frontmatter\n",
+    );
+
+    let output = invoke_coverage(scratch.path());
+    assert_eq!(output.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
+    assert_eq!(
+        report["unreadable"]
+            .as_array()
+            .expect("diagnostics listed")
+            .len(),
+        1
+    );
+    assert_eq!(
+        report["unreadable"][0]["path"],
+        "functional/FR-001-broken.md"
+    );
+    assert!(report["unreadable"][0]["reason"].as_str().is_some());
+    assert_eq!(report["features"], serde_json::json!([]));
+
+    let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+    let human_output = command
+        .args(["validation", "ratings", "--coverage", "--repo"])
+        .arg(scratch.path())
+        .args(["--repo-id", "agent-ix/quoin"])
+        .output()
+        .expect("quoin binary runs");
+    assert_eq!(human_output.status.code(), Some(1));
+    let stdout = String::from_utf8(human_output.stdout).expect("human output is UTF-8");
+    assert!(stdout.contains("unreadable: functional/FR-001-broken.md: "));
+}
+
 #[trace("PLAT-1636-AC-6")]
 #[trace("PLAT-1636-AC-7")]
 #[test]

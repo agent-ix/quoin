@@ -87,6 +87,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             repo,
             repository_namespace,
             &parsed.documents,
+            &parsed.unreadable,
             &features,
             ratings.get_flag("json"),
         );
@@ -237,6 +238,7 @@ fn run_coverage(
     repository: &str,
     repository_namespace: &str,
     documents: &[quoin_completeness::BundleDocument],
+    unreadable: &[quoin_completeness::UnreadableDocument],
     features: &[FeatureRatingState],
     json: bool,
 ) -> Result<Response, String> {
@@ -331,11 +333,21 @@ fn run_coverage(
         .iter()
         .filter_map(|row| (row["coverage"] == "uncovered").then(|| row["feature_id"].clone()))
         .collect::<Vec<_>>();
-    let partial = !uncovered.is_empty() || !invalid.is_empty();
+    let unreadable = unreadable
+        .iter()
+        .map(|document| {
+            serde_json::json!({
+                "path": document.path,
+                "reason": document.reason,
+            })
+        })
+        .collect::<Vec<_>>();
+    let partial = !uncovered.is_empty() || !invalid.is_empty() || !unreadable.is_empty();
     let payload = serde_json::json!({
         "features": coverage,
         "uncovered": uncovered,
         "invalid_markers": invalid,
+        "unreadable": unreadable,
     });
     let rendered = if json {
         serde_json::to_string_pretty(&payload).map_err(|error| error.to_string())?
@@ -360,6 +372,13 @@ fn run_coverage(
                 .iter()
                 .map(|marker| format!("invalid marker: {}", marker)),
         );
+        lines.extend(unreadable.iter().map(|document| {
+            format!(
+                "unreadable: {}: {}",
+                document["path"].as_str().unwrap_or("?"),
+                document["reason"].as_str().unwrap_or("?")
+            )
+        }));
         lines.join("\n")
     };
     Ok(Response {
@@ -453,6 +472,8 @@ fn read_selftest_markers(
     Ok((markers, invalid))
 }
 
+#[implements("FR-235-AC-4")]
+#[implements("FR-235-AC-11")]
 fn string_field<'a>(
     frontmatter: &'a serde_json::Map<String, serde_json::Value>,
     name: &str,
