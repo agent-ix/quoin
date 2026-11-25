@@ -15,3 +15,15 @@ The new test criterion is falsifiable and directly trace-tagged. It combines rel
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | high | FR-191 duplicates the upstream FR-018 producer identity and exclusion contract. | spec/functional/FR-191-dossier-command.md:106; spec-artifacts-process FR-018 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-191 now references the authoritative FR-018 frontmatter contract and retains only Quoin's exact running-executable version requirement. |
+
+- fnd: FND-001
+  outcome: fixed
+  after_excerpt: |-
+    - The generated files SHALL comply with the `DossierDocument` frontmatter contract defined by spec-artifacts-process [FR-018](ix://agent-ix/spec-artifacts-process/FR-018). Versioned kinds also carry their document `version`, while `records-of-processing` does not. Source-backed RMM and SOUP documents also carry `as_of`.
+    - Every generated file SHALL write the exact version string printed by the running Quoin executable to the producer version field defined by spec-artifacts-process FR-018. That producer version is independent of the dossier document's optional `version`.

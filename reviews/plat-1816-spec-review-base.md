@@ -21,3 +21,15 @@ FAIL — FR-191 restates the upstream producer identity shape and restrictions; 
 
 ## Coverage
 Changed scope checked: FR-191 document-set clause and AC-31; FR-207 and FR-215 cross references. FR-191-AC-31 has a direct `#[trace]`-tagged test that starts the built Quoin executable, compares embedded version to `--version`, distinguishes document version, and checks prohibited fields. No applicable AssuranceProfile was found; inspected AP-201/AP-202 are out of scope. EARS engine output contains no warnings for FR-191. No new dependency edge was introduced.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-191 now references the authoritative FR-018 frontmatter contract and retains only Quoin's exact running-executable version requirement. |
+
+- fnd: FND-001
+  outcome: fixed
+  after_excerpt: |-
+    - The generated files SHALL comply with the `DossierDocument` frontmatter contract defined by spec-artifacts-process [FR-018](ix://agent-ix/spec-artifacts-process/FR-018). Versioned kinds also carry their document `version`, while `records-of-processing` does not. Source-backed RMM and SOUP documents also carry `as_of`.
+    - Every generated file SHALL write the exact version string printed by the running Quoin executable to the producer version field defined by spec-artifacts-process FR-018. That producer version is independent of the dossier document's optional `version`.
