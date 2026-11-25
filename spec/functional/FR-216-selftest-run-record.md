@@ -39,6 +39,12 @@ found.
 - A case result SHALL contain its id, `pass`, `fail`, `error`, or `not-executed`
   status, traced acceptance criteria, and a detail field explaining a failure,
   error, or non-execution.
+- Each case result SHALL contain a `stderr` string with that case process's
+  captured standard-error output. The recorder SHALL decode the captured bytes
+  as UTF-8 and replace each invalid sequence with U+FFFD before serializing the
+  string as JSON, so the representation is deterministic and JSON-safe.
+- The runner SHALL NOT compare captured standard-error output with expected
+  output or use it to determine the case status.
 - The recorder SHALL retain a run record when a suite passes, fails, errors,
   or is not executed because a required tool is unavailable.
 - When no repository evidence store is available, `--out <path>` SHALL be
@@ -51,9 +57,6 @@ found.
   directory containing `spec/evidence/`. It SHALL NOT invoke Git to locate the
   store. It SHALL create `spec/evidence/runs/` and the suite directory when
   they do not exist.
-- Each case result SHALL include the captured standard-error output in its
-  `stderr` member. The runner SHALL NOT compare standard-error output with
-  expected output or use it to determine the case status.
 - The run record SHALL identify the retained evidence location.
 - The run record SHALL NOT claim an unavailable or unexecuted tool passed.
 - The run record SHALL carry the external-tools configuration index reference
@@ -71,7 +74,7 @@ found.
 | FR-216-AC-4 | A serialized run record contains no source commit digest, source revision pin, or report-content digest. | Test |
 | FR-216-AC-5 | Given no repository evidence store, `selftest --run --out <path>` retains the canonical run record at that path; without `--out`, the runner reports the missing retained destination and starts no case. | Test |
 | FR-216-AC-6 | Given nested ancestors with `spec/evidence/`, the recorder writes under the nearest one without invoking Git and creates its `runs/<suite>/` directories; when no ancestor has `spec/evidence/`, it uses required `--out`. | Test |
-| FR-216-AC-7 | Given a case that writes to stderr while matching its expected exit code, stdout, and files, the run record contains the captured stderr and the case still passes. | Test |
+| FR-216-AC-7 | Given two case runs with identical exit code, stdout, and expected files but different stderr bytes, both case statuses are identical and each run record contains its actual stderr as a JSON-safe UTF-8 string, replacing invalid byte sequences with U+FFFD. | Test |
 
 ## Dependencies
 

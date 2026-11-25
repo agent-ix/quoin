@@ -38,6 +38,10 @@ environment without checking out the source repository.
   identifies a requirement acceptance criterion.
 - The self-test runner SHALL compare the case's exit code, stdout bytes, and
   each expected file byte for byte.
+- The runner SHALL capture each case process's standard-error output separately
+  from stdout and include it in that case's FR-216 run-record result. It SHALL
+  NOT compare standard-error output with expected output or use it to determine
+  the case status.
 - `quoin selftest --run` SHALL run every embedded case when no `--case` is
   supplied. When one or more `--case <case-id>` options are supplied, it SHALL
   run only the named cases, once each, in embedded declaration order. The
