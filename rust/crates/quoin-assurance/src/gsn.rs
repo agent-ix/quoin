@@ -104,7 +104,18 @@ pub fn from_case(case: &AssuranceCase) -> Result<GsnCase, String> {
         edges: builder.edges,
         roots,
         unreachable: case.unreachable.clone(),
-        unmapped: Vec::new(),
+        unmapped: case
+            .unreadable
+            .iter()
+            .map(|item| Unmapped {
+                source: item.path.clone(),
+                reason: format!("source document could not be read: {}", item.reason),
+            })
+            .chain(case.formalization_records.iter().map(|item| Unmapped {
+                source: item.obligation_id.clone(),
+                reason: "formalization record is outside the declared GSN mapping".to_owned(),
+            }))
+            .collect(),
     };
     validate(&model)?;
     Ok(model)
@@ -443,13 +454,26 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
             to: if open { target_id } else { node },
         });
     }
+    let unmapped = value
+        .get("relationships")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|relationship| {
+            let source = relationship.get("target")?.as_str()?;
+            Some(Unmapped {
+                source: source.to_owned(),
+                reason: "authored relationship has no declared GSN edge mapping".to_owned(),
+            })
+        })
+        .collect();
     let model = GsnCase {
         format: "quoin.gsn-case/v1".to_owned(),
         nodes: b.nodes,
         edges: b.edges,
         roots: vec![root],
         unreachable: Vec::new(),
-        unmapped: Vec::new(),
+        unmapped,
     };
     validate(&model)?;
     Ok(model)
