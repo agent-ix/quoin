@@ -4,7 +4,7 @@ title: Quoin interaction and advisory feature risk rating
 type: FeatureRiskRating
 scope: supplier
 rating: not_high_process_risk
-rated_by: Peter Krenesky
+status: proposed
 relationships:
   - target: ix://agent-ix/quoin/IU-001
     type: uses_intended_use

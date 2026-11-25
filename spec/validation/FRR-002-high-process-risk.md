@@ -4,7 +4,7 @@ title: Quoin assurance and record-producing feature risk rating
 type: FeatureRiskRating
 scope: supplier
 rating: high_process_risk
-rated_by: Peter Krenesky
+status: proposed
 relationships:
   - target: ix://agent-ix/quoin/IU-001
     type: uses_intended_use
