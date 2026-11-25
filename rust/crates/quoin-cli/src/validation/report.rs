@@ -631,6 +631,8 @@ fn known_anomalies(
     };
     let temp = tempfile::tempdir().map_err(|error| format!("create anomaly workspace: {error}"))?;
     let scope = temp.path().join("spec/anomalies");
+    std::fs::create_dir_all(&scope)
+        .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
     for file in files {
         let path = scope.join(file.path);
         let parent = path
@@ -1277,7 +1279,7 @@ mod tests {
             report
                 .incomplete_reasons
                 .iter()
-                .any(|reason| reason.contains("fail case case-one"))
+                .any(|reason| reason.contains("failed case case-one"))
         );
         assert!(
             report
@@ -1292,8 +1294,8 @@ mod tests {
     #[test]
     fn known_anomalies_uses_fr162_selection_and_distinguishes_absent_empty_and_unassessed() {
         let files = [
-            EmbeddedFile { path: "AN-001-open.md", bytes: b"---\nid: AN-001\ntitle: High risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\nseverity: major\nassessment:\n  - kind: Requirement\n    target: FR-001\n    impact: Direct\n    rationale: Fixture\n---\n" },
-            EmbeddedFile { path: "AN-002-low.md", bytes: b"---\nid: AN-002\ntitle: Low risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\nassessment:\n  - kind: Requirement\n    target: FR-002\n    impact: Indirect\n    rationale: Fixture\n---\n" },
+            EmbeddedFile { path: "AN-001-open.md", bytes: b"---\nid: AN-001\ntitle: High risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\nseverity: major\n---\n# [AN-001] High risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-001 | Affects | Fixture |\n" },
+            EmbeddedFile { path: "AN-002-low.md", bytes: b"---\nid: AN-002\ntitle: Low risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n# [AN-002] Low risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-002 | Affects | Fixture |\n" },
             EmbeddedFile { path: "AN-003-fixed.md", bytes: b"---\nid: AN-003\ntitle: Fixed\ntype: Anomaly\nstatus: closed\nresolution: fixed\nsafety_impact: impacting\n---\n" },
             EmbeddedFile { path: "AN-004-wont-fix.md", bytes: b"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n" },
         ];
