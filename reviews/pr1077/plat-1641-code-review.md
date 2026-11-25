@@ -47,6 +47,7 @@ AP-201 (`spec/assurance/AP-201-finding-quality.md`) applies to report rendering,
 | FND-003 | fixed | Verified on PR head 79eaa3e8. |
 | FND-004 | fixed | Verified on PR head 79eaa3e8. |
 
+| FND-005 | fixed | AC-8 is now bound to tc_230_run_record_retains_versioned_anomaly_set_and_absence_state, which asserts provided state, producer version equality with toolVersion, authored path/raw documents, and provided-empty versus absent serialization. |
 +++ [reviewer dispositions]
 
 ```yaml
@@ -67,6 +68,10 @@ dispositions:
     ids.extend(index.invalid_ids.iter().cloned());
 
     ids.extend(evidence_by_id.keys().map(|id| (*id).to_owned()));'
+- fnd: FND-005
+  outcome: fixed
+  after_excerpt: >-
+    Given a self-test run, the retained record preserves the producing binary's anomaly-set provided state, producer version, and authored anomaly documents; the producer version equals toolVersion, and provided-empty differs from absent.
 ```
 
 +++
