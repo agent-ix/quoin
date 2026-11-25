@@ -1062,22 +1062,33 @@ mod tests {
             "sw-src",
             r#"{"schema_version":1,"id":"sw-src","record_type":"software_description","software_id":"SW-1","name":"Name"}"#,
         );
+        put(
+            t.path(),
+            "software_description",
+            "sw-empty",
+            r#"{"schema_version":1,"id":"sw-empty","record_type":"software_description","software_id":"SW-2","name":"Name","architecture_part_ids":[],"architecture_decision_ids":[]}"#,
+        );
         let r = read_all(t.path()).expect("valid records");
         let doc = render_sds(&r.software, t.path(), &[]).expect("render");
         assert!(doc.body.contains("Architecture parts:** Not stated."));
         assert!(doc.body.contains("Architecture decisions:** Not stated."));
-        assert!(
+        assert_eq!(
             doc.gaps
                 .iter()
-                .any(|g| g.gap_kind == GapKind::SoftwareDesignPartListUnstated
-                    && g.subject == "SW-1")
+                .filter(|g| g.gap_kind == GapKind::SoftwareDesignPartListUnstated)
+                .count(),
+            2
         );
-        assert!(doc.gaps.iter().any(
-            |g| g.gap_kind == GapKind::SoftwareDesignDecisionListUnstated && g.subject == "SW-1"
-        ));
+        assert_eq!(
+            doc.gaps
+                .iter()
+                .filter(|g| g.gap_kind == GapKind::SoftwareDesignDecisionListUnstated)
+                .count(),
+            2
+        );
     }
 
-    #[trace("FR-230-AC-1", "FR-230-AC-2", "FR-230-AC-3")]
+    #[trace("FR-230-AC-1", "FR-230-AC-2", "FR-230-AC-3", "FR-233-AC-3")]
     #[test]
     fn decisions_preserve_authored_fields_gaps_and_conflicts() {
         let t = scope();
@@ -1091,7 +1102,7 @@ mod tests {
             t.path(),
             "documentation_level_decision",
             "d1",
-            r#"{"schema_version":1,"id":"d1","record_type":"documentation_level_decision","software_id":"SW","level":" Level A ","decided_by":"Person","decided_on":"2026-02-28","rationale":"why"}"#,
+            r#"{"schema_version":1,"id":"d1","record_type":"documentation_level_decision","software_id":"SW","level":" Level A ","decided_by":"Person","decided_on":"2026-02-28","rationale":"why","source_records":[{"id":"missing","record_type":"device_description"}]}"#,
         );
         put(
             t.path(),
@@ -1108,6 +1119,12 @@ mod tests {
             doc.gaps
                 .iter()
                 .any(|g| g.gap_kind == GapKind::ConflictingDocumentationLevelDecisions)
+        );
+        assert!(
+            doc.gaps
+                .iter()
+                .any(|g| g.gap_kind == GapKind::SourceReferenceUnresolved
+                    && g.detail.contains("missing"))
         );
         assert_eq!(
             doc.gaps
