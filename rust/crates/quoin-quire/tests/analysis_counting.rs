@@ -215,6 +215,7 @@ fn admitted_run(file: &str, run_kind: Option<&str>) -> RunObservation {
             authorized: vec![AC1.to_owned(), AC2.to_owned(), AC3.to_owned()],
         }),
         actor_rejection: None,
+        current_formal_rule_status: None,
     }
 }
 
@@ -222,6 +223,7 @@ fn admitted_run(file: &str, run_kind: Option<&str>) -> RunObservation {
 struct Recorded {
     source: MemoryEvidence,
     reports: Vec<(String, Value)>,
+    current_formal_rule_status: Option<Value>,
 }
 
 impl Recorded {
@@ -229,6 +231,7 @@ impl Recorded {
         Self {
             source: MemoryEvidence::new(),
             reports: Vec::new(),
+            current_formal_rule_status: None,
         }
     }
 
@@ -330,7 +333,13 @@ impl Recorded {
                 )
                 .unwrap(),
                 report: Some(report.clone()),
-                observation: admitted_run(path, report.get("run_kind").and_then(Value::as_str)),
+                observation: {
+                    let mut observation =
+                        admitted_run(path, report.get("run_kind").and_then(Value::as_str));
+                    observation.current_formal_rule_status =
+                        self.current_formal_rule_status.clone();
+                    observation
+                },
             })
             .collect()
     }
@@ -363,6 +372,13 @@ impl Recorded {
                 }
             ]
         });
+        self.current_formal_rule_status = Some(serde_json::json!({
+            "protocol": "quoin.formal-rule-status/v1",
+            "rules": [
+                {"symbol": "qsl:qsl/rule.native::Rule0", "state": first_state},
+                {"symbol": "qsl:qsl/rule.native::Rule1", "state": second_state}
+            ]
+        }));
     }
 
     fn count(&self, requested: &[&str], host: HostObservations) -> Counted {
@@ -524,6 +540,68 @@ fn a_formal_rule_report_with_one_draft_rule_is_rejected() {
         &outcome,
         CauseCode::QualificationRejected,
         "draft_rule_in_judgement",
+    );
+}
+
+#[trace("FR-184-AC-25")]
+#[test]
+fn a_preparation_approval_does_not_override_a_current_changed_since_approval_result() {
+    let mut store = satisfied_store(&[AC1]);
+    store.mark_formal_rule_selection("approved", "approved");
+    store.current_formal_rule_status = Some(serde_json::json!({
+        "protocol": "quoin.formal-rule-status/v1",
+        "rules": [
+            {"symbol": "qsl:qsl/rule.native::Rule0", "state": "approved"},
+            {"symbol": "qsl:qsl/rule.native::Rule1", "state": "draft", "reason": "changed_since_approval"}
+        ]
+    }));
+
+    let stale = store.count(&[AC1], admitted());
+    assert_uncounted_naming(
+        &stale,
+        CauseCode::QualificationRejected,
+        "draft_rule_in_judgement",
+    );
+    assert!(
+        causes(&stale)
+            .iter()
+            .any(|(_, detail)| detail.contains("changed_since_approval"))
+    );
+
+    store.current_formal_rule_status = None;
+    let unavailable = store.count(&[AC1], admitted());
+    assert_uncounted_naming(
+        &unavailable,
+        CauseCode::Unevaluated,
+        "approved formal-rule selection",
+    );
+
+    store.mark_formal_rule_selection("approved", "approved");
+    let approved = store.count(&[AC1], admitted());
+    assert_eq!(
+        status(&approved, AC1),
+        CoverageMatrixStatus::QualifiedRecord
+    );
+}
+
+#[trace("FR-116-AC-19")]
+#[test]
+fn a_formal_rule_selection_absent_from_current_status_is_a_selection_mismatch() {
+    let mut store = satisfied_store(&[AC1]);
+    store.mark_formal_rule_selection("approved", "approved");
+    store.current_formal_rule_status = Some(serde_json::json!({
+        "protocol": "quoin.formal-rule-status/v1",
+        "rules": [
+            {"symbol": "qsl:qsl/rule.native::Rule0", "state": "approved"},
+            {"symbol": "qsl:qsl/other.native::Rule1", "state": "approved"}
+        ]
+    }));
+
+    let outcome = store.count(&[AC1], admitted());
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::SelectionMismatch,
+        "formal-rule selection premise",
     );
 }
 

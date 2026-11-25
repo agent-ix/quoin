@@ -106,6 +106,7 @@ fn cause_code(cause: Cause) -> CauseCode {
         Cause::Absent => CauseCode::Absent,
         Cause::Unevaluated => CauseCode::Unevaluated,
         Cause::WrongRevision => CauseCode::WrongRevision,
+        Cause::SelectionMismatch => CauseCode::SelectionMismatch,
         Cause::Stale => CauseCode::Stale,
         Cause::RecordConflict => CauseCode::RecordConflict,
         Cause::QualificationRejected => CauseCode::QualificationRejected,

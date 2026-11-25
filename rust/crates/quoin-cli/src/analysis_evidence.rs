@@ -148,7 +148,17 @@ fn request(
         .to_str()
         .ok_or_else(|| "repository path is not UTF-8".to_owned())?;
     let host = host_observations(canonical_repo, observations);
-    let (runs, bindings) = retained_runs(canonical_repo, observations, signature_verifier)?;
+    let current_formal_rule_status = observations
+        .iter()
+        .any(|observation| observation.run_kind.as_deref() == Some("formal_rule"))
+        .then(|| fresh_formal_rule_status(canonical_repo, module_paths, signature_verifier))
+        .flatten();
+    let (runs, bindings) = retained_runs(
+        canonical_repo,
+        observations,
+        signature_verifier,
+        current_formal_rule_status.as_ref(),
+    )?;
     let injections = decode_field::<Vec<MockInjection>>(audit_inputs, "injections")?;
     let mock_inspection_suites =
         decode_field::<Vec<String>>(audit_inputs, "mock_inspection_suites")?;
@@ -259,6 +269,7 @@ fn retained_runs(
     repo: &str,
     observations: &[RunObservationFile],
     signature_verifier: Option<&SignatureVerifier>,
+    current_formal_rule_status: Option<&serde_json::Value>,
 ) -> Result<(Vec<RetainedRun>, Vec<Binding>), String> {
     let source = DiskEvidence::new(repo);
     let bindings_text = source
@@ -282,7 +293,12 @@ fn retained_runs(
             let observed = observations
                 .iter()
                 .find(|observation| observation.record == snapshot.run.path);
-            runs.push(snapshot.into_run(repo, observed, signature_verifier));
+            runs.push(snapshot.into_run(
+                repo,
+                observed,
+                signature_verifier,
+                current_formal_rule_status,
+            ));
         }
     }
     for observation in observations {
@@ -362,9 +378,16 @@ impl RunSnapshot {
         repo: &str,
         input: Option<&RunObservationFile>,
         signature_verifier: Option<&SignatureVerifier>,
+        current_formal_rule_status: Option<&serde_json::Value>,
     ) -> RetainedRun {
         let observation = input.map_or_else(RunObservation::default, |input| {
-            run_observation(repo, input, self.pair(), signature_verifier)
+            run_observation(
+                repo,
+                input,
+                self.pair(),
+                signature_verifier,
+                current_formal_rule_status,
+            )
         });
         RetainedRun {
             file: self.run.path,
@@ -388,6 +411,7 @@ fn run_observation(
     input: &RunObservationFile,
     pair: Option<EvidencePair<'_>>,
     signature_verifier: Option<&SignatureVerifier>,
+    current_formal_rule_status: Option<&serde_json::Value>,
 ) -> RunObservation {
     let performed_revision = input
         .checkout_sha
@@ -413,7 +437,46 @@ fn run_observation(
         execution,
         actor,
         actor_rejection,
+        current_formal_rule_status: current_formal_rule_status.cloned(),
     }
+}
+
+fn fresh_formal_rule_status(
+    repo: &str,
+    module_paths: &[String],
+    signature_verifier: Option<&SignatureVerifier>,
+) -> Option<serde_json::Value> {
+    let verifier = signature_verifier?;
+    let mut argv = vec![
+        "quoin".to_owned(),
+        "formal-rules".to_owned(),
+        "status".to_owned(),
+        "--json".to_owned(),
+        "--repo".to_owned(),
+        repo.to_owned(),
+        "--engineering-assurance".to_owned(),
+        verifier.executable.display().to_string(),
+        "--allowed-signers".to_owned(),
+        verifier.allowed_signers.display().to_string(),
+    ];
+    if let Some(gitsign) = &verifier.gitsign {
+        for (field, flag) in [
+            ("certificate_identity", "--gitsign-certificate-identity"),
+            (
+                "certificate_oidc_issuer",
+                "--gitsign-certificate-oidc-issuer",
+            ),
+            ("principal", "--gitsign-principal"),
+        ] {
+            argv.push(flag.to_owned());
+            argv.push(gitsign.get(field)?.as_str()?.to_owned());
+        }
+    }
+    let matches = crate::formal_rules::command()
+        .try_get_matches_from(argv)
+        .ok()?;
+    let (_, args) = matches.subcommand()?;
+    crate::formal_rules::status_report_with_modules(args, module_paths).ok()
 }
 
 fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObservations {

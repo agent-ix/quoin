@@ -349,14 +349,12 @@ fn report_premises<'a>(
     }
     let expected_kind = run.observation.run_kind.as_deref().unwrap_or("analysis");
     let projected_kind = text(report, "run_kind").unwrap_or("analysis");
-    if expected_kind == "formal_rule"
-        && (projected_kind != "formal_rule" || !formal_rule_selection_is_approved(report))
-    {
+    if expected_kind == "formal_rule" && projected_kind != "formal_rule" {
         refusals.push(refusal(
             Cause::QualificationRejected,
             Premise::ApprovedFormalRules,
             locator,
-            "draft_rule_in_judgement: the selected claim set is missing, mismatched or includes a non-approved formal rule",
+            "draft_rule_in_judgement: the host's expected formal-rule projection is missing",
         ));
         return None;
     }
@@ -367,6 +365,11 @@ fn report_premises<'a>(
             locator,
             "the host's expected run_kind differs from the retained projection",
         ));
+        return None;
+    }
+    if expected_kind == "formal_rule"
+        && !formal_rule_selection_is_currently_approved(run, locator, report, refusals)
+    {
         return None;
     }
     let agreed = text(report, "disposition") == Some("agreement")
@@ -556,17 +559,100 @@ fn selection_ids(items: &[Value]) -> Option<BTreeSet<&str>> {
     Some(values)
 }
 
-fn formal_rule_selection_is_approved(report: &Value) -> bool {
+fn formal_rule_selection_is_currently_approved(
+    run: &RetainedRun,
+    locator: &RunLocator,
+    report: &Value,
+    refusals: &mut Vec<Refusal>,
+) -> bool {
+    let mut refuse = |cause, reason: &str| {
+        refusals.push(refusal(
+            cause,
+            Premise::ApprovedFormalRules,
+            locator,
+            reason,
+        ));
+    };
     let Some(mapping) = report.get("formal_rule_selection") else {
+        refuse(
+            Cause::QualificationRejected,
+            "draft_rule_in_judgement: formal-rule selection mapping is missing",
+        );
         return false;
     };
     let Some(claims) = mapping.get("claims").and_then(Value::as_array) else {
+        refuse(
+            Cause::QualificationRejected,
+            "draft_rule_in_judgement: formal-rule selection mapping is malformed",
+        );
         return false;
     };
-    valid_formal_rule_selection(Some(mapping), report.get("selection"))
-        && claims
+    if !valid_formal_rule_selection(Some(mapping), report.get("selection")) {
+        refuse(
+            Cause::SelectionMismatch,
+            "formal-rule selection differs from the selected report claims or source spans",
+        );
+        return false;
+    }
+    let Some(current) = run.observation.current_formal_rule_status.as_ref() else {
+        refuse(
+            Cause::Unevaluated,
+            "current FR-188 status is unavailable because the host verifier or result was not available",
+        );
+        return false;
+    };
+    if current.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1") {
+        refuse(
+            Cause::Unevaluated,
+            "current FR-188 status has an unsupported protocol",
+        );
+        return false;
+    }
+    let Some(rules) = current.get("rules").and_then(Value::as_array) else {
+        refuse(
+            Cause::Unevaluated,
+            "current FR-188 status has no rules result",
+        );
+        return false;
+    };
+    for claim in claims {
+        let Some(symbol) = claim.get("symbol").and_then(Value::as_str) else {
+            refuse(
+                Cause::SelectionMismatch,
+                "formal-rule selection has no matching symbol",
+            );
+            return false;
+        };
+        let mut current_rules = rules
             .iter()
-            .all(|claim| claim.get("state").and_then(Value::as_str) == Some("approved"))
+            .filter(|rule| rule.get("symbol").and_then(Value::as_str) == Some(symbol));
+        let Some(current_rule) = current_rules.next() else {
+            refuse(
+                Cause::SelectionMismatch,
+                "formal-rule selection names a symbol absent from the current FR-188 selection",
+            );
+            return false;
+        };
+        if current_rules.next().is_some() {
+            refuse(
+                Cause::SelectionMismatch,
+                "current FR-188 selection contains duplicate symbol identities",
+            );
+            return false;
+        }
+        if current_rule.get("state").and_then(Value::as_str) != Some("approved") {
+            let reason = current_rule
+                .get("reason")
+                .and_then(Value::as_str)
+                .unwrap_or("not_approved");
+            refuse(
+                Cause::QualificationRejected,
+                &format!("draft_rule_in_judgement: current FR-188 status is {reason}"),
+            );
+            return false;
+        }
+    }
+    true
 }
 
 fn valid_formal_rule_selection(mapping: Option<&Value>, selection: Option<&Value>) -> bool {

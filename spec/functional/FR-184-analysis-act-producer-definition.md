@@ -65,6 +65,7 @@ act, and a report from a solver started any other way is not an observation of i
 | Obligation statement | The `--discharges` id the recorder gave to `quoin evidence record` (FR-152). It is the only binding source. |
 | Run purpose | The host's explicit run kind, `analysis` for an ordinary analysis report or `formal_rule` for a formal-rule judgement. Existing ordinary projections without this member are treated as `analysis`. |
 | Formal-rule claim mapping | For `run_kind: formal_rule`, the host supplies the mapping retained as `formal_rule_selection` by FR-151. It maps every selected claim id and source span to its QSL symbol and the `approved` or `draft` status returned by FR-188 when the run was prepared. |
+| Current formal-rule approval observation | For `run_kind: formal_rule`, the host obtains the complete FR-188 status result at qualification time for the selected repository HEAD, using the current engineering-assurance verifier and allowed-signers bytes. The result includes each selected symbol's state, reason, source span and approval reference where present. A status object supplied by the report or caller is transcribed and cannot satisfy this premise. |
 
 ## Outputs
 
@@ -145,17 +146,45 @@ the selection used for `run-package` and the FR-188 status report used to build
 it. The mapping SHALL contain exactly one entry for each id in the report's
 `selection.selected` array. Each entry SHALL name that claim id, the matching
 report source span, its QSL symbol, and the status reported for that symbol
-when the run was prepared. The qualifier SHALL confirm that the mapping's ids
-equal `selection.selected` exactly, that every source span matches the report,
-and that each selected symbol has state `approved`. If expected `run_kind` is
+when the run was prepared. The host SHALL obtain the current FR-188 status
+report at qualification time from the selected repository HEAD, invoking the
+configured engineering-assurance verifier with the current allowed-signers
+file; a caller-supplied status report is transcribed and cannot satisfy this
+premise. The qualifier SHALL confirm that the mapping's ids equal
+`selection.selected` exactly, that every source span matches the report and
+current declaration, and that every selected symbol is `approved` in the
+current FR-188 result. A mapping that said `approved` when prepared does not
+override a current `draft` result such as `changed_since_approval`. An
+unavailable verifier or missing current result is `unevaluated`; a current
+draft, missing symbol, or source mismatch is `qualification-rejected` with
+reason `draft_rule_in_judgement`. If expected `run_kind` is
 `formal_rule` and the projection's discriminator is missing or different, the
 source report has no `selection`, the mapping is missing or malformed, the ids
-or spans differ, or any selected rule has state `draft`, the qualifier SHALL
-return `qualification-rejected` with reason `draft_rule_in_judgement`. It SHALL
-fail closed and SHALL NOT infer a missing mapping or status from the current
-checkout. Ordinary analysis qualification does not require a
+or spans differ, or any selected rule is not currently approved, the
+qualifier SHALL fail closed and SHALL NOT infer a missing mapping from the
+current checkout. Ordinary analysis qualification does not require a
 `formal_rule_selection` mapping. This mapping records no digest, checkout
 revision, version pin, or additional repository file path.
+
+### Real producer-to-qualified-record composition
+
+The Quoin integration test for this definition SHALL execute the real
+`filament-analyze run-package` binary selected by the test environment variable
+`FILAMENT_ANALYZE_BIN`, pass its actual report through Quoin's production
+`differential-report` recording path, and invoke the production
+`qualified-record` consumer path over that retained record. The test SHALL NOT
+substitute a hand-authored report for the analyzer output or mock the analyzer
+process. It SHALL assert that the real report's disposition, producer and
+engine observations survive validation, projection, recording and qualification
+with the expected per-target result. A positive result requires all FR-116
+host, authority, source, execution-association and bounded-reliance premises to
+be admitted under their existing rules; unavailable premises remain
+`unevaluated` and do not count as a passing composition. The focused test may
+be run with `FILAMENT_ANALYZE_BIN` set to an executable absolute path for a
+real analyzer binary; without that binary its positive composition partition
+has not executed and SHALL NOT be reported as passing. This test adds no
+report, run-record or projection field and changes no Filament or
+Engineering-assurance contract.
 
 ### Tool and configuration
 
@@ -333,14 +362,16 @@ The criteria describe the approved definition; none claims an implemented qualif
 | FR-184-AC-14 | A satisfied agreement with no CI checkout SHA for the `run-package` step yields `unevaluated` naming the performed-revision premise. | Test |
 | FR-184-AC-15 | One report with `--discharges` for one obligation yields a decision for that obligation only; no sibling obligation is qualified by it. | Test |
 | FR-184-AC-16 | One satisfied report recorded with `--discharges FR-001-AC-1,FR-001-AC-2` qualifies neither obligation: each is `unevaluated` and uncounted. | Test |
-| FR-184-AC-17 | A report qualified with expected `run_kind: formal_rule` whose projection has the same run kind and one matching `formal_rule_selection` entry with state `approved` for each selected claim may qualify; the qualifier checks the selected set. | Test |
-| FR-184-AC-18 | A formal-rule qualification whose projection lacks `run_kind: formal_rule`, whose report has no selection, whose mapping is missing, incomplete, extra, duplicate, or source-mismatched, or whose selected claim maps to state `draft` yields `qualification-rejected` with reason `draft_rule_in_judgement` and no positive decision. | Test |
+| FR-184-AC-17 | A report qualified with expected `run_kind: formal_rule` may qualify only when the FR-151 projection has the same run kind, its mapping matches every selected claim and source span, and a host-obtained FR-188 status recomputed at qualification for the selected repository HEAD reports every selected symbol `approved`. | Test |
+| FR-184-AC-18 | A formal-rule qualification whose projection lacks `run_kind: formal_rule`, whose report has no selection, whose mapping is missing, incomplete, extra, duplicate, or source-mismatched, or whose current FR-188 result reports a selected claim as `draft`, yields `qualification-rejected` with reason `draft_rule_in_judgement` and no positive decision; an unavailable current verifier/result remains `unevaluated`. | Test |
 | FR-184-AC-19 | An ordinary analysis report with no `formal_rule_selection` mapping remains eligible for qualification under the existing FR-116 premises and is not rejected as `draft_rule_in_judgement`. | Test |
 | FR-184-AC-20 | A `workflow_dispatch` run whose authenticated workflow source ref/commit or dispatch principal differs from the owner-approved FR-093 context yields no positive decision. A Quoin checkout SHA or `filament-analyze` build revision that differs from its accepted context, or that is reported only by workflow-authored JSON, is not an admitted performed revision. | Test |
 | FR-184-AC-21 | A raw workflow-supplied run record, artifact locator, report or context object cannot establish execution association. The FR-116 host accepts a CI observation only from its host-authenticated GitHub evidence collector after collector-side API and artifact checks; missing or invalid collector authority leaves the association `unevaluated`. | Test |
 | FR-184-AC-22 | An artifact not belonging to the authenticated run and attempt, no report, multiple reports for one invocation, or a report that fails FR-151 validation yields no positive decision. The collector binds the selected report projection to the authenticated artifact/run/job/invocation observation without adding report or artifact digests. | Test |
 | FR-184-AC-23 | An FR-093 assessment using the two `real-sat`/`real-unsat` controls alone, a category list without exact corpus identity, any stub-only corpus, or incomplete TC-006 validation evidence remains `unevaluated`; the owner-approved retained TC-006 corpus and its source revision, case identities, expected outcomes and observed results are required before analysis can qualify. | Test |
 | FR-184-AC-24 | An observed environment or producer/tool/configuration value that is absent from or differs from the owner-approved FR-093 context cannot produce a positive decision. The requirement names no fixed runner, language toolchain or executable version. | Test |
+| FR-184-AC-25 | A formal-rule projection whose mapping says `approved` from preparation time yields no positive decision when a fresh FR-188 verification at qualification reports the selected symbol `draft` with reason `changed_since_approval`; missing verifier/result remains `unevaluated`, and a current approved result is the positive control. | Test |
+| FR-184-AC-26 | One composition test executes the real binary named by `FILAMENT_ANALYZE_BIN`, records its actual report through Quoin's production differential-report path, and invokes the production `qualified-record` path, asserting the per-target result from the observed report; the test cannot pass its positive partition without the real executable and all FR-116 premises admitted. | Test |
 
 ## Dependencies
 
