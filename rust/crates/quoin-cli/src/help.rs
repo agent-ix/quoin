@@ -188,6 +188,18 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
     {
         return None;
     }
+    // These routes gained current native options after the retained help was
+    // captured. Render their Clap metadata so policy inputs are discoverable.
+    if matches!(
+        argv.as_slice(),
+        [command, flag] if command == "matrix" && flag == "--help"
+    ) || matches!(
+        argv.as_slice(),
+        [topic, command, flag]
+            if topic == "evidence" && command == "audit" && flag == "--help"
+    ) {
+        return None;
+    }
     let retained = serde_json::from_str::<serde_json::Value>(RETAINED_HELP).ok()?;
     let cases = retained.get("cases")?.as_array()?;
     let page = cases.iter().find(|case| {

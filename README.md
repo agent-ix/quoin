@@ -21,6 +21,9 @@ workflows agents need to write and validate specs directly as Markdown.
 
 If this plugin is uninitialized or a command fails, follow the [plugin setup guide](setup.md) for its required CLIs, configuration, and local diagnosis.
 
+For a person-led software risk and release review using Quoin's baseline
+capabilities, see the [regulated baseline guide](docs/regulated-baseline.md).
+
 ## Community help
 
 If the setup checks leave a reproducible Agent IX quoin bug that blocks progress, [join the Agent IX Discord](https://discord.gg/k8DVhuYBR2). Community help is a last resort for Agent IX product bugs, not a help desk for local credentials, machine setup, third party tools, or unrelated projects. See [setup.md](setup.md#community-help) for what to include.

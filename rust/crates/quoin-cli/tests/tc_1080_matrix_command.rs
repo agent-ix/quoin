@@ -1049,6 +1049,11 @@ fn tc_1080_206_help_describes_the_evidence_backed_render() {
     assert!(!page.contains("Build or update a requirements test matrix"));
     assert!(!page.contains("ix-flow"));
     assert!(!page.contains("[--strict]"), "the view adds no gate");
+    assert!(
+        page.contains("--class-policy <FILE>")
+            && page.contains("floors by stated software safety class"),
+        "help explains the class policy input: {page}"
+    );
     let root = fixture.ok(&["--help"]);
     assert!(
         root.contains(
