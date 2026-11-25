@@ -53,3 +53,11 @@ Quoin owns deterministic document generation and preserves human-authored decisi
 ## Evidence
 
 FR-231 Inputs calls for software-item `part` records and says not to infer associations from names or paths. The installed `part` schema contains `owner`, `declaredType`, and `multiplicity`, plus optional person-assigned software safety-class fields; it has no software-item discriminator. Since safety class is optional and must remain person-authored, it cannot define the selection rule. Two conforming implementations can select different parts or emit different sections.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-233 adds explicit per-software-item architecture part and decision id lists, and FR-231 restricts association to those authored ids and architecture relationships. After excerpt: `The generator SHALL associate parts with a software item only when their ids occur in that record's architecture_part_ids list.` |
+
+Round-1 recheck found Quoin's ownership boundary clearer: it validates authored source records and renders only explicit associations; people author the product facts and associations. See base FND-003 for the remaining missing/empty architecture-list gap mapping.

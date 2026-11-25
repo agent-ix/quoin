@@ -34,6 +34,7 @@ The document SHALL NOT assign a software safety class, risk score, or acceptabil
 - The selected scope and module roots used by the other dossier generators.
 - Each selected `software_description` record under FR-233 creates exactly one software-item section, keyed by its `software_id`.
 - The record's `architecture_part_ids` explicitly identifies its architecture `part` records. The selected architecture records also include `port`, `connection`, and `allocation` records whose declared owners or endpoints refer to those selected parts, plus architecture decision records whose ids appear in the software record's `architecture_decision_ids`.
+- If `architecture_part_ids` or `architecture_decision_ids` is absent or empty, the corresponding list is unstated under FR-233 and the section and final `Gaps` section SHALL identify it with `software_design_part_list_unstated` or `software_design_decision_list_unstated`, respectively. The gap is scoped to that software item even when other software-item sections have design sources.
 - Part, port, connection, allocation, and architecture decision record shapes follow spec-objects-architecture FR-007 and Quoin's existing FR-193 architecture source contract.
 
 ## Outputs
@@ -48,6 +49,12 @@ The document SHALL NOT assign a software safety class, risk score, or acceptabil
 - The generator SHALL associate parts with a software item only when their ids occur in that record's `architecture_part_ids` list.
 - The generator SHALL associate architecture decisions with a software item only when their ids occur in that record's `architecture_decision_ids` list.
 - The generator SHALL associate a port, connection, or allocation with a software item only through the selected part ids and the relationships defined by spec-objects-architecture FR-007.
+- The generator SHALL emit `software_design_part_list_unstated` for a software item's absent or empty `architecture_part_ids` list.
+- The generator SHALL emit `software_design_decision_list_unstated` for a software item's absent or empty `architecture_decision_ids` list.
+- Each list gap SHALL identify its software item's `software_id` and source-record id in the final `Gaps` section.
+- The corresponding software-item section SHALL visibly mark the list as unstated.
+- An explicitly empty list SHALL have the same unstated semantics as an absent list.
+- Quoin SHALL NOT interpret either form as evidence that no relationship exists.
 - The generator SHALL preserve authored design values.
 - The generator SHALL NOT infer a relationship, interface, allocation, verification result, or design property.
 - When an explicit part or decision id, or a selected relationship, refers to a missing or wrong-kind record, the document SHALL report a `source_reference_unresolved` gap naming the source record, referenced id, and expected artifact type.
@@ -64,9 +71,10 @@ The document SHALL NOT assign a software safety class, risk score, or acceptabil
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-231-AC-1 | Given a selected `software_description` record with explicit `architecture_part_ids` and `architecture_decision_ids`, `software-design-specification` emits one `DOS-SDS` section for its `software_id` and includes only those parts and decisions and architecture records related to those parts. | Test |
-| FR-231-AC-2 | Given an absent design source or an unresolved or wrong-kind reference, `DOS-SDS` reports a gap and does not invent or render a valid relationship for it. | Test |
+| FR-231-AC-2 | For each selected software item whose `architecture_part_ids` or `architecture_decision_ids` list is absent or empty, `DOS-SDS` marks the corresponding list as unstated in that item's section and emits the matching `software_design_part_list_unstated` or `software_design_decision_list_unstated` gap naming the software id and source-record id, even when another software item has design sources. Absent and empty lists produce the same result, and no relationship is inferred. | Test |
 | FR-231-AC-3 | Given a design record with a safety class, risk score or acceptability value, the generator does not assign or change those values and makes no adequacy or compliance claim. | Test |
 | FR-231-AC-4 | Given two generations over the same records and selection, `DOS-SDS` is byte-identical and carries the exact producer name and version specified by FR-191 and FR-018. | Test |
+| FR-231-AC-5 | Given an absent design source or an unresolved or wrong-kind reference, `DOS-SDS` reports a gap and does not invent or render a valid relationship for it. | Test |
 
 ## Dependencies
 

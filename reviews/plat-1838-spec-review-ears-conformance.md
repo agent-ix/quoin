@@ -36,3 +36,7 @@ The engine check found no EARS or semantic-pattern warnings in the changed requi
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | No EARS conformance findings (placeholder). | - |
+
+## Dispositions
+
+No original findings required disposition; FND-001 is the no-findings placeholder. The round-1 EARS recheck included FR-233, updated FR-191, FR-229–FR-232, and StR-010. Scoped validation found these documents grammar-clean; no semantic EARS defect was identified.

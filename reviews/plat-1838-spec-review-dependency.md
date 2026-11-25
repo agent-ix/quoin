@@ -69,3 +69,11 @@ No cycle is present in the declared prerequisite edges.
 ## Evidence
 
 The Quoin catalog has no `software_description`, `documentation_level_decision`, or `device_description` object type, and the spec contains no source-model FR for these records. The new document generators therefore depend on an unowned source-contract prerequisite; define it or link to an existing validated contract before scheduling these feature requirements.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-233 now owns the input-record contract and is an explicit prerequisite of each consuming product-document requirement; the dependency order remains acyclic. After excerpt: `Downstream: FR-229, FR-230, and FR-232 consume these source records; FR-231 uses software_description.architecture_part_ids to select parts.` |
+
+Round-1 recheck classified FR-233 as enablement and FR-229–FR-232 as features. The graph is FR-018 → FR-191 / FR-233 → the consuming feature requirements, with no cycle.

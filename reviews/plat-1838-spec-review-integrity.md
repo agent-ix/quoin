@@ -39,3 +39,12 @@ The new FRs are linked to US-024 and FR-191, and their IDs, acceptance-criterion
 
 - FR-229 through FR-232 link to US-024 and extend FR-191, but none has a `traces_to` edge to StR-010. StR-010's need lists the prior requirements, architecture, trace, verification, SOUP, anomaly, risk, and release documents; its validation criteria cover M1/M2. It does not mention the four new M3 documents.
 - FR-191 Inputs says the common `--scope` and `--module` select anomaly, risk, threat-model, product, software, and device records. FR-230 consumes `documentation_level_decision` records and FR-231 consumes architecture records (`part`, `port`, `connection`, allocations, and architecture decision records), which that statement does not name.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The M3 requirements now trace directly to StR-010, and StR-010 names the four M3 documents and adds a matching validation criterion. After excerpt: `The software description, documentation-level decision, software design specification, and device description name the stable ids and record types of their source records and carry the running Quoin producer identity.` |
+| FND-002 | fixed | FR-191 now names FR-233 JSON records and the architecture records selected for FR-231 under the common selector statement. After excerpt: `In addition, --scope selects the dossier/sources/ JSON records defined by FR-233 and the architecture records part, port, connection, allocation, and architecture decision records used by FR-231.` |
+
+Round-1 recheck also examined FR-233 and the changed indexes. No additional integrity defect was identified. The new acceptance criteria remain untagged pending implementation.

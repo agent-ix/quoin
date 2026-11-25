@@ -84,6 +84,7 @@ The schema for each record kind SHALL reject additional members. Required fields
 - Quoin SHALL validate source-reference member shapes without requiring target records to resolve during schema validation.
 - The consuming dossier document SHALL report any `software_id` in a `documentation_level_decision` record that does not resolve to one selected `software_description` record using the `source_reference_unresolved` gap defined by FR-191.
 - The consuming dossier document SHALL report any reference in `architecture_part_ids`, `architecture_decision_ids`, `software_ids`, or `source_records` that does not resolve to one selected artifact of the stated id and kind using the `source_reference_unresolved` gap defined by FR-191.
+- The software-design-specification document SHALL report an absent or empty `architecture_part_ids` list as an unstated field using `software_design_part_list_unstated`, and an absent or empty `architecture_decision_ids` list using `software_design_decision_list_unstated`, as defined by FR-191 and FR-231.
 - Quoin SHALL preserve all person-authored values exactly.
 - Quoin SHALL NOT assign a documentation level, software safety class, criticality, risk score, or acceptability.
 - Quoin SHALL NOT infer or add a software-to-part or device-to-software association that no selected source record states.
