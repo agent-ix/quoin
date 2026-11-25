@@ -47,6 +47,12 @@ environment without checking out the source repository.
   exceeds that limit, the runner SHALL terminate and reap the case process and
   its descendants, record that case as `error` with detail identifying
   `timeout`, and continue with the remaining selected cases.
+- `quoin selftest --run` SHALL execute cases on Linux and macOS. On Windows or
+  an unknown or otherwise unsupported operating system, the command SHALL return an
+  `unsupported-platform` error before starting a case and SHALL NOT report a
+  case as passed. `quoin selftest --list` MAY list embedded cases on an
+  unsupported operating system; listing SHALL NOT imply that they can run
+  there.
 - The runner SHALL label a case `pass` only when all expected outputs match.
 - The runner SHALL label a case `fail` when an expected output does not match.
 - The runner SHALL label a case `error` when case execution fails.
@@ -97,6 +103,7 @@ environment without checking out the source repository.
 | FR-215-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
 | FR-215-AC-8 | Given `--out <path>`, the command writes the retained FR-216 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out` and with a repository evidence store, it writes those bytes to stdout; without a repository evidence store it rejects before starting any case. | Test |
 | FR-215-AC-9 | Given a quire-rs-owned case embedded by quire-cli, its source and trace tags remain in quire-rs and the listed case is evidence of test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
+| FR-215-AC-10 | Given `quoin selftest --run` on Linux or macOS, the runner executes selected cases; given Windows or another unsupported operating system, it returns `unsupported-platform` before starting any case and reports no case as passed. Listing embedded cases on an unsupported operating system does not report execution success. | Test |
 
 ## Dependencies
 

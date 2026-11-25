@@ -25,9 +25,10 @@ found.
 
 ## Outputs
 
-- A canonical JSON run record under `spec/evidence/runs/<suite>/<timestamp>.json`
-  when a repository evidence store is available, or at an explicit `--out`
-  path when no repository evidence store is available
+- A canonical JSON run record at `<evidence-store>/runs/<suite>/<timestamp>.json`,
+  where `<evidence-store>` is the nearest ancestor of the current working
+  directory containing `spec/evidence/`, or at an explicit `--out` path when
+  no repository evidence store is available
 - A link from each run record to the tool-validation report that consumes it
 
 ## Behavior
@@ -45,6 +46,14 @@ found.
   a run without `--out` before starting any case when no repository evidence
   store is available; it SHALL NOT silently emit a stdout-only, unretained
   result.
+- The runner SHALL locate a repository evidence store by walking from the
+  current working directory to its ancestors and selecting the nearest
+  directory containing `spec/evidence/`. It SHALL NOT invoke Git to locate the
+  store. It SHALL create `spec/evidence/runs/` and the suite directory when
+  they do not exist.
+- Each case result SHALL include the captured standard-error output in its
+  `stderr` member. The runner SHALL NOT compare standard-error output with
+  expected output or use it to determine the case status.
 - The run record SHALL identify the retained evidence location.
 - The run record SHALL NOT claim an unavailable or unexecuted tool passed.
 - The run record SHALL carry the external-tools configuration index reference
@@ -61,6 +70,8 @@ found.
 | FR-216-AC-3 | A run involving an external tool records the PLAT-1641 configuration index reference used by the run. | Test |
 | FR-216-AC-4 | A serialized run record contains no source commit digest, source revision pin, or report-content digest. | Test |
 | FR-216-AC-5 | Given no repository evidence store, `selftest --run --out <path>` retains the canonical run record at that path; without `--out`, the runner reports the missing retained destination and starts no case. | Test |
+| FR-216-AC-6 | Given nested ancestors with `spec/evidence/`, the recorder writes under the nearest one without invoking Git and creates its `runs/<suite>/` directories; when no ancestor has `spec/evidence/`, it uses required `--out`. | Test |
+| FR-216-AC-7 | Given a case that writes to stderr while matching its expected exit code, stdout, and files, the run record contains the captured stderr and the case still passes. | Test |
 
 ## Dependencies
 
