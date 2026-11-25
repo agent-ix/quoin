@@ -223,6 +223,7 @@ index; the files are authoritative.
 - [FR-230](./functional/FR-230-dossier-documentation-level-decision.md) — record a person-authored documentation-level decision.
 - [FR-231](./functional/FR-231-dossier-software-design-specification.md) — render selected software design records.
 - [FR-232](./functional/FR-232-dossier-device-description.md) — identify the device from its authored records.
+- [FR-233](./functional/FR-233-dossier-product-source-record-contract.md) — define the JSON input contract for software, device, and documentation-level decision records.
 
 **Semantic-module architecture**
 

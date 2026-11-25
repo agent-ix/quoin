@@ -212,3 +212,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-230: The dossier records the person-authored software documentation-level decision](./FR-230-dossier-documentation-level-decision.md)
 - [FR-231: The dossier software design specification renders the selected software design records](./FR-231-dossier-software-design-specification.md)
 - [FR-232: The dossier device description identifies the device from its authored records](./FR-232-dossier-device-description.md)
+- [FR-233: Define the dossier product-source record contract](./FR-233-dossier-product-source-record-contract.md)

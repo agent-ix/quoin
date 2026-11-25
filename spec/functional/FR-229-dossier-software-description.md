@@ -7,13 +7,17 @@ relationships:
     type: "satisfies"
   - target: "ix://agent-ix/quoin/FR-191"
     type: "extends"
+  - target: "ix://agent-ix/quoin/FR-233"
+    type: "depends_on"
+  - target: "ix://agent-ix/quoin/StR-010"
+    type: "traces_to"
 ---
 
 # FR-229: The dossier software description identifies the software and its recorded purpose
 
 ## Description
 
-When `quoin dossier generate` selects `software-description`, Quoin SHALL write a software description from the selected repository's person-authored `software_description` records.
+When `quoin dossier generate` selects `software-description`, Quoin SHALL write a software description from selected `software_description` records valid under [FR-233](./FR-233-dossier-product-source-record-contract.md).
 
 The document SHALL identify the software by the stable identifiers and names stated in those records and describe only their recorded purpose, functions, operating environment, and interfaces.
 
@@ -26,8 +30,7 @@ The generator SHALL NOT infer product purpose, intended use, safety class, criti
 ## Inputs
 
 - The selected scope and module roots used by the other dossier generators.
-- Person-authored `software_description` records in the selected scope. Each record has the artifact `id` and `type`, a stable `software_id`, a `name`, and optional `purpose`, `functions`, `operating_environment`, and `interfaces` fields.
-- Each value in `functions` and `interfaces` names a source artifact id and type when it is backed by another selected record.
+- Selected `software_description` source records from `dossier/sources/software_description/`, as defined by [FR-233](./FR-233-dossier-product-source-record-contract.md).
 
 ## Outputs
 
@@ -43,20 +46,22 @@ The generator SHALL NOT infer product purpose, intended use, safety class, criti
 - When a source record is unreadable or invalid, the command SHALL NOT write a partial document.
 - When no selected record identifies software, the document SHALL contain a `no_software_description_source` gap.
 - When no selected record identifies software, the document SHALL be incomplete.
+- When a selected record omits `purpose` or `operating_environment`, or has an absent or empty `functions` or `interfaces` array, the document SHALL emit one `software_description_field_unstated` gap for each unstated field. An empty string is an invalid source value under FR-233 and causes a source failure.
 - The document SHALL identify the producing tool by the exact `producer_identity` required by FR-191.
-- The document SHALL identify source records by their stable ids and artifact types.
+- The document SHALL identify source records by their stable ids and `record_type` values.
 - The document SHALL NOT claim a source revision, commit, digest, or provenance that its sources do not provide.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-229-AC-1 | Given selected valid product and software records, `software-description` emits `DOS-SW` with the recorded identifiers, names, purpose, functions, operating environment and interfaces, and lists each contributing source id and type. | Test |
-| FR-229-AC-2 | Given a missing optional value or no software-identifying record, `DOS-SW` preserves stated values, emits the corresponding gap, and invents no value. | Test |
-| FR-229-AC-3 | Given an unreadable selected source record, generation reports the source failure and leaves existing output files unchanged. | Test |
-| FR-229-AC-4 | Given two generations over the same records, `DOS-SW` is byte-identical and carries the exact producer name and version specified by FR-191 and FR-018. | Test |
+| FR-229-AC-1 | Given selected valid `software_description` records, `software-description` emits `DOS-SW` with each record's `software_id`, name, present optional fields, and source id and `record_type`. | Test |
+| FR-229-AC-2 | Given any selected software record that omits `purpose` or `operating_environment`, or has an absent or empty `functions` or `interfaces` array, `DOS-SW` emits one `software_description_field_unstated` gap per unstated field; an empty string instead causes a source failure under FR-233. | Test |
+| FR-229-AC-3 | Given no selected `software_description` record, `DOS-SW` emits `no_software_description_source` and is incomplete. | Test |
+| FR-229-AC-4 | Given an unreadable or invalid selected source record, generation reports the source failure and leaves existing output files unchanged. | Test |
+| FR-229-AC-5 | Given two generations over the same records, `DOS-SW` is byte-identical and carries the exact producer name and version specified by FR-191 and FR-018. | Test |
 
 ## Dependencies
 
-- **Upstream**: [US-024](../usecase/US-024-hand-a-reviewer-dossier-documents-generated-from-records.md), [FR-191](./FR-191-dossier-command.md), and selected authored product and software records.
+- **Upstream**: [US-024](../usecase/US-024-hand-a-reviewer-dossier-documents-generated-from-records.md), [FR-191](./FR-191-dossier-command.md), and [FR-233](./FR-233-dossier-product-source-record-contract.md).
 - **Downstream**: [FR-191](./FR-191-dossier-command.md) registers and orders this document kind.
