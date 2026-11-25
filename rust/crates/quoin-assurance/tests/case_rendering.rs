@@ -28,6 +28,34 @@ mod render_hop;
 use crate::fixtures::{bundle, doc, input, obligation};
 use crate::render_hop::render;
 
+/// Context is displayed beneath its owner in both human-readable views.
+#[trace("FR-223-AC-6")]
+#[test]
+fn assurance_context_renders_under_its_owning_claim() {
+    let mut case = build_case(&input(
+        vec![doc("StR-901", "StR", "Claim", &[])],
+        vec![],
+        vec![],
+    ));
+    case.claims[0]
+        .context
+        .push(quoin_assurance::case::CaseNode {
+            id: "HZ-901".to_owned(),
+            kind: NodeKind::Context,
+            statement: "Hazard HZ-901: a source-owned hazard".to_owned(),
+            status: NodeStatus::Supported,
+            because: None,
+            evidence: None,
+            analysis_evidence: None,
+            children: Vec::new(),
+            context: Vec::new(),
+        });
+    let rendered = render(&case);
+    assert!(rendered.contains("HZ-901: a source-owned hazard"));
+    let graph = mermaid(&rendered);
+    assert!(graph.contains("StR_901 -.-> HZ_901"));
+}
+
 /// The contents of the first mermaid fence, exclusive of the fences.
 fn mermaid(rendered: &str) -> String {
     rendered
