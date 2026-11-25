@@ -218,14 +218,20 @@ impl Fixture {
         self.dir.path()
     }
 
-    fn quoin(&self, arguments: &[&str]) -> Output {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+    fn command(&self, executable: &str) -> Command {
+        let mut command = Command::new(executable);
         command
-            .args(arguments)
             .current_dir(self.repo())
             .env("IX_HOME", self.home.path())
             .env("GIT_CEILING_DIRECTORIES", self.repo().parent().unwrap());
-        command.output().expect("the native quoin binary runs")
+        command
+    }
+
+    fn quoin(&self, arguments: &[&str]) -> Output {
+        self.command(env!("CARGO_BIN_EXE_quoin"))
+            .args(arguments)
+            .output()
+            .expect("the native quoin binary runs")
     }
 
     fn ok(&self, arguments: &[&str]) -> String {
@@ -448,6 +454,168 @@ fn populated() -> Fixture {
     // The binding stays; the run it names does not.
     std::fs::remove_dir_all(fixture.repo().join("spec/evidence/runs/legacy")).unwrap();
     fixture
+}
+
+const DERIVED_ASSURANCE: [&str; 9] = [
+    "assurance",
+    "--repo",
+    ".",
+    "--module",
+    ".",
+    "--claim-type",
+    "FR",
+    "--as-of",
+    "2026-01-01T00:00:00Z",
+];
+
+#[trace("FR-221-AC-3", "FR-228-AC-8")]
+#[test]
+fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
+    let fixture = populated();
+    let run_path = "spec/evidence/runs/unit/2026-01-01T00~3A00~3A00Z.json";
+    let run = std::fs::read(fixture.repo().join(run_path)).expect("retained run record");
+    let digest = quoin_store::attachment::sha256_hex(&run);
+    let mut args = DERIVED_ASSURANCE.to_vec();
+    args.push("--gsn");
+    let gsn: Value = serde_json::from_str(&fixture.ok(&args)).expect("validated GSN");
+    let nodes = gsn["nodes"].as_array().expect("GSN nodes");
+    let healthy = nodes
+        .iter()
+        .find(|node| node["source"] == "FR-001-AC-1")
+        .expect("healthy solution");
+    let open = nodes
+        .iter()
+        .find(|node| node["source"] == "FR-001-AC-2")
+        .expect("missing run obligation");
+    assert_eq!(healthy["kind"], "solution");
+    assert_eq!(
+        healthy["evidence"]["suites"],
+        serde_json::json!([{"suite":"unit","at":"2026-01-01T00:00:00Z"}])
+    );
+    assert_eq!(open["kind"], "goal");
+    assert_eq!(open["status"], "open");
+    assert_eq!(open["undeveloped"], true);
+    assert_eq!(
+        open["evidence"]["suites"],
+        serde_json::json!([{"suite":"legacy"}])
+    );
+    assert_eq!(open["evidence"]["verdict"], "stale");
+    assert!(
+        open["openReason"]
+            .as_str()
+            .unwrap()
+            .contains("no recorded run"),
+        "{open}"
+    );
+    let open_id = open["id"].as_str().expect("open goal id");
+    assert!(
+        gsn["edges"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|edge| edge["from"] != open_id || edge["kind"] != "supported_by")
+    );
+
+    args.pop();
+    args.push("--sacm");
+    let xmi = fixture.ok(&args);
+    assert!(xmi.contains(&format!("gid=\"sha256:{digest}\"")), "{xmi}");
+    assert!(
+        xmi.contains(&format!("referencedArtifactElement=\"artifact-{digest}\"")),
+        "{xmi}"
+    );
+    assert!(
+        xmi.contains(&format!("xmi:id=\"artifact-{digest}\"")),
+        "{xmi}"
+    );
+    assert!(xmi.contains(&format!("content=\"{run_path}\"")), "{xmi}");
+    assert!(xmi.contains("content=\"unit\""), "{xmi}");
+    assert!(xmi.contains("version=\"2026-01-01T00:00:00Z\""), "{xmi}");
+    assert!(xmi.contains("content=\"verdict: bound\""), "{xmi}");
+    assert!(xmi.contains("content=\"FR-001-AC-2\""), "{xmi}");
+    assert!(!xmi.contains("spec/evidence/runs/legacy/"), "{xmi}");
+    let healthy_id = healthy["id"].as_str().expect("healthy solution id");
+    assert!(
+        xmi.lines()
+            .any(|element| element.contains("sacm:AssertedEvidence")
+                && element.contains(&format!("source=\"{healthy_id}\""))
+                && element.contains("assertionDeclaration=\"asserted\"")),
+        "{xmi}"
+    );
+    assert!(
+        xmi.lines().any(|element| element.contains("sacm:Claim")
+            && element.contains(&format!("xmi:id=\"{open_id}\""))
+            && element.contains("assertionDeclaration=\"needsSupport\"")),
+        "{xmi}"
+    );
+    let open_ref = format!("{open_id}-evidence");
+    assert!(
+        xmi.lines()
+            .any(|element| element.contains("sacm:ArtifactReference")
+                && element.contains(&format!("xmi:id=\"{open_ref}\""))
+                && !element.contains("referencedArtifactElement")),
+        "{xmi}"
+    );
+    assert!(
+        xmi.lines()
+            .any(|element| element.contains("sacm:AssertedEvidence")
+                && element.contains(&format!("source=\"{open_ref}\""))
+                && element.contains(&format!("target=\"{open_id}\""))
+                && element.contains("isCounter=\"false\"")
+                && element.contains("assertionDeclaration=\"needsSupport\"")),
+        "{xmi}"
+    );
+    assert!(
+        xmi.contains("not supporting: stale, missing run for legacy (no observation time)"),
+        "{xmi}"
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[trace("NFR-045-M-1")]
+#[test]
+#[ignore = "Linux offline assurance lane requires strace with network syscall fault injection"]
+fn sacm_and_gsn_derived_cli_make_no_network_syscalls() {
+    let fixture = populated();
+    let trace_path = fixture.home.path().join("network.trace");
+    for flag in ["--gsn", "--sacm"] {
+        let mut command = fixture.command("strace");
+        command
+            .args(["-f", "-qq", "-e", "trace=%network", "-e", "signal=none"])
+            .args(["-e", "inject=%network:error=ENETDOWN", "-o"])
+            .arg(&trace_path)
+            .arg("--")
+            .arg(env!("CARGO_BIN_EXE_quoin"))
+            .args(DERIVED_ASSURANCE)
+            .arg(flag);
+        if flag == "--sacm" {
+            command.args(["--sacm-report", "sacm-report.json"]);
+        }
+        let output = command.output().expect("strace runs the native exporter");
+        assert_eq!(
+            output.status.code(),
+            Some(0),
+            "{flag}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let trace = std::fs::read_to_string(&trace_path).expect("strace creates its syscall log");
+        assert!(
+            trace.is_empty(),
+            "{flag} attempted a network syscall:\n{trace}"
+        );
+        let rendered = String::from_utf8(output.stdout).expect("UTF-8 export");
+        assert!(rendered.contains("FR-001-AC-1"), "{flag}: {rendered}");
+        let format = if flag == "--gsn" {
+            "quoin.gsn-case/v1"
+        } else {
+            "sacm:AssuranceCasePackage"
+        };
+        assert!(rendered.contains(format), "{flag}: {rendered}");
+    }
+    let report = std::fs::read(fixture.repo().join("sacm-report.json"))
+        .expect("SACM report retained offline");
+    let report: Value = serde_json::from_slice(&report).expect("JSON report");
+    assert!(report["unmapped"].is_array() && report["unreachable"].is_array());
 }
 
 fn statuses(matrix: &Value) -> BTreeMap<String, String> {

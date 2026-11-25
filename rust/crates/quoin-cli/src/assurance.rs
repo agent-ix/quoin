@@ -3,6 +3,10 @@
 
 //! Rust adapter for the retained read-only `quoin assurance` view.
 
+mod case_approval;
+
+use std::path::Path;
+
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
@@ -39,6 +43,7 @@ pub(crate) fn command() -> Command {
         )
         .arg(Arg::new("as-of").long("as-of"))
         .args(crate::formal_rules::trust_arguments())
+        .args(case_approval::options())
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
         .arg(
             Arg::new("gsn")
@@ -53,6 +58,21 @@ pub(crate) fn command() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("sacm")
+                .long("sacm")
+                .help("Export the validated case as SACM 2.3 XMI.")
+                .action(ArgAction::SetTrue)
+                .conflicts_with_all(["json", "gsn", "gsn-diagram"]),
+        )
+        .arg(
+            Arg::new("sacm-report")
+                .long("sacm-report")
+                .value_name("PATH")
+                .help("Write the unmapped and unreachable items from the SACM export as JSON.")
+                .requires("sacm")
+                .conflicts_with_all(["json", "gsn", "gsn-diagram"]),
+        )
+        .arg(
             Arg::new("validation-report")
                 .long("validation-report")
                 .value_name("FILE")
@@ -61,6 +81,12 @@ pub(crate) fn command() -> Command {
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    if case_approval::supplied(arguments)
+        && !arguments.get_flag("gsn")
+        && !arguments.get_flag("sacm")
+    {
+        return Err("case approval options require --gsn or --sacm".to_owned());
+    }
     if arguments.get_flag("gsn") && arguments.get_flag("json") {
         return Err("--gsn cannot be combined with --json".to_owned());
     }
@@ -154,9 +180,9 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
     if !view.outcome.carries_payload() {
         return Ok(view);
     }
-    if arguments.get_flag("gsn") || arguments.get_flag("gsn-diagram") {
+    if exports_gsn_model(arguments) {
         let model = quoin_assurance::gsn::from_authored(&view.payload)?;
-        return render_gsn_response(&model, arguments.get_flag("gsn-diagram"));
+        return render_case_export(model, Path::new(&repo), arguments);
     }
     present(
         "assurance.render_authored_argument",
@@ -250,7 +276,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     if !case.outcome.carries_payload() {
         return Ok(case);
     }
-    if arguments.get_flag("gsn") || arguments.get_flag("gsn-diagram") {
+    if exports_gsn_model(arguments) {
         let assurance: quoin_assurance::AssuranceCase =
             serde_json::from_value(case.payload.clone()).map_err(|error| {
                 format!("assurance.build_case returned an invalid case: {error}")
@@ -268,13 +294,69 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             &run_records,
             validation_report.as_ref(),
         )?;
-        return render_gsn_response(&model, arguments.get_flag("gsn-diagram"));
+        return render_case_export(model, Path::new(&repo), arguments);
     }
     present(
         "assurance.render_case",
         &case.payload,
         arguments.get_flag("json"),
     )
+}
+
+fn exports_gsn_model(arguments: &ArgMatches) -> bool {
+    ["gsn", "gsn-diagram", "sacm"]
+        .iter()
+        .any(|flag| arguments.get_flag(flag))
+}
+
+fn render_case_export(
+    mut model: quoin_assurance::GsnCase,
+    repo: &Path,
+    arguments: &ArgMatches,
+) -> Result<Response, String> {
+    let approval_warning = case_approval::attach(&mut model, repo, arguments);
+    let mut response = if arguments.get_flag("sacm") {
+        render_sacm_response(
+            &model,
+            repo,
+            arguments.get_one::<String>("sacm-report").map(Path::new),
+        )?
+    } else {
+        render_gsn_response(&model, arguments.get_flag("gsn-diagram"))?
+    };
+    if let Some(warning) = approval_warning {
+        response.payload["warning"] = match response.payload["warning"].as_str() {
+            Some(existing) => format!("{existing}\n{warning}").into(),
+            None => warning.into(),
+        };
+    }
+    Ok(response)
+}
+
+fn render_sacm_response(
+    model: &quoin_assurance::GsnCase,
+    repo: &Path,
+    report_path: Option<&Path>,
+) -> Result<Response, String> {
+    use quoin_evidence::source::DiskEvidence;
+    use quoin_store::store::{Content, StorePath, publish};
+
+    let export = quoin_assurance::sacm::export(model, &DiskEvidence::new(repo))
+        .map_err(|error| error.to_string())?;
+    let rendered = String::from_utf8(export.xmi).map_err(|error| error.to_string())?;
+    let diagnostics: Vec<_> = export.report.diagnostics().collect();
+    if let Some(path) = report_path {
+        let report =
+            serde_json::to_vec_pretty(&export.report).map_err(|error| error.to_string())?;
+        let destination = Path::new(".").join(path);
+        publish(&StorePath::Named(destination), Content::Artifact(&report)).map_err(|error| {
+            format!("could not write SACM report at {}: {error}", path.display())
+        })?;
+    }
+    let warning = (!diagnostics.is_empty()).then(|| diagnostics.join("\n"));
+    Ok(Response::ok(
+        serde_json::json!({ "rendered": rendered, "warning": warning }),
+    ))
 }
 
 fn render_gsn_response(
@@ -296,7 +378,7 @@ fn render_gsn_response(
     reason = "invalid test graph should report why it was refused"
 )]
 mod gsn_refusal_tests {
-    use super::render_gsn_response;
+    use super::{render_gsn_response, render_sacm_response};
     use ix_trace_rs::trace;
     use quoin_assurance::{GsnCase, GsnEdge, GsnNode};
 
@@ -334,6 +416,7 @@ mod gsn_refusal_tests {
                 roots: vec![to.to_owned()],
                 unreachable: vec![],
                 unmapped: vec![],
+                signed_acceptance: None,
             };
             let error = render_gsn_response(&model, false).expect_err("invalid graph is refused");
             let mut stdout = Vec::new();
@@ -347,6 +430,86 @@ mod gsn_refusal_tests {
             assert!(diagnostic.contains(from), "{diagnostic}");
             assert!(diagnostic.contains(to), "{diagnostic}");
         }
+    }
+
+    #[trace("FR-226-AC-6")]
+    #[test]
+    fn sacm_wf6_failure_emits_no_xmi_or_report() {
+        let repo = tempfile::tempdir().expect("scratch repository");
+        let report_path = repo.path().join("sacm-report.json");
+        let model = GsnCase {
+            format: "quoin.gsn-case/v1".to_owned(),
+            nodes: vec![],
+            edges: vec![GsnEdge {
+                kind: "supported_by".to_owned(),
+                from: "G1".to_owned(),
+                to: "Sn2".to_owned(),
+            }],
+            roots: vec![],
+            unreachable: vec![],
+            unmapped: vec![],
+            signed_acceptance: None,
+        };
+        let error = render_sacm_response(&model, repo.path(), Some(&report_path))
+            .expect_err("invalid model is refused");
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let exit =
+            crate::emit_error_to(crate::ShellError::command(error), &mut stdout, &mut stderr);
+        assert_ne!(exit, std::process::ExitCode::SUCCESS);
+        assert!(stdout.is_empty());
+        assert!(!report_path.exists());
+        let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");
+        assert!(
+            diagnostic.contains("WF-6") && diagnostic.contains("G1") && diagnostic.contains("Sn2")
+        );
+    }
+
+    #[trace("FR-227-AC-1", "FR-227-AC-2", "FR-227-AC-3")]
+    #[test]
+    fn sacm_renders_one_sorted_diagnostic_and_json_item_per_omitted_source() {
+        let repo = tempfile::tempdir().expect("scratch repository");
+        let report_path = repo.path().join("sacm-report.json");
+        let unmapped = quoin_assurance::Unmapped {
+            source: "unmapped-source".to_owned(),
+            reason: "no defined mapping".to_owned(),
+        };
+        let model = GsnCase {
+            format: "quoin.gsn-case/v1".to_owned(),
+            nodes: vec![node("G1", "goal")],
+            edges: vec![],
+            roots: vec!["G1".to_owned()],
+            unreachable: vec![
+                "FR-270".to_owned(),
+                "FR-260".to_owned(),
+                "FR-260".to_owned(),
+            ],
+            unmapped: vec![unmapped.clone(), unmapped],
+            signed_acceptance: None,
+        };
+        let response = render_sacm_response(&model, repo.path(), Some(&report_path))
+            .expect("valid model exports");
+        assert_eq!(
+            response.payload["warning"],
+            "unmapped: unmapped-source: no defined mapping\nunreachable: FR-260\nunreachable: FR-270"
+        );
+        let xmi = response.payload["rendered"].as_str().expect("rendered XMI");
+        assert!(
+            !xmi.contains("unmapped-source") && !xmi.contains("FR-260") && !xmi.contains("FR-270")
+        );
+        let first_bytes = std::fs::read(&report_path).expect("read retained report");
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&first_bytes).expect("valid report"),
+            serde_json::json!({
+                "unmapped": [{"source": "unmapped-source", "reason": "no defined mapping"}],
+                "unreachable": ["FR-260", "FR-270"],
+            })
+        );
+        render_sacm_response(&model, repo.path(), Some(&report_path)).expect("repeat export");
+        assert_eq!(
+            first_bytes,
+            std::fs::read(report_path).expect("read repeat report")
+        );
     }
 
     /// A failed export aggregates violations, names every affected id, and
@@ -379,6 +542,7 @@ mod gsn_refusal_tests {
             roots: vec!["G1".to_owned()],
             unreachable: vec![],
             unmapped: vec![],
+            signed_acceptance: None,
         };
         let error = render_gsn_response(&model, false).expect_err("invalid model is refused");
         let mut stdout = Vec::new();

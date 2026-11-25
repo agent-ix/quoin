@@ -583,10 +583,38 @@ pub fn engineering_assurance_call(
     subcommand: &str,
     request: &serde_json::Value,
 ) -> Result<std::process::Output, String> {
-    use std::io::Write as _;
-    use std::process::{Command, Stdio};
+    call_engineering_assurance(
+        &mut std::process::Command::new(executable),
+        subcommand,
+        request,
+    )
+}
 
-    let mut child = Command::new(executable)
+/// Run one Engineering Assurance operation with Git transports disabled.
+///
+/// # Errors
+/// The verifier process could not be started, fed, or awaited.
+pub fn engineering_assurance_call_offline(
+    executable: &Path,
+    subcommand: &str,
+    request: &serde_json::Value,
+) -> Result<std::process::Output, String> {
+    let mut command = std::process::Command::new(executable);
+    command
+        .env("GIT_ALLOW_PROTOCOL", "")
+        .env("GIT_NO_LAZY_FETCH", "1");
+    call_engineering_assurance(&mut command, subcommand, request)
+}
+
+fn call_engineering_assurance(
+    command: &mut std::process::Command,
+    subcommand: &str,
+    request: &serde_json::Value,
+) -> Result<std::process::Output, String> {
+    use std::io::Write as _;
+    use std::process::Stdio;
+
+    let mut child = command
         .args([subcommand, "--request", "-"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

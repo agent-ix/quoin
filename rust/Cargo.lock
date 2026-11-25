@@ -3045,6 +3045,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41b1177fdf999d2321d3fb46ff47159d9c1fb9ad66a4879f8c50a0b504615e9b"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "quire-canonical"
 version = "0.3.0"
 source = "git+https://github.com/agent-ix/quire-canonical?branch=main#7d2f8389d01fcbf318e658746015b85a31526cc9"
@@ -3136,6 +3145,7 @@ version = "0.31.1"
 dependencies = [
  "engineering-assurance",
  "ix-trace-rs",
+ "quick-xml",
  "quoin-evidence",
  "quoin-evidence-types",
  "quoin-finding-types",
@@ -3144,6 +3154,8 @@ dependencies = [
  "schemars 1.2.2",
  "serde",
  "serde_json",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]
@@ -3230,6 +3242,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "serde_json_canonicalizer",
  "signal-hook",
  "tempfile",
  "thiserror",

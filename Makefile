@@ -89,6 +89,13 @@ test-real:
 	@test -n "$(QUOIN_TEST_MMDR)" || { echo "test-real: QUOIN_TEST_MMDR=<path> is required"; exit 1; }
 	cd $(RUST_DIR) && QUOIN_TEST_MMDR="$(QUOIN_TEST_MMDR)" cargo test --locked -p quoin-assurance --test gsn_mmdr -- --ignored
 
+.PHONY: test-sacm-metamodel
+test-sacm-metamodel:
+	@test -n "$${QUOIN_SACM_METAMODEL:-}" || { echo "QUOIN_SACM_METAMODEL must name the external OMG SACM 2.3 metamodel XML" >&2; exit 1; }
+	@model="$$QUOIN_SACM_METAMODEL"; \
+	  case "$$model" in /*) ;; *) model="$(CURDIR)/$$model";; esac; \
+	  cd "$(RUST_DIR)" && QUOIN_SACM_METAMODEL="$$model" cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-assurance --test tc_sacm_export sacm_uses_normative_metamodel -- --ignored
+
 mutation-test:
 	python3 tests/scripts/behavioral_mutation_test.py
 
