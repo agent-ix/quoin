@@ -101,7 +101,7 @@ environment without checking out the source repository.
 | FR-215-AC-1 | Given a listed case, `quoin selftest --run` executes its script using the installed binary and records a result for the case. | Test |
 | FR-215-AC-2 | Given an expected stdout file that differs from actual stdout by one byte, the case result is `fail` and names the case id and its traced criteria. | Test |
 | FR-215-AC-3 | Given a case process that exits non-zero or cannot execute, the result is respectively `fail` or `error`, and the command exits non-zero. | Test |
-| FR-215-AC-4 | Given a high-process-risk FR without a case traced to one of its acceptance criteria, the coverage check names that FR as uncovered. | Test |
+| FR-215-AC-4 | Given a high-process-risk FR without a self-test case traced to one of its acceptance criteria, the PLAT-1640 validation-kit trace-coverage check names that FR as uncovered. | Test |
 | FR-215-AC-5 | Given a test case without a trace marker, `quire matrix --strict` over `selftest/` reports the case as untagged. | Test |
 | FR-215-AC-6 | Given no `--case` option, `quoin selftest --run` runs every embedded case; given repeated `--case <id>` options, it runs only the named cases once each in embedded declaration order; an unknown id is rejected before any case starts and is named in the error. | Test |
 | FR-215-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
@@ -113,3 +113,4 @@ environment without checking out the source repository.
 
 - **Upstream**: [FR-112](./FR-112-npm-distribution-from-release-assets.md) defines the shipped quoin binary; [FR-030](./FR-030-evidence-store.md) defines the evidence store used for retained results.
 - **Downstream**: [FR-216](./FR-216-selftest-run-record.md) records each run; [FR-217](./FR-217-validation-report.md) presents its results.
+- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the validation-kit trace-coverage check in FR-215-AC-4; that check is outside the `quoin selftest` runner scope.
