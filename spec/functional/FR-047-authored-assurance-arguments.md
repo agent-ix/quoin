@@ -56,7 +56,7 @@ verified.
 | FR-047-AC-7 | An authored instant naming a day, hour, minute or second that does not exist is refused, rather than rolled forward into a different instant that then decides a reported status. | Test |
 | FR-047-AC-8 | The top claim is reported unbacked — kept open, with a stated reason — when it has no evidence references, when a cited reference does not resolve in the caller's evidence index, or when a cited reference is recorded stale or vacuous; every failing reference is reported, and an evidence index naming one reference twice is refused. | Test |
 | FR-047-AC-9 | When an authored challenge's current view status is open, `--gsn` exports it as a `counter_claim` node connected to its target by a `challenges` edge, never as a context node; the top claim remains open. | Test |
-| FR-047-AC-10 | When an authored challenge is open, the SACM export retains it as a counter-claim Claim with a counter inference to its target; signed acceptance metadata does not alter its open status. | Test |
+| FR-047-AC-10 | When an authored challenge is open, SACM retains its counter-claim Claim and either its counter inference or its unmapped strategy-target diagnostic as specified by [FR-226](./FR-226-sacm-export.md). The top claim remains open with or without signed acceptance metadata. | Test |
 
 ## Constraints
 

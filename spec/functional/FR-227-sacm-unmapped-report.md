@@ -19,6 +19,8 @@ decide acceptance, risk, or compliance.
 ## Inputs
 
 - The `unreachable` and `unmapped` lists in the validated GSN model.
+- Node or edge omissions made by the SACM mapping in
+  [FR-226](./FR-226-sacm-export.md).
 - An optional `--sacm-report <PATH>` output path.
 
 ## Outputs
@@ -31,12 +33,16 @@ decide acceptance, risk, or compliance.
 
 - The SACM exporter SHALL write an unmapped item to stderr as
   `unmapped: <source>: <reason>`.
+- For an unmapped edge, the item SHALL identify the origin node's Quoin
+  source id in `source`. The `reason` SHALL name the edge kind, the target
+  node's Quoin source id and the mapping limit.
 - The SACM exporter SHALL write an unreachable requirement to stderr as
   `unreachable: <id>`.
 - The JSON report SHALL preserve source ids and reasons, use deterministic
   ordering, and include every reported item exactly once.
 - The SACM XMI SHALL contain no element invented to stand in for an unreachable
-  or unmapped item.
+  or unmapped item. The exporter SHALL NOT replace an omitted edge with a
+  different relationship or use it to connect otherwise mapped endpoints.
 - If the report write fails, then the command SHALL return an error.
 - When the report write fails, the command SHALL NOT claim that the report was
   retained.
@@ -49,6 +55,7 @@ decide acceptance, risk, or compliance.
 | FR-227-AC-2 | Unreachable and unmapped source items produce no SACM stand-in elements and are not silently dropped. | Test |
 | FR-227-AC-3 | Repeating the report for unchanged input produces byte-identical JSON with deterministic item order. | Test |
 | FR-227-AC-4 | An unwritable report path returns an error and does not report successful report retention. | Test |
+| FR-227-AC-5 | Exporting an authored goal → strategy → strategy → goal chain via `quoin assurance --argument <ID> --sacm --sacm-report <PATH>` retains the two Claims and both ArgumentReasoning elements. Stderr and the JSON report name both ends of the omitted nested edge and explain the omission. No inference or evidence relationship crosses the omitted edge. An unrelated goal → strategy → goal path still yields its own inference. | Test |
 
 ## Dependencies
 

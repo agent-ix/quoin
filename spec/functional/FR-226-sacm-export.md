@@ -48,22 +48,41 @@ build a second, independent mapping from the corpus.
   only when its source GSN node is not open.
 - When a goal is undeveloped or open, the exporter SHALL mark its SACM Claim
   as needing support and SHALL NOT assert that Claim.
-- A strategy SHALL map to ArgumentReasoning. A `supported_by` relation through
-  a strategy SHALL map to an AssertedInference connecting the source and
-  target Claims and identifying that reasoning. A direct goal-to-goal support
-  relation SHALL map to an AssertedInference without a reasoning element.
-- A solution SHALL map to an ArtifactReference linked to its source Claim by
-  AssertedEvidence; its Artifact target and content identity are specified by
+- A strategy SHALL map to ArgumentReasoning. A direct goal-to-goal
+  `supported_by` edge SHALL map to an AssertedInference from the child Claim
+  to the parent Claim. A two-edge goal-to-strategy-to-goal path SHALL map to
+  the same Claim endpoints with `reasoning` set to that strategy's
+  ArgumentReasoning.
+- A direct goal-to-solution `supported_by` edge SHALL map to an
+  AssertedEvidence from the solution's ArtifactReference to the goal's Claim.
+  A two-edge goal-to-strategy-to-solution path SHALL map to the same endpoints
+  with `reasoning` set to that strategy's ArgumentReasoning. The content and
+  declaration of evidence relations follow
   [FR-228](./FR-228-sacm-evidence-artifact-content-identity.md).
+- An open derived obligation goal with `LeafEvidence` SHALL retain its Claim.
+  The exporter SHALL add an ArtifactReference for this evidence and an
+  AssertedEvidence from that reference to the Claim, as specified by
+  [FR-228](./FR-228-sacm-evidence-artifact-content-identity.md).
+- The exporter SHALL report a strategy-to-strategy support edge as unmapped.
+  When a support edge participates in none of the direct or two-edge mappings
+  above, the exporter SHALL report it as unmapped. It SHALL NOT traverse an
+  unmapped edge to construct an inference or evidence relation. Independently
+  representable paths still map.
 - A context SHALL map to an ArtifactReference linked by AssertedContext. An
   assumption SHALL map to a Claim with an assumed declaration and an
   AssertedContext link. A justification SHALL map to a Claim with an asserted
   declaration and an AssertedContext link to the Claim or ArgumentReasoning it
   justifies.
-- A counter-claim SHALL map to a Claim marked as needing support and an
-  AssertedInference with `isCounter=true` from that Claim to the challenged
-  Claim. It SHALL NOT map as contextual evidence or support. The associated
-  top claim remains open.
+- A counter-claim SHALL map to a Claim with `assertionDeclaration="needsSupport"`.
+  When it challenges a goal or assumption, the exporter SHALL emit an
+  AssertedInference with `isCounter=true` from that Claim to the exact
+  challenged Claim. The target retains its own declaration.
+- When a counter-claim challenges a strategy, the exporter SHALL retain the
+  counter-claim Claim and target ArgumentReasoning and report the challenge
+  edge as unmapped. The exporter SHALL NOT retarget the challenge or emit a
+  context or support relation for it. The top claim stays open for every open
+  challenge. SACM 2.3 §11.14 gives AssertedInference Assertion endpoints.
+  ArgumentReasoning is outside that hierarchy.
 - When the GSN model contains `signed_acceptance`, the exporter SHALL place
   exactly one distinct Artifact labeled `Human acceptance of case content` in
   the root AssuranceCasePackage's `artifactPackage` via its `artifactElement`
@@ -78,9 +97,12 @@ build a second, independent mapping from the corpus.
 - The exporter SHALL derive XMI ids from source GSN ids with a stable role
   suffix for generated relationship elements.
 - The exporter SHALL make every reference resolve to one id in the document.
-- A metamodel-conformance check MAY load the normative SACM 2.3 machine-readable
-  model from the explicit `QUOIN_SACM_METAMODEL` path. That check SHALL fail
-  when the path is unset. The metamodel source boundary is governed by
+- When the explicit metamodel check is run, it SHALL validate the emitted
+  classes, properties, containment and reference types against the published
+  SACM 2.3 UML XML at `QUOIN_SACM_METAMODEL`. It SHALL fail when the path is
+  unset. The check uses the published model as supplied, including the absence
+  of `Resource.location`. [FR-228](./FR-228-sacm-evidence-artifact-content-identity.md)
+  specifies the path representation. The model source boundary is governed by
   [NFR-046](../non-functional/NFR-046-no-copied-sacm-metamodel.md).
 - The workspace has no XML writer dependency. If an XML writer is required,
   the implementation SHALL use `quick-xml` (MIT) as the sole new runtime
@@ -92,11 +114,13 @@ build a second, independent mapping from the corpus.
   ([source](https://github.com/SystemsAssuranceGroup/SACM)); the MMINT-A
   material documents GSN use but no SACM 2.3 XMI import
   ([source](https://github.com/ScienceOfComputerProgramming/SCICO-D-22-00363)).
-  Headless EMF loading alone is not import interoperability evidence
-  ([source](https://eclipse.dev/emf/markdown/?file=FAQ.md)).
-  [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649) SHALL name a
-  candidate and confirm its version and licence only after a successful
-  import of the fixture.
+  The metamodel check establishes structural compatibility for the exercised
+  XMI. [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649) SHALL identify
+  the importer, version and licence after importing an unchanged Quoin
+  fixture. Inspect the imported Claims, evidence declarations and links,
+  including the ArtifactGroup membership and exact run path in the grouped
+  Resource name. A generic XML or EMF load does not establish the importer's
+  preservation of that content or its interpretation as a native location.
 
 ## Namespaces and XMI types
 
@@ -118,7 +142,8 @@ The exporter SHALL use these `xmi:type` identifiers from the normative SACM
 | Evidence reference | `sacm:ArtifactReference` |
 | Artifact package | `sacm:ArtifactPackage` |
 | Evidence or acceptance record | `sacm:Artifact` |
-| Location-bearing artifact data | `sacm:Resource` |
+| Run path displayed as name metadata | `sacm:Resource` |
+| Group associating a run Artifact with its path Resources | `sacm:ArtifactGroup` |
 
 ## Acceptance Criteria
 
@@ -126,13 +151,14 @@ The exporter SHALL use these `xmi:type` identifiers from the normative SACM
 |----|----------|--------------|
 | FR-226-AC-1 | A fixture containing each GSN node kind produces the stated SACM elements and relationships under an AssuranceCasePackage root, and all references resolve to an existing XMI id. | Test |
 | FR-226-AC-2 | An open or undeveloped goal maps to a claim needing support; it is never asserted, including when the source is a counter-claim. | Test |
-| FR-226-AC-3 | A direct goal-to-goal edge and a strategy-mediated edge produce their distinct AssertedInference structures with stable source ids. | Test |
+| FR-226-AC-3 | A direct goal-to-goal edge and a goal-to-strategy-to-goal path produce their respective AssertedInference structures with stable source ids. Both use the child and parent Claims as endpoints. Only the path sets `reasoning`, to the intervening ArgumentReasoning. | Test |
 | FR-226-AC-4 | Re-export of unchanged GSN input produces byte-identical UTF-8 XMI with stable element and relationship ordering. | Test |
 | FR-226-AC-5 | Combining `--sacm` with any incompatible output flag returns a usage error and writes no XMI. | Test |
 | FR-226-AC-6 | A well-formedness failure in the GSN input writes no XMI and preserves the named WF rule and node ids in the error report. | Test |
-| FR-226-AC-7 | Local expectations validate the XMI shape; the explicit metamodel-conformance check compares the output against the normative model at `QUOIN_SACM_METAMODEL` and rejects an unset path. | Test |
-| FR-226-AC-8 | No external interop application is named as verified until PLAT-1649 has successful fixture-import evidence with application name, version, and licence. | Inspection |
+| FR-226-AC-7 | The explicit check against the published UML XML at `QUOIN_SACM_METAMODEL` verifies the exported classes, containment and reference types, including `Resource.name` and `ArtifactGroup.artifactElement`. The check rejects an unset path and a fixture that invents a `Resource.location` property. | Test |
+| FR-226-AC-8 | A verified importer claim identifies the application, version and licence and cites a successful import of the unmodified fixture that preserves the specified claims, evidence links and declarations, Resource names and ArtifactGroup membership. | Inspection |
 | FR-226-AC-9 | A GSN case with verified `signed_acceptance` and an open claim yields exactly one labeled acceptance Artifact via the root's `artifactPackage` and its `artifactElement` containment. No argument element references it. Exporting the case with `signed_acceptance` omitted yields no acceptance Artifact and identical Claim declarations. | Test |
+| FR-226-AC-10 | `quoin assurance --argument <ID> --sacm` with open challenges to a goal, assumption, and strategy preserves all three counter-claim Claims and the open top claim. Counter inferences target exactly the goal and assumption Claims. The strategy challenge produces an unmapped edge diagnostic with both source ids and no substitute relationship. | Test |
 
 ## Dependencies
 
