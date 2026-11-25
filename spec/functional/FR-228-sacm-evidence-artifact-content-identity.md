@@ -3,7 +3,7 @@ id: FR-228
 title: "Identify SACM evidence artifacts by content"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/FR-221"
+  - target: "ix://agent-ix/quoin/FR-234"
     type: "requires"
 ---
 
@@ -26,7 +26,7 @@ revision identity or source-tree digest is produced.
 - The `LeafEvidence` on a derived GSN solution or undeveloped obligation goal,
   including each binding's suite and available observation time.
 - Authored citation references with the resolution or decision state preserved
-  by [FR-221](./FR-221-gsn-model-export.md).
+  by [FR-234](./FR-234-gsn-model-export.md).
 - The exact UTF-8 bytes of the retained run-record JSON file.
 - The repository-relative run-record path.
 
@@ -116,5 +116,5 @@ revision identity or source-tree digest is produced.
 
 ## Dependencies
 
-- **Upstream**: [FR-221](./FR-221-gsn-model-export.md)
+- **Upstream**: [FR-234](./FR-234-gsn-model-export.md)
 - **Downstream**: [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649)

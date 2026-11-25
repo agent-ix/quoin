@@ -3,7 +3,7 @@ id: FR-222
 title: "Validate GSN model well-formedness before export"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/FR-221"
+  - target: "ix://agent-ix/quoin/FR-234"
     type: "requires"
 ---
 
@@ -58,5 +58,5 @@ The validator applies to both the derived case and authored argument exports.
 
 ## Dependencies
 
-- **Upstream**: [FR-221](./FR-221-gsn-model-export.md)
+- **Upstream**: [FR-234](./FR-234-gsn-model-export.md)
 - **Downstream**: [PLAT-1447](https://linear.app/agent-ix/issue/PLAT-1447)
