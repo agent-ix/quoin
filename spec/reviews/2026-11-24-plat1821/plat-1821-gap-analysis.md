@@ -36,3 +36,10 @@ FAIL
 - The full matrix and static scans were performed, but reverse-gap semantic adjudication was limited to the changed area; the FAIL verdict is independently established by repository-wide traceability findings.
 - Semantic review: skipped (not opted in).
 - Plan completion: not assessed
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | deferred | Repository-wide untagged criteria are explicitly out of scope for PLAT-1821; 704 remain, while all changed criteria are tagged. |
+| FND-002 | deferred | Repository-wide ignored-only coverage is explicitly out of scope for PLAT-1821; 5 criteria remain, while all changed criteria are tagged. |

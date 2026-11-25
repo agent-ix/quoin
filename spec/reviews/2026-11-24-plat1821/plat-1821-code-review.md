@@ -27,3 +27,11 @@ FAIL
 - Applicable control: `spec/assurance/AP-201-finding-quality.md`; this change affects release snapshot anomaly selection, FR-164 gate findings, and DOS-REL rendering.
 - AP-201 context is current in the checked-out repository; linked context was available and no active exceptions were identified for these paths.
 - AP-201 recommends evidence, integrity, and scope-boundary lenses; those lenses were applied in separate review artifacts. Its suggested full gate was not rerun because the review dispatch explicitly prohibited additional tests/builds; only the supplied focused locked-build result is cited.
+
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Both Record and dossier now call the shared FR-162 predicate. |
+| FND-002 | fixed | The public field documentation now names both carried and closed/fixed snapshot records. |
