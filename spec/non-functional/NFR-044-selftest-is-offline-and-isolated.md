@@ -4,9 +4,9 @@ title: "Self-tests run offline with repository-owned fixtures"
 type: NFR
 quality_attribute: reliability
 relationships:
-  - target: "ix://agent-ix/quoin/FR-215"
+  - target: "ix://agent-ix/quoin/FR-229"
     type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-216"
+  - target: "ix://agent-ix/quoin/FR-230"
     type: "constrains"
 ---
 

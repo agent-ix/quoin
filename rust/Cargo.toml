@@ -152,6 +152,7 @@ uuid = { version = "=1.26.1", features = ["v4"] }
 # version: `cargo tree -i regex` reaches it through `jsonschema`. Exact pin for
 # the reason every line here is exact.
 regex = "=1.13.1"
+rustix = { version = "=1.1.4", features = ["process"] }
 # Property testing for the covering-array invariants (quoin#382 acceptance).
 # The workspace had no property-testing dependency before this; quoin#446
 # restated a fast-check property as a bounded exhaustive loop and said so,

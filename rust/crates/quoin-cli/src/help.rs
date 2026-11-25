@@ -118,6 +118,7 @@ const COMMANDS: &[(&str, &str)] = &[
     ("review", "Run a composite spec review workflow."),
     ("risk", crate::risk::ABOUT),
     ("risk-summary", crate::risk::SUMMARY_ABOUT),
+    ("selftest", crate::selftest::ABOUT),
     ("soup", crate::soup::ABOUT),
     (
         "to-plan",

@@ -1,0 +1,1 @@
+This case does not require input files.
