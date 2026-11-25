@@ -40,6 +40,7 @@ mod report;
 mod risk;
 mod run_observation;
 mod semantic;
+mod selftest;
 mod soup;
 mod update;
 mod validate;
@@ -347,6 +348,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("soup", soup)) = matches.subcommand() {
         return soup::run(soup);
     }
+    if let Some(("selftest", selftest)) = matches.subcommand() {
+        return selftest::run(selftest);
+    }
     if let Some(("validate", validate)) = matches.subcommand() {
         return validate::run(validate);
     }
@@ -477,6 +481,7 @@ fn command() -> Command {
         .subcommand(formal_rules::command())
         .subcommand(report::command())
         .subcommand(semantic::command())
+        .subcommand(selftest::command())
         .subcommand(risk::command())
         .subcommand(risk::summary_command())
         .subcommand(soup::command())
