@@ -1768,5 +1768,5 @@ fn malformed_m3_source_preserves_existing_outputs() {
         fs::read(output_dir.join("DOS-SW.md")).unwrap(),
         b"existing bytes\n"
     );
-    assert!(stdout(&output).contains(&source.display().to_string()));
+    assert!(stdout(&output).contains("dossier/sources/software_description/sw.json"));
 }
