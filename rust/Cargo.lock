@@ -3100,7 +3100,7 @@ dependencies = [
 [[package]]
 name = "quire-fixtures"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?tag=v0.61.0#84c3e408c636b183de1ae88c89ad3a00e055cef6"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.63.1#bd797be83f643a31e3a9c86580a06b4f6dbfa6bb"
 dependencies = [
  "serde_json",
 ]
