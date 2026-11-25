@@ -138,8 +138,10 @@ impl ProofIntegrityStatement {
     ///
     /// # Errors
     ///
-    /// Returns [`ProofIntegrityError::OutputMismatch`] when size or the
-    /// attestation's content commitment does not match, and
+    /// Returns [`ProofIntegrityError::AttestationBytesMismatch`] when the
+    /// exact bytes are not the canonical serialization of the supplied typed
+    /// attestation, [`ProofIntegrityError::OutputMismatch`] when size, scope,
+    /// or content commitment does not match, and
     /// [`ProofIntegrityError::UnrepresentableSize`] when a length cannot be
     /// represented exactly by the workspace's I-JSON number model.
     #[allow(
@@ -155,6 +157,18 @@ impl ProofIntegrityStatement {
         exact_attestation_bytes: &[u8],
         exact_output_bytes: &[u8],
     ) -> Result<Self, ProofIntegrityError> {
+        let parsed_attestation = parse_strict_json(exact_attestation_bytes)
+            .map_err(|_| ProofIntegrityError::AttestationBytesMismatch)?;
+        let attestation_from_bytes =
+            crate::attestations::read_attestation_json(&parsed_attestation)
+                .map_err(|_| ProofIntegrityError::AttestationBytesMismatch)?;
+        let canonical_attestation = crate::attestations::attestation_bytes(&attestation_from_bytes)
+            .map_err(|_| ProofIntegrityError::AttestationBytesMismatch)?;
+        if attestation_from_bytes != *attestation
+            || canonical_attestation != exact_attestation_bytes
+        {
+            return Err(ProofIntegrityError::AttestationBytesMismatch);
+        }
         let output_size_bytes = u64::try_from(exact_output_bytes.len())
             .map_err(|_| ProofIntegrityError::UnrepresentableSize)?;
         if output_size_bytes > MAX_EXACT_JSON_INTEGER
@@ -530,12 +544,6 @@ pub fn qualify(
     attestation: &[u8],
     output: &[u8],
 ) -> Qualification {
-    let Some(provider) = provider else {
-        return Qualification::Incomplete("retention_provider_unconfigured");
-    };
-    let Some(tag_object) = tag_object else {
-        return Qualification::Incomplete("signed_tag_object_missing");
-    };
     let checkpoint = match checkpoint {
         Ok(Some(checkpoint)) => checkpoint,
         Ok(None)
@@ -560,7 +568,6 @@ pub fn qualify(
         || checkpoint.statement_digest != statement.statement_digest
         || checkpoint.scope != *scope
         || checkpoint.tag_object_id.is_empty()
-        || checkpoint.tag_bytes_sha256 != digest(tag_object)
     {
         return Qualification::Invalid("checkpoint_binding_mismatch");
     }
@@ -574,6 +581,15 @@ pub fn qualify(
         || statement.output_size_bytes != u64::try_from(output.len()).unwrap_or(u64::MAX)
     {
         return Qualification::Invalid("statement_content_mismatch");
+    }
+    let Some(provider) = provider else {
+        return Qualification::Incomplete("retention_provider_unconfigured");
+    };
+    let Some(tag_object) = tag_object else {
+        return Qualification::Incomplete("signed_tag_object_missing");
+    };
+    if checkpoint.tag_bytes_sha256 != digest(tag_object) {
+        return Qualification::Invalid("checkpoint_binding_mismatch");
     }
     let objects = [
         RetainedObject::Statement(statement.as_bytes()),
@@ -642,6 +658,10 @@ pub enum RetentionFailure {
 /// Errors constructing a statement.
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ProofIntegrityError {
+    /// Exact accepted attestation bytes are malformed, noncanonical, or do not
+    /// encode the supplied typed attestation object.
+    #[error("exact attestation bytes do not match the typed attestation")]
+    AttestationBytesMismatch,
     /// Retained output or selected attestation binding did not match.
     #[error("proof-integrity input bytes or scope mismatch")]
     OutputMismatch,
@@ -766,9 +786,9 @@ mod tests {
     use ix_trace_rs::trace;
 
     use super::{
-        CheckpointSignature, Fr080CheckpointResult, ProofIntegrityStatement, ProofRetention,
-        ProofScope, Qualification, RetainedObject, RetentionFailure, STATEMENT_PURPOSE,
-        VerifiedCheckpoint, qualify,
+        CheckpointFailure, CheckpointSignature, Fr080CheckpointResult, ProofIntegrityStatement,
+        ProofRetention, ProofScope, Qualification, RetainedObject, RetentionFailure,
+        STATEMENT_PURPOSE, VerifiedCheckpoint, qualify,
     };
 
     /// Test double only: this in-memory map is not a durability or immutability claim.
@@ -891,6 +911,56 @@ mod tests {
         assert_eq!(
             result,
             Qualification::Incomplete("retention_provider_unconfigured")
+        );
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-2")]
+    #[test]
+    fn invalid_checkpoint_evidence_precedes_missing_provider_and_tag() {
+        for failure in [
+            CheckpointFailure::BadSignature,
+            CheckpointFailure::UntrustedSigner,
+            CheckpointFailure::BindingMismatch,
+            CheckpointFailure::ObjectBytesMismatch,
+        ] {
+            let result = qualify(
+                None,
+                &scope(),
+                &statement(),
+                None,
+                Err(failure),
+                b"attestation",
+                b"output",
+            );
+            assert!(
+                matches!(result, Qualification::Invalid(_)),
+                "invalid checkpoint evidence {failure} must not be downgraded: {result:?}"
+            );
+        }
+        assert_eq!(
+            qualify(
+                None,
+                &scope(),
+                &statement(),
+                None,
+                Err(CheckpointFailure::BadSignature),
+                b"attestation",
+                b"output",
+            ),
+            Qualification::Invalid("checkpoint_signature_bad")
+        );
+        assert_eq!(
+            qualify(
+                None,
+                &scope(),
+                &statement(),
+                None,
+                Err(CheckpointFailure::BindingMismatch),
+                b"attestation",
+                b"output",
+            ),
+            Qualification::Invalid("checkpoint_binding_mismatch")
         );
     }
 

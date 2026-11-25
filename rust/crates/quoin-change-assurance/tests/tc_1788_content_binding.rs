@@ -107,14 +107,19 @@ fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
         format!("sha256:{}", quoin_store::attachment::sha256_hex(OUTPUT))
     );
 
-    let mut changed = exact_attestation.clone();
-    changed.push(b' ');
+    let changed_attestation = ProofAttestation::from_json(&replacing(
+        &json(&attestation_text()),
+        "attestation_id",
+        JsonValue::string("att-substitute"),
+    ))
+    .unwrap();
+    let changed = attestation_bytes(&changed_attestation).unwrap();
     let substituted = ProofIntegrityStatement::create(
         &record_id,
         revision,
         "candidate-1",
         &proof_id,
-        &attestation,
+        &changed_attestation,
         &changed,
         OUTPUT,
     )
@@ -124,6 +129,19 @@ fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
         substituted.attestation_sha256()
     );
     assert_ne!(statement.statement_digest(), substituted.statement_digest());
+    assert_eq!(
+        ProofIntegrityStatement::create(
+            &record_id,
+            revision,
+            "candidate-1",
+            &proof_id,
+            &attestation,
+            &changed,
+            OUTPUT,
+        ),
+        Err(ProofIntegrityError::AttestationBytesMismatch),
+        "typed attestation metadata cannot be paired with bytes for another attestation"
+    );
     let parsed = ProofIntegrityStatement::from_canonical_bytes(statement.as_bytes()).unwrap();
     assert_eq!(parsed, statement);
 }
