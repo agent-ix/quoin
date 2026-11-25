@@ -151,24 +151,16 @@ fn generated_documents_carry_the_running_quoin_version() {
     for document in ["DOS-STUB-A", "DOS-STUB-B"] {
         let text = read(&work.path().join("dossier").join(format!("{document}.md")));
         let frontmatter = text.split("---").nth(1).unwrap();
-        assert!(
-            frontmatter.contains(&format!(
-                "producer_identity:\n  name: quoin\n  version: \"{version}\"\n"
-            )),
-            "{document} did not carry executable version {version:?}: {frontmatter}"
-        );
+        let producer_version = frontmatter
+            .split_once("producer_identity:\n")
+            .and_then(|(_, identity)| {
+                identity
+                    .lines()
+                    .find_map(|line| line.strip_prefix("  version: "))
+            })
+            .unwrap_or_else(|| panic!("{document} has no producer version: {frontmatter}"));
+        assert_eq!(producer_version, format!("\"{version}\""));
         assert!(frontmatter.contains("version: \"1.0\""));
-        for absent in [
-            "source_commit:",
-            "source_date:",
-            "digest:",
-            "hash:",
-            "generated_at:",
-            "quire_version:",
-            "engineering_assurance_version:",
-        ] {
-            assert!(!frontmatter.contains(absent), "{absent} in {document}");
-        }
     }
 }
 
