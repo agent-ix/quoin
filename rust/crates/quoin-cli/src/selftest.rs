@@ -200,6 +200,7 @@ fn run_record(
         "timestamp": timestamp,
         "results": results,
         "retainedLocation": retained_location,
+        "validationInputs": crate::validation::embedded_inputs_value(),
     })
 }
 
@@ -928,6 +929,7 @@ mod tests {
     }
 
     #[trace("FR-236-AC-1", "FR-236-AC-2", "FR-236-AC-4")]
+    #[trace("FR-217-AC-1")]
     #[test]
     fn tc_230_run_record_serializes_run_context_and_case_outcomes() {
         let results = vec![
@@ -963,6 +965,7 @@ mod tests {
         assert_eq!(record["results"][0]["status"], "pass");
         assert_eq!(record["results"][1]["status"], "not-executed");
         assert_eq!(record["results"][1]["detail"], "required tool unavailable");
+        assert!(record["validationInputs"].is_object());
         let serialized = serde_json::to_string(&record).expect("the record serializes");
         assert!(!serialized.contains("sourceDigest"));
         assert!(!serialized.contains("sourceRevision"));

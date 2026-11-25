@@ -28,6 +28,123 @@ fn main() {
         .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_owned());
     println!("cargo:rustc-env=QUOIN_VERSION={version}");
     embed_selftest_cases();
+    embed_validation_inputs();
+}
+
+fn embed_validation_inputs() {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").expect("Cargo sets OUT_DIR"));
+    let mut generated = String::from(
+        "pub(crate) static EMBEDDED_VALIDATION_INPUTS: Option<&[EmbeddedFile]> = ",
+    );
+    append_embedded_files(
+        &repository,
+        "spec/validation",
+        "validation",
+        &mut generated,
+    );
+    generated.push_str(";\npub(crate) static EMBEDDED_ANOMALIES: Option<&[EmbeddedFile]> = ");
+    append_embedded_files(
+        &repository,
+        "spec/anomalies",
+        "anomalies",
+        &mut generated,
+    );
+    generated.push_str(";\npub(crate) static EMBEDDED_EXTERNAL_TOOLS_INDEX: Option<&[u8]> = ");
+    let index = repository.join("spec/validation/external-tools.v1.json");
+    println!("cargo:rerun-if-changed={}", index.display());
+    if index.is_file() {
+        let source = index.canonicalize().expect("external tools index path canonicalizes");
+        let source = source.to_str().expect("external tools index path is UTF-8");
+        generated.push_str(&format!("Some(include_bytes!({source:?}))"));
+    } else {
+        generated.push_str("None");
+    }
+    generated.push_str(";\n");
+    fs::write(out_dir.join("embedded_validation.rs"), generated)
+        .expect("write embedded validation records");
+}
+
+fn append_embedded_files(repository: &Path, relative_root: &str, label: &str, out: &mut String) {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let root = repository.join(relative_root);
+    println!("cargo:rerun-if-changed={}", root.display());
+    if let Some(parent) = root.parent() {
+        println!("cargo:rerun-if-changed={}", parent.display());
+    }
+    if !root.is_dir() {
+        out.push_str("None");
+        return;
+    }
+
+    let mut paths = Vec::new();
+    collect_validation_files(&root, &root, &mut paths)
+        .unwrap_or_else(|error| panic!("cannot embed {label} records: {error}"));
+    paths.sort_by(|left, right| left.0.cmp(&right.0));
+    out.push_str("Some(&[\n");
+    for (relative, path) in paths {
+        let source = path
+            .canonicalize()
+            .expect("embedded validation record path canonicalizes");
+        let source = source
+            .to_str()
+            .expect("embedded validation record path is UTF-8");
+        out.push_str(&format!(
+            "EmbeddedFile {{ path: {relative:?}, bytes: include_bytes!({source:?}) }},\n"
+        ));
+    }
+    out.push_str("])");
+
+    fn collect_validation_files(
+        root: &Path,
+        directory: &Path,
+        files: &mut Vec<(String, PathBuf)>,
+    ) -> std::io::Result<()> {
+        use std::fs;
+        use std::path::Component;
+
+        let mut entries = fs::read_dir(directory)?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect::<Result<Vec<_>, _>>()?;
+        entries.sort();
+        for path in entries {
+            println!("cargo:rerun-if-changed={}", path.display());
+            let metadata = fs::symlink_metadata(&path)?;
+            if metadata.file_type().is_symlink() {
+                return Err(std::io::Error::other(format!(
+                    "symlink is not allowed in embedded validation records: {}",
+                    path.display()
+                )));
+            }
+            if metadata.is_dir() {
+                collect_validation_files(root, &path, files)?;
+                continue;
+            }
+            if !metadata.is_file() || path.extension().is_none_or(|ext| ext != "md") {
+                continue;
+            }
+            let relative = path.strip_prefix(root).map_err(std::io::Error::other)?;
+            if relative
+                .components()
+                .any(|part| !matches!(part, Component::Normal(_)))
+            {
+                return Err(std::io::Error::other(
+                    "embedded validation record path is not normalized",
+                ));
+            }
+            let relative = relative
+                .to_str()
+                .ok_or_else(|| std::io::Error::other("embedded validation path is not UTF-8"))?
+                .replace(std::path::MAIN_SEPARATOR, "/");
+            files.push((relative, path));
+        }
+        Ok(())
+    }
 }
 
 fn embed_selftest_cases() {
