@@ -447,7 +447,11 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
             None,
             Some(challenge.clone()),
         );
-        let target_id = b.ids.get(&target).cloned().unwrap_or(target);
+        let target_id = b
+            .ids
+            .get(target)
+            .cloned()
+            .unwrap_or_else(|| target.to_owned());
         b.edges.push(GsnEdge {
             kind: if open { "challenges" } else { "in_context_of" }.to_owned(),
             from: if open { node } else { target_id.clone() },
