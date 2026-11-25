@@ -51,6 +51,101 @@ fn invoke(root: &Path, json: bool) -> std::process::Output {
     command.output().expect("quoin binary runs")
 }
 
+fn invoke_coverage(root: &Path) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["validation", "ratings", "--coverage", "--json", "--repo"])
+        .arg(root)
+        .args(["--repo-id", "agent-ix/quoin"])
+        .output()
+        .expect("quoin binary runs")
+}
+
+#[trace("FR-235-AC-4")]
+#[trace("FR-235-AC-11")]
+#[test]
+fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_markers() {
+    let scratch = tempfile::tempdir().expect("temporary repository created");
+    write(
+        scratch.path(),
+        "spec/functional/FR-001.md",
+        "---\nid: FR-001\ntype: FR\n---\n| FR-001-AC-1 | One. | Test |\n",
+    );
+    write(
+        scratch.path(),
+        "spec/functional/FR-002.md",
+        "---\nid: FR-002\ntype: FR\n---\n| FR-002-AC-1 | Two. | Test |\n",
+    );
+    write(
+        scratch.path(),
+        "spec/functional/FR-003.md",
+        "---\nid: FR-003\ntype: FR\n---\n| FR-003-AC-1 | Three. | Test |\n",
+    );
+    write(
+        scratch.path(),
+        "spec/ratings/RR-1.md",
+        "---\nid: RR-1\ntype: FeatureRiskRating\nscope: supplier\nrating: high_process_risk\nstatus: proposed\nrelationships:\n  - target: ix://agent-ix/quoin/FR-001\n    type: rates_feature\n---\n",
+    );
+    write(
+        scratch.path(),
+        "spec/ratings/RR-2.md",
+        "---\nid: RR-2\ntype: FeatureRiskRating\nscope: supplier\nrating: not_high_process_risk\nstatus: proposed\nrelationships:\n  - target: ix://agent-ix/quoin/FR-002\n    type: rates_feature\n---\n",
+    );
+    write(
+        scratch.path(),
+        "selftest/cases/marked/run.sh",
+        "#!/bin/sh\n# Trace: FR-001-AC-1\n# Trace: FR-999-AC-1\n# Trace: malformed\nexit 0\n",
+    );
+    let output = invoke_coverage(scratch.path());
+    assert_eq!(output.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
+    let features = report["features"].as_array().expect("features listed");
+    let row = |id| {
+        features
+            .iter()
+            .find(|item| item["feature_id"] == id)
+            .expect("feature listed")
+    };
+    assert_eq!(row("FR-001")["coverage"], "covered");
+    assert_eq!(row("FR-002")["coverage"], "release_evidence", "{report}");
+    assert_eq!(row("FR-003")["coverage"], "unrated");
+    assert_eq!(
+        report["invalid_markers"]
+            .as_array()
+            .expect("invalid listed")
+            .len(),
+        2
+    );
+
+    write(
+        scratch.path(),
+        "selftest/cases/marked/run.sh",
+        "#!/bin/sh\n# Trace: FR-001-AC-1\nexit 0\n",
+    );
+    let output = invoke_coverage(scratch.path());
+    assert_eq!(output.status.code(), Some(0));
+    let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
+    let features = report["features"].as_array().expect("features listed");
+    assert_eq!(
+        features
+            .iter()
+            .find(|item| item["feature_id"] == "FR-001")
+            .expect("high-risk feature listed")["coverage"],
+        "covered"
+    );
+
+    write(
+        scratch.path(),
+        "selftest/cases/marked/run.sh",
+        "#!/bin/sh\nexit 0\n",
+    );
+    let output = invoke_coverage(scratch.path());
+    assert_eq!(output.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
+    assert_eq!(report["uncovered"], serde_json::json!(["FR-001"]));
+    let features = report["features"].as_array().expect("features listed");
+    assert_eq!(features[0]["coverage"], "uncovered");
+}
+
 #[trace("PLAT-1636-AC-6")]
 #[trace("PLAT-1636-AC-7")]
 #[test]
