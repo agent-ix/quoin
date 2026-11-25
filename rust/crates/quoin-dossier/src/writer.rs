@@ -95,7 +95,14 @@ mod tests {
     #[trace("FR-191-AC-14")]
     #[test]
     fn a_complete_document_reads_gaps_none_and_carries_exactly_the_archetype_frontmatter() {
-        let text = compose(&SPEC, Some("1.0"), "test-quoin-version", None, "# SRS\n", &[]);
+        let text = compose(
+            &SPEC,
+            Some("1.0"),
+            "test-quoin-version",
+            None,
+            "# SRS\n",
+            &[],
+        );
         assert_eq!(
             text,
             "---\nid: \"DOS-SRS\"\ntitle: \"Software Requirements Specification\"\nversion: \"1.0\"\ntype: DossierDocument\ndocument_kind: \"srs\"\ngenerated_by: quoin dossier\nproducer_identity:\n  name: quoin\n  version: \"test-quoin-version\"\n---\n\n# SRS\n\n## Gaps\n\nGaps: none\n"
@@ -151,7 +158,14 @@ mod tests {
     #[trace("FR-191")]
     #[test]
     fn a_hostile_version_cannot_add_a_frontmatter_key() {
-        let text = compose(&SPEC, Some("1\"\ntype: Other"), "test-quoin-version", None, "", &[]);
+        let text = compose(
+            &SPEC,
+            Some("1\"\ntype: Other"),
+            "test-quoin-version",
+            None,
+            "",
+            &[],
+        );
         assert!(text.lines().all(|line| line != "type: Other"));
         assert_eq!(
             text.lines()
