@@ -229,7 +229,7 @@ pub fn from_case_with_validation_report(
             });
             model.edges.push(GsnEdge {
                 kind: "supported_by".to_owned(),
-                from: parent,
+                from: parent.clone(),
                 to: strategy_id.clone(),
             });
             let mut gaps = Vec::new();
