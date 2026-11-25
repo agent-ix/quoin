@@ -90,6 +90,14 @@ pub fn from_case(case: &AssuranceCase) -> Result<GsnCase, String> {
         .iter()
         .map(|node| builder.add(node))
         .collect::<Result<Vec<_>, _>>()?;
+    if let Some(root) = roots.first() {
+        let trust =
+            serde_json::to_value(&case.producer_trust).map_err(|error| error.to_string())?;
+        append_global_context(&mut builder, root, trust, "producer trust")?;
+        let independence =
+            serde_json::to_value(&case.evidence_independence).map_err(|error| error.to_string())?;
+        append_global_context(&mut builder, root, independence, "evidence independence")?;
+    }
     let model = GsnCase {
         format: "quoin.gsn-case/v1".to_owned(),
         nodes: builder.nodes,
@@ -100,6 +108,44 @@ pub fn from_case(case: &AssuranceCase) -> Result<GsnCase, String> {
     };
     validate(&model)?;
     Ok(model)
+}
+
+fn append_global_context(
+    builder: &mut Builder,
+    root: &str,
+    source: serde_json::Value,
+    label: &str,
+) -> Result<(), String> {
+    let records = match source {
+        serde_json::Value::Array(values) => values,
+        serde_json::Value::Null => Vec::new(),
+        value => vec![value],
+    };
+    for (index, record) in records.into_iter().enumerate() {
+        let id = record
+            .get("id")
+            .or_else(|| record.get("obligation"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned)
+            .unwrap_or_else(|| format!("{label} {}", index + 1));
+        let statement = serde_json::to_string(&record).map_err(|error| error.to_string())?;
+        let node = builder.push(
+            "context",
+            "C",
+            &id,
+            statement,
+            "supported",
+            None,
+            None,
+            Some(record),
+        );
+        builder.edges.push(GsnEdge {
+            kind: "in_context_of".to_owned(),
+            from: root.to_owned(),
+            to: node,
+        });
+    }
+    Ok(())
 }
 
 struct Builder {

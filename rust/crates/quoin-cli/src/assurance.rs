@@ -40,10 +40,16 @@ pub(crate) fn command() -> Command {
         .arg(Arg::new("as-of").long("as-of"))
         .args(crate::formal_rules::trust_arguments())
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
-        .arg(Arg::new("gsn").long("gsn").action(ArgAction::SetTrue))
+        .arg(
+            Arg::new("gsn")
+                .long("gsn")
+                .help("Export the case as a validated GSN model.")
+                .action(ArgAction::SetTrue),
+        )
         .arg(
             Arg::new("gsn-diagram")
                 .long("gsn-diagram")
+                .help("Render the case as a Mermaid GSN diagram.")
                 .action(ArgAction::SetTrue),
         )
 }
