@@ -74,6 +74,10 @@ acceptance records a person's decision about the case representation.
   with [NFR-045](../non-functional/NFR-045-assurance-exports-run-offline.md).
   The request omits `gitsign` and `identity_registry`. A gitsign-signed tag is
   a failed selection. The case-approval check runs after model validation.
+- The exporter SHALL disable Git transport for the EA case-approval process
+  and its children. If Git needs an object that is absent locally, including
+  a committed trust blob in a partial clone, the case-approval check SHALL
+  fail without fetching the object.
 
 ### Verified acceptance
 
@@ -97,7 +101,7 @@ acceptance records a person's decision about the case representation.
   expiry based on `--as-of`, the local clock, or the tagger date.
 - If the exporter cannot encode the subject or obtain qualifying approval,
   it SHALL preserve the underlying case export with acceptance omitted.
-  This includes missing or malformed case inputs, unavailable EA, an EA
+  This includes missing or malformed case-approval inputs, unavailable EA, an EA
   refusal, and any response that fails an acceptance condition. The
   diagnostic SHALL identify the reason and include EA's status and reason
   or error code when EA supplies them.
@@ -115,7 +119,7 @@ acceptance records a person's decision about the case representation.
 | FR-225-AC-2 | A selected tag that is absent, malformed, bound to a different record id or digest, or rejected by EA (including a key EA judges outside its validity window) leaves acceptance absent and reports the reason. The same holds for an EA `approved` result that carries a different or repeated signed meaning. | Test |
 | FR-225-AC-3 | With no tag selection, export succeeds without acceptance, a case-verifier call, or a case-approval diagnostic. With a selected tag and missing case trust, an unavailable case verifier, or a malformed result, export still succeeds with the same underlying case and reports the failure on stderr. Legacy verification options alone supply no case trust, and case options alone supply no clause trust. | Test |
 | FR-225-AC-4 | The identity matches an independent SHA-256 of the RFC 8785 bytes of the unsigned model for both formats. JSON presentation changes preserve the identity, and changing a case statement changes it and invalidates the previous approval. | Test |
-| FR-225-AC-5 | Case approval runs offline through EA without Quoin inspecting Git. Selecting a gitsign tag yields the case without acceptance and starts no gitsign verifier. Valid acceptance leaves open claims, argument relationships, and evidence unchanged. An otherwise approved result with `signed_at_missing` still exports acceptance and reports the missing claimed and trusted times without substituting a time. | Test |
+| FR-225-AC-5 | Case approval runs offline through EA without Quoin inspecting Git. A selected gitsign tag starts no gitsign verifier. A partial clone with a committed trust blob available only from a promisor remote opens no Git transport. Both cases export the underlying case without acceptance and report the failure. Valid acceptance leaves open claims, argument relationships, and evidence unchanged. An otherwise approved result with `signed_at_missing` still exports acceptance and reports the missing claimed and trusted times without substituting a time. | Test |
 
 ## Dependencies
 
