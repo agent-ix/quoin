@@ -60,7 +60,6 @@ fn embed_validation_inputs() {
 }
 
 fn append_embedded_files(repository: &Path, relative_root: &str, label: &str, out: &mut String) {
-    use std::fs;
     use std::path::PathBuf;
 
     let root = repository.join(relative_root);

@@ -746,7 +746,7 @@ fn external_tool_report(
             .or_default()
             .push(evidence);
     }
-    let out = entries
+    let mut out = entries
         .iter()
         .map(|entry| {
             let candidates = evidence_by_id
