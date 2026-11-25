@@ -766,9 +766,9 @@ mod tests {
     use ix_trace_rs::trace;
 
     use super::{
-        CheckpointFailure, CheckpointSignature, Fr080CheckpointResult, ProofIntegrityStatement,
-        ProofRetention, ProofScope, Qualification, RetainedObject, RetentionFailure,
-        STATEMENT_PURPOSE, VerifiedCheckpoint, qualify,
+        CheckpointSignature, Fr080CheckpointResult, ProofIntegrityStatement, ProofRetention,
+        ProofScope, Qualification, RetainedObject, RetentionFailure, STATEMENT_PURPOSE,
+        VerifiedCheckpoint, qualify,
     };
 
     /// Test double only: this in-memory map is not a durability or immutability claim.
