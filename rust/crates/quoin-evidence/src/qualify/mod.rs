@@ -149,6 +149,8 @@ pub struct RunObservation {
     /// The host's FR-188 result freshly obtained at qualification time.
     /// `None` means no current verifier result was available.
     pub current_formal_rule_status: Option<Value>,
+    /// The exact FR-078 target the host admitted this observation for.
+    pub selected_target: Option<quoin_quire_types::TargetLocus>,
 }
 
 /// An actor and the host's admission of it.

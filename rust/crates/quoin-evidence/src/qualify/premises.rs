@@ -640,6 +640,31 @@ fn formal_rule_selection_is_currently_approved(
             );
             return false;
         }
+        let Some(source) = claim.get("source") else {
+            refuse(
+                Cause::SelectionMismatch,
+                "formal-rule selection has no retained source span",
+            );
+            return false;
+        };
+        let source_document = source.get("document").and_then(Value::as_str);
+        let source_start = source.pointer("/start/byte").and_then(Value::as_u64);
+        let source_end = source.pointer("/end/byte").and_then(Value::as_u64);
+        let current_path = current_rule.get("path").and_then(Value::as_str);
+        let current_start = current_rule
+            .pointer("/declaration_range/start")
+            .and_then(Value::as_u64);
+        let current_end = current_rule
+            .pointer("/declaration_range/end")
+            .and_then(Value::as_u64);
+        if (source_document, source_start, source_end) != (current_path, current_start, current_end)
+        {
+            refuse(
+                Cause::SelectionMismatch,
+                "current FR-188 declaration path or span differs from the retained selected source span",
+            );
+            return false;
+        }
         if current_rule.get("state").and_then(Value::as_str) != Some("approved") {
             let reason = current_rule
                 .get("reason")

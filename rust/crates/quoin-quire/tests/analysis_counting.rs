@@ -19,7 +19,7 @@
     reason = "in a test, a panic IS the failure report"
 )]
 
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use ix_trace_rs::trace;
 use quire_rs::coverage::CoverageMatrixStatus;
@@ -73,6 +73,19 @@ fn scope() -> ScopeRequest {
     ScopeRequest {
         scope: ids::ScopeRoot::open(fixture()).unwrap(),
         modules: ModuleSelection::Closed(vec![ids::ModuleRoot::open(fixture()).unwrap()]),
+    }
+}
+
+fn copy_tree(source: &std::path::Path, destination: &std::path::Path) {
+    fs::create_dir_all(destination).unwrap();
+    for entry in fs::read_dir(source).unwrap() {
+        let entry = entry.unwrap();
+        let target = destination.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_tree(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), target).unwrap();
+        }
     }
 }
 
@@ -216,6 +229,7 @@ fn admitted_run(file: &str, run_kind: Option<&str>) -> RunObservation {
         }),
         actor_rejection: None,
         current_formal_rule_status: None,
+        selected_target: None,
     }
 }
 
@@ -350,7 +364,10 @@ impl Recorded {
 
     fn mark_formal_rule_selection(&mut self, first_state: &str, second_state: &str) {
         let (_, projection) = self.reports.last_mut().unwrap();
-        let source: Value = serde_json::from_str(SATISFIED).unwrap();
+        let source = [
+            serde_json::json!({"document":"qsl/rule.native","revision":1,"start":{"byte":0,"column":1,"line":1},"end":{"byte":8,"column":9,"line":1}}),
+            serde_json::json!({"document":"qsl/rule.native","revision":1,"start":{"byte":8,"column":9,"line":1},"end":{"byte":16,"column":17,"line":1}}),
+        ];
         projection["run_kind"] = serde_json::json!("formal_rule");
         projection["selection"] = serde_json::json!({
             "selected": ["claim-0", "claim-1"],
@@ -360,25 +377,30 @@ impl Recorded {
             "claims": [
                 {
                     "claim_id": "claim-0",
-                    "source": source["assertions"][0]["source"],
+                    "source": source[0],
                     "symbol": "qsl:qsl/rule.native::Rule0",
                     "state": first_state,
                 },
                 {
                     "claim_id": "claim-1",
-                    "source": source["assertions"][1]["source"],
+                    "source": source[1],
                     "symbol": "qsl:qsl/rule.native::Rule1",
                     "state": second_state,
                 }
             ]
         });
-        self.current_formal_rule_status = Some(serde_json::json!({
+        self.current_formal_rule_status =
+            Some(Self::current_formal_rule_status(first_state, second_state));
+    }
+
+    fn current_formal_rule_status(first_state: &str, second_state: &str) -> Value {
+        serde_json::json!({
             "protocol": "quoin.formal-rule-status/v1",
             "rules": [
-                {"symbol": "qsl:qsl/rule.native::Rule0", "state": first_state},
-                {"symbol": "qsl:qsl/rule.native::Rule1", "state": second_state}
+                {"symbol": "qsl:qsl/rule.native::Rule0", "path":"qsl/rule.native", "declaration_range":{"start":0,"end":8}, "state": first_state},
+                {"symbol": "qsl:qsl/rule.native::Rule1", "path":"qsl/rule.native", "declaration_range":{"start":8,"end":16}, "state": second_state}
             ]
-        }));
+        })
     }
 
     fn count(&self, requested: &[&str], host: HostObservations) -> Counted {
@@ -414,6 +436,7 @@ fn count(
     compute(&Request {
         scope: scope(),
         requested: requested.iter().map(|id| (*id).to_owned()).collect(),
+        requested_targets: vec![None; requested.len()],
         runs,
         bindings,
         injections: Some(Vec::new()),
@@ -548,13 +571,10 @@ fn a_formal_rule_report_with_one_draft_rule_is_rejected() {
 fn a_preparation_approval_does_not_override_a_current_changed_since_approval_result() {
     let mut store = satisfied_store(&[AC1]);
     store.mark_formal_rule_selection("approved", "approved");
-    store.current_formal_rule_status = Some(serde_json::json!({
-        "protocol": "quoin.formal-rule-status/v1",
-        "rules": [
-            {"symbol": "qsl:qsl/rule.native::Rule0", "state": "approved"},
-            {"symbol": "qsl:qsl/rule.native::Rule1", "state": "draft", "reason": "changed_since_approval"}
-        ]
-    }));
+    store.current_formal_rule_status =
+        Some(Recorded::current_formal_rule_status("approved", "draft"));
+    store.current_formal_rule_status.as_mut().unwrap()["rules"][1]["reason"] =
+        serde_json::json!("changed_since_approval");
 
     let stale = store.count(&[AC1], admitted());
     assert_uncounted_naming(
@@ -584,7 +604,22 @@ fn a_preparation_approval_does_not_override_a_current_changed_since_approval_res
     );
 }
 
-#[trace("FR-116-AC-19")]
+#[trace("FR-184-AC-17")]
+#[test]
+fn a_current_formal_rule_with_changed_source_span_is_a_selection_mismatch() {
+    let mut store = satisfied_store(&[AC1]);
+    store.mark_formal_rule_selection("approved", "approved");
+    store.current_formal_rule_status.as_mut().unwrap()["rules"][0]["path"] =
+        serde_json::json!("qsl/moved.native");
+
+    let outcome = store.count(&[AC1], admitted());
+    assert_uncounted_naming(
+        &outcome,
+        CauseCode::SelectionMismatch,
+        "current FR-188 declaration path or span",
+    );
+}
+
 #[test]
 fn a_formal_rule_selection_absent_from_current_status_is_a_selection_mismatch() {
     let mut store = satisfied_store(&[AC1]);
@@ -592,8 +627,8 @@ fn a_formal_rule_selection_absent_from_current_status_is_a_selection_mismatch() 
     store.current_formal_rule_status = Some(serde_json::json!({
         "protocol": "quoin.formal-rule-status/v1",
         "rules": [
-            {"symbol": "qsl:qsl/rule.native::Rule0", "state": "approved"},
-            {"symbol": "qsl:qsl/other.native::Rule1", "state": "approved"}
+            {"symbol": "qsl:qsl/rule.native::Rule0", "path":"qsl/rule.native", "declaration_range":{"start":0,"end":8}, "state": "approved"},
+            {"symbol": "qsl:qsl/other.native::Rule1", "path":"qsl/rule.native", "declaration_range":{"start":8,"end":16}, "state": "approved"}
         ]
     }));
 
@@ -602,6 +637,88 @@ fn a_formal_rule_selection_absent_from_current_status_is_a_selection_mismatch() 
         &outcome,
         CauseCode::SelectionMismatch,
         "formal-rule selection premise",
+    );
+}
+
+#[trace("FR-116-AC-19")]
+#[test]
+fn same_rendered_id_with_a_different_selected_document_is_a_selection_mismatch() {
+    let source = fixture();
+    let temporary = tempfile::tempdir().unwrap();
+    copy_tree(&source, temporary.path());
+    fs::write(
+        temporary.path().join("spec/FR-002-other.md"),
+        "---\nid: FR-002\ntype: FR\ntitle: Duplicate rendered target\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|----|----------|--------------|\n| FR-001-AC-1 | The same rendered criterion appears in another source document. | Analysis |\n",
+    )
+    .unwrap();
+    let selected_scope = ScopeRequest {
+        scope: ids::ScopeRoot::open(temporary.path()).unwrap(),
+        modules: ModuleSelection::Closed(vec![ids::ModuleRoot::open(temporary.path()).unwrap()]),
+    };
+    let inventory = compute(&Request {
+        scope: selected_scope.clone(),
+        requested: vec![AC1.to_owned()],
+        requested_targets: vec![None],
+        runs: Vec::new(),
+        bindings: Vec::new(),
+        injections: Some(Vec::new()),
+        mock_inspection_suites: Some(Vec::new()),
+        host: HostObservations::default(),
+    })
+    .unwrap();
+    let mut identities = inventory
+        .report
+        .coverage_matrix
+        .iter()
+        .flat_map(|requirement| &requirement.criteria)
+        .filter(|criterion| criterion.id == AC1)
+        .filter_map(|criterion| criterion.identity.clone());
+    let first: quoin_quire_types::TargetLocus = serde_json::from_value(
+        serde_json::to_value(identities.next().expect("first FR-078 target identity")).unwrap(),
+    )
+    .unwrap();
+    let second: quoin_quire_types::TargetLocus = serde_json::from_value(
+        serde_json::to_value(identities.next().expect("second FR-078 target identity")).unwrap(),
+    )
+    .unwrap();
+    assert_ne!(first.document, second.document);
+
+    let store = satisfied_store(&[AC1]);
+    let mut runs = store.runs();
+    runs[0].observation.selected_target = Some(second.clone());
+    let mismatch = compute(&Request {
+        scope: selected_scope.clone(),
+        requested: vec![AC1.to_owned()],
+        requested_targets: vec![Some(first.clone())],
+        runs: runs.clone(),
+        bindings: store.bindings(),
+        injections: Some(Vec::new()),
+        mock_inspection_suites: Some(vec!["SUITE-A".to_owned()]),
+        host: admitted(),
+    })
+    .unwrap();
+    assert!(
+        causes(&mismatch)
+            .iter()
+            .any(|(cause, _)| *cause == CauseCode::SelectionMismatch)
+    );
+
+    runs[0].observation.selected_target = Some(first.clone());
+    let matching = compute(&Request {
+        scope: selected_scope,
+        requested: vec![AC1.to_owned()],
+        requested_targets: vec![Some(first)],
+        runs,
+        bindings: store.bindings(),
+        injections: Some(Vec::new()),
+        mock_inspection_suites: Some(vec!["SUITE-A".to_owned()]),
+        host: admitted(),
+    })
+    .unwrap();
+    assert!(
+        !causes(&matching)
+            .iter()
+            .any(|(cause, _)| *cause == CauseCode::SelectionMismatch)
     );
 }
 
@@ -644,6 +761,7 @@ fn the_shipped_default_and_a_missing_checkout_sha_leave_the_obligation_unevaluat
     let outcome = compute(&Request {
         scope: scope(),
         requested: vec![AC1.to_owned()],
+        requested_targets: vec![None],
         runs: store
             .runs()
             .into_iter()
@@ -712,6 +830,7 @@ fn without_the_hosts_mock_inspection_the_audit_cannot_call_the_obligation_health
     let outcome = compute(&Request {
         scope: scope(),
         requested: vec![AC1.to_owned()],
+        requested_targets: vec![None],
         runs: store.runs(),
         bindings: store.bindings(),
         injections: None,
