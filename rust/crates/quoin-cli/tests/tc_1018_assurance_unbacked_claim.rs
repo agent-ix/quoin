@@ -401,7 +401,11 @@ fn sacm_preserves_authored_citation_resolution_without_a_fabricated_run() {
             citation["evidence"]["references"],
             serde_json::json!([reference])
         );
-        assert_eq!(citation["sourceData"]["state"], state);
+        if state == "resolved" {
+            assert_eq!(citation["sourceData"]["state"], "resolved");
+        } else {
+            assert!(citation["sourceData"].get("state").is_none());
+        }
         assert!(citation["evidence"].get("suites").is_none());
         let id = citation["id"].as_str().unwrap();
         let sacm_args: Vec<_> = std::iter::once("--sacm")
@@ -460,7 +464,7 @@ fn sacm_preserves_goal_and_assumption_counter_inferences_and_reports_strategy_ch
         ("CH-OPEN-STRATEGY", "ARG-1018-B"),
     ] {
         use std::fmt::Write as _;
-        write!(additions, "  - id: {id}\n    target: {target}\n    statement: A challenge requiring review.\n    status: open\n    owner: release-owner\n    resolution_refs: []\n").unwrap();
+        write!(additions, "  - id: {id}\n    target: {target}\n    statement: A challenge requiring review.\n    status: open\n    owner: release-owner\n").unwrap();
     }
     write(
         repo.path(),
