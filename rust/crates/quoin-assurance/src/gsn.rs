@@ -820,7 +820,7 @@ mod tests {
     #[test]
     fn open_derived_obligation_becomes_undeveloped_goal_with_reason() {
         let case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
-            "claims": [{"id":"StR-1", "kind":"goal", "statement":"Claim", "status":"open", "children":[
+            "claims": [{"id":"StR-1", "kind":"goal", "statement":"Claim", "status":"open", "context":[{"id":"HZ-1","kind":"context","statement":"Hazard","status":"supported","children":[]}], "children":[
                 {"id":"StR-1/strategy", "kind":"strategy", "statement":"Argument", "status":"open", "children":[
                     {"id":"FR-1-AC-1", "kind":"solution", "statement":"Requirement", "status":"open", "because":"audit reason", "children":[]}
                 ]}
@@ -836,6 +836,15 @@ mod tests {
         assert_eq!(goal.status, "open");
         assert_eq!(goal.open_reason.as_deref(), Some("audit reason"));
         assert_eq!(goal.undeveloped, Some(true));
+        let context = model
+            .nodes
+            .iter()
+            .find(|node| node.source == "HZ-1")
+            .expect("case context maps to a GSN context");
+        assert_eq!(context.kind, "context");
+        assert!(model.edges.iter().any(|edge| edge.kind == "in_context_of"
+            && edge.from == model.roots[0]
+            && edge.to == context.id));
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.

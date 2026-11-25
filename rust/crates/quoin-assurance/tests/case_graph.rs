@@ -395,7 +395,7 @@ fn tc_447_409_claim_type_matching_is_case_insensitive_in_both_directions() {
 }
 
 /// Provenance: agent-ix/quoin#PLAT-1644.
-#[trace("FR-223-AC-1")]
+#[trace("FR-223-AC-1", "FR-223-AC-2")]
 #[test]
 fn mitigated_risks_are_sorted_context_and_missing_targets_stay_open() {
     let mut docs = bundle();
@@ -434,4 +434,11 @@ fn mitigated_risks_are_sorted_context_and_missing_targets_stay_open() {
             .as_deref()
             .is_some_and(|reason| reason.contains("HZ-MISSING"))
     );
+    let no_context = build_case(&input(
+        bundle(),
+        vec![obligation("FR-001-AC-1", "It holds.")],
+        vec![],
+    ));
+    let json = serde_json::to_value(no_context).expect("case serializes");
+    assert!(json["claims"][0].get("context").is_none());
 }
