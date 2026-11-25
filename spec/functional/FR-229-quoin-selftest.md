@@ -1,5 +1,5 @@
 ---
-id: FR-215
+id: FR-229
 title: "Run quoin self-tests against the installed binary"
 type: FR
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: "extends"
 ---
 
-# FR-215: Run quoin self-tests against the installed binary
+# FR-229: Run quoin self-tests against the installed binary
 
 ## Description
 
@@ -39,7 +39,7 @@ environment without checking out the source repository.
 - The self-test runner SHALL compare the case's exit code, stdout bytes, and
   each expected file byte for byte.
 - The runner SHALL capture each case process's standard-error output separately
-  from stdout and include it in that case's FR-216 run-record result. It SHALL
+  from stdout and include it in that case's FR-230 run-record result. It SHALL
   NOT compare standard-error output with expected output or use it to determine
   the case status.
 - `quoin selftest --run` SHALL run every embedded case when no `--case` is
@@ -63,12 +63,12 @@ environment without checking out the source repository.
 - The runner SHALL return a non-zero exit status when any case is `fail` or
   `error`, while retaining the result for every case that ran.
 - The runner SHALL retain the canonical run record defined by
-  [FR-216](./FR-216-selftest-run-record.md). When `--out <path>` is supplied,
+  [FR-230](./FR-230-selftest-run-record.md). When `--out <path>` is supplied,
   it SHALL write those same JSON bytes to that path instead of standard output;
   otherwise it SHALL write the JSON bytes to standard output when a repository
   evidence store is available. When no repository evidence store is available,
   it SHALL reject the run before starting any case unless `--out <path>` is
-  supplied, as required by FR-216.
+  supplied, as required by FR-230.
 - The high-process-risk features identified by the applicable
   `FeatureRiskRating` records SHALL each have at least one self-test case
   traced to an acceptance criterion of that feature.
@@ -89,28 +89,28 @@ environment without checking out the source repository.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-215-CON-1 | The runner SHALL materialize cases from the installed binary's embedded resources. | Security | Inspection |
-| FR-215-CON-2 | The runner SHALL NOT check out a repository or copy cases from another repository. | Security | Inspection |
-| FR-215-CON-3 | The self-test result SHALL state test outcomes only. | Compliance | Inspection |
-| FR-215-CON-4 | The self-test result SHALL NOT assign a process-risk rating, score, class, or customer-approval decision. | Compliance | Inspection |
+| FR-229-CON-1 | The runner SHALL materialize cases from the installed binary's embedded resources. | Security | Inspection |
+| FR-229-CON-2 | The runner SHALL NOT check out a repository or copy cases from another repository. | Security | Inspection |
+| FR-229-CON-3 | The self-test result SHALL state test outcomes only. | Compliance | Inspection |
+| FR-229-CON-4 | The self-test result SHALL NOT assign a process-risk rating, score, class, or customer-approval decision. | Compliance | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-215-AC-1 | Given a listed case, `quoin selftest --run` executes its script using the installed binary and records a result for the case. | Test |
-| FR-215-AC-2 | Given an expected stdout file that differs from actual stdout by one byte, the case result is `fail` and names the case id and its traced criteria. | Test |
-| FR-215-AC-3 | Given a case process that exits non-zero or cannot execute, the result is respectively `fail` or `error`, and the command exits non-zero. | Test |
-| FR-215-AC-4 | Given a high-process-risk FR without a self-test case traced to one of its acceptance criteria, the PLAT-1640 validation-kit trace-coverage check names that FR as uncovered. | Test |
-| FR-215-AC-5 | Given a test case without a trace marker, `quire matrix --strict` over `selftest/` reports the case as untagged. | Test |
-| FR-215-AC-6 | Given no `--case` option, `quoin selftest --run` runs every embedded case; given repeated `--case <id>` options, it runs only the named cases once each in embedded declaration order; an unknown id is rejected before any case starts and is named in the error. | Test |
-| FR-215-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
-| FR-215-AC-8 | Given `--out <path>`, the command writes the retained FR-216 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out` and with a repository evidence store, it writes those bytes to stdout; without a repository evidence store it rejects before starting any case. | Test |
-| FR-215-AC-9 | Given a quire-rs-owned case embedded by quire-cli, its source and trace tags remain in quire-rs and the listed case is evidence of test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
-| FR-215-AC-10 | Given `quoin selftest --run` on Linux, the runner executes selected cases; given macOS, Windows, or another unsupported operating system, it returns `unsupported-platform` before starting any case and reports no case as passed. Listing embedded cases on an unsupported operating system does not report execution success. | Test |
+| FR-229-AC-1 | Given a listed case, `quoin selftest --run` executes its script using the installed binary and records a result for the case. | Test |
+| FR-229-AC-2 | Given an expected stdout file that differs from actual stdout by one byte, the case result is `fail` and names the case id and its traced criteria. | Test |
+| FR-229-AC-3 | Given a case process that exits non-zero or cannot execute, the result is respectively `fail` or `error`, and the command exits non-zero. | Test |
+| FR-229-AC-4 | Given a high-process-risk FR without a self-test case traced to one of its acceptance criteria, the PLAT-1640 validation-kit trace-coverage check names that FR as uncovered. | Test |
+| FR-229-AC-5 | Given a test case without a trace marker, `quire matrix --strict` over `selftest/` reports the case as untagged. | Test |
+| FR-229-AC-6 | Given no `--case` option, `quoin selftest --run` runs every embedded case; given repeated `--case <id>` options, it runs only the named cases once each in embedded declaration order; an unknown id is rejected before any case starts and is named in the error. | Test |
+| FR-229-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
+| FR-229-AC-8 | Given `--out <path>`, the command writes the retained FR-230 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out` and with a repository evidence store, it writes those bytes to stdout; without a repository evidence store it rejects before starting any case. | Test |
+| FR-229-AC-9 | Given a quire-rs-owned case embedded by quire-cli, its source and trace tags remain in quire-rs and the listed case is evidence of test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
+| FR-229-AC-10 | Given `quoin selftest --run` on Linux, the runner executes selected cases; given macOS, Windows, or another unsupported operating system, it returns `unsupported-platform` before starting any case and reports no case as passed. Listing embedded cases on an unsupported operating system does not report execution success. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-112](./FR-112-npm-distribution-from-release-assets.md) defines the shipped quoin binary; [FR-030](./FR-030-evidence-store.md) defines the evidence store used for retained results.
-- **Downstream**: [FR-216](./FR-216-selftest-run-record.md) records each run; [FR-217](./FR-217-validation-report.md) presents its results.
-- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the validation-kit trace-coverage check in FR-215-AC-4; that check is outside the `quoin selftest` runner scope.
+- **Downstream**: [FR-230](./FR-230-selftest-run-record.md) records each run; [FR-217](./FR-217-validation-report.md) presents its results.
+- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the validation-kit trace-coverage check in FR-229-AC-4; that check is outside the `quoin selftest` runner scope.

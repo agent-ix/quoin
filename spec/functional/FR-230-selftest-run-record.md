@@ -1,5 +1,5 @@
 ---
-id: FR-216
+id: FR-230
 title: "Retain versioned self-test run records"
 type: FR
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: "requires"
 ---
 
-# FR-216: Retain versioned self-test run records
+# FR-230: Retain versioned self-test run records
 
 ## Description
 
@@ -68,13 +68,13 @@ found.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-216-AC-1 | A successful run record contains the tool name and version output, OS, architecture, suite, timestamp, and every case result. | Test |
-| FR-216-AC-2 | A failed, errored, or not-executed run is retained with the corresponding status and detail. | Test |
-| FR-216-AC-3 | A run involving an external tool records the PLAT-1641 configuration index reference used by the run. | Test |
-| FR-216-AC-4 | A serialized run record contains no source commit digest, source revision pin, or report-content digest. | Test |
-| FR-216-AC-5 | Given no repository evidence store, `selftest --run --out <path>` retains the canonical run record at that path; without `--out`, the runner reports the missing retained destination and starts no case. | Test |
-| FR-216-AC-6 | Given nested ancestors with `spec/evidence/`, the recorder writes under the nearest one without invoking Git and creates its `runs/<suite>/` directories; when no ancestor has `spec/evidence/`, it uses required `--out`. | Test |
-| FR-216-AC-7 | Given two case runs with identical exit code, stdout, and expected files but different stderr bytes, both case statuses are identical and each run record contains its actual stderr as a JSON-safe UTF-8 string, replacing invalid byte sequences with U+FFFD. | Test |
+| FR-230-AC-1 | A successful run record contains the tool name and version output, OS, architecture, suite, timestamp, and every case result. | Test |
+| FR-230-AC-2 | A failed, errored, or not-executed run is retained with the corresponding status and detail. | Test |
+| FR-230-AC-3 | A run involving an external tool records the PLAT-1641 configuration index reference used by the run. | Test |
+| FR-230-AC-4 | A serialized run record contains no source commit digest, source revision pin, or report-content digest. | Test |
+| FR-230-AC-5 | Given no repository evidence store, `selftest --run --out <path>` retains the canonical run record at that path; without `--out`, the runner reports the missing retained destination and starts no case. | Test |
+| FR-230-AC-6 | Given nested ancestors with `spec/evidence/`, the recorder writes under the nearest one without invoking Git and creates its `runs/<suite>/` directories; when no ancestor has `spec/evidence/`, it uses required `--out`. | Test |
+| FR-230-AC-7 | Given two case runs with identical exit code, stdout, and expected files but different stderr bytes, both case statuses are identical and each run record contains its actual stderr as a JSON-safe UTF-8 string, replacing invalid byte sequences with U+FFFD. | Test |
 
 ## Dependencies
 

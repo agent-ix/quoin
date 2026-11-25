@@ -3,7 +3,7 @@ id: FR-217
 title: "Generate a tool validation report from retained runs"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/FR-216"
+  - target: "ix://agent-ix/quoin/FR-230"
     type: "depends_on"
 ---
 
@@ -61,5 +61,5 @@ collected for the intended use.
 
 ## Dependencies
 
-- **Upstream**: [FR-216](./FR-216-selftest-run-record.md) defines retained results; [FR-030](./FR-030-evidence-store.md) defines the evidence store.
+- **Upstream**: [FR-230](./FR-230-selftest-run-record.md) defines retained results; [FR-030](./FR-030-evidence-store.md) defines the evidence store.
 - **Downstream**: [FR-218](./FR-218-validation-report-completeness-and-signoff.md) defines report completeness and signature verification.
