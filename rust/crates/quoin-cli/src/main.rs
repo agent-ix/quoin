@@ -185,8 +185,8 @@ fn emit_error(error: ShellError) -> std::process::ExitCode {
 
 fn emit_error_to(
     error: ShellError,
-    stdout: &mut impl std::io::Write,
-    stderr: &mut impl std::io::Write,
+    stdout: &mut dyn std::io::Write,
+    stderr: &mut dyn std::io::Write,
 ) -> std::process::ExitCode {
     let stream = match error.stream {
         ShellOutput::Stdout => stdout,
