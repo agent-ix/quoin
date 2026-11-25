@@ -90,7 +90,7 @@ fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
     assert_eq!(statement.candidate_revision(), "candidate-1");
     assert_eq!(statement.proof_id(), "proof-1");
     assert_eq!(statement.attestation_id(), "att-1");
-    assert_eq!(statement.output_media_type(), "application/octet-stream");
+    assert_eq!(statement.output_media_type(), "text/plain");
     assert_eq!(
         statement.output_size_bytes(),
         u64::try_from(OUTPUT.len()).unwrap()
