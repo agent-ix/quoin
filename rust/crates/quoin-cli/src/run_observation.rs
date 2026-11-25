@@ -20,6 +20,8 @@ pub(crate) struct RunObservationFile {
     /// Expected purpose of the run represented by the record.
     #[serde(default)]
     pub(crate) run_kind: Option<String>,
+    /// Exact FR-078 target this host observation is admitted for.
+    pub(crate) selected_target: Option<quoin_quire_types::TargetLocus>,
     /// Source HEAD selected for this read operation.
     pub(crate) selected_head: Option<String>,
     /// Checkout SHA observed for the run-package execution.

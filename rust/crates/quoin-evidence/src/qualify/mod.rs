@@ -50,6 +50,8 @@ pub enum Cause {
     Unevaluated,
     /// The performed revision is not the selected HEAD.
     WrongRevision,
+    /// The retained selection identifies a different selected corpus or target.
+    SelectionMismatch,
     /// Newer evidence or an invalidated reliance supersedes the pass.
     Stale,
     /// Observations contradict each other.
@@ -144,6 +146,11 @@ pub struct RunObservation {
     pub actor: Option<ActorAdmission>,
     /// A verified signature result that failed actor admission.
     pub actor_rejection: Option<String>,
+    /// The host's FR-188 result freshly obtained at qualification time.
+    /// `None` means no current verifier result was available.
+    pub current_formal_rule_status: Option<Value>,
+    /// The exact FR-078 target the host admitted this observation for.
+    pub selected_target: Option<quoin_quire_types::TargetLocus>,
 }
 
 /// An actor and the host's admission of it.

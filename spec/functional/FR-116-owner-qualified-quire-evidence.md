@@ -71,7 +71,7 @@ input, not an existing JSON envelope or permission to place arbitrary keys in
 
 | Input | Required meaning |
 |---|---|
-| Selected target | The owner selection and original criterion identity supplied by quire-rs FR-078, including its source/document/origin identity, exact requested target and declared method. A flat string ID alone is insufficient when the selected inventory distinguishes rows with the same rendered ID. |
+| Selected target | The owner-issued `SelectedInventory` and exact requested target supplied by quire-rs FR-078, including its `CriterionIdentity`, origin, exact requested target and declared method. Selection equality includes the selected corpus identity and the selected target identity; a flat rendered criterion ID alone is insufficient when distinct source/document/origin rows share that ID. |
 | Original audit premises | The original `AuditInput`, canonical `RunRecord` and `Binding` observations, method catalog and original record/run/entry locators from the owner read boundary. The bridge invokes the shared audit itself as quire-rs FR-078 specifies; a supplied `healthy` flag or precomputed pass list is insufficient. |
 | Producer definition | A Quoin-owner-approved definition identity/version describing the allowed declared-method/act-kind pair, required verification acts, required result semantics, permitted target scope, actual tool/configuration premises and required CI or manual association. A suite or command name alone is not this definition. |
 | Bounded reliance | The original FR-093 decision and current observation for the exact intended producer use, including accountable owner, permitted downstream decisions, validation evidence and accepted limitations. The requested positive use must be permitted, not merely another advisory use of the producer. |
@@ -115,7 +115,7 @@ record locator or producer outcome.
 | `absent` | A requested retained record or required act result is absent. |
 | `unevaluated` | A required premise or authoritative observation is unavailable or was not evaluated; an unknown owner contract is not an accepted default. |
 | `wrong-revision` | The actually performed source revision does not match the actual selected source HEAD/context required for this act. |
-| `selection-mismatch` | The audit, record association or owner context belongs to a different selected corpus. |
+| `selection-mismatch` | The supplied audit, record association or admitted owner context identifies a different FR-078 selected corpus or target identity than the requested `SelectedInventory` target. The cause identifies the requested target and the available conflicting locus; it is distinct from `record-conflict`, which means observations for one selection contradict each other. |
 | `stale` | Owner revalidation/time validity or newer selected evidence invalidates the earlier reliance. Original failed/error outcomes remain visible as well. |
 | `invalid-target` / `ambiguous-target` | The requested target is not in the owner selection, or distinct owner targets cannot be resolved unambiguously. |
 | `record-conflict` | Required owner observations contradict each other or cannot be correlated to one consistent selected record/read. |
@@ -233,7 +233,7 @@ can be reviewed independently of that unresolved waiver policy.
 
 ## Acceptance Criteria
 
-The criteria below are obligations. Tests tagged to them exercise the
+The criteria below are obligations. Existing tests tagged to them exercise the
 Analysis-act qualifier only; the `selection-mismatch`, `invalid-target` and
 `ambiguous-target` clauses of FR-116-AC-8 and AC-13 and the reused
 configuration-name clause of FR-116-AC-10 have no implementation yet. This
@@ -260,6 +260,7 @@ discharge.
 | FR-116-AC-16 | Accepted retained claims create no source symbols/binders or copied store records; legacy no-evidence audit/matrix behavior and the original canonical store formats remain unchanged. | Test |
 | FR-116-AC-17 | Waiver-shaped input produces no positive qualification and remains distinct under quire-rs FR-078's pending owner policy; no fixture or report claims the final recognized-waiver strict policy settled by this contract. | Test |
 | FR-116-AC-18 | The result exposes the host-admission and bounded authority basis for every positive decision; an unadmitted self-asserted context cannot obtain a positive decision merely by copying the expected field values. | Test |
+| FR-116-AC-19 | Given two FR-078 selected targets with the same rendered criterion ID but different source/document/origin identity, qualifying a record or admitted owner observation for one against the other returns `selection-mismatch` for the requested target and no positive decision; the matching-identity control retains the existing result. | Test |
 
 ## Dependencies
 

@@ -15,6 +15,10 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use filament_analyze::MAX_REPORT_BYTES;
+use filament_contract_model::{
+    CheckedNodeId, CheckedNodeTag, CheckedPackageEvidence, CheckedPackageReadLimits,
+    CheckedPackageV2, CheckedPackageV2ReadResult, CompleteLoweringProfileV2, LoweringProfileRef,
+};
 use ix_trace_rs::trace;
 
 const DISAGREEMENT: &str =
@@ -275,6 +279,157 @@ fn tc_002_audit_reports_the_obligation_undischarged_until_it_is_stated() {
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     let after = audit(&stated);
     assert!(!undischarged(&after, "FR-001-AC-1"), "{after}");
+}
+
+#[trace("FR-184-AC-26")]
+#[test]
+fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consumer() {
+    let binary = std::env::var_os("FILAMENT_ANALYZE_BIN")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute() && path.is_file())
+        .expect("FILAMENT_ANALYZE_BIN must name the real executable absolute path");
+    let producer_execute = std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
+        .map(|directory| directory.join("engineering-assurance"))
+        .find(|path| path.is_absolute() && path.is_file())
+        .expect("engineering-assurance producer-execute must be installed on PATH");
+    let package_fixture = include_bytes!("fixtures/formal-rules/checked-package-v2-success.json");
+    let mut evidence = CheckedPackageEvidence::default();
+    evidence.support_feature("filament.value.complete/v1");
+    let checked = match CheckedPackageV2::read(
+        package_fixture,
+        CheckedPackageReadLimits::bounded(),
+        &evidence,
+    ) {
+        CheckedPackageV2ReadResult::Admitted(package) => *package,
+        other => panic!("checked package fixture was refused: {other:?}"),
+    };
+    let selected_claim: CheckedNodeId = serde_json::from_value(serde_json::json!({
+        "package": "test/formal-rules",
+        "path": ["claim/approved"],
+        "ordinal": 0
+    }))
+    .unwrap();
+    let lowered = checked.lower(
+        &[selected_claim],
+        &CompleteLoweringProfileV2 {
+            reference: LoweringProfileRef {
+                authority: "filament-analyze".into(),
+                identity: "quoin-fr184-ac26".into(),
+            },
+            required_source_selections: Vec::new(),
+            supported_tags: CheckedNodeTag::ALL.iter().copied().collect(),
+            require_bounds: true,
+            work_limit: u64::MAX,
+        },
+    );
+    let package = lowered
+        .package
+        .canonical_bytes()
+        .expect("lowered contract package bytes");
+
+    let fixture = fixture();
+    let spec = SPEC.replace("|  |\n", "| Analysis |\n");
+    std::fs::write(fixture.repo.path().join("spec/FR-001-example.md"), spec).unwrap();
+    let package_path = fixture.home.path().join("contract-package.json");
+    let report_path = fixture.home.path().join("actual-report.json");
+    std::fs::write(&package_path, package).unwrap();
+    let produced = Command::new(binary)
+        .current_dir(fixture.repo.path())
+        .args([
+            "run-package",
+            "--package",
+            package_path.to_str().unwrap(),
+            "--output",
+            report_path.to_str().unwrap(),
+            "--z3",
+            "/usr/bin/false",
+            "--cvc5",
+            "/usr/bin/false",
+            "--producer-execute",
+            producer_execute.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(report_path.is_file(), "{}", stderr(&produced));
+    let actual_report: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&report_path).unwrap()).unwrap();
+    assert_eq!(actual_report["schema"], "filament.differential-report/v2");
+    assert_eq!(actual_report["producer"]["name"], "filament-analyze");
+
+    let recorded = fixture.record(&report_path, &["--discharges", "FR-001-AC-1", "--json"]);
+    assert_eq!(recorded.status.code(), Some(0), "{}", stderr(&recorded));
+    let record: serde_json::Value = serde_json::from_slice(&recorded.stdout).unwrap();
+    let run = "runs/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json";
+    let recorded_run = Path::new(record["run_path"].as_str().unwrap());
+    assert!(recorded_run.ends_with(run), "{}", recorded_run.display());
+    let retained_path = fixture.repo.path().join("spec/evidence").join(run);
+    let retained: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(retained_path).unwrap()).unwrap();
+    assert_eq!(retained["suite"], "SUITE-SMT");
+    assert_eq!(retained["timestamp"], "2026-01-01T00:00:00Z");
+    let projection_path = fixture
+        .repo
+        .path()
+        .join("spec/evidence/analysis-reports")
+        .join("SUITE-SMT")
+        .join(std::path::Path::new(run).file_name().unwrap());
+    let projection: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(projection_path).unwrap()).unwrap();
+    assert_eq!(projection["producer"], actual_report["producer"]);
+    for (projected_engine, actual_engine) in projection["engines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(actual_report["engines"].as_array().unwrap())
+    {
+        assert_eq!(projected_engine["engine"], actual_engine["engine"]);
+        assert_eq!(
+            projected_engine["configured_executable"],
+            actual_engine["configuredExecutable"]
+        );
+        assert_eq!(projected_engine["status"], actual_engine["status"]);
+        assert_eq!(projected_engine["outcome"], actual_engine["outcome"]);
+    }
+    assert_eq!(
+        projection["disposition"],
+        actual_report["differential"]["disposition"]
+    );
+
+    let observation_path = fixture.home.path().join("run-observation.json");
+    let same_revision = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    std::fs::write(
+        &observation_path,
+        serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": run,
+            "run_kind": "analysis",
+            "selected_head": same_revision,
+            "checkout_sha": same_revision,
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let matrix = fixture.matrix(&observation_path);
+    assert_eq!(matrix.status.code(), Some(0), "{}", stderr(&matrix));
+    let matrix: serde_json::Value = serde_json::from_slice(&matrix.stdout).unwrap();
+    let rows = matrix["requirements"][0]["criteria"][0]["analysis_evidence"]
+        .as_array()
+        .unwrap();
+    let expected = match (
+        actual_report["differential"]["disposition"].as_str(),
+        actual_report["differential"]["agreedStatus"].as_str(),
+    ) {
+        (Some("agreement"), Some("satisfied")) => "unevaluated",
+        (Some("agreement"), Some("refuted")) => "failed",
+        (Some("inconclusive" | "unavailable"), _) => "errored",
+        (Some("disagreement"), _) => "absent",
+        other => panic!("unexpected real analyzer disposition: {other:?}"),
+    };
+    assert!(rows.iter().any(|row| row["status"] == expected), "{rows:?}");
+    assert!(
+        rows.iter().all(|row| row["status"] != "qualified-record"),
+        "the real report has no admitted FR-116 owner premises: {rows:?}"
+    );
 }
 
 #[trace("FR-153-AC-8")]

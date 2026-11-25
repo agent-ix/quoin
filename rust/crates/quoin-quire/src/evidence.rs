@@ -42,6 +42,9 @@ pub struct Request {
     pub scope: ScopeRequest,
     /// The obligation ids to count, as the caller requests them.
     pub requested: Vec<String>,
+    /// Exact FR-078 identity for each requested ID when supplied by the host.
+    /// Kept parallel to `requested`; absent identities retain ID-only behavior.
+    pub requested_targets: Vec<Option<quoin_quire_types::TargetLocus>>,
     /// Every retained run, in any order, with its own host observations.
     pub runs: Vec<RetainedRun>,
     /// The binding graph, read by the FR-032 audit.
@@ -106,6 +109,7 @@ fn cause_code(cause: Cause) -> CauseCode {
         Cause::Absent => CauseCode::Absent,
         Cause::Unevaluated => CauseCode::Unevaluated,
         Cause::WrongRevision => CauseCode::WrongRevision,
+        Cause::SelectionMismatch => CauseCode::SelectionMismatch,
         Cause::Stale => CauseCode::Stale,
         Cause::RecordConflict => CauseCode::RecordConflict,
         Cause::QualificationRejected => CauseCode::QualificationRejected,
@@ -128,6 +132,41 @@ fn ordinals_stating(entries: &[CriterionEntry<'_>], id: &str) -> Vec<usize> {
         .filter(|(_, entry)| entry.obligation().id == id)
         .map(|(ordinal, _)| ordinal)
         .collect()
+}
+
+fn target_locus(
+    identity: quire_rs::obligation::inventory::CriterionIdentity<'_>,
+) -> quoin_quire_types::TargetLocus {
+    let (id, origin, row) = match identity.origin() {
+        quire_rs::obligation::inventory::CriterionOrigin::AuthoredRow { authored_id } => {
+            (authored_id, "authored-row", None)
+        }
+        quire_rs::obligation::inventory::CriterionOrigin::RenderedRow { rendered_id, row } => {
+            (rendered_id, "rendered-row", Some(row))
+        }
+        quire_rs::obligation::inventory::CriterionOrigin::CombinatorialTable { rendered_id } => {
+            (rendered_id, "combinatorial-table", None)
+        }
+    };
+    quoin_quire_types::TargetLocus {
+        source: identity.source_name().to_owned(),
+        document: identity.document().to_owned(),
+        id: id.to_owned(),
+        origin: origin.to_owned(),
+        row,
+        line: None,
+    }
+}
+
+fn same_target_identity(
+    left: &quoin_quire_types::TargetLocus,
+    right: &quoin_quire_types::TargetLocus,
+) -> bool {
+    left.source == right.source
+        && left.document == right.document
+        && left.id == right.id
+        && left.origin == right.origin
+        && left.row == right.row
 }
 
 /// The shared FR-032 audit, run over the newest run of every suite the
@@ -257,16 +296,43 @@ fn compute_with<T>(
 
     let mut accepted: Vec<(usize, Decision)> = Vec::new();
     let mut pending: Vec<Pending> = Vec::new();
-    for id in &request.requested {
+    for (requested_index, id) in request.requested.iter().enumerate() {
+        let requested_identity = request
+            .requested_targets
+            .get(requested_index)
+            .and_then(Option::as_ref);
         let found = ordinals_stating(&entries, id);
-        let (ordinal, method) = match found.as_slice() {
-            [ordinal] => (
-                *ordinal,
+        let matched = if let Some(identity) = requested_identity {
+            found.iter().copied().find(|ordinal| {
+                entries.get(*ordinal).is_some_and(|entry| {
+                    let actual = target_locus(entry.identity());
+                    same_target_identity(&actual, identity)
+                })
+            })
+        } else {
+            None
+        };
+        let (ordinal, method) = match (requested_identity, matched, found.as_slice()) {
+            (Some(_), Some(ordinal), _) => (
+                ordinal,
                 entries
-                    .get(*ordinal)
+                    .get(ordinal)
                     .and_then(|entry| entry.obligation().method.clone()),
             ),
-            [] => {
+            (Some(identity), None, [ordinal]) => {
+                pending.push(Pending {
+                    entry: Some(*ordinal),
+                    requested: id.clone(),
+                    cause: CauseCode::SelectionMismatch,
+                    locator: None,
+                    detail: format!(
+                        "requested target {}:{}:{}:{} is not the selected FR-078 target",
+                        identity.source, identity.document, identity.id, identity.origin
+                    ),
+                });
+                continue;
+            }
+            (Some(_), None, []) => {
                 pending.push(Pending::unresolved(
                     id,
                     CauseCode::InvalidTarget,
@@ -274,7 +340,29 @@ fn compute_with<T>(
                 ));
                 continue;
             }
-            _ => {
+            (Some(_), None, _) => {
+                pending.push(Pending::unresolved(
+                    id,
+                    CauseCode::AmbiguousTarget,
+                    "more than one selected row has this id and no exact target identity matched",
+                ));
+                continue;
+            }
+            (None, _, [ordinal]) => (
+                *ordinal,
+                entries
+                    .get(*ordinal)
+                    .and_then(|entry| entry.obligation().method.clone()),
+            ),
+            (None, _, []) => {
+                pending.push(Pending::unresolved(
+                    id,
+                    CauseCode::InvalidTarget,
+                    "no selected obligation has this id",
+                ));
+                continue;
+            }
+            (None, _, _) => {
                 pending.push(Pending::unresolved(
                     id,
                     CauseCode::AmbiguousTarget,
@@ -283,6 +371,41 @@ fn compute_with<T>(
                 continue;
             }
         };
+        if let Some(requested_identity) = requested_identity {
+            let conflicting = request.runs.iter().find(|run| {
+                run.record.entries.iter().any(|entry| {
+                    entry
+                        .trace_ids
+                        .iter()
+                        .flatten()
+                        .any(|trace_id| trace_id == id)
+                }) && run
+                    .observation
+                    .selected_target
+                    .as_ref()
+                    .is_some_and(|target| {
+                        target.id == *id && !same_target_identity(target, requested_identity)
+                    })
+            });
+            if let Some(run) = conflicting {
+                pending.push(Pending {
+                    entry: Some(ordinal),
+                    requested: id.clone(),
+                    cause: CauseCode::SelectionMismatch,
+                    locator: Some(RunLocator {
+                        record: run.file.clone(),
+                        run: format!("{}/{}", run.record.suite, run.record.timestamp),
+                        entry: run
+                            .record
+                            .entries
+                            .first()
+                            .map_or_else(String::new, |entry| entry.symbol.to_string()),
+                    }),
+                    detail: format!("requested target {}:{}:{}:{} conflicts with the admitted target {}:{}:{}:{}", requested_identity.source, requested_identity.document, requested_identity.id, requested_identity.origin, conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.source.as_str()), conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.document.as_str()), conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.id.as_str()), conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.origin.as_str())),
+                });
+                continue;
+            }
+        }
         let about = audit_outcome(&audit, id);
         let answer = qualify::qualify(&qualify::Request {
             obligation: id,
