@@ -4,12 +4,15 @@
 //! Run the self-test cases embedded in the installed binary (FR-215, PLAT-1639).
 
 use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command};
+use quoin_core::error::{CoreError, CoreErrorCode};
 use quoin_core::protocol::Response;
 use std::collections::BTreeSet;
-use std::path::{Component, Path};
+use std::path::{Component, Path, PathBuf};
 use std::process::{Command as ProcessCommand, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
 
 const CASE_TIMEOUT: Duration = Duration::from_secs(60);
 const TERMINATION_GRACE: Duration = Duration::from_millis(100);
@@ -59,14 +62,16 @@ pub(crate) fn command() -> Command {
                 .value_name("ID")
                 .help("Select a case to run; may be repeated")
                 .action(ArgAction::Append)
-                .requires("run"),
+                .requires("run")
+                .conflicts_with("list"),
         )
         .arg(
             Arg::new("out")
                 .long("out")
                 .value_name("PATH")
                 .help("Write the run record to a file")
-                .requires("run"),
+                .requires("run")
+                .conflicts_with("list"),
         )
 }
 
@@ -76,9 +81,156 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         return Ok(list());
     }
 
+    ensure_supported_platform(std::env::consts::OS)?;
+
     let selected = select_cases(arguments)?;
-    let _ = selected;
-    Err("the self-test runner is not ready".to_owned())
+    let working_directory =
+        std::env::current_dir().map_err(|error| format!("resolve current directory: {error}"))?;
+    let evidence_store = find_evidence_store(&working_directory);
+    let requested_output = arguments.get_one::<String>("out").map(PathBuf::from);
+    require_retained_destination(evidence_store.as_deref(), requested_output.as_deref())?;
+
+    let binary = std::env::current_exe()
+        .map_err(|error| format!("resolve running quoin binary: {error}"))?;
+    let tool_version = version_output(&binary)?;
+    let results = selected
+        .iter()
+        .map(|case| run_case(case, &binary, CASE_TIMEOUT))
+        .collect::<Vec<_>>();
+    let timestamp = OffsetDateTime::now_utc()
+        .format(&Rfc3339)
+        .map_err(|error| format!("format self-test timestamp: {error}"))?;
+
+    let store_path = evidence_store.map(|root| record_path(&root, &timestamp));
+    let explicit_output = requested_output
+        .as_deref()
+        .map(|path| absolute_path(&working_directory, path));
+    let retained_location = store_path
+        .as_deref()
+        .or(explicit_output.as_deref())
+        .ok_or_else(|| "self-test run record destination was not selected".to_owned())?;
+    let retained_location = retained_location
+        .to_str()
+        .ok_or_else(|| "self-test run record destination is not valid UTF-8".to_owned())?;
+    let record = serde_json::json!({
+        "schemaVersion": 1,
+        "tool": "quoin",
+        "toolVersion": tool_version,
+        "os": std::env::consts::OS,
+        "architecture": std::env::consts::ARCH,
+        "suite": "SELFTEST",
+        "timestamp": timestamp,
+        "results": results,
+        "retainedLocation": retained_location,
+    });
+    let mut bytes = serde_json::to_string_pretty(&record)
+        .map_err(|error| format!("serialize self-test run record: {error}"))?
+        .into_bytes();
+    bytes.push(b'\n');
+
+    if let Some(path) = store_path.as_deref() {
+        write_record(path, &bytes)?;
+    }
+    if let Some(path) = explicit_output.as_deref() {
+        if store_path.as_deref() != Some(path) {
+            write_record(path, &bytes)?;
+        }
+    }
+
+    let failed = record["results"]
+        .as_array()
+        .is_some_and(|results| results.iter().any(|result| result["status"] != "pass"));
+    let rendered = if requested_output.is_some() {
+        String::new()
+    } else {
+        String::from_utf8(bytes)
+            .map_err(|error| format!("canonical run record is not UTF-8: {error}"))?
+    };
+    let payload = serde_json::json!({
+        "rendered": rendered.trim_end_matches('\n'),
+        "renderedStream": "stdout",
+    });
+    if failed {
+        Ok(Response::partial(
+            payload,
+            &CoreError::new(
+                CoreErrorCode::Rejected,
+                "one or more self-test cases failed or errored",
+            ),
+        ))
+    } else {
+        Ok(Response::ok(payload))
+    }
+}
+
+fn ensure_supported_platform(os: &str) -> Result<(), String> {
+    match os {
+        "linux" | "macos" => Ok(()),
+        other => Err(format!(
+            "unsupported-platform: quoin self-tests run on Linux and macOS; current platform is {other}"
+        )),
+    }
+}
+
+fn find_evidence_store(start: &Path) -> Option<PathBuf> {
+    start.ancestors().find_map(|ancestor| {
+        let evidence = ancestor.join("spec/evidence");
+        evidence.is_dir().then_some(evidence)
+    })
+}
+
+fn require_retained_destination(
+    evidence_store: Option<&Path>,
+    requested_output: Option<&Path>,
+) -> Result<(), String> {
+    if evidence_store.is_none() && requested_output.is_none() {
+        return Err(
+            "no repository evidence store; provide --out <path> to retain the run record"
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
+fn record_path(evidence_store: &Path, timestamp: &str) -> PathBuf {
+    let key = timestamp
+        .bytes()
+        .filter(|byte| byte.is_ascii_alphanumeric() || *byte == b'-')
+        .map(char::from)
+        .collect::<String>();
+    evidence_store
+        .join("runs")
+        .join("SELFTEST")
+        .join(format!("{key}.json"))
+}
+
+fn absolute_path(working_directory: &Path, path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_owned()
+    } else {
+        working_directory.join(path)
+    }
+}
+
+fn write_record(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("run record path has no parent: {}", path.display()))?;
+    std::fs::create_dir_all(parent)
+        .map_err(|error| format!("create run record directory {}: {error}", parent.display()))?;
+    std::fs::write(path, bytes)
+        .map_err(|error| format!("write run record {}: {error}", path.display()))
+}
+
+fn version_output(binary: &Path) -> Result<String, String> {
+    let output = ProcessCommand::new(binary)
+        .arg("--version")
+        .output()
+        .map_err(|error| format!("read quoin version: {error}"))?;
+    if !output.status.success() {
+        return Err(format!("quoin --version exited with {}", output.status));
+    }
+    String::from_utf8(output.stdout).map_err(|error| format!("quoin version is not UTF-8: {error}"))
 }
 
 fn list() -> Response {
@@ -230,11 +382,15 @@ fn run_case(case: &EmbeddedCase, quoin_binary: &Path, timeout: Duration) -> Case
         }
     };
     let mut differences = Vec::new();
-    if output.status.code() != Some(expected_exit) {
+    let actual_exit = output.status.code();
+    if actual_exit != Some(expected_exit) {
         differences.push(format!(
             "exit code expected {expected_exit}, got {:?}",
-            output.status.code()
+            actual_exit
         ));
+    }
+    if actual_exit.is_some_and(|code| code != 0) {
+        differences.push(format!("case exited non-zero with {actual_exit:?}"));
     }
     if embedded_file(case, "expected/stdout") != Some(output.stdout.as_slice()) {
         differences.push("stdout bytes differ".to_owned());
@@ -349,24 +505,34 @@ fn execute_script(
     let stderr_reader = thread::spawn(move || read_pipe(stderr));
     let deadline = Instant::now() + timeout;
     let mut timed_out = false;
-    let status = loop {
-        match child.try_wait() {
-            Ok(Some(status)) => break status,
-            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(10)),
-            Ok(None) => {
-                timed_out = true;
-                terminate_process_group(&mut child)?;
-                break child
-                    .wait()
-                    .map_err(|error| format!("reap timed-out case process: {error}"))?;
-            }
-            Err(error) => {
-                terminate_process_group(&mut child)?;
-                let _ = child.wait();
-                return Err(format!("wait for case process: {error}"));
+    let mut status = None;
+    loop {
+        if status.is_none() {
+            match child.try_wait() {
+                Ok(result) => status = result,
+                Err(error) => {
+                    terminate_process_group(&mut child)?;
+                    let _ = child.wait();
+                    return Err(format!("wait for case process: {error}"));
+                }
             }
         }
-    };
+        if status.is_some() && stdout_reader.is_finished() && stderr_reader.is_finished() {
+            break;
+        }
+        if Instant::now() >= deadline {
+            timed_out = true;
+            terminate_process_group(&mut child)?;
+            status = Some(
+                child
+                    .wait()
+                    .map_err(|error| format!("reap timed-out case process: {error}"))?,
+            );
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    let status = status.ok_or_else(|| "case process exited without a status".to_owned())?;
     let stdout = stdout_reader
         .join()
         .map_err(|_| "case stdout reader panicked".to_owned())?
@@ -397,14 +563,10 @@ fn terminate_process_group(child: &mut std::process::Child) -> Result<(), String
     let _ = rustix::process::kill_process_group(pid, rustix::process::Signal::TERM);
     let deadline = Instant::now() + TERMINATION_GRACE;
     while Instant::now() < deadline {
-        if child
-            .try_wait()
-            .map_err(|error| format!("wait for terminating case process: {error}"))?
-            .is_some()
-        {
-            break;
+        match child.try_wait() {
+            Ok(Some(_)) | Err(_) => break,
+            Ok(None) => thread::sleep(Duration::from_millis(5)),
         }
-        thread::sleep(Duration::from_millis(5));
     }
     let _ = rustix::process::kill_process_group(pid, rustix::process::Signal::KILL);
     Ok(())
@@ -466,6 +628,15 @@ mod tests {
         );
     }
 
+    #[trace("FR-215-AC-10")]
+    #[test]
+    fn tc_215_runner_fails_closed_on_unsupported_platforms() {
+        assert!(ensure_supported_platform("linux").is_ok());
+        assert!(ensure_supported_platform("macos").is_ok());
+        let error = ensure_supported_platform("windows").expect_err("Windows is unsupported");
+        assert!(error.contains("unsupported-platform"));
+    }
+
     #[trace("FR-215-AC-6")]
     #[test]
     fn tc_215_unknown_case_is_rejected_before_execution() {
@@ -489,22 +660,166 @@ mod tests {
         );
     }
 
-    #[trace("FR-215-AC-1")]
+    #[trace("FR-216-AC-7")]
     #[test]
-    fn tc_215_runner_compares_exit_stdout_and_expected_files() {
-        let case = EmbeddedCase {
-            id: "runner-output",
+    fn tc_216_stderr_is_json_safe_and_does_not_affect_case_status() {
+        let first = EmbeddedCase {
+            id: "runner-stderr-a",
             files: &[
-                EmbeddedCaseFile { path: "run.sh", bytes: b"#!/bin/sh\n# Trace: FR-215-AC-1\nprintf 'hello\\n'\nprintf 'saved\\n' > result.txt\n" },
-                EmbeddedCaseFile { path: "expected/exit_code", bytes: b"0\n" },
-                EmbeddedCaseFile { path: "expected/stdout", bytes: b"hello\n" },
-                EmbeddedCaseFile { path: "expected/files/result.txt", bytes: b"saved\n" },
+                EmbeddedCaseFile {
+                    path: "run.sh",
+                    bytes: b"#!/bin/sh\n# Trace: FR-216-AC-7\nprintf 'hello\\n'\nprintf 'first\\377\\n' >&2\nprintf 'saved\\n' > result.txt\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/exit_code",
+                    bytes: b"0\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/stdout",
+                    bytes: b"hello\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/files/result.txt",
+                    bytes: b"saved\n",
+                },
+            ],
+        };
+        let second = EmbeddedCase {
+            id: "runner-stderr-b",
+            files: &[
+                EmbeddedCaseFile {
+                    path: "run.sh",
+                    bytes: b"#!/bin/sh\n# Trace: FR-216-AC-7\nprintf 'hello\\n'\nprintf 'second\\n' >&2\nprintf 'saved\\n' > result.txt\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/exit_code",
+                    bytes: b"0\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/stdout",
+                    bytes: b"hello\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/files/result.txt",
+                    bytes: b"saved\n",
+                },
+            ],
+        };
+        let first_result = run_case(&first, Path::new("/bin/true"), Duration::from_secs(1));
+        let second_result = run_case(&second, Path::new("/bin/true"), Duration::from_secs(1));
+        assert_eq!(first_result.status, "pass");
+        assert_eq!(second_result.status, first_result.status);
+        assert_eq!(first_result.stderr, "first�\n");
+        assert_eq!(second_result.stderr, "second\n");
+        let json = serde_json::to_string(&first_result).expect("lossy stderr is JSON-safe");
+        assert!(json.contains("first�\\n"));
+    }
+
+    #[trace("FR-215-AC-2")]
+    #[test]
+    fn tc_215_stdout_mismatch_names_case_and_trace() {
+        let case = EmbeddedCase {
+            id: "stdout-mismatch",
+            files: &[
+                EmbeddedCaseFile {
+                    path: "run.sh",
+                    bytes: b"#!/bin/sh\n# Trace: FR-215-AC-2\nprintf 'hello\\n'\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/exit_code",
+                    bytes: b"0\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/stdout",
+                    bytes: b"hellO\n",
+                },
             ],
         };
         let result = run_case(&case, Path::new("/bin/true"), Duration::from_secs(1));
-        assert_eq!(result.status, "pass");
-        assert!(result.detail.is_empty());
-        assert_eq!(result.criteria, ["FR-215-AC-1"]);
+        assert_eq!(result.id, "stdout-mismatch");
+        assert_eq!(result.status, "fail");
+        assert_eq!(result.criteria, ["FR-215-AC-2"]);
+        assert!(result.detail.contains("stdout bytes differ"));
+    }
+
+    #[trace("FR-215-AC-3")]
+    #[test]
+    fn tc_215_nonzero_exit_fails_even_when_expected() {
+        let case = EmbeddedCase {
+            id: "nonzero-exit",
+            files: &[
+                EmbeddedCaseFile {
+                    path: "run.sh",
+                    bytes: b"#!/bin/sh\n# Trace: FR-215-AC-3\nexit 7\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/exit_code",
+                    bytes: b"7\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/stdout",
+                    bytes: b"",
+                },
+            ],
+        };
+        let result = run_case(&case, Path::new("/bin/true"), Duration::from_secs(1));
+        assert_eq!(result.status, "fail");
+        assert!(result.detail.contains("exited non-zero"));
+    }
+
+    #[trace("FR-215-AC-7")]
+    #[test]
+    fn tc_215_timeout_is_an_error_with_timeout_detail() {
+        let case = EmbeddedCase {
+            id: "timeout-result",
+            files: &[
+                EmbeddedCaseFile {
+                    path: "run.sh",
+                    bytes: b"#!/bin/sh\n# Trace: FR-215-AC-7\nsleep 5\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/exit_code",
+                    bytes: b"0\n",
+                },
+                EmbeddedCaseFile {
+                    path: "expected/stdout",
+                    bytes: b"",
+                },
+            ],
+        };
+        let result = run_case(&case, Path::new("/bin/true"), Duration::from_millis(50));
+        assert_eq!(result.status, "error");
+        assert!(result.detail.contains("timeout"));
+    }
+
+    #[trace("FR-216-AC-6")]
+    #[test]
+    fn tc_216_evidence_store_search_uses_nearest_ancestor() {
+        let root = tempfile::tempdir().expect("a temporary repository");
+        let outer_evidence = root.path().join("spec/evidence");
+        std::fs::create_dir_all(&outer_evidence).expect("the outer evidence store exists");
+        let nested = root.path().join("nested");
+        std::fs::create_dir_all(nested.join("spec/evidence"))
+            .expect("the nested evidence store exists");
+        let start = nested.join("worktree");
+        std::fs::create_dir_all(&start).expect("the nested working directory exists");
+
+        assert_eq!(
+            find_evidence_store(&start),
+            Some(nested.join("spec/evidence"))
+        );
+        assert_eq!(
+            record_path(Path::new("/repo/spec/evidence"), "2026-11-24T19:30:01.123Z"),
+            PathBuf::from("/repo/spec/evidence/runs/SELFTEST/2026-11-24T193001123Z.json")
+        );
+    }
+
+    #[trace("FR-216-AC-5")]
+    #[test]
+    fn tc_216_no_store_requires_explicit_run_record_destination() {
+        assert!(require_retained_destination(None, None).is_err());
+        assert!(require_retained_destination(None, Some(Path::new("result.json"))).is_ok());
+        assert!(require_retained_destination(Some(Path::new("spec/evidence")), None).is_ok());
     }
 
     #[trace("FR-215-AC-7")]
@@ -513,7 +828,7 @@ mod tests {
         let root = tempfile::tempdir().expect("a temporary test root");
         let marker = root.path().join("descendant-survived");
         let script = format!(
-            "#!/bin/sh\n(sleep 0.4; touch '{}') &\nsleep 5\n",
+            "#!/bin/sh\n(sleep 0.4; touch '{}') &\nexit 0\n",
             marker.display()
         );
         let case_tmp = tempfile::tempdir().expect("a temporary case directory");
