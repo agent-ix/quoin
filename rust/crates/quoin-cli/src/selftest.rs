@@ -1035,7 +1035,10 @@ mod tests {
             serde_json::from_slice(&retained_bytes).expect("the retained record parses");
         assert_eq!(retained["anomalySet"]["provided"].as_bool(), Some(true));
         assert_eq!(retained["anomalySet"]["producerVersion"], version);
-        assert_eq!(retained["anomalySet"]["producerVersion"], retained["toolVersion"]);
+        assert_eq!(
+            retained["anomalySet"]["producerVersion"],
+            retained["toolVersion"]
+        );
         assert_eq!(
             retained["anomalySet"]["documents"],
             serde_json::json!([
@@ -1054,7 +1057,10 @@ mod tests {
         assert_eq!(empty["anomalySet"]["producerVersion"], empty["toolVersion"]);
         assert_eq!(empty["anomalySet"]["documents"], serde_json::json!([]));
         assert_eq!(absent["anomalySet"]["provided"].as_bool(), Some(false));
-        assert_eq!(absent["anomalySet"]["producerVersion"], absent["toolVersion"]);
+        assert_eq!(
+            absent["anomalySet"]["producerVersion"],
+            absent["toolVersion"]
+        );
         assert_eq!(absent["anomalySet"]["documents"], serde_json::json!([]));
         assert_ne!(empty["anomalySet"], absent["anomalySet"]);
     }
