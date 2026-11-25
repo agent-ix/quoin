@@ -26,7 +26,8 @@ pub(crate) fn command() -> Command {
         .about("Report authored validation evidence and supplier ratings")
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .subcommand(Command::new("ratings")
+        .subcommand(
+            Command::new("ratings")
                 .about("Report supplier feature ratings for each functional requirement")
                 .arg(Arg::new("repo").long("repo").default_value("."))
                 .arg(
@@ -36,7 +37,8 @@ pub(crate) fn command() -> Command {
                         .required(true)
                         .help("Repository namespace used to match ix:// requirement targets"),
                 )
-                .arg(Arg::new("json").long("json").action(ArgAction::SetTrue)))
+                .arg(Arg::new("json").long("json").action(ArgAction::SetTrue)),
+        )
         .subcommand(report::command())
 }
 

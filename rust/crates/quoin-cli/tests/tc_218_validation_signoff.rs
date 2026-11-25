@@ -38,12 +38,7 @@ fn find_program(name: &str) -> Option<PathBuf> {
 
 fn verify(repository: &Path, allowed_signers: &Path, verifier: &Path) -> Value {
     let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
-        .args([
-            "validation",
-            "report",
-            "--verify-signoff",
-            "--repo",
-        ])
+        .args(["validation", "report", "--verify-signoff", "--repo"])
         .arg(repository)
         .arg("--allowed-signers")
         .arg(allowed_signers)
@@ -75,7 +70,10 @@ fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsi
     std::fs::create_dir_all(&repository).expect("repository directory");
     git(&repository, &["init", "--quiet"]);
     git(&repository, &["config", "user.name", "Quality Person"]);
-    git(&repository, &["config", "user.email", "quality@example.test"]);
+    git(
+        &repository,
+        &["config", "user.email", "quality@example.test"],
+    );
     git(&repository, &["config", "gpg.format", "ssh"]);
 
     let key = temp.path().join("signing-key");
@@ -104,24 +102,47 @@ fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsi
     );
     git(
         &repository,
-        &["config", "user.signingkey", key.to_str().expect("key path is UTF-8")],
+        &[
+            "config",
+            "user.signingkey",
+            key.to_str().expect("key path is UTF-8"),
+        ],
     );
 
     let report_path = repository.join("validation-report.md");
     let report_json_path = repository.join("validation-report.json");
     std::fs::write(&report_path, "# Tool validation report\n").expect("report written");
     std::fs::write(&report_json_path, r#"{"ratedBy":"quality"}"#).expect("report JSON written");
-    git(&repository, &["add", "validation-report.md", "validation-report.json"]);
-    git(&repository, &["commit", "-S", "-m", "Validation report", "-m", "Signed-off-meaning: tool-validation-accepted"]);
+    git(
+        &repository,
+        &["add", "validation-report.md", "validation-report.json"],
+    );
+    git(
+        &repository,
+        &[
+            "commit",
+            "-S",
+            "-m",
+            "Validation report",
+            "-m",
+            "Signed-off-meaning: tool-validation-accepted",
+        ],
+    );
     let accepted = verify(&repository, &allowed_signers, &verifier);
     assert_eq!(accepted["status"], "accepted");
     assert_eq!(accepted["principalMatchesRatedBy"], true);
     assert_eq!(accepted["meaningPresent"], true);
 
-    std::fs::write(&report_path, "# Tool validation report\nNo meaning trailer.\n")
-        .expect("updated report written");
+    std::fs::write(
+        &report_path,
+        "# Tool validation report\nNo meaning trailer.\n",
+    )
+    .expect("updated report written");
     git(&repository, &["add", "validation-report.md"]);
-    git(&repository, &["commit", "-S", "-m", "Update validation report"]);
+    git(
+        &repository,
+        &["commit", "-S", "-m", "Update validation report"],
+    );
     let missing_meaning = verify(&repository, &allowed_signers, &verifier);
     assert_eq!(missing_meaning["status"], "not_accepted");
     assert_eq!(missing_meaning["reason"], "meaning_missing");
@@ -129,7 +150,10 @@ fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsi
     git(&repository, &["config", "commit.gpgsign", "false"]);
     std::fs::write(&report_path, "# Unsigned report revision\n").expect("unsigned report written");
     git(&repository, &["add", "validation-report.md"]);
-    git(&repository, &["commit", "--no-gpg-sign", "-m", "Unsigned report revision"]);
+    git(
+        &repository,
+        &["commit", "--no-gpg-sign", "-m", "Unsigned report revision"],
+    );
     let unsigned = verify(&repository, &allowed_signers, &verifier);
     assert_eq!(unsigned["status"], "not_accepted");
     assert_eq!(unsigned["reason"], "unsigned");

@@ -74,7 +74,13 @@ fn invoke(result: &Path, output: &Path) -> std::process::Output {
         .expect("validation report command starts")
 }
 
-#[trace("FR-217-AC-1", "FR-217-AC-3", "FR-217-AC-4", "FR-218-AC-1", "FR-218-AC-6")]
+#[trace(
+    "FR-217-AC-1",
+    "FR-217-AC-3",
+    "FR-217-AC-4",
+    "FR-218-AC-1",
+    "FR-218-AC-6"
+)]
 #[test]
 fn command_writes_deterministic_markdown_and_json_for_complete_validation() {
     let temp = tempfile::tempdir().expect("temporary fixture directory");
@@ -105,7 +111,11 @@ fn command_writes_deterministic_markdown_and_json_for_complete_validation() {
     assert_eq!(report["status"], "complete");
     assert_eq!(report["coverage"][0]["rating"], "high_process_risk");
     assert_eq!(report["ratedBy"], "quality");
-    assert!(String::from_utf8(first_markdown).expect("Markdown is UTF-8").contains("## Sign-off"));
+    assert!(
+        String::from_utf8(first_markdown)
+            .expect("Markdown is UTF-8")
+            .contains("## Sign-off")
+    );
     let serialized = serde_json::to_string(&report).expect("report serializes");
     assert!(!serialized.contains("digest"));
     assert!(!serialized.contains("commitId"));
@@ -122,13 +132,28 @@ fn incomplete_command_still_writes_the_report_and_names_each_gap() {
     assert_eq!(output.status.code(), Some(1));
     assert!(output_directory.join("validation-report.md").is_file());
     let report: Value = serde_json::from_slice(
-        &std::fs::read(output_directory.join("validation-report.json")).expect("JSON report exists"),
+        &std::fs::read(output_directory.join("validation-report.json"))
+            .expect("JSON report exists"),
     )
     .expect("JSON report parses");
     assert_eq!(report["status"], "incomplete");
-    let reasons = report["incompleteReasons"].as_array().expect("reasons listed");
+    let reasons = report["incompleteReasons"]
+        .as_array()
+        .expect("reasons listed");
     let reasons = reasons.iter().filter_map(Value::as_str).collect::<Vec<_>>();
-    assert!(reasons.iter().any(|reason| reason.contains("uncovered FR FR-001")));
-    assert!(reasons.iter().any(|reason| reason.contains("failed case fixture-case")));
-    assert!(reasons.iter().any(|reason| reason.contains("result missing for tool quire-cli")));
+    assert!(
+        reasons
+            .iter()
+            .any(|reason| reason.contains("uncovered FR FR-001"))
+    );
+    assert!(
+        reasons
+            .iter()
+            .any(|reason| reason.contains("failed case fixture-case"))
+    );
+    assert!(
+        reasons
+            .iter()
+            .any(|reason| reason.contains("result missing for tool quire-cli"))
+    );
 }

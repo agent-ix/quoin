@@ -76,7 +76,11 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             || repo.clone(),
             |path| {
                 let path = PathBuf::from(path);
-                if path.is_absolute() { path } else { repo.join(path) }
+                if path.is_absolute() {
+                    path
+                } else {
+                    repo.join(path)
+                }
             },
         );
         let executable = arguments
@@ -313,7 +317,10 @@ fn build_report(
             return Err(format!("run record {} has no tool name", path.display()));
         }
         for case in &record.results {
-            if !matches!(case.status.as_str(), "pass" | "fail" | "error" | "not-executed") {
+            if !matches!(
+                case.status.as_str(),
+                "pass" | "fail" | "error" | "not-executed"
+            ) {
                 return Err(format!(
                     "run record {} has unknown case status {:?}",
                     path.display(),
@@ -324,7 +331,11 @@ fn build_report(
         records.push(record);
     }
     records.sort_by(|left, right| {
-        (&left.tool, &left.suite, &left.timestamp).cmp(&(&right.tool, &right.suite, &right.timestamp))
+        (&left.tool, &left.suite, &left.timestamp).cmp(&(
+            &right.tool,
+            &right.suite,
+            &right.timestamp,
+        ))
     });
 
     let (intended_use, mut reasons) = validation_documents(&records);
@@ -342,12 +353,18 @@ fn build_report(
         tools.push(ToolRun {
             name: record.tool.clone(),
             version,
-            os: record.os.clone().unwrap_or_else(|| "not provided".to_owned()),
+            os: record
+                .os
+                .clone()
+                .unwrap_or_else(|| "not provided".to_owned()),
             architecture: record
                 .architecture
                 .clone()
                 .unwrap_or_else(|| "not provided".to_owned()),
-            suite: record.suite.clone().unwrap_or_else(|| "not stated".to_owned()),
+            suite: record
+                .suite
+                .clone()
+                .unwrap_or_else(|| "not stated".to_owned()),
             timestamp: record
                 .timestamp
                 .clone()
@@ -362,7 +379,10 @@ fn build_report(
             match case.status.as_str() {
                 "fail" => reasons.push(format!("failed case {}: {}", case.id, record.tool)),
                 "error" => reasons.push(format!("errored case {}: {}", case.id, record.tool)),
-                "not-executed" => reasons.push(format!("not-executed tool {} case {}", record.tool, case.id)),
+                "not-executed" => reasons.push(format!(
+                    "not-executed tool {} case {}",
+                    record.tool, case.id
+                )),
                 _ => {}
             }
             results.push(ReportCase {
@@ -384,9 +404,11 @@ fn build_report(
     let mut feature_cases = BTreeMap::<(String, String), Vec<String>>::new();
     for record in &records {
         if let Some(inputs) = &record.validation_inputs {
-            feature_ratings_by_tool.extend(feature_ratings(&inputs.documents).into_iter().map(
-                |(feature, rating)| ((record.tool.clone(), feature), rating),
-            ));
+            feature_ratings_by_tool.extend(
+                feature_ratings(&inputs.documents)
+                    .into_iter()
+                    .map(|(feature, rating)| ((record.tool.clone(), feature), rating)),
+            );
         }
         for case in &record.results {
             for criterion in &case.criteria {
@@ -459,7 +481,11 @@ fn build_report(
     }
     reasons.sort();
     reasons.dedup();
-    let status = if reasons.is_empty() { "complete" } else { "incomplete" };
+    let status = if reasons.is_empty() {
+        "complete"
+    } else {
+        "incomplete"
+    };
     Ok(ValidationReport {
         status: status.to_owned(),
         tools,
@@ -636,7 +662,11 @@ fn known_anomalies(
             let highlight = (!high_process_risk_features.is_empty()).then(|| {
                 format!(
                     "affects high-process-risk feature{} {}",
-                    if high_process_risk_features.len() == 1 { "" } else { "s" },
+                    if high_process_risk_features.len() == 1 {
+                        ""
+                    } else {
+                        "s"
+                    },
                     high_process_risk_features.join(", ")
                 )
             });
@@ -644,7 +674,10 @@ fn known_anomalies(
                 tool: "quoin".to_owned(),
                 anomaly: row.id.clone(),
                 title: row.title.clone().unwrap_or_else(|| "not stated".to_owned()),
-                severity: row.severity.clone().unwrap_or_else(|| "not stated".to_owned()),
+                severity: row
+                    .severity
+                    .clone()
+                    .unwrap_or_else(|| "not stated".to_owned()),
                 safety_impact: row.safety_impact.clone(),
                 affected_frs,
                 status: row.status.clone(),
@@ -654,15 +687,19 @@ fn known_anomalies(
         })
         .collect::<Vec<_>>();
     anomalies.sort_by(|left, right| {
-        left
-            .high_process_risk_features
+        left.high_process_risk_features
             .is_empty()
             .cmp(&right.high_process_risk_features.is_empty())
             .then_with(|| left.anomaly.cmp(&right.anomaly))
     });
     Ok(KnownAnomalies {
         provided: true,
-        status: if anomalies.is_empty() { "none known" } else { "listed" }.to_owned(),
+        status: if anomalies.is_empty() {
+            "none known"
+        } else {
+            "listed"
+        }
+        .to_owned(),
         anomalies,
     })
 }
@@ -683,7 +720,9 @@ fn embedded_external_tools_index() -> Option<ExternalToolsIndexReport> {
         .map(|entry| entry.id.as_str())
         .collect::<BTreeSet<_>>();
     let valid = ids.len() == REQUIRED_TOOL_IDS.len()
-        && REQUIRED_TOOL_IDS.iter().all(|required| ids.contains(required))
+        && REQUIRED_TOOL_IDS
+            .iter()
+            .all(|required| ids.contains(required))
         && index
             .entries
             .iter()
@@ -702,7 +741,10 @@ fn external_tool_report(
     let entries = index.map_or(&[][..], |index| index.entries.as_slice());
     let mut evidence_by_id = BTreeMap::<&str, Vec<&ExternalToolEvidence>>::new();
     for evidence in records.iter().flat_map(|record| &record.external_tools) {
-        evidence_by_id.entry(&evidence.tool_id).or_default().push(evidence);
+        evidence_by_id
+            .entry(&evidence.tool_id)
+            .or_default()
+            .push(evidence);
     }
     let out = entries
         .iter()
@@ -717,7 +759,10 @@ fn external_tool_report(
                     && evidence.version_invocation == entry.version_invocation
                     && evidence.index_path == INDEX_PATH
                     && evidence.index_format_version == "1"
-                    && matches!(evidence.observed_version_stream.as_str(), "stdout" | "stderr")
+                    && matches!(
+                        evidence.observed_version_stream.as_str(),
+                        "stdout" | "stderr"
+                    )
                     && !evidence.observed_version_output.trim().is_empty()
             });
             ExternalToolReport {
@@ -725,12 +770,16 @@ fn external_tool_report(
                 executable: entry.executable.clone(),
                 version_invocation: entry.version_invocation.clone(),
                 observed_version_output: if valid {
-                    evidence.map_or_else(String::new, |evidence| evidence.observed_version_output.clone())
+                    evidence.map_or_else(String::new, |evidence| {
+                        evidence.observed_version_output.clone()
+                    })
                 } else {
                     "not provided".to_owned()
                 },
                 observed_version_stream: if valid {
-                    evidence.map_or_else(String::new, |evidence| evidence.observed_version_stream.clone())
+                    evidence.map_or_else(String::new, |evidence| {
+                        evidence.observed_version_stream.clone()
+                    })
                 } else {
                     "not provided".to_owned()
                 },
@@ -767,11 +816,7 @@ fn render_markdown(report: &ValidationReport) -> String {
             cell(&tool.retained_location)
         ));
     }
-    lines.extend([
-        String::new(),
-        "## Intended use".to_owned(),
-        String::new(),
-    ]);
+    lines.extend([String::new(), "## Intended use".to_owned(), String::new()]);
     if report.intended_use.is_empty() {
         lines.push("not provided".to_owned());
     } else {
@@ -825,7 +870,8 @@ fn render_markdown(report: &ValidationReport) -> String {
         lines.push("none known".to_owned());
     } else {
         lines.extend([
-            "| Tool | Anomaly | Title | Severity | Safety impact | Affected FRs | Status |".to_owned(),
+            "| Tool | Anomaly | Title | Severity | Safety impact | Affected FRs | Status |"
+                .to_owned(),
             "| --- | --- | --- | --- | --- | --- | --- |".to_owned(),
         ]);
         for anomaly in &report.known_anomalies.anomalies {
@@ -845,11 +891,7 @@ fn render_markdown(report: &ValidationReport) -> String {
             ));
         }
     }
-    lines.extend([
-        String::new(),
-        "## External tools".to_owned(),
-        String::new(),
-    ]);
+    lines.extend([String::new(), "## External tools".to_owned(), String::new()]);
     if let Some(index) = &report.external_tools_index {
         lines.push(format!(
             "Configuration index: `{}` (format version `{}`).",
@@ -871,7 +913,8 @@ fn render_markdown(report: &ValidationReport) -> String {
         lines.push(String::new());
     }
     lines.extend([
-        "| Tool | Executable | Version invocation | Observed version | Stream | Status |".to_owned(),
+        "| Tool | Executable | Version invocation | Observed version | Stream | Status |"
+            .to_owned(),
         "| --- | --- | --- | --- | --- | --- |".to_owned(),
     ]);
     for tool in &report.external_tools {
@@ -885,7 +928,11 @@ fn render_markdown(report: &ValidationReport) -> String {
             cell(&tool.status)
         ));
     }
-    lines.extend([String::new(), "## Incomplete reasons".to_owned(), String::new()]);
+    lines.extend([
+        String::new(),
+        "## Incomplete reasons".to_owned(),
+        String::new(),
+    ]);
     if report.incomplete_reasons.is_empty() {
         lines.push("none".to_owned());
     } else {
@@ -933,7 +980,10 @@ fn verify_signoff(
         .map_err(|error| format!("repository is unavailable: {error}"))?;
     let report = report_directory.join("validation-report.md");
     if !report.is_file() {
-        return Err(format!("validation report is not present: {}", report.display()));
+        return Err(format!(
+            "validation report is not present: {}",
+            report.display()
+        ));
     }
     let report = report
         .strip_prefix(&repo)
@@ -973,12 +1023,9 @@ fn verify_signoff(
         "allowed_signers": allowed_signers,
         "trailer_keys": ["Signed-off-meaning"],
     });
-    let result = quoin_core::runtime::engineering_assurance_call(
-        executable,
-        "signature-verify",
-        &request,
-    )
-    .map_err(|error| error.to_string())?;
+    let result =
+        quoin_core::runtime::engineering_assurance_call(executable, "signature-verify", &request)
+            .map_err(|error| error.to_string())?;
     if !result.status.success() {
         return Err(format!(
             "engineering-assurance signature-verify failed: {}",
@@ -993,11 +1040,20 @@ fn verify_signoff(
         return Err("engineering-assurance returned an unsupported signature result".to_owned());
     }
     let status = value.get("status").and_then(Value::as_str).unwrap_or("");
-    let mapping = value.pointer("/signer/mapping").and_then(Value::as_str).unwrap_or("");
-    let principal = value.pointer("/signer/principal").and_then(Value::as_str).unwrap_or("");
+    let mapping = value
+        .pointer("/signer/mapping")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let principal = value
+        .pointer("/signer/principal")
+        .and_then(Value::as_str)
+        .unwrap_or("");
     let report_json_path = report_directory.join("validation-report.json");
     let report_json = std::fs::read_to_string(&report_json_path).map_err(|error| {
-        format!("validation report JSON is not readable at {}: {error}", report_json_path.display())
+        format!(
+            "validation report JSON is not readable at {}: {error}",
+            report_json_path.display()
+        )
     })?;
     let report_value: Value = serde_json::from_str(&report_json)
         .map_err(|error| format!("validation report JSON is invalid: {error}"))?;
@@ -1009,7 +1065,14 @@ fn verify_signoff(
     let principal_matches = !principal.is_empty() && principal == expected_principal;
     let meaning_present = meaning.iter().any(|value| *value == SIGNED_OFF_MEANING);
     let (result_status, reason) = if status != "signed_valid" {
-        ("not_accepted", Some(if status == "unsigned" { "unsigned" } else { "signature_invalid" }))
+        (
+            "not_accepted",
+            Some(if status == "unsigned" {
+                "unsigned"
+            } else {
+                "signature_invalid"
+            }),
+        )
     } else if mapping != "mapped" {
         ("not_accepted", Some("signer_unmapped"))
     } else if !principal_matches {
@@ -1053,11 +1116,10 @@ fn trailer_values<'a>(value: &'a Value, key: &str) -> Vec<&'a str> {
         .and_then(Value::as_object)
         .and_then(|trailers| trailers.get(key))
         .map(|value| {
-            value
-                .as_array()
-                .map_or_else(|| value.as_str().into_iter().collect(), |values| {
-                    values.iter().filter_map(Value::as_str).collect()
-                })
+            value.as_array().map_or_else(
+                || value.as_str().into_iter().collect(),
+                |values| values.iter().filter_map(Value::as_str).collect(),
+            )
         })
         .unwrap_or_default()
 }
@@ -1082,8 +1144,9 @@ fn field<'a>(object: &'a serde_json::Map<String, Value>, name: &str) -> Option<&
 }
 
 fn is_fr_id(id: &str) -> bool {
-    id.strip_prefix("FR-")
-        .is_some_and(|suffix| !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit()))
+    id.strip_prefix("FR-").is_some_and(|suffix| {
+        !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
+    })
 }
 
 fn cell(value: &str) -> String {
@@ -1102,13 +1165,16 @@ mod tests {
     use ix_trace_rs::trace;
 
     fn run_input(tool: &str, case_status: &str, rating: &str, includes_quire_cli: bool) -> Value {
-        let mut documents = vec![json!({
-            "path": format!("IU-{tool}.md"),
-            "raw": format!("---\nid: IU-001\ntype: IntendedUse\ntool: {tool}\n---\nPurpose for {tool}.\n"),
-        }), json!({
-            "path": format!("FRR-{tool}.md"),
-            "raw": format!("---\nid: FRR-001\ntype: FeatureRiskRating\nscope: supplier\nrating: {rating}\nrated_by: quality\nintended_use: IU-001\nrelationships:\n  - target: ix://agent-ix/{tool}/FR-001\n    type: rates_feature\n---\n"),
-        })];
+        let mut documents = vec![
+            json!({
+                "path": format!("IU-{tool}.md"),
+                "raw": format!("---\nid: IU-001\ntype: IntendedUse\ntool: {tool}\n---\nPurpose for {tool}.\n"),
+            }),
+            json!({
+                "path": format!("FRR-{tool}.md"),
+                "raw": format!("---\nid: FRR-001\ntype: FeatureRiskRating\nscope: supplier\nrating: {rating}\nrated_by: quality\nintended_use: IU-001\nrelationships:\n  - target: ix://agent-ix/{tool}/FR-001\n    type: rates_feature\n---\n"),
+            }),
+        ];
         if includes_quire_cli {
             documents.push(json!({
                 "path": "IU-quire-cli.md",
@@ -1143,7 +1209,13 @@ mod tests {
         path
     }
 
-    #[trace("FR-217-AC-1", "FR-217-AC-3", "FR-217-AC-4", "FR-218-AC-1", "FR-218-AC-6")]
+    #[trace(
+        "FR-217-AC-1",
+        "FR-217-AC-3",
+        "FR-217-AC-4",
+        "FR-218-AC-1",
+        "FR-218-AC-6"
+    )]
     #[test]
     fn report_renders_two_tools_coverage_and_signoff_deterministically() {
         let temp = tempfile::tempdir().expect("fixture directory");
@@ -1176,7 +1248,11 @@ mod tests {
         let json_text = String::from_utf8(json_first).expect("report JSON is UTF-8");
         assert!(!json_text.contains("digest"));
         assert!(!json_text.contains("commitId"));
-        assert!(!render_markdown(&first).to_ascii_lowercase().contains("score"));
+        assert!(
+            !render_markdown(&first)
+                .to_ascii_lowercase()
+                .contains("score")
+        );
         assert_eq!(first.sign_off.name, "");
     }
 
@@ -1191,9 +1267,24 @@ mod tests {
         );
         let report = build_report(&[quoin], None).expect("incomplete report still builds");
         assert_eq!(report.status, "incomplete");
-        assert!(report.incomplete_reasons.iter().any(|reason| reason.contains("uncovered FR FR-001")));
-        assert!(report.incomplete_reasons.iter().any(|reason| reason.contains("fail case case-one")));
-        assert!(report.incomplete_reasons.iter().any(|reason| reason.contains("result missing for tool quire-cli")));
+        assert!(
+            report
+                .incomplete_reasons
+                .iter()
+                .any(|reason| reason.contains("uncovered FR FR-001"))
+        );
+        assert!(
+            report
+                .incomplete_reasons
+                .iter()
+                .any(|reason| reason.contains("fail case case-one"))
+        );
+        assert!(
+            report
+                .incomplete_reasons
+                .iter()
+                .any(|reason| reason.contains("result missing for tool quire-cli"))
+        );
         assert!(render_markdown(&report).contains("not provided"));
     }
 
@@ -1209,10 +1300,17 @@ mod tests {
         let high_risk = BTreeSet::from(["FR-001".to_owned()]);
         let report = known_anomalies(Some(&files), &high_risk).expect("anomaly selection");
         assert_eq!(
-            report.anomalies.iter().map(|row| row.anomaly.as_str()).collect::<Vec<_>>(),
+            report
+                .anomalies
+                .iter()
+                .map(|row| row.anomaly.as_str())
+                .collect::<Vec<_>>(),
             ["AN-001", "AN-002", "AN-004"]
         );
-        assert_eq!(report.anomalies[0].highlight.as_deref(), Some("affects high-process-risk feature FR-001"));
+        assert_eq!(
+            report.anomalies[0].highlight.as_deref(),
+            Some("affects high-process-risk feature FR-001")
+        );
         assert_eq!(report.anomalies[2].safety_impact, "unassessed");
         assert_eq!(report.anomalies[2].severity, "not stated");
         let absent = known_anomalies(None, &BTreeSet::new()).expect("absent set");
@@ -1226,7 +1324,11 @@ mod tests {
     #[test]
     fn external_tools_index_has_the_nine_required_entries() {
         let index = embedded_external_tools_index().expect("embedded external tools index");
-        let ids = index.entries.iter().map(|entry| entry.id.as_str()).collect::<BTreeSet<_>>();
+        let ids = index
+            .entries
+            .iter()
+            .map(|entry| entry.id.as_str())
+            .collect::<BTreeSet<_>>();
         assert_eq!(ids, REQUIRED_TOOL_IDS.into_iter().collect());
         assert_eq!(index.path, INDEX_PATH);
     }

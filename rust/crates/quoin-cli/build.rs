@@ -37,27 +37,18 @@ fn embed_validation_inputs() {
 
     let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
     let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").expect("Cargo sets OUT_DIR"));
-    let mut generated = String::from(
-        "pub(crate) static EMBEDDED_VALIDATION_INPUTS: Option<&[EmbeddedFile]> = ",
-    );
-    append_embedded_files(
-        &repository,
-        "spec/validation",
-        "validation",
-        &mut generated,
-    );
+    let mut generated =
+        String::from("pub(crate) static EMBEDDED_VALIDATION_INPUTS: Option<&[EmbeddedFile]> = ");
+    append_embedded_files(&repository, "spec/validation", "validation", &mut generated);
     generated.push_str(";\npub(crate) static EMBEDDED_ANOMALIES: Option<&[EmbeddedFile]> = ");
-    append_embedded_files(
-        &repository,
-        "spec/anomalies",
-        "anomalies",
-        &mut generated,
-    );
+    append_embedded_files(&repository, "spec/anomalies", "anomalies", &mut generated);
     generated.push_str(";\npub(crate) static EMBEDDED_EXTERNAL_TOOLS_INDEX: Option<&[u8]> = ");
     let index = repository.join("spec/validation/external-tools.v1.json");
     println!("cargo:rerun-if-changed={}", index.display());
     if index.is_file() {
-        let source = index.canonicalize().expect("external tools index path canonicalizes");
+        let source = index
+            .canonicalize()
+            .expect("external tools index path canonicalizes");
         let source = source.to_str().expect("external tools index path is UTF-8");
         generated.push_str(&format!("Some(include_bytes!({source:?}))"));
     } else {
