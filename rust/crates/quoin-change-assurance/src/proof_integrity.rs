@@ -1225,10 +1225,7 @@ mod tests {
             b"attestation",
             b"output",
         );
-        assert_eq!(
-            replay,
-            Qualification::Invalid("checkpoint_binding_mismatch")
-        );
+        assert_eq!(replay, Qualification::Invalid("statement_content_mismatch"));
     }
 
     /// Provenance: PLAT-1801
