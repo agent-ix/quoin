@@ -109,8 +109,8 @@ fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
 
     let changed_attestation = ProofAttestation::from_json(&replacing(
         &json(&attestation_text()),
-        "attestation_id",
-        JsonValue::string("att-substitute"),
+        "observed_at",
+        JsonValue::string("2026-11-23T00:00:00Z"),
     ))
     .unwrap();
     let changed = attestation_bytes(&changed_attestation).unwrap();
