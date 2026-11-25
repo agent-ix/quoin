@@ -5,6 +5,8 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/FR-236"
     type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-162"
+    type: "depends_on"
 ---
 
 # FR-217: Generate a tool validation report from retained runs
@@ -34,6 +36,26 @@ collected for the intended use.
   external-tools configuration index reference, the per-case outcomes, and a
   per-FR table with columns `FR`, `Rating`, `Cases`, and `Result`.
 - The report SHALL identify the retained run records it consumes.
+- The report SHALL contain a `Known anomalies` section for the anomalies
+  carried by the binary that produced the run records. Quoin SHALL embed only
+  its own `Anomaly` records from `spec/anomalies/` in its binary at build time.
+- The quoin validation report generator SHALL render the `Known anomalies`
+  section from the selection returned by `quoin_anomaly::build_report`,
+  preserving FR-162's carried-anomaly selection. Each row SHALL state `Tool`,
+  `Anomaly`, `Title`, `Severity`,
+  `Safety impact`, `Affected FRs`, and `Status`, using authored values and
+  `not stated` where a value is absent. A `safety_impact` of `unassessed` SHALL
+  be shown as `unassessed`.
+- A row whose assessment targets an FR rated `high_process_risk` SHALL be
+  marked `affects high-process-risk feature` and SHALL appear before rows that
+  do not target such an FR. Rows within each group SHALL be ordered by anomaly
+  id. The section SHALL not report a score.
+- When the binary embeds an anomaly set but the selection is empty, the
+  section SHALL state `none known`. When the binary embeds no anomaly set, the
+  section SHALL state `not provided`.
+- Each tool binary SHALL embed only that tool's own anomaly records. The
+  `quire-cli` binary SHALL also embed the `quire-rs` records exposed by its
+  linked crate and SHALL NOT embed Quoin's records.
 - The report SHALL preserve each case's `pass`, `fail`, `error`, or
   `not-executed` status.
 - A `not_high_process_risk` feature MAY rely on retained release test evidence
@@ -58,8 +80,13 @@ collected for the intended use.
 | FR-217-AC-2 | Given a missing required run record, the report says `not provided` for that evidence and does not mark it as passing. | Test |
 | FR-217-AC-3 | Given unchanged retained run records and rating inputs, two report invocations produce byte-identical Markdown and JSON. | Test |
 | FR-217-AC-4 | The generated report contains a `Sign-off` section and does not contain a generated acceptance or compliance decision. | Test |
+| FR-217-AC-5 | Given an embedded fixture set with an open anomaly assessed against a `high_process_risk` FR, an open anomaly assessed against a `not_high_process_risk` FR, and a closed `fixed` anomaly, the `Known anomalies` section renders exactly the two carried anomalies, highlights the high-risk row first, and also lists a closed `wont-fix` anomaly when present. | Test |
+| FR-217-AC-6 | Given an embedded empty anomaly set, the section states `none known`; given no embedded set, it states `not provided`. | Test |
+| FR-217-AC-7 | Given a carried anomaly with `safety_impact: unassessed`, the section renders `unassessed` and does not supply a default value. | Test |
+| FR-217-AC-8 | Given a quire-cli binary embedding quire-cli and quire-rs records, the section lists those records and no Quoin records. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-236](./FR-236-selftest-run-record.md) defines retained results; [FR-030](./FR-030-evidence-store.md) defines the evidence store.
+- **Anomaly selection**: [FR-162](./FR-162-anomaly-report.md) defines which anomaly records a release carries; records are defined by `spec-artifacts-process` FR-014, FR-015 and FR-016.
 - **Downstream**: [FR-218](./FR-218-validation-report-completeness-and-signoff.md) defines report completeness and signature verification.
