@@ -582,15 +582,15 @@ pub fn qualify(
     {
         return Qualification::Invalid("checkpoint_binding_mismatch");
     }
-    let Some(provider) = provider else {
-        return Qualification::Incomplete("retention_provider_unconfigured");
-    };
     let Some(tag_object) = tag_object else {
         return Qualification::Incomplete("signed_tag_object_missing");
     };
     if checkpoint.tag_bytes_sha256 != digest(tag_object) {
         return Qualification::Invalid("checkpoint_binding_mismatch");
     }
+    let Some(provider) = provider else {
+        return Qualification::Incomplete("retention_provider_unconfigured");
+    };
     let objects = [
         RetainedObject::Statement(statement.as_bytes()),
         RetainedObject::TagObject(tag_object),
@@ -910,6 +910,40 @@ mod tests {
         );
         assert_eq!(
             result,
+            Qualification::Incomplete("retention_provider_unconfigured")
+        );
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-2")]
+    #[test]
+    fn supplied_tag_mismatch_precedes_missing_provider() {
+        let checkpoint = checkpoint(b"tag A", "tag-object-A");
+        let mismatch = qualify(
+            None,
+            &scope(),
+            &statement(),
+            Some(b"tag B"),
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            mismatch,
+            Qualification::Invalid("checkpoint_binding_mismatch")
+        );
+
+        let matching = qualify(
+            None,
+            &scope(),
+            &statement(),
+            Some(b"tag A"),
+            Ok(Some(&checkpoint)),
+            b"attestation",
+            b"output",
+        );
+        assert_eq!(
+            matching,
             Qualification::Incomplete("retention_provider_unconfigured")
         );
     }
