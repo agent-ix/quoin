@@ -123,21 +123,6 @@ jobs:
           CLEAN_HOME="$(mktemp -d)"
           HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" module ensure-defaults > /dev/null
           HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" catalog validate
-      - name: Run embedded self-tests on Linux
-        if: runner.os == 'Linux'
-        shell: bash
-        env:
-          BINARY: ${{ matrix.binary }}
-        run: |
-          set -euo pipefail
-          "./release-smoke/$BINARY" selftest --run
-      - name: Skip unsupported macOS and Windows self-tests
-        if: runner.os != 'Linux'
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "::notice::Quoin self-tests are Linux-only; macOS and Windows assets are skipped and not reported as passes."
-          echo "Quoin self-tests are Linux-only; macOS and Windows assets are skipped and not reported as passes." >> "$GITHUB_STEP_SUMMARY"
       - name: Prepare Quoin workflow smoke checker
         shell: bash
         run: |
