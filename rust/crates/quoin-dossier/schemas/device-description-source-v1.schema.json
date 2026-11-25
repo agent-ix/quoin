@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/quoin/device-description-source-v1.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "id", "record_type", "device_id", "name"],
+  "properties": {
+    "schema_version": {"const": 1}, "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "record_type": {"const": "device_description"}, "device_id": {"type": "string", "minLength": 1}, "name": {"type": "string", "minLength": 1},
+    "purpose": {"type": "string", "minLength": 1}, "intended_use": {"type": "string", "minLength": 1},
+    "operating_context": {"type": "string", "minLength": 1}, "software_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/quoin/documentation-level-decision-source-v1.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "id", "record_type", "software_id"],
+  "properties": {
+    "schema_version": {"const": 1}, "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "record_type": {"const": "documentation_level_decision"}, "software_id": {"type": "string", "minLength": 1},
+    "level": {"type": "string", "minLength": 1}, "decided_by": {"type": "string", "minLength": 1},
+    "decided_on": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}, "rationale": {"type": "string", "minLength": 1},
+    "source_records": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "record_type"], "properties": {"id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}, "record_type": {"enum": ["software_description", "documentation_level_decision", "device_description"]}}}}
+  }
+}
