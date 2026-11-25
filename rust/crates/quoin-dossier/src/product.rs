@@ -954,6 +954,32 @@ mod tests {
                 .detail
                 .contains("duplicate software_id")
         );
+
+        let devices = scope();
+        put(
+            devices.path(),
+            "software_description",
+            "shared",
+            r#"{"schema_version":1,"id":"shared","record_type":"software_description","software_id":"SW","name":"Name"}"#,
+        );
+        put(
+            devices.path(),
+            "device_description",
+            "shared",
+            r#"{"schema_version":1,"id":"shared","record_type":"device_description","device_id":"D","name":"Device"}"#,
+        );
+        put(
+            devices.path(),
+            "device_description",
+            "dev2",
+            r#"{"schema_version":1,"id":"dev2","record_type":"device_description","device_id":"D","name":"Other"}"#,
+        );
+        assert!(
+            read_all(devices.path())
+                .expect_err("duplicate device identity rejected")
+                .detail
+                .contains("duplicate device_id")
+        );
     }
 
     #[trace("FR-233-AC-1")]
