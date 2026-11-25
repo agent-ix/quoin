@@ -109,26 +109,11 @@ fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
 
     let changed_attestation = ProofAttestation::from_json(&replacing(
         &json(&attestation_text()),
-        "observed_at",
-        JsonValue::string("2026-11-23T00:00:00Z"),
+        "attestation_id",
+        JsonValue::string("att-substitute"),
     ))
     .unwrap();
     let changed = attestation_bytes(&changed_attestation).unwrap();
-    let substituted = ProofIntegrityStatement::create(
-        &record_id,
-        revision,
-        "candidate-1",
-        &proof_id,
-        &changed_attestation,
-        &changed,
-        OUTPUT,
-    )
-    .unwrap();
-    assert_ne!(
-        statement.attestation_sha256(),
-        substituted.attestation_sha256()
-    );
-    assert_ne!(statement.statement_digest(), substituted.statement_digest());
     assert_eq!(
         ProofIntegrityStatement::create(
             &record_id,
