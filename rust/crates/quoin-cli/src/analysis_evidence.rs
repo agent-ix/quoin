@@ -98,9 +98,9 @@ pub(crate) fn compute(
     .map_err(|error| Failure::from_quire(&error, "evidence.compute"))
 }
 
-/// Render design rows with the exact native identities used for qualification,
-/// and hand back the retained runs the qualification read, so the matrix reads
-/// run identities from the same records.
+/// Render design rows and preserve dropped-relation errors from the same engine
+/// result, alongside the exact native identities and retained runs used for
+/// qualification.
 pub(crate) fn compute_for_matrix(
     repo: &str,
     module_paths: &[String],

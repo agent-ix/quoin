@@ -18,8 +18,8 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# Use the published quire-rs release containing located cross-module semantic
-# reference resolution.
+# Use the published quire-rs release with corrected cross-module semantic
+# reference resolution and partial design-matrix error reporting.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject
