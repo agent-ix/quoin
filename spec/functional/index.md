@@ -208,3 +208,8 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-226: Export an assurance case as SACM 2.3 XMI](./FR-226-sacm-export.md)
 - [FR-227: Report unreachable and unmapped SACM export content](./FR-227-sacm-unmapped-report.md)
 - [FR-228: Identify SACM evidence artifacts by content](./FR-228-sacm-evidence-artifact-content-identity.md)
+- [FR-229: The dossier software description identifies the software and its recorded purpose](./FR-229-dossier-software-description.md)
+- [FR-230: The dossier records the person-authored software documentation-level decision](./FR-230-dossier-documentation-level-decision.md)
+- [FR-231: The dossier software design specification renders the selected software design records](./FR-231-dossier-software-design-specification.md)
+- [FR-232: The dossier device description identifies the device from its authored records](./FR-232-dossier-device-description.md)
+- [FR-233: Define the dossier product-source record contract](./FR-233-dossier-product-source-record-contract.md)
