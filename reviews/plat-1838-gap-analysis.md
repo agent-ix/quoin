@@ -32,3 +32,9 @@ Audited Quoin's computed requirement-to-test matrix and reverse code-to-spec cov
 - Coverage scan: 296 untracked symbols and 1,717 diagnostics repository-wide; none of the untracked test symbols names FR-229 through FR-233. The one relevant diagnostic is the non-binding FR-229–233 module comment in `product.rs`, which is not a test trace tag. `quoin matrix` reported the FR-232 device association test as tagged to AC-1; code review found its test body actually exercises AC-3, recorded in SR-20261117175248.
 - Reverse-gap inventory: changed product generators, source reader, schemas, and gap kinds map to FR-191 and FR-229–233; no unowned user-visible behavior or source/test stubs were found.
 - Semantic review: skipped; not requested.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | The computed matrix now shows each of the twelve cited M3 criteria as tagged by tests. This closes the matrix finding; the separate code review finding records the still-open architecture identity behavior and weak test oracle. `#[trace("FR-191-AC-32", "FR-231-AC-1", "FR-231-AC-3")]` |

@@ -43,3 +43,10 @@ Reviewed frozen PR #1068 at `25a9c9d1` against FR-191 and FR-229–233, includin
 ## Dispositions
 
 Not applicable in the review pass; findings remain open for the coder fix round.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | still-open | Current code still selects parts by `owner` and matches endpoints as synthetic `owner.direction` strings instead of the authored part and port artifact ids. Although the new endpoint cardinality check rejects malformed endpoints, valid artifact-id references remain unresolvable. The fix-round test uses the same synthetic identities and bypasses `render_sds`, so it does not exercise this production path. |
+| FND-002 | fixed | The DOS-DEV renderer now adds each resolved linked software artifact id to `source_rows` and emits it in Sources. `source_rows.insert(format!("software_description/{source_id}"));` |
+| FND-003 | fixed | The missing-software-reference test is now tagged FR-232-AC-3, and the new association contract test separately covers FR-232-AC-1. `#[trace("FR-232-AC-1")]` |
+| FND-004 | fixed | The reader now stores validated records as `serde_json::Value`; the three JSON Schemas remain the single closed record contract. `use serde_json::Value;` |

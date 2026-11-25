@@ -667,7 +667,7 @@ fn render_sds(
     };
     let mut context = SdsContext {
         systems: &systems,
-        parts: systems.parts.iter().map(|p| p.owner.as_str()).collect(),
+        parts: systems.parts.iter().map(|p| p.document.as_str()).collect(),
         decisions: adr_documents.iter().map(|d| d.id.as_str()).collect(),
         selected_parts: BTreeSet::new(),
     };
@@ -724,7 +724,7 @@ fn render_sds_sources(records: &[Value], context: &SdsContext<'_>, body: &mut St
         .iter()
         .filter(|port| context.selected_parts.contains(port.owner.as_str()))
     {
-        source_rows.insert(format!("port/{}.{}", port.owner, port.direction));
+        source_rows.insert(format!("port/{}", port.document));
     }
     for edge in &context.systems.connections {
         if selected_connection(edge, context) {
@@ -738,7 +738,7 @@ fn render_sds_sources(records: &[Value], context: &SdsContext<'_>, body: &mut St
                     .flat_map(|port| {
                         [
                             format!("part/{}", port.owner),
-                            format!("port/{}.{}", port.owner, port.direction),
+                            format!("port/{}", port.document),
                         ]
                     }),
             );
@@ -759,8 +759,7 @@ fn connection_has_port(
     edge: &quoin_quire::systems::Connection,
     port: &quoin_quire::systems::Port,
 ) -> bool {
-    edge.source == format!("{}.{}", port.owner, port.direction)
-        || edge.target == format!("{}.{}", port.owner, port.direction)
+    edge.source == port.document || edge.target == port.document
 }
 
 fn selected_connection(edge: &quoin_quire::systems::Connection, context: &SdsContext<'_>) -> bool {
@@ -772,13 +771,13 @@ fn selected_connection(edge: &quoin_quire::systems::Connection, context: &SdsCon
         .systems
         .ports
         .iter()
-        .filter(|port| edge.source == format!("{}.{}", port.owner, port.direction))
+        .filter(|port| edge.source == port.document)
         .count();
     let target_matches = context
         .systems
         .ports
         .iter()
-        .filter(|port| edge.target == format!("{}.{}", port.owner, port.direction))
+        .filter(|port| edge.target == port.document)
         .count();
     candidate && source_matches == 1 && target_matches == 1
 }
@@ -830,7 +829,7 @@ fn render_sds_item(
     context
         .selected_parts
         .extend(selected_parts.iter().map(|id| (*id).to_owned()));
-    any_design |= render_selected_relationships(context.systems, &selected_parts, r, body, gaps);
+    any_design |= render_selected_relationships(context.systems, &selected_parts, body, gaps);
     any_design
 }
 
@@ -884,7 +883,6 @@ fn render_design_ids(
 fn render_selected_relationships(
     systems: &quoin_quire::systems::Systems,
     selected_parts: &BTreeSet<&str>,
-    record: &Value,
     body: &mut String,
     gaps: &mut Vec<Gap>,
 ) -> bool {
@@ -897,12 +895,12 @@ fn render_selected_relationships(
         rendered = true;
         let _ = writeln!(
             body,
-            "**Port** `{}`: {} / {} / {} _(source: architecture part `{}`)_",
-            cell(&format!("{}.{}", port.owner, port.direction)),
+            "**Port** `{}`: {} / {} / {} _(source: architecture port `{}`)_",
+            cell(&port.document),
             cell(&port.direction),
             cell(&port.interface),
             cell(&port.multiplicity),
-            cell(&port.owner)
+            cell(&port.document)
         );
     }
     for edge in &systems.connections {
@@ -916,12 +914,12 @@ fn render_selected_relationships(
         let source_matches = systems
             .ports
             .iter()
-            .filter(|port| edge.source == format!("{}.{}", port.owner, port.direction))
+            .filter(|port| edge.source == port.document)
             .count();
         let target_matches = systems
             .ports
             .iter()
-            .filter(|port| edge.target == format!("{}.{}", port.owner, port.direction))
+            .filter(|port| edge.target == port.document)
             .count();
         if source_matches != 1 || target_matches != 1 {
             let invalid = if source_matches == 1 {
@@ -931,7 +929,7 @@ fn render_selected_relationships(
             };
             gaps.push(Gap::new(
                 GapKind::SourceReferenceUnresolved,
-                required_field(record, "id"),
+                edge.document.as_str(),
                 format!(
                     "connection {} endpoint {invalid} expected architecture port",
                     edge.document
@@ -984,6 +982,43 @@ mod tests {
         let dir = root.join("dossier/sources").join(kind);
         fs::create_dir_all(&dir).expect("source directory");
         fs::write(dir.join(format!("{id}.json")), value).expect("source record");
+    }
+
+    fn write_system_artifact(
+        root: &Path,
+        id: &str,
+        title: &str,
+        kind: &str,
+        headers: &str,
+        row: &str,
+    ) {
+        let fixture_manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../quoin-quire/tests/fixtures/systems-repo/manifest.yaml");
+        fs::copy(fixture_manifest, root.join("manifest.yaml")).expect("module manifest copied");
+        let dir = root.join("spec");
+        fs::create_dir_all(&dir).expect("architecture source directory");
+        let heading = match kind {
+            "part" => "Part",
+            "port" => "Port",
+            "connection" => "Connection",
+            _ => unreachable!("test supplies a systems kind"),
+        };
+        let contents = format!(
+            "---\nid: {id}\ntitle: {title:?}\ntype: {kind}\nobject: {kind}\n---\n\n## {heading}\n\n{headers}\n{row}\n"
+        );
+        fs::write(dir.join(format!("{id}.md")), contents).expect("architecture artifact");
+    }
+
+    fn write_product_source(root: &Path, architecture_part_ids: &[&str]) {
+        let part_ids = serde_json::to_string(architecture_part_ids).expect("JSON ids");
+        put(
+            root,
+            "software_description",
+            "sw-src",
+            &format!(
+                "{{\"schema_version\":1,\"id\":\"sw-src\",\"record_type\":\"software_description\",\"software_id\":\"SW\",\"name\":\"Software\",\"architecture_part_ids\":{part_ids},\"architecture_decision_ids\":[]}}"
+            ),
+        );
     }
 
     #[trace("FR-233-AC-1")]
@@ -1375,79 +1410,83 @@ mod tests {
 
     #[trace("FR-191-AC-32", "FR-231-AC-1", "FR-231-AC-3")]
     #[test]
-    fn selected_architecture_port_connection_renders_authored_fact_only() {
-        let systems = quoin_quire::systems::Systems {
-            parts: vec![quoin_quire::systems::Part {
-                document: "ARCH-1".into(),
-                owner: "PART-A".into(),
-                declared_type: "Engine".into(),
-                multiplicity: "1".into(),
-            }],
-            ports: vec![
-                quoin_quire::systems::Port {
-                    document: "ARCH-1".into(),
-                    owner: "PART-A".into(),
-                    direction: "out".into(),
-                    interface: "Telemetry".into(),
-                    multiplicity: "1".into(),
-                },
-                quoin_quire::systems::Port {
-                    document: "ARCH-1".into(),
-                    owner: "PART-B".into(),
-                    direction: "in".into(),
-                    interface: "Telemetry".into(),
-                    multiplicity: "1".into(),
-                },
-            ],
-            connections: vec![quoin_quire::systems::Connection {
-                document: "ARCH-1".into(),
-                source: "PART-A.out".into(),
-                source_multiplicity: "1".into(),
-                target: "PART-B.in".into(),
-                target_multiplicity: "1".into(),
-                direction: "forward".into(),
-            }],
-            allocations: Vec::new(),
-        };
-        let record = serde_json::json!({
-            "id":"sw-src", "software_id":"SW", "architecture_part_ids":["PART-A"],
-            "architecture_decision_ids":[]
-        });
-        let mut body = String::new();
-        let mut gaps = Vec::new();
-        assert!(render_selected_relationships(
-            &systems,
-            &BTreeSet::from(["PART-A"]),
-            &record,
-            &mut body,
-            &mut gaps
+    fn render_sds_resolves_authored_owner_port_and_connection_references() {
+        let t = scope();
+        write_product_source(t.path(), &["scoring_engine", "planner"]);
+        write_system_artifact(
+            t.path(),
+            "scoring_engine",
+            "Scoring Engine",
+            "part",
+            "| Owner | Declared Type | Multiplicity |\n|---|---|---|",
+            "| search_service | quant_scoring_engine | 1..1 |",
+        );
+        write_system_artifact(
+            t.path(),
+            "planner",
+            "Planner",
+            "part",
+            "| Owner | Declared Type | Multiplicity |\n|---|---|---|",
+            "| search_service | query_planner | 1..1 |",
+        );
+        write_system_artifact(
+            t.path(),
+            "planner_query_out",
+            "Planner Query Output",
+            "port",
+            "| Owner | Direction | Interface | Multiplicity |\n|---|---|---|---|",
+            "| planner | out | quant_query | 1..1 |",
+        );
+        write_system_artifact(
+            t.path(),
+            "score_query_in",
+            "Score Query Input",
+            "port",
+            "| Owner | Direction | Interface | Multiplicity |\n|---|---|---|---|",
+            "| scoring_engine | in | quant_query | 1..1 |",
+        );
+        write_system_artifact(
+            t.path(),
+            "planner_to_scoring",
+            "Planner To Scoring Connection",
+            "connection",
+            "| Source | Source Multiplicity | Target | Target Multiplicity | Direction |\n|---|---|---|---|---|",
+            "| planner_query_out | 1..1 | score_query_in | 1..1 | source-to-target |",
+        );
+        let records = read_all(t.path()).expect("software source is valid");
+        let doc = render_sds(&records.software, t.path(), &[t.path().to_path_buf()])
+            .expect("production SDS renderer");
+        assert!(
+            doc.body.contains("**Port** `planner_query_out`"),
+            "{}",
+            doc.body
+        );
+        assert!(
+            doc.body
+                .contains("source: architecture port `planner_query_out`")
+        );
+        assert!(doc.body.contains(
+            "**Connection** `planner_to_scoring`: `planner_query_out` → `score_query_in`"
         ));
-        assert!(body.contains("PART-A.out` → `PART-B.in"));
-        assert!(body.contains("Telemetry"));
-        assert!(!body.contains("safety class"));
-        assert!(gaps.is_empty());
-
-        let context = SdsContext {
-            systems: &systems,
-            parts: BTreeSet::from(["PART-A", "PART-B"]),
-            decisions: BTreeSet::new(),
-            selected_parts: BTreeSet::from(["PART-A".to_owned()]),
-        };
-        let mut sources = String::new();
-        render_sds_sources(std::slice::from_ref(&record), &context, &mut sources);
         for identity in [
             "software_description/sw-src",
-            "part/PART-A",
-            "part/PART-B",
-            "port/PART-A.out",
-            "port/PART-B.in",
-            "connection/ARCH-1",
+            "part/scoring_engine",
+            "part/planner",
+            "port/planner_query_out",
+            "port/score_query_in",
+            "connection/planner_to_scoring",
         ] {
             assert!(
-                sources.contains(identity),
+                doc.body.contains(identity),
                 "missing source identity {identity}"
             );
         }
+        assert!(
+            !doc.gaps
+                .iter()
+                .any(|gap| gap.gap_kind == GapKind::SourceReferenceUnresolved)
+        );
+        assert!(!doc.body.contains("safety class"));
     }
 
     #[trace("FR-231-AC-1")]
@@ -1494,39 +1533,47 @@ mod tests {
     #[trace("FR-231-AC-5")]
     #[test]
     fn wrong_kind_or_missing_connection_endpoint_is_gapped_and_not_rendered() {
-        let systems = quoin_quire::systems::Systems {
-            parts: Vec::new(),
-            ports: vec![quoin_quire::systems::Port {
-                document: "ARCH-1".into(),
-                owner: "PART-A".into(),
-                direction: "out".into(),
-                interface: "Telemetry".into(),
-                multiplicity: "1".into(),
-            }],
-            connections: vec![quoin_quire::systems::Connection {
-                document: "ARCH-1".into(),
-                source: "PART-A".into(),
-                source_multiplicity: "1".into(),
-                target: "MISSING.in".into(),
-                target_multiplicity: "1".into(),
-                direction: "forward".into(),
-            }],
-            allocations: Vec::new(),
-        };
-        let record = serde_json::json!({"id":"sw-src", "software_id":"SW"});
-        let mut body = String::new();
-        let mut gaps = Vec::new();
-        assert!(render_selected_relationships(
-            &systems,
-            &BTreeSet::from(["PART-A"]),
-            &record,
-            &mut body,
-            &mut gaps
-        ));
-        assert!(!body.contains("**Connection**"));
-        assert_eq!(gaps.len(), 1);
-        assert!(gaps[0].detail.contains("PART-A"));
-        assert!(gaps[0].detail.contains("expected architecture port"));
+        for (target, invalid_id) in [
+            ("scoring_engine", "scoring_engine"),
+            ("missing_port", "missing_port"),
+        ] {
+            let t = scope();
+            write_product_source(t.path(), &["scoring_engine"]);
+            write_system_artifact(
+                t.path(),
+                "scoring_engine",
+                "Scoring Engine",
+                "part",
+                "| Owner | Declared Type | Multiplicity |\n|---|---|---|",
+                "| search_service | quant_scoring_engine | 1..1 |",
+            );
+            write_system_artifact(
+                t.path(),
+                "planner_query_out",
+                "Planner Query Output",
+                "port",
+                "| Owner | Direction | Interface | Multiplicity |\n|---|---|---|---|",
+                "| scoring_engine | out | quant_query | 1..1 |",
+            );
+            write_system_artifact(
+                t.path(),
+                "planner_to_scoring",
+                "Planner To Scoring Connection",
+                "connection",
+                "| Source | Source Multiplicity | Target | Target Multiplicity | Direction |\n|---|---|---|---|---|",
+                &format!("| planner_query_out | 1..1 | {target} | 1..1 | source-to-target |"),
+            );
+            let records = read_all(t.path()).expect("software source is valid");
+            let doc = render_sds(&records.software, t.path(), &[t.path().to_path_buf()])
+                .expect("production SDS renderer");
+            assert!(!doc.body.contains("**Connection** `planner_to_scoring`"));
+            assert!(doc.gaps.iter().any(|gap| {
+                gap.gap_kind == GapKind::SourceReferenceUnresolved
+                    && gap.subject == "planner_to_scoring"
+                    && gap.detail.contains(invalid_id)
+                    && gap.detail.contains("expected architecture port")
+            }));
+        }
     }
 
     #[trace("FR-231-AC-5")]
