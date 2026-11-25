@@ -163,6 +163,14 @@ pub fn design_matrix(
         })?;
     let coverage_matrix = outcome
         .design_matrix
+        .entries
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| CoreError::new(CoreErrorCode::Io, error.to_string()))?;
+    let design_matrix_errors = outcome
+        .design_matrix
+        .errors
         .iter()
         .map(serde_json::to_value)
         .collect::<Result<Vec<_>, _>>()
@@ -171,6 +179,7 @@ pub fn design_matrix(
         obligations: outcome.report.obligations.iter().map(obligation).collect(),
         diagnostics: outcome.report.diagnostics.iter().map(diagnostic).collect(),
         coverage_matrix,
+        design_matrix_errors,
         carried_vocabulary: outcome.report.carried_vocabulary,
     })
 }

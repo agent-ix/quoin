@@ -112,6 +112,7 @@ pub(crate) fn compute_for_matrix(
     (
         quoin_quire::evidence::Outcome,
         serde_json::Value,
+        Vec<serde_json::Value>,
         Vec<RetainedRun>,
     ),
     Failure,
@@ -126,9 +127,15 @@ pub(crate) fn compute_for_matrix(
     )?;
     let (outcome, design) = quoin_quire::evidence::compute_for_matrix(&request)
         .map_err(|error| Failure::from_quire(&error, "evidence.compute_for_matrix"))?;
-    let design = serde_json::to_value(design)
+    let entries = serde_json::to_value(design.entries)
         .map_err(|error| format!("analysis design matrix is malformed: {error}"))?;
-    Ok((outcome, design, request.runs))
+    let errors = design
+        .errors
+        .into_iter()
+        .map(serde_json::to_value)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("analysis design matrix errors are malformed: {error}"))?;
+    Ok((outcome, entries, errors, request.runs))
 }
 
 fn request(

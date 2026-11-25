@@ -56,6 +56,8 @@ struct FakeEngine {
     unresolved: Vec<Unresolved>,
     failure: Option<quoin_quire::ErrorCode>,
     design_matrix_failure: bool,
+    design_entries: Vec<Value>,
+    design_errors: Vec<Value>,
     seen: std::cell::RefCell<Vec<Call>>,
 }
 
@@ -148,7 +150,11 @@ impl QuireHost for FakeEngine {
             .clone_from(&self.carried_vocabulary);
         Ok(quoin_quire::design_matrix::Outcome {
             report,
-            design_matrix: Vec::new(),
+            design_matrix: serde_json::from_value(json!({
+                "entries": self.design_entries,
+                "errors": self.design_errors,
+            }))
+            .unwrap(),
             notices: Vec::new(),
         })
     }
@@ -190,11 +196,37 @@ fn design_matrix_is_registered_and_keeps_coverage_available() {
         crate::dispatch::dispatch("quire.coverage", &json!({ "scope": "/repo" }), &grant).unwrap();
     assert_eq!(design.outcome.code(), coverage.outcome.code());
     assert_eq!(design.payload["coverage_matrix"], json!([]));
+    assert_eq!(design.payload["design_matrix_errors"], json!([]));
     assert_eq!(
         coverage.payload.get("design_matrix"),
         None,
         "quire.coverage keeps its existing shape"
     );
+}
+
+/// Partial design results preserve dropped-relation errors beside valid entries.
+#[trace("FR-165-AC-21")]
+#[test]
+fn design_matrix_preserves_errors_alongside_valid_sibling_entries() {
+    let entry = json!({ "document": "spec/FR-001.md", "criteria": [] });
+    let error = json!({
+        "module": "modules/design",
+        "item": "semantic-link",
+        "reason": "unavailable relation implementation"
+    });
+    let engine = FakeEngine {
+        design_entries: vec![entry.clone()],
+        design_errors: vec![error.clone()],
+        ..FakeEngine::default()
+    };
+    let response = design_matrix(
+        &json!({ "scope": "/repo" }),
+        &Capabilities::with_quire(&engine),
+    )
+    .unwrap();
+
+    assert_eq!(response.payload["coverage_matrix"], json!([entry]));
+    assert_eq!(response.payload["design_matrix_errors"], json!([error]));
 }
 
 #[trace("FR-205-AC-8")]

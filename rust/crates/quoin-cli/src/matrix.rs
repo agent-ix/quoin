@@ -122,18 +122,19 @@ pub(crate) fn build(
             .ok_or_else(|| "quire.coverage did not return obligations".to_owned())?,
     )
     .map_err(|error| format!("quire.coverage obligations are malformed: {error}"))?;
-    let (analysis, design_coverage, retained) = match crate::analysis_evidence::compute_for_matrix(
-        repo,
-        options.module_paths(),
-        &audited.store_inputs,
-        &obligations,
-        run_observations,
-        signature_verifier,
-    ) {
-        Ok(computed) => computed,
-        Err(Failure::Refused(response)) => return Ok(Built::Declined(response)),
-        Err(Failure::Message(message)) => return Err(message),
-    };
+    let (analysis, design_coverage, design_errors, retained) =
+        match crate::analysis_evidence::compute_for_matrix(
+            repo,
+            options.module_paths(),
+            &audited.store_inputs,
+            &obligations,
+            run_observations,
+            signature_verifier,
+        ) {
+            Ok(computed) => computed,
+            Err(Failure::Refused(response)) => return Ok(Built::Declined(response)),
+            Err(Failure::Message(message)) => return Err(message),
+        };
     let evidence_report = serde_json::to_value(&analysis.report)
         .map_err(|error| format!("analysis evidence report is malformed: {error}"))?;
     let mut request = serde_json::Map::new();
@@ -167,8 +168,16 @@ pub(crate) fn build(
     );
     let request = serde_json::Value::Object(request);
     let response = invoke("matrix.build", &request)?;
+    let mut diagnostics = audited.response.diagnostics;
+    diagnostics.extend(design_errors.into_iter().map(|error| {
+        quoin_core::protocol::Diagnostic {
+            code: "design-matrix-partial".to_owned(),
+            message: format!("quire-rs dropped a design relation while retaining valid matrix entries: {error}"),
+            context: Default::default(),
+        }
+    }));
     Ok(Built::Matrix(MatrixBuilt {
         response,
-        audit_diagnostics: audited.response.diagnostics,
+        audit_diagnostics: diagnostics,
     }))
 }

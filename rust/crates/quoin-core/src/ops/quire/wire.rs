@@ -122,7 +122,8 @@ pub struct CoveragePayload {
     pub formalization_identities: Option<Vec<FormalizationIdentity>>,
 }
 
-/// The `quire.design_matrix` payload, retaining the engine's matrix entries.
+/// The `quire.design_matrix` payload, retaining the engine's matrix entries
+/// and errors for dropped relations.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct DesignMatrixPayload {
     /// The obligations the run derived, in the engine's order.
@@ -131,6 +132,9 @@ pub struct DesignMatrixPayload {
     pub diagnostics: Vec<CoverageDiagnostic>,
     /// The design-bearing matrix entries, exactly as the engine emitted them.
     pub coverage_matrix: Vec<serde_json::Value>,
+    /// Required relations dropped while loading their declaring modules.
+    /// Kept beside valid entries so partial engine results remain actionable.
+    pub design_matrix_errors: Vec<serde_json::Value>,
     /// The ordered permitted values of each declared carried field.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub carried_vocabulary: BTreeMap<String, Vec<String>>,

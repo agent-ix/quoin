@@ -61,7 +61,7 @@ impl Generator for ArchitectureGenerator {
                 source: "design_matrix".to_owned(),
                 detail: format!("failed to compute design matrix: {error}"),
             })?;
-        let Ok(Value::Array(entries)) = serde_json::to_value(&outcome.design_matrix) else {
+        let Ok(Value::Array(entries)) = serde_json::to_value(&outcome.design_matrix.entries) else {
             return Err(SourceFailure {
                 source: "design_matrix".to_owned(),
                 detail: "the design matrix did not serialize to a list".to_owned(),
