@@ -107,6 +107,7 @@ struct Part {
 
 /// The architecture document over the design-matrix `entries` (as JSON), the
 /// systems records and the ADRs.
+#[cfg(test)]
 fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated {
     render_with_errors(entries, systems, adrs, &[])
 }
