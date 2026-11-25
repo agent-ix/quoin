@@ -8,13 +8,13 @@ use quoin_core::protocol::Response;
 use std::collections::BTreeSet;
 use std::path::{Component, Path};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct EmbeddedCase {
     id: &'static str,
     files: &'static [EmbeddedCaseFile],
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct EmbeddedCaseFile {
     path: &'static str,
     bytes: &'static [u8],
@@ -102,11 +102,7 @@ fn select_cases(arguments: &ArgMatches) -> Result<Vec<&'static EmbeddedCase>, St
         .iter()
         .map(|case| case.id)
         .collect::<BTreeSet<_>>();
-    if let Some(unknown) = requested
-        .iter()
-        .copied()
-        .find(|id| !available.contains(id))
-    {
+    if let Some(unknown) = requested.iter().copied().find(|id| !available.contains(id)) {
         return Err(format!("unknown self-test case id {unknown:?}"));
     }
 
@@ -185,7 +181,10 @@ mod tests {
     fn tc_215_list_shows_embedded_case_ids_in_declaration_order() {
         let listed = list();
         assert_eq!(
-            listed.payload.get("rendered").and_then(serde_json::Value::as_str),
+            listed
+                .payload
+                .get("rendered")
+                .and_then(serde_json::Value::as_str),
             Some("selftest-list")
         );
     }
