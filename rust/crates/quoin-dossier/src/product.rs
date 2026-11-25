@@ -145,19 +145,19 @@ fn read_kind<T: for<'de> Deserialize<'de>>(
 }
 
 fn read_all(scope: &Path) -> Result<ProductRecords, SourceFailure> {
-    let software = read_kind(
+    let software: Vec<Software> = read_kind(
         scope,
         "software_description",
         SW_SCHEMA,
         "software_description",
     )?;
-    let decisions = read_kind(
+    let decisions: Vec<Decision> = read_kind(
         scope,
         "documentation_level_decision",
         DL_SCHEMA,
         "documentation_level_decision",
     )?;
-    let devices = read_kind(
+    let devices: Vec<Device> = read_kind(
         scope,
         "device_description",
         DEV_SCHEMA,
