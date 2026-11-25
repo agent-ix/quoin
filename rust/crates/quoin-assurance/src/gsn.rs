@@ -142,8 +142,34 @@ pub fn from_case_with_validation_report(
         let Some(evidence) = case_node.evidence.as_ref() else {
             continue;
         };
+        let solution_id = model
+            .nodes
+            .iter()
+            .find(|node| node.source == source)
+            .map(|node| node.id.clone());
+        let parent = solution_id.as_ref().and_then(|solution_id| {
+            model
+                .edges
+                .iter()
+                .find(|edge| edge.kind == "supported_by" && edge.to == *solution_id)
+                .map(|edge| edge.from.clone())
+        });
+        let Some(parent) = parent else {
+            continue;
+        };
         for suite in &evidence.suites {
             let Some(at) = suite.at.as_deref() else {
+                append_missing_tool_source(
+                    &mut model,
+                    &parent,
+                    &source,
+                    &suite.suite,
+                    format!(
+                        "retained run timestamp not available for suite {}",
+                        suite.suite
+                    ),
+                    &mut goal_index,
+                );
                 continue;
             };
             let matching_run = run_records.iter().find(|record| {
@@ -151,9 +177,31 @@ pub fn from_case_with_validation_report(
                     && record.get("timestamp").and_then(serde_json::Value::as_str) == Some(at)
             });
             let Some(run) = matching_run else {
+                append_missing_tool_source(
+                    &mut model,
+                    &parent,
+                    &source,
+                    &suite.suite,
+                    format!(
+                        "no retained run record matches suite {} at {at}",
+                        suite.suite
+                    ),
+                    &mut goal_index,
+                );
                 continue;
             };
             let Some(tool) = run.get("tool").and_then(serde_json::Value::as_str) else {
+                append_missing_tool_source(
+                    &mut model,
+                    &parent,
+                    &source,
+                    &suite.suite,
+                    format!(
+                        "retained run record for suite {} at {at} has no tool identity",
+                        suite.suite
+                    ),
+                    &mut goal_index,
+                );
                 continue;
             };
             let tool_row = report
@@ -166,23 +214,6 @@ pub fn from_case_with_validation_report(
                 .and_then(|row| row.get("packageIdentity"))
                 .and_then(serde_json::Value::as_str);
             let displayed_identity = package_identity.unwrap_or(tool);
-            let parent = model
-                .edges
-                .iter()
-                .find(|edge| {
-                    edge.kind == "supported_by"
-                        && edge.to
-                            == model
-                                .nodes
-                                .iter()
-                                .find(|node| node.source == source)
-                                .map(|node| node.id.clone())
-                                .unwrap_or_default()
-                })
-                .map(|edge| edge.from.clone());
-            let Some(parent) = parent else {
-                continue;
-            };
             let strategy_id = format!("S{strategy_index}");
             strategy_index += 1;
             model.nodes.push(GsnNode {
@@ -246,7 +277,7 @@ pub fn from_case_with_validation_report(
                         add_fact(
                             validation_id,
                             "retained validation report".to_owned(),
-                            row.clone(),
+                            serde_json::json!({"id": validation_id}),
                         );
                     } else {
                         gaps.push("validation report reference not provided".to_owned());
@@ -278,13 +309,18 @@ pub fn from_case_with_validation_report(
                             );
                         }
                         for anomaly in anomalies {
+                            let mut anomaly_fact = anomaly.clone();
+                            if let Some(fields) = anomaly_fact.as_object_mut() {
+                                fields.remove("fixingChange");
+                                fields.remove("rationaleChange");
+                            }
                             let id = anomaly
                                 .get("id")
                                 .and_then(serde_json::Value::as_str)
                                 .unwrap_or("Anomaly");
-                            let statement = serde_json::to_string(anomaly)
+                            let statement = serde_json::to_string(&anomaly_fact)
                                 .map_err(|error| error.to_string())?;
-                            add_fact(id, statement, anomaly.clone());
+                            add_fact(id, statement, anomaly_fact);
                         }
                     } else {
                         gaps.push("Anomaly inventory not provided".to_owned());
@@ -321,6 +357,34 @@ pub fn from_case_with_validation_report(
     }
     validate(&model)?;
     Ok(model)
+}
+
+fn append_missing_tool_source(
+    model: &mut GsnCase,
+    parent: &str,
+    leaf: &str,
+    suite: &str,
+    reason: String,
+    goal_index: &mut usize,
+) {
+    let goal_id = format!("G{}", *goal_index);
+    *goal_index += 1;
+    model.nodes.push(GsnNode {
+        id: goal_id.clone(),
+        kind: "goal".to_owned(),
+        source: format!("tool-confidence-gap:{leaf}:{suite}"),
+        statement: "Evidence producer identity is unresolved".to_owned(),
+        status: "open".to_owned(),
+        open_reason: Some(reason),
+        undeveloped: Some(true),
+        evidence: None,
+        source_data: None,
+    });
+    model.edges.push(GsnEdge {
+        kind: "supported_by".to_owned(),
+        from: parent.to_owned(),
+        to: goal_id,
+    });
 }
 
 fn next_index(nodes: &[GsnNode], prefix: &str) -> usize {
@@ -1118,11 +1182,10 @@ mod tests {
                 },
             ],
         );
-        assert!(
-            validate(&cyclic)
-                .expect_err("cycle rejected")
-                .contains("WF-4")
-        );
+        let cycle_error = validate(&cyclic).expect_err("cycle rejected");
+        assert!(cycle_error.contains("WF-4"));
+        assert!(cycle_error.contains("G1"), "{cycle_error}");
+        assert!(cycle_error.contains("G2"), "{cycle_error}");
         let shared = model(
             vec![
                 node("G1", "goal", None),
@@ -1146,7 +1209,7 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-221-AC-3")]
+    #[trace("FR-221-AC-3", "FR-223-AC-7")]
     #[test]
     fn open_derived_obligation_becomes_undeveloped_goal_with_reason() {
         let case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
@@ -1157,6 +1220,12 @@ mod tests {
             ]}], "unreachable":[], "unreadable":[], "producerTrust":[]
         })).expect("case fixture deserializes");
         let model = super::from_case(&case).expect("valid case converts");
+        assert!(
+            !model
+                .nodes
+                .iter()
+                .any(|node| matches!(node.kind.as_str(), "assumption" | "justification"))
+        );
         let goal = model
             .nodes
             .iter()
@@ -1210,7 +1279,13 @@ mod tests {
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-221-AC-11", "FR-224-AC-1", "FR-224-AC-2", "FR-224-AC-4")]
+    #[trace(
+        "FR-221-AC-11",
+        "FR-224-AC-1",
+        "FR-224-AC-2",
+        "FR-224-AC-3",
+        "FR-224-AC-4"
+    )]
     #[test]
     fn tool_confidence_uses_exact_run_identity_and_keeps_missing_sources_open() {
         let case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
@@ -1268,10 +1343,101 @@ mod tests {
                 .unwrap_or_default()
                 .contains("validation-report tool entry not provided")
         );
+
+        let changed_report = serde_json::json!({"tools":[{
+            "tool":"pkg 1.2.3", "packageIdentity":"pkg",
+            "intendedUse":{"id":"IU-1","purpose":"test","limits":["bounded"]},
+            "validationReportId":"VR-1",
+            "selfTestRuns":[{"id":"RUN-1","outcome":"error","tool":"pkg 1.2.3"}],
+            "anomalies":[{"id":"AN-1","status":"open","safetyImpact":"high","fixingChange":{"commit":"deadbeef"},"rationaleChange":{"commit":"cafebabe"}}]
+        }]});
+        let changed = super::from_case_with_validation_report(&case, &runs, Some(&changed_report))
+            .expect("changed source facts are retained");
+        let original_root = converted
+            .nodes
+            .iter()
+            .find(|node| node.id == converted.roots[0])
+            .expect("root");
+        let changed_root = changed
+            .nodes
+            .iter()
+            .find(|node| node.id == changed.roots[0])
+            .expect("root");
+        assert_eq!(
+            original_root.status, changed_root.status,
+            "source facts do not alter auditor status"
+        );
+        assert!(changed.nodes.iter().any(|node| node.source == "AN-1"));
+        let anomaly_data = changed
+            .nodes
+            .iter()
+            .find(|node| node.source == "AN-1")
+            .and_then(|node| node.source_data.as_ref())
+            .expect("anomaly source facts");
+        assert!(anomaly_data.get("fixingChange").is_none());
+        assert!(anomaly_data.get("rationaleChange").is_none());
+        assert_ne!(
+            converted
+                .nodes
+                .iter()
+                .find(|node| node.source == "RUN-1")
+                .and_then(|node| node.source_data.as_ref()),
+            changed
+                .nodes
+                .iter()
+                .find(|node| node.source == "RUN-1")
+                .and_then(|node| node.source_data.as_ref())
+        );
+    }
+
+    /// Provenance: agent-ix/quoin#PLAT-1447, agent-ix/quoin#PLAT-1850.
+    #[trace("FR-224-AC-2", "FR-224-AC-5")]
+    #[test]
+    fn missing_run_timestamp_match_and_tool_identity_each_open_a_named_goal() {
+        let make_case = |suite: serde_json::Value| -> crate::AssuranceCase {
+            serde_json::from_value(serde_json::json!({
+                "claims":[{"id":"StR-1","kind":"goal","statement":"Claim","status":"supported","children":[
+                    {"id":"FR-1-AC-1","kind":"solution","statement":"Evidence","status":"supported","evidence":{"suites":[suite]},"children":[]}
+                ]}],"unreachable":[],"unreadable":[],"producerTrust":[]
+            })).expect("case fixture deserializes")
+        };
+        let absent_at = make_case(serde_json::json!({"suite":"SUITE-1"}));
+        let absent_at_model = super::from_case_with_validation_report(&absent_at, &[], None)
+            .expect("missing timestamp remains an open goal");
+        assert!(
+            absent_at_model
+                .nodes
+                .iter()
+                .any(|node| node.open_reason.as_deref()
+                    == Some("retained run timestamp not available for suite SUITE-1"))
+        );
+
+        let exact = make_case(serde_json::json!({"suite":"SUITE-1","at":"2026-01-01T00:00:00Z"}));
+        let no_match = super::from_case_with_validation_report(&exact, &[], None)
+            .expect("unmatched run remains an open goal");
+        assert!(no_match.nodes.iter().any(|node| node.open_reason.as_deref()
+            == Some("no retained run record matches suite SUITE-1 at 2026-01-01T00:00:00Z")));
+
+        let missing_tool = super::from_case_with_validation_report(
+            &exact,
+            &[serde_json::json!({"suite":"SUITE-1","timestamp":"2026-01-01T00:00:00Z"})],
+            None,
+        )
+        .expect("run without tool identity remains an open goal");
+        assert!(missing_tool.nodes.iter().any(|node| node.open_reason.as_deref() == Some("retained run record for suite SUITE-1 at 2026-01-01T00:00:00Z has no tool identity")));
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-222-AC-2")]
+    #[trace(
+        "FR-222-AC-2",
+        "FR-222-AC-3",
+        "FR-222-AC-5",
+        "FR-222-AC-6",
+        "FR-222-AC-7",
+        "FR-222-AC-8",
+        "FR-222-AC-9",
+        "FR-223-AC-5"
+    )]
     #[test]
     fn rejects_context_endpoints_terminal_nodes_development_and_bad_references() {
         let in_context_bad = model(
@@ -1292,17 +1458,30 @@ mod tests {
         );
 
         let terminal_bad = model(
-            vec![node("C1", "context", None), node("G1", "goal", Some(true))],
-            vec![GsnEdge {
-                kind: "supported_by".to_owned(),
-                from: "C1".to_owned(),
-                to: "G1".to_owned(),
-            }],
+            vec![
+                node("Sn1", "solution", None),
+                node("C1", "context", None),
+                node("A1", "assumption", None),
+                node("J1", "justification", None),
+                node("CC1", "counter_claim", None),
+                node("G1", "goal", Some(true)),
+            ],
+            ["Sn1", "C1", "A1", "J1", "CC1"]
+                .into_iter()
+                .map(|from| GsnEdge {
+                    kind: "supported_by".to_owned(),
+                    from: from.to_owned(),
+                    to: "G1".to_owned(),
+                })
+                .collect(),
         );
         let terminal_error =
             validate(&terminal_bad).expect_err("terminal nodes have no outgoing support");
         assert!(terminal_error.contains("WF-1"));
         assert!(terminal_error.contains("WF-3"));
+        for id in ["Sn1", "C1", "A1", "J1", "CC1"] {
+            assert!(terminal_error.contains(id), "{terminal_error}");
+        }
 
         let undeveloped_missing = model(vec![node("G1", "goal", None)], Vec::new());
         assert!(
@@ -1318,11 +1497,9 @@ mod tests {
             ],
             Vec::new(),
         );
-        assert!(
-            validate(&duplicate)
-                .expect_err("ids are unique")
-                .contains("WF-6")
-        );
+        let duplicate_error = validate(&duplicate).expect_err("ids are unique");
+        assert!(duplicate_error.contains("WF-6"));
+        assert!(duplicate_error.contains("G1"), "{duplicate_error}");
 
         let dangling = model(
             vec![node("G1", "goal", None)],
@@ -1332,11 +1509,9 @@ mod tests {
                 to: "missing".to_owned(),
             }],
         );
-        assert!(
-            validate(&dangling)
-                .expect_err("endpoints exist")
-                .contains("WF-6")
-        );
+        let dangling_error = validate(&dangling).expect_err("endpoints exist");
+        assert!(dangling_error.contains("WF-6"));
+        assert!(dangling_error.contains("missing"), "{dangling_error}");
 
         let undeveloped_with_support = model(
             vec![
@@ -1349,11 +1524,10 @@ mod tests {
                 to: "G2".to_owned(),
             }],
         );
-        assert!(
-            validate(&undeveloped_with_support)
-                .expect_err("undeveloped goal has no children")
-                .contains("WF-7")
-        );
+        let undeveloped_error =
+            validate(&undeveloped_with_support).expect_err("undeveloped goal has no children");
+        assert!(undeveloped_error.contains("WF-7"));
+        assert!(undeveloped_error.contains("G1"), "{undeveloped_error}");
 
         let counterclaim_without_edge = model(
             vec![
@@ -1402,25 +1576,62 @@ mod tests {
                 to: "Sn1".to_owned(),
             }],
         );
-        assert!(
-            validate(&counterclaim_bad_target)
-                .expect_err("counterclaim targets argument nodes only")
-                .contains("WF-8")
-        );
+        let bad_target_error = validate(&counterclaim_bad_target)
+            .expect_err("counterclaim targets argument nodes only");
+        assert!(bad_target_error.contains("WF-8"));
+        assert!(bad_target_error.contains("CC1"));
+        assert!(bad_target_error.contains("Sn1"));
 
-        let invalid_case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
-            "claims":[{"id":"G1","kind":"goal","statement":"Claim","status":"open","context":[{"id":"C1","kind":"context","statement":"Context","status":"open","children":[{"id":"G2","kind":"goal","statement":"Nested","status":"open","children":[]}]}],"children":[]}],
-            "unreachable":[],"unreadable":[],"producerTrust":[]
-        })).expect("case with invalid terminal node deserializes");
-        assert!(
-            super::from_case(&invalid_case)
-                .expect_err("terminal context cannot have children")
-                .contains("terminal GSN node C1")
+        let accumulated = model(
+            vec![
+                node("G1", "goal", Some(true)),
+                node("G1", "goal", Some(true)),
+                node("S1", "strategy", None),
+            ],
+            vec![
+                GsnEdge {
+                    kind: "supported_by".to_owned(),
+                    from: "S1".to_owned(),
+                    to: "missing".to_owned(),
+                },
+                GsnEdge {
+                    kind: "supported_by".to_owned(),
+                    from: "S1".to_owned(),
+                    to: "S1".to_owned(),
+                },
+            ],
         );
+        let accumulated_error = validate(&accumulated).expect_err("all violations are reported");
+        assert!(accumulated_error.contains("WF-4"), "{accumulated_error}");
+        assert!(accumulated_error.contains("WF-6"), "{accumulated_error}");
+        assert!(accumulated_error.contains("WF-5"), "{accumulated_error}");
+
+        for (id, kind) in [
+            ("C1", "context"),
+            ("A1", "assumption"),
+            ("J1", "justification"),
+            ("CC1", "counterclaim"),
+        ] {
+            let invalid_case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
+                "claims":[{"id":"G1","kind":"goal","statement":"Claim","status":"open","context":[{"id":id,"kind":kind,"statement":"Terminal","status":"open","children":[{"id":"G2","kind":"goal","statement":"Nested","status":"open","children":[]}]}],"children":[]}],
+                "unreachable":[],"unreadable":[],"producerTrust":[]
+            })).expect("case with invalid terminal node deserializes");
+            assert!(
+                super::from_case(&invalid_case)
+                    .expect_err("terminal GSN node cannot have children")
+                    .contains(&format!("terminal GSN node {id}"))
+            );
+        }
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-221-AC-6", "FR-223-AC-3", "FR-223-AC-4")]
+    #[trace(
+        "FR-221-AC-6",
+        "FR-221-AC-7",
+        "FR-221-AC-8",
+        "FR-223-AC-3",
+        "FR-223-AC-4"
+    )]
     #[test]
     fn open_authored_challenge_is_only_a_counter_claim() {
         let view = serde_json::json!({
@@ -1435,7 +1646,7 @@ mod tests {
                 {"id":"CH-1","target":"TC-1","statement":"Objection","owner":"auditor","status":"open","declaredStatus":"open","resolutionRefs":[],"reason":"unresolved"},
                 {"id":"CH-2","target":"TC-1","statement":"Resolved objection","owner":"owner","status":"resolved","declaredStatus":"accepted","resolutionRefs":["EV-1"],"expiresAt":"2030-01-01T00:00:00Z"}
             ],
-            "relationships":[]
+            "relationships":[{"target":"ix://example.invalid/Other-1","type":"references"}]
         });
         let model =
             super::from_authored(&view).expect("open challenge maps to a valid counter-claim");
@@ -1489,6 +1700,12 @@ mod tests {
                 .nodes
                 .iter()
                 .any(|node| node.source == "P-1" && node.kind == "context")
+        );
+        assert!(
+            model
+                .unmapped
+                .iter()
+                .any(|item| item.source == "ix://example.invalid/Other-1")
         );
         assert!(
             model

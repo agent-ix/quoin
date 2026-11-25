@@ -201,7 +201,7 @@ fn tc_1018_the_same_claim_with_its_reference_resolved_is_supported_through_the_r
 }
 
 /// Provenance: agent-ix/quoin#PLAT-1447, agent-ix/quoin#PLAT-1645.
-#[trace("FR-221-AC-9")]
+#[trace("FR-221-AC-1", "FR-221-AC-9")]
 #[test]
 fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
     let root = repo_with_argument("argument-no-refs.md");
@@ -223,6 +223,14 @@ fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
     let model: serde_json::Value =
         serde_json::from_str(text(&output.stdout).trim()).expect("GSN output is JSON");
     assert_eq!(model["format"], "quoin.gsn-case/v1");
+    let schema_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../quoin-assurance/schemas/gsn-case-v1.schema.json");
+    let schema: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&schema_path).expect("read shipped GSN schema"))
+            .expect("shipped GSN schema is JSON");
+    let validator = quoin_jsonschema::SchemaValidator::compile_vendored(&schema_path, &schema, &[])
+        .expect("shipped GSN schema compiles");
+    assert!(validator.is_valid(&model), "{:?}", validator.errors(&model));
 
     let mut diagram_args = common.to_vec();
     diagram_args.push("--gsn-diagram");
