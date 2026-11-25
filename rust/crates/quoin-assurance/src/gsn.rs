@@ -454,7 +454,11 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
             .unwrap_or_else(|| target.to_owned());
         b.edges.push(GsnEdge {
             kind: if open { "challenges" } else { "in_context_of" }.to_owned(),
-            from: if open { node } else { target_id.clone() },
+            from: if open {
+                node.clone()
+            } else {
+                target_id.clone()
+            },
             to: if open { target_id } else { node },
         });
     }
