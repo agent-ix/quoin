@@ -51,6 +51,7 @@ quoin-yaml = { workspace = true }
 quoin-quire = { workspace = true }
 quoin-quire-types = { workspace = true }
 quoin-risk-advice = { workspace = true }
+rustix = { workspace = true }
 filament-contract-model = { workspace = true }
 thiserror = { workspace = true }
 serde_json = { workspace = true }

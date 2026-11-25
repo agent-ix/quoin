@@ -3233,6 +3233,7 @@ dependencies = [
  "quoin-quire",
  "quoin-quire-types",
  "quoin-risk-advice",
+ "rustix",
  "quoin-semantic",
  "quoin-soup",
  "quoin-store",
