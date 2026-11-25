@@ -36,9 +36,17 @@ collected for the intended use.
   external-tools configuration index reference, the per-case outcomes, and a
   per-FR table with columns `FR`, `Rating`, `Cases`, and `Result`.
 - The report SHALL identify the retained run records it consumes.
-- The report SHALL contain a `Known anomalies` section for the anomalies
-  carried by the binary that produced the run records. Quoin SHALL embed only
-  its own `Anomaly` records from `spec/anomalies/` in its binary at build time.
+- Each retained run record SHALL preserve the anomaly records embedded in the
+  binary that produced that run, together with whether the set was provided
+  and the producer version. The producer version SHALL equal the run record's
+  `toolVersion`.
+- The report SHALL resolve the `Known anomalies` section from the anomaly sets
+  retained with its run records and SHALL NOT substitute anomaly records
+  embedded in the report generator's current build.
+- When an anomaly set's producer version does not match its run record's
+  `toolVersion`, the report SHALL treat that set as `not provided`.
+- Quoin SHALL embed only its own `Anomaly` records from `spec/anomalies/` in
+  its binary at build time.
 - The quoin validation report generator SHALL render the `Known anomalies`
   section from the selection returned by `quoin_anomaly::build_report`,
   preserving FR-162's carried-anomaly selection. Each row SHALL state `Tool`,
@@ -50,9 +58,10 @@ collected for the intended use.
   marked `affects high-process-risk feature` and SHALL appear before rows that
   do not target such an FR. Rows within each group SHALL be ordered by anomaly
   id. The section SHALL not report a score.
-- When the binary embeds an anomaly set but the selection is empty, the
-  section SHALL state `none known`. When the binary embeds no anomaly set, the
-  section SHALL state `not provided`.
+- When a run record carries an anomaly set and the selection is empty, the
+  section SHALL state `none known`.
+- When a run record does not carry an anomaly set or its producer version does
+  not match, the section SHALL state `not provided`.
 - Each tool binary SHALL embed only that tool's own anomaly records. The
   `quire-cli` binary SHALL also embed the `quire-rs` records exposed by its
   linked crate and SHALL NOT embed Quoin's records.
@@ -80,10 +89,11 @@ collected for the intended use.
 | FR-217-AC-2 | Given a missing required run record, the report says `not provided` for that evidence and does not mark it as passing. | Test |
 | FR-217-AC-3 | Given unchanged retained run records and rating inputs, two report invocations produce byte-identical Markdown and JSON. | Test |
 | FR-217-AC-4 | The generated report contains a `Sign-off` section and does not contain a generated acceptance or compliance decision. | Test |
-| FR-217-AC-5 | Given an embedded fixture set with an open anomaly assessed against a `high_process_risk` FR, an open anomaly assessed against a `not_high_process_risk` FR, and a closed `fixed` anomaly, the `Known anomalies` section renders exactly the two carried anomalies, highlights the high-risk row first, and also lists a closed `wont-fix` anomaly when present. | Test |
-| FR-217-AC-6 | Given an embedded empty anomaly set, the section states `none known`; given no embedded set, it states `not provided`. | Test |
+| FR-217-AC-5 | Given a version-matched retained anomaly set with an open anomaly assessed against a `high_process_risk` FR, an open anomaly assessed against a `not_high_process_risk` FR, a closed `fixed` anomaly, and a closed `wont-fix` anomaly, the `Known anomalies` section renders exactly the two open anomalies and the closed `wont-fix` anomaly, highlights the high-risk row first, and omits the closed `fixed` anomaly. | Test |
+| FR-217-AC-6 | Given a retained empty anomaly set whose producer version matches its run record, the section states `none known`. | Test |
 | FR-217-AC-7 | Given a carried anomaly with `safety_impact: unassessed`, the section renders `unassessed` and does not supply a default value. | Test |
 | FR-217-AC-8 | Given a quire-cli binary embedding quire-cli and quire-rs records, the section lists those records and no Quoin records. | Test |
+| FR-217-AC-9 | Given a run record with no retained anomaly set or a set whose producer version differs from `toolVersion`, the section states `not provided` and does not use the report generator's build-time set. | Test |
 
 ## Dependencies
 
