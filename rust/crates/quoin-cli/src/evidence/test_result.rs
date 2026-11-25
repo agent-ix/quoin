@@ -27,7 +27,15 @@ use super::required;
 pub(super) fn command() -> Command {
     Command::new("export-test-result")
         .about("Export retained test evidence as an in-toto Test Result statement")
-        .arg(Arg::new("subject").long("subject").required(true))
+        .arg(
+            Arg::new("subject")
+                .long("subject")
+                .value_name("FILE")
+                .help(
+                    "JSON array of in-toto subjects with SHA-256 digests and revision annotations",
+                )
+                .required(true),
+        )
         .arg(
             Arg::new("execution-provenance")
                 .long("execution-provenance")

@@ -6,8 +6,8 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::Response;
-use quoin_evidence::types::{Binding, RunRecord};
 use quoin_evidence::ObligationId;
+use quoin_evidence::types::{Binding, RunRecord};
 use std::collections::BTreeSet;
 
 use super::{json_arg, repo_arg, required};
@@ -41,7 +41,10 @@ pub(crate) fn policy_args() -> [Arg; 4] {
         Arg::new("independence-policy").long("independence-policy"),
         // FR-160: a person's file saying what evidence each software safety
         // class needs. Absent, the audit and the matrix read no class at all.
-        Arg::new("class-policy").long("class-policy"),
+        Arg::new("class-policy")
+            .long("class-policy")
+            .value_name("FILE")
+            .help("YAML or JSON policy for floors by stated software safety class"),
     ]
 }
 
