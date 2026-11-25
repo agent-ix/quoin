@@ -156,12 +156,7 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
     }
     if arguments.get_flag("gsn") || arguments.get_flag("gsn-diagram") {
         let model = quoin_assurance::gsn::from_authored(&view.payload)?;
-        let rendered = if arguments.get_flag("gsn-diagram") {
-            quoin_assurance::render_gsn_diagram(&model)?
-        } else {
-            serde_json::to_string_pretty(&model).map_err(|error| error.to_string())?
-        };
-        return Ok(Response::ok(serde_json::json!({ "rendered": rendered })));
+        return render_gsn_response(&model, arguments.get_flag("gsn-diagram"));
     }
     present(
         "assurance.render_authored_argument",
@@ -273,18 +268,133 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             &run_records,
             validation_report.as_ref(),
         )?;
-        let rendered = if arguments.get_flag("gsn-diagram") {
-            quoin_assurance::render_gsn_diagram(&model)?
-        } else {
-            serde_json::to_string_pretty(&model).map_err(|error| error.to_string())?
-        };
-        return Ok(Response::ok(serde_json::json!({ "rendered": rendered })));
+        return render_gsn_response(&model, arguments.get_flag("gsn-diagram"));
     }
     present(
         "assurance.render_case",
         &case.payload,
         arguments.get_flag("json"),
     )
+}
+
+fn render_gsn_response(
+    model: &quoin_assurance::GsnCase,
+    diagram: bool,
+) -> Result<Response, String> {
+    quoin_assurance::validate_gsn(model)?;
+    let rendered = if diagram {
+        quoin_assurance::render_gsn_diagram(model)?
+    } else {
+        serde_json::to_string_pretty(model).map_err(|error| error.to_string())?
+    };
+    Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    reason = "invalid test graph should report why it was refused"
+)]
+mod gsn_refusal_tests {
+    use super::render_gsn_response;
+    use ix_trace_rs::trace;
+    use quoin_assurance::{GsnCase, GsnEdge, GsnNode};
+
+    fn node(id: &str, kind: &str) -> GsnNode {
+        GsnNode {
+            id: id.to_owned(),
+            kind: kind.to_owned(),
+            source: id.to_owned(),
+            statement: id.to_owned(),
+            status: "open".to_owned(),
+            open_reason: None,
+            undeveloped: Some(true),
+            evidence: None,
+            source_data: None,
+        }
+    }
+
+    /// Failed WF checks use the command-error path: nonzero exit, no stdout,
+    /// and a diagnostic naming the rule and both endpoints.
+    #[trace("FR-222-AC-1", "FR-222-AC-2")]
+    #[test]
+    fn invalid_wf_models_fail_cli_with_empty_stdout_and_endpoint_diagnostic() {
+        for (from, from_kind, to, to_kind, edge_kind, rule) in [
+            ("Sn1", "solution", "G1", "goal", "supported_by", "WF-1"),
+            ("A1", "assumption", "G1", "goal", "in_context_of", "WF-2"),
+        ] {
+            let model = GsnCase {
+                format: "quoin.gsn-case/v1".to_owned(),
+                nodes: vec![node(from, from_kind), node(to, to_kind)],
+                edges: vec![GsnEdge {
+                    kind: edge_kind.to_owned(),
+                    from: from.to_owned(),
+                    to: to.to_owned(),
+                }],
+                roots: vec![to.to_owned()],
+                unreachable: vec![],
+                unmapped: vec![],
+            };
+            let error = render_gsn_response(&model, false).expect_err("invalid graph is refused");
+            let mut stdout = Vec::new();
+            let mut stderr = Vec::new();
+            let exit =
+                crate::emit_error_to(crate::ShellError::command(error), &mut stdout, &mut stderr);
+            assert_ne!(exit, std::process::ExitCode::SUCCESS);
+            assert!(stdout.is_empty());
+            let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");
+            assert!(diagnostic.contains(rule), "{diagnostic}");
+            assert!(diagnostic.contains(from), "{diagnostic}");
+            assert!(diagnostic.contains(to), "{diagnostic}");
+        }
+    }
+
+    /// A failed export aggregates violations, names every affected id, and
+    /// does not expose a partial rendered model on stdout.
+    #[trace("FR-222-AC-9")]
+    #[test]
+    fn aggregate_wf_refusal_has_nonzero_exit_and_no_partial_stdout() {
+        let mut undeveloped_strategy = node("S2", "strategy");
+        undeveloped_strategy.undeveloped = None;
+        let model = GsnCase {
+            format: "quoin.gsn-case/v1".to_owned(),
+            nodes: vec![
+                node("G1", "goal"),
+                node("G1", "goal"),
+                node("S1", "strategy"),
+                undeveloped_strategy,
+            ],
+            edges: vec![
+                GsnEdge {
+                    kind: "supported_by".to_owned(),
+                    from: "S1".to_owned(),
+                    to: "S1".to_owned(),
+                },
+                GsnEdge {
+                    kind: "supported_by".to_owned(),
+                    from: "S1".to_owned(),
+                    to: "missing".to_owned(),
+                },
+            ],
+            roots: vec!["G1".to_owned()],
+            unreachable: vec![],
+            unmapped: vec![],
+        };
+        let error = render_gsn_response(&model, false).expect_err("invalid model is refused");
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let exit =
+            crate::emit_error_to(crate::ShellError::command(error), &mut stdout, &mut stderr);
+        assert_ne!(exit, std::process::ExitCode::SUCCESS);
+        assert!(stdout.is_empty());
+        let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");
+        for rule in ["WF-4", "WF-5", "WF-6"] {
+            assert!(diagnostic.contains(rule), "{diagnostic}");
+        }
+        for id in ["G1", "S1", "S2", "missing"] {
+            assert!(diagnostic.contains(id), "{diagnostic}");
+        }
+    }
 }
 
 struct CaseRequestInputs<'a> {

@@ -1451,11 +1451,10 @@ mod tests {
                 to: "G1".to_owned(),
             }],
         );
-        assert!(
-            validate(&in_context_bad)
-                .expect_err("WF-2 endpoints")
-                .contains("WF-2")
-        );
+        let in_context_error = validate(&in_context_bad).expect_err("WF-2 endpoints");
+        assert!(in_context_error.contains("WF-2"));
+        assert!(in_context_error.contains("A1"), "{in_context_error}");
+        assert!(in_context_error.contains("G1"), "{in_context_error}");
 
         let terminal_bad = model(
             vec![
@@ -1464,6 +1463,7 @@ mod tests {
                 node("A1", "assumption", None),
                 node("J1", "justification", None),
                 node("CC1", "counter_claim", None),
+                node("C2", "context", None),
                 node("G1", "goal", Some(true)),
             ],
             ["Sn1", "C1", "A1", "J1", "CC1"]
@@ -1473,11 +1473,17 @@ mod tests {
                     from: from.to_owned(),
                     to: "G1".to_owned(),
                 })
+                .chain([GsnEdge {
+                    kind: "in_context_of".to_owned(),
+                    from: "J1".to_owned(),
+                    to: "C2".to_owned(),
+                }])
                 .collect(),
         );
         let terminal_error =
             validate(&terminal_bad).expect_err("terminal nodes have no outgoing support");
         assert!(terminal_error.contains("WF-1"));
+        assert!(terminal_error.contains("WF-2"));
         assert!(terminal_error.contains("WF-3"));
         for id in ["Sn1", "C1", "A1", "J1", "CC1"] {
             assert!(terminal_error.contains(id), "{terminal_error}");
@@ -1587,6 +1593,7 @@ mod tests {
                 node("G1", "goal", Some(true)),
                 node("G1", "goal", Some(true)),
                 node("S1", "strategy", None),
+                node("S2", "strategy", None),
             ],
             vec![
                 GsnEdge {
@@ -1605,6 +1612,9 @@ mod tests {
         assert!(accumulated_error.contains("WF-4"), "{accumulated_error}");
         assert!(accumulated_error.contains("WF-6"), "{accumulated_error}");
         assert!(accumulated_error.contains("WF-5"), "{accumulated_error}");
+        for id in ["G1", "S1", "S2", "missing"] {
+            assert!(accumulated_error.contains(id), "{accumulated_error}");
+        }
 
         for (id, kind) in [
             ("C1", "context"),
