@@ -132,12 +132,14 @@ pub enum GapKind {
     TransferSafeguardsUnstated,
     /// A connection or sink has no stated security measure.
     SecurityMeasuresUnstated,
+    /// A declared design relation was dropped while loading its module.
+    DesignRelationDropped,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 57] = [
+    pub(crate) const ALL: [Self; 58] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -195,6 +197,7 @@ impl GapKind {
         Self::TransferRegionUnstated,
         Self::TransferSafeguardsUnstated,
         Self::SecurityMeasuresUnstated,
+        Self::DesignRelationDropped,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -262,6 +265,7 @@ impl GapKind {
             Self::TransferRegionUnstated => "transfer_region_unstated",
             Self::TransferSafeguardsUnstated => "transfer_safeguards_unstated",
             Self::SecurityMeasuresUnstated => "security_measures_unstated",
+            Self::DesignRelationDropped => "design_relation_dropped",
         }
     }
 
@@ -441,6 +445,7 @@ mod tests {
                 "transfer_region_unstated",
                 "transfer_safeguards_unstated",
                 "security_measures_unstated",
+                "design_relation_dropped",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {
