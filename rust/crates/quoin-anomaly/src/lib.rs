@@ -23,7 +23,10 @@ pub mod report;
 pub mod status;
 pub mod verification;
 
-pub use carried::{CarriedAnomaly, CarriedRead, UnreadableAnomaly, is_carried, read_carried};
+pub use carried::{
+    AnomalyRead, AuthoredAnomaly, CarriedAnomaly, CarriedRead, UnreadableAnomaly, is_carried,
+    is_carried_fields, read_anomalies, read_carried,
+};
 pub use check::{Checked, Context, Diagnostic, DiagnosticCode, Severity, check_document};
 pub use derived::{Change, Derived, fixing_change, rationale_change, value_change};
 pub use error::{AnomalyError, ErrorCode};
