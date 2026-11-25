@@ -1131,7 +1131,7 @@ mod tests {
                 .iter()
                 .filter(|g| g.gap_kind == GapKind::DocumentationLevelDecisionFieldUnstated)
                 .count(),
-            5
+            4
         );
     }
 
