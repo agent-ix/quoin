@@ -15,7 +15,7 @@ QUIRE ?= quire
 # make spec-validation QUIRE_MODULE_ARGS='--module /tmp/modules/spec-artifacts-iso --module /tmp/modules/spec-artifacts-process ...'
 QUIRE_MODULE_ARGS ?=
 
-.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test test-real mutation-test wave2-validation spec-validation
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test test-real mutation-test wave2-validation spec-validation test-sacm-interop
 
 build: rust-build
 
@@ -107,6 +107,18 @@ test-sacm-metamodel:
 	@model="$$QUOIN_SACM_METAMODEL"; \
 	  case "$$model" in /*) ;; *) model="$(CURDIR)/$$model";; esac; \
 	  cd "$(RUST_DIR)" && QUOIN_SACM_METAMODEL="$$model" cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-assurance --test tc_sacm_export sacm_uses_normative_metamodel -- --ignored
+
+# Interop check against user-installed Assurance Forge 0.3.0-alpha.3 (MIT).
+# The generated XMI is copied byte-for-byte to a .sacm.xml name for the tool's
+# offline importer; no tool binary, plugin, or metamodel is stored in Quoin.
+test-sacm-interop:
+	@test -n "$(QUOIN_SACM_TOOL)" || { echo "QUOIN_SACM_TOOL must name the installed Assurance Forge MCP executable" >&2; exit 1; }
+	@set -e; export_file="$(CARGO_TARGET)/sacm-interop/full-case.xmi"; \
+	  import_file="$(CARGO_TARGET)/sacm-interop/full-case.sacm.xml"; \
+	  rm -f "$$export_file" "$$import_file"; \
+	  cd "$(RUST_DIR)" && QUOIN_SACM_INTEROP_FIXTURE="$$export_file" cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-assurance --test tc_sacm_export export_external_interop_fixture -- --ignored --exact; \
+	  cp "$$export_file" "$$import_file"; \
+	  cd "$(CURDIR)" && QUOIN_SACM_TOOL="$(QUOIN_SACM_TOOL)" QUOIN_SACM_INTEROP_FIXTURE="$$import_file" python3 tests/scripts/test_sacm_interop.py
 
 mutation-test:
 	python3 tests/scripts/behavioral_mutation_test.py

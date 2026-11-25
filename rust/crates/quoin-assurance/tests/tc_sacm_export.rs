@@ -122,6 +122,25 @@ fn shape_export() -> Export {
     export(&shape_fixture(), &DiskEvidence::new(repo.path())).expect("fixture exports")
 }
 
+/// Provenance: PLAT-1649
+#[trace("FR-226-AC-8")]
+#[test]
+#[ignore = "external SACM importer fixture; run via make test-sacm-interop"]
+fn export_external_interop_fixture() {
+    let output = std::env::var_os("QUOIN_SACM_INTEROP_FIXTURE")
+        .expect("QUOIN_SACM_INTEROP_FIXTURE must name the generated XMI path");
+    let mut fixture = shape_fixture();
+    fixture.nodes.push(solution("Sn2", Some(TIMESTAMP), "stale"));
+    fixture.edges.push(edge("supported_by", "G4", "Sn2"));
+    let repo = disk_repo();
+    let result = export(&fixture, &DiskEvidence::new(repo.path())).expect("fixture exports");
+    let path = std::path::PathBuf::from(output);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("create fixture output directory");
+    }
+    std::fs::write(path, result.xmi).expect("write external interop fixture");
+}
+
 fn signed_shape_export() -> Export {
     let mut fixture = shape_fixture();
     fixture.signed_acceptance = Some(
