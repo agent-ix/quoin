@@ -117,4 +117,4 @@ without checking out the source repository.
 
 - **Upstream**: [FR-112](./FR-112-npm-distribution-from-release-assets.md) defines the shipped quoin binary; [FR-030](./FR-030-evidence-store.md) defines the evidence store used for retained results.
 - **Downstream**: [FR-236](./FR-236-selftest-run-record.md) records each run; [FR-217](./FR-217-validation-report.md) presents its results.
-- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) is the cross-repository validation-kit follow-up for the FR-235-AC-4 coverage check; Quoin owns its `quoin selftest` entry point, while quire-cli owns the corresponding `quire selftest` entry point for its cases.
+- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the cross-repository validation-kit checks in FR-235-AC-4 and FR-235-AC-5: high-process-risk FR coverage and `quire matrix --strict` over each tool repository's `selftest/`. Quoin owns its `quoin selftest` entry point, while quire-cli owns the corresponding `quire selftest` entry point for its cases.

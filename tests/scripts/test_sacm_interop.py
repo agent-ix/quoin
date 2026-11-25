@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Trace: FR-226-AC-12
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Agent-IX
 """Exercise a generated Quoin SACM export with an installed external importer."""

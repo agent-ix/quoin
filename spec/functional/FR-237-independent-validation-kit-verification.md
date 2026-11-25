@@ -91,3 +91,4 @@ known faults as well as recognizing the released tools.
 
 - **Upstream**: [FR-235](./FR-235-quoin-selftest.md) defines the packaged self-test cases; [FR-236](./FR-236-selftest-run-record.md) defines retained run records.
 - **Downstream**: [FR-217](./FR-217-validation-report.md) may present the resulting run evidence.
+- [PLAT-1849](https://linear.app/agent-ix/issue/PLAT-1849/independent-verification-of-the-validation-kit) owns the independent verifier and its retained record. FR-237-AC-1 through FR-237-AC-4 and FR-237-AC-6 are downstream implementation criteria; this specification change defines them but does not implement the verifier. FR-237-AC-5 remains an inspection criterion for the record's output boundary.

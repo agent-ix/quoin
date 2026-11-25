@@ -166,15 +166,18 @@ The exporter SHALL use these `xmi:type` identifiers from the normative SACM
 | FR-226-AC-4 | Re-export of unchanged GSN input produces byte-identical UTF-8 XMI with stable element and relationship ordering. | Test |
 | FR-226-AC-5 | Combining `--sacm` with any incompatible output flag returns a usage error and writes no XMI. | Test |
 | FR-226-AC-6 | A well-formedness failure in the GSN input writes no XMI and preserves the named WF rule and node ids in the error report. | Test |
-| FR-226-AC-7 | The explicit check against the published UML XML at `QUOIN_SACM_METAMODEL` verifies the exported classes, containment and reference types, including `Resource.name` and `ArtifactGroup.artifactElement`. The check rejects an unset path and a fixture that invents a `Resource.location` property. | Test |
-| FR-226-AC-8 | A verified importer claim identifies Assurance Forge `0.3.0-alpha.3` and its MIT licence; the unchanged Quoin fixture imports without warnings and preserves the specified claims, evidence links and declarations, and exact Resource names. The MCP projection's ArtifactGroup-member limitation is stated, and the importer's separate ArtifactGroup round-trip test is cited without claiming that MCP returned the member ids. | Test / Inspection |
+| FR-226-AC-7 | When `QUOIN_SACM_METAMODEL` is unset or empty, the metamodel check rejects the request before reading a model and reports that the external SACM 2.3 model path is required. | Test |
+| FR-226-AC-8 | The interop evidence identifies Assurance Forge release `0.3.0-alpha.3` and its MIT licence, distinguishes the MCP server version, states that MCP import counts and warnings do not expose ArtifactGroup member ids, and cites the release-bound ArtifactGroup round-trip test without claiming that MCP returned those ids. | Inspection |
 | FR-226-AC-9 | A GSN case with verified `signed_acceptance` and an open claim yields exactly one labeled acceptance Artifact via the root's `artifactPackage` and its `artifactElement` containment. No argument element references it. Exporting the case with `signed_acceptance` omitted yields no acceptance Artifact and identical Claim declarations. | Test |
 | FR-226-AC-10 | `quoin assurance --argument <ID> --sacm` with open challenges to a goal, assumption, and strategy preserves all three counter-claim Claims and the open top claim. Counter inferences target exactly the goal and assumption Claims. The strategy challenge produces an unmapped edge diagnostic with both source ids and no substitute relationship. | Test |
+| FR-226-AC-11 | The focused check against the published UML XML at `QUOIN_SACM_METAMODEL` verifies the exported classes, containment and reference types, including `Resource.name` and `ArtifactGroup.artifactElement`, and rejects a fixture that invents a `Resource.location` property. | Test |
+| FR-226-AC-12 | The unchanged Quoin fixture imports through the installed Assurance Forge MCP server without warnings and preserves the specified claims, evidence links and declarations, and exact Resource names. The dedicated interop lane records the observed counts and projection limits. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-234](./FR-234-gsn-model-export.md), [FR-222](./FR-222-gsn-model-well-formedness.md), [FR-223](./FR-223-assurance-case-context-and-counter-claims.md), [FR-225](./FR-225-signed-acceptance-of-case-content.md)
 - **Downstream**: [PLAT-1647](https://linear.app/agent-ix/issue/PLAT-1647), [PLAT-1649](https://linear.app/agent-ix/issue/PLAT-1649)
+- FR-226-AC-11 is exercised by `make test-sacm-metamodel`; FR-226-AC-12 is exercised by `make test-sacm-interop`. These named external lanes invoke their opt-in tests, which are excluded from default Cargo runs because they require a user-supplied model or installed importer.
 
 ## Reference
 

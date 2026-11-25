@@ -123,14 +123,16 @@ fn shape_export() -> Export {
 }
 
 /// Provenance: PLAT-1649
-#[trace("FR-226-AC-8")]
+#[trace("FR-226-AC-12")]
 #[test]
 #[ignore = "external SACM importer fixture; run via make test-sacm-interop"]
 fn export_external_interop_fixture() {
     let output = std::env::var_os("QUOIN_SACM_INTEROP_FIXTURE")
         .expect("QUOIN_SACM_INTEROP_FIXTURE must name the generated XMI path");
     let mut fixture = shape_fixture();
-    fixture.nodes.push(solution("Sn2", Some(TIMESTAMP), "stale"));
+    fixture
+        .nodes
+        .push(solution("Sn2", Some(TIMESTAMP), "stale"));
     fixture.edges.push(edge("supported_by", "G4", "Sn2"));
     let repo = disk_repo();
     let result = export(&fixture, &DiskEvidence::new(repo.path())).expect("fixture exports");
@@ -155,6 +157,88 @@ fn signed_shape_export() -> Export {
     );
     let repo = disk_repo();
     export(&fixture, &DiskEvidence::new(repo.path())).expect("signed fixture exports")
+}
+
+#[trace("FR-226-AC-9")]
+#[test]
+fn signed_acceptance_is_one_contained_artifact_and_unsigned_export_is_unchanged() {
+    let signed_export = signed_shape_export();
+    let signed = parse_xml(&signed_export.xmi);
+    let unsigned = parse_xml(&shape_export().xmi);
+    let artifact_id = "case-signed-acceptance";
+    let artifacts: Vec<_> = signed
+        .child("artifactPackage")
+        .children
+        .iter()
+        .filter(|item| item.attr("xmi:type") == "sacm:Artifact")
+        .collect();
+    assert_eq!(artifacts.len(), 1, "one accepted Artifact is exported");
+    assert_eq!(artifacts[0].attr("xmi:id"), artifact_id);
+    assert_eq!(
+        artifacts[0].child("name").attr("content"),
+        "Human acceptance of case content"
+    );
+    assert_eq!(
+        signed.child("artifactPackage").attr("artifactElement"),
+        artifact_id,
+        "the root contains the acceptance Artifact"
+    );
+    let mut argument_elements = Vec::new();
+    signed.child("argumentPackage").walk(&mut argument_elements);
+    assert!(argument_elements.iter().all(|item| {
+        [
+            "source",
+            "target",
+            "reasoning",
+            "referencedArtifactElement",
+            "artifactElement",
+        ]
+        .iter()
+        .all(|property| item.attr(property) != artifact_id)
+    }));
+    let signed_claims: Vec<_> = {
+        let mut elements = Vec::new();
+        signed.child("argumentPackage").walk(&mut elements);
+        elements
+            .into_iter()
+            .filter(|item| item.attr("xmi:type") == "sacm:Claim")
+            .map(|item| {
+                (
+                    item.attr("xmi:id").to_owned(),
+                    item.attr("assertionDeclaration").to_owned(),
+                )
+            })
+            .collect()
+    };
+    let unsigned_claims: Vec<_> = {
+        let mut elements = Vec::new();
+        unsigned.child("argumentPackage").walk(&mut elements);
+        elements
+            .into_iter()
+            .filter(|item| item.attr("xmi:type") == "sacm:Claim")
+            .map(|item| {
+                (
+                    item.attr("xmi:id").to_owned(),
+                    item.attr("assertionDeclaration").to_owned(),
+                )
+            })
+            .collect()
+    };
+    assert_eq!(
+        unsigned
+            .child("artifactPackage")
+            .children
+            .iter()
+            .filter(|item| item.attr("xmi:type") == "sacm:Artifact")
+            .count(),
+        0,
+        "unsigned export has no acceptance Artifact"
+    );
+    assert_eq!(
+        signed_claims, unsigned_claims,
+        "Claim declarations are unchanged"
+    );
+    assert!(resolve_references(&signed).is_ok());
 }
 
 #[trace("FR-226-AC-1", "FR-226-AC-2", "FR-226-AC-3", "FR-226-AC-4")]
