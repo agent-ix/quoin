@@ -1708,3 +1708,22 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
     assert!(!valid, "{diagnostics}");
     assert!(diagnostics.contains("as_of"), "{diagnostics}");
 }
+
+/// Each new M3 selector generates only its registered document.
+#[trace("FR-191-AC-23")]
+#[test]
+fn each_m3_selector_writes_only_its_matching_document() {
+    let root = tempfile::tempdir().unwrap();
+    for (kind, id) in [
+        ("software-description", "DOS-SW.md"),
+        ("documentation-level-decision", "DOS-DL.md"),
+        ("software-design-specification", "DOS-SDS.md"),
+        ("device-description", "DOS-DEV.md"),
+    ] {
+        let work = root.path().join(kind);
+        fs::create_dir_all(&work).unwrap();
+        let output = quoin(&work, &["generate", "--version", "1.0", "--doc", kind]);
+        assert_eq!(code(&output), 1, "{}", stderr(&output));
+        assert_eq!(names(&work.join("dossier")), [id]);
+    }
+}
