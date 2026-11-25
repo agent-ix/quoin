@@ -36,6 +36,11 @@ collected for the intended use.
   external-tools configuration index reference, the per-case outcomes, and a
   per-FR table with columns `FR`, `Rating`, `Cases`, and `Result`.
 - The report SHALL identify the retained run records it consumes.
+- For each FR, the coverage row SHALL preserve the supplier-rating status and
+  all supplier rating record IDs returned by feature-rating assessment. When
+  more than one supplier record rates an FR, the report SHALL show
+  `rated_more_than_once` and SHALL NOT collapse the records by their rating
+  values.
 - Each retained run record SHALL preserve the anomaly records embedded in the
   binary that produced that run, together with whether the set was provided
   and the producer version. The producer version SHALL equal the run record's
@@ -94,6 +99,7 @@ collected for the intended use.
 | FR-217-AC-7 | Given a carried anomaly with `safety_impact: unassessed`, the section renders `unassessed` and does not supply a default value. | Test |
 | FR-217-AC-8 | Given a quire-cli binary embedding quire-cli and quire-rs records, the section lists those records and no Quoin records. | Test |
 | FR-217-AC-9 | Given a run record with no retained anomaly set or a set whose producer version differs from `toolVersion`, the section states `not provided` and does not use the report generator's build-time set. | Test |
+| FR-217-AC-10 | Given two supplier rating records for one FR with equal rating values, the coverage row preserves both rating IDs and reports `rated_more_than_once`. | Test |
 
 ## Dependencies
 
