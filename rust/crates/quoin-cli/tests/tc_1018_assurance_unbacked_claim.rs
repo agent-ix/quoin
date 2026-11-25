@@ -199,3 +199,48 @@ fn tc_1018_the_same_claim_with_its_reference_resolved_is_supported_through_the_r
     );
     assert_eq!(rendered["topClaim"]["reasons"], serde_json::json!([]));
 }
+
+/// Provenance: agent-ix/quoin#PLAT-1447, agent-ix/quoin#PLAT-1645.
+#[trace("FR-221-AC-1", "FR-221-AC-9")]
+#[test]
+fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
+    let root = repo_with_argument("argument-no-refs.md");
+    let decisions = root.path().join("decisions.json");
+    let common = [
+        "--repo",
+        root.path().to_str().unwrap(),
+        "--argument",
+        "AA-10180",
+        "--decisions",
+        decisions.to_str().unwrap(),
+        "--as-of",
+        "2026-08-15T00:00:00.000Z",
+    ];
+    let mut args = common.to_vec();
+    args.push("--gsn");
+    let output = quoin(&args);
+    assert_eq!(output.status.code(), Some(0), "{}", text(&output.stderr));
+    let model: serde_json::Value =
+        serde_json::from_str(text(&output.stdout).trim()).expect("GSN output is JSON");
+    assert_eq!(model["format"], "quoin.gsn-case/v1");
+    let schema_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../quoin-assurance/schemas/gsn-case-v1.schema.json");
+    let schema: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&schema_path).expect("read shipped GSN schema"))
+            .expect("shipped GSN schema is JSON");
+    let validator = quoin_jsonschema::SchemaValidator::compile_vendored(&schema_path, &schema, &[])
+        .expect("shipped GSN schema compiles");
+    assert!(validator.is_valid(&model), "{:?}", validator.errors(&model));
+
+    let mut diagram_args = common.to_vec();
+    diagram_args.push("--gsn-diagram");
+    let diagram = quoin(&diagram_args);
+    assert_eq!(diagram.status.code(), Some(0), "{}", text(&diagram.stderr));
+    assert!(text(&diagram.stdout).starts_with("flowchart TB\n"));
+
+    let mut conflicting = common.to_vec();
+    conflicting.extend(["--gsn", "--json"]);
+    let refused = quoin(&conflicting);
+    assert_ne!(refused.status.code(), Some(0));
+    assert!(refused.stdout.is_empty());
+}

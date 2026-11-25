@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/quoin/schemas/gsn-case-v1.schema.json",
+  "title": "Quoin GSN case v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "nodes", "edges", "roots", "unreachable", "unmapped"],
+  "properties": {
+    "format": { "const": "quoin.gsn-case/v1" },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+    "roots": { "type": "array", "items": { "type": "string" } },
+    "unreachable": { "type": "array", "items": { "type": "string" } },
+    "unmapped": { "type": "array", "items": { "$ref": "#/$defs/unmapped" } }
+  },
+  "$defs": {
+    "node": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "source", "statement", "status"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["goal", "strategy", "solution", "context", "assumption", "justification", "counter_claim"] },
+        "source": { "type": "string", "minLength": 1 },
+        "statement": { "type": "string" },
+        "status": { "enum": ["supported", "open"] },
+        "openReason": { "type": "string" },
+        "undeveloped": { "type": "boolean" },
+        "evidence": {},
+        "sourceData": {}
+      }
+    },
+    "edge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "from", "to"],
+      "properties": { "kind": { "enum": ["supported_by", "in_context_of", "challenges"] }, "from": { "type": "string" }, "to": { "type": "string" } }
+    },
+    "unmapped": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "reason"],
+      "properties": { "source": { "type": "string" }, "reason": { "type": "string" } }
+    }
+  }
+}

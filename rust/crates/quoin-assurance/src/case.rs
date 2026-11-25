@@ -56,6 +56,14 @@ pub enum NodeKind {
     Strategy,
     /// A leaf: one obligation.
     Solution,
+    /// Descriptive risk context attached to a goal or strategy.
+    Context,
+    /// An authored assumption.
+    Assumption,
+    /// A resolved challenge retained as justification.
+    Justification,
+    /// An open authored challenge, never supporting evidence.
+    CounterClaim,
 }
 
 /// Whether a node's part of the argument holds.
@@ -101,6 +109,9 @@ pub struct CaseNode {
     pub analysis_evidence: Option<Vec<serde_json::Value>>,
     /// Sub-claims first, then evidence.
     pub children: Vec<CaseNode>,
+    /// Descriptive context and dialectic nodes attached to this node.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub context: Vec<CaseNode>,
 }
 
 /// A validated FR-071 record associated with its Quire obligation row.
@@ -548,7 +559,84 @@ fn node_for(
         evidence: None,
         analysis_evidence: None,
         children: parts,
+        context: context_for(id, by_id),
     }
+}
+
+fn context_for(id: &str, by_id: &BTreeMap<String, &serde_json::Value>) -> Vec<CaseNode> {
+    let Some(document) = by_id.get(id) else {
+        return Vec::new();
+    };
+    let Some(relationships) = document
+        .get("frontmatter")
+        .and_then(|f| f.get("relationships"))
+        .and_then(serde_json::Value::as_array)
+    else {
+        return Vec::new();
+    };
+    let mut targets = BTreeSet::new();
+    for relation in relationships {
+        if relation.get("type").and_then(serde_json::Value::as_str) != Some("mitigates") {
+            continue;
+        }
+        if let Some(target) = relation
+            .get("target")
+            .and_then(serde_json::Value::as_str)
+            .and_then(|target| target.split('/').next_back())
+            .filter(|target| !target.is_empty())
+        {
+            targets.insert(target.to_owned());
+        }
+    }
+    targets
+        .into_iter()
+        .filter_map(|target| {
+            let found = by_id.get(&target).copied();
+            let valid = found.is_some_and(|doc| {
+                matches!(
+                    doc.get("frontmatter")
+                        .and_then(|f| f.get("type"))
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("")
+                        .to_ascii_lowercase()
+                        .as_str(),
+                    "hazard" | "threat" | "risk" | "vulnerability" | "failure-mode"
+                )
+            });
+            if found.is_some() && !valid {
+                return None;
+            }
+            let (kind, title) = found
+                .and_then(|doc| doc.get("frontmatter"))
+                .map(|frontmatter| {
+                    let kind = frontmatter
+                        .get("type")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("object");
+                    let title = frontmatter
+                        .get("title")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or(&target);
+                    (kind.to_owned(), title.to_owned())
+                })
+                .unwrap_or_else(|| ("object".to_owned(), target.clone()));
+            Some(CaseNode {
+                id: target.clone(),
+                kind: NodeKind::Context,
+                statement: format!("{kind} {target}: {title}"),
+                status: if valid {
+                    NodeStatus::Supported
+                } else {
+                    NodeStatus::Open
+                },
+                because: (!valid).then(|| format!("mitigates target {target} not found")),
+                evidence: None,
+                analysis_evidence: None,
+                children: Vec::new(),
+                context: Vec::new(),
+            })
+        })
+        .collect()
 }
 
 /// The document's own id, from frontmatter.

@@ -9,7 +9,7 @@ RUST_DIR := $(CURDIR)/rust
 CARGO_TARGET := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(RUST_DIR)/target)
 CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
 
-.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test mutation-test wave2-validation
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence real-tool-test test-real mutation-test wave2-validation
 
 build: rust-build
 
@@ -81,6 +81,13 @@ evidence: build-inputs
 real-tool-test: build-inputs
 	cd $(RUST_DIR) && cargo build --locked -p quoin-cli --bin quoin $(CARGO_TARGET_FLAG)
 	python3 tests/scripts/real_tool_test.py
+
+# Narrow external parser check for the GSN Mermaid output. Run through
+# locked-build.sh and supply the real parser explicitly; an unset path is a
+# failure, never a skipped acceptance check.
+test-real:
+	@test -n "$(QUOIN_TEST_MMDR)" || { echo "test-real: QUOIN_TEST_MMDR=<path> is required"; exit 1; }
+	cd $(RUST_DIR) && QUOIN_TEST_MMDR="$(QUOIN_TEST_MMDR)" cargo test --locked -p quoin-assurance --test gsn_mmdr -- --ignored
 
 mutation-test:
 	python3 tests/scripts/behavioral_mutation_test.py

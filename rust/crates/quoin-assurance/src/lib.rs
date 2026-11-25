@@ -38,6 +38,7 @@ pub mod argument;
 pub mod authored;
 pub mod case;
 pub mod discharge;
+pub mod gsn;
 pub mod matrix;
 pub mod render;
 
@@ -73,6 +74,10 @@ pub use discharge::{
     read_discharge_facts, record_digest, record_discharge_facts, record_id,
     render_discharge_report, render_inward_completeness, render_pack_requirements_mapping,
     render_requirements_mapping, validate_discharge_facts,
+};
+pub use gsn::{
+    GsnCase, GsnEdge, GsnNode, Unmapped, from_case as gsn_from_case,
+    render_diagram as render_gsn_diagram, validate as validate_gsn,
 };
 pub use render::{RenderableCase, render_case};
 

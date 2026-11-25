@@ -233,6 +233,9 @@ fn render_node(node: &CaseNode, depth: usize) -> Vec<String> {
     for child in &node.children {
         out.extend(render_node(child, depth + 1));
     }
+    for context in &node.context {
+        out.extend(render_node(context, depth + 1));
+    }
     out
 }
 
@@ -374,12 +377,19 @@ fn walk(node: &CaseNode, lines: &mut Vec<String>, seen: &mut Vec<String>) {
             NodeKind::Solution => ("([", "])"),
             NodeKind::Strategy => ("[/", "/]"),
             NodeKind::Goal => ("[", "]"),
+            NodeKind::Context => ("(", ")"),
+            NodeKind::Assumption | NodeKind::Justification => ("([", "])"),
+            NodeKind::CounterClaim => ("[/", "/]"),
         };
         lines.push(format!("  {id}{open}\"{}\"{close}", label(node)));
     }
     for child in &node.children {
         walk(child, lines, seen);
         lines.push(format!("  {id} --> {}", node_id(&child.id)));
+    }
+    for context in &node.context {
+        walk(context, lines, seen);
+        lines.push(format!("  {id} -.-> {}", node_id(&context.id)));
     }
 }
 

@@ -92,6 +92,7 @@ fn tc_447_400_argues_from_the_claim_down_to_its_evidence() {
             evidence: None,
             analysis_evidence: None,
             children: Vec::new(),
+            context: Vec::new(),
         }]
     );
 }
@@ -176,6 +177,7 @@ fn tc_447_403_a_claim_nothing_traces_to_is_undeveloped_and_never_supported() {
             evidence: None,
             analysis_evidence: None,
             children: Vec::new(),
+            context: Vec::new(),
         }]
     );
     // The retained criterion is stated as a substring, and it is the half a
@@ -390,4 +392,53 @@ fn tc_447_409_claim_type_matching_is_case_insensitive_in_both_directions() {
     ));
     let ids: Vec<&str> = lowercased.claims.iter().map(|c| c.id.as_str()).collect();
     assert_eq!(ids, ["StR-001"]);
+}
+
+/// Provenance: agent-ix/quoin#PLAT-1644.
+#[trace("FR-223-AC-1", "FR-223-AC-2")]
+#[test]
+fn mitigated_risks_are_sorted_context_and_missing_targets_stay_open() {
+    let mut docs = bundle();
+    let source = docs
+        .iter_mut()
+        .find(|document| document["frontmatter"]["id"] == "FR-001")
+        .expect("fixture has FR-001");
+    source["frontmatter"]["relationships"] = serde_json::json!([
+        {"target":"ix://agent-ix/quoin/StR-001", "type":"traces_to"},
+        {"target":"ix://agent-ix/quoin/HZ-002", "type":"mitigates"},
+        {"target":"ix://agent-ix/quoin/HZ-001", "type":"mitigates"},
+        {"target":"ix://agent-ix/quoin/HZ-MISSING", "type":"mitigates"}
+    ]);
+    docs.extend([
+        doc("HZ-002", "hazard", "Hazard two", &[]),
+        doc("HZ-001", "hazard", "Hazard one", &[]),
+    ]);
+    let result = build_case(&input(
+        docs,
+        vec![obligation("FR-001-AC-1", "It holds.")],
+        vec![],
+    ));
+    let context = &sub_goals(&result.claims[0])[0].context;
+    assert_eq!(
+        context
+            .iter()
+            .map(|node| node.id.as_str())
+            .collect::<Vec<_>>(),
+        ["HZ-001", "HZ-002", "HZ-MISSING"]
+    );
+    assert_eq!(context[0].status, NodeStatus::Supported);
+    assert_eq!(context[2].status, NodeStatus::Open);
+    assert!(
+        context[2]
+            .because
+            .as_deref()
+            .is_some_and(|reason| reason.contains("HZ-MISSING"))
+    );
+    let no_context = build_case(&input(
+        bundle(),
+        vec![obligation("FR-001-AC-1", "It holds.")],
+        vec![],
+    ));
+    let json = serde_json::to_value(no_context).expect("case serializes");
+    assert!(json["claims"][0].get("context").is_none());
 }

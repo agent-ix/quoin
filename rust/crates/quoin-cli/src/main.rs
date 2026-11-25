@@ -171,18 +171,29 @@ fn main() -> std::process::ExitCode {
     }
     match run(arguments) {
         Ok(response) => emit(&response),
-        Err(error) => {
-            match error.stream {
-                ShellOutput::Stdout => {
-                    let _ = writeln!(std::io::stdout(), "{}", error.message);
-                }
-                ShellOutput::Stderr => {
-                    let _ = writeln!(std::io::stderr(), "{}", error.message);
-                }
-            }
-            std::process::ExitCode::from(error.exit)
-        }
+        Err(error) => emit_error(error),
     }
+}
+
+fn emit_error(error: ShellError) -> std::process::ExitCode {
+    emit_error_to(
+        error,
+        &mut std::io::stdout().lock(),
+        &mut std::io::stderr().lock(),
+    )
+}
+
+fn emit_error_to<'a>(
+    error: ShellError,
+    stdout: &'a mut dyn std::io::Write,
+    stderr: &'a mut dyn std::io::Write,
+) -> std::process::ExitCode {
+    let stream = match error.stream {
+        ShellOutput::Stdout => stdout,
+        ShellOutput::Stderr => stderr,
+    };
+    let _ = writeln!(stream, "{}", error.message);
+    std::process::ExitCode::from(error.exit)
 }
 
 fn is_root_help_request(arguments: &[OsString]) -> bool {
