@@ -837,4 +837,200 @@ mod tests {
         assert_eq!(goal.open_reason.as_deref(), Some("audit reason"));
         assert_eq!(goal.undeveloped, Some(true));
     }
+
+    /// Provenance: agent-ix/quoin#PLAT-1447.
+    #[trace("FR-222-AC-2")]
+    #[test]
+    fn rejects_context_endpoints_terminal_nodes_development_and_bad_references() {
+        let in_context_bad = model(
+            vec![
+                node("A1", "assumption", None),
+                node("G1", "goal", Some(true)),
+            ],
+            vec![GsnEdge {
+                kind: "in_context_of".to_owned(),
+                from: "A1".to_owned(),
+                to: "G1".to_owned(),
+            }],
+        );
+        assert!(
+            validate(&in_context_bad)
+                .expect_err("WF-2 endpoints")
+                .contains("WF-2")
+        );
+
+        let terminal_bad = model(
+            vec![node("C1", "context", None), node("G1", "goal", Some(true))],
+            vec![GsnEdge {
+                kind: "supported_by".to_owned(),
+                from: "C1".to_owned(),
+                to: "G1".to_owned(),
+            }],
+        );
+        let terminal_error =
+            validate(&terminal_bad).expect_err("terminal nodes have no outgoing support");
+        assert!(terminal_error.contains("WF-1"));
+        assert!(terminal_error.contains("WF-3"));
+
+        let undeveloped_missing = model(vec![node("G1", "goal", None)], Vec::new());
+        assert!(
+            validate(&undeveloped_missing)
+                .expect_err("goal must be developed")
+                .contains("WF-5")
+        );
+
+        let duplicate = model(
+            vec![
+                node("G1", "goal", Some(true)),
+                node("G1", "goal", Some(true)),
+            ],
+            Vec::new(),
+        );
+        assert!(
+            validate(&duplicate)
+                .expect_err("ids are unique")
+                .contains("WF-6")
+        );
+
+        let dangling = model(
+            vec![node("G1", "goal", None)],
+            vec![GsnEdge {
+                kind: "supported_by".to_owned(),
+                from: "G1".to_owned(),
+                to: "missing".to_owned(),
+            }],
+        );
+        assert!(
+            validate(&dangling)
+                .expect_err("endpoints exist")
+                .contains("WF-6")
+        );
+
+        let undeveloped_with_support = model(
+            vec![
+                node("G1", "goal", Some(true)),
+                node("G2", "goal", Some(true)),
+            ],
+            vec![GsnEdge {
+                kind: "supported_by".to_owned(),
+                from: "G1".to_owned(),
+                to: "G2".to_owned(),
+            }],
+        );
+        assert!(
+            validate(&undeveloped_with_support)
+                .expect_err("undeveloped goal has no children")
+                .contains("WF-7")
+        );
+
+        let counterclaim_without_edge = model(
+            vec![
+                node("CC1", "counter_claim", None),
+                node("G1", "goal", Some(true)),
+            ],
+            Vec::new(),
+        );
+        assert!(
+            validate(&counterclaim_without_edge)
+                .expect_err("counterclaim targets one argument node")
+                .contains("WF-8")
+        );
+        let counterclaim_multiple_edges = model(
+            vec![
+                node("CC1", "counter_claim", None),
+                node("G1", "goal", Some(true)),
+                node("S1", "strategy", Some(true)),
+            ],
+            vec![
+                GsnEdge {
+                    kind: "challenges".to_owned(),
+                    from: "CC1".to_owned(),
+                    to: "G1".to_owned(),
+                },
+                GsnEdge {
+                    kind: "challenges".to_owned(),
+                    from: "CC1".to_owned(),
+                    to: "S1".to_owned(),
+                },
+            ],
+        );
+        assert!(
+            validate(&counterclaim_multiple_edges)
+                .expect_err("counterclaim has one target")
+                .contains("WF-8")
+        );
+        let counterclaim_bad_target = model(
+            vec![
+                node("CC1", "counter_claim", None),
+                node("Sn1", "solution", None),
+            ],
+            vec![GsnEdge {
+                kind: "challenges".to_owned(),
+                from: "CC1".to_owned(),
+                to: "Sn1".to_owned(),
+            }],
+        );
+        assert!(
+            validate(&counterclaim_bad_target)
+                .expect_err("counterclaim targets argument nodes only")
+                .contains("WF-8")
+        );
+    }
+
+    /// Provenance: agent-ix/quoin#PLAT-1447.
+    #[trace("FR-221-AC-6")]
+    #[test]
+    fn open_authored_challenge_is_only_a_counter_claim() {
+        let view = serde_json::json!({
+            "topClaim":{"id":"TC-1","statement":"Claim","status":"open","reasons":["challenge open"]},
+            "reasoning":[], "assumptions":[], "participants":[],
+            "challenges":[{"id":"CH-1","target":"TC-1","statement":"Objection","owner":"auditor","status":"open","declaredStatus":"open","resolutionRefs":[],"reason":"unresolved"}],
+            "relationships":[]
+        });
+        let model =
+            super::from_authored(&view).expect("open challenge maps to a valid counter-claim");
+        let challenge = model
+            .nodes
+            .iter()
+            .find(|node| node.source == "CH-1")
+            .expect("counter-claim is present");
+        assert_eq!(challenge.kind, "counter_claim");
+        assert_eq!(challenge.open_reason.as_deref(), Some("unresolved"));
+        assert_eq!(
+            model
+                .edges
+                .iter()
+                .filter(|edge| edge.kind == "challenges"
+                    && edge.from == challenge.id
+                    && edge.to == model.roots[0])
+                .count(),
+            1
+        );
+        assert!(
+            !model
+                .nodes
+                .iter()
+                .any(|node| node.source == "CH-1" && node.kind == "context")
+        );
+    }
+
+    /// Provenance: agent-ix/quoin#PLAT-1645.
+    #[trace("FR-221-AC-10")]
+    #[test]
+    fn diagram_escapes_quotes_newlines_and_truncates_code_points() {
+        let text = format!("{}é", "x".repeat(170));
+        let mut goal = node("G1", "goal", Some(true));
+        goal.source = "FR-1".to_owned();
+        goal.statement = format!("{text}\n\"quoted\"");
+        let diagram = super::render_diagram(&model(vec![goal], Vec::new())).expect("valid diagram");
+        assert!(diagram.starts_with("flowchart TB\n"));
+        assert!(diagram.contains("…"));
+        assert!(diagram.contains("class G1 open"));
+        let mut escaped_goal = node("G1", "goal", Some(true));
+        escaped_goal.statement = "first\n\"quoted\"".to_owned();
+        let escaped =
+            super::render_diagram(&model(vec![escaped_goal], Vec::new())).expect("valid diagram");
+        assert!(escaped.contains("#quot;"));
+        assert!(escaped.contains("<br/>"));
+    }
 }
