@@ -610,21 +610,29 @@ fn render_sds(
             "no software design source was selected",
         ));
     }
-    let loaded = modules
-        .iter()
-        .map(quoin_quire::ids::ModuleRoot::open)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| fail(scope, format!("module open failed: {e}")))?;
-    let selection = quoin_quire::ModuleSelection::Closed(loaded);
-    let request = quoin_quire::coverage::Request {
-        scope: quoin_quire::ids::ScopeRoot::open(scope).map_err(|e| fail(scope, e))?,
-        modules: selection,
+    let (systems, adr_documents) = if modules.is_empty() {
+        (
+            quoin_quire::systems::Systems::default(),
+            Vec::<quoin_quire::records::Document>::new(),
+        )
+    } else {
+        let loaded = modules
+            .iter()
+            .map(quoin_quire::ids::ModuleRoot::open)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| fail(scope, format!("module open failed: {e}")))?;
+        let selection = quoin_quire::ModuleSelection::Closed(loaded);
+        let request = quoin_quire::coverage::Request {
+            scope: quoin_quire::ids::ScopeRoot::open(scope).map_err(|e| fail(scope, e))?,
+            modules: selection,
+        };
+        let systems = quoin_quire::systems::load(&request).map_err(|e| fail(scope, e))?;
+        let adrs = quoin_quire::records::read(scope, &request.modules, &["ADR"])
+            .map_err(|e| fail(scope, e))?;
+        (systems, adrs.documents)
     };
-    let systems = quoin_quire::systems::load(&request).map_err(|e| fail(scope, e))?;
-    let adrs = quoin_quire::records::read(scope, &request.modules, &["ADR"])
-        .map_err(|e| fail(scope, e))?;
     let parts: BTreeSet<&str> = systems.parts.iter().map(|p| p.document.as_str()).collect();
-    let decisions: BTreeSet<&str> = adrs.documents.iter().map(|d| d.id.as_str()).collect();
+    let decisions: BTreeSet<&str> = adr_documents.iter().map(|d| d.id.as_str()).collect();
     let mut any_design = false;
     for r in records {
         any_design |= render_sds_item(r, &systems, &parts, &decisions, &mut body, &mut gaps);
