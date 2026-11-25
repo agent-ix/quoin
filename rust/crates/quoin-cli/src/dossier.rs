@@ -428,6 +428,7 @@ fn execute(
         as_of: text(arguments, "as-of"),
         // A missing --version is refused by the library, which owns that rule.
         version: text(arguments, "version").unwrap_or_default(),
+        producer_version: crate::build_version().to_owned(),
     };
     match mode {
         Mode::Generate => quoin_dossier::generate(registry, &kinds, &out, &inputs),

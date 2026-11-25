@@ -584,6 +584,7 @@ mod tests {
             release_verify: Some(verify_path),
             as_of: None,
             version: "1.0".to_owned(),
+            producer_version: "test-quoin-version".to_owned(),
         };
         let generator = ReleaseRecordGenerator;
         let before = generator.generate(&inputs).unwrap();

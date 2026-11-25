@@ -52,6 +52,8 @@ pub struct Inputs {
     pub as_of: Option<String>,
     /// The document version written into every generated file.
     pub version: String,
+    /// Exact `quoin --version` output for this running executable.
+    pub producer_version: String,
 }
 
 /// What a generator produces: the document body and the gaps it met.
