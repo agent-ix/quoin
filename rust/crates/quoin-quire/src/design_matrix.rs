@@ -6,13 +6,15 @@
 use crate::coverage::{self, Request};
 use crate::error::{Error, Result};
 
+pub use quire_rs::corpus::{DesignMatrix, DesignMatrixEntry, DroppedRelation};
+
 /// One design-matrix run.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Outcome {
     /// The engine's coverage report, unmodified.
     pub report: quire_rs::CoverageReport,
     /// The engine's design matrix, including errors for dropped relations.
-    pub design_matrix: quire_rs::corpus::DesignMatrix,
+    pub design_matrix: DesignMatrix,
     /// Advisory notices from the module, corpus and symbol walks.
     pub notices: Vec<crate::Notice>,
 }
@@ -50,7 +52,7 @@ pub(crate) fn for_coverage(
     spec: &quire_rs::Spec,
     registry: &quire_rs::Registry,
     report: &quire_rs::CoverageReport,
-) -> Result<quire_rs::corpus::DesignMatrix> {
+) -> Result<DesignMatrix> {
     quire_rs::design_matrix(
         spec,
         registry,

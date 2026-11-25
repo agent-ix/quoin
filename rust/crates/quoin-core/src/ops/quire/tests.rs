@@ -56,8 +56,7 @@ struct FakeEngine {
     unresolved: Vec<Unresolved>,
     failure: Option<quoin_quire::ErrorCode>,
     design_matrix_failure: bool,
-    design_entries: Vec<Value>,
-    design_errors: Vec<Value>,
+    design_result: Option<quoin_quire::design_matrix::DesignMatrix>,
     seen: std::cell::RefCell<Vec<Call>>,
 }
 
@@ -123,6 +122,7 @@ impl QuireHost for FakeEngine {
         self.record(scope, modules);
         Ok(quoin_quire::model::RelationReport {
             relations: vec![],
+            errors: vec![],
             flow: None,
         })
     }
@@ -150,11 +150,12 @@ impl QuireHost for FakeEngine {
             .clone_from(&self.carried_vocabulary);
         Ok(quoin_quire::design_matrix::Outcome {
             report,
-            design_matrix: serde_json::from_value(json!({
-                "entries": self.design_entries,
-                "errors": self.design_errors,
-            }))
-            .unwrap(),
+            design_matrix: self.design_result.clone().unwrap_or_else(|| {
+                quoin_quire::design_matrix::DesignMatrix {
+                    entries: vec![],
+                    errors: vec![],
+                }
+            }),
             notices: Vec::new(),
         })
     }
@@ -208,15 +209,25 @@ fn design_matrix_is_registered_and_keeps_coverage_available() {
 #[trace("FR-165-AC-21")]
 #[test]
 fn design_matrix_preserves_errors_alongside_valid_sibling_entries() {
-    let entry = json!({ "document": "spec/FR-001.md", "criteria": [] });
-    let error = json!({
-        "module": "modules/design",
-        "item": "semantic-link",
-        "reason": "unavailable relation implementation"
-    });
+    let entry = quoin_quire::design_matrix::DesignMatrixEntry {
+        document: "spec/FR-001.md".to_owned(),
+        repo: None,
+        id: None,
+        criticality: None,
+        carried: None,
+        criteria: vec![],
+        design: None,
+    };
+    let error = quoin_quire::design_matrix::DroppedRelation {
+        module: "modules/design".to_owned(),
+        item: "semantic-link".to_owned(),
+        reason: "unavailable relation implementation".to_owned(),
+    };
     let engine = FakeEngine {
-        design_entries: vec![entry.clone()],
-        design_errors: vec![error.clone()],
+        design_result: Some(quoin_quire::design_matrix::DesignMatrix {
+            entries: vec![entry.clone()],
+            errors: vec![error.clone()],
+        }),
         ..FakeEngine::default()
     };
     let response = design_matrix(

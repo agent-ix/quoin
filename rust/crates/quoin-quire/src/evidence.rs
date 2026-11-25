@@ -256,7 +256,9 @@ pub fn compute(request: &Request) -> Result<Outcome> {
 ///
 /// # Errors
 /// As [`compute`], plus errors in the declared design relations.
-pub fn compute_for_matrix(request: &Request) -> Result<(Outcome, quire_rs::corpus::DesignMatrix)> {
+pub fn compute_for_matrix(
+    request: &Request,
+) -> Result<(Outcome, crate::design_matrix::DesignMatrix)> {
     compute_with(request, |spec, registry, report| {
         crate::design_matrix::for_coverage(request.scope.scope.as_path(), spec, registry, report)
     })
