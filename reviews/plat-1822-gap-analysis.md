@@ -31,3 +31,9 @@ This bounded gap check examined the changed FR-165 error-preservation path and i
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | medium | FR-193 does not specify how architecture dossier generation handles `DesignMatrix.errors`, and its generator ignores them. A partial engine result can therefore omit a declared relation while retaining valid entries, without adding a gap or diagnostic to the dossier. Define and test the handling, then consume the errors in the generator. | rust/crates/quoin-dossier/src/architecture.rs:64; spec/functional/FR-193-dossier-architecture-content.md:24 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-193 defines dropped-relation reporting and the generator emits a gap per error; focused FR-193-AC-10/11 tests cover partial and error-only results. |

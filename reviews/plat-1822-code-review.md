@@ -37,3 +37,9 @@ AP-201 (`spec/assurance/AP-201-finding-quality.md`) applies because the change a
 - Focused check evidence from the coder: FR-165 boundary test, default-module manifest test, `cargo check --locked -p quoin-cli -p quoin-dossier`, and `git diff --check` passed via `locked-build.sh`. Reviewer rerun of the FR-165 boundary test passed 1/1 via `locked-build.sh`.
 - Reviewer `cargo fmt --all -- --check` exited 1 on formatting differences in unchanged `quoin-cli/src/evidence/audit.rs` and `quoin-cli/tests/tc_1817_suite004_record.rs`; no changed file was listed. Focused `cargo clippy --locked -p quoin-cli -p quoin-core -p quoin-dossier -p quoin-quire --all-targets -- -D warnings` exited 101 with 14 warnings in unchanged `quoin-evidence` files; no changed file was listed, and a baseline clippy comparison was not run. The release brief prohibits full workspace gates and long sweeps; `cargo deny` and the repository-wide matrix were not run.
 - No workflow files or gate settings changed. AP-201 applies as a recommended profile; AP-202 does not apply.
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | The generator now consumes and reports every dropped-relation error, while retaining returned entries. |
