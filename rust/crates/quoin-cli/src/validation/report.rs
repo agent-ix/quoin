@@ -1023,7 +1023,6 @@ fn verify_signoff(
         "revision": revision,
         "kind": "commit",
         "allowed_signers": allowed_signers,
-        "trailer_keys": ["Signed-off-meaning"],
     });
     let result =
         quoin_core::runtime::engineering_assurance_call(executable, "signature-verify", &request)
@@ -1063,7 +1062,13 @@ fn verify_signoff(
         .get("ratedBy")
         .and_then(Value::as_str)
         .unwrap_or("");
-    let meaning = trailer_values(&value, "Signed-off-meaning");
+    let meaning = value
+        .pointer("/signed_off_meaning/values")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .collect::<Vec<_>>();
     let principal_matches = !principal.is_empty() && principal == expected_principal;
     let meaning_present = meaning.iter().any(|value| *value == SIGNED_OFF_MEANING);
     let (result_status, reason) = if status != "signed_valid" {
@@ -1110,20 +1115,6 @@ fn signoff_result(
         "principalMatchesRatedBy": principal_matches,
         "meaningPresent": meaning_present,
     })
-}
-
-fn trailer_values<'a>(value: &'a Value, key: &str) -> Vec<&'a str> {
-    value
-        .get("trailers")
-        .and_then(Value::as_object)
-        .and_then(|trailers| trailers.get(key))
-        .map(|value| {
-            value.as_array().map_or_else(
-                || value.as_str().into_iter().collect(),
-                |values| values.iter().filter_map(Value::as_str).collect(),
-            )
-        })
-        .unwrap_or_default()
 }
 
 fn required_path(arguments: &ArgMatches, name: &str) -> Result<PathBuf, String> {
