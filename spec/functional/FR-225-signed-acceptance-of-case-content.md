@@ -58,8 +58,8 @@ acceptability.
   policy.
 - GSN and SACM output SHALL carry the same signed-acceptance content identity
   for the same input case. GSN output SHALL carry the acceptance as explicit
-  metadata. SACM output SHALL carry it as a distinct Artifact record linked to
-  the AssuranceCasePackage as context, not as supporting evidence.
+  metadata. SACM output SHALL carry it as a distinct Artifact record in the
+  root case's ArtifactPackage as specified by [FR-226](./FR-226-sacm-export.md).
 - The exporter SHALL label acceptance metadata as the human acceptance of the
   case content and SHALL NOT present it as evidence that establishes product
   safety or risk acceptability.

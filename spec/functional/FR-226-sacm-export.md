@@ -64,9 +64,13 @@ build a second, independent mapping from the corpus.
   AssertedInference with `isCounter=true` from that Claim to the challenged
   Claim. It SHALL NOT map as contextual evidence or support. The associated
   top claim remains open.
-- The exporter SHALL encode signed acceptance as the distinct Artifact
-  specified by [FR-225](./FR-225-signed-acceptance-of-case-content.md) and link
-  it to the AssuranceCasePackage by AssertedContext.
+- When the GSN model contains `signed_acceptance`, the exporter SHALL place
+  exactly one distinct Artifact labeled `Human acceptance of case content` in
+  the root AssuranceCasePackage's `artifactPackage` via its `artifactElement`
+  containment. The Artifact SHALL preserve the acceptance metadata specified
+  by [FR-225](./FR-225-signed-acceptance-of-case-content.md).
+- The exporter SHALL NOT reference the acceptance Artifact from any argument
+  element.
 - The exporter SHALL leave every case Claim's assertion declaration unchanged
   when it adds signed-acceptance metadata.
 - The exporter SHALL order SACM elements deterministically from their source
@@ -112,7 +116,7 @@ The exporter SHALL use these `xmi:type` identifiers from the normative SACM
 | Solution evidence relation | `sacm:AssertedEvidence` |
 | Context relation | `sacm:AssertedContext` |
 | Evidence reference | `sacm:ArtifactReference` |
-| Evidence package | `sacm:ArtifactPackage` |
+| Artifact package | `sacm:ArtifactPackage` |
 | Evidence or acceptance record | `sacm:Artifact` |
 | Location-bearing artifact data | `sacm:Resource` |
 
@@ -128,6 +132,7 @@ The exporter SHALL use these `xmi:type` identifiers from the normative SACM
 | FR-226-AC-6 | A well-formedness failure in the GSN input writes no XMI and preserves the named WF rule and node ids in the error report. | Test |
 | FR-226-AC-7 | Local expectations validate the XMI shape; the explicit metamodel-conformance check compares the output against the normative model at `QUOIN_SACM_METAMODEL` and rejects an unset path. | Test |
 | FR-226-AC-8 | No external interop application is named as verified until PLAT-1649 has successful fixture-import evidence with application name, version, and licence. | Inspection |
+| FR-226-AC-9 | A GSN case with verified `signed_acceptance` and an open claim yields exactly one labeled acceptance Artifact via the root's `artifactPackage` and its `artifactElement` containment. No argument element references it. Exporting the case with `signed_acceptance` omitted yields no acceptance Artifact and identical Claim declarations. | Test |
 
 ## Dependencies
 
