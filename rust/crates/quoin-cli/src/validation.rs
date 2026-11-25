@@ -127,8 +127,11 @@ pub(crate) fn embedded_inputs_value() -> serde_json::Value {
 }
 
 /// The anomaly documents and exact version of the binary that embeds them.
-pub(crate) fn embedded_anomaly_set_value(producer_version: &str) -> serde_json::Value {
-    let records = EMBEDDED_ANOMALIES.map(|files| {
+pub(crate) fn anomaly_set_value(
+    producer_version: &str,
+    anomaly_documents: Option<&[EmbeddedFile]>,
+) -> serde_json::Value {
+    let records = anomaly_documents.map(|files| {
         files
             .iter()
             .map(|file| {
