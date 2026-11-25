@@ -42,7 +42,7 @@ dispositions:
       decision. Each feature meets the not-high threshold because its failure can
       mislead or inconvenience a person, while the feature itself neither creates
       authoritative verification evidence nor makes an acceptance decision:
-      
+
       - FR-003 can misdescribe a command option, but help text does not execute the
         command or create a record.
       - FR-011 can misdescribe a catalog type, but a listing does not write a record
@@ -54,7 +54,7 @@ dispositions:
         unapproved and is not a verification result.
       - FR-221 can misstate the repository's private reporting route, but it does not
         itself disclose a report or authorize public disclosure.
-      
+
       In every case, the failure affects information used by a person; it does not
       silently claim that verification, traceability, discharge, or approval has
       occurred. A person remains responsible for reviewing the information and

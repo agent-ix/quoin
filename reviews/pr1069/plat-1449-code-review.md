@@ -41,8 +41,8 @@ dispositions:
   - fnd: FND-001
     outcome: fixed
     after_excerpt: |-
-      	@test -n "$(QUIRE_MODULE_ARGS)" || { echo "set QUIRE_MODULE_ARGS to explicit isolated module roots, including current spec-artifacts-iso and spec-artifacts-process" >&2; exit 2; }
-      	$(QUIRE) validate --scope . --okf --severity trace:feature-without-risk-rating=error $(QUIRE_MODULE_ARGS)
+	@test -n "$(QUIRE_MODULE_ARGS)" || { echo "set QUIRE_MODULE_ARGS to explicit isolated module roots, including current spec-artifacts-iso and spec-artifacts-process" >&2; exit 2; }
+	$(QUIRE) validate --scope . --okf --severity trace:feature-without-risk-rating=error $(QUIRE_MODULE_ARGS)
 ```
 
 +++
