@@ -75,7 +75,7 @@ struct SourceRef {
     record_type: String,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct ProductRecords {
     software: Vec<Software>,
     decisions: Vec<Decision>,
