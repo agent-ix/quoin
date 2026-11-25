@@ -51,6 +51,7 @@ and a second version to track.
 | FR-112-AC-3 | Under an npm install, `quoin update` given as the first argument makes no change to the installation, exits non-zero, and its stderr names the npm command that manages it (`npm install -g @agent-ix/quoin@latest`) and states that quoin was installed with npm. | Test |
 | FR-112-AC-4 | Every Linux platform package (`@agent-ix/quoin-linux-x64`, `@agent-ix/quoin-linux-arm64`) declares `libc: ["glibc"]` in `package.json`, matching the glibc floor the archived binary was built against. | Test |
 | FR-112-AC-5 | A YAML-parsing test confirms that `release.yml` and `native-release.yml` remain triggered only by `workflow_dispatch`; `release.yml` retains its main-branch guard, default-false `publish` input, npm publish input and post-publish smoke gate; and the independent `tag-attestation.yml` runs on `v*` tag pushes, uses only dependencies defined in its own workflow, and calls the shared Engineering Assurance release-attestation workflow. | Test (TC-013) |
+| FR-112-AC-6 | Before uploading a native release asset, `native-release.yml` runs the just-built `quoin selftest --run`; a non-zero self-test result fails the release job before any release asset is uploaded. | Test |
 
 ## Constraints
 

@@ -18,8 +18,8 @@ environment without checking out the source repository.
 ## Inputs
 
 - The installed quoin binary
-- An optional output path for the run result
-- The case selection, when a user requests selected cases
+- The case selection supplied as zero or more `--case <case-id>` options
+- An optional `--out <path>` destination for the run result
 
 ## Outputs
 
@@ -38,11 +38,24 @@ environment without checking out the source repository.
   identifies a requirement acceptance criterion.
 - The self-test runner SHALL compare the case's exit code, stdout bytes, and
   each expected file byte for byte.
+- `quoin selftest --run` SHALL run every embedded case when no `--case` is
+  supplied. When one or more `--case <case-id>` options are supplied, it SHALL
+  run only the named cases, once each, in embedded declaration order. The
+  runner SHALL reject an unknown case id before any case starts, with an error
+  that names the id.
+- Every case process SHALL have a wall-clock limit of 60 seconds. When a case
+  exceeds that limit, the runner SHALL terminate and reap the case process and
+  its descendants, record that case as `error` with detail identifying
+  `timeout`, and continue with the remaining selected cases.
 - The runner SHALL label a case `pass` only when all expected outputs match.
 - The runner SHALL label a case `fail` when an expected output does not match.
 - The runner SHALL label a case `error` when case execution fails.
 - The runner SHALL return a non-zero exit status when any case is `fail` or
   `error`, while retaining the result for every case that ran.
+- The runner SHALL retain the canonical run record defined by
+  [FR-216](./FR-216-selftest-run-record.md). When `--out <path>` is supplied,
+  it SHALL write those same JSON bytes to that path instead of standard output;
+  otherwise it SHALL write the JSON bytes to standard output.
 - The high-process-risk features identified by the applicable
   `FeatureRiskRating` records SHALL each have at least one self-test case
   traced to an acceptance criterion of that feature.
@@ -52,7 +65,10 @@ environment without checking out the source repository.
 - The quire-cli repository SHALL provide the corresponding `quire selftest`
   entry point for cases it owns. Its binary MAY embed quire-rs-owned case
   assets exposed by the linked quire-rs crate at build time; quire-cli SHALL
-  NOT copy or maintain those cases. The validation report's retained
+  NOT copy or maintain those cases. Listing or running a quire-rs-owned case
+  is test evidence only; it SHALL NOT create or imply an accepted
+  `FeatureRiskRating`. Ratings are accepted only through the named-person
+  workflow defined for the validation kit. The validation report's retained
   engineering-assurance and filament-analyze run evidence is specified by
   [FR-219](./FR-219-validation-report-tool-evidence.md).
 
@@ -74,6 +90,10 @@ environment without checking out the source repository.
 | FR-215-AC-3 | Given a case process that exits non-zero or cannot execute, the result is respectively `fail` or `error`, and the command exits non-zero. | Test |
 | FR-215-AC-4 | Given a high-process-risk FR without a case traced to one of its acceptance criteria, the coverage check names that FR as uncovered. | Test |
 | FR-215-AC-5 | Given a test case without a trace marker, `quire matrix --strict` over `selftest/` reports the case as untagged. | Test |
+| FR-215-AC-6 | Given no `--case` option, `quoin selftest --run` runs every embedded case; given repeated `--case <id>` options, it runs only the named cases once each in embedded declaration order; an unknown id is rejected before any case starts and is named in the error. | Test |
+| FR-215-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
+| FR-215-AC-8 | Given `--out <path>`, the command writes the retained FR-216 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out`, it writes those bytes to stdout. | Test |
+| FR-215-AC-9 | Given a quire-rs-owned case embedded by quire-cli, its source and trace tags remain in quire-rs and the listed case is evidence of test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
 
 ## Dependencies
 
