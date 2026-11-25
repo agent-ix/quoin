@@ -18,10 +18,8 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# The quire engine, at a quire-rs `main` commit that contains the
-# dropped-declaration refusal (quire-rs #715, PLAT-1804). That commit is past the
-# v0.62.3 tag and its package still reads 0.62.3; the dependency moves to a
-# release tag at the next batched release.
+# Use the published quire-rs release containing located cross-module semantic
+# reference resolution.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject
@@ -38,7 +36,7 @@ quoin-quire-types = { workspace = true }
 ix-trace-rs = { workspace = true }
 quoin-jsonschema = { workspace = true }
 quoin-yaml = { workspace = true }
-quire-rs = { version = "=0.62.3", git = "https://github.com/agent-ix/quire-rs", rev = "b6beef4df8326fdd4323dfeb803075563ccdc350" }
+quire-rs = { version = "=0.63.0", git = "https://github.com/agent-ix/quire-rs", tag = "v0.63.0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

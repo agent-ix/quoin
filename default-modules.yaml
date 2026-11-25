@@ -23,7 +23,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
-      ref: v0.27.0
+      ref: v0.28.0
 
   - name: spec-artifacts-app
     defaultEnabled: true
