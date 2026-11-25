@@ -146,7 +146,7 @@ mod tests {
 
     /// Shipped documents register in bundle order.
     #[cfg(not(feature = "test-stubs"))]
-    #[trace("FR-191")]
+    #[trace("FR-191-AC-23")]
     #[test]
     fn the_shipped_registry_holds_the_seventeen_documents() {
         let registry = builtin_registry(crate::testing::sources()).unwrap();
@@ -173,6 +173,21 @@ mod tests {
                 "records-of-processing",
                 "vulnerability-management-plan"
             ]
+        );
+        let selected = registry
+            .select(&[
+                "device-description".to_owned(),
+                "software-description".to_owned(),
+                "software-design-specification".to_owned(),
+                "documentation-level-decision".to_owned(),
+            ])
+            .unwrap();
+        assert_eq!(
+            selected
+                .iter()
+                .map(|generator| generator.spec().id)
+                .collect::<Vec<_>>(),
+            ["DOS-SW", "DOS-DL", "DOS-SDS", "DOS-DEV"]
         );
     }
 
