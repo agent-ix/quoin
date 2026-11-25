@@ -544,6 +544,17 @@ pub fn qualify(
     attestation: &[u8],
     output: &[u8],
 ) -> Qualification {
+    if statement.record_id != scope.record_id
+        || statement.record_revision != scope.record_revision
+        || statement.candidate_revision != scope.candidate_revision
+        || statement.proof_id != scope.proof_id
+        || statement.attestation_id != scope.attestation_id
+        || statement.attestation_sha256 != digest(attestation)
+        || statement.output_sha256 != digest(output)
+        || statement.output_size_bytes != u64::try_from(output.len()).unwrap_or(u64::MAX)
+    {
+        return Qualification::Invalid("statement_content_mismatch");
+    }
     let checkpoint = match checkpoint {
         Ok(Some(checkpoint)) => checkpoint,
         Ok(None)
@@ -570,17 +581,6 @@ pub fn qualify(
         || checkpoint.tag_object_id.is_empty()
     {
         return Qualification::Invalid("checkpoint_binding_mismatch");
-    }
-    if statement.record_id != scope.record_id
-        || statement.record_revision != scope.record_revision
-        || statement.candidate_revision != scope.candidate_revision
-        || statement.proof_id != scope.proof_id
-        || statement.attestation_id != scope.attestation_id
-        || statement.attestation_sha256 != digest(attestation)
-        || statement.output_sha256 != digest(output)
-        || statement.output_size_bytes != u64::try_from(output.len()).unwrap_or(u64::MAX)
-    {
-        return Qualification::Invalid("statement_content_mismatch");
     }
     let Some(provider) = provider else {
         return Qualification::Incomplete("retention_provider_unconfigured");
@@ -962,6 +962,66 @@ mod tests {
             ),
             Qualification::Invalid("checkpoint_binding_mismatch")
         );
+    }
+
+    /// Provenance: PLAT-1801
+    #[trace("FR-210-AC-2")]
+    #[test]
+    fn statement_mismatches_precede_missing_or_unverifiable_checkpoint() {
+        let unavailable = [
+            Ok(None),
+            Err(CheckpointFailure::VerifierUnavailable),
+            Err(CheckpointFailure::SignatureUnverifiable),
+        ];
+        for checkpoint in unavailable {
+            let output_mismatch = qualify(
+                None,
+                &scope(),
+                &statement(),
+                None,
+                checkpoint,
+                b"attestation",
+                b"substituted-output",
+            );
+            assert_eq!(
+                output_mismatch,
+                Qualification::Invalid("statement_content_mismatch")
+            );
+
+            let mut mismatched_scope = scope();
+            mismatched_scope.record_revision += 1;
+            let scope_mismatch = qualify(
+                None,
+                &mismatched_scope,
+                &statement(),
+                None,
+                checkpoint,
+                b"attestation",
+                b"output",
+            );
+            assert_eq!(
+                scope_mismatch,
+                Qualification::Invalid("statement_content_mismatch")
+            );
+        }
+        for checkpoint in [
+            Ok(None),
+            Err(CheckpointFailure::VerifierUnavailable),
+            Err(CheckpointFailure::SignatureUnverifiable),
+        ] {
+            assert_eq!(
+                qualify(
+                    None,
+                    &scope(),
+                    &statement(),
+                    None,
+                    checkpoint,
+                    b"attestation",
+                    b"output",
+                ),
+                Qualification::Incomplete("checkpoint_unavailable")
+            );
+        }
     }
 
     /// Provenance: PLAT-1801
