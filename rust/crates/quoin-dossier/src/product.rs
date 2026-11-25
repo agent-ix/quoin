@@ -171,24 +171,45 @@ fn read_kind<T: for<'de> Deserialize<'de>>(
 }
 
 fn read_all(scope: &Path) -> Result<ProductRecords, SourceFailure> {
-    let software: Vec<Software> = read_kind(
-        scope,
-        "software_description",
-        SW_SCHEMA,
-        "software_description",
-    )?;
-    let decisions: Vec<Decision> = read_kind(
-        scope,
-        "documentation_level_decision",
-        DL_SCHEMA,
-        "documentation_level_decision",
-    )?;
-    let devices: Vec<Device> = read_kind(
-        scope,
-        "device_description",
-        DEV_SCHEMA,
-        "device_description",
-    )?;
+    read_records(scope, true, true, true)
+}
+
+fn read_records(
+    scope: &Path,
+    include_software: bool,
+    include_decisions: bool,
+    include_devices: bool,
+) -> Result<ProductRecords, SourceFailure> {
+    let software: Vec<Software> = if include_software {
+        read_kind(
+            scope,
+            "software_description",
+            SW_SCHEMA,
+            "software_description",
+        )?
+    } else {
+        Vec::new()
+    };
+    let decisions: Vec<Decision> = if include_decisions {
+        read_kind(
+            scope,
+            "documentation_level_decision",
+            DL_SCHEMA,
+            "documentation_level_decision",
+        )?
+    } else {
+        Vec::new()
+    };
+    let devices: Vec<Device> = if include_devices {
+        read_kind(
+            scope,
+            "device_description",
+            DEV_SCHEMA,
+            "device_description",
+        )?
+    } else {
+        Vec::new()
+    };
     let mut identities = BTreeSet::new();
     for r in &software {
         if r.schema_version != 1
@@ -276,7 +297,7 @@ impl Generator for SoftwareDescription {
         }
     }
     fn generate(&self, i: &Inputs) -> Result<Generated, SourceFailure> {
-        let r = read_all(&i.scope)?;
+        let r = read_records(&i.scope, true, false, false)?;
         Ok(render_sw(&r.software))
     }
 }
@@ -291,7 +312,7 @@ impl Generator for DocumentationDecision {
         }
     }
     fn generate(&self, i: &Inputs) -> Result<Generated, SourceFailure> {
-        let r = read_all(&i.scope)?;
+        let r = read_records(&i.scope, true, true, true)?;
         Ok(render_dl(&r))
     }
 }
@@ -306,7 +327,7 @@ impl Generator for SoftwareDesign {
         }
     }
     fn generate(&self, i: &Inputs) -> Result<Generated, SourceFailure> {
-        let r = read_all(&i.scope)?;
+        let r = read_records(&i.scope, true, false, false)?;
         render_sds(&r.software, &i.scope, &i.modules)
     }
 }
@@ -321,7 +342,7 @@ impl Generator for DeviceDescription {
         }
     }
     fn generate(&self, i: &Inputs) -> Result<Generated, SourceFailure> {
-        let r = read_all(&i.scope)?;
+        let r = read_records(&i.scope, true, false, true)?;
         Ok(render_dev(&r))
     }
 }
@@ -1011,6 +1032,23 @@ mod tests {
                 .software,
         );
         assert_eq!(one, two);
+    }
+
+    #[trace("FR-233-AC-1")]
+    #[test]
+    fn generator_reads_only_its_selected_source_kinds() {
+        let t = scope();
+        put(
+            t.path(),
+            "software_description",
+            "sw",
+            r#"{"schema_version":1,"id":"sw","record_type":"software_description","software_id":"SW","name":"Name"}"#,
+        );
+        put(t.path(), "device_description", "dev", "{");
+        let records = read_records(t.path(), true, false, false)
+            .expect("unselected device records are not read");
+        assert_eq!(records.software.len(), 1);
+        assert!(records.devices.is_empty());
     }
 
     #[trace("FR-231-AC-2")]
