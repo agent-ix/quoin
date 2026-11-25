@@ -33,6 +33,14 @@ compliance verdict.
   self-test run records, and typed per-tool `Anomaly` records. The initial
   tool set includes quoin, quire-rs, quire-cli, engineering-assurance, and
   filament-analyze.
+- For GSN export, the caller may supply the retained FR-217 JSON report with
+  `quoin assurance --validation-report <file>`. Its `tools` entries identify
+  each tool by `tool` (the retained RunRecord's exact name/version) and
+  `packageIdentity` (the Toolchain Validation Kit package identity), and retain `intendedUse`, `validationReportId`,
+  `selfTestRuns`, and `anomalies`. The anomaly entries are the existing typed
+  FR-162/FR-163 report rows, not a new record shape. Missing `anomalies` means
+  the inventory was not provided; an empty array means the report supplied an
+  empty inventory.
 
 ## Outputs
 
@@ -46,6 +54,15 @@ compliance verdict.
 - The strategy SHALL identify each producing tool by the package identity in
   the Toolchain Validation Kit record and SHALL retain the source record ids
   and reported tool versions.
+- Derived-case producer identity SHALL be joined only by an exact retained
+  run match: a leaf's suite id and timestamp SHALL match the suite and
+  timestamp of a retained run record, whose source-owned `tool` name/version
+  then selects the report entry. A missing suite timestamp, run record, or
+  matching report entry SHALL leave a specific open sub-goal. The command
+  SHALL NOT infer identity from suite name, a remote, executable path, or host.
+- The optional validation report SHALL be read only for `--gsn` output. It
+  SHALL NOT change the existing case payload, auditor verdict, or default
+  renderer.
 - The strategy SHALL show the tool's declared purpose and limits from its
   `IntendedUse`, the retained outcome and identity of the relevant self-test
   run, and every applicable per-tool `Anomaly` record in the known-anomaly
@@ -77,6 +94,7 @@ compliance verdict.
 | FR-224-AC-2 | An absent or unlinked required record emits an open sub-goal naming the missing record kind and never emits a passing confidence result. | Test |
 | FR-224-AC-3 | Changing a source anomaly or self-test record changes only the displayed source facts and does not change the auditor verdict or create a confidence score. | Test |
 | FR-224-AC-4 | A case with no identified producing tool emits no inferred tool-confidence node. | Test |
+| FR-224-AC-5 | A producer identity joins only through an exact retained suite/timestamp run; a missing report entry leaves an open sub-goal, while no producer identity emits no tool-confidence node. | Test |
 
 ## Dependencies
 

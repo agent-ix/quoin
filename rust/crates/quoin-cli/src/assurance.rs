@@ -52,6 +52,12 @@ pub(crate) fn command() -> Command {
                 .help("Render the case as a Mermaid GSN diagram.")
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("validation-report")
+                .long("validation-report")
+                .value_name("FILE")
+                .help("Use a retained TVK validation-report JSON file for GSN tool-confidence source facts"),
+        )
 }
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
@@ -64,6 +70,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         return Err("--gsn-diagram cannot be combined with --json or --gsn".to_owned());
     }
     if arguments.get_one::<String>("argument").is_some() {
+        if arguments.get_one::<String>("validation-report").is_some() {
+            return Err("--validation-report applies only to derived GSN assurance".to_owned());
+        }
         if arguments
             .get_one::<String>("formalization-records")
             .is_some()
@@ -251,7 +260,19 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             serde_json::from_value(case.payload.clone()).map_err(|error| {
                 format!("assurance.build_case returned an invalid case: {error}")
             })?;
-        let model = quoin_assurance::gsn_from_case(&assurance)?;
+        let validation_report = arguments
+            .get_one::<String>("validation-report")
+            .map(|path| json_file(path, "TVK validation report"))
+            .transpose()?;
+        let run_records = field(&store.payload, "runs")?
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
+        let model = quoin_assurance::gsn::from_case_with_validation_report(
+            &assurance,
+            &run_records,
+            validation_report.as_ref(),
+        )?;
         let rendered = if arguments.get_flag("gsn-diagram") {
             quoin_assurance::render_gsn_diagram(&model)?
         } else {

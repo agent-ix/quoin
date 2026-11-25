@@ -22,8 +22,8 @@ use super::parse::{
 use super::view::{
     ArgumentSummary, AssumptionView, AuthoredArgumentView, BuildAuthoredArgumentRequest,
     ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, EvidenceIndexEntry,
-    EvidenceRefState, ReasoningView, SufficiencyDecision, TopClaimView, UnusedDecision,
-    ViewSchemaVersion, ViewStatus,
+    EvidenceRefState, EvidenceReferenceView, ReasoningView, SufficiencyDecision, TopClaimView,
+    UnusedDecision, ViewSchemaVersion, ViewStatus,
 };
 
 /// Build the authored view at one stated instant.
@@ -104,6 +104,31 @@ pub fn build_authored_argument_view(
             subject,
             status: top_status,
             reasons,
+            evidence_refs: argument
+                .top_claim
+                .evidence_refs
+                .iter()
+                .map(|reference| {
+                    let state = evidence_index.get(reference.as_str()).copied();
+                    let reason = match state {
+                        Some(EvidenceRefState::Resolved) => None,
+                        Some(EvidenceRefState::Stale) => {
+                            Some("evidence reference is stale".to_owned())
+                        }
+                        Some(EvidenceRefState::Vacuous) => {
+                            Some("evidence reference is vacuous".to_owned())
+                        }
+                        None => Some(
+                            "evidence reference does not resolve in the evidence store".to_owned(),
+                        ),
+                    };
+                    EvidenceReferenceView {
+                        reference: reference.clone(),
+                        state,
+                        reason,
+                    }
+                })
+                .collect(),
         },
         reasoning,
         assumptions,

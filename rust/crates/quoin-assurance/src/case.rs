@@ -606,23 +606,30 @@ fn context_for(id: &str, by_id: &BTreeMap<String, &serde_json::Value>) -> Vec<Ca
             if found.is_some() && !valid {
                 return None;
             }
-            let statement = found
+            let (kind, title) = found
                 .and_then(|doc| doc.get("frontmatter"))
-                .and_then(|f| f.get("title"))
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_owned)
-                .unwrap_or_else(|| target.clone());
+                .map(|frontmatter| {
+                    let kind = frontmatter
+                        .get("type")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("object");
+                    let title = frontmatter
+                        .get("title")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or(&target);
+                    (kind.to_owned(), title.to_owned())
+                })
+                .unwrap_or_else(|| ("object".to_owned(), target.clone()));
             Some(CaseNode {
                 id: target.clone(),
                 kind: NodeKind::Context,
-                statement,
+                statement: format!("{kind} {target}: {title}"),
                 status: if valid {
                     NodeStatus::Supported
                 } else {
                     NodeStatus::Open
                 },
-                because: (!valid)
-                    .then(|| format!("mitigated target {target} is absent from the loaded corpus")),
+                because: (!valid).then(|| format!("mitigates target {target} not found")),
                 evidence: None,
                 analysis_evidence: None,
                 children: Vec::new(),

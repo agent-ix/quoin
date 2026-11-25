@@ -204,6 +204,23 @@ pub struct TopClaimView {
     /// Every reason, in the retained order: argument status, criteria,
     /// assumptions, challenges, then the two discharge reasons.
     pub reasons: Vec<String>,
+    /// Every authored evidence reference and the evidence-store state, if any.
+    pub evidence_refs: Vec<EvidenceReferenceView>,
+}
+
+/// One top-claim reference as resolved by the supplied evidence snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct EvidenceReferenceView {
+    /// The authored reference.
+    pub reference: String,
+    /// Missing references remain `None` and therefore open.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<EvidenceRefState>,
+    /// Why the reference does not resolve as current evidence.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// A decision that matched no authored criterion.
