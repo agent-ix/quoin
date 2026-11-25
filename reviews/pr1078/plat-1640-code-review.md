@@ -37,4 +37,9 @@ FAIL. If an FR or rating file cannot be parsed, `read_bundle_frontmatter` return
 
 ## Dispositions
 
-No dispositions; this is the initial review pass.
+Round 1, checked against head 5442c2e0296903474fd8a2ef4243763f3eacbbab.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Coverage now includes unreadable documents in JSON and human output and returns Partial when any are present. The new malformed-frontmatter fixture asserts the unreadable path and nonzero exit. |
+| FND-002 | fixed | `string_field` now carries bare `implements` attributes for FR-235-AC-4 and FR-235-AC-11; `quire trace --file` lists both implementation bindings. |
