@@ -31,7 +31,8 @@ struct Software {
     schema_version: u8,
     id: String,
     record_type: String,
-    software_id: String,
+    #[serde(rename = "software_id")]
+    identity: String,
     name: String,
     purpose: Option<String>,
     functions: Option<Vec<String>>,
@@ -59,7 +60,8 @@ struct Device {
     schema_version: u8,
     id: String,
     record_type: String,
-    device_id: String,
+    #[serde(rename = "device_id")]
+    identity: String,
     name: String,
     purpose: Option<String>,
     intended_use: Option<String>,
@@ -167,7 +169,7 @@ fn read_all(scope: &Path) -> Result<ProductRecords, SourceFailure> {
     for r in &software {
         if r.schema_version != 1
             || r.record_type != "software_description"
-            || !identities.insert(r.software_id.clone())
+            || !identities.insert(r.identity.clone())
         {
             return Err(fail(
                 &scope.join("dossier/sources/software_description"),
@@ -179,7 +181,7 @@ fn read_all(scope: &Path) -> Result<ProductRecords, SourceFailure> {
     for r in &devices {
         if r.schema_version != 1
             || r.record_type != "device_description"
-            || !identities.insert(r.device_id.clone())
+            || !identities.insert(r.identity.clone())
         {
             return Err(fail(
                 &scope.join("dossier/sources/device_description"),
@@ -220,8 +222,7 @@ fn label(
     value: Option<&str>,
     record: &str,
     gaps: &mut Vec<Gap>,
-    kind: GapKind,
-    subject: &str,
+    gap: (GapKind, &str),
 ) {
     if let Some(value) = value {
         let _ = writeln!(
@@ -233,8 +234,8 @@ fn label(
     } else {
         let _ = writeln!(body, "**{name}:** Not stated.\n");
         gaps.push(Gap::new(
-            kind,
-            subject,
+            gap.0,
+            gap.1,
             format!("{name} is not stated in source record {record}"),
         ));
     }
@@ -252,7 +253,7 @@ impl Generator for SoftwareDescription {
     }
     fn generate(&self, i: &Inputs) -> Result<Generated, SourceFailure> {
         let r = read_all(&i.scope)?;
-        render_sw(&r.software)
+        Ok(render_sw(&r.software))
     }
 }
 pub(crate) struct DocumentationDecision;
@@ -267,7 +268,7 @@ impl Generator for DocumentationDecision {
     }
     fn generate(&self, i: &Inputs) -> Result<Generated, SourceFailure> {
         let r = read_all(&i.scope)?;
-        render_dl(&r)
+        Ok(render_dl(&r))
     }
 }
 pub(crate) struct SoftwareDesign;
@@ -297,11 +298,11 @@ impl Generator for DeviceDescription {
     }
     fn generate(&self, i: &Inputs) -> Result<Generated, SourceFailure> {
         let r = read_all(&i.scope)?;
-        render_dev(&r)
+        Ok(render_dev(&r))
     }
 }
 
-fn render_sw(records: &[Software]) -> Result<Generated, SourceFailure> {
+fn render_sw(records: &[Software]) -> Generated {
     let mut body = String::from("# Software description\n\n");
     let mut gaps = Vec::new();
     if records.is_empty() {
@@ -312,64 +313,66 @@ fn render_sw(records: &[Software]) -> Result<Generated, SourceFailure> {
         ));
     }
     for r in records {
-        let _ = writeln!(
-            body,
-            "## {} — {}\n\n**Source:** `software_description/{}`\n",
-            cell(&r.software_id),
-            cell(&r.name),
-            cell(&r.id)
-        );
-        let s = r.id.as_str();
-        label(
-            &mut body,
-            "Purpose",
-            r.purpose.as_deref(),
-            s,
-            &mut gaps,
-            GapKind::SoftwareDescriptionFieldUnstated,
-            &format!("{} purpose", r.software_id),
-        );
-        label(
-            &mut body,
-            "Operating environment",
-            r.operating_environment.as_deref(),
-            s,
-            &mut gaps,
-            GapKind::SoftwareDescriptionFieldUnstated,
-            &format!("{} operating_environment", r.software_id),
-        );
-        for (field, values) in [
-            ("Functions", r.functions.as_deref()),
-            ("Interfaces", r.interfaces.as_deref()),
-        ] {
-            match values {
-                Some(v) if !v.is_empty() => {
-                    let _ = writeln!(body, "**{field}:** _(source: `{}`)_", cell(s));
-                    for x in v {
-                        let _ = writeln!(body, "- {}", prose(x));
-                    }
-                    body.push('\n');
-                }
-                _ => gaps.push(Gap::new(
-                    GapKind::SoftwareDescriptionFieldUnstated,
-                    format!("{} {field}", r.software_id),
-                    format!("{field} is not stated in source record {s}"),
-                )),
-            }
-        }
+        render_sw_section(r, &mut body, &mut gaps);
     }
     body.push_str("## Sources\n\n");
     for r in records {
         let _ = writeln!(body, "- `software_description/{}`", cell(&r.id));
     }
-    Ok(Generated {
+    Generated {
         body,
         document_version: None,
         gaps,
-    })
+    }
 }
 
-fn render_dl(records: &ProductRecords) -> Result<Generated, SourceFailure> {
+fn render_sw_section(r: &Software, body: &mut String, gaps: &mut Vec<Gap>) {
+    let _ = writeln!(
+        body,
+        "## {} — {}\n\n**Source:** `software_description/{}`\n",
+        cell(&r.identity),
+        cell(&r.name),
+        cell(&r.id)
+    );
+    let s = r.id.as_str();
+    label(
+        body,
+        "Purpose",
+        r.purpose.as_deref(),
+        s,
+        gaps,
+        (GapKind::SoftwareDescriptionFieldUnstated, &r.id),
+    );
+    label(
+        body,
+        "Operating environment",
+        r.operating_environment.as_deref(),
+        s,
+        gaps,
+        (GapKind::SoftwareDescriptionFieldUnstated, &r.id),
+    );
+    for (field, values) in [
+        ("Functions", r.functions.as_deref()),
+        ("Interfaces", r.interfaces.as_deref()),
+    ] {
+        match values {
+            Some(v) if !v.is_empty() => {
+                let _ = writeln!(body, "**{field}:** _(source: `{}`)_", cell(s));
+                for x in v {
+                    let _ = writeln!(body, "- {}", prose(x));
+                }
+                body.push('\n');
+            }
+            _ => gaps.push(Gap::new(
+                GapKind::SoftwareDescriptionFieldUnstated,
+                &r.id,
+                format!("{field} is not stated in source record {s}"),
+            )),
+        }
+    }
+}
+
+fn render_dl(records: &ProductRecords) -> Generated {
     let mut body = String::from("# Documentation level decision\n\n");
     let mut gaps = Vec::new();
     if records.decisions.is_empty() {
@@ -380,96 +383,11 @@ fn render_dl(records: &ProductRecords) -> Result<Generated, SourceFailure> {
         ));
     }
     let mut decisions: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
-    let software: BTreeSet<&str> = records
-        .software
-        .iter()
-        .map(|r| r.software_id.as_str())
-        .collect();
-    let all_source_ids: BTreeSet<(&str, &str)> = records
-        .software
-        .iter()
-        .map(|r| ("software_description", r.id.as_str()))
-        .chain(
-            records
-                .decisions
-                .iter()
-                .map(|r| ("documentation_level_decision", r.id.as_str())),
-        )
-        .chain(
-            records
-                .devices
-                .iter()
-                .map(|r| ("device_description", r.id.as_str())),
-        )
-        .collect();
+    let index = ProductIndex::new(records);
     for r in &records.decisions {
-        let _ = writeln!(
-            body,
-            "## {}\n\n**Source:** `documentation_level_decision/{}`\n\n**Software:** `{}`\n",
-            cell(&r.software_id),
-            cell(&r.id),
-            cell(&r.software_id)
-        );
-        if !software.contains(r.software_id.as_str()) {
-            gaps.push(Gap::new(
-                GapKind::SourceReferenceUnresolved,
-                &r.id,
-                format!(
-                    "software_id {} expected software_description",
-                    r.software_id
-                ),
-            ));
-        }
-        for (key, val) in [
-            ("Level", r.level.as_deref()),
-            ("Decided by", r.decided_by.as_deref()),
-            ("Decided on", r.decided_on.as_deref()),
-            ("Rationale", r.rationale.as_deref()),
-        ] {
-            label(
-                &mut body,
-                key,
-                val,
-                &r.id,
-                &mut gaps,
-                GapKind::DocumentationLevelDecisionFieldUnstated,
-                &format!("{} {key}", r.id),
-            );
-        }
-        if let Some(rows) = &r.source_records {
-            if rows.is_empty() {
-                gaps.push(Gap::new(
-                    GapKind::DocumentationLevelDecisionFieldUnstated,
-                    &r.id,
-                    "source_records is empty",
-                ));
-            } else {
-                let _ = writeln!(body, "**Referenced sources:** _(from `{}`)_", cell(&r.id));
-                for src in rows {
-                    let _ = writeln!(body, "- `{}/{}`", cell(&src.record_type), cell(&src.id));
-                    if !all_source_ids.contains(&(src.record_type.as_str(), src.id.as_str())) {
-                        gaps.push(Gap::new(
-                            GapKind::SourceReferenceUnresolved,
-                            &r.id,
-                            format!("referenced id {} expected {}", src.id, src.record_type),
-                        ));
-                    }
-                }
-                body.push('\n');
-            }
-        } else {
-            gaps.push(Gap::new(
-                GapKind::DocumentationLevelDecisionFieldUnstated,
-                &r.id,
-                "source_records is not stated",
-            ));
-        }
-        let decision_signature = format!(
-            "{:?}|{:?}|{:?}|{:?}|{:?}",
-            r.level, r.decided_by, r.decided_on, r.rationale, r.source_records
-        );
+        let decision_signature = render_decision(r, &index, &mut body, &mut gaps);
         decisions
-            .entry(&r.software_id)
+            .entry(&r.identity)
             .or_default()
             .insert(decision_signature);
     }
@@ -491,14 +409,120 @@ fn render_dl(records: &ProductRecords) -> Result<Generated, SourceFailure> {
             }
         }
     }
-    Ok(Generated {
+    Generated {
         body,
         document_version: None,
         gaps,
-    })
+    }
 }
 
-fn render_dev(records: &ProductRecords) -> Result<Generated, SourceFailure> {
+struct ProductIndex<'a> {
+    software: BTreeSet<&'a str>,
+    source_ids: BTreeSet<(&'a str, &'a str)>,
+}
+
+impl<'a> ProductIndex<'a> {
+    fn new(records: &'a ProductRecords) -> Self {
+        let software = records
+            .software
+            .iter()
+            .map(|r| r.identity.as_str())
+            .collect();
+        let source_ids = records
+            .software
+            .iter()
+            .map(|r| ("software_description", r.id.as_str()))
+            .chain(
+                records
+                    .decisions
+                    .iter()
+                    .map(|r| ("documentation_level_decision", r.id.as_str())),
+            )
+            .chain(
+                records
+                    .devices
+                    .iter()
+                    .map(|r| ("device_description", r.id.as_str())),
+            )
+            .collect();
+        Self {
+            software,
+            source_ids,
+        }
+    }
+}
+
+fn render_decision(
+    r: &Decision,
+    index: &ProductIndex<'_>,
+    body: &mut String,
+    gaps: &mut Vec<Gap>,
+) -> String {
+    let _ = writeln!(
+        body,
+        "## {}\n\n**Source:** `documentation_level_decision/{}`\n\n**Software:** `{}`\n",
+        cell(&r.identity),
+        cell(&r.id),
+        cell(&r.identity)
+    );
+    if !index.software.contains(r.identity.as_str()) {
+        gaps.push(Gap::new(
+            GapKind::SourceReferenceUnresolved,
+            &r.id,
+            format!("software_id {} expected software_description", r.identity),
+        ));
+    }
+    for (key, value) in [
+        ("Level", r.level.as_deref()),
+        ("Decided by", r.decided_by.as_deref()),
+        ("Decided on", r.decided_on.as_deref()),
+        ("Rationale", r.rationale.as_deref()),
+    ] {
+        label(
+            body,
+            key,
+            value,
+            &r.id,
+            gaps,
+            (GapKind::DocumentationLevelDecisionFieldUnstated, &r.id),
+        );
+    }
+    match &r.source_records {
+        Some(rows) if rows.is_empty() => gaps.push(Gap::new(
+            GapKind::DocumentationLevelDecisionFieldUnstated,
+            &r.id,
+            "source_records is empty",
+        )),
+        Some(rows) => {
+            let _ = writeln!(body, "**Referenced sources:** _(from `{}`)_", cell(&r.id));
+            for src in rows {
+                let _ = writeln!(body, "- `{}/{}`", cell(&src.record_type), cell(&src.id));
+                if !index
+                    .source_ids
+                    .contains(&(src.record_type.as_str(), src.id.as_str()))
+                {
+                    gaps.push(Gap::new(
+                        GapKind::SourceReferenceUnresolved,
+                        &r.id,
+                        format!("referenced id {} expected {}", src.id, src.record_type),
+                    ));
+                }
+            }
+            body.push('\n');
+        }
+        None => gaps.push(Gap::new(
+            GapKind::DocumentationLevelDecisionFieldUnstated,
+            &r.id,
+            "source_records is not stated",
+        )),
+    }
+    format!(
+        "{:?}|{:?}|{:?}|{:?}|{:?}",
+        r.level, r.decided_by, r.decided_on, r.rationale, r.source_records
+    )
+}
+
+fn render_dev(records: &ProductRecords) -> Generated {
     let mut body = String::from("# Device description\n\n");
     let mut gaps = Vec::new();
     if records.devices.is_empty() {
@@ -511,13 +535,13 @@ fn render_dev(records: &ProductRecords) -> Result<Generated, SourceFailure> {
     let software: BTreeSet<&str> = records
         .software
         .iter()
-        .map(|r| r.software_id.as_str())
+        .map(|r| r.identity.as_str())
         .collect();
     for r in &records.devices {
         let _ = writeln!(
             body,
             "## {} — {}\n\n**Source:** `device_description/{}`\n",
-            cell(&r.device_id),
+            cell(&r.identity),
             cell(&r.name),
             cell(&r.id)
         );
@@ -532,8 +556,7 @@ fn render_dev(records: &ProductRecords) -> Result<Generated, SourceFailure> {
                 v,
                 &r.id,
                 &mut gaps,
-                GapKind::DeviceFieldUnstated,
-                &format!("{} {k}", r.id),
+                (GapKind::DeviceFieldUnstated, &r.id),
             );
         }
         match &r.software_ids {
@@ -563,11 +586,11 @@ fn render_dev(records: &ProductRecords) -> Result<Generated, SourceFailure> {
     for r in &records.devices {
         let _ = writeln!(body, "- `device_description/{}`", cell(&r.id));
     }
-    Ok(Generated {
+    Generated {
         body,
         document_version: None,
         gaps,
-    })
+    }
 }
 
 fn render_sds(
@@ -601,107 +624,7 @@ fn render_sds(
     let decisions: BTreeSet<&str> = adrs.documents.iter().map(|d| d.id.as_str()).collect();
     let mut any_design = false;
     for r in records {
-        let _ = writeln!(
-            body,
-            "## {}\n\n**Source:** `software_description/{}`\n",
-            cell(&r.software_id),
-            cell(&r.id)
-        );
-        let part_ids = r.architecture_part_ids.as_deref().unwrap_or(&[]);
-        let decision_ids = r.architecture_decision_ids.as_deref().unwrap_or(&[]);
-        if part_ids.is_empty() {
-            body.push_str("**Architecture parts:** Not stated.\n\n");
-            gaps.push(Gap::new(
-                GapKind::SoftwareDesignPartListUnstated,
-                &r.software_id,
-                format!("source record {} has no architecture_part_ids", r.id),
-            ));
-        } else {
-            body.push_str("**Architecture parts:**\n");
-            for id in part_ids {
-                if parts.contains(id.as_str()) {
-                    any_design = true;
-                    let _ = writeln!(body, "- `{id}`");
-                } else {
-                    gaps.push(Gap::new(
-                        GapKind::SourceReferenceUnresolved,
-                        &r.id,
-                        format!("referenced id {id} expected architecture part"),
-                    ));
-                }
-            }
-            body.push('\n');
-        }
-        if decision_ids.is_empty() {
-            body.push_str("**Architecture decisions:** Not stated.\n\n");
-            gaps.push(Gap::new(
-                GapKind::SoftwareDesignDecisionListUnstated,
-                &r.software_id,
-                format!("source record {} has no architecture_decision_ids", r.id),
-            ));
-        } else {
-            body.push_str("**Architecture decisions:**\n");
-            for id in decision_ids {
-                if decisions.contains(id.as_str()) {
-                    any_design = true;
-                    let _ = writeln!(body, "- `{id}`");
-                } else {
-                    gaps.push(Gap::new(
-                        GapKind::SourceReferenceUnresolved,
-                        &r.id,
-                        format!("referenced id {id} expected ADR"),
-                    ));
-                }
-            }
-            body.push('\n');
-        }
-        let selected_parts: BTreeSet<&str> = part_ids
-            .iter()
-            .filter_map(|id| parts.contains(id.as_str()).then_some(id.as_str()))
-            .collect();
-        for port in systems
-            .ports
-            .iter()
-            .filter(|port| selected_parts.contains(port.owner.as_str()))
-        {
-            any_design = true;
-            let _ = writeln!(
-                body,
-                "**Port** `{}`: {} / {} / {} _(source: architecture part `{}`)_",
-                cell(&port.document),
-                cell(&port.direction),
-                cell(&port.interface),
-                cell(&port.multiplicity),
-                cell(&port.owner)
-            );
-        }
-        for connection in systems.connections.iter().filter(|edge| {
-            selected_parts.contains(edge.source.as_str())
-                || selected_parts.contains(edge.target.as_str())
-        }) {
-            any_design = true;
-            let _ = writeln!(
-                body,
-                "**Connection** `{}`: `{}` → `{}` ({})",
-                cell(&connection.document),
-                cell(&connection.source),
-                cell(&connection.target),
-                cell(&connection.direction)
-            );
-        }
-        for allocation in systems.allocations.iter().filter(|edge| {
-            selected_parts.contains(edge.source.as_str())
-                || selected_parts.contains(edge.target.as_str())
-        }) {
-            any_design = true;
-            let _ = writeln!(
-                body,
-                "**Allocation** `{}`: `{}` → `{}`",
-                cell(&allocation.document),
-                cell(&allocation.source),
-                cell(&allocation.target)
-            );
-        }
+        any_design |= render_sds_item(r, &systems, &parts, &decisions, &mut body, &mut gaps);
     }
     if !records.is_empty() && !any_design {
         gaps.push(Gap::new(
@@ -725,6 +648,150 @@ fn render_sds(
         document_version: None,
         gaps,
     })
+}
+
+fn render_sds_item(
+    r: &Software,
+    systems: &quoin_quire::systems::Systems,
+    parts: &BTreeSet<&str>,
+    decisions: &BTreeSet<&str>,
+    body: &mut String,
+    gaps: &mut Vec<Gap>,
+) -> bool {
+    let _ = writeln!(
+        body,
+        "## {}\n\n**Source:** `software_description/{}`\n",
+        cell(&r.identity),
+        cell(&r.id)
+    );
+    let part_ids = r.architecture_part_ids.as_deref().unwrap_or(&[]);
+    let decision_ids = r.architecture_decision_ids.as_deref().unwrap_or(&[]);
+    let mut any_design = render_design_ids(
+        body,
+        gaps,
+        part_ids,
+        parts,
+        r,
+        DesignIdList {
+            heading: "Architecture parts",
+            gap_kind: GapKind::SoftwareDesignPartListUnstated,
+            field: "architecture_part_ids",
+            expected: "architecture part",
+        },
+    );
+    any_design |= render_design_ids(
+        body,
+        gaps,
+        decision_ids,
+        decisions,
+        r,
+        DesignIdList {
+            heading: "Architecture decisions",
+            gap_kind: GapKind::SoftwareDesignDecisionListUnstated,
+            field: "architecture_decision_ids",
+            expected: "ADR",
+        },
+    );
+    let selected_parts: BTreeSet<&str> = part_ids
+        .iter()
+        .filter_map(|id| parts.contains(id.as_str()).then_some(id.as_str()))
+        .collect();
+    any_design |= render_selected_relationships(systems, &selected_parts, body);
+    any_design
+}
+
+struct DesignIdList {
+    heading: &'static str,
+    gap_kind: GapKind,
+    field: &'static str,
+    expected: &'static str,
+}
+
+fn render_design_ids(
+    body: &mut String,
+    gaps: &mut Vec<Gap>,
+    ids: &[String],
+    known: &BTreeSet<&str>,
+    r: &Software,
+    list: DesignIdList,
+) -> bool {
+    if ids.is_empty() {
+        let _ = writeln!(body, "**{}:** Not stated.\n", list.heading);
+        gaps.push(Gap::new(
+            list.gap_kind,
+            &r.identity,
+            format!("source record {} has no {}", r.id, list.field),
+        ));
+        return false;
+    }
+    let _ = writeln!(body, "**{}:**", list.heading);
+    let mut resolved = false;
+    for id in ids {
+        if known.contains(id.as_str()) {
+            resolved = true;
+            let _ = writeln!(body, "- `{}`", cell(id));
+        } else {
+            gaps.push(Gap::new(
+                GapKind::SourceReferenceUnresolved,
+                &r.id,
+                format!("referenced id {id} expected {}", list.expected),
+            ));
+        }
+    }
+    body.push('\n');
+    resolved
+}
+
+fn render_selected_relationships(
+    systems: &quoin_quire::systems::Systems,
+    selected_parts: &BTreeSet<&str>,
+    body: &mut String,
+) -> bool {
+    let mut rendered = false;
+    for port in systems
+        .ports
+        .iter()
+        .filter(|port| selected_parts.contains(port.owner.as_str()))
+    {
+        rendered = true;
+        let _ = writeln!(
+            body,
+            "**Port** `{}`: {} / {} / {} _(source: architecture part `{}`)_",
+            cell(&port.document),
+            cell(&port.direction),
+            cell(&port.interface),
+            cell(&port.multiplicity),
+            cell(&port.owner)
+        );
+    }
+    for edge in systems.connections.iter().filter(|edge| {
+        selected_parts.contains(edge.source.as_str())
+            || selected_parts.contains(edge.target.as_str())
+    }) {
+        rendered = true;
+        let _ = writeln!(
+            body,
+            "**Connection** `{}`: `{}` → `{}` ({})",
+            cell(&edge.document),
+            cell(&edge.source),
+            cell(&edge.target),
+            cell(&edge.direction)
+        );
+    }
+    for edge in systems.allocations.iter().filter(|edge| {
+        selected_parts.contains(edge.source.as_str())
+            || selected_parts.contains(edge.target.as_str())
+    }) {
+        rendered = true;
+        let _ = writeln!(
+            body,
+            "**Allocation** `{}`: `{}` → `{}`",
+            cell(&edge.document),
+            cell(&edge.source),
+            cell(&edge.target)
+        );
+    }
+    rendered
 }
 
 #[cfg(test)]
@@ -802,6 +869,31 @@ mod tests {
         );
     }
 
+    #[trace("FR-233-AC-1")]
+    #[test]
+    fn rejects_malformed_json_and_empty_optional_values() {
+        let t = scope();
+        put(t.path(), "software_description", "sw", "{");
+        assert!(
+            read_all(t.path())
+                .expect_err("malformed JSON rejected")
+                .detail
+                .contains("invalid JSON")
+        );
+        put(
+            t.path(),
+            "software_description",
+            "sw",
+            r#"{"schema_version":1,"id":"sw","record_type":"software_description","software_id":"SW","name":"Name","purpose":""}"#,
+        );
+        assert!(
+            read_all(t.path())
+                .expect_err("empty strings rejected")
+                .detail
+                .contains("schema validation")
+        );
+    }
+
     #[trace("FR-229-AC-1", "FR-229-AC-2", "FR-229-AC-3")]
     #[test]
     fn software_output_preserves_authored_values_and_reports_absence() {
@@ -813,7 +905,7 @@ mod tests {
             r#"{"schema_version":1,"id":"sw-src","record_type":"software_description","software_id":"SW-1","name":" Name ","purpose":" purpose "}"#,
         );
         let r = read_all(t.path()).expect("valid records");
-        let doc = render_sw(&r.software).expect("render");
+        let doc = render_sw(&r.software);
         assert!(doc.body.contains(" Name "));
         assert!(doc.body.contains(" purpose "));
         assert!(doc.body.contains("software_description/sw-src"));
@@ -825,7 +917,7 @@ mod tests {
             3
         );
         assert_eq!(
-            render_sw(&[]).expect("empty source output").gaps[0].gap_kind,
+            render_sw(&[]).gaps[0].gap_kind,
             GapKind::NoSoftwareDescriptionSource
         );
     }
@@ -853,5 +945,89 @@ mod tests {
         assert!(doc.gaps.iter().any(
             |g| g.gap_kind == GapKind::SoftwareDesignDecisionListUnstated && g.subject == "SW-1"
         ));
+    }
+
+    #[trace("FR-230-AC-1", "FR-230-AC-2", "FR-230-AC-3")]
+    #[test]
+    fn decisions_preserve_authored_fields_gaps_and_conflicts() {
+        let t = scope();
+        put(
+            t.path(),
+            "software_description",
+            "sw",
+            r#"{"schema_version":1,"id":"sw","record_type":"software_description","software_id":"SW","name":"Name"}"#,
+        );
+        put(
+            t.path(),
+            "documentation_level_decision",
+            "d1",
+            r#"{"schema_version":1,"id":"d1","record_type":"documentation_level_decision","software_id":"SW","level":" Level A ","decided_by":"Person","decided_on":"2026-02-28","rationale":"why"}"#,
+        );
+        put(
+            t.path(),
+            "documentation_level_decision",
+            "d2",
+            r#"{"schema_version":1,"id":"d2","record_type":"documentation_level_decision","software_id":"SW","level":"Level B"}"#,
+        );
+        let records = read_all(t.path()).expect("valid records");
+        let doc = render_dl(&records);
+        assert!(doc.body.contains(" Level A "));
+        assert!(doc.body.contains("Person"));
+        assert!(doc.body.contains("2026-02-28"));
+        assert!(
+            doc.gaps
+                .iter()
+                .any(|g| g.gap_kind == GapKind::ConflictingDocumentationLevelDecisions)
+        );
+        assert_eq!(
+            doc.gaps
+                .iter()
+                .filter(|g| g.gap_kind == GapKind::DocumentationLevelDecisionFieldUnstated)
+                .count(),
+            5
+        );
+    }
+
+    #[trace("FR-232-AC-1", "FR-233-AC-3")]
+    #[test]
+    fn device_software_association_requires_a_resolved_explicit_id() {
+        let t = scope();
+        put(
+            t.path(),
+            "device_description",
+            "dev",
+            r#"{"schema_version":1,"id":"dev","record_type":"device_description","device_id":"D","name":"Device","software_ids":["missing"]}"#,
+        );
+        let records = read_all(t.path()).expect("valid shape without resolution");
+        let doc = render_dev(&records);
+        assert!(
+            doc.gaps
+                .iter()
+                .any(|g| g.gap_kind == GapKind::SourceReferenceUnresolved
+                    && g.detail.contains("missing"))
+        );
+        assert!(!doc.body.contains("- `missing`"));
+    }
+
+    #[trace("FR-231-AC-5")]
+    #[test]
+    fn design_does_not_infer_unlisted_architecture_ids() {
+        let t = scope();
+        put(
+            t.path(),
+            "software_description",
+            "sw",
+            r#"{"schema_version":1,"id":"sw","record_type":"software_description","software_id":"SW","name":"Name","architecture_part_ids":["same-name"],"architecture_decision_ids":["same-name"]}"#,
+        );
+        let records = read_all(t.path()).expect("valid reference shape");
+        let doc = render_sds(&records.software, t.path(), &[]).expect("render");
+        assert!(!doc.body.contains("- `same-name`"));
+        assert_eq!(
+            doc.gaps
+                .iter()
+                .filter(|g| g.gap_kind == GapKind::SourceReferenceUnresolved)
+                .count(),
+            2
+        );
     }
 }
