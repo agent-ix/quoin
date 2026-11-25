@@ -244,3 +244,97 @@ fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
     assert_ne!(refused.status.code(), Some(0));
     assert!(refused.stdout.is_empty());
 }
+
+#[trace("FR-226-AC-5")]
+#[test]
+fn sacm_output_flags_are_exclusive() {
+    let root = tempfile::tempdir().expect("scratch repository");
+    let path = root.path().join("report.json");
+    for incompatible in ["--json", "--gsn", "--gsn-diagram"] {
+        for flags in [
+            vec!["--sacm", incompatible],
+            vec![
+                "--sacm",
+                "--sacm-report",
+                path.to_str().expect("UTF-8 path"),
+                incompatible,
+            ],
+            vec![
+                "--sacm-report",
+                path.to_str().expect("UTF-8 path"),
+                incompatible,
+            ],
+        ] {
+            let output = quoin(&flags);
+            assert_eq!(output.status.code(), Some(3), "{}", text(&output.stderr));
+            assert!(output.stdout.is_empty());
+            assert!(text(&output.stderr).contains(incompatible));
+            assert!(!path.exists());
+        }
+    }
+}
+
+#[trace("FR-226-AC-4", "FR-227-AC-2", "FR-227-AC-3", "FR-227-AC-4")]
+#[test]
+fn sacm_authored_command_retains_report_and_refuses_failed_publication() {
+    let repo = repo_with_argument("argument-no-refs.md");
+    let decisions = repo.path().join("decisions.json");
+    let common = [
+        "--repo",
+        repo.path().to_str().expect("UTF-8 path"),
+        "--argument",
+        "AA-10180",
+        "--decisions",
+        decisions.to_str().expect("UTF-8 path"),
+        "--as-of",
+        "2026-08-15T00:00:00.000Z",
+        "--sacm",
+    ];
+    let report_path = repo.path().join("report.json");
+    let mut args = common.to_vec();
+    args.extend(["--sacm-report", report_path.to_str().expect("UTF-8 path")]);
+    let first = quoin(&args);
+    assert_eq!(first.status.code(), Some(0), "{}", text(&first.stderr));
+    let xmi = text(&first.stdout);
+    assert!(xmi.contains("xmi:type=\"sacm:AssuranceCasePackage\""));
+    assert!(xmi.contains("CLAIM-1018-A"));
+    assert!(!xmi.contains("ix://example.invalid/widget/AP-1018"));
+    assert_eq!(
+        text(&first.stderr),
+        "unmapped: ix://example.invalid/widget/AP-1018: authored relationship has no declared GSN edge mapping\n"
+    );
+    let report = std::fs::read(&report_path).expect("report retained");
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&report).expect("report is JSON"),
+        serde_json::json!({
+            "unmapped": [{"source": "ix://example.invalid/widget/AP-1018",
+                "reason": "authored relationship has no declared GSN edge mapping"}],
+            "unreachable": [],
+        })
+    );
+    write(
+        repo.path(),
+        "spec/other.md",
+        &read_fixture("argument-unresolved-ref.md"),
+    );
+    std::fs::rename(
+        repo.path().join("spec/argument.md"),
+        repo.path().join("spec/zz-argument.md"),
+    )
+    .expect("change the order of corpus files");
+    let repeated = quoin(&args);
+    assert_eq!(repeated.status.code(), Some(0));
+    assert_eq!(first.stdout, repeated.stdout);
+    assert_eq!(first.stderr, repeated.stderr);
+    assert_eq!(
+        report,
+        std::fs::read(report_path).expect("report retained again")
+    );
+
+    let mut failed = common.to_vec();
+    failed.extend(["--sacm-report", repo.path().to_str().expect("UTF-8 path")]);
+    let output = quoin(&failed);
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(text(&output.stderr).contains("could not write SACM report"));
+}

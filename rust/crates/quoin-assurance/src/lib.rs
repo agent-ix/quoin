@@ -41,6 +41,7 @@ pub mod discharge;
 pub mod gsn;
 pub mod matrix;
 pub mod render;
+pub mod sacm;
 
 pub use argument::{
     ArgumentError, ArgumentKind, ArgumentStatus, Assumption, AssumptionStatus, AssuranceArgument,
