@@ -233,8 +233,7 @@ fn signed_acceptance_is_one_contained_artifact_and_unsigned_export_is_unchanged(
             .iter()
             .filter(|item| {
                 item.attr("xmi:type") == "sacm:Artifact"
-                    && item.child("name").attr("content")
-                        == "Human acceptance of case content"
+                    && item.child("name").attr("content") == "Human acceptance of case content"
             })
             .count(),
         0,
