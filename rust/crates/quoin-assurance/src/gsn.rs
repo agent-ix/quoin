@@ -984,16 +984,34 @@ mod tests {
                 .expect_err("counterclaim targets argument nodes only")
                 .contains("WF-8")
         );
+
+        let invalid_case: crate::AssuranceCase = serde_json::from_value(serde_json::json!({
+            "claims":[{"id":"G1","kind":"goal","statement":"Claim","status":"open","context":[{"id":"C1","kind":"context","statement":"Context","status":"open","children":[{"id":"G2","kind":"goal","statement":"Nested","status":"open","children":[]}]}],"children":[]}],
+            "unreachable":[],"unreadable":[],"producerTrust":[]
+        })).expect("case with invalid terminal node deserializes");
+        assert!(
+            super::from_case(&invalid_case)
+                .expect_err("terminal context cannot have children")
+                .contains("terminal GSN node C1")
+        );
     }
 
     /// Provenance: agent-ix/quoin#PLAT-1447.
-    #[trace("FR-221-AC-6")]
+    #[trace("FR-221-AC-6", "FR-223-AC-3", "FR-223-AC-4")]
     #[test]
     fn open_authored_challenge_is_only_a_counter_claim() {
         let view = serde_json::json!({
             "topClaim":{"id":"TC-1","statement":"Claim","status":"open","reasons":["challenge open"]},
-            "reasoning":[], "assumptions":[], "participants":[],
-            "challenges":[{"id":"CH-1","target":"TC-1","statement":"Objection","owner":"auditor","status":"open","declaredStatus":"open","resolutionRefs":[],"reason":"unresolved"}],
+            "reasoning":[],
+            "assumptions":[
+                {"id":"AS-1","statement":"First assumption","owner":"ops","status":"supported","declaredStatus":"accepted","reviewBy":"2030-01-01T00:00:00Z"},
+                {"id":"AS-2","statement":"Second assumption","owner":"safety","status":"open","declaredStatus":"proposed","reviewBy":"2030-01-01T00:00:00Z","reason":"not accepted"}
+            ],
+            "participants":[{"id":"P-1","role":"reviewer","authority":"approve","independence":"implementation"}],
+            "challenges":[
+                {"id":"CH-1","target":"TC-1","statement":"Objection","owner":"auditor","status":"open","declaredStatus":"open","resolutionRefs":[],"reason":"unresolved"},
+                {"id":"CH-2","target":"TC-1","statement":"Resolved objection","owner":"owner","status":"resolved","declaredStatus":"accepted","resolutionRefs":["EV-1"],"expiresAt":"2030-01-01T00:00:00Z"}
+            ],
             "relationships":[]
         });
         let model =
@@ -1020,6 +1038,40 @@ mod tests {
                 .nodes
                 .iter()
                 .any(|node| node.source == "CH-1" && node.kind == "context")
+        );
+        assert_eq!(
+            model
+                .nodes
+                .iter()
+                .filter(|node| node.kind == "assumption")
+                .count(),
+            2
+        );
+        let resolved = model
+            .nodes
+            .iter()
+            .find(|node| node.source == "CH-2")
+            .expect("resolved challenge is retained");
+        assert_eq!(resolved.kind, "justification");
+        assert_eq!(
+            resolved
+                .source_data
+                .as_ref()
+                .and_then(|data| data.get("owner"))
+                .and_then(serde_json::Value::as_str),
+            Some("owner")
+        );
+        assert!(
+            model
+                .nodes
+                .iter()
+                .any(|node| node.source == "P-1" && node.kind == "context")
+        );
+        assert!(
+            model
+                .edges
+                .iter()
+                .any(|edge| edge.kind == "in_context_of" && edge.to == resolved.id)
         );
     }
 
