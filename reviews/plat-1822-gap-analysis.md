@@ -37,3 +37,5 @@ This bounded gap check examined the changed FR-165 error-preservation path and i
 | FND | Outcome | Reason |
 | --- | --- | --- |
 | FND-001 | fixed | FR-193 defines dropped-relation reporting and the generator emits a gap per error; focused FR-193-AC-10/11 tests cover partial and error-only results. |
+
+| FND-001 | fixed | Reconfirmed at PR head `4f6c1c48d1de019d2d29e472f52e01b62f3c47ce`; FR-193 still traces the error handling, and the v0.63.1 matrix API retains both valid entries and errors. |

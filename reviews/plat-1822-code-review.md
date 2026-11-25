@@ -43,3 +43,5 @@ AP-201 (`spec/assurance/AP-201-finding-quality.md`) applies because the change a
 | FND | Outcome | Reason |
 | --- | --- | --- |
 | FND-001 | fixed | The generator now consumes and reports every dropped-relation error, while retaining returned entries. |
+
+| FND-001 | fixed | Reconfirmed at PR head `4f6c1c48d1de019d2d29e472f52e01b62f3c47ce`; the v0.63.1 API still supplies entries and dropped-relation errors consumed by the architecture generator. |
