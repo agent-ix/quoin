@@ -132,9 +132,13 @@ signer configuration. Generate the release snapshot from the reviewed source
 records, and obtain the Engineering Assurance release-history and release
 verification results required by the release record.
 
-Engineering Assurance request bodies are a separate interface. Its help output
-does not expose a complete schema for every request. Check its documentation
-before submitting each request; Quoin does not define those payloads.
+Engineering Assurance request bodies are a separate interface owned by
+Engineering Assurance. Before submitting each request, run that command's
+`--schema request` and construct the request from the printed schema, for
+example `engineering-assurance <command> --schema request`. Confirm that the
+selected Engineering Assurance version implements this option; this guide
+does not claim that the request schemas are already available. Quoin does not
+define those payloads.
 
 ## Step 8: Generate and check the dossier
 
