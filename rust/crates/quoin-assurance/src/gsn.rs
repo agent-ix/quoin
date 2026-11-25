@@ -557,6 +557,12 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
             .and_then(serde_json::Value::as_array)
             .cloned()
             .unwrap_or_default();
+        let has_nested_reasoning = reasoning_rows.iter().any(|candidate| {
+            candidate
+                .get("supports")
+                .and_then(serde_json::Value::as_str)
+                == Some(source)
+        });
         let strategy = b.push(
             "strategy",
             "S",
@@ -567,7 +573,7 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
                 .iter()
                 .find_map(|c| c.get("reason").and_then(serde_json::Value::as_str))
                 .map(str::to_owned),
-            criteria_rows.is_empty().then_some(true),
+            (criteria_rows.is_empty() && !has_nested_reasoning).then_some(true),
             Some(reasoning.clone()),
         );
         strategy_ids.insert(source.to_owned(), strategy.clone());
