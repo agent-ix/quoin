@@ -743,13 +743,13 @@ fn valid_object_id(value: &str) -> bool {
 )]
 mod tests {
     use super::{
-        RunSnapshot, SignatureVerifier, first_pair_introduction, fresh_formal_rule_status,
-        host_observations,
+        RunSnapshot, SignatureVerifier, first_pair_introduction, host_observations, request,
     };
     use crate::run_observation::RunObservationFile;
     use ix_trace_rs::trace;
     use quoin_evidence::qualify::RetainedRun;
     use quoin_evidence::source::DiskEvidence;
+    use quoin_quire_types::Obligation;
     use std::fs;
     use std::process::Command;
 
@@ -828,12 +828,27 @@ mod tests {
                 "Formal-rule: qsl:a.native::P1",
             ],
         );
+        let run_file = repo.path().join("spec/evidence").join(RUN);
+        let projection_file = repo.path().join("spec/evidence").join(PROJECTION);
+        fs::create_dir_all(run_file.parent().expect("run parent")).expect("run directory");
+        fs::create_dir_all(projection_file.parent().expect("projection parent"))
+            .expect("projection directory");
+        fs::write(
+            &run_file,
+            br#"{"schemaVersion":1,"suite":"unit","tool":"fixture","timestamp":"2026-11-13T00:00:00Z","entries":[{"symbol":"analysis-result","outcome":"pass","traceIds":["FR-001-AC-1"]}]}"#,
+        )
+        .expect("run record");
+        fs::write(&projection_file, PROJECTION_BYTES).expect("analysis projection");
         let allowed_signers = repo.path().join("allowed-signers");
         fs::write(&allowed_signers, "fixture\n").expect("allowed signers");
+        let verifier_marker = repo.path().join("verifier-called");
         let verifier = executable(
             repo.path(),
             "controlled-ea",
-            "cat >/dev/null\nprintf '%s\\n' '{\"protocol\":\"engineering-assurance.signature-verify-result/v1\",\"kind\":\"commit\",\"status\":\"unsigned\",\"verified_commit_id\":\"stale-id\",\"trailers\":{\"Formal-rule\":[\"qsl:a.native::P1\"]}}'",
+            &format!(
+                "touch '{}'\ncat >/dev/null\nprintf '%s\\n' '{{\"protocol\":\"engineering-assurance.signature-verify-result/v1\",\"kind\":\"commit\",\"status\":\"unsigned\",\"verified_commit_id\":\"stale-id\",\"trailers\":{{\"Formal-rule\":[\"qsl:a.native::P1\"]}}}}'",
+                verifier_marker.display()
+            ),
         );
         let verifier = SignatureVerifier {
             executable: verifier,
@@ -841,40 +856,88 @@ mod tests {
             gitsign: None,
         };
         let repo_path = repo.path().to_str().expect("repository path");
-        let direct_arguments = crate::formal_rules::command()
-            .try_get_matches_from([
-                "formal-rules",
-                "status",
-                "--json",
-                "--repo",
-                repo_path,
-                "--engineering-assurance",
-                verifier.executable.to_str().expect("verifier path"),
-                "--allowed-signers",
-                verifier
-                    .allowed_signers
-                    .to_str()
-                    .expect("allowed signers path"),
-            ])
-            .expect("direct formal status arguments");
-        let (_, direct_status) = direct_arguments.subcommand().expect("formal status");
-        let direct_report = crate::formal_rules::status_report_with_modules(direct_status, &[]);
-        if let Err(crate::core_runtime::Failure::Message(message)) = &direct_report {
-            panic!("host status failed: {message}");
-        }
-        assert!(direct_report.is_ok(), "host status returned a refusal");
-        let refreshed = fresh_formal_rule_status(repo_path, &[], Some(&verifier))
-            .expect("current status is re-derived");
+        let observation = |run_kind: &str| {
+            serde_json::from_value(serde_json::json!({
+                "protocol": "quoin.analysis-run-observation/v1",
+                "record": RUN,
+                "run_kind": run_kind,
+            }))
+            .expect("run observation")
+        };
+        let obligation = Obligation {
+            id: "FR-001-AC-1".to_owned(),
+            identity: None,
+            document: None,
+            statement: "A formal rule is current.".to_owned(),
+            target_ids: None,
+            method: Some("Analysis".to_owned()),
+            criticality: None,
+            parameters: None,
+        };
+        let audit_inputs = serde_json::json!({"injections": null, "mock_inspection_suites": null});
+        let formal_request = request(
+            repo_path,
+            &[],
+            &audit_inputs,
+            std::slice::from_ref(&obligation),
+            &[observation("formal_rule")],
+            Some(&verifier),
+        )
+        .expect("production request succeeds with a controlled verifier");
+        assert!(
+            verifier_marker.is_file(),
+            "formal_rule request invokes the verifier"
+        );
+        let refreshed = formal_request.runs[0]
+            .observation
+            .current_formal_rule_status
+            .as_ref()
+            .expect("request attached freshly derived status");
         assert_eq!(refreshed["protocol"], "quoin.formal-rule-status/v1");
         assert_eq!(refreshed["rules"][0]["state"], "draft");
         assert_eq!(refreshed["rules"][0]["reason"], "approval_unverifiable");
+
+        fs::remove_file(&verifier_marker).expect("reset verifier marker");
+        let analysis_request = request(
+            repo_path,
+            &[],
+            &audit_inputs,
+            std::slice::from_ref(&obligation),
+            &[observation("analysis")],
+            Some(&verifier),
+        )
+        .expect("ordinary analysis request");
+        assert!(
+            !verifier_marker.exists(),
+            "ordinary analysis does not require status refresh"
+        );
+        assert!(
+            analysis_request.runs[0]
+                .observation
+                .current_formal_rule_status
+                .is_none()
+        );
 
         let unavailable = SignatureVerifier {
             executable: executable(repo.path(), "unavailable-ea", "exit 9"),
             allowed_signers,
             gitsign: None,
         };
-        assert!(fresh_formal_rule_status(repo_path, &[], Some(&unavailable)).is_none());
+        let unavailable_request = request(
+            repo_path,
+            &[],
+            &audit_inputs,
+            std::slice::from_ref(&obligation),
+            &[observation("formal_rule")],
+            Some(&unavailable),
+        )
+        .expect("unavailable current verifier leaves request unevaluated");
+        assert!(
+            unavailable_request.runs[0]
+                .observation
+                .current_formal_rule_status
+                .is_none()
+        );
     }
 
     fn pair_repo() -> (tempfile::TempDir, String) {
