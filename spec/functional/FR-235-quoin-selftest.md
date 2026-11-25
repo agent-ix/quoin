@@ -72,12 +72,20 @@ without checking out the source repository.
   the JSON bytes to standard output. When no repository evidence store is
   available, it rejects the run before starting any case unless `--out <path>`
   is supplied, as required by FR-236.
-- For each high-process-risk feature identified by the applicable
-  `FeatureRiskRating` records, at least one self-test case is traced to an
-  acceptance criterion of that feature.
-- When a feature is rated `not_high_process_risk`, retained test evidence may
-  support it only if the evidence record identifies the tool version and
-  exists in the tool's evidence store.
+- The read-only `quoin validation ratings --coverage` check joins applicable
+  supplier `FeatureRiskRating` values to local self-test `# Trace:` markers. A
+  high-process-risk feature is covered only when a marker in a local
+  `selftest/cases/<case-id>/run.sh` names one of that feature's existing
+  acceptance criteria. A high-process-risk feature without such a marker is
+  reported as uncovered and makes the command exit non-zero.
+- The coverage check reports a `not_high_process_risk` feature without a local
+  case as `release evidence`; that status is informative and does not make the
+  command exit non-zero. A feature without an applicable rating remains
+  `unrated`. A marker with malformed syntax or a reference to a nonexistent
+  local feature or acceptance criterion is reported as invalid.
+- The check reports the rating values and links it reads; it does not change
+  rating acceptance state or produce retained-run evidence. Retained run
+  evidence remains governed by [FR-236](./FR-236-selftest-run-record.md).
 - Quoin owns the `quoin selftest` entry point and its cases. The quire-cli
   repository provides the corresponding `quire selftest` entry point for the
   cases it owns. Its binary may embed quire-rs-owned case assets exposed by
@@ -105,16 +113,17 @@ without checking out the source repository.
 | FR-235-AC-1 | Given a listed case, `quoin selftest --run` executes its script using the installed binary and records a result for the case. | Test |
 | FR-235-AC-2 | Given an expected stdout file that differs from actual stdout by one byte, the case result is `fail` and names the case id and its traced criteria. | Test |
 | FR-235-AC-3 | Given a case process that exits non-zero or cannot execute, the result is respectively `fail` or `error`, and the command exits non-zero. | Test |
-| FR-235-AC-4 | When the PLAT-1640 validation-kit trace-coverage check finds a high-process-risk FR with no self-test case traced to one of its acceptance criteria, it names that FR as uncovered. This is a cross-repository validation-kit check, not a Quoin runner check. | Test |
+| FR-235-AC-4 | Given `quoin validation ratings --coverage` and a high-process-risk rating, each linked FR with no local self-test `# Trace:` marker naming one of its existing acceptance criteria is reported as uncovered and causes a non-zero exit. | Test |
 | FR-235-AC-5 | Given a test case without a trace marker, `quire matrix --strict` over `selftest/` reports the case as untagged. | Test |
 | FR-235-AC-6 | Given no `--case` option, `quoin selftest --run` runs every embedded case; given repeated `--case <id>` options, it runs only the named cases once each in embedded declaration order; an unknown id is rejected before any case starts and is named in the error. | Test |
 | FR-235-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
 | FR-235-AC-8 | Given `--out <path>`, the command writes the retained FR-236 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out` and with a repository evidence store, it writes those bytes to stdout; without a repository evidence store it rejects before starting any case. | Test |
 | FR-235-AC-9 | Given a quire-rs-owned case embedded by quire-cli, its source and trace tags remain in quire-rs and the listed case is evidence of test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
 | FR-235-AC-10 | Given `quoin selftest --run` on Linux, the runner executes selected cases; given macOS, Windows, or another unsupported operating system, it returns `unsupported-platform` before starting any case and reports no case as passed. Listing embedded cases on an unsupported operating system does not report execution success. | Test |
+| FR-235-AC-11 | Given `quoin validation ratings --coverage`, the report labels an unmarked not-high-process-risk FR `release evidence` without failing, leaves an unrated FR `unrated`, and reports malformed or unknown `# Trace:` markers as invalid. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-112](./FR-112-npm-distribution-from-release-assets.md) defines the shipped quoin binary; [FR-030](./FR-030-evidence-store.md) defines the evidence store used for retained results.
 - **Downstream**: [FR-236](./FR-236-selftest-run-record.md) records each run; [FR-217](./FR-217-validation-report.md) presents its results.
-- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the cross-repository validation-kit checks in FR-235-AC-4 and FR-235-AC-5: high-process-risk FR coverage and `quire matrix --strict` over each tool repository's `selftest/`. Quoin owns its `quoin selftest` entry point, while quire-cli owns the corresponding `quire selftest` entry point for its cases.
+- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the cross-repository `quire matrix --strict` check over each tool repository's `selftest/`. Quoin owns `quoin validation ratings --coverage` and its `quoin selftest` entry point; quire-cli owns the corresponding `quire selftest` entry point for its cases.
