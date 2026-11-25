@@ -40,9 +40,7 @@ relation obliges, `id`, `repo`, `criticality` and, when declared, `carried` (qui
 `criteria: []`. An entry with no `design` key means no design relation obliges that document.
 `quoin-core` SHALL provide a `quire.design_matrix` operation, registered beside `quire.coverage` with its
 own exhaustive `dispatch()` arm, taking `quire.coverage`'s request and its byte ceiling, over the working
-tree's single corpus member. Its payload SHALL retain the engine's `entries` as `coverage_matrix` and its
-`errors` as `design_matrix_errors`, including both when valid entries and dropped-relation errors coexist.
-`quire.coverage` is unchanged (FR-092-CON-2), and `quoin matrix` SHALL call
+tree's single corpus member. `quire.coverage` is unchanged (FR-092-CON-2), and `quoin matrix` SHALL call
 `quire.design_matrix` in its place. When no loaded module declares `design_relations` the payload, and so
 the output, is FR-115's. Cross-repository design elements are outside this command: they appear as
 `dangling` references, as quire-rs reports them.
@@ -72,6 +70,9 @@ requirement's `design`. A `criteria: []` entry is grouped under its document `id
 ordered by requirement id among the others, and appears with empty `criteria` and its `design`. When no
 criterion exists in any entry, `reason` is present as FR-115 states and `requirements[]` holds only those
 entries (amending FR-115's empty `requirements`).
+
+The `quire.design_matrix` payload SHALL retain the engine's `entries` as `coverage_matrix` and its
+`errors` as `design_matrix_errors`, including both when valid entries and dropped-relation errors coexist.
 
 ### Gap
 
