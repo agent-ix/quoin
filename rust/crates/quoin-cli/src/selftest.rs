@@ -447,6 +447,27 @@ mod tests {
 
     #[trace("FR-215-AC-6")]
     #[test]
+    fn tc_215_command_requires_one_mode_and_cases_require_run() {
+        assert!(command().try_get_matches_from(["selftest"]).is_err());
+        assert!(
+            command()
+                .try_get_matches_from(["selftest", "--list", "--run"])
+                .is_err()
+        );
+        assert!(
+            command()
+                .try_get_matches_from(["selftest", "--list", "--case", "selftest-list"])
+                .is_err()
+        );
+        assert!(
+            command()
+                .try_get_matches_from(["selftest", "--run", "--out", "result.json"])
+                .is_ok()
+        );
+    }
+
+    #[trace("FR-215-AC-6")]
+    #[test]
     fn tc_215_unknown_case_is_rejected_before_execution() {
         let matches = command()
             .try_get_matches_from(["selftest", "--run", "--case", "missing-case"])
