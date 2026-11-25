@@ -9,15 +9,19 @@ import collections
 import json
 import os
 import pathlib
+import select
 import subprocess
 import sys
 import tempfile
+import time
 import xml.etree.ElementTree as ET
 
 
 XMI = "http://www.omg.org/spec/XMI/20131001"
 TOOL_RELEASE = "0.3.0-alpha.3"
 MCP_VERSION = "assurance-forge 0.1.0 (MCP 2025-06-18)"
+MCP_RESPONSE_TIMEOUT_SECONDS = 10
+TOOL_VERSION_TIMEOUT_SECONDS = 5
 RUN_PATH = "spec/evidence/runs/SUITE-1/2026-11-23T10~3A20~3A00Z.json"
 ARTIFACT_ID = "artifact-43525f0578f3747767a425cd3d03ebf400e56d3da6ce128e65d10f2632f8ca7e"
 
@@ -45,6 +49,7 @@ class Mcp:
     def __init__(self, proc: subprocess.Popen[str]) -> None:
         self.proc = proc
         self.request_id = 0
+        self.stdout_buffer = bytearray()
 
     def request(self, method: str, params: dict[str, object]) -> dict[str, object]:
         if self.proc.stdin is None or self.proc.stdout is None:
@@ -54,12 +59,30 @@ class Mcp:
         request = {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}
         self.proc.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
         self.proc.stdin.flush()
+        deadline = time.monotonic() + MCP_RESPONSE_TIMEOUT_SECONDS
         while True:
-            line = self.proc.stdout.readline()
-            if not line:
-                error = self.proc.stderr.read() if self.proc.stderr is not None else ""
-                fail(f"Assurance Forge ended before JSON-RPC response: {error.strip()}")
-            response = json.loads(line)
+            newline = self.stdout_buffer.find(b"\n")
+            if newline < 0:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    fail(
+                        f"Assurance Forge MCP timed out after {MCP_RESPONSE_TIMEOUT_SECONDS}s "
+                        f"waiting for {method} response"
+                    )
+                ready, _, _ = select.select([self.proc.stdout], [], [], remaining)
+                if not ready:
+                    fail(
+                        f"Assurance Forge MCP timed out after {MCP_RESPONSE_TIMEOUT_SECONDS}s "
+                        f"waiting for {method} response"
+                    )
+                chunk = os.read(self.proc.stdout.fileno(), 4096)
+                if not chunk:
+                    fail(f"Assurance Forge ended before JSON-RPC response to {method}")
+                self.stdout_buffer.extend(chunk)
+                continue
+            line = bytes(self.stdout_buffer[:newline])
+            del self.stdout_buffer[: newline + 1]
+            response = json.loads(line.decode("utf-8"))
             if response.get("id") == request_id:
                 if "error" in response:
                     fail(f"Assurance Forge JSON-RPC error: {response['error']}")
@@ -241,7 +264,16 @@ def main() -> int:
         fail(f"test-sacm-interop: QUOIN_SACM_TOOL is not an executable file: {tool}")
     if not fixture.is_file():
         fail(f"test-sacm-interop: generated fixture is missing: {fixture}")
-    version_result = subprocess.run([tool, "--version"], check=True, capture_output=True, text=True)
+    try:
+        version_result = subprocess.run(
+            [tool, "--version"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=TOOL_VERSION_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        fail(f"Assurance Forge --version timed out after {TOOL_VERSION_TIMEOUT_SECONDS}s")
     version = (version_result.stdout + version_result.stderr).strip()
     if version != MCP_VERSION:
         fail(f"expected Assurance Forge MCP {MCP_VERSION}, got {version!r}")
