@@ -232,7 +232,7 @@ struct Graph<'a> {
     nodes: BTreeMap<&'a str, &'a GsnNode>,
     support_parents: BTreeMap<&'a str, Vec<&'a str>>,
     context_parents: BTreeMap<&'a str, Vec<&'a str>>,
-    support_children: BTreeSet<&'a str>,
+    non_strategy_children: BTreeSet<&'a str>,
 }
 
 impl<'a> Graph<'a> {
@@ -245,12 +245,18 @@ impl<'a> Graph<'a> {
                 .collect(),
             support_parents: BTreeMap::new(),
             context_parents: BTreeMap::new(),
-            support_children: BTreeSet::new(),
+            non_strategy_children: BTreeSet::new(),
         };
         for edge in &model.edges {
             let parents = match edge.kind.as_str() {
                 "supported_by" => {
-                    graph.support_children.insert(edge.from.as_str());
+                    if graph
+                        .nodes
+                        .get(edge.to.as_str())
+                        .is_some_and(|child| child.kind != "strategy")
+                    {
+                        graph.non_strategy_children.insert(edge.from.as_str());
+                    }
                     &mut graph.support_parents
                 }
                 "in_context_of" => &mut graph.context_parents,
@@ -268,21 +274,22 @@ impl<'a> Graph<'a> {
             .ok_or_else(|| ExportError::InvalidGsn(format!("WF-6 missing node {id}")))
     }
 
-    fn nearest_goals(&self, id: &'a str) -> Vec<&'a str> {
-        let mut goals = Vec::new();
-        let mut visited = BTreeSet::new();
-        let mut pending = vec![id];
-        while let Some(id) = pending.pop() {
-            if !visited.insert(id) {
-                continue;
-            }
-            if self.nodes.get(id).is_some_and(|node| node.kind == "goal") {
-                goals.push(id);
-            } else if let Some(parents) = self.support_parents.get(id) {
-                pending.extend(parents.iter().rev().copied());
-            }
+    fn claim_targets(&self, from: &'a GsnNode) -> Vec<&'a GsnNode> {
+        if from.kind == "goal" {
+            return vec![from];
         }
-        goals
+
+        // A reasoning element can describe an inference with a direct parent
+        // Claim. Traversing a parent strategy would manufacture an inference
+        // through an edge that the report says could not be mapped.
+        let mut seen = BTreeSet::new();
+        self.support_parents
+            .get(from.id.as_str())
+            .into_iter()
+            .flatten()
+            .filter_map(|parent| self.nodes.get(parent).copied())
+            .filter(|parent| parent.kind == "goal" && seen.insert(parent.id.as_str()))
+            .collect()
     }
 
     fn relations(
@@ -331,7 +338,7 @@ impl<'a> Graph<'a> {
         if to.kind == "strategy" {
             let reason = if from.kind == "strategy" {
                 Some("nested reasoning has no SACM relationship between strategies")
-            } else if !self.support_children.contains(to.id.as_str()) {
+            } else if !self.non_strategy_children.contains(to.id.as_str()) {
                 Some("strategy has no child for an asserted relationship")
             } else {
                 None
@@ -341,9 +348,9 @@ impl<'a> Graph<'a> {
             }
             return Ok(());
         }
-        let targets = self.nearest_goals(&from.id);
+        let targets = self.claim_targets(from);
         if targets.is_empty() {
-            unmapped_edge(from, to, "strategy has no parent Claim", report);
+            unmapped_edge(from, to, "strategy has no direct parent Claim", report);
         }
         let non_supporting = artifacts
             .solution(&to.id)
@@ -354,7 +361,7 @@ impl<'a> Graph<'a> {
             } else {
                 "AssertedInference"
             };
-            let mut relationship = Relationship::new(relation_type, to, self.node(target)?, index);
+            let mut relationship = Relationship::new(relation_type, to, target, index);
             relationship.reasoning = (from.kind == "strategy").then_some(from.id.as_str());
             relationship.non_supporting = non_supporting.map(crate::matrix::EvidenceStatus::as_str);
             relationships.push(relationship);

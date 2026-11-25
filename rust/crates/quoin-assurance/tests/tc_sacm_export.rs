@@ -366,6 +366,43 @@ fn sacm_content_addresses_exact_bytes_and_retains_non_supporting_evidence() {
     assert_eq!(resolve_references(&shared), Ok(()));
 }
 
+#[trace("FR-227-AC-2")]
+#[test]
+fn sacm_does_not_approximate_unmapped_nested_reasoning() {
+    let authored = json!({
+        "topClaim": { "id": "G-root", "statement": "Top Claim", "status": "open" },
+        "reasoning": [
+            { "id": "S-outer", "statement": "Outer reasoning", "supports": "G-root" },
+            { "id": "S-inner", "statement": "Inner reasoning", "supports": "S-outer",
+              "criteria": [{ "criterion": "Subclaim", "status": "open" }] },
+        ],
+    });
+    let fixture = quoin_assurance::gsn::from_authored(&authored).expect("valid nested GSN");
+    let exported = export(&fixture, &MemoryEvidence::default()).expect("export with omissions");
+    let parsed = parse_xml(&exported.xmi);
+    let argument = parsed.child("argumentPackage");
+    for (id, source) in [("S1", "S-outer"), ("S2", "S-inner")] {
+        let strategy = argument.by_id(id);
+        assert_eq!(strategy.attr("xmi:type"), "sacm:ArgumentReasoning");
+        assert_eq!(strategy.child("name").attr("content"), source);
+    }
+    assert!(
+        argument
+            .children
+            .iter()
+            .all(|element| element.attr("xmi:type") != "sacm:AssertedInference"),
+        "a reported strategy path must produce no inference"
+    );
+    assert_eq!(
+        exported.report.diagnostics().collect::<Vec<_>>(),
+        [
+            "unmapped: G-root: supported_by S-outer: strategy has no child for an asserted relationship",
+            "unmapped: S-inner: supported_by S-inner:Subclaim: strategy has no direct parent Claim",
+            "unmapped: S-outer: supported_by S-inner: nested reasoning has no SACM relationship between strategies",
+        ]
+    );
+}
+
 #[trace("FR-226-AC-6")]
 #[test]
 fn sacm_rejects_dangling_gsn_before_returning_xmi() {
