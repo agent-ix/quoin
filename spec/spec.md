@@ -216,6 +216,14 @@ index; the files are authoritative.
 - [FR-212](./functional/FR-212-module-lag-warning.md) — warn when an installed default module is not at the CLI pin.
 - [FR-221](./functional/FR-221-quoin-vulnerability-reporting-policy.md) — document the private vulnerability reporting route for quoin.
 
+**Dossier documents**
+
+- [FR-191](./functional/FR-191-dossier-command.md) — generate, check and export selected dossier documents from authored records.
+- [FR-229](./functional/FR-229-dossier-software-description.md) — identify the software and its recorded purpose.
+- [FR-230](./functional/FR-230-dossier-documentation-level-decision.md) — record a person-authored documentation-level decision.
+- [FR-231](./functional/FR-231-dossier-software-design-specification.md) — render selected software design records.
+- [FR-232](./functional/FR-232-dossier-device-description.md) — identify the device from its authored records.
+
 **Semantic-module architecture**
 
 - [FR-117](./functional/FR-117-record-semantic-data-planes.md) — record the four semantic data planes.

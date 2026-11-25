@@ -51,6 +51,12 @@ committed before it is exported.
 - **When** the team selects `risk-management-plan`
 - **Then** the policy is rendered, `no_plan_record` is listed as a gap, and no plan scope or responsibility is invented
 
+### US-024-EX-5: Generate the missing M3 product documents
+
+- **Given** a repository with authored software, device, design, and documentation-level decision records
+- **When** the team selects `software-description`, `documentation-level-decision`, `software-design-specification`, or `device-description`
+- **Then** each generated document names the stable ids and types of its source records, identifies the producing Quoin version, reports missing source facts as gaps, and leaves all decisions to the person-authored records
+
 ## Constraints (Contextual)
 
 Quoin renders nothing. Rendering, templates and approval blocks belong to `quire export`.
@@ -58,7 +64,7 @@ Quoin renders nothing. Rendering, templates and approval blocks belong to `quire
 ## Dependencies (Contextual)
 
 Upstream: StR-010 and the declared source reports. Downstream: FR-191 to
-FR-201, NFR-040 and NFR-041.
+FR-201, FR-229 to FR-232, NFR-040 and NFR-041.
 
 ## Priority and Risk (Informative)
 
