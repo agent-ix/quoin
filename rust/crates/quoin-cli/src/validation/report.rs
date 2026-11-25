@@ -587,7 +587,7 @@ fn validation_documents(
     let documents = documents_by_tool
         .iter()
         .flat_map(|(tool, documents)| {
-            documents.iter().map(|document| DocumentSource {
+            documents.iter().map(move |document| DocumentSource {
                 path: format!("{tool}/{}", document.path),
                 raw: document.raw.clone(),
             })
@@ -1013,7 +1013,7 @@ fn embedded_external_tools_index(bytes: Option<&[u8]>) -> ExternalToolsIndexStat
     ExternalToolsIndexState {
         report: Some(ExternalToolsIndexReport {
             path: INDEX_PATH.to_owned(),
-            format_version,
+            format_version: format_version.clone(),
             entries: report_entries,
         }),
         entries,
