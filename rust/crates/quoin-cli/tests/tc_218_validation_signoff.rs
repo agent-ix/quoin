@@ -53,13 +53,7 @@ fn verify(repository: &Path, allowed_signers: &Path, verifier: &Path) -> Value {
         "sign-off verifier failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let outer: Value = serde_json::from_slice(&output.stdout).expect("command response is JSON");
-    serde_json::from_str(
-        outer["rendered"]
-            .as_str()
-            .expect("rendered sign-off JSON is a string"),
-    )
-    .expect("sign-off facts are JSON")
+    serde_json::from_slice(&output.stdout).expect("rendered sign-off facts are JSON")
 }
 
 #[trace("FR-218-AC-4", "FR-218-AC-5")]
