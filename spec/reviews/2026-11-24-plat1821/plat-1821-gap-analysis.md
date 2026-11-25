@@ -43,3 +43,7 @@ FAIL
 | --- | --- | --- |
 | FND-001 | deferred | Repository-wide untagged criteria are explicitly out of scope for PLAT-1821; 704 remain, while all changed criteria are tagged. |
 | FND-002 | deferred | Repository-wide ignored-only coverage is explicitly out of scope for PLAT-1821; 5 criteria remain, while all changed criteria are tagged. |
+
+## Planner disposition
+
+Planner ruling relayed by `terra:quoin:minder`: review scope is the PR diff. Because the only remaining condition concerns repository-wide baseline gaps, this disposition accepts the scoped PR review as PASS for this batch. The repository-wide matrix remains FAIL as recorded above; this ruling does not claim those baseline gaps are resolved. All three changed acceptance criteria are tagged.
