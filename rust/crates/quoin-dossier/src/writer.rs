@@ -25,6 +25,7 @@ const DOCUMENT_TYPE: &str = "DossierDocument";
 pub(crate) fn compose(
     spec: &DocumentSpec,
     version: Option<&str>,
+    producer_version: &str,
     as_of: Option<&str>,
     body: &str,
     gaps: &[Gap],
@@ -39,6 +40,8 @@ pub(crate) fn compose(
     let _ = writeln!(out, "type: {DOCUMENT_TYPE}");
     push_field(&mut out, "document_kind", spec.kind);
     let _ = writeln!(out, "generated_by: {GENERATED_BY}");
+    out.push_str("producer_identity:\n  name: quoin\n");
+    push_field(&mut out, "  version", producer_version);
     if spec.needs_as_of
         && let Some(instant) = as_of
     {
@@ -92,17 +95,24 @@ mod tests {
     #[trace("FR-191-AC-14")]
     #[test]
     fn a_complete_document_reads_gaps_none_and_carries_exactly_the_archetype_frontmatter() {
-        let text = compose(&SPEC, Some("1.0"), None, "# SRS\n", &[]);
+        let text = compose(
+            &SPEC,
+            Some("1.0"),
+            "test-quoin-version",
+            None,
+            "# SRS\n",
+            &[],
+        );
         assert_eq!(
             text,
-            "---\nid: \"DOS-SRS\"\ntitle: \"Software Requirements Specification\"\nversion: \"1.0\"\ntype: DossierDocument\ndocument_kind: \"srs\"\ngenerated_by: quoin dossier\n---\n\n# SRS\n\n## Gaps\n\nGaps: none\n"
+            "---\nid: \"DOS-SRS\"\ntitle: \"Software Requirements Specification\"\nversion: \"1.0\"\ntype: DossierDocument\ndocument_kind: \"srs\"\ngenerated_by: quoin dossier\nproducer_identity:\n  name: quoin\n  version: \"test-quoin-version\"\n---\n\n# SRS\n\n## Gaps\n\nGaps: none\n"
         );
     }
 
     #[trace("FR-191-AC-13")]
     #[test]
     fn a_document_without_version_metadata_omits_the_version_field() {
-        let text = compose(&SPEC, None, None, "# Dossier\n", &[]);
+        let text = compose(&SPEC, None, "test-quoin-version", None, "# Dossier\n", &[]);
         assert!(!text.lines().any(|line| line.starts_with("version:")));
     }
 
@@ -113,7 +123,7 @@ mod tests {
             Gap::new(GapKind::NoRequirements, "document", "none found"),
             Gap::new(GapKind::NoEvidence, "FR-1-AC-1", "no test"),
         ];
-        let text = compose(&SPEC, Some("1.0"), None, "", &gaps);
+        let text = compose(&SPEC, Some("1.0"), "test-quoin-version", None, "", &gaps);
         assert!(text.ends_with(
             "## Gaps\n\n- `no_requirements` document: none found\n- `no_evidence` FR-1-AC-1: no test\n"
         ));
@@ -124,17 +134,38 @@ mod tests {
     #[test]
     fn as_of_is_written_only_where_the_document_needs_it() {
         let mut spec = SPEC;
-        let without = compose(&spec, Some("1"), Some("2026-11-15T00:00:00Z"), "", &[]);
+        let without = compose(
+            &spec,
+            Some("1"),
+            "test-quoin-version",
+            Some("2026-11-15T00:00:00Z"),
+            "",
+            &[],
+        );
         assert!(!without.contains("as_of"));
         spec.needs_as_of = true;
-        let with = compose(&spec, Some("1"), Some("2026-11-15T00:00:00Z"), "", &[]);
+        let with = compose(
+            &spec,
+            Some("1"),
+            "test-quoin-version",
+            Some("2026-11-15T00:00:00Z"),
+            "",
+            &[],
+        );
         assert!(with.contains("as_of: \"2026-11-15T00:00:00Z\"\n---"));
     }
 
     #[trace("FR-191")]
     #[test]
     fn a_hostile_version_cannot_add_a_frontmatter_key() {
-        let text = compose(&SPEC, Some("1\"\ntype: Other"), None, "", &[]);
+        let text = compose(
+            &SPEC,
+            Some("1\"\ntype: Other"),
+            "test-quoin-version",
+            None,
+            "",
+            &[],
+        );
         assert!(text.lines().all(|line| line != "type: Other"));
         assert_eq!(
             text.lines()

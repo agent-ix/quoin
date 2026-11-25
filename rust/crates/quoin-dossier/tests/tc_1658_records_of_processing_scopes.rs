@@ -196,6 +196,7 @@ fn input(work: &std::path::Path, module: &std::path::Path) -> Inputs {
         release_verify: None,
         as_of: None,
         version: String::new(),
+        producer_version: "test-quoin-version".to_owned(),
     }
 }
 

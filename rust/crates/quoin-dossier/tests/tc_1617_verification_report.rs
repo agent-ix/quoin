@@ -46,6 +46,7 @@ fn inputs() -> Inputs {
         release_verify: None,
         as_of: None,
         version: "1.0".to_owned(),
+        producer_version: "test-quoin-version".to_owned(),
     }
 }
 

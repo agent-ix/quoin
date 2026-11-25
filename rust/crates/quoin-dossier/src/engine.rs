@@ -137,6 +137,7 @@ pub(crate) fn render_for(
         let text = compose(
             &spec,
             version,
+            &inputs.producer_version,
             inputs
                 .as_of
                 .as_deref()

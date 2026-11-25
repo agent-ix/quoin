@@ -130,6 +130,40 @@ fn generate_stubs(work: &Path, docs: &[&str]) {
     commit_paths(work, "dossier fixtures", &["dossier"]);
 }
 
+/// Every dossier document carries the exact version its executable reports
+/// (FR-191-AC-31), independently of its document version.
+#[trace("FR-191-AC-31")]
+#[test]
+fn generated_documents_carry_the_running_quoin_version() {
+    let version = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .arg("--version")
+        .output()
+        .expect("quoin starts");
+    assert!(version.status.success());
+    let version = String::from_utf8(version.stdout)
+        .unwrap()
+        .trim_end()
+        .to_owned();
+    assert!(!version.is_empty());
+
+    let work = tempfile::tempdir().unwrap();
+    generate_stubs(work.path(), &["stub-a", "stub-b"]);
+    for document in ["DOS-STUB-A", "DOS-STUB-B"] {
+        let text = read(&work.path().join("dossier").join(format!("{document}.md")));
+        let frontmatter = text.split("---").nth(1).unwrap();
+        let producer_version = frontmatter
+            .split_once("producer_identity:\n")
+            .and_then(|(_, identity)| {
+                identity
+                    .lines()
+                    .find_map(|line| line.strip_prefix("  version: "))
+            })
+            .unwrap_or_else(|| panic!("{document} has no producer version: {frontmatter}"));
+        assert_eq!(producer_version, format!("\"{version}\""));
+        assert!(frontmatter.contains("version: \"1.0\""));
+    }
+}
+
 /// Another command's failure still prints nothing on stdout: the dossier
 /// report is the only one that does at exit 2 to 4.
 #[trace("FR-191")]
@@ -1623,6 +1657,7 @@ fn generated_frontmatter_validates_and_an_unknown_document_kind_does_not() {
         release_verify: None,
         as_of: Some("2026-11-15T00:00:00Z".to_owned()),
         version: "1.0".to_owned(),
+        producer_version: "test-quoin-version".to_owned(),
     };
     quoin_dossier::generate(&registry, &[], &out, &inputs).unwrap();
 
