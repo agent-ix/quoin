@@ -170,6 +170,7 @@ fn read_kind<T: for<'de> Deserialize<'de>>(
     Ok(records)
 }
 
+#[cfg(test)]
 fn read_all(scope: &Path) -> Result<ProductRecords, SourceFailure> {
     read_records(scope, true, true, true)
 }
