@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! Producer-reliance and independence assessments, as the assurance renderer
 //! observes them (quoin#384).
 //!

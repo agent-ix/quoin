@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! Release checks exercise the actual packaged binary and published ix-flow.
 //! Audit inventories receipts without validating or rewriting historical evidence.
 

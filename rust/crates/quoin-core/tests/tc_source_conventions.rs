@@ -63,20 +63,139 @@ fn tc_375_every_rust_file_carries_the_agpl_spdx_header() {
 }
 
 /// Provenance: quoin#375
+#[trace("NFR-027-AC-2", "NFR-027-AC-9", "NFR-027-M-2")]
 #[test]
 fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {
-    // The style doc says there is no exception. An exception added without
-    // editing this test — and the reason in the root Cargo.toml — fails here.
+    // The policy has one source of truth. Per-crate overrides are rejected;
+    // exceptions need an explicit workspace-level decision instead.
     let root = workspace_root();
-    let mut without = Vec::new();
+    let root_manifest = std::fs::read_to_string(root.join("Cargo.toml")).unwrap();
+    assert!(has_single_workspace_lint_policy(&root_manifest));
+    assert!(!has_single_workspace_lint_policy(
+        "[workspace.lints.rust]\nunsafe_code = \"forbid\"\n"
+    ));
+    assert!(!crate_uses_workspace_lints(
+        "[lints]\nworkspace = true\n[lints.rust]\nunsafe_code = \"allow\"\n"
+    ));
+
+    let mut crates = Vec::new();
     for entry in std::fs::read_dir(root.join("crates")).unwrap() {
         let manifest = entry.unwrap().path().join("Cargo.toml");
-        let text = std::fs::read_to_string(&manifest).unwrap();
-        if !text.contains("[lints]\nworkspace = true") {
-            without.push(manifest.strip_prefix(&root).unwrap().display().to_string());
+        if manifest.exists() {
+            crates.push(manifest);
         }
     }
-    assert_eq!(without, Vec::<String>::new());
+    eprintln!(
+        "NFR-027 workspace-lint manifest population: {}",
+        crates.len()
+    );
+    assert!(
+        !crates.is_empty(),
+        "inconclusive: no crate manifests were scanned"
+    );
+
+    let mut violations = Vec::new();
+    for manifest in &crates {
+        let text = std::fs::read_to_string(manifest).unwrap();
+        if !crate_uses_workspace_lints(&text) {
+            violations.push(manifest.strip_prefix(&root).unwrap().display().to_string());
+        }
+    }
+    assert!(
+        violations.is_empty(),
+        "crate manifests missing workspace lint opt-in or adding per-crate overrides: {violations:?}"
+    );
+}
+
+fn has_single_workspace_lint_policy(manifest: &str) -> bool {
+    manifest.matches("[workspace.lints.").count() == 2
+        && manifest.contains("[workspace.lints.rust]")
+        && manifest.contains("[workspace.lints.clippy]")
+}
+
+fn crate_uses_workspace_lints(manifest: &str) -> bool {
+    manifest.contains("[lints]\nworkspace = true")
+        && !manifest.contains("[lints.rust]")
+        && !manifest.contains("[lints.clippy]")
+}
+
+/// Every Rust library and executable is a crate root, so each one opts into
+/// the compiler-level unsafe prohibition at the boundary.
+#[trace("NFR-027-AC-1", "NFR-027-AC-9", "NFR-027-M-1")]
+#[test]
+fn tc_nfr_027_every_crate_root_forbids_unsafe() {
+    let root = workspace_root();
+    let mut roots = Vec::new();
+    for entry in std::fs::read_dir(root.join("crates")).unwrap() {
+        let crate_dir = entry.unwrap().path();
+        let src = crate_dir.join("src");
+        for filename in ["lib.rs", "main.rs"] {
+            let path = src.join(filename);
+            if path.exists() {
+                roots.push(path);
+            }
+        }
+    }
+
+    let mut missing = Vec::new();
+    for path in &roots {
+        let source = std::fs::read_to_string(path).unwrap();
+        if !root_forbids_unsafe(&source) {
+            missing.push(path.strip_prefix(&root).unwrap().display().to_string());
+        }
+    }
+    eprintln!("NFR-027 crate-root population: {}", roots.len());
+    assert!(
+        !roots.is_empty(),
+        "inconclusive: no crate roots were scanned"
+    );
+    assert!(
+        missing.is_empty(),
+        "crate roots missing unsafe prohibition: {missing:?}"
+    );
+    assert!(!root_forbids_unsafe("fn main() { unsafe {} }"));
+    assert!(root_forbids_unsafe("#![forbid(unsafe_code)]\nfn main() {}"));
+}
+
+fn root_forbids_unsafe(source: &str) -> bool {
+    source
+        .lines()
+        .any(|line| line.trim() == "#![forbid(unsafe_code)]")
+}
+
+/// CI keeps the declared format, lint, build, test, and dependency lanes live.
+#[trace("NFR-027-AC-3", "NFR-027-AC-8", "NFR-027-AC-9")]
+#[test]
+fn tc_nfr_027_ci_runs_the_rust_gates_without_softening_them() {
+    let repository = workspace_root().parent().unwrap().to_path_buf();
+    let makefile = std::fs::read_to_string(repository.join("Makefile")).unwrap();
+    let workflow =
+        std::fs::read_to_string(repository.join(".github/workflows/build-test.yml")).unwrap();
+    eprintln!("NFR-027 CI gate-config population: 2 files");
+
+    assert!(ci_runs_rust_gates(&makefile, &workflow));
+    assert!(!ci_runs_rust_gates(
+        "rust-gate: rust-lint rust-deny rust-test",
+        "run: make rust-lint\nrun: make rust-build\nrun: make rust-test"
+    ));
+    assert!(!ci_runs_rust_gates(
+        "rust-lint: cargo clippy\nrust-gate: rust-lint rust-deny rust-test\ncargo test --workspace",
+        "run: make rust-lint\nrun: make rust-build\nrun: make rust-test\ncargo-deny-action"
+    ));
+}
+
+fn ci_runs_rust_gates(makefile: &str, workflow: &str) -> bool {
+    ["rust-lint", "rust-build", "rust-test"]
+        .iter()
+        .all(|lane| makefile.contains(lane) && workflow.contains(&format!("run: make {lane}")))
+        && makefile.contains("rust-gate: rust-lint rust-deny rust-test")
+        && makefile.contains("cargo fmt --all --check")
+        && makefile.contains("cargo clippy --workspace --all-targets --all-features")
+        && makefile.contains("-D warnings")
+        && makefile.contains("cargo test --workspace")
+        && makefile.contains("cargo deny check")
+        && workflow.contains("cargo-deny-action")
+        && !workflow.contains("continue-on-error")
 }
 
 // ---------------------------------------------------------------------------

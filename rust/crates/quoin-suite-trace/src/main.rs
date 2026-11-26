@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! `quoin-suite-trace` adds each test's trace tags to a cargo-nextest `JUnit`
 //! report, so `quoin evidence record --adapter junit` binds the run to the
 //! acceptance criteria the tests actually exercised.

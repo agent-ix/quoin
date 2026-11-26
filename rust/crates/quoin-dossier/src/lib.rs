@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The machinery behind `quoin dossier` (FR-191, PLAT-1614): the document
 //! registry, the gap model and its deterministic order, the `DossierDocument`
 //! frontmatter and `Gaps` writer, `generate` / `check`, and the export

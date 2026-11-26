@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The quoin engine boundary (quoin#373 FR-096, Stage 0 = quoin#375).
 //!
 //! The pure operation protocol is callable in-process through [`runtime`].
