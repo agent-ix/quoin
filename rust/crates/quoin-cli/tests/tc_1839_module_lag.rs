@@ -30,7 +30,8 @@ fn pinned_ref() -> String {
 
 /// An `IX_HOME` whose registry records every default module as installed at
 /// its pin, except `LAGGING_MODULE`, installed at `lagging_ref` (or with no
-/// ref). Each module directory exists so lazy reconcile does no network work.
+/// ref). Each module directory is materialized so reconcile does no network
+/// work while the test checks lag reporting.
 fn home_with_lagging_module_at(lagging_ref: Option<&str>) -> tempfile::TempDir {
     let home = tempfile::tempdir().unwrap();
     let manifest = quoin_modules::MarketplaceManifest::from_yaml(DEFAULT_MODULES).unwrap();
@@ -39,6 +40,17 @@ fn home_with_lagging_module_at(lagging_ref: Option<&str>) -> tempfile::TempDir {
     for entry in &manifest.entries {
         let dir = modules.join(entry.name.as_str());
         std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("manifest.yaml"),
+            format!(
+                "name: {}\nversion: 1.0.0\nartifact_types:\n  - name: FR\n",
+                entry.name
+            ),
+        )
+        .unwrap();
+        if entry.source.git_url().is_some() {
+            std::fs::write(dir.join(".quoin-materialize-complete"), "").unwrap();
+        }
         let mut record = serde_json::Map::from_iter([
             ("name".to_owned(), serde_json::json!(entry.name)),
             ("source".to_owned(), serde_json::json!(entry.source)),
