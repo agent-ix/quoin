@@ -342,7 +342,7 @@ fn generate_writes_exactly_the_selected_files_and_nothing_else() {
     assert_eq!(read(&work.path().join("dossier/notes.md")), "keep");
 }
 
-#[trace("FR-191-AC-3")]
+#[trace("FR-191-AC-3", "FR-191-AC-20")]
 #[test]
 fn an_unknown_kind_exits_2_names_it_and_writes_nothing() {
     let work = tempfile::tempdir().unwrap();
@@ -986,7 +986,7 @@ fn export_passes_module_roots_to_quire_in_the_supplied_order() {
     assert_eq!(modules, ["module-one", "module-two"]);
 }
 
-#[trace("FR-201-AC-9", "FR-201-AC-10")]
+#[trace("FR-191-AC-21", "FR-201-AC-9", "FR-201-AC-10")]
 #[test]
 fn release_verify_result_is_appended_after_user_approvals_once() {
     let work = tempfile::tempdir().unwrap();
@@ -1018,7 +1018,13 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
         ],
     );
     assert_eq!(code(&generated), 0, "{}", stderr(&generated));
+    let generated_stub = quoin(
+        work.path(),
+        &["generate", "--version", "1.0", "--doc", "stub-a"],
+    );
+    assert_eq!(code(&generated_stub), 0, "{}", stderr(&generated_stub));
     git(&["add", "dossier/DOS-REL.md"]);
+    git(&["add", "dossier/DOS-STUB-A.md"]);
     git(&["commit", "-qm", "release record"]);
     let generated_text = read(&work.path().join("dossier/DOS-REL.md"));
     let decision_at = generated_text.find("## Decision").unwrap();
@@ -1038,6 +1044,8 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
             "1.0",
             "--doc",
             "release-record",
+            "--doc",
+            "stub-a",
             "--snapshot",
             snapshot.to_str().unwrap(),
             "--release-verify",
@@ -1055,8 +1063,10 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
         ],
     );
     assert_eq!(code(&exported), 0, "{}", stderr(&exported));
-    let args = recorded_args(work.path());
-    let approvals: Vec<_> = args
+    let export_args = recorded_args(work.path());
+    assert!(export_args[1].ends_with("DOS-REL.md"), "{export_args:?}");
+    assert!(export_args[2].ends_with("DOS-STUB-A.md"), "{export_args:?}");
+    let approvals: Vec<_> = export_args
         .windows(2)
         .filter(|pair| pair[0] == "--approval")
         .map(|pair| pair[1].as_str())
@@ -1068,6 +1078,42 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
             "approval-two.json",
             verify.to_str().unwrap()
         ]
+    );
+
+    let control = quoin(
+        work.path(),
+        &[
+            "export",
+            "--version",
+            "1.0",
+            "--doc",
+            "stub-a",
+            "--snapshot",
+            snapshot.to_str().unwrap(),
+            "--release-verify",
+            verify.to_str().unwrap(),
+            "--approval",
+            "approval-one.json",
+            "--approval",
+            "approval-two.json",
+            "--to",
+            "pdf",
+            "--output",
+            "out-without-release-record.pdf",
+            "--quire",
+            quire.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(code(&control), 0, "{}", stderr(&control));
+    let control_args = recorded_args(work.path());
+    let control_approvals: Vec<_> = control_args
+        .windows(2)
+        .filter(|pair| pair[0] == "--approval")
+        .map(|pair| pair[1].as_str())
+        .collect();
+    assert_eq!(
+        control_approvals,
+        ["approval-one.json", "approval-two.json"]
     );
     let document = read(&work.path().join("dossier/DOS-REL.md"));
     assert!(document.contains("Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document"));

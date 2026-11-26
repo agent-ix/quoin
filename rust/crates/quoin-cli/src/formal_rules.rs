@@ -3,10 +3,14 @@
 //! Read-only, git-derived formal-rule approval status (VER-101).
 
 use std::ffi::OsStr;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command as ProcessCommand;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 
 use crate::core_runtime::Failure;
@@ -16,6 +20,7 @@ use serde_json::{Value, json};
 const REQUEST_PROTOCOL: &str = "engineering-assurance.signature-verify-request/v1";
 const RESULT_PROTOCOL: &str = "engineering-assurance.signature-verify-result/v1";
 
+#[implements("FR-190-AC-7")]
 pub(crate) fn command() -> Command {
     Command::new("formal-rules")
         .about("Read formal-rule approval state from signed git commits")
@@ -28,6 +33,11 @@ pub(crate) fn command() -> Command {
                         .long("repo")
                         .value_name("DIR")
                         .default_value("."),
+                )
+                .arg(
+                    Arg::new("select-out")
+                        .long("select-out")
+                        .value_name("ABSOLUTE-PATH"),
                 )
                 .arg(Arg::new("json").long("json").action(ArgAction::SetTrue)),
         ))
@@ -68,6 +78,18 @@ pub(crate) fn trust_arguments() -> [Arg; 5] {
     ]
 }
 
+#[implements(
+    "FR-190-AC-2",
+    "FR-190-AC-3",
+    "FR-190-AC-4",
+    "FR-190-AC-5",
+    "FR-190-AC-6",
+    "FR-190-AC-7",
+    "FR-190-AC-8",
+    "FR-190-AC-9",
+    "FR-190-AC-10",
+    "FR-190-AC-11"
+)]
 pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
     let Some((name, args)) = matches.subcommand() else {
         return Err(crate::ShellError::usage(
@@ -83,10 +105,52 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
             "an unknown formal-rules command reached dispatch",
         ));
     }
+    let select_out = select_out_path(args).map_err(status_shell_error)?;
     let report = match status_report_shell(args) {
         Ok(report) => report,
-        Err(error) => return settle_status(error),
+        Err(error) => {
+            if let Some(path) = &select_out {
+                remove_select_out(path).map_err(|cleanup| {
+                    crate::ShellError::usage_refused(format!(
+                        "cannot remove stale --select-out {}: {cleanup}",
+                        path.display()
+                    ))
+                })?;
+            }
+            return settle_status(error);
+        }
     };
+    if let Some(path) = select_out {
+        let bytes = quoin_evidence::adapters::build_approved_claim_selection(&report, "quoin")
+            .map_err(|error| error.to_string())
+            .and_then(|selection| {
+                serde_json::to_vec(&selection).map_err(|error| error.to_string())
+            });
+        let bytes = match bytes {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                remove_select_out(&path).map_err(|cleanup| {
+                    crate::ShellError::usage_refused(format!(
+                        "cannot remove stale --select-out {}: {cleanup}",
+                        path.display()
+                    ))
+                })?;
+                return Err(crate::ShellError::usage_refused(error));
+            }
+        };
+        if let Err(error) = write_selection_atomic(&path, &bytes) {
+            remove_select_out(&path).map_err(|cleanup| {
+                crate::ShellError::usage_refused(format!(
+                    "cannot remove incomplete --select-out {} after write failure: {cleanup}",
+                    path.display()
+                ))
+            })?;
+            return Err(crate::ShellError::usage_refused(format!(
+                "cannot write --select-out {}: {error}",
+                path.display()
+            )));
+        }
+    }
     let rendered = if args.get_flag("json") {
         serde_json::to_string(&report)
             .map_err(|error| crate::ShellError::unavailable(error.to_string()))?
@@ -110,6 +174,81 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
         lines.join("\n")
     };
     Ok(Response::ok(json!({"rendered": rendered})))
+}
+
+#[implements("FR-190-AC-7")]
+fn select_out_path(args: &ArgMatches) -> Result<Option<PathBuf>, StatusError> {
+    let Some(value) = args.get_one::<String>("select-out") else {
+        return Ok(None);
+    };
+    if value.is_empty() || value.contains('\0') || !Path::new(value).is_absolute() {
+        return Err(StatusError::Invalid(
+            "--select-out must be a non-empty absolute path".to_owned(),
+        ));
+    }
+    Ok(Some(PathBuf::from(value)))
+}
+
+#[implements("FR-190-AC-8", "FR-190-AC-9")]
+fn remove_select_out(path: &Path) -> std::io::Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_dir() => Ok(()),
+        Ok(_) => fs::remove_file(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+#[implements("FR-190-AC-10")]
+fn write_selection_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+    let parent = path.parent().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "output path has no parent",
+        )
+    })?;
+    let name = path.file_name().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "output path has no file name",
+        )
+    })?;
+
+    for _ in 0..16 {
+        let sequence = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let temp_path = parent.join(format!(
+            ".{}.quoin-selection.{}.{}.tmp",
+            name.to_string_lossy(),
+            std::process::id(),
+            sequence
+        ));
+        let mut file = match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temp_path)
+        {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error),
+        };
+        let write_result = file.write_all(bytes).and_then(|()| file.sync_all());
+        drop(file);
+        if let Err(error) = write_result {
+            let _ = fs::remove_file(&temp_path);
+            return Err(error);
+        }
+        if let Err(error) = fs::rename(&temp_path, path) {
+            let _ = fs::remove_file(&temp_path);
+            return Err(error);
+        }
+        return Ok(());
+    }
+
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "could not allocate a unique temporary selection path",
+    ))
 }
 
 pub(crate) fn status_report_with_modules(
@@ -837,19 +976,126 @@ mod tests {
 
     #[cfg(unix)]
     fn status_matches(repo: &Path, ea: &Path, allowed: &Path) -> clap::ArgMatches {
+        status_matches_with_select_out(repo, ea, allowed, None)
+    }
+
+    #[cfg(unix)]
+    fn status_matches_with_select_out(
+        repo: &Path,
+        ea: &Path,
+        allowed: &Path,
+        select_out: Option<&Path>,
+    ) -> clap::ArgMatches {
+        let mut arguments = vec![
+            "formal-rules".to_owned(),
+            "status".to_owned(),
+            "--repo".to_owned(),
+            repo.to_str().expect("repo path is UTF-8").to_owned(),
+            "--engineering-assurance".to_owned(),
+            ea.to_str().expect("EA path is UTF-8").to_owned(),
+            "--allowed-signers".to_owned(),
+            allowed
+                .to_str()
+                .expect("allowed signers path is UTF-8")
+                .to_owned(),
+            "--json".to_owned(),
+        ];
+        if let Some(path) = select_out {
+            arguments.push("--select-out".to_owned());
+            arguments.push(path.to_str().expect("selection path is UTF-8").to_owned());
+        }
         command()
-            .try_get_matches_from([
-                "formal-rules",
-                "status",
-                "--repo",
-                repo.to_str().expect("repo path is UTF-8"),
-                "--engineering-assurance",
-                ea.to_str().expect("EA path is UTF-8"),
-                "--allowed-signers",
-                allowed.to_str().expect("allowed signers path is UTF-8"),
-                "--json",
-            ])
+            .try_get_matches_from(arguments)
             .expect("status arguments")
+    }
+
+    #[cfg(unix)]
+    fn approve_symbols(repo: &Path, ea: &Path, symbols: &[String]) -> String {
+        let trailers = symbols
+            .iter()
+            .map(|symbol| format!("Formal-rule: {symbol}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        git(
+            repo,
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "approval",
+                "-m",
+                &trailers,
+            ],
+        );
+        let commit = git(repo, &["rev-parse", "HEAD"]);
+        let result = json!({
+            "protocol": RESULT_PROTOCOL,
+            "kind": "commit",
+            "status": "signed_valid",
+            "verified_commit_id": commit,
+            "signer": {"mapping":"mapped", "principal":"alice@example.invalid"},
+            "signed_off_meaning": {"presence":"present", "values":["formal-rule-approved"]},
+            "trailers": {"Formal-rule": symbols},
+        });
+        executable(
+            ea.parent().expect("EA fixture parent"),
+            "engineering-assurance",
+            &format!("cat >/dev/null\nprintf '%s\\n' '{}'; exit 0", result),
+        );
+        commit
+    }
+
+    #[cfg(unix)]
+    fn formal_rule_symbol(path: &str, label: &str) -> String {
+        format!("qsl:{path}::{label}")
+    }
+
+    #[cfg(unix)]
+    fn committed_sources(repo: &Path, sources: &[(&str, &str)]) {
+        let existing = repo.join("a.native");
+        if existing.exists() {
+            fs::remove_file(existing).expect("remove default QSL fixture");
+        }
+        for (path, source) in sources {
+            let target = repo.join(path);
+            fs::create_dir_all(target.parent().expect("QSL parent")).expect("QSL directory");
+            fs::write(target, source).expect("QSL source");
+        }
+        git(repo, &["add", "--all"]);
+        git(
+            repo,
+            &["commit", "-q", "-m", "set formal-rule fixture sources"],
+        );
+    }
+
+    #[cfg(unix)]
+    fn read_selection(path: &Path) -> Value {
+        let bytes = fs::read(path).expect("selection file bytes");
+        let selection: Value = serde_json::from_slice(&bytes).expect("selection JSON");
+        assert_eq!(selection["protocol"], "filament-analyze.claim-selection/v1");
+        selection
+    }
+
+    #[cfg(unix)]
+    fn run_with_selection(
+        repo: &Path,
+        ea: &Path,
+        allowed: &Path,
+        select_out: &Path,
+    ) -> (Value, Value) {
+        let response = super::run(&status_matches_with_select_out(
+            repo,
+            ea,
+            allowed,
+            Some(select_out),
+        ))
+        .expect("status command writes selection");
+        let rendered = response.payload["rendered"]
+            .as_str()
+            .expect("rendered status report");
+        let report: Value = serde_json::from_str(rendered).expect("status JSON");
+        (report, read_selection(select_out))
     }
 
     fn signature(commit: &str, symbol: &str) -> serde_json::Value {
@@ -1342,6 +1588,333 @@ mod tests {
         assert_eq!(report["rules"][0]["reason"], "no_approval");
         assert_eq!(git(repo.path(), &["log", "--format=%H"]), head_before);
         assert_eq!(git(repo.path(), &["status", "--porcelain"]), status_before);
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-2")]
+    #[test]
+    fn select_out_writes_an_empty_selection_when_no_rule_is_approved() {
+        let (repo, ea, allowed) = command_fixture();
+        let output = repo.path().join("selection.json");
+
+        let (report, selection) = run_with_selection(repo.path(), &ea, &allowed, &output);
+
+        assert_eq!(report["rules"][0]["state"], "draft");
+        assert_eq!(selection["spans"], json!([]));
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-3")]
+    #[test]
+    fn select_out_excludes_a_declaration_changed_after_approval() {
+        let (repo, ea, allowed) = command_fixture();
+        let symbol = formal_rule_symbol("a.native", "P1");
+        let approval = approve_symbols(repo.path(), &ea, &[symbol]);
+        fs::write(
+            repo.path().join("a.native"),
+            "language qsl\nprofile core\n// formalizes: FR-001-AC-1\nrule P1 { check y }\n",
+        )
+        .expect("edit the approved declaration");
+        git(repo.path(), &["add", "a.native"]);
+        git(
+            repo.path(),
+            &["commit", "-q", "-m", "edit approved declaration"],
+        );
+        assert_ne!(git(repo.path(), &["rev-parse", "HEAD"]), approval);
+        let output = repo.path().join("selection.json");
+
+        let (report, selection) = run_with_selection(repo.path(), &ea, &allowed, &output);
+
+        assert_eq!(report["rules"][0]["state"], "draft");
+        assert_eq!(report["rules"][0]["reason"], "changed_since_approval");
+        assert_eq!(selection["spans"], json!([]));
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-4")]
+    #[test]
+    fn select_out_offsets_are_utf8_bytes_after_multibyte_source() {
+        let (repo, ea, allowed) = command_fixture();
+        let source = "language qsl\nprofile core\n// café before declaration\n// formalizes: FR-001-AC-4\nrule P1 { check x }\n";
+        committed_sources(repo.path(), &[("rules/é.native", source)]);
+        let symbol = formal_rule_symbol("rules/é.native", "P1");
+        approve_symbols(repo.path(), &ea, &[symbol]);
+        let output = repo.path().join("selection.json");
+
+        let (report, selection) = run_with_selection(repo.path(), &ea, &allowed, &output);
+
+        let span = &selection["spans"][0];
+        let start = usize::try_from(span["start"].as_u64().expect("start offset"))
+            .expect("start fits usize");
+        let end =
+            usize::try_from(span["end"].as_u64().expect("end offset")).expect("end fits usize");
+        let rule = report["rules"]
+            .as_array()
+            .expect("status rules")
+            .iter()
+            .find(|rule| rule["state"] == "approved")
+            .expect("approved status row");
+        assert_eq!(span["identity"], "rules/é.native");
+        assert_eq!(span["start"], rule["declaration_range"]["start"]);
+        assert_eq!(span["end"], rule["declaration_range"]["end"]);
+        assert_eq!(&source.as_bytes()[start..end], b"rule P1 { check x }");
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-6")]
+    #[test]
+    fn select_out_orders_declarations_in_one_file_by_start_offset() {
+        let (repo, ea, allowed) = command_fixture();
+        let source = "language qsl\nprofile core\n// formalizes: FR-001-AC-6\nrule Zed { check x }\n// formalizes: FR-002-AC-6\nrule Alpha { check y }\n";
+        committed_sources(repo.path(), &[("rules/same.native", source)]);
+        let symbols = [
+            formal_rule_symbol("rules/same.native", "Zed"),
+            formal_rule_symbol("rules/same.native", "Alpha"),
+        ];
+        approve_symbols(repo.path(), &ea, &symbols);
+        let output = repo.path().join("selection.json");
+
+        let (_, selection) = run_with_selection(repo.path(), &ea, &allowed, &output);
+
+        let spans = selection["spans"].as_array().expect("selection spans");
+        assert_eq!(spans.len(), 2);
+        assert_eq!(spans[0]["identity"], "rules/same.native");
+        assert_eq!(spans[1]["identity"], "rules/same.native");
+        assert!(
+            spans[0]["start"].as_u64().expect("first offset")
+                < spans[1]["start"].as_u64().expect("second offset")
+        );
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-7")]
+    #[test]
+    fn relative_select_out_is_refused_before_repository_access() {
+        let (repo, ea, allowed) = command_fixture();
+        let relative = format!("relative-selection-{}.json", std::process::id());
+        let missing_repo = repo.path().join("does-not-exist");
+        let matches = status_matches_with_select_out(
+            &missing_repo,
+            &ea,
+            &allowed,
+            Some(Path::new(&relative)),
+        );
+
+        let error = super::run(&matches).expect_err("relative selection path is refused");
+
+        assert_eq!(error.exit, 2);
+        assert!(error.message.contains("--select-out must be"));
+        assert!(!Path::new(&relative).exists());
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-8")]
+    #[test]
+    fn select_out_removes_existing_file_when_status_exits_two() {
+        let (repo, ea, allowed) = command_fixture();
+        let symbol = formal_rule_symbol("a.native", "P1");
+        approve_symbols(repo.path(), &ea, &[symbol]);
+        let refusal = executable(
+            repo.path(),
+            "engineering-assurance",
+            "printf '%s\\n' '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"signature_verify_allowed_signers_invalid\",\"message\":\"bad signers\"}'; exit 2",
+        );
+        let output = repo.path().join("selection.json");
+        fs::write(&output, b"stale selection").expect("stale selection file");
+
+        let error = super::run(&status_matches_with_select_out(
+            repo.path(),
+            &refusal,
+            &allowed,
+            Some(&output),
+        ))
+        .expect_err("FR-188 invalid refusal must not leave a stale selection");
+
+        assert_eq!(error.exit, 2, "{}", error.message);
+        assert!(!output.exists());
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-9")]
+    #[test]
+    fn select_out_removes_existing_file_when_status_exits_three() {
+        let (repo, ea, allowed) = command_fixture();
+        let symbol = formal_rule_symbol("a.native", "P1");
+        approve_symbols(repo.path(), &ea, &[symbol]);
+        let refusal = executable(
+            repo.path(),
+            "engineering-assurance",
+            "printf '%s\\n' '{\"protocol\":\"engineering-assurance.error/v1\",\"code\":\"signature_verify_request_invalid\",\"message\":\"bad request\"}'; exit 2",
+        );
+        let output = repo.path().join("selection.json");
+        fs::write(&output, b"stale selection").expect("stale selection file");
+
+        let error = super::run(&status_matches_with_select_out(
+            repo.path(),
+            &refusal,
+            &allowed,
+            Some(&output),
+        ))
+        .expect_err("FR-188 unavailable refusal must not leave a stale selection");
+
+        assert_eq!(error.exit, 3);
+        assert!(!output.exists());
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-10")]
+    #[test]
+    fn select_out_missing_directory_fails_without_partial_files() {
+        let (repo, ea, allowed) = command_fixture();
+        let parent = repo.path().join("missing-directory");
+        let output = parent.join("selection.json");
+
+        let error = super::run(&status_matches_with_select_out(
+            repo.path(),
+            &ea,
+            &allowed,
+            Some(&output),
+        ))
+        .expect_err("missing output directory must fail");
+
+        assert_eq!(error.exit, 2);
+        assert!(!output.exists());
+        assert!(!parent.exists());
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-11")]
+    #[test]
+    fn select_out_document_is_accepted_by_run_package_consumer() {
+        let (repo, ea, allowed) = command_fixture();
+        let source =
+            "language qsl\nprofile core\n// formalizes: FR-001-AC-1\nrule P1 { check x }\n";
+        committed_sources(repo.path(), &[("approved/rule.native", source)]);
+        let symbol = formal_rule_symbol("approved/rule.native", "P1");
+        approve_symbols(repo.path(), &ea, &[symbol]);
+        let selection_path = repo.path().join("selection.json");
+
+        let (report, selection) = run_with_selection(repo.path(), &ea, &allowed, &selection_path);
+        let approved = report["rules"]
+            .as_array()
+            .expect("status rules")
+            .iter()
+            .find(|rule| rule["state"] == "approved")
+            .expect("approved rule");
+        let start = approved["declaration_range"]["start"]
+            .as_u64()
+            .expect("declaration start");
+        let end = approved["declaration_range"]["end"]
+            .as_u64()
+            .expect("declaration end");
+        assert_eq!(selection["spans"].as_array().unwrap().len(), 1);
+        assert_eq!(selection["spans"][0]["identity"], "approved/rule.native");
+        assert_eq!(selection["spans"][0]["start"], start);
+        assert_eq!(selection["spans"][0]["end"], end);
+
+        // The pinned consumer fixture has the same semantic graph. Bind its selected claim and
+        // reached expression to the exact source span Quoin just emitted.
+        let mut package: Value = serde_json::from_slice(include_bytes!(
+            "../tests/fixtures/formal-rules/checked-package-v2-success.json"
+        ))
+        .expect("checked package fixture");
+        for entry in package["source_map"].as_array_mut().expect("source map") {
+            let path = entry["node_id"]["path"][0]
+                .as_str()
+                .expect("source map node path")
+                .to_owned();
+            if path == "claim/approved" || path == "value/literal" {
+                for region in entry["regions"].as_array_mut().expect("source regions") {
+                    region["source"]["authority"] = json!("quoin");
+                    region["source"]["identity"] = json!("approved/rule.native");
+                    if path == "value/literal" {
+                        region["start"] = json!(start);
+                        region["end"] = json!(start + 1);
+                    } else {
+                        region["start"] = json!(start + 1);
+                        region["end"] = json!(end);
+                    }
+                }
+            }
+        }
+        for source in package["lock"]["sources"]
+            .as_array_mut()
+            .expect("locked sources")
+        {
+            if source["identity"] == "approved/rule.native" {
+                source["authority"] = json!("quoin");
+            }
+        }
+        let package_bytes = serde_json::to_vec(&package).expect("serialize checked package");
+        let mut evidence = filament_contract_model::CheckedPackageEvidence::default();
+        evidence.support_feature("filament.value.complete/v1");
+        let checked = match filament_contract_model::CheckedPackageV2::read(
+            &package_bytes,
+            filament_contract_model::CheckedPackageReadLimits::bounded(),
+            &evidence,
+        ) {
+            filament_contract_model::CheckedPackageV2ReadResult::Admitted(package) => *package,
+            other => panic!("checked package fixture refused: {other:?}"),
+        };
+        let selected_claim: filament_contract_model::CheckedNodeId =
+            serde_json::from_value(json!({
+                "package": "test/formal-rules",
+                "path": ["claim/approved"],
+                "ordinal": 0
+            }))
+            .expect("selected claim id");
+        let lowered = checked.lower(
+            &[selected_claim],
+            &filament_contract_model::CompleteLoweringProfileV2 {
+                reference: filament_contract_model::LoweringProfileRef {
+                    authority: "filament-analyze".into(),
+                    identity: "fr190-consumer-test".into(),
+                },
+                required_source_selections: Vec::new(),
+                supported_tags: filament_contract_model::CheckedNodeTag::ALL
+                    .iter()
+                    .copied()
+                    .collect(),
+                require_bounds: true,
+                work_limit: u64::MAX,
+            },
+        );
+        let package_path = repo.path().join("checked-package.json");
+        fs::write(
+            &package_path,
+            lowered
+                .package
+                .canonical_bytes()
+                .expect("lowered package bytes"),
+        )
+        .expect("write checked package");
+        let output_path = repo.path().join("consumer-report.json");
+        let arguments = [
+            "--package",
+            package_path.to_str().expect("package path"),
+            "--output",
+            output_path.to_str().expect("output path"),
+            "--z3",
+            "/usr/bin/false",
+            "--cvc5",
+            "/usr/bin/false",
+            "--producer-execute",
+            "/usr/bin/false",
+            "--select",
+            selection_path.to_str().expect("selection path"),
+        ]
+        .into_iter()
+        .map(std::ffi::OsString::from);
+        let command = filament_analyze::parse_run_package_arguments(arguments)
+            .expect("run-package arguments accept the selection option");
+        let filament_analyze::RunPackageCommand::Run(arguments) = command else {
+            panic!("expected run-package command");
+        };
+
+        let error = filament_analyze::run_package(&arguments)
+            .expect_err("stub solvers stop after the consumer accepts the selection");
+        assert_eq!(error.class(), filament_analyze::EXIT_FAILURE, "{error}");
+        assert!(!error.message().contains("--select"), "{error}");
     }
 
     #[cfg(unix)]
