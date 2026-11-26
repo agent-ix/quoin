@@ -11,9 +11,11 @@ transitions and acknowledgements. Start through the installed skill as described
    select specification lenses. Resolve ambiguous profile applicability with the
    owner. Never invent `review_selection` or claim code-review/gap-analysis is
    fulfilled by specification review.
-2. Obtain the user's base/all/subset selection. Record `request` interview answers
+2. Measure the change and select the set yourself using the scope and method
+   decision tables in SKILL.md; do not ask the user to choose. Record `request` interview answers
    with `review_set`, `selected_analyses`, `assurance_profiles` (possibly empty),
-   and `profile_disposition`. Base is always required. The all set is:
+   and `profile_disposition`. Write the scope, chosen methods and reasons in each
+   document's Summary. Base is always required. The all set is:
    failure-domain, integrity, dependency, evidence, risk-complexity, scope-boundary, ears-conformance.
 3. Advance to analyses_run, perform the base checklist and selected lenses, then
    obtain each live artifact contract with `quoin write <repo> --types SpecReview`.

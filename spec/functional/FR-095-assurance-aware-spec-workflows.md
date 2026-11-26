@@ -23,8 +23,8 @@ Quoin SHALL NOT interpret the obsolete review_selection field. A required
 spec-review operation SHALL require an accepted enforced review run. Operations
 code-review and gap-analysis SHALL remain separate from specification lenses.
 
-The user SHALL choose base, all or subset independently of the profile's operation
-policy. Base SHALL always be required. All SHALL expand to the seven declared
+The review agent SHALL select base, all or subset from the measured change, independently of the profile's operation
+policy, and SHALL record the selection and its reason in each review document without asking the user to choose. Base SHALL always be required. All SHALL expand to the seven declared
 specification lenses: failure-domain, integrity, dependency, evidence,
 risk-complexity, scope-boundary and ears-conformance. The native provider SHALL
 check every selected lens against the live SpecReview.analysis vocabulary.

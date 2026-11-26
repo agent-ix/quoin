@@ -37,29 +37,86 @@ The profile does not select individual analysis lenses. Requirements for
 `code-review` or `gap-analysis` remain separate operations; a specification
 review cannot mark those complete. Never author or interpret `review_selection`.
 
-For each review, present these options to the user and let them
-choose:
+## Review scope and method selection
 
-- **base** — the **Checklist** only: ID formats, US/FR/TC quality, and the six coverage
-  rules. No analysis skills.
-- **all** — `base` plus all seven analyses below.
-- **subset** — `base` plus the analyses the user picks from the seven below.
+Review effort is proportional to the change. The agent measures the change,
+selects the methods itself, and records the choice. It never stops to ask the
+user which methods to run; ask only when the review would otherwise be
+impossible (no diff or target can be determined, or profile applicability is
+ambiguous). The user may still name methods up front; follow that instead.
 
-The seven analyses:
+### 1. Measure the change
 
-| Analysis | Skill |
+Measure from the diff (`git diff --name-status <base>...HEAD` and the changed
+hunks). Classify each touched file and requirement id by what changed:
+
+- requirement text (statement, acceptance criteria rows, rule wording),
+- frontmatter relationships only (links, `refines`, `depends`, and similar),
+- test-case rows only,
+- an ADR, shared type, shared format or other cross-cutting artifact.
+
+Count the requirements touched and the cross-references the change adds or alters.
+
+### 2. Scope
+
+| Signal in the diff | Scope |
 | --- | --- |
-| failure-domain | `spec-failure-domain-analysis` |
-| integrity | `spec-integrity-analysis` |
-| dependency | `spec-dependency-analysis` |
-| evidence | `spec-evidence-analysis` |
-| risk-complexity | `spec-risk-complexity-analysis` |
-| scope-boundary | `spec-scope-boundary-analysis` |
-| ears-conformance | `spec-ears-analysis` |
+| Frontmatter links only; or test-case rows only; or a typo or non-normative edit | Small: the changed text and its directly linked artifacts |
+| Wording or criteria of one requirement; up to about 3 requirements in one area; no ADR or shared type | Small: the changed text, the requirements it links to by frontmatter relationships, the tests and code criteria it constrains, the sibling requirement that must agree |
+| New or restructured rule across routes or several requirements; 4 or more requirements in more than one area; new cross-references among them | Large: the wider set below, over every requirement touched and its neighbours |
+| An ADR, shared type or shared format changes; any change that alters who owns a responsibility or a boundary | Large |
+
+When signals disagree, take the larger scope. Small scope never reads the whole
+spec tree; large scope reads every requirement touched plus its linked neighbours.
+
+### 3. Select methods
+
+Base (the Checklist, scoped to the changed text and its neighbours) always runs.
+Add methods by what the change needs:
+
+| What changed | Methods added to base |
+| --- | --- |
+| Frontmatter links only | dependency (links check only) |
+| Test-case rows only | evidence on the touched criteria |
+| Wording change in one requirement | ears-conformance and integrity, on that requirement |
+| New criterion or rule in one requirement | ears-conformance, integrity, evidence on that requirement |
+| New rule across routes or several requirements | integrity, dependency, object review (`spec-object-review`), failure-domain |
+| Restructure, new shared type or format | the row above plus scope-boundary |
+| New component, responsibility or interface boundary | scope-boundary, dependency, integrity |
+| Volatile, novel or hard to estimate requirement | risk-complexity |
+| ADR or security-relevant change (trust boundary, authz, secrets, input handling) | the matching rows above plus `spec-security-analysis` |
+| Criteria that may be unfalsifiable | `spec-criterion-strength-analysis` on those criteria |
+
+Rows combine: take the union. Run only the methods the union names. The seven
+lenses are failure-domain, integrity, dependency, evidence, risk-complexity,
+scope-boundary and ears-conformance (skills `spec-failure-domain-analysis`,
+`spec-integrity-analysis`, `spec-dependency-analysis`, `spec-evidence-analysis`,
+`spec-risk-complexity-analysis`, `spec-scope-boundary-analysis`,
+`spec-ears-analysis`). Object review, security and criterion-strength are
+additional direct methods, not enforced-run lenses.
+
+### 4. Record the choice
+
+Write the measured change, the scope, the selected methods and the reason for
+each in the `## Summary` of every review document (the artifact header), for
+example `Scope: small (1 requirement, wording only). Methods: base, ears-conformance,
+integrity. Reason: wording change, no link or rule change.` Methods not run are
+listed with why they were skipped.
+
+In an enforced run, record `review_set: base` when only base runs, `all` only
+when the table selects all seven lenses, otherwise `subset` with the chosen
+lenses in `selected_analyses`. Direct-only methods go in the Summary and their
+own documents, not in `selected_analyses`.
+
+### 5. Re-review after fixes
+
+After a fix round, check the fix diff only, plus any requirement the fix newly
+touches (apply sections 1 to 4 to that diff). Do not repeat the full review
+unless a rule changed; if a rule changed, review that rule and what links to it.
 
 ## Process
 
-1.  Automated Checks (always — part of `base`):
+1.  Measure, scope and select (see above), then Automated Checks (always — part of `base`):
     -   Validate ID formats (US/FR/TC/AC/CON).
     -   Detect duplicates or gaps.
     -   Validation link integrity.
@@ -72,7 +129,7 @@ The seven analyses:
         **Hash / Digest / Pin Antipattern** section of the Checklist). The fix is removal;
         do not accept an existing use as a reason to keep it.
 3.  Selected Analyses:
-    -   Run each analysis the user chose. Prefer running them **in parallel**.
+    -   Run each analysis selected in **Select methods**. Prefer running them **in parallel**.
     -   **Fetch the template from quoin** once with `quoin write . --types SpecReview`
         from the target repository — use its skeleton + schema as the contract.
     -   Write **one `SpecReview` document per analysis** to the repo-root
@@ -118,7 +175,7 @@ See [workflow instructions](references/workflow.md). Record the `request` interv
 one `review_doc` item per analysis, including `base`, with its `id`, `analysis`,
 and repository-relative `path`. The Rust provider opens and validates every
 required document before validation and again before acceptance. Names or old
-validation claims alone cannot pass. `all` always includes the seven lenses above.
+validation claims alone cannot pass. `all` always includes the seven lenses above; the agent chooses the set (see Review scope and method selection).
 
 The final transition requires explicit human acknowledgement; never automatically
 acknowledge it. A failed enforced run cannot be claimed complete from direct
