@@ -204,6 +204,82 @@ fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsi
     assert_eq!(unsigned["reason"], "unsigned");
 }
 
+#[trace("FR-218-AC-5")]
+#[test]
+fn signoff_verification_resolves_relative_repository_and_output_paths() {
+    let temp = tempfile::tempdir().expect("temporary root");
+    let repository = temp.path().join("repo");
+    let report_directory = repository.join("build/validation-report");
+    std::fs::create_dir_all(&repository).expect("repository directory exists");
+    git(&repository, &["init", "--quiet"]);
+    git(&repository, &["config", "user.name", "Validation Tester"]);
+    git(
+        &repository,
+        &["config", "user.email", "validation@example.test"],
+    );
+    std::fs::write(repository.join("seed.txt"), "seed\n").expect("seed file exists");
+    git(&repository, &["add", "seed.txt"]);
+    git(&repository, &["commit", "--quiet", "-m", "Seed repository"]);
+    std::fs::create_dir_all(&report_directory).expect("report directory exists");
+    std::fs::write(
+        report_directory.join("validation-report.md"),
+        "# Tool validation report\n",
+    )
+    .expect("report exists");
+
+    let allowed_signers = temp.path().join("allowed_signers");
+    std::fs::write(&allowed_signers, "").expect("allowed signers file exists");
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args([
+            "validation",
+            "report",
+            "--verify-signoff",
+            "--repo",
+            ".",
+            "--out",
+            "build/validation-report",
+            "--allowed-signers",
+        ])
+        .arg(&allowed_signers)
+        .args(["--engineering-assurance", "/bin/true"])
+        .current_dir(&repository)
+        .output()
+        .expect("sign-off verification command runs");
+    assert!(
+        output.status.success(),
+        "sign-off verifier failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let result: Value = serde_json::from_slice(&output.stdout).expect("sign-off output is JSON");
+    assert_eq!(result["status"], "not_accepted");
+    assert_eq!(result["reason"], "unsigned");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args([
+            "validation",
+            "report",
+            "--verify-signoff",
+            "--repo",
+            "repo",
+            "--out",
+            "build/validation-report",
+            "--allowed-signers",
+        ])
+        .arg(&allowed_signers)
+        .args(["--engineering-assurance", "/bin/true"])
+        .current_dir(temp.path())
+        .output()
+        .expect("sign-off verification command runs from the parent directory");
+    assert!(
+        output.status.success(),
+        "sign-off verifier failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let result: Value = serde_json::from_slice(&output.stdout).expect("sign-off output is JSON");
+    assert_eq!(result["status"], "not_accepted");
+    assert_eq!(result["reason"], "unsigned");
+}
+
 #[cfg(unix)]
 #[trace("FR-218-AC-4", "FR-218-AC-5")]
 #[test]
