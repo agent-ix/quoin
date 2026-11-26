@@ -29,6 +29,8 @@ Quoin validates the report and writes a run record under `spec/evidence/runs/`. 
 
 2. Use `--run-kind formal_rule` when the report judges selected formal claims. Prepare its matching `--formal-rule-selection` file from the same package selection and rule-status result. See [formal rule analysis](./formal-rule-analysis.md) for that workflow.
 
+3. Verify the retained pair. Open the run path printed by the command, then open the projection with the same suite and timestamp under `spec/evidence/analysis-reports/`.
+
 ## Expected output
 
 The command prints a JSON object with `kind: run` and the path of the recorded run. For example:
