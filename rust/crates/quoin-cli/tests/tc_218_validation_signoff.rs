@@ -58,6 +58,7 @@ fn verify(repository: &Path, allowed_signers: &Path, verifier: &Path) -> Value {
 
 #[trace("FR-218-AC-4", "FR-218-AC-5")]
 #[test]
+#[ignore = "real SSH signing lane requires Engineering Assurance, Git and ssh-keygen"]
 fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsigned_commit() {
     let verifier = find_program("engineering-assurance").expect("Engineering Assurance executable");
     let temp = tempfile::tempdir().expect("temporary root");
@@ -201,4 +202,90 @@ fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsi
     let unsigned = verify(&repository, &allowed_signers, &verifier);
     assert_eq!(unsigned["status"], "not_accepted");
     assert_eq!(unsigned["reason"], "unsigned");
+}
+
+#[cfg(unix)]
+#[trace("FR-218-AC-4", "FR-218-AC-5")]
+#[test]
+fn signoff_interprets_engineering_assurance_results() {
+    let temp = tempfile::tempdir().expect("temporary root");
+    let repository = temp.path().join("repo");
+    std::fs::create_dir_all(&repository).expect("repository directory");
+    git(&repository, &["init", "--quiet"]);
+    git(&repository, &["config", "user.name", "Quality Person"]);
+    git(
+        &repository,
+        &["config", "user.email", "quality@example.test"],
+    );
+    std::fs::write(repository.join("validation-report.md"), "# Report\n").expect("report written");
+    std::fs::write(
+        repository.join("validation-report.json"),
+        r#"{"ratedBy":"quality"}"#,
+    )
+    .expect("report JSON written");
+    git(&repository, &["add", "."]);
+    git(&repository, &["commit", "-m", "Validation report"]);
+
+    let allowed_signers = temp.path().join("allowed_signers");
+    std::fs::write(&allowed_signers, "quality ssh-ed25519 AAAA\n").expect("signers written");
+    let result_path = temp.path().join("verification.json");
+    let verifier = temp.path().join("engineering-assurance");
+    std::fs::write(
+        &verifier,
+        format!(
+            "#!/bin/sh\ncat >/dev/null\ncat '{}'\n",
+            result_path.display()
+        ),
+    )
+    .expect("verifier written");
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&verifier, std::fs::Permissions::from_mode(0o755))
+        .expect("verifier made executable");
+
+    let set_result = |status: &str, mapping: &str, principal: &str, meaning: bool| {
+        let meanings = if meaning {
+            r#"["tool-validation-accepted"]"#
+        } else {
+            "[]"
+        };
+        std::fs::write(
+            &result_path,
+            format!(
+                r#"{{"protocol":"engineering-assurance.signature-verify-result/v1","kind":"commit","status":"{status}","signer":{{"mapping":"{mapping}","principal":"{principal}"}},"signed_off_meaning":{{"values":{meanings}}}}}"#
+            ),
+        )
+        .expect("verifier response written");
+    };
+
+    set_result("signed_valid", "mapped", "quality", true);
+    let accepted = verify(&repository, &allowed_signers, &verifier);
+    assert_eq!(accepted["status"], "accepted");
+    assert_eq!(accepted["principalMatchesRatedBy"], true);
+    assert_eq!(accepted["meaningPresent"], true);
+
+    set_result("signed_untrusted", "unmapped", "", true);
+    assert_eq!(
+        verify(&repository, &allowed_signers, &verifier)["reason"],
+        "signer_unmapped"
+    );
+    set_result("signed_valid", "mapped", "someone-else", true);
+    assert_eq!(
+        verify(&repository, &allowed_signers, &verifier)["reason"],
+        "signer_mismatch"
+    );
+    set_result("signed_valid", "mapped", "quality", false);
+    assert_eq!(
+        verify(&repository, &allowed_signers, &verifier)["reason"],
+        "meaning_missing"
+    );
+    set_result("unsigned", "unmapped", "", false);
+    assert_eq!(
+        verify(&repository, &allowed_signers, &verifier)["reason"],
+        "unsigned"
+    );
+    set_result("signed_bad", "mapped", "quality", true);
+    assert_eq!(
+        verify(&repository, &allowed_signers, &verifier)["reason"],
+        "signature_invalid"
+    );
 }

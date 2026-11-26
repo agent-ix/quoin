@@ -13,6 +13,8 @@ Install Quoin 0.37.0. Collect the JSON run records produced by the normal test s
 
 The examples use two sample records in `docs/examples/validation-report/`. Replace those paths with your retained run records.
 
+To verify sign-off, also install Engineering Assurance and Git, and configure SSH commit signing. Set `gpg.format` to `ssh`, set `user.signingkey` to the private key used for the report commit, and configure `gpg.ssh.allowedSignersFile` to a file that maps the signer's principal to its public key. The allowed-signers principal must match the report's `ratedBy` value. Quoin invokes Engineering Assurance from `PATH`; use `--engineering-assurance` if it is installed at another path.
+
 ## Steps
 
 1. **Generate the report.** Pass each run record with its own `--results` option. Choose an output directory inside your project so Git can record the report later.
