@@ -38,7 +38,7 @@ traceability:
 
 const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: Fixture\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|---|---|---|\n| FR-001-AC-1 | The retained tool evidence is complete. | Test |\n";
 
-#[trace("FR-030-AC-42")]
+#[trace("FR-030-AC-42", "FR-030-AC-28")]
 #[test]
 fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
     let repo = tempfile::tempdir().unwrap();
@@ -95,8 +95,6 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
             "quoin-real-tool-test 1.0.0",
             "--results",
             input.to_str().unwrap(),
-            "--timestamp",
-            "2026-11-24T00:00:00.123Z",
             "--json",
         ])
         .current_dir(repo.path())
@@ -116,7 +114,11 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
 
     assert_eq!(retained["suite"], "SUITE-004");
     assert_eq!(retained["tool"], "quoin-real-tool-test 1.0.0");
-    assert_eq!(retained["timestamp"], "2026-11-24T00:00:00.123Z");
+    let timestamp = retained["timestamp"].as_str().unwrap();
+    assert!(
+        quoin_evidence::parse_timestamp(timestamp).is_some(),
+        "generated timestamp must be canonical: {timestamp}"
+    );
     let entries = retained["entries"].as_array().unwrap();
     let osv = entries
         .iter()
