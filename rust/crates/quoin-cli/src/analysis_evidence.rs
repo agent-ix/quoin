@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use clap::ArgMatches;
+use ix_trace_rs::implements;
 use quoin_evidence::EvidenceSource;
 use quoin_evidence::paths::{ANALYSIS_REPORTS_DIR, RUNS_DIR, record_path, suite_dir};
 use quoin_evidence::qualify::{
@@ -101,6 +102,7 @@ pub(crate) fn compute(
 /// Render design rows and preserve dropped-relation errors from the same engine
 /// result, alongside the exact native identities and retained runs used for
 /// qualification.
+#[implements("FR-165-AC-21")]
 pub(crate) fn compute_for_matrix(
     repo: &str,
     module_paths: &[String],

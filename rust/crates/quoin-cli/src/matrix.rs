@@ -10,6 +10,7 @@
 //! `quoin evidence audit --strict`.
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_core::protocol::{Response, canonical_json};
 
 use crate::core_runtime::{Failure, invoke};
@@ -98,6 +99,7 @@ pub(crate) enum Built {
 /// Assemble the audit over `repo` and join it into the evidence-backed matrix.
 ///
 /// The one path `quoin matrix` and `quoin release snapshot` share (FR-115).
+#[implements("FR-165-AC-21")]
 pub(crate) fn build(
     options: &AuditOptions,
     repo: &str,
