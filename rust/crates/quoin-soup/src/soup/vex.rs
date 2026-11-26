@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `quoin soup vex export`: serialize authored SOUP statements as OpenVEX
-//! 0.2.0 (FR-216). No scan, advisory or vulnerability lifecycle is read.
+//! `quoin soup vex export --format openvex`: serialize authored SOUP
+//! statements as `OpenVEX` 0.2.0 (FR-216).
 
 use std::collections::BTreeSet;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
+use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 use quoin_quire::records::Contract;
 use quoin_quire::{ModuleSelection, records};
@@ -29,8 +30,17 @@ struct Metadata {
     role: Option<String>,
 }
 
-/// Run the OpenVEX exporter after Clap has parsed its arguments.
+/// Run the `OpenVEX` exporter after Clap has parsed its arguments.
+#[implements("FR-156-AC-10")]
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
+    match arg(arguments, "format").unwrap_or("openvex") {
+        "openvex" => run_openvex(arguments),
+        "cyclonedx" => super::cyclonedx::run(arguments),
+        other => Err(Stop::Fail(format!("unsupported VEX format {other}"))),
+    }
+}
+
+fn run_openvex(arguments: &ArgMatches) -> Result<Response, Stop> {
     let repo = PathBuf::from(arg(arguments, "repo").unwrap_or("."));
     let records_dir =
         arg(arguments, "records").map_or_else(|| repo.join("spec/soup"), PathBuf::from);
@@ -62,7 +72,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
 /// `IX_FILAMENT_MODULES_PATH` and the installed default module set. This keeps
 /// the export aligned with `quire validate` and the current `SoupRecord`
 /// schema instead of maintaining a second statement schema here.
-fn validate_source_contract(records_dir: &Path) -> Result<(), Stop> {
+pub(super) fn validate_source_contract(records_dir: &Path) -> Result<(), Stop> {
     let corpus = records::read(
         records_dir,
         &ModuleSelection::Ambient,
@@ -217,6 +227,10 @@ fn render(records: &[Existing], metadata: &Metadata) -> Result<Value, Stop> {
     Ok(Value::Object(document))
 }
 
+#[allow(
+    clippy::struct_field_names,
+    reason = "these members preserve the authored OpenVEX source field names"
+)]
 struct Statement {
     advisory: String,
     status: String,

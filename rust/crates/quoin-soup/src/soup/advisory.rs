@@ -253,6 +253,85 @@ pub(super) struct RecordJoin {
     pub(super) could_belong: Vec<Tool>,
 }
 
+/// Current-read facts used to decide whether an authored VEX statement is stale.
+#[derive(Clone, Default)]
+pub(super) struct VexScanState {
+    read: BTreeSet<Tool>,
+    could_belong: BTreeSet<Tool>,
+    reported: BTreeSet<String>,
+}
+
+impl VexScanState {
+    /// Project a report join into the scan facts the VEX export needs.
+    pub(super) fn from_join(join: &RecordJoin) -> Self {
+        Self {
+            read: join.read.iter().copied().collect(),
+            could_belong: join.could_belong.iter().copied().collect(),
+            reported: join
+                .advisories
+                .iter()
+                .map(|advisory| advisory.rule_id.clone())
+                .collect(),
+        }
+    }
+
+    /// Whether every applicable current scan excludes this authored advisory.
+    #[implements("FR-144-AC-22", "FR-156-AC-7")]
+    pub(super) fn is_stale(&self, purl: &str, advisory_id: &str) -> bool {
+        let applicable = Tool::ALL
+            .into_iter()
+            .filter(|tool| tool.assesses(purl))
+            .collect::<Vec<_>>();
+        !self.reported.contains(advisory_id)
+            && !applicable.is_empty()
+            && applicable.iter().all(|tool| self.read.contains(tool))
+            && applicable
+                .iter()
+                .all(|tool| !self.could_belong.contains(tool))
+    }
+}
+
+/// Derive current-read VEX facts from retained scans without consulting any
+/// advisory disposition or treating a missing, unordered, or vacuous scan as
+/// evidence that an authored statement is stale.
+#[implements("FR-156-AC-7")]
+pub(super) fn vex_scan_states(records: &[Existing], scans: &[FindingRecord]) -> Vec<VexScanState> {
+    let index = RecordIndex::new(records);
+    let mut states = vec![VexScanState::default(); records.len()];
+
+    for tool in Tool::ALL {
+        let scan = match newest(scans, |scan| Tool::of(scan) == Some(tool)) {
+            Newest::Scan { scan, .. } if scan_is_vacuous(scan) != Some(true) => scan,
+            Newest::None | Newest::Unordered(_) | Newest::Scan { .. } => continue,
+        };
+        for (finding, hit) in read_scan(tool, scan, &index).advisories {
+            match hit {
+                Hit::One(record) => {
+                    if let Some(state) = states.get_mut(record.0) {
+                        state.reported.insert(finding.rule_id);
+                    }
+                }
+                Hit::Not(_, candidates) => {
+                    for candidate in candidates {
+                        if let Some(state) = states.get_mut(candidate) {
+                            state.could_belong.insert(tool);
+                        }
+                    }
+                }
+            }
+        }
+        for (position, record) in records.iter().enumerate() {
+            if tool.assesses(&record.purl)
+                && let Some(state) = states.get_mut(position)
+            {
+                state.read.insert(tool);
+            }
+        }
+    }
+
+    states
+}
+
 /// Why a finding is listed instead of attached.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub(super) enum UnmatchedReason {

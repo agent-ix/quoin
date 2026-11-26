@@ -4,13 +4,14 @@
 //! `quoin soup promote`: write one `soup_record` per purl of an ingested SBOM
 //! (FR-141); `quoin soup report`: render them with their advisories and
 //! support (FR-144); `quoin soup vex export`: serialize authored statements
-//! as OpenVEX (FR-216).
+//! as `OpenVEX` or `CycloneDX` VEX (FR-216, FR-156).
 //!
 //! The components are the FR-041 adapter's (`quoin_evidence::adapters::sbom`);
 //! this command has no SBOM reader. The record type, skeleton and schema belong
 //! to `spec-objects-security`, found through the module catalog.
 
 mod advisory;
+mod cyclonedx;
 mod plan;
 mod policy;
 pub(crate) mod report;
@@ -25,6 +26,7 @@ use std::path::{Path, PathBuf};
 use crate::{SoupError, SoupErrorCode};
 use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
+use ix_trace_rs::implements;
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_evidence::adapters::read_components;
 
@@ -134,67 +136,83 @@ pub fn command() -> Command {
                         .help("Emit the report as JSON instead of Markdown"),
                 ),
         )
+        .subcommand(vex_command())
+}
+
+/// Build the VEX export grammar for the `OpenVEX` and `CycloneDX` formats.
+#[must_use]
+#[implements("FR-156-AC-10")]
+fn vex_command() -> Command {
+    Command::new("vex")
+        .about("Export authored SOUP VEX statements")
+        .hide(true)
+        .subcommand_required(true)
         .subcommand(
-            Command::new("vex")
-                .about("Export authored SOUP VEX statements")
-                .hide(true)
-                .subcommand_required(true)
-                .subcommand(
-                    Command::new("export")
-                        .about("Export authored statements as OpenVEX 0.2.0 JSON")
-                        .arg(
-                            Arg::new("repo")
-                                .long("repo")
-                                .value_name("DIR")
-                                .default_value(".")
-                                .help("Repository root; records default to <repo>/spec/soup"),
-                        )
-                        .arg(
-                            Arg::new("records")
-                                .long("records")
-                                .value_name("DIR")
-                                .help("Where the soup_record files are read"),
-                        )
-                        .arg(
-                            Arg::new("out")
-                                .long("out")
-                                .value_name("FILE")
-                                .help("Output file; defaults to <repo>/spec/soup.vex.openvex.json"),
-                        )
-                        .arg(
-                            Arg::new("id")
-                                .long("id")
-                                .value_name("IRI")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX document @id"),
-                        )
-                        .arg(
-                            Arg::new("author")
-                                .long("author")
-                                .value_name("AUTHOR")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX author"),
-                        )
-                        .arg(
-                            Arg::new("timestamp")
-                                .long("timestamp")
-                                .value_name("RFC3339")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX timestamp"),
-                        )
-                        .arg(
-                            Arg::new("version")
-                                .long("version")
-                                .value_name("POSITIVE_INTEGER")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX document version"),
-                        )
-                        .arg(
-                            Arg::new("role")
-                                .long("role")
-                                .value_name("ROLE")
-                                .help("Optional caller-supplied OpenVEX author role"),
-                        ),
+            Command::new("export")
+                .about("Export authored statements as OpenVEX 0.2.0 or CycloneDX 1.7 JSON")
+                .arg(
+                    Arg::new("format")
+                        .long("format")
+                        .value_name("FORMAT")
+                        .value_parser(["openvex", "cyclonedx"])
+                        .default_value("openvex")
+                        .help("Output format; defaults to OpenVEX 0.2.0"),
+                )
+                .arg(
+                    Arg::new("repo")
+                        .long("repo")
+                        .value_name("DIR")
+                        .default_value(".")
+                        .help("Repository root; records default to <repo>/spec/soup"),
+                )
+                .arg(
+                    Arg::new("records")
+                        .long("records")
+                        .value_name("DIR")
+                        .help("Where the soup_record files are read"),
+                )
+                .arg(
+                    Arg::new("out")
+                        .long("out")
+                        .value_name("FILE")
+                        .help("Output file; defaults depend on the selected format"),
+                )
+                .arg(Arg::new("sbom").long("sbom").value_name("FILE").help(
+                    "Syft CycloneDX SBOM path used only to choose CycloneDX's default output path",
+                ))
+                .arg(
+                    Arg::new("id")
+                        .long("id")
+                        .value_name("IRI")
+                        .required_if_eq("format", "openvex")
+                        .help("Caller-supplied OpenVEX document @id"),
+                )
+                .arg(
+                    Arg::new("author")
+                        .long("author")
+                        .value_name("AUTHOR")
+                        .required_if_eq("format", "openvex")
+                        .help("Caller-supplied OpenVEX author"),
+                )
+                .arg(
+                    Arg::new("timestamp")
+                        .long("timestamp")
+                        .value_name("RFC3339")
+                        .required_if_eq("format", "openvex")
+                        .help("Caller-supplied OpenVEX timestamp"),
+                )
+                .arg(
+                    Arg::new("version")
+                        .long("version")
+                        .value_name("POSITIVE_INTEGER")
+                        .required_if_eq("format", "openvex")
+                        .help("Caller-supplied OpenVEX document version"),
+                )
+                .arg(
+                    Arg::new("role")
+                        .long("role")
+                        .value_name("ROLE")
+                        .help("Optional caller-supplied OpenVEX author role"),
                 ),
         )
 }

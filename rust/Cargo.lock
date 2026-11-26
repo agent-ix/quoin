@@ -1351,7 +1351,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c91d8cffac8849493a82233811bd02b2b183b8cf39bf704de0fa0841b737595"
 dependencies = [
  "bstr",
- "hashbrown 0.16.1",
+ "hashbrown 0.17.1",
 ]
 
 [[package]]
@@ -2861,6 +2861,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a80800c0488c3a21695ea981a54918fbb37abf04f4d0720c453632255e2ff0e"
 
 [[package]]
+name = "packageurl"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7719f5f3fc6fbf28f1b6b3d1cddd43958116db8f2e6c97e520757fbb490fcbf"
+dependencies = [
+ "percent-encoding",
+ "thiserror",
+]
+
+[[package]]
 name = "parking_lot"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3233,12 +3243,12 @@ dependencies = [
  "quoin-quire",
  "quoin-quire-types",
  "quoin-risk-advice",
- "rustix",
  "quoin-semantic",
  "quoin-soup",
  "quoin-store",
  "quoin-validators",
  "quoin-yaml",
+ "rustix",
  "schemars 1.2.2",
  "semver",
  "serde",
@@ -3566,6 +3576,7 @@ dependencies = [
  "clap",
  "ix-cli-kit",
  "ix-trace-rs",
+ "packageurl",
  "quoin-assurance",
  "quoin-core",
  "quoin-evidence",

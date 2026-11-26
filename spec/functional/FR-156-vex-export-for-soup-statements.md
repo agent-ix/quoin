@@ -34,7 +34,9 @@ The `quoin soup vex export` command SHALL serialize each person-authored entry i
 ## Behavior
 
 - The command SHALL read `vex_statements` from each record and emit one `vulnerabilities[]` entry for each statement.
+- The command SHALL select CycloneDX output with `--format cyclonedx`; the existing default `--format openvex` remains the OpenVEX mode defined by FR-216.
 - The command SHALL use the Syft SBOM path only to choose the default output location.
+- When CycloneDX output is selected and `--out` is omitted, `--sbom` SHALL be required and the output SHALL be placed beside that path. For `probe.cdx.json`, the default output SHALL be `probe.vex.cdx.json`.
 - The command SHALL NOT read or modify the Syft SBOM.
 - For each SOUP record referenced by an exported statement, the command SHALL emit a CycloneDX component with `type=library`, `purl` and `bom-ref` equal to the record's canonical PURL, and `name` and optional `group` derived from the decoded PURL components.
 - The command SHALL derive the component `name` from the PURL's decoded name and, when the PURL has a namespace, its `group` from the decoded namespace.
@@ -107,6 +109,7 @@ The [PURL specification](https://github.com/package-url/purl-spec) defines the `
 | FR-156-AC-7 | A statement absent from all current applicable scans is exported with `quoin:vex:stale=true`; an unavailable, unordered or vacuous applicable scan does not produce that property. | Test |
 | FR-156-AC-8 | For a case-sensitive PURL type, `components[].group` (when namespace exists) and `components[].name` preserve the decoded namespace and name case; for a PURL type that normalizes either component, those fields carry the PURL-defined normalized values without additional case folding or normalization. | Test |
 | FR-156-AC-9 | Repeating export with identical records, SBOM and scan inputs yields byte-identical JSON at the same output path. | Test |
+| FR-156-AC-10 | `--format cyclonedx` selects CycloneDX without OpenVEX metadata flags; omitting `--out` requires `--sbom` and writes `<sbom-stem>.vex.cdx.json` beside the SBOM. The default `--format openvex` still requires its OpenVEX metadata and writes OpenVEX. | Test |
 
 ## Dependencies
 

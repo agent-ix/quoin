@@ -24,6 +24,7 @@ quoin-assurance = { workspace = true }
 quoin-evidence = { workspace = true }
 quoin-store = { workspace = true }
 quoin-quire = { workspace = true }
+packageurl = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true, features = ["parsing"] }

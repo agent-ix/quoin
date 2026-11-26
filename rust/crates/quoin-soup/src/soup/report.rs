@@ -18,13 +18,14 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
+use ix_trace_rs::implements;
 use quoin_assurance::DischargeReport;
 use quoin_core::protocol::Response;
 use quoin_evidence::DiskEvidence;
 use quoin_evidence::store::latest_scans;
 use serde_json::{Map, Value};
 
-use super::advisory::{self, RecordJoin, ScanState, Unmatched};
+use super::advisory::{self, RecordJoin, ScanState, Unmatched, VexScanState};
 use super::plan;
 use super::policy::{self, LicenceState, PolicyUnmatched, RecordPolicy};
 use super::support::{
@@ -333,6 +334,7 @@ fn support_refusal(error: SupportError) -> Stop {
 }
 
 /// The row of one joined record, from the frontmatter read with it.
+#[implements("FR-144-AC-22")]
 fn row(
     join: RecordJoin,
     front: &Map<String, Value>,
@@ -382,21 +384,9 @@ fn row(
         }
     };
     let mut vex_statements = vex_statements(front, &join)?;
-    let applicable = advisory::Tool::ALL
-        .into_iter()
-        .filter(|tool| tool.assesses(&join.purl))
-        .collect::<Vec<_>>();
+    let scan_state = VexScanState::from_join(&join);
     for statement in &mut vex_statements {
-        let currently_reported = join
-            .advisories
-            .iter()
-            .any(|advisory| advisory.rule_id == statement.advisory);
-        let every_scan_read =
-            !applicable.is_empty() && applicable.iter().all(|tool| join.read.contains(tool));
-        let no_possible_match = applicable
-            .iter()
-            .all(|tool| !join.could_belong.contains(tool));
-        statement.stale = !currently_reported && every_scan_read && no_possible_match;
+        statement.stale = scan_state.is_stale(&join.purl, &statement.advisory);
     }
     Ok(Row {
         version,
