@@ -215,8 +215,21 @@ fn complete_report_keeps_failed_and_errored_results_and_uncovered_requirements()
     .expect("report JSON parses");
     assert_eq!(report["status"], "complete");
     assert_eq!(report["incompleteReasons"], json!([]));
-    assert_eq!(report["results"][0]["result"], "fail");
-    assert_eq!(report["results"][1]["result"], "error");
+    let results = report["results"].as_array().expect("result rows");
+    assert_eq!(
+        results
+            .iter()
+            .find(|row| row["id"] == "fixture-case")
+            .expect("failed result is present")["result"],
+        "fail"
+    );
+    assert_eq!(
+        results
+            .iter()
+            .find(|row| row["id"] == "case-error")
+            .expect("errored result is present")["result"],
+        "error"
+    );
     assert!(
         report["coverage"]
             .as_array()
@@ -265,5 +278,5 @@ fn missing_risk_rating_does_not_make_complete_run_evidence_incomplete() {
     )
     .expect("report JSON parses");
     assert_eq!(report["status"], "complete");
-    assert_eq!(report["coverage"][0]["ratingStatus"], "unrated");
+    assert_eq!(report["coverage"][0]["rating_status"], "unrated");
 }
