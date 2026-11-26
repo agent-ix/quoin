@@ -519,7 +519,7 @@ fn the_same_inputs_give_the_same_bytes_without_the_sbom_and_write_nothing() {
     assert_eq!(again.stdout, with_sbom.stdout);
 }
 
-#[trace("FR-144-AC-10", "NFR-030-AC-3")]
+#[trace("FR-144-AC-10", "NFR-030-AC-3", "NFR-030-M-2")]
 #[test]
 fn the_json_has_no_score_rank_class_or_percentage_key() {
     let (repo, binding) = standard();
