@@ -1290,7 +1290,13 @@ fn assert_accept_only_in_copied_values(markdown: &str, report: &Report) {
     }
 }
 
-#[trace("FR-164-AC-11", "NFR-035-AC-2", "NFR-035-AC-3")]
+#[trace(
+    "FR-164-AC-11",
+    "NFR-035-AC-2",
+    "NFR-035-AC-3",
+    "NFR-035-M-2",
+    "NFR-035-M-3"
+)]
 #[test]
 fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
     let repo = corpus_with(&[
