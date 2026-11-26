@@ -21,6 +21,7 @@ without checking out the source repository.
 - The installed quoin binary
 - The installed command's exact `--version` output
 - The target operating system and architecture
+- No source-repository checkout or sibling specification repository checkout
 - The case selection supplied as zero or more `--case <case-id>` options
 - An optional `--out <path>` destination for the run result
 
@@ -52,6 +53,10 @@ without checking out the source repository.
   implementation crates. Tests that link and exercise those libraries remain
   internal normal-suite evidence and SHALL NOT be shipped as customer
   self-test runners.
+- Customer self-test execution SHALL require only the installed command and
+  its matching release runner. It SHALL NOT require a checkout of
+  `spec-objects-safety`, `spec-objects-security`, or any other source
+  repository.
 - Each selected test SHALL invoke the installed command through its executable
   path and SHALL carry its normal-suite requirement trace markers. Its test
   source, input, and expected results SHALL remain in the normal suite.
@@ -155,6 +160,7 @@ without checking out the source repository.
 | FR-235-AC-10 | Given `quoin selftest --run` on Linux, a matching version-and-target runner is used; when the version or target has no release runner, or the runner cannot be fetched, execution returns an error before a case starts and reports no case as passed. Given macOS, Windows, or another unsupported operating system, it returns `unsupported-platform` before a case starts. | Test |
 | FR-235-AC-11 | Given `quoin validation ratings --coverage`, a not-high-process-risk or unrated FR without a local self-test marker has `selftest_coverage: not_in_selftest` without failing; an unrated FR remains unrated in its separate rating state; malformed or unknown `# Trace:` markers are reported as invalid and cause a non-zero exit. | Test |
 | FR-235-AC-12 | Given a published self-test runner, its executable and declared runtime files contain no private library linkage or private data beyond content already present in the installed command; the normal-suite library test harness is not published as a customer self-test runner. | Inspection |
+| FR-235-AC-13 | Given the matching runner release asset is available but no sibling source or specification repositories are checked out, `quoin selftest --run` invokes the installed command and records its result without attempting to access those repositories. | Test |
 
 ## Dependencies
 
