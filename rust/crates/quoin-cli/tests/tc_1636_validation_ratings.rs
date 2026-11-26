@@ -105,9 +105,21 @@ fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_marke
             .find(|item| item["feature_id"] == id)
             .expect("feature listed")
     };
-    assert_eq!(row("FR-001")["coverage"], "covered");
-    assert_eq!(row("FR-002")["coverage"], "release_evidence", "{report}");
-    assert_eq!(row("FR-003")["coverage"], "unrated");
+    assert_eq!(row("FR-001")["status"], "rated");
+    assert_eq!(row("FR-001")["selftest_coverage"], "covered");
+    assert_eq!(row("FR-001")["rating_ids"], serde_json::json!(["RR-1"]));
+    assert_eq!(
+        row("FR-001")["rating_values"][0]["value"],
+        "high_process_risk"
+    );
+    assert_eq!(row("FR-002")["status"], "rated", "{report}");
+    assert_eq!(row("FR-002")["selftest_coverage"], "not_in_selftest");
+    assert_eq!(row("FR-003")["status"], "unrated");
+    assert_eq!(row("FR-003")["selftest_coverage"], "not_in_selftest");
+    assert_eq!(
+        report["not_in_selftest"],
+        serde_json::json!(["FR-002", "FR-003"])
+    );
     assert_eq!(
         report["invalid_markers"]
             .as_array()
@@ -129,9 +141,10 @@ fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_marke
         features
             .iter()
             .find(|item| item["feature_id"] == "FR-001")
-            .expect("high-risk feature listed")["coverage"],
+            .expect("high-risk feature listed")["selftest_coverage"],
         "covered"
     );
+    assert_eq!(output.status.code(), Some(0));
 
     write(
         scratch.path(),
@@ -139,11 +152,30 @@ fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_marke
         "#!/bin/sh\nexit 0\n",
     );
     let output = invoke_coverage(scratch.path());
-    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.status.code(), Some(0));
     let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
-    assert_eq!(report["uncovered"], serde_json::json!(["FR-001"]));
     let features = report["features"].as_array().expect("features listed");
-    assert_eq!(features[0]["coverage"], "uncovered");
+    assert_eq!(
+        report["not_in_selftest"],
+        serde_json::json!(["FR-001", "FR-002", "FR-003"])
+    );
+    let high = features
+        .iter()
+        .find(|item| item["feature_id"] == "FR-001")
+        .expect("high-rated FR listed");
+    let not_high = features
+        .iter()
+        .find(|item| item["feature_id"] == "FR-002")
+        .expect("not-high-rated FR listed");
+    assert_eq!(high["status"], "rated");
+    assert_eq!(high["selftest_coverage"], "not_in_selftest");
+    assert_eq!(not_high["status"], "rated");
+    assert_eq!(not_high["selftest_coverage"], "not_in_selftest");
+    assert!(
+        features
+            .iter()
+            .all(|item| item["selftest_coverage"] == "not_in_selftest")
+    );
 }
 
 #[trace("FR-235-AC-4")]

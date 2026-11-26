@@ -129,7 +129,7 @@ fn command_writes_deterministic_markdown_and_json_for_complete_validation() {
     assert!(!serialized.to_ascii_lowercase().contains("accepted"));
 }
 
-#[trace("FR-217-AC-2", "FR-218-AC-2", "FR-218-AC-3")]
+#[trace("FR-217-AC-2", "FR-218-AC-2")]
 #[test]
 fn incomplete_command_still_writes_the_report_and_names_each_gap() {
     let temp = tempfile::tempdir().expect("temporary fixture directory");
@@ -148,19 +148,135 @@ fn incomplete_command_still_writes_the_report_and_names_each_gap() {
         .as_array()
         .expect("reasons listed");
     let reasons = reasons.iter().filter_map(Value::as_str).collect::<Vec<_>>();
-    assert!(
-        reasons
-            .iter()
-            .any(|reason| reason.contains("uncovered FR FR-001"))
-    );
-    assert!(
-        reasons
-            .iter()
-            .any(|reason| reason.contains("failed case fixture-case"))
-    );
+    assert_eq!(report["results"][0]["result"], "fail");
+    assert_eq!(report["coverage"][0]["result"], "uncovered");
     assert!(
         reasons
             .iter()
             .any(|reason| reason.contains("result missing for tool quire-cli"))
     );
+}
+
+#[trace("FR-218-AC-1", "FR-218-AC-3")]
+#[test]
+fn complete_report_keeps_failed_and_errored_results_and_uncovered_requirements() {
+    let temp = tempfile::tempdir().expect("temporary fixture directory");
+    let quoin = write_run(temp.path(), "fail", false);
+    let quire_cli = temp.path().join("quire-cli-run.json");
+    let quire_cli_record = json!({
+        "schemaVersion": 1,
+        "tool": "quire-cli",
+        "toolVersion": "quire-cli test",
+        "os": "linux",
+        "architecture": "x86_64",
+        "suite": "NORMAL",
+        "timestamp": "2026-11-25T12:00:00Z",
+        "results": [{
+            "id": "case-error",
+            "status": "error",
+            "criteria": ["FR-002-AC-1"],
+            "detail": "fixture execution error",
+            "stderr": "fixture stderr"
+        }],
+        "validationInputs": {"provided": true, "documents": []},
+        "anomalySet": {
+            "provided": true,
+            "producerVersion": "quire-cli test",
+            "documents": []
+        },
+        "externalTools": [],
+        "retainedLocation": "spec/evidence/runs/NORMAL/run.json"
+    });
+    std::fs::write(
+        &quire_cli,
+        serde_json::to_vec(&quire_cli_record).expect("run serializes"),
+    )
+    .expect("second run record writes");
+    let output_directory = temp.path().join("report");
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["validation", "report", "--results"])
+        .arg(&quoin)
+        .arg("--results")
+        .arg(&quire_cli)
+        .arg("--out")
+        .arg(&output_directory)
+        .output()
+        .expect("validation report command starts");
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "complete evidence exits successfully even when tests fail: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(
+        &std::fs::read(output_directory.join("validation-report.json"))
+            .expect("JSON report is written"),
+    )
+    .expect("report JSON parses");
+    assert_eq!(report["status"], "complete");
+    assert_eq!(report["incompleteReasons"], json!([]));
+    let results = report["results"].as_array().expect("result rows");
+    assert_eq!(
+        results
+            .iter()
+            .find(|row| row["id"] == "fixture-case")
+            .expect("failed result is present")["result"],
+        "fail"
+    );
+    assert_eq!(
+        results
+            .iter()
+            .find(|row| row["id"] == "case-error")
+            .expect("errored result is present")["result"],
+        "error"
+    );
+    assert!(
+        report["coverage"]
+            .as_array()
+            .expect("coverage rows")
+            .iter()
+            .any(|row| row["fr"] == "FR-001" && row["result"] == "uncovered")
+    );
+    let markdown = std::fs::read_to_string(output_directory.join("validation-report.md"))
+        .expect("Markdown report is written");
+    assert!(markdown.contains("| fixture-case | quoin | FR-001-AC-1 | fail |"));
+    assert!(markdown.contains("| case-error | quire-cli | FR-002-AC-1 | error |"));
+}
+
+#[trace("FR-218-AC-1")]
+#[test]
+fn missing_risk_rating_does_not_make_complete_run_evidence_incomplete() {
+    let temp = tempfile::tempdir().expect("temporary fixture directory");
+    let result = write_run(temp.path(), "pass", false);
+    let mut record: Value =
+        serde_json::from_slice(&std::fs::read(&result).expect("run record reads"))
+            .expect("run record parses");
+    record["validationInputs"]["documents"]
+        .as_array_mut()
+        .expect("validation documents")
+        .retain(|document| {
+            document["raw"]
+                .as_str()
+                .is_some_and(|raw| !raw.contains("FeatureRiskRating"))
+        });
+    std::fs::write(
+        &result,
+        serde_json::to_vec(&record).expect("run serializes"),
+    )
+    .expect("run record writes");
+    let output_directory = temp.path().join("report");
+    let output = invoke(&result, &output_directory);
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "risk rating absence does not make run evidence incomplete: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(
+        &std::fs::read(output_directory.join("validation-report.json"))
+            .expect("JSON report is written"),
+    )
+    .expect("report JSON parses");
+    assert_eq!(report["status"], "complete");
+    assert_eq!(report["coverage"][0]["rating_status"], "unrated");
 }

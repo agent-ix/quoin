@@ -54,6 +54,9 @@ pub(crate) fn command() -> Command {
         )
 }
 
+#[implements("FR-218-AC-1")]
+#[implements("FR-218-AC-2")]
+#[implements("FR-218-AC-3")]
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     if arguments.get_flag("verify-signoff") {
         if arguments.get_many::<String>("results").is_some() {
@@ -314,6 +317,11 @@ struct SignOff {
     meaning: String,
 }
 
+#[implements("FR-218-AC-1")]
+#[implements("FR-218-AC-2")]
+#[implements("FR-218-AC-3")]
+#[implements("FR-217-AC-11")]
+#[implements("FR-217-AC-12")]
 fn build_report(paths: &[PathBuf]) -> Result<ValidationReport, String> {
     if paths.is_empty() {
         return Err("report requires one or more --results files".to_owned());
@@ -395,8 +403,7 @@ fn build_report(paths: &[PathBuf]) -> Result<ValidationReport, String> {
         required_tools.remove(&record.tool);
         for case in &record.results {
             match case.status.as_str() {
-                "fail" => reasons.push(format!("failed case {}: {}", case.id, record.tool)),
-                "error" => reasons.push(format!("errored case {}: {}", case.id, record.tool)),
+                "fail" | "error" => {}
                 "not-executed" => reasons.push(format!(
                     "not-executed tool {} case {}",
                     record.tool, case.id
@@ -468,9 +475,6 @@ fn build_report(paths: &[PathBuf]) -> Result<ValidationReport, String> {
                 && case.result == "pass"
         });
         let result = if passed { "covered" } else { "uncovered" };
-        if feature_rating.high_process_risk && !passed {
-            reasons.push(format!("uncovered FR {feature} for {tool}"));
-        }
         coverage.push(Coverage {
             tool: tool.clone(),
             fr: feature,
@@ -616,13 +620,6 @@ fn validation_documents(
     }
     if intended_use.is_empty() {
         reasons.push("intended use not provided".to_owned());
-    }
-    if !parsed
-        .documents
-        .iter()
-        .any(|document| field(&document.frontmatter, "type") == Some("FeatureRiskRating"))
-    {
-        reasons.push("feature risk ratings not provided".to_owned());
     }
     (intended_use, reasons, documents_by_tool)
 }
@@ -794,6 +791,7 @@ fn ratings_for_feature(
     ratings
 }
 
+#[implements("FR-217-AC-8")]
 fn known_anomalies(
     records: &[RunRecord],
     high_risk: &BTreeMap<String, BTreeSet<String>>,
@@ -1098,6 +1096,7 @@ fn external_tool_report(
     out
 }
 
+#[implements("FR-217-AC-12")]
 fn render_markdown(report: &ValidationReport) -> String {
     let mut lines = vec![
         "# Tool validation report".to_owned(),
@@ -1649,9 +1648,9 @@ mod tests {
         );
     }
 
-    #[trace("FR-217-AC-2", "FR-218-AC-2", "FR-218-AC-3")]
+    #[trace("FR-217-AC-2", "FR-218-AC-2")]
     #[test]
-    fn incomplete_report_names_uncovered_failed_and_missing_tool_evidence() {
+    fn incomplete_report_keeps_outcomes_separate_from_missing_tool_evidence() {
         let temp = tempfile::tempdir().expect("fixture directory");
         let quoin = write_run(
             temp.path(),
@@ -1664,21 +1663,125 @@ mod tests {
             report
                 .incomplete_reasons
                 .iter()
-                .any(|reason| reason.contains("uncovered FR FR-001"))
-        );
-        assert!(
-            report
-                .incomplete_reasons
-                .iter()
-                .any(|reason| reason.contains("failed case case-one"))
-        );
-        assert!(
-            report
-                .incomplete_reasons
-                .iter()
                 .any(|reason| reason.contains("result missing for tool quire-cli"))
         );
+        assert_eq!(report.results[0].result, "fail");
+        assert_eq!(report.coverage[0].result, "uncovered");
         assert!(render_markdown(&report).contains("not provided"));
+    }
+
+    #[trace("FR-218-AC-1", "FR-218-AC-3")]
+    #[test]
+    fn test_failures_and_uncovered_requirements_do_not_make_evidence_incomplete() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let quoin = write_run(
+            temp.path(),
+            "quoin.json",
+            &run_input("quoin", "fail", "high_process_risk", true),
+        );
+        let quire_cli = write_run(
+            temp.path(),
+            "quire-cli.json",
+            &run_input("quire-cli", "pass", "not_high_process_risk", false),
+        );
+        let mut quoin_record: Value =
+            serde_json::from_slice(&std::fs::read(&quoin).expect("Quoin record reads"))
+                .expect("Quoin record parses");
+        quoin_record["results"]
+            .as_array_mut()
+            .expect("result list")
+            .push(json!({
+                "id": "case-error",
+                "status": "error",
+                "criteria": ["FR-002-AC-1"],
+                "detail": "fixture execution error",
+                "stderr": "fixture stderr",
+            }));
+        std::fs::write(
+            &quoin,
+            serde_json::to_vec(&quoin_record).expect("updated record serializes"),
+        )
+        .expect("updated Quoin record writes");
+
+        let report = build_report(&[quoin, quire_cli]).expect("complete report builds");
+        assert_eq!(report.status, "complete");
+        assert!(report.incomplete_reasons.is_empty());
+        assert!(report.results.iter().any(|case| case.result == "fail"));
+        assert!(report.results.iter().any(|case| case.result == "error"));
+        assert!(
+            report
+                .coverage
+                .iter()
+                .any(|coverage| { coverage.fr == "FR-001" && coverage.result == "uncovered" })
+        );
+        assert!(
+            report
+                .coverage
+                .iter()
+                .any(|coverage| { coverage.fr == "FR-002" && coverage.result == "uncovered" })
+        );
+        let markdown = render_markdown(&report);
+        assert!(markdown.contains("| case-one | quoin | FR-001-AC-1 | fail |"));
+        assert!(markdown.contains("| case-error | quoin | FR-002-AC-1 | error |"));
+        assert!(markdown.contains("| quoin | FR-001 | high_process_risk | rated |"));
+    }
+
+    #[trace("FR-217-AC-11")]
+    #[test]
+    fn feature_ratings_do_not_select_tests_or_change_coverage() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let high = write_run(
+            temp.path(),
+            "high.json",
+            &run_input("quoin", "pass", "high_process_risk", false),
+        );
+        let not_high = write_run(
+            temp.path(),
+            "not-high.json",
+            &run_input("quoin", "pass", "not_high_process_risk", false),
+        );
+        let high_report = build_report(&[high]).expect("high-rating report builds");
+        let not_high_report = build_report(&[not_high]).expect("not-high report builds");
+        assert_eq!(high_report.status, "complete");
+        assert_eq!(not_high_report.status, "complete");
+        assert_eq!(
+            serde_json::to_value(&high_report.results).expect("high results serialize"),
+            serde_json::to_value(&not_high_report.results).expect("not-high results serialize")
+        );
+        assert_eq!(
+            high_report.coverage[0].cases,
+            not_high_report.coverage[0].cases
+        );
+        assert_eq!(
+            high_report.coverage[0].result,
+            not_high_report.coverage[0].result
+        );
+        assert_eq!(high_report.coverage[0].result, "covered");
+        assert_eq!(high_report.coverage[0].rating, "high_process_risk");
+        assert_eq!(not_high_report.coverage[0].rating, "not_high_process_risk");
+    }
+
+    #[trace("FR-217-AC-12")]
+    #[test]
+    fn producer_execution_details_do_not_supply_test_coverage() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let mut run = run_input("quoin", "pass", "high_process_risk", false);
+        run["results"][0]["criteria"] = json!([]);
+        run["results"][0]["detail"] =
+            json!("producer-execute completed; artifact: reports/producer-result.json");
+        let path = write_run(temp.path(), "producer-details.json", &run);
+        let report = build_report(&[path]).expect("report builds");
+        assert_eq!(report.status, "complete");
+        assert_eq!(
+            report.results[0].detail,
+            "producer-execute completed; artifact: reports/producer-result.json"
+        );
+        assert_eq!(report.results[0].result, "pass");
+        assert_eq!(report.coverage[0].result, "uncovered");
+        let markdown = render_markdown(&report);
+        assert!(
+            markdown.contains("producer-execute completed; artifact: reports/producer-result.json")
+        );
     }
 
     #[trace("FR-217-AC-10")]
@@ -1712,7 +1815,13 @@ mod tests {
         );
     }
 
-    #[trace("FR-217-AC-5", "FR-217-AC-6", "FR-217-AC-7", "FR-219-AC-3")]
+    #[trace(
+        "FR-217-AC-5",
+        "FR-217-AC-6",
+        "FR-217-AC-7",
+        "FR-217-AC-8",
+        "FR-219-AC-3"
+    )]
     #[test]
     fn known_anomalies_uses_version_matched_retained_fr162_selection() {
         let temp = tempfile::tempdir().expect("fixture directory");
@@ -1721,7 +1830,8 @@ mod tests {
             {"path":"AN-001-open.md", "raw":"---\nid: AN-001\ntitle: High risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\nseverity: major\n---\n# [AN-001] High risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-001 | Affects | Fixture |\n"},
             {"path":"AN-002-low.md", "raw":"---\nid: AN-002\ntitle: Low risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n# [AN-002] Low risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-002 | Affects | Fixture |\n"},
             {"path":"AN-003-fixed.md", "raw":"---\nid: AN-003\ntitle: Fixed\ntype: Anomaly\nstatus: closed\nresolution: fixed\nsafety_impact: impacting\n---\n"},
-            {"path":"AN-004-wont-fix.md", "raw":"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n"}
+            {"path":"AN-004-wont-fix.md", "raw":"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n"},
+            {"path":"linked-engine/AN-005-linked.md", "raw":"---\nid: AN-005\ntitle: Linked engine issue\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n# [AN-005] Linked engine issue\n"}
         ]);
         let path = write_run(temp.path(), "quoin.json", &run);
         let validation_report = build_report(&[path]).expect("anomaly selection");
@@ -1732,7 +1842,7 @@ mod tests {
                 .iter()
                 .map(|row| row.anomaly.as_str())
                 .collect::<Vec<_>>(),
-            ["AN-001", "AN-002", "AN-004"]
+            ["AN-001", "AN-002", "AN-004", "AN-005"]
         );
         assert_eq!(
             report.anomalies[0].highlight.as_deref(),
