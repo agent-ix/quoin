@@ -94,6 +94,7 @@ fn line_of(markdown: &str, needle: &str) -> usize {
         + 1
 }
 
+#[derive(Debug)]
 struct TestDiagnostic {
     code: String,
     severity: String,
