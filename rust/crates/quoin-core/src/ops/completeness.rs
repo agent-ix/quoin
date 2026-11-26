@@ -257,7 +257,7 @@ mod tests {
     /// named. Zero declarations would be `UNCHECKED`, which is the distinction
     /// FR-037 exists to keep visible, so both are asserted here rather than
     /// only the happy one.
-    #[trace("FR-037", "FR-096")]
+    #[trace("FR-037-AC-12", "FR-037-CON-4", "FR-096")]
     #[test]
     fn an_assessment_crosses_the_boundary_with_no_filesystem_at_all() {
         let request = serde_json::json!({
