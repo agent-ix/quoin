@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "clause-binding-v1",
+  "clauseSet": {
+    "authority": "example.invalid",
+    "id": "synthetic-baseline",
+    "version": "1.0.0"
+  },
+  "context": {"product": "synthetic-example"},
+  "clauses": []
+}

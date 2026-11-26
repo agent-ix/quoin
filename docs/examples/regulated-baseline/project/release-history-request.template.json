@@ -1,0 +1,7 @@
+{
+  "protocol": "engineering-assurance.release-history-request/v1",
+  "repository": ".",
+  "baseline_commit": "replace-with-the-baseline-commit",
+  "previous_release_tag": null,
+  "records_dir": "spec/change-assurance/records"
+}

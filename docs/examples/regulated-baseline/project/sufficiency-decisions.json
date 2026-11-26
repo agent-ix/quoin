@@ -1,0 +1,12 @@
+[
+  {
+    "reasoningId": "reasoning-display",
+    "criterion": "the evidence index resolves the retained result",
+    "state": "satisfied",
+    "evidenceRefs": ["ix://example/regulated-baseline/evidence/display-check"],
+    "decidedBy": "example-reviewer",
+    "authority": "review this synthetic example",
+    "decidedAt": "2026-11-25T00:00:00Z",
+    "expiresAt": "2027-11-25T00:00:00Z"
+  }
+]

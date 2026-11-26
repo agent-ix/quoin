@@ -1,0 +1,60 @@
+{
+  "schema_version": 2,
+  "record_type": "change_assurance",
+  "record_id": "CA-001",
+  "revision": 1,
+  "subject": {
+    "repository": "example.invalid/desk-sensor",
+    "base_revision": "synthetic-baseline",
+    "scope": ["spec"]
+  },
+  "source_connections": [
+    {
+      "source_id": "FR-001",
+      "kind": "requirement",
+      "revision": "1",
+      "path": "spec/functional/FR-001-sensor-status.md"
+    }
+  ],
+  "impact_snapshot": {
+    "identity": "impact-001",
+    "revision": "1",
+    "completeness": "complete",
+    "truncated": false,
+    "gaps": []
+  },
+  "definition": {
+    "requirements": [
+      {
+        "id": "FR-001",
+        "statement": "Quoin shows the retained test status for each requirement criterion.",
+        "source_ids": ["FR-001"]
+      }
+    ],
+    "preservation_constraints": [],
+    "proof_obligations": [
+      {
+        "proof_id": "proof-display",
+        "statement": "The sample result names the displayed criterion.",
+        "obligation_ids": ["FR-001-AC-1"],
+        "evidence_kind": "Test",
+        "command": {
+          "argv": ["sample-runner"],
+          "working_directory": "."
+        },
+        "tool_identity": "sample-runner",
+        "configuration_ref": "sample-test-results.xml"
+      }
+    ],
+    "unknowns": []
+  },
+  "review_workflow": {
+    "run_id": "sample-review-001",
+    "decision_event_kind": "change_assurance.review_decided",
+    "signed_approval": {
+      "required": true,
+      "signature_kinds": ["ssh"],
+      "approvers": ["example-reviewer"]
+    }
+  }
+}

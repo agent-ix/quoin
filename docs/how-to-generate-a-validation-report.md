@@ -23,7 +23,7 @@ To verify sign-off, also install Engineering Assurance and Git, and configure SS
    quoin validation report \
      --results docs/examples/validation-report/quoin-run.json \
      --results docs/examples/validation-report/quire-cli-run.json \
-     --out build/validation-report
+     --out "$PWD/build/validation-report"
    ```
 
    The command writes `validation-report.md` and `validation-report.json`. A complete report exits with code 0. An incomplete report still writes both files and exits with code 1.
@@ -46,8 +46,8 @@ To verify sign-off, also install Engineering Assurance and Git, and configure SS
    ```sh
    quoin validation report \
      --verify-signoff \
-     --repo . \
-     --out build/validation-report \
+     --repo "$PWD" \
+     --out "$PWD/build/validation-report" \
      --allowed-signers /path/to/allowed_signers
    ```
 

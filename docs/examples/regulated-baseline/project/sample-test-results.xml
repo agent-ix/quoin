@@ -1,0 +1,7 @@
+<testsuite name="example-checks">
+  <testcase name="matrix-shows-coverage">
+    <properties>
+      <property name="trace" value="FR-001-AC-1"/>
+    </properties>
+  </testcase>
+</testsuite>
