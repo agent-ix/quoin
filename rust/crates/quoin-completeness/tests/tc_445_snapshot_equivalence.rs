@@ -464,7 +464,7 @@ fn module_under(root: &Path) -> Option<ModuleSource> {
 ///
 /// Both entry points are live code run over the same committed input corpus
 /// (`tests/fixtures/assess-bundle-inputs.json`); no recorded answer is read.
-#[trace("FR-037", "FR-096-AC-8")]
+#[trace("FR-037", "FR-096-AC-8", "FR-099-AC-6")]
 #[test]
 fn tc_445_310_the_content_in_path_answers_what_the_filesystem_path_answers() {
     let corpus = fixture("assess-bundle-inputs.json");

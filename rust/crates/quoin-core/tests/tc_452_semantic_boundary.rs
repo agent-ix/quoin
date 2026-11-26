@@ -139,7 +139,7 @@ fn semantic_root() -> PathBuf {
 /// would satisfy a single-root assertion.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-070-AC-1", "FR-096")]
+#[trace("FR-070-AC-1", "FR-096", "FR-099-AC-6")]
 #[test]
 fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
     let module_dir = common::module_ok_copy();

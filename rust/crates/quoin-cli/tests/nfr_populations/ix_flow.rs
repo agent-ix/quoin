@@ -40,7 +40,7 @@ const MODES: [Mode; 12] = [
     Mode {
         id: "ix-flow-absent",
         operation: None,
-        evidence: "could not start ix-flow",
+        evidence: "could not resolve ix-flow executable",
     },
     Mode {
         id: "ix-flow-reports-an-old-version",
