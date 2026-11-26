@@ -36,6 +36,8 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 #[cfg(unix)]
 use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::process::Command;
 
 #[cfg(unix)]
 type ExpectedClaimSpan = (String, String, u64, u64);
@@ -1157,7 +1159,7 @@ fn analysis_invariant_refuses_an_empty_drafted_selection_before_analyzer() {
     let analyzer = executable(
         directory.path(),
         "analyzer-must-not-run",
-        &format!("touch '{}'\\nexit 0", marker.display()),
+        &format!("touch '{}'\nexit 0", marker.display()),
     );
     let z3 = executable(directory.path(), "z3", "exit 0");
     let cvc5 = executable(directory.path(), "cvc5", "exit 0");
@@ -1177,6 +1179,14 @@ fn analysis_invariant_refuses_an_empty_drafted_selection_before_analyzer() {
         !marker.exists(),
         "analyzer must not run without a draft span"
     );
+    let control = Command::new(&analyzer)
+        .status()
+        .expect("invoke analyzer stub control");
+    assert!(
+        control.success(),
+        "analyzer stub control exits successfully"
+    );
+    assert!(marker.exists(), "analyzer stub control creates its marker");
 }
 
 #[cfg(unix)]
@@ -2142,7 +2152,7 @@ fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
 #[trace("FR-189-AC-9")]
 #[test]
 fn formalize_provider_dispatches_the_three_domain_invariants() {
-    let (_directory, _, context) = formalization_fixture();
+    let (_directory, request, context) = formalization_fixture();
     let instance = serde_json::from_value(json!({
         "defName": "formalize",
         "items": {
@@ -2152,23 +2162,31 @@ fn formalize_provider_dispatches_the_three_domain_invariants() {
                 "config_root": context.config_root,
                 "targets": []
             }],
-            "formalization_request": [{}]
+            "formalization_request": [{
+                "requirement_id": request.requirement_id,
+                "draft_path": request.draft_path,
+                "analysis_package": request.analysis_package,
+                "drafted_symbols": request.drafted_symbols
+            }]
         },
         "gateConfig": {}
     }))
     .expect("formalize instance");
 
-    for invariant in [
-        "qsl_check_passes",
-        "analysis_consistent_with_approved",
-        "formal_rule_approved",
+    for (invariant, expected_code) in [
+        ("qsl_check_passes", "qsl_check_unavailable"),
+        (
+            "analysis_consistent_with_approved",
+            "analysis_package_invalid",
+        ),
+        ("formal_rule_approved", "formal_rule_trust_inputs_invalid"),
     ] {
         let failure = check_with_details(&instance, invariant)
-            .expect_err("incomplete request should reach a formalize invariant handler");
+            .expect_err("valid request metadata reaches the selected formalize handler");
         assert_eq!(
             failure.code.to_string(),
-            "WORKFLOW_ITEM_INVALID",
-            "{invariant} must be dispatched to its request handler"
+            expected_code,
+            "{invariant} must reach its own handler"
         );
     }
 
@@ -2177,6 +2195,19 @@ fn formalize_provider_dispatches_the_three_domain_invariants() {
     let skill = std::fs::read_to_string(skill_path).expect("read formalize skill");
     assert!(skill.contains("ix-flow-invariant-provider:"));
     assert!(skill.contains("command: quoin"));
+    assert!(skill.contains("args: [workflow-invariants]"));
+    assert!(skill.contains("request-protocol: quoin.workflow-invariants/v1"));
+    assert!(skill.contains("result-protocol: quoin.workflow-invariants-result/v1"));
+    for invariant in [
+        "qsl_check_passes",
+        "analysis_consistent_with_approved",
+        "formal_rule_approved",
+    ] {
+        assert!(
+            skill.contains(&format!("- {invariant}")),
+            "provider metadata names {invariant}"
+        );
+    }
 }
 
 #[trace("FR-209-AC-5", "FR-209-AC-6", "FR-209-AC-7")]
