@@ -9,6 +9,11 @@ repository.workspace = true
 authors.workspace = true
 publish.workspace = true
 
+[features]
+# The integration test using the installed ix-flow runtime is selected only by
+# `make workflow-test`; ordinary unit tests need no npm-installed runner.
+workflow-test = []
+
 [lints]
 workspace = true
 

@@ -99,8 +99,17 @@ fn selection(set: &str, lenses: &[&str]) -> Value {
     json!({"review_set":set,"selected_analyses":lenses,"assurance_profiles":[],"profile_disposition":"No applicable profile in this synthetic repository."})
 }
 fn review(analysis: &str, severity: &str) -> String {
+    review_with_revision(analysis, severity, "v1")
+}
+fn review_with_revision(analysis: &str, severity: &str, revision: &str) -> String {
     format!(
-        "---\nid: SR-001\ntitle: Synthetic review\ntype: SpecReview\nanalysis: {analysis}\n---\n# Review\n\n## Summary\nSynthetic outcome.\n\n## Findings\n\n| ID | Severity | Summary | Refs |\n| --- | --- | --- | --- |\n| FND-001 | {severity} | Synthetic finding | FR-001 |\n"
+        "---\nid: SR-001\ntitle: Synthetic review\ntype: SpecReview\nanalysis: {analysis}\npackRevision: {revision}\n---\n# Review\n\n## Summary\nSynthetic outcome.\n\n## Findings\n\n| ID | Severity | Summary | Refs |\n| --- | --- | --- | --- |\n| FND-001 | {severity} | Synthetic finding | FR-001 |\n"
+    )
+}
+fn profile(revision: &str, mode: &str, operations: &[&str]) -> String {
+    format!(
+        "---\nid: AP-001\ntitle: Synthetic profile\ntype: AssuranceProfile\nstatus: active\nprofileRevision: {revision}\nreview_policy:\n  mode: {mode}\n  operations: [{}]\n---\n# Profile\n",
+        operations.join(", ")
     )
 }
 fn simple(kind: &str, id: &str) -> String {
@@ -110,6 +119,7 @@ fn schema(kind: &str) -> Value {
     let mut properties = json!({"id":{"type":"string","minLength":1},"title":{"type":"string","minLength":1},"type":{"const":kind}});
     let mut required = vec!["id", "title", "type"];
     if let Some(map) = properties.as_object_mut() {
+        map.insert("packRevision".to_owned(), json!({"const":"v1"}));
         if kind == "SpecReview" {
             map.insert(
                 "analysis".to_owned(),
@@ -118,6 +128,7 @@ fn schema(kind: &str) -> Value {
             required.push("analysis");
         }
         if kind == "AssuranceProfile" {
+            map.insert("profileRevision".to_owned(), json!({"const":"v1"}));
             map.insert(
                 "status".to_owned(),
                 json!({"enum":["active","proposed","retired"]}),
@@ -347,6 +358,18 @@ pub(super) fn run(binary: &str, runner: &str, plugin: &str) -> Result<()> {
 }
 
 fn lifecycle(h: &Harness) -> Result<()> {
+    let started = review_base_lifecycle(h)?;
+    review_scenarios(h, &started)?;
+    plan_scenario(h)?;
+    formalize_scenarios(h)?;
+    runner_failures(h)?;
+    println!(
+        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, host-capable ix-flow package, review/profile/plan validation and explicit human acceptance"
+    );
+    Ok(())
+}
+
+fn review_base_lifecycle(h: &Harness) -> Result<Value> {
     let started = h.start("review", "smoke-base")?;
     require(
         text(&started, "/current_phase")? == "intake",
@@ -373,6 +396,16 @@ fn lifecycle(h: &Harness) -> Result<()> {
         .map_err(|e| e.to_string())?;
     passed(&convenience)?;
     h.answers("smoke-base", "request", &selection("base", &[]))?;
+    let recorded = passed(&h.flow(&["status", "smoke-base"])?)?;
+    let request = recorded
+        .pointer("/data/items/operation_request/0")
+        .ok_or("review answers were not recorded in the run")?;
+    require(
+        request.get("assurance_profiles") == Some(&json!([]))
+            && request.get("profile_disposition").and_then(Value::as_str)
+                == Some("No applicable profile in this synthetic repository."),
+        format!("the run records the explicit no-profile disposition: {request}"),
+    )?;
     h.advance("smoke-base", "analyses_run")?;
     h.advance("smoke-base", "reviews_rendered")?;
     refused(
@@ -383,6 +416,20 @@ fn lifecycle(h: &Harness) -> Result<()> {
     refused(
         &h.flow(&["advance", "smoke-base", "validated"])?,
         "WORKFLOW_DOCUMENT_UNAVAILABLE",
+    )?;
+    fs::create_dir_all(h.root.join("spec/reviews/base.md")).map_err(|error| error.to_string())?;
+    refused(
+        &h.flow(&["advance", "smoke-base", "validated"])?,
+        "WORKFLOW_DOCUMENT_UNAVAILABLE",
+    )?;
+    fs::remove_dir_all(h.root.join("spec/reviews/base.md")).map_err(|error| error.to_string())?;
+    write(
+        &h.root.join("spec/reviews/base.md"),
+        "---\nid: SR-001\ntitle: Synthetic review\ntype: SpecReview\nanalysis: base\n",
+    )?;
+    refused(
+        &h.flow(&["advance", "smoke-base", "validated"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
     )?;
     write(
         &h.root.join("spec/reviews/base.md"),
@@ -400,8 +447,21 @@ fn lifecycle(h: &Harness) -> Result<()> {
         &h.flow(&["advance", "smoke-base", "validated"])?,
         "WORKFLOW_DOCUMENT_INVALID",
     )?;
+    let review_schema = h.module().join("schemas/SpecReview.json");
+    let mut live_review_schema = schema("SpecReview");
+    live_review_schema["properties"]["packRevision"]["const"] = json!("v2");
+    write(&review_schema, live_review_schema.to_string())?;
     write(&h.root.join("spec/reviews/base.md"), review("base", "low"))?;
+    refused(
+        &h.flow(&["advance", "smoke-base", "validated"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+    write(
+        &h.root.join("spec/reviews/base.md"),
+        review_with_revision("base", "low", "v2"),
+    )?;
     h.advance("smoke-base", "validated")?;
+    write(&review_schema, schema("SpecReview").to_string())?;
     write(
         &h.root.join("spec/reviews/base.md"),
         review("integrity", "low"),
@@ -434,14 +494,7 @@ fn lifecycle(h: &Harness) -> Result<()> {
         )? == "accepted",
         "acceptance must persist",
     )?;
-    review_scenarios(h, &started)?;
-    plan_scenario(h)?;
-    formalize_scenarios(h)?;
-    runner_failures(h)?;
-    println!(
-        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, host-capable ix-flow package, review/profile/plan validation and explicit human acceptance"
-    );
-    Ok(())
+    Ok(started)
 }
 
 #[cfg(test)]
@@ -869,16 +922,103 @@ fn review_scenarios(h: &Harness, started: &Value) -> Result<()> {
     }
     h.advance("smoke-all", "validated")?;
     h.start("review", "smoke-profile")?;
+    let profile_schema = h.module().join("schemas/AssuranceProfile.json");
     write(
         &h.root.join("spec/profile.md"),
-        "---\nid: AP-001\ntitle: Synthetic profile\ntype: AssuranceProfile\nstatus: active\nreview_policy:\n  mode: require\n  operations: [spec-review]\n---\n# Profile\n",
+        profile("v1", "require", &["spec-review", "code-review"]),
     )?;
-    let mut answers = selection("base", &[]);
+    let mut answers = selection("subset", &["integrity"]);
     if let Some(map) = answers.as_object_mut() {
         map.insert("assurance_profiles".to_owned(), json!(["spec/profile.md"]));
+        map.insert(
+            "profile_disposition".to_owned(),
+            json!("The active profile applies to spec-review; code-review remains a separate operation."),
+        );
     }
     h.answers("smoke-profile", "request", &answers)?;
+    let profile_run = passed(&h.flow(&["status", "smoke-profile"])?)?;
+    let recorded = profile_run
+        .pointer("/data/items/operation_request/0")
+        .ok_or("review profile answers were not recorded in the run")?;
+    require(
+        recorded.get("assurance_profiles") == Some(&json!(["spec/profile.md"]))
+            && recorded.get("profile_disposition").and_then(Value::as_str)
+                == Some(
+                    "The active profile applies to spec-review; code-review remains a separate operation.",
+                ),
+        format!("the run records profile paths and applicability: {recorded}"),
+    )?;
+    let mut live_profile_schema = schema("AssuranceProfile");
+    live_profile_schema["properties"]["profileRevision"]["const"] = json!("v2");
+    write(&profile_schema, live_profile_schema.to_string())?;
+    refused(
+        &h.flow(&["advance", "smoke-profile", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+    write(
+        &h.root.join("spec/profile.md"),
+        profile("v2", "require", &["spec-review", "code-review"]),
+    )?;
     h.advance("smoke-profile", "analyses_run")?;
+    h.advance("smoke-profile", "reviews_rendered")?;
+    write(&h.root.join("spec/reviews/base.md"), review("base", "low"))?;
+    write(
+        &h.root.join("spec/reviews/integrity.md"),
+        review("integrity", "low"),
+    )?;
+    h.add("smoke-profile", "base", "spec/reviews/base.md")?;
+    h.add("smoke-profile", "integrity", "spec/reviews/integrity.md")?;
+    h.advance("smoke-profile", "validated")?;
+    write(&profile_schema, schema("AssuranceProfile").to_string())?;
+
+    h.start("review", "smoke-obsolete-profile")?;
+    write(
+        &h.root.join("spec/obsolete-profile.md"),
+        profile("v1", "require", &["spec-review"]).replace(
+            "---\n# Profile\n",
+            "review_selection: [all]\n---\n# Profile\n",
+        ),
+    )?;
+    let mut obsolete = selection("base", &[]);
+    obsolete["assurance_profiles"] = json!(["spec/obsolete-profile.md"]);
+    h.answers("smoke-obsolete-profile", "request", &obsolete)?;
+    refused(
+        &h.flow(&["advance", "smoke-obsolete-profile", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+
+    h.start("review", "smoke-invalid-profile-policy")?;
+    write(
+        &h.root.join("spec/invalid-profile.md"),
+        profile("v1", "automatic", &["spec-review"]),
+    )?;
+    let mut invalid_policy = selection("base", &[]);
+    invalid_policy["assurance_profiles"] = json!(["spec/invalid-profile.md"]);
+    h.answers("smoke-invalid-profile-policy", "request", &invalid_policy)?;
+    refused(
+        &h.flow(&["advance", "smoke-invalid-profile-policy", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+
+    h.start("review", "smoke-profile-invents-severity")?;
+    let mut invented = profile("v1", "recommend", &["spec-review"]);
+    invented = invented.replace(
+        "  operations: [spec-review]",
+        "  operations: [spec-review]\n  severity: high",
+    );
+    write(&h.root.join("spec/invented-profile.md"), invented)?;
+    let mut invented_policy = selection("base", &[]);
+    invented_policy["assurance_profiles"] = json!(["spec/invented-profile.md"]);
+    h.answers(
+        "smoke-profile-invents-severity",
+        "request",
+        &invented_policy,
+    )?;
+    refused(
+        &h.flow(&["advance", "smoke-profile-invents-severity", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+
     let runtime = text(started, "/data/skillPath/absolute")?;
     passed(&h.flow(&[
         "run",
@@ -1046,6 +1186,33 @@ mod tests {
         design_gate_missing_host_refused, formalize_scenarios,
     };
     use ix_trace_rs::trace;
+
+    #[cfg(feature = "workflow-test")]
+    use super::{review_base_lifecycle, review_scenarios};
+
+    #[cfg(feature = "workflow-test")]
+    #[trace(
+        "FR-095-AC-1",
+        "FR-095-AC-3",
+        "FR-095-AC-4",
+        "FR-095-AC-5",
+        "FR-095-AC-6",
+        "FR-095-AC-7",
+        "FR-095-AC-8",
+        "FR-095-AC-9",
+        "FR-095-CON-2",
+        "FR-095-CON-3"
+    )]
+    #[test]
+    fn fr095_review_workflow_enforces_live_contracts() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("review smoke harness");
+        let started = review_base_lifecycle(&harness).expect("base review lifecycle");
+        review_scenarios(&harness, &started).expect("review contract scenarios");
+    }
 
     #[trace("FR-020-AC-6")]
     #[test]
