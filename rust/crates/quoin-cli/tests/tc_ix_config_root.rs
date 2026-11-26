@@ -125,7 +125,6 @@ fn empty_or_unset_ix_config_root_falls_back_to_ix_home_then_home_ix() {
     let default_home = process_home.join(".ix");
     fs::create_dir_all(&process_home).expect("process home exists");
     install_defaults(&legacy_home);
-    install_defaults(&default_home);
 
     let empty_config_root = invoke(
         Some(""),
@@ -138,6 +137,7 @@ fn empty_or_unset_ix_config_root_falls_back_to_ix_home_then_home_ix() {
     let unset_config_root = invoke(None, Some(&legacy_home), &process_home, &["module", "list"]);
     assert_module_count(&unset_config_root, 10, "IX_HOME after unset IX_CONFIG_ROOT");
 
+    install_defaults(&default_home);
     let default = invoke(None, None, &process_home, &["module", "list"]);
     assert_module_count(&default, 10, "~/.ix after both overrides are unset");
 }
