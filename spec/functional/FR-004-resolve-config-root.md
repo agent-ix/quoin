@@ -29,14 +29,14 @@ enabled unless `--no-project-config` is given.
 
 ## Behavior
 
-- The CLI SHALL use `--config-root` when present; otherwise it SHALL use
-  `IX_CONFIG_ROOT` when set and non-empty; otherwise it SHALL use `IX_HOME` when
-  set and non-empty; otherwise it SHALL default to `~/.ix`.
+- The CLI SHALL use `--config-root` when present; in its absence, the selected
+  root is the first non-empty value from `IX_CONFIG_ROOT`, `IX_HOME`, or `~/.ix`,
+  in that order.
 - The CLI SHALL export the resolved root to `IX_HOME` for downstream resolution.
 - The CLI SHALL configure the runtime context with namespace `ix` and project
   config root `<cwd>/.ix`.
-- The CLI SHALL enable project config unless `--no-project-config` is given, in
-  which case it SHALL disable it.
+- The CLI SHALL enable project config by default and disable it when
+  `--no-project-config` is given.
 
 ## Acceptance Criteria
 

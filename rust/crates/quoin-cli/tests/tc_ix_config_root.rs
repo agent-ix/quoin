@@ -47,43 +47,97 @@ fn install_defaults(home: &Path) {
     .expect("module registry is written");
 }
 
-fn invoke(config_root: &Path, legacy_home: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_quoin"))
+fn invoke(
+    config_root: Option<&str>,
+    legacy_home: Option<&Path>,
+    home: &Path,
+    args: &[&str],
+) -> Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
+    command
         .args(args)
-        .env("IX_CONFIG_ROOT", config_root)
-        .env("IX_HOME", legacy_home)
-        .env_remove("QUOIN_SEMANTIC_ROOT")
-        .output()
-        .expect("the quoin binary starts")
+        .env("HOME", home)
+        .env_remove("IX_CONFIG_ROOT")
+        .env_remove("IX_HOME")
+        .env_remove("QUOIN_SEMANTIC_ROOT");
+    if let Some(config_root) = config_root {
+        command.env("IX_CONFIG_ROOT", config_root);
+    }
+    if let Some(legacy_home) = legacy_home {
+        command.env("IX_HOME", legacy_home);
+    }
+    command.output().expect("the quoin binary starts")
+}
+
+fn assert_module_count(output: &Output, expected: usize, source: &str) {
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let modules: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("module list emits JSON");
+    assert_eq!(
+        modules["plugins"].as_array().map(Vec::len),
+        Some(expected),
+        "module list resolves modules from {source}"
+    );
 }
 
 #[trace("FR-004-AC-2", "FR-004-AC-4")]
 #[test]
 fn module_list_and_ensure_defaults_use_ix_config_root_before_ix_home() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
+    let process_home = scratch.path().join("process-home");
     let config_root = scratch.path().join("config-root");
     let legacy_home = scratch.path().join("legacy-home");
+    fs::create_dir_all(&process_home).expect("process home exists");
     install_defaults(&config_root);
     fs::create_dir_all(legacy_home.join("filament")).expect("legacy home exists");
 
-    let listed = invoke(&config_root, &legacy_home, &["module", "list"]);
-    assert!(
-        listed.status.success(),
-        "stderr: {}",
-        String::from_utf8_lossy(&listed.stderr)
+    let listed = invoke(
+        Some(config_root.to_str().expect("config root is UTF-8")),
+        Some(&legacy_home),
+        &process_home,
+        &["module", "list"],
     );
-    let modules: serde_json::Value =
-        serde_json::from_slice(&listed.stdout).expect("module list emits JSON");
-    assert_eq!(
-        modules["plugins"].as_array().map(Vec::len),
-        Some(10),
-        "module list reads the config root selected by IX_CONFIG_ROOT"
-    );
+    assert_module_count(&listed, 10, "IX_CONFIG_ROOT ahead of IX_HOME");
 
-    let ensured = invoke(&config_root, &legacy_home, &["module", "ensure-defaults"]);
+    let ensured = invoke(
+        Some(config_root.to_str().expect("config root is UTF-8")),
+        Some(&legacy_home),
+        &process_home,
+        &["module", "ensure-defaults"],
+    );
     assert!(
         ensured.status.success(),
         "stderr: {}",
         String::from_utf8_lossy(&ensured.stderr)
     );
+}
+
+#[trace("FR-004-AC-2")]
+#[test]
+fn empty_or_unset_ix_config_root_falls_back_to_ix_home_then_home_ix() {
+    let scratch = tempfile::tempdir().expect("scratch directory is created");
+    let process_home = scratch.path().join("process-home");
+    let legacy_home = scratch.path().join("legacy-home");
+    let default_home = process_home.join(".ix");
+    fs::create_dir_all(&process_home).expect("process home exists");
+    install_defaults(&legacy_home);
+    install_defaults(&default_home);
+
+    let empty_config_root = invoke(
+        Some(""),
+        Some(&legacy_home),
+        &process_home,
+        &["module", "list"],
+    );
+    assert_module_count(&empty_config_root, 10, "IX_HOME after empty IX_CONFIG_ROOT");
+
+    let unset_config_root = invoke(None, Some(&legacy_home), &process_home, &["module", "list"]);
+    assert_module_count(&unset_config_root, 10, "IX_HOME after unset IX_CONFIG_ROOT");
+
+    let default = invoke(None, None, &process_home, &["module", "list"]);
+    assert_module_count(&default, 10, "~/.ix after both overrides are unset");
 }
