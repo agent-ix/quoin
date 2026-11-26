@@ -1179,6 +1179,10 @@ fn snapshot_lists_fr162_carried_and_fixed_anomalies_with_gate_only_on_carried() 
         "",
     );
     let snapshot = repo.snapshot(&repo.run());
+    assert_anomaly_snapshot_projection(&snapshot, &repo);
+}
+
+fn assert_anomaly_snapshot_projection(snapshot: &serde_json::Value, repo: &Repo) {
     let anomalies = snapshot["anomalies"].as_array().unwrap();
     let ids: Vec<&str> = anomalies
         .iter()

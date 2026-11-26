@@ -100,7 +100,7 @@ fn verify(
     };
     let request_json = serde_json::to_value(&request).map_err(|error| error.to_string())?;
     let output = engineering_assurance_call_offline(verifier, "approval-verify", &request_json)?;
-    approved(output, &request)
+    approved(&output, &request)
 }
 
 #[derive(Deserialize)]
@@ -161,7 +161,8 @@ struct Binding {
 struct Signature {
     status: String,
     kind: String,
-    signature_kind: String,
+    #[serde(rename = "signature_kind")]
+    algorithm: String,
     signer: Signer,
     #[serde(rename = "verified_commit_id")]
     _verified_commit_id: Option<IgnoredAny>,
@@ -179,7 +180,7 @@ struct Signer {
     principal: String,
 }
 
-fn approved(output: Output, request: &Request<'_>) -> Result<SignedAcceptance, String> {
+fn approved(output: &Output, request: &Request<'_>) -> Result<SignedAcceptance, String> {
     let summary: Value = serde_json::from_slice(&output.stdout).unwrap_or(Value::Null);
     if !output.status.success() {
         let message = summary
@@ -234,7 +235,7 @@ impl Approved {
         let signer = self.signature.signer;
         if self.signature.status != "signed_valid"
             || self.signature.kind != "tag"
-            || self.signature.signature_kind != "ssh"
+            || self.signature.algorithm != "ssh"
             || self.signature_kind != "ssh"
             || signer.source != "allowed_signers"
             || signer.mapping != "mapped"

@@ -277,30 +277,37 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
         return Ok(case);
     }
     if exports_gsn_model(arguments) {
-        let assurance: quoin_assurance::AssuranceCase =
-            serde_json::from_value(case.payload.clone()).map_err(|error| {
-                format!("assurance.build_case returned an invalid case: {error}")
-            })?;
-        let validation_report = arguments
-            .get_one::<String>("validation-report")
-            .map(|path| json_file(path, "TVK validation report"))
-            .transpose()?;
-        let run_records = field(&store.payload, "runs")?
-            .as_array()
-            .cloned()
-            .unwrap_or_default();
-        let model = quoin_assurance::gsn::from_case_with_validation_report(
-            &assurance,
-            &run_records,
-            validation_report.as_ref(),
-        )?;
-        return render_case_export(model, Path::new(&repo), arguments);
+        return export_derived_case(&case, &store, &repo, arguments);
     }
     present(
         "assurance.render_case",
         &case.payload,
         arguments.get_flag("json"),
     )
+}
+
+fn export_derived_case(
+    case: &Response,
+    store: &Response,
+    repo: &str,
+    arguments: &ArgMatches,
+) -> Result<Response, String> {
+    let assurance: quoin_assurance::AssuranceCase = serde_json::from_value(case.payload.clone())
+        .map_err(|error| format!("assurance.build_case returned an invalid case: {error}"))?;
+    let validation_report = arguments
+        .get_one::<String>("validation-report")
+        .map(|path| json_file(path, "TVK validation report"))
+        .transpose()?;
+    let run_records = field(&store.payload, "runs")?
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let model = quoin_assurance::gsn::from_case_with_validation_report(
+        &assurance,
+        &run_records,
+        validation_report.as_ref(),
+    )?;
+    render_case_export(model, Path::new(repo), arguments)
 }
 
 fn exports_gsn_model(arguments: &ArgMatches) -> bool {
@@ -325,10 +332,15 @@ fn render_case_export(
         render_gsn_response(&model, arguments.get_flag("gsn-diagram"))?
     };
     if let Some(warning) = approval_warning {
-        response.payload["warning"] = match response.payload["warning"].as_str() {
+        let object = response
+            .payload
+            .as_object_mut()
+            .ok_or_else(|| "case export response payload must be an object".to_owned())?;
+        let warning = match object.get("warning").and_then(serde_json::Value::as_str) {
             Some(existing) => format!("{existing}\n{warning}").into(),
             None => warning.into(),
         };
+        object.insert("warning".to_owned(), warning);
     }
     Ok(response)
 }
@@ -422,7 +434,7 @@ mod gsn_refusal_tests {
             let mut stdout = Vec::new();
             let mut stderr = Vec::new();
             let exit =
-                crate::emit_error_to(crate::ShellError::command(error), &mut stdout, &mut stderr);
+                crate::emit_error_to(&crate::ShellError::command(error), &mut stdout, &mut stderr);
             assert_ne!(exit, std::process::ExitCode::SUCCESS);
             assert!(stdout.is_empty());
             let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");
@@ -455,7 +467,7 @@ mod gsn_refusal_tests {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
         let exit =
-            crate::emit_error_to(crate::ShellError::command(error), &mut stdout, &mut stderr);
+            crate::emit_error_to(&crate::ShellError::command(error), &mut stdout, &mut stderr);
         assert_ne!(exit, std::process::ExitCode::SUCCESS);
         assert!(stdout.is_empty());
         assert!(!report_path.exists());
@@ -490,10 +502,14 @@ mod gsn_refusal_tests {
         let response = render_sacm_response(&model, repo.path(), Some(&report_path))
             .expect("valid model exports");
         assert_eq!(
-            response.payload["warning"],
+            response.payload.get("warning").expect("warning field"),
             "unmapped: unmapped-source: no defined mapping\nunreachable: FR-260\nunreachable: FR-270"
         );
-        let xmi = response.payload["rendered"].as_str().expect("rendered XMI");
+        let xmi = response
+            .payload
+            .get("rendered")
+            .and_then(serde_json::Value::as_str)
+            .expect("rendered XMI");
         assert!(
             !xmi.contains("unmapped-source") && !xmi.contains("FR-260") && !xmi.contains("FR-270")
         );
@@ -548,7 +564,7 @@ mod gsn_refusal_tests {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
         let exit =
-            crate::emit_error_to(crate::ShellError::command(error), &mut stdout, &mut stderr);
+            crate::emit_error_to(&crate::ShellError::command(error), &mut stdout, &mut stderr);
         assert_ne!(exit, std::process::ExitCode::SUCCESS);
         assert!(stdout.is_empty());
         let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");

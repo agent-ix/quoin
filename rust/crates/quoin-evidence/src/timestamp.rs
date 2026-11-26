@@ -11,18 +11,19 @@ pub type TimestampKey = (u16, u8, u8, u8, u8, u8, u16);
 /// Years are 0001–9999, seconds are 00–59, and a fraction is exactly three
 /// ASCII millisecond digits. The tuple compares by instant for every accepted
 /// value.
+#[must_use]
 pub fn parse_timestamp(value: &str) -> Option<TimestampKey> {
     let bytes = value.as_bytes();
     if bytes.len() != 20 && bytes.len() != 24 {
         return None;
     }
-    if bytes[4] != b'-'
-        || bytes[7] != b'-'
-        || bytes[10] != b'T'
-        || bytes[13] != b':'
-        || bytes[16] != b':'
-        || (bytes.len() == 20 && bytes[19] != b'Z')
-        || (bytes.len() == 24 && (bytes[19] != b'.' || bytes[23] != b'Z'))
+    if bytes.get(4) != Some(&b'-')
+        || bytes.get(7) != Some(&b'-')
+        || bytes.get(10) != Some(&b'T')
+        || bytes.get(13) != Some(&b':')
+        || bytes.get(16) != Some(&b':')
+        || (bytes.len() == 20 && bytes.get(19) != Some(&b'Z'))
+        || (bytes.len() == 24 && (bytes.get(19) != Some(&b'.') || bytes.get(23) != Some(&b'Z')))
     {
         return None;
     }

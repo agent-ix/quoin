@@ -140,40 +140,6 @@ pub(super) fn copy_dir(from: &Path, to: &Path) -> Result<(), ModulesError> {
     Ok(())
 }
 
-#[cfg(test)]
-#[allow(
-    clippy::expect_used,
-    clippy::panic,
-    reason = "test assertions report the violated filesystem contract"
-)]
-mod tests {
-    use ix_trace_rs::trace;
-    use tempfile::tempdir;
-
-    use super::{MATERIALIZED_MARKER, materialize};
-
-    #[trace("FR-099-AC-11")]
-    #[test]
-    fn tc_1915_failed_materialization_does_not_publish_completion_marker() {
-        let scratch = tempdir().expect("scratch directory is created");
-        let missing_source = scratch.path().join("missing-source");
-        let target = scratch.path().join("modules/module");
-
-        let error = materialize(&missing_source, &target)
-            .expect_err("an unreadable source tree cannot be materialized");
-
-        assert!(matches!(
-            error,
-            crate::error::ModulesError::MaterializeFailed { .. }
-        ));
-        assert!(!target.exists(), "a failed copy leaves no target root");
-        assert!(
-            !target.join(MATERIALIZED_MARKER).exists(),
-            "an incomplete target has no completion marker"
-        );
-    }
-}
-
 /// An RFC 3339 timestamp for the install record.
 ///
 /// Hand-rolled rather than pulling in a date crate: the registry only needs a
@@ -212,4 +178,43 @@ pub(super) fn civil_from_days(z: i64) -> (i64, u32, u32) {
         u32::try_from(m).unwrap_or(1),
         u32::try_from(d).unwrap_or(1),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use ix_trace_rs::trace;
+    use tempfile::tempdir;
+
+    use super::{MATERIALIZED_MARKER, materialize};
+
+    #[trace("FR-099-AC-11")]
+    #[test]
+    fn tc_1915_failed_materialization_does_not_publish_completion_marker() {
+        let scratch_result = tempdir();
+        assert!(scratch_result.is_ok(), "scratch directory is created");
+        let Some(scratch) = scratch_result.ok() else {
+            return;
+        };
+        let missing_source = scratch.path().join("missing-source");
+        let target = scratch.path().join("modules/module");
+
+        let materialized = materialize(&missing_source, &target);
+        assert!(
+            materialized.is_err(),
+            "an unreadable source tree cannot be materialized"
+        );
+        let Some(error) = materialized.err() else {
+            return;
+        };
+
+        assert!(matches!(
+            error,
+            crate::error::ModulesError::MaterializeFailed { .. }
+        ));
+        assert!(!target.exists(), "a failed copy leaves no target root");
+        assert!(
+            !target.join(MATERIALIZED_MARKER).exists(),
+            "an incomplete target has no completion marker"
+        );
+    }
 }

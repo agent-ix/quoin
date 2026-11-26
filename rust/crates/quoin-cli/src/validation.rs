@@ -68,8 +68,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let ratings = matches;
     let repo = ratings
         .get_one::<String>("repo")
-        .map(String::as_str)
-        .unwrap_or(".");
+        .map_or(".", String::as_str);
     let bundle = Path::new(repo).join("spec");
     if !bundle.is_dir() {
         return Err(format!(

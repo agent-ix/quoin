@@ -70,6 +70,14 @@ fn tc_fr034_gc_keeps_the_newest_scan_by_timestamp() {
     );
     let scans = latest_scans(&store, &mut Vec::new()).unwrap();
     assert_eq!(scans.len(), 1);
-    assert_eq!(scans[0].timestamp, "2026-11-25T00:00:00Z");
-    assert_eq!(scans[0].findings[0].rule_id, "NEWEST");
+    let newest = scans.first().expect("one retained scan");
+    assert_eq!(newest.timestamp, "2026-11-25T00:00:00Z");
+    assert_eq!(
+        newest
+            .findings
+            .first()
+            .expect("one retained finding")
+            .rule_id,
+        "NEWEST"
+    );
 }

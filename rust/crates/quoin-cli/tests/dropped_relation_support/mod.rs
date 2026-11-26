@@ -3,7 +3,7 @@
 
 //! Shared CLI fixture for a valid required relation beside a dropped relation.
 
-pub(crate) const MODULE: &str = r##"name: quoin-cli-dropped-relation-fixture
+pub(crate) const MODULE: &str = r"name: quoin-cli-dropped-relation-fixture
 version: 0.1.0
 artifact_types:
   - name: Requirement
@@ -39,6 +39,6 @@ traceability:
       check: connection-without-classification
       record_keys: [regulatedCategories]
   design_relations: [requirement-has-design]
-"##;
+";
 
 pub(crate) const SPEC: &str = "---\nid: FR-001\ntype: Requirement\ntitle: Requirement\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|----|----------|--------------|\n| FR-001-AC-1 | The requirement has a design entry. | Test (TC-001) |\n";

@@ -9,6 +9,8 @@
 //! static axis is gated by `quire matrix --strict` and the evidence axis by
 //! `quoin evidence audit --strict`.
 
+use std::collections::BTreeMap;
+
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_trace_rs::implements;
 use quoin_core::protocol::{Response, canonical_json};
@@ -175,7 +177,7 @@ pub(crate) fn build(
         quoin_core::protocol::Diagnostic {
             code: "design-matrix-partial".to_owned(),
             message: format!("quire-rs dropped a design relation while retaining valid matrix entries: {error}"),
-            context: Default::default(),
+            context: BTreeMap::default(),
         }
     }));
     Ok(Built::Matrix(MatrixBuilt {

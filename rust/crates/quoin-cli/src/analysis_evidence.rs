@@ -490,8 +490,8 @@ fn fresh_formal_rule_status(
     let matches = crate::formal_rules::command()
         .try_get_matches_from(argv)
         .ok()?;
-    let (_, args) = matches.subcommand()?;
-    crate::formal_rules::status_report_with_modules(args, module_paths).ok()
+    let (_, status_arguments) = matches.subcommand()?;
+    crate::formal_rules::status_report_with_modules(status_arguments, module_paths).ok()
 }
 
 fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObservations {
@@ -802,10 +802,15 @@ mod tests {
         path
     }
 
+    struct FormalRuleStatusFixture {
+        repo: tempfile::TempDir,
+        verifier: SignatureVerifier,
+        verifier_marker: std::path::PathBuf,
+        obligation: Obligation,
+    }
+
     #[cfg(unix)]
-    #[trace("FR-184-AC-25")]
-    #[test]
-    fn the_host_refreshes_formal_rule_status_and_fails_closed_when_verification_is_unavailable() {
+    fn formal_rule_status_fixture() -> FormalRuleStatusFixture {
         let repo = tempfile::tempdir().expect("temporary repository");
         fs::write(
             repo.path().join("manifest.yaml"),
@@ -864,15 +869,6 @@ mod tests {
             allowed_signers: allowed_signers.clone(),
             gitsign: None,
         };
-        let repo_path = repo.path().to_str().expect("repository path");
-        let observation = |run_kind: &str| {
-            serde_json::from_value(serde_json::json!({
-                "protocol": "quoin.analysis-run-observation/v1",
-                "record": RUN,
-                "run_kind": run_kind,
-            }))
-            .expect("run observation")
-        };
         let obligation = Obligation {
             id: "FR-001-AC-1".to_owned(),
             identity: None,
@@ -883,37 +879,81 @@ mod tests {
             criticality: None,
             parameters: None,
         };
+        FormalRuleStatusFixture {
+            repo,
+            verifier,
+            verifier_marker,
+            obligation,
+        }
+    }
+
+    #[cfg(unix)]
+    fn formal_rule_observation(run_kind: &str) -> RunObservationFile {
+        serde_json::from_value(serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": RUN,
+            "run_kind": run_kind,
+        }))
+        .expect("run observation")
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-184-AC-25")]
+    #[test]
+    fn the_host_refreshes_formal_rule_status_and_fails_closed_when_verification_is_unavailable() {
+        let fixture = formal_rule_status_fixture();
+        let repo_path = fixture.repo.path().to_str().expect("repository path");
+        let verifier_marker = fixture.verifier_marker.clone();
         let audit_inputs = serde_json::json!({"injections": null, "mock_inspection_suites": null});
         let formal_request = request(
             repo_path,
             &[],
             &audit_inputs,
-            std::slice::from_ref(&obligation),
-            &[observation("formal_rule")],
-            Some(&verifier),
+            std::slice::from_ref(&fixture.obligation),
+            &[formal_rule_observation("formal_rule")],
+            Some(&fixture.verifier),
         )
         .expect("production request succeeds with a controlled verifier");
         assert!(
             verifier_marker.is_file(),
             "formal_rule request invokes the verifier"
         );
-        let refreshed = formal_request.runs[0]
+        let refreshed = &formal_request
+            .runs
+            .first()
+            .expect("formal run")
             .observation
             .current_formal_rule_status
             .as_ref()
             .expect("request attached freshly derived status");
-        assert_eq!(refreshed["protocol"], "quoin.formal-rule-status/v1");
-        assert_eq!(refreshed["rules"][0]["state"], "draft");
-        assert_eq!(refreshed["rules"][0]["reason"], "approval_unverifiable");
+        assert_eq!(
+            refreshed
+                .get("protocol")
+                .and_then(serde_json::Value::as_str),
+            Some("quoin.formal-rule-status/v1")
+        );
+        let rule = refreshed
+            .get("rules")
+            .and_then(serde_json::Value::as_array)
+            .and_then(|rules| rules.first())
+            .expect("one refreshed rule");
+        assert_eq!(
+            rule.get("state").and_then(serde_json::Value::as_str),
+            Some("draft")
+        );
+        assert_eq!(
+            rule.get("reason").and_then(serde_json::Value::as_str),
+            Some("approval_unverifiable")
+        );
 
         fs::remove_file(&verifier_marker).expect("reset verifier marker");
         let analysis_request = request(
             repo_path,
             &[],
             &audit_inputs,
-            std::slice::from_ref(&obligation),
-            &[observation("analysis")],
-            Some(&verifier),
+            std::slice::from_ref(&fixture.obligation),
+            &[formal_rule_observation("analysis")],
+            Some(&fixture.verifier),
         )
         .expect("ordinary analysis request");
         assert!(
@@ -921,28 +961,34 @@ mod tests {
             "ordinary analysis does not require status refresh"
         );
         assert!(
-            analysis_request.runs[0]
+            analysis_request
+                .runs
+                .first()
+                .expect("analysis run")
                 .observation
                 .current_formal_rule_status
                 .is_none()
         );
 
         let unavailable = SignatureVerifier {
-            executable: executable(repo.path(), "unavailable-ea", "exit 9"),
-            allowed_signers,
+            executable: executable(fixture.repo.path(), "unavailable-ea", "exit 9"),
+            allowed_signers: fixture.verifier.allowed_signers.clone(),
             gitsign: None,
         };
         let unavailable_request = request(
             repo_path,
             &[],
             &audit_inputs,
-            std::slice::from_ref(&obligation),
-            &[observation("formal_rule")],
+            std::slice::from_ref(&fixture.obligation),
+            &[formal_rule_observation("formal_rule")],
             Some(&unavailable),
         )
         .expect("unavailable current verifier leaves request unevaluated");
         assert!(
-            unavailable_request.runs[0]
+            unavailable_request
+                .runs
+                .first()
+                .expect("unavailable run")
                 .observation
                 .current_formal_rule_status
                 .is_none()
@@ -985,9 +1031,9 @@ mod tests {
         fs::write(&path, [b'{', 0xff, b'}']).expect("invalid UTF-8 record bytes");
 
         let result = RunSnapshot::read(&DiskEvidence::new(repo.path()), RUN.to_owned());
-        let Err(error) = result else {
-            panic!("invalid UTF-8 evidence was silently dropped");
-        };
+        let error = result
+            .err()
+            .expect("invalid UTF-8 evidence must not be dropped");
         assert!(error.contains("unreadable"), "{error}");
     }
 
@@ -1002,9 +1048,9 @@ mod tests {
         fs::remove_file(path).expect("record disappeared after listing");
 
         let result = RunSnapshot::read(&source, RUN.to_owned());
-        let Err(error) = result else {
-            panic!("missing retained evidence was silently dropped");
-        };
+        let error = result
+            .err()
+            .expect("missing retained evidence must not be dropped");
         assert!(error.contains("disappeared"), "{error}");
     }
 

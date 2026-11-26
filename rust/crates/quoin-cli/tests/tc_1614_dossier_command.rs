@@ -29,6 +29,10 @@ use serde_json::Value;
 
 mod dropped_relation_support;
 
+const APPROVAL_SCOPE: &str = "Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.";
+const VERIFIER_IDENTITY: &str =
+    "Verifier identity: not provided as a distinct field by the source approval contracts.";
+
 fn quoin(work: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .arg("dossier")
@@ -511,17 +515,7 @@ fn records_of_processing_needs_no_version_and_exports_only_with_release() {
     fs::create_dir(&module).unwrap();
     fs::write(module.join("manifest.yaml"), "name: dossier-empty-flow\n").unwrap();
     let module_path = module.to_str().unwrap();
-    for args in [
-        &["generate", "--doc", "stub-a"][..],
-        &["check", "--doc", "stub-a"][..],
-        &[
-            "export", "--doc", "stub-a", "--to", "pdf", "--output", "out.pdf",
-        ][..],
-    ] {
-        let output = quoin(work.path(), args);
-        assert_eq!(code(&output), 2, "{args:?}: {}", stderr(&output));
-        assert_eq!(names(work.path()), ["spec"], "{args:?}");
-    }
+    assert_stub_actions_need_version(work.path());
 
     init_temp_git(work.path());
     let generated = quoin(
@@ -618,6 +612,20 @@ fn records_of_processing_needs_no_version_and_exports_only_with_release() {
     let args = recorded_args(work.path());
     assert!(args.windows(2).any(|pair| pair == ["--release", "v1"]));
     assert!(!args.iter().any(|arg| arg == "--version"));
+}
+
+fn assert_stub_actions_need_version(work: &Path) {
+    for args in [
+        &["generate", "--doc", "stub-a"][..],
+        &["check", "--doc", "stub-a"][..],
+        &[
+            "export", "--doc", "stub-a", "--to", "pdf", "--output", "out.pdf",
+        ][..],
+    ] {
+        let output = quoin(work, args);
+        assert_eq!(code(&output), 2, "{args:?}: {}", stderr(&output));
+        assert_eq!(names(work), ["spec"], "{args:?}");
+    }
 }
 
 #[trace("FR-191")]
@@ -982,6 +990,7 @@ fn export_passes_module_roots_to_quire_in_the_supplied_order() {
 #[test]
 fn release_verify_result_is_appended_after_user_approvals_once() {
     let work = tempfile::tempdir().unwrap();
+    let (snapshot, verify, quire) = prepare_release_approval_inputs(work.path());
     let git = |args: &[&str]| {
         let result = Command::new("git")
             .args(args)
@@ -994,32 +1003,6 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
             String::from_utf8_lossy(&result.stderr)
         );
     };
-    git(&["init", "-q"]);
-    git(&["config", "user.name", "Dossier test"]);
-    git(&["config", "user.email", "dossier@example.invalid"]);
-    let snapshot = work.path().join("snapshot.json");
-    fs::write(
-        &snapshot,
-        r#"{"protocol":"quoin.release-snapshot/v1","tool_identity":{"name":"quoin","version":"0.0.0"},"clean_tree_precondition":"not_verified","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"vulnerabilities":[],"anomalies":[],"change_records":[]}"#,
-    )
-    .unwrap();
-    let verify = work.path().join("release-verify.json");
-    fs::write(
-        &verify,
-        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["NestedReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["ReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
-    )
-    .unwrap();
-    for (file, principal, meaning) in [
-        ("approval-one.json", "Rae One", "StandaloneMeaningOne"),
-        ("approval-two.json", "Rae Two", "StandaloneMeaningTwo"),
-    ] {
-        fs::write(
-            work.path().join(file),
-            format!(r#"{{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"{file}","approver":"{principal}","meaning":["{meaning}"],"signed_at":"2026-11-02T03:04:05Z","signature":{{"status":"signed_valid","kind":"tag"}}}}"#),
-        )
-        .unwrap();
-    }
-    let quire = fake_quire(work.path(), 0, "");
     let generated = quoin(
         work.path(),
         &[
@@ -1038,9 +1021,6 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     git(&["add", "dossier/DOS-REL.md"]);
     git(&["commit", "-qm", "release record"]);
     let generated_text = read(&work.path().join("dossier/DOS-REL.md"));
-    const APPROVAL_SCOPE: &str = "Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.";
-    const VERIFIER_IDENTITY: &str =
-        "Verifier identity: not provided as a distinct field by the source approval contracts.";
     let decision_at = generated_text.find("## Decision").unwrap();
     let evidence_at = generated_text.find("## Evidence at release").unwrap();
     let approval_at = generated_text.find(APPROVAL_SCOPE).unwrap();
@@ -1094,6 +1074,48 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     assert!(document.contains(
         "Verifier identity: not provided as a distinct field by the source approval contracts."
     ));
+}
+
+fn prepare_release_approval_inputs(work: &Path) -> (PathBuf, PathBuf, PathBuf) {
+    let git = |args: &[&str]| {
+        let result = Command::new("git")
+            .args(args)
+            .current_dir(work)
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    };
+    git(&["init", "-q"]);
+    git(&["config", "user.name", "Dossier test"]);
+    git(&["config", "user.email", "dossier@example.invalid"]);
+    let snapshot = work.join("snapshot.json");
+    fs::write(
+        &snapshot,
+        r#"{"protocol":"quoin.release-snapshot/v1","tool_identity":{"name":"quoin","version":"0.0.0"},"clean_tree_precondition":"not_verified","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"vulnerabilities":[],"anomalies":[],"change_records":[]}"#,
+    )
+    .unwrap();
+    let verify = work.join("release-verify.json");
+    fs::write(
+        &verify,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["NestedReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["ReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+    )
+    .unwrap();
+    for (file, principal, meaning) in [
+        ("approval-one.json", "Rae One", "StandaloneMeaningOne"),
+        ("approval-two.json", "Rae Two", "StandaloneMeaningTwo"),
+    ] {
+        fs::write(
+            work.join(file),
+            format!(r#"{{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"{file}","approver":"{principal}","meaning":["{meaning}"],"signed_at":"2026-11-02T03:04:05Z","signature":{{"status":"signed_valid","kind":"tag"}}}}"#),
+        )
+        .unwrap();
+    }
+    let quire = fake_quire(work, 0, "");
+    (snapshot, verify, quire)
 }
 
 #[trace("FR-201-AC-3")]
@@ -1248,6 +1270,7 @@ fn release_record_generation_needs_no_git_and_is_repeatable() {
 #[test]
 fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     let work = tempfile::tempdir().unwrap();
+    let (snapshot, verify) = prepare_release_record_export_inputs(work.path());
     let git = |args: &[&str]| {
         let result = Command::new("git")
             .args(args)
@@ -1260,31 +1283,6 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
             String::from_utf8_lossy(&result.stderr)
         );
     };
-    git(&["init", "-q"]);
-    git(&["config", "user.name", "Dossier Test"]);
-    git(&["config", "user.email", "dossier@example.invalid"]);
-    let snapshot = work.path().join("snapshot.json");
-    fs::write(
-        &snapshot,
-        r#"{"protocol":"quoin.release-snapshot/v1","tool_identity":{"name":"quoin","version":"0.0.0"},"clean_tree_precondition":"not_verified","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"vulnerabilities":[],"anomalies":[],"change_records":[]}"#,
-    )
-    .unwrap();
-    let verify = work.path().join("release-verify.json");
-    fs::write(
-        &verify,
-        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["NestedReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["ReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
-    )
-    .unwrap();
-    for (file, principal, meaning) in [
-        ("approval-one.json", "Rae One", "StandaloneMeaningOne"),
-        ("approval-two.json", "Rae Two", "StandaloneMeaningTwo"),
-    ] {
-        fs::write(
-            work.path().join(file),
-            format!(r#"{{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"{file}","approver":"{principal}","meaning":["{meaning}"],"signed_at":"2026-11-02T03:04:05Z","signature":{{"status":"signed_valid","kind":"tag"}}}}"#),
-        )
-        .unwrap();
-    }
     let generated = quoin(
         work.path(),
         &[
@@ -1366,6 +1364,47 @@ fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
         );
         assert!(normalized.contains("Verifier identity"), "{normalized}");
     }
+}
+
+fn prepare_release_record_export_inputs(work: &Path) -> (PathBuf, PathBuf) {
+    let git = |args: &[&str]| {
+        let result = Command::new("git")
+            .args(args)
+            .current_dir(work)
+            .output()
+            .expect("git starts");
+        assert!(
+            result.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    };
+    git(&["init", "-q"]);
+    git(&["config", "user.name", "Dossier Test"]);
+    git(&["config", "user.email", "dossier@example.invalid"]);
+    let snapshot = work.join("snapshot.json");
+    fs::write(
+        &snapshot,
+        r#"{"protocol":"quoin.release-snapshot/v1","tool_identity":{"name":"quoin","version":"0.0.0"},"clean_tree_precondition":"not_verified","as_of":"2026-11-01T00:00:00Z","baseline_commit":"baseline-commit","previous_release":null,"coverage":[],"evidence_freshness":{"bound":0,"stale":0,"suspect":0,"undischarged":0,"no run evidence":0},"open_findings":[],"soup":{"rows":[],"not_assessed":[]},"vulnerabilities":[],"anomalies":[],"change_records":[]}"#,
+    )
+    .unwrap();
+    let verify = work.join("release-verify.json");
+    fs::write(
+        &verify,
+        r#"{"protocol":"engineering-assurance.release-verify-result/v1","status":"released","tag":"v1","reasons":[],"approval":{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"REC-1","trust":{"allowed_signers":"/trust/allowed_signers"},"approver":"Ada Example","meaning":["NestedReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signature":{"status":"signed_valid","kind":"tag"}},"release":{"id":"REL-1","name":"Release one","snapshot_path":"release/snapshot.json"},"baseline":{"name":"Baseline one","commit":"baseline-commit","items":[]},"approver":"Ada Example","meaning":["ReleaseMeaning"],"signed_at":"2026-11-02T03:04:05Z","signed_at_source":"tagger_date","accepted_anomalies":[]}"#,
+    )
+    .unwrap();
+    for (file, principal, meaning) in [
+        ("approval-one.json", "Rae One", "StandaloneMeaningOne"),
+        ("approval-two.json", "Rae Two", "StandaloneMeaningTwo"),
+    ] {
+        fs::write(
+            work.join(file),
+            format!(r#"{{"protocol":"engineering-assurance.approval-verify-result/v1","status":"approved","tag":"v1","record_id":"{file}","approver":"{principal}","meaning":["{meaning}"],"signed_at":"2026-11-02T03:04:05Z","signature":{{"status":"signed_valid","kind":"tag"}}}}"#),
+        )
+        .unwrap();
+    }
+    (snapshot, verify)
 }
 
 #[trace("FR-191-AC-10")]

@@ -371,7 +371,7 @@ impl<'a> Graph<'a> {
             let to = self.node(&edge.to)?;
             match edge.kind.as_str() {
                 "in_context_of" => {
-                    relationships.push(Relationship::new("AssertedContext", &to.id, from, index))
+                    relationships.push(Relationship::new("AssertedContext", &to.id, from, index));
                 }
                 "challenges" if to.kind == "strategy" => {
                     unmapped_edge(

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `quoin soup vex export`: serialize authored SOUP statements as OpenVEX
+//! `quoin soup vex export`: serialize authored SOUP statements as `OpenVEX`
 //! 0.2.0 (FR-216). No scan, advisory or vulnerability lifecycle is read.
 
 use std::collections::BTreeSet;
@@ -29,7 +29,7 @@ struct Metadata {
     role: Option<String>,
 }
 
-/// Run the OpenVEX exporter after Clap has parsed its arguments.
+/// Run the `OpenVEX` exporter after Clap has parsed its arguments.
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
     let repo = PathBuf::from(arg(arguments, "repo").unwrap_or("."));
     let records_dir =
@@ -221,8 +221,8 @@ struct Statement {
     advisory: String,
     status: String,
     justification: Option<String>,
-    impact_statement: Option<String>,
-    action_statement: Option<String>,
+    impact: Option<String>,
+    action: Option<String>,
 }
 
 impl Statement {
@@ -233,8 +233,8 @@ impl Statement {
         statement.insert("products".to_owned(), json!([{"@id": purl}]));
         for (field, value) in [
             ("justification", &self.justification),
-            ("impact_statement", &self.impact_statement),
-            ("action_statement", &self.action_statement),
+            ("impact_statement", &self.impact),
+            ("action_statement", &self.action),
         ] {
             if let Some(value) = value {
                 statement.insert(field.to_owned(), json!(value));
@@ -282,8 +282,8 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
         advisory,
         status,
         justification,
-        impact_statement,
-        action_statement,
+        impact: impact_statement,
+        action: action_statement,
     })
 }
 

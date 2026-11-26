@@ -196,8 +196,7 @@ where
                     skipped.push(path);
                 }
             }
-            Ok(_) => skipped.push(path),
-            Err(EvidenceError::StoreRead { .. }) => skipped.push(path),
+            Ok(_) | Err(EvidenceError::StoreRead { .. }) => skipped.push(path),
             Err(other) => return Err(other),
         }
     }

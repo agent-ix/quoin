@@ -6,7 +6,7 @@
 #![allow(
     clippy::expect_used,
     clippy::unwrap_used,
-    reason = "test assertions report command-contract failures"
+    reason = "test assertions inspect fixed paths in validated JSON fixtures; a missing path is a failed test"
 )]
 
 use ix_trace_rs::trace;
@@ -51,6 +51,10 @@ fn invoke(root: &Path, json: bool) -> std::process::Output {
     command.output().expect("quoin binary runs")
 }
 
+fn json_at<'a>(value: &'a Value, pointer: &str) -> &'a Value {
+    value.pointer(pointer).unwrap_or(&Value::Null)
+}
+
 fn invoke_coverage(root: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .args(["validation", "ratings", "--coverage", "--json", "--repo"])
@@ -93,25 +97,31 @@ fn tc_235_ratings_coverage_reports_ratings_without_reading_selftest_assets() {
     let output = invoke_coverage(scratch.path());
     assert_eq!(output.status.code(), Some(0));
     let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
-    let features = report["features"].as_array().expect("features listed");
+    let features = report
+        .get("features")
+        .and_then(Value::as_array)
+        .expect("features listed");
     let row = |id| {
         features
             .iter()
-            .find(|item| item["feature_id"] == id)
+            .find(|item| item.get("feature_id").and_then(Value::as_str) == Some(id))
             .expect("feature listed")
     };
-    assert_eq!(row("FR-001")["status"], "rated");
-    assert_eq!(row("FR-001")["rating_ids"], serde_json::json!(["RR-1"]));
+    assert_eq!(json_at(row("FR-001"), "/status"), "rated");
     assert_eq!(
-        row("FR-001")["rating_values"][0]["value"],
+        *json_at(row("FR-001"), "/rating_ids"),
+        serde_json::json!(["RR-1"])
+    );
+    assert_eq!(
+        json_at(row("FR-001"), "/rating_values/0/value"),
         "high_process_risk"
     );
-    assert_eq!(row("FR-002")["status"], "rated", "{report}");
-    assert_eq!(row("FR-003")["status"], "unrated");
-    assert!(row("FR-001")["selftest_coverage"].is_null());
-    assert!(row("FR-001")["traced_criteria"].is_null());
-    assert!(report["not_in_selftest"].is_null());
-    assert!(report["invalid_markers"].is_null());
+    assert_eq!(json_at(row("FR-002"), "/status"), "rated", "{report}");
+    assert_eq!(json_at(row("FR-003"), "/status"), "unrated");
+    assert!(json_at(row("FR-001"), "/selftest_coverage").is_null());
+    assert!(json_at(row("FR-001"), "/traced_criteria").is_null());
+    assert!(json_at(&report, "/not_in_selftest").is_null());
+    assert!(json_at(&report, "/invalid_markers").is_null());
 
     write(
         scratch.path(),
@@ -137,18 +147,18 @@ fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
     assert_eq!(output.status.code(), Some(1));
     let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
     assert_eq!(
-        report["unreadable"]
+        json_at(&report, "/unreadable")
             .as_array()
             .expect("diagnostics listed")
             .len(),
         1
     );
     assert_eq!(
-        report["unreadable"][0]["path"],
+        json_at(&report, "/unreadable/0/path"),
         "functional/FR-001-broken.md"
     );
-    assert!(report["unreadable"][0]["reason"].as_str().is_some());
-    assert_eq!(report["features"], serde_json::json!([]));
+    assert!(json_at(&report, "/unreadable/0/reason").as_str().is_some());
+    assert_eq!(*json_at(&report, "/features"), serde_json::json!([]));
 
     let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
     let human_output = command
@@ -222,7 +232,10 @@ fn tc_1636_ratings_reports_each_status_and_is_read_only() {
     assert_eq!(
         features
             .iter()
-            .map(|item| item["feature_id"].as_str().expect("feature ID is string"))
+            .map(|item| item
+                .get("feature_id")
+                .and_then(Value::as_str)
+                .expect("feature ID is string"))
             .collect::<Vec<_>>(),
         ["FR-001", "FR-002", "FR-003"]
     );
@@ -232,15 +245,21 @@ fn tc_1636_ratings_reports_each_status_and_is_read_only() {
             .find(|item| item.get("feature_id").and_then(Value::as_str) == Some(feature))
             .expect("feature state exists")
     };
-    assert_eq!(state("FR-001")["status"], "unrated");
-    assert_eq!(state("FR-001")["rating_ids"], serde_json::json!([]));
-    assert_eq!(state("FR-002")["status"], "rated_more_than_once");
+    assert_eq!(json_at(state("FR-001"), "/status"), "unrated");
     assert_eq!(
-        state("FR-002")["rating_ids"],
+        *json_at(state("FR-001"), "/rating_ids"),
+        serde_json::json!([])
+    );
+    assert_eq!(json_at(state("FR-002"), "/status"), "rated_more_than_once");
+    assert_eq!(
+        *json_at(state("FR-002"), "/rating_ids"),
         serde_json::json!(["RR-1", "RR-2"])
     );
-    assert_eq!(state("FR-003")["status"], "rated");
-    assert_eq!(state("FR-003")["rating_ids"], serde_json::json!(["RR-3"]));
+    assert_eq!(json_at(state("FR-003"), "/status"), "rated");
+    assert_eq!(
+        *json_at(state("FR-003"), "/rating_ids"),
+        serde_json::json!(["RR-3"])
+    );
 
     let mut after = BTreeMap::new();
     snapshot(scratch.path(), scratch.path(), &mut after);
@@ -270,20 +289,20 @@ fn tc_1636_unreadable_input_is_reported_in_json_and_human_output() {
     let json_output = invoke(scratch.path(), true);
     assert_eq!(json_output.status.code(), Some(1));
     let report: Value = serde_json::from_slice(&json_output.stdout).expect("JSON report parses");
-    assert_eq!(report["features"][0]["feature_id"], "FR-001");
-    assert_eq!(report["features"][0]["status"], "unrated");
+    assert_eq!(json_at(&report, "/features/0/feature_id"), "FR-001");
+    assert_eq!(json_at(&report, "/features/0/status"), "unrated");
     assert_eq!(
-        report["unreadable"]
+        json_at(&report, "/unreadable")
             .as_array()
             .expect("diagnostics listed")
             .len(),
         1
     );
     assert_eq!(
-        report["unreadable"][0]["path"],
+        json_at(&report, "/unreadable/0/path"),
         "functional/FR-002-broken.md"
     );
-    assert!(report["unreadable"][0]["reason"].as_str().is_some());
+    assert!(json_at(&report, "/unreadable/0/reason").as_str().is_some());
 
     let human_output = invoke(scratch.path(), false);
     assert_eq!(human_output.status.code(), Some(1));
