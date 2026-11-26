@@ -765,7 +765,7 @@ fn tc_1080_211_the_matrix_carries_the_run_identity_the_store_retains() {
 
 /// Markdown by default, canonical JSON under `--json`, both byte-identical
 /// across two runs.
-#[trace("FR-115-AC-11")]
+#[trace("FR-115-AC-11", "FR-235-AC-5")]
 #[test]
 fn tc_1080_201_renders_markdown_and_canonical_json_deterministically() {
     let fixture = populated();
