@@ -598,7 +598,12 @@ fn is_expected_rmm_compliance_row(line: &str) -> bool {
     )
 }
 
-#[trace("FR-173-AC-1", "NFR-038-AC-1", "NFR-038-AC-3")]
+#[trace(
+    "FR-173-AC-1",
+    "NFR-038-AC-1",
+    "NFR-038-AC-3",
+    "NFR-038-M-1"
+)]
 #[test]
 fn tc_173_an_effective_control_yields_a_direct_fact_with_the_supplied_attestation() {
     let world = World::new(
@@ -641,6 +646,31 @@ fn tc_173_a_clause_without_an_effective_control_yields_no_fact_and_an_open_line(
     let report = err(&output);
     assert!(report.contains("open C1 CTRL-A CTRL-B"), "{report}");
     assert!(report.contains("open C2 CTRL-C CTRL-D"), "{report}");
+}
+
+#[trace("NFR-038-AC-3", "NFR-038-M-3")]
+#[test]
+fn each_mapping_fact_uses_the_effectiveness_from_its_own_control() {
+    let world = World::new(
+        &two_clauses(),
+        &[
+            (
+                "A.md",
+                control("CTRL-A", Some("not_assessed"), &[(SET, "C1")]),
+            ),
+            (
+                "B.md",
+                control("CTRL-B", Some("effective"), &[(SET, "C2")]),
+            ),
+        ],
+    );
+    let facts = parsed(&world.facts());
+    assert_eq!(facts.len(), 1);
+    assert_eq!(facts[0]["clauseId"], "C2");
+    assert!(!out(&world.facts()).contains("effectiveness"));
+    let report = err(&world.facts());
+    assert!(report.contains("open C1 CTRL-A"), "{report}");
+    assert!(!report.contains("open C2"), "{report}");
 }
 
 #[trace("FR-173-AC-3")]
@@ -1008,7 +1038,7 @@ fn assert_scope_exclusion_required_properties(schema_path: &Path, required_field
     }
 }
 
-#[trace("FR-173-AC-5", "NFR-038-AC-1")]
+#[trace("FR-173-AC-5", "NFR-038-AC-1", "NFR-038-M-1")]
 #[test]
 fn tc_173_every_refusal_exits_non_zero_with_empty_stdout_and_names_its_subject() {
     let effective = |id: &str, clause: &str| control(id, Some("effective"), &[(SET, clause)]);
