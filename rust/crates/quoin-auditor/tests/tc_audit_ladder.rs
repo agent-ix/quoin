@@ -352,7 +352,7 @@ fn a_non_test_method_discharged_by_a_test_run_is_flagged() {
 
 /// A criticality demanding two independent methods is satisfied by two suites
 /// and not by two symbols in one, and does not apply below the threshold.
-#[trace("FR-032-AC-7")]
+#[trace("FR-032-AC-7", "FR-032-AC-8")]
 #[test]
 fn two_independent_methods_means_two_suites_not_two_symbols() {
     let build = |criticality: &str, bindings: Vec<Binding>| {
