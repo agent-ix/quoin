@@ -579,6 +579,46 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
             text(&refused)
         );
     }
+    let no_approval_ref = record_output(&env, &env.repo, "gdpr", "1.0.0", &[direct("no-role")]);
+    assert!(
+        no_approval_ref.status.success(),
+        "a generic clause must accept a direct fact without approvalRef: {}",
+        text(&no_approval_ref)
+    );
+    let no_approval_report = json(&env.report(&["--json"]));
+    let no_approval_row = no_approval_report["matrices"][0]["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["clauseId"] == "no-role")
+        .unwrap();
+    assert_eq!(no_approval_row["compliance"], "compliant");
+    let no_approval_binding = env.base.join("no-approval-binding.json");
+    std::fs::write(
+        &no_approval_binding,
+        env.engine_binding("gdpr", "1.0.0", &[]),
+    )
+    .unwrap();
+    let no_approval_direct = json(&discharge_report_with_binding(
+        &env,
+        &env.repo,
+        &no_approval_binding,
+        &[],
+    ));
+    let no_approval_fact = no_approval_direct["binding"]["direct"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|fact| fact["clauseId"] == "no-role")
+        .unwrap();
+    assert!(
+        !no_approval_fact["fact"]
+            .as_object()
+            .unwrap()
+            .contains_key("approvalRef"),
+        "a generic direct fact without an approval reference acquired one: {no_approval_fact}"
+    );
+
     let generic_approval_ref = "person://example.invalid/people/generic-reviewer";
     let mut generic_fact = direct("no-role");
     generic_fact["approvalRef"] = serde_json::json!(generic_approval_ref);
