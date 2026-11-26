@@ -34,6 +34,9 @@ coverage, evidence completeness, and authored risk ratings.
 - The external-tools configuration index reference, when applicable
 - The Engineering Assurance `producer-execute` result and retained artifacts,
   when that command executed a suite process
+- The required sibling checkouts `agent-ix/spec-objects-safety` and
+  `agent-ix/spec-objects-security` used by the suite
+- The writable temporary directory used by the suite
 
 ## Outputs
 
@@ -60,6 +63,15 @@ coverage, evidence completeness, and authored risk ratings.
 - The report SHALL contain the exact tool version output observed for each
   run, the operating system and architecture, suite identity, run time, and
   each test result and status.
+- For each suite run, the report environment SHALL identify the required
+  sibling checkouts `agent-ix/spec-objects-safety` and
+  `agent-ix/spec-objects-security`. For each checkout, it SHALL record the
+  canonical repository identity, observed commit revision, and resolved
+  absolute checkout path.
+- The report environment SHALL record the resolved path of the temporary
+  directory used by the suite and whether that directory was writable when the
+  suite began, as captured by suite execution. The report generator SHALL NOT
+  infer that value later.
 - For Rust suites that emit JUnit, the normal-suite workflow SHALL use the
   existing evidence path: `cargo nextest` writes JUnit,
   `quoin-suite-trace` adds the source test trace tags, and
@@ -159,6 +171,8 @@ coverage, evidence completeness, and authored risk ratings.
 | FR-217-AC-10 | Given two supplier rating records for one FR with equal rating values, the coverage row preserves both rating IDs and reports `rated_more_than_once`. | Test |
 | FR-217-AC-11 | Given equivalent run records and requirement mappings for two requirements with different risk ratings, the report selects the same tests and computes the same coverage states for both; it displays each rating only as authored metadata. | Test |
 | FR-217-AC-12 | Given a retained test result whose detail records the bounded Engineering Assurance `producer-execute` result and its artifact references, the report preserves that detail, while deriving test-to-requirement coverage only from the test result's trace-linked criteria; artifact details alone do not establish coverage. | Test |
+| FR-217-AC-13 | Given a run environment containing both required sibling checkouts, the report records each canonical repository identity, commit revision, and resolved absolute path, plus the resolved temporary-directory path and its captured writable status. | Test |
+| FR-217-AC-14 | Given either required checkout or the temporary-directory write check is unavailable, the report records the unavailable checkout identity or `writable: false`; it preserves test outcomes and requirement coverage as separate facts. | Test |
 
 ## Dependencies
 
