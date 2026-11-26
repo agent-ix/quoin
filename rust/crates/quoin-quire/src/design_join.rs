@@ -58,6 +58,7 @@ mod tests {
             module: "m".to_owned(),
             kind: DeclarationKind::FlowRule,
             item: "r".to_owned(),
+            required_relation_cause: None,
         }]);
         let error = relation_error(quire_rs::RelationReportError::DeclarationsDropped(dropped));
         assert_eq!(error.code().as_str(), "QQ-1022");

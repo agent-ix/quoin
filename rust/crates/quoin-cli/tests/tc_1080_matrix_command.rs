@@ -1067,7 +1067,13 @@ fn tc_1080_206_help_describes_the_evidence_backed_render() {
 
 /// The matrix loads required-relation record keys through the released Quire
 /// engine, including its relation-specific malformed-value diagnostics.
-#[trace("FR-206-AC-1", "FR-206-AC-2", "FR-206-AC-3", "FR-206-AC-4")]
+#[trace(
+    "FR-206-AC-1",
+    "FR-206-AC-2",
+    "FR-206-AC-3",
+    "FR-206-AC-4",
+    "FR-165-AC-21"
+)]
 #[test]
 fn tc_1080_209_matrix_loads_required_relation_record_keys() {
     let valid = RECORD_KEYS_MODULE.to_owned();
@@ -1105,6 +1111,47 @@ fn tc_1080_209_matrix_loads_required_relation_record_keys() {
         );
         assert!(!String::from_utf8_lossy(&output.stdout).contains("requirements"));
     }
+
+    let undeclared_relation_key = RECORD_KEYS_MODULE.replace(
+        "      record_keys: [classification, privacy]\n",
+        "      record_keys: [notDeclared]\n",
+    );
+    let fixture = record_keys_repository(&undeclared_relation_key);
+    let output = fixture.quoin(&["matrix", "--module", ".", "--json"]);
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "an undeclared endpoint key remains a partial-matrix condition: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let matrix: Value = serde_json::from_slice(&output.stdout).expect("partial matrix is JSON");
+    assert!(
+        matrix["requirements"].is_array(),
+        "valid rows survive: {matrix}"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("connection-carries-classification") && stderr.contains("notDeclared"),
+        "the dropped relation and its missing key are reported: {stderr}"
+    );
+
+    let conflicting_relation = RECORD_KEYS_MODULE.replace(
+        "      record_keys: [classification, privacy]\n",
+        "      record_keys: [classification, privacy]\n    - name: connection-carries-classification\n      from: Connection\n      edges: [classified-as]\n      to: [Classification]\n      direction: outgoing\n      check: conflicting-check\n",
+    );
+    let fixture = record_keys_repository(&conflicting_relation);
+    let output = fixture.quoin(&["matrix", "--module", ".", "--json"]);
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "conflicting required relations remain fatal: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("connection-carries-classification"),
+        "the conflict names its relation: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 
     let unknown = RECORD_KEYS_MODULE.replace(
         "      record_keys: [classification, privacy]\n",
