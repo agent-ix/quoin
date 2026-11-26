@@ -9,8 +9,11 @@ use std::path::Path;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_trace_rs::implements;
-use quoin_completeness::{FeatureRatingState, RatingStatus, read_bundle_frontmatter};
+use quoin_completeness::{
+    BundleDocument, FeatureRatingState, RatingStatus, UnreadableDocument, read_bundle_frontmatter,
+};
 use quoin_core::protocol::Response;
+use serde::Serialize;
 
 /// One build-time embedded validation or anomaly record.
 pub(crate) struct EmbeddedFile {
@@ -84,7 +87,6 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         quoin_completeness::assess_feature_ratings(&parsed.documents, repository_namespace);
     if ratings.get_flag("coverage") {
         return run_coverage(
-            repo,
             repository_namespace,
             &parsed.documents,
             &parsed.unreadable,
@@ -232,140 +234,86 @@ fn status(feature: &FeatureRatingState) -> &'static str {
     }
 }
 
+#[derive(Serialize)]
+struct CoverageRatingValue<'a> {
+    rating_id: &'a str,
+    value: &'a str,
+}
+
+#[derive(Serialize)]
+struct CoverageFeature<'a> {
+    #[serde(flatten)]
+    rating: &'a FeatureRatingState,
+    rating_values: Vec<CoverageRatingValue<'a>>,
+}
+
+#[derive(Serialize)]
+struct CoverageReport<'a> {
+    features: Vec<CoverageFeature<'a>>,
+    unreadable: &'a [UnreadableDocument],
+}
+
 #[implements("FR-235-AC-4")]
 #[implements("FR-235-AC-11")]
 fn run_coverage(
-    repository: &str,
     repository_namespace: &str,
     documents: &[quoin_completeness::BundleDocument],
     unreadable: &[quoin_completeness::UnreadableDocument],
     features: &[FeatureRatingState],
     json: bool,
 ) -> Result<Response, String> {
-    let functional = documents
-        .iter()
-        .filter(|document| string_field(&document.frontmatter, "type") == Some("FR"))
-        .filter_map(|document| {
-            let id = string_field(&document.frontmatter, "id")?.to_owned();
-            let criteria = document
-                .body
-                .split(|character: char| !character.is_ascii_alphanumeric() && character != '-')
-                .filter(|token| token.starts_with(&format!("{id}-AC-")))
-                .map(str::to_owned)
-                .collect::<std::collections::BTreeSet<_>>();
-            Some((id, criteria))
-        })
-        .collect::<std::collections::BTreeMap<_, _>>();
-    let (markers, mut invalid) = read_selftest_markers(Path::new(repository), &functional)?;
-    let mut coverage = Vec::new();
+    let mut coverage = Vec::with_capacity(features.len());
     for feature in features {
-        let mut risk_values = Vec::new();
-        for document in documents {
-            if string_field(&document.frontmatter, "type") != Some("FeatureRiskRating")
-                || string_field(&document.frontmatter, "scope") != Some("supplier")
-                || string_field(&document.frontmatter, "rating").is_none()
-            {
-                continue;
-            }
-            let rates_feature = document
-                .frontmatter
-                .get("relationships")
-                .and_then(serde_json::Value::as_array)
-                .is_some_and(|relations| {
-                    relations.iter().any(|relation| {
-                        relation.get("type").and_then(serde_json::Value::as_str)
-                            == Some("rates_feature")
-                            && relation
-                                .get("target")
-                                .and_then(serde_json::Value::as_str)
-                                .is_some_and(|target| {
-                                    target
-                                        == format!(
-                                            "ix://{repository_namespace}/{}",
-                                            feature.feature_id
-                                        )
-                                })
-                    })
-                });
-            if rates_feature {
-                risk_values.push((
-                    string_field(&document.frontmatter, "id").unwrap_or("unknown"),
-                    string_field(&document.frontmatter, "rating").unwrap_or("unknown"),
-                ));
-            }
-        }
-        let criteria = markers
-            .get(&feature.feature_id)
-            .cloned()
-            .unwrap_or_default();
-        let selftest_coverage = if criteria.is_empty() {
-            "not_in_selftest"
-        } else {
-            "covered"
-        };
-        coverage.push(serde_json::json!({
-            "feature_id": feature.feature_id,
-            "status": feature.status,
-            "rating_ids": feature.rating_ids,
-            "rating_values": risk_values.iter().map(|(id, value)| serde_json::json!({"rating_id": id, "value": value})).collect::<Vec<_>>(),
-            "selftest_coverage": selftest_coverage,
-            "traced_criteria": criteria,
-        }));
+        coverage.push(CoverageFeature {
+            rating: feature,
+            rating_values: rating_values_for_feature(
+                documents,
+                repository_namespace,
+                &feature.feature_id,
+            ),
+        });
     }
-    invalid.sort_by(|left, right| left.to_string().cmp(&right.to_string()));
-    let not_in_selftest = coverage
-        .iter()
-        .filter_map(|row| {
-            (row["selftest_coverage"] == "not_in_selftest").then(|| row["feature_id"].clone())
-        })
-        .collect::<Vec<_>>();
-    let unreadable = unreadable
-        .iter()
-        .map(|document| {
-            serde_json::json!({
-                "path": document.path,
-                "reason": document.reason,
-            })
-        })
-        .collect::<Vec<_>>();
-    let partial = !invalid.is_empty() || !unreadable.is_empty();
-    let payload = serde_json::json!({
-        "features": coverage,
-        "not_in_selftest": not_in_selftest,
-        "invalid_markers": invalid,
-        "unreadable": unreadable,
-    });
+    let report = CoverageReport {
+        features: coverage,
+        unreadable,
+    };
+    let partial = !report.unreadable.is_empty();
     let rendered = if json {
-        serde_json::to_string_pretty(&payload).map_err(|error| error.to_string())?
+        serde_json::to_string_pretty(&report).map_err(|error| error.to_string())?
     } else {
-        let mut lines = coverage
+        let mut lines = report
+            .features
             .iter()
-            .map(|row| {
+            .map(|feature| {
+                let ids = if feature.rating.rating_ids.is_empty() {
+                    "none".to_owned()
+                } else {
+                    feature.rating.rating_ids.join(", ")
+                };
+                let values = feature
+                    .rating_values
+                    .iter()
+                    .map(|rating| format!("{}={}", rating.rating_id, rating.value))
+                    .collect::<Vec<_>>();
                 format!(
-                    "{}: rating={}, selftest={}",
-                    row["feature_id"].as_str().unwrap_or("?"),
-                    row["status"].as_str().unwrap_or("?"),
-                    row["selftest_coverage"].as_str().unwrap_or("?")
+                    "{}: {} (rating IDs: {}; values: {})",
+                    feature.rating.feature_id,
+                    status(feature.rating),
+                    ids,
+                    if values.is_empty() {
+                        "none".to_owned()
+                    } else {
+                        values.join(", ")
+                    }
                 )
             })
             .collect::<Vec<_>>();
         lines.extend(
-            not_in_selftest
+            report
+                .unreadable
                 .iter()
-                .map(|id| format!("not in self-test: {}", id.as_str().unwrap_or("?"))),
+                .map(|document| format!("unreadable: {}: {}", document.path, document.reason)),
         );
-        lines.extend(
-            invalid
-                .iter()
-                .map(|marker| format!("invalid marker: {}", marker)),
-        );
-        lines.extend(unreadable.iter().map(|document| {
-            format!(
-                "unreadable: {}: {}",
-                document["path"].as_str().unwrap_or("?"),
-                document["reason"].as_str().unwrap_or("?")
-            )
-        }));
         lines.join("\n")
     };
     Ok(Response {
@@ -381,82 +329,37 @@ fn run_coverage(
 
 #[implements("FR-235-AC-4")]
 #[implements("FR-235-AC-11")]
-fn read_selftest_markers(
-    repository: &Path,
-    functional: &std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
-) -> Result<
-    (
-        std::collections::BTreeMap<String, Vec<String>>,
-        Vec<serde_json::Value>,
-    ),
-    String,
-> {
-    let mut markers = std::collections::BTreeMap::<String, Vec<String>>::new();
-    let mut invalid = Vec::new();
-    let cases = repository.join("selftest/cases");
-    if !cases.exists() {
-        return Ok((markers, invalid));
-    }
-    let entries =
-        std::fs::read_dir(&cases).map_err(|error| format!("{}: {error}", cases.display()))?;
-    for entry in entries {
-        let entry = entry.map_err(|error| format!("{}: {error}", cases.display()))?;
-        let script = entry.path().join("run.sh");
-        if !script.is_file() {
-            continue;
-        }
-        let source = std::fs::read_to_string(&script)
-            .map_err(|error| format!("{}: {error}", script.display()))?;
-        for (line_index, line) in source.lines().enumerate() {
-            let Some(raw) = line.trim().strip_prefix("# Trace:") else {
-                continue;
-            };
-            let tokens = raw
-                .split(|character: char| {
-                    character.is_whitespace() || character == ',' || character == ';'
-                })
-                .filter(|token| !token.is_empty())
-                .collect::<Vec<_>>();
-            if tokens.is_empty() {
-                invalid.push(serde_json::json!({"path": script.display().to_string(), "line": line_index + 1, "marker": raw, "reason": "empty trace marker"}));
-                continue;
-            }
-            for token in tokens {
-                let parsed = token
-                    .strip_prefix("FR-")
-                    .and_then(|rest| rest.split_once("-AC-"))
-                    .filter(|(feature, criterion)| {
-                        !feature.is_empty()
-                            && feature.chars().all(|character| character.is_ascii_digit())
-                            && !criterion.is_empty()
-                            && criterion
-                                .chars()
-                                .all(|character| character.is_ascii_digit())
-                    });
-                let Some((feature_number, _)) = parsed else {
-                    invalid.push(serde_json::json!({"path": script.display().to_string(), "line": line_index + 1, "marker": token, "reason": "malformed trace marker"}));
-                    continue;
-                };
-                let feature_id = format!("FR-{feature_number}");
-                if !functional
-                    .get(&feature_id)
-                    .is_some_and(|criteria| criteria.contains(token))
-                {
-                    invalid.push(serde_json::json!({"path": script.display().to_string(), "line": line_index + 1, "marker": token, "reason": "unknown feature or acceptance criterion"}));
-                } else {
-                    markers
-                        .entry(feature_id)
-                        .or_default()
-                        .push(token.to_owned());
-                }
-            }
-        }
-    }
-    for criteria in markers.values_mut() {
-        criteria.sort();
-        criteria.dedup();
-    }
-    Ok((markers, invalid))
+fn rating_values_for_feature<'a>(
+    documents: &'a [BundleDocument],
+    repository_namespace: &str,
+    feature_id: &str,
+) -> Vec<CoverageRatingValue<'a>> {
+    let feature_target = format!("ix://{repository_namespace}/{feature_id}");
+    documents
+        .iter()
+        .filter(|document| {
+            string_field(&document.frontmatter, "type") == Some("FeatureRiskRating")
+                && string_field(&document.frontmatter, "scope") == Some("supplier")
+                && document
+                    .frontmatter
+                    .get("relationships")
+                    .and_then(serde_json::Value::as_array)
+                    .is_some_and(|relations| {
+                        relations.iter().any(|relation| {
+                            relation.get("type").and_then(serde_json::Value::as_str)
+                                == Some("rates_feature")
+                                && relation.get("target").and_then(serde_json::Value::as_str)
+                                    == Some(feature_target.as_str())
+                        })
+                    })
+        })
+        .filter_map(|document| {
+            Some(CoverageRatingValue {
+                rating_id: string_field(&document.frontmatter, "id")?,
+                value: string_field(&document.frontmatter, "rating")?,
+            })
+        })
+        .collect()
 }
 
 #[implements("FR-235-AC-4")]
