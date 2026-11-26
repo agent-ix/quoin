@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command as ProcessCommand;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_completeness::{
     BundleDocument, DocumentSource, FeatureRatingState, RatingStatus, assess_feature_ratings,
     frontmatter_from_sources,
@@ -1292,6 +1293,7 @@ fn write_report(directory: &Path, markdown: &str, json_bytes: &[u8]) -> Result<(
     Ok(())
 }
 
+#[implements("FR-218-AC-5")]
 fn verify_signoff(
     executable: &Path,
     allowed_signers: &Path,
@@ -1392,15 +1394,12 @@ fn verify_signoff(
         .collect::<Vec<_>>();
     let principal_matches = !principal.is_empty() && principal == expected_principal;
     let meaning_present = meaning.iter().any(|value| *value == SIGNED_OFF_MEANING);
-    let (result_status, reason) = if status != "signed_valid" {
-        (
-            "not_accepted",
-            Some(if status == "unsigned" {
-                "unsigned"
-            } else {
-                "signature_invalid"
-            }),
-        )
+    let (result_status, reason) = if status == "unsigned" {
+        ("not_accepted", Some("unsigned"))
+    } else if status == "signed_untrusted" && mapping == "unmapped" {
+        ("not_accepted", Some("signer_unmapped"))
+    } else if status != "signed_valid" {
+        ("not_accepted", Some("signature_invalid"))
     } else if mapping != "mapped" {
         ("not_accepted", Some("signer_unmapped"))
     } else if !principal_matches {
@@ -1574,6 +1573,82 @@ mod tests {
         assert_eq!(first.sign_off.name, "");
     }
 
+    #[trace("FR-217-AC-8")]
+    #[test]
+    fn known_anomalies_lists_only_embedded_quire_tool_records() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let mut quire_cli_record = run_input("quire-cli", "pass", "not_high_process_risk", false);
+        quire_cli_record["anomalySet"]["documents"] = json!([
+            {"path":"AN-CLI-001.md", "raw":"---\nid: AN-CLI-001\ntitle: CLI retained finding\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\nseverity: major\n---\n"}
+        ]);
+        let quire_cli = write_run(temp.path(), "quire-cli-anomaly.json", &quire_cli_record);
+        let mut quire_rs_record = run_input("quire-rs", "pass", "not_high_process_risk", false);
+        quire_rs_record["anomalySet"]["documents"] = json!([
+            {"path":"AN-RS-001.md", "raw":"---\nid: AN-RS-001\ntitle: Rust retained finding\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n"}
+        ]);
+        let quire_rs = write_run(temp.path(), "quire-rs-anomaly.json", &quire_rs_record);
+        let report = build_report(&[quire_cli, quire_rs]).expect("report builds");
+        let producer_names = report
+            .known_anomalies
+            .producers
+            .iter()
+            .map(|producer| producer.tool.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(producer_names, ["quire-cli", "quire-rs"]);
+        assert_eq!(
+            report
+                .known_anomalies
+                .anomalies
+                .iter()
+                .map(|row| row.anomaly.as_str())
+                .collect::<Vec<_>>(),
+            ["AN-CLI-001", "AN-RS-001"]
+        );
+
+        let markdown = render_markdown(&report);
+        assert!(markdown.contains("Anomaly set: quire-cli quire-cli 1.0.0 — provided."));
+        assert!(markdown.contains("Anomaly set: quire-rs quire-rs 1.0.0 — provided."));
+        assert!(markdown.contains("CLI retained finding"));
+        assert!(markdown.contains("Rust retained finding"));
+        assert!(!markdown.contains("Anomaly set: quoin"));
+    }
+
+    #[trace("FR-219-AC-1")]
+    #[test]
+    fn report_lists_ea_and_filament_analyze_versions_from_run_records() {
+        let temp = tempfile::tempdir().expect("fixture directory");
+        let engineering_assurance = write_run(
+            temp.path(),
+            "engineering-assurance.json",
+            &run_input(
+                "engineering-assurance",
+                "pass",
+                "not_high_process_risk",
+                false,
+            ),
+        );
+        let filament_analyze = write_run(
+            temp.path(),
+            "filament-analyze.json",
+            &run_input("filament-analyze", "pass", "not_high_process_risk", false),
+        );
+
+        let report =
+            build_report(&[engineering_assurance, filament_analyze]).expect("report builds");
+        let tools = report
+            .tools
+            .iter()
+            .map(|tool| (tool.name.as_str(), tool.version.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            tools,
+            [
+                ("engineering-assurance", "engineering-assurance 1.0.0"),
+                ("filament-analyze", "filament-analyze 1.0.0"),
+            ]
+        );
+    }
+
     #[trace("FR-217-AC-2", "FR-218-AC-2", "FR-218-AC-3")]
     #[test]
     fn incomplete_report_names_uncovered_failed_and_missing_tool_evidence() {
@@ -1637,7 +1712,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-217-AC-5", "FR-217-AC-6", "FR-217-AC-7")]
+    #[trace("FR-217-AC-5", "FR-217-AC-6", "FR-217-AC-7", "FR-219-AC-3")]
     #[test]
     fn known_anomalies_uses_version_matched_retained_fr162_selection() {
         let temp = tempfile::tempdir().expect("fixture directory");
@@ -1649,9 +1724,8 @@ mod tests {
             {"path":"AN-004-wont-fix.md", "raw":"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n"}
         ]);
         let path = write_run(temp.path(), "quoin.json", &run);
-        let report = build_report(&[path])
-            .expect("anomaly selection")
-            .known_anomalies;
+        let validation_report = build_report(&[path]).expect("anomaly selection");
+        let report = &validation_report.known_anomalies;
         assert_eq!(
             report
                 .anomalies
@@ -1667,12 +1741,22 @@ mod tests {
         assert_eq!(report.anomalies[2].safety_impact, "unassessed");
         assert_eq!(report.anomalies[2].severity, "not stated");
         assert_eq!(report.status, "listed");
+        let markdown = render_markdown(&validation_report);
+        assert!(markdown.contains("High risk open (affects high-process-risk feature FR-001)"));
     }
 
-    #[trace("FR-217-AC-6")]
+    #[trace("FR-217-AC-6", "FR-219-AC-2")]
     #[test]
     fn absent_anomaly_set_is_distinct_from_version_matched_empty_set() {
         let temp = tempfile::tempdir().expect("fixture directory");
+        let empty = write_run(
+            temp.path(),
+            "empty.json",
+            &run_input("quoin", "pass", "high_process_risk", false),
+        );
+        let empty_report = build_report(&[empty]).expect("empty set report builds");
+        assert_eq!(empty_report.known_anomalies.status, "none known");
+
         let mut run = run_input("quoin", "pass", "high_process_risk", false);
         run["anomalySet"]["provided"] = json!(false);
         let path = write_run(temp.path(), "absent.json", &run);

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "tool": "quire-cli",
+  "toolVersion": "quire-cli 0.53.0",
+  "os": "linux",
+  "architecture": "x86_64",
+  "suite": "validation-example",
+  "timestamp": "2026-11-25T12:00:00Z",
+  "results": [
+    {
+      "id": "basic-command",
+      "status": "pass",
+      "criteria": ["FR-001-AC-1"],
+      "detail": "The command accepted the input.",
+      "stderr": ""
+    }
+  ],
+  "validationInputs": {
+    "provided": true,
+    "documents": [
+      {
+        "path": "IU-002.md",
+        "raw": "---\nid: IU-002\ntype: IntendedUse\ntool: quire-cli\n---\nPurpose: Inspect Quire CLI output.\n"
+      },
+      {
+        "path": "FRR-002.md",
+        "raw": "---\nid: FRR-002\ntype: FeatureRiskRating\nscope: supplier\nrating: not_high_process_risk\nrated_by: quality\nintended_use: IU-002\nrelationships:\n  - target: ix://agent-ix/quire-cli/FR-001\n    type: rates_feature\n---\n"
+      }
+    ]
+  },
+  "anomalySet": {
+    "provided": true,
+    "producerVersion": "quire-cli 0.53.0",
+    "documents": []
+  },
+  "externalTools": [],
+  "retainedLocation": "spec/evidence/runs/validation-example/quire-cli.json"
+}

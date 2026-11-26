@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "tool": "quoin",
+  "toolVersion": "quoin 0.37.0",
+  "os": "linux",
+  "architecture": "x86_64",
+  "suite": "validation-example",
+  "timestamp": "2026-11-25T12:00:00Z",
+  "results": [
+    {
+      "id": "basic-command",
+      "status": "pass",
+      "criteria": ["FR-001-AC-1"],
+      "detail": "The command accepted the input.",
+      "stderr": ""
+    }
+  ],
+  "validationInputs": {
+    "provided": true,
+    "documents": [
+      {
+        "path": "IU-001.md",
+        "raw": "---\nid: IU-001\ntype: IntendedUse\ntool: quoin\n---\nPurpose: Inspect Quoin output.\n"
+      },
+      {
+        "path": "FRR-001.md",
+        "raw": "---\nid: FRR-001\ntype: FeatureRiskRating\nscope: supplier\nrating: high_process_risk\nrated_by: quality\nintended_use: IU-001\nrelationships:\n  - target: ix://agent-ix/quoin/FR-001\n    type: rates_feature\n---\n"
+      }
+    ]
+  },
+  "anomalySet": {
+    "provided": true,
+    "producerVersion": "quoin 0.37.0",
+    "documents": []
+  },
+  "externalTools": [],
+  "retainedLocation": "spec/evidence/runs/validation-example/quoin.json"
+}
