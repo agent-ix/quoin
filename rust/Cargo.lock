@@ -227,7 +227,7 @@ dependencies = [
 [[package]]
 name = "build-npm-fetch"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=b2678772a02bcba4716073d1d8af2250c224b60b#b2678772a02bcba4716073d1d8af2250c224b60b"
+source = "git+https://github.com/agent-ix/quire-rs?rev=5796c39854aca9a26b8ed0130141dc734988c090#5796c39854aca9a26b8ed0130141dc734988c090"
 
 [[package]]
 name = "bumpalo"
@@ -3105,7 +3105,7 @@ dependencies = [
 [[package]]
 name = "quire-fixtures"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=b2678772a02bcba4716073d1d8af2250c224b60b#b2678772a02bcba4716073d1d8af2250c224b60b"
+source = "git+https://github.com/agent-ix/quire-rs?rev=5796c39854aca9a26b8ed0130141dc734988c090#5796c39854aca9a26b8ed0130141dc734988c090"
 dependencies = [
  "serde_json",
  "spec-objects-safety-fixture",
@@ -4445,7 +4445,7 @@ dependencies = [
 [[package]]
 name = "spec-objects-safety-fixture"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=b2678772a02bcba4716073d1d8af2250c224b60b#b2678772a02bcba4716073d1d8af2250c224b60b"
+source = "git+https://github.com/agent-ix/quire-rs?rev=5796c39854aca9a26b8ed0130141dc734988c090#5796c39854aca9a26b8ed0130141dc734988c090"
 dependencies = [
  "build-npm-fetch",
 ]
