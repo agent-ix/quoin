@@ -216,6 +216,7 @@ pub(super) fn vulnerabilities(
 /// Malformed frontmatter is a vulnerability-record failure only in the
 /// authored vulnerability-record directory. Other malformed repository files
 /// belong to the snapshot's risk-summary refusal, which can name their path.
+#[implements("FR-167-AC-24")]
 fn is_vulnerability_record_path(repo: &Path, path: &Path) -> bool {
     path.strip_prefix(repo)
         .is_ok_and(|relative| relative.starts_with(Path::new("spec/vulnerabilities")))
@@ -223,6 +224,7 @@ fn is_vulnerability_record_path(repo: &Path, path: &Path) -> bool {
 
 /// Preserve the module root when reading vulnerability records fails during
 /// module loading, just as the risk-summary refusal does.
+#[implements("FR-167-AC-24")]
 fn vulnerability_records_refusal(
     modules: &[String],
     roots: &[ModuleRoot],

@@ -2335,7 +2335,7 @@ fn the_unusable_file_is_named_relative_to_repo_whatever_the_repo_spelling() {
     );
 }
 
-#[trace("FR-167-AC-20")]
+#[trace("FR-167-AC-24")]
 #[test]
 fn a_valid_typeless_skill_document_is_not_a_vulnerability_record() {
     let repo = Repo::bare();
