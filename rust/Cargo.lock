@@ -3079,7 +3079,7 @@ dependencies = [
 [[package]]
 name = "quire-code-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=b6beef4df8326fdd4323dfeb803075563ccdc350#b6beef4df8326fdd4323dfeb803075563ccdc350"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.63.1#bd797be83f643a31e3a9c86580a06b4f6dbfa6bb"
 dependencies = [
  "quire-code-parse",
 ]
@@ -3100,15 +3100,15 @@ dependencies = [
 [[package]]
 name = "quire-fixtures"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?tag=v0.61.0#84c3e408c636b183de1ae88c89ad3a00e055cef6"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.63.1#bd797be83f643a31e3a9c86580a06b4f6dbfa6bb"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "quire-rs"
-version = "0.62.3"
-source = "git+https://github.com/agent-ix/quire-rs?rev=b6beef4df8326fdd4323dfeb803075563ccdc350#b6beef4df8326fdd4323dfeb803075563ccdc350"
+version = "0.63.1"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.63.1#bd797be83f643a31e3a9c86580a06b4f6dbfa6bb"
 dependencies = [
  "agent-ix-semantic-schema",
  "globset",

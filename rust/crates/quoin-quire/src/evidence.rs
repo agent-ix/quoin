@@ -256,9 +256,10 @@ pub fn compute(request: &Request) -> Result<Outcome> {
 ///
 /// # Errors
 /// As [`compute`], plus errors in the declared design relations.
+#[implements("FR-165-AC-21")]
 pub fn compute_for_matrix(
     request: &Request,
-) -> Result<(Outcome, Vec<quire_rs::DesignMatrixEntry>)> {
+) -> Result<(Outcome, crate::design_matrix::DesignMatrix)> {
     compute_with(request, |spec, registry, report| {
         crate::design_matrix::for_coverage(request.scope.scope.as_path(), spec, registry, report)
     })

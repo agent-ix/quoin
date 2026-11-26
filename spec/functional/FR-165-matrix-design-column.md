@@ -71,6 +71,9 @@ ordered by requirement id among the others, and appears with empty `criteria` an
 criterion exists in any entry, `reason` is present as FR-115 states and `requirements[]` holds only those
 entries (amending FR-115's empty `requirements`).
 
+The `quire.design_matrix` payload SHALL retain the engine's `entries` as `coverage_matrix` and its
+`errors` as `design_matrix_errors`, including both when valid entries and dropped-relation errors coexist.
+
 ### Gap
 
 A requirement with an `uncovered` block is a design gap, whether or not it has criteria. `quoin matrix`
@@ -128,6 +131,7 @@ blocks of two relations shows two lines, one per `check` token.
 | FR-165-AC-18 | `quire.design_matrix` is in `quoin-core`'s `OPERATIONS` list and dispatched by an exhaustive arm, and `quire.coverage` output is unchanged. | Test |
 | FR-165-AC-19 | A `quire.design_matrix` failure other than an undeclared design relation, such as an oversized request, an engine refusal or a missing quire host, gives the error code and exit code `quire.coverage` gives for the same cause, not `design-matrix-failed`, and `quoin matrix` prints no matrix. | Test |
 | FR-165-AC-20 | Given a `coverage` in which requirement A carries `uncovered` blocks of relations P and Q, requirement B carries no block of P and an `uncovered` block of Q, and requirement C carries only `covered` blocks, `matrix.build` carries every block verbatim, B has no block of P, and markdown shows two `Design gap:` lines under A (one per `check` token), one under B (Q's) and none under C. | Test |
+| FR-165-AC-21 | Given quire-rs returns at least one valid design-matrix entry and at least one dropped-relation error, `quire.design_matrix` returns the valid entries in `coverage_matrix` and preserves the errors in `design_matrix_errors`. | Test |
 
 ## Constraints
 

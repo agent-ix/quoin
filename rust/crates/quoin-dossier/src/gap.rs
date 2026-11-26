@@ -132,12 +132,14 @@ pub enum GapKind {
     TransferSafeguardsUnstated,
     /// A connection or sink has no stated security measure.
     SecurityMeasuresUnstated,
+    /// A declared design relation was dropped while loading its module.
+    DesignRelationDropped,
 }
 
 impl GapKind {
     /// Every kind, in the closed order.
     #[cfg(test)]
-    pub(crate) const ALL: [Self; 57] = [
+    pub(crate) const ALL: [Self; 58] = [
         Self::NoRequirements,
         Self::NoAcceptanceCriteria,
         Self::CriticalityUnassigned,
@@ -195,6 +197,7 @@ impl GapKind {
         Self::TransferRegionUnstated,
         Self::TransferSafeguardsUnstated,
         Self::SecurityMeasuresUnstated,
+        Self::DesignRelationDropped,
     ];
 
     /// The spelling written in the Markdown and the JSON report.
@@ -262,6 +265,7 @@ impl GapKind {
             Self::TransferRegionUnstated => "transfer_region_unstated",
             Self::TransferSafeguardsUnstated => "transfer_safeguards_unstated",
             Self::SecurityMeasuresUnstated => "security_measures_unstated",
+            Self::DesignRelationDropped => "design_relation_dropped",
         }
     }
 
@@ -434,6 +438,17 @@ mod tests {
                 "classified_sink_without_threat",
                 "threat_without_treatment",
                 "no_threat_model",
+                "no_software_description_source",
+                "software_description_field_unstated",
+                "no_documentation_level_decision",
+                "documentation_level_decision_field_unstated",
+                "conflicting_documentation_level_decisions",
+                "no_software_design_source",
+                "software_design_part_list_unstated",
+                "software_design_decision_list_unstated",
+                "source_reference_unresolved",
+                "no_device_description_source",
+                "device_field_unstated",
                 "no_processing_activity",
                 "model_facts_unavailable",
                 "personal_data_categories_unstated",
@@ -441,6 +456,7 @@ mod tests {
                 "transfer_region_unstated",
                 "transfer_safeguards_unstated",
                 "security_measures_unstated",
+                "design_relation_dropped",
             ]
         );
         for (index, kind) in GapKind::ALL.iter().enumerate() {

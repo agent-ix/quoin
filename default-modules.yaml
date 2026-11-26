@@ -15,7 +15,7 @@ entries:
       type: git-subdir
       url: agent-ix/engineering-assurance
       path: engineering_assurance
-      ref: v0.10.1
+      ref: v0.11.0
 
   - name: spec-artifacts-iso
     defaultEnabled: true
@@ -23,7 +23,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
-      ref: v0.27.0
+      ref: v0.28.0
 
   - name: spec-artifacts-app
     defaultEnabled: true
@@ -39,7 +39,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: v0.36.0
+      ref: v0.38.0
 
   - name: spec-objects-business
     defaultEnabled: true
@@ -47,7 +47,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-business
       path: spec_objects_business
-      ref: v0.10.0
+      ref: v0.11.0
 
   - name: spec-objects-architecture
     defaultEnabled: true
@@ -55,7 +55,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-architecture
       path: spec_objects_architecture
-      ref: v0.14.0
+      ref: v0.15.0
 
   - name: spec-objects-enterprise
     defaultEnabled: true
@@ -71,7 +71,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-operational
       path: spec_objects_operational
-      ref: v0.10.0
+      ref: v0.11.0
 
   - name: spec-objects-security
     defaultEnabled: true
@@ -79,7 +79,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-security
       path: spec_objects_security
-      ref: v0.18.0
+      ref: v0.19.0
 
   - name: spec-objects-safety
     defaultEnabled: true
@@ -87,4 +87,4 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-safety
       path: spec_objects_safety
-      ref: v0.8.2
+      ref: v0.9.0

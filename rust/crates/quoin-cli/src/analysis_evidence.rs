@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use clap::ArgMatches;
+use ix_trace_rs::implements;
 use quoin_evidence::EvidenceSource;
 use quoin_evidence::paths::{ANALYSIS_REPORTS_DIR, RUNS_DIR, record_path, suite_dir};
 use quoin_evidence::qualify::{
@@ -98,9 +99,10 @@ pub(crate) fn compute(
     .map_err(|error| Failure::from_quire(&error, "evidence.compute"))
 }
 
-/// Render design rows with the exact native identities used for qualification,
-/// and hand back the retained runs the qualification read, so the matrix reads
-/// run identities from the same records.
+/// Render design rows and preserve dropped-relation errors from the same engine
+/// result, alongside the exact native identities and retained runs used for
+/// qualification.
+#[implements("FR-165-AC-21")]
 pub(crate) fn compute_for_matrix(
     repo: &str,
     module_paths: &[String],
@@ -112,6 +114,7 @@ pub(crate) fn compute_for_matrix(
     (
         quoin_quire::evidence::Outcome,
         serde_json::Value,
+        Vec<serde_json::Value>,
         Vec<RetainedRun>,
     ),
     Failure,
@@ -126,9 +129,15 @@ pub(crate) fn compute_for_matrix(
     )?;
     let (outcome, design) = quoin_quire::evidence::compute_for_matrix(&request)
         .map_err(|error| Failure::from_quire(&error, "evidence.compute_for_matrix"))?;
-    let design = serde_json::to_value(design)
+    let entries = serde_json::to_value(design.entries)
         .map_err(|error| format!("analysis design matrix is malformed: {error}"))?;
-    Ok((outcome, design, request.runs))
+    let errors = design
+        .errors
+        .into_iter()
+        .map(serde_json::to_value)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("analysis design matrix errors are malformed: {error}"))?;
+    Ok((outcome, entries, errors, request.runs))
 }
 
 fn request(

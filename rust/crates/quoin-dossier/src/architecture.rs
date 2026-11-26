@@ -10,6 +10,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
+use ix_trace_rs::implements;
 use quoin_quire::coverage::Request;
 use quoin_quire::records::Document;
 use quoin_quire::systems::Systems;
@@ -34,6 +35,8 @@ impl Generator for ArchitectureGenerator {
         }
     }
 
+    #[implements("FR-193-AC-10")]
+    #[implements("FR-193-AC-11")]
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
         let modules = inputs
             .modules
@@ -61,7 +64,7 @@ impl Generator for ArchitectureGenerator {
                 source: "design_matrix".to_owned(),
                 detail: format!("failed to compute design matrix: {error}"),
             })?;
-        let Ok(Value::Array(entries)) = serde_json::to_value(&outcome.design_matrix) else {
+        let Ok(Value::Array(entries)) = serde_json::to_value(&outcome.design_matrix.entries) else {
             return Err(SourceFailure {
                 source: "design_matrix".to_owned(),
                 detail: "the design matrix did not serialize to a list".to_owned(),
@@ -89,7 +92,12 @@ impl Generator for ArchitectureGenerator {
             .filter(|doc| doc.kind == "ADR")
             .collect();
 
-        Ok(render(&entries, &systems, &adrs))
+        Ok(render_with_errors(
+            &entries,
+            &systems,
+            &adrs,
+            &outcome.design_matrix.errors,
+        ))
     }
 }
 
@@ -102,16 +110,36 @@ struct Part {
 
 /// The architecture document over the design-matrix `entries` (as JSON), the
 /// systems records and the ADRs.
+#[cfg(test)]
 fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated {
+    render_with_errors(entries, systems, adrs, &[])
+}
+
+#[implements("FR-193-AC-10")]
+#[implements("FR-193-AC-11")]
+fn render_with_errors(
+    entries: &[Value],
+    systems: &Systems,
+    adrs: &[&Document],
+    design_errors: &[quoin_quire::design_matrix::DroppedRelation],
+) -> Generated {
     let mut gaps = Vec::new();
-    let relations_declared = entries
-        .iter()
-        .any(|entry| entry.get("design").is_some_and(Value::is_array));
+    let relations_declared = !design_errors.is_empty()
+        || entries
+            .iter()
+            .any(|entry| entry.get("design").is_some_and(Value::is_array));
     if !relations_declared {
         gaps.push(Gap::new(
             GapKind::DesignRelationsUnavailable,
             "design_relations",
             "the loaded modules declare no design_relations, so no requirement can be joined to a design element",
+        ));
+    }
+    for error in design_errors {
+        gaps.push(Gap::new(
+            GapKind::DesignRelationDropped,
+            &error.module,
+            format!("relation `{}` was dropped: {}", error.item, error.reason),
         ));
     }
 
@@ -720,6 +748,77 @@ mod tests {
                 .gaps
                 .iter()
                 .all(|gap| !gap.detail.contains("no realizing"))
+        );
+    }
+
+    #[trace("FR-193-AC-10")]
+    #[test]
+    fn dropped_relation_is_reported_while_valid_design_entries_remain() {
+        let errors = [
+            quoin_quire::design_matrix::DroppedRelation {
+                module: "modules/architecture".to_owned(),
+                item: "implements".to_owned(),
+                reason: "relation evaluation failed".to_owned(),
+            },
+            quoin_quire::design_matrix::DroppedRelation {
+                module: "modules/architecture".to_owned(),
+                item: "satisfies".to_owned(),
+                reason: "relation dependency missing".to_owned(),
+            },
+        ];
+        let generated = render_with_errors(
+            &[covered("FR-1", &["PART-A"])],
+            &Systems::default(),
+            &[],
+            &errors,
+        );
+
+        assert!(generated.body.contains("PART-A"));
+        assert_eq!(
+            kinds(&generated),
+            vec![
+                ("design_relation_dropped", "modules/architecture".to_owned()),
+                ("design_relation_dropped", "modules/architecture".to_owned()),
+            ]
+        );
+        assert!(generated.gaps[0].detail.contains("implements"));
+        assert!(
+            generated.gaps[0]
+                .detail
+                .contains("relation evaluation failed")
+        );
+        assert!(generated.gaps[1].detail.contains("satisfies"));
+        assert!(
+            generated.gaps[1]
+                .detail
+                .contains("relation dependency missing")
+        );
+    }
+
+    #[trace("FR-193-AC-11")]
+    #[test]
+    fn dropped_relations_do_not_masquerade_as_no_declared_relations() {
+        let error = quoin_quire::design_matrix::DroppedRelation {
+            module: "modules/architecture".to_owned(),
+            item: "implements".to_owned(),
+            reason: "relation evaluation failed".to_owned(),
+        };
+        let generated = render_with_errors(
+            &[json!({ "document": "FR-1.md", "criteria": [] })],
+            &Systems::default(),
+            &[],
+            &[error],
+        );
+
+        assert_eq!(
+            kinds(&generated),
+            vec![("design_relation_dropped", "modules/architecture".to_owned())]
+        );
+        assert!(
+            !generated
+                .gaps
+                .iter()
+                .any(|gap| gap.gap_kind == GapKind::DesignRelationsUnavailable)
         );
     }
 

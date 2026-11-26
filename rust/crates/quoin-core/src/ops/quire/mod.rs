@@ -59,6 +59,7 @@ mod tests;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+use ix_trace_rs::implements;
 use quoin_auditor::advise::PropertyShape;
 use quoin_quire_types::{
     CoverageDiagnostic, CoverageMatrixBinder, CoverageMatrixCriterion, CoverageMatrixRequirement,
@@ -136,6 +137,7 @@ pub fn coverage(
 /// # Errors
 /// The same request and host errors as [`coverage`], plus an undeclared design
 /// relation, which is identified by the `design-matrix-failed` reason.
+#[implements("FR-165-AC-21")]
 pub fn design_matrix(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,
@@ -163,6 +165,14 @@ pub fn design_matrix(
         })?;
     let coverage_matrix = outcome
         .design_matrix
+        .entries
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| CoreError::new(CoreErrorCode::Io, error.to_string()))?;
+    let design_matrix_errors = outcome
+        .design_matrix
+        .errors
         .iter()
         .map(serde_json::to_value)
         .collect::<Result<Vec<_>, _>>()
@@ -171,6 +181,7 @@ pub fn design_matrix(
         obligations: outcome.report.obligations.iter().map(obligation).collect(),
         diagnostics: outcome.report.diagnostics.iter().map(diagnostic).collect(),
         coverage_matrix,
+        design_matrix_errors,
         carried_vocabulary: outcome.report.carried_vocabulary,
     })
 }
