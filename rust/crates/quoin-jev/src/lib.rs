@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The criterion-strength lens's Jev (`typesafe.ai` System One) client wiring
 //! (PLAT-837).
 //!

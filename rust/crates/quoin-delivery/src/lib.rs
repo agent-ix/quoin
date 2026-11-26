@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! Native release delivery for the `quoin` executable.
 //!
 //! The crate owns the untrusted release-manifest, archive and filesystem

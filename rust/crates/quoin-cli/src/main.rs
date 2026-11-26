@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The first Rust-owned `quoin` command slice (FR-062, FR-102).
 //!
 //! This binary owns syntax and rendering only. The graph analysis remains in

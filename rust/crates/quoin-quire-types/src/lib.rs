@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! Deserialize-only readers for quire's wire formats (quoin#384).
 //!
 //! # This crate defines nothing

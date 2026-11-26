@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The installed specification-module catalog (quoin#373, Stage 8).
 //!
 //! This crate owns the projection from module manifests to the artifact/object
