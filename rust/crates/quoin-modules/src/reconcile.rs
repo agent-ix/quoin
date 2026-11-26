@@ -11,6 +11,7 @@
 //! `stat` calls.
 
 use crate::error::ModulesError;
+use crate::git::COMPLETE_MARKER;
 use crate::ids::ModuleName;
 use crate::install::ModuleInstaller;
 use crate::manifest::MarketplaceManifest;
@@ -71,8 +72,11 @@ pub fn reconcile(
         let existing = registry.find(&entry.name);
         let target = entry.name.dir_under(&installer.paths().target_root);
         let materialized = existing.is_some_and(|installed| {
+            let source_complete =
+                installed.source.git_url().is_none() || target.join(COMPLETE_MARKER).is_file();
             target.is_dir()
                 && target.join("manifest.yaml").is_file()
+                && source_complete
                 && !installed.target_path.is_empty()
         });
 

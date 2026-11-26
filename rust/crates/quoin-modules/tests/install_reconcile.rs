@@ -123,6 +123,7 @@ fn write_module(root: &Path, name: &str, marker: &str) -> PathBuf {
     let dir = root.join(name);
     fs::create_dir_all(dir.join("artifacts")).expect("fixture dirs");
     fs::write(dir.join("manifest.yaml"), format!("name: {name}\n")).expect("manifest");
+    fs::write(dir.join(".quoin-extract-complete"), "").expect("resolved git tree is complete");
     fs::write(dir.join("artifacts").join("marker.txt"), marker).expect("marker");
     dir
 }
@@ -346,11 +347,25 @@ fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
-    let manifest = git_manifest("mod", "v1.0.0");
+    let manifest = MarketplaceManifest {
+        schema_version: 1,
+        name: Some("test-set".to_owned()),
+        entries: vec![MarketplaceEntry {
+            name: ModuleName::new("mod").expect("legal name"),
+            source: Source::GitSubdir {
+                url: "https://github.com/agent-ix/fixture.git".to_owned(),
+                path: "module".to_owned(),
+                r#ref: Some("v1.0.0".to_owned()),
+            },
+            default_enabled: None,
+            path: None,
+        }],
+    };
 
     ensure_defaults(&manifest, &installer).expect("initial reconcile installs the module");
     let installed_root = h.paths.target_root.join("mod");
-    fs::remove_file(installed_root.join("manifest.yaml")).expect("simulate an interrupted root");
+    fs::remove_file(installed_root.join(".quoin-extract-complete"))
+        .expect("simulate an interrupted git-subdir root");
 
     let repaired = ensure_defaults(&manifest, &installer).expect("partial root is re-resolved");
     assert_eq!(
@@ -362,9 +377,9 @@ fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
         2,
         "partial roots must not take the lazy fast path"
     );
-    assert_eq!(
-        fs::read_to_string(installed_root.join("manifest.yaml")).expect("restored manifest"),
-        "name: mod\n"
+    assert!(
+        installed_root.join(".quoin-extract-complete").is_file(),
+        "the complete-tree marker returns after replacement"
     );
 }
 

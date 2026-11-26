@@ -357,12 +357,13 @@ fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
     // `find_entry` resolves by case-folded name alone, across artifact and
     // object entries. The duplicate gate must use that same identity or it
     // could miss a collision that resolution treats as one type.
-    let mut grouped: Vec<(EntryKind, String, Vec<String>)> = Vec::new();
+    let mut grouped: Vec<(EntryKind, String, Vec<String>, usize)> = Vec::new();
     for entry in entries {
-        if let Some((_, _, modules)) = grouped
+        if let Some((_, _, modules, declarations)) = grouped
             .iter_mut()
-            .find(|(_, name, _)| name.to_lowercase() == entry.name.to_lowercase())
+            .find(|(_, name, _, _)| name.to_lowercase() == entry.name.to_lowercase())
         {
+            *declarations += 1;
             if !modules.contains(&entry.module_name) {
                 modules.push(entry.module_name.clone());
             }
@@ -371,13 +372,14 @@ fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
                 entry.kind,
                 entry.name.clone(),
                 vec![entry.module_name.clone()],
+                1,
             ));
         }
     }
     grouped
         .into_iter()
-        .filter_map(|(kind, name, mut modules)| {
-            (modules.len() > 1).then(|| {
+        .filter_map(|(kind, name, mut modules, declarations)| {
+            (declarations > 1).then(|| {
                 modules.sort_by(|left, right| left.encode_utf16().cmp(right.encode_utf16()));
                 Duplicate {
                     kind,
@@ -565,6 +567,22 @@ mod tests {
             find_entry(&catalog, "fr").map(|entry| entry.module_name.as_str()),
             "the resolver and duplicate check must use the same case-fold rule"
         );
+
+        let same_module = build(
+            &[ModuleDocument {
+                root: "/modules/same".to_owned(),
+                manifest: "name: same\nartifact_types: [{name: CollisionT}]\nobject_types: [{name: collisiont}]\n"
+                    .to_owned(),
+                skeleton_names: Vec::new(),
+            }],
+            &[],
+        )
+        .expect("one module may declare both kinds");
+        let [duplicate] = same_module.duplicates.as_slice() else {
+            panic!("same-module cross-kind declarations are duplicates to the resolver");
+        };
+        assert_eq!(duplicate.name, "CollisionT");
+        assert_eq!(duplicate.modules, ["same"]);
     }
 
     #[test]

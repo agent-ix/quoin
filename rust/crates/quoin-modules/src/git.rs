@@ -289,7 +289,7 @@ pub fn sanitize_cache_key(raw: &str) -> String {
 /// Its presence is what makes a cache hit safe: an extraction interrupted
 /// half-way leaves no marker, so the next run redoes it rather than serving a
 /// partial tree.
-const COMPLETE_MARKER: &str = ".quoin-extract-complete";
+pub(crate) const COMPLETE_MARKER: &str = ".quoin-extract-complete";
 
 impl GitResolver for GixResolver {
     fn resolve(
