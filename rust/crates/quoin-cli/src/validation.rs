@@ -298,40 +298,26 @@ fn run_coverage(
             .get(&feature.feature_id)
             .cloned()
             .unwrap_or_default();
-        let high = risk_values
-            .iter()
-            .any(|(_, rating)| *rating == "high_process_risk");
-        let not_high = risk_values
-            .iter()
-            .any(|(_, rating)| *rating == "not_high_process_risk");
-        let coverage_status = if feature.status == RatingStatus::Unrated {
-            "unrated"
-        } else if high {
-            if criteria.is_empty() {
-                "uncovered"
-            } else {
-                "covered"
-            }
-        } else if not_high && criteria.is_empty() {
-            "release_evidence"
-        } else if !criteria.is_empty() {
-            "covered"
+        let selftest_coverage = if criteria.is_empty() {
+            "not_in_selftest"
         } else {
-            "unrated"
+            "covered"
         };
         coverage.push(serde_json::json!({
             "feature_id": feature.feature_id,
             "status": feature.status,
             "rating_ids": feature.rating_ids,
             "rating_values": risk_values.iter().map(|(id, value)| serde_json::json!({"rating_id": id, "value": value})).collect::<Vec<_>>(),
-            "coverage": coverage_status,
+            "selftest_coverage": selftest_coverage,
             "traced_criteria": criteria,
         }));
     }
     invalid.sort_by(|left, right| left.to_string().cmp(&right.to_string()));
-    let uncovered = coverage
+    let not_in_selftest = coverage
         .iter()
-        .filter_map(|row| (row["coverage"] == "uncovered").then(|| row["feature_id"].clone()))
+        .filter_map(|row| {
+            (row["selftest_coverage"] == "not_in_selftest").then(|| row["feature_id"].clone())
+        })
         .collect::<Vec<_>>();
     let unreadable = unreadable
         .iter()
@@ -342,10 +328,10 @@ fn run_coverage(
             })
         })
         .collect::<Vec<_>>();
-    let partial = !uncovered.is_empty() || !invalid.is_empty() || !unreadable.is_empty();
+    let partial = !invalid.is_empty() || !unreadable.is_empty();
     let payload = serde_json::json!({
         "features": coverage,
-        "uncovered": uncovered,
+        "not_in_selftest": not_in_selftest,
         "invalid_markers": invalid,
         "unreadable": unreadable,
     });
@@ -356,16 +342,17 @@ fn run_coverage(
             .iter()
             .map(|row| {
                 format!(
-                    "{}: {}",
+                    "{}: rating={}, selftest={}",
                     row["feature_id"].as_str().unwrap_or("?"),
-                    row["coverage"].as_str().unwrap_or("?")
+                    row["status"].as_str().unwrap_or("?"),
+                    row["selftest_coverage"].as_str().unwrap_or("?")
                 )
             })
             .collect::<Vec<_>>();
         lines.extend(
-            uncovered
+            not_in_selftest
                 .iter()
-                .map(|id| format!("uncovered: {}", id.as_str().unwrap_or("?"))),
+                .map(|id| format!("not in self-test: {}", id.as_str().unwrap_or("?"))),
         );
         lines.extend(
             invalid
