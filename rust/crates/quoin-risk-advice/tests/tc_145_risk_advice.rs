@@ -29,12 +29,61 @@ use common::*;
 
 impl Corpus {
     fn json(&self) -> Value {
+        let before = snapshot(self.dir.path());
         let advice = advise(self.dir.path(), &modules()).unwrap();
-        serde_json::from_str(&advice.to_json().unwrap()).unwrap()
+        let json = serde_json::from_str(&advice.to_json().unwrap()).unwrap();
+        assert_eq!(
+            snapshot(self.dir.path()),
+            before,
+            "JSON advice changed the input files"
+        );
+        json
     }
 
     fn markdown(&self) -> String {
-        advise(self.dir.path(), &modules()).unwrap().to_markdown()
+        let before = snapshot(self.dir.path());
+        let markdown = advise(self.dir.path(), &modules()).unwrap().to_markdown();
+        assert_eq!(
+            snapshot(self.dir.path()),
+            before,
+            "Markdown advice changed the input files"
+        );
+        markdown
+    }
+}
+
+fn assert_no_decision_keys(value: &Value, path: &str) {
+    match value {
+        Value::Object(entries) => {
+            for (key, nested) in entries {
+                let normalized: String = key
+                    .chars()
+                    .filter(|character| character.is_ascii_alphanumeric())
+                    .flat_map(char::to_lowercase)
+                    .collect();
+                assert!(
+                    !matches!(
+                        normalized.as_str(),
+                        "score"
+                            | "weight"
+                            | "total"
+                            | "rank"
+                            | "verdict"
+                            | "recommendation"
+                            | "proposal"
+                            | "priority"
+                    ),
+                    "decision-shaped JSON key at {path}.{key}"
+                );
+                assert_no_decision_keys(nested, &format!("{path}.{key}"));
+            }
+        }
+        Value::Array(entries) => {
+            for (index, nested) in entries.iter().enumerate() {
+                assert_no_decision_keys(nested, &format!("{path}[{index}]"));
+            }
+        }
+        _ => {}
     }
 }
 
@@ -126,7 +175,7 @@ fn the_json_has_exactly_the_six_keys_and_no_chain_rows() {
     }
 }
 
-#[trace("FR-145-AC-2", "NFR-031-AC-1")]
+#[trace("FR-145-AC-2", "NFR-031-AC-1", "NFR-031-M-1")]
 #[test]
 fn a_run_changes_no_file() {
     let c = corpus();
@@ -137,15 +186,26 @@ fn a_run_changes_no_file() {
     assert_eq!(snapshot(c.dir.path()), before);
 }
 
+#[trace("NFR-031-M-3")]
+#[test]
+fn no_json_section_emits_a_decision_shaped_key() {
+    let c = corpus();
+    chain(&c);
+    let json = c.json();
+    assert_no_decision_keys(&json, "$");
+}
+
 #[trace("FR-145-AC-3", "NFR-031-AC-6", "NFR-031-M-4")]
 #[test]
 fn two_runs_are_byte_identical() {
     let c = corpus();
     chain(&c);
+    let before = snapshot(c.dir.path());
     let a = advise(c.dir.path(), &modules()).unwrap();
     let b = advise(c.dir.path(), &modules()).unwrap();
     assert_eq!(a.to_json().unwrap(), b.to_json().unwrap());
     assert_eq!(a.to_markdown(), b.to_markdown());
+    assert_eq!(snapshot(c.dir.path()), before);
 }
 
 #[trace("FR-145-AC-4", "FR-145-AC-5")]
