@@ -1650,7 +1650,7 @@ mod tests {
 
     #[trace("FR-217-AC-2", "FR-218-AC-2")]
     #[test]
-    fn incomplete_report_names_uncovered_failed_and_missing_tool_evidence() {
+    fn incomplete_report_keeps_outcomes_separate_from_missing_tool_evidence() {
         let temp = tempfile::tempdir().expect("fixture directory");
         let quoin = write_run(
             temp.path(),
@@ -1815,7 +1815,13 @@ mod tests {
         );
     }
 
-    #[trace("FR-217-AC-5", "FR-217-AC-6", "FR-217-AC-7", "FR-217-AC-8", "FR-219-AC-3")]
+    #[trace(
+        "FR-217-AC-5",
+        "FR-217-AC-6",
+        "FR-217-AC-7",
+        "FR-217-AC-8",
+        "FR-219-AC-3"
+    )]
     #[test]
     fn known_anomalies_uses_version_matched_retained_fr162_selection() {
         let temp = tempfile::tempdir().expect("fixture directory");
@@ -1824,7 +1830,8 @@ mod tests {
             {"path":"AN-001-open.md", "raw":"---\nid: AN-001\ntitle: High risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\nseverity: major\n---\n# [AN-001] High risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-001 | Affects | Fixture |\n"},
             {"path":"AN-002-low.md", "raw":"---\nid: AN-002\ntitle: Low risk open\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n# [AN-002] Low risk open\n\n## Safety Impact Assessment\n\n| Kind | Target | Impact | Rationale |\n|------|--------|--------|-----------|\n| Requirement | FR-002 | Affects | Fixture |\n"},
             {"path":"AN-003-fixed.md", "raw":"---\nid: AN-003\ntitle: Fixed\ntype: Anomaly\nstatus: closed\nresolution: fixed\nsafety_impact: impacting\n---\n"},
-            {"path":"AN-004-wont-fix.md", "raw":"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n"}
+            {"path":"AN-004-wont-fix.md", "raw":"---\nid: AN-004\ntitle: Won't fix\ntype: Anomaly\nstatus: closed\nresolution: wont-fix\nsafety_impact: unassessed\n---\n"},
+            {"path":"linked-engine/AN-005-linked.md", "raw":"---\nid: AN-005\ntitle: Linked engine issue\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n# [AN-005] Linked engine issue\n"}
         ]);
         let path = write_run(temp.path(), "quoin.json", &run);
         let validation_report = build_report(&[path]).expect("anomaly selection");
@@ -1835,7 +1842,7 @@ mod tests {
                 .iter()
                 .map(|row| row.anomaly.as_str())
                 .collect::<Vec<_>>(),
-            ["AN-001", "AN-002", "AN-004"]
+            ["AN-001", "AN-002", "AN-004", "AN-005"]
         );
         assert_eq!(
             report.anomalies[0].highlight.as_deref(),
