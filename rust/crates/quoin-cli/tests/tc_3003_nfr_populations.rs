@@ -48,7 +48,7 @@ fn tc_3003_the_nfr003_populations_are_stated_by_class() {
 #[test]
 fn tc_3004_the_nfr007_population_is_stated_by_failure_mode() {
     let probed = ix_flow::external_tool_failures(&context::Context::new());
-    assert!(probed.examined.len() >= 24, "{:?}", probed.examined);
+    assert!(probed.examined.len() >= 48, "{:?}", probed.examined);
     let unmatched: BTreeSet<_> = probed.examined.difference(&probed.matched).collect();
     assert!(
         unmatched.is_empty(),

@@ -1,5 +1,5 @@
 {
- "schema_version": 1,
+ "schema_version": 2,
  "record_type": "proof_attestation",
  "attestation_id": "att-1",
  "candidate_revision": "candidate-1",
