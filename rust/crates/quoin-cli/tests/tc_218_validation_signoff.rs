@@ -204,7 +204,7 @@ fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsi
     assert_eq!(unsigned["reason"], "unsigned");
 }
 
-#[trace("FR-218-AC-4")]
+#[trace("FR-218-AC-5")]
 #[test]
 fn signoff_verification_resolves_relative_repository_and_output_paths() {
     let temp = tempfile::tempdir().expect("temporary root");
@@ -245,6 +245,31 @@ fn signoff_verification_resolves_relative_repository_and_output_paths() {
         .current_dir(&repository)
         .output()
         .expect("sign-off verification command runs");
+    assert!(
+        output.status.success(),
+        "sign-off verifier failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let result: Value = serde_json::from_slice(&output.stdout).expect("sign-off output is JSON");
+    assert_eq!(result["status"], "not_accepted");
+    assert_eq!(result["reason"], "unsigned");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args([
+            "validation",
+            "report",
+            "--verify-signoff",
+            "--repo",
+            "repo",
+            "--out",
+            "build/validation-report",
+            "--allowed-signers",
+        ])
+        .arg(&allowed_signers)
+        .args(["--engineering-assurance", "/bin/true"])
+        .current_dir(temp.path())
+        .output()
+        .expect("sign-off verification command runs from the parent directory");
     assert!(
         output.status.success(),
         "sign-off verifier failed: {}",

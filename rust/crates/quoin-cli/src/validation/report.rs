@@ -1306,7 +1306,9 @@ fn verify_signoff(
     let report_directory = if report_directory.is_absolute() {
         report_directory.to_path_buf()
     } else {
-        repo.join(report_directory)
+        std::env::current_dir()
+            .map_err(|error| format!("current directory is unavailable: {error}"))?
+            .join(report_directory)
     };
     let report_directory = report_directory.canonicalize().map_err(|error| {
         format!(
