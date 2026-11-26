@@ -25,6 +25,7 @@ use serde_json::{Value, json};
 
 use super::{
     Join, RecordJoin, Resolution, ScanOutcome, Tool, Unmatched, UnmatchedReason, Unresolved, join,
+    vex_scan_states,
 };
 use crate::soup::plan::Existing;
 
@@ -128,6 +129,26 @@ pub(in crate::soup) fn record(purl: &str, clause: Option<&str>) -> Existing {
         disposition_clause: clause.map(str::to_owned),
         front: serde_json::Map::new(),
     }
+}
+
+#[trace("FR-156-AC-7")]
+#[test]
+fn unordered_applicable_scan_does_not_mark_authored_vex_stale() {
+    let records = [record("pkg:npm/example@1.0.0", None)];
+    let unordered = FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new("osv-unordered"),
+        tool: "osv-scanner 2.7.1".to_owned(),
+        evidence_kind: None,
+        timestamp: "not-an-instant".to_owned(),
+        ruleset: Some("osv-db-1".to_owned()),
+        rules_evaluated: Some(1),
+        findings: Vec::new(),
+        evaluated: None,
+    };
+    let states = vex_scan_states(&records, &[unordered]);
+
+    assert!(!states[0].is_stale("pkg:npm/example@1.0.0", "CVE-OLD"));
 }
 
 pub(in crate::soup) fn attestation(at: &str, until: &str) -> Value {

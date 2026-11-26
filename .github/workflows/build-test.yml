@@ -84,17 +84,30 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes poppler-utils=24.02.0-1ubuntu9.11
-      - name: Fetch pinned OpenVEX 0.2.0 schema for export integration tests
+      - name: Fetch pinned VEX export schemas for integration tests
         run: |
           curl --fail --location --silent --show-error \
             https://raw.githubusercontent.com/openvex/spec/a68ccd19b15a9604d28ef66ebf33f27a772ba4ec/openvex_json_schema.json \
             --output "$RUNNER_TEMP/openvex_json_schema_0.2.0.json"
+          curl --fail --location --silent --show-error \
+            https://raw.githubusercontent.com/CycloneDX/specification/349314a9d7671d7d2ca5b711a725f49a73979da6/schema/bom-1.7.schema.json \
+            --output "$RUNNER_TEMP/cyclonedx_bom_1.7.schema.json"
+          curl --fail --location --silent --show-error \
+            https://raw.githubusercontent.com/CycloneDX/specification/349314a9d7671d7d2ca5b711a725f49a73979da6/schema/cryptography-defs.schema.json \
+            --output "$RUNNER_TEMP/cryptography-defs.schema.json"
+          curl --fail --location --silent --show-error \
+            https://raw.githubusercontent.com/CycloneDX/specification/349314a9d7671d7d2ca5b711a725f49a73979da6/schema/jsf-0.82.schema.json \
+            --output "$RUNNER_TEMP/jsf-0.82.schema.json"
+          curl --fail --location --silent --show-error \
+            https://raw.githubusercontent.com/CycloneDX/specification/349314a9d7671d7d2ca5b711a725f49a73979da6/schema/spdx.schema.json \
+            --output "$RUNNER_TEMP/spdx.schema.json"
       - name: Test
         env:
           SPEC_OBJECTS_SAFETY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-safety
           SPEC_OBJECTS_SECURITY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-security/spec_objects_security
           SPEC_ARTIFACTS_PROCESS_DIR: ${{ github.workspace }}/.ci-deps/spec-artifacts-process
           OPENVEX_SCHEMA_PATH: ${{ runner.temp }}/openvex_json_schema_0.2.0.json
+          CYCLONEDX_SCHEMA_PATH: ${{ runner.temp }}/cyclonedx_bom_1.7.schema.json
         run: make rust-test
       - name: Installed workflow behavior
         run: make workflow-test

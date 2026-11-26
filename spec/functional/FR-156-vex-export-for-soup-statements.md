@@ -34,7 +34,10 @@ The `quoin soup vex export` command SHALL serialize each person-authored entry i
 ## Behavior
 
 - The command SHALL read `vex_statements` from each record and emit one `vulnerabilities[]` entry for each statement.
+- The command SHALL select CycloneDX output with `--format cyclonedx`; the existing default `--format openvex` remains the OpenVEX mode defined by FR-216.
 - The command SHALL use the Syft SBOM path only to choose the default output location.
+- When CycloneDX output is selected and `--out` is omitted, the command SHALL require `--sbom`.
+- When CycloneDX output is selected, `--out` is omitted and `--sbom` names `probe.cdx.json`, the command SHALL write `probe.vex.cdx.json` beside the SBOM.
 - The command SHALL NOT read or modify the Syft SBOM.
 - For each SOUP record referenced by an exported statement, the command SHALL emit a CycloneDX component with `type=library`, `purl` and `bom-ref` equal to the record's canonical PURL, and `name` and optional `group` derived from the decoded PURL components.
 - The command SHALL derive the component `name` from the PURL's decoded name and, when the PURL has a namespace, its `group` from the decoded namespace.
@@ -45,6 +48,8 @@ The `quoin soup vex export` command SHALL serialize each person-authored entry i
 - The command SHALL map each stored status and the affected component version status as specified in the table below.
 - The command SHALL preserve the source status in the named property so consumers can distinguish the authored VEX vocabulary from CycloneDX's analysis vocabulary.
 - The command SHALL preserve source fields that CycloneDX does not represent with an equivalent native field as named vulnerability properties.
+- The command SHALL refuse duplicate source statements that would produce identical CycloneDX vulnerability entries, because the published schema requires unique entries.
+- The command SHALL refuse a component version longer than 1,024 characters because CycloneDX 1.7 limits `affects[].versions[].version` to that length.
 - The command SHALL produce one property for each evidence reference.
 - The command SHALL include only `analysis.justification` mappings with an equivalent CycloneDX 1.7 justification.
 - The command SHALL retain every stored source justification in `quoin:vex:justification`, including values without a native CycloneDX equivalent.
@@ -107,6 +112,9 @@ The [PURL specification](https://github.com/package-url/purl-spec) defines the `
 | FR-156-AC-7 | A statement absent from all current applicable scans is exported with `quoin:vex:stale=true`; an unavailable, unordered or vacuous applicable scan does not produce that property. | Test |
 | FR-156-AC-8 | For a case-sensitive PURL type, `components[].group` (when namespace exists) and `components[].name` preserve the decoded namespace and name case; for a PURL type that normalizes either component, those fields carry the PURL-defined normalized values without additional case folding or normalization. | Test |
 | FR-156-AC-9 | Repeating export with identical records, SBOM and scan inputs yields byte-identical JSON at the same output path. | Test |
+| FR-156-AC-10 | `--format cyclonedx` selects CycloneDX without OpenVEX metadata flags; omitting `--out` requires `--sbom` and writes `<sbom-stem>.vex.cdx.json` beside the SBOM. The default `--format openvex` still requires its OpenVEX metadata and writes OpenVEX. | Test |
+| FR-156-AC-11 | Two identical authored statements in one SOUP record refuse export with an error naming the record and `vex_statements`, and no output file is created or replaced. | Test |
+| FR-156-AC-12 | A 1,024-character component version exports and validates against the CycloneDX 1.7 schema; a 1,025-character component version refuses with an error naming the record and `version`, and does not replace an existing output. | Test |
 
 ## Dependencies
 
