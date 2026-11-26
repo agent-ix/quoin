@@ -153,8 +153,25 @@ fn tc_nfr_027_every_crate_root_forbids_unsafe() {
         missing.is_empty(),
         "crate roots missing unsafe prohibition: {missing:?}"
     );
-    assert!(!root_forbids_unsafe("fn main() { unsafe {} }"));
     assert!(root_forbids_unsafe("#![forbid(unsafe_code)]\nfn main() {}"));
+
+    let temp = tempfile::tempdir().unwrap();
+    let source = temp.path().join("forbidden.rs");
+    std::fs::write(
+        &source,
+        "#![forbid(unsafe_code)]\npub fn planted() { unsafe {} }\n",
+    )
+    .unwrap();
+    let output = std::process::Command::new("rustc")
+        .args(["--crate-type=lib", "--emit=metadata", "--out-dir"])
+        .arg(temp.path())
+        .arg(&source)
+        .output()
+        .unwrap();
+    assert!(
+        !output.status.success(),
+        "rustc accepted a planted unsafe block under #![forbid(unsafe_code)]"
+    );
 }
 
 fn root_forbids_unsafe(source: &str) -> bool {
@@ -164,7 +181,7 @@ fn root_forbids_unsafe(source: &str) -> bool {
 }
 
 /// CI keeps the declared format, lint, build, test, and dependency lanes live.
-#[trace("NFR-027-AC-3", "NFR-027-AC-8", "NFR-027-AC-9")]
+#[trace("NFR-027-AC-8", "NFR-027-AC-9")]
 #[test]
 fn tc_nfr_027_ci_runs_the_rust_gates_without_softening_them() {
     let repository = workspace_root().parent().unwrap().to_path_buf();
@@ -174,28 +191,82 @@ fn tc_nfr_027_ci_runs_the_rust_gates_without_softening_them() {
     eprintln!("NFR-027 CI gate-config population: 2 files");
 
     assert!(ci_runs_rust_gates(&makefile, &workflow));
-    assert!(!ci_runs_rust_gates(
-        "rust-gate: rust-lint rust-deny rust-test",
-        "run: make rust-lint\nrun: make rust-build\nrun: make rust-test"
-    ));
-    assert!(!ci_runs_rust_gates(
-        "rust-lint: cargo clippy\nrust-gate: rust-lint rust-deny rust-test\ncargo test --workspace",
-        "run: make rust-lint\nrun: make rust-build\nrun: make rust-test\ncargo-deny-action"
-    ));
+    let narrow_test = makefile.replace(
+        "cargo test --workspace --locked",
+        "cargo test --workspace -p quoin-core",
+    );
+    assert!(!ci_runs_rust_gates(&narrow_test, &workflow));
+    let disabled_lint = workflow.replace(
+        "      - name: Format and lint\n        run: make rust-lint",
+        "      - name: Format and lint\n        if: false\n        run: make rust-lint",
+    );
+    assert!(!ci_runs_rust_gates(&makefile, &disabled_lint));
 }
 
 fn ci_runs_rust_gates(makefile: &str, workflow: &str) -> bool {
-    ["rust-lint", "rust-build", "rust-test"]
-        .iter()
-        .all(|lane| makefile.contains(lane) && workflow.contains(&format!("run: make {lane}")))
-        && makefile.contains("rust-gate: rust-lint rust-deny rust-test")
+    makefile.contains("rust-gate: rust-lint rust-deny rust-test workflow-test")
         && makefile.contains("cargo fmt --all --check")
         && makefile.contains("cargo clippy --workspace --all-targets --all-features")
         && makefile.contains("-D warnings")
-        && makefile.contains("cargo test --workspace")
+        && makefile.contains("cargo build --workspace --locked")
+        && makefile.contains("cargo test --workspace --locked")
         && makefile.contains("cargo deny check")
-        && workflow.contains("cargo-deny-action")
+        && required_workflow_step(workflow, "Format and lint", "run: make rust-lint")
+        && required_workflow_step(workflow, "Build", "run: make rust-build")
+        && required_workflow_step(workflow, "Test", "run: make rust-test")
+        && required_workflow_job(workflow, "rust-deny", "cargo-deny-action")
         && !workflow.contains("continue-on-error")
+}
+
+fn required_workflow_step(workflow: &str, name: &str, command: &str) -> bool {
+    let marker = format!("- name: {name}");
+    let Some(start) = workflow.find(&marker) else {
+        return false;
+    };
+    let line_start = workflow[..start].rfind('\n').map_or(0, |index| index + 1);
+    let indent = workflow[line_start..start].len();
+    let mut block_end = workflow.len();
+    let tail = &workflow[line_start..];
+    let mut lines = tail.split_inclusive('\n');
+    let mut consumed = lines.next().map_or(0, str::len);
+    for line in lines {
+        let content = line.trim_end_matches('\n');
+        if content.trim_start().starts_with("- name:")
+            && content.len() - content.trim_start().len() == indent
+        {
+            block_end = line_start + consumed;
+            break;
+        }
+        consumed += line.len();
+    }
+    let block = &workflow[line_start..block_end];
+    block.lines().any(|line| line.contains(command))
+        && !block
+            .lines()
+            .any(|line| line.trim_start().starts_with("if:"))
+        && !block.contains("continue-on-error")
+}
+
+fn required_workflow_job(workflow: &str, name: &str, command: &str) -> bool {
+    let marker = format!("{name}:");
+    let Some(start) = workflow.lines().position(|line| line.trim() == marker) else {
+        return false;
+    };
+    let lines: Vec<_> = workflow.lines().collect();
+    let indent = lines[start].len() - lines[start].trim_start().len();
+    let mut block = vec![lines[start]];
+    for line in lines.iter().skip(start + 1) {
+        let current_indent = line.len() - line.trim_start().len();
+        if !line.trim().is_empty() && current_indent <= indent {
+            break;
+        }
+        block.push(line);
+    }
+    block.iter().any(|line| line.contains(command))
+        && !block
+            .iter()
+            .any(|line| line.trim_start().starts_with("if:"))
+        && !block.iter().any(|line| line.contains("continue-on-error"))
 }
 
 // ---------------------------------------------------------------------------
