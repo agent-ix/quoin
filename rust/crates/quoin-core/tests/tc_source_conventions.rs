@@ -156,6 +156,20 @@ fn tc_nfr_027_every_crate_root_forbids_unsafe() {
     assert!(root_forbids_unsafe("#![forbid(unsafe_code)]\nfn main() {}"));
 
     let temp = tempfile::tempdir().unwrap();
+    let healthy = temp.path().join("healthy.rs");
+    std::fs::write(&healthy, "#![forbid(unsafe_code)]\npub fn safe() {}\n").unwrap();
+    let healthy_output = std::process::Command::new("rustc")
+        .args(["--crate-type=lib", "--emit=metadata", "--out-dir"])
+        .arg(temp.path())
+        .arg(&healthy)
+        .output()
+        .unwrap();
+    assert!(
+        healthy_output.status.success(),
+        "healthy control failed to compile: {}",
+        String::from_utf8_lossy(&healthy_output.stderr)
+    );
+
     let source = temp.path().join("forbidden.rs");
     std::fs::write(
         &source,
@@ -201,6 +215,11 @@ fn tc_nfr_027_ci_runs_the_rust_gates_without_softening_them() {
         "      - name: Format and lint\n        if: false\n        run: make rust-lint",
     );
     assert!(!ci_runs_rust_gates(&makefile, &disabled_lint));
+    let disabled_job = workflow.replace(
+        "  rust:\n    name: Rust",
+        "  rust:\n    if: false\n    name: Rust",
+    );
+    assert!(!ci_runs_rust_gates(&makefile, &disabled_job));
 }
 
 fn ci_runs_rust_gates(makefile: &str, workflow: &str) -> bool {
@@ -209,13 +228,20 @@ fn ci_runs_rust_gates(makefile: &str, workflow: &str) -> bool {
         && makefile.contains("cargo clippy --workspace --all-targets --all-features")
         && makefile.contains("-D warnings")
         && makefile.contains("cargo build --workspace --locked")
-        && makefile.contains("cargo test --workspace --locked")
+        && has_full_workspace_test_recipe(makefile)
         && makefile.contains("cargo deny check")
+        && required_workflow_job(workflow, "rust", "name: Rust")
         && required_workflow_step(workflow, "Format and lint", "run: make rust-lint")
         && required_workflow_step(workflow, "Build", "run: make rust-build")
         && required_workflow_step(workflow, "Test", "run: make rust-test")
         && required_workflow_job(workflow, "rust-deny", "cargo-deny-action")
         && !workflow.contains("continue-on-error")
+}
+
+fn has_full_workspace_test_recipe(makefile: &str) -> bool {
+    makefile.lines().any(|line| {
+        line.trim() == "cd $(RUST_DIR) && cargo test --workspace --locked $(CARGO_TARGET_FLAG)"
+    })
 }
 
 fn required_workflow_step(workflow: &str, name: &str, command: &str) -> bool {
