@@ -598,12 +598,7 @@ fn is_expected_rmm_compliance_row(line: &str) -> bool {
     )
 }
 
-#[trace(
-    "FR-173-AC-1",
-    "NFR-038-AC-1",
-    "NFR-038-AC-3",
-    "NFR-038-M-1"
-)]
+#[trace("FR-173-AC-1", "NFR-038-AC-1", "NFR-038-AC-3", "NFR-038-M-1")]
 #[test]
 fn tc_173_an_effective_control_yields_a_direct_fact_with_the_supplied_attestation() {
     let world = World::new(
