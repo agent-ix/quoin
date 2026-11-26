@@ -617,7 +617,7 @@ fn tc_173_an_effective_control_yields_a_direct_fact_with_the_supplied_attestatio
     assert!(!out(&world.facts()).contains("effectiveness"));
 }
 
-#[trace("FR-173-AC-2", "NFR-038-AC-2")]
+#[trace("FR-173-AC-2", "NFR-038-AC-2", "NFR-038-M-2")]
 #[test]
 fn tc_173_a_clause_without_an_effective_control_yields_no_fact_and_an_open_line() {
     let files = [
@@ -1240,7 +1240,7 @@ impl Drop for ReadOnlyTrees {
     }
 }
 
-#[trace("FR-173-AC-8", "NFR-038-AC-4")]
+#[trace("FR-173-AC-8", "NFR-038-AC-4", "NFR-038-M-4")]
 #[test]
 fn tc_173_a_run_writes_no_file() {
     let world = World::new(
