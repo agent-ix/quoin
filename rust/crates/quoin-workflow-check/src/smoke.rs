@@ -141,6 +141,19 @@ fn schema(kind: &str) -> Value {
 
 impl Harness {
     fn new(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
+        Self::new_with_plugin_version(binary, runner, plugin, crlf, false)
+    }
+    #[cfg(test)]
+    fn new_for_formalize(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
+        Self::new_with_plugin_version(binary, runner, plugin, crlf, true)
+    }
+    fn new_with_plugin_version(
+        binary: &str,
+        runner: &str,
+        plugin: &str,
+        crlf: bool,
+        normalize_copied_manifest: bool,
+    ) -> Result<Self> {
         let scratch = tempfile::tempdir().map_err(|e| e.to_string())?;
         let root = scratch.path().join("unrelated repo with spaces");
         let home = scratch.path().join("fresh home");
@@ -179,11 +192,21 @@ impl Harness {
         }
         for directory in [".codex-plugin", ".claude-plugin"] {
             copy_tree(&plugin.join(directory), &installed_plugin.join(directory))?;
-            let manifest: Value = serde_json::from_slice(
-                &fs::read(installed_plugin.join(directory).join("plugin.json"))
-                    .map_err(|e| e.to_string())?,
-            )
-            .map_err(|e| e.to_string())?;
+            let manifest_path = installed_plugin.join(directory).join("plugin.json");
+            let mut manifest: Value =
+                serde_json::from_slice(&fs::read(&manifest_path).map_err(|e| e.to_string())?)
+                    .map_err(|e| e.to_string())?;
+            // The FR-189 workflow behavior tests use current skills with the
+            // Rust binary built from this workspace. A recent plugin-only
+            // release advanced the source manifests independently, so normalize
+            // only the temporary copies and preserve the source-version check.
+            if normalize_copied_manifest {
+                manifest["version"] = json!(env!("CARGO_PKG_VERSION"));
+                write(
+                    &manifest_path,
+                    serde_json::to_vec(&manifest).map_err(|e| e.to_string())?,
+                )?;
+            }
             require(
                 manifest.get("version").and_then(Value::as_str) == Some(env!("CARGO_PKG_VERSION")),
                 "plugin manifest must match the release checker version",
@@ -280,6 +303,14 @@ impl Harness {
         self.flow_with_tools(args, None)
     }
     fn flow_with_tools(&self, args: &[&str], tools: Option<(&Path, &Path)>) -> Result<Output> {
+        self.flow_with_analysis_tools(args, tools, None)
+    }
+    fn flow_with_analysis_tools(
+        &self,
+        args: &[&str],
+        tools: Option<(&Path, &Path)>,
+        analysis_tools: Option<(&Path, &Path, &Path)>,
+    ) -> Result<Output> {
         let mut command =
             self.command(Path::new(if cfg!(windows) { "node.exe" } else { "node" }))?;
         command
@@ -294,6 +325,12 @@ impl Harness {
             command
                 .env("FSL_DRIVER_BIN", fsl)
                 .env("QUIRE_DRIVER_BIN", quire);
+        }
+        if let Some((analyzer, z3, cvc5)) = analysis_tools {
+            command
+                .env("FILAMENT_ANALYZE_BIN", analyzer)
+                .env("Z3_BIN", z3)
+                .env("CVC5_BIN", cvc5);
         }
         command.output().map_err(|e| e.to_string())
     }
@@ -900,6 +937,249 @@ fn formalize_retry_scenario(
     Ok(())
 }
 
+#[cfg(test)]
+fn git(repo: &Path, args: &[&str]) -> Result<String> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(args)
+        .output()
+        .map_err(|error| error.to_string())?;
+    require(
+        output.status.success(),
+        format!(
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ),
+    )?;
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
+}
+
+#[cfg(test)]
+fn formalize_analysis_fixture(h: &Harness) -> Result<(PathBuf, PathBuf, PathBuf, PathBuf)> {
+    let module = json!({
+        "name": "formalize-workflow-fixture",
+        "version": "0.1.0",
+        "description": "workflow smoke fixture",
+        "artifact_types": [{"name":"FR"}],
+        "traceability": {
+            "trace_tags": {
+                "formalizes": [{
+                    "name": "formalizes",
+                    "language": "qsl",
+                    "syntax": "comment",
+                    "pattern": "^// formalizes: (.+)$"
+                }]
+            }
+        }
+    });
+    write(
+        &h.root.join("manifest.yaml"),
+        serde_yaml_ng::to_string(&module).map_err(|e| e.to_string())?,
+    )?;
+    let draft = "language qsl\nprofile core\n// formalizes: FR-001\nrule P1 { check x }\n";
+    write(&h.root.join("qsl/rule.native"), draft)?;
+    write(
+        &h.root.join("spec/FR-001.md"),
+        "---\nid: FR-001\ntype: FR\n---\n\n## Description\n\nSynthetic requirement.\n",
+    )?;
+    git(&h.root, &["init", "-q"])?;
+    git(&h.root, &["config", "user.name", "workflow smoke"])?;
+    git(
+        &h.root,
+        &["config", "user.email", "workflow-smoke@example.invalid"],
+    )?;
+    git(
+        &h.root,
+        &["add", "manifest.yaml", "qsl/rule.native", "spec/FR-001.md"],
+    )?;
+    git(
+        &h.root,
+        &["commit", "-q", "-m", "formalize workflow fixture"],
+    )?;
+
+    let mut package: Value = serde_json::from_slice(include_bytes!(
+        "../../quoin-cli/tests/fixtures/formal-rules/checked-package-v2-success.json"
+    ))
+    .map_err(|error| error.to_string())?;
+    let node_count = {
+        let nodes = package
+            .pointer_mut("/semantic_graph/nodes")
+            .and_then(Value::as_array_mut)
+            .ok_or("checked fixture has no semantic nodes")?;
+        nodes.retain(|node| {
+            node.pointer("/node_id/path/0").and_then(Value::as_str) != Some("claim/approved")
+        });
+        nodes.len()
+    };
+    let operand_rows = package
+        .pointer_mut("/semantic_graph/operand_rows")
+        .and_then(Value::as_array_mut)
+        .ok_or("checked fixture has no operand rows")?;
+    if operand_rows.len() != node_count + 1 {
+        return Err("checked fixture node and operand row counts did not align".to_owned());
+    }
+    operand_rows.remove(4);
+    let declaration_start = draft.find("rule P1").ok_or("draft declaration missing")?;
+    let declaration_end = draft.trim_end().len();
+    let source_map = package
+        .get_mut("source_map")
+        .and_then(Value::as_array_mut)
+        .ok_or("checked fixture has no source map")?;
+    source_map.retain(|entry| {
+        entry.pointer("/node_id/path/0").and_then(Value::as_str) != Some("claim/approved")
+    });
+    for entry in source_map {
+        if entry.pointer("/node_id/path/0").and_then(Value::as_str) == Some("claim/draft") {
+            let region = entry
+                .pointer_mut("/regions/0")
+                .ok_or("draft claim region missing")?;
+            region["source"]["identity"] = json!("qsl/rule.native");
+            region["start"] = json!(declaration_start);
+            region["end"] = json!(declaration_end);
+        }
+    }
+    let sources = package
+        .pointer_mut("/lock/sources")
+        .and_then(Value::as_array_mut)
+        .ok_or("checked fixture has no source list")?;
+    sources.retain(|source| {
+        source.get("identity").and_then(Value::as_str) != Some("approved/rule.native")
+    });
+    for source in sources {
+        if source.get("identity").and_then(Value::as_str) == Some("draft/rule.native") {
+            source["identity"] = json!("qsl/rule.native");
+        }
+    }
+    let package_path = h.scratch.path().join("formalize-analysis-package.json");
+    write(
+        &package_path,
+        serde_json::to_vec(&package).map_err(|e| e.to_string())?,
+    )?;
+    let allowed_signers = h.scratch.path().join("allowed-signers");
+    write(&allowed_signers, "fixture\n")?;
+    let tools = h.scratch.path().join("formalize analysis tools");
+    fs::create_dir_all(&tools).map_err(|e| e.to_string())?;
+    let ea = executable(
+        &tools,
+        "engineering-assurance",
+        "if [ \"$1\" = \"--version\" ]; then printf 'engineering-assurance 0.8.2\\n'; exit 0; fi\nexit 99",
+        "if \"%~1\"==\"--version\" (echo engineering-assurance 0.8.2& exit /b 0)\r\nexit /b 99",
+    )?;
+    Ok((package_path, ea, allowed_signers, tools))
+}
+
+#[cfg(test)]
+fn analyzer_for_status(directory: &Path, status: &str) -> Result<PathBuf> {
+    let body = format!(
+        r#"while [ "$#" -gt 0 ]; do case "$1" in --output) output="$2"; shift 2 ;; --request) mode="$2"; shift 2 ;; *) shift ;; esac; done
+printf '{{"analysisKind":"%s","differential":{{"disposition":"agreement","agreedStatus":"{status}"}},"selection":{{"selected":["claim/draft"],"excluded":[]}}}}' "$mode" > "$output"
+exit {exit_code}"#,
+        exit_code = if status == "satisfied" { 0 } else { 1 }
+    );
+    executable(directory, "filament-analyze", &body, "exit /b 99")
+}
+
+#[cfg(test)]
+fn formalize_analysis_scenario(
+    h: &Harness,
+    id: &str,
+    analyzer_status: &str,
+    expected_phase: &str,
+) -> Result<()> {
+    let (package, ea, allowed_signers, tools) = formalize_analysis_fixture(h)?;
+    let fsl = executable(
+        &tools,
+        "fsl-check",
+        "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"success\",\"diagnostics\":[]}'; exit 0",
+        "exit /b 0",
+    )?;
+    let quire = executable(
+        &tools,
+        "quire-trace",
+        "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"P1\"}]}}'; exit 0",
+        "exit /b 0",
+    )?;
+    let analyzer = analyzer_for_status(&tools, analyzer_status)?;
+    let z3 = executable(&tools, "z3", "exit 0", "exit /b 0")?;
+    let cvc5 = executable(&tools, "cvc5", "exit 0", "exit /b 0")?;
+    h.start("formalize", id)?;
+    h.answers(
+        id,
+        "request",
+        &json!({
+            "requirement_id": "FR-001",
+            "draft_path": "qsl/rule.native",
+            "analysis_package": package,
+            "engineering_assurance": ea,
+            "allowed_signers": allowed_signers
+        }),
+    )?;
+    let checked = passed(&h.flow_with_tools(&["advance", id, "checked"], Some((&fsl, &quire)))?)?;
+    require(
+        text(&checked, "/current_phase")? == "checked",
+        "clean formalization reaches checked",
+    )?;
+    let status = passed(&h.flow(&["status", id])?)?;
+    let request_item = status
+        .pointer("/data/items/formalization_request/0")
+        .ok_or("formalization request is missing")?;
+    let item_id = request_item
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("formalization request has no item id")?;
+    passed(&h.flow(&[
+        "update-item",
+        id,
+        "formalization_request",
+        item_id,
+        "--patch",
+        &json!({"drafted_symbols":["qsl:qsl/rule.native::P1"]}).to_string(),
+    ])?)?;
+    h.advance(id, "analysed")?;
+    let outcome = h.flow_with_analysis_tools(
+        &["advance", id, "awaiting_approval"],
+        None,
+        Some((&analyzer, &z3, &cvc5)),
+    )?;
+    if expected_phase == "awaiting_approval" {
+        let result = passed(&outcome)?;
+        require(
+            text(&result, "/current_phase")? == expected_phase,
+            "a clean analysis reaches awaiting_approval",
+        )?;
+    } else {
+        let failure: Value = serde_json::from_slice(&outcome.stdout).map_err(|e| e.to_string())?;
+        require(
+            failure.to_string().contains("draft_claims_inconsistent"),
+            format!("refuted analysis reports the failing claim: {failure}"),
+        )?;
+        let diagnostic = failure.to_string();
+        passed(&h.flow(&[
+            "add-item",
+            id,
+            "formalization_failure",
+            "--item",
+            &json!({"id":"analysis-failure-1","diagnostic":diagnostic}).to_string(),
+        ])?)?;
+        h.advance(id, expected_phase)?;
+        let status = passed(&h.flow(&["status", id])?)?;
+        require(
+            text(&status, "/current_phase")? == expected_phase,
+            format!("failed analysis returns to {expected_phase}: {status}"),
+        )?;
+        let after_recording = passed(&h.flow(&["status", id])?)?;
+        require(
+            after_recording
+                .pointer("/data/items/formalization_failure")
+                .and_then(Value::as_array)
+                .is_some_and(|items| items.len() == 1),
+            "failed analysis increments the recorded retry count",
+        )?;
+    }
+    Ok(())
+}
+
 fn review_scenarios(h: &Harness, started: &Value) -> Result<()> {
     h.start("review", "smoke-all")?;
     h.answers("smoke-all", "request", &selection("all", &["integrity"]))?;
@@ -1183,7 +1463,7 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
 mod tests {
     use super::{
         Harness, design_gate_context_seeded, design_gate_incompatible_host_refused,
-        design_gate_missing_host_refused, formalize_scenarios,
+        design_gate_missing_host_refused, formalize_analysis_scenario, formalize_scenarios,
     };
     use ix_trace_rs::trace;
 
@@ -1250,14 +1530,35 @@ mod tests {
         design_gate_incompatible_host_refused(&harness).expect("incompatible host API is refused");
     }
 
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-189-AC-2", "FR-189-AC-3", "FR-189-AC-9")]
     #[test]
-    #[ignore = "run by make workflow-test with the current ix-flow runtime"]
     fn formalize_failures_return_to_drafting_with_diagnostics() {
         let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        let harness =
+            Harness::new_for_formalize(&binary, &runner, &plugin, false).expect("smoke harness");
         formalize_scenarios(&harness).expect("formalize ix-flow scenarios");
+    }
+
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-189-AC-11")]
+    #[test]
+    fn formalize_refuted_analysis_returns_to_drafting_with_retry_record() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new_for_formalize(&binary, &runner, &plugin, false)
+            .expect("formalize smoke harness");
+        formalize_analysis_scenario(
+            &harness,
+            "smoke-formalize-refuted-analysis",
+            "refuted",
+            "drafting",
+        )
+        .expect("refuted analysis returns to drafting and records a retry");
     }
 }
