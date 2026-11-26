@@ -192,6 +192,7 @@ mod tests {
     }
 
     #[cfg(not(feature = "test-stubs"))]
+    #[trace("FR-191-AC-18")]
     #[test]
     fn the_m1_and_m2_registry_selects_and_exports_ten_documents_in_dossier_order() {
         use std::path::PathBuf;

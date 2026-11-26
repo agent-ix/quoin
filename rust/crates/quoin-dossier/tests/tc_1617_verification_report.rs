@@ -132,7 +132,7 @@ fn kinds() -> [String; 1] {
     ["verification-report".to_owned()]
 }
 
-#[trace("FR-196-AC-1", "FR-196-AC-3")]
+#[trace("FR-191-AC-19", "FR-196-AC-1", "FR-196-AC-3")]
 #[test]
 fn the_report_titles_rows_from_the_repository_and_flags_the_failed_run() {
     let out = tempfile::tempdir().unwrap();

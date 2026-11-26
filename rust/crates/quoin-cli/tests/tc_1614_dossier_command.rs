@@ -342,7 +342,7 @@ fn generate_writes_exactly_the_selected_files_and_nothing_else() {
     assert_eq!(read(&work.path().join("dossier/notes.md")), "keep");
 }
 
-#[trace("FR-191-AC-3")]
+#[trace("FR-191-AC-3", "FR-191-AC-20")]
 #[test]
 fn an_unknown_kind_exits_2_names_it_and_writes_nothing() {
     let work = tempfile::tempdir().unwrap();
@@ -986,7 +986,7 @@ fn export_passes_module_roots_to_quire_in_the_supplied_order() {
     assert_eq!(modules, ["module-one", "module-two"]);
 }
 
-#[trace("FR-201-AC-9", "FR-201-AC-10")]
+#[trace("FR-191-AC-21", "FR-201-AC-9", "FR-201-AC-10")]
 #[test]
 fn release_verify_result_is_appended_after_user_approvals_once() {
     let work = tempfile::tempdir().unwrap();
