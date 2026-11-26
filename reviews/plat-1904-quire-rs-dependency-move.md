@@ -121,9 +121,10 @@ An exact-path search for the 95 changed upstream file paths found 17 paths menti
 
 ## Tests and checks
 
-- `cargo metadata --manifest-path rust/Cargo.toml --locked --format-version 1 --no-deps` passed before the new upstream fix; full metadata for `d7d418fa` is being checked.
+- `CARGO_HOME=/home/peter/.cache/cargo-home cargo metadata --manifest-path rust/Cargo.toml --locked --format-version 1` passed against `d7d418fa`.
 - `cargo fmt --manifest-path rust/Cargo.toml --all -- --check` and `git diff --check` passed.
-- Focused matrix regression and strictness tests have not yet run against `d7d418fa`; the prior queued attempt against `42bbf796` was canceled before it started, after an upstream compile defect was reported. The focused tests will run through `locked-build.sh` against this corrected revision.
+- Through `/home/peter/dev/worktrees/locked-build.sh` against `d7d418fa`, the focused regression `cargo test --locked -p quoin-quire --test fr029_dropped_declarations the_design_matrix_keeps_coverage_when_only_a_required_relation_drops -- --exact` passed (1 passed, 0 failed), and the strictness test `cargo test --locked -p quoin-quire --test fr029_dropped_declarations the_design_computes_refuse_a_dropped_declaration_with_qq_1022 -- --exact` passed (1 passed, 0 failed). Retained run log: `/home/peter/dev/.scratchpad/plat-1822-real-tool-runs/quoin-plat1904-focused.log`.
+- The first compile attempt against `d7d418fa` exposed that the public function is under `quire_rs::coverage`, not the crate root. The integration now uses `quire_rs::coverage::compute_coverage_for_design_matrix`; both focused tests passed after this correction. The earlier queued attempt against `42bbf796` was canceled before it started after an upstream compile defect was reported.
 
 ## PLAT-1904 host-path blocker and proposed engine contract
 
