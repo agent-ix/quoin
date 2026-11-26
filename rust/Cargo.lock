@@ -225,6 +225,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "build-npm-fetch"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=b2678772a02bcba4716073d1d8af2250c224b60b#b2678772a02bcba4716073d1d8af2250c224b60b"
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3100,9 +3105,10 @@ dependencies = [
 [[package]]
 name = "quire-fixtures"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?tag=v0.63.1#bd797be83f643a31e3a9c86580a06b4f6dbfa6bb"
+source = "git+https://github.com/agent-ix/quire-rs?rev=b2678772a02bcba4716073d1d8af2250c224b60b#b2678772a02bcba4716073d1d8af2250c224b60b"
 dependencies = [
  "serde_json",
+ "spec-objects-safety-fixture",
 ]
 
 [[package]]
@@ -4434,6 +4440,14 @@ checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "spec-objects-safety-fixture"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=b2678772a02bcba4716073d1d8af2250c224b60b#b2678772a02bcba4716073d1d8af2250c224b60b"
+dependencies = [
+ "build-npm-fetch",
 ]
 
 [[package]]
