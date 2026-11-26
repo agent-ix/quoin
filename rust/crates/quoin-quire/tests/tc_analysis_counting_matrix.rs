@@ -245,3 +245,23 @@ fn counting_uses_supplied_record_projection_and_leaves_inputs_untouched() {
     assert_eq!(fixture_files_after, fixture_files_before);
 }
 
+#[trace("FR-184-AC-19")]
+#[test]
+fn ordinary_analysis_projection_without_formal_rule_selection_is_eligible() {
+    let recorded = Recorded::new(&[AC1], "analysis-suite", "2026-11-13T00:00:00Z");
+    assert!(recorded.report.get("formal_rule_selection").is_none());
+
+    let outcome = count(recorded.runs(), recorded.bindings(), &[AC1], admitted());
+
+    assert_eq!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+    assert!(
+        outcome
+            .report
+            .evidence_results
+            .as_ref()
+            .unwrap()
+            .iter()
+            .all(|result| result.cause != CauseCode::QualificationRejected)
+    );
+}
+
