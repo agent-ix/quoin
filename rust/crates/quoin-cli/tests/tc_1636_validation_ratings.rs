@@ -123,7 +123,7 @@ fn tc_235_ratings_coverage_reports_ratings_without_reading_selftest_assets() {
     assert_eq!(with_selftest_assets.stdout, output.stdout);
 }
 
-#[trace("FR-235-AC-4")]
+#[trace("FR-235-AC-11")]
 #[test]
 fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
