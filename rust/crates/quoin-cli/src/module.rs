@@ -110,6 +110,7 @@ pub(crate) fn lag_diagnostics_or_warning(
     })
 }
 
+#[implements("FR-212-AC-1")]
 fn lag_warnings(
     manifest: &quoin_modules::MarketplaceManifest,
     registry: &quoin_modules::ModuleRegistry,
