@@ -90,8 +90,8 @@ fn doctor_warns_for_an_older_module_summarises_and_exits_zero() {
     assert!(stderr.contains(&pinned_ref()), "{stderr}");
     assert!(stderr.contains("QM032_MODULE_LAGS_PIN"), "{stderr}");
     assert!(
-        stderr.contains(&format!("quoin module remove {LAGGING_MODULE}")),
-        "{stderr}"
+        !stderr.contains(&format!("quoin module remove {LAGGING_MODULE}")),
+        "the repair should not require removing a module first: {stderr}"
     );
     assert!(stderr.contains("quoin module ensure-defaults"), "{stderr}");
 }
