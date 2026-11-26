@@ -6,9 +6,9 @@
 use std::io::Read as _;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 use time::OffsetDateTime;
-use time::format_description::well_known::Rfc3339;
 
 use crate::core_runtime::invoke;
 
@@ -133,6 +133,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     }
 }
 
+#[implements("FR-030-AC-28")]
 fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
     let modules = arguments
@@ -159,14 +160,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
     let timestamp = arguments
         .get_one::<String>("timestamp")
         .cloned()
-        .map_or_else(
-            || {
-                OffsetDateTime::now_utc()
-                    .format(&Rfc3339)
-                    .map_err(|error| error.to_string())
-            },
-            Ok,
-        )?;
+        .map_or_else(|| canonical_timestamp(OffsetDateTime::now_utc()), Ok)?;
     let discharges = arguments
         .get_one::<String>("discharges")
         .map_or_else(Vec::new, |value| {
@@ -253,18 +247,12 @@ fn read_policy(arguments: &ArgMatches) -> Result<Option<String>, String> {
         .transpose()
 }
 
+#[implements("FR-030-AC-28")]
 fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
     let timestamp = arguments
         .get_one::<String>("timestamp")
         .cloned()
-        .map_or_else(
-            || {
-                OffsetDateTime::now_utc()
-                    .format(&Rfc3339)
-                    .map_err(|error| error.to_string())
-            },
-            Ok,
-        )?;
+        .map_or_else(|| canonical_timestamp(OffsetDateTime::now_utc()), Ok)?;
     let suite = required(arguments, "suite")?;
     let dry_run = arguments.get_flag("dry-run");
     let response = invoke(
@@ -304,6 +292,22 @@ fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
             )
         ))
     })
+}
+
+#[implements("FR-030-AC-28")]
+fn canonical_timestamp(now: OffsetDateTime) -> Result<String, String> {
+    let milliseconds = (now.nanosecond() / 1_000_000) * 1_000_000;
+    let timestamp = now
+        .replace_nanosecond(milliseconds)
+        .map_err(|error| error.to_string())?;
+    let format = time::format_description::parse_borrowed::<3>(
+        "[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]Z",
+    )
+    .map_err(|error| error.to_string())?;
+    timestamp
+        .to_offset(time::UtcOffset::UTC)
+        .format(&format)
+        .map_err(|error| error.to_string())
 }
 
 fn gc(arguments: &ArgMatches) -> Result<Response, String> {
@@ -533,8 +537,9 @@ fn render(
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::{DESCRIPTION, command, run};
+    use super::{DESCRIPTION, canonical_timestamp, command, run};
     use ix_trace_rs::trace;
+    use time::OffsetDateTime;
 
     #[trace("FR-030", "FR-062", "FR-102")]
     #[test]
@@ -599,6 +604,17 @@ mod tests {
                     "evidence", "audit", "--module", "first", "--module", "second", "--strict",
                 ])
                 .is_ok()
+        );
+    }
+
+    #[trace("FR-030-AC-28")]
+    #[test]
+    fn generated_evidence_timestamps_are_exact_milliseconds() {
+        let now = OffsetDateTime::from_unix_timestamp_nanos(1_123_456_789)
+            .expect("fixed timestamp is in range");
+        assert_eq!(
+            canonical_timestamp(now).expect("timestamp formats"),
+            "1970-01-01T00:00:01.123Z"
         );
     }
 }
