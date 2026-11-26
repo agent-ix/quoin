@@ -5,6 +5,7 @@
 
 use crate::coverage::{self, Request};
 use crate::error::{Error, Result};
+use ix_trace_rs::implements;
 
 pub use quire_rs::corpus::{DesignMatrix, DesignMatrixEntry, DroppedRelation};
 
@@ -25,6 +26,8 @@ pub struct Outcome {
 /// The same scope, module, and extraction failures as [`coverage::compute`],
 /// or [`Error::DesignMatrixUnknownRelation`] when a declared design relation
 /// names no required relation.
+#[implements("FR-193-AC-10")]
+#[implements("FR-193-AC-11")]
 pub fn compute(request: &Request) -> Result<Outcome> {
     let walked = coverage::walk(request)?;
     let report = quire_rs::compute_coverage(
@@ -47,6 +50,8 @@ pub fn compute(request: &Request) -> Result<Outcome> {
     })
 }
 
+#[implements("FR-193-AC-10")]
+#[implements("FR-193-AC-11")]
 pub(crate) fn for_coverage(
     root: &std::path::Path,
     spec: &quire_rs::Spec,

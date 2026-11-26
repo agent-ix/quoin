@@ -10,6 +10,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
+use ix_trace_rs::implements;
 use quoin_quire::coverage::Request;
 use quoin_quire::records::Document;
 use quoin_quire::systems::Systems;
@@ -34,6 +35,8 @@ impl Generator for ArchitectureGenerator {
         }
     }
 
+    #[implements("FR-193-AC-10")]
+    #[implements("FR-193-AC-11")]
     fn generate(&self, inputs: &Inputs) -> Result<Generated, SourceFailure> {
         let modules = inputs
             .modules
@@ -112,6 +115,8 @@ fn render(entries: &[Value], systems: &Systems, adrs: &[&Document]) -> Generated
     render_with_errors(entries, systems, adrs, &[])
 }
 
+#[implements("FR-193-AC-10")]
+#[implements("FR-193-AC-11")]
 fn render_with_errors(
     entries: &[Value],
     systems: &Systems,
