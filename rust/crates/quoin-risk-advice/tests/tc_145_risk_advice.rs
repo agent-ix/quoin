@@ -195,7 +195,7 @@ fn no_json_section_emits_a_decision_shaped_key() {
     assert_no_decision_keys(&json, "$");
 }
 
-#[trace("FR-145-AC-3", "NFR-031-AC-6")]
+#[trace("FR-145-AC-3", "NFR-031-AC-6", "NFR-031-M-4")]
 #[test]
 fn two_runs_are_byte_identical() {
     let c = corpus();
@@ -969,7 +969,7 @@ fn with_every_optional_input_absent_each_value_is_null_a_marker_a_token_or_copie
     );
 }
 
-#[trace("NFR-031-AC-2", "FR-148-AC-9")]
+#[trace("NFR-031-AC-2", "FR-148-AC-9", "NFR-031-M-2")]
 #[test]
 fn the_markdown_never_says_the_tool_accepts() {
     let c = corpus();
