@@ -92,3 +92,27 @@ Ran code-review with its Rust lane, gap-analysis, and spec-review base, EARS, in
 The locked-build invocation `cargo clippy --locked -p quoin-completeness -p quoin-cli --all-targets --all-features -- -D warnings`, with target directory `/home/peter/dev/worktrees/plat1638-1640-coverage/target`, exited 101. It stops in unchanged dependency crate quoin-evidence before checking the changed crates: 14 warnings-as-errors (too_many_lines in qualify/premises.rs:562 and qualify/runs.rs:128, match_same_arms in store/gc.rs:199 and store/records.rs:555, missing_errors_doc in store/records.rs:50, must_use_candidate and indexing_slicing in timestamp.rs:14-25). No such file is in this PR. The complete log is `/tmp/quoin-pr1088-reviews/clippy.log`. These are recorded as out-of-diff gate context, not attributed to this PR; warnings were not suppressed. The code lead was informed of the exact limitation.
 
 The narrower `cargo clippy --locked -p quoin-completeness --all-targets --all-features -- -D warnings` completed with exit 0 through the same locked-build/private-target configuration. It verifies the touched shared-types crate, including test targets; the CLI lint check remains incomplete because of the unchanged dependency failures above. Log: `/tmp/quoin-pr1088-reviews/clippy-completeness.log`.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Round 1: commit 308f16c448737dd597f848dc8b8c893c26bd785c retags the unreadable-spec regression to FR-235-AC-11; the engine matrix includes it under AC-11 and excludes it from AC-4. |
+
+## Disposition Round 1
+
+**PASS; mergeable: yes** for the reviewed PR scope at `308f16c448737dd597f848dc8b8c893c26bd785c`. FND-001 is fixed; no new findings. The original findings text and original verdict remain unchanged as the historical review record.
+
+Reviewed the entire delta from `7ee1f6b550c1dec3d0e3df6f32cf6afa97504bf7`: one trace literal changes in the unreadable-spec test, and this exact reviewer-authored artifact is added under reviews/. The committed artifact matches the review-pass scratch artifact byte for byte before this disposition appendix. Test bodies and production code are unchanged. Re-read the six other method artifacts; their scopes are unchanged and their PR-scoped PASS verdicts stand.
+
+The fixed source excerpt at `rust/crates/quoin-cli/tests/tc_1636_validation_ratings.rs:125` is:
+
+```rust
+#[trace("FR-235-AC-11")]
+#[test]
+fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
+```
+
+Quire `0.52.0` (engine `0.62.2`), executable `/home/peter/.npm-global/bin/quire`, returned exit 0 for both `quire trace --scope . --file rust/crates/quoin-cli/tests/tc_1636_validation_ratings.rs` and `quire matrix --scope . --format json`. The matrix shows AC-4 tagged only by the readable-bundle regression, while AC-11 is tagged by both that regression and the unreadable-spec partial-result regression. This directly verifies the repaired binding. `git diff --check` passes; the head/tree were verified exact and clean. Runtime assertions are unchanged and were already exercised in the first review; no broad test suite or aggregate gate was rerun.
+
+Released Quoin remains `0.37.0` at `/tmp/plat1923-review-quoin037/node_modules/.bin/quoin`; schema module remains `spec-artifacts-process@v0.36.0`. Reviewer model: `gpt-6.1-sol`. Previously recorded out-of-diff cargo-deny advisories, dependency clippy errors and repository matrix baseline remain non-blocking context under the lead's explicit scope direction. GitHub reports MERGEABLE with mergeStateStatus BLOCKED; this disposition's mergeable=yes means no open review findings, not that branch protection was bypassed by the reviewer.
