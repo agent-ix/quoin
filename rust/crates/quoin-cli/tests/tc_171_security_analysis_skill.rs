@@ -287,7 +287,7 @@ fn revisions(text: &str) -> BTreeSet<String> {
         .collect()
 }
 
-#[trace("FR-171-AC-1")]
+#[trace("FR-171-AC-1", "FR-099-AC-7")]
 #[test]
 fn skill_text_writes_typed_artifacts_and_no_section_19() {
     let text = skill();

@@ -2074,6 +2074,7 @@ fn the_retry_guard_requires_four_recorded_consecutive_failures() {
     assert!(super::retries_exhausted(&make_instance(4, 1)).is_err());
 }
 
+#[trace("FR-099-AC-7")]
 #[test]
 fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -2210,7 +2211,7 @@ fn formalize_provider_dispatches_the_three_domain_invariants() {
     }
 }
 
-#[trace("FR-209-AC-5", "FR-209-AC-6", "FR-209-AC-7")]
+#[trace("FR-099-AC-7", "FR-209-AC-5", "FR-209-AC-6", "FR-209-AC-7")]
 #[test]
 fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

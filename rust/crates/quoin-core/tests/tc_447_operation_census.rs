@@ -178,6 +178,68 @@ fn tc_521_migrated_command_routes_remain_named_in_the_runtime_census() {
     }
 }
 
+/// The `validators.run` wire boundary preserves the validator's verdict over
+/// the same golden repository snapshot: a declared, wired gate that counts
+/// forbidden matches without checking the count yields the same finding.
+#[trace("FR-099-AC-1")]
+#[test]
+fn tc_511_validators_run_matches_the_validator_on_a_golden_snapshot() {
+    let script =
+        "#!/bin/sh\n# gate for O-1: never allow unwrap\ngrep -n 'unwrap' src/*.rs | wc -l\n";
+    let makefile = "gate:\n\t./scripts/check.sh\n";
+    let snapshot = quoin_validators::MemoryRepo::new()
+        .with_file("scripts/check.sh", script)
+        .with_file("Makefile", makefile);
+    let expected = quoin_validators::inspect_empty_gates_in(&mut snapshot.clone())
+        .expect("the golden snapshot is readable");
+    assert_eq!(expected.len(), 1, "fixture must exercise a real finding");
+
+    let actual = run(
+        "validators.run",
+        &json!({
+            "files": {
+                "scripts/check.sh": script.lines().map(str::to_owned).collect::<Vec<_>>(),
+                "Makefile": makefile.lines().map(str::to_owned).collect::<Vec<_>>()
+            }
+        })
+        .to_string(),
+    );
+    assert_eq!(
+        actual.status, 0,
+        "findings are a successful verdict: {}",
+        actual.stderr
+    );
+    assert_eq!(actual.stderr, "");
+    let payload: Value = serde_json::from_str(&actual.stdout).expect("payload is JSON");
+    assert_eq!(payload["findings"], serde_json::to_value(expected).unwrap());
+}
+
+/// A validator refusal keeps its non-success class when it crosses the
+/// `validators.run` boundary: an unlistable repository root is refused.
+#[trace("FR-099-AC-1")]
+#[test]
+fn tc_511_validators_run_preserves_the_root_refusal_classification() {
+    let mut snapshot = quoin_validators::MemoryRepo::new().with_unlistable_directory("");
+    let retained = quoin_validators::inspect_empty_gates_in(&mut snapshot)
+        .expect_err("an unlistable root cannot yield a verdict");
+    assert_eq!(
+        retained.code(),
+        quoin_validators::ErrorCode::RepoRootUnreadable
+    );
+
+    let actual = run(
+        "validators.run",
+        &json!({ "files": {}, "unlistable": [""] }).to_string(),
+    );
+    assert_eq!(actual.status, 2, "root refusal must remain non-success");
+    assert!(
+        actual.stdout.is_empty(),
+        "a refused run has no verdict payload"
+    );
+    assert!(actual.stderr.contains("CORE_REFUSED"), "{}", actual.stderr);
+    assert!(actual.stderr.contains("QV-E001"), "{}", actual.stderr);
+}
+
 /// Every operation this build routes is invoked BY NAME by some integration
 /// test.
 ///
@@ -440,7 +502,7 @@ fn tc_447_605_read_frontmatter_splits_documents_and_keeps_the_unreadable() {
 /// `completeness.assess_bundle` reaches a verdict over content alone.
 ///
 /// Provenance: agent-ix/quoin#445
-#[trace("FR-037", "FR-096")]
+#[trace("FR-037", "FR-096", "FR-099-AC-6")]
 #[test]
 fn tc_447_606_assess_bundle_returns_a_verdict() {
     let request = json!({
@@ -460,6 +522,10 @@ fn tc_447_606_assess_bundle_returns_a_verdict() {
             }]
     });
     let payload = ok(&run("completeness.assess_bundle", &request.to_string()));
+    let input: quoin_completeness::AssessInput =
+        serde_json::from_value(request).expect("the boundary fixture is a valid assessment input");
+    let direct = quoin_completeness::assess_sources(&input);
+    assert_eq!(payload, serde_json::to_value(direct).unwrap());
     assert_eq!(payload["bundleRoot"], "spec");
     assert_eq!(payload["verdict"], "CONDITIONAL");
     assert_eq!(payload["vocabularies"], json!(["quality-characteristics"]));

@@ -1,7 +1,7 @@
 # Retiring `@agent-ix/ix-cli-core` — the symbol inventory
 
 Deliverable of quoin#381 (EPIC #373, Stage 7). The EPIC records "quoin uses 9 of
-its symbols"; **the verified count for `src/` is 11** (10 values + 1 type), plus
+its symbols"; **the verified count for `src/` is 12** (11 values + 1 type), plus
 one further symbol used only by `tests/`. The inventory below was taken from the
 import sites and checked against ix-cli-core 0.12.0's `dist/index.js`, not from
 its `.d.ts` alone — three behaviours differ between the two.
@@ -26,9 +26,8 @@ marketplace or capability-resolution code. Nothing is ported wholesale.
 | 11  | `maybeOfferUpdate`         | `src/base.ts:1`                   | Throttled `npm view` update check with a TTL cache; skips in CI, when `NO_UPDATE_NOTIFIER` is set, or when not a TTY; never throws into the host.                                                                                                                                                                                                                                                                            | **Not quoin's to own.** Update notification is a distribution concern; Stage 9 decides whether the clap shell keeps it.                                                                                                           |
 | 12  | `runSelfUpdate`            | `src/commands/update.ts:2`        | `npm view` then `npm install -g <pkg>@<latest>`, with scope-aware registry flags.                                                                                                                                                                                                                                                                                                                                            | As above — Stage 9.                                                                                                                                                                                                               |
 
-> The table lists 12 rows because `RunnerLoadOptions` is a type import sharing
-> `src/cli.ts:5` with `loadConfig` and `run`. Distinct **symbols** imported by
-> `src/`: 11 values-or-types across 6 files.
+> The table lists 12 distinct symbols imported by `src/`, including the
+> `RunnerLoadOptions` type.
 
 `UnknownPluginError` appears only in a doc comment (`src/config-schema.ts:52`),
 never imported; its behaviour is reproduced as
@@ -40,6 +39,29 @@ raise it.
 | Symbol            | Site                                    | What it does                                                                                                                                                                                                 |
 | ----------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `listCorePlugins` | `tests/it-005-sync-discovery.test.ts:8` | Lists non-root `core`-type oclif plugins with their command ids. Used to assert the `@agent-ix/filament-plan-sync` extension contract still resolves. Stage 9 territory; see the plugin-contract note below. |
+
+## Retirement gate inventory
+
+The table below is the machine-readable source for the retirement gate. A
+`ported` entry names its Rust implementation and test. A shell-only or
+distribution entry names why it is deferred or excluded from this Rust port.
+The gate derives its entries from this table, not a fixed symbol count.
+
+| Symbol | Status | Rust implementation | Test or disposition |
+| --- | --- | --- | --- |
+| `ConfigService` | ported | `rust/crates/quoin-config/src/service.rs` | `rust/crates/quoin-config/tests/config_service.rs` |
+| `registerPluginSchema` | ported | `rust/crates/quoin-config/src/plugin_registry.rs` | `rust/crates/quoin-config/src/plugin_registry.rs` |
+| `runConfigGet` | ported | `rust/crates/quoin-cli/src/config.rs` | `rust/crates/quoin-cli/tests/tc_099_config_commands.rs` |
+| `runConfigSet` | ported | `rust/crates/quoin-cli/src/config.rs` | `rust/crates/quoin-cli/tests/tc_099_config_commands.rs` |
+| `runConfigDoctor` | ported | `rust/crates/quoin-cli/src/config.rs` | `rust/crates/quoin-cli/tests/tc_099_config_commands.rs` |
+| `runConfigEdit` | ported | `rust/crates/quoin-cli/src/config.rs` | `rust/crates/quoin-cli/tests/tc_099_config_commands.rs` |
+| `BaseCommand` | deferred | oclif base class is Stage 9 | shell command test is Stage 9 |
+| `loadConfig` | deferred | oclif command graph loading is Stage 9 | shell command test is Stage 9 |
+| `run` | deferred | oclif dispatch is Stage 9 | shell command test is Stage 9 |
+| `RunnerLoadOptions` | deferred | oclif runner type is Stage 9 | shell command test is Stage 9 |
+| `maybeOfferUpdate` | excluded | update notification is a distribution concern | no Rust port planned |
+| `runSelfUpdate` | excluded | package-manager self-update is a distribution concern | no Rust port planned |
+| `listCorePlugins` | deferred | oclif plugin discovery is Stage 9 | extension contract test is Stage 9 |
 
 ## Three places the implementation contradicts the published types
 
