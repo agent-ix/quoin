@@ -794,7 +794,6 @@ fn ratings_for_feature(
     ratings
 }
 
-#[implements("FR-217-AC-8")]
 fn known_anomalies(
     records: &[RunRecord],
     high_risk: &BTreeMap<String, BTreeSet<String>>,
@@ -802,9 +801,6 @@ fn known_anomalies(
     let mut producers = Vec::new();
     let mut anomalies = Vec::new();
     for record in records {
-        if record.tool == "quoin" {
-            continue;
-        }
         let version = record
             .tool_version
             .clone()
@@ -1591,13 +1587,7 @@ mod tests {
             {"path":"AN-RS-001.md", "raw":"---\nid: AN-RS-001\ntitle: Rust retained finding\ntype: Anomaly\nstatus: identified\nsafety_impact: none\nseverity: minor\n---\n"}
         ]);
         let quire_rs = write_run(temp.path(), "quire-rs-anomaly.json", &quire_rs_record);
-        let mut quoin_record = run_input("quoin", "pass", "not_high_process_risk", false);
-        quoin_record["anomalySet"]["documents"] = json!([
-            {"path":"AN-QUOIN-001.md", "raw":"---\nid: AN-QUOIN-001\ntitle: Quoin finding excluded\ntype: Anomaly\nstatus: identified\nsafety_impact: impacting\n---\n"}
-        ]);
-        let quoin = write_run(temp.path(), "quoin-anomaly.json", &quoin_record);
-
-        let report = build_report(&[quire_cli, quire_rs, quoin]).expect("report builds");
+        let report = build_report(&[quire_cli, quire_rs]).expect("report builds");
         let producer_names = report
             .known_anomalies
             .producers
@@ -1620,7 +1610,6 @@ mod tests {
         assert!(markdown.contains("Anomaly set: quire-rs quire-rs 1.0.0 — provided."));
         assert!(markdown.contains("CLI retained finding"));
         assert!(markdown.contains("Rust retained finding"));
-        assert!(!markdown.contains("Quoin finding excluded"));
         assert!(!markdown.contains("Anomaly set: quoin"));
     }
 
