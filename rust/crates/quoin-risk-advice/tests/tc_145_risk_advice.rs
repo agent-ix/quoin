@@ -175,7 +175,7 @@ fn the_json_has_exactly_the_six_keys_and_no_chain_rows() {
     }
 }
 
-#[trace("FR-145-AC-2", "NFR-031-AC-1")]
+#[trace("FR-145-AC-2", "NFR-031-AC-1", "NFR-031-M-1")]
 #[test]
 fn a_run_changes_no_file() {
     let c = corpus();
@@ -186,7 +186,7 @@ fn a_run_changes_no_file() {
     assert_eq!(snapshot(c.dir.path()), before);
 }
 
-#[trace("NFR-031-AC-3")]
+#[trace("NFR-031-AC-3", "NFR-031-M-3")]
 #[test]
 fn no_json_section_emits_a_decision_shaped_key() {
     let c = corpus();
