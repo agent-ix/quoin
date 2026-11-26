@@ -10,9 +10,11 @@ exported dossier using Quoin's baseline capabilities.
 
 ## Before you start
 
-Install Quoin and Quire, initialize a project repository, and identify the
-person who owns risk decisions and release approval. Keep one terminal at the
-project root for the commands below.
+Install Quoin, Quire, and Engineering Assurance, initialize a project
+repository, and identify the person who owns risk decisions and release
+approval. Keep one terminal at the project root for the commands below.
+
+To run the steps with test data, use the [synthetic baseline example](examples/regulated-baseline/README.md). It includes records, an SBOM, example decisions, and instructions for a throwaway SSH signing key.
 
 ## Intended use
 
