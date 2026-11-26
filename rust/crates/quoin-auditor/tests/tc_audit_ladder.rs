@@ -263,6 +263,50 @@ fn vacuity_needs_every_bound_symbol_skipped_or_absent() {
     assert_eq!(of_kind(&out, "vacuous-evidence", "FR-9-AC-2").len(), 0);
 }
 
+/// Vacuity folds symbols across every suite bound to the obligation.
+#[trace("FR-032-AC-8")]
+#[test]
+fn vacuity_folds_over_all_bound_suites() {
+    let obligation = ob("FR-9-AC-1", "the system SHALL do the thing");
+    let bindings = vec![
+        bind("FR-9-AC-1", "unit", &["t::skipped"]),
+        bind("FR-9-AC-1", "property", &["t::passed"]),
+    ];
+    let mixed = input(
+        vec![obligation.clone()],
+        bindings.clone(),
+        vec![
+            run_of(
+                "unit",
+                None,
+                vec![RunEntry::new("t::skipped", Outcome::Skip)],
+            ),
+            run_of("property", None, vec![pass("t::passed")]),
+        ],
+    );
+    assert!(
+        of_kind(&report(&mixed), "vacuous-evidence", "FR-9-AC-1").is_empty(),
+        "one passing bound symbol in another suite keeps the evidence non-vacuous"
+    );
+
+    let all_vacuous = input(
+        vec![obligation],
+        bindings,
+        vec![
+            run_of(
+                "unit",
+                None,
+                vec![RunEntry::new("t::skipped", Outcome::Skip)],
+            ),
+            run_of("property", None, vec![]),
+        ],
+    );
+    let all_vacuous_report = report(&all_vacuous);
+    let findings = of_kind(&all_vacuous_report, "vacuous-evidence", "FR-9-AC-1");
+    assert_eq!(findings.len(), 1);
+    assert_eq!(findings[0].severity, Some(Severity::high()));
+}
+
 /// An obligation with no binding is undischarged at medium severity.
 #[trace("FR-032-AC-5")]
 #[test]
