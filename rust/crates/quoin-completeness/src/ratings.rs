@@ -36,6 +36,34 @@ pub struct FeatureRatingState {
     pub rating_ids: Vec<String>,
 }
 
+/// An authored supplier rating value for a functional requirement.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FeatureRatingValue {
+    /// The identifier of the rating record.
+    pub rating_id: String,
+    /// The value authored in the rating record.
+    pub value: String,
+}
+
+/// Rating state and authored values for one functional requirement.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FeatureRatingCoverage {
+    /// The requirement's authored rating state and rating record identifiers.
+    #[serde(flatten)]
+    pub rating: FeatureRatingState,
+    /// Values present in the supplier rating records.
+    pub rating_values: Vec<FeatureRatingValue>,
+}
+
+/// Read-only supplier rating coverage for a specification bundle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FeatureRatingCoverageReport {
+    /// Rating state and values for every functional requirement in the bundle.
+    pub features: Vec<FeatureRatingCoverage>,
+    /// Spec documents that could not be read while building the report.
+    pub unreadable: Vec<crate::bundle::UnreadableDocument>,
+}
+
 /// Report supplier-rating completeness for every FR document in a parsed
 /// bundle. Adopter re-ratings are deliberately excluded.
 #[must_use]

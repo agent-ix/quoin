@@ -10,10 +10,10 @@ use std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_trace_rs::implements;
 use quoin_completeness::{
-    BundleDocument, FeatureRatingState, RatingStatus, UnreadableDocument, read_bundle_frontmatter,
+    BundleDocument, FeatureRatingCoverage, FeatureRatingCoverageReport, FeatureRatingState,
+    FeatureRatingValue, RatingStatus, read_bundle_frontmatter,
 };
 use quoin_core::protocol::Response;
-use serde::Serialize;
 
 /// One build-time embedded validation or anomaly record.
 pub(crate) struct EmbeddedFile {
@@ -234,25 +234,6 @@ fn status(feature: &FeatureRatingState) -> &'static str {
     }
 }
 
-#[derive(Serialize)]
-struct CoverageRatingValue<'a> {
-    rating_id: &'a str,
-    value: &'a str,
-}
-
-#[derive(Serialize)]
-struct CoverageFeature<'a> {
-    #[serde(flatten)]
-    rating: &'a FeatureRatingState,
-    rating_values: Vec<CoverageRatingValue<'a>>,
-}
-
-#[derive(Serialize)]
-struct CoverageReport<'a> {
-    features: Vec<CoverageFeature<'a>>,
-    unreadable: &'a [UnreadableDocument],
-}
-
 #[implements("FR-235-AC-4")]
 #[implements("FR-235-AC-11")]
 fn run_coverage(
@@ -264,8 +245,8 @@ fn run_coverage(
 ) -> Result<Response, String> {
     let mut coverage = Vec::with_capacity(features.len());
     for feature in features {
-        coverage.push(CoverageFeature {
-            rating: feature,
+        coverage.push(FeatureRatingCoverage {
+            rating: feature.clone(),
             rating_values: rating_values_for_feature(
                 documents,
                 repository_namespace,
@@ -273,9 +254,9 @@ fn run_coverage(
             ),
         });
     }
-    let report = CoverageReport {
+    let report = FeatureRatingCoverageReport {
         features: coverage,
-        unreadable,
+        unreadable: unreadable.to_vec(),
     };
     let partial = !report.unreadable.is_empty();
     let rendered = if json {
@@ -329,11 +310,11 @@ fn run_coverage(
 
 #[implements("FR-235-AC-4")]
 #[implements("FR-235-AC-11")]
-fn rating_values_for_feature<'a>(
-    documents: &'a [BundleDocument],
+fn rating_values_for_feature(
+    documents: &[BundleDocument],
     repository_namespace: &str,
     feature_id: &str,
-) -> Vec<CoverageRatingValue<'a>> {
+) -> Vec<FeatureRatingValue> {
     let feature_target = format!("ix://{repository_namespace}/{feature_id}");
     documents
         .iter()
@@ -354,9 +335,9 @@ fn rating_values_for_feature<'a>(
                     })
         })
         .filter_map(|document| {
-            Some(CoverageRatingValue {
-                rating_id: string_field(&document.frontmatter, "id")?,
-                value: string_field(&document.frontmatter, "rating")?,
+            Some(FeatureRatingValue {
+                rating_id: string_field(&document.frontmatter, "id")?.to_owned(),
+                value: string_field(&document.frontmatter, "rating")?.to_owned(),
             })
         })
         .collect()
