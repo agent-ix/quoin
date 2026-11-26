@@ -29,8 +29,8 @@ pub struct Outcome {
 #[implements("FR-193-AC-10")]
 #[implements("FR-193-AC-11")]
 pub fn compute(request: &Request) -> Result<Outcome> {
-    let walked = coverage::walk(request)?;
-    let report = quire_rs::compute_coverage(
+    let walked = coverage::walk_for_design_matrix(request)?;
+    let report = quire_rs::compute_coverage_for_design_matrix(
         &walked.spec,
         &walked.registry,
         &walked.graph,

@@ -21,6 +21,7 @@
 use crate::error::{Error, Result};
 use crate::ids::{DOCUMENT_ROOT_DIR, ScopeRoot};
 use crate::modules::{ModuleSelection, Notice, NoticeKind};
+use ix_trace_rs::implements;
 
 /// One coverage run.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,13 +78,34 @@ pub(crate) struct Walked {
 
 /// The module, corpus and symbol walks a coverage run reconciles.
 pub(crate) fn walk(request: &Request) -> Result<Walked> {
+    walk_with_dropped_relation_policy(request, false)
+}
+
+/// Walk the inputs for design-matrix coverage, where the engine keeps valid
+/// entries when only required-relation declarations were dropped.
+#[implements("FR-193-AC-10", "FR-193-AC-11")]
+pub(crate) fn walk_for_design_matrix(request: &Request) -> Result<Walked> {
+    walk_with_dropped_relation_policy(request, true)
+}
+
+#[implements("FR-193-AC-10", "FR-193-AC-11")]
+fn walk_with_dropped_relation_policy(
+    request: &Request,
+    allow_dropped_required_relations: bool,
+) -> Result<Walked> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
 
     // Dropped declarations first, and before the absent-model check: when every
     // declaration was dropped the merged model is empty and reads as absent,
     // which must be reported as the drop, not as QQ-1020 (FR-029-AC-20).
-    crate::modules::require_complete_model(&registry)?;
+    let has_disallowed_drops = registry.dropped_declarations().any(|(_, declaration)| {
+        !allow_dropped_required_relations
+            || declaration.kind != quire_rs::traceability::DeclarationKind::RequiredRelation
+    });
+    if has_disallowed_drops {
+        crate::modules::require_complete_model(&registry)?;
+    }
 
     // Checked before any walk: without a model there is nothing to reconcile
     // against, and guessing would be exactly the agent-grep behaviour this

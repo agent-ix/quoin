@@ -226,6 +226,27 @@ fn the_design_computes_refuse_a_dropped_declaration_with_qq_1022() {
     }
 }
 
+/// FR-193-AC-10: the design-matrix path keeps valid coverage when one required
+/// relation cannot load, while ordinary coverage and unrelated declaration
+/// failures retain their strict behavior.
+#[trace("FR-193-AC-10")]
+#[test]
+fn the_design_matrix_keeps_coverage_when_only_a_required_relation_drops() {
+    let module = Module::new(
+        "partial-matrix",
+        &manifest(
+            "  required_relations:\n    - name: retained-relation\n      from: FR\n      edges: [implements]\n      direction: outgoing\n      check: missing-design\n    - name: dropped-relation\n      from: FR\n      edges: [implements]\n      direction: outgoing\n      check: missing-design\n      record_keys: [regulatedCategories]\n",
+        ),
+    );
+    let request = module.request();
+
+    coverage::compute(&request)
+        .expect_err("ordinary coverage remains strict on any dropped declaration");
+    let outcome = design_matrix::compute(&request)
+        .expect("design coverage survives a dropped required relation");
+    assert_eq!(outcome.design_matrix.errors.len(), 1);
+}
+
 /// FR-029-AC-20: with every declaration dropped the model reads as absent, and
 /// each compute still refuses with the drop, not QQ-1020.
 #[trace("FR-029-AC-20")]
