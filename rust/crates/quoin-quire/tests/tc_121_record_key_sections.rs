@@ -419,23 +419,10 @@ fn token_gate_and_unowned_headings_are_prose() {
         assert!(!record_source_keys(&prose).contains(&key), "{key}");
     }
 
-    let schema = json!({
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://schemas.example.test/ArchitectureRecord.json",
-        "type": "object",
-        "properties": {
-            "thresholds": {"type": "array", "items": {"type": "object"}},
-            "records": {"type": "array", "items": {"type": "object"}},
-            "endianness": {"type": "string"}
-        },
-        "additionalProperties": false
-    });
-    let extraction = json!({"yield_pattern": {"match": {
-        "thresholds": {"from": "table_row", "under_section": "Thresholds", "required": true,
-            "assert": {"columns": ["Name"], "min_rows": 1}}
-    }}});
+    let schema = architecture_schema();
+    let extraction = json!({"yield_pattern": {"match": {}}});
     let architecture = synthetic_for(
-        "# Artifact\n\n## Thresholds\n\n| Name |\n|---|\n| high |\n\n## Requires\n\n- control-1\n\n## Endianness\n\n`little`\n",
+        "# Artifact\n\n## Thresholds\n\n| Scope | Metric | Limit | Window | Status | Retry After | Behavior |\n|---|---|---|---|---|---|---|\n| per_token | requests | 60 | 1m | 429 | true | block |\n\n## Requires\n\n- control-1\n\n## Endianness\n\n`little`\n",
         &schema,
         &["record-sections"],
         Some(&extraction),
@@ -483,6 +470,31 @@ fn status_schema() -> Value {
         "type": "object",
         "properties": {"status": {"type": "string"}, "label": {"type": "string"},
             "thresholds": {"type": "array", "items": {"type": "object"}}},
+        "additionalProperties": false
+    })
+}
+
+fn architecture_schema() -> Value {
+    json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://schemas.example.test/ArchitectureRecord.json",
+        "type": "object",
+        "properties": {
+            "label": {"type": "string"},
+            "thresholds": {"type": "array", "items": {"type": "object", "properties": {
+                "scope": {"type": "string"},
+                "metric": {"type": "string"},
+                "limit": {"type": "integer"},
+                "window": {"type": "string"},
+                "on_exceeded": {"type": "object", "properties": {
+                    "status": {"type": "integer"},
+                    "retry_after": {"type": "boolean"},
+                    "behavior": {"type": "string"}
+                }}
+            }}},
+            "records": {"type": "array", "items": {"type": "object"}},
+            "endianness": {"type": "string"}
+        },
         "additionalProperties": false
     })
 }
@@ -596,25 +608,12 @@ fn absent_optional_frontmatter_key_is_not_defaulted() {
 #[trace("FR-121-AC-14")]
 #[test]
 fn another_declared_table_mapping_owns_its_heading() {
-    let schema = json!({
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://schemas.example.test/ArchitectureRecord.json",
-        "type": "object",
-        "properties": {
-            "label": {"type": "string"},
-            "thresholds": {"type": "array", "items": {"type": "object"}},
-            "records": {"type": "array", "items": {"type": "object"}},
-            "endianness": {"type": "string"}
-        },
-        "additionalProperties": false
-    });
+    let schema = architecture_schema();
     let extraction = json!({"yield_pattern": {"match": {
-        "label": {"from": "frontmatter_field", "path": ["label"], "required": false},
-        "thresholds": {"from": "table_row", "under_section": "Thresholds", "required": true,
-            "assert": {"columns": ["Name"], "min_rows": 1}}
+        "label": {"from": "frontmatter_field", "path": ["label"], "required": false}
     }}});
     let output = synthetic_for(
-        "---\nlabel: sample\n---\n# Item\n\n## Thresholds\n\n| Name |\n|---|\n| high |\n\n## Endianness\n\n`little`\n",
+        "---\nlabel: sample\n---\n# Item\n\n## Thresholds\n\n| Scope | Metric | Limit | Window | Status | Retry After | Behavior |\n|---|---|---|---|---|---|---|\n| per_token | requests | 60 | 1m | 429 | true | block |\n\n## Endianness\n\n`little`\n",
         &schema,
         &["record-sections"],
         Some(&extraction),
