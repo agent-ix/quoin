@@ -7,9 +7,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use ix_trace_rs::implements;
 use tempfile::Builder;
 
 use crate::error::ModulesError;
+use crate::install::MATERIALIZED_MARKER;
 use crate::pack::RestrictedSet;
 use crate::source::Source;
 
@@ -39,6 +41,7 @@ pub(super) fn join_checked(base: &Path, sub: &str) -> Result<PathBuf, ModulesErr
 }
 
 /// Replace `target` with a copy of `content_root`.
+#[implements("FR-099-AC-11")]
 pub(super) fn materialize(content_root: &Path, target: &Path) -> Result<(), ModulesError> {
     let parent = target
         .parent()
@@ -59,6 +62,12 @@ pub(super) fn materialize(content_root: &Path, target: &Path) -> Result<(), Modu
         })?;
     let staged = staging.path().join("new");
     copy_dir(content_root, &staged)?;
+    fs::write(staged.join(MATERIALIZED_MARKER), b"").map_err(|source| {
+        ModulesError::MaterializeFailed {
+            target: staged.join(MATERIALIZED_MARKER),
+            source,
+        }
+    })?;
 
     let previous = staging.path().join("previous");
     let had_previous = match fs::rename(target, &previous) {
@@ -129,6 +138,40 @@ pub(super) fn copy_dir(from: &Path, to: &Path) -> Result<(), ModulesError> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::panic,
+    reason = "test assertions report the violated filesystem contract"
+)]
+mod tests {
+    use ix_trace_rs::trace;
+    use tempfile::tempdir;
+
+    use super::{MATERIALIZED_MARKER, materialize};
+
+    #[trace("FR-099-AC-11")]
+    #[test]
+    fn tc_1915_failed_materialization_does_not_publish_completion_marker() {
+        let scratch = tempdir().expect("scratch directory is created");
+        let missing_source = scratch.path().join("missing-source");
+        let target = scratch.path().join("modules/module");
+
+        let error = materialize(&missing_source, &target)
+            .expect_err("an unreadable source tree cannot be materialized");
+
+        assert!(matches!(
+            error,
+            crate::error::ModulesError::MaterializeFailed { .. }
+        ));
+        assert!(!target.exists(), "a failed copy leaves no target root");
+        assert!(
+            !target.join(MATERIALIZED_MARKER).exists(),
+            "an incomplete target has no completion marker"
+        );
+    }
 }
 
 /// An RFC 3339 timestamp for the install record.

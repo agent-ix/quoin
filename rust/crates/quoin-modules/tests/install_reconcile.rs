@@ -296,17 +296,32 @@ fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
 #[test]
 fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     let h = home();
-    let tree = write_module(&h.fixtures, "mod", "v1");
+    let tree = h.fixtures.join("repo");
+    fs::create_dir_all(tree.join("nested/artifacts")).expect("nested fixture dirs");
+    fs::write(tree.join(".quoin-extract-complete"), "").expect("resolved git tree is complete");
     fs::write(
-        tree.join("manifest.yaml"),
+        tree.join("nested/manifest.yaml"),
         "name: mod\nversion: 1.0.0\nartifact_types:\n  - name: FR\n",
     )
     .expect("fixture declares a catalog artifact");
+    fs::write(tree.join("nested/artifacts/marker.txt"), "v1").expect("artifact fixture");
     let resolver =
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
-    let manifest = git_manifest("mod", "v1.0.0");
+    let manifest = MarketplaceManifest {
+        schema_version: 1,
+        name: Some("test-set".to_owned()),
+        entries: vec![MarketplaceEntry {
+            name: ModuleName::new("mod").expect("legal name"),
+            source: Source::Git {
+                url: "https://github.com/agent-ix/fixture.git".to_owned(),
+                r#ref: Some("v1.0.0".to_owned()),
+            },
+            default_enabled: None,
+            path: Some("nested".to_owned()),
+        }],
+    };
 
     let first = ensure_defaults(&manifest, &installer).expect("first reconcile");
     assert_eq!(
@@ -364,7 +379,7 @@ fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
 
     ensure_defaults(&manifest, &installer).expect("initial reconcile installs the module");
     let installed_root = h.paths.target_root.join("mod");
-    fs::remove_file(installed_root.join(".quoin-extract-complete"))
+    fs::remove_file(installed_root.join(".quoin-materialize-complete"))
         .expect("simulate an interrupted git-subdir root");
 
     let repaired = ensure_defaults(&manifest, &installer).expect("partial root is re-resolved");
@@ -378,7 +393,7 @@ fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
         "partial roots must not take the lazy fast path"
     );
     assert!(
-        installed_root.join(".quoin-extract-complete").is_file(),
+        installed_root.join(".quoin-materialize-complete").is_file(),
         "the complete-tree marker returns after replacement"
     );
 }

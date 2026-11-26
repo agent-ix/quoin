@@ -11,9 +11,8 @@
 //! `stat` calls.
 
 use crate::error::ModulesError;
-use crate::git::COMPLETE_MARKER;
 use crate::ids::ModuleName;
-use crate::install::ModuleInstaller;
+use crate::install::{MATERIALIZED_MARKER, ModuleInstaller};
 use crate::manifest::MarketplaceManifest;
 use crate::registry::ModuleRegistry;
 use ix_trace_rs::implements;
@@ -73,7 +72,7 @@ pub fn reconcile(
         let target = entry.name.dir_under(&installer.paths().target_root);
         let materialized = existing.is_some_and(|installed| {
             let source_complete =
-                installed.source.git_url().is_none() || target.join(COMPLETE_MARKER).is_file();
+                installed.source.git_url().is_none() || target.join(MATERIALIZED_MARKER).is_file();
             target.is_dir()
                 && target.join("manifest.yaml").is_file()
                 && source_complete

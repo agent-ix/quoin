@@ -27,6 +27,9 @@ use crate::paths::InstallPaths;
 use crate::registry::{InstalledModule, ModuleRegistry};
 use crate::semantic::SemanticGate;
 use crate::source::Source;
+
+/// Marker published only after a module root has been copied into its target.
+pub(crate) const MATERIALIZED_MARKER: &str = ".quoin-materialize-complete";
 #[cfg(test)]
 use support::civil_from_days;
 use support::{

@@ -53,8 +53,8 @@ fn materialize_retained_module_manifests(home: &Path) {
                 format!("name: {name}\n"),
             )
             .expect("copied module root is materialized");
-            fs::write(entry.path().join(".quoin-extract-complete"), "")
-                .expect("copied git module root is complete");
+            fs::write(entry.path().join(".quoin-materialize-complete"), "")
+                .expect("copied module root is complete");
         }
     }
 }
