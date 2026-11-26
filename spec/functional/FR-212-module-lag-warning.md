@@ -16,9 +16,11 @@ relationships:
 Lazy reconciliation ([FR-017](./FR-017-reconcile-default-modules.md)) skips a
 module that is already installed, so a module installed by an older CLI keeps
 its old release after the CLI is upgraded and its content can silently lack
-fields the current CLI's pin has. `quoin module doctor` and
-`quoin catalog validate` SHALL warn for each default module that is installed
-at a release other than, and not newer than, the release the running CLI pins.
+fields the current CLI's pin has. `quoin module ensure-defaults` SHALL repair
+installed default modules whose refs are older than or incomparable with the
+running CLI's pins. `quoin module doctor` and `quoin catalog validate` SHALL
+warn for each default module that is installed at a release other than, and not
+newer than, the release the running CLI pins.
 
 ## Inputs
 
@@ -27,8 +29,8 @@ at a release other than, and not newer than, the release the running CLI pins.
 ## Outputs
 
 - One warning diagnostic per such module, naming the module, its installed ref
-  and its pinned ref, and stating the two commands that install the pinned
-  release: `quoin module remove <name>`, then `quoin module ensure-defaults`.
+  and its pinned ref, and stating the command that installs the pinned release:
+  `quoin module ensure-defaults`.
 - Warnings never change an exit status.
 
 ## Behavior
@@ -42,6 +44,9 @@ at a release other than, and not newer than, the release the running CLI pins.
   not at the pinned release.
 - A module that is not installed, or is installed at the pinned or a newer
   release, is not reported.
+- `quoin module ensure-defaults` SHALL re-resolve each installed default module
+  whose ref is older than or incomparable with its pin, leaving modules at the
+  pin or at a newer semantic version unchanged.
 - `quoin module doctor` SHALL print the warnings.
 - `quoin module doctor` SHALL print one summary line stating how many installed
   modules were warned about.
@@ -56,13 +61,14 @@ at a release other than, and not newer than, the release the running CLI pins.
 
 | ID          | Criteria                                                                                                                                                     | Verification |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
-| FR-212-AC-1 | A module installed at a semantic-version ref lower than its pin yields a warning naming the module, installed ref and pinned ref, and the remove-then-ensure-defaults commands | Test         |
+| FR-212-AC-1 | A module installed at a semantic-version ref lower than its pin yields a warning naming the module and both refs, and names `quoin module ensure-defaults` as the repair command. | Test |
 | FR-212-AC-2 | A module installed at its pinned or a newer release yields no warning                                                                                        | Test         |
 | FR-212-AC-3 | A module installed with a non-version ref or no ref, differing from a version pin, yields a warning naming the module, installed ref and pinned ref, saying it is not at the pinned release | Test         |
 | FR-212-AC-4 | A module that is not installed, or whose pin is not a semantic version, yields no warning                                                                    | Test         |
 | FR-212-AC-5 | `quoin module doctor` prints the warnings and a one-line summary count, and exits zero                                                                       | Test         |
 | FR-212-AC-6 | `quoin catalog validate` prints the warnings and exits zero when the catalog is valid                                                                        | Test         |
 | FR-212-AC-7 | When the lag check fails after the catalog loads, the check yields a warning diagnostic in place of the lag warnings and does not change the exit status of `quoin catalog validate` | Test         |
+| FR-212-AC-8 | `quoin module ensure-defaults` updates an installed default module whose ref is older than its pin to the pinned release, and a second call performs no further resolution. | Test |
 
 ## Dependencies
 
