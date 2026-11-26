@@ -169,7 +169,7 @@ impl DecisionCheck {
 /// Check the retained decision history against a single record revision.
 ///
 /// Use [`crate::verify::verify_change_assurance`] to also check its lineage and
-/// compare the signing policies of successive revisions.
+/// compare the policies successive revisions record; it does not perform signing or verification.
 ///
 /// Takes the history as JSON rather than as a parsed value because
 /// verification distinguishes *absent* (`event_chain_missing`, incomplete) from *present

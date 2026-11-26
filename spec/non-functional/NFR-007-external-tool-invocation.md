@@ -15,10 +15,14 @@ relationships:
 ## Statement
 
 `quoin` SHALL invoke the external tool `ix-flow` by name from `PATH`, and its
-absence or non-zero exit SHALL surface as a non-zero `quoin` exit. `quire` is a
-library linked into `quoin`, not a process; the only processes `quoin` starts are
-`git`, `ix-flow` and the operator's `$EDITOR` (FR-036-AC-8). `ix-flow` is not
-version-pinned, which is a known and accepted limitation.
+absence or non-zero exit SHALL surface as a non-zero `quoin` exit. The fixed
+process dependencies are `git`, `ix-flow`, `node`, `engineering-assurance`, the
+`quoin` executable used by `selftest`, `/bin/sh` for the Linux self-test sandbox,
+and the `quire` CLI used by dossier export. Quoin also uses linked quire-rs APIs;
+the `quire` CLI is a subprocess (FR-036-AC-8). Quoin may also start the
+operator's `$EDITOR` for `config edit` and tool paths explicitly supplied through
+configured runtime/capability inputs. `ix-flow` is not version-pinned, which is
+a known and accepted limitation.
 
 ## Scope
 
@@ -41,8 +45,8 @@ problems visible to the caller.
 
 `quoin-cli` `src/flow.rs` ::
 `ix_flow_error_envelope_is_reported_before_missing_run_id` asserts that an `ix-flow` failure is
-reported. `quoin_executes_exactly_git_and_ix_flow_and_the_operators_editor` (TC-203, FR-036-AC-8) asserts structurally that the executables `quoin` spawns are
-exactly `git`, `ix-flow` and `$EDITOR`.
+reported. `quoin_process_launches_match_the_declared_tool_policy` (TC-203, FR-036-AC-8) checks the
+production process inventory and fails closed on an unrecognized executable expression.
 
 NFR-007-M-1 is measured over each workflow command crossed with twelve ways `ix-flow` fails,
 by plan [MP-252](../assurance/MP-252-nfr007-external-tool-failures.md) with the test
