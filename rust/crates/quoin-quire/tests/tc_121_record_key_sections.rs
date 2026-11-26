@@ -176,6 +176,34 @@ fn synthetic(
     )
 }
 
+fn synthetic_with_relations(
+    markdown: &str,
+    schema: &Value,
+    body_extraction: Option<&Value>,
+    relation_vocabulary: &Value,
+) -> Value {
+    let mut request = json!({
+        "markdown": markdown,
+        "module": {
+            "contractVersion": "1.0.0",
+            "package": "acme/synthetic",
+            "exports": [],
+            "mappings": ["record-sections"],
+        },
+        "path": "synthetic.md",
+        "sourceIdentity": "ix://acme/synthetic/spec",
+        "bundle": {"package": "acme/synthetic"},
+        "dataSchema": schema,
+        "schemaDocuments": {},
+        "relationVocabulary": relation_vocabulary,
+    });
+    if let Some(body_extraction) = body_extraction {
+        request["bodyExtraction"] = body_extraction.clone();
+    }
+    serde_json::to_value(extract_semantic_json(&request).expect("Quire extracts owned-key case"))
+        .expect("semantic output serializes")
+}
+
 #[test]
 fn shared_assessment_golden_extracts_with_a_source_span() {
     let (case, output, root) = run_fixture("assessment-row");
@@ -419,19 +447,36 @@ fn token_gate_and_unowned_headings_are_prose() {
         assert!(!record_source_keys(&prose).contains(&key), "{key}");
     }
 
-    let schema = architecture_schema();
-    let extraction = json!({"yield_pattern": {"match": {}}});
-    let architecture = synthetic_for(
-        "# Artifact\n\n## Thresholds\n\n| Scope | Metric | Limit | Window | Status | Retry After | Behavior |\n|---|---|---|---|---|---|---|\n| per_token | requests | 60 | 1m | 429 | true | block |\n\n## Requires\n\n- control-1\n\n## Endianness\n\n`little`\n",
+    let schema = owned_relation_schema();
+    let vocabulary = owned_relation_vocabulary();
+    let headings = synthetic_with_relations(
+        "# Artifact\n\n## Thresholds\n\n- target-1\n\n## Requires\n\n- target-1\n",
         &schema,
+        None,
+        &vocabulary,
+    );
+    assert!(diagnostics(&headings).is_empty());
+    assert!(headings.get("record").is_none() || headings["record"].is_null());
+    assert!(record_source_keys(&headings).is_empty());
+
+    let endian_schema = json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://schemas.example.test/BinaryFormat.json",
+        "type": "object",
+        "properties": {"endianness": {"type": "string"}},
+        "additionalProperties": false
+    });
+    let endian = synthetic_for(
+        "# Artifact\n\n## Endianness\n\n`little`\n",
+        &endian_schema,
         &["record-sections"],
-        Some(&extraction),
+        None,
         "agent-ix/spec-objects-architecture",
         Some("binary_format"),
     );
-    assert!(diagnostics(&architecture).is_empty());
-    assert!(architecture.get("record").is_none() || architecture["record"].is_null());
-    assert!(record_source_keys(&architecture).is_empty());
+    assert!(diagnostics(&endian).is_empty());
+    assert!(endian.get("record").is_none() || endian["record"].is_null());
+    assert!(record_source_keys(&endian).is_empty());
 }
 
 fn record_source_keys(output: &Value) -> Vec<&str> {
@@ -474,28 +519,33 @@ fn status_schema() -> Value {
     })
 }
 
-fn architecture_schema() -> Value {
+fn owned_relation_schema() -> Value {
     json!({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://schemas.example.test/ArchitectureRecord.json",
+        "$id": "https://schemas.example.test/OwnedRecord.json",
         "type": "object",
         "properties": {
             "label": {"type": "string"},
-            "thresholds": {"type": "array", "items": {"type": "object", "properties": {
-                "scope": {"type": "string"},
-                "metric": {"type": "string"},
-                "limit": {"type": "integer"},
-                "window": {"type": "string"},
-                "on_exceeded": {"type": "object", "properties": {
-                    "status": {"type": "integer"},
-                    "retry_after": {"type": "boolean"},
-                    "behavior": {"type": "string"}
-                }}
-            }}},
-            "records": {"type": "array", "items": {"type": "object"}},
-            "endianness": {"type": "string"}
+            "thresholds": {"type": "array", "items": {
+                "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.0/SemanticId.json"
+            }},
+            "requires": {"type": "array", "items": {
+                "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.0/SemanticId.json"
+            }}
         },
         "additionalProperties": false
+    })
+}
+
+fn owned_relation_vocabulary() -> Value {
+    json!({
+        "objectType": "synthetic",
+        "edgeTypes": {
+            "thresholds": {"category": "dependency"},
+            "requires": {"category": "dependency"}
+        },
+        "roles": {"synthetic": []},
+        "allowedLinks": {"synthetic": {"thresholds": ["*"], "requires": ["*"]}}
     })
 }
 
@@ -608,17 +658,16 @@ fn absent_optional_frontmatter_key_is_not_defaulted() {
 #[trace("FR-121-AC-14")]
 #[test]
 fn another_declared_table_mapping_owns_its_heading() {
-    let schema = architecture_schema();
+    let schema = owned_relation_schema();
+    let vocabulary = owned_relation_vocabulary();
     let extraction = json!({"yield_pattern": {"match": {
         "label": {"from": "frontmatter_field", "path": ["label"], "required": false}
     }}});
-    let output = synthetic_for(
-        "---\nlabel: sample\n---\n# Item\n\n## Thresholds\n\n| Scope | Metric | Limit | Window | Status | Retry After | Behavior |\n|---|---|---|---|---|---|---|\n| per_token | requests | 60 | 1m | 429 | true | block |\n\n## Endianness\n\n`little`\n",
+    let output = synthetic_with_relations(
+        "---\nlabel: sample\n---\n# Item\n\n## Thresholds\n\n- target-1\n",
         &schema,
-        &["record-sections"],
         Some(&extraction),
-        "agent-ix/spec-objects-architecture",
-        Some("binary_format"),
+        &vocabulary,
     );
     assert!(
         diagnostics(&output).is_empty(),
@@ -626,7 +675,6 @@ fn another_declared_table_mapping_owns_its_heading() {
         diagnostics(&output)
     );
     assert!(output["record"].get("thresholds").is_none());
-    assert!(output["record"].get("endianness").is_none());
     assert!(record_source_keys(&output).is_empty());
 }
 
