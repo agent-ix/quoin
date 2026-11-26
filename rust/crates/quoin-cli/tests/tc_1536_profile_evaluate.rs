@@ -515,7 +515,12 @@ fn out_dir_files_equal_the_engine_report_and_discharge_accepts_them() {
     assert!(discharge.status.success(), "{}", text(&discharge));
 }
 
-#[trace("FR-181-AC-11", "NFR-037-AC-1", "NFR-037-AC-2")]
+#[trace(
+    "FR-181-AC-11",
+    "NFR-037-AC-1",
+    "NFR-037-AC-2",
+    "NFR-037-M-1"
+)]
 #[test]
 fn a_run_is_byte_identical_offline_and_changes_nothing() {
     let env = env();
