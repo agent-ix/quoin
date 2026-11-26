@@ -102,6 +102,38 @@ impl Fixture {
             .unwrap()
     }
 
+    fn record_with_run_kind(
+        &self,
+        results: &Path,
+        run_kind: Option<&str>,
+        formal_rule_selection: Option<&Path>,
+    ) -> Output {
+        let mut command = self.quoin();
+        command.args([
+            "evidence",
+            "record",
+            "--repo",
+            ".",
+            "--module",
+            ".",
+            "--suite",
+            "SUITE-SMT",
+            "--tool",
+            "filament-analyze 0.1.0",
+            "--timestamp",
+            "2026-01-01T00:00:00Z",
+            "--results",
+        ]);
+        command.arg(results);
+        if let Some(run_kind) = run_kind {
+            command.args(["--run-kind", run_kind]);
+        }
+        if let Some(selection) = formal_rule_selection {
+            command.arg("--formal-rule-selection").arg(selection);
+        }
+        command.output().unwrap()
+    }
+
     fn results(&self, bytes: &[u8]) -> std::path::PathBuf {
         let path = self.home.path().join("results.json");
         std::fs::write(&path, bytes).unwrap();
@@ -126,6 +158,13 @@ impl Fixture {
 
     fn runs_exist(&self) -> bool {
         self.repo.path().join("spec/evidence/runs").exists()
+    }
+
+    fn report_projection_exists(&self) -> bool {
+        self.repo
+            .path()
+            .join("spec/evidence/analysis-reports")
+            .exists()
     }
 }
 
@@ -242,6 +281,83 @@ fn tc_001_the_command_applies_the_report_limit_not_a_lower_request_limit() {
         "{over_text}"
     );
     assert!(!fixture.runs_exist());
+}
+
+#[trace("FR-151-AC-18")]
+#[test]
+fn tc_001_new_runs_require_a_known_kind_and_legacy_analysis_projection_defaults_to_analysis() {
+    let fixture = fixture();
+    let results = fixture.results(SATISFIED.as_bytes());
+
+    let missing = fixture.record_with_run_kind(&results, None, None);
+    assert_ne!(missing.status.code(), Some(0), "{}", stdout(&missing));
+    assert!(!fixture.runs_exist());
+    assert!(!fixture.report_projection_exists());
+
+    let unknown = fixture.record_with_run_kind(&results, Some("unknown"), None);
+    assert_ne!(unknown.status.code(), Some(0), "{}", stderr(&unknown));
+    assert!(!fixture.runs_exist());
+    assert!(!fixture.report_projection_exists());
+
+    let formal_selection = fixture.home.path().join("formal-rule-selection.json");
+    std::fs::write(&formal_selection, "{}").unwrap();
+    let unexpected_selection =
+        fixture.record_with_run_kind(&results, Some("analysis"), Some(&formal_selection));
+    assert_ne!(unexpected_selection.status.code(), Some(0));
+    assert!(!fixture.runs_exist());
+    assert!(!fixture.report_projection_exists());
+
+    let spec = SPEC.replace("|  |\n", "| Analysis |\n");
+    std::fs::write(fixture.repo.path().join("spec/FR-001-example.md"), spec).unwrap();
+    let recorded = fixture.record(&results, &["--discharges", "FR-001-AC-1", "--json"]);
+    assert_eq!(recorded.status.code(), Some(0), "{}", stderr(&recorded));
+    let recorded: serde_json::Value = serde_json::from_slice(&recorded.stdout).unwrap();
+    let projection_path = fixture
+        .repo
+        .path()
+        .join("spec/evidence/analysis-reports/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json");
+    let projection: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&projection_path).unwrap()).unwrap();
+    assert_eq!(projection["run_kind"], "analysis");
+
+    let observation = fixture.home.path().join("legacy-observation.json");
+    let revision = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    let record_path = recorded["run_path"]
+        .as_str()
+        .unwrap()
+        .strip_prefix("./spec/evidence/")
+        .unwrap();
+    std::fs::write(
+        &observation,
+        serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": record_path,
+            "run_kind": "analysis",
+            "selected_head": revision,
+            "checkout_sha": revision,
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let explicit = fixture.matrix(&observation);
+    assert_eq!(explicit.status.code(), Some(0), "{}", stderr(&explicit));
+    let explicit: serde_json::Value = serde_json::from_slice(&explicit.stdout).unwrap();
+    let explicit_evidence = explicit["requirements"][0]["criteria"][0]["analysis_evidence"]
+        .as_array()
+        .unwrap();
+    assert!(!explicit_evidence.is_empty(), "{explicit}");
+
+    let mut projection: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&projection_path).unwrap()).unwrap();
+    projection.as_object_mut().unwrap().remove("run_kind");
+    std::fs::write(&projection_path, serde_json::to_vec(&projection).unwrap()).unwrap();
+    let legacy = fixture.matrix(&observation);
+    assert_eq!(legacy.status.code(), Some(0), "{}", stderr(&legacy));
+    let legacy: serde_json::Value = serde_json::from_slice(&legacy.stdout).unwrap();
+    let legacy_evidence = legacy["requirements"][0]["criteria"][0]["analysis_evidence"]
+        .as_array()
+        .unwrap();
+    assert_eq!(legacy_evidence, explicit_evidence);
 }
 
 fn audit(fixture: &Fixture) -> serde_json::Value {
