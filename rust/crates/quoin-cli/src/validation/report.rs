@@ -1293,6 +1293,7 @@ fn write_report(directory: &Path, markdown: &str, json_bytes: &[u8]) -> Result<(
 }
 
 #[implements("FR-218-AC-5")]
+#[implements("FR-218-AC-4")]
 fn verify_signoff(
     executable: &Path,
     allowed_signers: &Path,
@@ -1302,6 +1303,17 @@ fn verify_signoff(
     let repo = repo
         .canonicalize()
         .map_err(|error| format!("repository is unavailable: {error}"))?;
+    let report_directory = if report_directory.is_absolute() {
+        report_directory.to_path_buf()
+    } else {
+        repo.join(report_directory)
+    };
+    let report_directory = report_directory.canonicalize().map_err(|error| {
+        format!(
+            "validation report directory is unavailable at {}: {error}",
+            report_directory.display()
+        )
+    })?;
     let report = report_directory.join("validation-report.md");
     if !report.is_file() {
         return Err(format!(
