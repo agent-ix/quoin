@@ -474,7 +474,7 @@ fn status_locator() -> Value {
 #[trace("FR-121-AC-10")]
 #[test]
 fn section_cannot_supply_a_missing_frontmatter_owned_key() {
-    let output = synthetic_for(
+    let output = synthetic(
         "# Item\n\n## Status\n\n`accepted`\n",
         &status_schema(),
         &["record-sections"],
